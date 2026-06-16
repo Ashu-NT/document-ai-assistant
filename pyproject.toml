@@ -50,15 +50,28 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "pytest-mock>=3.14",
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
 
-    "pytest",
-    "pytest-cov",
-    "pytest-mock",
-
-    "ruff",
-    "black",
-    "mypy",
-
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-q",
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "unit: fast isolated unit tests",
+    "integration: tests requiring external systems or real infrastructure",
+    "e2e: full workflow tests",
+    "slow: slow tests",
 ]
 
 [project.scripts]
