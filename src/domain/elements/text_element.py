@@ -1,0 +1,24 @@
+from dataclasses import dataclass
+
+from src.domain.common import ElementType
+from src.domain.elements.canonical_element import CanonicalElement
+
+
+@dataclass(slots=True)
+class TextElement(CanonicalElement):
+    def __init__(
+        self,
+        element_id: str,
+        document_id: str,
+        text: str,
+        parent_section_id: str | None = None,
+        reading_order: int | None = None,
+    ) -> None:
+        super().__init__(
+            element_id=element_id,
+            document_id=document_id,
+            element_type=ElementType.TEXT,
+            text=text,
+            parent_section_id=parent_section_id,
+            reading_order=reading_order,
+        )
