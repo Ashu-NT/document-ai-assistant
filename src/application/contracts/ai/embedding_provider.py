@@ -1,6 +1,9 @@
 from typing import Protocol
 
 
-class LLMProvider(Protocol):
-    def generate(self, prompt: str, model: str | None = None) -> str:
+class EmbeddingProvider(Protocol):
+    def embed_text(self, text: str) -> list[float]:
+        ...
+
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
         ...
