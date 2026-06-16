@@ -1,0 +1,28 @@
+from dataclasses import dataclass
+
+from src.domain.common import ElementType
+from src.domain.elements.canonical_element import CanonicalElement
+
+
+@dataclass(slots=True)
+class CodeElement(CanonicalElement):
+    language: str | None = None
+
+    def __init__(
+        self,
+        element_id: str,
+        document_id: str,
+        code: str,
+        language: str | None = None,
+        parent_section_id: str | None = None,
+        reading_order: int | None = None,
+    ) -> None:
+        super().__init__(
+            element_id=element_id,
+            document_id=document_id,
+            element_type=ElementType.CODE,
+            text=code,
+            parent_section_id=parent_section_id,
+            reading_order=reading_order,
+        )
+        self.language = language
