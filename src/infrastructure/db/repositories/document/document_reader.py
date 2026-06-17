@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.domain.document import DocumentGraph
@@ -16,68 +17,76 @@ from src.infrastructure.db.orm_models import (
     IdentifierORM,
     SectionORM,
 )
-
+from src.shared.exceptions import DatabaseError
 
 class DocumentReader:
     def __init__(self, session: Session) -> None:
         self.session = session
 
     def get_document_graph(self, document_id: str) -> DocumentGraph | None:
-        document_orm = self.session.get(DocumentORM, document_id)
+        try:
+            document_orm = self.session.get(DocumentORM, document_id)
 
-        if document_orm is None:
-            return None
+            if document_orm is None:
+                return None
 
-        graph = DocumentGraph(
-            document=DocumentMapper.to_domain(document_orm),
-        )
-
-        sections = self.session.execute(
-            select(SectionORM).where(SectionORM.document_id == document_id)
-        ).scalars().all()
-
-        elements = self.session.execute(
-            select(ElementORM).where(ElementORM.document_id == document_id)
-        ).scalars().all()
-
-        chunks = self.session.execute(
-            select(ChunkORM).where(ChunkORM.document_id == document_id)
-        ).scalars().all()
-
-        questions = self.session.execute(
-            select(GeneratedQuestionORM).where(
-                GeneratedQuestionORM.document_id == document_id
+            graph = DocumentGraph(
+                document=DocumentMapper.to_domain(document_orm),
             )
-        ).scalars().all()
 
-        identifiers = self.session.execute(
-            select(IdentifierORM).where(IdentifierORM.document_id == document_id)
-        ).scalars().all()
+            sections = self.session.execute(
+                select(SectionORM).where(SectionORM.document_id == document_id)
+            ).scalars().all()
 
-        element_ids_by_section = self._group_element_ids_by_section(elements)
+            elements = self.session.execute(
+                select(ElementORM).where(ElementORM.document_id == document_id)
+            ).scalars().all()
 
-        for section_orm in sections:
-            section = SectionMapper.to_domain(
-                section_orm,
-                element_ids=element_ids_by_section.get(section_orm.id, []),
-            )
-            graph.add_section(section)
+            chunks = self.session.execute(
+                select(ChunkORM).where(ChunkORM.document_id == document_id)
+            ).scalars().all()
 
-        for element_orm in elements:
-            graph.add_element(ElementMapper.to_domain(element_orm))
+            questions = self.session.execute(
+                select(GeneratedQuestionORM).where(
+                    GeneratedQuestionORM.document_id == document_id
+                )
+            ).scalars().all()
 
-        for chunk_orm in chunks:
-            graph.add_chunk(ChunkMapper.to_domain(chunk_orm))
+            identifiers = self.session.execute(
+                select(IdentifierORM).where(IdentifierORM.document_id == document_id)
+            ).scalars().all()
 
-        for question_orm in questions:
-            question = GeneratedQuestionMapper.to_domain(question_orm)
-            graph.questions[question.question_id] = question
+            element_ids_by_section = self._group_element_ids_by_section(elements)
 
-        for identifier_orm in identifiers:
-            identifier = IdentifierMapper.to_domain(identifier_orm)
-            graph.identifiers[identifier.identifier_id] = identifier
+            for section_orm in sections:
+                graph.add_section(
+                    SectionMapper.to_domain(
+                        section_orm,
+                        element_ids=element_ids_by_section.get(section_orm.id, []),
+                    )
+                )
 
-        return graph
+            for element_orm in elements:
+                graph.add_element(ElementMapper.to_domain(element_orm))
+
+            for chunk_orm in chunks:
+                graph.add_chunk(ChunkMapper.to_domain(chunk_orm))
+
+            for question_orm in questions:
+                question = GeneratedQuestionMapper.to_domain(question_orm)
+                graph.questions[question.question_id] = question
+
+            for identifier_orm in identifiers:
+                identifier = IdentifierMapper.to_domain(identifier_orm)
+                graph.identifiers[identifier.identifier_id] = identifier
+
+            return graph
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to load document graph.",
+                details={"document_id": document_id},
+            ) from exc
 
     def _group_element_ids_by_section(
         self,

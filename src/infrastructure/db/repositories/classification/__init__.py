@@ -1,0 +1,3 @@
+from src.infrastructure.db.repositories.classification.classification_repository import SqlAlchemyClassificationRepository
+
+__all__ = ["SqlAlchemyClassificationRepository"]

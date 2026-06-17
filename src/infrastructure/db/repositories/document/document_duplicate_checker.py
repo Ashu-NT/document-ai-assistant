@@ -1,7 +1,9 @@
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.infrastructure.db.orm_models import DocumentORM
+from src.shared.exceptions import DatabaseError
 
 
 class DocumentDuplicateChecker:
@@ -9,15 +11,29 @@ class DocumentDuplicateChecker:
         self.session = session
 
     def find_document_id_by_file_hash(self, file_hash: str) -> str | None:
-        statement = select(DocumentORM.id).where(
-            DocumentORM.file_hash == file_hash,
-        )
+        try:
+            statement = select(DocumentORM.id).where(
+                DocumentORM.file_hash == file_hash,
+            )
 
-        return self.session.execute(statement).scalar_one_or_none()
+            return self.session.execute(statement).scalar_one_or_none()
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to check document file hash duplicate.",
+                details={"file_hash": file_hash},
+            ) from exc
 
     def find_document_id_by_content_hash(self, content_hash: str) -> str | None:
-        statement = select(DocumentORM.id).where(
-            DocumentORM.content_hash == content_hash,
-        )
+        try:
+            statement = select(DocumentORM.id).where(
+                DocumentORM.content_hash == content_hash,
+            )
 
-        return self.session.execute(statement).scalar_one_or_none()
+            return self.session.execute(statement).scalar_one_or_none()
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to check document content hash duplicate.",
+                details={"content_hash": content_hash},
+            ) from exc
