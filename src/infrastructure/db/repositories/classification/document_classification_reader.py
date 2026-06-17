@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.domain.classification import DocumentClassification
-from src.infrastructure.db.mappers.classification import (
+from src.infrastructure.db.mappers import (
     DocumentClassificationMapper,
 )
 from src.infrastructure.db.orm_models import DocumentClassificationORM

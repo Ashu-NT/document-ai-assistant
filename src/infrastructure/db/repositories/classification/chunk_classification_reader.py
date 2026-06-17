@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.domain.classification import ChunkClassification
-from src.infrastructure.db.mappers.classification import (
+from src.infrastructure.db.mappers import (
     ChunkClassificationMapper,
 )
 from src.infrastructure.db.orm_models import ChunkClassificationORM
