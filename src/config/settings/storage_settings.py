@@ -1,12 +1,12 @@
 from pathlib import Path
 
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from src.config.settings.base_settings import AppBaseSettings
 
 from src.config.paths import resolve_project_path
 
 
-class StorageSettings(BaseSettings):
+class StorageSettings(AppBaseSettings):
     project_root: str | None = Field(default=None, alias="PROJECT_ROOT")
 
     data_dir: str = Field(alias="DATA_DIR")
@@ -18,9 +18,6 @@ class StorageSettings(BaseSettings):
     evaluation_output_dir: str = Field(alias="EVALUATION_OUTPUT_DIR")
     log_dir: str = Field(alias="LOG_DIR")
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
 
     @property
     def data_path(self) -> Path:

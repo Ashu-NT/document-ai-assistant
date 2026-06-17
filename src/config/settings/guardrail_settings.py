@@ -1,8 +1,8 @@
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from src.config.settings.base_settings import AppBaseSettings
 
 
-class GuardrailSettings(BaseSettings):
+class GuardrailSettings(AppBaseSettings):
     min_evidence_chunks: int = Field(
         alias="MIN_EVIDENCE_CHUNKS"
     )
@@ -11,7 +11,4 @@ class GuardrailSettings(BaseSettings):
         alias="REQUIRE_CITATIONS"
     )
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
         

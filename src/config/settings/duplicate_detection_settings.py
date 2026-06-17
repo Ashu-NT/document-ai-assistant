@@ -1,8 +1,8 @@
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from src.config.settings.base_settings import AppBaseSettings
 
 
-class DuplicateDetectionSettings(BaseSettings):
+class DuplicateDetectionSettings(AppBaseSettings):
     enable_file_hash_check: bool = Field(
         alias="ENABLE_FILE_HASH_CHECK"
     )
@@ -15,6 +15,4 @@ class DuplicateDetectionSettings(BaseSettings):
         alias="CONTENT_HASH_NORMALIZE_TEXT"
     )
 
-    class Config:
-        env_file = ".env"
         

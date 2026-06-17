@@ -1,8 +1,8 @@
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from src.config.settings.base_settings import AppBaseSettings
 
 
-class LangGraphSettings(BaseSettings):
+class LangGraphSettings(AppBaseSettings):
     enabled: bool = Field(alias="LANGGRAPH_ENABLED")
 
     checkpointing: bool = Field(
@@ -10,7 +10,4 @@ class LangGraphSettings(BaseSettings):
     )
 
     max_steps: int = Field(alias="LANGGRAPH_MAX_STEPS")
-
-    class Config:
-        env_file = ".env"
         

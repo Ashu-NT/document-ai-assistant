@@ -1,8 +1,8 @@
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from src.config.settings.base_settings import AppBaseSettings
 
 
-class MemorySettings(BaseSettings):
+class MemorySettings(AppBaseSettings):
     enable_short_term_memory: bool = Field(
         alias="ENABLE_SHORT_TERM_MEMORY"
     )
@@ -14,7 +14,4 @@ class MemorySettings(BaseSettings):
     max_conversation_messages: int = Field(
         alias="MAX_CONVERSATION_MESSAGES"
     )
-
-    class Config:
-        env_file = ".env"
         
