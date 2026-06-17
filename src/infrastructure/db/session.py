@@ -5,7 +5,7 @@ from src.config.settings import database_settings
 
 
 engine = create_engine(
-    database_settings.database_url,
+    database_settings.resolved_database_url,
     pool_pre_ping=True,
     future=True,
 )
