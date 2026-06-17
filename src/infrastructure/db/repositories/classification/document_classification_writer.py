@@ -5,7 +5,7 @@ from src.domain.classification import DocumentClassification
 from src.infrastructure.db.mappers.classification import (
     DocumentClassificationMapper,
 )
-from shared.exceptions import DatabaseError
+from src.shared.exceptions import DatabaseError
 
 
 class DocumentClassificationWriter:
