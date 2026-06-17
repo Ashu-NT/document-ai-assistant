@@ -6,8 +6,8 @@ from src.domain.classification import DocumentClassification
 from src.infrastructure.db.mappers.classification import (
     DocumentClassificationMapper,
 )
-from infrastructure.db.orm_models import DocumentClassificationORM
-from shared.exceptions import DatabaseError
+from src.infrastructure.db.orm_models import DocumentClassificationORM
+from src.shared.exceptions import DatabaseError
 
 
 class DocumentClassificationReader:
