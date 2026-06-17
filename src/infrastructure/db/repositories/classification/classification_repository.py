@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from src.application.contracts.classification import ClassificationRepository
 from src.domain.classification import ChunkClassification, DocumentClassification
-from infrastructure.db.repositories.classification.chunk_classification_reader import (
+from src.infrastructure.db.repositories.classification.chunk_classification_reader import (
     ChunkClassificationReader,
 )
 from src.infrastructure.db.repositories.classification.chunk_classification_writer import (
