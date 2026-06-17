@@ -32,3 +32,8 @@ memory_settings = MemorySettings()
 extraction_settings = ExtractionSettings()
 duplicate_detection_settings = DuplicateDetectionSettings()
 storage_settings = StorageSettings()
+
+def ensure_application_directories() -> None:
+    storage_settings.ensure_directories()
+    database_settings.ensure_database_directory()
+    qdrant_settings.ensure_storage_directory()
