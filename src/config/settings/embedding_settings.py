@@ -1,13 +1,10 @@
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from src.config.settings.base_settings import AppBaseSettings
 
 
-class EmbeddingSettings(BaseSettings):
+class EmbeddingSettings(AppBaseSettings):
     model_name: str = Field(alias="EMBEDDING_MODEL")
 
     dimensions: int = Field(alias="EMBEDDING_DIMENSIONS")
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
         

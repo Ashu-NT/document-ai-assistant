@@ -1,8 +1,8 @@
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from src.config.settings.base_settings import AppBaseSettings
 
 
-class LoggingSettings(BaseSettings):
+class LoggingSettings(AppBaseSettings):
 
     log_level: str = Field(alias="LOG_LEVEL")
 
@@ -23,7 +23,4 @@ class LoggingSettings(BaseSettings):
         alias="LOG_CONSOLE_ENABLED",
     )
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
         

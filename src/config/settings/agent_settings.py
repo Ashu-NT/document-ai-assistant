@@ -1,8 +1,9 @@
 from pydantic import Field
-from pydantic_settings import BaseSettings
+
+from src.config.settings.base_settings import AppBaseSettings
 
 
-class AgentSettings(BaseSettings):
+class AgentSettings(AppBaseSettings):
     enabled: bool = Field(alias="AGENT_ENABLED")
 
     max_tool_calls: int = Field(
@@ -20,7 +21,3 @@ class AgentSettings(BaseSettings):
     allow_retrieval_tools: bool = Field(
         alias="AGENT_ALLOW_RETRIEVAL_TOOLS"
     )
-
-    class Config:
-        env_file = ".env"
-        

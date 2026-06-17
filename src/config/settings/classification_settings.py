@@ -1,8 +1,8 @@
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from src.config.settings.base_settings import AppBaseSettings
 
 
-class ClassificationSettings(BaseSettings):
+class ClassificationSettings(AppBaseSettings):
 
     enabled: bool = Field(
         alias="CLASSIFICATION_ENABLED"
@@ -55,10 +55,6 @@ class ClassificationSettings(BaseSettings):
     chunk_confidence_threshold: float = Field(
         alias="CHUNK_CLASSIFICATION_CONFIDENCE_THRESHOLD"
     )
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
 
     @property
     def supported_document_types(self) -> list[str]:

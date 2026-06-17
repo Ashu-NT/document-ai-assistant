@@ -1,8 +1,8 @@
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from src.config.settings.base_settings import AppBaseSettings
 
 
-class ExtractionSettings(BaseSettings):
+class ExtractionSettings(AppBaseSettings):
     extraction_enabled: bool = Field(
         alias="EXTRACTION_ENABLED"
     )
@@ -14,7 +14,4 @@ class ExtractionSettings(BaseSettings):
     extraction_require_human_review: bool = Field(
         alias="EXTRACTION_REQUIRE_HUMAN_REVIEW"
     )
-
-    class Config:
-        env_file = ".env"
         

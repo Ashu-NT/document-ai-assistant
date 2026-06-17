@@ -1,8 +1,8 @@
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from src.config.settings.base_settings import AppBaseSettings
 
 
-class IngestionSettings(BaseSettings):
+class IngestionSettings(AppBaseSettings):
     max_file_size_mb: int = Field(alias="MAX_FILE_SIZE_MB")
 
     max_pdf_pages: int = Field(alias="MAX_PDF_PAGES")
@@ -19,7 +19,4 @@ class IngestionSettings(BaseSettings):
         alias="ENABLE_QUESTION_GENERATION"
     )
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
         

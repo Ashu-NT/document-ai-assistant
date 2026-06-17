@@ -1,19 +1,15 @@
 from pathlib import Path
 
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from src.config.settings.base_settings import AppBaseSettings
 
 from src.config.paths import resolve_project_path
 
 
-class DatabaseSettings(BaseSettings):
+class DatabaseSettings(AppBaseSettings):
     database_provider: str = Field(alias="DATABASE_PROVIDER")
     database_url: str | None = Field(default=None, alias="DATABASE_URL")
     database_file: str = Field(alias="DATABASE_FILE")
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
 
     @property
     def database_path(self) -> Path:

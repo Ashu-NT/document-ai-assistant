@@ -1,8 +1,8 @@
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from src.config.settings.base_settings import AppBaseSettings
 
 
-class RetrievalSettings(BaseSettings):
+class RetrievalSettings(AppBaseSettings):
     top_k_retrieval: int = Field(alias="TOP_K_RETRIEVAL")
 
     retrieval_score_threshold: float = Field(
@@ -39,6 +39,4 @@ class RetrievalSettings(BaseSettings):
         alias="FINAL_RETRIEVAL_TOP_K"
     )
 
-    class Config:
-        env_file = ".env"
            
