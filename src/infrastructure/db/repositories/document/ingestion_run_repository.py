@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from src.application.contracts.document import IngestionRunRepository
 from domain.common import IngestionStatus
 from domain.workflows import IngestionRun
-from infrastructure.db.mappers.workflow.ingestion_run_mapper import IngestionRunMapper
+from infrastructure.db.mappers import IngestionRunMapper
 from infrastructure.db.orm_models import IngestionRunORM
 from infrastructure.db.repositories.common import update_orm_from_orm
 from src.shared.exceptions import DatabaseError

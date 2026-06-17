@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.domain.document.entities import Identifier
-from src.infrastructure.db.mappers.document.identifier_mapper import IdentifierMapper
+from src.infrastructure.db.mappers import IdentifierMapper
 from src.infrastructure.db.orm_models import IdentifierORM
 from src.shared.exceptions import DatabaseError
 

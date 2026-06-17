@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.domain.document.entities import DocumentChunk
-from src.infrastructure.db.mappers.document.chunk_mapper import ChunkMapper
+from src.infrastructure.db.mappers import ChunkMapper
 from src.infrastructure.db.orm_models import ChunkORM
 from src.shared.exceptions import DatabaseError
 
