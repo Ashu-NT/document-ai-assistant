@@ -4,6 +4,7 @@ from src.domain.events import DomainEvent
 from src.shared.events import EventContext, EventSeverity
 from src.shared.execution.action_result import ActionResult
 from src.shared.execution.payloads import build_failure_payload
+from uuid import uuid4
 
 if TYPE_CHECKING:
     from src.application.services.events import EventService
@@ -57,6 +58,7 @@ class EventTracker:
             return
 
         event = DomainEvent(
+            event_id=f"event_{uuid4().hex}",
             event_type=f"{action}.failed",
             aggregate_type=default_entity_type,
             payload=build_failure_payload(exc),
