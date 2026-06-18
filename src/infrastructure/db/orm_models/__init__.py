@@ -24,6 +24,7 @@ from src.infrastructure.db.orm_models.memory_models import (
 )
 from src.infrastructure.db.orm_models.activity_models import ActivityRecordORM
 from src.infrastructure.db.orm_models.audit_models import AuditRecordORM
+from src.infrastructure.db.orm_models.event_models import EventEnvelopeORM
 
 __all__ = [
     "ChunkORM",
@@ -47,4 +48,5 @@ __all__ = [
     "SemanticMemoryReferenceORM",
     "ActivityRecordORM",
     "AuditRecordORM",
+    "EventEnvelopeORM",
 ]
