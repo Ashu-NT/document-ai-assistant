@@ -2,9 +2,8 @@ from src.application.contracts.activity import ActivityRepository
 from src.domain.activity import ActivityRecord
 from src.shared.activity import ActivityContext, ActivityPayload
 
-
 class ActivityService:
-    def __init__(self, repository: ActivityRepository) -> None:
+    def __init__(self, repository:ActivityRepository) -> None:
         self.repository = repository
 
     def record(

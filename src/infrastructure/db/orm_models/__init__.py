@@ -22,6 +22,7 @@ from src.infrastructure.db.orm_models.memory_models import (
     MemoryEntryORM,
     SemanticMemoryReferenceORM,
 )
+from src.infrastructure.db.orm_models.activity_models import ActivityRecordORM
 
 __all__ = [
     "ChunkORM",
@@ -43,4 +44,5 @@ __all__ = [
     "ConversationMessageORM",
     "MemoryEntryORM",
     "SemanticMemoryReferenceORM",
+    "ActivityRecordORM",
 ]

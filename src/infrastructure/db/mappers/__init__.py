@@ -21,7 +21,9 @@ from src.infrastructure.db.mappers.extraction import SparePartMapper
 from src.infrastructure.db.mappers.memory import ConversationMemoryMapper
 from src.infrastructure.db.mappers.memory import MemoryEntryMapper
 from src.infrastructure.db.mappers.memory import SemanticMemoryMapper
-
+from src.infrastructure.db.mappers.activity import (
+    ActivityRecordMapper,
+)
 
 __all__ = [
     "columns_to_source_location",
@@ -45,4 +47,5 @@ __all__ = [
     "ConversationMemoryMapper",
     "MemoryEntryMapper",
     "SemanticMemoryMapper",
+    "ActivityRecordMapper"
 ]
