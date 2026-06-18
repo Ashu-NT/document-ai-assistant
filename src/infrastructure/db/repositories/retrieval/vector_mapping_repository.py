@@ -1,8 +1,9 @@
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
+from sqlalchemy import delete
 
+from src.infrastructure.db.mappers import ChunkVectorMapper
 from src.infrastructure.db.orm_models import ChunkVectorORM
 from src.shared.exceptions import DatabaseError
 
@@ -23,15 +24,14 @@ class SqlAlchemyVectorMappingRepository:
         embedding_text_hash: str | None = None,
     ) -> None:
         try:
-            mapping = ChunkVectorORM(
-                id=vector_id,
+            mapping = ChunkVectorMapper.to_orm(
+                vector_id=vector_id,
                 document_id=document_id,
                 chunk_id=chunk_id,
                 qdrant_collection=qdrant_collection,
                 qdrant_point_id=qdrant_point_id,
                 embedding_model=embedding_model,
                 embedding_text_hash=embedding_text_hash,
-                created_at=datetime.now(timezone.utc),
             )
 
             self.session.merge(mapping)
@@ -71,5 +71,45 @@ class SqlAlchemyVectorMappingRepository:
         except SQLAlchemyError as exc:
             raise DatabaseError(
                 "Failed to list vector chunk ids by document.",
+                details={"document_id": document_id},
+            ) from exc
+            
+    def list_qdrant_point_ids_by_document(
+        self,
+        document_id: str,
+    ) -> list[str]:
+        try:
+            statement = select(
+                ChunkVectorORM.qdrant_point_id
+            ).where(
+                ChunkVectorORM.document_id == document_id
+            )
+
+            return list(
+                self.session.execute(statement)
+                .scalars()
+                .all()
+            )
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to list Qdrant point ids by document.",
+                details={"document_id": document_id},
+            ) from exc
+            
+    def delete_document_mappings(
+        self,
+        document_id: str,
+    ) -> None:
+        try:
+            statement = delete(ChunkVectorORM).where(
+                ChunkVectorORM.document_id == document_id
+            )
+
+            self.session.execute(statement)
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to delete vector mappings by document.",
                 details={"document_id": document_id},
             ) from exc

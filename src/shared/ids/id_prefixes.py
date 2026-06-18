@@ -1,4 +1,6 @@
-from enum import Enum
+
+
+from sqlalchemy import Enum
 
 
 class IdPrefix(str, Enum):
@@ -16,6 +18,7 @@ class IdPrefix(str, Enum):
     ACTIVITY = "activity"
     AUDIT = "audit"
     EVENT = "event"
+    RETRIEVAL = "retrieval"
 
     MEMORY = "memory"
     CONVERSATION = "conversation"
