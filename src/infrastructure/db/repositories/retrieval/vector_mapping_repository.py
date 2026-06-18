@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from datetime import datetime, timezone
 
 from src.infrastructure.db.orm_models import ChunkVectorORM
 from src.shared.exceptions import DatabaseError
@@ -30,6 +31,7 @@ class SqlAlchemyVectorMappingRepository:
                 qdrant_point_id=qdrant_point_id,
                 embedding_model=embedding_model,
                 embedding_text_hash=embedding_text_hash,
+                created_at=datetime.now(timezone.utc),
             )
 
             self.session.merge(mapping)

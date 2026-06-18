@@ -3,9 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.domain.classification import ChunkClassification
-from src.infrastructure.db.mappers import (
-    ChunkClassificationMapper,
-)
+from src.infrastructure.db.mappers import ChunkClassificationMapper
 from src.infrastructure.db.orm_models import ChunkClassificationORM
 from src.shared.exceptions import DatabaseError
 
@@ -31,4 +29,20 @@ class ChunkClassificationReader:
             raise DatabaseError(
                 "Failed to load chunk classification.",
                 details={"chunk_id": chunk_id},
+            ) from exc
+
+    def list_by_document(self, document_id: str) -> list[ChunkClassification]:
+        try:
+            statement = select(ChunkClassificationORM).where(
+                ChunkClassificationORM.document_id == document_id,
+            )
+
+            rows = self.session.execute(statement).scalars().all()
+
+            return [ChunkClassificationMapper.to_domain(row) for row in rows]
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to list chunk classifications by document.",
+                details={"document_id": document_id},
             ) from exc
