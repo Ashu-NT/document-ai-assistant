@@ -24,6 +24,8 @@ from src.infrastructure.db.mappers.memory import SemanticMemoryMapper
 from src.infrastructure.db.mappers.activity import (
     ActivityRecordMapper,
 )
+from src.infrastructure.db.mappers.audit import AuditRecordMapper
+
 
 __all__ = [
     "columns_to_source_location",
@@ -47,5 +49,6 @@ __all__ = [
     "ConversationMemoryMapper",
     "MemoryEntryMapper",
     "SemanticMemoryMapper",
-    "ActivityRecordMapper"
+    "ActivityRecordMapper",
+    "AuditRecordMapper",
 ]
