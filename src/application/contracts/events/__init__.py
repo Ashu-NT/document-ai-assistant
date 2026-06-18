@@ -1,3 +1,3 @@
-from src.application.contracts.events.event_bus import EventBus
+from src.application.contracts.events.event_repository import EventRepository
 
-__all__ = ["EventBus"]
+__all__ = ["EventRepository"]
