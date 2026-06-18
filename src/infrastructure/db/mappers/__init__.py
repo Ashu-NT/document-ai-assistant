@@ -1,4 +1,4 @@
-from src.infrastructure.db.mappers.common import columns_to_source_location
+from src.infrastructure.db.mappers.common import columns_to_source_location, bbox_to_columns
 from src.infrastructure.db.mappers.workflow import IngestionRunMapper
 
 from src.infrastructure.db.mappers.document import (
@@ -25,6 +25,7 @@ from src.infrastructure.db.mappers.memory import SemanticMemoryMapper
 
 __all__ = [
     "columns_to_source_location",
+    "bbox_to_columns",
     "DocumentGraph",
     "ChunkMapper",
     "DocumentMapper",
