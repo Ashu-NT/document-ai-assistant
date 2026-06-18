@@ -25,7 +25,9 @@ from src.infrastructure.db.mappers.activity import (
     ActivityRecordMapper,
 )
 from src.infrastructure.db.mappers.audit import AuditRecordMapper
-
+from src.infrastructure.db.mappers.events.event_envelope_mapper import (
+    EventEnvelopeMapper,
+)
 
 __all__ = [
     "columns_to_source_location",
@@ -51,4 +53,5 @@ __all__ = [
     "SemanticMemoryMapper",
     "ActivityRecordMapper",
     "AuditRecordMapper",
+    "EventEnvelopeMapper",
 ]

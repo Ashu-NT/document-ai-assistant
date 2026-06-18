@@ -22,6 +22,7 @@ from src.infrastructure.db.repositories.activity import (
     SqlAlchemyActivityRepository,
 )
 from src.infrastructure.db.repositories.audit import SqlAlchemyAuditRepository
+from src.infrastructure.db.repositories.events import SqlAlchemyEventRepository
 from src.shared.exceptions import DatabaseError
 
 
@@ -36,6 +37,7 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
         self.ingestion_runs = SqlAlchemyIngestionRunRepository(session)
         self.activity = SqlAlchemyActivityRepository(session)
         self.audit = SqlAlchemyAuditRepository(session)
+        self.events = SqlAlchemyEventRepository(session)
 
     def __enter__(self) -> Self:
         return self
