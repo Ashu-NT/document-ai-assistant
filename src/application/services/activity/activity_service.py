@@ -1,9 +1,11 @@
 from src.application.contracts.activity import ActivityRepository
 from src.domain.activity import ActivityRecord
-from src.shared.activity import ActivityContext, ActivityPayload
+from src.shared.activity import ActivityContext, ActivityPayload, ActivitySeverity, ActivityStatus
+from src.shared.activity.activity_builder import ActivityBuilder
+
 
 class ActivityService:
-    def __init__(self, repository:ActivityRepository) -> None:
+    def __init__(self, repository: ActivityRepository) -> None:
         self.repository = repository
 
     def record(
@@ -14,21 +16,19 @@ class ActivityService:
         context: ActivityContext | None = None,
         entity_type: str | None = None,
         entity_id: str | None = None,
+        status: ActivityStatus = ActivityStatus.COMPLETED,
+        severity: ActivitySeverity = ActivitySeverity.INFO,
         payload: ActivityPayload | None = None,
     ) -> ActivityRecord:
-        context = context or ActivityContext()
-
-        activity = ActivityRecord(
+        activity = ActivityBuilder.build(
             action=action,
             message=message,
+            context=context,
             entity_type=entity_type,
             entity_id=entity_id,
-            actor_id=context.actor_id,
-            actor_type=context.actor_type,
-            request_id=context.request_id,
-            correlation_id=context.correlation_id,
-            source=context.source,
-            payload=payload or {},
+            status=status,
+            severity=severity,
+            payload=payload,
         )
 
         self.repository.save(activity)
