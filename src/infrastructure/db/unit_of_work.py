@@ -24,7 +24,7 @@ from src.infrastructure.db.repositories.activity import (
 from src.infrastructure.db.repositories.audit import SqlAlchemyAuditRepository
 from src.infrastructure.db.repositories.events import SqlAlchemyEventRepository
 from src.shared.exceptions import DatabaseError
-
+from src.infrastructure.db.repositories.retrieval import SqlKeywordRepository, SqlAlchemyVectorMappingRepository
 
 class SqlAlchemyUnitOfWork(UnitOfWork):
     def __init__(self, session: Session) -> None:
@@ -38,6 +38,8 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
         self.activity = SqlAlchemyActivityRepository(session)
         self.audit = SqlAlchemyAuditRepository(session)
         self.events = SqlAlchemyEventRepository(session)
+        self.keyword_index = SqlKeywordRepository(session)
+        self.vector_mappings = SqlAlchemyVectorMappingRepository(session)
 
     def __enter__(self) -> Self:
         return self

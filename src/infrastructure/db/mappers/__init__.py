@@ -28,6 +28,12 @@ from src.infrastructure.db.mappers.audit import AuditRecordMapper
 from src.infrastructure.db.mappers.events.event_envelope_mapper import (
     EventEnvelopeMapper,
 )
+from src.infrastructure.db.mappers.retrieval.chunk_vector_mapper import (
+    ChunkVectorMapper,
+)
+from src.infrastructure.db.mappers.retrieval.retrieved_chunk_mapper import (
+    RetrievedChunkMapper,
+)
 
 __all__ = [
     "columns_to_source_location",
@@ -54,4 +60,6 @@ __all__ = [
     "ActivityRecordMapper",
     "AuditRecordMapper",
     "EventEnvelopeMapper",
+    "ChunkVectorMapper",
+    "RetrievedChunkMapper"
 ]
