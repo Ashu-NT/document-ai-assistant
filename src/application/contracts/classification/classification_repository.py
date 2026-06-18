@@ -27,3 +27,9 @@ class ClassificationRepository(Protocol):
         chunk_id: str,
     ) -> ChunkClassification | None:
         ...
+
+    def list_chunk_classifications(
+        self,
+        document_id: str,
+    ) -> list[ChunkClassification]:
+        ...

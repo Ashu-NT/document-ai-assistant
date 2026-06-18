@@ -46,3 +46,9 @@ class SqlAlchemyClassificationRepository(ClassificationRepository):
         chunk_id: str,
     ) -> ChunkClassification | None:
         return self.chunk_reader.get(chunk_id)
+    
+    def list_chunk_classifications(
+        self,
+        document_id: str,
+    ) -> list[ChunkClassification]:
+        return self.chunk_reader.list_by_document(document_id)
