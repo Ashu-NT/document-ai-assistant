@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from src.shared.activity import ActivitySeverity, ActivityStatus
+from src.shared.activity.activity_types import ActivitySeverity, ActivityStatus
 
 
 @dataclass
