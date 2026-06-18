@@ -18,6 +18,9 @@ from src.infrastructure.db.repositories.extraction import (
 from src.infrastructure.db.repositories.memory import (
     SqlAlchemyMemoryRepository,
 )
+from src.infrastructure.db.repositories.activity import (
+    SqlAlchemyActivityRepository,
+)
 from src.shared.exceptions import DatabaseError
 
 
@@ -30,6 +33,7 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
         self.extractions = SqlAlchemyExtractionRepository(session)
         self.memory = SqlAlchemyMemoryRepository(session)
         self.ingestion_runs = SqlAlchemyIngestionRunRepository(session)
+        self.activity = SqlAlchemyActivityRepository(session)
 
     def __enter__(self) -> Self:
         return self
