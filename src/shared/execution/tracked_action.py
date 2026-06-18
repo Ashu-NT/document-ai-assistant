@@ -3,7 +3,11 @@ from functools import wraps
 from typing import Any
 
 from src.shared.execution.activity import ActivityTracker
-from src.shared.execution.context_resolver import resolve_activity_context
+from src.shared.execution.audit import AuditTracker
+from src.shared.execution.context_resolver import (
+    resolve_activity_context,
+    resolve_audit_context,
+)
 from src.shared.execution.tracking_options import TrackingOptions
 
 
@@ -24,7 +28,8 @@ def tracked_action(
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(self, *args: Any, **kwargs: Any) -> Any:
-            context = resolve_activity_context(kwargs)
+            activity_context = resolve_activity_context(kwargs)
+            audit_context = resolve_audit_context(kwargs)
 
             try:
                 result = func(self, *args, **kwargs)
@@ -33,7 +38,16 @@ def tracked_action(
                     ActivityTracker.record_success(
                         service_instance=self,
                         action=action,
-                        context=context,
+                        context=activity_context,
+                        result=result,
+                        default_entity_type=entity_type,
+                    )
+
+                if options.audit:
+                    AuditTracker.record_success(
+                        service_instance=self,
+                        action=action,
+                        context=audit_context,
                         result=result,
                         default_entity_type=entity_type,
                     )
@@ -45,7 +59,16 @@ def tracked_action(
                     ActivityTracker.record_failure(
                         service_instance=self,
                         action=action,
-                        context=context,
+                        context=activity_context,
+                        exc=exc,
+                        default_entity_type=entity_type,
+                    )
+
+                if options.audit:
+                    AuditTracker.record_failure(
+                        service_instance=self,
+                        action=action,
+                        context=audit_context,
                         exc=exc,
                         default_entity_type=entity_type,
                     )
