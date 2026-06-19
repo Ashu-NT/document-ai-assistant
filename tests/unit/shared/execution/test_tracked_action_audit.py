@@ -39,6 +39,15 @@ class ExampleAuditService:
     def fail(self, audit_context=None):
         raise RuntimeError("delete failed")
 
+    @tracked_action(
+        action="question_generation.generated",
+        entity_type="question",
+        activity=False,
+        audit=True,
+    )
+    def generate_questions(self, audit_context=None):
+        return ["Question one?", "Question two?"]
+
 
 def test_tracked_action_records_audit_success() -> None:
     service = ExampleAuditService()
@@ -71,3 +80,22 @@ def test_tracked_action_records_audit_failure() -> None:
     assert record["action"] == "document.delete_failed"
     assert record["outcome"] == AuditOutcome.FAILURE
     assert record["metadata"]["error_type"] == "RuntimeError"
+
+
+def test_tracked_action_records_audit_for_list_results() -> None:
+    service = ExampleAuditService()
+
+    service.generate_questions(
+        audit_context=AuditContext(actor_id="user_001"),
+    )
+
+    assert len(service.audit_service.records) == 1
+
+    record = service.audit_service.records[0]
+
+    assert record["action"] == "question_generation.generated"
+    assert record["entity_type"] == "question"
+    assert record["outcome"] == AuditOutcome.SUCCESS
+    assert record["after_state"]["result_count"] == 2
+    assert record["after_state"]["result_type"] == "list"
+    assert record["metadata"]["message"] is None

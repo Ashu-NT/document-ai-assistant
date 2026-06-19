@@ -1,8 +1,8 @@
 from typing import Any
 
 from src.shared.audit import AuditContext, AuditOutcome, AuditSeverity
-from src.shared.execution.action_result import ActionResult
 from src.shared.execution.payloads import build_failure_payload
+from src.shared.execution.result_adapter import ResultAdapter
 
 
 class AuditTracker:
@@ -20,10 +20,9 @@ class AuditTracker:
         if audit_service is None:
             return
 
-        action_result = (
-            result
-            if isinstance(result, ActionResult)
-            else ActionResult(entity_type=default_entity_type)
+        action_result = ResultAdapter.to_action_result(
+            result,
+            default_entity_type=default_entity_type,
         )
 
         audit_service.record(

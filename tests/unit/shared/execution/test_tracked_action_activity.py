@@ -29,6 +29,10 @@ class ExampleService:
     def fail(self, activity_context=None):
         raise RuntimeError("boom")
 
+    @tracked_action(action="question_generation.generated", entity_type="question")
+    def generate_questions(self, activity_context=None):
+        return ["Question one?", "Question two?"]
+
 
 def test_tracked_action_records_activity_success() -> None:
     service = ExampleService()
@@ -62,6 +66,25 @@ def test_tracked_action_records_activity_failure() -> None:
     assert record["action"] == "document.failed"
     assert record["status"] == ActivityStatus.FAILED
     assert record["payload"]["error_type"] == "RuntimeError"
+
+
+def test_tracked_action_records_activity_for_list_results() -> None:
+    service = ExampleService()
+
+    service.generate_questions(
+        activity_context=ActivityContext(actor_id="user_001"),
+    )
+
+    assert len(service.activity_service.records) == 1
+
+    record = service.activity_service.records[0]
+
+    assert record["action"] == "question_generation.generated"
+    assert record["message"] == "question_generation.generated completed."
+    assert record["status"] == ActivityStatus.COMPLETED
+    assert record["entity_type"] == "question"
+    assert record["payload"]["result_count"] == 2
+    assert record["payload"]["result_type"] == "list"
 
 
 def test_tracked_action_can_disable_activity() -> None:
