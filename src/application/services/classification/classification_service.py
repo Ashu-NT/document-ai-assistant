@@ -1,12 +1,23 @@
 from src.application.contracts.classification import ClassificationRepository
+from src.application.validation.classification import (
+    ChunkClassificationValidator,
+    DocumentClassificationValidator,
+)
 from src.domain.classification import ChunkClassification, DocumentClassification
 from src.shared.activity import ActivityContext
 from src.shared.execution import ActionResult, tracked_action
 
 
 class ClassificationService:
-    def __init__(self, classification_repository: ClassificationRepository) -> None:
+    def __init__(
+        self,
+        classification_repository: ClassificationRepository,
+        document_classification_validator: DocumentClassificationValidator,
+        chunk_classification_validator: ChunkClassificationValidator,
+    ) -> None:
         self.classification_repository = classification_repository
+        self.document_classification_validator = document_classification_validator
+        self.chunk_classification_validator = chunk_classification_validator
 
     @tracked_action(
         action="classification.document_saved",
@@ -20,6 +31,9 @@ class ClassificationService:
         classification: DocumentClassification,
         activity_context: ActivityContext | None = None,
     ) -> ActionResult:
+        validation = self.document_classification_validator.validate(classification)
+        validation.raise_if_invalid()
+
         self.classification_repository.save_document_classification(classification)
 
         return ActionResult(
@@ -50,6 +64,9 @@ class ClassificationService:
         classification: ChunkClassification,
         activity_context: ActivityContext | None = None,
     ) -> ActionResult:
+        validation = self.chunk_classification_validator.validate(classification)
+        validation.raise_if_invalid()
+
         self.classification_repository.save_chunk_classification(classification)
 
         return ActionResult(

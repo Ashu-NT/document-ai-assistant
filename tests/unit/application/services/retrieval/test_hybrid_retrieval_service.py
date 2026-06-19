@@ -1,5 +1,9 @@
+import pytest
+
 from src.application.services.retrieval import HybridRetrievalService
+from src.application.validation.retrieval import RetrievalQueryValidator
 from src.domain.retrieval import RetrievalResult
+from src.shared.exceptions import SchemaValidationError
 from src.shared.ids import IdGenerator
 
 
@@ -14,27 +18,33 @@ def make_service(
         vector_store=vector_store,
         reranker=reranker,
         id_generator=IdGenerator(),
+        retrieval_query_validator=RetrievalQueryValidator(),
     )
+
 
 class FakeKeywordIndex:
     def __init__(self, chunks) -> None:
         self.chunks = chunks
+        self.search_calls = 0
 
     def index_chunks(self, chunks) -> None:
         pass
 
     def search(self, query):
+        self.search_calls += 1
         return self.chunks
 
 
 class FakeVectorStore:
     def __init__(self, chunks) -> None:
         self.chunks = chunks
+        self.search_calls = 0
 
     def save_chunk_vectors(self, chunks) -> None:
         pass
 
     def search(self, query):
+        self.search_calls += 1
         return self.chunks
 
     def delete_document_vectors(self, document_id: str) -> None:
@@ -59,6 +69,7 @@ def clone_chunk(sample_retrieved_chunk, *, chunk_id: str, score: float):
         source=sample_retrieved_chunk.source,
     )
 
+
 def test_hybrid_retrieval_uses_keyword_only(
     sample_retrieval_query,
     sample_retrieved_chunk,
@@ -74,6 +85,7 @@ def test_hybrid_retrieval_uses_keyword_only(
     assert len(result.chunks) == 1
     assert result.chunks[0].chunk_id == sample_retrieved_chunk.chunk_id
     assert result.total_candidates == 1
+
 
 def test_hybrid_retrieval_deduplicates_by_chunk_id(
     sample_retrieval_query,
@@ -94,7 +106,8 @@ def test_hybrid_retrieval_deduplicates_by_chunk_id(
 
     assert len(result.chunks) == 1
     assert result.total_candidates == 1
-    
+
+
 def test_hybrid_retrieval_uses_reranker(
     sample_retrieval_query,
     sample_retrieved_chunk,
@@ -120,7 +133,8 @@ def test_hybrid_retrieval_uses_reranker(
     result = service.retrieve(sample_retrieval_query)
 
     assert result.chunks[0].chunk_id == "chunk_high"
-    
+
+
 def test_hybrid_retrieval_respects_top_k(
     sample_retrieval_query,
     sample_retrieved_chunk,
@@ -143,3 +157,16 @@ def test_hybrid_retrieval_respects_top_k(
 
     assert len(result.chunks) == 1
     assert result.total_candidates == 2
+
+
+def test_hybrid_retrieval_rejects_invalid_query(
+    sample_retrieval_query,
+) -> None:
+    keyword_index = FakeKeywordIndex([])
+    service = make_service(keyword_index=keyword_index)
+    sample_retrieval_query.query_text = "   "
+
+    with pytest.raises(SchemaValidationError):
+        service.retrieve(sample_retrieval_query)
+
+    assert keyword_index.search_calls == 0

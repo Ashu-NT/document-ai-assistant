@@ -1,11 +1,13 @@
 from src.application.contracts.retrieval import (
     KeywordIndex,
+    RetrievalBackend,
     Reranker,
     VectorStore,
 )
+from src.application.validation.retrieval import RetrievalQueryValidator
 from src.domain.retrieval import RetrievalQuery, RetrievalResult, RetrievedChunk
-from src.application.contracts.retrieval import RetrievalBackend
 from src.shared.ids import IdGenerator
+
 
 class HybridRetrievalService(RetrievalBackend):
     def __init__(
@@ -13,15 +15,20 @@ class HybridRetrievalService(RetrievalBackend):
         *,
         keyword_index: KeywordIndex,
         id_generator: IdGenerator,
+        retrieval_query_validator: RetrievalQueryValidator,
         vector_store: VectorStore | None = None,
         reranker: Reranker | None = None,
     ) -> None:
         self.keyword_index = keyword_index
         self.id_generator = id_generator
+        self.retrieval_query_validator = retrieval_query_validator
         self.vector_store = vector_store
         self.reranker = reranker
 
     def retrieve(self, query: RetrievalQuery) -> RetrievalResult:
+        validation = self.retrieval_query_validator.validate(query)
+        validation.raise_if_invalid()
+
         results: list[RetrievedChunk] = []
 
         results.extend(self.keyword_index.search(query))
@@ -63,5 +70,4 @@ class HybridRetrievalService(RetrievalBackend):
             seen.add(chunk.chunk_id)
             unique.append(chunk)
 
-        return unique  
-    
+        return unique

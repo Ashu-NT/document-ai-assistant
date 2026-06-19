@@ -4,6 +4,7 @@ from src.application.services.document import (
     DocumentRegistrationService,
     DuplicateDetectionService,
 )
+from src.application.validation.document import DocumentGraphValidator
 
 
 class FakeDocumentRepository:
@@ -15,7 +16,10 @@ def test_document_application_service_groups_document_services() -> None:
 
     duplicate_detection = DuplicateDetectionService(repository)
     lookup = DocumentLookupService(repository)
-    registration = DocumentRegistrationService(repository)
+    registration = DocumentRegistrationService(
+        repository,
+        DocumentGraphValidator(),
+    )
 
     service = DocumentApplicationService(
         duplicate_detection=duplicate_detection,

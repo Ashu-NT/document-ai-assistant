@@ -1,4 +1,8 @@
+import pytest
+
 from src.application.services.extraction import ExtractionService
+from src.application.validation.extraction import ExtractionResultValidator
+from src.shared.exceptions import SchemaValidationError
 
 
 class FakeExtractionRepository:
@@ -44,9 +48,16 @@ class FakeExtractionRepository:
         ]
 
 
+def make_service(repository: FakeExtractionRepository) -> ExtractionService:
+    return ExtractionService(
+        repository,
+        ExtractionResultValidator(),
+    )
+
+
 def test_save_extraction_result(sample_extraction_result) -> None:
     repository = FakeExtractionRepository()
-    service = ExtractionService(repository)
+    service = make_service(repository)
 
     result = service.save_extraction_result(sample_extraction_result)
 
@@ -60,7 +71,7 @@ def test_get_extraction_result(sample_extraction_result) -> None:
     repository = FakeExtractionRepository()
     repository.save_extraction_result(sample_extraction_result)
 
-    service = ExtractionService(repository)
+    service = make_service(repository)
 
     loaded = service.get_extraction_result(sample_extraction_result.extraction_id)
 
@@ -71,7 +82,7 @@ def test_list_maintenance_tasks(sample_extraction_result) -> None:
     repository = FakeExtractionRepository()
     repository.save_extraction_result(sample_extraction_result)
 
-    service = ExtractionService(repository)
+    service = make_service(repository)
 
     tasks = service.list_maintenance_tasks(sample_extraction_result.document_id)
 
@@ -82,7 +93,7 @@ def test_list_spare_parts(sample_extraction_result) -> None:
     repository = FakeExtractionRepository()
     repository.save_extraction_result(sample_extraction_result)
 
-    service = ExtractionService(repository)
+    service = make_service(repository)
 
     parts = service.list_spare_parts(sample_extraction_result.document_id)
 
@@ -93,7 +104,7 @@ def test_list_equipment(sample_extraction_result) -> None:
     repository = FakeExtractionRepository()
     repository.save_extraction_result(sample_extraction_result)
 
-    service = ExtractionService(repository)
+    service = make_service(repository)
 
     equipment = service.list_equipment(sample_extraction_result.document_id)
 
@@ -104,8 +115,21 @@ def test_list_manufacturers(sample_extraction_result) -> None:
     repository = FakeExtractionRepository()
     repository.save_extraction_result(sample_extraction_result)
 
-    service = ExtractionService(repository)
+    service = make_service(repository)
 
     manufacturers = service.list_manufacturers(sample_extraction_result.document_id)
 
     assert len(manufacturers) == 1
+
+
+def test_save_extraction_result_rejects_invalid_input(
+    sample_extraction_result,
+) -> None:
+    repository = FakeExtractionRepository()
+    service = make_service(repository)
+    sample_extraction_result.confidence_score = 1.5
+
+    with pytest.raises(SchemaValidationError):
+        service.save_extraction_result(sample_extraction_result)
+
+    assert repository.results == {}
