@@ -162,6 +162,10 @@ class DoclingDocumentNormalizer:
             if markdown:
                 metadata["markdown"] = markdown
 
+            rows = self.table_extractor.extract_rows(item)
+            if rows:
+                metadata["table_rows"] = rows
+
             row_count, column_count = self.table_extractor.extract_dimensions(item)
             if row_count is not None:
                 metadata["row_count"] = row_count

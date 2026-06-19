@@ -66,3 +66,33 @@ def test_section_stack_builder_clears_stale_stack_when_returning_to_root() -> No
     assert sections[4].parent_section_id == sections[3].section_id
     assert sections[4].parent_section_id != sections[2].section_id
     assert sections[4].section_path == ["Root B", "Child B"]
+
+
+def test_section_stack_builder_honors_explicit_parent_hints() -> None:
+    headers = [
+        make_header("hdr_root", "Sampling and quantization", 1),
+        make_header("hdr_parent", "1.3 A first DSP project", 2),
+        make_header("hdr_task", "Lab task 1.1", 3),
+        make_header("hdr_child", "1.3.3 Overflows", 4),
+    ]
+    builder = SectionStackBuilder(IdGenerator())
+
+    sections, _ = builder.build(
+        "doc_001",
+        headers,
+        {
+            "hdr_root": 1,
+            "hdr_parent": 2,
+            "hdr_task": 2,
+            "hdr_child": 3,
+        },
+        explicit_parent_headers={"hdr_child": "hdr_parent"},
+    )
+
+    assert sections[3].parent_section_id == sections[1].section_id
+    assert sections[3].parent_section_id != sections[2].section_id
+    assert sections[3].section_path == [
+        "Sampling and quantization",
+        "1.3 A first DSP project",
+        "1.3.3 Overflows",
+    ]

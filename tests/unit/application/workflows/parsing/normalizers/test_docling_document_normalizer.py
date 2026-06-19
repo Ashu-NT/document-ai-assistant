@@ -180,6 +180,7 @@ def test_table_item_becomes_table_element_and_preserves_metadata() -> None:
 
     assert normalized[0].element_type == ElementType.TABLE
     assert normalized[0].text.startswith("| Part |")
+    assert normalized[0].metadata["table_rows"] == [["Part", "Description"]]
     assert normalized[0].metadata["row_count"] == 1
     assert normalized[0].metadata["column_count"] == 2
 

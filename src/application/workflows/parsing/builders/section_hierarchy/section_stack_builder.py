@@ -13,14 +13,27 @@ class SectionStackBuilder:
         document_id: str,
         headers: list[CanonicalElement],
         effective_levels: dict[str, int],
+        explicit_parent_headers: dict[str, str] | None = None,
     ) -> tuple[list[DocumentSection], dict[str, str]]:
         sections: list[DocumentSection] = []
         header_section_ids: dict[str, str] = {}
+        header_sections: dict[str, DocumentSection] = {}
         stack: dict[int, DocumentSection] = {}
 
         for index, header in enumerate(sorted(headers, key=lambda element: element.order_index), start=1):
             level = max(1, effective_levels.get(header.element_id, 1))
-            parent_section = self._find_parent_section(level, stack)
+            explicit_parent_header_id = (
+                explicit_parent_headers.get(header.element_id)
+                if explicit_parent_headers is not None
+                else None
+            )
+            parent_section = (
+                header_sections.get(explicit_parent_header_id)
+                if explicit_parent_header_id is not None
+                else None
+            )
+            if parent_section is None:
+                parent_section = self._find_parent_section(level, stack)
             title = header.text or header.section_title or f"Section {index}"
             section_path = (
                 [*parent_section.section_path, title]
@@ -45,6 +58,7 @@ class SectionStackBuilder:
 
             sections.append(section)
             header_section_ids[header.element_id] = section.section_id
+            header_sections[header.element_id] = section
             stack[level] = section
             self._clear_deeper_levels(stack, level)
 
