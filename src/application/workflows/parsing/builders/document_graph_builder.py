@@ -1,5 +1,8 @@
 from pathlib import Path
 
+from src.application.workflows.parsing.builders.section_build_result import (
+    SectionBuildResult,
+)
 from src.application.workflows.parsing.builders.section_builder import SectionBuilder
 from src.application.workflows.parsing.canonical_element import (
     CanonicalElement as ParsedCanonicalElement,
@@ -41,6 +44,7 @@ class DocumentGraphBuilder:
         self.max_chunk_tokens = max_chunk_tokens
         self.chunk_overlap = chunk_overlap
         self.min_section_text_length = min_section_text_length
+        self.last_section_build_result: SectionBuildResult | None = None
 
     def build(
         self,
@@ -64,11 +68,13 @@ class DocumentGraphBuilder:
 
             graph = DocumentGraph(document=document)
 
-            sections = self.section_builder.build(
+            section_build_result = self.section_builder.build(
                 document_id,
                 canonical_elements,
                 default_title=raw_parsed_document.title or "Document",
             )
+            self.last_section_build_result = section_build_result
+            sections = section_build_result.sections
             section_lookup = {section.section_id: section for section in sections}
 
             for section in sections:
@@ -82,7 +88,11 @@ class DocumentGraphBuilder:
             for parsed_element in ordered_elements:
                 parent_section_id = self.section_builder.resolve_section_id(
                     parsed_element,
-                    sections,
+                    section_build_result,
+                )
+                resolved_section_path = self.section_builder.resolve_section_path(
+                    parsed_element,
+                    section_build_result,
                 )
                 table_id = None
                 picture_id = None
@@ -118,7 +128,16 @@ class DocumentGraphBuilder:
                         parser_version=raw_parsed_document.parser_version,
                         raw_source_type=parsed_element.metadata.get("raw_source_type"),
                         raw_ref=parsed_element.raw_ref,
-                        extra=dict(parsed_element.metadata),
+                        extra={
+                            **dict(parsed_element.metadata),
+                            "resolved_section_path": list(resolved_section_path),
+                            "effective_heading_level": section_build_result.header_levels.get(
+                                parsed_element.element_id
+                            ),
+                            "heading_level_source": section_build_result.header_sources.get(
+                                parsed_element.element_id
+                            ),
+                        },
                     ),
                 )
 
@@ -257,7 +276,7 @@ class DocumentGraphBuilder:
             text_parts = [
                 element.text.strip()
                 for element in elements
-                if element.element_type != ElementType.SECTION_HEADER
+                if self._element_contributes_to_chunk(element)
                 and element.text
                 and element.text.strip()
             ]
@@ -306,6 +325,33 @@ class DocumentGraphBuilder:
             payloads.append(payload)
 
         return payloads
+
+    @staticmethod
+    def _element_contributes_to_chunk(element: CanonicalElement) -> bool:
+        if element.element_type == ElementType.SECTION_HEADER:
+            return False
+
+        if element.element_type == ElementType.PICTURE:
+            return False
+
+        parser_extra = (
+            element.parser_metadata.extra
+            if element.parser_metadata is not None and element.parser_metadata.extra is not None
+            else {}
+        )
+        parent_ref = parser_extra.get("parent_ref")
+        if (
+            isinstance(parent_ref, str)
+            and parent_ref.startswith("#/pictures/")
+            and element.element_type == ElementType.TEXT
+        ):
+            return False
+
+        content_layer = parser_extra.get("content_layer")
+        if content_layer == "furniture":
+            return False
+
+        return True
 
     def _split_text(self, text: str) -> list[str]:
         tokens = text.split()
