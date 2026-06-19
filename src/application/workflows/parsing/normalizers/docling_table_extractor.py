@@ -75,6 +75,9 @@ class DoclingTableExtractor:
             column_count or None,
         )
 
+    def extract_rows(self, item: Any) -> list[list[str]]:
+        return self._extract_rows(item)
+
     def _extract_rows(self, item: Any) -> list[list[str]]:
         table_cells = self._extract_table_cells(item)
         if not table_cells:

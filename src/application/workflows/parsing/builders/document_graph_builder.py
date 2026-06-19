@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from src.application.workflows.parsing.builders.chunking import SectionChunkBuilder
 from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,
 )
@@ -11,7 +12,6 @@ from src.application.workflows.parsing.raw_parsed_document import RawParsedDocum
 from src.domain.assets import AssetMetadata, PictureAsset, TableAsset
 from src.domain.common import (
     BoundingBox,
-    ChunkType,
     DocumentType,
     ElementType,
     ParserMetadata,
@@ -38,12 +38,15 @@ class DocumentGraphBuilder:
         max_chunk_tokens: int = 200,
         chunk_overlap: int = 20,
         min_section_text_length: int = 20,
+        section_chunk_builder: SectionChunkBuilder | None = None,
     ) -> None:
         self.id_generator = id_generator
         self.section_builder = section_builder
-        self.max_chunk_tokens = max_chunk_tokens
-        self.chunk_overlap = chunk_overlap
-        self.min_section_text_length = min_section_text_length
+        self.section_chunk_builder = section_chunk_builder or SectionChunkBuilder(
+            max_chunk_tokens=max_chunk_tokens,
+            chunk_overlap=chunk_overlap,
+            min_section_text_length=min_section_text_length,
+        )
         self.last_section_build_result: SectionBuildResult | None = None
 
     def build(
@@ -223,157 +226,43 @@ class DocumentGraphBuilder:
         graph: DocumentGraph,
         sections: list,
     ) -> list[DocumentChunk]:
-        prepared_sections = self._prepare_section_payloads(graph, sections)
         chunks: list[DocumentChunk] = []
         sequence_number = 1
 
-        for payload in prepared_sections:
-            windows = self._split_text(payload["content"])
-            total_windows = len(windows)
+        for section in sorted(sections, key=lambda value: value.sequence_number or 0):
+            elements = graph.get_section_elements(section.section_id)
+            chunk_payloads = self.section_chunk_builder.build_chunk_payloads(
+                document_title=graph.document.title,
+                section=section,
+                elements=elements,
+            )
+            total_windows = len(chunk_payloads)
 
-            for chunk_index, content in enumerate(windows, start=1):
+            for chunk_index, chunk_payload in enumerate(chunk_payloads, start=1):
                 chunks.append(
                     DocumentChunk(
                         chunk_id=self.id_generator.new_id(IdPrefix.CHUNK),
                         document_id=graph.document.document_id,
-                        section_id=payload["section_id"],
-                        content=content,
-                        chunk_type=(
-                            ChunkType.SPARE_PARTS_TABLE
-                            if payload["table_ids"]
-                            else ChunkType.GENERAL
-                        ),
-                        section_path=list(payload["section_path"]),
-                        element_ids=list(payload["element_ids"]),
-                        table_ids=list(payload["table_ids"]),
-                        picture_ids=list(payload["picture_ids"]),
+                        section_id=chunk_payload.section_id,
+                        content=chunk_payload.content,
+                        chunk_type=chunk_payload.chunk_type,
+                        section_path=list(chunk_payload.section_path),
+                        element_ids=list(chunk_payload.element_ids),
+                        table_ids=list(chunk_payload.table_ids),
+                        picture_ids=list(chunk_payload.picture_ids),
                         source=SourceLocation(
-                            page_start=payload["page_start"],
-                            page_end=payload["page_end"],
+                            page_start=chunk_payload.page_start,
+                            page_end=chunk_payload.page_end,
                         ),
                         sequence_number=sequence_number,
                         chunk_index=chunk_index,
                         chunk_total=total_windows,
-                        embedding_text=content,
+                        embedding_text=chunk_payload.embedding_text,
                     )
                 )
                 sequence_number += 1
 
         return chunks
-
-    def _prepare_section_payloads(
-        self,
-        graph: DocumentGraph,
-        sections: list,
-    ) -> list[dict]:
-        payloads: list[dict] = []
-
-        for section in sorted(sections, key=lambda value: value.sequence_number or 0):
-            elements = graph.get_section_elements(section.section_id)
-            if not elements:
-                continue
-
-            text_parts = [
-                element.text.strip()
-                for element in elements
-                if self._element_contributes_to_chunk(element)
-                and element.text
-                and element.text.strip()
-            ]
-            if not text_parts:
-                continue
-
-            payload = {
-                "section_id": section.section_id,
-                "section_path": list(section.section_path),
-                "element_ids": list(section.element_ids),
-                "table_ids": [
-                    element.table_id
-                    for element in elements
-                    if element.table_id is not None
-                ],
-                "picture_ids": [
-                    element.picture_id
-                    for element in elements
-                    if element.picture_id is not None
-                ],
-                "page_start": self._min_page(elements),
-                "page_end": self._max_page(elements),
-                "content": "\n".join(text_parts),
-            }
-
-            if (
-                payloads
-                and len(payload["content"]) < self.min_section_text_length
-            ):
-                payloads[-1]["content"] = "\n".join(
-                    [payloads[-1]["content"], payload["content"]]
-                ).strip()
-                payloads[-1]["element_ids"].extend(payload["element_ids"])
-                payloads[-1]["table_ids"].extend(payload["table_ids"])
-                payloads[-1]["picture_ids"].extend(payload["picture_ids"])
-                payloads[-1]["page_start"] = self._merge_min_page(
-                    payloads[-1]["page_start"],
-                    payload["page_start"],
-                )
-                payloads[-1]["page_end"] = self._merge_max_page(
-                    payloads[-1]["page_end"],
-                    payload["page_end"],
-                )
-                continue
-
-            payloads.append(payload)
-
-        return payloads
-
-    @staticmethod
-    def _element_contributes_to_chunk(element: CanonicalElement) -> bool:
-        if element.element_type == ElementType.SECTION_HEADER:
-            return False
-
-        if element.element_type == ElementType.PICTURE:
-            return False
-
-        parser_extra = (
-            element.parser_metadata.extra
-            if element.parser_metadata is not None and element.parser_metadata.extra is not None
-            else {}
-        )
-        parent_ref = parser_extra.get("parent_ref")
-        if (
-            isinstance(parent_ref, str)
-            and parent_ref.startswith("#/pictures/")
-            and element.element_type == ElementType.TEXT
-        ):
-            return False
-
-        content_layer = parser_extra.get("content_layer")
-        if content_layer == "furniture":
-            return False
-
-        return True
-
-    def _split_text(self, text: str) -> list[str]:
-        tokens = text.split()
-        if not tokens:
-            return []
-
-        if len(tokens) <= self.max_chunk_tokens:
-            return [text]
-
-        step = max(1, self.max_chunk_tokens - self.chunk_overlap)
-        windows: list[str] = []
-
-        for start in range(0, len(tokens), step):
-            window = tokens[start : start + self.max_chunk_tokens]
-            if not window:
-                continue
-
-            windows.append(" ".join(window))
-            if start + self.max_chunk_tokens >= len(tokens):
-                break
-
-        return windows
 
     @staticmethod
     def _source_from_parsed(parsed_element: ParsedCanonicalElement) -> SourceLocation:

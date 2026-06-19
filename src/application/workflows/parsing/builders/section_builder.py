@@ -80,6 +80,7 @@ class SectionBuilder:
             document_id,
             headers,
             hierarchy_resolution.effective_levels,
+            hierarchy_resolution.explicit_parent_headers,
         )
         section_lookup = {section.section_id: section for section in sections}
 
@@ -116,6 +117,7 @@ class SectionBuilder:
             header_levels=hierarchy_resolution.effective_levels,
             header_sources=hierarchy_resolution.sources,
             header_raw_levels=hierarchy_resolution.raw_levels,
+            header_parent_headers=hierarchy_resolution.explicit_parent_headers,
             header_section_ids=header_section_ids,
         )
 

@@ -73,3 +73,74 @@ def test_resolver_applies_layout_refinement_inside_toc_ranges() -> None:
     assert resolution.effective_levels["hdr_child"] == 2
     assert resolution.effective_levels["hdr_grandchild"] == 3
     assert resolution.sources["hdr_grandchild"] == "layout_heuristic"
+
+
+def test_resolver_uses_structured_contents_and_explicit_parent_hints() -> None:
+    elements = [
+        make_element("hdr_cover", ElementType.SECTION_HEADER, "DP Lab", 1, 1, {"heading_level": 1}),
+        make_element("hdr_toc", ElementType.SECTION_HEADER, "Contents", 2, 3, {"heading_level": 1}),
+        make_element(
+            "tbl_toc",
+            ElementType.TABLE,
+            "",
+            3,
+            3,
+            metadata={
+                "item_label": "document_index",
+                "table_rows": [
+                    ["1 Sampling and quantization", "", "", "5"],
+                    ["", "1.2", "Lab preparation", "5"],
+                    ["", "", "1.2.1 Interrupt handler and bit manipulation", "6"],
+                    ["", "1.3", "A first DSP project with Code Composer Studio", "7"],
+                    ["", "", "1.3.3 Overflows", "8"],
+                ],
+            },
+        ),
+        make_element("hdr_root", ElementType.SECTION_HEADER, "Sampling and quantization", 4, 5, {"heading_level": 1}),
+        make_element("hdr_1_2", ElementType.SECTION_HEADER, "1.2 Lab preparation", 5, 5, {"heading_level": 1}),
+        make_element("hdr_prep", ElementType.SECTION_HEADER, "Prep task (for lab entry test)", 6, 6, {"heading_level": 1}),
+        make_element(
+            "hdr_1_2_1",
+            ElementType.SECTION_HEADER,
+            "1.2.1 Interrupt handler and bit manipulation",
+            7,
+            6,
+            {"heading_level": 1},
+        ),
+        make_element(
+            "hdr_1_3",
+            ElementType.SECTION_HEADER,
+            "1.3 A first DSP project with Code Composer Studio",
+            8,
+            7,
+            {"heading_level": 1},
+        ),
+        make_element(
+            "hdr_lab_task",
+            ElementType.SECTION_HEADER,
+            "Lab task 1.1: Feeding the ADC input directly to the DAC output",
+            9,
+            7,
+            {"heading_level": 1},
+        ),
+        make_element(
+            "hdr_local_step",
+            ElementType.SECTION_HEADER,
+            "1. Function test of the program",
+            10,
+            7,
+            {"heading_level": 1},
+        ),
+        make_element("hdr_1_3_3", ElementType.SECTION_HEADER, "1.3.3 Overflows", 11, 8, {"heading_level": 1}),
+    ]
+
+    resolution = SectionHierarchyResolver().resolve(elements)
+
+    assert resolution.effective_levels["hdr_root"] == 1
+    assert resolution.effective_levels["hdr_1_2"] == 2
+    assert resolution.effective_levels["hdr_1_2_1"] == 3
+    assert resolution.effective_levels["hdr_1_3"] == 2
+    assert resolution.effective_levels["hdr_1_3_3"] == 3
+    assert resolution.explicit_parent_headers["hdr_1_3_3"] == "hdr_1_3"
+    assert resolution.explicit_parent_headers["hdr_prep"] == "hdr_1_2"
+    assert resolution.explicit_parent_headers["hdr_lab_task"] == "hdr_1_3"
