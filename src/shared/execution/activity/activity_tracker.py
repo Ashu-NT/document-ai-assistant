@@ -1,8 +1,8 @@
 from typing import Any
 
 from src.shared.activity import ActivityContext, ActivitySeverity, ActivityStatus
-from src.shared.execution.action_result import ActionResult
 from src.shared.execution.payloads import build_failure_payload
+from src.shared.execution.result_adapter import ResultAdapter
 
 
 class ActivityTracker:
@@ -20,13 +20,9 @@ class ActivityTracker:
         if activity_service is None:
             return
 
-        action_result = (
-            result
-            if isinstance(result, ActionResult)
-            else ActionResult(
-                entity_type=default_entity_type,
-                message=f"{action} completed.",
-            )
+        action_result = ResultAdapter.to_action_result(
+            result,
+            default_entity_type=default_entity_type,
         )
 
         activity_service.record(
