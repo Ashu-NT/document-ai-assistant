@@ -1,3 +1,10 @@
+from src.application.workflows.parsing.builders.section_build_result import (
+    SectionBuildResult,
+)
+from src.application.workflows.parsing.builders.section_hierarchy import (
+    SectionHierarchyResolver,
+    SectionStackBuilder,
+)
 from src.application.workflows.parsing.canonical_element import CanonicalElement
 from src.domain.common import BoundingBox, ElementType, SourceLocation
 from src.domain.document import DocumentSection
@@ -5,8 +12,18 @@ from src.shared.ids import IdGenerator, IdPrefix
 
 
 class SectionBuilder:
-    def __init__(self, id_generator: IdGenerator) -> None:
+    def __init__(
+        self,
+        id_generator: IdGenerator,
+        *,
+        hierarchy_resolver: SectionHierarchyResolver | None = None,
+        section_stack_builder: SectionStackBuilder | None = None,
+    ) -> None:
         self.id_generator = id_generator
+        self.hierarchy_resolver = hierarchy_resolver or SectionHierarchyResolver()
+        self.section_stack_builder = section_stack_builder or SectionStackBuilder(
+            id_generator
+        )
 
     def build(
         self,
@@ -14,7 +31,11 @@ class SectionBuilder:
         canonical_elements: list[CanonicalElement],
         *,
         default_title: str = "Document",
-    ) -> list[DocumentSection]:
+    ) -> SectionBuildResult:
+        ordered_elements = sorted(
+            canonical_elements,
+            key=lambda element: element.order_index,
+        )
         headers = sorted(
             [
                 element
@@ -25,98 +46,126 @@ class SectionBuilder:
         )
 
         if not headers:
-            return [
-                DocumentSection(
+            root_section = DocumentSection(
+                section_id=self.id_generator.new_id(IdPrefix.SECTION),
+                document_id=document_id,
+                title=default_title,
+                level=1,
+                section_path=[default_title],
+                source=self._source_from_element(
+                    ordered_elements[0] if ordered_elements else None
+                ),
+                sequence_number=1,
+                reading_order_start=(
+                    ordered_elements[0].order_index if ordered_elements else None
+                ),
+                reading_order_end=(
+                    ordered_elements[-1].order_index if ordered_elements else None
+                ),
+            )
+            return SectionBuildResult(
+                sections=[root_section],
+                element_section_ids={
+                    element.element_id: root_section.section_id
+                    for element in ordered_elements
+                },
+                element_section_paths={
+                    element.element_id: list(root_section.section_path)
+                    for element in ordered_elements
+                },
+            )
+
+        hierarchy_resolution = self.hierarchy_resolver.resolve(ordered_elements)
+        sections, header_section_ids = self.section_stack_builder.build(
+            document_id,
+            headers,
+            hierarchy_resolution.effective_levels,
+        )
+        section_lookup = {section.section_id: section for section in sections}
+
+        root_section = self._build_leading_root_section(
+            document_id,
+            ordered_elements,
+            headers,
+            default_title,
+        )
+        if root_section is not None:
+            sections.insert(0, root_section)
+            section_lookup[root_section.section_id] = root_section
+
+        element_section_ids: dict[str, str] = {}
+        element_section_paths: dict[str, list[str]] = {}
+        active_section = root_section
+
+        for element in ordered_elements:
+            if element.element_type == ElementType.SECTION_HEADER:
+                section_id = header_section_ids.get(element.element_id)
+                if section_id is not None:
+                    active_section = section_lookup[section_id]
+
+            if active_section is None:
+                continue
+
+            element_section_ids[element.element_id] = active_section.section_id
+            element_section_paths[element.element_id] = list(active_section.section_path)
+
+        return SectionBuildResult(
+            sections=sections,
+            element_section_ids=element_section_ids,
+            element_section_paths=element_section_paths,
+            header_levels=hierarchy_resolution.effective_levels,
+            header_sources=hierarchy_resolution.sources,
+            header_raw_levels=hierarchy_resolution.raw_levels,
+            header_section_ids=header_section_ids,
+        )
+
+    def resolve_section_id(
+        self,
+        element: CanonicalElement,
+        build_result: SectionBuildResult,
+    ) -> str | None:
+        return build_result.element_section_ids.get(element.element_id)
+
+    def resolve_section_path(
+        self,
+        element: CanonicalElement,
+        build_result: SectionBuildResult,
+    ) -> list[str]:
+        return list(build_result.element_section_paths.get(element.element_id, []))
+
+    def _build_leading_root_section(
+        self,
+        document_id: str,
+        ordered_elements: list[CanonicalElement],
+        headers: list[CanonicalElement],
+        default_title: str,
+    ) -> DocumentSection | None:
+        first_header_order = headers[0].order_index
+        leading_elements = [
+            element
+            for element in ordered_elements
+            if element.order_index < first_header_order
+        ]
+        if not leading_elements:
+            return None
+
+        return DocumentSection(
                     section_id=self.id_generator.new_id(IdPrefix.SECTION),
                     document_id=document_id,
                     title=default_title,
                     level=1,
                     section_path=[default_title],
                     source=self._source_from_element(
-                        canonical_elements[0] if canonical_elements else None
+                        leading_elements[0]
                     ),
                     sequence_number=1,
                     reading_order_start=(
-                        canonical_elements[0].order_index if canonical_elements else None
+                        leading_elements[0].order_index
                     ),
                     reading_order_end=(
-                        canonical_elements[-1].order_index if canonical_elements else None
+                        leading_elements[-1].order_index
                     ),
                 )
-            ]
-
-        sections: list[DocumentSection] = []
-        sections_by_path: dict[tuple[str, ...], DocumentSection] = {}
-
-        for index, header in enumerate(headers, start=1):
-            title = header.text or header.section_title or f"Section {index}"
-            section_path = header.section_path or [title]
-            parent_path = tuple(section_path[:-1])
-            parent_section = sections_by_path.get(parent_path)
-
-            section = DocumentSection(
-                section_id=self.id_generator.new_id(IdPrefix.SECTION),
-                document_id=document_id,
-                title=title,
-                level=max(1, len(section_path)),
-                parent_section_id=(
-                    parent_section.section_id if parent_section is not None else None
-                ),
-                section_path=list(section_path),
-                source=self._source_from_element(header),
-                sequence_number=index,
-                reading_order_start=header.order_index,
-                reading_order_end=header.order_index,
-            )
-
-            sections.append(section)
-            sections_by_path[tuple(section.section_path)] = section
-
-        return sections
-
-    def resolve_section_id(
-        self,
-        element: CanonicalElement,
-        sections: list[DocumentSection],
-    ) -> str | None:
-        if not sections:
-            return None
-
-        sections_by_path = {
-            tuple(section.section_path): section
-            for section in sections
-            if section.section_path
-        }
-
-        if element.parent_section_id is not None:
-            for section in sections:
-                if section.section_id == element.parent_section_id:
-                    return section.section_id
-
-        if element.section_path:
-            for size in range(len(element.section_path), 0, -1):
-                section = sections_by_path.get(tuple(element.section_path[:size]))
-                if section is not None:
-                    return section.section_id
-
-        if element.section_title:
-            for section in sections:
-                if section.title == element.section_title:
-                    return section.section_id
-
-        ordered_sections = sorted(
-            sections,
-            key=lambda section: section.sequence_number or 0,
-        )
-
-        for section in reversed(ordered_sections):
-            if section.reading_order_start is None:
-                continue
-
-            if element.order_index >= section.reading_order_start:
-                return section.section_id
-
-        return ordered_sections[0].section_id
 
     @staticmethod
     def _source_from_element(element: CanonicalElement | None) -> SourceLocation:

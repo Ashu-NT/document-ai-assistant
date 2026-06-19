@@ -28,6 +28,7 @@ for import_root in (PROJECT_ROOT, SRC_ROOT):
 from src.application.workflows.parsing.builders import (  # noqa: E402
     DocumentGraphBuilder,
     SectionBuilder,
+    SectionBuildResult,
 )
 from src.application.workflows.parsing.normalizers import (  # noqa: E402
     DoclingDocumentNormalizer,
@@ -195,7 +196,91 @@ def sanitize_code_block(value: Any) -> str:
     return text.replace("```", "'''")
 
 
-def build_warnings(canonical_elements: list[Any], document_graph: Any) -> list[str]:
+def build_section_tree(section_build_result: SectionBuildResult | None) -> str:
+    if section_build_result is None or not section_build_result.sections:
+        return "_No section hierarchy available._"
+
+    sections = list(section_build_result.sections)
+    children_by_parent: dict[str | None, list[Any]] = {}
+    for section in sections:
+        children_by_parent.setdefault(
+            safe_getattr(section, "parent_section_id"),
+            [],
+        ).append(section)
+
+    for children in children_by_parent.values():
+        children.sort(
+            key=lambda item: (
+                safe_getattr(item, "sequence_number", default=0) or 0,
+                safe_getattr(item, "title", default=""),
+            )
+        )
+
+    lines: list[str] = []
+
+    def render(parent_id: str | None, depth: int) -> None:
+        for section in children_by_parent.get(parent_id, []):
+            indent = "  " * depth
+            lines.append(f"{indent}- {safe_getattr(section, 'title', default='')}")
+            render(safe_getattr(section, "section_id"), depth + 1)
+
+    render(None, 0)
+    return "\n".join(lines) if lines else "_No section hierarchy available._"
+
+
+def invert_mapping(mapping: dict[str, str]) -> dict[str, str]:
+    return {
+        value: key
+        for key, value in mapping.items()
+    }
+
+
+def build_validation_summary(
+    canonical_elements: list[Any],
+    document_graph: Any,
+    section_build_result: SectionBuildResult | None,
+) -> list[str]:
+    section_count_with_parent = 0
+    root_section_count = 0
+    if section_build_result is not None:
+        for section in section_build_result.sections:
+            if safe_getattr(section, "parent_section_id"):
+                section_count_with_parent += 1
+            else:
+                root_section_count += 1
+
+    elements_without_section_id = sum(
+        1
+        for element in document_graph.elements.values()
+        if safe_getattr(element, "parent_section_id") is None
+    )
+    chunks_without_section_path = sum(
+        1
+        for chunk in document_graph.chunks.values()
+        if not safe_getattr(chunk, "section_path")
+    )
+    self_titled_text_elements = sum(
+        1
+        for element in canonical_elements
+        if display_value(safe_getattr(element, "element_type")) == "text"
+        and safe_getattr(element, "section_title")
+        and safe_getattr(element, "section_title") == safe_getattr(element, "text")
+    )
+
+    return [
+        f"- sections with parent_section_id: `{section_count_with_parent}`",
+        f"- root sections: `{root_section_count}`",
+        f"- elements without section_id: `{elements_without_section_id}`",
+        f"- chunks without section_path: `{chunks_without_section_path}`",
+        f"- normal text elements with self-derived section_title: `{self_titled_text_elements}`",
+    ]
+
+
+def build_warnings(
+    canonical_elements: list[Any],
+    document_graph: Any,
+    section_build_result: SectionBuildResult | None,
+) -> list[str]:
     warnings: list[str] = []
 
     if not canonical_elements:
@@ -241,6 +326,38 @@ def build_warnings(canonical_elements: list[Any], document_graph: Any) -> list[s
             "Elements without section assignment: " + ", ".join(unassigned_elements)
         )
 
+    if section_build_result is not None:
+        root_sections = [
+            section.section_id
+            for section in section_build_result.sections
+            if not safe_getattr(section, "parent_section_id")
+        ]
+        if root_sections and len(root_sections) == len(section_build_result.sections):
+            warnings.append("All sections are root sections.")
+
+    chunks_without_section_path = [
+        chunk.chunk_id
+        for chunk in document_graph.chunks.values()
+        if not safe_getattr(chunk, "section_path")
+    ]
+    if chunks_without_section_path:
+        warnings.append(
+            "Chunks without section_path: " + ", ".join(chunks_without_section_path)
+        )
+
+    self_titled_text_elements = [
+        element.element_id
+        for element in canonical_elements
+        if display_value(safe_getattr(element, "element_type")) == "text"
+        and safe_getattr(element, "section_title")
+        and safe_getattr(element, "section_title") == safe_getattr(element, "text")
+    ]
+    if self_titled_text_elements:
+        warnings.append(
+            "Text elements using their own paragraph text as section_title: "
+            + ", ".join(self_titled_text_elements)
+        )
+
     return warnings
 
 
@@ -253,6 +370,7 @@ def build_report(
     raw_parsed_document: Any,
     canonical_elements: list[Any],
     document_graph: Any,
+    section_build_result: SectionBuildResult | None,
 ) -> str:
     lines: list[str] = ["# Parsing Debug Report", ""]
 
@@ -374,6 +492,17 @@ def build_report(
         ]
     )
 
+    lines.append("## Section Hierarchy Tree")
+    lines.append("")
+    lines.append(build_section_tree(section_build_result))
+    lines.append("")
+
+    section_header_by_section_id = (
+        invert_mapping(section_build_result.header_section_ids)
+        if section_build_result is not None
+        else {}
+    )
+
     lines.append("## Sections")
     lines.append("")
     if not document_graph.sections:
@@ -387,6 +516,24 @@ def build_report(
                 safe_getattr(item, "title", default=""),
             ),
         ):
+            header_element_id = section_header_by_section_id.get(
+                safe_getattr(section, "section_id", default="")
+            )
+            raw_heading_level = (
+                section_build_result.header_raw_levels.get(header_element_id)
+                if section_build_result is not None and header_element_id is not None
+                else None
+            )
+            effective_heading_level = (
+                section_build_result.header_levels.get(header_element_id)
+                if section_build_result is not None and header_element_id is not None
+                else safe_getattr(section, "level")
+            )
+            heading_source = (
+                section_build_result.header_sources.get(header_element_id)
+                if section_build_result is not None and header_element_id is not None
+                else "default"
+            )
             lines.extend(
                 [
                     f"### {safe_getattr(section, 'section_id', default='')}",
@@ -395,6 +542,9 @@ def build_report(
                     f"- section path: `{format_section_path(safe_getattr(section, 'section_path'))}`",
                     f"- page_start/page_end: `{format_page_range(safe_getattr(section, 'source', 'page_start'), safe_getattr(section, 'source', 'page_end'))}`",
                     f"- order_index: `{safe_getattr(section, 'reading_order_start', default='')}`",
+                    f"- raw heading_level: `{raw_heading_level if raw_heading_level is not None else ''}`",
+                    f"- effective heading_level: `{effective_heading_level if effective_heading_level is not None else ''}`",
+                    f"- strategy: `{heading_source}`",
                     "",
                 ]
             )
@@ -510,7 +660,21 @@ def build_report(
 
     lines.append("## Warnings")
     lines.append("")
-    warnings = build_warnings(canonical_elements, document_graph)
+    lines.append("### Validation")
+    lines.extend(
+        build_validation_summary(
+            canonical_elements,
+            document_graph,
+            section_build_result,
+        )
+    )
+    lines.append("")
+    lines.append("### Warnings")
+    warnings = build_warnings(
+        canonical_elements,
+        document_graph,
+        section_build_result,
+    )
     if not warnings:
         lines.append("- None")
     else:
@@ -554,6 +718,7 @@ def main() -> int:
             canonical_elements=canonical_elements,
             raw_parsed_document=raw_parsed_document,
         )
+        section_build_result = graph_builder.last_section_build_result
 
         report = build_report(
             input_path=input_path,
@@ -563,6 +728,7 @@ def main() -> int:
             raw_parsed_document=raw_parsed_document,
             canonical_elements=canonical_elements,
             document_graph=document_graph,
+            section_build_result=section_build_result,
         )
         write_markdown_report(output_path, report)
 
