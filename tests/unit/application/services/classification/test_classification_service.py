@@ -1,4 +1,11 @@
+import pytest
+
 from src.application.services.classification import ClassificationService
+from src.application.validation.classification import (
+    ChunkClassificationValidator,
+    DocumentClassificationValidator,
+)
+from src.shared.exceptions import SchemaValidationError
 
 
 class FakeClassificationRepository:
@@ -26,9 +33,17 @@ class FakeClassificationRepository:
         ]
 
 
+def make_service(repository: FakeClassificationRepository) -> ClassificationService:
+    return ClassificationService(
+        repository,
+        DocumentClassificationValidator(),
+        ChunkClassificationValidator(),
+    )
+
+
 def test_save_document_classification(sample_document_classification) -> None:
     repository = FakeClassificationRepository()
-    service = ClassificationService(repository)
+    service = make_service(repository)
 
     result = service.save_document_classification(sample_document_classification)
 
@@ -39,7 +54,7 @@ def test_save_document_classification(sample_document_classification) -> None:
 
 def test_save_chunk_classification(sample_chunk_classification) -> None:
     repository = FakeClassificationRepository()
-    service = ClassificationService(repository)
+    service = make_service(repository)
 
     result = service.save_chunk_classification(sample_chunk_classification)
 
@@ -52,7 +67,7 @@ def test_get_document_classification(sample_document_classification) -> None:
     repository = FakeClassificationRepository()
     repository.save_document_classification(sample_document_classification)
 
-    service = ClassificationService(repository)
+    service = make_service(repository)
 
     loaded = service.get_document_classification(
         sample_document_classification.document_id
@@ -65,7 +80,7 @@ def test_get_chunk_classification(sample_chunk_classification) -> None:
     repository = FakeClassificationRepository()
     repository.save_chunk_classification(sample_chunk_classification)
 
-    service = ClassificationService(repository)
+    service = make_service(repository)
 
     loaded = service.get_chunk_classification(
         sample_chunk_classification.chunk_id
@@ -78,7 +93,7 @@ def test_list_chunk_classifications(sample_chunk_classification) -> None:
     repository = FakeClassificationRepository()
     repository.save_chunk_classification(sample_chunk_classification)
 
-    service = ClassificationService(repository)
+    service = make_service(repository)
 
     results = service.list_chunk_classifications(
         sample_chunk_classification.document_id
@@ -86,3 +101,29 @@ def test_list_chunk_classifications(sample_chunk_classification) -> None:
 
     assert len(results) == 1
     assert results[0] == sample_chunk_classification
+
+
+def test_save_document_classification_rejects_invalid_input(
+    sample_document_classification,
+) -> None:
+    repository = FakeClassificationRepository()
+    service = make_service(repository)
+    sample_document_classification.result = None
+
+    with pytest.raises(SchemaValidationError):
+        service.save_document_classification(sample_document_classification)
+
+    assert repository.document_classifications == {}
+
+
+def test_save_chunk_classification_rejects_invalid_input(
+    sample_chunk_classification,
+) -> None:
+    repository = FakeClassificationRepository()
+    service = make_service(repository)
+    sample_chunk_classification.result = None
+
+    with pytest.raises(SchemaValidationError):
+        service.save_chunk_classification(sample_chunk_classification)
+
+    assert repository.chunk_classifications == {}

@@ -2,6 +2,7 @@ from src.application.services.extraction import (
     ExtractionApplicationService,
     ExtractionService,
 )
+from src.application.validation.extraction import ExtractionResultValidator
 
 
 class FakeExtractionRepository:
@@ -9,7 +10,10 @@ class FakeExtractionRepository:
 
 
 def test_extraction_application_service_groups_services() -> None:
-    extraction_service = ExtractionService(FakeExtractionRepository())
+    extraction_service = ExtractionService(
+        FakeExtractionRepository(),
+        ExtractionResultValidator(),
+    )
 
     app_service = ExtractionApplicationService(
         extraction=extraction_service,

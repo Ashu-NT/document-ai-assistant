@@ -1,12 +1,18 @@
 from src.application.contracts.extraction import ExtractionRepository
+from src.application.validation.extraction import ExtractionResultValidator
 from src.domain.extraction import ExtractionResult
 from src.shared.activity import ActivityContext
 from src.shared.execution import ActionResult, tracked_action
 
 
 class ExtractionService:
-    def __init__(self, extraction_repository: ExtractionRepository) -> None:
+    def __init__(
+        self,
+        extraction_repository: ExtractionRepository,
+        extraction_result_validator: ExtractionResultValidator,
+    ) -> None:
         self.extraction_repository = extraction_repository
+        self.extraction_result_validator = extraction_result_validator
 
     @tracked_action(
         action="extraction.result_saved",
@@ -20,6 +26,9 @@ class ExtractionService:
         result: ExtractionResult,
         activity_context: ActivityContext | None = None,
     ) -> ActionResult:
+        validation = self.extraction_result_validator.validate(result)
+        validation.raise_if_invalid()
+
         self.extraction_repository.save_extraction_result(result)
 
         return ActionResult(
