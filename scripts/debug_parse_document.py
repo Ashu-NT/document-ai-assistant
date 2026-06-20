@@ -196,6 +196,21 @@ def sanitize_code_block(value: Any) -> str:
     return text.replace("```", "'''")
 
 
+def format_list_summary(values: Any, limit: int = 8) -> str:
+    if not values:
+        return ""
+
+    if not isinstance(values, (list, tuple, set)):
+        return str(values)
+
+    items = [str(value) for value in values]
+    if len(items) <= limit:
+        return ", ".join(items)
+
+    preview_items = ", ".join(items[:limit])
+    return f"{preview_items}, ... (+{len(items) - limit} more)"
+
+
 def build_section_tree(section_build_result: SectionBuildResult | None) -> str:
     if section_build_result is None or not section_build_result.sections:
         return "_No section hierarchy available._"
@@ -259,6 +274,21 @@ def build_validation_summary(
         for chunk in document_graph.chunks.values()
         if not safe_getattr(chunk, "section_path")
     )
+    multi_element_chunks = sum(
+        1
+        for chunk in document_graph.chunks.values()
+        if len(safe_getattr(chunk, "element_ids", default=[]) or []) > 1
+    )
+    multi_page_chunks = sum(
+        1
+        for chunk in document_graph.chunks.values()
+        if (
+            safe_getattr(chunk, "source", "page_start") is not None
+            and safe_getattr(chunk, "source", "page_end") is not None
+            and safe_getattr(chunk, "source", "page_start")
+            != safe_getattr(chunk, "source", "page_end")
+        )
+    )
     self_titled_text_elements = sum(
         1
         for element in canonical_elements
@@ -272,6 +302,8 @@ def build_validation_summary(
         f"- root sections: `{root_section_count}`",
         f"- elements without section_id: `{elements_without_section_id}`",
         f"- chunks without section_path: `{chunks_without_section_path}`",
+        f"- chunks spanning multiple elements: `{multi_element_chunks}`",
+        f"- chunks spanning multiple pages: `{multi_page_chunks}`",
         f"- normal text elements with self-derived section_title: `{self_titled_text_elements}`",
     ]
 
@@ -559,13 +591,17 @@ def build_report(
             document_graph.elements.values(),
             key=lambda item: safe_getattr(item, "reading_order", default=0) or 0,
         ):
+            parser_extra = safe_getattr(element, "parser_metadata", "extra", default={}) or {}
             lines.extend(
                 [
                     f"### {safe_getattr(element, 'element_id', default='')}",
                     f"- type: `{display_value(safe_getattr(element, 'element_type'))}`",
                     f"- section id: `{safe_getattr(element, 'parent_section_id', default='')}`",
+                    f"- resolved section path: `{format_section_path(parser_extra.get('resolved_section_path'))}`",
                     f"- page_start/page_end: `{format_page_range(safe_getattr(element, 'source', 'page_start'), safe_getattr(element, 'source', 'page_end'))}`",
                     f"- order_index: `{safe_getattr(element, 'reading_order', default='')}`",
+                    f"- effective heading_level: `{parser_extra.get('effective_heading_level') or ''}`",
+                    f"- heading level source: `{parser_extra.get('heading_level_source') or ''}`",
                     f"- text preview: `{preview_text(safe_getattr(element, 'text'), limit=240)}`",
                     "",
                 ]
@@ -636,6 +672,45 @@ def build_report(
         lines.append("_No chunks._")
         lines.append("")
     else:
+        lines.append("### Chunk Summary")
+        lines.append(
+            format_table(
+                headers=[
+                    "sequence",
+                    "chunk_id",
+                    "section_id",
+                    "section_path",
+                    "chunk_pos",
+                    "elements",
+                    "pages",
+                    "content preview",
+                ],
+                rows=[
+                    [
+                        safe_getattr(chunk, "sequence_number"),
+                        safe_getattr(chunk, "chunk_id"),
+                        safe_getattr(chunk, "section_id"),
+                        format_section_path(safe_getattr(chunk, "section_path")),
+                        (
+                            f"{safe_getattr(chunk, 'chunk_index', default='')}/"
+                            f"{safe_getattr(chunk, 'chunk_total', default='')}"
+                        ),
+                        len(safe_getattr(chunk, "element_ids", default=[]) or []),
+                        format_page_range(
+                            safe_getattr(chunk, "source", "page_start"),
+                            safe_getattr(chunk, "source", "page_end"),
+                        ),
+                        preview_text(safe_getattr(chunk, "content"), limit=120),
+                    ]
+                    for chunk in sorted(
+                        document_graph.chunks.values(),
+                        key=lambda item: safe_getattr(item, "sequence_number", default=0) or 0,
+                    )[:20]
+                ],
+            )
+        )
+        lines.append("")
+
         for chunk in sorted(
             document_graph.chunks.values(),
             key=lambda item: safe_getattr(item, "sequence_number", default=0) or 0,
@@ -646,10 +721,16 @@ def build_report(
                     f"### {safe_getattr(chunk, 'chunk_id', default='')}",
                     f"- document id: `{safe_getattr(chunk, 'document_id', default='')}`",
                     f"- section id: `{safe_getattr(chunk, 'section_id', default='')}`",
+                    f"- sequence_number: `{safe_getattr(chunk, 'sequence_number', default='')}`",
+                    f"- chunk_index/chunk_total: `{safe_getattr(chunk, 'chunk_index', default='')}/{safe_getattr(chunk, 'chunk_total', default='')}`",
                     f"- chunk type: `{display_value(safe_getattr(chunk, 'chunk_type'))}`",
                     f"- page_start/page_end: `{format_page_range(safe_getattr(chunk, 'source', 'page_start'), safe_getattr(chunk, 'source', 'page_end'))}`",
                     f"- token_count: `{token_count if token_count is not None else ''}`",
                     f"- section_path: `{format_section_path(safe_getattr(chunk, 'section_path'))}`",
+                    f"- element_ids ({len(safe_getattr(chunk, 'element_ids', default=[]) or [])}): `{format_list_summary(safe_getattr(chunk, 'element_ids', default=[]))}`",
+                    f"- table_ids ({len(safe_getattr(chunk, 'table_ids', default=[]) or [])}): `{format_list_summary(safe_getattr(chunk, 'table_ids', default=[]))}`",
+                    f"- picture_ids ({len(safe_getattr(chunk, 'picture_ids', default=[]) or [])}): `{format_list_summary(safe_getattr(chunk, 'picture_ids', default=[]))}`",
+                    f"- embedding_text preview: `{preview_text(safe_getattr(chunk, 'embedding_text'), limit=240)}`",
                     "- content:",
                     "```text",
                     sanitize_code_block(safe_getattr(chunk, "content", default="")),

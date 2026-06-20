@@ -8,6 +8,11 @@ class ChunkFragment:
     text: str
     chunk_type: ChunkType
     standalone: bool = False
+    section_id: str | None = None
+    section_title: str | None = None
+    section_path: list[str] = field(default_factory=list)
+    section_level: int = 1
+    parent_section_id: str | None = None
     element_ids: list[str] = field(default_factory=list)
     table_ids: list[str] = field(default_factory=list)
     picture_ids: list[str] = field(default_factory=list)

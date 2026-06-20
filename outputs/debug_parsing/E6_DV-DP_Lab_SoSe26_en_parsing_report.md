@@ -2955,12 +2955,12 @@
 - text/content preview: `von Gr¨ unigen: Digitale Signalverarbeitung, Fachbuchverlag Leipzig, 2004`
 
 ## Document Graph Summary
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
 - document title: `E6_DV-DP_Lab_SoSe26_en`
 - document type: `unknown`
 - section count: `43`
 - element count: `290`
-- chunk count: `40`
+- chunk count: `24`
 - table asset count: `2`
 - picture asset count: `13`
 
@@ -3012,7 +3012,7 @@
 
 ## Sections
 
-### sec_ba2a66dc17084f4689e93d236550b8b3
+### sec_5988e15bfc2449feb37ff4b1850f34d4
 - title: `DP Lab`
 - parent section id: ``
 - section path: `DP Lab`
@@ -3022,7 +3022,7 @@
 - effective heading_level: `1`
 - strategy: `default`
 
-### sec_fbcdcd2b7b854b8b81e470df6f332570
+### sec_b8d782cf53f04ebd9d4eb7d53bd59483
 - title: `E6_DV-DP_Lab_SoSe26_en`
 - parent section id: ``
 - section path: `E6_DV-DP_Lab_SoSe26_en`
@@ -3032,9 +3032,9 @@
 - effective heading_level: `1`
 - strategy: `default`
 
-### sec_e4951bd280c3487189b48d5b0d1d6e21
+### sec_95f1a65583be4f79af9704cbfa9f8d19
 - title: `Contents`
-- parent section id: `sec_ba2a66dc17084f4689e93d236550b8b3`
+- parent section id: `sec_5988e15bfc2449feb37ff4b1850f34d4`
 - section path: `DP Lab > Contents`
 - page_start/page_end: `3 -> 5`
 - order_index: `15`
@@ -3042,7 +3042,7 @@
 - effective heading_level: `2`
 - strategy: `toc_context`
 
-### sec_1d061b969c0f43e6b5082c8b1a14e48c
+### sec_e47f3de271464dd09c3f24df5faf631d
 - title: `Chapter 1`
 - parent section id: ``
 - section path: `Chapter 1`
@@ -3052,9 +3052,9 @@
 - effective heading_level: `1`
 - strategy: `numbering_hierarchy`
 
-### sec_e2434164fdd547bdb685caec9eeadfc8
+### sec_c64a95862970492b98c35ed279bd5996
 - title: `Sampling and quantization`
-- parent section id: `sec_1d061b969c0f43e6b5082c8b1a14e48c`
+- parent section id: `sec_e47f3de271464dd09c3f24df5faf631d`
 - section path: `Chapter 1 > Sampling and quantization`
 - page_start/page_end: `5`
 - order_index: `20`
@@ -3062,9 +3062,9 @@
 - effective heading_level: `2`
 - strategy: `toc_context`
 
-### sec_af3512c62bae4eba9875862b1f2c2e63
+### sec_c578a94097694ccf836a0d871fd556b0
 - title: `1.1 Objectives of this first lab session`
-- parent section id: `sec_1d061b969c0f43e6b5082c8b1a14e48c`
+- parent section id: `sec_e47f3de271464dd09c3f24df5faf631d`
 - section path: `Chapter 1 > 1.1 Objectives of this first lab session`
 - page_start/page_end: `5`
 - order_index: `21`
@@ -3072,9 +3072,9 @@
 - effective heading_level: `2`
 - strategy: `toc_page_range`
 
-### sec_2269ebfd8d584e52b7be78bfd06b9fbc
+### sec_72633b3e02af4b439c1531937205d426
 - title: `1.2 Lab preparation`
-- parent section id: `sec_1d061b969c0f43e6b5082c8b1a14e48c`
+- parent section id: `sec_e47f3de271464dd09c3f24df5faf631d`
 - section path: `Chapter 1 > 1.2 Lab preparation`
 - page_start/page_end: `5`
 - order_index: `31`
@@ -3082,9 +3082,9 @@
 - effective heading_level: `2`
 - strategy: `toc_page_range`
 
-### sec_c1a4dae788c54aed9e39689cda20be37
+### sec_02533ef8f2164a83a0eea2d026138488
 - title: `Prep task (for lab entry test)`
-- parent section id: `sec_2269ebfd8d584e52b7be78bfd06b9fbc`
+- parent section id: `sec_72633b3e02af4b439c1531937205d426`
 - section path: `Chapter 1 > 1.2 Lab preparation > Prep task (for lab entry test)`
 - page_start/page_end: `6`
 - order_index: `35`
@@ -3092,9 +3092,9 @@
 - effective heading_level: `3`
 - strategy: `toc_context`
 
-### sec_844baf81084b40a488fe82f798df60f1
+### sec_ca9df2fae3a44f00a9b853a3a0e57e5e
 - title: `1.2.1 Interrupt handler and bit manipulation`
-- parent section id: `sec_2269ebfd8d584e52b7be78bfd06b9fbc`
+- parent section id: `sec_72633b3e02af4b439c1531937205d426`
 - section path: `Chapter 1 > 1.2 Lab preparation > 1.2.1 Interrupt handler and bit manipulation`
 - page_start/page_end: `6`
 - order_index: `41`
@@ -3102,9 +3102,9 @@
 - effective heading_level: `3`
 - strategy: `toc_page_range`
 
-### sec_2fcaf80992494e8aa577a3b07a2428cd
+### sec_52e6a98b14f24c27b4501d3f15f05b26
 - title: `Prep task 1: Interrupt handler and bit manipulation`
-- parent section id: `sec_2269ebfd8d584e52b7be78bfd06b9fbc`
+- parent section id: `sec_72633b3e02af4b439c1531937205d426`
 - section path: `Chapter 1 > 1.2 Lab preparation > Prep task 1: Interrupt handler and bit manipulation`
 - page_start/page_end: `6`
 - order_index: `45`
@@ -3112,9 +3112,9 @@
 - effective heading_level: `3`
 - strategy: `toc_context`
 
-### sec_5278a2c7e3a54d9699e02abac79ab629
+### sec_aefddbc6811349879e9136f02c31d865
 - title: `1.2.2 Sampling and quantization`
-- parent section id: `sec_2269ebfd8d584e52b7be78bfd06b9fbc`
+- parent section id: `sec_72633b3e02af4b439c1531937205d426`
 - section path: `Chapter 1 > 1.2 Lab preparation > 1.2.2 Sampling and quantization`
 - page_start/page_end: `6`
 - order_index: `47`
@@ -3122,9 +3122,9 @@
 - effective heading_level: `2`
 - strategy: `layout_heuristic`
 
-### sec_917ffe00a71f4d2d8a5c00f940ead87d
+### sec_34057b2e0e034fc0822649cde6342c9d
 - title: `Prep task 2: Sampling and quantization`
-- parent section id: `sec_1d061b969c0f43e6b5082c8b1a14e48c`
+- parent section id: `sec_e47f3de271464dd09c3f24df5faf631d`
 - section path: `Chapter 1 > Prep task 2: Sampling and quantization`
 - page_start/page_end: `7`
 - order_index: `49`
@@ -3132,9 +3132,9 @@
 - effective heading_level: `2`
 - strategy: `toc_page_range`
 
-### sec_89a5fc7fa27040a1af8f9f7763f9cb1d
+### sec_10a8314d395f4f08a64344aa21b9ede4
 - title: `1.3 A first DSP project with Code Composer Studio`
-- parent section id: `sec_1d061b969c0f43e6b5082c8b1a14e48c`
+- parent section id: `sec_e47f3de271464dd09c3f24df5faf631d`
 - section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio`
 - page_start/page_end: `7`
 - order_index: `52`
@@ -3142,9 +3142,9 @@
 - effective heading_level: `2`
 - strategy: `toc_page_range`
 
-### sec_9d40dd78ea564633a84cefec36c88e6b
+### sec_a99954fd2ad543509b71a456a44f6791
 - title: `1.3.1 Start of CCS and import of a project`
-- parent section id: `sec_89a5fc7fa27040a1af8f9f7763f9cb1d`
+- parent section id: `sec_10a8314d395f4f08a64344aa21b9ede4`
 - section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.1 Start of CCS and import of a project`
 - page_start/page_end: `7`
 - order_index: `53`
@@ -3152,9 +3152,9 @@
 - effective heading_level: `3`
 - strategy: `toc_page_range`
 
-### sec_d73983aecc8c4193bac77bbb700f3057
+### sec_415fba356e7c46649711ea90713a214b
 - title: `1.3.2 First test of the project`
-- parent section id: `sec_89a5fc7fa27040a1af8f9f7763f9cb1d`
+- parent section id: `sec_10a8314d395f4f08a64344aa21b9ede4`
 - section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.2 First test of the project`
 - page_start/page_end: `7`
 - order_index: `56`
@@ -3162,9 +3162,9 @@
 - effective heading_level: `3`
 - strategy: `toc_page_range`
 
-### sec_83afa0efbf214153b3a252cd15d20ae9
+### sec_b6f2924d60b14c74a6105be6c5feca42
 - title: `Lab task 1.1: Feeding the ADC input directly to the DAC output`
-- parent section id: `sec_89a5fc7fa27040a1af8f9f7763f9cb1d`
+- parent section id: `sec_10a8314d395f4f08a64344aa21b9ede4`
 - section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > Lab task 1.1: Feeding the ADC input directly to the DAC output`
 - page_start/page_end: `7`
 - order_index: `58`
@@ -3172,9 +3172,9 @@
 - effective heading_level: `3`
 - strategy: `toc_page_range`
 
-### sec_7770646123f44ee4b9eca2a48ff68f06
+### sec_1c56482f69cd4520bb3877a51ed6fef8
 - title: `1. Function test of the program`
-- parent section id: `sec_89a5fc7fa27040a1af8f9f7763f9cb1d`
+- parent section id: `sec_10a8314d395f4f08a64344aa21b9ede4`
 - section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `7 -> 8`
 - order_index: `60`
@@ -3182,9 +3182,9 @@
 - effective heading_level: `3`
 - strategy: `toc_context`
 
-### sec_9298b8a07aa04e2bb4b80c843034fc97
+### sec_8d835eeaf6af4d76a18cd8af295e610a
 - title: `1.3.3 Overflows`
-- parent section id: `sec_89a5fc7fa27040a1af8f9f7763f9cb1d`
+- parent section id: `sec_10a8314d395f4f08a64344aa21b9ede4`
 - section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.3 Overflows`
 - page_start/page_end: `8`
 - order_index: `79`
@@ -3192,9 +3192,9 @@
 - effective heading_level: `3`
 - strategy: `toc_page_range`
 
-### sec_09f73e7914514e82af41f7b90e8df633
+### sec_7ce880ad62264c88874fca964293520f
 - title: `Lab task 2: Number range overflows`
-- parent section id: `sec_89a5fc7fa27040a1af8f9f7763f9cb1d`
+- parent section id: `sec_10a8314d395f4f08a64344aa21b9ede4`
 - section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > Lab task 2: Number range overflows`
 - page_start/page_end: `8`
 - order_index: `82`
@@ -3202,9 +3202,9 @@
 - effective heading_level: `3`
 - strategy: `toc_context`
 
-### sec_5aebe847b446453ca623353a7142140b
+### sec_d1709b251b994683a61ab87376137d43
 - title: `1.3.4 Quantization`
-- parent section id: `sec_89a5fc7fa27040a1af8f9f7763f9cb1d`
+- parent section id: `sec_10a8314d395f4f08a64344aa21b9ede4`
 - section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.4 Quantization`
 - page_start/page_end: `8 -> 9`
 - order_index: `87`
@@ -3212,9 +3212,9 @@
 - effective heading_level: `3`
 - strategy: `toc_page_range`
 
-### sec_5d6bbcbe59a9420ba01822f9316b8cfc
+### sec_eb9856a660894cfdad5323e01d49cc4f
 - title: `Lab task 3: Quantization of speech signals`
-- parent section id: `sec_1d061b969c0f43e6b5082c8b1a14e48c`
+- parent section id: `sec_e47f3de271464dd09c3f24df5faf631d`
 - section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `9 -> 11`
 - order_index: `92`
@@ -3222,7 +3222,7 @@
 - effective heading_level: `2`
 - strategy: `toc_page_range`
 
-### sec_40dcd54e18084b628ecc83b7c7b2c2b7
+### sec_d273a3b7b11f46699f4072cbd37cb673
 - title: `Radix-2 FFT and Real-Time Spectrum Analyser`
 - parent section id: ``
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser`
@@ -3232,9 +3232,9 @@
 - effective heading_level: `1`
 - strategy: `toc_page_range`
 
-### sec_e2f4bf9adbf448de9744d9602e38d665
+### sec_1bc739a34b404f1cbc154644847de3bb
 - title: `2.1 Objectives of this second lab session`
-- parent section id: `sec_40dcd54e18084b628ecc83b7c7b2c2b7`
+- parent section id: `sec_d273a3b7b11f46699f4072cbd37cb673`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.1 Objectives of this second lab session`
 - page_start/page_end: `11`
 - order_index: `106`
@@ -3242,9 +3242,9 @@
 - effective heading_level: `2`
 - strategy: `toc_page_range`
 
-### sec_c3b1fe4b99cd465f97b1cb8b8a0d42a1
+### sec_7ed26d2cb7ae42898eed2f4393165141
 - title: `2.2 Preparation of the lab`
-- parent section id: `sec_40dcd54e18084b628ecc83b7c7b2c2b7`
+- parent section id: `sec_d273a3b7b11f46699f4072cbd37cb673`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab`
 - page_start/page_end: `11`
 - order_index: `112`
@@ -3252,9 +3252,9 @@
 - effective heading_level: `2`
 - strategy: `toc_page_range`
 
-### sec_6e4335cb98dd43c090e14027b6799d16
+### sec_cd39d7e6e73749d281c8622687f0931d
 - title: `Prep task (for short test)`
-- parent section id: `sec_c3b1fe4b99cd465f97b1cb8b8a0d42a1`
+- parent section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task (for short test)`
 - page_start/page_end: `11 -> 12`
 - order_index: `115`
@@ -3262,9 +3262,9 @@
 - effective heading_level: `3`
 - strategy: `toc_context`
 
-### sec_4873ba255ee8447e873d5632a4fa16d4
+### sec_022fd39ce6414baf80392d61ca42e10e
 - title: `2.2.1 Analysis of a Butterfly`
-- parent section id: `sec_c3b1fe4b99cd465f97b1cb8b8a0d42a1`
+- parent section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.1 Analysis of a Butterfly`
 - page_start/page_end: `12`
 - order_index: `122`
@@ -3272,9 +3272,9 @@
 - effective heading_level: `3`
 - strategy: `toc_page_range`
 
-### sec_224dc44655814e86b7276f7e090e2c10
+### sec_f4d454968c5c4b7dbbe4b90ab4e85924
 - title: `Prep task 1`
-- parent section id: `sec_c3b1fe4b99cd465f97b1cb8b8a0d42a1`
+- parent section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 1`
 - page_start/page_end: `12`
 - order_index: `127`
@@ -3282,9 +3282,9 @@
 - effective heading_level: `3`
 - strategy: `toc_context`
 
-### sec_2406664f50194e97902f8d90277c2800
+### sec_01542d4c08c94c589ee25039b5a7701c
 - title: `2.2.2 8-point FFT (DIT)`
-- parent section id: `sec_c3b1fe4b99cd465f97b1cb8b8a0d42a1`
+- parent section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `12 -> 13`
 - order_index: `137`
@@ -3292,9 +3292,9 @@
 - effective heading_level: `3`
 - strategy: `toc_page_range`
 
-### sec_17c95d149a5045b891afb495471cf262
+### sec_d418ba6a31fe449cb7bfde49ff98eec3
 - title: `Prep task 2`
-- parent section id: `sec_c3b1fe4b99cd465f97b1cb8b8a0d42a1`
+- parent section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13 -> 14`
 - order_index: `185`
@@ -3302,9 +3302,9 @@
 - effective heading_level: `3`
 - strategy: `toc_context`
 
-### sec_d5c320063ea143078e829eb0e35d7f1d
+### sec_594e6f35ac924945b321768574218f69
 - title: `Prep task 3`
-- parent section id: `sec_c3b1fe4b99cd465f97b1cb8b8a0d42a1`
+- parent section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 3`
 - page_start/page_end: `14`
 - order_index: `201`
@@ -3312,9 +3312,9 @@
 - effective heading_level: `3`
 - strategy: `toc_context`
 
-### sec_9c96b643ae1c4bf4bfca0fc6f720248b
+### sec_dc1a4d1c2aa448f1b3ec0b81b155daa3
 - title: `2.2.3 Familiarize yourself with the lab project`
-- parent section id: `sec_c3b1fe4b99cd465f97b1cb8b8a0d42a1`
+- parent section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14 -> 15`
 - order_index: `205`
@@ -3322,9 +3322,9 @@
 - effective heading_level: `3`
 - strategy: `toc_page_range`
 
-### sec_1997bc9f81814d11b2c01191587c02b7
+### sec_594aac6616dd4969990693d7ad5c3f84
 - title: `2.3 Lab: Spectrum Analysis using FFT`
-- parent section id: `sec_40dcd54e18084b628ecc83b7c7b2c2b7`
+- parent section id: `sec_d273a3b7b11f46699f4072cbd37cb673`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT`
 - page_start/page_end: `15`
 - order_index: `223`
@@ -3332,9 +3332,9 @@
 - effective heading_level: `2`
 - strategy: `toc_page_range`
 
-### sec_195468f140db466d8fc9fa5b061edb8b
+### sec_d71e052cdf6a47468a8ae61b54e4e465
 - title: `2.3.1 Getting started with the c project`
-- parent section id: `sec_1997bc9f81814d11b2c01191587c02b7`
+- parent section id: `sec_594aac6616dd4969990693d7ad5c3f84`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.1 Getting started with the c project`
 - page_start/page_end: `15`
 - order_index: `224`
@@ -3342,9 +3342,9 @@
 - effective heading_level: `3`
 - strategy: `toc_page_range`
 
-### sec_19a3ba15789d44d6bb4a3acbcfe49bf6
+### sec_c796bad62eb04f5f89c88a61baa13134
 - title: `Lab task 1`
-- parent section id: `sec_1997bc9f81814d11b2c01191587c02b7`
+- parent section id: `sec_594aac6616dd4969990693d7ad5c3f84`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > Lab task 1`
 - page_start/page_end: `15`
 - order_index: `228`
@@ -3352,9 +3352,9 @@
 - effective heading_level: `3`
 - strategy: `toc_context`
 
-### sec_4cee45b9f32842d79fdd17f3f4f34b33
+### sec_d3bafd9edb1344e1a9ab126fef44ff2e
 - title: `2.3.2 Extension of the FFT to 64 points`
-- parent section id: `sec_1997bc9f81814d11b2c01191587c02b7`
+- parent section id: `sec_594aac6616dd4969990693d7ad5c3f84`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.2 Extension of the FFT to 64 points`
 - page_start/page_end: `15`
 - order_index: `232`
@@ -3362,9 +3362,9 @@
 - effective heading_level: `3`
 - strategy: `toc_page_range`
 
-### sec_0d0ce27edd02420dad25e14a70458180
+### sec_9dc1275cf2064724a951231453370056
 - title: `Lab task 2: 64 point FFT`
-- parent section id: `sec_1997bc9f81814d11b2c01191587c02b7`
+- parent section id: `sec_594aac6616dd4969990693d7ad5c3f84`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > Lab task 2: 64 point FFT`
 - page_start/page_end: `16`
 - order_index: `236`
@@ -3372,9 +3372,9 @@
 - effective heading_level: `3`
 - strategy: `toc_context`
 
-### sec_76714fc95f8440f9af58f7293f6b8ec5
+### sec_9abc832a968a47d5b16dff13c631d58d
 - title: `2.3.3 Real-time spectrum analyser`
-- parent section id: `sec_1997bc9f81814d11b2c01191587c02b7`
+- parent section id: `sec_594aac6616dd4969990693d7ad5c3f84`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser`
 - page_start/page_end: `16`
 - order_index: `239`
@@ -3382,9 +3382,9 @@
 - effective heading_level: `3`
 - strategy: `toc_page_range`
 
-### sec_8d960c37a60547b5b093ab81c66c62ed
+### sec_531b7a04218649a283ae78236645224b
 - title: `1. Reading samples`
-- parent section id: `sec_76714fc95f8440f9af58f7293f6b8ec5`
+- parent section id: `sec_9abc832a968a47d5b16dff13c631d58d`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 1. Reading samples`
 - page_start/page_end: `16`
 - order_index: `243`
@@ -3392,9 +3392,9 @@
 - effective heading_level: `4`
 - strategy: `toc_context`
 
-### sec_3e36edbbd84e442db76204067a1d04ad
+### sec_d8f4579bd8044e459e38c4c597439797
 - title: `2. Calculation of the magnitudes of the spectrum`
-- parent section id: `sec_76714fc95f8440f9af58f7293f6b8ec5`
+- parent section id: `sec_9abc832a968a47d5b16dff13c631d58d`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
 - page_start/page_end: `16 -> 17`
 - order_index: `251`
@@ -3402,9 +3402,9 @@
 - effective heading_level: `4`
 - strategy: `toc_context`
 
-### sec_31c2ffd64d8740d385e7a8ba1c38cb1a
+### sec_559e66680b2241509d5789548f5705ed
 - title: `3. Visualization of the results`
-- parent section id: `sec_76714fc95f8440f9af58f7293f6b8ec5`
+- parent section id: `sec_9abc832a968a47d5b16dff13c631d58d`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 3. Visualization of the results`
 - page_start/page_end: `17`
 - order_index: `261`
@@ -3412,9 +3412,9 @@
 - effective heading_level: `4`
 - strategy: `toc_context`
 
-### sec_18d50c9198c44787b4167abcdf1aea4a
+### sec_20bbb31e50cf4c938438d792731c021e
 - title: `4. Output of the results to the oscilloscope`
-- parent section id: `sec_76714fc95f8440f9af58f7293f6b8ec5`
+- parent section id: `sec_9abc832a968a47d5b16dff13c631d58d`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 4. Output of the results to the oscilloscope`
 - page_start/page_end: `17`
 - order_index: `265`
@@ -3422,9 +3422,9 @@
 - effective heading_level: `4`
 - strategy: `toc_context`
 
-### sec_4901dad3b552492e99b9fa700d8eee3e
+### sec_bb0ef6afa9984cbcb6bed83215f8f5fd
 - title: `Lab task 3: Real-time spectrum analyser`
-- parent section id: `sec_76714fc95f8440f9af58f7293f6b8ec5`
+- parent section id: `sec_9abc832a968a47d5b16dff13c631d58d`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
 - page_start/page_end: `17 -> 18`
 - order_index: `271`
@@ -3432,9 +3432,9 @@
 - effective heading_level: `4`
 - strategy: `toc_context`
 
-### sec_dcc6a24c34ce4d0cafa75118d2fc9dcb
+### sec_1605cf6e40724a32b16c470a35410398
 - title: `Bibliography`
-- parent section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+- parent section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
 - section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser > Bibliography`
 - page_start/page_end: `19`
 - order_index: `282`
@@ -3444,2041 +3444,2911 @@
 
 ## Elements
 
-### el_c3462824d9044912967a3578e369eb09
+### el_4669de2dd7c344f0992dcc3052b10324
 - type: `picture`
-- section id: `sec_fbcdcd2b7b854b8b81e470df6f332570`
+- section id: `sec_b8d782cf53f04ebd9d4eb7d53bd59483`
+- resolved section path: `E6_DV-DP_Lab_SoSe26_en`
 - page_start/page_end: `1`
 - order_index: `1`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: ``
 
-### el_93ae3800fab44833ae11dc8c422d87ae
+### el_143a20b5a1204b838299cc2886f00e99
 - type: `text`
-- section id: `sec_fbcdcd2b7b854b8b81e470df6f332570`
+- section id: `sec_b8d782cf53f04ebd9d4eb7d53bd59483`
+- resolved section path: `E6_DV-DP_Lab_SoSe26_en`
 - page_start/page_end: `1`
 - order_index: `2`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Digital Signal Processing`
 
-### el_b674a913741d4e308759da940cb23937
+### el_190ef4577e5a49498cc7460678b4054f
 - type: `text`
-- section id: `sec_fbcdcd2b7b854b8b81e470df6f332570`
+- section id: `sec_b8d782cf53f04ebd9d4eb7d53bd59483`
+- resolved section path: `E6_DV-DP_Lab_SoSe26_en`
 - page_start/page_end: `1`
 - order_index: `3`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Lab`
 
-### el_2f3373a2b7bb403e8b74f19143475db9
+### el_05a4477215364e8fb37a12596ce6d31c
 - type: `text`
-- section id: `sec_fbcdcd2b7b854b8b81e470df6f332570`
+- section id: `sec_b8d782cf53f04ebd9d4eb7d53bd59483`
+- resolved section path: `E6_DV-DP_Lab_SoSe26_en`
 - page_start/page_end: `1`
 - order_index: `4`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Digital`
 
-### el_78eb0772bdcc46349c8b3df046c446cb
+### el_b9a039d328224799bfabc728318a853c
 - type: `text`
-- section id: `sec_fbcdcd2b7b854b8b81e470df6f332570`
+- section id: `sec_b8d782cf53f04ebd9d4eb7d53bd59483`
+- resolved section path: `E6_DV-DP_Lab_SoSe26_en`
 - page_start/page_end: `1`
 - order_index: `5`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Signal`
 
-### el_91aabab20fc341adba1d2847669d4408
+### el_0690c359ce66437bb1661b64b7db06a6
 - type: `text`
-- section id: `sec_fbcdcd2b7b854b8b81e470df6f332570`
+- section id: `sec_b8d782cf53f04ebd9d4eb7d53bd59483`
+- resolved section path: `E6_DV-DP_Lab_SoSe26_en`
 - page_start/page_end: `1`
 - order_index: `6`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `rocessing`
 
-### el_a72f4dc5a2f64213b687fa40715a338f
+### el_fd2f03ae024c472e8a5f7cd837f9ff28
 - type: `text`
-- section id: `sec_fbcdcd2b7b854b8b81e470df6f332570`
+- section id: `sec_b8d782cf53f04ebd9d4eb7d53bd59483`
+- resolved section path: `E6_DV-DP_Lab_SoSe26_en`
 - page_start/page_end: `1`
 - order_index: `7`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `P`
 
-### el_f699e8dd44314875987a89e730041767
+### el_7ae6d2f71ea349b1be32ada8a200dcad
 - type: `section_header`
-- section id: `sec_ba2a66dc17084f4689e93d236550b8b3`
+- section id: `sec_5988e15bfc2449feb37ff4b1850f34d4`
+- resolved section path: `DP Lab`
 - page_start/page_end: `1`
 - order_index: `8`
+- effective heading_level: `1`
+- heading level source: `default`
 - text preview: `DP Lab`
 
-### el_48a2b5c656a84d6d959fa851fa49ac99
+### el_a0fed5faaa164a87a0fb675fc68ad472
 - type: `text`
-- section id: `sec_ba2a66dc17084f4689e93d236550b8b3`
+- section id: `sec_5988e15bfc2449feb37ff4b1850f34d4`
+- resolved section path: `DP Lab`
 - page_start/page_end: `1`
 - order_index: `9`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `April 30, 2026`
 
-### el_2004c7365f1240809d4bae38313498a2
+### el_050c165a101b42daa2888fd7ce1229d6
 - type: `text`
-- section id: `sec_ba2a66dc17084f4689e93d236550b8b3`
+- section id: `sec_5988e15bfc2449feb37ff4b1850f34d4`
+- resolved section path: `DP Lab`
 - page_start/page_end: `1`
 - order_index: `10`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Hochschule f¨ ur Angewandte Wissenschaften Hamburg Hamburg University of Applied Sciences`
 
-### el_711ad5051a934ab585738cf62ff4aeb5
+### el_54098df96f31474e9b8668aab067621a
 - type: `text`
-- section id: `sec_ba2a66dc17084f4689e93d236550b8b3`
+- section id: `sec_5988e15bfc2449feb37ff4b1850f34d4`
+- resolved section path: `DP Lab`
 - page_start/page_end: `2`
 - order_index: `11`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `© 2026 Copyright Andrea Kupke, Prof. Dr.-Ing. Ulrich Sauvagerd, Prof. Dr.-Ing. Lutz Leutelt Hochschule f¨ ur Angewandte Wissenschaften Hamburg,`
 
-### el_b6b493790bdc4b66bab82d4c99f7d86c
+### el_889d6547320c4843a4e17ba71c51d361
 - type: `text`
-- section id: `sec_ba2a66dc17084f4689e93d236550b8b3`
+- section id: `sec_5988e15bfc2449feb37ff4b1850f34d4`
+- resolved section path: `DP Lab`
 - page_start/page_end: `2`
 - order_index: `12`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `All rights reserved.`
 
-### el_a0199ed518b640a9ae236c8d67fcd767
+### el_c4d13ac320014ace807bc34a7f56490f
 - type: `text`
-- section id: `sec_ba2a66dc17084f4689e93d236550b8b3`
+- section id: `sec_5988e15bfc2449feb37ff4b1850f34d4`
+- resolved section path: `DP Lab`
 - page_start/page_end: `2`
 - order_index: `13`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Alle Rechte, auch das des auszugsweisen Nachdrucks, der auszugsweisen oder vollst¨ andigen Wiedergabe, der Speicherung in Datenverarbeitungsanlagen und der ¨ Ubersetzung, vorbehalten.`
 
-### el_8d4ef7678ffa442fab1e1eb7112bf1cb
+### el_7b304ed3f0844eae839d296de26cbf22
 - type: `text`
-- section id: `sec_ba2a66dc17084f4689e93d236550b8b3`
+- section id: `sec_5988e15bfc2449feb37ff4b1850f34d4`
+- resolved section path: `DP Lab`
 - page_start/page_end: `2`
 - order_index: `14`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Dieses Dokument wurde mit Hilfe von KOMA-Script und L A T E X gesetzt.`
 
-### el_bfe96900e1a84e67b84b2e7a9097de21
+### el_14276a817372426ca430533972562eb5
 - type: `section_header`
-- section id: `sec_e4951bd280c3487189b48d5b0d1d6e21`
+- section id: `sec_95f1a65583be4f79af9704cbfa9f8d19`
+- resolved section path: `DP Lab > Contents`
 - page_start/page_end: `3`
 - order_index: `15`
+- effective heading_level: `2`
+- heading level source: `toc_context`
 - text preview: `Contents`
 
-### el_e219cd5606374b32acae41b0a21d77a9
+### el_3d42e96535334e94a760b79a4990fee6
 - type: `table`
-- section id: `sec_e4951bd280c3487189b48d5b0d1d6e21`
+- section id: `sec_95f1a65583be4f79af9704cbfa9f8d19`
+- resolved section path: `DP Lab > Contents`
 - page_start/page_end: `3`
 - order_index: `16`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `| 1 Sampling and quantization | 1 Sampling and quantization | 1 Sampling and quantization | 5 | |-------------------------------|-----------------------------------------------|----------------------------------------------------|-----|...`
 
-### el_f32de0ebe07f467d8077863f43a7b849
+### el_f0572baea1ff45f7aa96cdf0770c5f0d
 - type: `picture`
-- section id: `sec_e4951bd280c3487189b48d5b0d1d6e21`
+- section id: `sec_95f1a65583be4f79af9704cbfa9f8d19`
+- resolved section path: `DP Lab > Contents`
 - page_start/page_end: `5`
 - order_index: `17`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: ``
 
-### el_f285dd4941314f6f97aed8f6437ba69f
+### el_8f806bbb35e042848ad8882f3c79f722
 - type: `text`
-- section id: `sec_e4951bd280c3487189b48d5b0d1d6e21`
+- section id: `sec_95f1a65583be4f79af9704cbfa9f8d19`
+- resolved section path: `DP Lab > Contents`
 - page_start/page_end: `5`
 - order_index: `18`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `1`
 
-### el_b5c79906459a41649b8a4c4cec71fea9
+### el_9d20baeb410f4ec18341d3b58f0558de
 - type: `section_header`
-- section id: `sec_1d061b969c0f43e6b5082c8b1a14e48c`
+- section id: `sec_e47f3de271464dd09c3f24df5faf631d`
+- resolved section path: `Chapter 1`
 - page_start/page_end: `5`
 - order_index: `19`
+- effective heading_level: `1`
+- heading level source: `numbering_hierarchy`
 - text preview: `Chapter 1`
 
-### el_9736c8d1a9eb474892bb218b70588138
+### el_71d55758924e4a44addd01758bbaea70
 - type: `section_header`
-- section id: `sec_e2434164fdd547bdb685caec9eeadfc8`
+- section id: `sec_c64a95862970492b98c35ed279bd5996`
+- resolved section path: `Chapter 1 > Sampling and quantization`
 - page_start/page_end: `5`
 - order_index: `20`
+- effective heading_level: `2`
+- heading level source: `toc_context`
 - text preview: `Sampling and quantization`
 
-### el_9ff8835cebad4cd6924c6d5536d5c1a3
+### el_3f22e2754af547c38eebad15dd68902b
 - type: `section_header`
-- section id: `sec_af3512c62bae4eba9875862b1f2c2e63`
+- section id: `sec_c578a94097694ccf836a0d871fd556b0`
+- resolved section path: `Chapter 1 > 1.1 Objectives of this first lab session`
 - page_start/page_end: `5`
 - order_index: `21`
+- effective heading_level: `2`
+- heading level source: `toc_page_range`
 - text preview: `1.1 Objectives of this first lab session`
 
-### el_e1c8358216d54a898f24ed9906891842
+### el_84159dcd3bbc4d6fb2d07ec8e6864e7c
 - type: `text`
-- section id: `sec_af3512c62bae4eba9875862b1f2c2e63`
+- section id: `sec_c578a94097694ccf836a0d871fd556b0`
+- resolved section path: `Chapter 1 > 1.1 Objectives of this first lab session`
 - page_start/page_end: `5`
 - order_index: `22`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `The purpose of this first lab project is to give an introduction to the hardware and software of the UniDAQ2 Digital Signal Processor board, which is used in this and all subsequent lab sessions.`
 
-### el_85d75274f9eb411a99f35035f96ded31
+### el_0224b22aacc3455f901f522ace4cbf20
 - type: `text`
-- section id: `sec_af3512c62bae4eba9875862b1f2c2e63`
+- section id: `sec_c578a94097694ccf836a0d871fd556b0`
+- resolved section path: `Chapter 1 > 1.1 Objectives of this first lab session`
 - page_start/page_end: `5`
 - order_index: `23`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `The document Getting Started [1] serves as a basis and reference.`
 
-### el_4556b308d0a54841926b627fc6ad1477
+### el_7a13aa2490a64477a5263bd2fad8e7f5
 - type: `text`
-- section id: `sec_af3512c62bae4eba9875862b1f2c2e63`
+- section id: `sec_c578a94097694ccf836a0d871fd556b0`
+- resolved section path: `Chapter 1 > 1.1 Objectives of this first lab session`
 - page_start/page_end: `5`
 - order_index: `24`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `You will step by step`
 
-### el_7c93134b05d54344b9714963d6f45422
+### el_6336ce60d09c4fb5abe50defd76ec02b
 - type: `list_item`
-- section id: `sec_af3512c62bae4eba9875862b1f2c2e63`
+- section id: `sec_c578a94097694ccf836a0d871fd556b0`
+- resolved section path: `Chapter 1 > 1.1 Objectives of this first lab session`
 - page_start/page_end: `5`
 - order_index: `25`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ import a Code Composer Studio (CCS) project for the UniDAQ2 board,`
 
-### el_a89abef9b8d84d1daaed84647689f853
+### el_561e525725fa4c96a96c18899d1864ac
 - type: `list_item`
-- section id: `sec_af3512c62bae4eba9875862b1f2c2e63`
+- section id: `sec_c578a94097694ccf836a0d871fd556b0`
+- resolved section path: `Chapter 1 > 1.1 Objectives of this first lab session`
 - page_start/page_end: `5`
 - order_index: `26`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ compile and link the project and execute your project on the DSP Client,`
 
-### el_fcffe65491f445278f8c2f0617432f11
+### el_9a0bc463f4dd495f88c9033ab209d826
 - type: `list_item`
-- section id: `sec_af3512c62bae4eba9875862b1f2c2e63`
+- section id: `sec_c578a94097694ccf836a0d871fd556b0`
+- resolved section path: `Chapter 1 > 1.1 Objectives of this first lab session`
 - page_start/page_end: `5`
 - order_index: `27`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ use the CCS debugging tool and correct errors in the source code,`
 
-### el_ad878bdfda6d414a93c0aa1f9a77bba9
+### el_744ac21d8f0b4e5fbd77bed31fb36c2e
 - type: `list_item`
-- section id: `sec_af3512c62bae4eba9875862b1f2c2e63`
+- section id: `sec_c578a94097694ccf836a0d871fd556b0`
+- resolved section path: `Chapter 1 > 1.1 Objectives of this first lab session`
 - page_start/page_end: `5`
 - order_index: `28`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ use interrupt service routines,`
 
-### el_d0e7700bd45840858c1a1afd412ca570
+### el_8f442c87892143e1892943ca16afa57b
 - type: `list_item`
-- section id: `sec_af3512c62bae4eba9875862b1f2c2e63`
+- section id: `sec_c578a94097694ccf836a0d871fd556b0`
+- resolved section path: `Chapter 1 > 1.1 Objectives of this first lab session`
 - page_start/page_end: `5`
 - order_index: `29`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ get to know the Interface to ADC and DAC and the usage of hardware interrupts`
 
-### el_ec543ae3d6954f1682d4c2bf74df6c3e
+### el_31da5360873c4e96bc28b183d1b88fb4
 - type: `list_item`
-- section id: `sec_af3512c62bae4eba9875862b1f2c2e63`
+- section id: `sec_c578a94097694ccf836a0d871fd556b0`
+- resolved section path: `Chapter 1 > 1.1 Objectives of this first lab session`
 - page_start/page_end: `5`
 - order_index: `30`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ and develop simple DSP programs which read audio signals from an audio source and output them through a DAC (directly or after processing).`
 
-### el_97b7e702c2664f3b91fa84445022da12
+### el_2649f8bec3a945af89745f141c35192d
 - type: `section_header`
-- section id: `sec_2269ebfd8d584e52b7be78bfd06b9fbc`
+- section id: `sec_72633b3e02af4b439c1531937205d426`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation`
 - page_start/page_end: `5`
 - order_index: `31`
+- effective heading_level: `2`
+- heading level source: `toc_page_range`
 - text preview: `1.2 Lab preparation`
 
-### el_a3c32802d7824c5ebe02d682a83b33d9
+### el_e08350a1079743b5ba399070a38e337f
 - type: `text`
-- section id: `sec_2269ebfd8d584e52b7be78bfd06b9fbc`
+- section id: `sec_72633b3e02af4b439c1531937205d426`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation`
 - page_start/page_end: `5`
 - order_index: `32`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `It is very important that you work through these lab instructions before the lab session and that you are familiar with the fundamentals of 'Signals and Systems 1+2' and 'Programming in C'. If you need to catch up, please make yourself f...`
 
-### el_4be61e1590d047e59d05142a1da6cb15
+### el_4e2461ad3c1043d283aba0e8d904d339
 - type: `list_item`
-- section id: `sec_2269ebfd8d584e52b7be78bfd06b9fbc`
+- section id: `sec_72633b3e02af4b439c1531937205d426`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation`
 - page_start/page_end: `5`
 - order_index: `33`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ In particular, answer all the preparation tasks in the light blue boxes ('Prep task').`
 
-### el_7bbffafafea343d2bdd540e908b14833
+### el_5cf02ac69186477d90b37f3a66274e70
 - type: `list_item`
-- section id: `sec_2269ebfd8d584e52b7be78bfd06b9fbc`
+- section id: `sec_72633b3e02af4b439c1531937205d426`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation`
 - page_start/page_end: `5`
 - order_index: `34`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Familiarize yourself with the document Getting Started [1] so that when you get to the lab, you will know for sure what information to look up in it.`
 
-### el_4a0fa571b77548a79a01594ba51caa21
+### el_79a6da4b88fd42de8bfdc70f83975bc4
 - type: `section_header`
-- section id: `sec_c1a4dae788c54aed9e39689cda20be37`
+- section id: `sec_02533ef8f2164a83a0eea2d026138488`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > Prep task (for lab entry test)`
 - page_start/page_end: `6`
 - order_index: `35`
+- effective heading_level: `3`
+- heading level source: `toc_context`
 - text preview: `Prep task (for lab entry test)`
 
-### el_e5fc479c8287410e9627e192306f8f98
+### el_fab5ac98b6b84468837dfe947e09d25d
 - type: `text`
-- section id: `sec_c1a4dae788c54aed9e39689cda20be37`
+- section id: `sec_02533ef8f2164a83a0eea2d026138488`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > Prep task (for lab entry test)`
 - page_start/page_end: `6`
 - order_index: `36`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Familiarize yourself with the concepts of the chapter 'DP01: Digitization and Digital Signals', particularly`
 
-### el_9d74b44528b74f3ebb1ce798d4bc1118
+### el_4e457258c196439993d78c24b97ee594
 - type: `list_item`
-- section id: `sec_c1a4dae788c54aed9e39689cda20be37`
+- section id: `sec_02533ef8f2164a83a0eea2d026138488`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > Prep task (for lab entry test)`
 - page_start/page_end: `6`
 - order_index: `37`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ sampling, sampling frequency, aliasing and quantization,`
 
-### el_45ab21c0f99b4f83ac57c7198b0e5de3
+### el_af63ddcd8d32475dbfa082802914298a
 - type: `list_item`
-- section id: `sec_c1a4dae788c54aed9e39689cda20be37`
+- section id: `sec_02533ef8f2164a83a0eea2d026138488`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > Prep task (for lab entry test)`
 - page_start/page_end: `6`
 - order_index: `38`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ DSP system UniDAQ2 board, interrupt-based sample-by-sample processing in C`
 
-### el_e933b007f81d481ca27120eb5e470159
+### el_1699c24087a34b2c92c8c1a700520447
 - type: `list_item`
-- section id: `sec_c1a4dae788c54aed9e39689cda20be37`
+- section id: `sec_02533ef8f2164a83a0eea2d026138488`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > Prep task (for lab entry test)`
 - page_start/page_end: `6`
 - order_index: `39`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ rounding of fixed-point numbers and techniques in C to avoid overflows after arithmetic operations`
 
-### el_874430b4118b4bfaa02f4c97ba10dfbb
+### el_845c8994749f4c079f01b5e01653b2f5
 - type: `text`
-- section id: `sec_c1a4dae788c54aed9e39689cda20be37`
+- section id: `sec_02533ef8f2164a83a0eea2d026138488`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > Prep task (for lab entry test)`
 - page_start/page_end: `6`
 - order_index: `40`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `These topics will be addressed by the lab entry test at the beginning of the lab session.`
 
-### el_c2bb09f0d1a841189d30a7e8be38f666
+### el_ff95cbc8a3df48fa98ee1d6ceb0dc736
 - type: `section_header`
-- section id: `sec_844baf81084b40a488fe82f798df60f1`
+- section id: `sec_ca9df2fae3a44f00a9b853a3a0e57e5e`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > 1.2.1 Interrupt handler and bit manipulation`
 - page_start/page_end: `6`
 - order_index: `41`
+- effective heading_level: `3`
+- heading level source: `toc_page_range`
 - text preview: `1.2.1 Interrupt handler and bit manipulation`
 
-### el_fe92c4a771534cf7b50a01f9b23e7b77
+### el_a95394984ce249c788a6d32090d20192
 - type: `text`
-- section id: `sec_844baf81084b40a488fe82f798df60f1`
+- section id: `sec_ca9df2fae3a44f00a9b853a3a0e57e5e`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > 1.2.1 Interrupt handler and bit manipulation`
 - page_start/page_end: `6`
 - order_index: `42`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `In your microcontroller class, you have learned how to do bit manipulation of integer values with bit masks and bitwise-logic operators (e.g. and, or, xor). Let an interrupt handler, which is called with every new pair of samples, perfor...`
 
-### el_f0ff5901b75e41cbaf0a669b845e9e36
+### el_1feef4305bb04030be0612ec253c698f
 - type: `code`
-- section id: `sec_844baf81084b40a488fe82f798df60f1`
+- section id: `sec_ca9df2fae3a44f00a9b853a3a0e57e5e`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > 1.2.1 Interrupt handler and bit manipulation`
 - page_start/page_end: `6`
 - order_index: `43`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `1 interrupt void adcInt (void) { 3 sData[0] = PRU_addaRegs ->adc[0]; // read from ADC channel 0 sData[1] = PRU_addaRegs ->adc[1]; // read from ADC channel 1 5 sData[0] &= 0x5555; 7 sData[1] &= 0xCCCC; } 9 interrupt void dacInt (void) { 1...`
 
-### el_6eaa5e4886004edbb0c5cb5bf39fda22
+### el_05dfb1dea2954d929dc3aac7a4770313
 - type: `caption`
-- section id: `sec_844baf81084b40a488fe82f798df60f1`
+- section id: `sec_ca9df2fae3a44f00a9b853a3a0e57e5e`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > 1.2.1 Interrupt handler and bit manipulation`
 - page_start/page_end: `6`
 - order_index: `44`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Listing 1.1: bit-mask unidaq.c.`
 
-### el_64eb46c1840e450a8f53e6bc624751ca
+### el_9345eb03867947f1855da368cec4397d
 - type: `section_header`
-- section id: `sec_2fcaf80992494e8aa577a3b07a2428cd`
+- section id: `sec_52e6a98b14f24c27b4501d3f15f05b26`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > Prep task 1: Interrupt handler and bit manipulation`
 - page_start/page_end: `6`
 - order_index: `45`
+- effective heading_level: `3`
+- heading level source: `toc_context`
 - text preview: `Prep task 1: Interrupt handler and bit manipulation`
 
-### el_b9e94560d644454591f2e2bb2f0531c8
+### el_d39fbd6093a144d6a6bb9e6e4e938fc2
 - type: `list_item`
-- section id: `sec_2fcaf80992494e8aa577a3b07a2428cd`
+- section id: `sec_52e6a98b14f24c27b4501d3f15f05b26`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > Prep task 1: Interrupt handler and bit manipulation`
 - page_start/page_end: `6`
 - order_index: `46`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Which decimal(!) values are output after bit manipulation to channel 0 and channel 1 of the DAC, if the hexadecimal values received from ADC in the format int16 t were 0xFC7F at channel 0 and 0x83EE at channel 1?`
 
-### el_41d5bb96886f4e7994f14bd7a3a16d35
+### el_a350cdc3bed444b9bbe2ecc4e938404e
 - type: `section_header`
-- section id: `sec_5278a2c7e3a54d9699e02abac79ab629`
+- section id: `sec_aefddbc6811349879e9136f02c31d865`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > 1.2.2 Sampling and quantization`
 - page_start/page_end: `6`
 - order_index: `47`
+- effective heading_level: `2`
+- heading level source: `layout_heuristic`
 - text preview: `1.2.2 Sampling and quantization`
 
-### el_4b418544f3564ab0945dcbb206ddf352
+### el_7d141c6017314640bf302cb227c2ded4
 - type: `text`
-- section id: `sec_5278a2c7e3a54d9699e02abac79ab629`
+- section id: `sec_aefddbc6811349879e9136f02c31d865`
+- resolved section path: `Chapter 1 > 1.2 Lab preparation > 1.2.2 Sampling and quantization`
 - page_start/page_end: `6`
 - order_index: `48`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Let an analog cosine signal x ( t ) = cos(2 πf 0 t ) with f 0 = 4 kHz be sampled at f S = 32 kHz. (In the lab you later use a different sampling frequency.) The sampled discrete-time signal x[n] is afterwards quantized by a 4-bit quantiz...`
 
-### el_93571bc8915c491fa75aff48284e3a0b
+### el_abe1d11737684bdfa3ade0e6f64fadf3
 - type: `section_header`
-- section id: `sec_917ffe00a71f4d2d8a5c00f940ead87d`
+- section id: `sec_34057b2e0e034fc0822649cde6342c9d`
+- resolved section path: `Chapter 1 > Prep task 2: Sampling and quantization`
 - page_start/page_end: `7`
 - order_index: `49`
+- effective heading_level: `2`
+- heading level source: `toc_page_range`
 - text preview: `Prep task 2: Sampling and quantization`
 
-### el_b3e40278038f42dd8d95abb1c03f8ea6
+### el_9914a0b4842248969c42cb5ea7432ac5
 - type: `list_item`
-- section id: `sec_917ffe00a71f4d2d8a5c00f940ead87d`
+- section id: `sec_34057b2e0e034fc0822649cde6342c9d`
+- resolved section path: `Chapter 1 > Prep task 2: Sampling and quantization`
 - page_start/page_end: `7`
 - order_index: `50`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Determine the sampled discrete-time signal x [ n ] (without quantization).`
 
-### el_3a511e2c8bd049f3875ad4b0e09a04c6
+### el_65ce457f0d724c29aa5c01e9b33a5f79
 - type: `list_item`
-- section id: `sec_917ffe00a71f4d2d8a5c00f940ead87d`
+- section id: `sec_34057b2e0e034fc0822649cde6342c9d`
+- resolved section path: `Chapter 1 > Prep task 2: Sampling and quantization`
 - page_start/page_end: `7`
 - order_index: `51`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Determine the eight signal values x [ n ] , ˆ x [ n ] , n = 0 , . . . , +7 before and after 4-bit quantization with truncation.`
 
-### el_4e7d550730584061a752e2ce3bcedd74
+### el_231093146a484453b484fe56a17baa8e
 - type: `section_header`
-- section id: `sec_89a5fc7fa27040a1af8f9f7763f9cb1d`
+- section id: `sec_10a8314d395f4f08a64344aa21b9ede4`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio`
 - page_start/page_end: `7`
 - order_index: `52`
+- effective heading_level: `2`
+- heading level source: `toc_page_range`
 - text preview: `1.3 A first DSP project with Code Composer Studio`
 
-### el_c099dc6fb83d4bd58054526d81ab3bf6
+### el_9ff6b725061742daace356b43a551d6a
 - type: `section_header`
-- section id: `sec_9d40dd78ea564633a84cefec36c88e6b`
+- section id: `sec_a99954fd2ad543509b71a456a44f6791`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.1 Start of CCS and import of a project`
 - page_start/page_end: `7`
 - order_index: `53`
+- effective heading_level: `3`
+- heading level source: `toc_page_range`
 - text preview: `1.3.1 Start of CCS and import of a project`
 
-### el_9271e7f43dd74a38a2081ba6b2164f99
+### el_98529133a67241d2be119caa3cf3d965
 - type: `list_item`
-- section id: `sec_9d40dd78ea564633a84cefec36c88e6b`
+- section id: `sec_a99954fd2ad543509b71a456a44f6791`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.1 Start of CCS and import of a project`
 - page_start/page_end: `7`
 - order_index: `54`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Start up the UniDAQ2 board according to the instructions in Getting Started [1] and run the prepared program that reads values and outputs them unchanged.`
 
-### el_fdc94db54d7b449d82b52296e7f6b4fe
+### el_ad4f3632dc824130bece8fa8bb2508b4
 - type: `list_item`
-- section id: `sec_9d40dd78ea564633a84cefec36c88e6b`
+- section id: `sec_a99954fd2ad543509b71a456a44f6791`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.1 Start of CCS and import of a project`
 - page_start/page_end: `7`
 - order_index: `55`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Set the sampling rate of the board to F s = 50 kHz.`
 
-### el_5403e38f6e5a4fc2bfd2052b651a4ccc
+### el_b17dcddf3ae345ae8f0e3debaff3bdf7
 - type: `section_header`
-- section id: `sec_d73983aecc8c4193bac77bbb700f3057`
+- section id: `sec_415fba356e7c46649711ea90713a214b`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.2 First test of the project`
 - page_start/page_end: `7`
 - order_index: `56`
+- effective heading_level: `3`
+- heading level source: `toc_page_range`
 - text preview: `1.3.2 First test of the project`
 
-### el_ae7e37a934994360a3f5dbd6233b8d25
+### el_b531ba9f7d4e4cf0bdd2793347ca376a
 - type: `text`
-- section id: `sec_d73983aecc8c4193bac77bbb700f3057`
+- section id: `sec_415fba356e7c46649711ea90713a214b`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.2 First test of the project`
 - page_start/page_end: `7`
 - order_index: `57`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `The demo program main adda simple Lab.c copies the data of the two ADC registers in the ADC interrupt service routine (ISR) adcInt to sData[0] and sData[1] . These data are now available for processing. In the DAC ISR dacInt , the values...`
 
-### el_a44ff123063f485da8607fbdbeec0ad5
+### el_18ff405f779e4cdd8f69c68f10ca2f08
 - type: `section_header`
-- section id: `sec_83afa0efbf214153b3a252cd15d20ae9`
+- section id: `sec_b6f2924d60b14c74a6105be6c5feca42`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > Lab task 1.1: Feeding the ADC input directly to the DAC output`
 - page_start/page_end: `7`
 - order_index: `58`
+- effective heading_level: `3`
+- heading level source: `toc_page_range`
 - text preview: `Lab task 1.1: Feeding the ADC input directly to the DAC output`
 
-### el_64e8ec7da2434f43907f369d33e4a4ff
+### el_d886375967b84203950a1273d7d5d20e
 - type: `text`
-- section id: `sec_83afa0efbf214153b3a252cd15d20ae9`
+- section id: `sec_b6f2924d60b14c74a6105be6c5feca42`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > Lab task 1.1: Feeding the ADC input directly to the DAC output`
 - page_start/page_end: `7`
 - order_index: `59`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `In this first task, you apply a signal to the ADC and use the given program to read this signal into the DSP and output the signal at the DAC.`
 
-### el_9672f0af424d4996a66c31be8b986ee0
+### el_aff642a232824ef9a132c2ade9cdedca
 - type: `section_header`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `7`
 - order_index: `60`
+- effective heading_level: `3`
+- heading level source: `toc_context`
 - text preview: `1. Function test of the program`
 
-### el_22f9149a9b2746d38755014a8451f627
+### el_49ead8aa9b964dce81f34e36c4e9c551
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `7`
 - order_index: `61`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Use the HAMEG HMF2525 function generator to apply a sinusoidal voltage to the input of the board. Mind that you have to terminate the coax cable from the function generator with a 50 Ω resistor as otherwise the double value of the set...`
 
-### el_a027db58ea1843fbbfb9d4f58c4db1b0
+### el_fdff8ce12fdd4bdda7ac7cfd5be664e3
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `7`
 - order_index: `62`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Feed a sine wave from the function generator to the ADC 1 input of the board with V pp = 1 V and connect an oscilloscope to both output channels. The output DAC 1 should be almost equal to the input signal, at DAC you will see no output.`
 
-### el_0102d628b26742d1b03050537919fc1f
+### el_b14392fbc75847c997feded8d38d9794
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `7`
 - order_index: `63`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Now reconnect the cable from the generator so that the signal is fed to ADC 0. Check whether you are now measuring the sine wave at DAC 0.`
 
-### el_d00a30d4f5c54291b98354cdd7722d19
+### el_1810a35c63a342cbaf3f3d8f6365c98a
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `7`
 - order_index: `64`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Display the input and output signals at ADC 0 and DAC 0 on the oscilloscope, determine the delay between both sine signals and document the measured delay value and a screenshot of the oscilloscope measurement in the report.`
 
-### el_37b25a48cc374d27864dc1ee19dbf018
+### el_55ce682a6cd24781b38216bb816c07e3
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `7`
 - order_index: `65`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Masking`
 
-### el_6fa35af5f8564fd7ac147d7bde2eb624
+### el_af7aa6d989a84e7aafd60531224f88b3
 - type: `picture`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `7`
 - order_index: `66`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: ``
 
-### el_be4d53ee73d54a6d9efd8ec523404477
+### el_d12dbe3ff10c4ca38e36e6b780b5f3b3
 - type: `picture`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `8`
 - order_index: `67`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: ``
 
-### el_f6efafe720824c07b6b612278dde3686
+### el_375ea34f836b48cb82df87c92210ac3d
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `8`
 - order_index: `68`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Mask out channel 0 (set all 16 bits to 0) by inserting the following line between reading and writing the data:`
 
-### el_da333cf169294b9abc372cb5733d8677
+### el_1078e5f2b41d4766b32b2546da128edb
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `8`
 - order_index: `69`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `sData[0] &= 0x0000;`
 
-### el_9badf7fff3f540edabbddd70dba7cab9
+### el_5b240a34eb3745d9bbae358964e931e5
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `8`
 - order_index: `70`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Call up Run → Debug to test the program: Channel 0 should now be 'silent'.`
 
-### el_9803213be9f246fdaf5486b2781c0e4d
+### el_f6bcb2409f1f49e4aceb6e2a0293651a
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `8`
 - order_index: `71`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Comment out the mask after this exercise.`
 
-### el_c34e7e52bed54a0e8e6378128335b447
+### el_5d749a1bffea47068aafed8b9320384a
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `8`
 - order_index: `72`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Copy data of a channel`
 
-### el_737158a8fc7a477e91e25dc64e03743a
+### el_f5406f5177ac42bdb3beef9a410a961e
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `8`
 - order_index: `73`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Now insert the following line before writing the data: sData[0] = sData[1];`
 
-### el_1da0717605e948e7b03c2be3ff97798f
+### el_107bd3161b5542119a78a11d12249270
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `8`
 - order_index: `74`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ The data from channel 1 is now copied to channel 0 and written to the DAC. Call Run → Debug and check the function in a suitable way here too.`
 
-### el_53cf6c1497254fb68ff450770e74d955
+### el_75dfcc90eb3d41e18a0a4711efaec0c3
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `8`
 - order_index: `75`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Comment this line out again.`
 
-### el_c5065c580f33482e8e98246eeda285d9
+### el_5c8890dd2abb48aa8ac36c3ae9c9f40a
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `8`
 - order_index: `76`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Swap channels`
 
-### el_21842f2e4c154943b9c0ecaec9f67825
+### el_fd7da9f1f69b4760b223f947cbc37e81
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `8`
 - order_index: `77`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Ensure that the audio channels are output in reverse: the sine wave fed into ADC 0 should appear at the DAC 1 output. If you feed in at ADC 1, you will only see a signal at DAC 0.`
 
-### el_8daaba2651024b29b617c016c4602911
+### el_a8aee3841e234d309276d5bee728f8a7
 - type: `list_item`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
 - page_start/page_end: `8`
 - order_index: `78`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ The swapping of the channels must be demonstrated to the supervisors in the lab. Give the code of interrupt handler dacInt() including your modifications in the report.`
 
-### el_be1beb8cee454bca827d9b11e5e97f46
+### el_c29f7ad38f484f4b9d5ea1e1d6905cf8
 - type: `section_header`
-- section id: `sec_9298b8a07aa04e2bb4b80c843034fc97`
+- section id: `sec_8d835eeaf6af4d76a18cd8af295e610a`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.3 Overflows`
 - page_start/page_end: `8`
 - order_index: `79`
+- effective heading_level: `3`
+- heading level source: `toc_page_range`
 - text preview: `1.3.3 Overflows`
 
-### el_b72dc11262c04cfba8ab24201a6d2d34
+### el_50d5ee1adbb9426da40f3d41b022599c
 - type: `text`
-- section id: `sec_9298b8a07aa04e2bb4b80c843034fc97`
+- section id: `sec_8d835eeaf6af4d76a18cd8af295e610a`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.3 Overflows`
 - page_start/page_end: `8`
 - order_index: `80`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `We now want to generate an internal number range overflow by multiplying the values of ADC input 0 by an increasing factor. Use the function generator to apply a sine wave of 300 Hz, V pp = 1 V to ADC input 0.`
 
-### el_5fdc7be3674f48999e7b559b57763f49
+### el_bc5172f3ec3d49adb23783e499ce9045
 - type: `picture`
-- section id: `sec_9298b8a07aa04e2bb4b80c843034fc97`
+- section id: `sec_8d835eeaf6af4d76a18cd8af295e610a`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.3 Overflows`
 - page_start/page_end: `8`
 - order_index: `81`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: ``
 
-### el_5b3efb7309024e43afb4273626fbedb3
+### el_4a884a90889a47a08a3556b8fd3a3f68
 - type: `section_header`
-- section id: `sec_09f73e7914514e82af41f7b90e8df633`
+- section id: `sec_7ce880ad62264c88874fca964293520f`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > Lab task 2: Number range overflows`
 - page_start/page_end: `8`
 - order_index: `82`
+- effective heading_level: `3`
+- heading level source: `toc_context`
 - text preview: `Lab task 2: Number range overflows`
 
-### el_8aa20fc96f494834bbfdc844fd7eaaab
+### el_35f2e451a42b4d26af138cb93c0a9cb0
 - type: `list_item`
-- section id: `sec_09f73e7914514e82af41f7b90e8df633`
+- section id: `sec_7ce880ad62264c88874fca964293520f`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > Lab task 2: Number range overflows`
 - page_start/page_end: `8`
 - order_index: `83`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Modify the DAC interrupt handler dacInt() that the values of both ADC inputs are multiplied by a factor scale (defined as a global variable) before they are output to the DAC outputs.`
 
-### el_4deec918a1c7493a9f83ff5e7a20db6a
+### el_4ad4de7408664c7b96fa893308cd3169
 - type: `list_item`
-- section id: `sec_09f73e7914514e82af41f7b90e8df633`
+- section id: `sec_7ce880ad62264c88874fca964293520f`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > Lab task 2: Number range overflows`
 - page_start/page_end: `8`
 - order_index: `84`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Add the factor scale to the Expressions window of the CCS Debugger.`
 
-### el_c31469392a6c4726b53e07493fb66a69
+### el_e7b7719434c645d8b22764f40bd75ded
 - type: `list_item`
-- section id: `sec_09f73e7914514e82af41f7b90e8df633`
+- section id: `sec_7ce880ad62264c88874fca964293520f`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > Lab task 2: Number range overflows`
 - page_start/page_end: `8`
 - order_index: `85`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Increase the factor scale in the Expressions window until you observe an overflow on the oscilloscope. Make an oscilloscope screenshoot right before and right after the overflow occurs. Specify the value of scale at which the overflow...`
 
-### el_27966f47874a4aaca4851c2d370488ca
+### el_b1983dc388e4414b8a941543bdb61098
 - type: `table`
-- section id: `sec_09f73e7914514e82af41f7b90e8df633`
+- section id: `sec_7ce880ad62264c88874fca964293520f`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > Lab task 2: Number range overflows`
 - page_start/page_end: `8`
 - order_index: `86`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `| Lab task 2: Number range overflows | |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------...`
 
-### el_6ad2cc37e5fd4491a2b900b4e34a5d5d
+### el_b4e5a929e53a4f989696acccbd98b847
 - type: `section_header`
-- section id: `sec_5aebe847b446453ca623353a7142140b`
+- section id: `sec_d1709b251b994683a61ab87376137d43`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.4 Quantization`
 - page_start/page_end: `8`
 - order_index: `87`
+- effective heading_level: `3`
+- heading level source: `toc_page_range`
 - text preview: `1.3.4 Quantization`
 
-### el_5ecef7ad9bb2406fa4a03f62f593cb23
+### el_1162ab56aee64c93bf7add8fdaa1b82e
 - type: `text`
-- section id: `sec_5aebe847b446453ca623353a7142140b`
+- section id: `sec_d1709b251b994683a61ab87376137d43`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.4 Quantization`
 - page_start/page_end: `8`
 - order_index: `88`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `We now want to give speech signals into the system and examine the speech quality at different bit resolutions. To do this, both channels are masked with bit masks as in the prep task before they are output to DAC outputs 0 and 1.`
 
-### el_84f2b4fdef2e440a8cae6748cea4ad2c
+### el_64b434f54d3943c39b3476429646b913
 - type: `text`
-- section id: `sec_5aebe847b446453ca623353a7142140b`
+- section id: `sec_d1709b251b994683a61ab87376137d43`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.4 Quantization`
 - page_start/page_end: `9`
 - order_index: `89`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Connections to the DSP board. The output of the PC's sound card must be connected to the input of the DSP board via an adapter cable (3,5mm male audio jack to 2 x BNC).`
 
-### el_9d5c485856684f19979b6e422a4e824d
+### el_55916be3cbab4165bf32ab02865d3264
 - type: `text`
-- section id: `sec_5aebe847b446453ca623353a7142140b`
+- section id: `sec_d1709b251b994683a61ab87376137d43`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.4 Quantization`
 - page_start/page_end: `9`
 - order_index: `90`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `The speakers are connected to DAC outputs 0 and 1 via adapter cables, too (2 x BNC to female audio jack). For simultaneously displaying on the oscilloscope, you must use T shaped BNC splitters at the oscilloscope inputs.`
 
-### el_ac733a7154604a65866cc2ce607f75db
+### el_b3078785f0aa4e5c897aefee06f050bd
 - type: `text`
-- section id: `sec_5aebe847b446453ca623353a7142140b`
+- section id: `sec_d1709b251b994683a61ab87376137d43`
+- resolved section path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.4 Quantization`
 - page_start/page_end: `9`
 - order_index: `91`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Audio files. Audio files can be found in directory D: \ wavefiles \ . Use for this task THEFORCE.wav as signal input. Play it back with the PC application Audacity .`
 
-### el_c00ecd8cae244f80a861355875117a0c
+### el_54c540bcc3144b3194d58ddc5b9707b6
 - type: `section_header`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `9`
 - order_index: `92`
+- effective heading_level: `2`
+- heading level source: `toc_page_range`
 - text preview: `Lab task 3: Quantization of speech signals`
 
-### el_01874ebf4b8b42c195b01433de7f94c7
+### el_b208f11f3dc44c5ab3546326efb4e731
 - type: `list_item`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `9`
 - order_index: `93`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Make sure that the audio signal is well leveled by leaving the value of factor scale as you determined it in task 2, now applied to both channels. Now increase the volume on the PC as much as possible without overflowing (you would hea...`
 
-### el_ec016d15384144ff8abbe9df43094c96
+### el_274620f60101464690f931c0541299ef
 - type: `list_item`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `9`
 - order_index: `94`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Add a global variable bitmask to your program that manipulates both channels`
 
-### el_094031d78f8f4efc87ba9cd9cca5a7d6
+### el_8eaad98757d74f468a56ce91ecf71605
 - type: `text`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `9`
 - order_index: `95`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `sData[0] &= bitmask;`
 
-### el_74f6a6a44f13496083d24c8eaf53446a
+### el_113a25e6c0d94f28a498d5e628e02e43
 - type: `text`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `9`
 - order_index: `96`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `sData[1] &= bitmask;`
 
-### el_7875c8ec64cf4686bb3bf0e7194beb9b
+### el_aa9a772c97f94d03906cd1552b758f76
 - type: `text`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `9`
 - order_index: `97`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `after your program has scaled both ADC input signals with factor scale .`
 
-### el_58d58d9f763b4ab09a5e9f13edddb614
+### el_91cb99de438f47eb96c7af03e1a4bcc9
 - type: `list_item`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `9`
 - order_index: `98`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Add variable bitmask to the CCS Expressions window and chose a hexadecimal representation by right-clicking on the variable type.`
 
-### el_46f8b9cc6a9f4d00b3ff326eccc7b71e
+### el_d1422f1bae984c1798cb1871087178c2
 - type: `list_item`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `9`
 - order_index: `99`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Give the bit masks required for 1-, 4- and 8-bit quantization as hexadecimal values in the report. Hint: the least significant bits of both channels must be masked out. Is the quantization done by truncation or by arithmetic rounding?`
 
-### el_3e20b34db9b9469d8c800651616957ef
+### el_19597504acfa4554b2a68c5cb53a5e87
 - type: `list_item`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `9`
 - order_index: `100`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Set the bit masks in the Expression window to the corresponding values for 1, 4 and 8bit quantization and compare the intelligibility in the report. Take an oscilloscope screenshot of one 4-bit quantized signal for the report .`
 
-### el_6fad1229936b4514aa824b542a8cec42
+### el_aa95496d81f54224b06e90b3d5c84aa9
 - type: `picture`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `9`
 - order_index: `101`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: ``
 
-### el_2681ddf7511441638a72918fbe8b5e65
+### el_e8f291cc5c6b4816994dde8828feb464
 - type: `picture`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `11`
 - order_index: `102`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: ``
 
-### el_8ade777b3f8d4aa786a8c360908a0aae
+### el_a8b41f0fbe05405fae0a9ef19ea052d7
 - type: `text`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `11`
 - order_index: `103`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `2`
 
-### el_6ead3ab2a2324f16a63489d4a746af0e
+### el_08c51bebe8b540269f4beb4ce66087f4
 - type: `text`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- resolved section path: `Chapter 1 > Lab task 3: Quantization of speech signals`
 - page_start/page_end: `11`
 - order_index: `104`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Chapter 2`
 
-### el_9a29a9745979434990c21bebc628938f
+### el_0c848870ef1a47a5bbf69054a86056cb
 - type: `section_header`
-- section id: `sec_40dcd54e18084b628ecc83b7c7b2c2b7`
+- section id: `sec_d273a3b7b11f46699f4072cbd37cb673`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser`
 - page_start/page_end: `11`
 - order_index: `105`
+- effective heading_level: `1`
+- heading level source: `toc_page_range`
 - text preview: `Radix-2 FFT and Real-Time Spectrum Analyser`
 
-### el_19375adc190645a7b7b7f43b7621898b
+### el_f57563f7f6f541c6991d71ea0f27c1fa
 - type: `section_header`
-- section id: `sec_e2f4bf9adbf448de9744d9602e38d665`
+- section id: `sec_1bc739a34b404f1cbc154644847de3bb`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.1 Objectives of this second lab session`
 - page_start/page_end: `11`
 - order_index: `106`
+- effective heading_level: `2`
+- heading level source: `toc_page_range`
 - text preview: `2.1 Objectives of this second lab session`
 
-### el_e2f2fd682b3f46f8bd1eed04a07b6f2b
+### el_cfded6c350c743b59ba57326099b97c5
 - type: `text`
-- section id: `sec_e2f4bf9adbf448de9744d9602e38d665`
+- section id: `sec_1bc739a34b404f1cbc154644847de3bb`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.1 Objectives of this second lab session`
 - page_start/page_end: `11`
 - order_index: `107`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `In this lab, you will implement a 64-point Radix-2 FFT on the signal processor based on a given 8point FFT. Eventually, you will develop a real-time spectrum analyzer using this FFT implementation. After this lab you should`
 
-### el_e85042ae669848739ca86a49d467f55c
+### el_7abe859e5ac84b8cbae165f90d8eec3f
 - type: `list_item`
-- section id: `sec_e2f4bf9adbf448de9744d9602e38d665`
+- section id: `sec_1bc739a34b404f1cbc154644847de3bb`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.1 Objectives of this second lab session`
 - page_start/page_end: `11`
 - order_index: `108`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ better understand the Radix-2 FFT algorithm,`
 
-### el_92fb9f65aab74c3bb88c58cd9d73891f
+### el_a1c93386ab664f718755c349cd77b0f2
 - type: `list_item`
-- section id: `sec_e2f4bf9adbf448de9744d9602e38d665`
+- section id: `sec_1bc739a34b404f1cbc154644847de3bb`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.1 Objectives of this second lab session`
 - page_start/page_end: `11`
 - order_index: `109`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ be able to understand how to implement and execute an FFT on a DSP under real-time constraints,`
 
-### el_8659d3087daf4844b04cc9ac754f6bfb
+### el_082eabba9b4a466b82829ca529428749
 - type: `list_item`
-- section id: `sec_e2f4bf9adbf448de9744d9602e38d665`
+- section id: `sec_1bc739a34b404f1cbc154644847de3bb`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.1 Objectives of this second lab session`
 - page_start/page_end: `11`
 - order_index: `110`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ be able to implement a framework around an existing FFT algorithms in assembly language in order to perform a frequency analysis of a signal.`
 
-### el_8c449ef7f751419eb75cf128777252d0
+### el_2318d1b522344f9c82b2e97f571cf65d
 - type: `list_item`
-- section id: `sec_e2f4bf9adbf448de9744d9602e38d665`
+- section id: `sec_1bc739a34b404f1cbc154644847de3bb`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.1 Objectives of this second lab session`
 - page_start/page_end: `11`
 - order_index: `111`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ be able to apply a Hamming window to a block of N samples stored in a corresponding buffer`
 
-### el_04d39c67d5d1444abe0cbf235873be73
+### el_74e4e123c2ba409cbabb9b3958aea7b7
 - type: `section_header`
-- section id: `sec_c3b1fe4b99cd465f97b1cb8b8a0d42a1`
+- section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab`
 - page_start/page_end: `11`
 - order_index: `112`
+- effective heading_level: `2`
+- heading level source: `toc_page_range`
 - text preview: `2.2 Preparation of the lab`
 
-### el_3f5933b1839941f9a79abc56c3319409
+### el_8b92f3c491a640189a3026665e2623b4
 - type: `text`
-- section id: `sec_c3b1fe4b99cd465f97b1cb8b8a0d42a1`
+- section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab`
 - page_start/page_end: `11`
 - order_index: `113`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Prepare well the fundamentals presented in the lecture on DFT and FFT and the preparation tasks in this lab assignment.`
 
-### el_3fd28d95d0324a938723a968a741675b
+### el_b6cb3829adb4464f86446041b191027e
 - type: `picture`
-- section id: `sec_c3b1fe4b99cd465f97b1cb8b8a0d42a1`
+- section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab`
 - page_start/page_end: `11`
 - order_index: `114`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: ``
 
-### el_c0896623681940fe8449d9f0c93df795
+### el_3afce437f1a44f12ae88ac574d3bbc1f
 - type: `section_header`
-- section id: `sec_6e4335cb98dd43c090e14027b6799d16`
+- section id: `sec_cd39d7e6e73749d281c8622687f0931d`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task (for short test)`
 - page_start/page_end: `11`
 - order_index: `115`
+- effective heading_level: `3`
+- heading level source: `toc_context`
 - text preview: `Prep task (for short test)`
 
-### el_fbb5be8db8cf4adcbf87468038df3f08
+### el_0f2e1a8e6a884a5795851ff420196e9e
 - type: `text`
-- section id: `sec_6e4335cb98dd43c090e14027b6799d16`
+- section id: `sec_cd39d7e6e73749d281c8622687f0931d`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task (for short test)`
 - page_start/page_end: `11`
 - order_index: `116`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Familiarize yourself with the concepts of`
 
-### el_b3345c9e82564b6eb3fb37a3efc7410f
+### el_6456153621514d35840e218b838e117a
 - type: `list_item`
-- section id: `sec_6e4335cb98dd43c090e14027b6799d16`
+- section id: `sec_cd39d7e6e73749d281c8622687f0931d`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task (for short test)`
 - page_start/page_end: `11`
 - order_index: `117`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Discrete Fourier Transform (DFT) and Fast Fourier Transform (FFT), including`
 
-### el_5e292f64577841eea67603c5c3ece3fb
+### el_72a02e30598c4487aa977d0b938b341a
 - type: `list_item`
-- section id: `sec_6e4335cb98dd43c090e14027b6799d16`
+- section id: `sec_cd39d7e6e73749d281c8622687f0931d`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task (for short test)`
 - page_start/page_end: `11`
 - order_index: `118`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ DFT theorems,`
 
-### el_5cbc7cb4bff6480dbf6c4e8723c53ea4
+### el_a653f395b73140abab877e0467716835
 - type: `list_item`
-- section id: `sec_6e4335cb98dd43c090e14027b6799d16`
+- section id: `sec_cd39d7e6e73749d281c8622687f0931d`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task (for short test)`
 - page_start/page_end: `11`
 - order_index: `119`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ DFT symmetries, and`
 
-### el_5ee6111fad7445c999e0a92047afcd2f
+### el_683e0850814a446e8a378376d840ae5f
 - type: `list_item`
-- section id: `sec_6e4335cb98dd43c090e14027b6799d16`
+- section id: `sec_cd39d7e6e73749d281c8622687f0931d`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task (for short test)`
 - page_start/page_end: `12`
 - order_index: `120`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ effects of windowing.`
 
-### el_ded4f7e445e64ab5ade9b913f09ce3e5
+### el_f657bdc17f0644a0879ad596819d3946
 - type: `text`
-- section id: `sec_6e4335cb98dd43c090e14027b6799d16`
+- section id: `sec_cd39d7e6e73749d281c8622687f0931d`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task (for short test)`
 - page_start/page_end: `12`
 - order_index: `121`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `These topics will be addressed by the short test at the beginning of the lab session.`
 
-### el_49f61780615b487f9b6d72bba46098f7
+### el_be9c23499a924811952811ef87620fb7
 - type: `section_header`
-- section id: `sec_4873ba255ee8447e873d5632a4fa16d4`
+- section id: `sec_022fd39ce6414baf80392d61ca42e10e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.1 Analysis of a Butterfly`
 - page_start/page_end: `12`
 - order_index: `122`
+- effective heading_level: `3`
+- heading level source: `toc_page_range`
 - text preview: `2.2.1 Analysis of a Butterfly`
 
-### el_d877c33adc6b4c809ee6413ea02bde31
+### el_e35372f7937c4eeab5bc251cb4a40479
 - type: `text`
-- section id: `sec_4873ba255ee8447e873d5632a4fa16d4`
+- section id: `sec_022fd39ce6414baf80392d61ca42e10e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.1 Analysis of a Butterfly`
 - page_start/page_end: `12`
 - order_index: `123`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `In Prep Task 1, we analyze the butterfly of the 2-point FFT which is depicted in Figure 2.1.`
 
-### el_7fcd01dfaa6847efa076372d2b8b6a18
+### el_e832ae254cdd4f059b0aa7187833b56f
 - type: `picture`
-- section id: `sec_4873ba255ee8447e873d5632a4fa16d4`
+- section id: `sec_022fd39ce6414baf80392d61ca42e10e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.1 Analysis of a Butterfly`
 - page_start/page_end: `12`
 - order_index: `124`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Figure 2.1: Butterfly`
 
-### el_565e5005dac5480b971e2c41edac5845
+### el_02f39ed3c1354fcea84c249434ef2d88
 - type: `caption`
-- section id: `sec_4873ba255ee8447e873d5632a4fa16d4`
+- section id: `sec_022fd39ce6414baf80392d61ca42e10e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.1 Analysis of a Butterfly`
 - page_start/page_end: `12`
 - order_index: `125`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Figure 2.1: Butterfly`
 
-### el_2a72872f174a4f9a94da83506aaf34d3
+### el_0faadf7b422c47459ba551d58674329b
 - type: `formula`
-- section id: `sec_4873ba255ee8447e873d5632a4fa16d4`
+- section id: `sec_022fd39ce6414baf80392d61ca42e10e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.1 Analysis of a Butterfly`
 - page_start/page_end: `12`
 - order_index: `126`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: ``
 
-### el_c965daccdd104fca90eab5b81aca6f9e
+### el_09fca7331f234232afae169cf21c792f
 - type: `section_header`
-- section id: `sec_224dc44655814e86b7276f7e090e2c10`
+- section id: `sec_f4d454968c5c4b7dbbe4b90ab4e85924`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 1`
 - page_start/page_end: `12`
 - order_index: `127`
+- effective heading_level: `3`
+- heading level source: `toc_context`
 - text preview: `Prep task 1`
 
-### el_723dec061d594bc581dc332bfd51fd95
+### el_0d6572164997478da89a62e8bc35cf58
 - type: `list_item`
-- section id: `sec_224dc44655814e86b7276f7e090e2c10`
+- section id: `sec_f4d454968c5c4b7dbbe4b90ab4e85924`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 1`
 - page_start/page_end: `12`
 - order_index: `128`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ The relation between the (generally complex) time-domain values`
 
-### el_5f3d1be535f84af98bb41349f8667346
+### el_a4cd2a9823844dd6bbd476f9af3fb279
 - type: `formula`
-- section id: `sec_224dc44655814e86b7276f7e090e2c10`
+- section id: `sec_f4d454968c5c4b7dbbe4b90ab4e85924`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 1`
 - page_start/page_end: `12`
 - order_index: `129`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `z 1 = x 1 + jy 1 and z 2 = x 2 + jy 2`
 
-### el_d54fedd2c4394185a96715da46d1bb2b
+### el_db2d9080b3b24010bfd2875bbb217ed2
 - type: `text`
-- section id: `sec_224dc44655814e86b7276f7e090e2c10`
+- section id: `sec_f4d454968c5c4b7dbbe4b90ab4e85924`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 1`
 - page_start/page_end: `12`
 - order_index: `130`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `on the left side of Figure 2.1 and the corresponding values`
 
-### el_526ad5294b144b2d818400261abd7db7
+### el_7d5b68fcac54442d8de20954dcf6d86e
 - type: `formula`
-- section id: `sec_224dc44655814e86b7276f7e090e2c10`
+- section id: `sec_f4d454968c5c4b7dbbe4b90ab4e85924`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 1`
 - page_start/page_end: `12`
 - order_index: `131`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Z 1 = X 1 + jY 1 and Z 2 = X 2 + jY 2`
 
-### el_c1215d00b09043048c84c8b7c067896f
+### el_5b43e34d236949ad9b8ab9ed054a5eac
 - type: `text`
-- section id: `sec_224dc44655814e86b7276f7e090e2c10`
+- section id: `sec_f4d454968c5c4b7dbbe4b90ab4e85924`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 1`
 - page_start/page_end: `12`
 - order_index: `132`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `of the DFT spectrum on the right side shall be found. Before doing so, please mind:`
 
-### el_e0b1f8decad14212a1d34a634a2e3cbd
+### el_532caeb449f148cca41e2f4bc932e229
 - type: `list_item`
-- section id: `sec_224dc44655814e86b7276f7e090e2c10`
+- section id: `sec_f4d454968c5c4b7dbbe4b90ab4e85924`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 1`
 - page_start/page_end: `12`
 - order_index: `133`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Four equations are wanted: two for the real-parts X 1 , X 2 and two for the imaginaryparts Y 1 , Y 2 .`
 
-### el_2a4b390b06354d639a23045bfc037893
+### el_bebabccf414844ad96a115b19e727b6f
 - type: `list_item`
-- section id: `sec_224dc44655814e86b7276f7e090e2c10`
+- section id: `sec_f4d454968c5c4b7dbbe4b90ab4e85924`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 1`
 - page_start/page_end: `12`
 - order_index: `134`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ The twiddle factor is given by w k = e -j 2 πk/N and the DFT length is N = 2 . What is the value of k needed here? Determine the value(s) of the twiddle factor(s).`
 
-### el_0aad8da5fa2c48b0a4217b63d35fa645
+### el_e55c07656f604849aa43a8a6ed5311be
 - type: `list_item`
-- section id: `sec_224dc44655814e86b7276f7e090e2c10`
+- section id: `sec_f4d454968c5c4b7dbbe4b90ab4e85924`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 1`
 - page_start/page_end: `12`
 - order_index: `135`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Give now the four equations for X 1 , Y 1 , X 2 , Y 2 .`
 
-### el_9e9f134a61644f2e976938b676ce5a1c
+### el_8ac741642ada4c619fa2d0df69928371
 - type: `list_item`
-- section id: `sec_224dc44655814e86b7276f7e090e2c10`
+- section id: `sec_f4d454968c5c4b7dbbe4b90ab4e85924`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 1`
 - page_start/page_end: `12`
 - order_index: `136`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Rewrite the equations for X 2 , Y 2 using only x 1 , X 1 , y 1 , Y 1`
 
-### el_775bf3a42a934a12994fdd670ba3c3a0
+### el_4f0bcbad60b94f549446c90b429df9b5
 - type: `section_header`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `12`
 - order_index: `137`
+- effective heading_level: `3`
+- heading level source: `toc_page_range`
 - text preview: `2.2.2 8-point FFT (DIT)`
 
-### el_d6bd927e2216487298dd4322db5cf808
+### el_1749dc476dc94d929946db5c7cc297cc
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `12`
 - order_index: `138`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `An 8-point FFT (DIT) is illustrated in Figure 2.2. Analyse this signal-flow diagram by solving the prep tasks.`
 
-### el_4df76e658d1a4049a13921e6a51ae030
+### el_78394676a78147a7a12a4bf22dc19507
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `12`
 - order_index: `139`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `The input sequences x 1 [ n ] , x 2 [ n ] (not x in [ n ] !!) consist each of the following 8 real decimal values, which we assume to be stored as 16 Bit (short int):`
 
-### el_dc46acc91e5a4bb2a096e151ed375a9f
+### el_fbef0fd3c1b1413b87528863d6fff2c0
 - type: `formula`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `12`
 - order_index: `140`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `x 1 [ n ] = { 2000 , 0 , -2000 , 0 , 2000 , 0 , -2000 , 0 } , N = 0 , . . . , 7 x 2 [ n ] = { 10000 , 0 , -10000 , 0 , 10000 , 0 , -10000 , 0 } , N = 0 , . . . , 7`
 
-### el_0ae6c0657f6a4aaf89d2606bf82d2a54
+### el_f5e1d69ef75d4235bb7be49ccb44d05f
 - type: `picture`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `141`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Figure 2.2: 8-point FFT (3 stages)`
 
-### el_9f0fb5c97a6046248e04b769cab0769d
+### el_d1dc316ab2ed42f1834e4a795274585d
 - type: `caption`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `142`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Figure 2.2: 8-point FFT (3 stages)`
 
-### el_25bb2663ecf148caa9c186cbafc6bec4
+### el_6d6f5d96dad5403088f925e181af52f6
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `143`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `X(0)`
 
-### el_0b9ec4beaa48481fa493877a0f1172c3
+### el_517854ca283543908c69c21101e0cfdf
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `144`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `xin(0) =x(0)`
 
-### el_f7a6f88011ec410c8154222e60819738
+### el_71b3cadc29b94cd39789e178c132bc72
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `145`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `X(1)`
 
-### el_d05d6d50eeaf4f0e9ac79e69ff013050
+### el_55505936994947e1bf9d543302f92ee9
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `146`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `xin(1) = x(4)`
 
-### el_bc6a8bb324fe4ff3b030785f12028f42
+### el_8bfdd8c1843a4441a5e444a24684aef5
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `147`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `W=1`
 
-### el_0318099b6dac4dcc96f6cb0401780c96
+### el_b2ffaa6298704e53854fa6b15b09cba7
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `148`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `一1`
 
-### el_2883c52857284f83b390debb36edead8
+### el_08b599fc02824ea7b14fc622df2406fd
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `149`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `xin(2) =x(2)`
 
-### el_5888e14124284b7292142de72563a121
+### el_cba5486b824b48a2a12d47898d3975f9
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `150`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `X(2)`
 
-### el_3f8bfd53c3c046be8aec0a8589fea04f
+### el_76a2766d1ba64028b55395b4ab0433ce
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `151`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `iWO`
 
-### el_8b53e4da3f0b4366b736c6c13b882775
+### el_632a243fbbb0443e92d742d34995aa7c
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `152`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `xin(3) =x(6)`
 
-### el_9253dc30e1c84c9c8733d10694bd79bd
+### el_56e3efdc250b4d3da77c5ed84bc98697
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `153`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `8`
 
-### el_da9348adecd94fdb8e91fecf9a6c70d7
+### el_5face02d7ed242beba6976ae3cca53b0
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `154`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `X(3)`
 
-### el_64be6e8662c34c56a419b5f180cb3238
+### el_33306b95b412451dab22cf18c35606da
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `155`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `W8=1`
 
-### el_2fe25b42c9c5438f852f0300cfcc6de5
+### el_3e97ab807139439483c85ca6a6386556
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `156`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `-1`
 
-### el_c4f3ed042b034495b40a2cea77809ed8
+### el_aba9c0d5032e4ed78c9972e50c60100b
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `157`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `iW2`
 
-### el_e028428e49844fd4bfd83331b2927107
+### el_cac47568d4e04c79a3753fe7382fe09d
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `158`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `8`
 
-### el_bc9b406c2270494d93b43149cb0aa819
+### el_42879c618b75497a82618d968615146a
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `159`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `xin(4) =x(1)`
 
-### el_c1a5f66565d44212a57bd2bd45f6c320
+### el_b4e390cf14b84992ae77c970e9f068b3
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `160`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `X(4)`
 
-### el_a5d855c28d8c4c0ba3e0eca3dae1b11a
+### el_bd09f1b0fe914451a22deb23af51a58d
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `161`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `I`
 
-### el_c791980d097e412aabc93dfe272cd801
+### el_8621e71d11904fa2b5b2abebe4d7fbcc
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `162`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `W0`
 
-### el_89ec0a8400af498882a54b51ccab45da
+### el_2d6194006b8b432ca63fc66057a2a2ad
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `163`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `xin(5) =x(5)`
 
-### el_a8832e01ed574122a922e461e0958e3b
+### el_1ab46fc2353e4a8fa452f59d03ce819b
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `164`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `8`
 
-### el_984fa8a4f83e4f1fb6829d4b5fa539b4
+### el_45b6fb0b33d94e55b5c1cd6ac306188e
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `165`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `X(5)`
 
-### el_8911666d0b1240c0aa71fe2b395e2881
+### el_4065e120c5484a219d8f13d2386dd3ed
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `166`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `W=1`
 
-### el_d6f9d78b90e341028d675c0b933de9e0
+### el_cf76fa745b50472d96227bc567e1cf75
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `167`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `-1`
 
-### el_fa696060bf744fa984415dda9f159a48
+### el_10fe60aa21ec4223aa8686063cfea4a9
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `168`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `W!`
 
-### el_d6addd7f0ed34b85ab4277de85f5d1b9
+### el_001f42688f6c4796b87b40c435e6fc29
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `169`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `8`
 
-### el_3e942dac834547008cb6ed563ed34179
+### el_da405cc5e6214d5fb6f20d079407f020
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `170`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `X(6)`
 
-### el_35bbe4bcf1834001a68ad89e7a252687
+### el_6c4e808a85ef4a918d6e3df1a9408aad
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `171`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `xin(6) =x(3)`
 
-### el_97095c1804904509a46260ddd295fb1c
+### el_df9b3c8576884848b3a76f004f11047f
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `172`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `W`
 
-### el_8f958a664edf4a2981e5c1da7367158b
+### el_21ad6cc20e8a4945957bbed3c3595687
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `173`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `0`
 
-### el_842d7a91912942e1bfd60f3bed2472ca
+### el_bfa2860048be40b98a72c629f51c9ca0
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `174`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `!W2`
 
-### el_e31573a45f234114a8a9438f302b3269
+### el_2199ec0de9cd4f1390b9e7c12b6dd279
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `175`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `-1`
 
-### el_3fd1c243a065456391c92fea1ae45838
+### el_bdb7995c5f3e48b292fe82d587cd3cfb
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `176`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `xin(7) =x(7)`
 
-### el_e4c30dd837ff4c7a9e76d89d4e87c438
+### el_b404d66a7d02408bb87665af79f19ea0
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `177`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `8`
 
-### el_079646326a31457792aa5675f4565955
+### el_b26bb1a3f58949819f759f6b4c6531cf
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `178`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `X(7)`
 
-### el_fe130c2219d14906a846835a1d29676f
+### el_a59c83e2cd2245fb917fdece9b161242
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `179`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `W3`
 
-### el_866dcf2da9b3481a8f01a2841209c232
+### el_8837f51bd23a4d859011e92daeb4bb41
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `180`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `-1`
 
-### el_ea73e1219c624a899d27d9dd6106a1be
+### el_5c05d692763d4d579787315f9540058f
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `181`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `W8=1`
 
-### el_df69e8f267104efea697b8028b8b1d9f
+### el_773fbf11744f4d35ad704b80b9a528ee
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `182`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `2`
 
-### el_7007cbd53b7a4ab8b73ad3cc5bd1e481
+### el_2388e05a78af43a4a21decde50cf8fb1
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `183`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `8`
 
-### el_a26296d625044c0499e846380c712745
+### el_bf9973e1f9234413b8c3f6d586b3f148
 - type: `text`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+- section id: `sec_01542d4c08c94c589ee25039b5a7701c`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
 - page_start/page_end: `13`
 - order_index: `184`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `8`
 
-### el_c3802c0affd4447f9d572a6ea93c3ca8
+### el_14fa877fe15448d9911b2ac1bee2d76f
 - type: `section_header`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `185`
+- effective heading_level: `3`
+- heading level source: `toc_context`
 - text preview: `Prep task 2`
 
-### el_a25a6a60db084a97b185986133551799
+### el_3c682aa0ede04f5b891e700ab6da4f69
 - type: `list_item`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `186`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Put the values of x 1 [ n ] in the correct order according to Figure 2.2. Calculate (e.g. by hand) the output values of the first, second and last stage according to Figure 2.2 and assign the values to the nodes in the graph.`
 
-### el_dc3a7769113649a297bb84733101089d
+### el_981e5d3fd0fb4296bc04f388aeaf6715
 - type: `list_item`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `187`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Write a MATLAB script FFT a.m which calculates the output signal X 8 [ k ] , k = 0 , . . . 7 directly (i.e. internal node values not required) using MATLAB's FFT function. Compare your results from above with the result of MATLAB.`
 
-### el_46c9c715c97341559a209cd9493861eb
+### el_f93ab6c92c5541ae818f5cca62f5f60c
 - type: `list_item`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `188`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Do overflows occur?`
 
-### el_0fa9efb1d45c47539eed3c064a82e283
+### el_013054c345fb41a4acf111c1190020ad
 - type: `list_item`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `189`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Now repeat the handwritten calculation of the output values of all three stages for x 2 [ n ] .`
 
-### el_af785fb255054355acca054bc89a1b1e
+### el_f33dfd3467a44d33a6cd040fc724ca38
 - type: `list_item`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `190`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Extend your script FFT a.m to calculate the FFT of x 2 [ n ] and again compare your calculation with the one from MATLAB.`
 
-### el_02e9cab2859d412ba9411026d90bf97e
+### el_65c1a6b1c6ac4fada38dd2c24ecb48e8
 - type: `list_item`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `191`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Do overflows occur (values larger than can be represented with signed 16 bit)? If so, explain why!`
 
-### el_de13e70a0d8e485283b6b9c6037257ed
+### el_391bc40bdfff43df86c8bee80a2a1cb9
 - type: `list_item`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `192`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `By which factor do we need to scale the input values x [ n ] that never an overflow can occur at the output of the 8-point FFT when all values are of type short int ?`
 
-### el_1f082a177a4b4c39ad131c51ccd29279
+### el_14a9698077b94274b4f33b8adad5679e
 - type: `list_item`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `193`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Find a method that has a smaller loss in precision as the previous one. Hint: consider a scaling of values at nodes inside the FFT algorithm. Explain e.g. with an example why the latter method outperforms method where we scale the input...`
 
-### el_be374679588f43fe8601422451a66106
+### el_e9b31d2d67ca4062a680083a78e76999
 - type: `text`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `194`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Hint: Begin each MATLAB script with 'clear all'. This clears the internal Workspace and if necessary resets ' i' and ' j' (previously defined as index variables) back to imaginary numbers, i.e. i 2 = -1 , j 2 = -1 .`
 
-### el_3566519ddcd243b9884cbca002246840
+### el_9f62938b62704b3db61505387e3be8a9
 - type: `picture`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `195`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: ``
 
-### el_4e940d132ba247dc88a55f1f412df712
+### el_ff913c8135384b8797d75633c1c055da
 - type: `text`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `196`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `IM`
 
-### el_b7949b16c9204539bf8b6ce4afd70a4e
+### el_aec0784ae3754e98930b55e2ee066fa3
 - type: `text`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `197`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `HAW`
 
-### el_ae5e6d5ebab04800a84fcb6491ec37fc
+### el_6ccd94bc7cf942d2b280b673768a93ce
 - type: `text`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `13`
 - order_index: `198`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `HAMBURG`
 
-### el_480085eb94d2445ba8376fe662cfb8fc
+### el_c6f8df1bf0314f0d8fab21790a8e102b
 - type: `text`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `14`
 - order_index: `199`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Complex-valued input signal: Now examine x 3 [ n ] , a complex-value test signal (MATLAB notation):`
 
-### el_c0b0b4776e6945afa192517d6d861306
+### el_4d9c959feca04487bcb078bf08abfabc
 - type: `formula`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
 - page_start/page_end: `14`
 - order_index: `200`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `x3 = 0.125*cos(2*pi*3*(0:7)/8) + j*0.125*sin(2*pi*3*(0:7)/8);`
 
-### el_280481c8447f415180e20ec630951acd
+### el_e099f13121684afb9ed70fc77c16d40c
 - type: `section_header`
-- section id: `sec_d5c320063ea143078e829eb0e35d7f1d`
+- section id: `sec_594e6f35ac924945b321768574218f69`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 3`
 - page_start/page_end: `14`
 - order_index: `201`
+- effective heading_level: `3`
+- heading level source: `toc_context`
 - text preview: `Prep task 3`
 
-### el_7d64a1049d0b47daafa9980f9e3ea508
+### el_f93d5718bcdf45d5848cd85ac8001e81
 - type: `text`
-- section id: `sec_d5c320063ea143078e829eb0e35d7f1d`
+- section id: `sec_594e6f35ac924945b321768574218f69`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 3`
 - page_start/page_end: `14`
 - order_index: `202`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Extend your MATLAB script as follows:`
 
-### el_b64db6850bc3469d8da3a556b82c9a79
+### el_a5d7e2c10b894013b7395fb39195e49a
 - type: `list_item`
-- section id: `sec_d5c320063ea143078e829eb0e35d7f1d`
+- section id: `sec_594e6f35ac924945b321768574218f69`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 3`
 - page_start/page_end: `14`
 - order_index: `203`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Plot the magnitude spectrum | X [ k ] | of x 3 [ n ] . Pay attention to the correct labeling and scaling of the frequency axis k .`
 
-### el_60f9ff490b7f4e31bac00b51df67d4c6
+### el_9ed13a7fd3a34ed79433331cd0e0e29e
 - type: `list_item`
-- section id: `sec_d5c320063ea143078e829eb0e35d7f1d`
+- section id: `sec_594e6f35ac924945b321768574218f69`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 3`
 - page_start/page_end: `14`
 - order_index: `204`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Does the magnitude spectrum show symmetries? Explain your answer.`
 
-### el_20370b43af854319ad4c7acef43e07dd
+### el_dd306198ef6042edb5ea20510cc589fe
 - type: `section_header`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `205`
+- effective heading_level: `3`
+- heading level source: `toc_page_range`
 - text preview: `2.2.3 Familiarize yourself with the lab project`
 
-### el_fa238e5bb25e4e8ea0fd27b230819904
+### el_8c9fced321db4c08a062683457dba839
 - type: `text`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `206`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `In D: \ ti work or in EMIL you will find the complete C code for calculating an 8-point FFT. To execute this, copy the following three files from directory D: \ ti work \ UniDAQ2.DSP-ADDA \ Lab support into the standard project and remov...`
 
-### el_53990d05df6a455abe5989983338a28c
+### el_67ba00ec6f7a42ea8b04a98677323b1d
 - type: `list_item`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `207`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ FFT8 Radix2 ISR.c (main( ))`
 
-### el_379b3ad21a194b3ab66b729fff68fc56
+### el_58ad2919a3d64c21bb28f45cdabb9f2a
 - type: `list_item`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `208`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ FFT butterfly.c`
 
-### el_7b12cdfa8b1a476abcae8012fad70c5e
+### el_3ef25ee273664e2c97f70236b389a2d2
 - type: `list_item`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `209`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ FFT radix2.c`
 
-### el_3bba1bad6fb74d7ab55c68c0dbac9e31
+### el_9a6981db910945ba84b775b4e86ba548
 - type: `text`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `210`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `In main( ), the FFT is calculated once before entering the infinite for(;;)-loop. The program provides already an interrupt routine which however just realizes a simple echo program, i. e., the FFT is not executed again.`
 
-### el_d7a99973ad5d44c0b5c2eac9bd73004d
+### el_e7b81b2d5fca4405aa7559aab877cb26
 - type: `text`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `211`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Please make sure that you understand the program files of the project, particulary. . .`
 
-### el_0b4eec5f38294aefa1102234985c4476
+### el_0af9180d7ec14af49a8377575b3a068b
 - type: `list_item`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `212`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ how the input signal is generated,`
 
-### el_cde1c613a38446db89a9ac5f544c14a3
+### el_e843e01d651644c3a06ad40522131776
 - type: `list_item`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `213`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ how twiddle factors are calculated and how they are arranged in bit-reversed order,`
 
-### el_fc2eca7ca5e54d61b062aa4744410c53
+### el_e29454fde2e6472381417e18842c1e97
 - type: `list_item`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `214`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ how the FFT function is called including of bit-reversal of the samples in the FFT buffer in main() once.`
 
-### el_fc7103db0e7949d799b1fb87e5ad5b53
+### el_30f1cf84cbfa4d6bad43e3fe4cb54431
 - type: `text`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `215`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `The files containing the FFT calculation are FFT butterfly.c and FFT radix2.c . The function call in the C code is:`
 
-### el_0fd33b3305c14dd1b44e905bb314c35b
+### el_e234240b80f5404fbfd578d1853e333c
 - type: `text`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `216`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `// carry out the N-point FFT on array asX[2*N] IN PLACE radix2(N FFT, asX, asWr, asWi);`
 
-### el_b973f664be034f779afc0a9fa232ae52
+### el_c7eb9f21afde4eb1933872b941bc2586
 - type: `list_item`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `217`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ This algorithm expects the (real and imaginary) samples in asX [2 ∗ N FFT ] in bit-reversed order, while the coefficients asW [ N FFT ] have to be stored in normal order.`
 
-### el_db9effc5f44d41508987cadb46b67b57
+### el_8941212d9be446abaeaa5b6fd35c42a2
 - type: `list_item`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `14`
 - order_index: `218`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ The real part of the twiddle factors is stored on even addresses of the buffer asW [ N FFT ] , the imaginary samples on the odd addresses.`
 
-### el_446cd0b1348c4b27a93836d196d4e510
+### el_b80f3f4fd44c41568bdad1ad377a99a1
 - type: `list_item`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `15`
 - order_index: `219`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ A block of N FFT samples of the real-valued part of the input signal asInBuf [ ] is stored bit reversed on even addresses of the FFT buffer asX [ ] . The imaginary parts on the odd addresses are set to zero, since for a real-valued sig...`
 
-### el_96c42f18d5304dafa8a95f946fc75877
+### el_7f9582fa17c64f7291b6060379af67a8
 - type: `list_item`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `15`
 - order_index: `220`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Optional: A Hamming window shall be applied to the samples stored in asInBuf [ ] . A variable sDoHamming shall be used to turn the window on or off.`
 
-### el_ceff1512bad249318dc48607edace9ce
+### el_2a80a53460fa435eb0e9bc36ea150327
 - type: `list_item`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `15`
 - order_index: `221`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ After execution of the FFT, the FFT result is stored in the asX [2 ∗ N FFT ] buffer. The calculation is done 'in-place', i.e., the same memory is used for FFT input and output data.`
 
-### el_809b14824b82400ca66240dbb860d8a9
+### el_05c692985aa3474bb2d5112327b94de7
 - type: `list_item`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
 - page_start/page_end: `15`
 - order_index: `222`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ An ANSI C function int16 t bitrev(int16 t sIn, int16 t sNfftStages) for bit-reversal is also provided. The second parameter of this function is referring to the number of FFT stages, not to the FFT length.`
 
-### el_0b488229a50742bebc1750283b3a609f
+### el_a2b5ee98bb1c4368bcefa952c6ebeaa4
 - type: `section_header`
-- section id: `sec_1997bc9f81814d11b2c01191587c02b7`
+- section id: `sec_594aac6616dd4969990693d7ad5c3f84`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT`
 - page_start/page_end: `15`
 - order_index: `223`
+- effective heading_level: `2`
+- heading level source: `toc_page_range`
 - text preview: `2.3 Lab: Spectrum Analysis using FFT`
 
-### el_ee980bc8cf1f41b3b4f2116067c95433
+### el_0a8c612d77d34726bd87f4dd3a10732c
 - type: `section_header`
-- section id: `sec_195468f140db466d8fc9fa5b061edb8b`
+- section id: `sec_d71e052cdf6a47468a8ae61b54e4e465`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.1 Getting started with the c project`
 - page_start/page_end: `15`
 - order_index: `224`
+- effective heading_level: `3`
+- heading level source: `toc_page_range`
 - text preview: `2.3.1 Getting started with the c project`
 
-### el_fd22c6de5ecf4fd598dc53bc3c657391
+### el_53dcb38d9d0f45f7b6e39749cad1c519
 - type: `text`
-- section id: `sec_195468f140db466d8fc9fa5b061edb8b`
+- section id: `sec_d71e052cdf6a47468a8ae61b54e4e465`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.1 Getting started with the c project`
 - page_start/page_end: `15`
 - order_index: `225`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `The given program correctly calculates the Radix-2 8-point FFT for an input sequence. If necessary, adjust the input values to the already examined input sequence:`
 
-### el_439a9835c2864a5fbba5720990634527
+### el_4a6a07b7557a4624bc8919fa24167af2
 - type: `code`
-- section id: `sec_195468f140db466d8fc9fa5b061edb8b`
+- section id: `sec_d71e052cdf6a47468a8ae61b54e4e465`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.1 Getting started with the c project`
 - page_start/page_end: `15`
 - order_index: `226`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `x 1 [ n ] = { 2000 0 -2000 0 2000 0 -2000 0 }`
 
-### el_7ca269c0c32b42a39cfd921f061df084
+### el_1f56da1d07b44452870236ac9ce1ee62
 - type: `text`
-- section id: `sec_195468f140db466d8fc9fa5b061edb8b`
+- section id: `sec_d71e052cdf6a47468a8ae61b54e4e465`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.1 Getting started with the c project`
 - page_start/page_end: `15`
 - order_index: `227`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Import the prepared project into CCS as for the 1st lab session. Copy the three files FFT8 Radix2 ISR.c , FFT butterfly.c and FFT radix2.c from ti work \ UniDAQ2.DSP-ADDA \ Lab support into the project folder and deactivate main adda sim...`
 
-### el_dde018200a1240e2b5619fc629779876
+### el_3a09da50f7ea49e382093e947d8cac00
 - type: `section_header`
-- section id: `sec_19a3ba15789d44d6bb4a3acbcfe49bf6`
+- section id: `sec_c796bad62eb04f5f89c88a61baa13134`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > Lab task 1`
 - page_start/page_end: `15`
 - order_index: `228`
+- effective heading_level: `3`
+- heading level source: `toc_context`
 - text preview: `Lab task 1`
 
-### el_5af1451a081a450e9df33a74198ea029
+### el_254243fdd4a74b3bafdf5d56f1678a7a
 - type: `list_item`
-- section id: `sec_19a3ba15789d44d6bb4a3acbcfe49bf6`
+- section id: `sec_c796bad62eb04f5f89c88a61baa13134`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > Lab task 1`
 - page_start/page_end: `15`
 - order_index: `229`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `As a second step, enter the input sequence x 2 [ n ] from prep task and check the result. Do overflows occur? Comment on this and explain the values obtained in a brief calculation.`
 
-### el_cd40387141604d04989d164abf1f7504
+### el_8168256b9d5e450baa35f95f791514ea
 - type: `list_item`
-- section id: `sec_19a3ba15789d44d6bb4a3acbcfe49bf6`
+- section id: `sec_c796bad62eb04f5f89c88a61baa13134`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > Lab task 1`
 - page_start/page_end: `15`
 - order_index: `230`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Correct the ' error ' just determined in the program butterfly.c, so that overflows are avoided. Check the functionality: Are the output values correct?`
 
-### el_8378eb9beaef40d889a938bf88231757
+### el_bbb5c59d36f14fdc83a9e6799b41fa26
 - type: `list_item`
-- section id: `sec_19a3ba15789d44d6bb4a3acbcfe49bf6`
+- section id: `sec_c796bad62eb04f5f89c88a61baa13134`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > Lab task 1`
 - page_start/page_end: `15`
 - order_index: `231`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `In butterfly.c replace the equations for X2 and Y2 with the equations from the first preparation task. Check that the results remain identical.`
 
-### el_bb1485ae976c43dbaafc4da2a14ad476
+### el_1c5e7bdff5e8461ab5c93286af5f2d58
 - type: `section_header`
-- section id: `sec_4cee45b9f32842d79fdd17f3f4f34b33`
+- section id: `sec_d3bafd9edb1344e1a9ab126fef44ff2e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.2 Extension of the FFT to 64 points`
 - page_start/page_end: `15`
 - order_index: `232`
+- effective heading_level: `3`
+- heading level source: `toc_page_range`
 - text preview: `2.3.2 Extension of the FFT to 64 points`
 
-### el_514054d6cc2a4e339ccc7bd6660082ee
+### el_4597bf7ca2374dea848019f4163779f0
 - type: `text`
-- section id: `sec_4cee45b9f32842d79fdd17f3f4f34b33`
+- section id: `sec_d3bafd9edb1344e1a9ab126fef44ff2e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.2 Extension of the FFT to 64 points`
 - page_start/page_end: `15`
 - order_index: `233`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Your project should now be extended to a 64-point FFT.`
 
-### el_c5f3eca2b3f843eeb12fe914304083a7
+### el_9f675218dcdc49a190106c3ae43b55ba
 - type: `text`
-- section id: `sec_4cee45b9f32842d79fdd17f3f4f34b33`
+- section id: `sec_d3bafd9edb1344e1a9ab126fef44ff2e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.2 Extension of the FFT to 64 points`
 - page_start/page_end: `15`
 - order_index: `234`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `First make a copy of the file FFT8 Radix2 ISR.c in the project folder and rename it to FFT64 Radix2 ISR.c . After that deactivate FFT8 Radix2 ISR.c via Exclude from Build .`
 
-### el_d24b6fee74b7450187f944d135b7f9e9
+### el_c4c30c5e9fc042b9ad959fc67caafe9d
 - type: `picture`
-- section id: `sec_4cee45b9f32842d79fdd17f3f4f34b33`
+- section id: `sec_d3bafd9edb1344e1a9ab126fef44ff2e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.2 Extension of the FFT to 64 points`
 - page_start/page_end: `15`
 - order_index: `235`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: ``
 
-### el_8444ccae8dcb45359061a4b2b755d102
+### el_fa7e0e98c5c3467fa9f4f0c0635c387b
 - type: `section_header`
-- section id: `sec_0d0ce27edd02420dad25e14a70458180`
+- section id: `sec_9dc1275cf2064724a951231453370056`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > Lab task 2: 64 point FFT`
 - page_start/page_end: `16`
 - order_index: `236`
+- effective heading_level: `3`
+- heading level source: `toc_context`
 - text preview: `Lab task 2: 64 point FFT`
 
-### el_ddbe7c2bccc14ec0af4c371b5b4c392f
+### el_b2e12eefcf2940b884af6c32d2a3c360
 - type: `list_item`
-- section id: `sec_0d0ce27edd02420dad25e14a70458180`
+- section id: `sec_9dc1275cf2064724a951231453370056`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > Lab task 2: 64 point FFT`
 - page_start/page_end: `16`
 - order_index: `237`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Test the 64-point FFT with the following signal written directly to asInBuf [ ] and compare the result with that from MATLAB. x 4 = 4096 ∗ sin (2 ∗ pi ∗ 4 ∗ (0 : 63) / 64);`
 
-### el_c6a82b58301b43bc8e76921f1bc8d7c4
+### el_3a493dd1bc594bd1b71db236748806e9
 - type: `list_item`
-- section id: `sec_0d0ce27edd02420dad25e14a70458180`
+- section id: `sec_9dc1275cf2064724a951231453370056`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > Lab task 2: 64 point FFT`
 - page_start/page_end: `16`
 - order_index: `238`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Use the graphical display in CCS via Tools → Graph (instructions see Getting Started [1]) to plot the result against a MATLAB plot.`
 
-### el_1b04fa41e0aa473db9b204c48f85dfd2
+### el_57bb6eb937774712802353ab531fbbe4
 - type: `section_header`
-- section id: `sec_76714fc95f8440f9af58f7293f6b8ec5`
+- section id: `sec_9abc832a968a47d5b16dff13c631d58d`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser`
 - page_start/page_end: `16`
 - order_index: `239`
+- effective heading_level: `3`
+- heading level source: `toc_page_range`
 - text preview: `2.3.3 Real-time spectrum analyser`
 
-### el_f51c403c0bdf45acacdba5e13e0047ca
+### el_ee54b9004ab44d37b90b2f426d6ade89
 - type: `text`
-- section id: `sec_76714fc95f8440f9af58f7293f6b8ec5`
+- section id: `sec_9abc832a968a47d5b16dff13c631d58d`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser`
 - page_start/page_end: `16`
 - order_index: `240`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `A continuous FFT analysis of N samples of a real signal is to be performed. The input signal is a sine signal coming from a function generator, the output is displayed in the graphical display. The results are displayed on the oscillosco...`
 
-### el_f63ee6fa869c4e9cb6f1b05d8a7c6868
+### el_e6f89736a4dc48efb955cfb461193252
 - type: `text`
-- section id: `sec_76714fc95f8440f9af58f7293f6b8ec5`
+- section id: `sec_9abc832a968a47d5b16dff13c631d58d`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser`
 - page_start/page_end: `16`
 - order_index: `241`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `In the project folder, make a copy of the file FFT64 Radix2 ISR.c and rename it to FFT64 Analyser.c . Then disable FFT64 Radix2 ISR.c via Exclude from Build .`
 
-### el_a3a65065f6ac4c8bb04fc7cbbd6ed766
+### el_a7af5fdcfa2143caa8c8c23730875880
 - type: `text`
-- section id: `sec_76714fc95f8440f9af58f7293f6b8ec5`
+- section id: `sec_9abc832a968a47d5b16dff13c631d58d`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser`
 - page_start/page_end: `16`
 - order_index: `242`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `The algorithm is to be implemented as follows:`
 
-### el_0ed7fa1e55bc40d1a481996cbdb7d41b
+### el_c058b03784434d6680d5cb26956ac3ce
 - type: `section_header`
-- section id: `sec_8d960c37a60547b5b093ab81c66c62ed`
+- section id: `sec_531b7a04218649a283ae78236645224b`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 1. Reading samples`
 - page_start/page_end: `16`
 - order_index: `243`
+- effective heading_level: `4`
+- heading level source: `toc_context`
 - text preview: `1. Reading samples`
 
-### el_ab0257f7c5334dcb8e2902c479fb7fe8
+### el_d9cd88435a9842e698bd38f8e72aa36d
 - type: `text`
-- section id: `sec_8d960c37a60547b5b093ab81c66c62ed`
+- section id: `sec_531b7a04218649a283ae78236645224b`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 1. Reading samples`
 - page_start/page_end: `16`
 - order_index: `244`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Reading the samples has to be implemented in the ISR.`
 
-### el_d256260ff7c14032a0afcb61dd765acb
+### el_63460dd741944e26a3330ef9568e2e4d
 - type: `list_item`
-- section id: `sec_8d960c37a60547b5b093ab81c66c62ed`
+- section id: `sec_531b7a04218649a283ae78236645224b`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 1. Reading samples`
 - page_start/page_end: `16`
 - order_index: `245`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ The samples from the ADC are stored in a int16 t input buffer asInBuf [ N ] . The 0th sample value is saved in asInBuf [0] , the 1st in asInBuf [1] and so on. During N interrupts, the input buffer is therefore gradually filled with N s...`
 
-### el_1a22948c437442a79f37be589bf499c0
+### el_3fdc60342d434c1c97043ae645c64b53
 - type: `list_item`
-- section id: `sec_8d960c37a60547b5b093ab81c66c62ed`
+- section id: `sec_531b7a04218649a283ae78236645224b`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 1. Reading samples`
 - page_start/page_end: `16`
 - order_index: `246`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ A global counter variable sSamplecount holds the number of samples already read from the A/D converter.`
 
-### el_f6167d2f079d46d8be89866fc5c242bd
+### el_3c8866b6b9004b068b64cfc80a1fc43e
 - type: `list_item`
-- section id: `sec_8d960c37a60547b5b093ab81c66c62ed`
+- section id: `sec_531b7a04218649a283ae78236645224b`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 1. Reading samples`
 - page_start/page_end: `16`
 - order_index: `247`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ If ( sSamplecount > = N ),`
 
-### el_a5bcc38691d4422191c7e5af9d1f4e6d
+### el_f739c989d29d4863bd13671f975e5779
 - type: `list_item`
-- section id: `sec_8d960c37a60547b5b093ab81c66c62ed`
+- section id: `sec_531b7a04218649a283ae78236645224b`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 1. Reading samples`
 - page_start/page_end: `16`
 - order_index: `248`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `samplecount is reset`
 
-### el_fcdaa687a09d4c8db04210b62fba9d19
+### el_476aebafe1be49d391944ba35afaf9a3
 - type: `list_item`
-- section id: `sec_8d960c37a60547b5b093ab81c66c62ed`
+- section id: `sec_531b7a04218649a283ae78236645224b`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 1. Reading samples`
 - page_start/page_end: `16`
 - order_index: `249`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `the FFT is calculated`
 
-### el_1e27bf98f7f3490d9d54e174e426cd9e
+### el_0f2d5b675b7c451cb2f0360b341d0a71
 - type: `text`
-- section id: `sec_8d960c37a60547b5b093ab81c66c62ed`
+- section id: `sec_531b7a04218649a283ae78236645224b`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 1. Reading samples`
 - page_start/page_end: `16`
 - order_index: `250`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `This is done in the infinite loop in main(), see below.`
 
-### el_f76542fd7cc8451d9e29872ec52a7820
+### el_06fb850201634f8ea5a7989c386d3131
 - type: `section_header`
-- section id: `sec_3e36edbbd84e442db76204067a1d04ad`
+- section id: `sec_d8f4579bd8044e459e38c4c597439797`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
 - page_start/page_end: `16`
 - order_index: `251`
+- effective heading_level: `4`
+- heading level source: `toc_context`
 - text preview: `2. Calculation of the magnitudes of the spectrum`
 
-### el_349ce4f65574400e9bab07ca55ee6db0
+### el_b0a2ae3855754bd0801b01c4f69c2f34
 - type: `text`
-- section id: `sec_3e36edbbd84e442db76204067a1d04ad`
+- section id: `sec_d8f4579bd8044e459e38c4c597439797`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
 - page_start/page_end: `16`
 - order_index: `252`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `As soon as the input buffer is filled, you calculate the FFT before the next sample value is read. The following steps are carried out for this purpose:`
 
-### el_2ad2bc774e294e6082cd1ec1c59b89de
+### el_a81a7c4120fd494ebc912fd8fe3afef2
 - type: `list_item`
-- section id: `sec_3e36edbbd84e442db76204067a1d04ad`
+- section id: `sec_d8f4579bd8044e459e38c4c597439797`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
 - page_start/page_end: `16`
 - order_index: `253`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ First each element of the input buffer asInBuf [ N ] is copied (bit reversed) to asX [2 ∗ N ] , but only to those array elements with even numbered indexes. All array elements with odd index (imaginary parts) have to be explicitly set...`
 
-### el_26657da91fb74abd8a4f74ac176898b1
+### el_df6d78b9da864627a5ce552636a99e74
 - type: `list_item`
-- section id: `sec_3e36edbbd84e442db76204067a1d04ad`
+- section id: `sec_d8f4579bd8044e459e38c4c597439797`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
 - page_start/page_end: `16`
 - order_index: `254`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Function radix 2( ) is called and computes the FFT of the last N read samples, stored in asX [2 ∗ N ] .`
 
-### el_c58bb6a9c49d45c2930d14d7f0fb1de2
+### el_7bd138ee6d2b47d5b30661143bcf9f74
 - type: `text`
-- section id: `sec_3e36edbbd84e442db76204067a1d04ad`
+- section id: `sec_d8f4579bd8044e459e38c4c597439797`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
 - page_start/page_end: `16`
 - order_index: `255`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Before calculating the FFT, asX [2 ∗ N ] contains the values for the FFT ( int16 t ); after the FFT, it contains the (complex) values of the spectrum.`
 
-### el_160f8b2acf9b4c0f9ee7bd888103616b
+### el_293e1257f6de45e288b516e439caf75d
 - type: `list_item`
-- section id: `sec_3e36edbbd84e442db76204067a1d04ad`
+- section id: `sec_d8f4579bd8044e459e38c4c597439797`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
 - page_start/page_end: `16`
 - order_index: `256`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ After that, the magnitudes of the spectrum are calculated from asX [2 ∗ N ] and saved in the output buffer alOutBuf [ N ] . alOutBuf [ N ] now contains the 32 Bit int results`
 
-### el_3c30c2b2247b4b6680e1ede03267c4a9
+### el_c02b3c3ed21c461eaa3c2e27079bda67
 - type: `text`
-- section id: `sec_3e36edbbd84e442db76204067a1d04ad`
+- section id: `sec_d8f4579bd8044e459e38c4c597439797`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
 - page_start/page_end: `17`
 - order_index: `257`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `of the last read samples as squares of the absolute values.`
 
-### el_cdb34dd3376b491ba38fd6142457d60d
+### el_d8995166b6e046139f64ab11a9ebfea6
 - type: `list_item`
-- section id: `sec_3e36edbbd84e442db76204067a1d04ad`
+- section id: `sec_d8f4579bd8044e459e38c4c597439797`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
 - page_start/page_end: `17`
 - order_index: `258`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ Please note:`
 
-### el_f86e1a2d56b34d4fab7d15f109db0234
+### el_7d1af10f3d2344b9befa70ca7d378479
 - type: `list_item`
-- section id: `sec_3e36edbbd84e442db76204067a1d04ad`
+- section id: `sec_d8f4579bd8044e459e38c4c597439797`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
 - page_start/page_end: `17`
 - order_index: `259`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Do not use any printf calls in interrupt mode.`
 
-### el_c1cd5bc9af3d4c76b7fc8b3b1b8095c3
+### el_f9c560f28851405db3da16818a16b216
 - type: `list_item`
-- section id: `sec_3e36edbbd84e442db76204067a1d04ad`
+- section id: `sec_d8f4579bd8044e459e38c4c597439797`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
 - page_start/page_end: `17`
 - order_index: `260`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `The twiddle factors are only calculated once, as they do not change.`
 
-### el_45c04cb756df4b74ac6039e5976fcefe
+### el_945d220e62214c04bdb646491ae190dd
 - type: `section_header`
-- section id: `sec_31c2ffd64d8740d385e7a8ba1c38cb1a`
+- section id: `sec_559e66680b2241509d5789548f5705ed`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 3. Visualization of the results`
 - page_start/page_end: `17`
 - order_index: `261`
+- effective heading_level: `4`
+- heading level source: `toc_context`
 - text preview: `3. Visualization of the results`
 
-### el_cf028a8198c046f4a7692665801a3edd
+### el_d8dd71b6a1bd4d368d8795e5667ba002
 - type: `text`
-- section id: `sec_31c2ffd64d8740d385e7a8ba1c38cb1a`
+- section id: `sec_559e66680b2241509d5789548f5705ed`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 3. Visualization of the results`
 - page_start/page_end: `17`
 - order_index: `262`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `The visualization is shown in the graphical display.`
 
-### el_9bda2df3d50f4a58b3856d197b3a035f
+### el_cd3226eb27694889ba98c495c2534c51
 - type: `text`
-- section id: `sec_31c2ffd64d8740d385e7a8ba1c38cb1a`
+- section id: `sec_559e66680b2241509d5789548f5705ed`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 3. Visualization of the results`
 - page_start/page_end: `17`
 - order_index: `263`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Hint: To save time of taking the square roots in the calculation of the magnitudes, it is sufficient to send the squares of the magnitudes of the spectrum, i.e. | X k | 2 instead of X k to the DAC.`
 
-### el_655451c9c8c14296bfb3e7ee6897ccac
+### el_6e7636750ff843d487319604fdabd972
 - type: `list_item`
-- section id: `sec_31c2ffd64d8740d385e7a8ba1c38cb1a`
+- section id: `sec_559e66680b2241509d5789548f5705ed`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 3. Visualization of the results`
 - page_start/page_end: `17`
 - order_index: `264`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ For the visualization, Refresh On Halt and Enable Continuous Refresh must be activated in the Graphical Display.`
 
-### el_b3467d0016e54701a27ba97c8a0f643b
+### el_1c161cf41ec4416ab6e0e97de92148c1
 - type: `section_header`
-- section id: `sec_18d50c9198c44787b4167abcdf1aea4a`
+- section id: `sec_20bbb31e50cf4c938438d792731c021e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 4. Output of the results to the oscilloscope`
 - page_start/page_end: `17`
 - order_index: `265`
+- effective heading_level: `4`
+- heading level source: `toc_context`
 - text preview: `4. Output of the results to the oscilloscope`
 
-### el_53b2b0aa3d0040bcb25d97f280ba8f5a
+### el_850a1005d0d0437faa751dede7767bc7
 - type: `text`
-- section id: `sec_18d50c9198c44787b4167abcdf1aea4a`
+- section id: `sec_20bbb31e50cf4c938438d792731c021e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 4. Output of the results to the oscilloscope`
 - page_start/page_end: `17`
 - order_index: `266`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `The output of the magnitude squares and the trigger pulse to the DAC is, of course, also carried out in the ISR.`
 
-### el_c45f3951ae5a4b6087c542d5f3e321f5
+### el_13359a3e8adf4bc9a9fce14db65ad631
 - type: `list_item`
-- section id: `sec_18d50c9198c44787b4167abcdf1aea4a`
+- section id: `sec_20bbb31e50cf4c938438d792731c021e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 4. Output of the results to the oscilloscope`
 - page_start/page_end: `17`
 - order_index: `267`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■ During each cycle, the interrupt routine sends one sample from asOutBuf [ ] to channel 0 of the D/A converter. So while reading N new samples, the result consisting of N squared magnitudes of the computed FFT is sent to the DAC.`
 
-### el_290ad2b9b08144289e48390b7412a4bc
+### el_d2359b846813418e86e2acc758dcc1d7
 - type: `list_item`
-- section id: `sec_18d50c9198c44787b4167abcdf1aea4a`
+- section id: `sec_20bbb31e50cf4c938438d792731c021e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 4. Output of the results to the oscilloscope`
 - page_start/page_end: `17`
 - order_index: `268`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `■`
 
-### el_3eb8116012124a69ab2670e23080b01c
+### el_bd09980db6d74c22a65bff06140dee06
 - type: `list_item`
-- section id: `sec_18d50c9198c44787b4167abcdf1aea4a`
+- section id: `sec_20bbb31e50cf4c938438d792731c021e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 4. Output of the results to the oscilloscope`
 - page_start/page_end: `17`
 - order_index: `269`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Trigger for the presentation on the scope:`
 
-### el_c9abaf0073494014ad37eb4bbf7056f2
+### el_84d6df593e65460484fa5fa1313812c7
 - type: `text`
-- section id: `sec_18d50c9198c44787b4167abcdf1aea4a`
+- section id: `sec_20bbb31e50cf4c938438d792731c021e`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 4. Output of the results to the oscilloscope`
 - page_start/page_end: `17`
 - order_index: `270`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Furthermore, if ( samplecount < = 2) , a trigger impulse 32767 is sent to channel 1 of the DAC; otherwise the output is '0'.`
 
-### el_f6b1b92b197b40668db7b30672b31983
+### el_18ea07b18c444ebdbbc55e49ea8e1ab2
 - type: `section_header`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
 - page_start/page_end: `17`
 - order_index: `271`
+- effective heading_level: `4`
+- heading level source: `toc_context`
 - text preview: `Lab task 3: Real-time spectrum analyser`
 
-### el_6e5fa0c6ded54d969f2f2f70db1fe826
+### el_a4640ecef49e43cf8dcf2a5a434c1618
 - type: `text`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
 - page_start/page_end: `17`
 - order_index: `272`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Implement the analyzer according to the description of the algorithm above.`
 
-### el_697457c4340141ddb84e89ba3d086ca7
+### el_6cccb659a44c4978a3612f9a27a023f4
 - type: `text`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
 - page_start/page_end: `17`
 - order_index: `273`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Verify that the FFT64 Analyser.c functions correctly:`
 
-### el_56763760dafa41bfa24586982119ea31
+### el_d93bd83016984c1383ede0346b3c0182
 - type: `text`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
 - page_start/page_end: `17`
 - order_index: `274`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Connect the signal generator to the DSK board and select 'Waveform Sinus'. Choose an amplitude of 2 V pp .`
 
-### el_a97c2f9526424207b57cfb052efecf7b
+### el_6d6cd9ec6eb14bb9874da3262199812a
 - type: `list_item`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
 - page_start/page_end: `17`
 - order_index: `275`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Use the CCS 'graphical display' to monitor the results of the FFT. Start the program, updating the 'graph display' as described above. The display should adjust when you change the frequency of the generator.`
 
-### el_4a3d01a7736e4aeeabd6e70069554c1a
+### el_44abb53a52b247a9a9c28d23e1965be2
 - type: `text`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
 - page_start/page_end: `17`
 - order_index: `276`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Take a screenshot for f in = 1 kHz .`
 
-### el_f8efbe7a076d4e6c9f2b4b7a03a3ac01
+### el_c483a8bff3964e218aca890dcccf6878
 - type: `list_item`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
 - page_start/page_end: `17`
 - order_index: `277`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Now change the input frequency to f in = 15 kHz . Save a screenshot and explain in one sentence what you see.`
 
-### el_30de43e2dbfc4dc6ba2e55ef9f008ea2
+### el_f214bc19104149c8b818c9bd08d1f68f
 - type: `list_item`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
 - page_start/page_end: `17`
 - order_index: `278`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `In a next step, display the result on the oscilloscope (connect DAC channels 0 and 1 to the oscilloscope and use channel 1 of the board as trigger source). Take screenshots of the scope for f in = 0.5 kHz and f in = 2 kHz`
 
-### el_923a497977294a288164dac63500c3ac
+### el_a714855c56944e1fb85a01d73b4bc245
 - type: `list_item`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
 - page_start/page_end: `17`
 - order_index: `279`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Optional: Compute in MATLAB a 64-point Hamming-window and scale it to a int16 t variable asHammWind [64] . Multiply asInBuf [ ] with this window before the buffer asInBuf [ N ] is copied to asX [2 ∗ N ] . Create a variable sDoHamming to...`
 
-### el_0083848279cc4b74af364ff9a39efe85
+### el_f72c29d34d7f49bea3042e7c839701e4
 - type: `text`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
 - page_start/page_end: `17 -> 18`
 - order_index: `280`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Connect a sine signal of amplitude of 2 V pp and frequency 500 Hz to the input of the DSK board. Display the output buffer in the CCS ' graph display'. Set a breakpoint at the line where samplecount is set to zero. Start the program, upd...`
 
-### el_b1474a7e75f3482aa50a61a3fba98c50
+### el_01e4eb864ac641a5a470dcaa96522fa6
 - type: `picture`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
 - page_start/page_end: `17`
 - order_index: `281`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: ``
 
-### el_c48c92e7b67c4ceda1884d4133fdd917
+### el_742402fe875547f1aeb33d5573cf9833
 - type: `section_header`
-- section id: `sec_dcc6a24c34ce4d0cafa75118d2fc9dcb`
+- section id: `sec_1605cf6e40724a32b16c470a35410398`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser > Bibliography`
 - page_start/page_end: `19`
 - order_index: `282`
+- effective heading_level: `5`
+- heading level source: `toc_context`
 - text preview: `Bibliography`
 
-### el_a6c24c2a196b441da5134740a4ea7ef2
+### el_82380f1cf80f40f58d3f160a86083f5c
 - type: `list_item`
-- section id: `sec_dcc6a24c34ce4d0cafa75118d2fc9dcb`
+- section id: `sec_1605cf6e40724a32b16c470a35410398`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser > Bibliography`
 - page_start/page_end: `19`
 - order_index: `283`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Getting Started with Unidaq2 en.pdf: Introduction and operation of the UNiDAQ2 in the Signal Processing Lab.`
 
-### el_4cb7467030754e7492c2d4747cd532a1
+### el_1a4d5856227d444783ae012e572754d4
 - type: `text`
-- section id: `sec_dcc6a24c34ce4d0cafa75118d2fc9dcb`
+- section id: `sec_1605cf6e40724a32b16c470a35410398`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser > Bibliography`
 - page_start/page_end: `19`
 - order_index: `284`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `moodle course of the lab`
 
-### el_bc1876b8672e44659a7f186ab632c41c
+### el_77be1575bf004898a3aeed16132ae6f3
 - type: `list_item`
-- section id: `sec_dcc6a24c34ce4d0cafa75118d2fc9dcb`
+- section id: `sec_1605cf6e40724a32b16c470a35410398`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser > Bibliography`
 - page_start/page_end: `19`
 - order_index: `285`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `DSignT: UniDAQ Processor Board UniDAQ2.DSP-ADDA . https://www.dsignt.de/de/unidaq/unidaq2-dsp-adda.html`
 
-### el_12665b4c719d4dfc9abfa9b2f3bd5fba
+### el_cf58b61324c44d2b938d62868b64e199
 - type: `list_item`
-- section id: `sec_dcc6a24c34ce4d0cafa75118d2fc9dcb`
+- section id: `sec_1605cf6e40724a32b16c470a35410398`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser > Bibliography`
 - page_start/page_end: `19`
 - order_index: `286`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `UPV Starter en.pdf: Introduction Audioanalyser R&S UPV . moodle course of the lab`
 
-### el_882727520e214f9ea1c0b25856e4cbb5
+### el_5c3ef6bc4d6f433aa47719ad2c8f8d72
 - type: `list_item`
-- section id: `sec_dcc6a24c34ce4d0cafa75118d2fc9dcb`
+- section id: `sec_1605cf6e40724a32b16c470a35410398`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser > Bibliography`
 - page_start/page_end: `19`
 - order_index: `287`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `Datasheet-BM8-May-2021.pdf: Datasheet Kemo BM 8 . moodle course of the lab`
 
-### el_a297eb01a6304415a851efcb35041108
+### el_03e854e948d546ccb5ca5dc4eae02b74
 - type: `list_item`
-- section id: `sec_dcc6a24c34ce4d0cafa75118d2fc9dcb`
+- section id: `sec_1605cf6e40724a32b16c470a35410398`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser > Bibliography`
 - page_start/page_end: `19`
 - order_index: `288`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `S.K.Mitra: Digital Signal Processing, McGraw-Hill, 2001`
 
-### el_e92d4b03ebce41b69a7bf47552296af4
+### el_4b31f039f54c4ed58b9b04bcfc3b9c63
 - type: `list_item`
-- section id: `sec_dcc6a24c34ce4d0cafa75118d2fc9dcb`
+- section id: `sec_1605cf6e40724a32b16c470a35410398`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser > Bibliography`
 - page_start/page_end: `19`
 - order_index: `289`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `E.C.Ifeachor, B.W.Jervis:: Digital Signal Processing - A Practical Approach,2nd ed., Prentice Hall, 2002`
 
-### el_2f9e29a761bb4b3c9ff1ae34708bf256
+### el_68fed997ae444e60b1b9d2bff2877cf0
 - type: `list_item`
-- section id: `sec_dcc6a24c34ce4d0cafa75118d2fc9dcb`
+- section id: `sec_1605cf6e40724a32b16c470a35410398`
+- resolved section path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser > Bibliography`
 - page_start/page_end: `19`
 - order_index: `290`
+- effective heading_level: ``
+- heading level source: ``
 - text preview: `von Gr¨ unigen: Digitale Signalverarbeitung, Fachbuchverlag Leipzig, 2004`
 
 ## Table Assets
 
-### table_b6b6a3dca0394cd3aa79aa09f4757bb8
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_e219cd5606374b32acae41b0a21d77a9`
+### table_a2ad3a80f60b471d9d1d82a87bd866bf
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_3d42e96535334e94a760b79a4990fee6`
 - page_start/page_end: `3`
 - markdown preview: `| 1 Sampling and quantization | 1 Sampling and quantization | 1 Sampling and quantization | 5 | |-------------------------------|-----------------------------------------------|----------------------------------------------------|-----| | | 1.1 | Objectives of this first lab session . . . . . . . | 5 | | | 1.2 | Lab...`
 - metadata:
@@ -5486,9 +6356,9 @@
 "AssetMetadata(source=SourceLocation(page_start=3, page_end=3, bbox=BoundingBox(x1=63.018775939941406, y1=659.2523803710938, x2=513.01953125, y2=380.8876647949219)), caption=None, nearby_text=None)"
 ```
 
-### table_12d1af0e765a4e189f2cd3e0aec77542
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_27966f47874a4aaca4851c2d370488ca`
+### table_5753adba90c04694801865d8efbd5c29
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_b1983dc388e4414b8a941543bdb61098`
 - page_start/page_end: `8`
 - markdown preview: `| Lab task 2: Number range overflows | |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------...`
 - metadata:
@@ -5498,9 +6368,9 @@
 
 ## Picture Assets
 
-### picture_45533de75cf8411a99753ff8a759ac38
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_c3462824d9044912967a3578e369eb09`
+### picture_e078056fc9884543a738224667c69b46
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_4669de2dd7c344f0992dcc3052b10324`
 - page_start/page_end: `1`
 - image path: ``
 - caption/text: ``
@@ -5509,9 +6379,9 @@
 "AssetMetadata(source=SourceLocation(page_start=1, page_end=1, bbox=BoundingBox(x1=62.28445816040039, y1=717.0121078491211, x2=515.0907592773438, y2=638.6043548583984)), caption=None, nearby_text=None)"
 ```
 
-### picture_bc5a2356ef8a4f1c8d06333add76bdcf
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_f32de0ebe07f467d8077863f43a7b849`
+### picture_5107095f05644004becb8a33fd5d898a
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_f0572baea1ff45f7aa96cdf0770c5f0d`
 - page_start/page_end: `5`
 - image path: ``
 - caption/text: ``
@@ -5520,9 +6390,9 @@
 "AssetMetadata(source=SourceLocation(page_start=5, page_end=5, bbox=BoundingBox(x1=61.62914276123047, y1=656.2537231445312, x2=379.5350646972656, y2=591.5311126708984)), caption=None, nearby_text=None)"
 ```
 
-### picture_1a437b12549d40369fd57f6919d53979
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_6fa35af5f8564fd7ac147d7bde2eb624`
+### picture_64d7d8b106494b148514e40712bffb8b
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_af7aa6d989a84e7aafd60531224f88b3`
 - page_start/page_end: `7`
 - image path: ``
 - caption/text: ``
@@ -5531,9 +6401,9 @@
 "AssetMetadata(source=SourceLocation(page_start=7, page_end=7, bbox=BoundingBox(x1=68.01701354980469, y1=67.986083984375, x2=138.24249267578125, y2=48.18475341796875)), caption=None, nearby_text=None)"
 ```
 
-### picture_68b6dc1154b84977aec619e87232dc94
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_be4d53ee73d54a6d9efd8ec523404477`
+### picture_f0ccfa752a984b43baf0cc1e886113fa
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_d12dbe3ff10c4ca38e36e6b780b5f3b3`
 - page_start/page_end: `8`
 - image path: ``
 - caption/text: ``
@@ -5542,9 +6412,9 @@
 "AssetMetadata(source=SourceLocation(page_start=8, page_end=8, bbox=BoundingBox(x1=80.49958801269531, y1=783.7904930114746, x2=533.4304809570312, y2=485.0481262207031)), caption=None, nearby_text=None)"
 ```
 
-### picture_4ec41fd71ae54a678ef08f04b376e0f9
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_5fdc7be3674f48999e7b559b57763f49`
+### picture_fe3e54f3d54d4654b14c0825f4eb6e82
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_bc5172f3ec3d49adb23783e499ce9045`
 - page_start/page_end: `8`
 - image path: ``
 - caption/text: ``
@@ -5553,9 +6423,9 @@
 "AssetMetadata(source=SourceLocation(page_start=8, page_end=8, bbox=BoundingBox(x1=80.83990478515625, y1=370.7016906738281, x2=533.0560302734375, y2=210.58837890625)), caption=None, nearby_text=None)"
 ```
 
-### picture_3a62f86aad9e4c4a9f5d9cf1c8881120
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_6fad1229936b4514aa824b542a8cec42`
+### picture_bb9af172fa02438e9bc748eab1d3ac54
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_aa95496d81f54224b06e90b3d5c84aa9`
 - page_start/page_end: `9`
 - image path: ``
 - caption/text: ``
@@ -5564,9 +6434,9 @@
 "AssetMetadata(source=SourceLocation(page_start=9, page_end=9, bbox=BoundingBox(x1=67.97000122070312, y1=68.2791748046875, x2=138.43173217773438, y2=48.11431884765625)), caption=None, nearby_text=None)"
 ```
 
-### picture_84fd2753996e435e87dc9f37e9a0dafa
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_2681ddf7511441638a72918fbe8b5e65`
+### picture_7cbd5d33c99540b38f68397c6478a055
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_e8f291cc5c6b4816994dde8828feb464`
 - page_start/page_end: `11`
 - image path: ``
 - caption/text: ``
@@ -5575,9 +6445,9 @@
 "AssetMetadata(source=SourceLocation(page_start=11, page_end=11, bbox=BoundingBox(x1=63.118324279785156, y1=661.5692291259766, x2=511.763427734375, y2=581.5950622558594)), caption=None, nearby_text=None)"
 ```
 
-### picture_e4adac64c96d4d45ac4c3079276a4bb1
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_3fd28d95d0324a938723a968a741675b`
+### picture_beef6f5f5e3846f28284cbc77d085425
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_b6cb3829adb4464f86446041b191027e`
 - page_start/page_end: `11`
 - image path: ``
 - caption/text: ``
@@ -5586,9 +6456,9 @@
 "AssetMetadata(source=SourceLocation(page_start=11, page_end=11, bbox=BoundingBox(x1=62.08060836791992, y1=222.02777099609375, x2=513.3157958984375, y2=106.7498779296875)), caption=None, nearby_text=None)"
 ```
 
-### picture_fc14ab2720504c1f9ab18232c0e7a500
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_7fcd01dfaa6847efa076372d2b8b6a18`
+### picture_c7520ab33efd4d6ebe1e672b0df3a0b6
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_e832ae254cdd4f059b0aa7187833b56f`
 - page_start/page_end: `12`
 - image path: ``
 - caption/text: `Figure 2.1: Butterfly`
@@ -5597,9 +6467,9 @@
 "AssetMetadata(source=SourceLocation(page_start=12, page_end=12, bbox=BoundingBox(x1=215.0579071044922, y1=642.8570709228516, x2=396.64593505859375, y2=588.7048187255859)), caption='Figure 2.1: Butterfly', nearby_text=None)"
 ```
 
-### picture_49179afbf38f443298a1d97a04d33560
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_0ae6c0657f6a4aaf89d2606bf82d2a54`
+### picture_0884571bc32442e2955f73d914113228
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_f5e1d69ef75d4235bb7be49ccb44d05f`
 - page_start/page_end: `13`
 - image path: ``
 - caption/text: `Figure 2.2: 8-point FFT (3 stages)`
@@ -5608,9 +6478,9 @@
 "AssetMetadata(source=SourceLocation(page_start=13, page_end=13, bbox=BoundingBox(x1=87.30765533447266, y1=781.6935501098633, x2=491.08807373046875, y2=557.4543762207031)), caption='Figure 2.2: 8-point FFT (3 stages)', nearby_text=None)"
 ```
 
-### picture_a6916229b5684ddfafdc977e73ad4052
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_3566519ddcd243b9884cbca002246840`
+### picture_128a0fa627ac44d2a3cbf359f06815ac
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_9f62938b62704b3db61505387e3be8a9`
 - page_start/page_end: `13`
 - image path: ``
 - caption/text: ``
@@ -5619,9 +6489,9 @@
 "AssetMetadata(source=SourceLocation(page_start=13, page_end=13, bbox=BoundingBox(x1=68.14556121826172, y1=68.2008056640625, x2=138.2261505126953, y2=48.14923095703125)), caption=None, nearby_text=None)"
 ```
 
-### picture_abfe59e0da98493aae083e50f9cad3fa
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_d24b6fee74b7450187f944d135b7f9e9`
+### picture_be0c10159e0e49d299588feaae5e8862
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_c4c30c5e9fc042b9ad959fc67caafe9d`
 - page_start/page_end: `15`
 - image path: ``
 - caption/text: ``
@@ -5630,9 +6500,9 @@
 "AssetMetadata(source=SourceLocation(page_start=15, page_end=15, bbox=BoundingBox(x1=68.06072998046875, y1=67.98779296875, x2=138.22000122070312, y2=48.2716064453125)), caption=None, nearby_text=None)"
 ```
 
-### picture_5849be95eed6465b80e0c5180e0d0319
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- element id: `el_b1474a7e75f3482aa50a61a3fba98c50`
+### picture_56fb155a942a41b98a266c9829bb2253
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- element id: `el_01e4eb864ac641a5a470dcaa96522fa6`
 - page_start/page_end: `17`
 - image path: ``
 - caption/text: ``
@@ -5643,13 +6513,43 @@
 
 ## Chunks
 
-### chunk_f5e6fe3523cc485c88a26e9af25e63a0
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_af3512c62bae4eba9875862b1f2c2e63`
+### Chunk Summary
+| sequence | chunk_id | section_id | section_path | chunk_pos | elements | pages | content preview |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | chunk_5f3d1563b89c4325b1611b94e36d927b | sec_e47f3de271464dd09c3f24df5faf631d | Chapter 1 | 1/3 | 11 | 5 | The purpose of this first lab project is to give an introduction to the hardware and software of the UniDAQ2 Digital... |
+| 2 | chunk_ae7f289ac1694d35ac12196621eb8d12 | sec_72633b3e02af4b439c1531937205d426 | Chapter 1 > 1.2 Lab preparation | 1/1 | 8 | 5 -> 6 | ■ In particular, answer all the preparation tasks in the light blue boxes ('Prep task'). ■ Familiarize yourself with... |
+| 3 | chunk_b66a4a48f8e64b9691e020ae050bc7e7 | sec_e47f3de271464dd09c3f24df5faf631d | Chapter 1 | 2/3 | 4 | 6 -> 7 | 1 interrupt void adcInt (void) { 3 sData[0] = PRU_addaRegs ->adc[0]; // read from ADC channel 0 sData[1] = PRU_addaRe... |
+| 4 | chunk_4e8b7f5b600f4a6192167123b949da68 | sec_34057b2e0e034fc0822649cde6342c9d | Chapter 1 > Prep task 2: Sampling and quantization | 1/1 | 2 | 7 | ■ Determine the sampled discrete-time signal x [ n ] (without quantization). ■ Determine the eight signal values x [... |
+| 5 | chunk_1344c4651da14f9ca7b978298d1c0c53 | sec_10a8314d395f4f08a64344aa21b9ede4 | Chapter 1 > 1.3 A first DSP project with Code Composer Studio | 1/3 | 5 | 7 | ■ Start up the UniDAQ2 board according to the instructions in Getting Started [1] and run the prepared program that r... |
+| 6 | chunk_575e30c8efec4da0a4516a6f8e083cfe | sec_1c56482f69cd4520bb3877a51ed6fef8 | Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program | 1/1 | 10 | 7 -> 8 | ■ Feed a sine wave from the function generator to the ADC 1 input of the board with V pp = 1 V and connect an oscillo... |
+| 7 | chunk_e8cd84c8008b44e382d264db067ce7c0 | sec_10a8314d395f4f08a64344aa21b9ede4 | Chapter 1 > 1.3 A first DSP project with Code Composer Studio | 2/3 | 8 | 8 | Copy data of a channel ■ Now insert the following line before writing the data: sData[0] = sData[1]; ■ The data from... |
+| 8 | chunk_4580032e28d54eb4af73a87caee964cf | sec_10a8314d395f4f08a64344aa21b9ede4 | Chapter 1 > 1.3 A first DSP project with Code Composer Studio | 3/3 | 5 | 8 -> 9 | ■ Modify the DAC interrupt handler dacInt() that the values of both ADC inputs are multiplied by a factor scale (defi... |
+| 9 | chunk_9098b57d234f460eb2693d93ee1441a1 | sec_e47f3de271464dd09c3f24df5faf631d | Chapter 1 | 3/3 | 8 | 9 | The speakers are connected to DAC outputs 0 and 1 via adapter cables, too (2 x BNC to female audio jack). For simulta... |
+| 10 | chunk_17ef51e5387e44ccb46abf6299bf5b71 | sec_eb9856a660894cfdad5323e01d49cc4f | Chapter 1 > Lab task 3: Quantization of speech signals | 1/1 | 3 | 9 | ■ Add variable bitmask to the CCS Expressions window and chose a hexadecimal representation by right-clicking on the... |
+| 11 | chunk_20da10dfacbe4e81b82dab5649444d80 | sec_d273a3b7b11f46699f4072cbd37cb673 | Radix-2 FFT and Real-Time Spectrum Analyser | 1/1 | 13 | 11 -> 12 | In this lab, you will implement a 64-point Radix-2 FFT on the signal processor based on a given 8point FFT. Eventuall... |
+| 12 | chunk_abd9791ff1824317bd634c611c9e6bc7 | sec_7ed26d2cb7ae42898eed2f4393165141 | Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab | 1/3 | 10 | 12 | ■ The relation between the (generally complex) time-domain values z 1 = x 1 + jy 1 and z 2 = x 2 + jy 2 on the left s... |
+| 13 | chunk_63eb08b01f3447e7a2c133bc06530e94 | sec_7ed26d2cb7ae42898eed2f4393165141 | Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab | 2/3 | 4 | 12 -> 13 | An 8-point FFT (DIT) is illustrated in Figure 2.2. Analyse this signal-flow diagram by solving the prep tasks. The in... |
+| 14 | chunk_9e55e097703749fbbee9e5ff227483a0 | sec_d418ba6a31fe449cb7bfde49ff98eec3 | Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2 | 1/1 | 7 | 13 | Write a MATLAB script FFT a.m which calculates the output signal X 8 [ k ] , k = 0 , . . . 7 directly (i.e. internal... |
+| 15 | chunk_93c3bdbde1304610b9c7e2cb4c41b49a | sec_7ed26d2cb7ae42898eed2f4393165141 | Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab | 3/3 | 10 | 13 -> 14 | Hint: Begin each MATLAB script with 'clear all'. This clears the internal Workspace and if necessary resets ' i' and... |
+| 16 | chunk_c680331095264244bb7f351b4b2a4de6 | sec_dc1a4d1c2aa448f1b3ec0b81b155daa3 | Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project | 1/2 | 11 | 14 | ■ FFT8 Radix2 ISR.c (main( )) ■ FFT butterfly.c ■ FFT radix2.c In main( ), the FFT is calculated once before entering... |
+| 17 | chunk_079ad9c44af44c17b0723f4e3a32cf5c | sec_dc1a4d1c2aa448f1b3ec0b81b155daa3 | Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project | 2/2 | 5 | 14 -> 15 | ■ The real part of the twiddle factors is stored on even addresses of the buffer asW [ N FFT ] , the imaginary sample... |
+| 18 | chunk_8bc41fba2b0f4e9693da1baba97688c1 | sec_594aac6616dd4969990693d7ad5c3f84 | Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT | 1/2 | 7 | 15 | The given program correctly calculates the Radix-2 8-point FFT for an input sequence. If necessary, adjust the input... |
+| 19 | chunk_687535a8ab204805b799e8504dc9e9e9 | sec_594aac6616dd4969990693d7ad5c3f84 | Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT | 2/2 | 7 | 15 -> 16 | Your project should now be extended to a 64-point FFT. First make a copy of the file FFT8 Radix2 ISR.c in the project... |
+| 20 | chunk_a0932ac7d1d649e3bd63c7fd915260e0 | sec_9abc832a968a47d5b16dff13c631d58d | Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser | 1/3 | 9 | 16 | Reading the samples has to be implemented in the ISR. ■ The samples from the ADC are stored in a int16 t input buffer... |
+
+### chunk_5f3d1563b89c4325b1611b94e36d927b
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_e47f3de271464dd09c3f24df5faf631d`
+- sequence_number: `1`
+- chunk_index/chunk_total: `1/3`
 - chunk type: `general`
 - page_start/page_end: `5`
-- token_count: `134`
-- section_path: `Chapter 1 > 1.1 Objectives of this first lab session`
+- token_count: `201`
+- section_path: `Chapter 1`
+- element_ids (11): `el_84159dcd3bbc4d6fb2d07ec8e6864e7c, el_0224b22aacc3455f901f522ace4cbf20, el_7a13aa2490a64477a5263bd2fad8e7f5, el_6336ce60d09c4fb5abe50defd76ec02b, el_561e525725fa4c96a96c18899d1864ac, el_9a0bc463f4dd495f88c9033ab209d826, el_744ac21d8f0b4e5fbd77bed31fb36c2e, el_8f442c87892143e1892943ca16afa57b, ... (+3 more)`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Chapter 1 The purpose of this first lab project is to give an introduction to the hardware and software of the UniDAQ2 Digital Signal Processor board, which is used in this and all sub...`
 - content:
 ```text
 The purpose of this first lab project is to give an introduction to the hardware and software of the UniDAQ2 Digital Signal Processor board, which is used in this and all subsequent lab sessions.
@@ -5669,33 +6569,35 @@ You will step by step
 ■ get to know the Interface to ADC and DAC and the usage of hardware interrupts
 
 ■ and develop simple DSP programs which read audio signals from an audio source and output them through a DAC (directly or after processing).
-```
 
-### chunk_8139d9f5b6314e07bd37c75db12da314
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_2269ebfd8d584e52b7be78bfd06b9fbc`
-- chunk type: `general`
-- page_start/page_end: `5`
-- token_count: `93`
-- section_path: `Chapter 1 > 1.2 Lab preparation`
-- content:
-```text
+1.2 Lab preparation
+
 It is very important that you work through these lab instructions before the lab session and that you are familiar with the fundamentals of 'Signals and Systems 1+2' and 'Programming in C'. If you need to catch up, please make yourself familiar with these topics of the previous semesters.
 
 ■ In particular, answer all the preparation tasks in the light blue boxes ('Prep task').
-
-■ Familiarize yourself with the document Getting Started [1] so that when you get to the lab, you will know for sure what information to look up in it.
 ```
 
-### chunk_936b23c6fc0a4ad1aa90b2784f72a5f9
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_c1a4dae788c54aed9e39689cda20be37`
+### chunk_ae7f289ac1694d35ac12196621eb8d12
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_72633b3e02af4b439c1531937205d426`
+- sequence_number: `2`
+- chunk_index/chunk_total: `1/1`
 - chunk type: `general`
-- page_start/page_end: `6`
-- token_count: `63`
-- section_path: `Chapter 1 > 1.2 Lab preparation > Prep task (for lab entry test)`
+- page_start/page_end: `5 -> 6`
+- token_count: `161`
+- section_path: `Chapter 1 > 1.2 Lab preparation`
+- element_ids (8): `el_4e2461ad3c1043d283aba0e8d904d339, el_5cf02ac69186477d90b37f3a66274e70, el_fab5ac98b6b84468837dfe947e09d25d, el_4e457258c196439993d78c24b97ee594, el_af63ddcd8d32475dbfa082802914298a, el_1699c24087a34b2c92c8c1a700520447, el_845c8994749f4c079f01b5e01653b2f5, el_a95394984ce249c788a6d32090d20192`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Chapter 1 > 1.2 Lab preparation ■ In particular, answer all the preparation tasks in the light blue boxes ('Prep task'). ■ Familiarize yourself with the document Getting Started [1] so...`
 - content:
 ```text
+■ In particular, answer all the preparation tasks in the light blue boxes ('Prep task').
+
+■ Familiarize yourself with the document Getting Started [1] so that when you get to the lab, you will know for sure what information to look up in it.
+
+Prep task (for lab entry test)
+
 Familiarize yourself with the concepts of the chapter 'DP01: Digitization and Digital Signals', particularly
 
 ■ sampling, sampling frequency, aliasing and quantization,
@@ -5705,53 +6607,55 @@ Familiarize yourself with the concepts of the chapter 'DP01: Digitization and Di
 ■ rounding of fixed-point numbers and techniques in C to avoid overflows after arithmetic operations
 
 These topics will be addressed by the lab entry test at the beginning of the lab session.
-```
 
-### chunk_4b7958f773f04f358aabcb537657ce20
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_844baf81084b40a488fe82f798df60f1`
-- chunk type: `general`
-- page_start/page_end: `6`
-- token_count: `107`
-- section_path: `Chapter 1 > 1.2 Lab preparation > 1.2.1 Interrupt handler and bit manipulation`
-- content:
-```text
+1.2.1 Interrupt handler and bit manipulation
+
 In your microcontroller class, you have learned how to do bit manipulation of integer values with bit masks and bitwise-logic operators (e.g. and, or, xor). Let an interrupt handler, which is called with every new pair of samples, perform a bit manipulation.
+```
 
+### chunk_b66a4a48f8e64b9691e020ae050bc7e7
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_e47f3de271464dd09c3f24df5faf631d`
+- sequence_number: `3`
+- chunk_index/chunk_total: `2/3`
+- chunk type: `general`
+- page_start/page_end: `6 -> 7`
+- token_count: `198`
+- section_path: `Chapter 1`
+- element_ids (4): `el_1feef4305bb04030be0612ec253c698f, el_d39fbd6093a144d6a6bb9e6e4e938fc2, el_7d141c6017314640bf302cb227c2ded4, el_9914a0b4842248969c42cb5ea7432ac5`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Chapter 1 1 interrupt void adcInt (void) { 3 sData[0] = PRU_addaRegs ->adc[0]; // read from ADC channel 0 sData[1] = PRU_addaRegs ->adc[1]; // read from ADC channel 1 5 sData[0] &= 0x5...`
+- content:
+```text
 1 interrupt void adcInt (void) { 3 sData[0] = PRU_addaRegs ->adc[0]; // read from ADC channel 0 sData[1] = PRU_addaRegs ->adc[1]; // read from ADC channel 1 5 sData[0] &= 0x5555; 7 sData[1] &= 0xCCCC; } 9 interrupt void dacInt (void) { 11 PRU_addaRegs ->dac[0] = sData[0]; // write to DAC channel 0 PRU_addaRegs ->dac[1] = sData[1]; // write to DAC channel 1 13 }
-```
 
-### chunk_249288631a0c4df1aae57ac10e1f167e
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_2fcaf80992494e8aa577a3b07a2428cd`
-- chunk type: `general`
-- page_start/page_end: `6`
-- token_count: `40`
-- section_path: `Chapter 1 > 1.2 Lab preparation > Prep task 1: Interrupt handler and bit manipulation`
-- content:
-```text
+Prep task 1: Interrupt handler and bit manipulation
+
 ■ Which decimal(!) values are output after bit manipulation to channel 0 and channel 1 of the DAC, if the hexadecimal values received from ADC in the format int16 t were 0xFC7F at channel 0 and 0x83EE at channel 1?
-```
 
-### chunk_3a2b22ec722640569b695dbc010167fe
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_5278a2c7e3a54d9699e02abac79ab629`
-- chunk type: `general`
-- page_start/page_end: `6`
-- token_count: `63`
-- section_path: `Chapter 1 > 1.2 Lab preparation > 1.2.2 Sampling and quantization`
-- content:
-```text
+1.2.2 Sampling and quantization
+
 Let an analog cosine signal x ( t ) = cos(2 πf 0 t ) with f 0 = 4 kHz be sampled at f S = 32 kHz. (In the lab you later use a different sampling frequency.) The sampled discrete-time signal x[n] is afterwards quantized by a 4-bit quantizer with amplitude input range R ADC = [ -1 , +1[ .
+
+Prep task 2: Sampling and quantization
+
+■ Determine the sampled discrete-time signal x [ n ] (without quantization).
 ```
 
-### chunk_a43e280fecea4b00965e8798e79c428e
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_917ffe00a71f4d2d8a5c00f940ead87d`
+### chunk_4e8b7f5b600f4a6192167123b949da68
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_34057b2e0e034fc0822649cde6342c9d`
+- sequence_number: `4`
+- chunk_index/chunk_total: `1/1`
 - chunk type: `general`
 - page_start/page_end: `7`
 - token_count: `45`
 - section_path: `Chapter 1 > Prep task 2: Sampling and quantization`
+- element_ids (2): `el_9914a0b4842248969c42cb5ea7432ac5, el_65ce457f0d724c29aa5c01e9b33a5f79`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Chapter 1 > Prep task 2: Sampling and quantization ■ Determine the sampled discrete-time signal x [ n ] (without quantization). ■ Determine the eight signal values x [ n ] , ˆ x [ n ]...`
 - content:
 ```text
 ■ Determine the sampled discrete-time signal x [ n ] (without quantization).
@@ -5759,55 +6663,53 @@ Let an analog cosine signal x ( t ) = cos(2 πf 0 t ) with f 0 = 4 kHz be sample
 ■ Determine the eight signal values x [ n ] , ˆ x [ n ] , n = 0 , . . . , +7 before and after 4-bit quantization with truncation.
 ```
 
-### chunk_b34303a5471a4acab3883c1c28470f96
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_9d40dd78ea564633a84cefec36c88e6b`
+### chunk_1344c4651da14f9ca7b978298d1c0c53
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_10a8314d395f4f08a64344aa21b9ede4`
+- sequence_number: `5`
+- chunk_index/chunk_total: `1/3`
 - chunk type: `general`
 - page_start/page_end: `7`
-- token_count: `40`
-- section_path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.1 Start of CCS and import of a project`
+- token_count: `206`
+- section_path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio`
+- element_ids (5): `el_98529133a67241d2be119caa3cf3d965, el_ad4f3632dc824130bece8fa8bb2508b4, el_b531ba9f7d4e4cf0bdd2793347ca376a, el_d886375967b84203950a1273d7d5d20e, el_49ead8aa9b964dce81f34e36c4e9c551`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Chapter 1 > 1.3 A first DSP project with Code Composer Studio ■ Start up the UniDAQ2 board according to the instructions in Getting Started [1] and run the prepared program that reads...`
 - content:
 ```text
 ■ Start up the UniDAQ2 board according to the instructions in Getting Started [1] and run the prepared program that reads values and outputs them unchanged.
 
 ■ Set the sampling rate of the board to F s = 50 kHz.
-```
 
-### chunk_04488cbb060848ba8baa03a81901298e
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_d73983aecc8c4193bac77bbb700f3057`
-- chunk type: `general`
-- page_start/page_end: `7`
-- token_count: `53`
-- section_path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.2 First test of the project`
-- content:
-```text
+1.3.2 First test of the project
+
 The demo program main adda simple Lab.c copies the data of the two ADC registers in the ADC interrupt service routine (ISR) adcInt to sData[0] and sData[1] . These data are now available for processing. In the DAC ISR dacInt , the values from sData[0] and sData[1] are written to two DAC registers.
-```
 
-### chunk_4993a1790b2d404da8640b0d9ac20785
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_83afa0efbf214153b3a252cd15d20ae9`
-- chunk type: `general`
-- page_start/page_end: `7`
-- token_count: `30`
-- section_path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > Lab task 1.1: Feeding the ADC input directly to the DAC output`
-- content:
-```text
+Lab task 1.1: Feeding the ADC input directly to the DAC output
+
 In this first task, you apply a signal to the ADC and use the given program to read this signal into the DSP and output the signal at the DAC.
+
+1. Function test of the program
+
+■ Use the HAMEG HMF2525 function generator to apply a sinusoidal voltage to the input of the board. Mind that you have to terminate the coax cable from the function generator with a 50 Ω resistor as otherwise the double value of the set voltage is applied to the DSP board and overvoltages might electrically damage the ADC input.
 ```
 
-### chunk_4b4d7a30417f4c1da0362fc64012fd80
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
+### chunk_575e30c8efec4da0a4516a6f8e083cfe
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_1c56482f69cd4520bb3877a51ed6fef8`
+- sequence_number: `6`
+- chunk_index/chunk_total: `1/1`
 - chunk type: `general`
 - page_start/page_end: `7 -> 8`
-- token_count: `200`
+- token_count: `186`
 - section_path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
+- element_ids (10): `el_fdff8ce12fdd4bdda7ac7cfd5be664e3, el_b14392fbc75847c997feded8d38d9794, el_1810a35c63a342cbaf3f3d8f6365c98a, el_55ce682a6cd24781b38216bb816c07e3, el_375ea34f836b48cb82df87c92210ac3d, el_1078e5f2b41d4766b32b2546da128edb, el_5b240a34eb3745d9bbae358964e931e5, el_f6bcb2409f1f49e4aceb6e2a0293651a, ... (+2 more)`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program ■ Feed a sine wave from the function generator to the ADC 1 input of the board with V pp...`
 - content:
 ```text
-■ Use the HAMEG HMF2525 function generator to apply a sinusoidal voltage to the input of the board. Mind that you have to terminate the coax cable from the function generator with a 50 Ω resistor as otherwise the double value of the set voltage is applied to the DSP board and overvoltages might electrically damage the ADC input.
-
 ■ Feed a sine wave from the function generator to the ADC 1 input of the board with V pp = 1 V and connect an oscilloscope to both output channels. The output DAC 1 should be almost equal to the input signal, at DAC you will see no output.
 
 ■ Now reconnect the cable from the generator so that the signal is fed to ADC 0. Check whether you are now measuring the sine wave at DAC 0.
@@ -5817,23 +6719,33 @@ In this first task, you apply a signal to the ADC and use the given program to r
 Masking
 
 ■ Mask out channel 0 (set all 16 bits to 0) by inserting the following line between reading and writing the data:
-```
 
-### chunk_5a27ca2ee5fa4812a062b067527b076d
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_7770646123f44ee4b9eca2a48ff68f06`
-- chunk type: `general`
-- page_start/page_end: `8`
-- token_count: `152`
-- section_path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1. Function test of the program`
-- content:
-```text
 sData[0] &= 0x0000;
 
 ■ Call up Run → Debug to test the program: Channel 0 should now be 'silent'.
 
 ■ Comment out the mask after this exercise.
 
+Copy data of a channel
+
+■ Now insert the following line before writing the data: sData[0] = sData[1];
+```
+
+### chunk_e8cd84c8008b44e382d264db067ce7c0
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_10a8314d395f4f08a64344aa21b9ede4`
+- sequence_number: `7`
+- chunk_index/chunk_total: `2/3`
+- chunk type: `general`
+- page_start/page_end: `8`
+- token_count: `170`
+- section_path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio`
+- element_ids (8): `el_5d749a1bffea47068aafed8b9320384a, el_f5406f5177ac42bdb3beef9a410a961e, el_107bd3161b5542119a78a11d12249270, el_75dfcc90eb3d41e18a0a4711efaec0c3, el_5c8890dd2abb48aa8ac36c3ae9c9f40a, el_fd7da9f1f69b4760b223f947cbc37e81, el_a8aee3841e234d309276d5bee728f8a7, el_50d5ee1adbb9426da40f3d41b022599c`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Chapter 1 > 1.3 A first DSP project with Code Composer Studio Copy data of a channel ■ Now insert the following line before writing the data: sData[0] = sData[1]; ■ The data from chann...`
+- content:
+```text
 Copy data of a channel
 
 ■ Now insert the following line before writing the data: sData[0] = sData[1];
@@ -5847,27 +6759,25 @@ Swap channels
 ■ Ensure that the audio channels are output in reverse: the sine wave fed into ADC 0 should appear at the DAC 1 output. If you feed in at ADC 1, you will only see a signal at DAC 0.
 
 ■ The swapping of the channels must be demonstrated to the supervisors in the lab. Give the code of interrupt handler dacInt() including your modifications in the report.
-```
 
-### chunk_0613f0f1fa3d4c46b843f19723a51cb5
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_9298b8a07aa04e2bb4b80c843034fc97`
-- chunk type: `general`
-- page_start/page_end: `8`
-- token_count: `43`
-- section_path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.3 Overflows`
-- content:
-```text
+1.3.3 Overflows
+
 We now want to generate an internal number range overflow by multiplying the values of ADC input 0 by an increasing factor. Use the function generator to apply a sine wave of 300 Hz, V pp = 1 V to ADC input 0.
 ```
 
-### chunk_0ca52dfe928d4aa18158270f6c12957b
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_09f73e7914514e82af41f7b90e8df633`
+### chunk_4580032e28d54eb4af73a87caee964cf
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_10a8314d395f4f08a64344aa21b9ede4`
+- sequence_number: `8`
+- chunk_index/chunk_total: `3/3`
 - chunk type: `general`
-- page_start/page_end: `8`
-- token_count: `99`
-- section_path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > Lab task 2: Number range overflows`
+- page_start/page_end: `8 -> 9`
+- token_count: `179`
+- section_path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio`
+- element_ids (5): `el_35f2e451a42b4d26af138cb93c0a9cb0, el_4ad4de7408664c7b96fa893308cd3169, el_e7b7719434c645d8b22764f40bd75ded, el_1162ab56aee64c93bf7add8fdaa1b82e, el_64b434f54d3943c39b3476429646b913`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Chapter 1 > 1.3 A first DSP project with Code Composer Studio ■ Modify the DAC interrupt handler dacInt() that the values of both ADC inputs are multiplied by a factor scale (defined a...`
 - content:
 ```text
 ■ Modify the DAC interrupt handler dacInt() that the values of both ADC inputs are multiplied by a factor scale (defined as a global variable) before they are output to the DAC outputs.
@@ -5875,35 +6785,35 @@ We now want to generate an internal number range overflow by multiplying the val
 ■ Add the factor scale to the Expressions window of the CCS Debugger.
 
 ■ Increase the factor scale in the Expressions window until you observe an overflow on the oscilloscope. Make an oscilloscope screenshoot right before and right after the overflow occurs. Specify the value of scale at which the overflow occurs and explain the signal shape in the event of an overflow in the report.
-```
 
-### chunk_694f4db31c9e4425943062c25d769dfe
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_5aebe847b446453ca623353a7142140b`
-- chunk type: `general`
-- page_start/page_end: `8 -> 9`
-- token_count: `147`
-- section_path: `Chapter 1 > 1.3 A first DSP project with Code Composer Studio > 1.3.4 Quantization`
-- content:
-```text
+1.3.4 Quantization
+
 We now want to give speech signals into the system and examine the speech quality at different bit resolutions. To do this, both channels are masked with bit masks as in the prep task before they are output to DAC outputs 0 and 1.
 
 Connections to the DSP board. The output of the PC's sound card must be connected to the input of the DSP board via an adapter cable (3,5mm male audio jack to 2 x BNC).
+```
 
+### chunk_9098b57d234f460eb2693d93ee1441a1
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_e47f3de271464dd09c3f24df5faf631d`
+- sequence_number: `9`
+- chunk_index/chunk_total: `3/3`
+- chunk type: `general`
+- page_start/page_end: `9`
+- token_count: `177`
+- section_path: `Chapter 1`
+- element_ids (8): `el_55916be3cbab4165bf32ab02865d3264, el_b3078785f0aa4e5c897aefee06f050bd, el_b208f11f3dc44c5ab3546326efb4e731, el_274620f60101464690f931c0541299ef, el_8eaad98757d74f468a56ce91ecf71605, el_113a25e6c0d94f28a498d5e628e02e43, el_aa9a772c97f94d03906cd1552b758f76, el_91cb99de438f47eb96c7af03e1a4bcc9`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Chapter 1 The speakers are connected to DAC outputs 0 and 1 via adapter cables, too (2 x BNC to female audio jack). For simultaneously displaying on the oscilloscope, you must use T sh...`
+- content:
+```text
 The speakers are connected to DAC outputs 0 and 1 via adapter cables, too (2 x BNC to female audio jack). For simultaneously displaying on the oscilloscope, you must use T shaped BNC splitters at the oscilloscope inputs.
 
 Audio files. Audio files can be found in directory D: \ wavefiles \ . Use for this task THEFORCE.wav as signal input. Play it back with the PC application Audacity .
-```
 
-### chunk_a20e704ff3e24dce8953f08e4438a17d
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_5d6bbcbe59a9420ba01822f9316b8cfc`
-- chunk type: `general`
-- page_start/page_end: `9`
-- token_count: `180`
-- section_path: `Chapter 1 > Lab task 3: Quantization of speech signals`
-- content:
-```text
+Lab task 3: Quantization of speech signals
+
 ■ Make sure that the audio signal is well leveled by leaving the value of factor scale as you determined it in task 2, now applied to both channels. Now increase the volume on the PC as much as possible without overflowing (you would hear this in the signal).
 
 ■ Add a global variable bitmask to your program that manipulates both channels
@@ -5915,19 +6825,43 @@ sData[1] &= bitmask;
 after your program has scaled both ADC input signals with factor scale .
 
 ■ Add variable bitmask to the CCS Expressions window and chose a hexadecimal representation by right-clicking on the variable type.
+```
+
+### chunk_17ef51e5387e44ccb46abf6299bf5b71
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_eb9856a660894cfdad5323e01d49cc4f`
+- sequence_number: `10`
+- chunk_index/chunk_total: `1/1`
+- chunk type: `general`
+- page_start/page_end: `9`
+- token_count: `99`
+- section_path: `Chapter 1 > Lab task 3: Quantization of speech signals`
+- element_ids (3): `el_91cb99de438f47eb96c7af03e1a4bcc9, el_d1422f1bae984c1798cb1871087178c2, el_19597504acfa4554b2a68c5cb53a5e87`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Chapter 1 > Lab task 3: Quantization of speech signals ■ Add variable bitmask to the CCS Expressions window and chose a hexadecimal representation by right-clicking on the variable typ...`
+- content:
+```text
+■ Add variable bitmask to the CCS Expressions window and chose a hexadecimal representation by right-clicking on the variable type.
 
 ■ Give the bit masks required for 1-, 4- and 8-bit quantization as hexadecimal values in the report. Hint: the least significant bits of both channels must be masked out. Is the quantization done by truncation or by arithmetic rounding?
 
 ■ Set the bit masks in the Expression window to the corresponding values for 1, 4 and 8bit quantization and compare the intelligibility in the report. Take an oscilloscope screenshot of one 4-bit quantized signal for the report .
 ```
 
-### chunk_5e91fc0772b543bcb2ee5407495a0f38
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_e2f4bf9adbf448de9744d9602e38d665`
+### chunk_20da10dfacbe4e81b82dab5649444d80
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_d273a3b7b11f46699f4072cbd37cb673`
+- sequence_number: `11`
+- chunk_index/chunk_total: `1/1`
 - chunk type: `general`
-- page_start/page_end: `11`
-- token_count: `106`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.1 Objectives of this second lab session`
+- page_start/page_end: `11 -> 12`
+- token_count: `209`
+- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser`
+- element_ids (13): `el_cfded6c350c743b59ba57326099b97c5, el_7abe859e5ac84b8cbae165f90d8eec3f, el_a1c93386ab664f718755c349cd77b0f2, el_082eabba9b4a466b82829ca529428749, el_2318d1b522344f9c82b2e97f571cf65d, el_8b92f3c491a640189a3026665e2623b4, el_6456153621514d35840e218b838e117a, el_72a02e30598c4487aa977d0b938b341a, ... (+5 more)`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser In this lab, you will implement a 64-point Radix-2 FFT on the signal processor based on a given 8point FFT. Eventually, you will develop a r...`
 - content:
 ```text
 In this lab, you will implement a 64-point Radix-2 FFT on the signal processor based on a given 8point FFT. Eventually, you will develop a real-time spectrum analyzer using this FFT implementation. After this lab you should
@@ -5939,29 +6873,13 @@ In this lab, you will implement a 64-point Radix-2 FFT on the signal processor b
 ■ be able to implement a framework around an existing FFT algorithms in assembly language in order to perform a frequency analysis of a signal.
 
 ■ be able to apply a Hamming window to a block of N samples stored in a corresponding buffer
-```
 
-### chunk_3d9011a4d715402a9d1528d150a41b76
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_c3b1fe4b99cd465f97b1cb8b8a0d42a1`
-- chunk type: `general`
-- page_start/page_end: `11`
-- token_count: `20`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab`
-- content:
-```text
+2.2 Preparation of the lab
+
 Prepare well the fundamentals presented in the lecture on DFT and FFT and the preparation tasks in this lab assignment.
-```
 
-### chunk_5526611414124b0fa6e238c92640150d
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_6e4335cb98dd43c090e14027b6799d16`
-- chunk type: `general`
-- page_start/page_end: `11 -> 12`
-- token_count: `38`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task (for short test)`
-- content:
-```text
+Prep task (for short test)
+
 ■ Discrete Fourier Transform (DFT) and Fast Fourier Transform (FFT), including
 
 ■ DFT theorems,
@@ -5971,27 +6889,29 @@ Prepare well the fundamentals presented in the lecture on DFT and FFT and the pr
 ■ effects of windowing.
 
 These topics will be addressed by the short test at the beginning of the lab session.
-```
 
-### chunk_5be80b1d2dad49d39b5df8b4040d3ecc
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_4873ba255ee8447e873d5632a4fa16d4`
-- chunk type: `general`
-- page_start/page_end: `12`
-- token_count: `18`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.1 Analysis of a Butterfly`
-- content:
-```text
+2.2.1 Analysis of a Butterfly
+
 In Prep Task 1, we analyze the butterfly of the 2-point FFT which is depicted in Figure 2.1.
+
+Prep task 1
+
+■ The relation between the (generally complex) time-domain values
 ```
 
-### chunk_156167a10fab4f34baa919b06aa38d46
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_224dc44655814e86b7276f7e090e2c10`
+### chunk_abd9791ff1824317bd634c611c9e6bc7
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
+- sequence_number: `12`
+- chunk_index/chunk_total: `1/3`
 - chunk type: `general`
 - page_start/page_end: `12`
-- token_count: `175`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 1`
+- token_count: `197`
+- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab`
+- element_ids (10): `el_0d6572164997478da89a62e8bc35cf58, el_a4cd2a9823844dd6bbd476f9af3fb279, el_db2d9080b3b24010bfd2875bbb217ed2, el_7d5b68fcac54442d8de20954dcf6d86e, el_5b43e34d236949ad9b8ab9ed054a5eac, el_532caeb449f148cca41e2f4bc932e229, el_bebabccf414844ad96a115b19e727b6f, el_e55c07656f604849aa43a8a6ed5311be, ... (+2 more)`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab ■ The relation between the (generally complex) time-domain values z 1 = x 1 + jy 1 and z 2 = x 2 + jy 2 on the...`
 - content:
 ```text
 ■ The relation between the (generally complex) time-domain values
@@ -6011,15 +6931,25 @@ of the DFT spectrum on the right side shall be found. Before doing so, please mi
 ■ Give now the four equations for X 1 , Y 1 , X 2 , Y 2 .
 
 ■ Rewrite the equations for X 2 , Y 2 using only x 1 , X 1 , y 1 , Y 1
+
+2.2.2 8-point FFT (DIT)
+
+An 8-point FFT (DIT) is illustrated in Figure 2.2. Analyse this signal-flow diagram by solving the prep tasks.
 ```
 
-### chunk_6ffa22fe222947c28d79fa9c323e464f
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_2406664f50194e97902f8d90277c2800`
+### chunk_63eb08b01f3447e7a2c133bc06530e94
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
+- sequence_number: `13`
+- chunk_index/chunk_total: `2/3`
 - chunk type: `general`
-- page_start/page_end: `12`
-- token_count: `125`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.2 8-point FFT (DIT)`
+- page_start/page_end: `12 -> 13`
+- token_count: `173`
+- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab`
+- element_ids (4): `el_1749dc476dc94d929946db5c7cc297cc, el_78394676a78147a7a12a4bf22dc19507, el_fbef0fd3c1b1413b87528863d6fff2c0, el_3c682aa0ede04f5b891e700ab6da4f69`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab An 8-point FFT (DIT) is illustrated in Figure 2.2. Analyse this signal-flow diagram by solving the prep tasks....`
 - content:
 ```text
 An 8-point FFT (DIT) is illustrated in Figure 2.2. Analyse this signal-flow diagram by solving the prep tasks.
@@ -6027,19 +6957,27 @@ An 8-point FFT (DIT) is illustrated in Figure 2.2. Analyse this signal-flow diag
 The input sequences x 1 [ n ] , x 2 [ n ] (not x in [ n ] !!) consist each of the following 8 real decimal values, which we assume to be stored as 16 Bit (short int):
 
 x 1 [ n ] = { 2000 , 0 , -2000 , 0 , 2000 , 0 , -2000 , 0 } , N = 0 , . . . , 7 x 2 [ n ] = { 10000 , 0 , -10000 , 0 , 10000 , 0 , -10000 , 0 } , N = 0 , . . . , 7
+
+Prep task 2
+
+Put the values of x 1 [ n ] in the correct order according to Figure 2.2. Calculate (e.g. by hand) the output values of the first, second and last stage according to Figure 2.2 and assign the values to the nodes in the graph.
 ```
 
-### chunk_457ae4f27e8e48059326e63796803a6a
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+### chunk_9e55e097703749fbbee9e5ff227483a0
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_d418ba6a31fe449cb7bfde49ff98eec3`
+- sequence_number: `14`
+- chunk_index/chunk_total: `1/1`
 - chunk type: `general`
 - page_start/page_end: `13`
-- token_count: `193`
+- token_count: `192`
 - section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
+- element_ids (7): `el_981e5d3fd0fb4296bc04f388aeaf6715, el_f93ab6c92c5541ae818f5cca62f5f60c, el_013054c345fb41a4acf111c1190020ad, el_f33dfd3467a44d33a6cd040fc724ca38, el_65c1a6b1c6ac4fada38dd2c24ecb48e8, el_391bc40bdfff43df86c8bee80a2a1cb9, el_14a9698077b94274b4f33b8adad5679e`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2 Write a MATLAB script FFT a.m which calculates the output signal X 8 [ k ] , k = 0 , . . . 7 dire...`
 - content:
 ```text
-Put the values of x 1 [ n ] in the correct order according to Figure 2.2. Calculate (e.g. by hand) the output values of the first, second and last stage according to Figure 2.2 and assign the values to the nodes in the graph.
-
 Write a MATLAB script FFT a.m which calculates the output signal X 8 [ k ] , k = 0 , . . . 7 directly (i.e. internal node values not required) using MATLAB's FFT function. Compare your results from above with the result of MATLAB.
 
 Do overflows occur?
@@ -6051,53 +6989,65 @@ Extend your script FFT a.m to calculate the FFT of x 2 [ n ] and again compare y
 Do overflows occur (values larger than can be represented with signed 16 bit)? If so, explain why!
 
 By which factor do we need to scale the input values x [ n ] that never an overflow can occur at the output of the 8-point FFT when all values are of type short int ?
+
+Find a method that has a smaller loss in precision as the previous one. Hint: consider a scaling of values at nodes inside the FFT algorithm. Explain e.g. with an example why the latter method outperforms method where we scale the input values only?
 ```
 
-### chunk_5ccc166589384026ba78336733dddf7f
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_17c95d149a5045b891afb495471cf262`
+### chunk_93c3bdbde1304610b9c7e2cb4c41b49a
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_7ed26d2cb7ae42898eed2f4393165141`
+- sequence_number: `15`
+- chunk_index/chunk_total: `3/3`
 - chunk type: `general`
 - page_start/page_end: `13 -> 14`
-- token_count: `108`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 2`
+- token_count: `183`
+- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab`
+- element_ids (10): `el_e9b31d2d67ca4062a680083a78e76999, el_c6f8df1bf0314f0d8fab21790a8e102b, el_4d9c959feca04487bcb078bf08abfabc, el_f93d5718bcdf45d5848cd85ac8001e81, el_a5d7e2c10b894013b7395fb39195e49a, el_9ed13a7fd3a34ed79433331cd0e0e29e, el_8c9fced321db4c08a062683457dba839, el_67ba00ec6f7a42ea8b04a98677323b1d, ... (+2 more)`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab Hint: Begin each MATLAB script with 'clear all'. This clears the internal Workspace and if necessary resets ' i...`
 - content:
 ```text
-Find a method that has a smaller loss in precision as the previous one. Hint: consider a scaling of values at nodes inside the FFT algorithm. Explain e.g. with an example why the latter method outperforms method where we scale the input values only?
-
 Hint: Begin each MATLAB script with 'clear all'. This clears the internal Workspace and if necessary resets ' i' and ' j' (previously defined as index variables) back to imaginary numbers, i.e. i 2 = -1 , j 2 = -1 .
 
 Complex-valued input signal: Now examine x 3 [ n ] , a complex-value test signal (MATLAB notation):
 
 x3 = 0.125*cos(2*pi*3*(0:7)/8) + j*0.125*sin(2*pi*3*(0:7)/8);
-```
 
-### chunk_8fde6d373c3e40e4849baddaf21ef339
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_d5c320063ea143078e829eb0e35d7f1d`
-- chunk type: `general`
-- page_start/page_end: `14`
-- token_count: `48`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > Prep task 3`
-- content:
-```text
+Prep task 3
+
 Extend your MATLAB script as follows:
 
 ■ Plot the magnitude spectrum | X [ k ] | of x 3 [ n ] . Pay attention to the correct labeling and scaling of the frequency axis k .
 
 ■ Does the magnitude spectrum show symmetries? Explain your answer.
-```
 
-### chunk_480747e8d8b049feb270665fe8cf41d9
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
-- chunk type: `general`
-- page_start/page_end: `14`
-- token_count: `190`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
-- content:
-```text
+2.2.3 Familiarize yourself with the lab project
+
 In D: \ ti work or in EMIL you will find the complete C code for calculating an 8-point FFT. To execute this, copy the following three files from directory D: \ ti work \ UniDAQ2.DSP-ADDA \ Lab support into the standard project and remove main adda simple Lab.c:
 
+■ FFT8 Radix2 ISR.c (main( ))
+
+■ FFT butterfly.c
+
+■ FFT radix2.c
+```
+
+### chunk_c680331095264244bb7f351b4b2a4de6
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- sequence_number: `16`
+- chunk_index/chunk_total: `1/2`
+- chunk type: `general`
+- page_start/page_end: `14`
+- token_count: `175`
+- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
+- element_ids (11): `el_67ba00ec6f7a42ea8b04a98677323b1d, el_58ad2919a3d64c21bb28f45cdabb9f2a, el_3ef25ee273664e2c97f70236b389a2d2, el_9a6981db910945ba84b775b4e86ba548, el_e7b81b2d5fca4405aa7559aab877cb26, el_0af9180d7ec14af49a8377575b3a068b, el_e843e01d651644c3a06ad40522131776, el_e29454fde2e6472381417e18842c1e97, ... (+3 more)`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project ■ FFT8 Radix2 ISR.c (main( )) ■ FFT butterfly.c ■ FFT radix2....`
+- content:
+```text
 ■ FFT8 Radix2 ISR.c (main( ))
 
 ■ FFT butterfly.c
@@ -6117,49 +7067,49 @@ Please make sure that you understand the program files of the project, particula
 The files containing the FFT calculation are FFT butterfly.c and FFT radix2.c . The function call in the C code is:
 
 // carry out the N-point FFT on array asX[2*N] IN PLACE radix2(N FFT, asX, asWr, asWi);
-```
-
-### chunk_d3e3e3ce05f1416bb118c16fc9c80df3
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
-- chunk type: `general`
-- page_start/page_end: `14 -> 15`
-- token_count: `166`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
-- content:
-```text
-// carry out the N-point FFT on array asX[2*N] IN PLACE radix2(N FFT, asX, asWr, asWi);
 
 ■ This algorithm expects the (real and imaginary) samples in asX [2 ∗ N FFT ] in bit-reversed order, while the coefficients asW [ N FFT ] have to be stored in normal order.
+```
 
+### chunk_079ad9c44af44c17b0723f4e3a32cf5c
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_dc1a4d1c2aa448f1b3ec0b81b155daa3`
+- sequence_number: `17`
+- chunk_index/chunk_total: `2/2`
+- chunk type: `general`
+- page_start/page_end: `14 -> 15`
+- token_count: `190`
+- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
+- element_ids (5): `el_8941212d9be446abaeaa5b6fd35c42a2, el_b80f3f4fd44c41568bdad1ad377a99a1, el_7f9582fa17c64f7291b6060379af67a8, el_2a80a53460fa435eb0e9bc36ea150327, el_05c692985aa3474bb2d5112327b94de7`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project ■ The real part of the twiddle factors is stored on even addr...`
+- content:
+```text
 ■ The real part of the twiddle factors is stored on even addresses of the buffer asW [ N FFT ] , the imaginary samples on the odd addresses.
 
 ■ A block of N FFT samples of the real-valued part of the input signal asInBuf [ ] is stored bit reversed on even addresses of the FFT buffer asX [ ] . The imaginary parts on the odd addresses are set to zero, since for a real-valued signal the imaginary part is necessarily equal to zero.
 
 ■ Optional: A Hamming window shall be applied to the samples stored in asInBuf [ ] . A variable sDoHamming shall be used to turn the window on or off.
-```
 
-### chunk_1c099cfa85124e3bbd95bf95796735e9
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_9c96b643ae1c4bf4bfca0fc6f720248b`
-- chunk type: `general`
-- page_start/page_end: `15`
-- token_count: `74`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.2 Preparation of the lab > 2.2.3 Familiarize yourself with the lab project`
-- content:
-```text
 ■ After execution of the FFT, the FFT result is stored in the asX [2 ∗ N FFT ] buffer. The calculation is done 'in-place', i.e., the same memory is used for FFT input and output data.
 
 ■ An ANSI C function int16 t bitrev(int16 t sIn, int16 t sNfftStages) for bit-reversal is also provided. The second parameter of this function is referring to the number of FFT stages, not to the FFT length.
 ```
 
-### chunk_42ad6e8d71f34382abf2e11de4e80fc2
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_195468f140db466d8fc9fa5b061edb8b`
+### chunk_8bc41fba2b0f4e9693da1baba97688c1
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_594aac6616dd4969990693d7ad5c3f84`
+- sequence_number: `18`
+- chunk_index/chunk_total: `1/2`
 - chunk type: `general`
 - page_start/page_end: `15`
-- token_count: `104`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.1 Getting started with the c project`
+- token_count: `207`
+- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT`
+- element_ids (7): `el_53dcb38d9d0f45f7b6e39749cad1c519, el_4a6a07b7557a4624bc8919fa24167af2, el_1f56da1d07b44452870236ac9ce1ee62, el_254243fdd4a74b3bafdf5d56f1678a7a, el_8168256b9d5e450baa35f95f791514ea, el_bbb5c59d36f14fdc83a9e6799b41fa26, el_4597bf7ca2374dea848019f4163779f0`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT The given program correctly calculates the Radix-2 8-point FFT for an input sequence. If necessary, a...`
 - content:
 ```text
 The given program correctly calculates the Radix-2 8-point FFT for an input sequence. If necessary, adjust the input values to the already examined input sequence:
@@ -6167,61 +7117,47 @@ The given program correctly calculates the Radix-2 8-point FFT for an input sequ
 x 1 [ n ] = { 2000 0 -2000 0 2000 0 -2000 0 }
 
 Import the prepared project into CCS as for the 1st lab session. Copy the three files FFT8 Radix2 ISR.c , FFT butterfly.c and FFT radix2.c from ti work \ UniDAQ2.DSP-ADDA \ Lab support into the project folder and deactivate main adda simple Lab.c via Exclude from Build . First check whether the expected results are delivered. This does not need to be documented.
-```
 
-### chunk_3b5dc97ebda441838bae792c760aa0ed
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_19a3ba15789d44d6bb4a3acbcfe49bf6`
-- chunk type: `general`
-- page_start/page_end: `15`
-- token_count: `82`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > Lab task 1`
-- content:
-```text
+Lab task 1
+
 As a second step, enter the input sequence x 2 [ n ] from prep task and check the result. Do overflows occur? Comment on this and explain the values obtained in a brief calculation.
 
 Correct the ' error ' just determined in the program butterfly.c, so that overflows are avoided. Check the functionality: Are the output values correct?
 
 In butterfly.c replace the equations for X2 and Y2 with the equations from the first preparation task. Check that the results remain identical.
+
+2.3.2 Extension of the FFT to 64 points
+
+Your project should now be extended to a 64-point FFT.
 ```
 
-### chunk_79e04c727d294957a7ef1f9c33fe1355
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_4cee45b9f32842d79fdd17f3f4f34b33`
+### chunk_687535a8ab204805b799e8504dc9e9e9
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_594aac6616dd4969990693d7ad5c3f84`
+- sequence_number: `19`
+- chunk_index/chunk_total: `2/2`
 - chunk type: `general`
-- page_start/page_end: `15`
-- token_count: `43`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.2 Extension of the FFT to 64 points`
+- page_start/page_end: `15 -> 16`
+- token_count: `208`
+- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT`
+- element_ids (7): `el_4597bf7ca2374dea848019f4163779f0, el_9f675218dcdc49a190106c3ae43b55ba, el_b2e12eefcf2940b884af6c32d2a3c360, el_3a493dd1bc594bd1b71db236748806e9, el_ee54b9004ab44d37b90b2f426d6ade89, el_e6f89736a4dc48efb955cfb461193252, el_a7af5fdcfa2143caa8c8c23730875880`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT Your project should now be extended to a 64-point FFT. First make a copy of the file FFT8 Radix2 ISR....`
 - content:
 ```text
 Your project should now be extended to a 64-point FFT.
 
 First make a copy of the file FFT8 Radix2 ISR.c in the project folder and rename it to FFT64 Radix2 ISR.c . After that deactivate FFT8 Radix2 ISR.c via Exclude from Build .
-```
 
-### chunk_694fad47211944b6940be20c7775f505
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_0d0ce27edd02420dad25e14a70458180`
-- chunk type: `general`
-- page_start/page_end: `16`
-- token_count: `64`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > Lab task 2: 64 point FFT`
-- content:
-```text
+Lab task 2: 64 point FFT
+
 ■ Test the 64-point FFT with the following signal written directly to asInBuf [ ] and compare the result with that from MATLAB. x 4 = 4096 ∗ sin (2 ∗ pi ∗ 4 ∗ (0 : 63) / 64);
 
 ■ Use the graphical display in CCS via Tools → Graph (instructions see Getting Started [1]) to plot the result against a MATLAB plot.
-```
 
-### chunk_376b498eaac7400d9df5936e3d2ee910
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_76714fc95f8440f9af58f7293f6b8ec5`
-- chunk type: `general`
-- page_start/page_end: `16`
-- token_count: `91`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser`
-- content:
-```text
+2.3.3 Real-time spectrum analyser
+
 A continuous FFT analysis of N samples of a real signal is to be performed. The input signal is a sine signal coming from a function generator, the output is displayed in the graphical display. The results are displayed on the oscilloscope in the second step. The sampling frequency is 12,5 kHz .
 
 In the project folder, make a copy of the file FFT64 Radix2 ISR.c and rename it to FFT64 Analyser.c . Then disable FFT64 Radix2 ISR.c via Exclude from Build .
@@ -6229,13 +7165,19 @@ In the project folder, make a copy of the file FFT64 Radix2 ISR.c and rename it 
 The algorithm is to be implemented as follows:
 ```
 
-### chunk_578ec81761f74929832d08b7e86c00b8
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_8d960c37a60547b5b093ab81c66c62ed`
+### chunk_a0932ac7d1d649e3bd63c7fd915260e0
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_9abc832a968a47d5b16dff13c631d58d`
+- sequence_number: `20`
+- chunk_index/chunk_total: `1/3`
 - chunk type: `general`
 - page_start/page_end: `16`
-- token_count: `105`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 1. Reading samples`
+- token_count: `205`
+- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser`
+- element_ids (9): `el_d9cd88435a9842e698bd38f8e72aa36d, el_63460dd741944e26a3330ef9568e2e4d, el_3fdc60342d434c1c97043ae645c64b53, el_3c8866b6b9004b068b64cfc80a1fc43e, el_f739c989d29d4863bd13671f975e5779, el_476aebafe1be49d391944ba35afaf9a3, el_0f2d5b675b7c451cb2f0360b341d0a71, el_b0a2ae3855754bd0801b01c4f69c2f34, ... (+1 more)`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser Reading the samples has to be implemented in the ISR. ■ The sampl...`
 - content:
 ```text
 Reading the samples has to be implemented in the ISR.
@@ -6251,21 +7193,29 @@ samplecount is reset
 the FFT is calculated
 
 This is done in the infinite loop in main(), see below.
-```
 
-### chunk_ac08ca214b554f099840b0942d6775fa
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_3e36edbbd84e442db76204067a1d04ad`
-- chunk type: `general`
-- page_start/page_end: `16 -> 17`
-- token_count: `199`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
-- content:
-```text
+2. Calculation of the magnitudes of the spectrum
+
 As soon as the input buffer is filled, you calculate the FFT before the next sample value is read. The following steps are carried out for this purpose:
 
 ■ First each element of the input buffer asInBuf [ N ] is copied (bit reversed) to asX [2 ∗ N ] , but only to those array elements with even numbered indexes. All array elements with odd index (imaginary parts) have to be explicitly set to zero after calculating a 64-point FFT, since after the calculation asX [2 ∗ N ] is complex!!
+```
 
+### chunk_5466150579bf4e8c8510c42a18dc7295
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_9abc832a968a47d5b16dff13c631d58d`
+- sequence_number: `21`
+- chunk_index/chunk_total: `2/3`
+- chunk type: `general`
+- page_start/page_end: `16 -> 17`
+- token_count: `200`
+- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser`
+- element_ids (10): `el_df6d78b9da864627a5ce552636a99e74, el_7bd138ee6d2b47d5b30661143bcf9f74, el_293e1257f6de45e288b516e439caf75d, el_c02b3c3ed21c461eaa3c2e27079bda67, el_d8995166b6e046139f64ab11a9ebfea6, el_7d1af10f3d2344b9befa70ca7d378479, el_f9c560f28851405db3da16818a16b216, el_d8dd71b6a1bd4d368d8795e5667ba002, ... (+2 more)`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser ■ Function radix 2( ) is called and computes the FFT of the last...`
+- content:
+```text
 ■ Function radix 2( ) is called and computes the FFT of the last N read samples, stored in asX [2 ∗ N ] .
 
 Before calculating the FFT, asX [2 ∗ N ] contains the values for the FFT ( int16 t ); after the FFT, it contains the (complex) values of the spectrum.
@@ -6275,35 +7225,13 @@ Before calculating the FFT, asX [2 ∗ N ] contains the values for the FFT ( int
 of the last read samples as squares of the absolute values.
 
 ■ Please note:
-```
-
-### chunk_2057dcdbad46478f8b773e306eaa07b4
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_3e36edbbd84e442db76204067a1d04ad`
-- chunk type: `general`
-- page_start/page_end: `17`
-- token_count: `35`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 2. Calculation of the magnitudes of the spectrum`
-- content:
-```text
-of the last read samples as squares of the absolute values.
-
-■ Please note:
 
 Do not use any printf calls in interrupt mode.
 
 The twiddle factors are only calculated once, as they do not change.
-```
 
-### chunk_1e3b85d5867c490e9b4d375b4510a1ae
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_31c2ffd64d8740d385e7a8ba1c38cb1a`
-- chunk type: `general`
-- page_start/page_end: `17`
-- token_count: `67`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 3. Visualization of the results`
-- content:
-```text
+3. Visualization of the results
+
 The visualization is shown in the graphical display.
 
 Hint: To save time of taking the square roots in the calculation of the magnitudes, it is sufficient to send the squares of the magnitudes of the spectrum, i.e. | X k | 2 instead of X k to the DAC.
@@ -6311,13 +7239,19 @@ Hint: To save time of taking the square roots in the calculation of the magnitud
 ■ For the visualization, Refresh On Halt and Enable Continuous Refresh must be activated in the Graphical Display.
 ```
 
-### chunk_1aa17a7e38184578bb5c77f74792a19a
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_18d50c9198c44787b4167abcdf1aea4a`
+### chunk_47f02c894b0a470086c806caeb4fe718
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_9abc832a968a47d5b16dff13c631d58d`
+- sequence_number: `22`
+- chunk_index/chunk_total: `3/3`
 - chunk type: `general`
 - page_start/page_end: `17`
-- token_count: `98`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > 4. Output of the results to the oscilloscope`
+- token_count: `186`
+- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser`
+- element_ids (10): `el_850a1005d0d0437faa751dede7767bc7, el_13359a3e8adf4bc9a9fce14db65ad631, el_d2359b846813418e86e2acc758dcc1d7, el_bd09980db6d74c22a65bff06140dee06, el_84d6df593e65460484fa5fa1313812c7, el_a4640ecef49e43cf8dcf2a5a434c1618, el_6cccb659a44c4978a3612f9a27a023f4, el_d93bd83016984c1383ede0346b3c0182, ... (+2 more)`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser The output of the magnitude squares and the trigger pulse to the...`
 - content:
 ```text
 The output of the magnitude squares and the trigger pulse to the DAC is, of course, also carried out in the ISR.
@@ -6329,17 +7263,9 @@ The output of the magnitude squares and the trigger pulse to the DAC is, of cour
 Trigger for the presentation on the scope:
 
 Furthermore, if ( samplecount < = 2) , a trigger impulse 32767 is sent to channel 1 of the DAC; otherwise the output is '0'.
-```
 
-### chunk_e608638ed1674615ac23c0895d22240e
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
-- chunk type: `general`
-- page_start/page_end: `17`
-- token_count: `151`
-- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
-- content:
-```text
+Lab task 3: Real-time spectrum analyser
+
 Implement the analyzer according to the description of the algorithm above.
 
 Verify that the FFT64 Analyser.c functions correctly:
@@ -6349,23 +7275,47 @@ Connect the signal generator to the DSK board and select 'Waveform Sinus'. Choos
 Use the CCS 'graphical display' to monitor the results of the FFT. Start the program, updating the 'graph display' as described above. The display should adjust when you change the frequency of the generator.
 
 Take a screenshot for f in = 1 kHz .
+```
+
+### chunk_d7bbddae1e494ebfb83c0305fba52304
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- sequence_number: `23`
+- chunk_index/chunk_total: `1/2`
+- chunk type: `general`
+- page_start/page_end: `17`
+- token_count: `131`
+- section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
+- element_ids (4): `el_44abb53a52b247a9a9c28d23e1965be2, el_c483a8bff3964e218aca890dcccf6878, el_f214bc19104149c8b818c9bd08d1f68f, el_a714855c56944e1fb85a01d73b4bc245`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser Take a screenshot for f...`
+- content:
+```text
+Take a screenshot for f in = 1 kHz .
 
 Now change the input frequency to f in = 15 kHz . Save a screenshot and explain in one sentence what you see.
 
 In a next step, display the result on the oscilloscope (connect DAC channels 0 and 1 to the oscilloscope and use channel 1 of the board as trigger source). Take screenshots of the scope for f in = 0.5 kHz and f in = 2 kHz
+
+Optional: Compute in MATLAB a 64-point Hamming-window and scale it to a int16 t variable asHammWind [64] . Multiply asInBuf [ ] with this window before the buffer asInBuf [ N ] is copied to asX [2 ∗ N ] . Create a variable sDoHamming to switch the windowing on and off.
 ```
 
-### chunk_46ba9e711ae74e16bb1f6634b307f66b
-- document id: `doc_937e5cd2a1a3416e871b22b76c5bf2ab`
-- section id: `sec_4901dad3b552492e99b9fa700d8eee3e`
+### chunk_1ee0e38258d549f09a08af1661db8407
+- document id: `doc_c4856ffcca3543edbd8464622ac6f310`
+- section id: `sec_bb0ef6afa9984cbcb6bed83215f8f5fd`
+- sequence_number: `24`
+- chunk_index/chunk_total: `2/2`
 - chunk type: `general`
 - page_start/page_end: `17 -> 18`
-- token_count: `147`
+- token_count: `95`
 - section_path: `Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser`
+- element_ids (1): `el_f72c29d34d7f49bea3042e7c839701e4`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: E6_DV-DP_Lab_SoSe26_en Section path: Radix-2 FFT and Real-Time Spectrum Analyser > 2.3 Lab: Spectrum Analysis using FFT > 2.3.3 Real-time spectrum analyser > Lab task 3: Real-time spectrum analyser Connect a sine signal o...`
 - content:
 ```text
-Optional: Compute in MATLAB a 64-point Hamming-window and scale it to a int16 t variable asHammWind [64] . Multiply asInBuf [ ] with this window before the buffer asInBuf [ N ] is copied to asX [2 ∗ N ] . Create a variable sDoHamming to switch the windowing on and off.
-
 Connect a sine signal of amplitude of 2 V pp and frequency 500 Hz to the input of the DSK board. Display the output buffer in the CCS ' graph display'. Set a breakpoint at the line where samplecount is set to zero. Start the program, updating the 'graph display' at the breakpoint. Display the variable sDoHamming in the CCS 'Expressions Window' and switch sDoHamming on and off. Comment on the effect of the Hamming-window on the FFT output in alOutBuf [ ] (magnitude spectrum displayed logarithmically in a CCS ' graph display \ )
 ```
 
@@ -6376,6 +7326,8 @@ Connect a sine signal of amplitude of 2 V pp and frequency 500 Hz to the input o
 - root sections: `4`
 - elements without section_id: `0`
 - chunks without section_path: `0`
+- chunks spanning multiple elements: `23`
+- chunks spanning multiple pages: `11`
 - normal text elements with self-derived section_title: `0`
 
 ### Warnings

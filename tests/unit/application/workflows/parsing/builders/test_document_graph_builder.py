@@ -603,3 +603,246 @@ def test_document_graph_builder_creates_spare_parts_table_chunk_for_real_table()
 
     assert chunk.chunk_type.value == "spare_parts_table"
     assert "HP-001" in chunk.content
+
+
+def test_document_graph_builder_merges_short_related_subsections_into_one_chunk() -> None:
+    builder = make_builder(max_chunk_tokens=80, chunk_overlap=0)
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="Procedure",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="hdr_2",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=2,
+                text="Preparation",
+                page_start=1,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=3,
+                text="Wear gloves and isolate power.",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="hdr_3",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=4,
+                text="Execution",
+                page_start=1,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="txt_2",
+                element_type=ElementType.TEXT,
+                order_index=5,
+                text="Remove the cover and inspect the seal.",
+                page_start=1,
+            ),
+        ],
+        raw_parsed_document=make_raw_parsed_document(),
+    )
+
+    chunks = list(graph.chunks.values())
+
+    assert len(chunks) == 1
+    assert chunks[0].section_path == ["Procedure"]
+    assert "Wear gloves and isolate power." in chunks[0].content
+    assert "Execution" in chunks[0].content
+    assert "Remove the cover and inspect the seal." in chunks[0].content
+
+
+def test_document_graph_builder_merges_intro_with_child_task_when_under_budget() -> None:
+    builder = make_builder(max_chunk_tokens=200, chunk_overlap=0)
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="A first DSP project with Code Composer Studio",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=2,
+                text=(
+                    "This project introduces the signal path through the ADC and DAC "
+                    "and gives the context needed for the first implementation task."
+                ),
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="hdr_2",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=3,
+                text="Lab task 1: Feeding the ADC input directly to the DAC output",
+                page_start=1,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="txt_2",
+                element_type=ElementType.LIST_ITEM,
+                order_index=4,
+                text="Feed a sine wave into ADC 1 and inspect both output channels.",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_3",
+                element_type=ElementType.LIST_ITEM,
+                order_index=5,
+                text="Reconnect the cable to ADC 0 and verify the output path again.",
+                page_start=1,
+            ),
+        ],
+        raw_parsed_document=make_raw_parsed_document(),
+    )
+
+    chunks = list(graph.chunks.values())
+
+    assert len(chunks) == 1
+    assert chunks[0].section_path == ["A first DSP project with Code Composer Studio"]
+    assert "Lab task 1: Feeding the ADC input directly to the DAC output" in chunks[0].content
+
+
+def test_document_graph_builder_merges_same_topic_sibling_sections_under_parent() -> None:
+    builder = make_builder(max_chunk_tokens=200, chunk_overlap=0)
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="Lab preparation",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="hdr_2",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=2,
+                text="1.2.1 Interrupt handler and bit manipulation",
+                page_start=1,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=3,
+                text=(
+                    "Use bit masks to isolate relevant bits before copying the values "
+                    "to the DAC output channels."
+                ),
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="hdr_3",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=4,
+                text="Prep task 1: Interrupt handler and bit manipulation",
+                page_start=1,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="txt_2",
+                element_type=ElementType.LIST_ITEM,
+                order_index=5,
+                text="Which decimal values appear at the DAC outputs after masking?",
+                page_start=1,
+            ),
+        ],
+        raw_parsed_document=make_raw_parsed_document(),
+    )
+
+    chunks = list(graph.chunks.values())
+
+    assert len(chunks) == 1
+    assert chunks[0].section_path == ["Lab preparation"]
+    assert "Prep task 1: Interrupt handler and bit manipulation" in chunks[0].content
+
+
+def test_document_graph_builder_keeps_unrelated_sibling_sections_separate() -> None:
+    builder = make_builder(max_chunk_tokens=200, chunk_overlap=0)
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="Procedure",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="hdr_2",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=2,
+                text="Safety warnings",
+                page_start=1,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=3,
+                text="Disconnect the system from power before opening the housing.",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="hdr_3",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=4,
+                text="Troubleshooting",
+                page_start=1,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="txt_2",
+                element_type=ElementType.TEXT,
+                order_index=5,
+                text="Check the fuse, verify the supply voltage, and inspect the relay.",
+                page_start=1,
+            ),
+        ],
+        raw_parsed_document=make_raw_parsed_document(),
+    )
+
+    chunks = list(graph.chunks.values())
+
+    assert len(chunks) == 2
+    assert chunks[0].section_path == ["Procedure", "Safety warnings"]
+    assert chunks[1].section_path == ["Procedure", "Troubleshooting"]

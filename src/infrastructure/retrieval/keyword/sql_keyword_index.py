@@ -14,6 +14,5 @@ class SqlKeywordIndex(KeywordIndex):
 
     def search(self, query: RetrievalQuery) -> list[RetrievedChunk]:
         return self.repository.search_chunks(
-            query=query.query_text,
-            limit=query.top_k,
+            query=query,
         )

@@ -42,6 +42,23 @@ def unique_preserve_order(values: Iterable[str]) -> list[str]:
     return ordered
 
 
+def common_path_prefix(paths: list[list[str]]) -> list[str]:
+    if not paths:
+        return []
+
+    prefix = list(paths[0])
+    for path in paths[1:]:
+        prefix = [
+            left
+            for left, right in zip(prefix, path)
+            if left == right
+        ]
+        if not prefix:
+            return []
+
+    return prefix
+
+
 def is_contents_title(value: str | None) -> bool:
     if not value:
         return False

@@ -3,6 +3,9 @@ from src.application.validation.retrieval import RetrievalQueryValidator
 from src.application.workflows.retrieval.retrieval_workflow_result import (
     RetrievalWorkflowResult,
 )
+from src.application.workflows.retrieval.retrieval_context_expander import (
+    RetrievalContextExpander,
+)
 from src.domain.retrieval import RetrievalQuery
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import NoEvidenceFoundError
@@ -16,11 +19,13 @@ class RetrievalWorkflow:
         query_validator: RetrievalQueryValidator,
         min_evidence_chunks: int = 1,
         strict_evidence: bool = False,
+        context_expander: RetrievalContextExpander | None = None,
     ) -> None:
         self.retrieval_service = retrieval_service
         self.query_validator = query_validator
         self.min_evidence_chunks = min_evidence_chunks
         self.strict_evidence = strict_evidence
+        self.context_expander = context_expander
 
     @tracked_action(
         action="retrieval.workflow_completed",
@@ -61,8 +66,15 @@ class RetrievalWorkflow:
                 },
             )
 
+        context_chunks = (
+            self.context_expander.expand(retrieval_result.chunks)
+            if self.context_expander is not None
+            else list(retrieval_result.chunks)
+        )
+
         return RetrievalWorkflowResult(
             retrieval_result=retrieval_result,
             enough_evidence=enough_evidence,
             min_evidence_chunks=self.min_evidence_chunks,
+            context_chunks=context_chunks,
         )
