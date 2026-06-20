@@ -21,8 +21,8 @@ class FakeContextExpander:
         self.chunks = chunks
         self.calls = []
 
-    def expand(self, chunks):
-        self.calls.append(chunks)
+    def expand(self, chunks, query=None):
+        self.calls.append((chunks, query))
         return self.chunks
 
 
@@ -159,7 +159,9 @@ def test_workflow_expands_context_chunks_when_expander_is_available(
 
     result = workflow.run(sample_retrieval_query)
 
-    assert context_expander.calls == [sample_retrieval_result.chunks]
+    assert context_expander.calls == [
+        (sample_retrieval_result.chunks, sample_retrieval_query)
+    ]
     assert [chunk.chunk_id for chunk in result.final_chunks] == [
         sample_retrieved_chunk.chunk_id,
         "chunk_context_001",

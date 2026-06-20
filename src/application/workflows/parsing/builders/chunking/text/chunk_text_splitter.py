@@ -1,6 +1,6 @@
 import re
 
-from src.application.workflows.parsing.builders.chunking.chunking_utils import (
+from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     clean_chunk_text,
     count_tokens,
     tail_words,

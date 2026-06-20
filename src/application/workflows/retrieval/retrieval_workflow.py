@@ -67,7 +67,7 @@ class RetrievalWorkflow:
             )
 
         context_chunks = (
-            self.context_expander.expand(retrieval_result.chunks)
+            self.context_expander.expand(retrieval_result.chunks, query=query)
             if self.context_expander is not None
             else list(retrieval_result.chunks)
         )

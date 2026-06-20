@@ -1,12 +1,12 @@
 import re
 
-from src.application.workflows.parsing.builders.chunking.chunking_utils import (
+from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     clean_chunk_text,
     is_contents_title,
     is_reference_title,
     looks_like_boilerplate,
 )
-from src.application.workflows.parsing.builders.chunking.chunk_text_splitter import (
+from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
 from src.domain.common import ElementType

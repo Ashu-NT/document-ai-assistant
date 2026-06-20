@@ -1,7 +1,7 @@
-from src.application.workflows.parsing.builders.chunking.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.section_semantics import (
+from src.application.workflows.parsing.builders.chunking.policies.section_semantics import (
     normalize_section_title,
 )
 from src.domain.common import ElementType

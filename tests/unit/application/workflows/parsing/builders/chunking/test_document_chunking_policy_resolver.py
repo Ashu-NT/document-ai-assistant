@@ -1,7 +1,7 @@
-from src.application.workflows.parsing.builders.chunking.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.document_chunking_policy_resolver import (
+from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy_resolver import (
     DocumentChunkingPolicyResolver,
 )
 from src.domain.common import DocumentType

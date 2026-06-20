@@ -1,8 +1,10 @@
-from src.application.workflows.parsing.builders.chunking.chunk_fragment import (
+from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
-from src.application.workflows.parsing.builders.chunking.chunk_payload import ChunkPayload
-from src.application.workflows.parsing.builders.chunking.chunking_utils import (
+from src.application.workflows.parsing.builders.chunking.models.chunk_payload import (
+    ChunkPayload,
+)
+from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     clean_chunk_text,
     common_path_prefix,
     unique_preserve_order,
@@ -25,18 +27,12 @@ class ChunkPayloadFactory:
         )
         content = content_override or self._assemble_chunk_content(fragments)
         cleaned_content = clean_chunk_text(content) or ""
-        table_only = all(
-            fragment.chunk_type == ChunkType.SPARE_PARTS_TABLE
-            for fragment in fragments
-        )
 
         return ChunkPayload(
             section_id=section_id,
             section_path=list(section_path),
             content=cleaned_content,
-            chunk_type=(
-                ChunkType.SPARE_PARTS_TABLE if table_only else ChunkType.GENERAL
-            ),
+            chunk_type=self._resolve_chunk_type(fragments),
             element_ids=unique_preserve_order(
                 element_id
                 for fragment in fragments
@@ -83,6 +79,18 @@ class ChunkPayloadFactory:
             previous_path = list(fragment.section_path)
 
         return "\n\n".join(part for part in parts if part).strip()
+
+    @staticmethod
+    def _resolve_chunk_type(fragments: list[ChunkFragment]) -> ChunkType:
+        chunk_types = {
+            fragment.chunk_type
+            for fragment in fragments
+        }
+        if len(chunk_types) == 1:
+            return next(iter(chunk_types))
+        if chunk_types == {ChunkType.GENERAL, ChunkType.SPARE_PARTS_TABLE}:
+            return ChunkType.GENERAL
+        return ChunkType.GENERAL
 
     def _resolve_payload_section(
         self,

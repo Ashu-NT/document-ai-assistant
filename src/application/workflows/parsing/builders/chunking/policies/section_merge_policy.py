@@ -1,13 +1,13 @@
-from src.application.workflows.parsing.builders.chunking.chunk_fragment import (
+from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
-from src.application.workflows.parsing.builders.chunking.chunk_text_splitter import (
+from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
-from src.application.workflows.parsing.builders.chunking.chunking_utils import (
+from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     common_path_prefix,
 )
-from src.application.workflows.parsing.builders.chunking.section_semantics import (
+from src.application.workflows.parsing.builders.chunking.policies.section_semantics import (
     is_introductory_title,
     is_task_like_title,
     titles_share_topic,
@@ -20,6 +20,8 @@ class SectionMergePolicy:
         *,
         text_splitter: ChunkTextSplitter,
         min_section_text_length: int,
+        same_topic_merge_tokens: int | None = None,
+        intro_context_tokens: int | None = None,
     ) -> None:
         self.text_splitter = text_splitter
         self.min_section_text_length = min_section_text_length
@@ -27,13 +29,17 @@ class SectionMergePolicy:
             int(self.text_splitter.max_chunk_tokens * 0.85),
             self.text_splitter.max_chunk_tokens - 30,
         )
-        self.small_section_tokens = max(
+        computed_small_section_tokens = max(
             self.min_section_text_length * 3,
             int(self.text_splitter.max_chunk_tokens * 0.3),
         )
-        self.intro_context_tokens = max(
+        computed_intro_context_tokens = max(
             self.min_section_text_length * 4,
             int(self.text_splitter.max_chunk_tokens * 0.45),
+        )
+        self.small_section_tokens = same_topic_merge_tokens or computed_small_section_tokens
+        self.intro_context_tokens = (
+            intro_context_tokens or computed_intro_context_tokens
         )
 
     def should_flush_on_section_change(
