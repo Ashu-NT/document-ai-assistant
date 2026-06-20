@@ -1,10 +1,10 @@
-from src.application.workflows.parsing.builders.chunking.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.chunking_profile_inferer import (
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_inferer import (
     ChunkingProfileInferer,
 )
-from src.application.workflows.parsing.builders.chunking.document_chunking_policy import (
+from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy import (
     DocumentChunkingPolicy,
 )
 from src.domain.common import DocumentType

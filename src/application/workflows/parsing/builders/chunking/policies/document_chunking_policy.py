@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from src.application.workflows.parsing.builders.chunking.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
 )
 

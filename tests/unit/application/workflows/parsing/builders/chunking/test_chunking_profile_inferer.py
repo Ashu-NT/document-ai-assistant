@@ -1,7 +1,7 @@
-from src.application.workflows.parsing.builders.chunking.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.chunking_profile_inferer import (
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_inferer import (
     ChunkingProfileInferer,
 )
 from src.domain.common import ElementType

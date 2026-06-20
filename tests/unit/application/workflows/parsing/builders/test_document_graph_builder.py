@@ -61,6 +61,18 @@ def make_raw_parsed_document() -> RawParsedDocument:
     )
 
 
+def find_chunk_by_type(graph, chunk_type: str):
+    return next(
+        chunk for chunk in graph.chunks.values() if chunk.chunk_type.value == chunk_type
+    )
+
+
+def find_non_overview_chunks(graph):
+    return [
+        chunk for chunk in graph.chunks.values() if chunk.chunk_type.value != "overview"
+    ]
+
+
 def test_document_graph_builder_uses_resolved_section_paths_for_chunks() -> None:
     builder = make_builder()
     graph = builder.build(
@@ -98,7 +110,7 @@ def test_document_graph_builder_uses_resolved_section_paths_for_chunks() -> None
         raw_parsed_document=make_raw_parsed_document(),
     )
 
-    chunk = next(iter(graph.chunks.values()))
+    chunk = find_non_overview_chunks(graph)[0]
 
     assert chunk.section_path == ["Oscilloscope Probes", "Loading"]
 
@@ -160,6 +172,10 @@ def test_document_graph_builder_creates_table_assets_and_picture_assets() -> Non
     assert table.metadata.caption == "Spare parts list"
     assert picture.metadata.caption == "Figure 1. Exploded view."
     assert picture.image_path == "outputs/images/pic_001.png"
+    assert (
+        picture.metadata.nearby_text
+        == "Refer to the exploded view for part placement."
+    )
 
 
 def test_document_graph_builder_does_not_make_chunks_from_picture_ocr_noise() -> None:
@@ -199,10 +215,131 @@ def test_document_graph_builder_does_not_make_chunks_from_picture_ocr_noise() ->
         raw_parsed_document=make_raw_parsed_document(),
     )
 
-    chunk = next(iter(graph.chunks.values()))
+    chunk = find_non_overview_chunks(graph)[0]
 
     assert "Replace the hydraulic filter" in chunk.content
     assert "MKEYSIGHT" not in chunk.content
+
+
+def test_document_graph_builder_creates_picture_reference_chunk_with_context() -> None:
+    builder = make_builder()
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="Assembly View",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=2,
+                text="Inspect the figure to identify the filter housing.",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="pic_1",
+                element_type=ElementType.PICTURE,
+                order_index=3,
+                text="Figure 4. Filter housing layout.",
+                page_start=1,
+                metadata={
+                    "caption": "Figure 4. Filter housing layout.",
+                    "ocr_text": "FILTER HOUSING",
+                    "image_path": "outputs/images/pic_004.png",
+                },
+            ),
+        ],
+        raw_parsed_document=make_raw_parsed_document(),
+    )
+
+    picture_chunk = next(
+        chunk
+        for chunk in graph.chunks.values()
+        if chunk.chunk_type.value == "drawing_reference"
+    )
+
+    assert "Figure: Figure 4. Filter housing layout." in picture_chunk.content
+    assert "Context: Inspect the figure to identify the filter housing." in (
+        picture_chunk.content
+    )
+
+
+def test_document_graph_builder_uses_datasheet_profile_to_skip_picture_chunks() -> None:
+    builder = make_builder()
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/adc_converter_datasheet.pdf",
+        title="ADC Converter Datasheet",
+        page_count=2,
+        raw_document=object(),
+        parser_name="docling",
+        parser_version="1.2.3",
+        metadata={"language": "en"},
+    )
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/adc_converter_datasheet.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="Electrical Specifications",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="tbl_1",
+                element_type=ElementType.TABLE,
+                order_index=2,
+                text="| Parameter | Value |\n|---|---|\n| Supply Voltage | 5V |",
+                page_start=1,
+                metadata={
+                    "markdown": "| Parameter | Value |\n|---|---|\n| Supply Voltage | 5V |",
+                    "caption": "Electrical specifications",
+                    "row_count": 2,
+                    "column_count": 2,
+                },
+            ),
+            make_parsed_element(
+                element_id="pic_1",
+                element_type=ElementType.PICTURE,
+                order_index=3,
+                text="Figure 1. Package outline.",
+                page_start=1,
+                metadata={
+                    "caption": "Figure 1. Package outline.",
+                    "image_path": "outputs/images/pic_001.png",
+                },
+            ),
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=4,
+                text="Mechanical package dimensions are shown in the figure.",
+                page_start=1,
+            ),
+        ],
+        raw_parsed_document=raw_parsed_document,
+    )
+
+    assert all(
+        chunk.chunk_type.value != "drawing_reference"
+        for chunk in graph.chunks.values()
+    )
 
 
 def test_document_graph_builder_keeps_whole_elements_when_packing_chunks() -> None:
@@ -341,7 +478,7 @@ def test_document_graph_builder_adds_document_and_section_context_to_embedding_t
         raw_parsed_document=make_raw_parsed_document(),
     )
 
-    chunk = next(iter(graph.chunks.values()))
+    chunk = find_non_overview_chunks(graph)[0]
 
     assert chunk.content == "Loading impacts the probe and circuit under test."
     assert "Document title: Hydraulic Pump Manual" in (chunk.embedding_text or "")
@@ -657,13 +794,16 @@ def test_document_graph_builder_merges_short_related_subsections_into_one_chunk(
         raw_parsed_document=make_raw_parsed_document(),
     )
 
-    chunks = list(graph.chunks.values())
+    overview_chunk = find_chunk_by_type(graph, "overview")
+    detail_chunk = find_non_overview_chunks(graph)[0]
 
-    assert len(chunks) == 1
-    assert chunks[0].section_path == ["Procedure"]
-    assert "Wear gloves and isolate power." in chunks[0].content
-    assert "Execution" in chunks[0].content
-    assert "Remove the cover and inspect the seal." in chunks[0].content
+    assert len(graph.chunks) == 2
+    assert overview_chunk.section_path == ["Procedure"]
+    assert "Subsections: Preparation; Execution" in overview_chunk.content
+    assert detail_chunk.section_path == ["Procedure"]
+    assert "Wear gloves and isolate power." in detail_chunk.content
+    assert "Execution" in detail_chunk.content
+    assert "Remove the cover and inspect the seal." in detail_chunk.content
 
 
 def test_document_graph_builder_merges_intro_with_child_task_when_under_budget() -> None:
@@ -720,11 +860,14 @@ def test_document_graph_builder_merges_intro_with_child_task_when_under_budget()
         raw_parsed_document=make_raw_parsed_document(),
     )
 
-    chunks = list(graph.chunks.values())
+    overview_chunk = find_chunk_by_type(graph, "overview")
+    detail_chunk = find_non_overview_chunks(graph)[0]
 
-    assert len(chunks) == 1
-    assert chunks[0].section_path == ["A first DSP project with Code Composer Studio"]
-    assert "Lab task 1: Feeding the ADC input directly to the DAC output" in chunks[0].content
+    assert len(graph.chunks) == 2
+    assert overview_chunk.section_path == ["A first DSP project with Code Composer Studio"]
+    assert "Subsections: Lab task 1: Feeding the ADC input directly to the DAC output" in overview_chunk.content
+    assert detail_chunk.section_path == ["A first DSP project with Code Composer Studio"]
+    assert "Lab task 1: Feeding the ADC input directly to the DAC output" in detail_chunk.content
 
 
 def test_document_graph_builder_merges_same_topic_sibling_sections_under_parent() -> None:
@@ -782,11 +925,14 @@ def test_document_graph_builder_merges_same_topic_sibling_sections_under_parent(
         raw_parsed_document=make_raw_parsed_document(),
     )
 
-    chunks = list(graph.chunks.values())
+    overview_chunk = find_chunk_by_type(graph, "overview")
+    detail_chunk = find_non_overview_chunks(graph)[0]
 
-    assert len(chunks) == 1
-    assert chunks[0].section_path == ["Lab preparation"]
-    assert "Prep task 1: Interrupt handler and bit manipulation" in chunks[0].content
+    assert len(graph.chunks) == 2
+    assert overview_chunk.section_path == ["Lab preparation"]
+    assert "Subsections:" in overview_chunk.content
+    assert detail_chunk.section_path == ["Lab preparation"]
+    assert "Prep task 1: Interrupt handler and bit manipulation" in detail_chunk.content
 
 
 def test_document_graph_builder_keeps_unrelated_sibling_sections_separate() -> None:
@@ -841,8 +987,12 @@ def test_document_graph_builder_keeps_unrelated_sibling_sections_separate() -> N
         raw_parsed_document=make_raw_parsed_document(),
     )
 
-    chunks = list(graph.chunks.values())
+    overview_chunk = find_chunk_by_type(graph, "overview")
+    detail_chunks = find_non_overview_chunks(graph)
 
-    assert len(chunks) == 2
-    assert chunks[0].section_path == ["Procedure", "Safety warnings"]
-    assert chunks[1].section_path == ["Procedure", "Troubleshooting"]
+    assert len(graph.chunks) == 3
+    assert overview_chunk.section_path == ["Procedure"]
+    assert [chunk.section_path for chunk in detail_chunks] == [
+        ["Procedure", "Safety warnings"],
+        ["Procedure", "Troubleshooting"],
+    ]

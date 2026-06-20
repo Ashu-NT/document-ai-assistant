@@ -1,10 +1,10 @@
-from src.application.workflows.parsing.builders.chunking.chunk_fragment import (
+from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
-from src.application.workflows.parsing.builders.chunking.chunk_text_splitter import (
+from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
-from src.application.workflows.parsing.builders.chunking.section_merge_policy import (
+from src.application.workflows.parsing.builders.chunking.policies.section_merge_policy import (
     SectionMergePolicy,
 )
 from src.domain.common import ChunkType

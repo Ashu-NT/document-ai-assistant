@@ -2,6 +2,7 @@ from pathlib import Path
 
 from src.application.workflows.parsing.builders.chunking import SectionChunkBuilder
 from src.application.workflows.parsing.builders.document_graph import (
+    AssetNearbyTextEnricher,
     GraphChunkBuilder,
     ParsedAssetFactory,
     ParsedElementFactory,
@@ -39,12 +40,23 @@ class DocumentGraphBuilder:
     ) -> None:
         self.id_generator = id_generator
         self.section_builder = section_builder
-        self.section_chunk_builder = section_chunk_builder or SectionChunkBuilder(
-            max_chunk_tokens=max_chunk_tokens,
-            chunk_overlap=chunk_overlap,
-            min_section_text_length=min_section_text_length,
-        )
+        if section_chunk_builder is not None:
+            self.section_chunk_builder = section_chunk_builder
+        else:
+            section_chunk_builder_kwargs: dict[str, int] = {}
+            if max_chunk_tokens != 200:
+                section_chunk_builder_kwargs["max_chunk_tokens"] = max_chunk_tokens
+            if chunk_overlap != 20:
+                section_chunk_builder_kwargs["chunk_overlap"] = chunk_overlap
+            if min_section_text_length != 20:
+                section_chunk_builder_kwargs["min_section_text_length"] = (
+                    min_section_text_length
+                )
+            self.section_chunk_builder = SectionChunkBuilder(
+                **section_chunk_builder_kwargs,
+            )
         self.asset_factory = ParsedAssetFactory(id_generator)
+        self.asset_nearby_text_enricher = AssetNearbyTextEnricher()
         self.chunk_builder = GraphChunkBuilder(
             id_generator=id_generator,
             section_chunk_builder=self.section_chunk_builder,
@@ -67,7 +79,7 @@ class DocumentGraphBuilder:
                 file_path=file_path,
                 hashes=hashes,
                 title=raw_parsed_document.title or Path(file_path).stem,
-                document_type=DocumentType.UNKNOWN,
+                document_type=self._extract_document_type(raw_parsed_document),
                 language=self._extract_language(raw_parsed_document),
             )
 
@@ -144,6 +156,8 @@ class DocumentGraphBuilder:
                     section.element_ids.append(domain_element.element_id)
                     self._update_section_boundaries(section, domain_element)
 
+            self.asset_nearby_text_enricher.enrich(graph)
+
             for chunk in self.chunk_builder.build_chunks(graph=graph, sections=sections):
                 graph.add_chunk(chunk)
 
@@ -191,3 +205,26 @@ class DocumentGraphBuilder:
         if isinstance(language, str) and language.strip():
             return language.strip()
         return None
+
+    @staticmethod
+    def _extract_document_type(raw_parsed_document: RawParsedDocument) -> DocumentType:
+        raw_document_type = raw_parsed_document.metadata.get("document_type")
+        if isinstance(raw_document_type, str):
+            normalized = raw_document_type.strip().lower()
+            for document_type in DocumentType:
+                if normalized == document_type.value:
+                    return document_type
+
+        title = (raw_parsed_document.title or "").strip().lower()
+        title_markers = {
+            "datasheet": DocumentType.DATASHEET,
+            "manual": DocumentType.MANUAL,
+            "drawing": DocumentType.DRAWING,
+            "report": DocumentType.REPORT,
+            "certificate": DocumentType.CERTIFICATE,
+        }
+        for marker, document_type in title_markers.items():
+            if marker in title:
+                return document_type
+
+        return DocumentType.UNKNOWN

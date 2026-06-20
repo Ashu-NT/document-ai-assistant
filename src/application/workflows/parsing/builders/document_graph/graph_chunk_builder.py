@@ -30,6 +30,7 @@ class GraphChunkBuilder:
         }
         chunk_payloads = self.section_chunk_builder.build_document_chunk_payloads(
             document_title=graph.document.title,
+            document_type=graph.document.document_type,
             sections=ordered_sections,
             section_elements_by_id=section_elements_by_id,
         )
