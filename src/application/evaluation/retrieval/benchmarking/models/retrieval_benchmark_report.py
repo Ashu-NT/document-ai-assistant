@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from src.application.evaluation.retrieval.benchmarking.retrieval_benchmark_case_result import (
+from src.application.evaluation.retrieval.benchmarking.models.retrieval_benchmark_case_result import (
     RetrievalBenchmarkCaseResult,
 )
 

@@ -1,15 +1,29 @@
-from src.application.evaluation.retrieval.benchmarking.retrieval_benchmark_case import (
+from src.application.evaluation.retrieval.benchmarking.datasets import (
+    RetrievalBenchmarkDataset,
+)
+from src.application.evaluation.retrieval.benchmarking.enums import (
+    RetrievalBenchmarkPriority,
+    RetrievalBenchmarkQueryType,
+    RetrievalBenchmarkRankTarget,
+)
+from src.application.evaluation.retrieval.benchmarking.loaders import (
+    RetrievalTruthSetLoader,
+    DEFAULT_RETRIEVAL_TRUTH_SET_PATH,
+)
+from src.application.evaluation.retrieval.benchmarking.models import (
     RetrievalBenchmarkCase,
-)
-from src.application.evaluation.retrieval.benchmarking.retrieval_benchmark_case_result import (
     RetrievalBenchmarkCaseResult,
-)
-from src.application.evaluation.retrieval.benchmarking.retrieval_benchmark_report import (
     RetrievalBenchmarkReport,
 )
 
 __all__ = [
     "RetrievalBenchmarkCase",
+    "RetrievalBenchmarkDataset",
     "RetrievalBenchmarkCaseResult",
     "RetrievalBenchmarkReport",
+    "RetrievalBenchmarkPriority",
+    "RetrievalBenchmarkQueryType",
+    "RetrievalBenchmarkRankTarget",
+    "RetrievalTruthSetLoader",
+    "DEFAULT_RETRIEVAL_TRUTH_SET_PATH",
 ]
