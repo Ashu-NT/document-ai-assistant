@@ -45,6 +45,7 @@ from src.application.validation.classification import (  # noqa: E402
 )
 from src.application.validation.document import DocumentGraphValidator  # noqa: E402
 from src.application.workflows.classification import (  # noqa: E402
+    ChunkClassificationWorkflow,
     DocumentClassificationWorkflow,
     PostClassificationChunkFinalizationWorkflow,
 )
@@ -222,6 +223,12 @@ def build_corpus_seeder() -> RetrievalBenchmarkCorpusSeeder:
         document_classification_validator=document_validator,
         chunk_classification_validator=chunk_validator,
     )
+    chunk_classification_workflow = ChunkClassificationWorkflow(
+        llm_service=llm_service,
+        classification_service=classification_service,
+        chunk_classification_validator=chunk_validator,
+        id_generator=id_generator,
+    )
 
     return RetrievalBenchmarkCorpusSeeder(
         parsing_workflow=parsing_workflow,
@@ -240,6 +247,7 @@ def build_corpus_seeder() -> RetrievalBenchmarkCorpusSeeder:
                 document_lookup_service=document_lookup_service,
                 document_registration_service=document_registration_service,
                 classification_service=classification_service,
+                chunk_classification_workflow=chunk_classification_workflow,
                 question_generation_service=QuestionGenerationService(
                     llm_service=llm_service,
                     id_generator=id_generator,

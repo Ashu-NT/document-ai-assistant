@@ -68,6 +68,15 @@ class FakeQuestionGenerationService:
         ]
 
 
+class FakeChunkClassificationWorkflow:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def classify_chunk(self, chunk: DocumentChunk, activity_context=None):
+        self.calls.append(chunk.chunk_id)
+        return None
+
+
 class FakeDocumentRegistrationService:
     def __init__(self, operations: list[str]) -> None:
         self.operations = operations
@@ -198,9 +207,13 @@ def make_workflow(
     decision: DocumentTypeDecision,
     rechunked_chunks: list[DocumentChunk],
     provisional_profile: ChunkingProfile,
+    chunk_classification_workflow: FakeChunkClassificationWorkflow | None = None,
+    enable_chunk_classification: bool = False,
+    enable_question_generation: bool = True,
 ) -> tuple[
     PostClassificationChunkFinalizationWorkflow,
     FakeQuestionGenerationService,
+    FakeChunkClassificationWorkflow | None,
     FakeDocumentRegistrationService,
     FakeVectorStore,
     FakeEmbeddingWorkflow,
@@ -217,6 +230,7 @@ def make_workflow(
         document_lookup_service=FakeDocumentLookupService(graph),
         document_registration_service=registration_service,
         classification_service=FakeClassificationService(classification),
+        chunk_classification_workflow=chunk_classification_workflow,
         question_generation_service=question_generation_service,
         embedding_workflow=embedding_workflow,
         vector_store=vector_store,
@@ -226,10 +240,13 @@ def make_workflow(
         ),
         chunking_policy_resolver=FakeChunkingPolicyResolver(provisional_profile),
         document_type_resolver=FakeDocumentTypeResolver(decision),
+        enable_chunk_classification=enable_chunk_classification,
+        enable_question_generation=enable_question_generation,
     )
     return (
         workflow,
         question_generation_service,
+        chunk_classification_workflow,
         registration_service,
         vector_store,
         embedding_workflow,
@@ -267,6 +284,7 @@ def test_post_classification_finalization_reuses_chunks_and_runs_questions_and_e
     (
         workflow,
         question_service,
+        _,
         registration_service,
         vector_store,
         embedding_workflow,
@@ -278,6 +296,7 @@ def test_post_classification_finalization_reuses_chunks_and_runs_questions_and_e
         decision=decision,
         rechunked_chunks=[detail_chunk],
         provisional_profile=ChunkingProfile.MANUAL,
+        enable_question_generation=True,
     )
 
     result = workflow.finalize(graph.document.document_id)
@@ -326,6 +345,7 @@ def test_post_classification_finalization_rechunks_before_questions_and_embeddin
     (
         workflow,
         question_service,
+        _,
         registration_service,
         vector_store,
         embedding_workflow,
@@ -337,6 +357,7 @@ def test_post_classification_finalization_rechunks_before_questions_and_embeddin
         decision=decision,
         rechunked_chunks=[final_overview_chunk, final_detail_chunk],
         provisional_profile=ChunkingProfile.MANUAL,
+        enable_question_generation=True,
     )
 
     result = workflow.finalize(graph.document.document_id)
@@ -373,12 +394,13 @@ def test_post_classification_finalization_emits_nested_progress_messages(
         reasons=["reused provisional chunks"],
         should_rechunk=False,
     )
-    workflow, _, _, _, _, _, _ = make_workflow(
+    workflow, _, _, _, _, _, _, _ = make_workflow(
         graph=graph,
         classification=sample_document_classification,
         decision=decision,
         rechunked_chunks=[detail_chunk],
         provisional_profile=ChunkingProfile.MANUAL,
+        enable_question_generation=True,
     )
     messages: list[str] = []
 
@@ -394,3 +416,117 @@ def test_post_classification_finalization_emits_nested_progress_messages(
     assert any("Deleting existing vectors for this document..." in message for message in messages)
     assert any("embedding called for 1 chunk(s)" in message for message in messages)
     assert messages[-1] == "Post-classification chunk finalization completed."
+
+
+def test_post_classification_finalization_skips_question_generation_when_disabled(
+    sample_document_graph,
+    sample_document_classification,
+    sample_chunk,
+) -> None:
+    graph = copy.deepcopy(sample_document_graph)
+    detail_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_detail",
+        content="Detail content.",
+        chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+    )
+    graph.replace_chunks([detail_chunk])
+    decision = DocumentTypeDecision(
+        effective_document_type=DocumentType.MANUAL,
+        effective_chunking_profile=ChunkingProfile.MANUAL,
+        confidence=0.9,
+        reasons=["reused provisional chunks"],
+        should_rechunk=False,
+    )
+    (
+        workflow,
+        question_service,
+        _,
+        registration_service,
+        _,
+        embedding_workflow,
+        _,
+        _,
+    ) = make_workflow(
+        graph=graph,
+        classification=sample_document_classification,
+        decision=decision,
+        rechunked_chunks=[detail_chunk],
+        provisional_profile=ChunkingProfile.MANUAL,
+        enable_question_generation=False,
+    )
+    messages: list[str] = []
+
+    result = workflow.finalize(
+        graph.document.document_id,
+        progress_callback=messages.append,
+    )
+
+    assert question_service.calls == []
+    assert result.questions == {}
+    assert registration_service.replace_calls[0].questions == {}
+    assert embedding_workflow.calls == [["chunk_detail"]]
+    assert any(
+        "Question generation disabled; skipping final chunk questions."
+        in message
+        for message in messages
+    )
+
+
+def test_post_classification_finalization_classifies_chunks_when_enabled(
+    sample_document_graph,
+    sample_document_classification,
+    sample_chunk,
+) -> None:
+    graph = copy.deepcopy(sample_document_graph)
+    first_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_a",
+        content="Chunk A content.",
+        chunk_type=ChunkType.GENERAL,
+    )
+    second_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_b",
+        content="Chunk B content.",
+        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+    )
+    graph.replace_chunks([first_chunk, second_chunk])
+    decision = DocumentTypeDecision(
+        effective_document_type=DocumentType.MANUAL,
+        effective_chunking_profile=ChunkingProfile.MANUAL,
+        confidence=0.9,
+        reasons=["reused provisional chunks"],
+        should_rechunk=False,
+    )
+    chunk_workflow = FakeChunkClassificationWorkflow()
+    (
+        workflow,
+        _,
+        returned_chunk_workflow,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = make_workflow(
+        graph=graph,
+        classification=sample_document_classification,
+        decision=decision,
+        rechunked_chunks=[first_chunk, second_chunk],
+        provisional_profile=ChunkingProfile.MANUAL,
+        chunk_classification_workflow=chunk_workflow,
+        enable_chunk_classification=True,
+        enable_question_generation=False,
+    )
+    messages: list[str] = []
+
+    workflow.finalize(
+        graph.document.document_id,
+        progress_callback=messages.append,
+    )
+
+    assert returned_chunk_workflow is chunk_workflow
+    assert chunk_workflow.calls == ["chunk_a", "chunk_b"]
+    assert any("Classifying 2 final chunk(s)..." in message for message in messages)
+    assert any("Classified 2 final chunk(s)." in message for message in messages)
