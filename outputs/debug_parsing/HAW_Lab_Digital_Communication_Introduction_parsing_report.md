@@ -14,6 +14,130 @@
 - page count: `7`
 - raw document type: `DoclingDocument`
 
+## Structural Profile Inference
+- selected profile: `manual`
+- confidence: `0.608`
+- scores:
+```json
+{
+  "default": 1.3,
+  "manual": 3.6,
+  "datasheet": 0.7,
+  "drawing": 0.0,
+  "report": 0.7
+}
+```
+- selected profile reasons:
+```json
+[
+  "Manual markers found in title/sections (1 hits).",
+  "Procedure-like section titles are present (3)."
+]
+```
+- key statistics:
+```json
+{
+  "element_count": 147,
+  "section_count": 11,
+  "root_section_count": 11,
+  "nested_section_count": 0,
+  "max_section_depth": 1,
+  "table_count": 0,
+  "picture_count": 12,
+  "list_count": 5,
+  "code_count": 0,
+  "caption_count": 4,
+  "text_element_count": 121,
+  "text_token_total": 1039,
+  "long_text_block_count": 23,
+  "short_text_block_count": 87,
+  "avg_text_tokens": 8.587,
+  "table_ratio": 0.0,
+  "picture_ratio": 0.082,
+  "list_ratio": 0.034,
+  "code_ratio": 0.0,
+  "caption_ratio": 0.027,
+  "nested_section_ratio": 0.0,
+  "long_text_ratio": 0.19,
+  "short_text_ratio": 0.719,
+  "manual_marker_hits": 1,
+  "datasheet_marker_hits": 0,
+  "drawing_marker_hits": 0,
+  "report_marker_hits": 0,
+  "procedure_like_section_count": 3
+}
+```
+
+## Document Classification
+- provider: `OllamaLLMProvider`
+- ollama base url: `http://localhost:11434`
+- parser/title hint document type: `unknown`
+- classification id: `classification_ed1860c831e8420593861874e9dafab2`
+- predicted document type: `manual`
+- confidence score: `0.95`
+- model name: `qwen3:8b`
+- model type: `document_classification`
+- prompt version: `v2`
+- rationale: `The document contains lab exercise instructions, step-by-step procedures, and task assignments typical of technical manuals. Graph-derived content emphasizes hardware-software workflows and simulation setup.`
+- evidence:
+```json
+[
+  "[drawing_reference] Steps of this lab course (one step per lab day)",
+  "[drawing_reference] Matlab/Simulink (pages 4): Context: This lab builds upon a special toolbox set...",
+  "Chunk type distribution includes 'certification_info' and 'drawing_reference",
+  "Picture signals reference hardware preparation and simulation workflow"
+]
+```
+- metadata errors:
+```json
+[]
+```
+## Hybrid Chunking Decision
+- provisional chunking profile: `manual`
+- structural profile: `manual`
+- structural confidence: `0.608`
+- effective document type: `manual`
+- effective chunking profile: `manual`
+- decision confidence: `0.961`
+- should rechunk: `False`
+- decision reasons:
+```json
+[
+  "Model classification and structural inference agreed on the same document type.",
+  "Saved model classification aligned with the final document type.",
+  "Structural profile inference aligned with the final document type."
+]
+```
+### Classification Statistics
+```json
+{
+  "parser_title_hint_document_type": "unknown",
+  "predicted_document_type": "manual",
+  "classification_confidence_score": 0.95,
+  "structural_profile": "manual",
+  "structural_confidence": 0.608,
+  "provisional_chunking_profile": "manual",
+  "effective_document_type": "manual",
+  "effective_chunking_profile": "manual",
+  "decision_confidence": 0.961,
+  "should_rechunk": false,
+  "initial_chunk_count": 22,
+  "post_classification_chunk_count": 22,
+  "initial_chunk_types": {
+    "certification_info": 4,
+    "drawing_reference": 10,
+    "general": 7,
+    "technical_specification": 1
+  },
+  "post_classification_chunk_types": {
+    "certification_info": 4,
+    "drawing_reference": 10,
+    "general": 7,
+    "technical_specification": 1
+  }
+}
+```
+
 ## Canonical Elements Summary
 - total canonical elements: `147`
 - count by element_type: `{
@@ -1522,7 +1646,7 @@
 - text/content preview: `Digital Communications - Experiment number and title`
 
 ## Document Graph Summary
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
 - document title: `HAW_Lab_Digital_Communication_Introduction`
 - document type: `unknown`
 - section count: `11`
@@ -1547,7 +1671,7 @@
 
 ## Sections
 
-### sec_d48201ed54b94d298dbea174a8138b04
+### sec_ee730113146b4e28af7147d820678b2d
 - title: `Digital Communication Systems`
 - parent section id: ``
 - section path: `Digital Communication Systems`
@@ -1557,7 +1681,7 @@
 - effective heading_level: `1`
 - strategy: `default`
 
-### sec_cb83c50b28f64e739d4ad33448e1a508
+### sec_53d94df587b1460094730a54b8a77956
 - title: `HAW_Lab_Digital_Communication_Introduction`
 - parent section id: ``
 - section path: `HAW_Lab_Digital_Communication_Introduction`
@@ -1567,7 +1691,7 @@
 - effective heading_level: `1`
 - strategy: `default`
 
-### sec_1d060d1c32d34df688f668613cc0243d
+### sec_9f8b80786a084ea78b021faec0a426fd
 - title: `Lab exercises`
 - parent section id: ``
 - section path: `Lab exercises`
@@ -1577,7 +1701,7 @@
 - effective heading_level: `1`
 - strategy: `default`
 
-### sec_1c0679a4c8b24778b79f8547479f24d2
+### sec_7422f13892cc4fb1a42ff89e7bd0c516
 - title: `Explanations and descriptions`
 - parent section id: ``
 - section path: `Explanations and descriptions`
@@ -1587,7 +1711,7 @@
 - effective heading_level: `1`
 - strategy: `default`
 
-### sec_5bf9a97891af49b6a92cfffb127d27b7
+### sec_b6756d2942bb4b89b7c678cb7607fbdf
 - title: `Overview`
 - parent section id: ``
 - section path: `Overview`
@@ -1597,7 +1721,7 @@
 - effective heading_level: `1`
 - strategy: `default`
 
-### sec_287cb01e6db24597ba50732703a9f89c
+### sec_4465dabf7082464db5bd53db54abd267
 - title: `Teams`
 - parent section id: ``
 - section path: `Teams`
@@ -1607,7 +1731,7 @@
 - effective heading_level: `1`
 - strategy: `default`
 
-### sec_0b576ffc0f1c46308a97591105db01f4
+### sec_d047654edd654644819d1d4218ab8c1a
 - title: `Steps of this lab course (one step per lab day)`
 - parent section id: ``
 - section path: `Steps of this lab course (one step per lab day)`
@@ -1617,7 +1741,7 @@
 - effective heading_level: `1`
 - strategy: `default`
 
-### sec_a0316da80e5e427da6aee5f29584bef9
+### sec_e06f9300d6e8473889ac3f526b40d3ff
 - title: `Matlab/Simulink`
 - parent section id: ``
 - section path: `Matlab/Simulink`
@@ -1627,7 +1751,7 @@
 - effective heading_level: `1`
 - strategy: `default`
 
-### sec_beb1e6742d344d22afd511cb76f21f1f
+### sec_423bdc8cf5fb4deba88ac081367860b6
 - title: `Task assignments`
 - parent section id: ``
 - section path: `Task assignments`
@@ -1637,7 +1761,7 @@
 - effective heading_level: `1`
 - strategy: `default`
 
-### sec_10d04b72c72c4b56874b4b144a545a8a
+### sec_da5f6cab97bf42c6a7748ce56c25ba44
 - title: `HAW Hamburg`
 - parent section id: ``
 - section path: `HAW Hamburg`
@@ -1647,7 +1771,7 @@
 - effective heading_level: `1`
 - strategy: `default`
 
-### sec_4b08c758065f48158d65dd74fa659579
+### sec_1be2b97c970942338e90836ac93f3c05
 - title: `Fachbereich Elektrotechnik und Informatik`
 - parent section id: ``
 - section path: `Fachbereich Elektrotechnik und Informatik`
@@ -1659,9 +1783,9 @@
 
 ## Elements
 
-### el_e1d5c5563db74214a9c8f3c315cc168b
+### el_4da27347fdbc45e0b1f9db37f4e1d089
 - type: `picture`
-- section id: `sec_cb83c50b28f64e739d4ad33448e1a508`
+- section id: `sec_53d94df587b1460094730a54b8a77956`
 - resolved section path: `HAW_Lab_Digital_Communication_Introduction`
 - page_start/page_end: `1`
 - order_index: `1`
@@ -1669,9 +1793,9 @@
 - heading level source: ``
 - text preview: ``
 
-### el_80077fe7a8e54a57b2269840ac22c9c8
+### el_41b3246d348c4b80bab09c84e6983c6d
 - type: `section_header`
-- section id: `sec_d48201ed54b94d298dbea174a8138b04`
+- section id: `sec_ee730113146b4e28af7147d820678b2d`
 - resolved section path: `Digital Communication Systems`
 - page_start/page_end: `1`
 - order_index: `2`
@@ -1679,9 +1803,9 @@
 - heading level source: `default`
 - text preview: `Digital Communication Systems`
 
-### el_04d7b63098564fa4bb9dfe8eeecab185
+### el_984190036ac6450a8f21eb1279a93659
 - type: `section_header`
-- section id: `sec_1d060d1c32d34df688f668613cc0243d`
+- section id: `sec_9f8b80786a084ea78b021faec0a426fd`
 - resolved section path: `Lab exercises`
 - page_start/page_end: `1`
 - order_index: `3`
@@ -1689,9 +1813,9 @@
 - heading level source: `default`
 - text preview: `Lab exercises`
 
-### el_f0b6c372cb134592a80cd0b7cf0a80ac
+### el_3f449c23bf2f490a810195ab2b570544
 - type: `section_header`
-- section id: `sec_1c0679a4c8b24778b79f8547479f24d2`
+- section id: `sec_7422f13892cc4fb1a42ff89e7bd0c516`
 - resolved section path: `Explanations and descriptions`
 - page_start/page_end: `1`
 - order_index: `4`
@@ -1699,9 +1823,9 @@
 - heading level source: `default`
 - text preview: `Explanations and descriptions`
 
-### el_6b53ad37e7634460ae5a15997c265ea2
+### el_b330b08be5634dca93e3c69d26f4e441
 - type: `text`
-- section id: `sec_1c0679a4c8b24778b79f8547479f24d2`
+- section id: `sec_7422f13892cc4fb1a42ff89e7bd0c516`
 - resolved section path: `Explanations and descriptions`
 - page_start/page_end: `1`
 - order_index: `5`
@@ -1709,9 +1833,9 @@
 - heading level source: ``
 - text preview: `SS 2017`
 
-### el_cef8c4ef0cd442d6826ee3773224b121
+### el_7d67ba95bdf541e394550c23263d8da2
 - type: `text`
-- section id: `sec_1c0679a4c8b24778b79f8547479f24d2`
+- section id: `sec_7422f13892cc4fb1a42ff89e7bd0c516`
 - resolved section path: `Explanations and descriptions`
 - page_start/page_end: `1`
 - order_index: `6`
@@ -1719,9 +1843,9 @@
 - heading level source: ``
 - text preview: `Prof. R. Schoenen`
 
-### el_602e1c021e1c4dc49ff4c75926fcccb2
+### el_a07e81ce194a4102b21383d4b71eaa15
 - type: `section_header`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `7`
@@ -1729,9 +1853,9 @@
 - heading level source: `default`
 - text preview: `Overview`
 
-### el_e73477afe73d44e099008b58e05bc3a1
+### el_9dc840135da040ab936556951d233001
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `8`
@@ -1739,9 +1863,9 @@
 - heading level source: ``
 - text preview: `The lab exercises have the purpose of providing a hands-on experience about the theory learned during the lectures.`
 
-### el_e0f84da186c4423b8c60e911dca45e3b
+### el_c298f0bab01f465db2fb81e9e3dafa96
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `9`
@@ -1749,9 +1873,9 @@
 - heading level source: ``
 - text preview: `You have to come prepared to the lab, i.e. read and understood the instructions for that particular lab exercise, and practice using some simulation model components.`
 
-### el_57d406bbc1234b298bce8d8dde73e71f
+### el_f486ce6ffb3b4ac7ab54fe762b70a7f7
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `10`
@@ -1759,9 +1883,9 @@
 - heading level source: ``
 - text preview: `Many components of a digital transmission block diagram should be constructed and built up using two different methods:`
 
-### el_74804f5a48a94fe5998d1ce99469ea54
+### el_e899a45c9f094187a323ec2adf94429e
 - type: `list_item`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `11`
@@ -1769,9 +1893,9 @@
 - heading level source: ``
 - text preview: `Using real hardware, oscilloscopes, real sources`
 
-### el_e144082b6ef140c0942ff9b475ec37ea
+### el_29d71fdc783b471caa54bc2147cc2b53
 - type: `list_item`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `12`
@@ -1779,9 +1903,9 @@
 - heading level source: ``
 - text preview: `Using a simulation toolkit, e.g. Matlab/Simulink`
 
-### el_134acaf4031448bca1d4fbd66b533e2a
+### el_630b151f93914ee9b339544f3e131407
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `13`
@@ -1789,9 +1913,9 @@
 - heading level source: ``
 - text preview: `All tasks are performed in teams of (nominally) three students. No pre-assigned teams.`
 
-### el_9a0de041b4854d4c9cbd71c6b3c125b3
+### el_d7d39a7c8ff0427b87f24bb7aee9afff
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `14`
@@ -1799,9 +1923,9 @@
 - heading level source: ``
 - text preview: `Due to the limited resources, some groups start at the hardware bench while the other half starts at the software bench. At half-time the groups are swapped. For this change, all hardware must be back to its original state, i.e. cables d...`
 
-### el_087a3b0cb8df486ca3129202e6335c6b
+### el_f16cb2ed553f4d6c95cc5b3f053c30fb
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `15`
@@ -1809,9 +1933,9 @@
 - heading level source: ``
 - text preview: `For the hardware implementation, a number of instruments exist in the lab. Familiarize yourself with the available tools and list them here:`
 
-### el_ab67f578f2854d62b469a5ea7ff9dc5e
+### el_424721337206478cac6e363ba81e6b44
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `16`
@@ -1819,9 +1943,9 @@
 - heading level source: ``
 - text preview: `___________________________________________________________________________`
 
-### el_7b41fcc6f3a347f9bec2343fd962bcb6
+### el_aea27dcdc5c043a0a1a2c617d9826be2
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `17`
@@ -1829,9 +1953,9 @@
 - heading level source: ``
 - text preview: `For the simulation software implementation, the participants are requested to construct a model using the simulation software and given building blocks.`
 
-### el_c0431a1687b34ec4891b7e49ddde0a15
+### el_2b858db80d724d178dc7d886795c00b2
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `18`
@@ -1839,9 +1963,9 @@
 - heading level source: ``
 - text preview: `Write down here under which directory and filename the tools are stored:`
 
-### el_d5fe2cad3fab4e8fbf7e89bd0cda0789
+### el_08886d39a0684bc181c4da1a13cf9dc5
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `19`
@@ -1849,9 +1973,9 @@
 - heading level source: ``
 - text preview: `___________________________________________________________________________`
 
-### el_91463ece76bb46e59ce43797d832ced2
+### el_0f906c96608f44c994f9b160cf6dd7cc
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `20`
@@ -1859,9 +1983,9 @@
 - heading level source: ``
 - text preview: `Your task is to construct the complete model, adjust all the required parameters correctly, apply representative sources and sinks to the system, and measure the signals at several relevant positions.`
 
-### el_5f8ef03c46e24097be261febe49d5d9a
+### el_6dc9ac8e609d4271a869d5d36ceb02d2
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `21`
@@ -1869,9 +1993,9 @@
 - heading level source: ``
 - text preview: `This enables you to construct the hardware much easier, as you prepare yourself and understand the project task.`
 
-### el_7335cb6ebb1c45fd914dd727a7583b15
+### el_03a1e845494d46109905aedfde2e16d6
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `22`
@@ -1879,9 +2003,9 @@
 - heading level source: ``
 - text preview: `If you start with the hardware first and then switch to simulation, you will notice the gain of modeling efficiency, but perhaps also the problem of a long simulation runtime.`
 
-### el_d8a13774f305468a9f5e06ddef42a0b1
+### el_f16ec249d86948599647b3fe6bdaf1df
 - type: `picture`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `2`
 - order_index: `23`
@@ -1889,9 +2013,9 @@
 - heading level source: ``
 - text preview: ``
 
-### el_23a77e2685f641ea93659a7640fd2930
+### el_d0ac2f7344d94079a27b0ce4090b0268
 - type: `picture`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `3`
 - order_index: `24`
@@ -1899,9 +2023,9 @@
 - heading level source: ``
 - text preview: ``
 
-### el_5b18cca477724f24b6d8ca9b70332831
+### el_455d0a39b538400ca9cb63efe8d4340f
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `3`
 - order_index: `25`
@@ -1909,9 +2033,9 @@
 - heading level source: ``
 - text preview: `Optional and on request: One quarter of the groups will present their results at the end of the lab time, e.g. one group if there are four altogether, or two if there are eight altogether.`
 
-### el_87bc49ea2e4f44e6a86153525064e8a0
+### el_92049cb0591143238cd35734774a9bb6
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `3`
 - order_index: `26`
@@ -1919,9 +2043,9 @@
 - heading level source: ``
 - text preview: `During the other lab exercises, the other groups which haven't done this before will present. At the end of the last lab, each group must have presented one time.`
 
-### el_1853615ab4174784903d406e83fd6704
+### el_4804b8e4933542f59da526f5b736a2ab
 - type: `text`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `3`
 - order_index: `27`
@@ -1929,9 +2053,9 @@
 - heading level source: ``
 - text preview: `The requirements (prerequisite before the exam, or PVL=Prüfungsvorleistung) are passed if:`
 
-### el_286a0722c2f2458b9d9ce8e6b11b4c1c
+### el_ba415251d6804410a0fb10a1474a2104
 - type: `list_item`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `3`
 - order_index: `28`
@@ -1939,9 +2063,9 @@
 - heading level source: ``
 - text preview: `The student was present at all lab exercises,`
 
-### el_4d2c05823eec4745b5cbe81286856375
+### el_dc6dd9e502d041d18103561270082bc9
 - type: `list_item`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `3`
 - order_index: `29`
@@ -1949,9 +2073,9 @@
 - heading level source: ``
 - text preview: `the student was prepared sufficiently before,`
 
-### el_56816050c3294a9d8897ff91ac27a2f5
+### el_50031c4987dd4552b9da5be591c89d5b
 - type: `list_item`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - resolved section path: `Overview`
 - page_start/page_end: `3`
 - order_index: `30`
@@ -1959,9 +2083,9 @@
 - heading level source: ``
 - text preview: `the written reports were sufficiently graded within the provided time (deadline).`
 
-### el_335d79750b9b4fc6a9c626f6bbc83713
+### el_dfe39c65b2bc44138aa2dac242fec5f5
 - type: `section_header`
-- section id: `sec_287cb01e6db24597ba50732703a9f89c`
+- section id: `sec_4465dabf7082464db5bd53db54abd267`
 - resolved section path: `Teams`
 - page_start/page_end: `3`
 - order_index: `31`
@@ -1969,9 +2093,9 @@
 - heading level source: `default`
 - text preview: `Teams`
 
-### el_cf553ca80b9f435c82ac8d31960a4dc7
+### el_31e53f3aa71d41d7b3c24085638e754a
 - type: `text`
-- section id: `sec_287cb01e6db24597ba50732703a9f89c`
+- section id: `sec_4465dabf7082464db5bd53db54abd267`
 - resolved section path: `Teams`
 - page_start/page_end: `3`
 - order_index: `32`
@@ -1979,9 +2103,9 @@
 - heading level source: ``
 - text preview: `The team assignment is not fixed and cannot be pre-determined. No pre-arrangements will be accepted. Each individual student must be prepared to perform the tasks him-/herself.`
 
-### el_13f79e521c6f437aa20f2e53b7fee78f
+### el_65074d8199e24cbe81542e898de0aa8a
 - type: `section_header`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `3`
 - order_index: `33`
@@ -1989,9 +2113,9 @@
 - heading level source: `default`
 - text preview: `Steps of this lab course (one step per lab day)`
 
-### el_5c623131d36d4c8fa738f8dfee50e26d
+### el_cdc2240ce3bf402fbdefba7ccb2f02e3
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `3`
 - order_index: `34`
@@ -1999,9 +2123,9 @@
 - heading level source: ``
 - text preview: `Step 1: Sampling and quantization of analog signals`
 
-### el_b9ed1ed305b34e6d823a26a0f8d78470
+### el_c001bce06a64477a93ac548c55658cfa
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `3`
 - order_index: `35`
@@ -2009,9 +2133,9 @@
 - heading level source: ``
 - text preview: `Step 2: Impulse transmission in baseband and channel equalization`
 
-### el_f18f220f287b499eab0fd38cbfad2734
+### el_8ab96c99c08a4eae8d2a5f6df4932146
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `3`
 - order_index: `36`
@@ -2019,9 +2143,9 @@
 - heading level source: ``
 - text preview: `Step 3: Impulse transmission, synchronization, matched filter, bit errors`
 
-### el_c5e20afd8c9c429e9ea080275b18dc47
+### el_6b7aa6b9ff5f4d1b9060d552856d1324
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `3`
 - order_index: `37`
@@ -2029,9 +2153,9 @@
 - heading level source: ``
 - text preview: `Step 4: Channel coding, modulation, demodulation and decoding`
 
-### el_8bc4d19a0faf479a91436da73bf4845e
+### el_d6516e39c5f54309b89a12b0585e778f
 - type: `picture`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `38`
@@ -2039,9 +2163,9 @@
 - heading level source: ``
 - text preview: `Step 1: Sampling and Quantization:`
 
-### el_3ee4fdc7fbbc4004924b4fb6269f0cb5
+### el_b6e42eb2ca3d46d8a8b8ad29e85532af
 - type: `caption`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `39`
@@ -2049,9 +2173,9 @@
 - heading level source: ``
 - text preview: `Step 1: Sampling and Quantization:`
 
-### el_c998b7d851d44ad6981844fac4f975b2
+### el_3b08b8db3ab74d12aa73b9b84f9ab31c
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `40`
@@ -2059,9 +2183,9 @@
 - heading level source: ``
 - text preview: `SRC`
 
-### el_64a0d1265fce44d0bc550350e763b4b8
+### el_68e427750a6f410ea5b8083a1ed96b2f
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `41`
@@ -2069,9 +2193,9 @@
 - heading level source: ``
 - text preview: `sampling`
 
-### el_74cb9bb62e254f909a5b524880c849d3
+### el_15a772c34ed644e38ab45ada26aee01e
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `42`
@@ -2079,9 +2203,9 @@
 - heading level source: ``
 - text preview: `quantization`
 
-### el_dc183d1b4b90457fb69e9b1d41e4cd11
+### el_ae31e36857e04616b6413f06958dcfaa
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `43`
@@ -2089,9 +2213,9 @@
 - heading level source: ``
 - text preview: `reconstruction`
 
-### el_56129a3eaf3f435ab45a30f672fd6e8f
+### el_431c9ad20c9049cc951a6aa1a985c27e
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `44`
@@ -2099,9 +2223,9 @@
 - heading level source: ``
 - text preview: `SINK`
 
-### el_a38c56d71a4243db89778034dcee75aa
+### el_1efc74bc6cb344cc8d6f0c715164baa9
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `45`
@@ -2109,9 +2233,9 @@
 - heading level source: ``
 - text preview: `SRC & SINK : Audio up to 4kHz`
 
-### el_1add7ff41a77434e9745d91e16e08ff2
+### el_e676b45ca3484ddfa92e17b2d3d4a8a8
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `46`
@@ -2119,9 +2243,9 @@
 - heading level source: ``
 - text preview: `SRC & SINK : Audio up to 4kHz`
 
-### el_3fbf3db3616247ddb8a11c53477ba84d
+### el_437db1ab3f04497c8a9280d6e5585441
 - type: `picture`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `47`
@@ -2129,9 +2253,9 @@
 - heading level source: ``
 - text preview: `Step 2: Baseband Channel and Equalization`
 
-### el_b01e75a7068f4ee8b5b5823520a270ba
+### el_e0d3f501c93f4f27898b5f03a6b6d12c
 - type: `caption`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `48`
@@ -2139,9 +2263,9 @@
 - heading level source: ``
 - text preview: `Step 2: Baseband Channel and Equalization`
 
-### el_34026c2563c949deb1c7896d0a72b520
+### el_5c16352751644d7297b1a864af59053b
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `49`
@@ -2149,9 +2273,9 @@
 - heading level source: ``
 - text preview: `noise`
 
-### el_60dd8c0dc4b945cebbe7eb6bf5353eb9
+### el_8716325c532b4452816a19035e3b171f
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `50`
@@ -2159,9 +2283,9 @@
 - heading level source: ``
 - text preview: `digital`
 
-### el_1d2c433ac3934bbab11999155311c70e
+### el_6e268a90045e40679dc96c28e0c1a37b
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `51`
@@ -2169,9 +2293,9 @@
 - heading level source: ``
 - text preview: `baseband`
 
-### el_293e1d49d415436ab6500f1c760d0dfc
+### el_2af572cd69cc490dbefc2697677c8a41
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `52`
@@ -2179,9 +2303,9 @@
 - heading level source: ``
 - text preview: `channel`
 
-### el_432eb02ac09c41519fc686bd5a2fec1e
+### el_407ad37e27f3452ab849da1a49ec1672
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `53`
@@ -2189,9 +2313,9 @@
 - heading level source: ``
 - text preview: `measurements`
 
-### el_8962e5d2546e499a97d7ae04c924d725
+### el_fe0054d839b94d7fa79c6db9ee5aa455
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `54`
@@ -2199,9 +2323,9 @@
 - heading level source: ``
 - text preview: `source`
 
-### el_859058171551479fb8c2f2741f25376d
+### el_906c7860f0fb40239b44dd8d218ff6ec
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `55`
@@ -2209,9 +2333,9 @@
 - heading level source: ``
 - text preview: `channel`
 
-### el_2bead0f71afe4d3e84c0f472ab8dba80
+### el_10f9570567a74b78aa32ddff2b536449
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `56`
@@ -2219,9 +2343,9 @@
 - heading level source: ``
 - text preview: `equalizer`
 
-### el_f4cd7c34e94a48d795d168e6e5158a9e
+### el_796a32d0fef4442a8ca03d2317cf970f
 - type: `picture`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `57`
@@ -2229,9 +2353,9 @@
 - heading level source: ``
 - text preview: `Step 3: Impulse transmission, sync, matched filter, bit errors:`
 
-### el_14d7fea40b5842679417e4f7ce805ce1
+### el_e32e1c8a0d304f9dab00689205eba440
 - type: `caption`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `58`
@@ -2239,9 +2363,9 @@
 - heading level source: ``
 - text preview: `Step 3: Impulse transmission, sync, matched filter, bit errors:`
 
-### el_29443c9efe3f4130a0688f440e858af9
+### el_f2fcf97e76b643d7a5557da0ccc9fa9b
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `59`
@@ -2249,9 +2373,9 @@
 - heading level source: ``
 - text preview: `noise`
 
-### el_d30668d057a74c818719e64a3c447488
+### el_667d825b82b1461089198b391178cd9f
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `60`
@@ -2259,9 +2383,9 @@
 - heading level source: ``
 - text preview: `sync`
 
-### el_5ae79a55d01d40e2a8549debebaac9eb
+### el_aeab4c1912e648afb8201f64bc94cd7d
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `61`
@@ -2269,9 +2393,9 @@
 - heading level source: ``
 - text preview: `digital`
 
-### el_2ce7c9b81f504aebbaa978cefd69ec2d
+### el_24f847dc14024036a51209ad2b36274c
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `62`
@@ -2279,9 +2403,9 @@
 - heading level source: ``
 - text preview: `pulse`
 
-### el_2e8627e1646b4cd09ec95f89ba2d1648
+### el_ca7867e4b10649cfb06c62055460394c
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `63`
@@ -2289,9 +2413,9 @@
 - heading level source: ``
 - text preview: `baseband`
 
-### el_5f7af07ff87840b2b7a0f2ba46dc8b71
+### el_ca144d3b566744d6ab685bb2fb7f0f4d
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `64`
@@ -2299,9 +2423,9 @@
 - heading level source: ``
 - text preview: `matched`
 
-### el_fef62ba8f92846c3952c2439e4a714c5
+### el_09e23bb5a8094ad7a70bbad90d5b0df9
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `65`
@@ -2309,9 +2433,9 @@
 - heading level source: ``
 - text preview: `measurements`
 
-### el_1d0348d1a99740b4af6fc9f3c21f36ee
+### el_d7504847af8f47dc8f5bceeb7dc39af1
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `66`
@@ -2319,9 +2443,9 @@
 - heading level source: ``
 - text preview: `source`
 
-### el_0b5afc7ccc4443d8b76428ef6fd87d53
+### el_9c8b862559a541a69731489b71ef885a
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `67`
@@ -2329,9 +2453,9 @@
 - heading level source: ``
 - text preview: `shaping`
 
-### el_962dc790393643cf89a0436d6161dd33
+### el_0999473af15a4b6680826e6d9ff6d00d
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `68`
@@ -2339,9 +2463,9 @@
 - heading level source: ``
 - text preview: `channel`
 
-### el_7283c81b10064b03aef8eb1ac4de439a
+### el_727f5da2c3084fe2873849d81f96e11e
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `69`
@@ -2349,9 +2473,9 @@
 - heading level source: ``
 - text preview: `filter`
 
-### el_289dcfaecb91444b9137fddbb30bb886
+### el_520cdd904ef64591adc852a9a835043a
 - type: `caption`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `70`
@@ -2359,9 +2483,9 @@
 - heading level source: ``
 - text preview: `Step 4: Channel coding, modulation, demodulation and decoding`
 
-### el_ae634e6c797544d4a2eb86fdc8404927
+### el_f69c2652ec264138a390d6780e83a5ee
 - type: `picture`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `71`
@@ -2369,9 +2493,9 @@
 - heading level source: ``
 - text preview: ``
 
-### el_a692083bcfeb48f5ba337d816b5036c2
+### el_60c962e72b2e477197d68d614e5fadf0
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `72`
@@ -2379,9 +2503,9 @@
 - heading level source: ``
 - text preview: `digital`
 
-### el_7e1043a031a84d1983d88b0822394f66
+### el_0a4159693c9242f28bedb917efc59f35
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `73`
@@ -2389,9 +2513,9 @@
 - heading level source: ``
 - text preview: `channel`
 
-### el_d69d0f3f19a64b48a58690d6a55d6865
+### el_7262eb97f6814128ab4c0fb9499d62d2
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `74`
@@ -2399,9 +2523,9 @@
 - heading level source: ``
 - text preview: `modulate`
 
-### el_fafae0c203e3433dae184a93c5b1b8b5
+### el_0c6ad763d3744f8ca1c999a96609ef5e
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `75`
@@ -2409,9 +2533,9 @@
 - heading level source: ``
 - text preview: `source`
 
-### el_94c8f23e29c54e79bcd87e9c94b6646a
+### el_5c19adfb971f4a788dafde186aed4cda
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `76`
@@ -2419,9 +2543,9 @@
 - heading level source: ``
 - text preview: `encoder`
 
-### el_42524ad69dcd45e986ea2460aa6e917e
+### el_728aa63cafda46688f7143993defd5d8
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `77`
@@ -2429,9 +2553,9 @@
 - heading level source: ``
 - text preview: `RF`
 
-### el_76226213a36a4fa1b15418f2c9f3b463
+### el_503175de3faf4621bbd22b0018185bbc
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `78`
@@ -2439,9 +2563,9 @@
 - heading level source: ``
 - text preview: `noise`
 
-### el_192dce68e35949f2816b6f5111aa8be5
+### el_7b0698d3e83a4e1ca9b5d05ddab37268
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `79`
@@ -2449,9 +2573,9 @@
 - heading level source: ``
 - text preview: `channel`
 
-### el_848d00e8042740a3a98feac75034a40f
+### el_e0cbea65c65846bbb98de03ec201a2b1
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `80`
@@ -2459,9 +2583,9 @@
 - heading level source: ``
 - text preview: `channel`
 
-### el_66edad2787044ffeab4c04b167077054
+### el_485e00e2d3494c05b8c5d216ae9ee063
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `81`
@@ -2469,9 +2593,9 @@
 - heading level source: ``
 - text preview: `measurements`
 
-### el_1794300ff891430dbd03792b787a2509
+### el_decea2d286dc4646993f519d779760e8
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `82`
@@ -2479,9 +2603,9 @@
 - heading level source: ``
 - text preview: `demodulate`
 
-### el_6e1f3cf2d1a54a0790062a858c64bf5e
+### el_313d49188c3044f4bbe46dbac7043723
 - type: `text`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - resolved section path: `Steps of this lab course (one step per lab day)`
 - page_start/page_end: `4`
 - order_index: `83`
@@ -2489,9 +2613,9 @@
 - heading level source: ``
 - text preview: `decode`
 
-### el_f63bffe1ad444ad2b498bf52b7b1e149
+### el_575670867b5f480da7d4ca586a871bb1
 - type: `section_header`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `4`
 - order_index: `84`
@@ -2499,9 +2623,9 @@
 - heading level source: `default`
 - text preview: `Matlab/Simulink`
 
-### el_5a7bb9c21547489aaaec041e7283a858
+### el_6518abb173a44c74b584510d4523d266
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `4`
 - order_index: `85`
@@ -2509,9 +2633,9 @@
 - heading level source: ``
 - text preview: `This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measurements and analysis. It is possible that the provided blocks are not compatible with your version of Matlab. Please check beforeh...`
 
-### el_ae98c194cdb04e06836efcfd336a5823
+### el_5ea78a2fa4914a25877923ed064bb2fc
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `4`
 - order_index: `86`
@@ -2519,9 +2643,9 @@
 - heading level source: ``
 - text preview: `All toolboxes and required files are located in a folder which is told you during the lab:`
 
-### el_3b85300c836249f19b0d158c2de61487
+### el_67b4562b126e4287a7e22c85da6cdf26
 - type: `picture`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `4`
 - order_index: `87`
@@ -2529,9 +2653,9 @@
 - heading level source: ``
 - text preview: ``
 
-### el_ba071dc3e1014dfa805f26bb47a4988f
+### el_b954a17697334a8cbd8238727fe0d3f7
 - type: `picture`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `88`
@@ -2539,9 +2663,9 @@
 - heading level source: ``
 - text preview: ``
 
-### el_d574eeb41e9647bf8628092340105289
+### el_42c9124962694498a835c6f4ccbf76bf
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `89`
@@ -2549,9 +2673,9 @@
 - heading level source: ``
 - text preview: `______________________________________________________________________`
 
-### el_430f37ed21074f4eab934d9b084e6adf
+### el_f10947ff1dd441999f0147ac9ad465d4
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `90`
@@ -2559,9 +2683,9 @@
 - heading level source: ``
 - text preview: `This folder and all its contents must be copied into your workbench directory and be made available in the Matlab include path. Then you call the initialization script from Matlab:`
 
-### el_6198a6e4c4df450eade420d9e2b9ecd2
+### el_a69b8fd6f3cf4d7dba5a2ba3d8d30d88
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `91`
@@ -2569,9 +2693,9 @@
 - heading level source: ``
 - text preview: `init_digital_communications.m`
 
-### el_70a32e8b547a4085b774842c80bad71f
+### el_2edf14d3069240188f060624fa8d6afd
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `92`
@@ -2579,9 +2703,9 @@
 - heading level source: ``
 - text preview: `This initializes required settings (e.g., c.sample_time ).`
 
-### el_5002d09b789a4ba8a67bc7619e396f33
+### el_2ec32082128b4c9ca92b8259bec5868a
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `93`
@@ -2589,9 +2713,9 @@
 - heading level source: ``
 - text preview: `You may write an additional settings.m file for your own calculations and settings. This is strongly suggested, e.g., to declare and define variable names for global parameters such as sampling period time, sampling frequency, simulation...`
 
-### el_46a5fa621f424a8db9fee63a01865312
+### el_73fc5a5b029f4ebd9dd310af3f2be51b
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `94`
@@ -2599,9 +2723,9 @@
 - heading level source: ``
 - text preview: `After this, start the toolbox GUI by calling digital_communications_gui.m`
 
-### el_783a4e898b9e45008e62f61aff778a49
+### el_c60af8cb1dd24ea9acc6ef7d64017d52
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `95`
@@ -2609,9 +2733,9 @@
 - heading level source: ``
 - text preview: `This will provide you with the necessary blocks which you may use during the exercise. By clicking on the 'project step #' button an empty worksheet will be opened where some settings have already been done for you to save some time. The...`
 
-### el_f50855f842d84606a03beacc23bfd761
+### el_ec9f4b15b5dd4a9f9f0468ec7fc587b1
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `96`
@@ -2619,9 +2743,9 @@
 - heading level source: ``
 - text preview: `The button 'system blocks' makes a library window appear which contains all necessary building blocks.`
 
-### el_b956471a05dd42089558f56aee33d550
+### el_c273ea0f7d764641ba915f1bb01fb9ee
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `97`
@@ -2629,9 +2753,9 @@
 - heading level source: ``
 - text preview: `The button 'measurement tools' opens a library window containing signal sources, measurement blocks, and other useful tools.`
 
-### el_6d5205ec953f4ea5b091a902d00490c8
+### el_61b2f713f3e547fba700def2d2c9bb08
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `98`
@@ -2639,9 +2763,9 @@
 - heading level source: ``
 - text preview: `The button 'plot signal properties' provides measurement units, e.g., FFT spectrum or timebased measurements. Signals to analyze must be stored in 'to workspace' blocks before.`
 
-### el_2c2da592f04940d7b07f646fb5f40870
+### el_1cfe9de022cf47e9b159845e77d9f060
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `99`
@@ -2649,9 +2773,9 @@
 - heading level source: ``
 - text preview: `Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Configuration Parameters / Solver Options / Type: Variable-Step (This is faster)`
 
-### el_81e754cf702a4f4c87af1311d3f0765e
+### el_48f5eebdecfe46c2aea83b8c07aec98d
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `5`
 - order_index: `100`
@@ -2659,9 +2783,9 @@
 - heading level source: ``
 - text preview: `Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Parameters / Solver Options / Type: Fixed-Step Simulation / Model Configuration Parameters / Solver Options / Fixed-Step size: 2/64e...`
 
-### el_643a15dd708a4b40b6fc46278c9bc258
+### el_ce3c9d3656584647a8ac6f7b1edde5ef
 - type: `picture`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `101`
@@ -2669,9 +2793,9 @@
 - heading level source: ``
 - text preview: ``
 
-### el_8faa4cf34435489e83bb5dce0436519d
+### el_9c7647e798a244e99b090b10b5e584ad
 - type: `picture`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `102`
@@ -2679,9 +2803,9 @@
 - heading level source: ``
 - text preview: ``
 
-### el_4ddc28d0ce1344e9a3f27b1bc306052f
+### el_812419721fe24163b6aeb372d2706267
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `103`
@@ -2689,9 +2813,9 @@
 - heading level source: ``
 - text preview: `Figure 102`
 
-### el_780c5d5ce18d492b967554f0a256b83b
+### el_14123dc81f754d50b44aeb4c65a05837
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `104`
@@ -2699,9 +2823,9 @@
 - heading level source: ``
 - text preview: `X`
 
-### el_8389005933054a48ba1310635546d837
+### el_270297ec552245148abe27ee27b544e0
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `105`
@@ -2709,9 +2833,9 @@
 - heading level source: ``
 - text preview: `File`
 
-### el_f0425549981540dea8213732acad9902
+### el_8e27fe7d50644839a1bd0a6a61f919a9
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `106`
@@ -2719,9 +2843,9 @@
 - heading level source: ``
 - text preview: `1P3`
 
-### el_c1c8f1459f174365b882a5c6e22ddd47
+### el_b2c969b44b0e4874b7ebb8b0fb341d8e
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `107`
@@ -2729,9 +2853,9 @@
 - heading level source: ``
 - text preview: `View Insert`
 
-### el_144e4f191d5e450e8cb6dfeb8b2c7f78
+### el_004d831035d8484c925bb55f1664e10c
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `108`
@@ -2739,9 +2863,9 @@
 - heading level source: ``
 - text preview: `Iools`
 
-### el_17f323fa28b549dea23cf43544136a00
+### el_15b47783aff2413d8d72f201c311fa39
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `109`
@@ -2749,9 +2873,9 @@
 - heading level source: ``
 - text preview: `Desktop`
 
-### el_5fa5d5a5a13d408d804c915d649fb424
+### el_1aab9767daa14a21888f43573a545239
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `110`
@@ -2759,9 +2883,9 @@
 - heading level source: ``
 - text preview: `Window`
 
-### el_bc00505255b947f4a9753d41a707f351
+### el_3ea93081ef3945bb82045ad5b7b2acdd
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `111`
@@ -2769,9 +2893,9 @@
 - heading level source: ``
 - text preview: `Help`
 
-### el_f9f94c0f150e4502bf109c73acd13614
+### el_5bbdd95ed07b416ebb023beff9ca5646
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `112`
@@ -2779,9 +2903,9 @@
 - heading level source: ``
 - text preview: `Project "Digital Communication Systems"`
 
-### el_5c6ce595e5c84db5b8d3831cad8fc182
+### el_52dd0abab7124fbf9dcbc11291407c80
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `113`
@@ -2789,9 +2913,9 @@
 - heading level source: ``
 - text preview: `System Blocks`
 
-### el_58e8db05a29c4c6d831cc20659cb7677
+### el_f769a0190c9a4df6900ff340d3083370
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `114`
@@ -2799,9 +2923,9 @@
 - heading level source: ``
 - text preview: `project step 1`
 
-### el_8aab079aa9ff4d7c8df987383e508830
+### el_018110c06eb4414787c5e78fe608f64f
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `115`
@@ -2809,9 +2933,9 @@
 - heading level source: ``
 - text preview: `project step 2`
 
-### el_b4b06682023741669aee4ab55f7e30fe
+### el_e97dcbf10d314e4fb35ac1540a111772
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `116`
@@ -2819,9 +2943,9 @@
 - heading level source: ``
 - text preview: `Measurement Tools`
 
-### el_8e2ab38bb56c40afbe539d9cc2938e24
+### el_361f9e48774f4a028f0b51f0787ebbe0
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `117`
@@ -2829,9 +2953,9 @@
 - heading level source: ``
 - text preview: `project step 3`
 
-### el_b56097c36cd14fb484cfd1a1859ac90c
+### el_a1bca79c53e0413d887fb9599068281f
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `118`
@@ -2839,9 +2963,9 @@
 - heading level source: ``
 - text preview: `Re`
 
-### el_1f5eba3e062d4432b5c3814a1110b05b
+### el_ae6f4a1c2ebc46889a7d0b79d073ae69
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `119`
@@ -2849,9 +2973,9 @@
 - heading level source: ``
 - text preview: `Re`
 
-### el_a5ab44c988b0456798996ac1921b1a41
+### el_d882499ae782410f8480dcf0bca545db
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `120`
@@ -2859,9 +2983,9 @@
 - heading level source: ``
 - text preview: `project step 4`
 
-### el_c5441a2df3b948e494214b84baab0e01
+### el_4fb11b3e0e954ef1b10f49a646ef0ddf
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `121`
@@ -2869,9 +2993,9 @@
 - heading level source: ``
 - text preview: `plot signal prop.`
 
-### el_504866dd8b4e446db15b5a4cd91c92f6
+### el_3f6450dd7f054007860d0748df39bbad
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `122`
@@ -2879,9 +3003,9 @@
 - heading level source: ``
 - text preview: `Prof. Dr.-Ing. Micheel/Kroger/Schoenen`
 
-### el_a0dfeaa153c6464790027f99466fe0b2
+### el_6f25584f60274ee08efea352e18c2099
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `123`
@@ -2889,9 +3013,9 @@
 - heading level source: ``
 - text preview: `Help`
 
-### el_d352091dfd5f4e39bc4ab42303b00403
+### el_e457f35e253a43308ea407f128e0f47d
 - type: `text`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - resolved section path: `Matlab/Simulink`
 - page_start/page_end: `6`
 - order_index: `124`
@@ -2899,9 +3023,9 @@
 - heading level source: ``
 - text preview: `close`
 
-### el_088941043d8c4daa8c2c83baed1719b1
+### el_bb096c768c8b498090b20d07e2682d4b
 - type: `section_header`
-- section id: `sec_beb1e6742d344d22afd511cb76f21f1f`
+- section id: `sec_423bdc8cf5fb4deba88ac081367860b6`
 - resolved section path: `Task assignments`
 - page_start/page_end: `6`
 - order_index: `125`
@@ -2909,9 +3033,9 @@
 - heading level source: `default`
 - text preview: `Task assignments`
 
-### el_4666387adaf849998f8ebf4a78a48055
+### el_0f0f522dc2664428a13e6cb07f7f4b71
 - type: `text`
-- section id: `sec_beb1e6742d344d22afd511cb76f21f1f`
+- section id: `sec_423bdc8cf5fb4deba88ac081367860b6`
 - resolved section path: `Task assignments`
 - page_start/page_end: `6`
 - order_index: `126`
@@ -2919,9 +3043,9 @@
 - heading level source: ``
 - text preview: `For all lab exercises (1-4) there is a separate sheet with details of the instructions. You may find valuable information there including system parameters and hints to the expected results of the processing chain.`
 
-### el_8c277e8a6034474991e4cff80cd8d595
+### el_0c1c2b06056a4bf7afacb9d8481365c7
 - type: `text`
-- section id: `sec_beb1e6742d344d22afd511cb76f21f1f`
+- section id: `sec_423bdc8cf5fb4deba88ac081367860b6`
 - resolved section path: `Task assignments`
 - page_start/page_end: `6`
 - order_index: `127`
@@ -2929,9 +3053,9 @@
 - heading level source: ``
 - text preview: `Additionally it contains the instructions which measurements have to be taken in order to prove the correctness of the simulation model and the hardware setup.`
 
-### el_a13159959d1040f68f38a338d5a6b04a
+### el_624c6cbe352245b094270798040005c3
 - type: `text`
-- section id: `sec_beb1e6742d344d22afd511cb76f21f1f`
+- section id: `sec_423bdc8cf5fb4deba88ac081367860b6`
 - resolved section path: `Task assignments`
 - page_start/page_end: `6`
 - order_index: `128`
@@ -2939,9 +3063,9 @@
 - heading level source: ``
 - text preview: `Students must decide by using their own knowledge which instruments to choose in order to observe the requested results.`
 
-### el_f898ae6c54ef4de1b7d0e64a057453a8
+### el_9da8d29f8389448cac586c621d68803f
 - type: `text`
-- section id: `sec_beb1e6742d344d22afd511cb76f21f1f`
+- section id: `sec_423bdc8cf5fb4deba88ac081367860b6`
 - resolved section path: `Task assignments`
 - page_start/page_end: `6`
 - order_index: `129`
@@ -2949,9 +3073,9 @@
 - heading level source: ``
 - text preview: `If time and interest allows additional (voluntary) tasks can be addressed, for those who are more advanced.`
 
-### el_11f87bdb86b849c0b09cee5cc48a89c5
+### el_8432ca044da34363b4cccb6eebe092a0
 - type: `text`
-- section id: `sec_beb1e6742d344d22afd511cb76f21f1f`
+- section id: `sec_423bdc8cf5fb4deba88ac081367860b6`
 - resolved section path: `Task assignments`
 - page_start/page_end: `6`
 - order_index: `130`
@@ -2959,9 +3083,9 @@
 - heading level source: ``
 - text preview: `The lab report ('Protokoll') must contain a cover sheet of the lab (see last page of this document). Each report starts with a comprehensive explanation of the task assignment.`
 
-### el_0408f4fce7a246d0b236031e676ce2c1
+### el_57f4ec3f44db48c0b68ef92b9f7415c1
 - type: `picture`
-- section id: `sec_beb1e6742d344d22afd511cb76f21f1f`
+- section id: `sec_423bdc8cf5fb4deba88ac081367860b6`
 - resolved section path: `Task assignments`
 - page_start/page_end: `7`
 - order_index: `131`
@@ -2969,9 +3093,9 @@
 - heading level source: ``
 - text preview: ``
 
-### el_5bb29d72c94e418cbeab61d212944202
+### el_e7285109f15f44899d8e246bed943c5b
 - type: `section_header`
-- section id: `sec_10d04b72c72c4b56874b4b144a545a8a`
+- section id: `sec_da5f6cab97bf42c6a7748ce56c25ba44`
 - resolved section path: `HAW Hamburg`
 - page_start/page_end: `7`
 - order_index: `132`
@@ -2979,9 +3103,9 @@
 - heading level source: `default`
 - text preview: `HAW Hamburg`
 
-### el_0b2f91bedf2f488095b7dab9c9a8dab7
+### el_3d0a3919f99a42e5b502f22bde4a1bf1
 - type: `section_header`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `133`
@@ -2989,9 +3113,9 @@
 - heading level source: `default`
 - text preview: `Fachbereich Elektrotechnik und Informatik`
 
-### el_f7d7a36c11f848209e4bef6c8956a005
+### el_a0e856c4f5304159b32b7dddf681f094
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `134`
@@ -2999,9 +3123,9 @@
 - heading level source: ``
 - text preview: `DCL`
 
-### el_9f940265441140f5b5ec5f0a96984027
+### el_d4b336fbdf89495390c2dcdb710323ec
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `135`
@@ -3009,9 +3133,9 @@
 - heading level source: ``
 - text preview: `Semester: [SS/WS] 20__`
 
-### el_9ecac9ba70a94f6181d86418dae2396d
+### el_1389ef0705164673b73f072264994ea0
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `136`
@@ -3019,9 +3143,9 @@
 - heading level source: ``
 - text preview: `Lab group (DCL/01/02):`
 
-### el_3e3d36f384d24f9fad37c82152501f25
+### el_c7a69a64e34a4f71ae50041e879debf1
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `137`
@@ -3029,9 +3153,9 @@
 - heading level source: ``
 - text preview: `Team name/number:`
 
-### el_a7b0d1b3b2c9491b8cf3fd2ca53efe6b
+### el_d59abdf2a21f469ab3d77b205241afb8
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `138`
@@ -3039,9 +3163,9 @@
 - heading level source: ``
 - text preview: `Performed tasks:`
 
-### el_42ca83e40f38485493e23c0439857d60
+### el_7984261aa1144626a7578fec0ab0338e
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `139`
@@ -3049,9 +3173,9 @@
 - heading level source: ``
 - text preview: ` Hands-on hardware`
 
-### el_f438206c914e4ce9a4c0fd546c185a8f
+### el_4dd6629d7399419092ac16310e16cd99
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `140`
@@ -3059,9 +3183,9 @@
 - heading level source: ``
 - text preview: ` Hands-on software (Matlab/Simulink)`
 
-### el_8177847f70164bf89faba107ef378e5a
+### el_baad975134114269a036e9ddabadcb34
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `141`
@@ -3069,9 +3193,9 @@
 - heading level source: ``
 - text preview: `Protocol manager:`
 
-### el_5fc44fc7cc9a4d9c9e64e8c525428828
+### el_44a0d8bdfc26479e9401385e5d3ead3b
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `142`
@@ -3079,9 +3203,9 @@
 - heading level source: ``
 - text preview: `Date of exercise:`
 
-### el_f022828edce54c41a6749538429a43a9
+### el_bceac43a87584739ab2b89a5bdd7e34d
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `143`
@@ -3089,9 +3213,9 @@
 - heading level source: ``
 - text preview: ` Presentation`
 
-### el_b27ee63ff67b4484af7d64cba32dfacf
+### el_c1559970f77d4d42916e1db35e95e8c9
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `144`
@@ -3099,9 +3223,9 @@
 - heading level source: ``
 - text preview: `Other participants:`
 
-### el_561b3290f55c4cb2ae6b4217bda4e3a2
+### el_992211d320b04eeab1de9d441ed0f9e5
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `145`
@@ -3109,9 +3233,9 @@
 - heading level source: ``
 - text preview: `Professor:`
 
-### el_41b37139afee42d9963feb626bab44bd
+### el_920eba3f88cb4138960660bdcb679542
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `146`
@@ -3119,9 +3243,9 @@
 - heading level source: ``
 - text preview: `Attestation:`
 
-### el_f9ded7e168574fd99e7119eb83eafc23
+### el_d61eac683a5948ecb3bb757d8c7fc4ec
 - type: `text`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - resolved section path: `Fachbereich Elektrotechnik und Informatik`
 - page_start/page_end: `7`
 - order_index: `147`
@@ -3135,9 +3259,9 @@ _No table assets._
 
 ## Picture Assets
 
-### picture_dfdece3ab09940f98f98d300b947f72d
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- element id: `el_e1d5c5563db74214a9c8f3c315cc168b`
+### picture_fc7f4934798440a782eb92c47c1b13bd
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- element id: `el_4da27347fdbc45e0b1f9db37f4e1d089`
 - page_start/page_end: `1`
 - image path: ``
 - caption/text: ``
@@ -3146,9 +3270,9 @@ _No table assets._
 "AssetMetadata(source=SourceLocation(page_start=1, page_end=1, bbox=BoundingBox(x1=483.10205078125, y1=807.3896751403809, x2=520.4900512695312, y2=792.6376457214355)), caption=None, nearby_text=None)"
 ```
 
-### picture_6a412270caa6449e817a72d7ec431c62
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- element id: `el_d8a13774f305468a9f5e06ddef42a0b1`
+### picture_b851007fd7694c8c8f5f5dcf9c7d571c
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- element id: `el_f16ec249d86948599647b3fe6bdaf1df`
 - page_start/page_end: `2`
 - image path: ``
 - caption/text: ``
@@ -3157,9 +3281,9 @@ _No table assets._
 "AssetMetadata(source=SourceLocation(page_start=2, page_end=2, bbox=BoundingBox(x1=483.02679443359375, y1=807.3371849060059, x2=520.4893188476562, y2=792.6505737304688)), caption=None, nearby_text='This enables you to construct the hardware much easier, as you prepare yourself and understand the project task.\\n\\nIf you start with the hardware first and then switch to simulation, you will notice the gain of modeling efficiency, but perhaps also the problem of a long simulation runtime.\\n\\nOptional and on request: One quarter of the groups will present their results at the end of the lab time, e.g. one group if')"
 ```
 
-### picture_a75d8d4ac5e4401dae7031ad2be4b2f6
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- element id: `el_23a77e2685f641ea93659a7640fd2930`
+### picture_90243f9a102c4a4f918d14af0e72fe3b
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- element id: `el_d0ac2f7344d94079a27b0ce4090b0268`
 - page_start/page_end: `3`
 - image path: ``
 - caption/text: ``
@@ -3168,9 +3292,9 @@ _No table assets._
 "AssetMetadata(source=SourceLocation(page_start=3, page_end=3, bbox=BoundingBox(x1=483.1669616699219, y1=807.2893943786621, x2=520.3165893554688, y2=792.8108596801758)), caption=None, nearby_text='If you start with the hardware first and then switch to simulation, you will notice the gain of modeling efficiency, but perhaps also the problem of a long simulation runtime.\\n\\nOptional and on request: One quarter of the groups will present their results at the end of the lab time, e.g. one group if there are four altogether, or two if there are eight altogether.\\n\\nDuring the other lab exercises, the other')"
 ```
 
-### picture_0fe7f6b3458d420eb95894daa4de4666
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- element id: `el_8bc4d19a0faf479a91436da73bf4845e`
+### picture_84f49f54cec049e895e29994b6bb22b6
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- element id: `el_d6516e39c5f54309b89a12b0585e778f`
 - page_start/page_end: `4`
 - image path: ``
 - caption/text: `Step 1: Sampling and Quantization:`
@@ -3179,9 +3303,9 @@ _No table assets._
 "AssetMetadata(source=SourceLocation(page_start=4, page_end=4, bbox=BoundingBox(x1=69.26429748535156, y1=742.1752548217773, x2=511.7059631347656, y2=676.9700317382812)), caption='Step 1: Sampling and Quantization:', nearby_text='Step 3: Impulse transmission, synchronization, matched filter, bit errors\\n\\nStep 4: Channel coding, modulation, demodulation and decoding')"
 ```
 
-### picture_68d4806ec18044fbad4b71341d4a1c60
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- element id: `el_3fbf3db3616247ddb8a11c53477ba84d`
+### picture_154a68e4098146838502093ca9ff443f
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- element id: `el_437db1ab3f04497c8a9280d6e5585441`
 - page_start/page_end: `4`
 - image path: ``
 - caption/text: `Step 2: Baseband Channel and Equalization`
@@ -3190,9 +3314,9 @@ _No table assets._
 "AssetMetadata(source=SourceLocation(page_start=4, page_end=4, bbox=BoundingBox(x1=69.99340057373047, y1=624.5355529785156, x2=510.7875671386719, y2=537.4105224609375)), caption='Step 2: Baseband Channel and Equalization', nearby_text='SRC & SINK : Audio up to 4kHz')"
 ```
 
-### picture_6d0a1d457cdf46eb9e817a63256a4c75
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- element id: `el_f4cd7c34e94a48d795d168e6e5158a9e`
+### picture_724d7ba137874d49a01a427773bee0ca
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- element id: `el_796a32d0fef4442a8ca03d2317cf970f`
 - page_start/page_end: `4`
 - image path: ``
 - caption/text: `Step 3: Impulse transmission, sync, matched filter, bit errors:`
@@ -3201,9 +3325,9 @@ _No table assets._
 "AssetMetadata(source=SourceLocation(page_start=4, page_end=4, bbox=BoundingBox(x1=70.06462860107422, y1=494.9561462402344, x2=510.87957763671875, y2=408.1116943359375)), caption='Step 3: Impulse transmission, sync, matched filter, bit errors:', nearby_text=None)"
 ```
 
-### picture_0ee253a0b41545598a87924da4e51d2d
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- element id: `el_ae634e6c797544d4a2eb86fdc8404927`
+### picture_2aa0b9951a0d47c784ee1138456e2c86
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- element id: `el_f69c2652ec264138a390d6780e83a5ee`
 - page_start/page_end: `4`
 - image path: ``
 - caption/text: ``
@@ -3212,9 +3336,9 @@ _No table assets._
 "AssetMetadata(source=SourceLocation(page_start=4, page_end=4, bbox=BoundingBox(x1=69.58642578125, y1=349.437255859375, x2=511.7929382324219, y2=240.3682861328125)), caption=None, nearby_text=None)"
 ```
 
-### picture_2d3c61cd85af4459abc19832e3ed68d9
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- element id: `el_3b85300c836249f19b0d158c2de61487`
+### picture_64e623d8fa8b42e89080c26c1bf15bdd
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- element id: `el_67b4562b126e4287a7e22c85da6cdf26`
 - page_start/page_end: `4`
 - image path: ``
 - caption/text: ``
@@ -3223,9 +3347,9 @@ _No table assets._
 "AssetMetadata(source=SourceLocation(page_start=4, page_end=4, bbox=BoundingBox(x1=483.0514221191406, y1=807.3114738464355, x2=520.3502197265625, y2=792.7977905273438)), caption=None, nearby_text='This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measurements and analysis. It is possible that the provided blocks are not compatible with your version of Matlab. Please check beforehand to ensure that the exercise will run on your lab PC or laptop computer.\\n\\nAll toolboxes and required files are located in a folder which is told you during the lab:\\n\\n______________________________________________________________________')"
 ```
 
-### picture_2435ce1c4dbd4931ba04c7f3635911af
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- element id: `el_ba071dc3e1014dfa805f26bb47a4988f`
+### picture_5920bdb53758480da6e5e160a4c5ccc4
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- element id: `el_b954a17697334a8cbd8238727fe0d3f7`
 - page_start/page_end: `5`
 - image path: ``
 - caption/text: ``
@@ -3234,9 +3358,9 @@ _No table assets._
 "AssetMetadata(source=SourceLocation(page_start=5, page_end=5, bbox=BoundingBox(x1=483.091796875, y1=807.1875801086426, x2=520.3577270507812, y2=792.7981262207031)), caption=None, nearby_text='All toolboxes and required files are located in a folder which is told you during the lab:\\n\\n______________________________________________________________________\\n\\nThis folder and all its contents must be copied into your workbench directory and be made available in the Matlab include path. Then you call the initialization script from Matlab:')"
 ```
 
-### picture_3b0078c4b44244608d0bcd9bfbd38a1c
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- element id: `el_643a15dd708a4b40b6fc46278c9bc258`
+### picture_d261c03d6c794452af2f239ba6a46f20
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- element id: `el_ce3c9d3656584647a8ac6f7b1edde5ef`
 - page_start/page_end: `6`
 - image path: ``
 - caption/text: ``
@@ -3245,9 +3369,9 @@ _No table assets._
 "AssetMetadata(source=SourceLocation(page_start=6, page_end=6, bbox=BoundingBox(x1=483.06781005859375, y1=807.3511810302734, x2=520.3431396484375, y2=792.4396667480469)), caption=None, nearby_text='Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Configuration Parameters / Solver Options / Type: Variable-Step (This is faster)\\n\\nRecommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Parameters / Solver Options / Type: Fixed-Step Simulation / Model Configuration Parameters / Solver Options / Fixed-Step size: 2/64e5 (This is more precise)')"
 ```
 
-### picture_c9596c0ea10b41749e6fd47bf510f2b4
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- element id: `el_8faa4cf34435489e83bb5dce0436519d`
+### picture_8dd2547602504f22bd771a96eea059cc
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- element id: `el_9c7647e798a244e99b090b10b5e584ad`
 - page_start/page_end: `6`
 - image path: ``
 - caption/text: ``
@@ -3256,9 +3380,9 @@ _No table assets._
 "AssetMetadata(source=SourceLocation(page_start=6, page_end=6, bbox=BoundingBox(x1=69.81846618652344, y1=772.602668762207, x2=524.1115112304688, y2=407.6225280761719)), caption=None, nearby_text='Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Parameters / Solver Options / Type: Fixed-Step Simulation / Model Configuration Parameters / Solver Options / Fixed-Step size: 2/64e5 (This is more precise)')"
 ```
 
-### picture_8a746b2bb789473c9b47b63b5d47f03e
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- element id: `el_0408f4fce7a246d0b236031e676ce2c1`
+### picture_a358dcba75c24f6ca2326e98e01f1de0
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- element id: `el_57f4ec3f44db48c0b68ef92b9f7415c1`
 - page_start/page_end: `7`
 - image path: ``
 - caption/text: ``
@@ -3267,42 +3391,43 @@ _No table assets._
 "AssetMetadata(source=SourceLocation(page_start=7, page_end=7, bbox=BoundingBox(x1=483.0752868652344, y1=807.4863967895508, x2=520.3709106445312, y2=792.9199333190918)), caption=None, nearby_text=\"If time and interest allows additional (voluntary) tasks can be addressed, for those who are more advanced.\\n\\nThe lab report ('Protokoll') must contain a cover sheet of the lab (see last page of this document). Each report starts with a comprehensive explanation of the task assignment.\")"
 ```
 
-## Chunks
+## Initial Chunks
+- note: Structural chunks produced directly by parsing before model classification.
 
 ### Chunk Summary
-| sequence | chunk_id | section_id | section_path | chunk_pos | elements | pages | content preview |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | chunk_8b855b4a3401466e8234cac2ec5b094b | sec_1c0679a4c8b24778b79f8547479f24d2 | Explanations and descriptions | 1/1 | 2 | 1 | SS 2017 Prof. R. Schoenen |
-| 2 | chunk_c44f7517a3ec4f33921dc075233d85ef | sec_5bf9a97891af49b6a92cfffb127d27b7 | Overview | 1/5 | 12 | 2 | The lab exercises have the purpose of providing a hands-on experience about the theory learned during the lectures. Y... |
-| 3 | chunk_c0a5e1f4b5654b4cb2aaa79a8ee15b00 | sec_5bf9a97891af49b6a92cfffb127d27b7 | Overview | 2/5 | 2 | 2 | This enables you to construct the hardware much easier, as you prepare yourself and understand the project task. If y... |
-| 4 | chunk_292e7391b5f143b5bcbf2527cc443429 | sec_5bf9a97891af49b6a92cfffb127d27b7 | Overview | 3/5 | 1 | 2 | Context: This enables you to construct the hardware much easier, as you prepare yourself and understand the project t... |
-| 5 | chunk_ae2b33de04844555af994ad7b8dff354 | sec_5bf9a97891af49b6a92cfffb127d27b7 | Overview | 4/5 | 1 | 3 | Context: If you start with the hardware first and then switch to simulation, you will notice the gain of modeling eff... |
-| 6 | chunk_c0d6335a361746a3a2e1b0c23f7f60e9 | sec_5bf9a97891af49b6a92cfffb127d27b7 | Overview | 5/5 | 6 | 3 | Optional and on request: One quarter of the groups will present their results at the end of the lab time, e.g. one gr... |
-| 7 | chunk_60250a96e6764df2a02738a8320111b1 | sec_287cb01e6db24597ba50732703a9f89c | Teams | 1/1 | 1 | 3 | The team assignment is not fixed and cannot be pre-determined. No pre-arrangements will be accepted. Each individual... |
-| 8 | chunk_7481777cae5643dc8ef18d941a77c134 | sec_0b576ffc0f1c46308a97591105db01f4 | Steps of this lab course (one step per lab day) | 1/5 | 4 | 3 | Step 1: Sampling and quantization of analog signals Step 2: Impulse transmission in baseband and channel equalization... |
-| 9 | chunk_f25a1ab5cac04d3f810065c2e2eeeccb | sec_0b576ffc0f1c46308a97591105db01f4 | Steps of this lab course (one step per lab day) | 2/5 | 1 | 4 | Figure: Step 1: Sampling and Quantization: Context: Step 3: Impulse transmission, synchronization, matched filter, bi... |
-| 10 | chunk_ce174ba184414005bd1f4070fb0d54f1 | sec_0b576ffc0f1c46308a97591105db01f4 | Steps of this lab course (one step per lab day) | 3/5 | 1 | 4 | SRC & SINK : Audio up to 4kHz |
-| 11 | chunk_321a49ea4bf948df85fa72965ff83a79 | sec_0b576ffc0f1c46308a97591105db01f4 | Steps of this lab course (one step per lab day) | 4/5 | 1 | 4 | Figure: Step 2: Baseband Channel and Equalization Context: SRC & SINK : Audio up to 4kHz |
-| 12 | chunk_72183709078140ed8c20b902a65aa6ae | sec_0b576ffc0f1c46308a97591105db01f4 | Steps of this lab course (one step per lab day) | 5/5 | 1 | 4 | Figure: Step 3: Impulse transmission, sync, matched filter, bit errors: |
-| 13 | chunk_15d138a221ae46a89383d53e7694023e | sec_a0316da80e5e427da6aee5f29584bef9 | Matlab/Simulink | 1/7 | 2 | 4 | This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measurements an... |
-| 14 | chunk_fa7b893d81534e61b75b38eab89aae6c | sec_a0316da80e5e427da6aee5f29584bef9 | Matlab/Simulink | 2/7 | 1 | 4 | Context: This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measur... |
-| 15 | chunk_ce3a3ed0202a485ba51c4c4fa07dcd18 | sec_a0316da80e5e427da6aee5f29584bef9 | Matlab/Simulink | 3/7 | 1 | 5 | Context: All toolboxes and required files are located in a folder which is told you during the lab: _________________... |
-| 16 | chunk_c59e1a097f134ad2867af2e4005fcd60 | sec_a0316da80e5e427da6aee5f29584bef9 | Matlab/Simulink | 4/7 | 9 | 5 | This folder and all its contents must be copied into your workbench directory and be made available in the Matlab inc... |
-| 17 | chunk_88291ae1be6644a5bf794c0e3b554235 | sec_a0316da80e5e427da6aee5f29584bef9 | Matlab/Simulink | 5/7 | 2 | 5 | Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Configuratio... |
-| 18 | chunk_72694358b37741898b7f85e8b5f9f909 | sec_a0316da80e5e427da6aee5f29584bef9 | Matlab/Simulink | 6/7 | 1 | 6 | Context: Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Con... |
-| 19 | chunk_894d41b97cb44dbeb271b1888c1de2ab | sec_a0316da80e5e427da6aee5f29584bef9 | Matlab/Simulink | 7/7 | 1 | 6 | Context: Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Par... |
-| 20 | chunk_c8716415c9f24c2186b2be5b7671cf11 | sec_beb1e6742d344d22afd511cb76f21f1f | Task assignments | 1/2 | 5 | 6 | For all lab exercises (1-4) there is a separate sheet with details of the instructions. You may find valuable informa... |
+| sequence | chunk_id | section_id | section_path | chunk_pos | type | elements | pages | content preview |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | chunk_f0c02573008d46f789a4facb14d27521 | sec_7422f13892cc4fb1a42ff89e7bd0c516 | Explanations and descriptions | 1/1 | general | 2 | 1 | SS 2017 Prof. R. Schoenen |
+| 2 | chunk_5eb5ff65457943998717d6be63d56c07 | sec_b6756d2942bb4b89b7c678cb7607fbdf | Overview | 1/5 | certification_info | 12 | 2 | The lab exercises have the purpose of providing a hands-on experience about the theory learned during the lectures. Y... |
+| 3 | chunk_b0aa6d0179ec470b8bd4fdea6f104c36 | sec_b6756d2942bb4b89b7c678cb7607fbdf | Overview | 2/5 | general | 2 | 2 | This enables you to construct the hardware much easier, as you prepare yourself and understand the project task. If y... |
+| 4 | chunk_a572ab160fe04587908d77d6cc165ea6 | sec_b6756d2942bb4b89b7c678cb7607fbdf | Overview | 3/5 | drawing_reference | 1 | 2 | Context: This enables you to construct the hardware much easier, as you prepare yourself and understand the project t... |
+| 5 | chunk_dc266edbf12f48508621cb01898d71c8 | sec_b6756d2942bb4b89b7c678cb7607fbdf | Overview | 4/5 | drawing_reference | 1 | 3 | Context: If you start with the hardware first and then switch to simulation, you will notice the gain of modeling eff... |
+| 6 | chunk_11a0c892eed7426baf8903d4aa1bc2dc | sec_b6756d2942bb4b89b7c678cb7607fbdf | Overview | 5/5 | general | 6 | 3 | Optional and on request: One quarter of the groups will present their results at the end of the lab time, e.g. one gr... |
+| 7 | chunk_c7d52cb6dfed41a68579bab6d33281c8 | sec_4465dabf7082464db5bd53db54abd267 | Teams | 1/1 | general | 1 | 3 | The team assignment is not fixed and cannot be pre-determined. No pre-arrangements will be accepted. Each individual... |
+| 8 | chunk_dbb7755fb4734f36a580ac6e3c45733b | sec_d047654edd654644819d1d4218ab8c1a | Steps of this lab course (one step per lab day) | 1/5 | certification_info | 4 | 3 | Step 1: Sampling and quantization of analog signals Step 2: Impulse transmission in baseband and channel equalization... |
+| 9 | chunk_cc5e49ed22c74259af7815996529502c | sec_d047654edd654644819d1d4218ab8c1a | Steps of this lab course (one step per lab day) | 2/5 | drawing_reference | 1 | 4 | Figure: Step 1: Sampling and Quantization: Context: Step 3: Impulse transmission, synchronization, matched filter, bi... |
+| 10 | chunk_4243b13b5e4c4790b17c7cd5475765b7 | sec_d047654edd654644819d1d4218ab8c1a | Steps of this lab course (one step per lab day) | 3/5 | technical_specification | 1 | 4 | SRC & SINK : Audio up to 4kHz |
+| 11 | chunk_631b80c145ca4173abb008359796e7ce | sec_d047654edd654644819d1d4218ab8c1a | Steps of this lab course (one step per lab day) | 4/5 | drawing_reference | 1 | 4 | Figure: Step 2: Baseband Channel and Equalization Context: SRC & SINK : Audio up to 4kHz |
+| 12 | chunk_76feee19d4c84d06bcd763d8717b03cf | sec_d047654edd654644819d1d4218ab8c1a | Steps of this lab course (one step per lab day) | 5/5 | drawing_reference | 1 | 4 | Figure: Step 3: Impulse transmission, sync, matched filter, bit errors: |
+| 13 | chunk_8c5d3ff5569f41a89d643fa8e6b542fa | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 1/7 | general | 2 | 4 | This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measurements an... |
+| 14 | chunk_a04da68d042b42069021d3fe311fccbd | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 2/7 | drawing_reference | 1 | 4 | Context: This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measur... |
+| 15 | chunk_5a46c9b8ac9a4ada83a8d5de87ec6b4d | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 3/7 | drawing_reference | 1 | 5 | Context: All toolboxes and required files are located in a folder which is told you during the lab: _________________... |
+| 16 | chunk_b25899acd1ca43b682519a93c8a291e1 | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 4/7 | certification_info | 9 | 5 | This folder and all its contents must be copied into your workbench directory and be made available in the Matlab inc... |
+| 17 | chunk_0c7ce8e00cdd472c9a1e860b322a4c26 | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 5/7 | general | 2 | 5 | Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Configuratio... |
+| 18 | chunk_a9fcccba36f4439c9c6494941ee060ba | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 6/7 | drawing_reference | 1 | 6 | Context: Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Con... |
+| 19 | chunk_04f9dfa6682c4cf1adc84f029de168a3 | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 7/7 | drawing_reference | 1 | 6 | Context: Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Par... |
+| 20 | chunk_5c4987f9df624afebc4d0f794f6b4024 | sec_423bdc8cf5fb4deba88ac081367860b6 | Task assignments | 1/2 | certification_info | 5 | 6 | For all lab exercises (1-4) there is a separate sheet with details of the instructions. You may find valuable informa... |
 
-### chunk_8b855b4a3401466e8234cac2ec5b094b
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_1c0679a4c8b24778b79f8547479f24d2`
+### chunk_f0c02573008d46f789a4facb14d27521
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_7422f13892cc4fb1a42ff89e7bd0c516`
 - sequence_number: `1`
 - chunk_index/chunk_total: `1/1`
 - chunk type: `general`
 - page_start/page_end: `1`
 - token_count: `5`
 - section_path: `Explanations and descriptions`
-- element_ids (2): `el_6b53ad37e7634460ae5a15997c265ea2, el_cef8c4ef0cd442d6826ee3773224b121`
+- element_ids (2): `el_b330b08be5634dca93e3c69d26f4e441, el_7d67ba95bdf541e394550c23263d8da2`
 - table_ids (0): ``
 - picture_ids (0): ``
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Explanations and descriptions SS 2017 Prof. R. Schoenen`
@@ -3313,16 +3438,16 @@ SS 2017
 Prof. R. Schoenen
 ```
 
-### chunk_c44f7517a3ec4f33921dc075233d85ef
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+### chunk_5eb5ff65457943998717d6be63d56c07
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - sequence_number: `2`
 - chunk_index/chunk_total: `1/5`
-- chunk type: `general`
+- chunk type: `certification_info`
 - page_start/page_end: `2`
 - token_count: `239`
 - section_path: `Overview`
-- element_ids (12): `el_e73477afe73d44e099008b58e05bc3a1, el_e0f84da186c4423b8c60e911dca45e3b, el_57d406bbc1234b298bce8d8dde73e71f, el_74804f5a48a94fe5998d1ce99469ea54, el_e144082b6ef140c0942ff9b475ec37ea, el_134acaf4031448bca1d4fbd66b533e2a, el_9a0de041b4854d4c9cbd71c6b3c125b3, el_087a3b0cb8df486ca3129202e6335c6b, ... (+4 more)`
+- element_ids (12): `el_9dc840135da040ab936556951d233001, el_c298f0bab01f465db2fb81e9e3dafa96, el_f486ce6ffb3b4ac7ab54fe762b70a7f7, el_e899a45c9f094187a323ec2adf94429e, el_29d71fdc783b471caa54bc2147cc2b53, el_630b151f93914ee9b339544f3e131407, el_d7d39a7c8ff0427b87f24bb7aee9afff, el_f16cb2ed553f4d6c95cc5b3f053c30fb, ... (+4 more)`
 - table_ids (0): ``
 - picture_ids (0): ``
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Overview The lab exercises have the purpose of providing a hands-on experience about the theory learned during the lectures. You have to come prepared to the lab, i...`
@@ -3353,16 +3478,16 @@ Your task is to construct the complete model, adjust all the required parameters
 This enables you to construct the hardware much easier, as you prepare yourself and understand the project task.
 ```
 
-### chunk_c0a5e1f4b5654b4cb2aaa79a8ee15b00
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+### chunk_b0aa6d0179ec470b8bd4fdea6f104c36
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - sequence_number: `3`
 - chunk_index/chunk_total: `2/5`
 - chunk type: `general`
 - page_start/page_end: `2`
 - token_count: `48`
 - section_path: `Overview`
-- element_ids (2): `el_5f8ef03c46e24097be261febe49d5d9a, el_7335cb6ebb1c45fd914dd727a7583b15`
+- element_ids (2): `el_6dc9ac8e609d4271a869d5d36ceb02d2, el_03a1e845494d46109905aedfde2e16d6`
 - table_ids (0): ``
 - picture_ids (0): ``
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Overview This enables you to construct the hardware much easier, as you prepare yourself and understand the project task. If you start with the hardware first and t...`
@@ -3373,18 +3498,18 @@ This enables you to construct the hardware much easier, as you prepare yourself 
 If you start with the hardware first and then switch to simulation, you will notice the gain of modeling efficiency, but perhaps also the problem of a long simulation runtime.
 ```
 
-### chunk_292e7391b5f143b5bcbf2527cc443429
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+### chunk_a572ab160fe04587908d77d6cc165ea6
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - sequence_number: `4`
 - chunk_index/chunk_total: `3/5`
 - chunk type: `drawing_reference`
 - page_start/page_end: `2`
 - token_count: `84`
 - section_path: `Overview`
-- element_ids (1): `el_d8a13774f305468a9f5e06ddef42a0b1`
+- element_ids (1): `el_f16ec249d86948599647b3fe6bdaf1df`
 - table_ids (0): ``
-- picture_ids (1): `picture_6a412270caa6449e817a72d7ec431c62`
+- picture_ids (1): `picture_b851007fd7694c8c8f5f5dcf9c7d571c`
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Overview Context: This enables you to construct the hardware much easier, as you prepare yourself and understand the project task. If you start with the hardware fi...`
 - content:
 ```text
@@ -3395,18 +3520,18 @@ If you start with the hardware first and then switch to simulation, you will not
 Optional and on request: One quarter of the groups will present their results at the end of the lab time, e.g. one group if there are four altogether, or two if there are eight altogether.
 ```
 
-### chunk_ae2b33de04844555af994ad7b8dff354
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+### chunk_dc266edbf12f48508621cb01898d71c8
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - sequence_number: `5`
 - chunk_index/chunk_total: `4/5`
 - chunk type: `drawing_reference`
 - page_start/page_end: `3`
 - token_count: `91`
 - section_path: `Overview`
-- element_ids (1): `el_23a77e2685f641ea93659a7640fd2930`
+- element_ids (1): `el_d0ac2f7344d94079a27b0ce4090b0268`
 - table_ids (0): ``
-- picture_ids (1): `picture_a75d8d4ac5e4401dae7031ad2be4b2f6`
+- picture_ids (1): `picture_90243f9a102c4a4f918d14af0e72fe3b`
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Overview Context: If you start with the hardware first and then switch to simulation, you will notice the gain of modeling efficiency, but perhaps also the problem...`
 - content:
 ```text
@@ -3417,16 +3542,16 @@ Optional and on request: One quarter of the groups will present their results at
 During the other lab exercises, the other groups which haven't done this before will present. At the end of the last lab, each group must
 ```
 
-### chunk_c0d6335a361746a3a2e1b0c23f7f60e9
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_5bf9a97891af49b6a92cfffb127d27b7`
+### chunk_11a0c892eed7426baf8903d4aa1bc2dc
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
 - sequence_number: `6`
 - chunk_index/chunk_total: `5/5`
 - chunk type: `general`
 - page_start/page_end: `3`
 - token_count: `100`
 - section_path: `Overview`
-- element_ids (6): `el_5b18cca477724f24b6d8ca9b70332831, el_87bc49ea2e4f44e6a86153525064e8a0, el_1853615ab4174784903d406e83fd6704, el_286a0722c2f2458b9d9ce8e6b11b4c1c, el_4d2c05823eec4745b5cbe81286856375, el_56816050c3294a9d8897ff91ac27a2f5`
+- element_ids (6): `el_455d0a39b538400ca9cb63efe8d4340f, el_92049cb0591143238cd35734774a9bb6, el_4804b8e4933542f59da526f5b736a2ab, el_ba415251d6804410a0fb10a1474a2104, el_dc6dd9e502d041d18103561270082bc9, el_50031c4987dd4552b9da5be591c89d5b`
 - table_ids (0): ``
 - picture_ids (0): ``
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Overview Optional and on request: One quarter of the groups will present their results at the end of the lab time, e.g. one group if there are four altogether, or t...`
@@ -3445,16 +3570,16 @@ the student was prepared sufficiently before,
 the written reports were sufficiently graded within the provided time (deadline).
 ```
 
-### chunk_60250a96e6764df2a02738a8320111b1
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_287cb01e6db24597ba50732703a9f89c`
+### chunk_c7d52cb6dfed41a68579bab6d33281c8
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_4465dabf7082464db5bd53db54abd267`
 - sequence_number: `7`
 - chunk_index/chunk_total: `1/1`
 - chunk type: `general`
 - page_start/page_end: `3`
 - token_count: `26`
 - section_path: `Teams`
-- element_ids (1): `el_cf553ca80b9f435c82ac8d31960a4dc7`
+- element_ids (1): `el_31e53f3aa71d41d7b3c24085638e754a`
 - table_ids (0): ``
 - picture_ids (0): ``
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Teams The team assignment is not fixed and cannot be pre-determined. No pre-arrangements will be accepted. Each individual student must be prepared to perform the t...`
@@ -3463,16 +3588,16 @@ the written reports were sufficiently graded within the provided time (deadline)
 The team assignment is not fixed and cannot be pre-determined. No pre-arrangements will be accepted. Each individual student must be prepared to perform the tasks him-/herself.
 ```
 
-### chunk_7481777cae5643dc8ef18d941a77c134
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+### chunk_dbb7755fb4734f36a580ac6e3c45733b
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - sequence_number: `8`
 - chunk_index/chunk_total: `1/5`
-- chunk type: `general`
+- chunk type: `certification_info`
 - page_start/page_end: `3`
 - token_count: `34`
 - section_path: `Steps of this lab course (one step per lab day)`
-- element_ids (4): `el_5c623131d36d4c8fa738f8dfee50e26d, el_b9ed1ed305b34e6d823a26a0f8d78470, el_f18f220f287b499eab0fd38cbfad2734, el_c5e20afd8c9c429e9ea080275b18dc47`
+- element_ids (4): `el_cdc2240ce3bf402fbdefba7ccb2f02e3, el_c001bce06a64477a93ac548c55658cfa, el_8ab96c99c08a4eae8d2a5f6df4932146, el_6b7aa6b9ff5f4d1b9060d552856d1324`
 - table_ids (0): ``
 - picture_ids (0): ``
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Steps of this lab course (one step per lab day) Step 1: Sampling and quantization of analog signals Step 2: Impulse transmission in baseband and channel equalizatio...`
@@ -3487,18 +3612,18 @@ Step 3: Impulse transmission, synchronization, matched filter, bit errors
 Step 4: Channel coding, modulation, demodulation and decoding
 ```
 
-### chunk_f25a1ab5cac04d3f810065c2e2eeeccb
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+### chunk_cc5e49ed22c74259af7815996529502c
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - sequence_number: `9`
 - chunk_index/chunk_total: `2/5`
 - chunk type: `drawing_reference`
 - page_start/page_end: `4`
 - token_count: `24`
 - section_path: `Steps of this lab course (one step per lab day)`
-- element_ids (1): `el_8bc4d19a0faf479a91436da73bf4845e`
+- element_ids (1): `el_d6516e39c5f54309b89a12b0585e778f`
 - table_ids (0): ``
-- picture_ids (1): `picture_0fe7f6b3458d420eb95894daa4de4666`
+- picture_ids (1): `picture_84f49f54cec049e895e29994b6bb22b6`
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Steps of this lab course (one step per lab day) Figure: Step 1: Sampling and Quantization: Context: Step 3: Impulse transmission, synchronization, matched filter, b...`
 - content:
 ```text
@@ -3509,16 +3634,16 @@ Context: Step 3: Impulse transmission, synchronization, matched filter, bit erro
 Step 4: Channel coding, modulation, demodulation and decoding
 ```
 
-### chunk_ce174ba184414005bd1f4070fb0d54f1
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+### chunk_4243b13b5e4c4790b17c7cd5475765b7
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - sequence_number: `10`
 - chunk_index/chunk_total: `3/5`
-- chunk type: `general`
+- chunk type: `technical_specification`
 - page_start/page_end: `4`
 - token_count: `8`
 - section_path: `Steps of this lab course (one step per lab day)`
-- element_ids (1): `el_1add7ff41a77434e9745d91e16e08ff2`
+- element_ids (1): `el_e676b45ca3484ddfa92e17b2d3d4a8a8`
 - table_ids (0): ``
 - picture_ids (0): ``
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Steps of this lab course (one step per lab day) SRC & SINK : Audio up to 4kHz`
@@ -3527,18 +3652,18 @@ Step 4: Channel coding, modulation, demodulation and decoding
 SRC & SINK : Audio up to 4kHz
 ```
 
-### chunk_321a49ea4bf948df85fa72965ff83a79
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+### chunk_631b80c145ca4173abb008359796e7ce
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - sequence_number: `11`
 - chunk_index/chunk_total: `4/5`
 - chunk type: `drawing_reference`
 - page_start/page_end: `4`
 - token_count: `16`
 - section_path: `Steps of this lab course (one step per lab day)`
-- element_ids (1): `el_3fbf3db3616247ddb8a11c53477ba84d`
+- element_ids (1): `el_437db1ab3f04497c8a9280d6e5585441`
 - table_ids (0): ``
-- picture_ids (1): `picture_68d4806ec18044fbad4b71341d4a1c60`
+- picture_ids (1): `picture_154a68e4098146838502093ca9ff443f`
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Steps of this lab course (one step per lab day) Figure: Step 2: Baseband Channel and Equalization Context: SRC & SINK : Audio up to 4kHz`
 - content:
 ```text
@@ -3547,34 +3672,34 @@ Figure: Step 2: Baseband Channel and Equalization
 Context: SRC & SINK : Audio up to 4kHz
 ```
 
-### chunk_72183709078140ed8c20b902a65aa6ae
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_0b576ffc0f1c46308a97591105db01f4`
+### chunk_76feee19d4c84d06bcd763d8717b03cf
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
 - sequence_number: `12`
 - chunk_index/chunk_total: `5/5`
 - chunk type: `drawing_reference`
 - page_start/page_end: `4`
 - token_count: `10`
 - section_path: `Steps of this lab course (one step per lab day)`
-- element_ids (1): `el_f4cd7c34e94a48d795d168e6e5158a9e`
+- element_ids (1): `el_796a32d0fef4442a8ca03d2317cf970f`
 - table_ids (0): ``
-- picture_ids (1): `picture_6d0a1d457cdf46eb9e817a63256a4c75`
+- picture_ids (1): `picture_724d7ba137874d49a01a427773bee0ca`
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Steps of this lab course (one step per lab day) Figure: Step 3: Impulse transmission, sync, matched filter, bit errors:`
 - content:
 ```text
 Figure: Step 3: Impulse transmission, sync, matched filter, bit errors:
 ```
 
-### chunk_15d138a221ae46a89383d53e7694023e
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+### chunk_8c5d3ff5569f41a89d643fa8e6b542fa
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - sequence_number: `13`
 - chunk_index/chunk_total: `1/7`
 - chunk type: `general`
 - page_start/page_end: `4`
 - token_count: `67`
 - section_path: `Matlab/Simulink`
-- element_ids (2): `el_5a7bb9c21547489aaaec041e7283a858, el_ae98c194cdb04e06836efcfd336a5823`
+- element_ids (2): `el_6518abb173a44c74b584510d4523d266, el_5ea78a2fa4914a25877923ed064bb2fc`
 - table_ids (0): ``
 - picture_ids (0): ``
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measurements and analysis. It is possible that...`
@@ -3585,18 +3710,18 @@ This lab builds upon a special toolbox set developed here to enable block-diagra
 All toolboxes and required files are located in a folder which is told you during the lab:
 ```
 
-### chunk_fa7b893d81534e61b75b38eab89aae6c
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+### chunk_a04da68d042b42069021d3fe311fccbd
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - sequence_number: `14`
 - chunk_index/chunk_total: `2/7`
 - chunk type: `drawing_reference`
 - page_start/page_end: `4`
 - token_count: `69`
 - section_path: `Matlab/Simulink`
-- element_ids (1): `el_3b85300c836249f19b0d158c2de61487`
+- element_ids (1): `el_67b4562b126e4287a7e22c85da6cdf26`
 - table_ids (0): ``
-- picture_ids (1): `picture_2d3c61cd85af4459abc19832e3ed68d9`
+- picture_ids (1): `picture_64e623d8fa8b42e89080c26c1bf15bdd`
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink Context: This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measurements and analysis. It is poss...`
 - content:
 ```text
@@ -3607,18 +3732,18 @@ All toolboxes and required files are located in a folder which is told you durin
 ______________________________________________________________________
 ```
 
-### chunk_ce3a3ed0202a485ba51c4c4fa07dcd18
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+### chunk_5a46c9b8ac9a4ada83a8d5de87ec6b4d
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - sequence_number: `15`
 - chunk_index/chunk_total: `3/7`
 - chunk type: `drawing_reference`
 - page_start/page_end: `5`
 - token_count: `49`
 - section_path: `Matlab/Simulink`
-- element_ids (1): `el_ba071dc3e1014dfa805f26bb47a4988f`
+- element_ids (1): `el_b954a17697334a8cbd8238727fe0d3f7`
 - table_ids (0): ``
-- picture_ids (1): `picture_2435ce1c4dbd4931ba04c7f3635911af`
+- picture_ids (1): `picture_5920bdb53758480da6e5e160a4c5ccc4`
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink Context: All toolboxes and required files are located in a folder which is told you during the lab: ________________________________________________...`
 - content:
 ```text
@@ -3629,16 +3754,16 @@ ______________________________________________________________________
 This folder and all its contents must be copied into your workbench directory and be made available in the Matlab include path. Then you call the initialization script from Matlab:
 ```
 
-### chunk_c59e1a097f134ad2867af2e4005fcd60
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+### chunk_b25899acd1ca43b682519a93c8a291e1
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - sequence_number: `16`
 - chunk_index/chunk_total: `4/7`
-- chunk type: `general`
+- chunk type: `certification_info`
 - page_start/page_end: `5`
 - token_count: `217`
 - section_path: `Matlab/Simulink`
-- element_ids (9): `el_430f37ed21074f4eab934d9b084e6adf, el_6198a6e4c4df450eade420d9e2b9ecd2, el_70a32e8b547a4085b774842c80bad71f, el_5002d09b789a4ba8a67bc7619e396f33, el_46a5fa621f424a8db9fee63a01865312, el_783a4e898b9e45008e62f61aff778a49, el_f50855f842d84606a03beacc23bfd761, el_b956471a05dd42089558f56aee33d550, ... (+1 more)`
+- element_ids (9): `el_f10947ff1dd441999f0147ac9ad465d4, el_a69b8fd6f3cf4d7dba5a2ba3d8d30d88, el_2edf14d3069240188f060624fa8d6afd, el_2ec32082128b4c9ca92b8259bec5868a, el_73fc5a5b029f4ebd9dd310af3f2be51b, el_c60af8cb1dd24ea9acc6ef7d64017d52, el_ec9f4b15b5dd4a9f9f0468ec7fc587b1, el_c273ea0f7d764641ba915f1bb01fb9ee, ... (+1 more)`
 - table_ids (0): ``
 - picture_ids (0): ``
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink This folder and all its contents must be copied into your workbench directory and be made available in the Matlab include path. Then you call the in...`
@@ -3663,16 +3788,16 @@ The button 'measurement tools' opens a library window containing signal sources,
 The button 'plot signal properties' provides measurement units, e.g., FFT spectrum or timebased measurements. Signals to analyze must be stored in 'to workspace' blocks before.
 ```
 
-### chunk_88291ae1be6644a5bf794c0e3b554235
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+### chunk_0c7ce8e00cdd472c9a1e860b322a4c26
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - sequence_number: `17`
 - chunk_index/chunk_total: `5/7`
 - chunk type: `general`
 - page_start/page_end: `5`
 - token_count: `65`
 - section_path: `Matlab/Simulink`
-- element_ids (2): `el_2c2da592f04940d7b07f646fb5f40870, el_81e754cf702a4f4c87af1311d3f0765e`
+- element_ids (2): `el_1cfe9de022cf47e9b159845e77d9f060, el_48f5eebdecfe46c2aea83b8c07aec98d`
 - table_ids (0): ``
 - picture_ids (0): ``
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Configuration Parameters / Solver Options /...`
@@ -3683,18 +3808,18 @@ Recommended settings for simulation solver, when using S&H and the real audio ou
 Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Parameters / Solver Options / Type: Fixed-Step Simulation / Model Configuration Parameters / Solver Options / Fixed-Step size: 2/64e5 (This is more precise)
 ```
 
-### chunk_72694358b37741898b7f85e8b5f9f909
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+### chunk_a9fcccba36f4439c9c6494941ee060ba
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - sequence_number: `18`
 - chunk_index/chunk_total: `6/7`
 - chunk type: `drawing_reference`
 - page_start/page_end: `6`
 - token_count: `66`
 - section_path: `Matlab/Simulink`
-- element_ids (1): `el_643a15dd708a4b40b6fc46278c9bc258`
+- element_ids (1): `el_ce3c9d3656584647a8ac6f7b1edde5ef`
 - table_ids (0): ``
-- picture_ids (1): `picture_3b0078c4b44244608d0bcd9bfbd38a1c`
+- picture_ids (1): `picture_d261c03d6c794452af2f239ba6a46f20`
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink Context: Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Configuration Parameters / Solver...`
 - content:
 ```text
@@ -3703,34 +3828,34 @@ Context: Recommended settings for simulation solver, when using S&H and the real
 Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Parameters / Solver Options / Type: Fixed-Step Simulation / Model Configuration Parameters / Solver Options / Fixed-Step size: 2/64e5 (This is more precise)
 ```
 
-### chunk_894d41b97cb44dbeb271b1888c1de2ab
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_a0316da80e5e427da6aee5f29584bef9`
+### chunk_04f9dfa6682c4cf1adc84f029de168a3
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
 - sequence_number: `19`
 - chunk_index/chunk_total: `7/7`
 - chunk type: `drawing_reference`
 - page_start/page_end: `6`
 - token_count: `39`
 - section_path: `Matlab/Simulink`
-- element_ids (1): `el_8faa4cf34435489e83bb5dce0436519d`
+- element_ids (1): `el_9c7647e798a244e99b090b10b5e584ad`
 - table_ids (0): ``
-- picture_ids (1): `picture_c9596c0ea10b41749e6fd47bf510f2b4`
+- picture_ids (1): `picture_8dd2547602504f22bd771a96eea059cc`
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink Context: Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Parameters / Solver Options / Type...`
 - content:
 ```text
 Context: Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Parameters / Solver Options / Type: Fixed-Step Simulation / Model Configuration Parameters / Solver Options / Fixed-Step size: 2/64e5 (This is more precise)
 ```
 
-### chunk_c8716415c9f24c2186b2be5b7671cf11
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_beb1e6742d344d22afd511cb76f21f1f`
+### chunk_5c4987f9df624afebc4d0f794f6b4024
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_423bdc8cf5fb4deba88ac081367860b6`
 - sequence_number: `20`
 - chunk_index/chunk_total: `1/2`
-- chunk type: `general`
+- chunk type: `certification_info`
 - page_start/page_end: `6`
 - token_count: `124`
 - section_path: `Task assignments`
-- element_ids (5): `el_4666387adaf849998f8ebf4a78a48055, el_8c277e8a6034474991e4cff80cd8d595, el_a13159959d1040f68f38a338d5a6b04a, el_f898ae6c54ef4de1b7d0e64a057453a8, el_11f87bdb86b849c0b09cee5cc48a89c5`
+- element_ids (5): `el_0f0f522dc2664428a13e6cb07f7f4b71, el_0c1c2b06056a4bf7afacb9d8481365c7, el_624c6cbe352245b094270798040005c3, el_9da8d29f8389448cac586c621d68803f, el_8432ca044da34363b4cccb6eebe092a0`
 - table_ids (0): ``
 - picture_ids (0): ``
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Task assignments For all lab exercises (1-4) there is a separate sheet with details of the instructions. You may find valuable information there including system pa...`
@@ -3747,18 +3872,18 @@ If time and interest allows additional (voluntary) tasks can be addressed, for t
 The lab report ('Protokoll') must contain a cover sheet of the lab (see last page of this document). Each report starts with a comprehensive explanation of the task assignment.
 ```
 
-### chunk_9e9f6eda3bff48c182f54a229396f792
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_beb1e6742d344d22afd511cb76f21f1f`
+### chunk_b6db47b29eb8448b9a53ee3647ca5df6
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_423bdc8cf5fb4deba88ac081367860b6`
 - sequence_number: `21`
 - chunk_index/chunk_total: `2/2`
 - chunk type: `drawing_reference`
 - page_start/page_end: `7`
 - token_count: `47`
 - section_path: `Task assignments`
-- element_ids (1): `el_0408f4fce7a246d0b236031e676ce2c1`
+- element_ids (1): `el_57f4ec3f44db48c0b68ef92b9f7415c1`
 - table_ids (0): ``
-- picture_ids (1): `picture_8a746b2bb789473c9b47b63b5d47f03e`
+- picture_ids (1): `picture_a358dcba75c24f6ca2326e98e01f1de0`
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Task assignments Context: If time and interest allows additional (voluntary) tasks can be addressed, for those who are more advanced. The lab report ('Protokoll') m...`
 - content:
 ```text
@@ -3767,16 +3892,561 @@ Context: If time and interest allows additional (voluntary) tasks can be address
 The lab report ('Protokoll') must contain a cover sheet of the lab (see last page of this document). Each report starts with a comprehensive explanation of the task assignment.
 ```
 
-### chunk_e815850cb3ea4e0d9fca0e854d7478b6
-- document id: `doc_9596d1258fd54203a24592b2af4c056a`
-- section id: `sec_4b08c758065f48158d65dd74fa659579`
+### chunk_70f9485317e5495abd34344dc75ce6bd
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
 - sequence_number: `22`
 - chunk_index/chunk_total: `1/1`
 - chunk type: `general`
 - page_start/page_end: `7`
 - token_count: `36`
 - section_path: `Fachbereich Elektrotechnik und Informatik`
-- element_ids (14): `el_f7d7a36c11f848209e4bef6c8956a005, el_9f940265441140f5b5ec5f0a96984027, el_9ecac9ba70a94f6181d86418dae2396d, el_3e3d36f384d24f9fad37c82152501f25, el_a7b0d1b3b2c9491b8cf3fd2ca53efe6b, el_42ca83e40f38485493e23c0439857d60, el_f438206c914e4ce9a4c0fd546c185a8f, el_8177847f70164bf89faba107ef378e5a, ... (+6 more)`
+- element_ids (14): `el_a0e856c4f5304159b32b7dddf681f094, el_d4b336fbdf89495390c2dcdb710323ec, el_1389ef0705164673b73f072264994ea0, el_c7a69a64e34a4f71ae50041e879debf1, el_d59abdf2a21f469ab3d77b205241afb8, el_7984261aa1144626a7578fec0ab0338e, el_4dd6629d7399419092ac16310e16cd99, el_baad975134114269a036e9ddabadcb34, ... (+6 more)`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Fachbereich Elektrotechnik und Informatik DCL Semester: [SS/WS] 20__ Lab group (DCL/01/02): Team name/number: Performed tasks:  Hands-on hardware  Hands-on softwa...`
+- content:
+```text
+DCL
+
+Semester: [SS/WS] 20__
+
+Lab group (DCL/01/02):
+
+Team name/number:
+
+Performed tasks:
+
+ Hands-on hardware
+
+ Hands-on software (Matlab/Simulink)
+
+Protocol manager:
+
+Date of exercise:
+
+ Presentation
+
+Other participants:
+
+Professor:
+
+Attestation:
+
+Digital Communications - Experiment number and title
+```
+
+## Post-Classification Chunks
+- note: Final chunk view after document classification and hybrid chunk-profile decision.
+
+### Chunk Summary
+| sequence | chunk_id | section_id | section_path | chunk_pos | type | elements | pages | content preview |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | chunk_f0c02573008d46f789a4facb14d27521 | sec_7422f13892cc4fb1a42ff89e7bd0c516 | Explanations and descriptions | 1/1 | general | 2 | 1 | SS 2017 Prof. R. Schoenen |
+| 2 | chunk_5eb5ff65457943998717d6be63d56c07 | sec_b6756d2942bb4b89b7c678cb7607fbdf | Overview | 1/5 | certification_info | 12 | 2 | The lab exercises have the purpose of providing a hands-on experience about the theory learned during the lectures. Y... |
+| 3 | chunk_b0aa6d0179ec470b8bd4fdea6f104c36 | sec_b6756d2942bb4b89b7c678cb7607fbdf | Overview | 2/5 | general | 2 | 2 | This enables you to construct the hardware much easier, as you prepare yourself and understand the project task. If y... |
+| 4 | chunk_a572ab160fe04587908d77d6cc165ea6 | sec_b6756d2942bb4b89b7c678cb7607fbdf | Overview | 3/5 | drawing_reference | 1 | 2 | Context: This enables you to construct the hardware much easier, as you prepare yourself and understand the project t... |
+| 5 | chunk_dc266edbf12f48508621cb01898d71c8 | sec_b6756d2942bb4b89b7c678cb7607fbdf | Overview | 4/5 | drawing_reference | 1 | 3 | Context: If you start with the hardware first and then switch to simulation, you will notice the gain of modeling eff... |
+| 6 | chunk_11a0c892eed7426baf8903d4aa1bc2dc | sec_b6756d2942bb4b89b7c678cb7607fbdf | Overview | 5/5 | general | 6 | 3 | Optional and on request: One quarter of the groups will present their results at the end of the lab time, e.g. one gr... |
+| 7 | chunk_c7d52cb6dfed41a68579bab6d33281c8 | sec_4465dabf7082464db5bd53db54abd267 | Teams | 1/1 | general | 1 | 3 | The team assignment is not fixed and cannot be pre-determined. No pre-arrangements will be accepted. Each individual... |
+| 8 | chunk_dbb7755fb4734f36a580ac6e3c45733b | sec_d047654edd654644819d1d4218ab8c1a | Steps of this lab course (one step per lab day) | 1/5 | certification_info | 4 | 3 | Step 1: Sampling and quantization of analog signals Step 2: Impulse transmission in baseband and channel equalization... |
+| 9 | chunk_cc5e49ed22c74259af7815996529502c | sec_d047654edd654644819d1d4218ab8c1a | Steps of this lab course (one step per lab day) | 2/5 | drawing_reference | 1 | 4 | Figure: Step 1: Sampling and Quantization: Context: Step 3: Impulse transmission, synchronization, matched filter, bi... |
+| 10 | chunk_4243b13b5e4c4790b17c7cd5475765b7 | sec_d047654edd654644819d1d4218ab8c1a | Steps of this lab course (one step per lab day) | 3/5 | technical_specification | 1 | 4 | SRC & SINK : Audio up to 4kHz |
+| 11 | chunk_631b80c145ca4173abb008359796e7ce | sec_d047654edd654644819d1d4218ab8c1a | Steps of this lab course (one step per lab day) | 4/5 | drawing_reference | 1 | 4 | Figure: Step 2: Baseband Channel and Equalization Context: SRC & SINK : Audio up to 4kHz |
+| 12 | chunk_76feee19d4c84d06bcd763d8717b03cf | sec_d047654edd654644819d1d4218ab8c1a | Steps of this lab course (one step per lab day) | 5/5 | drawing_reference | 1 | 4 | Figure: Step 3: Impulse transmission, sync, matched filter, bit errors: |
+| 13 | chunk_8c5d3ff5569f41a89d643fa8e6b542fa | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 1/7 | general | 2 | 4 | This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measurements an... |
+| 14 | chunk_a04da68d042b42069021d3fe311fccbd | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 2/7 | drawing_reference | 1 | 4 | Context: This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measur... |
+| 15 | chunk_5a46c9b8ac9a4ada83a8d5de87ec6b4d | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 3/7 | drawing_reference | 1 | 5 | Context: All toolboxes and required files are located in a folder which is told you during the lab: _________________... |
+| 16 | chunk_b25899acd1ca43b682519a93c8a291e1 | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 4/7 | certification_info | 9 | 5 | This folder and all its contents must be copied into your workbench directory and be made available in the Matlab inc... |
+| 17 | chunk_0c7ce8e00cdd472c9a1e860b322a4c26 | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 5/7 | general | 2 | 5 | Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Configuratio... |
+| 18 | chunk_a9fcccba36f4439c9c6494941ee060ba | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 6/7 | drawing_reference | 1 | 6 | Context: Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Con... |
+| 19 | chunk_04f9dfa6682c4cf1adc84f029de168a3 | sec_e06f9300d6e8473889ac3f526b40d3ff | Matlab/Simulink | 7/7 | drawing_reference | 1 | 6 | Context: Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Par... |
+| 20 | chunk_5c4987f9df624afebc4d0f794f6b4024 | sec_423bdc8cf5fb4deba88ac081367860b6 | Task assignments | 1/2 | certification_info | 5 | 6 | For all lab exercises (1-4) there is a separate sheet with details of the instructions. You may find valuable informa... |
+
+### chunk_f0c02573008d46f789a4facb14d27521
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_7422f13892cc4fb1a42ff89e7bd0c516`
+- sequence_number: `1`
+- chunk_index/chunk_total: `1/1`
+- chunk type: `general`
+- page_start/page_end: `1`
+- token_count: `5`
+- section_path: `Explanations and descriptions`
+- element_ids (2): `el_b330b08be5634dca93e3c69d26f4e441, el_7d67ba95bdf541e394550c23263d8da2`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Explanations and descriptions SS 2017 Prof. R. Schoenen`
+- content:
+```text
+SS 2017
+
+Prof. R. Schoenen
+```
+
+### chunk_5eb5ff65457943998717d6be63d56c07
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
+- sequence_number: `2`
+- chunk_index/chunk_total: `1/5`
+- chunk type: `certification_info`
+- page_start/page_end: `2`
+- token_count: `239`
+- section_path: `Overview`
+- element_ids (12): `el_9dc840135da040ab936556951d233001, el_c298f0bab01f465db2fb81e9e3dafa96, el_f486ce6ffb3b4ac7ab54fe762b70a7f7, el_e899a45c9f094187a323ec2adf94429e, el_29d71fdc783b471caa54bc2147cc2b53, el_630b151f93914ee9b339544f3e131407, el_d7d39a7c8ff0427b87f24bb7aee9afff, el_f16cb2ed553f4d6c95cc5b3f053c30fb, ... (+4 more)`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Overview The lab exercises have the purpose of providing a hands-on experience about the theory learned during the lectures. You have to come prepared to the lab, i...`
+- content:
+```text
+The lab exercises have the purpose of providing a hands-on experience about the theory learned during the lectures.
+
+You have to come prepared to the lab, i.e. read and understood the instructions for that particular lab exercise, and practice using some simulation model components.
+
+Many components of a digital transmission block diagram should be constructed and built up using two different methods:
+
+Using real hardware, oscilloscopes, real sources
+
+Using a simulation toolkit, e.g. Matlab/Simulink
+
+All tasks are performed in teams of (nominally) three students. No pre-assigned teams.
+
+Due to the limited resources, some groups start at the hardware bench while the other half starts at the software bench. At half-time the groups are swapped. For this change, all hardware must be back to its original state, i.e. cables detached from the sockets, measurement units switched off.
+
+For the hardware implementation, a number of instruments exist in the lab. Familiarize yourself with the available tools and list them here:
+
+For the simulation software implementation, the participants are requested to construct a model using the simulation software and given building blocks.
+
+Write down here under which directory and filename the tools are stored:
+
+Your task is to construct the complete model, adjust all the required parameters correctly, apply representative sources and sinks to the system, and measure the signals at several relevant positions.
+
+This enables you to construct the hardware much easier, as you prepare yourself and understand the project task.
+```
+
+### chunk_b0aa6d0179ec470b8bd4fdea6f104c36
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
+- sequence_number: `3`
+- chunk_index/chunk_total: `2/5`
+- chunk type: `general`
+- page_start/page_end: `2`
+- token_count: `48`
+- section_path: `Overview`
+- element_ids (2): `el_6dc9ac8e609d4271a869d5d36ceb02d2, el_03a1e845494d46109905aedfde2e16d6`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Overview This enables you to construct the hardware much easier, as you prepare yourself and understand the project task. If you start with the hardware first and t...`
+- content:
+```text
+This enables you to construct the hardware much easier, as you prepare yourself and understand the project task.
+
+If you start with the hardware first and then switch to simulation, you will notice the gain of modeling efficiency, but perhaps also the problem of a long simulation runtime.
+```
+
+### chunk_a572ab160fe04587908d77d6cc165ea6
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
+- sequence_number: `4`
+- chunk_index/chunk_total: `3/5`
+- chunk type: `drawing_reference`
+- page_start/page_end: `2`
+- token_count: `84`
+- section_path: `Overview`
+- element_ids (1): `el_f16ec249d86948599647b3fe6bdaf1df`
+- table_ids (0): ``
+- picture_ids (1): `picture_b851007fd7694c8c8f5f5dcf9c7d571c`
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Overview Context: This enables you to construct the hardware much easier, as you prepare yourself and understand the project task. If you start with the hardware fi...`
+- content:
+```text
+Context: This enables you to construct the hardware much easier, as you prepare yourself and understand the project task.
+
+If you start with the hardware first and then switch to simulation, you will notice the gain of modeling efficiency, but perhaps also the problem of a long simulation runtime.
+
+Optional and on request: One quarter of the groups will present their results at the end of the lab time, e.g. one group if there are four altogether, or two if there are eight altogether.
+```
+
+### chunk_dc266edbf12f48508621cb01898d71c8
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
+- sequence_number: `5`
+- chunk_index/chunk_total: `4/5`
+- chunk type: `drawing_reference`
+- page_start/page_end: `3`
+- token_count: `91`
+- section_path: `Overview`
+- element_ids (1): `el_d0ac2f7344d94079a27b0ce4090b0268`
+- table_ids (0): ``
+- picture_ids (1): `picture_90243f9a102c4a4f918d14af0e72fe3b`
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Overview Context: If you start with the hardware first and then switch to simulation, you will notice the gain of modeling efficiency, but perhaps also the problem...`
+- content:
+```text
+Context: If you start with the hardware first and then switch to simulation, you will notice the gain of modeling efficiency, but perhaps also the problem of a long simulation runtime.
+
+Optional and on request: One quarter of the groups will present their results at the end of the lab time, e.g. one group if there are four altogether, or two if there are eight altogether.
+
+During the other lab exercises, the other groups which haven't done this before will present. At the end of the last lab, each group must
+```
+
+### chunk_11a0c892eed7426baf8903d4aa1bc2dc
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_b6756d2942bb4b89b7c678cb7607fbdf`
+- sequence_number: `6`
+- chunk_index/chunk_total: `5/5`
+- chunk type: `general`
+- page_start/page_end: `3`
+- token_count: `100`
+- section_path: `Overview`
+- element_ids (6): `el_455d0a39b538400ca9cb63efe8d4340f, el_92049cb0591143238cd35734774a9bb6, el_4804b8e4933542f59da526f5b736a2ab, el_ba415251d6804410a0fb10a1474a2104, el_dc6dd9e502d041d18103561270082bc9, el_50031c4987dd4552b9da5be591c89d5b`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Overview Optional and on request: One quarter of the groups will present their results at the end of the lab time, e.g. one group if there are four altogether, or t...`
+- content:
+```text
+Optional and on request: One quarter of the groups will present their results at the end of the lab time, e.g. one group if there are four altogether, or two if there are eight altogether.
+
+During the other lab exercises, the other groups which haven't done this before will present. At the end of the last lab, each group must have presented one time.
+
+The requirements (prerequisite before the exam, or PVL=Prüfungsvorleistung) are passed if:
+
+The student was present at all lab exercises,
+
+the student was prepared sufficiently before,
+
+the written reports were sufficiently graded within the provided time (deadline).
+```
+
+### chunk_c7d52cb6dfed41a68579bab6d33281c8
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_4465dabf7082464db5bd53db54abd267`
+- sequence_number: `7`
+- chunk_index/chunk_total: `1/1`
+- chunk type: `general`
+- page_start/page_end: `3`
+- token_count: `26`
+- section_path: `Teams`
+- element_ids (1): `el_31e53f3aa71d41d7b3c24085638e754a`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Teams The team assignment is not fixed and cannot be pre-determined. No pre-arrangements will be accepted. Each individual student must be prepared to perform the t...`
+- content:
+```text
+The team assignment is not fixed and cannot be pre-determined. No pre-arrangements will be accepted. Each individual student must be prepared to perform the tasks him-/herself.
+```
+
+### chunk_dbb7755fb4734f36a580ac6e3c45733b
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
+- sequence_number: `8`
+- chunk_index/chunk_total: `1/5`
+- chunk type: `certification_info`
+- page_start/page_end: `3`
+- token_count: `34`
+- section_path: `Steps of this lab course (one step per lab day)`
+- element_ids (4): `el_cdc2240ce3bf402fbdefba7ccb2f02e3, el_c001bce06a64477a93ac548c55658cfa, el_8ab96c99c08a4eae8d2a5f6df4932146, el_6b7aa6b9ff5f4d1b9060d552856d1324`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Steps of this lab course (one step per lab day) Step 1: Sampling and quantization of analog signals Step 2: Impulse transmission in baseband and channel equalizatio...`
+- content:
+```text
+Step 1: Sampling and quantization of analog signals
+
+Step 2: Impulse transmission in baseband and channel equalization
+
+Step 3: Impulse transmission, synchronization, matched filter, bit errors
+
+Step 4: Channel coding, modulation, demodulation and decoding
+```
+
+### chunk_cc5e49ed22c74259af7815996529502c
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
+- sequence_number: `9`
+- chunk_index/chunk_total: `2/5`
+- chunk type: `drawing_reference`
+- page_start/page_end: `4`
+- token_count: `24`
+- section_path: `Steps of this lab course (one step per lab day)`
+- element_ids (1): `el_d6516e39c5f54309b89a12b0585e778f`
+- table_ids (0): ``
+- picture_ids (1): `picture_84f49f54cec049e895e29994b6bb22b6`
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Steps of this lab course (one step per lab day) Figure: Step 1: Sampling and Quantization: Context: Step 3: Impulse transmission, synchronization, matched filter, b...`
+- content:
+```text
+Figure: Step 1: Sampling and Quantization:
+
+Context: Step 3: Impulse transmission, synchronization, matched filter, bit errors
+
+Step 4: Channel coding, modulation, demodulation and decoding
+```
+
+### chunk_4243b13b5e4c4790b17c7cd5475765b7
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
+- sequence_number: `10`
+- chunk_index/chunk_total: `3/5`
+- chunk type: `technical_specification`
+- page_start/page_end: `4`
+- token_count: `8`
+- section_path: `Steps of this lab course (one step per lab day)`
+- element_ids (1): `el_e676b45ca3484ddfa92e17b2d3d4a8a8`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Steps of this lab course (one step per lab day) SRC & SINK : Audio up to 4kHz`
+- content:
+```text
+SRC & SINK : Audio up to 4kHz
+```
+
+### chunk_631b80c145ca4173abb008359796e7ce
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
+- sequence_number: `11`
+- chunk_index/chunk_total: `4/5`
+- chunk type: `drawing_reference`
+- page_start/page_end: `4`
+- token_count: `16`
+- section_path: `Steps of this lab course (one step per lab day)`
+- element_ids (1): `el_437db1ab3f04497c8a9280d6e5585441`
+- table_ids (0): ``
+- picture_ids (1): `picture_154a68e4098146838502093ca9ff443f`
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Steps of this lab course (one step per lab day) Figure: Step 2: Baseband Channel and Equalization Context: SRC & SINK : Audio up to 4kHz`
+- content:
+```text
+Figure: Step 2: Baseband Channel and Equalization
+
+Context: SRC & SINK : Audio up to 4kHz
+```
+
+### chunk_76feee19d4c84d06bcd763d8717b03cf
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_d047654edd654644819d1d4218ab8c1a`
+- sequence_number: `12`
+- chunk_index/chunk_total: `5/5`
+- chunk type: `drawing_reference`
+- page_start/page_end: `4`
+- token_count: `10`
+- section_path: `Steps of this lab course (one step per lab day)`
+- element_ids (1): `el_796a32d0fef4442a8ca03d2317cf970f`
+- table_ids (0): ``
+- picture_ids (1): `picture_724d7ba137874d49a01a427773bee0ca`
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Steps of this lab course (one step per lab day) Figure: Step 3: Impulse transmission, sync, matched filter, bit errors:`
+- content:
+```text
+Figure: Step 3: Impulse transmission, sync, matched filter, bit errors:
+```
+
+### chunk_8c5d3ff5569f41a89d643fa8e6b542fa
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
+- sequence_number: `13`
+- chunk_index/chunk_total: `1/7`
+- chunk type: `general`
+- page_start/page_end: `4`
+- token_count: `67`
+- section_path: `Matlab/Simulink`
+- element_ids (2): `el_6518abb173a44c74b584510d4523d266, el_5ea78a2fa4914a25877923ed064bb2fc`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measurements and analysis. It is possible that...`
+- content:
+```text
+This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measurements and analysis. It is possible that the provided blocks are not compatible with your version of Matlab. Please check beforehand to ensure that the exercise will run on your lab PC or laptop computer.
+
+All toolboxes and required files are located in a folder which is told you during the lab:
+```
+
+### chunk_a04da68d042b42069021d3fe311fccbd
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
+- sequence_number: `14`
+- chunk_index/chunk_total: `2/7`
+- chunk type: `drawing_reference`
+- page_start/page_end: `4`
+- token_count: `69`
+- section_path: `Matlab/Simulink`
+- element_ids (1): `el_67b4562b126e4287a7e22c85da6cdf26`
+- table_ids (0): ``
+- picture_ids (1): `picture_64e623d8fa8b42e89080c26c1bf15bdd`
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink Context: This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measurements and analysis. It is poss...`
+- content:
+```text
+Context: This lab builds upon a special toolbox set developed here to enable block-diagram based construction, measurements and analysis. It is possible that the provided blocks are not compatible with your version of Matlab. Please check beforehand to ensure that the exercise will run on your lab PC or laptop computer.
+
+All toolboxes and required files are located in a folder which is told you during the lab:
+
+______________________________________________________________________
+```
+
+### chunk_5a46c9b8ac9a4ada83a8d5de87ec6b4d
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
+- sequence_number: `15`
+- chunk_index/chunk_total: `3/7`
+- chunk type: `drawing_reference`
+- page_start/page_end: `5`
+- token_count: `49`
+- section_path: `Matlab/Simulink`
+- element_ids (1): `el_b954a17697334a8cbd8238727fe0d3f7`
+- table_ids (0): ``
+- picture_ids (1): `picture_5920bdb53758480da6e5e160a4c5ccc4`
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink Context: All toolboxes and required files are located in a folder which is told you during the lab: ________________________________________________...`
+- content:
+```text
+Context: All toolboxes and required files are located in a folder which is told you during the lab:
+
+______________________________________________________________________
+
+This folder and all its contents must be copied into your workbench directory and be made available in the Matlab include path. Then you call the initialization script from Matlab:
+```
+
+### chunk_b25899acd1ca43b682519a93c8a291e1
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
+- sequence_number: `16`
+- chunk_index/chunk_total: `4/7`
+- chunk type: `certification_info`
+- page_start/page_end: `5`
+- token_count: `217`
+- section_path: `Matlab/Simulink`
+- element_ids (9): `el_f10947ff1dd441999f0147ac9ad465d4, el_a69b8fd6f3cf4d7dba5a2ba3d8d30d88, el_2edf14d3069240188f060624fa8d6afd, el_2ec32082128b4c9ca92b8259bec5868a, el_73fc5a5b029f4ebd9dd310af3f2be51b, el_c60af8cb1dd24ea9acc6ef7d64017d52, el_ec9f4b15b5dd4a9f9f0468ec7fc587b1, el_c273ea0f7d764641ba915f1bb01fb9ee, ... (+1 more)`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink This folder and all its contents must be copied into your workbench directory and be made available in the Matlab include path. Then you call the in...`
+- content:
+```text
+This folder and all its contents must be copied into your workbench directory and be made available in the Matlab include path. Then you call the initialization script from Matlab:
+
+init_digital_communications.m
+
+This initializes required settings (e.g., c.sample_time ).
+
+You may write an additional settings.m file for your own calculations and settings. This is strongly suggested, e.g., to declare and define variable names for global parameters such as sampling period time, sampling frequency, simulation step time, etc.
+
+After this, start the toolbox GUI by calling digital_communications_gui.m
+
+This will provide you with the necessary blocks which you may use during the exercise. By clicking on the 'project step #' button an empty worksheet will be opened where some settings have already been done for you to save some time. The simulation duration is set to 'inf' and must be adjusted according to your needs and the tradeoff between simulation efficiency (proportionally to computer performance) and the required precision and quantity of samples.
+
+The button 'system blocks' makes a library window appear which contains all necessary building blocks.
+
+The button 'measurement tools' opens a library window containing signal sources, measurement blocks, and other useful tools.
+
+The button 'plot signal properties' provides measurement units, e.g., FFT spectrum or timebased measurements. Signals to analyze must be stored in 'to workspace' blocks before.
+```
+
+### chunk_0c7ce8e00cdd472c9a1e860b322a4c26
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
+- sequence_number: `17`
+- chunk_index/chunk_total: `5/7`
+- chunk type: `general`
+- page_start/page_end: `5`
+- token_count: `65`
+- section_path: `Matlab/Simulink`
+- element_ids (2): `el_1cfe9de022cf47e9b159845e77d9f060, el_48f5eebdecfe46c2aea83b8c07aec98d`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Configuration Parameters / Solver Options /...`
+- content:
+```text
+Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Configuration Parameters / Solver Options / Type: Variable-Step (This is faster)
+
+Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Parameters / Solver Options / Type: Fixed-Step Simulation / Model Configuration Parameters / Solver Options / Fixed-Step size: 2/64e5 (This is more precise)
+```
+
+### chunk_a9fcccba36f4439c9c6494941ee060ba
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
+- sequence_number: `18`
+- chunk_index/chunk_total: `6/7`
+- chunk type: `drawing_reference`
+- page_start/page_end: `6`
+- token_count: `66`
+- section_path: `Matlab/Simulink`
+- element_ids (1): `el_ce3c9d3656584647a8ac6f7b1edde5ef`
+- table_ids (0): ``
+- picture_ids (1): `picture_d261c03d6c794452af2f239ba6a46f20`
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink Context: Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Configuration Parameters / Solver...`
+- content:
+```text
+Context: Recommended settings for simulation solver, when using S&H and the real audio output: Simulation / Model Configuration Parameters / Solver Options / Type: Variable-Step (This is faster)
+
+Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Parameters / Solver Options / Type: Fixed-Step Simulation / Model Configuration Parameters / Solver Options / Fixed-Step size: 2/64e5 (This is more precise)
+```
+
+### chunk_04f9dfa6682c4cf1adc84f029de168a3
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_e06f9300d6e8473889ac3f526b40d3ff`
+- sequence_number: `19`
+- chunk_index/chunk_total: `7/7`
+- chunk type: `drawing_reference`
+- page_start/page_end: `6`
+- token_count: `39`
+- section_path: `Matlab/Simulink`
+- element_ids (1): `el_9c7647e798a244e99b090b10b5e584ad`
+- table_ids (0): ``
+- picture_ids (1): `picture_8dd2547602504f22bd771a96eea059cc`
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Matlab/Simulink Context: Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Parameters / Solver Options / Type...`
+- content:
+```text
+Context: Recommended settings for simulation solver, when using the ADC and DAC: Simulation / Model Configuration Parameters / Solver Options / Type: Fixed-Step Simulation / Model Configuration Parameters / Solver Options / Fixed-Step size: 2/64e5 (This is more precise)
+```
+
+### chunk_5c4987f9df624afebc4d0f794f6b4024
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_423bdc8cf5fb4deba88ac081367860b6`
+- sequence_number: `20`
+- chunk_index/chunk_total: `1/2`
+- chunk type: `certification_info`
+- page_start/page_end: `6`
+- token_count: `124`
+- section_path: `Task assignments`
+- element_ids (5): `el_0f0f522dc2664428a13e6cb07f7f4b71, el_0c1c2b06056a4bf7afacb9d8481365c7, el_624c6cbe352245b094270798040005c3, el_9da8d29f8389448cac586c621d68803f, el_8432ca044da34363b4cccb6eebe092a0`
+- table_ids (0): ``
+- picture_ids (0): ``
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Task assignments For all lab exercises (1-4) there is a separate sheet with details of the instructions. You may find valuable information there including system pa...`
+- content:
+```text
+For all lab exercises (1-4) there is a separate sheet with details of the instructions. You may find valuable information there including system parameters and hints to the expected results of the processing chain.
+
+Additionally it contains the instructions which measurements have to be taken in order to prove the correctness of the simulation model and the hardware setup.
+
+Students must decide by using their own knowledge which instruments to choose in order to observe the requested results.
+
+If time and interest allows additional (voluntary) tasks can be addressed, for those who are more advanced.
+
+The lab report ('Protokoll') must contain a cover sheet of the lab (see last page of this document). Each report starts with a comprehensive explanation of the task assignment.
+```
+
+### chunk_b6db47b29eb8448b9a53ee3647ca5df6
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_423bdc8cf5fb4deba88ac081367860b6`
+- sequence_number: `21`
+- chunk_index/chunk_total: `2/2`
+- chunk type: `drawing_reference`
+- page_start/page_end: `7`
+- token_count: `47`
+- section_path: `Task assignments`
+- element_ids (1): `el_57f4ec3f44db48c0b68ef92b9f7415c1`
+- table_ids (0): ``
+- picture_ids (1): `picture_a358dcba75c24f6ca2326e98e01f1de0`
+- embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Task assignments Context: If time and interest allows additional (voluntary) tasks can be addressed, for those who are more advanced. The lab report ('Protokoll') m...`
+- content:
+```text
+Context: If time and interest allows additional (voluntary) tasks can be addressed, for those who are more advanced.
+
+The lab report ('Protokoll') must contain a cover sheet of the lab (see last page of this document). Each report starts with a comprehensive explanation of the task assignment.
+```
+
+### chunk_70f9485317e5495abd34344dc75ce6bd
+- document id: `doc_0c84dc10aa0e45a6a715ed5f9eaff6a4`
+- section id: `sec_1be2b97c970942338e90836ac93f3c05`
+- sequence_number: `22`
+- chunk_index/chunk_total: `1/1`
+- chunk type: `general`
+- page_start/page_end: `7`
+- token_count: `36`
+- section_path: `Fachbereich Elektrotechnik und Informatik`
+- element_ids (14): `el_a0e856c4f5304159b32b7dddf681f094, el_d4b336fbdf89495390c2dcdb710323ec, el_1389ef0705164673b73f072264994ea0, el_c7a69a64e34a4f71ae50041e879debf1, el_d59abdf2a21f469ab3d77b205241afb8, el_7984261aa1144626a7578fec0ab0338e, el_4dd6629d7399419092ac16310e16cd99, el_baad975134114269a036e9ddabadcb34, ... (+6 more)`
 - table_ids (0): ``
 - picture_ids (0): ``
 - embedding_text preview: `Document title: HAW_Lab_Digital_Communication_Introduction Section path: Fachbereich Elektrotechnik und Informatik DCL Semester: [SS/WS] 20__ Lab group (DCL/01/02): Team name/number: Performed tasks:  Hands-on hardware  Hands-on softwa...`
