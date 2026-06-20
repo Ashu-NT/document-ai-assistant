@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from src.application.workflows.retrieval.retrieval_benchmark_case import (
+from src.application.evaluation.retrieval_benchmark_case import (
     RetrievalBenchmarkCase,
 )
 
