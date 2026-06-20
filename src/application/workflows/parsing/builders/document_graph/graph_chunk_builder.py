@@ -1,5 +1,9 @@
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+    ChunkingProfile,
+)
 from src.application.workflows.parsing.builders.chunking import SectionChunkBuilder
 from src.domain.common import SourceLocation
+from src.domain.common import DocumentType
 from src.domain.document import DocumentChunk, DocumentGraph, DocumentSection
 from src.shared.ids import IdGenerator, IdPrefix
 
@@ -19,6 +23,8 @@ class GraphChunkBuilder:
         *,
         graph: DocumentGraph,
         sections: list[DocumentSection],
+        document_type_override: DocumentType | None = None,
+        chunking_profile_override: ChunkingProfile | None = None,
     ) -> list[DocumentChunk]:
         ordered_sections = sorted(
             sections,
@@ -30,7 +36,8 @@ class GraphChunkBuilder:
         }
         chunk_payloads = self.section_chunk_builder.build_document_chunk_payloads(
             document_title=graph.document.title,
-            document_type=graph.document.document_type,
+            document_type=document_type_override or graph.document.document_type,
+            chunking_profile_override=chunking_profile_override,
             sections=ordered_sections,
             section_elements_by_id=section_elements_by_id,
         )

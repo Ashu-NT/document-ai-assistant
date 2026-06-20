@@ -1,6 +1,8 @@
 from src.application.workflows.retrieval import RetrievalContextExpander
+from src.application.workflows.retrieval import RetrievalContextAssembler
 from src.domain.common import ChunkType, SourceLocation
 from src.domain.document import DocumentChunk
+from src.domain.document.value_objects import ChunkStatistics
 from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 
 
@@ -23,6 +25,8 @@ def make_document_chunk(
     chunk_type: ChunkType = ChunkType.GENERAL,
     table_ids: list[str] | None = None,
     picture_ids: list[str] | None = None,
+    chunk_index: int | None = None,
+    chunk_total: int = 3,
 ) -> DocumentChunk:
     return DocumentChunk(
         chunk_id=chunk_id,
@@ -35,8 +39,8 @@ def make_document_chunk(
         picture_ids=picture_ids or [],
         source=SourceLocation(page_start=sequence_number, page_end=sequence_number),
         sequence_number=sequence_number,
-        chunk_index=sequence_number,
-        chunk_total=3,
+        chunk_index=chunk_index or sequence_number,
+        chunk_total=chunk_total,
     )
 
 
@@ -151,6 +155,8 @@ def test_retrieval_context_expander_prioritizes_asset_companion_for_figure_query
             section_path=["Procedure", "Assembly View"],
             chunk_type=ChunkType.DRAWING_REFERENCE,
             picture_ids=["pic_001"],
+            chunk_index=1,
+            chunk_total=1,
         ),
         make_document_chunk(
             chunk_id="chunk_text",
@@ -159,6 +165,8 @@ def test_retrieval_context_expander_prioritizes_asset_companion_for_figure_query
             section_path=["Procedure", "Assembly View"],
             chunk_type=ChunkType.GENERAL,
             picture_ids=["pic_001"],
+            chunk_index=1,
+            chunk_total=1,
         ),
         make_document_chunk(
             chunk_id="chunk_neighbor",
@@ -198,3 +206,87 @@ def test_retrieval_context_expander_prioritizes_asset_companion_for_figure_query
         "chunk_neighbor",
     ]
     assert expanded[1].metadata["context_relation"] == "asset_companion"
+
+
+def test_retrieval_context_expander_prioritizes_same_family_split_chunks() -> None:
+    document_chunks = [
+        make_document_chunk(chunk_id="chunk_001", sequence_number=1),
+        make_document_chunk(chunk_id="chunk_002", sequence_number=2),
+        make_document_chunk(chunk_id="chunk_003", sequence_number=3),
+        make_document_chunk(
+            chunk_id="chunk_other",
+            sequence_number=4,
+            section_id="sec_other",
+            section_path=["Procedure", "Neighbor"],
+        ),
+    ]
+    lookup_service = FakeDocumentLookupService({"doc_001": document_chunks})
+    expander = RetrievalContextExpander(
+        document_lookup_service=lookup_service,
+        neighbor_window=1,
+        max_context_chunks=4,
+    )
+    anchor = RetrievedChunk(
+        chunk_id="chunk_002",
+        document_id="doc_001",
+        content="Chunk 2 content",
+        score=0.82,
+        retrieval_source="dense",
+        chunk_type=ChunkType.GENERAL,
+        section_id="sec_001",
+        section_path=["Procedure"],
+        source=SourceLocation(page_start=2, page_end=2),
+    )
+
+    expanded = expander.expand([anchor])
+
+    assert [chunk.chunk_id for chunk in expanded[:3]] == [
+        "chunk_002",
+        "chunk_001",
+        "chunk_003",
+    ]
+    assert expanded[1].metadata["context_relation"] == "same_section_part"
+
+
+def test_retrieval_context_expander_respects_token_budget() -> None:
+    long_chunk = make_document_chunk(chunk_id="chunk_001", sequence_number=1)
+    long_chunk.content = " ".join(["long"] * 30)
+    long_chunk.statistics = ChunkStatistics(char_count=120, token_count_estimate=30)
+    anchor_chunk = make_document_chunk(chunk_id="chunk_002", sequence_number=2)
+    anchor_chunk.content = "short anchor text"
+    anchor_chunk.statistics = ChunkStatistics(char_count=18, token_count_estimate=3)
+    neighbor_chunk = make_document_chunk(
+        chunk_id="chunk_003",
+        sequence_number=3,
+        section_id="sec_other",
+        section_path=["Procedure", "Neighbor"],
+    )
+    neighbor_chunk.content = "short neighbor"
+    neighbor_chunk.statistics = ChunkStatistics(char_count=14, token_count_estimate=2)
+    lookup_service = FakeDocumentLookupService(
+        {"doc_001": [long_chunk, anchor_chunk, neighbor_chunk]}
+    )
+    expander = RetrievalContextExpander(
+        document_lookup_service=lookup_service,
+        neighbor_window=1,
+        max_context_chunks=3,
+        context_assembler=RetrievalContextAssembler(token_budget=5),
+    )
+    anchor = RetrievedChunk(
+        chunk_id="chunk_002",
+        document_id="doc_001",
+        content="short anchor text",
+        score=0.82,
+        retrieval_source="dense",
+        chunk_type=ChunkType.GENERAL,
+        section_id="sec_001",
+        section_path=["Procedure"],
+        source=SourceLocation(page_start=2, page_end=2),
+    )
+
+    expanded = expander.expand([anchor])
+
+    assert [chunk.chunk_id for chunk in expanded] == [
+        "chunk_002",
+        "chunk_003",
+    ]

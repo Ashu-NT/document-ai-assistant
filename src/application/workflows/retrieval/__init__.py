@@ -22,6 +22,9 @@ from src.application.workflows.retrieval.retrieval_query_intent import (
 from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
+from src.application.workflows.retrieval.retrieval_context_assembler import (
+    RetrievalContextAssembler,
+)
 from src.application.workflows.retrieval.retrieval_context_expander import (
     RetrievalContextExpander,
 )
@@ -31,6 +34,7 @@ __all__ = [
     "RetrievalBenchmarkCase",
     "RetrievalBenchmarkCaseResult",
     "RetrievalBenchmarkReport",
+    "RetrievalContextAssembler",
     "RetrievalQueryIntent",
     "RetrievalQueryIntentInferer",
     "RetrievalContextExpander",

@@ -1,3 +1,9 @@
+from src.application.workflows.parsing.builders.chunking.builders.chunk_semantic_signal_extractor import (
+    ChunkSemanticSignalExtractor,
+)
+from src.application.workflows.parsing.builders.chunking.builders.chunk_type_resolver import (
+    ChunkTypeResolver,
+)
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
@@ -27,10 +33,12 @@ from src.application.workflows.parsing.builders.chunking.builders.section_chunk_
 )
 
 __all__ = [
+    "ChunkSemanticSignalExtractor",
     "ChunkFragment",
     "ChunkingProfile",
     "ChunkingProfileInference",
     "ChunkingProfileStatistics",
+    "ChunkTypeResolver",
     "ChunkPayload",
     "ChunkTextSplitter",
     "DocumentChunkingPolicy",

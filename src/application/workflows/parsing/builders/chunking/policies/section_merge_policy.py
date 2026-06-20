@@ -1,3 +1,6 @@
+from src.application.workflows.parsing.builders.chunking.builders.chunk_type_resolver import (
+    ChunkTypeResolver,
+)
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
@@ -22,9 +25,11 @@ class SectionMergePolicy:
         min_section_text_length: int,
         same_topic_merge_tokens: int | None = None,
         intro_context_tokens: int | None = None,
+        chunk_type_resolver: ChunkTypeResolver | None = None,
     ) -> None:
         self.text_splitter = text_splitter
         self.min_section_text_length = min_section_text_length
+        self.chunk_type_resolver = chunk_type_resolver or ChunkTypeResolver()
         self.soft_chunk_tokens = max(
             int(self.text_splitter.max_chunk_tokens * 0.85),
             self.text_splitter.max_chunk_tokens - 30,
@@ -60,6 +65,12 @@ class SectionMergePolicy:
 
         if previous_path == next_path:
             return False
+
+        if not self.chunk_type_resolver.are_semantically_compatible(
+            current_fragments=current_fragments,
+            next_fragment=next_fragment,
+        ):
+            return True
 
         if not self._paths_are_related(previous_path, next_path):
             return True

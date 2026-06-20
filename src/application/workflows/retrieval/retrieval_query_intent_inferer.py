@@ -16,11 +16,21 @@ class RetrievalQueryIntentInferer:
             return RetrievalQueryIntent.FIGURE
         if ChunkType.TECHNICAL_SPECIFICATION in query.chunk_types:
             return RetrievalQueryIntent.SPECIFICATION
+        if ChunkType.CERTIFICATION_INFO in query.chunk_types:
+            return RetrievalQueryIntent.SPECIFICATION
         if ChunkType.SAFETY_WARNING in query.chunk_types:
             return RetrievalQueryIntent.SAFETY
         if ChunkType.TROUBLESHOOTING in query.chunk_types:
             return RetrievalQueryIntent.TROUBLESHOOTING
-        if ChunkType.MAINTENANCE_PROCEDURE in query.chunk_types:
+        if any(
+            chunk_type in query.chunk_types
+            for chunk_type in {
+                ChunkType.MAINTENANCE_PROCEDURE,
+                ChunkType.MAINTENANCE_INTERVAL,
+                ChunkType.INSTALLATION_INSTRUCTION,
+                ChunkType.OPERATION_INSTRUCTION,
+            }
+        ):
             return RetrievalQueryIntent.PROCEDURE
 
         query_text = query.effective_query().strip().lower()
