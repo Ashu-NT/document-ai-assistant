@@ -69,7 +69,29 @@ def test_hybrid_document_type_resolver_uses_structural_fallback_when_model_missi
     assert decision.should_rechunk is True
 
 
-def test_hybrid_document_type_resolver_lets_model_win_when_structural_signal_is_weak() -> None:
+def test_hybrid_document_type_resolver_boosts_confidence_when_both_signals_agree() -> None:
+    resolver = HybridDocumentTypeResolver()
+
+    decision = resolver.resolve(
+        parser_title_hint=DocumentType.UNKNOWN,
+        structural_inference=make_inference(
+            profile=ChunkingProfile.MANUAL,
+            confidence=0.41,
+        ),
+        classification=make_document_classification(
+            document_type=DocumentType.MANUAL,
+            confidence=0.46,
+        ),
+        provisional_chunking_profile=ChunkingProfile.DEFAULT,
+    )
+
+    assert decision.effective_document_type == DocumentType.MANUAL
+    assert decision.effective_chunking_profile == ChunkingProfile.MANUAL
+    assert decision.confidence > 0.46
+    assert decision.should_rechunk is True
+
+
+def test_hybrid_document_type_resolver_lets_model_win_when_model_signal_is_high() -> None:
     resolver = HybridDocumentTypeResolver()
 
     decision = resolver.resolve(
@@ -109,7 +131,7 @@ def test_hybrid_document_type_resolver_lets_structural_signal_win_when_model_is_
     assert decision.effective_chunking_profile == ChunkingProfile.MANUAL
 
 
-def test_hybrid_document_type_resolver_uses_default_profile_for_strong_conflict() -> None:
+def test_hybrid_document_type_resolver_lets_model_win_on_high_conflict_and_flags_it() -> None:
     resolver = HybridDocumentTypeResolver()
 
     decision = resolver.resolve(
@@ -125,8 +147,90 @@ def test_hybrid_document_type_resolver_uses_default_profile_for_strong_conflict(
         provisional_chunking_profile=ChunkingProfile.MANUAL,
     )
 
+    assert decision.effective_document_type == DocumentType.DATASHEET
+    assert decision.effective_chunking_profile == ChunkingProfile.DATASHEET
+    assert decision.should_rechunk is True
+    assert any("Conflict flagged" in reason for reason in decision.reasons)
+
+
+def test_hybrid_document_type_resolver_uses_default_when_both_signals_are_low_and_different() -> None:
+    resolver = HybridDocumentTypeResolver()
+
+    decision = resolver.resolve(
+        parser_title_hint=DocumentType.REPORT,
+        structural_inference=make_inference(
+            profile=ChunkingProfile.MANUAL,
+            confidence=0.42,
+        ),
+        classification=make_document_classification(
+            document_type=DocumentType.DATASHEET,
+            confidence=0.48,
+        ),
+        provisional_chunking_profile=ChunkingProfile.MANUAL,
+    )
+
+    assert decision.effective_document_type == DocumentType.UNKNOWN
     assert decision.effective_chunking_profile == ChunkingProfile.DEFAULT
     assert decision.should_rechunk is True
+
+
+def test_hybrid_document_type_resolver_uses_default_when_signals_disagree_without_decisive_winner() -> None:
+    resolver = HybridDocumentTypeResolver()
+
+    decision = resolver.resolve(
+        parser_title_hint=DocumentType.UNKNOWN,
+        structural_inference=make_inference(
+            profile=ChunkingProfile.MANUAL,
+            confidence=0.78,
+        ),
+        classification=make_document_classification(
+            document_type=DocumentType.DATASHEET,
+            confidence=0.65,
+        ),
+        provisional_chunking_profile=ChunkingProfile.MANUAL,
+    )
+
+    assert decision.effective_document_type == DocumentType.UNKNOWN
+    assert decision.effective_chunking_profile == ChunkingProfile.DEFAULT
+    assert decision.should_rechunk is True
+
+
+def test_hybrid_document_type_resolver_uses_available_high_confidence_model_when_structural_signal_missing() -> None:
+    resolver = HybridDocumentTypeResolver()
+
+    decision = resolver.resolve(
+        parser_title_hint=DocumentType.UNKNOWN,
+        structural_inference=make_inference(
+            profile=ChunkingProfile.DEFAULT,
+            confidence=0.35,
+        ),
+        classification=make_document_classification(
+            document_type=DocumentType.REPORT,
+            confidence=0.88,
+        ),
+        provisional_chunking_profile=ChunkingProfile.DEFAULT,
+    )
+
+    assert decision.effective_document_type == DocumentType.REPORT
+    assert decision.effective_chunking_profile == ChunkingProfile.REPORT
+
+
+def test_hybrid_document_type_resolver_uses_default_when_only_low_confidence_signal_is_available() -> None:
+    resolver = HybridDocumentTypeResolver()
+
+    decision = resolver.resolve(
+        parser_title_hint=DocumentType.MANUAL,
+        structural_inference=make_inference(
+            profile=ChunkingProfile.DEFAULT,
+            confidence=0.33,
+        ),
+        classification=None,
+        provisional_chunking_profile=ChunkingProfile.DEFAULT,
+    )
+
+    assert decision.effective_document_type == DocumentType.UNKNOWN
+    assert decision.effective_chunking_profile == ChunkingProfile.DEFAULT
+    assert decision.should_rechunk is False
 
 
 def test_hybrid_document_type_resolver_computes_should_rechunk_from_provisional_profile() -> None:
