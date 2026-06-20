@@ -1077,7 +1077,7 @@ def run_document_classification(
         document_classification_validator=DocumentClassificationValidator(),
         id_generator=id_generator,
     )
-    classification = workflow.classify_document(document_graph.document)
+    classification = workflow.classify_document(document_graph)
     return classification, provider
 
 
