@@ -2,6 +2,9 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
+from src.infrastructure.parsing.docling.docling_converter_factory import (
+    build_docling_converter,
+)
 from src.shared.exceptions import DocumentParsingError
 
 
@@ -85,9 +88,7 @@ class DoclingParser:
 
     @staticmethod
     def _build_default_converter() -> Any:
-        from docling.document_converter import DocumentConverter
-
-        return DocumentConverter()
+        return build_docling_converter()
 
     @staticmethod
     def _resolve_parser_version() -> str | None:

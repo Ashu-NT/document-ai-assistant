@@ -1,3 +1,5 @@
+from typing import Callable
+
 from src.application.contracts.retrieval import VectorStore
 from src.application.services.classification import ClassificationService
 from src.application.services.document import (
@@ -71,7 +73,12 @@ class PostClassificationChunkFinalizationWorkflow:
         *,
         max_questions_per_chunk: int = 5,
         activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> DocumentGraph:
+        self._emit_progress(
+            progress_callback,
+            f"Loading persisted document graph for {document_id}...",
+        )
         graph = self.document_lookup_service.get_document_graph(
             document_id,
             activity_context=activity_context,
@@ -82,6 +89,10 @@ class PostClassificationChunkFinalizationWorkflow:
                 details={"document_id": document_id},
             )
 
+        self._emit_progress(
+            progress_callback,
+            "Loading saved document classification...",
+        )
         classification = self.classification_service.get_document_classification(
             document_id
         )
@@ -91,6 +102,10 @@ class PostClassificationChunkFinalizationWorkflow:
                 details={"document_id": document_id},
             )
 
+        self._emit_progress(
+            progress_callback,
+            "Resolving final document type and chunking policy...",
+        )
         sections = self._ordered_sections(graph)
         section_elements_by_id = {
             section.section_id: graph.get_section_elements(section.section_id)
@@ -113,25 +128,53 @@ class PostClassificationChunkFinalizationWorkflow:
             classification=classification,
             provisional_chunking_profile=provisional_policy.profile_name,
         )
+        self._emit_progress(
+            progress_callback,
+            (
+                "Chunking decision resolved: "
+                f"document_type={decision.effective_document_type.value}, "
+                f"profile={decision.effective_chunking_profile.value}, "
+                f"should_rechunk={'yes' if decision.should_rechunk else 'no'}."
+            ),
+        )
 
+        self._emit_progress(
+            progress_callback,
+            "Building final chunk set..." if decision.should_rechunk
+            else "Reusing stored final chunk set...",
+        )
         final_chunks = self._final_chunks(
             graph=graph,
             sections=sections,
             decision=decision,
         )
+        self._emit_progress(
+            progress_callback,
+            f"Final chunk set contains {len(final_chunks)} chunk(s).",
+        )
         graph.document.document_type = decision.effective_document_type
         graph.replace_chunks(final_chunks)
         graph.clear_chunk_dependents()
+        questionable_chunks = [
+            chunk
+            for chunk in final_chunks
+            if chunk.chunk_type != ChunkType.OVERVIEW
+        ]
+        self._emit_progress(
+            progress_callback,
+            f"Generating questions for {len(questionable_chunks)} chunk(s)...",
+        )
         graph.replace_questions(
             self.question_generation_service.generate_for_chunks(
-                [
-                    chunk
-                    for chunk in final_chunks
-                    if chunk.chunk_type != ChunkType.OVERVIEW
-                ],
+                questionable_chunks,
                 max_questions_per_chunk=max_questions_per_chunk,
                 activity_context=activity_context,
+                progress_callback=progress_callback,
             )
+        )
+        self._emit_progress(
+            progress_callback,
+            f"Generated {len(graph.questions)} question(s) for final chunk set.",
         )
         graph.document.statistics = DocumentStatistics(
             page_count=graph.document.statistics.page_count,
@@ -142,14 +185,31 @@ class PostClassificationChunkFinalizationWorkflow:
             picture_count=len(graph.pictures),
         )
 
+        self._emit_progress(
+            progress_callback,
+            "Deleting existing vectors for this document...",
+        )
         self.vector_store.delete_document_vectors(document_id)
+        self._emit_progress(
+            progress_callback,
+            "Persisting final chunk artifacts to the document repository...",
+        )
         self.document_registration_service.replace_document_chunk_artifacts(
             graph,
             activity_context=activity_context,
         )
+        self._emit_progress(
+            progress_callback,
+            f"Embedding and storing {len(final_chunks)} final chunk(s)...",
+        )
         self.embedding_workflow.embed_and_store_chunks(
             final_chunks,
             activity_context=activity_context,
+            progress_callback=progress_callback,
+        )
+        self._emit_progress(
+            progress_callback,
+            "Post-classification chunk finalization completed.",
         )
 
         return graph
@@ -180,3 +240,11 @@ class PostClassificationChunkFinalizationWorkflow:
             graph.sections.values(),
             key=lambda section: section.sequence_number or 0,
         )
+
+    @staticmethod
+    def _emit_progress(
+        progress_callback: Callable[[str], None] | None,
+        message: str,
+    ) -> None:
+        if progress_callback is not None:
+            progress_callback(message)

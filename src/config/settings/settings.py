@@ -1,9 +1,11 @@
 from src.config.settings.app_settings import AppSettings
 from src.config.settings.db_settings import DatabaseSettings
+from src.config.settings.docling_settings import DoclingSettings
 from src.config.settings.embedding_settings import EmbeddingSettings
 from src.config.settings.guardrail_settings import GuardrailSettings
 from src.config.settings.ingestion_settings import IngestionSettings
 from src.config.settings.llm_settings import LLMSettings
+from src.config.settings.ocr_settings import OCRSettings
 from src.config.settings.qdrant_settings import QdrantSettings
 from src.config.settings.retrieval_settings import RetrievalSettings
 from src.config.settings.classification_settings import ClassificationSettings
@@ -22,6 +24,7 @@ qdrant_settings = QdrantSettings()
 llm_settings = LLMSettings()
 embedding_settings = EmbeddingSettings()
 ingestion_settings = IngestionSettings()
+docling_settings = DoclingSettings()
 retrieval_settings = RetrievalSettings()
 guardrail_settings = GuardrailSettings()
 classification_settings = ClassificationSettings()
@@ -29,6 +32,7 @@ logging_settings = LoggingSettings()
 agent_settings = AgentSettings()
 langgraph_settings = LangGraphSettings()
 memory_settings = MemorySettings()
+ocr_settings = OCRSettings()
 extraction_settings = ExtractionSettings()
 duplicate_detection_settings = DuplicateDetectionSettings()
 storage_settings = StorageSettings()

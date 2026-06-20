@@ -191,9 +191,12 @@ class FakePostClassificationChunkFinalizationWorkflow:
         *,
         max_questions_per_chunk: int = 5,
         activity_context=None,
+        progress_callback=None,
     ) -> DocumentGraph:
         self.operations.append("finalize")
         self.calls.append(document_id)
+        if progress_callback is not None:
+            progress_callback(f"fake finalization for {document_id}")
         return self.graphs_by_document_id[document_id]
 
 
@@ -745,4 +748,5 @@ def test_seed_corpus_emits_progress_messages_for_major_stages() -> None:
     assert any("Parsing document into provisional graph" in message for message in messages)
     assert any("Running document classification" in message for message in messages)
     assert any("Finalizing post-classification chunks, questions, and embeddings" in message for message in messages)
+    assert any("fake finalization for doc_manual" in message for message in messages)
     assert any("Corpus seeding completed for 1 document(s)." in message for message in messages)

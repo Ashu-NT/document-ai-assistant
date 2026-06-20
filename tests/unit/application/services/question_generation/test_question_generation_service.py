@@ -165,3 +165,32 @@ def test_generate_for_chunk_uses_injected_llm_service_only(sample_chunk) -> None
 
     assert len(fake_llm_service.calls) == 1
     assert len(questions) == 1
+
+
+def test_generate_for_chunks_emits_progress_messages(sample_chunk) -> None:
+    second_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_002",
+        content="Inspect the pump housing for visible leaks every 500 hours.",
+    )
+    fake_llm_service = FakeLLMService(
+        [
+            "When should the hydraulic filter be replaced?",
+            "How often should the pump housing be inspected?",
+        ]
+    )
+    service = make_service(fake_llm_service)
+    messages: list[str] = []
+
+    service.generate_for_chunks(
+        [sample_chunk, second_chunk],
+        max_questions_per_chunk=2,
+        progress_callback=messages.append,
+    )
+
+    assert messages == [
+        f"[questions 1/2] Generating questions for chunk {sample_chunk.chunk_id}...",
+        f"[questions 1/2] Generated 1 question(s) for chunk {sample_chunk.chunk_id}.",
+        "[questions 2/2] Generating questions for chunk chunk_002...",
+        "[questions 2/2] Generated 1 question(s) for chunk chunk_002.",
+    ]

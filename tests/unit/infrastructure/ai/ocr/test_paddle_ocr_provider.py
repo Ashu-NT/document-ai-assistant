@@ -1,6 +1,7 @@
 import pytest
 
 from src.infrastructure.ai.ocr import PaddleOCRProvider
+from src.infrastructure.ai.ocr import paddle_ocr_provider
 from src.shared.exceptions import OCRProviderError
 
 
@@ -53,3 +54,28 @@ def test_extract_text_from_image_wraps_underlying_errors() -> None:
 
     with pytest.raises(OCRProviderError):
         provider.extract_text_from_image("outputs/images/pic_001.png")
+
+
+def test_provider_uses_settings_defaults_when_arguments_are_omitted(
+    monkeypatch,
+) -> None:
+    fake_settings = type(
+        "FakeOCRSettings",
+        (),
+        {
+            "paddle_lang": "de",
+            "paddle_use_textline_orientation": False,
+            "paddle_ocr_version": "PP-OCRv5",
+        },
+    )()
+    monkeypatch.setattr(
+        paddle_ocr_provider,
+        "ocr_settings",
+        fake_settings,
+    )
+
+    provider = PaddleOCRProvider()
+
+    assert provider.lang == "de"
+    assert provider.use_textline_orientation is False
+    assert provider.ocr_version == "PP-OCRv5"

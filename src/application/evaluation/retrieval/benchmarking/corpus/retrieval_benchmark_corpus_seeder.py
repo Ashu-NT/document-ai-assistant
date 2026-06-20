@@ -272,6 +272,10 @@ class RetrievalBenchmarkCorpusSeeder:
         final_graph = self.post_classification_chunk_finalization_workflow.finalize(
             parsing_result.document_id,
             activity_context=activity_context,
+            progress_callback=self._scoped_progress_callback(
+                progress_callback,
+                prefix,
+            ),
         )
         self._commit()
 
@@ -333,6 +337,10 @@ class RetrievalBenchmarkCorpusSeeder:
         final_graph = self.post_classification_chunk_finalization_workflow.finalize(
             document_id,
             activity_context=activity_context,
+            progress_callback=self._scoped_progress_callback(
+                progress_callback,
+                prefix,
+            ),
         )
         self._commit()
 
@@ -494,3 +502,17 @@ class RetrievalBenchmarkCorpusSeeder:
         if seed_index is None or total_targets is None:
             return "[seed]"
         return f"[{seed_index}/{total_targets}]"
+
+    @classmethod
+    def _scoped_progress_callback(
+        cls,
+        progress_callback: Callable[[str], None] | None,
+        prefix: str,
+    ) -> Callable[[str], None] | None:
+        if progress_callback is None:
+            return None
+
+        def scoped_callback(message: str) -> None:
+            cls._emit_progress(progress_callback, f"{prefix} {message}")
+
+        return scoped_callback
