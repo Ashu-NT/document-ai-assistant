@@ -106,7 +106,11 @@ class ChunkClassificationWorkflow:
                 model_name=self.classification_model or "default",
                 model_type="chunk_classification",
                 confidence=parsed["confidence_score"],
-                prompt_version=self.prompt_builder.prompt_version,
+                prompt_version=getattr(
+                    self.prompt_builder,
+                    "chunk_prompt_version",
+                    getattr(self.prompt_builder, "prompt_version", None),
+                ),
                 errors=metadata_errors,
             ),
         )

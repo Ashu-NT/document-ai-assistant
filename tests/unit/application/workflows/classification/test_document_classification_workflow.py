@@ -75,13 +75,13 @@ def make_workflow(
 
 
 def test_classify_document_builds_classification_and_saves_it(
-    sample_document,
+    sample_document_graph,
 ) -> None:
     fake_llm_service = FakeLLMService(
         [
             '{"label": "manual", "confidence_score": 0.91, '
-            '"rationale": "The file metadata describes a maintenance manual.", '
-            '"evidence": ["pump_manual.pdf", "Hydraulic Pump Manual"]}'
+            '"rationale": "The graph summary and content match a maintenance manual.", '
+            '"evidence": ["Hydraulic Pump Manual", "Replace hydraulic filter every 1000 operating hours."]}'
         ]
     )
     fake_classification_service = FakeClassificationService()
@@ -90,9 +90,9 @@ def test_classify_document_builds_classification_and_saves_it(
         fake_classification_service,
     )
 
-    classification = workflow.classify_document(sample_document)
+    classification = workflow.classify_document(sample_document_graph)
 
-    assert classification.document_id == sample_document.document_id
+    assert classification.document_id == sample_document_graph.document.document_id
     assert classification.document_type == DocumentType.MANUAL
     assert classification.result is not None
     assert classification.result.classification_id.startswith("classification_")
@@ -108,12 +108,14 @@ def test_classify_document_builds_classification_and_saves_it(
             "model": "qwen3:8b",
         }
     ]
-    assert sample_document.file_name in fake_llm_service.calls[0]["prompt"]
-    assert sample_document.title in fake_llm_service.calls[0]["prompt"]
+    assert sample_document_graph.document.file_name in fake_llm_service.calls[0]["prompt"]
+    assert sample_document_graph.document.title in fake_llm_service.calls[0]["prompt"]
+    assert "Replace hydraulic filter every 1000 operating hours." in fake_llm_service.calls[0]["prompt"]
+    assert "Spare parts table" in fake_llm_service.calls[0]["prompt"]
 
 
 def test_classify_document_raises_when_validator_rejects_response(
-    sample_document,
+    sample_document_graph,
 ) -> None:
     fake_llm_service = FakeLLMService(
         [
@@ -129,13 +131,13 @@ def test_classify_document_raises_when_validator_rejects_response(
     )
 
     with pytest.raises(SchemaValidationError):
-        workflow.classify_document(sample_document)
+        workflow.classify_document(sample_document_graph)
 
     assert len(validator.calls) == 1
     assert fake_classification_service.saved_document_classifications == []
 
 
-def test_classify_document_raises_on_malformed_response(sample_document) -> None:
+def test_classify_document_raises_on_malformed_response(sample_document_graph) -> None:
     fake_llm_service = FakeLLMService(
         [
             "This answer is not structured in any supported format."
@@ -148,7 +150,29 @@ def test_classify_document_raises_on_malformed_response(sample_document) -> None
     )
 
     with pytest.raises(SchemaValidationError):
-        workflow.classify_document(sample_document)
+        workflow.classify_document(sample_document_graph)
 
     assert validator.calls == []
     assert fake_classification_service.saved_document_classifications == []
+
+
+def test_classify_document_still_supports_document_only_input(
+    sample_document,
+) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            '{"label": "manual", "confidence_score": 0.81, '
+            '"rationale": "The title indicates a manual.", '
+            '"evidence": ["Hydraulic Pump Manual"]}'
+        ]
+    )
+    fake_classification_service = FakeClassificationService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_classification_service,
+    )
+
+    classification = workflow.classify_document(sample_document)
+
+    assert classification.document_id == sample_document.document_id
+    assert "No graph-derived content summary was available." in fake_llm_service.calls[0]["prompt"]

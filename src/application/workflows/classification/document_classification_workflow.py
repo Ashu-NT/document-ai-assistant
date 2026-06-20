@@ -12,7 +12,7 @@ from src.application.workflows.classification.prompt_builders import (
 )
 from src.domain.classification import ClassificationResult, DocumentClassification
 from src.domain.common import DocumentType, ModelProcessingMetadata
-from src.domain.document import Document
+from src.domain.document import Document, DocumentGraph
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
 from src.shared.exceptions import SchemaValidationError
@@ -64,10 +64,13 @@ class DocumentClassificationWorkflow:
     )
     def classify_document(
         self,
-        document: Document,
+        document_graph: DocumentGraph | Document,
         activity_context: ActivityContext | None = None,
     ) -> DocumentClassification:
-        prompt = self.prompt_builder.build_document_classification_prompt(document)
+        document = self._resolve_document(document_graph)
+        prompt = self.prompt_builder.build_document_classification_prompt(
+            document_graph
+        )
         response = self.llm_service.generate(
             prompt,
             model=self.classification_model,
@@ -105,7 +108,11 @@ class DocumentClassificationWorkflow:
                 model_name=self.classification_model or "default",
                 model_type="document_classification",
                 confidence=parsed["confidence_score"],
-                prompt_version=self.prompt_builder.prompt_version,
+                prompt_version=getattr(
+                    self.prompt_builder,
+                    "document_prompt_version",
+                    getattr(self.prompt_builder, "prompt_version", None),
+                ),
                 errors=metadata_errors,
             ),
         )
@@ -321,3 +328,9 @@ class DocumentClassificationWorkflow:
             return [f"Unknown label returned by model: {raw_label}"]
 
         return []
+
+    @staticmethod
+    def _resolve_document(document_graph: DocumentGraph | Document) -> Document:
+        if isinstance(document_graph, DocumentGraph):
+            return document_graph.document
+        return document_graph
