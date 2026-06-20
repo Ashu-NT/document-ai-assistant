@@ -71,6 +71,12 @@ class RetrievalBenchmarkCase:
             )
         return []
 
+    @property
+    def expected_document_family(self) -> str | None:
+        if not self.expected_document_alias:
+            return None
+        return self.expected_document_alias.split("_", 1)[0]
+
     @staticmethod
     def _fallback_query_id(query_text: str) -> str:
         normalized = _CASE_ID_PATTERN.sub("_", query_text.lower()).strip("_")

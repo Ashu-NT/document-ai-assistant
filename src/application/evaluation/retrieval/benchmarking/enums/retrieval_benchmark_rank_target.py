@@ -19,3 +19,12 @@ class RetrievalBenchmarkRankTarget(StrEnum):
                 return member
 
         raise ValueError(f"Unsupported retrieval benchmark rank target: {value}")
+
+    @property
+    def max_rank(self) -> int:
+        return {
+            RetrievalBenchmarkRankTarget.TOP_1: 1,
+            RetrievalBenchmarkRankTarget.TOP_3: 3,
+            RetrievalBenchmarkRankTarget.TOP_5: 5,
+            RetrievalBenchmarkRankTarget.TOP_10: 10,
+        }[self]

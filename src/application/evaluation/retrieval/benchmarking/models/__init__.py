@@ -4,6 +4,9 @@ from src.application.evaluation.retrieval.benchmarking.models.retrieval_benchmar
 from src.application.evaluation.retrieval.benchmarking.models.retrieval_benchmark_case_result import (
     RetrievalBenchmarkCaseResult,
 )
+from src.application.evaluation.retrieval.benchmarking.models.retrieval_benchmark_chunk_snapshot import (
+    RetrievalBenchmarkChunkSnapshot,
+)
 from src.application.evaluation.retrieval.benchmarking.models.retrieval_benchmark_report import (
     RetrievalBenchmarkReport,
 )
@@ -11,5 +14,6 @@ from src.application.evaluation.retrieval.benchmarking.models.retrieval_benchmar
 __all__ = [
     "RetrievalBenchmarkCase",
     "RetrievalBenchmarkCaseResult",
+    "RetrievalBenchmarkChunkSnapshot",
     "RetrievalBenchmarkReport",
 ]
