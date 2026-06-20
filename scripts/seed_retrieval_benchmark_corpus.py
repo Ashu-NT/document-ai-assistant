@@ -12,6 +12,7 @@ import argparse
 import json
 import sys
 import traceback
+from dataclasses import dataclass
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -75,6 +76,12 @@ from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork  # noqa: E40
 from src.infrastructure.parsing.docling import DoclingParser  # noqa: E402
 from src.infrastructure.retrieval.vector import QdrantVectorStore  # noqa: E402
 from src.shared.ids import IdGenerator  # noqa: E402
+
+
+@dataclass(slots=True)
+class CorpusSeederRuntime:
+    seeder: RetrievalBenchmarkCorpusSeeder
+    qdrant_client: QdrantClient | None = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -178,7 +185,7 @@ def build_parsing_workflow(
     return workflow, document_graph_builder
 
 
-def build_corpus_seeder() -> RetrievalBenchmarkCorpusSeeder:
+def build_corpus_seeder() -> CorpusSeederRuntime:
     bootstrap_application()
     Base.metadata.create_all(engine)
 
@@ -198,8 +205,9 @@ def build_corpus_seeder() -> RetrievalBenchmarkCorpusSeeder:
     embedding_provider = BgeEmbeddingProvider(
         model_name=embedding_settings.model_name,
     )
+    qdrant_client = create_qdrant_client()
     vector_store = QdrantVectorStore(
-        client=create_qdrant_client(),
+        client=qdrant_client,
         mapping_repository=uow.vector_mappings,
         collection_name=qdrant_settings.collection,
         embedding_model=embedding_settings.model_name,
@@ -230,44 +238,49 @@ def build_corpus_seeder() -> RetrievalBenchmarkCorpusSeeder:
         id_generator=id_generator,
     )
 
-    return RetrievalBenchmarkCorpusSeeder(
-        parsing_workflow=parsing_workflow,
-        document_registration_service=document_registration_service,
-        duplicate_detection_service=DuplicateDetectionService(document_repository),
-        document_lookup_service=document_lookup_service,
-        classification_service=classification_service,
-        document_classification_workflow=DocumentClassificationWorkflow(
-            llm_service=llm_service,
+    return CorpusSeederRuntime(
+        seeder=RetrievalBenchmarkCorpusSeeder(
+            parsing_workflow=parsing_workflow,
+            document_registration_service=document_registration_service,
+            duplicate_detection_service=DuplicateDetectionService(document_repository),
+            document_lookup_service=document_lookup_service,
             classification_service=classification_service,
-            document_classification_validator=document_validator,
-            id_generator=id_generator,
-        ),
-        post_classification_chunk_finalization_workflow=(
-            PostClassificationChunkFinalizationWorkflow(
-                document_lookup_service=document_lookup_service,
-                document_registration_service=document_registration_service,
+            document_classification_workflow=DocumentClassificationWorkflow(
+                llm_service=llm_service,
                 classification_service=classification_service,
-                chunk_classification_workflow=chunk_classification_workflow,
-                question_generation_service=QuestionGenerationService(
-                    llm_service=llm_service,
-                    id_generator=id_generator,
-                ),
-                embedding_workflow=EmbeddingWorkflow(
-                    embedding_service=EmbeddingService(embedding_provider),
+                document_classification_validator=document_validator,
+                id_generator=id_generator,
+            ),
+            post_classification_chunk_finalization_workflow=(
+                PostClassificationChunkFinalizationWorkflow(
+                    document_lookup_service=document_lookup_service,
+                    document_registration_service=document_registration_service,
+                    classification_service=classification_service,
+                    chunk_classification_workflow=chunk_classification_workflow,
+                    question_generation_service=QuestionGenerationService(
+                        llm_service=llm_service,
+                        id_generator=id_generator,
+                    ),
+                    embedding_workflow=EmbeddingWorkflow(
+                        embedding_service=EmbeddingService(embedding_provider),
+                        vector_store=vector_store,
+                    ),
                     vector_store=vector_store,
-                ),
-                vector_store=vector_store,
-                graph_chunk_builder=document_graph_builder.chunk_builder,
-            )
+                    graph_chunk_builder=document_graph_builder.chunk_builder,
+                )
+            ),
+            unit_of_work=uow,
+            embedding_model=embedding_settings.model_name,
+            vector_collection=qdrant_settings.collection,
         ),
-        unit_of_work=uow,
-        embedding_model=embedding_settings.model_name,
-        vector_collection=qdrant_settings.collection,
+        qdrant_client=qdrant_client,
     )
 
 
 def main() -> int:
     args = parse_args()
+    runtime: CorpusSeederRuntime | None = None
+    seeder: RetrievalBenchmarkCorpusSeeder | None = None
     truth_set_path = resolve_path(args.truth_set)
     input_directory = resolve_path(args.input_dir)
     output_path = resolve_path(args.output) or default_output_path()
@@ -280,7 +293,8 @@ def main() -> int:
         print_status(f"Input directory: {input_directory}")
     print_status(f"Manifest output path: {output_path}")
     print_status("Building corpus seeder runtime...")
-    seeder = build_corpus_seeder()
+    runtime = build_corpus_seeder()
+    seeder = runtime.seeder
     print_status("Corpus seeder runtime ready.")
 
     try:
@@ -309,9 +323,22 @@ def main() -> int:
         session = getattr(unit_of_work, "session", None)
         if session is not None:
             session.close()
+        close_quietly(getattr(runtime, "qdrant_client", None))
 
     print(output_path)
     return 0
+
+
+def close_quietly(resource) -> None:
+    if resource is None:
+        return
+
+    close = getattr(resource, "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception:
+            return
 
 
 if __name__ == "__main__":

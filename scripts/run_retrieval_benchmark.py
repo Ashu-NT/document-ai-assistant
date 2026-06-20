@@ -59,6 +59,7 @@ class BenchmarkRuntime:
     report_writer: RetrievalBenchmarkReportWriter
     workflow: Any
     session: Any = None
+    qdrant_client: Any = None
 
 
 @dataclass(slots=True)
@@ -194,8 +195,9 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
     embedding_provider = BgeEmbeddingProvider(
         model_name=embedding_settings.model_name,
     )
+    qdrant_client = _create_qdrant_client(QdrantClient)
     vector_store = QdrantVectorStore(
-        client=_create_qdrant_client(QdrantClient),
+        client=qdrant_client,
         mapping_repository=unit_of_work.vector_mappings,
         collection_name=qdrant_settings.collection,
         embedding_model=embedding_settings.model_name,
@@ -226,6 +228,7 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
         report_writer=RetrievalBenchmarkReportWriter(),
         workflow=workflow,
         session=session,
+        qdrant_client=qdrant_client,
     )
 
 
@@ -387,6 +390,20 @@ def close_runtime(runtime: BenchmarkRuntime | None) -> None:
     session = getattr(runtime, "session", None)
     if session is not None:
         session.close()
+    qdrant_client = getattr(runtime, "qdrant_client", None)
+    close_quietly(qdrant_client)
+
+
+def close_quietly(resource: Any | None) -> None:
+    if resource is None:
+        return
+
+    close = getattr(resource, "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception:
+            return
 
 
 def format_error_details(details: dict[str, Any] | None) -> str:

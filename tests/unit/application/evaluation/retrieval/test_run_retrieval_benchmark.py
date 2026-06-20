@@ -4,6 +4,7 @@ from pathlib import Path
 
 from scripts.run_retrieval_benchmark import (
     BenchmarkRuntime,
+    close_runtime,
     ensure_manifest_exists,
     main,
     select_subset_dataset,
@@ -161,6 +162,14 @@ class FakeReportWriter:
         path.write_text(f"# Report\n\nCases: {report.case_count}\n", encoding="utf-8")
         self.markdown_paths.append(path)
         return path
+
+
+class FakeClosable:
+    def __init__(self) -> None:
+        self.close_calls = 0
+
+    def close(self) -> None:
+        self.close_calls += 1
 
 
 @dataclass(slots=True)
@@ -379,3 +388,23 @@ def test_ensure_manifest_exists_raises_friendly_seed_guidance(
         )
     else:
         raise AssertionError("Expected SchemaValidationError for missing manifest.")
+
+
+def test_close_runtime_closes_session_and_qdrant_client() -> None:
+    session = FakeClosable()
+    qdrant_client = FakeClosable()
+    runtime = BenchmarkRuntime(
+        truth_set_loader=FakeTruthSetLoader(build_dataset()),
+        manifest_loader=FakeManifestLoader(build_manifest()),
+        dataset_resolver=FakeDatasetResolver(),
+        evaluator=FakeEvaluator(build_report(passing=True)),
+        report_writer=FakeReportWriter(),
+        workflow=object(),
+        session=session,
+        qdrant_client=qdrant_client,
+    )
+
+    close_runtime(runtime)
+
+    assert session.close_calls == 1
+    assert qdrant_client.close_calls == 1

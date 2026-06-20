@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 from src.application.contracts.ai import EmbeddingProvider
@@ -26,6 +27,8 @@ class BgeEmbeddingProvider(EmbeddingProvider):
         self.model_name = model_name or _default_embedding_model_name()
         self.normalize_embeddings = normalize_embeddings
         self._model = model
+        if self._model is None:
+            self._validate_model_name(self.model_name)
 
     def embed_text(self, text: str) -> list[float]:
         try:
@@ -98,3 +101,26 @@ class BgeEmbeddingProvider(EmbeddingProvider):
             return [cls._normalize_vector(embeddings)]
 
         return [cls._normalize_vector(embedding) for embedding in embeddings]
+
+    @classmethod
+    def _validate_model_name(cls, model_name: str) -> None:
+        if cls._looks_like_ollama_model_name(model_name):
+            raise InfrastructureError(
+                "BgeEmbeddingProvider requires a sentence-transformers or Hugging Face model id, not an Ollama-style model tag.",
+                details={
+                    "model_name": model_name,
+                    "expected_provider": "sentence-transformers",
+                    "suggested_model_name": DEFAULT_EMBEDDING_MODEL,
+                },
+            )
+
+    @staticmethod
+    def _looks_like_ollama_model_name(model_name: str) -> bool:
+        if not model_name:
+            return False
+
+        if "\\" in model_name or Path(model_name).anchor:
+            return False
+
+        last_segment = model_name.rsplit("/", maxsplit=1)[-1]
+        return ":" in last_segment
