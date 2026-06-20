@@ -1,4 +1,5 @@
 import re
+from typing import Callable
 
 from src.application.services.ai import LLMService
 from src.domain.common import ModelProcessingMetadata
@@ -49,11 +50,21 @@ class QuestionGenerationService:
         chunk: DocumentChunk,
         max_questions: int = 5,
         activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> list[GeneratedQuestion]:
-        return self._generate_questions_for_chunk(
+        self._emit_progress(
+            progress_callback,
+            f"Generating questions for chunk {chunk.chunk_id}...",
+        )
+        questions = self._generate_questions_for_chunk(
             chunk,
             max_questions=max_questions,
         )
+        self._emit_progress(
+            progress_callback,
+            f"Generated {len(questions)} question(s) for chunk {chunk.chunk_id}.",
+        )
+        return questions
 
     @tracked_action(
         action="question_generation.batch_generated",
@@ -67,18 +78,33 @@ class QuestionGenerationService:
         chunks: list[DocumentChunk],
         max_questions_per_chunk: int = 5,
         activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> list[GeneratedQuestion]:
         if max_questions_per_chunk <= 0:
             return []
 
         questions: list[GeneratedQuestion] = []
+        total_chunks = len(chunks)
 
-        for chunk in chunks:
-            questions.extend(
-                self._generate_questions_for_chunk(
-                    chunk,
-                    max_questions=max_questions_per_chunk,
-                )
+        for index, chunk in enumerate(chunks, start=1):
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[questions {index}/{total_chunks}] Generating questions "
+                    f"for chunk {chunk.chunk_id}..."
+                ),
+            )
+            chunk_questions = self._generate_questions_for_chunk(
+                chunk,
+                max_questions=max_questions_per_chunk,
+            )
+            questions.extend(chunk_questions)
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[questions {index}/{total_chunks}] Generated "
+                    f"{len(chunk_questions)} question(s) for chunk {chunk.chunk_id}."
+                ),
             )
 
         return questions
@@ -177,3 +203,11 @@ class QuestionGenerationService:
                 break
 
         return questions
+
+    @staticmethod
+    def _emit_progress(
+        progress_callback: Callable[[str], None] | None,
+        message: str,
+    ) -> None:
+        if progress_callback is not None:
+            progress_callback(message)
