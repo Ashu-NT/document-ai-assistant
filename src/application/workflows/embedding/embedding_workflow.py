@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Callable
 
 from src.application.contracts.retrieval import VectorStore
 from src.application.services.ai import EmbeddingService
@@ -34,10 +35,19 @@ class EmbeddingWorkflow:
         self,
         chunks: list[DocumentChunk],
         activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> list[EmbeddedChunk]:
         if not chunks:
+            self._emit_progress(
+                progress_callback,
+                "No chunks to embed; skipping vector storage.",
+            )
             return []
 
+        self._emit_progress(
+            progress_callback,
+            f"Generating embeddings for {len(chunks)} chunk(s)...",
+        )
         embeddings = self.embedding_service.embed_chunks(
             chunks,
             activity_context=activity_context,
@@ -57,7 +67,15 @@ class EmbeddingWorkflow:
             for chunk, embedding in zip(chunks, embeddings)
         ]
 
+        self._emit_progress(
+            progress_callback,
+            f"Saving {len(embedded_chunks)} embedded chunk vector(s)...",
+        )
         self.vector_store.save_chunk_vectors(embedded_chunks)
+        self._emit_progress(
+            progress_callback,
+            "Embedding and vector storage completed.",
+        )
         return embedded_chunks
 
     @staticmethod
@@ -96,3 +114,11 @@ class EmbeddingWorkflow:
             char_count=statistics.char_count,
             token_count_estimate=statistics.token_count_estimate,
         )
+
+    @staticmethod
+    def _emit_progress(
+        progress_callback: Callable[[str], None] | None,
+        message: str,
+    ) -> None:
+        if progress_callback is not None:
+            progress_callback(message)

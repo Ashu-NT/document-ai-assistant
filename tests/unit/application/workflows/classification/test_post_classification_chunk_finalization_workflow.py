@@ -50,8 +50,13 @@ class FakeQuestionGenerationService:
         chunks: list[DocumentChunk],
         max_questions_per_chunk: int = 5,
         activity_context=None,
+        progress_callback=None,
     ) -> list[GeneratedQuestion]:
         self.calls.append([chunk.chunk_id for chunk in chunks])
+        if progress_callback is not None:
+            progress_callback(
+                f"question generation called for {len(chunks)} chunk(s)"
+            )
         return [
             GeneratedQuestion(
                 question_id=f"question_{index:03d}",
@@ -96,9 +101,16 @@ class FakeEmbeddingWorkflow:
         self.operations = operations
         self.calls: list[list[str]] = []
 
-    def embed_and_store_chunks(self, chunks: list[DocumentChunk], activity_context=None):
+    def embed_and_store_chunks(
+        self,
+        chunks: list[DocumentChunk],
+        activity_context=None,
+        progress_callback=None,
+    ):
         self.operations.append("embed")
         self.calls.append([chunk.chunk_id for chunk in chunks])
+        if progress_callback is not None:
+            progress_callback(f"embedding called for {len(chunks)} chunk(s)")
         return []
 
 
@@ -339,3 +351,46 @@ def test_post_classification_finalization_rechunks_before_questions_and_embeddin
     assert vector_store.delete_calls == [graph.document.document_id]
     assert len(graph_chunk_builder.calls) == 1
     assert operations == ["delete_vectors", "replace", "embed"]
+
+
+def test_post_classification_finalization_emits_nested_progress_messages(
+    sample_document_graph,
+    sample_document_classification,
+    sample_chunk,
+) -> None:
+    graph = copy.deepcopy(sample_document_graph)
+    detail_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_detail",
+        content="Detail content.",
+        chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+    )
+    graph.replace_chunks([detail_chunk])
+    decision = DocumentTypeDecision(
+        effective_document_type=DocumentType.MANUAL,
+        effective_chunking_profile=ChunkingProfile.MANUAL,
+        confidence=0.9,
+        reasons=["reused provisional chunks"],
+        should_rechunk=False,
+    )
+    workflow, _, _, _, _, _, _ = make_workflow(
+        graph=graph,
+        classification=sample_document_classification,
+        decision=decision,
+        rechunked_chunks=[detail_chunk],
+        provisional_profile=ChunkingProfile.MANUAL,
+    )
+    messages: list[str] = []
+
+    workflow.finalize(
+        graph.document.document_id,
+        progress_callback=messages.append,
+    )
+
+    assert messages[0] == f"Loading persisted document graph for {graph.document.document_id}..."
+    assert any("Chunking decision resolved" in message for message in messages)
+    assert any("Generating questions for 1 chunk(s)..." in message for message in messages)
+    assert any("question generation called for 1 chunk(s)" in message for message in messages)
+    assert any("Deleting existing vectors for this document..." in message for message in messages)
+    assert any("embedding called for 1 chunk(s)" in message for message in messages)
+    assert messages[-1] == "Post-classification chunk finalization completed."

@@ -134,3 +134,24 @@ def test_embed_and_store_chunks_rejects_vector_count_mismatch(
         workflow.embed_and_store_chunks([sample_chunk])
 
     assert vector_store.save_calls == 0
+
+
+def test_embed_and_store_chunks_emits_progress_messages(sample_chunk) -> None:
+    embedding_service = FakeEmbeddingService([[0.1, 0.2, 0.3]])
+    vector_store = FakeVectorStore()
+    workflow = EmbeddingWorkflow(
+        embedding_service=embedding_service,
+        vector_store=vector_store,
+    )
+    messages: list[str] = []
+
+    workflow.embed_and_store_chunks(
+        [sample_chunk],
+        progress_callback=messages.append,
+    )
+
+    assert messages == [
+        "Generating embeddings for 1 chunk(s)...",
+        "Saving 1 embedded chunk vector(s)...",
+        "Embedding and vector storage completed.",
+    ]

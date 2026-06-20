@@ -4,21 +4,42 @@ from pathlib import Path
 from typing import Any
 
 from src.application.contracts.ai import OCRProvider
+from src.config.settings import ocr_settings
 from src.shared.exceptions import OCRProviderError
+
+
+def _default_paddle_lang() -> str:
+    return ocr_settings.paddle_lang or "en"
+
+
+def _default_paddle_use_textline_orientation() -> bool:
+    return ocr_settings.paddle_use_textline_orientation
+
+
+def _default_paddle_ocr_version() -> str | None:
+    return ocr_settings.paddle_ocr_version
 
 
 class PaddleOCRProvider(OCRProvider):
     def __init__(
         self,
         *,
-        lang: str = "en",
-        use_textline_orientation: bool = True,
+        lang: str | None = None,
+        use_textline_orientation: bool | None = None,
         ocr_version: str | None = None,
         ocr_engine: Any | None = None,
     ) -> None:
-        self.lang = lang
-        self.use_textline_orientation = use_textline_orientation
-        self.ocr_version = ocr_version
+        self.lang = lang or _default_paddle_lang()
+        self.use_textline_orientation = (
+            use_textline_orientation
+            if use_textline_orientation is not None
+            else _default_paddle_use_textline_orientation()
+        )
+        self.ocr_version = (
+            ocr_version
+            if ocr_version is not None
+            else _default_paddle_ocr_version()
+        )
         self._ocr_engine = ocr_engine
 
     def extract_text_from_image(self, image_path: str) -> str:
