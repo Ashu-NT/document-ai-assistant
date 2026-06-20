@@ -45,6 +45,7 @@ class ClassificationSettings(AppBaseSettings):
     )
 
     chunk_classification_enabled: bool = Field(
+        default=False,
         alias="CHUNK_CLASSIFICATION_ENABLED"
     )
 

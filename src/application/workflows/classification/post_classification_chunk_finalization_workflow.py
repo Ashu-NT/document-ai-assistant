@@ -7,6 +7,9 @@ from src.application.services.document import (
     DocumentRegistrationService,
 )
 from src.application.services.question_generation import QuestionGenerationService
+from src.application.workflows.classification.chunk_classification_workflow import (
+    ChunkClassificationWorkflow,
+)
 from src.application.workflows.classification.hybrid_document_type_resolver import (
     HybridDocumentTypeResolver,
 )
@@ -28,6 +31,24 @@ from src.shared.exceptions import ApplicationError
 from src.shared.execution import tracked_action
 
 
+def _default_enable_chunk_classification() -> bool:
+    try:
+        from src.config.settings import classification_settings
+
+        return classification_settings.chunk_classification_enabled
+    except Exception:
+        return False
+
+
+def _default_enable_question_generation() -> bool:
+    try:
+        from src.config.settings import ingestion_settings
+
+        return ingestion_settings.enable_question_generation
+    except Exception:
+        return False
+
+
 class PostClassificationChunkFinalizationWorkflow:
     def __init__(
         self,
@@ -39,9 +60,12 @@ class PostClassificationChunkFinalizationWorkflow:
         embedding_workflow: EmbeddingWorkflow,
         vector_store: VectorStore,
         graph_chunk_builder: GraphChunkBuilder,
+        chunk_classification_workflow: ChunkClassificationWorkflow | None = None,
         chunking_profile_inferer: ChunkingProfileInferer | None = None,
         chunking_policy_resolver: DocumentChunkingPolicyResolver | None = None,
         document_type_resolver: HybridDocumentTypeResolver | None = None,
+        enable_chunk_classification: bool | None = None,
+        enable_question_generation: bool | None = None,
     ) -> None:
         self.document_lookup_service = document_lookup_service
         self.document_registration_service = document_registration_service
@@ -50,6 +74,7 @@ class PostClassificationChunkFinalizationWorkflow:
         self.embedding_workflow = embedding_workflow
         self.vector_store = vector_store
         self.graph_chunk_builder = graph_chunk_builder
+        self.chunk_classification_workflow = chunk_classification_workflow
         self.chunking_profile_inferer = (
             chunking_profile_inferer or ChunkingProfileInferer()
         )
@@ -58,6 +83,16 @@ class PostClassificationChunkFinalizationWorkflow:
         )
         self.document_type_resolver = (
             document_type_resolver or HybridDocumentTypeResolver()
+        )
+        self.enable_chunk_classification = (
+            enable_chunk_classification
+            if enable_chunk_classification is not None
+            else _default_enable_chunk_classification()
+        )
+        self.enable_question_generation = (
+            enable_question_generation
+            if enable_question_generation is not None
+            else _default_enable_question_generation()
         )
 
     @tracked_action(
@@ -155,26 +190,16 @@ class PostClassificationChunkFinalizationWorkflow:
         graph.document.document_type = decision.effective_document_type
         graph.replace_chunks(final_chunks)
         graph.clear_chunk_dependents()
-        questionable_chunks = [
-            chunk
-            for chunk in final_chunks
-            if chunk.chunk_type != ChunkType.OVERVIEW
-        ]
-        self._emit_progress(
-            progress_callback,
-            f"Generating questions for {len(questionable_chunks)} chunk(s)...",
+        self._classify_chunks_if_enabled(
+            chunks=final_chunks,
+            activity_context=activity_context,
+            progress_callback=progress_callback,
         )
-        graph.replace_questions(
-            self.question_generation_service.generate_for_chunks(
-                questionable_chunks,
-                max_questions_per_chunk=max_questions_per_chunk,
-                activity_context=activity_context,
-                progress_callback=progress_callback,
-            )
-        )
-        self._emit_progress(
-            progress_callback,
-            f"Generated {len(graph.questions)} question(s) for final chunk set.",
+        self._generate_questions_if_enabled(
+            graph=graph,
+            max_questions_per_chunk=max_questions_per_chunk,
+            activity_context=activity_context,
+            progress_callback=progress_callback,
         )
         graph.document.statistics = DocumentStatistics(
             page_count=graph.document.statistics.page_count,
@@ -232,6 +257,85 @@ class PostClassificationChunkFinalizationWorkflow:
             sections=sections,
             document_type_override=decision.effective_document_type,
             chunking_profile_override=decision.effective_chunking_profile,
+        )
+
+    def _classify_chunks_if_enabled(
+        self,
+        *,
+        chunks: list[DocumentChunk],
+        activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
+    ) -> None:
+        if not self.enable_chunk_classification:
+            self._emit_progress(
+                progress_callback,
+                "Chunk classification disabled; skipping final chunk classification.",
+            )
+            return
+
+        if self.chunk_classification_workflow is None:
+            raise ApplicationError(
+                "Chunk classification is enabled but no chunk classification workflow is configured.",
+            )
+
+        total_chunks = len(chunks)
+        self._emit_progress(
+            progress_callback,
+            f"Classifying {total_chunks} final chunk(s)...",
+        )
+        for index, chunk in enumerate(chunks, start=1):
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[chunk-classification {index}/{total_chunks}] "
+                    f"Classifying chunk {chunk.chunk_id}..."
+                ),
+            )
+            self.chunk_classification_workflow.classify_chunk(
+                chunk,
+                activity_context=activity_context,
+            )
+        self._emit_progress(
+            progress_callback,
+            f"Classified {total_chunks} final chunk(s).",
+        )
+
+    def _generate_questions_if_enabled(
+        self,
+        *,
+        graph: DocumentGraph,
+        max_questions_per_chunk: int,
+        activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
+    ) -> None:
+        if not self.enable_question_generation:
+            self._emit_progress(
+                progress_callback,
+                "Question generation disabled; skipping final chunk questions.",
+            )
+            graph.replace_questions([])
+            return
+
+        questionable_chunks = [
+            chunk
+            for chunk in graph.chunks.values()
+            if chunk.chunk_type != ChunkType.OVERVIEW
+        ]
+        self._emit_progress(
+            progress_callback,
+            f"Generating questions for {len(questionable_chunks)} chunk(s)...",
+        )
+        graph.replace_questions(
+            self.question_generation_service.generate_for_chunks(
+                questionable_chunks,
+                max_questions_per_chunk=max_questions_per_chunk,
+                activity_context=activity_context,
+                progress_callback=progress_callback,
+            )
+        )
+        self._emit_progress(
+            progress_callback,
+            f"Generated {len(graph.questions)} question(s) for final chunk set.",
         )
 
     @staticmethod

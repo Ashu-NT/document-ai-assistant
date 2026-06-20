@@ -16,6 +16,7 @@ class IngestionSettings(AppBaseSettings):
     )
 
     enable_question_generation: bool = Field(
+        default=False,
         alias="ENABLE_QUESTION_GENERATION"
     )
 
