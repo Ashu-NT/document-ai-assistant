@@ -1,4 +1,4 @@
-from src.application.workflows.retrieval import (
+from src.application.evaluation import (
     ChunkQualityEvaluator,
     RetrievalBenchmarkCase,
 )

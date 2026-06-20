@@ -1,10 +1,10 @@
-from src.application.workflows.retrieval.retrieval_benchmark_case import (
+from src.application.evaluation.retrieval_benchmark_case import (
     RetrievalBenchmarkCase,
 )
-from src.application.workflows.retrieval.retrieval_benchmark_case_result import (
+from src.application.evaluation.retrieval_benchmark_case_result import (
     RetrievalBenchmarkCaseResult,
 )
-from src.application.workflows.retrieval.retrieval_benchmark_report import (
+from src.application.evaluation.retrieval_benchmark_report import (
     RetrievalBenchmarkReport,
 )
 
@@ -79,7 +79,9 @@ class ChunkQualityEvaluator:
         returned_section_paths: list[list[str]],
     ) -> int:
         chunk_hits = sum(
-            1 for chunk_id in returned_chunk_ids if chunk_id in benchmark_case.expected_chunk_ids
+            1
+            for chunk_id in returned_chunk_ids
+            if chunk_id in benchmark_case.expected_chunk_ids
         )
         section_hits = sum(
             1
