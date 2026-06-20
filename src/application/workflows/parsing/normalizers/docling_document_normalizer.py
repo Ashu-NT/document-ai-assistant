@@ -41,7 +41,12 @@ class DoclingDocumentNormalizer:
                     continue
 
                 element_type = self.item_extractor.extract_element_type(item)
-                text = self._extract_text(item, element_type, caption_extractor)
+                text = self._extract_text(
+                    item,
+                    element_type,
+                    caption_extractor,
+                    raw_document=raw_parsed_document.raw_document,
+                )
                 page_start, page_end = self.provenance_extractor.extract_pages(item)
                 bbox = self.provenance_extractor.extract_bbox(item)
                 section_path = self.item_extractor.extract_section_path(item)
@@ -52,6 +57,7 @@ class DoclingDocumentNormalizer:
                     raw_ref=raw_ref,
                     element_type=element_type,
                     caption_extractor=caption_extractor,
+                    raw_document=raw_parsed_document.raw_document,
                 )
 
                 normalized.append(
@@ -88,9 +94,14 @@ class DoclingDocumentNormalizer:
         item: Any,
         element_type: ElementType,
         caption_extractor: DoclingCaptionExtractor,
+        *,
+        raw_document: Any,
     ) -> str | None:
         if element_type == ElementType.TABLE:
-            return self.table_extractor.extract_markdown(item)
+            return self.table_extractor.extract_markdown(
+                item,
+                doc=raw_document,
+            )
 
         if element_type == ElementType.PICTURE:
             return self._clean_text(
@@ -134,6 +145,7 @@ class DoclingDocumentNormalizer:
         raw_ref: str | None,
         element_type: ElementType,
         caption_extractor: DoclingCaptionExtractor,
+        raw_document: Any,
     ) -> dict[str, Any]:
         metadata: dict[str, Any] = {
             "raw_source_type": item.__class__.__name__,
@@ -158,7 +170,10 @@ class DoclingDocumentNormalizer:
             metadata["heading_level"] = heading_level
 
         if element_type == ElementType.TABLE:
-            markdown = self.table_extractor.extract_markdown(item)
+            markdown = self.table_extractor.extract_markdown(
+                item,
+                doc=raw_document,
+            )
             if markdown:
                 metadata["markdown"] = markdown
 

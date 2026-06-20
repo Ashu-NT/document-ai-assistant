@@ -1,3 +1,4 @@
+import inspect
 from typing import Any
 
 
@@ -14,7 +15,12 @@ class DoclingTableExtractor:
         table_cells = self._extract_table_cells(item)
         return bool(table_cells)
 
-    def extract_markdown(self, item: Any) -> str | None:
+    def extract_markdown(
+        self,
+        item: Any,
+        *,
+        doc: Any | None = None,
+    ) -> str | None:
         for attribute_name in ("markdown", "md", "text"):
             value = self._get_value(item, attribute_name)
             cleaned = self._clean_text(value)
@@ -25,7 +31,9 @@ class DoclingTableExtractor:
             method = getattr(item, method_name, None)
             if callable(method):
                 try:
-                    cleaned = self._clean_text(method())
+                    cleaned = self._clean_text(
+                        self._call_markdown_method(method, doc=doc)
+                    )
                 except Exception:
                     cleaned = None
                 if cleaned:
@@ -77,6 +85,25 @@ class DoclingTableExtractor:
 
     def extract_rows(self, item: Any) -> list[list[str]]:
         return self._extract_rows(item)
+
+    @staticmethod
+    def _call_markdown_method(
+        method: Any,
+        *,
+        doc: Any | None = None,
+    ) -> Any:
+        if doc is None:
+            return method()
+
+        try:
+            parameters = inspect.signature(method).parameters
+        except (TypeError, ValueError):
+            parameters = {}
+
+        if "doc" in parameters:
+            return method(doc=doc)
+
+        return method()
 
     def _extract_rows(self, item: Any) -> list[list[str]]:
         table_cells = self._extract_table_cells(item)

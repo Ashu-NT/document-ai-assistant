@@ -42,6 +42,7 @@ class FakeDoclingItem:
         parent: dict | None = None,
         captions: list[dict] | None = None,
         data: dict | None = None,
+        requires_doc_for_markdown: bool = False,
     ) -> None:
         self.label = FakeLabel(label)
         self.text = text
@@ -57,8 +58,13 @@ class FakeDoclingItem:
         self.parent = parent
         self.captions = captions or []
         self.data = data
+        self.requires_doc_for_markdown = requires_doc_for_markdown
+        self.exported_markdown_doc = None
 
-    def export_to_markdown(self) -> str | None:
+    def export_to_markdown(self, doc=None) -> str | None:
+        if self.requires_doc_for_markdown and doc is None:
+            raise AssertionError("doc argument is required for markdown export")
+        self.exported_markdown_doc = doc
         return self.markdown
 
 
@@ -183,6 +189,24 @@ def test_table_item_becomes_table_element_and_preserves_metadata() -> None:
     assert normalized[0].metadata["table_rows"] == [["Part", "Description"]]
     assert normalized[0].metadata["row_count"] == 1
     assert normalized[0].metadata["column_count"] == 2
+
+
+def test_table_item_passes_raw_document_to_markdown_export() -> None:
+    table_item = FakeDoclingItem(
+        label="table",
+        self_ref="#/tables/42",
+        prov=[FakeProvenance(2)],
+        requires_doc_for_markdown=True,
+    )
+    raw_document = FakeRawDocument([table_item])
+
+    normalized = DoclingDocumentNormalizer().normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_001",
+    )
+
+    assert normalized[0].element_type == ElementType.TABLE
+    assert table_item.exported_markdown_doc is raw_document
 
 
 def test_picture_item_collects_caption_refs() -> None:
