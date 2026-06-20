@@ -79,39 +79,96 @@ class RetrievalBenchmarkCorpusSeeder:
         truth_set_path: Path | str | None = None,
         input_directory: Path | str | None = None,
         activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> RetrievalBenchmarkCorpusManifest:
+        self._emit_progress(
+            progress_callback,
+            "Loading retrieval benchmark truth set...",
+        )
         dataset = self.truth_set_loader.load(truth_set_path)
         resolved_input_directory = self._resolve_input_directory(
             input_directory=input_directory,
             dataset=dataset,
         )
+        self._emit_progress(
+            progress_callback,
+            f"Using input directory: {resolved_input_directory}",
+        )
+        self._emit_progress(
+            progress_callback,
+            "Collecting benchmark corpus seed targets...",
+        )
         seed_targets = self._collect_seed_targets(
             dataset=dataset,
             input_directory=resolved_input_directory,
         )
+        total_targets = len(seed_targets)
+        self._emit_progress(
+            progress_callback,
+            f"Collected {total_targets} document seed target(s).",
+        )
 
-        documents = [
-            self._seed_target(
+        documents: list[RetrievalBenchmarkCorpusDocument] = []
+        for index, seed_target in enumerate(seed_targets, start=1):
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[{index}/{total_targets}] Starting corpus seed for "
+                    f"{seed_target.document_alias} ({seed_target.file_name})"
+                ),
+            )
+            document = self._seed_target(
                 seed_target,
                 activity_context=activity_context,
+                progress_callback=progress_callback,
+                seed_index=index,
+                total_targets=total_targets,
             )
-            for seed_target in seed_targets
-        ]
+            documents.append(document)
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[{index}/{total_targets}] Completed {seed_target.document_alias} "
+                    f"-> {document.document_id} "
+                    f"(status={document.seed_status}, chunks={document.chunk_count}, "
+                    f"questions={document.question_count})"
+                ),
+            )
 
-        return RetrievalBenchmarkCorpusManifest(
+        manifest = RetrievalBenchmarkCorpusManifest(
             truth_set_path=dataset.source_path,
             input_directory=resolved_input_directory,
             generated_at=datetime.now(UTC).isoformat(),
             documents=documents,
         )
+        self._emit_progress(
+            progress_callback,
+            f"Corpus seeding completed for {manifest.document_count} document(s).",
+        )
+        return manifest
 
     def _seed_target(
         self,
         seed_target: _CorpusSeedTarget,
         *,
         activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
+        seed_index: int | None = None,
+        total_targets: int | None = None,
     ) -> RetrievalBenchmarkCorpusDocument:
+        prefix = self._progress_prefix(
+            seed_index=seed_index,
+            total_targets=total_targets,
+        )
+        self._emit_progress(
+            progress_callback,
+            f"{prefix} Computing hashes for {seed_target.file_name}...",
+        )
         file_hash, content_hash = self.hash_computer(seed_target.file_path)
+        self._emit_progress(
+            progress_callback,
+            f"{prefix} Checking duplicate status...",
+        )
         duplicate_result = self.duplicate_detection_service.check_file_hash(
             file_hash,
             activity_context=activity_context,
@@ -119,16 +176,33 @@ class RetrievalBenchmarkCorpusSeeder:
         existing_document_id = duplicate_result.payload.get("existing_document_id")
 
         if existing_document_id:
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"{prefix} Existing document found for {seed_target.document_alias}: "
+                    f"{existing_document_id}"
+                ),
+            )
             final_graph, classification, seed_status = self._refresh_existing_document(
                 document_id=existing_document_id,
                 activity_context=activity_context,
+                progress_callback=progress_callback,
+                seed_index=seed_index,
+                total_targets=total_targets,
             )
         else:
+            self._emit_progress(
+                progress_callback,
+                f"{prefix} No duplicate found. Running full seed workflow...",
+            )
             final_graph, classification, seed_status = self._seed_new_document(
                 seed_target=seed_target,
                 file_hash=file_hash,
                 content_hash=content_hash,
                 activity_context=activity_context,
+                progress_callback=progress_callback,
+                seed_index=seed_index,
+                total_targets=total_targets,
             )
 
         return self._build_manifest_document(
@@ -147,12 +221,30 @@ class RetrievalBenchmarkCorpusSeeder:
         file_hash: str,
         content_hash: str | None,
         activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
+        seed_index: int | None = None,
+        total_targets: int | None = None,
     ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
+        prefix = self._progress_prefix(
+            seed_index=seed_index,
+            total_targets=total_targets,
+        )
+        self._emit_progress(
+            progress_callback,
+            f"{prefix} Parsing document into provisional graph...",
+        )
         parsing_result = self.parsing_workflow.parse(
             file_path=str(seed_target.file_path),
             file_hash=file_hash,
             content_hash=content_hash,
             activity_context=activity_context,
+        )
+        self._emit_progress(
+            progress_callback,
+            (
+                f"{prefix} Registering provisional document graph "
+                f"({len(parsing_result.document_graph.chunks)} chunk(s))."
+            ),
         )
         self.document_registration_service.register_document_graph(
             parsing_result.document_graph,
@@ -160,12 +252,23 @@ class RetrievalBenchmarkCorpusSeeder:
         )
         self._commit()
 
+        self._emit_progress(
+            progress_callback,
+            f"{prefix} Running document classification...",
+        )
         classification = self.document_classification_workflow.classify_document(
             parsing_result.document_graph,
             activity_context=activity_context,
         )
         self._commit()
 
+        self._emit_progress(
+            progress_callback,
+            (
+                f"{prefix} Finalizing post-classification chunks, questions, "
+                "and embeddings..."
+            ),
+        )
         final_graph = self.post_classification_chunk_finalization_workflow.finalize(
             parsing_result.document_id,
             activity_context=activity_context,
@@ -179,7 +282,18 @@ class RetrievalBenchmarkCorpusSeeder:
         *,
         document_id: str,
         activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
+        seed_index: int | None = None,
+        total_targets: int | None = None,
     ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
+        prefix = self._progress_prefix(
+            seed_index=seed_index,
+            total_targets=total_targets,
+        )
+        self._emit_progress(
+            progress_callback,
+            f"{prefix} Loading existing persisted document graph...",
+        )
         document_graph = self.document_lookup_service.get_document_graph(
             document_id,
             activity_context=activity_context,
@@ -194,12 +308,28 @@ class RetrievalBenchmarkCorpusSeeder:
             document_id
         )
         if classification is None:
+            self._emit_progress(
+                progress_callback,
+                f"{prefix} Existing classification missing. Reclassifying document...",
+            )
             classification = self.document_classification_workflow.classify_document(
                 document_graph,
                 activity_context=activity_context,
             )
             self._commit()
+        else:
+            self._emit_progress(
+                progress_callback,
+                f"{prefix} Reusing existing document classification.",
+            )
 
+        self._emit_progress(
+            progress_callback,
+            (
+                f"{prefix} Re-finalizing chunks, questions, and embeddings for "
+                "existing document..."
+            ),
+        )
         final_graph = self.post_classification_chunk_finalization_workflow.finalize(
             document_id,
             activity_context=activity_context,
@@ -346,3 +476,21 @@ class RetrievalBenchmarkCorpusSeeder:
         if self.unit_of_work is None:
             return
         self.unit_of_work.commit()
+
+    @staticmethod
+    def _emit_progress(
+        progress_callback: Callable[[str], None] | None,
+        message: str,
+    ) -> None:
+        if progress_callback is not None:
+            progress_callback(message)
+
+    @staticmethod
+    def _progress_prefix(
+        *,
+        seed_index: int | None,
+        total_targets: int | None,
+    ) -> str:
+        if seed_index is None or total_targets is None:
+            return "[seed]"
+        return f"[{seed_index}/{total_targets}]"

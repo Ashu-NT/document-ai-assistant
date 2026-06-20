@@ -1,3 +1,5 @@
+from typing import Callable
+
 from src.application.evaluation.retrieval.benchmarking import (
     RetrievalBenchmarkCase,
     RetrievalBenchmarkCaseResult,
@@ -23,16 +25,26 @@ class RetrievalBenchmarkEvaluator:
         self,
         workflow,
         benchmark_cases: RetrievalBenchmarkDataset | list[RetrievalBenchmarkCase],
+        progress_callback: Callable[[str], None] | None = None,
     ) -> RetrievalBenchmarkReport:
         case_results: list[RetrievalBenchmarkCaseResult] = []
+        cases = self._benchmark_cases(benchmark_cases)
+        total_cases = len(cases)
 
-        for benchmark_case in self._benchmark_cases(benchmark_cases):
+        for index, benchmark_case in enumerate(cases, start=1):
             if benchmark_case.query is None:
                 raise SchemaValidationError(
                     "Retrieval benchmark case is missing a query.",
                     details={"case_id": benchmark_case.case_id},
                 )
 
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[{index}/{total_cases}] Running benchmark case "
+                    f"{benchmark_case.case_id}"
+                ),
+            )
             workflow_result = workflow.run(benchmark_case.query)
             workflow_output = self.workflow_result_adapter.to_workflow_output(
                 workflow_result
@@ -100,6 +112,14 @@ class RetrievalBenchmarkEvaluator:
                     ),
                     used_context_expansion=workflow_output.used_context_expansion,
                 )
+            )
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[{index}/{total_cases}] Completed {benchmark_case.case_id} "
+                    f"(anchor_hit={'yes' if anchor_match is not None else 'no'}, "
+                    f"context_hit={'yes' if context_match is not None else 'no'})"
+                ),
             )
 
         return RetrievalBenchmarkReport(case_results=case_results)
@@ -219,3 +239,11 @@ class RetrievalBenchmarkEvaluator:
         if len(normalized) <= max_length:
             return normalized
         return normalized[: max_length - 3].rstrip() + "..."
+
+    @staticmethod
+    def _emit_progress(
+        progress_callback: Callable[[str], None] | None,
+        message: str,
+    ) -> None:
+        if progress_callback is not None:
+            progress_callback(message)

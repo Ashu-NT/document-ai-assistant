@@ -202,3 +202,44 @@ def test_retrieval_benchmark_evaluator_computes_metrics_and_keeps_anchor_misses_
     assert context_result.context_hit is True
     assert context_result.meets_expected_rank_target is False
     assert context_result.evidence_completeness == 1.0
+
+
+def test_retrieval_benchmark_evaluator_emits_progress_messages() -> None:
+    query = RetrievalQuery(
+        query_id="query_progress",
+        query_text="What is the identifier?",
+    )
+    workflow = FakeWorkflow(
+        {
+            "query_progress": make_workflow_result(
+                query=query,
+                anchor_chunks=[
+                    make_chunk(
+                        chunk_id="chunk_progress",
+                        section_path=["Certificate", "Identity"],
+                        score=0.98,
+                    ),
+                ],
+            )
+        }
+    )
+    evaluator = RetrievalBenchmarkEvaluator()
+    messages: list[str] = []
+
+    evaluator.evaluate(
+        workflow,
+        [
+            make_case(
+                query=query,
+                query_type=RetrievalBenchmarkQueryType.IDENTIFIER_LOOKUP,
+                rank_target=RetrievalBenchmarkRankTarget.TOP_1,
+                expected_chunk_ids=["chunk_progress"],
+            )
+        ],
+        progress_callback=messages.append,
+    )
+
+    assert messages == [
+        "[1/1] Running benchmark case query_progress",
+        "[1/1] Completed query_progress (anchor_hit=yes, context_hit=yes)",
+    ]

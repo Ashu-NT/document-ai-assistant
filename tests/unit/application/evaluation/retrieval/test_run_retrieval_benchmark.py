@@ -136,8 +136,10 @@ class FakeEvaluator:
         self.report = report
         self.calls: list[list[str]] = []
 
-    def evaluate(self, workflow, benchmark_cases):
+    def evaluate(self, workflow, benchmark_cases, progress_callback=None):
         self.calls.append([case.case_id for case in benchmark_cases.cases])
+        if progress_callback is not None:
+            progress_callback("fake evaluator progress")
         return self.report
 
 
@@ -266,6 +268,8 @@ def test_main_uses_cli_path_override_and_subset_selection(
     assert truth_loader.calls == [truth_set_path.resolve()]
     assert manifest_loader.calls == [manifest_path.resolve()]
     assert evaluator.calls == [["ID-001"]]
+    assert "[retrieval-benchmark] Building benchmark runtime..." in stdout
+    assert "[retrieval-benchmark] fake evaluator progress" in stdout
     assert "subset: identifier" in stdout
     assert report_writer.json_paths[0].name == "retrieval_benchmark_identifier_report.json"
     assert report_writer.markdown_paths[0].name == "retrieval_benchmark_identifier_report.md"

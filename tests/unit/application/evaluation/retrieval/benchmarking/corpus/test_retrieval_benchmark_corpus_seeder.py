@@ -679,3 +679,70 @@ def test_seed_corpus_fails_when_expected_file_is_missing() -> None:
             truth_set_path=truth_set_path,
             input_directory=input_directory,
         )
+
+
+def test_seed_corpus_emits_progress_messages_for_major_stages() -> None:
+    tmp_path = make_workspace_temp_dir()
+    truth_set_path = tmp_path / "retrieval_truth_set.md"
+    truth_set_path.write_text("truth set", encoding="utf-8")
+    input_directory = tmp_path / "docs"
+    input_directory.mkdir()
+    file_path = input_directory / "manual.pdf"
+    file_path.write_text("manual", encoding="utf-8")
+
+    dataset = build_dataset(
+        truth_set_path,
+        [
+            build_case(
+                case_id="P-001",
+                document_alias="manual_alias",
+                file_name=file_path.name,
+            )
+        ],
+    )
+    provisional_graph = build_document_graph(
+        document_id="doc_manual",
+        file_name=file_path.name,
+        file_path=str(file_path),
+        document_type=DocumentType.UNKNOWN,
+        chunk_texts=["provisional manual chunk"],
+    )
+    final_graph = build_document_graph(
+        document_id="doc_manual",
+        file_name=file_path.name,
+        file_path=str(file_path),
+        document_type=DocumentType.MANUAL,
+        chunk_texts=["final manual chunk"],
+        question_count=1,
+    )
+    classifications = {
+        "doc_manual": build_document_classification(
+            document_id="doc_manual",
+            document_type=DocumentType.MANUAL,
+            confidence_score=0.9,
+        )
+    }
+    operations: list[str] = []
+    unit_of_work = FakeUnitOfWork()
+    seeder, _, _ = build_seeder(
+        dataset=dataset,
+        operations=operations,
+        parsing_graphs_by_path={str(file_path): provisional_graph},
+        final_graphs_by_document_id={"doc_manual": final_graph},
+        classifications=classifications,
+        unit_of_work=unit_of_work,
+    )
+    messages: list[str] = []
+
+    seeder.seed_corpus(
+        truth_set_path=truth_set_path,
+        input_directory=input_directory,
+        progress_callback=messages.append,
+    )
+
+    assert any("Loading retrieval benchmark truth set" in message for message in messages)
+    assert any("Computing hashes" in message for message in messages)
+    assert any("Parsing document into provisional graph" in message for message in messages)
+    assert any("Running document classification" in message for message in messages)
+    assert any("Finalizing post-classification chunks, questions, and embeddings" in message for message in messages)
+    assert any("Corpus seeding completed for 1 document(s)." in message for message in messages)

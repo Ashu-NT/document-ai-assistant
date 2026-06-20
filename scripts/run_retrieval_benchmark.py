@@ -105,6 +105,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(list(argv) if argv is not None else None)
 
 
+def print_status(message: str) -> None:
+    print(f"[retrieval-benchmark] {message}", flush=True)
+
+
 def resolve_path(value: str | None) -> Path | None:
     if value is None:
         return None
@@ -245,28 +249,60 @@ def run_benchmark(
     subset: str,
     output_directory: Path | str,
     evaluation_top_k: int,
+    progress_callback=None,
 ) -> BenchmarkRunResult:
+    emit_progress(progress_callback, "Loading retrieval truth set...")
     dataset = runtime.truth_set_loader.load(truth_set_path)
+    emit_progress(
+        progress_callback,
+        f"Loaded {dataset.case_count} benchmark case(s) from {dataset.source_path}",
+    )
+    emit_progress(progress_callback, f"Selecting subset '{subset}'...")
     selected_dataset = select_subset_dataset(
         dataset,
         subset=subset,
         evaluation_top_k=evaluation_top_k,
     )
+    emit_progress(
+        progress_callback,
+        f"Selected {selected_dataset.case_count} case(s) for evaluation.",
+    )
+    emit_progress(progress_callback, "Loading benchmark corpus manifest...")
     manifest = runtime.manifest_loader.load(manifest_path)
+    emit_progress(
+        progress_callback,
+        f"Loaded manifest with {manifest.document_count} seeded document(s).",
+    )
+    emit_progress(
+        progress_callback,
+        "Resolving benchmark cases to final persisted chunk IDs...",
+    )
     resolved_dataset = runtime.dataset_resolver.resolve_dataset(
         selected_dataset,
         manifest,
     )
+    emit_progress(
+        progress_callback,
+        "Benchmark case resolution completed successfully.",
+    )
+    emit_progress(progress_callback, "Evaluating retrieval workflow...")
     report = runtime.evaluator.evaluate(
         runtime.workflow,
         resolved_dataset,
+        progress_callback=progress_callback,
     )
     json_output_path, markdown_output_path = resolve_output_paths(
         output_directory=Path(output_directory),
         subset=subset,
     )
+    emit_progress(progress_callback, f"Writing JSON report to {json_output_path}...")
     runtime.report_writer.write_json(report, json_output_path)
+    emit_progress(
+        progress_callback,
+        f"Writing Markdown report to {markdown_output_path}...",
+    )
     runtime.report_writer.write_markdown(report, markdown_output_path)
+    emit_progress(progress_callback, "Retrieval benchmark run completed.")
 
     return BenchmarkRunResult(
         subset=subset,
@@ -357,6 +393,11 @@ def format_error_details(details: dict[str, Any] | None) -> str:
     return json.dumps(details or {}, indent=2)
 
 
+def emit_progress(progress_callback, message: str) -> None:
+    if progress_callback is not None:
+        progress_callback(message)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     runtime: BenchmarkRuntime | None = None
@@ -365,12 +406,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         truth_set_path = resolve_path(args.truth_set)
         manifest_path = resolve_path(args.manifest) or default_manifest_path()
         output_directory = resolve_path(args.output_dir) or default_output_directory()
+        print_status(f"Truth set path: {truth_set_path}")
+        print_status(f"Manifest path: {manifest_path}")
+        print_status(f"Output directory: {output_directory}")
+        print_status("Checking benchmark corpus manifest...")
         ensure_manifest_exists(
             manifest_path=manifest_path,
             truth_set_argument=args.truth_set,
         )
+        print_status("Building benchmark runtime...")
 
         runtime = build_benchmark_runtime()
+        print_status("Benchmark runtime ready.")
         result = run_benchmark(
             runtime=runtime,
             truth_set_path=truth_set_path,
@@ -378,6 +425,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             subset=args.subset,
             output_directory=output_directory,
             evaluation_top_k=benchmark_evaluation_top_k(),
+            progress_callback=print_status,
         )
 
         print(f"subset: {result.subset}")
