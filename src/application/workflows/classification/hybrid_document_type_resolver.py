@@ -31,7 +31,6 @@ class HybridDocumentTypeResolver:
         classification: DocumentClassification | None,
         provisional_chunking_profile: ChunkingProfile | None = None,
     ) -> DocumentTypeDecision:
-        parser_hint = parser_title_hint or DocumentType.UNKNOWN
         model_type = (
             classification.document_type
             if classification is not None
@@ -47,72 +46,133 @@ class HybridDocumentTypeResolver:
         structural_confidence = structural_inference.confidence
         reasons: list[str] = []
 
-        if self._is_strong(model_confidence, self.strong_model_threshold) and (
-            self._is_strong(structural_confidence, self.strong_structural_threshold)
-            and model_type not in {DocumentType.UNKNOWN}
-            and structural_type not in {DocumentType.UNKNOWN}
-            and model_type != structural_type
+        if (
+            self._is_known_type(model_type)
+            and self._is_known_type(structural_type)
+            and model_type == structural_type
         ):
-            effective_document_type = self._resolve_conflict_document_type(
-                parser_hint=parser_hint,
-                model_type=model_type,
-                structural_type=structural_type,
+            effective_document_type = model_type
+            effective_profile = self._profile_for_document_type(model_type)
+            confidence = self._agreement_confidence(
+                model_confidence=model_confidence,
+                structural_confidence=structural_confidence,
             )
-            effective_profile = ChunkingProfile.DEFAULT
-            confidence = min(model_confidence, structural_confidence)
             reasons.append(
-                "Strong model and structural signals disagreed; default chunking profile selected for safety."
+                "Model classification and structural inference agreed on the same document type."
             )
         elif (
-            model_type != DocumentType.UNKNOWN
+            self._is_known_type(model_type)
+            and self._is_known_type(structural_type)
+            and model_type != structural_type
             and self._is_strong(model_confidence, self.strong_model_threshold)
-            and (
-                structural_type == DocumentType.UNKNOWN
-                or self._is_weak(structural_confidence)
+            and self._is_strong(
+                structural_confidence,
+                self.strong_structural_threshold,
             )
         ):
             effective_document_type = model_type
             effective_profile = self._profile_for_document_type(model_type)
             confidence = model_confidence
-            reasons.append("Strong model classification overrode weak structural evidence.")
+            reasons.append(
+                "Model classification and structural inference conflicted at high confidence; model classification was selected."
+            )
+            reasons.append(
+                "Conflict flagged: strong structural evidence disagreed with the selected model classification."
+            )
         elif (
-            structural_type != DocumentType.UNKNOWN
-            and self._is_strong(structural_confidence, self.strong_structural_threshold)
-            and (
-                model_type == DocumentType.UNKNOWN
-                or self._is_weak(model_confidence)
-            )
+            self._is_known_type(model_type)
+            and self._is_known_type(structural_type)
+            and model_type != structural_type
+            and self._is_strong(model_confidence, self.strong_model_threshold)
         ):
-            effective_document_type = structural_type
-            effective_profile = structural_profile
-            confidence = structural_confidence
-            reasons.append("Strong structural evidence overrode weak model classification.")
-        elif model_type != DocumentType.UNKNOWN and model_confidence >= structural_confidence:
             effective_document_type = model_type
             effective_profile = self._profile_for_document_type(model_type)
             confidence = model_confidence
-            reasons.append("Model classification chosen as the strongest available signal.")
+            reasons.append(
+                "High-confidence model classification overrode a different structural inference."
+            )
         elif structural_type != DocumentType.UNKNOWN:
-            effective_document_type = structural_type
-            effective_profile = structural_profile
-            confidence = structural_confidence
-            reasons.append("Structural inference chosen as the strongest available signal.")
-        elif parser_hint != DocumentType.UNKNOWN:
-            effective_document_type = parser_hint
-            effective_profile = self._profile_for_document_type(parser_hint)
-            confidence = max(model_confidence, structural_confidence)
-            reasons.append("Parser/title hint used as the remaining tie-breaker.")
+            if (
+                self._is_known_type(structural_type)
+                and self._is_strong(
+                    structural_confidence,
+                    self.strong_structural_threshold,
+                )
+                and (
+                    not self._is_known_type(model_type)
+                    or self._is_weak(model_confidence)
+                )
+            ):
+                effective_document_type = structural_type
+                effective_profile = structural_profile
+                confidence = structural_confidence
+                reasons.append(
+                    "High-confidence structural inference overrode a missing or low-confidence model classification."
+                )
+            elif (
+                self._is_known_type(model_type)
+                and self._is_known_type(structural_type)
+                and model_type != structural_type
+                and self._is_weak(model_confidence)
+                and self._is_weak(structural_confidence)
+            ):
+                effective_document_type = DocumentType.UNKNOWN
+                effective_profile = ChunkingProfile.DEFAULT
+                confidence = max(model_confidence, structural_confidence)
+                reasons.append(
+                    "Model classification and structural inference disagreed at low confidence; default profile selected."
+                )
+            elif (
+                self._is_known_type(model_type)
+                and self._is_known_type(structural_type)
+                and model_type != structural_type
+            ):
+                effective_document_type = DocumentType.UNKNOWN
+                effective_profile = ChunkingProfile.DEFAULT
+                confidence = max(model_confidence, structural_confidence)
+                reasons.append(
+                    "Model classification and structural inference disagreed without a decisive high-confidence winner; default profile selected."
+                )
+            else:
+                effective_document_type = DocumentType.UNKNOWN
+                effective_profile = ChunkingProfile.DEFAULT
+                confidence = max(model_confidence, structural_confidence)
+                reasons.append(
+                    "Structural inference was available but not at decisive high confidence; default profile selected."
+                )
+        elif (
+            self._is_known_type(model_type)
+            and self._is_strong(model_confidence, self.strong_model_threshold)
+        ):
+            effective_document_type = model_type
+            effective_profile = self._profile_for_document_type(model_type)
+            confidence = model_confidence
+            reasons.append(
+                "Available high-confidence model classification was used because no competing structural signal was available."
+            )
         else:
             effective_document_type = DocumentType.UNKNOWN
             effective_profile = ChunkingProfile.DEFAULT
             confidence = max(model_confidence, structural_confidence)
-            reasons.append("No strong document-type signal was available; default profile selected.")
+            if parser_title_hint not in {None, DocumentType.UNKNOWN}:
+                reasons.append(
+                    "Parser/title hint was available but not used because no decisive high-confidence signal was present."
+                )
+            reasons.append(
+                "No decisive high-confidence document-type signal was available; default profile selected."
+            )
 
-        if parser_hint != DocumentType.UNKNOWN and parser_hint == effective_document_type:
+        if (
+            parser_title_hint not in {None, DocumentType.UNKNOWN}
+            and parser_title_hint == effective_document_type
+        ):
             reasons.append("Parser/title hint aligned with the final document type.")
-        if model_type != DocumentType.UNKNOWN and model_type == effective_document_type:
+        if self._is_known_type(model_type) and model_type == effective_document_type:
             reasons.append("Saved model classification aligned with the final document type.")
-        if structural_type != DocumentType.UNKNOWN and structural_type == effective_document_type:
+        if (
+            self._is_known_type(structural_type)
+            and structural_type == effective_document_type
+        ):
             reasons.append("Structural profile inference aligned with the final document type.")
 
         should_rechunk = (
@@ -133,6 +193,10 @@ class HybridDocumentTypeResolver:
         )
 
     @staticmethod
+    def _is_known_type(document_type: DocumentType) -> bool:
+        return document_type != DocumentType.UNKNOWN
+
+    @staticmethod
     def _is_strong(value: float, threshold: float) -> bool:
         return value >= threshold
 
@@ -140,17 +204,15 @@ class HybridDocumentTypeResolver:
         return value <= self.weak_signal_threshold
 
     @staticmethod
-    def _resolve_conflict_document_type(
+    def _agreement_confidence(
         *,
-        parser_hint: DocumentType,
-        model_type: DocumentType,
-        structural_type: DocumentType,
-    ) -> DocumentType:
-        if parser_hint == model_type:
-            return model_type
-        if parser_hint == structural_type:
-            return structural_type
-        return model_type
+        model_confidence: float,
+        structural_confidence: float,
+    ) -> float:
+        higher_confidence = max(model_confidence, structural_confidence)
+        lower_confidence = min(model_confidence, structural_confidence)
+        boost = (1 - higher_confidence) * lower_confidence * 0.35
+        return min(0.99, higher_confidence + boost)
 
     @staticmethod
     def _document_type_for_profile(profile: ChunkingProfile) -> DocumentType:
