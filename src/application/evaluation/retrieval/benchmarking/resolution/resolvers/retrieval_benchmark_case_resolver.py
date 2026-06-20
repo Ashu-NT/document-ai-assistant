@@ -1,0 +1,122 @@
+import copy
+
+from src.application.evaluation.retrieval.benchmarking.models import (
+    RetrievalBenchmarkCase,
+)
+from src.application.evaluation.retrieval.benchmarking.resolution.matching.retrieval_benchmark_chunk_matcher import (
+    RetrievalBenchmarkChunkMatcher,
+)
+from src.application.evaluation.retrieval.benchmarking.resolution.models import (
+    RetrievalBenchmarkResolutionDiagnostic,
+)
+from src.domain.document import DocumentGraph
+
+
+class RetrievalBenchmarkCaseResolver:
+    def __init__(
+        self,
+        *,
+        chunk_matcher: RetrievalBenchmarkChunkMatcher | None = None,
+        max_diagnostic_candidates: int = 5,
+    ) -> None:
+        self.chunk_matcher = chunk_matcher or RetrievalBenchmarkChunkMatcher()
+        self.max_diagnostic_candidates = max_diagnostic_candidates
+
+    def try_resolve_case(
+        self,
+        benchmark_case: RetrievalBenchmarkCase,
+        document_graph: DocumentGraph,
+    ) -> tuple[RetrievalBenchmarkCase | None, RetrievalBenchmarkResolutionDiagnostic | None]:
+        ordered_chunks = sorted(
+            document_graph.chunks.values(),
+            key=lambda chunk: chunk.sequence_number,
+        )
+        candidates = self.chunk_matcher.match_chunks(benchmark_case, ordered_chunks)
+        viable_candidates = [
+            candidate
+            for candidate in candidates
+            if candidate.viable
+        ]
+
+        if not viable_candidates:
+            return None, self._build_diagnostic(
+                benchmark_case,
+                "No final chunk matched the expected section/page/passage signals.",
+                candidates,
+            )
+
+        best_candidate = viable_candidates[0]
+        second_candidate = viable_candidates[1] if len(viable_candidates) > 1 else None
+        if second_candidate is not None and self._is_ambiguous(
+            best_candidate,
+            second_candidate,
+        ):
+            return None, self._build_diagnostic(
+                benchmark_case,
+                "Multiple final chunks matched this benchmark case ambiguously.",
+                viable_candidates,
+            )
+
+        resolved_case = copy.deepcopy(benchmark_case)
+        resolved_case.expected_chunk_ids = self._resolved_chunk_ids(
+            document_graph=document_graph,
+            chunk_id=best_candidate.chunk_id,
+        )
+        if (
+            best_candidate.section_path
+            and best_candidate.section_path not in resolved_case.expected_section_paths
+        ):
+            resolved_case.expected_section_paths.append(
+                list(best_candidate.section_path)
+            )
+        return resolved_case, None
+
+    def _build_diagnostic(
+        self,
+        benchmark_case: RetrievalBenchmarkCase,
+        message: str,
+        candidates,
+    ) -> RetrievalBenchmarkResolutionDiagnostic:
+        return RetrievalBenchmarkResolutionDiagnostic(
+            case_id=benchmark_case.case_id,
+            document_alias=benchmark_case.expected_document_alias,
+            file_name=benchmark_case.expected_file_name,
+            message=message,
+            details={
+                "expected_section_path": benchmark_case.expected_section_path_text,
+                "expected_page": benchmark_case.expected_page,
+                "expected_relevant_passage": benchmark_case.expected_relevant_passage,
+            },
+            candidate_summaries=list(candidates[: self.max_diagnostic_candidates]),
+        )
+
+    @staticmethod
+    def _resolved_chunk_ids(
+        *,
+        document_graph: DocumentGraph,
+        chunk_id: str,
+    ) -> list[str]:
+        best_chunk = document_graph.chunks[chunk_id]
+        if best_chunk.chunk_total <= 1 or best_chunk.section_id is None:
+            return [chunk_id]
+
+        family_chunks = [
+            chunk
+            for chunk in document_graph.chunks.values()
+            if chunk.section_id == best_chunk.section_id
+        ]
+        return [
+            chunk.chunk_id
+            for chunk in sorted(
+                family_chunks,
+                key=lambda chunk: chunk.sequence_number,
+            )
+        ]
+
+    @staticmethod
+    def _is_ambiguous(best_candidate, second_candidate) -> bool:
+        score_gap = best_candidate.score - second_candidate.score
+        overlap_gap = abs(
+            best_candidate.passage_overlap - second_candidate.passage_overlap
+        )
+        return score_gap < 1.0 and overlap_gap <= 0.05
