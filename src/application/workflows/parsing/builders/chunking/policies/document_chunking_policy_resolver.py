@@ -27,7 +27,11 @@ class DocumentChunkingPolicyResolver:
         document_type: DocumentType | None,
         sections: list[DocumentSection],
         section_elements_by_id: dict[str, list[CanonicalElement]],
+        chunking_profile_override: ChunkingProfile | None = None,
     ) -> DocumentChunkingPolicy:
+        if chunking_profile_override is not None:
+            return self._policy_for_profile(chunking_profile_override)
+
         if document_type == DocumentType.DATASHEET:
             return self._datasheet_policy()
         if document_type == DocumentType.DRAWING:
@@ -42,6 +46,12 @@ class DocumentChunkingPolicyResolver:
             sections=sections,
             section_elements_by_id=section_elements_by_id,
         )
+        return self._policy_for_profile(profile)
+
+    def _policy_for_profile(
+        self,
+        profile: ChunkingProfile,
+    ) -> DocumentChunkingPolicy:
         if profile == ChunkingProfile.DATASHEET:
             return self._datasheet_policy()
         if profile == ChunkingProfile.DRAWING:

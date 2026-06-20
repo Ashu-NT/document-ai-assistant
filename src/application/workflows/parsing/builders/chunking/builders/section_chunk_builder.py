@@ -29,6 +29,9 @@ from src.domain.common import ChunkType
 from src.domain.common import DocumentType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+    ChunkingProfile,
+)
 
 
 class SectionChunkBuilder:
@@ -68,9 +71,10 @@ class SectionChunkBuilder:
         self,
         *,
         document_title: str | None,
-        document_type: DocumentType | None = None,
         section: DocumentSection,
         elements: list[CanonicalElement],
+        document_type: DocumentType | None = None,
+        chunking_profile_override: ChunkingProfile | None = None,
     ) -> list[ChunkPayload]:
         if not elements:
             return []
@@ -78,6 +82,7 @@ class SectionChunkBuilder:
         runtime = self.runtime_factory.create(
             document_title=document_title,
             document_type=document_type,
+            chunking_profile_override=chunking_profile_override,
             sections=[section],
             section_elements_by_id={section.section_id: elements},
         )
@@ -105,13 +110,15 @@ class SectionChunkBuilder:
         self,
         *,
         document_title: str | None,
-        document_type: DocumentType | None = None,
         sections: list[DocumentSection],
         section_elements_by_id: dict[str, list[CanonicalElement]],
+        document_type: DocumentType | None = None,
+        chunking_profile_override: ChunkingProfile | None = None,
     ) -> list[ChunkPayload]:
         runtime = self.runtime_factory.create(
             document_title=document_title,
             document_type=document_type,
+            chunking_profile_override=chunking_profile_override,
             sections=sections,
             section_elements_by_id=section_elements_by_id,
         )

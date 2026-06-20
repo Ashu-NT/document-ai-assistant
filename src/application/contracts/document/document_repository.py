@@ -14,6 +14,9 @@ class DocumentRepository(Protocol):
     def save_document_graph(self, document_graph: DocumentGraph) -> None:
         ...
 
+    def replace_document_chunk_artifacts(self, document_graph: DocumentGraph) -> None:
+        ...
+
     def get_document_graph(self, document_id: str) -> DocumentGraph | None:
         ...
 

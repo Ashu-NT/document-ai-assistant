@@ -34,6 +34,19 @@ class DocumentGraph:
     def add_chunk(self, chunk: DocumentChunk) -> None:
         self.chunks[chunk.chunk_id] = chunk
 
+    def replace_chunks(self, chunks: list[DocumentChunk]) -> None:
+        self.chunks = {chunk.chunk_id: chunk for chunk in chunks}
+
+    def replace_questions(self, questions: list[GeneratedQuestion]) -> None:
+        self.questions = {
+            question.question_id: question
+            for question in questions
+        }
+
+    def clear_chunk_dependents(self) -> None:
+        self.questions = {}
+        self.identifiers = {}
+
     def get_section_elements(self, section_id: str) -> list[CanonicalElement]:
         section = self.sections[section_id]
         return [

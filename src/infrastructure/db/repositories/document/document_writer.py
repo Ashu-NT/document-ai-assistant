@@ -1,3 +1,4 @@
+from sqlalchemy import delete
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -6,11 +7,17 @@ from src.infrastructure.db.mappers import (
     ChunkMapper,
     DocumentMapper,
     ElementMapper,
-    IdentifierMapper,
     GeneratedQuestionMapper,
+    IdentifierMapper,
     SectionMapper,
 )
+from src.infrastructure.db.orm_models import (
+    ChunkORM,
+    GeneratedQuestionORM,
+    IdentifierORM,
+)
 from src.shared.exceptions import DatabaseError
+
 
 class DocumentWriter:
     def __init__(self, session: Session) -> None:
@@ -18,23 +25,7 @@ class DocumentWriter:
 
     def save_document_graph(self, document_graph: DocumentGraph) -> None:
         try:
-            self.session.merge(DocumentMapper.to_orm(document_graph.document))
-
-            for section in document_graph.sections.values():
-                self.session.merge(SectionMapper.to_orm(section))
-
-            for element in document_graph.elements.values():
-                self.session.merge(ElementMapper.to_orm(element))
-
-            for chunk in document_graph.chunks.values():
-                self.session.merge(ChunkMapper.to_orm(chunk))
-
-            for question in document_graph.questions.values():
-                self.session.merge(GeneratedQuestionMapper.to_orm(question))
-
-            for identifier in document_graph.identifiers.values():
-                self.session.merge(IdentifierMapper.to_orm(identifier))
-
+            self._merge_document_graph(document_graph)
         except SQLAlchemyError as exc:
             raise DatabaseError(
                 "Failed to save document graph.",
@@ -45,3 +36,61 @@ class DocumentWriter:
                     "chunk_count": len(document_graph.chunks),
                 },
             ) from exc
+
+    def replace_document_chunk_artifacts(self, document_graph: DocumentGraph) -> None:
+        try:
+            self._merge_document_structure(document_graph)
+            self._delete_document_chunk_artifacts(
+                document_graph.document.document_id
+            )
+            self._merge_chunk_artifacts(document_graph)
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to replace document chunk artifacts.",
+                details={
+                    "document_id": document_graph.document.document_id,
+                    "chunk_count": len(document_graph.chunks),
+                    "question_count": len(document_graph.questions),
+                    "identifier_count": len(document_graph.identifiers),
+                },
+            ) from exc
+
+    def _merge_document_graph(self, document_graph: DocumentGraph) -> None:
+        self._merge_document_structure(document_graph)
+        self._merge_chunk_artifacts(document_graph)
+
+    def _merge_document_structure(self, document_graph: DocumentGraph) -> None:
+        self.session.merge(DocumentMapper.to_orm(document_graph.document))
+
+        for section in document_graph.sections.values():
+            self.session.merge(SectionMapper.to_orm(section))
+
+        for element in document_graph.elements.values():
+            self.session.merge(ElementMapper.to_orm(element))
+
+    def _merge_chunk_artifacts(self, document_graph: DocumentGraph) -> None:
+        for chunk in document_graph.chunks.values():
+            self.session.merge(ChunkMapper.to_orm(chunk))
+
+        for question in document_graph.questions.values():
+            self.session.merge(GeneratedQuestionMapper.to_orm(question))
+
+        for identifier in document_graph.identifiers.values():
+            self.session.merge(IdentifierMapper.to_orm(identifier))
+
+    def _delete_document_chunk_artifacts(self, document_id: str) -> None:
+        self.session.execute(
+            delete(GeneratedQuestionORM).where(
+                GeneratedQuestionORM.document_id == document_id
+            )
+        )
+        self.session.execute(
+            delete(IdentifierORM).where(
+                IdentifierORM.document_id == document_id
+            )
+        )
+        self.session.execute(
+            delete(ChunkORM).where(
+                ChunkORM.document_id == document_id
+            )
+        )

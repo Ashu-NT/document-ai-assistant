@@ -86,3 +86,65 @@ def test_document_repository_searches_identifiers(
 
     assert len(identifiers) == 1
     assert identifiers[0].raw_value.strip() == "HP-001"
+
+
+def test_document_repository_replaces_document_chunk_artifacts(
+    db_uow,
+    sample_document_graph,
+    sample_chunk,
+    sample_question,
+    sample_identifier,
+    document_id,
+) -> None:
+    db_uow.documents.save_document_graph(sample_document_graph)
+    db_uow.commit()
+
+    updated_graph = copy.deepcopy(sample_document_graph)
+    updated_chunk = sample_chunk.__class__(
+        chunk_id="chunk_002",
+        document_id=document_id,
+        section_id=sample_chunk.section_id,
+        content="Updated chunk content.",
+        chunk_type=sample_chunk.chunk_type,
+        section_path=list(sample_chunk.section_path),
+        element_ids=list(sample_chunk.element_ids),
+        table_ids=list(sample_chunk.table_ids),
+        picture_ids=list(sample_chunk.picture_ids),
+        source=sample_chunk.source,
+        sequence_number=1,
+        chunk_index=1,
+        chunk_total=1,
+        embedding_text=sample_chunk.embedding_text,
+    )
+    updated_question = sample_question.__class__(
+        question_id="question_002",
+        document_id=document_id,
+        chunk_id=updated_chunk.chunk_id,
+        question="Updated question?",
+        is_active=sample_question.is_active,
+        processing_metadata=sample_question.processing_metadata,
+    )
+    updated_identifier = sample_identifier.__class__(
+        identifier_id="identifier_002",
+        document_id=document_id,
+        chunk_id=updated_chunk.chunk_id,
+        raw_value=" HP-002 ",
+        identifier_type=sample_identifier.identifier_type,
+    )
+
+    updated_graph.replace_chunks([updated_chunk])
+    updated_graph.replace_questions([updated_question])
+    updated_graph.identifiers = {
+        updated_identifier.identifier_id: updated_identifier
+    }
+
+    db_uow.documents.replace_document_chunk_artifacts(updated_graph)
+    db_uow.commit()
+
+    loaded = db_uow.documents.get_document_graph(document_id)
+
+    assert loaded is not None
+    assert list(loaded.chunks) == ["chunk_002"]
+    assert list(loaded.questions) == ["question_002"]
+    assert list(loaded.identifiers) == ["identifier_002"]
+import copy

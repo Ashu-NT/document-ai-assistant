@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
+from src.application.workflows.parsing.builders.chunking.builders.chunk_type_resolver import (
+    ChunkTypeResolver,
+)
 from src.application.workflows.parsing.builders.chunking.models.chunk_payload import (
     ChunkPayload,
 )
@@ -9,10 +12,16 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
     common_path_prefix,
     unique_preserve_order,
 )
-from src.domain.common import ChunkType
 
 
 class ChunkPayloadFactory:
+    def __init__(
+        self,
+        *,
+        chunk_type_resolver: ChunkTypeResolver | None = None,
+    ) -> None:
+        self.chunk_type_resolver = chunk_type_resolver or ChunkTypeResolver()
+
     def build_payload(
         self,
         *,
@@ -32,7 +41,10 @@ class ChunkPayloadFactory:
             section_id=section_id,
             section_path=list(section_path),
             content=cleaned_content,
-            chunk_type=self._resolve_chunk_type(fragments),
+            chunk_type=self.chunk_type_resolver.resolve(
+                fragments=fragments,
+                content=cleaned_content,
+            ),
             element_ids=unique_preserve_order(
                 element_id
                 for fragment in fragments
@@ -79,18 +91,6 @@ class ChunkPayloadFactory:
             previous_path = list(fragment.section_path)
 
         return "\n\n".join(part for part in parts if part).strip()
-
-    @staticmethod
-    def _resolve_chunk_type(fragments: list[ChunkFragment]) -> ChunkType:
-        chunk_types = {
-            fragment.chunk_type
-            for fragment in fragments
-        }
-        if len(chunk_types) == 1:
-            return next(iter(chunk_types))
-        if chunk_types == {ChunkType.GENERAL, ChunkType.SPARE_PARTS_TABLE}:
-            return ChunkType.GENERAL
-        return ChunkType.GENERAL
 
     def _resolve_payload_section(
         self,

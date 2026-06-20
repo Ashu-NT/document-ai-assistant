@@ -109,4 +109,7 @@ def test_build_report_includes_structural_profile_inference_section() -> None:
 
     assert "## Structural Profile Inference" in report
     assert "selected profile" in report
-    assert "model classification: `not run in parsing debug script`" in report
+    assert "## Document Classification" in report
+    assert "- classification: `not run`" in report
+    assert "## Initial Chunks" in report
+    assert "## Post-Classification Chunks" in report

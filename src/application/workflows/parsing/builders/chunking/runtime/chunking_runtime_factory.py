@@ -1,3 +1,6 @@
+from src.application.workflows.parsing.builders.chunking.builders.chunk_type_resolver import (
+    ChunkTypeResolver,
+)
 from src.application.workflows.parsing.builders.chunking.builders.chunk_fragment_builder import (
     ChunkFragmentBuilder,
 )
@@ -18,6 +21,9 @@ from src.application.workflows.parsing.builders.chunking.builders.section_chunk_
 )
 from src.application.workflows.parsing.builders.chunking.policies.section_merge_policy import (
     SectionMergePolicy,
+)
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+    ChunkingProfile,
 )
 from src.domain.common import DocumentType
 from src.domain.document import DocumentSection
@@ -45,10 +51,13 @@ class ChunkingRuntimeFactory:
         document_type: DocumentType | None,
         sections: list[DocumentSection],
         section_elements_by_id: dict[str, list[CanonicalElement]],
+        chunking_profile_override: ChunkingProfile | None = None,
     ) -> ChunkingRuntime:
+        chunk_type_resolver = ChunkTypeResolver()
         policy = self.policy_resolver.resolve(
             document_title=document_title,
             document_type=document_type,
+            chunking_profile_override=chunking_profile_override,
             sections=sections,
             section_elements_by_id=section_elements_by_id,
         )
@@ -80,11 +89,14 @@ class ChunkingRuntimeFactory:
             section_skipper=SectionChunkSkipper(
                 text_splitter=text_splitter,
             ),
-            payload_factory=ChunkPayloadFactory(),
+            payload_factory=ChunkPayloadFactory(
+                chunk_type_resolver=chunk_type_resolver,
+            ),
             merge_policy=SectionMergePolicy(
                 text_splitter=text_splitter,
                 min_section_text_length=min_section_text_length,
                 same_topic_merge_tokens=policy.same_topic_merge_tokens,
                 intro_context_tokens=policy.intro_context_tokens,
+                chunk_type_resolver=chunk_type_resolver,
             ),
         )
