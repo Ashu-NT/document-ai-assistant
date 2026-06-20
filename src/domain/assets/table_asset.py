@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from src.domain.assets.asset_metadata import AssetMetadata
-from domain.common import AuditMetadata
+from src.domain.common import AuditMetadata
 
 
 @dataclass(slots=True)

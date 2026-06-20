@@ -170,3 +170,43 @@ def test_hybrid_retrieval_rejects_invalid_query(
         service.retrieve(sample_retrieval_query)
 
     assert keyword_index.search_calls == 0
+
+
+def test_hybrid_retrieval_skips_dense_search_when_query_disables_it(
+    sample_retrieval_query,
+    sample_retrieved_chunk,
+) -> None:
+    sample_retrieval_query.use_dense = False
+    keyword_index = FakeKeywordIndex([sample_retrieved_chunk])
+    vector_store = FakeVectorStore([sample_retrieved_chunk])
+    service = make_service(
+        keyword_index=keyword_index,
+        vector_store=vector_store,
+    )
+
+    result = service.retrieve(sample_retrieval_query)
+
+    assert len(result.chunks) == 1
+    assert keyword_index.search_calls == 1
+    assert vector_store.search_calls == 0
+    assert result.used_dense is False
+
+
+def test_hybrid_retrieval_tracks_combined_sources_for_duplicate_hits(
+    sample_retrieval_query,
+    sample_retrieved_chunk,
+) -> None:
+    duplicate_chunk = clone_chunk(
+        sample_retrieved_chunk,
+        chunk_id=sample_retrieved_chunk.chunk_id,
+        score=0.88,
+    )
+    service = make_service(
+        keyword_index=FakeKeywordIndex([sample_retrieved_chunk]),
+        vector_store=FakeVectorStore([duplicate_chunk]),
+    )
+
+    result = service.retrieve(sample_retrieval_query)
+
+    assert result.chunks[0].retrieval_source == "hybrid"
+    assert result.chunks[0].metadata["retrieval_sources"] == "dense,sql_keyword"

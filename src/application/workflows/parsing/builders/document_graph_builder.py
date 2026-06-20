@@ -1,6 +1,11 @@
 from pathlib import Path
 
 from src.application.workflows.parsing.builders.chunking import SectionChunkBuilder
+from src.application.workflows.parsing.builders.document_graph import (
+    GraphChunkBuilder,
+    ParsedAssetFactory,
+    ParsedElementFactory,
+)
 from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,
 )
@@ -9,24 +14,16 @@ from src.application.workflows.parsing.canonical_element import (
     CanonicalElement as ParsedCanonicalElement,
 )
 from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
-from src.domain.assets import AssetMetadata, PictureAsset, TableAsset
-from src.domain.common import (
-    BoundingBox,
-    DocumentType,
-    ElementType,
-    ParserMetadata,
-    SourceLocation,
-)
+from src.domain.common import DocumentType, ElementType
 from src.domain.document import (
     Document,
-    DocumentChunk,
     DocumentGraph,
     DocumentHashes,
     DocumentStatistics,
 )
 from src.domain.elements import CanonicalElement
 from src.shared.exceptions import ChunkingError
-from src.shared.ids import IdGenerator, IdPrefix
+from src.shared.ids import IdGenerator
 
 
 class DocumentGraphBuilder:
@@ -46,6 +43,11 @@ class DocumentGraphBuilder:
             max_chunk_tokens=max_chunk_tokens,
             chunk_overlap=chunk_overlap,
             min_section_text_length=min_section_text_length,
+        )
+        self.asset_factory = ParsedAssetFactory(id_generator)
+        self.chunk_builder = GraphChunkBuilder(
+            id_generator=id_generator,
+            section_chunk_builder=self.section_chunk_builder,
         )
         self.last_section_build_result: SectionBuildResult | None = None
 
@@ -70,6 +72,11 @@ class DocumentGraphBuilder:
             )
 
             graph = DocumentGraph(document=document)
+            element_factory = ParsedElementFactory(
+                id_generator=self.id_generator,
+                parser_name=raw_parsed_document.parser_name,
+                parser_version=raw_parsed_document.parser_version,
+            )
 
             section_build_result = self.section_builder.build(
                 document_id,
@@ -101,47 +108,34 @@ class DocumentGraphBuilder:
                 picture_id = None
 
                 if parsed_element.element_type == ElementType.TABLE:
-                    table_id = self._create_table_asset(
-                        graph,
+                    table_id, table_asset = self.asset_factory.build_table_asset(
                         document_id=document_id,
                         parent_section_id=parent_section_id,
                         parsed_element=parsed_element,
                     )
+                    graph.tables[table_id] = table_asset
 
                 if parsed_element.element_type == ElementType.PICTURE:
-                    picture_id = self._create_picture_asset(
-                        graph,
+                    picture_id, picture_asset = self.asset_factory.build_picture_asset(
                         document_id=document_id,
                         parent_section_id=parent_section_id,
                         parsed_element=parsed_element,
                     )
+                    graph.pictures[picture_id] = picture_asset
 
-                domain_element = CanonicalElement(
-                    element_id=self.id_generator.new_id(IdPrefix.ELEMENT),
+                domain_element = element_factory.build(
                     document_id=document_id,
-                    element_type=parsed_element.element_type,
-                    text=parsed_element.text,
+                    parsed_element=parsed_element,
                     parent_section_id=parent_section_id,
-                    reading_order=parsed_element.order_index,
-                    source=self._source_from_parsed(parsed_element),
+                    resolved_section_path=resolved_section_path,
+                    effective_heading_level=section_build_result.header_levels.get(
+                        parsed_element.element_id
+                    ),
+                    heading_level_source=section_build_result.header_sources.get(
+                        parsed_element.element_id
+                    ),
                     table_id=table_id,
                     picture_id=picture_id,
-                    parser_metadata=ParserMetadata(
-                        parser_name=raw_parsed_document.parser_name,
-                        parser_version=raw_parsed_document.parser_version,
-                        raw_source_type=parsed_element.metadata.get("raw_source_type"),
-                        raw_ref=parsed_element.raw_ref,
-                        extra={
-                            **dict(parsed_element.metadata),
-                            "resolved_section_path": list(resolved_section_path),
-                            "effective_heading_level": section_build_result.header_levels.get(
-                                parsed_element.element_id
-                            ),
-                            "heading_level_source": section_build_result.header_sources.get(
-                                parsed_element.element_id
-                            ),
-                        },
-                    ),
                 )
 
                 graph.add_element(domain_element)
@@ -150,7 +144,7 @@ class DocumentGraphBuilder:
                     section.element_ids.append(domain_element.element_id)
                     self._update_section_boundaries(section, domain_element)
 
-            for chunk in self._build_chunks(graph, sections):
+            for chunk in self.chunk_builder.build_chunks(graph=graph, sections=sections):
                 graph.add_chunk(chunk)
 
             graph.document.statistics = DocumentStatistics(
@@ -173,113 +167,6 @@ class DocumentGraphBuilder:
                     "file_path": file_path,
                 },
             ) from exc
-
-    def _create_table_asset(
-        self,
-        graph: DocumentGraph,
-        *,
-        document_id: str,
-        parent_section_id: str | None,
-        parsed_element: ParsedCanonicalElement,
-    ) -> str:
-        table_id = self.id_generator.new_id("table")
-        graph.tables[table_id] = TableAsset(
-            table_id=table_id,
-            document_id=document_id,
-            markdown=(
-                parsed_element.metadata.get("markdown")
-                or parsed_element.text
-                or ""
-            ),
-            parent_section_id=parent_section_id,
-            metadata=AssetMetadata(
-                source=self._source_from_parsed(parsed_element),
-                caption=parsed_element.metadata.get("caption"),
-            ),
-        )
-        return table_id
-
-    def _create_picture_asset(
-        self,
-        graph: DocumentGraph,
-        *,
-        document_id: str,
-        parent_section_id: str | None,
-        parsed_element: ParsedCanonicalElement,
-    ) -> str:
-        picture_id = self.id_generator.new_id("picture")
-        graph.pictures[picture_id] = PictureAsset(
-            picture_id=picture_id,
-            document_id=document_id,
-            parent_section_id=parent_section_id,
-            image_path=parsed_element.metadata.get("image_path"),
-            ocr_text=parsed_element.metadata.get("ocr_text"),
-            metadata=AssetMetadata(
-                source=self._source_from_parsed(parsed_element),
-                caption=parsed_element.metadata.get("caption") or parsed_element.text,
-            ),
-        )
-        return picture_id
-
-    def _build_chunks(
-        self,
-        graph: DocumentGraph,
-        sections: list,
-    ) -> list[DocumentChunk]:
-        chunks: list[DocumentChunk] = []
-        sequence_number = 1
-
-        for section in sorted(sections, key=lambda value: value.sequence_number or 0):
-            elements = graph.get_section_elements(section.section_id)
-            chunk_payloads = self.section_chunk_builder.build_chunk_payloads(
-                document_title=graph.document.title,
-                section=section,
-                elements=elements,
-            )
-            total_windows = len(chunk_payloads)
-
-            for chunk_index, chunk_payload in enumerate(chunk_payloads, start=1):
-                chunks.append(
-                    DocumentChunk(
-                        chunk_id=self.id_generator.new_id(IdPrefix.CHUNK),
-                        document_id=graph.document.document_id,
-                        section_id=chunk_payload.section_id,
-                        content=chunk_payload.content,
-                        chunk_type=chunk_payload.chunk_type,
-                        section_path=list(chunk_payload.section_path),
-                        element_ids=list(chunk_payload.element_ids),
-                        table_ids=list(chunk_payload.table_ids),
-                        picture_ids=list(chunk_payload.picture_ids),
-                        source=SourceLocation(
-                            page_start=chunk_payload.page_start,
-                            page_end=chunk_payload.page_end,
-                        ),
-                        sequence_number=sequence_number,
-                        chunk_index=chunk_index,
-                        chunk_total=total_windows,
-                        embedding_text=chunk_payload.embedding_text,
-                    )
-                )
-                sequence_number += 1
-
-        return chunks
-
-    @staticmethod
-    def _source_from_parsed(parsed_element: ParsedCanonicalElement) -> SourceLocation:
-        bbox = None
-        if parsed_element.bbox is not None:
-            bbox = BoundingBox(
-                x1=parsed_element.bbox.x1,
-                y1=parsed_element.bbox.y1,
-                x2=parsed_element.bbox.x2,
-                y2=parsed_element.bbox.y2,
-            )
-
-        return SourceLocation(
-            page_start=parsed_element.page_start,
-            page_end=parsed_element.page_end,
-            bbox=bbox,
-        )
 
     @staticmethod
     def _update_section_boundaries(section, element: CanonicalElement) -> None:
@@ -304,37 +191,3 @@ class DocumentGraphBuilder:
         if isinstance(language, str) and language.strip():
             return language.strip()
         return None
-
-    @staticmethod
-    def _min_page(elements: list[CanonicalElement]) -> int | None:
-        pages = [
-            element.source.page_start
-            for element in elements
-            if element.source.page_start is not None
-        ]
-        return min(pages) if pages else None
-
-    @staticmethod
-    def _max_page(elements: list[CanonicalElement]) -> int | None:
-        pages = [
-            element.source.page_end
-            for element in elements
-            if element.source.page_end is not None
-        ]
-        return max(pages) if pages else None
-
-    @staticmethod
-    def _merge_min_page(
-        left: int | None,
-        right: int | None,
-    ) -> int | None:
-        values = [value for value in [left, right] if value is not None]
-        return min(values) if values else None
-
-    @staticmethod
-    def _merge_max_page(
-        left: int | None,
-        right: int | None,
-    ) -> int | None:
-        values = [value for value in [left, right] if value is not None]
-        return max(values) if values else None

@@ -14,3 +14,4 @@ def test_retrieved_chunk_mapper_from_chunk_orm(sample_chunk) -> None:
     assert retrieved.document_id == sample_chunk.document_id
     assert retrieved.score == 0.8
     assert retrieved.retrieval_source == "sql_keyword"
+    assert retrieved.section_path == sample_chunk.section_path

@@ -16,17 +16,29 @@ class FakeHybridRetrievalService:
         return self.result
 
 
+class FakeContextExpander:
+    def __init__(self, chunks) -> None:
+        self.chunks = chunks
+        self.calls = []
+
+    def expand(self, chunks):
+        self.calls.append(chunks)
+        return self.chunks
+
+
 def make_workflow(
     retrieval_service: FakeHybridRetrievalService,
     *,
     min_evidence_chunks: int = 1,
     strict_evidence: bool = False,
+    context_expander=None,
 ) -> RetrievalWorkflow:
     return RetrievalWorkflow(
         retrieval_service=retrieval_service,
         query_validator=RetrievalQueryValidator(),
         min_evidence_chunks=min_evidence_chunks,
         strict_evidence=strict_evidence,
+        context_expander=context_expander,
     )
 
 
@@ -118,3 +130,38 @@ def test_not_enough_evidence_raises_when_strict_mode_requires_more_chunks(
 
     with pytest.raises(NoEvidenceFoundError):
         workflow.run(sample_retrieval_query)
+
+
+def test_workflow_expands_context_chunks_when_expander_is_available(
+    sample_retrieval_query,
+    sample_retrieval_result,
+    sample_retrieved_chunk,
+) -> None:
+    retrieval_service = FakeHybridRetrievalService(sample_retrieval_result)
+    expanded_chunk = sample_retrieved_chunk.__class__(
+        chunk_id="chunk_context_001",
+        document_id=sample_retrieved_chunk.document_id,
+        content="Neighbor context chunk",
+        score=0.5,
+        retrieval_source="context_expansion",
+        chunk_type=sample_retrieved_chunk.chunk_type,
+        section_id=sample_retrieved_chunk.section_id,
+        section_path=sample_retrieved_chunk.section_path,
+        source=sample_retrieved_chunk.source,
+    )
+    context_expander = FakeContextExpander(
+        [sample_retrieved_chunk, expanded_chunk]
+    )
+    workflow = make_workflow(
+        retrieval_service,
+        context_expander=context_expander,
+    )
+
+    result = workflow.run(sample_retrieval_query)
+
+    assert context_expander.calls == [sample_retrieval_result.chunks]
+    assert [chunk.chunk_id for chunk in result.final_chunks] == [
+        sample_retrieved_chunk.chunk_id,
+        "chunk_context_001",
+    ]
+    assert result.context_result_count == 2
