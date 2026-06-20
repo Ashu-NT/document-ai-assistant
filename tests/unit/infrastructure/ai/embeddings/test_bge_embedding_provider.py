@@ -97,3 +97,14 @@ def test_embed_batch_wraps_underlying_errors() -> None:
 
     with pytest.raises(InfrastructureError):
         provider.embed_batch(["first", "second"])
+
+
+def test_ollama_style_model_name_fails_fast() -> None:
+    with pytest.raises(InfrastructureError) as exc_info:
+        BgeEmbeddingProvider(model_name="Qwen/qwen3-embedding:0.6B")
+
+    assert exc_info.value.details == {
+        "model_name": "Qwen/qwen3-embedding:0.6B",
+        "expected_provider": "sentence-transformers",
+        "suggested_model_name": "BAAI/bge-small-en-v1.5",
+    }
