@@ -1,8 +1,14 @@
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_inference import (
+    ChunkingProfileInference,
+)
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
+)
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_statistics import (
+    ChunkingProfileStatistics,
 )
 from src.application.workflows.parsing.builders.chunking.models.chunk_payload import (
     ChunkPayload,
@@ -23,6 +29,8 @@ from src.application.workflows.parsing.builders.chunking.builders.section_chunk_
 __all__ = [
     "ChunkFragment",
     "ChunkingProfile",
+    "ChunkingProfileInference",
+    "ChunkingProfileStatistics",
     "ChunkPayload",
     "ChunkTextSplitter",
     "DocumentChunkingPolicy",

@@ -33,6 +33,9 @@ from src.application.workflows.parsing.builders import (  # noqa: E402
 from src.application.workflows.parsing.normalizers import (  # noqa: E402
     DoclingDocumentNormalizer,
 )
+from src.application.workflows.parsing.builders.chunking.policies import (  # noqa: E402
+    ChunkingProfileInferer,
+)
 from src.config.paths import ensure_directory, resolve_project_path  # noqa: E402
 from src.domain.document import DocumentHashes  # noqa: E402
 from src.infrastructure.parsing.docling import DoclingParser  # noqa: E402
@@ -405,6 +408,7 @@ def build_report(
     section_build_result: SectionBuildResult | None,
 ) -> str:
     lines: list[str] = ["# Parsing Debug Report", ""]
+    structural_profile_inference = infer_structural_profile_inference(document_graph)
 
     lines.extend(
         [
@@ -428,6 +432,10 @@ def build_report(
             f"- raw document type: `{type(safe_getattr(raw_parsed_document, 'raw_document')).__name__}`",
             "",
         ]
+    )
+
+    lines.extend(
+        build_structural_profile_inference_section(structural_profile_inference)
     )
 
     canonical_counts = count_by_type(canonical_elements)
@@ -763,6 +771,70 @@ def build_report(
 
     lines.append("")
     return "\n".join(lines)
+
+
+def infer_structural_profile_inference(document_graph: Any) -> Any:
+    inferer = ChunkingProfileInferer()
+    ordered_sections = sorted(
+        document_graph.sections.values(),
+        key=lambda value: value.sequence_number or 0,
+    )
+    section_elements_by_id = {
+        section.section_id: document_graph.get_section_elements(section.section_id)
+        for section in ordered_sections
+    }
+    return inferer.infer_result(
+        document_title=safe_getattr(document_graph, "document", "title"),
+        sections=ordered_sections,
+        section_elements_by_id=section_elements_by_id,
+    )
+
+
+def build_structural_profile_inference_section(structural_profile_inference: Any) -> list[str]:
+    statistics = (
+        structural_profile_inference.statistics.to_debug_dict()
+        if hasattr(structural_profile_inference, "statistics")
+        else {}
+    )
+    scores = (
+        structural_profile_inference.scores_by_name()
+        if hasattr(structural_profile_inference, "scores_by_name")
+        else {}
+    )
+    reasons = (
+        structural_profile_inference.reasons_by_name()
+        if hasattr(structural_profile_inference, "reasons_by_name")
+        else {}
+    )
+    return [
+        "## Structural Profile Inference",
+        f"- selected profile: `{display_value(safe_getattr(structural_profile_inference, 'selected_profile'))}`",
+        f"- confidence: `{safe_getattr(structural_profile_inference, 'confidence', default='')}`",
+        "- scores:",
+        "```json",
+        sanitize_code_block(json.dumps(scores, indent=2)),
+        "```",
+        "- selected profile reasons:",
+        "```json",
+        sanitize_code_block(
+            json.dumps(
+                reasons.get(
+                    display_value(
+                        safe_getattr(structural_profile_inference, "selected_profile")
+                    ),
+                    [],
+                ),
+                indent=2,
+            )
+        ),
+        "```",
+        "- key statistics:",
+        "```json",
+        sanitize_code_block(json.dumps(statistics, indent=2)),
+        "```",
+        "- model classification: `not run in parsing debug script`",
+        "",
+    ]
 
 
 def main() -> int:
