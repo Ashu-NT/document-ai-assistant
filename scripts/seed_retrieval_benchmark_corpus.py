@@ -106,6 +106,10 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def print_status(message: str) -> None:
+    print(f"[seed-retrieval-corpus] {message}", flush=True)
+
+
 def resolve_path(value: str | None) -> Path | None:
     if value is None:
         return None
@@ -261,17 +265,31 @@ def main() -> int:
     output_path = resolve_path(args.output) or default_output_path()
     ensure_directory(output_path.parent)
 
+    print_status(f"Truth set path: {truth_set_path}")
+    if input_directory is None:
+        print_status("Input directory: derived from the truth-set parent directory")
+    else:
+        print_status(f"Input directory: {input_directory}")
+    print_status(f"Manifest output path: {output_path}")
+    print_status("Building corpus seeder runtime...")
     seeder = build_corpus_seeder()
+    print_status("Corpus seeder runtime ready.")
 
     try:
+        print_status("Starting retrieval benchmark corpus seeding...")
         manifest = seeder.seed_corpus(
             truth_set_path=truth_set_path,
             input_directory=input_directory,
+            progress_callback=print_status,
+        )
+        print_status(
+            f"Writing manifest for {manifest.document_count} document(s)..."
         )
         output_path.write_text(
             json.dumps(manifest.to_dict(), indent=2),
             encoding="utf-8",
         )
+        print_status("Corpus manifest written successfully.")
     except Exception:
         unit_of_work = getattr(seeder, "unit_of_work", None)
         if unit_of_work is not None:
