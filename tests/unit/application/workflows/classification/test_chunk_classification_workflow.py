@@ -130,3 +130,32 @@ def test_classify_chunk_maps_invalid_label_to_unknown(sample_chunk) -> None:
     ]
     assert fake_classification_service.saved_chunk_classifications == [classification]
     assert validator.calls == [classification]
+
+
+def test_classify_chunk_accepts_fenced_json_with_think_block(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            "<think>This looks like a recurring interval classification.</think>\n"
+            "```json\n"
+            "{\n"
+            '  "chunk_type": "maintenance_interval",\n'
+            '  "confidence": "84%",\n'
+            '  "rationale": "The chunk describes periodic replacement.",\n'
+            '  "evidence": ["every 1000 operating hours"]\n'
+            "}\n"
+            "```"
+        ]
+    )
+    fake_classification_service = FakeClassificationService()
+    workflow, validator = make_workflow(
+        fake_llm_service,
+        fake_classification_service,
+    )
+
+    classification = workflow.classify_chunk(sample_chunk)
+
+    assert classification.chunk_type == ChunkType.MAINTENANCE_INTERVAL
+    assert classification.result is not None
+    assert classification.result.confidence_score == 0.84
+    assert fake_classification_service.saved_chunk_classifications == [classification]
+    assert validator.calls == [classification]

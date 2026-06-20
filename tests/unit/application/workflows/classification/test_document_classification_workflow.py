@@ -176,3 +176,34 @@ def test_classify_document_still_supports_document_only_input(
 
     assert classification.document_id == sample_document.document_id
     assert "No graph-derived content summary was available." in fake_llm_service.calls[0]["prompt"]
+
+
+def test_classify_document_accepts_fenced_json_with_think_block(
+    sample_document_graph,
+) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            "<think>I should compare the graph signals first.</think>\n"
+            "```json\n"
+            "{\n"
+            '  "label": "manual",\n'
+            '  "confidence_score": 0.87,\n'
+            '  "rationale": "The chunk previews and section paths look like a manual.",\n'
+            '  "evidence": ["Maintenance Schedule", "Replace hydraulic filter every 1000 operating hours."]\n'
+            "}\n"
+            "```"
+        ]
+    )
+    fake_classification_service = FakeClassificationService()
+    workflow, validator = make_workflow(
+        fake_llm_service,
+        fake_classification_service,
+    )
+
+    classification = workflow.classify_document(sample_document_graph)
+
+    assert classification.document_type == DocumentType.MANUAL
+    assert classification.result is not None
+    assert classification.result.confidence_score == 0.87
+    assert fake_classification_service.saved_document_classifications == [classification]
+    assert validator.calls == [classification]
