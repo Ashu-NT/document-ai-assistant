@@ -1,8 +1,10 @@
-from src.application.evaluation.retrieval import (
-    ChunkQualityEvaluator,
+from src.application.evaluation.retrieval.benchmarking import (
     RetrievalBenchmarkCase,
     RetrievalBenchmarkCaseResult,
     RetrievalBenchmarkReport,
+)
+from src.application.evaluation.retrieval.evaluators import (
+    ChunkQualityEvaluator,
 )
 
 __all__ = [

@@ -1,10 +1,6 @@
-from src.application.evaluation.retrieval_benchmark_case import (
+from src.application.evaluation.retrieval.benchmarking import (
     RetrievalBenchmarkCase,
-)
-from src.application.evaluation.retrieval_benchmark_case_result import (
     RetrievalBenchmarkCaseResult,
-)
-from src.application.evaluation.retrieval_benchmark_report import (
     RetrievalBenchmarkReport,
 )
 
