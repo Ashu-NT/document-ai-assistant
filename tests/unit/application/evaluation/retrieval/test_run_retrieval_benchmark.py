@@ -360,7 +360,16 @@ def test_main_returns_non_zero_for_unresolved_truth_cases(
         ]
     )
 
+    json_report_path = tmp_path / "reports" / "retrieval_benchmark_report.json"
+    markdown_report_path = tmp_path / "reports" / "retrieval_benchmark_report.md"
+
     assert exit_code == 1
+    assert json_report_path.exists()
+    assert markdown_report_path.exists()
+    assert "resolution_failed" in json_report_path.read_text(encoding="utf-8")
+    assert "Retrieval Benchmark Resolution Failure" in markdown_report_path.read_text(
+        encoding="utf-8"
+    )
 
 
 def test_ensure_manifest_exists_raises_friendly_seed_guidance(

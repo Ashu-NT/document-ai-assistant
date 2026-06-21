@@ -34,6 +34,7 @@ from src.application.evaluation.retrieval.benchmarking.reporting import (
     RetrievalBenchmarkReportMarkdownRenderer,
     RetrievalBenchmarkReportSummaryBuilder,
     RetrievalBenchmarkReportWriter,
+    RetrievalBenchmarkResolutionFailureWriter,
 )
 
 __all__ = [
@@ -46,6 +47,7 @@ __all__ = [
     "RetrievalBenchmarkReportMarkdownRenderer",
     "RetrievalBenchmarkReportSummaryBuilder",
     "RetrievalBenchmarkReportWriter",
+    "RetrievalBenchmarkResolutionFailureWriter",
     "RetrievalBenchmarkCaseResolver",
     "RetrievalBenchmarkChunkMatcher",
     "RetrievalBenchmarkCorpusDocument",

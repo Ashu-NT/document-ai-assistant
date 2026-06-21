@@ -384,6 +384,46 @@ def benchmark_evaluation_top_k() -> int:
     return max(retrieval_settings.final_retrieval_top_k, 10)
 
 
+def is_resolution_failure(exc: SchemaValidationError) -> bool:
+    details = exc.details or {}
+    unresolved_case_ids = details.get("unresolved_case_ids")
+    return isinstance(unresolved_case_ids, list)
+
+
+def write_resolution_failure_reports(
+    *,
+    details: dict[str, Any] | None,
+    truth_set_path: Path,
+    manifest_path: Path,
+    output_directory: Path,
+    subset: str,
+) -> tuple[Path, Path]:
+    from src.application.evaluation import (  # noqa: WPS433
+        RetrievalBenchmarkResolutionFailureWriter,
+    )
+
+    json_output_path, markdown_output_path = resolve_output_paths(
+        output_directory=output_directory,
+        subset=subset,
+    )
+    failure_writer = RetrievalBenchmarkResolutionFailureWriter()
+    failure_writer.write_json(
+        details=details,
+        output_path=json_output_path,
+        subset=subset,
+        truth_set_path=truth_set_path,
+        manifest_path=manifest_path,
+    )
+    failure_writer.write_markdown(
+        details=details,
+        output_path=markdown_output_path,
+        subset=subset,
+        truth_set_path=truth_set_path,
+        manifest_path=manifest_path,
+    )
+    return json_output_path, markdown_output_path
+
+
 def close_runtime(runtime: BenchmarkRuntime | None) -> None:
     if runtime is None:
         return
@@ -418,11 +458,11 @@ def emit_progress(progress_callback, message: str) -> None:
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     runtime: BenchmarkRuntime | None = None
+    truth_set_path = resolve_path(args.truth_set)
+    manifest_path = resolve_path(args.manifest) or default_manifest_path()
+    output_directory = resolve_path(args.output_dir) or default_output_directory()
 
     try:
-        truth_set_path = resolve_path(args.truth_set)
-        manifest_path = resolve_path(args.manifest) or default_manifest_path()
-        output_directory = resolve_path(args.output_dir) or default_output_directory()
         print_status(f"Truth set path: {truth_set_path}")
         print_status(f"Manifest path: {manifest_path}")
         print_status(f"Output directory: {output_directory}")
@@ -458,7 +498,28 @@ def main(argv: Sequence[str] | None = None) -> int:
     except FileNotFoundError as exc:
         print(str(exc), file=sys.stderr)
         return 1
-    except (SchemaValidationError, ApplicationError) as exc:
+    except SchemaValidationError as exc:
+        if is_resolution_failure(exc):
+            json_output_path, markdown_output_path = (
+                write_resolution_failure_reports(
+                    details=exc.details,
+                    truth_set_path=truth_set_path,
+                    manifest_path=manifest_path,
+                    output_directory=output_directory,
+                    subset=args.subset,
+                )
+            )
+            print_status(
+                f"Wrote resolution failure JSON report to {json_output_path}."
+            )
+            print_status(
+                f"Wrote resolution failure Markdown report to {markdown_output_path}."
+            )
+        print(f"{exc.error_code}: {exc.message}", file=sys.stderr)
+        if exc.details:
+            print(format_error_details(exc.details), file=sys.stderr)
+        return 1
+    except ApplicationError as exc:
         print(f"{exc.error_code}: {exc.message}", file=sys.stderr)
         if exc.details:
             print(format_error_details(exc.details), file=sys.stderr)
