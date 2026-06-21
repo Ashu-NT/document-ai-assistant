@@ -39,4 +39,34 @@ class RetrievalSettings(AppBaseSettings):
         alias="FINAL_RETRIEVAL_TOP_K"
     )
 
+    exact_duplicate_enabled: bool = Field(
+        default=True,
+        alias="RETRIEVAL_EXACT_DUPLICATE_ENABLED"
+    )
+
+    context_companion_collapse_enabled: bool = Field(
+        default=True,
+        alias="RETRIEVAL_CONTEXT_COMPANION_COLLAPSE_ENABLED"
+    )
+
+    overview_duplicate_collapse_enabled: bool = Field(
+        default=True,
+        alias="RETRIEVAL_OVERVIEW_DUPLICATE_COLLAPSE_ENABLED"
+    )
+
+    token_overlap_threshold: float = Field(
+        default=0.90,
+        alias="RETRIEVAL_TOKEN_OVERLAP_THRESHOLD"
+    )
+
+    containment_threshold: float = Field(
+        default=0.95,
+        alias="RETRIEVAL_CONTAINMENT_THRESHOLD"
+    )
+
+    min_unique_token_count: int = Field(
+        default=20,
+        alias="RETRIEVAL_MIN_UNIQUE_TOKEN_COUNT"
+    )
+
            

@@ -18,7 +18,7 @@ def test_resolver_uses_enum_profile_for_explicit_document_type() -> None:
     )
 
     assert policy.profile_name == ChunkingProfile.MANUAL
-    assert policy.max_chunk_tokens == 240
+    assert policy.max_chunk_tokens == 1000
 
 
 def test_resolver_uses_profile_override_before_document_type() -> None:

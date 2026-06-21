@@ -101,6 +101,7 @@ class HybridRetrievalService(RetrievalBackend):
                     str(existing.metadata.get("retrieval_sources", "")).split(",")
                 ) - {""}
                 existing_sources.add(source_name)
+                existing.metadata[f"{source_name}_source_score"] = str(chunk.score)
                 existing.metadata["retrieval_sources"] = ",".join(
                     sorted(existing_sources)
                 )
@@ -127,6 +128,7 @@ class HybridRetrievalService(RetrievalBackend):
         metadata["retrieval_sources"] = retrieval_source
         metadata["best_source_score"] = str(chunk.score)
         metadata["fused_score"] = f"{score:.12f}"
+        metadata[f"{retrieval_source}_source_score"] = str(chunk.score)
 
         return RetrievedChunk(
             chunk_id=chunk.chunk_id,

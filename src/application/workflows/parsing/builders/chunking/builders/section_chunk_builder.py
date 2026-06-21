@@ -32,6 +32,9 @@ from src.domain.elements import CanonicalElement
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
 )
+from src.application.workflows.parsing.builders.chunking.deduplication.chunk_payload_deduplicator import (
+    ChunkPayloadDeduplicator,
+)
 
 
 class SectionChunkBuilder:
@@ -43,6 +46,7 @@ class SectionChunkBuilder:
         chunk_overlap: int | None = None,
         min_section_text_length: int | None = None,
         runtime_factory: ChunkingRuntimeFactory | None = None,
+        payload_deduplicator: ChunkPayloadDeduplicator | None = None,
     ) -> None:
         text_splitter = text_splitter or (
             ChunkTextSplitter(
@@ -66,6 +70,9 @@ class SectionChunkBuilder:
                 else chunk_overlap
             ),
             min_section_text_length_override=min_section_text_length,
+        )
+        self.payload_deduplicator = (
+            payload_deduplicator or ChunkPayloadDeduplicator()
         )
     def build_chunk_payloads(
         self,
@@ -103,12 +110,14 @@ class SectionChunkBuilder:
         if not fragments:
             return []
 
-        return self._chunk_payloads_from_fragments(
-            document_title=document_title,
-            fragments=fragments,
-            text_splitter=runtime.text_splitter,
-            payload_factory=runtime.payload_factory,
-            merge_policy=runtime.merge_policy,
+        return self._deduplicate_payloads(
+            self._chunk_payloads_from_fragments(
+                document_title=document_title,
+                fragments=fragments,
+                text_splitter=runtime.text_splitter,
+                payload_factory=runtime.payload_factory,
+                merge_policy=runtime.merge_policy,
+            )
         )
 
     def build_document_chunk_payloads(
@@ -179,10 +188,18 @@ class SectionChunkBuilder:
             sections=ordered_sections,
             section_elements_by_id=section_elements_by_id,
         )
-        return self._merge_overview_payloads(
-            base_payloads=base_payloads,
-            overview_payloads=overview_payloads,
+        return self._deduplicate_payloads(
+            self._merge_overview_payloads(
+                base_payloads=base_payloads,
+                overview_payloads=overview_payloads,
+            )
         )
+
+    def _deduplicate_payloads(
+        self,
+        payloads: list[ChunkPayload],
+    ) -> list[ChunkPayload]:
+        return self.payload_deduplicator.deduplicate(payloads).payloads
 
     def _chunk_payloads_from_fragments(
         self,

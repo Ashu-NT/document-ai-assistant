@@ -16,12 +16,24 @@ from src.application.workflows.retrieval.retrieval_context_assembler import (
 from src.application.workflows.retrieval.retrieval_context_expander import (
     RetrievalContextExpander,
 )
+from src.application.workflows.retrieval.deduplication import (
+    DuplicateGroup,
+    RetrievalDeduplicationPolicy,
+    RetrievalDeduplicationResult,
+    RetrievedChunkDeduplicator,
+    RetrievedChunkSignature,
+)
 
 __all__ = [
+    "DuplicateGroup",
     "RetrievalContextAssembler",
+    "RetrievalDeduplicationPolicy",
+    "RetrievalDeduplicationResult",
     "RetrievalQueryIntent",
     "RetrievalQueryIntentInferer",
     "RetrievalContextExpander",
+    "RetrievedChunkDeduplicator",
+    "RetrievedChunkSignature",
     "RetrievalWorkflow",
     "RetrievalWorkflowResult",
 ]
