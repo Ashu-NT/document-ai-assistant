@@ -9,6 +9,7 @@ from src.application.evaluation.retrieval.benchmarking.reporting.summaries impor
 )
 from src.application.evaluation.retrieval.benchmarking.reporting.writers import (
     RetrievalBenchmarkReportWriter,
+    RetrievalBenchmarkResolutionFailureWriter,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "RetrievalBenchmarkReportMarkdownRenderer",
     "RetrievalBenchmarkReportSummaryBuilder",
     "RetrievalBenchmarkReportWriter",
+    "RetrievalBenchmarkResolutionFailureWriter",
 ]
