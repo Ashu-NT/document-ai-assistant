@@ -26,17 +26,21 @@ def build_docling_converter() -> Any:
         format_options={
             input_format.PDF: pdf_format_option_class(
                 pipeline_options=pipeline_options,
+                backend=_resolve_pdf_backend(components),
             )
         }
     )
 
 
 def _configure_pipeline_options(pipeline_options: Any) -> None:
+    pipeline_options.accelerator_options.device = _normalize_accelerator_device()
+    pipeline_options.accelerator_options.num_threads = docling_settings.num_threads
     pipeline_options.images_scale = docling_settings.images_scale
     pipeline_options.do_table_structure = docling_settings.enable_table_structure
     pipeline_options.do_ocr = docling_settings.enable_ocr
     pipeline_options.ocr_batch_size = docling_settings.ocr_batch_size
-    pipeline_options.accelerator_options.num_threads = docling_settings.num_threads
+    pipeline_options.layout_batch_size = docling_settings.layout_batch_size
+    pipeline_options.table_batch_size = docling_settings.table_batch_size
 
 
 def _build_ocr_options(
@@ -84,7 +88,70 @@ def _normalize_rapidocr_backend() -> str:
     )
 
 
+def _normalize_accelerator_device() -> str:
+    normalized_device = docling_settings.accelerator_device.strip().lower()
+    supported_devices = {"auto", "cpu", "cuda", "mps", "xpu"}
+
+    if normalized_device in supported_devices:
+        return normalized_device
+
+    raise InfrastructureError(
+        "Unsupported Docling accelerator device configured.",
+        details={
+            "accelerator_device": docling_settings.accelerator_device,
+            "supported_devices": sorted(supported_devices),
+        },
+    )
+
+
+def _resolve_pdf_backend(components: dict[str, Any]):
+    normalized_backend = _normalize_pdf_backend_value()
+    backend_mapping = {
+        "pypdfium2": components["PyPdfiumDocumentBackend"],
+        "docling_parse": components["DoclingParseDocumentBackend"],
+        "threaded_docling_parse": components["ThreadedDoclingParseDocumentBackend"],
+    }
+    return backend_mapping[normalized_backend]
+
+
+def _normalize_pdf_backend_value() -> str:
+    normalize_pdf_backend = _import_normalize_pdf_backend()
+    supported_backends = {
+        "pypdfium2",
+        "docling_parse",
+        "threaded_docling_parse",
+    }
+
+    try:
+        normalized_backend = normalize_pdf_backend(docling_settings.pdf_backend)
+    except Exception as exc:
+        raise InfrastructureError(
+            "Unsupported Docling PDF backend configured.",
+            details={
+                "pdf_backend": docling_settings.pdf_backend,
+                "supported_backends": sorted(supported_backends),
+            },
+        ) from exc
+
+    normalized_value = getattr(normalized_backend, "value", str(normalized_backend))
+    if normalized_value in supported_backends:
+        return normalized_value
+
+    raise InfrastructureError(
+        "Unsupported Docling PDF backend configured.",
+        details={
+            "pdf_backend": docling_settings.pdf_backend,
+            "supported_backends": sorted(supported_backends),
+        },
+    )
+
+
 def _import_docling_components() -> dict[str, Any]:
+    from docling.backend.docling_parse_backend import (
+        DoclingParseDocumentBackend,
+        ThreadedDoclingParseDocumentBackend,
+    )
+    from docling.backend.pypdfium2_backend import PyPdfiumDocumentBackend
     from docling.datamodel.base_models import InputFormat
     from docling.datamodel.pipeline_options import (
         OcrAutoOptions,
@@ -100,4 +167,13 @@ def _import_docling_components() -> dict[str, Any]:
         "PdfPipelineOptions": PdfPipelineOptions,
         "OcrAutoOptions": OcrAutoOptions,
         "RapidOcrOptions": RapidOcrOptions,
+        "PyPdfiumDocumentBackend": PyPdfiumDocumentBackend,
+        "DoclingParseDocumentBackend": DoclingParseDocumentBackend,
+        "ThreadedDoclingParseDocumentBackend": ThreadedDoclingParseDocumentBackend,
     }
+
+
+def _import_normalize_pdf_backend():
+    from docling.datamodel.pipeline_options import normalize_pdf_backend
+
+    return normalize_pdf_backend
