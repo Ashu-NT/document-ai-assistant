@@ -131,9 +131,13 @@ def print_status(message: str) -> None:
 def print_runtime_ocr_configuration() -> None:
     print_status(
         "Docling pipeline: "
+        f"pdf_backend={docling_settings.pdf_backend}, "
+        f"device={docling_settings.accelerator_device}, "
         f"images_scale={docling_settings.images_scale}, "
         f"table_structure={docling_settings.enable_table_structure}, "
-        f"num_threads={docling_settings.num_threads}"
+        f"num_threads={docling_settings.num_threads}, "
+        f"layout_batch_size={docling_settings.layout_batch_size}, "
+        f"table_batch_size={docling_settings.table_batch_size}"
     )
     print_status(
         "Docling OCR: "

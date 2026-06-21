@@ -4,6 +4,16 @@ from src.config.settings.base_settings import AppBaseSettings
 
 
 class DoclingSettings(AppBaseSettings):
+    pdf_backend: str = Field(
+        default="pypdfium2",
+        alias="DOCLING_PDF_BACKEND",
+    )
+
+    accelerator_device: str = Field(
+        default="auto",
+        alias="DOCLING_ACCELERATOR_DEVICE",
+    )
+
     images_scale: float = Field(
         default=1.0,
         alias="DOCLING_IMAGES_SCALE",
@@ -47,6 +57,16 @@ class DoclingSettings(AppBaseSettings):
     ocr_batch_size: int = Field(
         default=4,
         alias="DOCLING_OCR_BATCH_SIZE",
+    )
+
+    layout_batch_size: int = Field(
+        default=4,
+        alias="DOCLING_LAYOUT_BATCH_SIZE",
+    )
+
+    table_batch_size: int = Field(
+        default=4,
+        alias="DOCLING_TABLE_BATCH_SIZE",
     )
 
     export_markdown: bool = Field(
