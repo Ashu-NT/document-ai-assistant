@@ -1,4 +1,7 @@
 from src.application.validation.document import DocumentGraphValidator
+from src.application.workflows.parsing.canonical_element_ocr_enricher import (
+    CanonicalElementOCREnricher,
+)
 from src.application.workflows.parsing.builders.document_graph_builder import (
     DocumentGraphBuilder,
 )
@@ -23,12 +26,14 @@ class ParsingWorkflow:
         document_graph_builder: DocumentGraphBuilder,
         id_generator: IdGenerator,
         document_graph_validator: DocumentGraphValidator | None = None,
+        canonical_element_ocr_enricher: CanonicalElementOCREnricher | None = None,
     ) -> None:
         self.parser = parser
         self.normalizer = normalizer
         self.document_graph_builder = document_graph_builder
         self.id_generator = id_generator
         self.document_graph_validator = document_graph_validator
+        self.canonical_element_ocr_enricher = canonical_element_ocr_enricher
 
     @tracked_action(
         action="parsing.workflow_completed",
@@ -53,6 +58,11 @@ class ParsingWorkflow:
             raw_parsed_document,
             resolved_document_id,
         )
+        if self.canonical_element_ocr_enricher is not None:
+            canonical_elements = self.canonical_element_ocr_enricher.enrich(
+                canonical_elements,
+                activity_context=activity_context,
+            )
 
         document_graph = self.document_graph_builder.build(
             document_id=resolved_document_id,

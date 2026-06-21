@@ -4,6 +4,11 @@ from src.config.settings.base_settings import AppBaseSettings
 
 
 class OCRSettings(AppBaseSettings):
+    enabled: bool = Field(
+        default=False,
+        alias="ENABLE_PROVIDER_OCR",
+    )
+
     provider: str = Field(
         default="paddleocr",
         alias="OCR_PROVIDER",

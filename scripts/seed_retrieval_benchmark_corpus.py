@@ -30,7 +30,11 @@ from src.application.evaluation.retrieval import (  # noqa: E402
     DEFAULT_RETRIEVAL_TRUTH_SET_PATH,
     RetrievalBenchmarkCorpusSeeder,
 )
-from src.application.services.ai import EmbeddingService, LLMService  # noqa: E402
+from src.application.services.ai import (  # noqa: E402
+    EmbeddingService,
+    LLMService,
+    OCRService,
+)
 from src.application.services.classification import ClassificationService  # noqa: E402
 from src.application.services.document import (  # noqa: E402
     DocumentLookupService,
@@ -52,6 +56,9 @@ from src.application.workflows.classification import (  # noqa: E402
 )
 from src.application.workflows.embedding import EmbeddingWorkflow  # noqa: E402
 from src.application.workflows.parsing import ParsingWorkflow  # noqa: E402
+from src.application.workflows.parsing.canonical_element_ocr_enricher import (  # noqa: E402
+    CanonicalElementOCREnricher,
+)
 from src.application.workflows.parsing.builders import (  # noqa: E402
     DocumentGraphBuilder,
     SectionBuilder,
@@ -64,11 +71,13 @@ from src.config.paths import ensure_directory, resolve_project_path  # noqa: E40
 from src.config.settings import (  # noqa: E402
     embedding_settings,
     llm_settings,
+    ocr_settings,
     qdrant_settings,
     storage_settings,
 )
 from src.infrastructure.ai.embeddings import BgeEmbeddingProvider  # noqa: E402
 from src.infrastructure.ai.llm import OllamaLLMProvider  # noqa: E402
+from src.infrastructure.ai.ocr import build_ocr_provider  # noqa: E402
 from src.infrastructure.db.base import Base  # noqa: E402
 from src.infrastructure.db.orm_models import __all__ as _orm_models_loaded  # noqa: E402,F401
 from src.infrastructure.db.session import SessionLocal, engine  # noqa: E402
@@ -181,8 +190,18 @@ def build_parsing_workflow(
         document_graph_builder=document_graph_builder,
         id_generator=id_generator,
         document_graph_validator=DocumentGraphValidator(),
+        canonical_element_ocr_enricher=build_optional_ocr_enricher(),
     )
     return workflow, document_graph_builder
+
+
+def build_optional_ocr_enricher() -> CanonicalElementOCREnricher | None:
+    if not ocr_settings.enabled:
+        return None
+
+    return CanonicalElementOCREnricher(
+        OCRService(build_ocr_provider()),
+    )
 
 
 def build_corpus_seeder() -> CorpusSeederRuntime:
