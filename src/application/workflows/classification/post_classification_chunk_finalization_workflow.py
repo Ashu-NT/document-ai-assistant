@@ -173,15 +173,14 @@ class PostClassificationChunkFinalizationWorkflow:
             ),
         )
 
-        self._emit_progress(
-            progress_callback,
-            "Building final chunk set..." if decision.should_rechunk
-            else "Reusing stored final chunk set...",
-        )
-        final_chunks = self._final_chunks(
+        final_chunks, final_chunk_mode = self._final_chunks(
             graph=graph,
             sections=sections,
             decision=decision,
+        )
+        self._emit_progress(
+            progress_callback,
+            self._final_chunk_progress_message(final_chunk_mode),
         )
         self._emit_progress(
             progress_callback,
@@ -245,19 +244,24 @@ class PostClassificationChunkFinalizationWorkflow:
         graph: DocumentGraph,
         sections: list[DocumentSection],
         decision,
-    ) -> list[DocumentChunk]:
-        if not decision.should_rechunk:
-            return sorted(
-                graph.chunks.values(),
-                key=lambda chunk: chunk.sequence_number,
-            )
-
-        return self.graph_chunk_builder.build_chunks(
+    ) -> tuple[list[DocumentChunk], str]:
+        stored_chunks = sorted(
+            graph.chunks.values(),
+            key=lambda chunk: chunk.sequence_number,
+        )
+        rebuilt_chunks = self.graph_chunk_builder.build_chunks(
             graph=graph,
             sections=sections,
             document_type_override=decision.effective_document_type,
             chunking_profile_override=decision.effective_chunking_profile,
         )
+        if decision.should_rechunk:
+            return rebuilt_chunks, "rechunked"
+        if not stored_chunks:
+            return rebuilt_chunks, "rebuilt_missing"
+        if self._chunk_structures_match(stored_chunks, rebuilt_chunks):
+            return stored_chunks, "reused"
+        return rebuilt_chunks, "refreshed_stale"
 
     def _classify_chunks_if_enabled(
         self,
@@ -344,6 +348,51 @@ class PostClassificationChunkFinalizationWorkflow:
             graph.sections.values(),
             key=lambda section: section.sequence_number or 0,
         )
+
+    @classmethod
+    def _chunk_structures_match(
+        cls,
+        stored_chunks: list[DocumentChunk],
+        rebuilt_chunks: list[DocumentChunk],
+    ) -> bool:
+        if len(stored_chunks) != len(rebuilt_chunks):
+            return False
+
+        return [
+            cls._chunk_structure_signature(chunk)
+            for chunk in stored_chunks
+        ] == [
+            cls._chunk_structure_signature(chunk)
+            for chunk in rebuilt_chunks
+        ]
+
+    @staticmethod
+    def _chunk_structure_signature(
+        chunk: DocumentChunk,
+    ) -> tuple[object, ...]:
+        return (
+            chunk.content,
+            chunk.chunk_type.value,
+            tuple(chunk.section_path),
+            tuple(chunk.element_ids),
+            tuple(chunk.table_ids),
+            tuple(chunk.picture_ids),
+            chunk.source.page_start,
+            chunk.source.page_end,
+            chunk.chunk_index,
+            chunk.chunk_total,
+            chunk.embedding_text,
+        )
+
+    @staticmethod
+    def _final_chunk_progress_message(mode: str) -> str:
+        if mode == "rechunked":
+            return "Building final chunk set..."
+        if mode == "rebuilt_missing":
+            return "Rebuilding final chunk set because no stored final chunks were available..."
+        if mode == "refreshed_stale":
+            return "Refreshing stored final chunk set using the current chunk builder..."
+        return "Reusing stored final chunk set..."
 
     @staticmethod
     def _emit_progress(

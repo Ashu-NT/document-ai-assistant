@@ -294,7 +294,7 @@ def test_post_classification_finalization_reuses_chunks_and_runs_questions_and_e
         graph=graph,
         classification=sample_document_classification,
         decision=decision,
-        rechunked_chunks=[detail_chunk],
+        rechunked_chunks=[overview_chunk, detail_chunk],
         provisional_profile=ChunkingProfile.MANUAL,
         enable_question_generation=True,
     )
@@ -306,7 +306,7 @@ def test_post_classification_finalization_reuses_chunks_and_runs_questions_and_e
     assert registration_service.replace_calls[0].questions
     assert vector_store.delete_calls == [graph.document.document_id]
     assert embedding_workflow.calls == [["chunk_overview", "chunk_detail"]]
-    assert graph_chunk_builder.calls == []
+    assert len(graph_chunk_builder.calls) == 1
     assert operations == ["delete_vectors", "replace", "embed"]
 
 
@@ -372,6 +372,100 @@ def test_post_classification_finalization_rechunks_before_questions_and_embeddin
     assert vector_store.delete_calls == [graph.document.document_id]
     assert len(graph_chunk_builder.calls) == 1
     assert operations == ["delete_vectors", "replace", "embed"]
+
+
+def test_post_classification_finalization_refreshes_stale_chunk_set_when_builder_output_changes(
+    sample_document_graph,
+    sample_document_classification,
+    sample_chunk,
+) -> None:
+    graph = copy.deepcopy(sample_document_graph)
+    stored_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_stored",
+        content="Old combined content.",
+        chunk_type=ChunkType.GENERAL,
+    )
+    graph.replace_chunks([stored_chunk])
+    refreshed_chunk_a = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_refreshed_a",
+        content="Refreshed content A.",
+        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+    )
+    refreshed_chunk_b = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_refreshed_b",
+        content="Refreshed content B.",
+        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+    )
+    decision = DocumentTypeDecision(
+        effective_document_type=DocumentType.MANUAL,
+        effective_chunking_profile=ChunkingProfile.MANUAL,
+        confidence=0.9,
+        reasons=["stored chunk set is stale"],
+        should_rechunk=False,
+    )
+    (
+        workflow,
+        question_service,
+        _,
+        _,
+        _,
+        embedding_workflow,
+        graph_chunk_builder,
+        _,
+    ) = make_workflow(
+        graph=graph,
+        classification=sample_document_classification,
+        decision=decision,
+        rechunked_chunks=[refreshed_chunk_a, refreshed_chunk_b],
+        provisional_profile=ChunkingProfile.MANUAL,
+        enable_question_generation=True,
+    )
+
+    result = workflow.finalize(graph.document.document_id)
+
+    assert list(result.chunks) == ["chunk_refreshed_a", "chunk_refreshed_b"]
+    assert question_service.calls == [["chunk_refreshed_a", "chunk_refreshed_b"]]
+    assert embedding_workflow.calls == [["chunk_refreshed_a", "chunk_refreshed_b"]]
+    assert len(graph_chunk_builder.calls) == 1
+
+
+def test_post_classification_finalization_rebuilds_when_stored_chunk_set_is_empty(
+    sample_document_graph,
+    sample_document_classification,
+    sample_chunk,
+) -> None:
+    graph = copy.deepcopy(sample_document_graph)
+    graph.replace_chunks([])
+    rebuilt_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_rebuilt",
+        content="Rebuilt content.",
+        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+    )
+    decision = DocumentTypeDecision(
+        effective_document_type=DocumentType.MANUAL,
+        effective_chunking_profile=ChunkingProfile.MANUAL,
+        confidence=0.9,
+        reasons=["stored chunk set missing"],
+        should_rechunk=False,
+    )
+    workflow, _, _, _, _, embedding_workflow, graph_chunk_builder, _ = make_workflow(
+        graph=graph,
+        classification=sample_document_classification,
+        decision=decision,
+        rechunked_chunks=[rebuilt_chunk],
+        provisional_profile=ChunkingProfile.MANUAL,
+        enable_question_generation=False,
+    )
+
+    result = workflow.finalize(graph.document.document_id)
+
+    assert list(result.chunks) == ["chunk_rebuilt"]
+    assert embedding_workflow.calls == [["chunk_rebuilt"]]
+    assert len(graph_chunk_builder.calls) == 1
 
 
 def test_post_classification_finalization_emits_nested_progress_messages(

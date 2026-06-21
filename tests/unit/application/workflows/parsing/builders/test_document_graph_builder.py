@@ -73,6 +73,12 @@ def find_non_overview_chunks(graph):
     ]
 
 
+def find_chunk_by_path(graph, path: list[str]):
+    return next(
+        chunk for chunk in graph.chunks.values() if chunk.section_path == path
+    )
+
+
 def test_document_graph_builder_uses_resolved_section_paths_for_chunks() -> None:
     builder = make_builder()
     graph = builder.build(
@@ -933,6 +939,481 @@ def test_document_graph_builder_merges_same_topic_sibling_sections_under_parent(
     assert "Subsections:" in overview_chunk.content
     assert detail_chunk.section_path == ["Lab preparation"]
     assert "Prep task 1: Interrupt handler and bit manipulation" in detail_chunk.content
+
+
+def test_document_graph_builder_creates_structured_drawing_chunks() -> None:
+    builder = make_builder()
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/nav_lights_arrangement.pdf",
+        title="Arrangement Navigation Lights and Signals",
+        page_count=1,
+        raw_document=object(),
+        parser_name="docling",
+        parser_version="1.2.3",
+        metadata={"language": "en"},
+    )
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/nav_lights_arrangement.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=1,
+                text="Title ARRANGEMENT",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_2",
+                element_type=ElementType.TEXT,
+                order_index=2,
+                text="NAVIGATION LIGHTS AND SIGNALS",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_3",
+                element_type=ElementType.TEXT,
+                order_index=3,
+                text="Drawing Number",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_4",
+                element_type=ElementType.TEXT,
+                order_index=4,
+                text="13759/3540-01.00",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_5",
+                element_type=ElementType.TEXT,
+                order_index=5,
+                text="Modification",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_6",
+                element_type=ElementType.TEXT,
+                order_index=6,
+                text="18.11.2025 See mod. protocol",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_7",
+                element_type=ElementType.TEXT,
+                order_index=7,
+                text="LENGTH OVER ALL",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_8",
+                element_type=ElementType.TEXT,
+                order_index=8,
+                text="114.20 m",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_9",
+                element_type=ElementType.TEXT,
+                order_index=9,
+                text="Vertical and horizontal positioning and spacing of lights (COLREG)",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_10",
+                element_type=ElementType.TEXT,
+                order_index=10,
+                text="Two masthead lights horizontal distance not less than 0.5 x length overall",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_11",
+                element_type=ElementType.TEXT,
+                order_index=11,
+                text="Desired >57.10 m",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_12",
+                element_type=ElementType.TEXT,
+                order_index=12,
+                text="Actual 62.23 m",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_13",
+                element_type=ElementType.TEXT,
+                order_index=13,
+                text="13 - SIDE LAMP SB - GREEN",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_14",
+                element_type=ElementType.TEXT,
+                order_index=14,
+                text="14 - SIDE LAMP PS - RED",
+                page_start=1,
+            ),
+        ],
+        raw_parsed_document=raw_parsed_document,
+    )
+
+    title_block_chunk = find_chunk_by_path(graph, ["Title block"])
+    lamp_labels_chunk = find_chunk_by_path(graph, ["Lamp labels"])
+    colreg_chunk = find_chunk_by_path(graph, ["COLREG table"])
+
+    assert "13759/3540-01.00" in title_block_chunk.content
+    assert "13 - SIDE LAMP SB - GREEN" in lamp_labels_chunk.content
+    assert "Actual 62.23 m" in colreg_chunk.content
+
+
+def test_document_graph_builder_creates_combined_anchor_and_towing_lamp_chunk() -> None:
+    builder = make_builder()
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/nav_lights_arrangement.pdf",
+        title="Arrangement Navigation Lights and Signals",
+        page_count=1,
+        raw_document=object(),
+        parser_name="docling",
+        parser_version="1.2.3",
+        metadata={"language": "en"},
+    )
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/nav_lights_arrangement.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=1,
+                text="15 - COMBINED",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_2",
+                element_type=ElementType.TEXT,
+                order_index=2,
+                text="ANCHOR / MASTHEAD LANTERN WHITE / WHITE",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_3",
+                element_type=ElementType.TEXT,
+                order_index=3,
+                text="3540.6000",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_4",
+                element_type=ElementType.TEXT,
+                order_index=4,
+                text="16 - COMBINED",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_5",
+                element_type=ElementType.TEXT,
+                order_index=5,
+                text="ANCHOR/ TOWING LANTERN WHITE / YELLOW",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_6",
+                element_type=ElementType.TEXT,
+                order_index=6,
+                text="3540.7000",
+                page_start=1,
+            ),
+        ],
+        raw_parsed_document=raw_parsed_document,
+    )
+
+    lamp_labels_chunk = find_chunk_by_path(graph, ["Lamp labels"])
+
+    assert "15 - COMBINED" in lamp_labels_chunk.content
+    assert "3540.6000" in lamp_labels_chunk.content
+    assert "16 - COMBINED" in lamp_labels_chunk.content
+    assert "3540.7000" in lamp_labels_chunk.content
+
+
+def test_document_graph_builder_creates_structured_report_chunks() -> None:
+    builder = make_builder()
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/pressure_transmitter_report.pdf",
+        title="Pressure transmitter report",
+        page_count=1,
+        raw_document=object(),
+        parser_name="docling",
+        parser_version="1.2.3",
+        metadata={"language": "en"},
+    )
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pressure_transmitter_report.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=1,
+                text="Final Inspection Report",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_2",
+                element_type=ElementType.TEXT,
+                order_index=2,
+                text="Device information",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_3",
+                element_type=ElementType.TEXT,
+                order_index=3,
+                text="Description",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_4",
+                element_type=ElementType.TEXT,
+                order_index=4,
+                text="Cerabar M PMP51",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_5",
+                element_type=ElementType.TEXT,
+                order_index=5,
+                text="TAG",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_6",
+                element_type=ElementType.TEXT,
+                order_index=6,
+                text="9180",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_7",
+                element_type=ElementType.TEXT,
+                order_index=7,
+                text="Serial number",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_8",
+                element_type=ElementType.TEXT,
+                order_index=8,
+                text="V8055401129",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_9",
+                element_type=ElementType.TEXT,
+                order_index=9,
+                text="Additional information",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_10",
+                element_type=ElementType.TEXT,
+                order_index=10,
+                text="Output type",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_11",
+                element_type=ElementType.TEXT,
+                order_index=11,
+                text="4...20 mA HART",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_12",
+                element_type=ElementType.TEXT,
+                order_index=12,
+                text="Maximum permissible error",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="txt_13",
+                element_type=ElementType.TEXT,
+                order_index=13,
+                text="±0.1%",
+                page_start=1,
+            ),
+        ],
+        raw_parsed_document=raw_parsed_document,
+    )
+
+    device_chunk = find_chunk_by_path(
+        graph,
+        ["Final Inspection Report", "Device information"],
+    )
+    additional_chunk = find_chunk_by_path(
+        graph,
+        ["Final Inspection Report", "Additional information"],
+    )
+
+    assert "Cerabar M PMP51" in device_chunk.content
+    assert "9180" in device_chunk.content
+    assert "4...20 mA HART" in additional_chunk.content
+    assert "±0.1%" in additional_chunk.content
+
+
+def test_document_graph_builder_creates_approval_matrix_chunk() -> None:
+    builder = make_builder()
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/pressure_transmitter_report.pdf",
+        title="Pressure transmitter report",
+        page_count=36,
+        raw_document=object(),
+        parser_name="docling",
+        parser_version="1.2.3",
+        metadata={"language": "en"},
+    )
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pressure_transmitter_report.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="Safety Instructions",
+                page_start=35,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="hdr_2",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=2,
+                text="Extended order code: Cerabar M",
+                page_start=36,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="tbl_1",
+                element_type=ElementType.TABLE,
+                order_index=3,
+                text=(
+                    "| Position 1, 2 (Approval) | Description |\n"
+                    "|---|---|\n"
+                    "| PMC51 PMP5x BG | ATEX II 3 G Ex ic IIC T6...T4 Gc |\n"
+                    "| IE | IECEx Ex ic IIC T6...T4 Gc |"
+                ),
+                page_start=36,
+                metadata={
+                    "markdown": (
+                        "| Position 1, 2 (Approval) | Description |\n"
+                        "|---|---|\n"
+                        "| PMC51 PMP5x BG | ATEX II 3 G Ex ic IIC T6...T4 Gc |\n"
+                        "| IE | IECEx Ex ic IIC T6...T4 Gc |"
+                    ),
+                    "row_count": 3,
+                    "column_count": 2,
+                },
+            ),
+        ],
+        raw_parsed_document=raw_parsed_document,
+    )
+
+    approval_chunk = find_chunk_by_path(
+        graph,
+        [
+            "Safety Instructions",
+            "Extended order code: Cerabar M",
+            "Basic specifications",
+        ],
+    )
+
+    assert "PMC51 PMP5x BG" in approval_chunk.content
+    assert "ATEX II 3 G Ex ic IIC T6...T4 Gc" in approval_chunk.content
+    assert "IECEx Ex ic IIC T6...T4 Gc" in approval_chunk.content
+
+
+def test_document_graph_builder_creates_structured_sensor_list_chunk() -> None:
+    builder = make_builder()
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/fwc12_manual.pdf",
+        title="FWC12 Manual",
+        page_count=98,
+        raw_document=object(),
+        parser_name="docling",
+        parser_version="1.2.3",
+        metadata={"language": "en"},
+    )
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/fwc12_manual.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="7 Components",
+                page_start=97,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="hdr_2",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=2,
+                text="7.6 Sensor List",
+                page_start=97,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="tbl_1",
+                element_type=ElementType.TABLE,
+                order_index=3,
+                text=(
+                    "| P&ID Pos Nr. | Service | Function | Type | Part No. |\n"
+                    "|---|---|---|---|---|\n"
+                    "| M.00.01.01 | Service Tank level | HHL | Fixed point sensor, LMT100 | A00071 |"
+                ),
+                page_start=97,
+                metadata={
+                    "markdown": (
+                        "| P&ID Pos Nr. | Service | Function | Type | Part No. |\n"
+                        "|---|---|---|---|---|\n"
+                        "| M.00.01.01 | Service Tank level | HHL | Fixed point sensor, LMT100 | A00071 |"
+                    ),
+                    "row_count": 2,
+                    "column_count": 5,
+                },
+            ),
+        ],
+        raw_parsed_document=raw_parsed_document,
+    )
+
+    sensor_chunk = find_chunk_by_path(
+        graph,
+        ["7 Components", "7.6 Sensor List"],
+    )
+
+    assert "M.00.01.01" in sensor_chunk.content
+    assert "LMT100" in sensor_chunk.content
 
 
 def test_document_graph_builder_keeps_unrelated_sibling_sections_separate() -> None:

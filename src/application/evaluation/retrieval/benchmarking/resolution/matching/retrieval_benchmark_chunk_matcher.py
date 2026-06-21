@@ -1,6 +1,9 @@
 from src.application.evaluation.retrieval.benchmarking.models import (
     RetrievalBenchmarkCase,
 )
+from src.application.evaluation.retrieval.benchmarking.resolution.matching.retrieval_benchmark_candidate_content import (
+    detect_candidate_role,
+)
 from src.application.evaluation.retrieval.benchmarking.resolution.matching.text_normalization import (
     normalize_free_text,
     normalize_path_segments,
@@ -83,6 +86,8 @@ class RetrievalBenchmarkChunkMatcher:
             exact_section_path_match=exact_section_path_match,
             page_match=page_match,
             viable=viable,
+            role=detect_candidate_role(chunk.content),
+            content_text=chunk.content,
             content_preview=self._content_preview(chunk.content),
         )
 

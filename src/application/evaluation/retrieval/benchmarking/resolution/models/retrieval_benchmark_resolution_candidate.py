@@ -1,6 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from src.application.evaluation.retrieval.benchmarking.resolution.models.retrieval_benchmark_candidate_role import (
+    RetrievalBenchmarkCandidateRole,
+)
+
 
 @dataclass(slots=True)
 class RetrievalBenchmarkResolutionCandidate:
@@ -16,6 +20,10 @@ class RetrievalBenchmarkResolutionCandidate:
     exact_section_path_match: bool = False
     page_match: bool = False
     viable: bool = False
+    role: RetrievalBenchmarkCandidateRole = (
+        RetrievalBenchmarkCandidateRole.ATOMIC_EVIDENCE
+    )
+    content_text: str = ""
     content_preview: str = ""
 
     @property
@@ -37,5 +45,6 @@ class RetrievalBenchmarkResolutionCandidate:
             "exact_section_path_match": self.exact_section_path_match,
             "page_match": self.page_match,
             "viable": self.viable,
+            "role": self.role.value,
             "content_preview": self.content_preview,
         }

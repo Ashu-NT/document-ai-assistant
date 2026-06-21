@@ -293,6 +293,71 @@ def test_dataset_resolver_returns_same_family_chunk_ids_for_split_chunks() -> No
     ]
 
 
+def test_dataset_resolver_allows_same_section_ambiguous_candidates_to_resolve_as_one_family() -> None:
+    benchmark_case = build_case(
+        case_id="DS-008",
+        document_alias="datasheet_alias",
+        file_name="datasheet.pdf",
+        section_path_text="Abmessung / Dimension",
+        expected_page=2,
+        expected_relevant_passage=(
+            "DN80 row d 76 L 118 D 200 D1 160 D2 138."
+        ),
+    )
+    dataset = RetrievalBenchmarkDataset(
+        source_path=Path("TestDoc/retrieval_truth_set.md"),
+        cases=[benchmark_case],
+    )
+    manifest = build_manifest(
+        build_manifest_document(
+            document_alias="datasheet_alias",
+            document_id="doc_datasheet",
+            file_name="datasheet.pdf",
+        )
+    )
+    graph = build_graph(
+        document_id="doc_datasheet",
+        file_name="datasheet.pdf",
+        chunks=[
+            build_chunk(
+                chunk_id="chunk_dim_1",
+                document_id="doc_datasheet",
+                section_id="sec_dimensions",
+                content="DN80 row d 76 L 118",
+                section_path=["Abmessung / Dimension"],
+                page_start=2,
+                page_end=2,
+                sequence_number=1,
+                chunk_index=1,
+                chunk_total=2,
+            ),
+            build_chunk(
+                chunk_id="chunk_dim_2",
+                document_id="doc_datasheet",
+                section_id="sec_dimensions",
+                content="D 200 D1 160 D2 138",
+                section_path=["Abmessung / Dimension"],
+                page_start=2,
+                page_end=2,
+                sequence_number=2,
+                chunk_index=2,
+                chunk_total=2,
+            ),
+        ],
+    )
+
+    resolved_dataset = RetrievalBenchmarkDatasetResolver(
+        document_lookup_service=FakeDocumentLookupService(
+            {"doc_datasheet": graph}
+        ),
+    ).resolve_dataset(dataset, manifest)
+
+    assert resolved_dataset.cases[0].expected_chunk_ids == [
+        "chunk_dim_1",
+        "chunk_dim_2",
+    ]
+
+
 def test_dataset_resolver_raises_diagnostics_for_ambiguous_matches() -> None:
     benchmark_case = build_case(
         case_id="A-001",
@@ -323,7 +388,10 @@ def test_dataset_resolver_raises_diagnostics_for_ambiguous_matches() -> None:
                 chunk_id="chunk_1",
                 document_id="doc_manual",
                 section_id="sec_001",
-                content="Replace hydraulic filter every 1000 operating hours.",
+                content=(
+                    "Replace hydraulic filter every 1000 operating hours. "
+                    "Verify the return line pressure afterward."
+                ),
                 section_path=["Maintenance Schedule"],
                 page_start=10,
                 page_end=10,
@@ -333,7 +401,10 @@ def test_dataset_resolver_raises_diagnostics_for_ambiguous_matches() -> None:
                 chunk_id="chunk_2",
                 document_id="doc_manual",
                 section_id="sec_002",
-                content="Replace hydraulic filter every 1000 operating hours.",
+                content=(
+                    "Replace hydraulic filter every 1000 operating hours. "
+                    "Record the maintenance action in the service log."
+                ),
                 section_path=["Maintenance Schedule"],
                 page_start=10,
                 page_end=10,
@@ -356,6 +427,182 @@ def test_dataset_resolver_raises_diagnostics_for_ambiguous_matches() -> None:
         "Multiple final chunks matched this benchmark case ambiguously."
     )
     assert len(details["diagnostics"][0]["candidate_summaries"]) >= 2
+
+
+def test_dataset_resolver_prefers_atomic_chunk_over_context_companion() -> None:
+    benchmark_case = build_case(
+        case_id="A-CTX-001",
+        document_alias="manual_alias",
+        file_name="manual.pdf",
+        section_path_text="Maintenance Schedule",
+        expected_page=10,
+        expected_relevant_passage=(
+            "Replace hydraulic filter every 1000 operating hours."
+        ),
+    )
+    dataset = RetrievalBenchmarkDataset(
+        source_path=Path("TestDoc/retrieval_truth_set.md"),
+        cases=[benchmark_case],
+    )
+    manifest = build_manifest(
+        build_manifest_document(
+            document_alias="manual_alias",
+            document_id="doc_manual",
+            file_name="manual.pdf",
+        )
+    )
+    graph = build_graph(
+        document_id="doc_manual",
+        file_name="manual.pdf",
+        chunks=[
+            build_chunk(
+                chunk_id="chunk_atomic",
+                document_id="doc_manual",
+                section_id="sec_001",
+                content="Replace hydraulic filter every 1000 operating hours.",
+                section_path=["Maintenance Schedule"],
+                page_start=10,
+                page_end=10,
+                sequence_number=1,
+            ),
+            build_chunk(
+                chunk_id="chunk_context",
+                document_id="doc_manual",
+                section_id="sec_001",
+                content=(
+                    "Context: Replace hydraulic filter every 1000 operating hours."
+                ),
+                section_path=["Maintenance Schedule"],
+                page_start=10,
+                page_end=10,
+                sequence_number=2,
+            ),
+        ],
+    )
+
+    resolved_dataset = RetrievalBenchmarkDatasetResolver(
+        document_lookup_service=FakeDocumentLookupService({"doc_manual": graph}),
+    ).resolve_dataset(dataset, manifest)
+
+    assert resolved_dataset.cases[0].expected_chunk_ids == ["chunk_atomic"]
+
+
+def test_dataset_resolver_collapses_duplicate_atomic_chunks_with_same_evidence() -> None:
+    benchmark_case = build_case(
+        case_id="A-DUP-001",
+        document_alias="manual_alias",
+        file_name="manual.pdf",
+        section_path_text="Technical Data",
+        expected_page=10,
+        expected_relevant_passage=(
+            "Replace hydraulic filter every 1000 operating hours."
+        ),
+    )
+    dataset = RetrievalBenchmarkDataset(
+        source_path=Path("TestDoc/retrieval_truth_set.md"),
+        cases=[benchmark_case],
+    )
+    manifest = build_manifest(
+        build_manifest_document(
+            document_alias="manual_alias",
+            document_id="doc_manual",
+            file_name="manual.pdf",
+        )
+    )
+    graph = build_graph(
+        document_id="doc_manual",
+        file_name="manual.pdf",
+        chunks=[
+            build_chunk(
+                chunk_id="chunk_primary",
+                document_id="doc_manual",
+                section_id="sec_001",
+                content="Replace hydraulic filter every 1000 operating hours.",
+                section_path=["Particulars"],
+                page_start=10,
+                page_end=10,
+                sequence_number=1,
+            ),
+            build_chunk(
+                chunk_id="chunk_duplicate",
+                document_id="doc_manual",
+                section_id="sec_002",
+                content="Replace hydraulic filter every 1000 operating hours.",
+                section_path=["Technical Data / Specification"],
+                page_start=10,
+                page_end=10,
+                sequence_number=2,
+            ),
+        ],
+    )
+
+    resolved_dataset = RetrievalBenchmarkDatasetResolver(
+        document_lookup_service=FakeDocumentLookupService({"doc_manual": graph}),
+    ).resolve_dataset(dataset, manifest)
+
+    assert resolved_dataset.cases[0].expected_chunk_ids in (
+        ["chunk_primary"],
+        ["chunk_duplicate"],
+    )
+
+
+def test_dataset_resolver_prefers_atomic_chunk_over_overview_companion() -> None:
+    benchmark_case = build_case(
+        case_id="A-OVR-001",
+        document_alias="manual_alias",
+        file_name="manual.pdf",
+        section_path_text="Maintenance Schedule",
+        expected_page=10,
+        expected_relevant_passage=(
+            "Replace hydraulic filter every 1000 operating hours."
+        ),
+    )
+    dataset = RetrievalBenchmarkDataset(
+        source_path=Path("TestDoc/retrieval_truth_set.md"),
+        cases=[benchmark_case],
+    )
+    manifest = build_manifest(
+        build_manifest_document(
+            document_alias="manual_alias",
+            document_id="doc_manual",
+            file_name="manual.pdf",
+        )
+    )
+    graph = build_graph(
+        document_id="doc_manual",
+        file_name="manual.pdf",
+        chunks=[
+            build_chunk(
+                chunk_id="chunk_overview",
+                document_id="doc_manual",
+                section_id="sec_001",
+                content=(
+                    "Section overview: Maintenance Schedule Replace hydraulic filter "
+                    "every 1000 operating hours."
+                ),
+                section_path=["Maintenance Schedule"],
+                page_start=10,
+                page_end=10,
+                sequence_number=1,
+            ),
+            build_chunk(
+                chunk_id="chunk_atomic",
+                document_id="doc_manual",
+                section_id="sec_001",
+                content="Replace hydraulic filter every 1000 operating hours.",
+                section_path=["Maintenance Schedule"],
+                page_start=10,
+                page_end=10,
+                sequence_number=2,
+            ),
+        ],
+    )
+
+    resolved_dataset = RetrievalBenchmarkDatasetResolver(
+        document_lookup_service=FakeDocumentLookupService({"doc_manual": graph}),
+    ).resolve_dataset(dataset, manifest)
+
+    assert resolved_dataset.cases[0].expected_chunk_ids == ["chunk_atomic"]
 
 
 def test_dataset_resolver_raises_diagnostics_for_alias_file_mismatch() -> None:
