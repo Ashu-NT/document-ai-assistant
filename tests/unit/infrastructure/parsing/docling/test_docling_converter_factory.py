@@ -8,11 +8,19 @@ class FakeInputFormat:
     PDF = "pdf"
 
 
+class FakeAcceleratorOptions:
+    def __init__(self) -> None:
+        self.num_threads = 4
+
+
 class FakePdfPipelineOptions:
     def __init__(self) -> None:
+        self.images_scale = 1.0
+        self.do_table_structure = True
         self.do_ocr = True
         self.ocr_batch_size = 4
         self.ocr_options = None
+        self.accelerator_options = FakeAcceleratorOptions()
 
 
 class FakePdfFormatOption:
@@ -40,6 +48,9 @@ class FakeDoclingSettings:
     def __init__(
         self,
         *,
+        images_scale: float,
+        num_threads: int,
+        enable_table_structure: bool,
         enable_ocr: bool,
         ocr_engine: str,
         rapidocr_backend: str,
@@ -47,6 +58,9 @@ class FakeDoclingSettings:
         bitmap_area_threshold: float,
         ocr_batch_size: int,
     ) -> None:
+        self.images_scale = images_scale
+        self.num_threads = num_threads
+        self.enable_table_structure = enable_table_structure
         self.enable_ocr = enable_ocr
         self.ocr_engine = ocr_engine
         self.rapidocr_backend = rapidocr_backend
@@ -78,6 +92,9 @@ def test_build_docling_converter_disables_ocr_when_configured(
         docling_converter_factory,
         "docling_settings",
         FakeDoclingSettings(
+            images_scale=0.75,
+            num_threads=1,
+            enable_table_structure=False,
             enable_ocr=False,
             ocr_engine="auto",
             rapidocr_backend="torch",
@@ -90,8 +107,11 @@ def test_build_docling_converter_disables_ocr_when_configured(
     converter = docling_converter_factory.build_docling_converter()
     pdf_option = converter.kwargs["format_options"][FakeInputFormat.PDF]
 
+    assert pdf_option.pipeline_options.images_scale == 0.75
+    assert pdf_option.pipeline_options.do_table_structure is False
     assert pdf_option.pipeline_options.do_ocr is False
     assert pdf_option.pipeline_options.ocr_batch_size == 1
+    assert pdf_option.pipeline_options.accelerator_options.num_threads == 1
     assert pdf_option.pipeline_options.ocr_options is None
 
 
@@ -107,6 +127,9 @@ def test_build_docling_converter_uses_rapidocr_when_requested(
         docling_converter_factory,
         "docling_settings",
         FakeDoclingSettings(
+            images_scale=1.0,
+            num_threads=2,
+            enable_table_structure=True,
             enable_ocr=True,
             ocr_engine="rapidocr",
             rapidocr_backend="torch",
@@ -120,8 +143,11 @@ def test_build_docling_converter_uses_rapidocr_when_requested(
     pdf_option = converter.kwargs["format_options"][FakeInputFormat.PDF]
     ocr_options = pdf_option.pipeline_options.ocr_options
 
+    assert pdf_option.pipeline_options.images_scale == 1.0
+    assert pdf_option.pipeline_options.do_table_structure is True
     assert pdf_option.pipeline_options.do_ocr is True
     assert pdf_option.pipeline_options.ocr_batch_size == 2
+    assert pdf_option.pipeline_options.accelerator_options.num_threads == 2
     assert isinstance(ocr_options, FakeRapidOcrOptions)
     assert ocr_options.kwargs["backend"] == "torch"
     assert ocr_options.kwargs["force_full_page_ocr"] is True
@@ -140,6 +166,9 @@ def test_build_docling_converter_rejects_unsupported_ocr_engine(
         docling_converter_factory,
         "docling_settings",
         FakeDoclingSettings(
+            images_scale=1.0,
+            num_threads=1,
+            enable_table_structure=True,
             enable_ocr=True,
             ocr_engine="paddleocr",
             rapidocr_backend="torch",

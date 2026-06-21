@@ -4,6 +4,21 @@ from src.config.settings.base_settings import AppBaseSettings
 
 
 class DoclingSettings(AppBaseSettings):
+    images_scale: float = Field(
+        default=1.0,
+        alias="DOCLING_IMAGES_SCALE",
+    )
+
+    num_threads: int = Field(
+        default=1,
+        alias="DOCLING_NUM_THREADS",
+    )
+
+    enable_table_structure: bool = Field(
+        default=True,
+        alias="DOCLING_ENABLE_TABLE_STRUCTURE",
+    )
+
     enable_ocr: bool = Field(
         default=True,
         alias="DOCLING_ENABLE_OCR",
