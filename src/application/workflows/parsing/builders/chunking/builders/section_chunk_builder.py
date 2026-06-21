@@ -94,7 +94,12 @@ class SectionChunkBuilder:
         ):
             return []
 
-        fragments = runtime.fragment_builder.build_section_fragments(section, elements)
+        fragments = runtime.fragment_builder.build_section_fragments(
+            document_title=document_title,
+            document_type=document_type,
+            section=section,
+            elements=elements,
+        )
         if not fragments:
             return []
 
@@ -146,7 +151,12 @@ class SectionChunkBuilder:
                 continue
 
             fragments.extend(
-                runtime.fragment_builder.build_section_fragments(section, elements)
+                runtime.fragment_builder.build_section_fragments(
+                    document_title=document_title,
+                    document_type=document_type,
+                    section=section,
+                    elements=elements,
+                )
             )
 
         if not fragments:

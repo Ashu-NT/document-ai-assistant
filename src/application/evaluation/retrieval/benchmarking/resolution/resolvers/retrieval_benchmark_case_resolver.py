@@ -9,6 +9,9 @@ from src.application.evaluation.retrieval.benchmarking.resolution.matching.retri
 from src.application.evaluation.retrieval.benchmarking.resolution.models import (
     RetrievalBenchmarkResolutionDiagnostic,
 )
+from src.application.evaluation.retrieval.benchmarking.resolution.resolvers.retrieval_benchmark_candidate_canonicalizer import (
+    RetrievalBenchmarkCandidateCanonicalizer,
+)
 from src.domain.document import DocumentGraph
 
 
@@ -17,9 +20,13 @@ class RetrievalBenchmarkCaseResolver:
         self,
         *,
         chunk_matcher: RetrievalBenchmarkChunkMatcher | None = None,
+        candidate_canonicalizer: RetrievalBenchmarkCandidateCanonicalizer | None = None,
         max_diagnostic_candidates: int = 5,
     ) -> None:
         self.chunk_matcher = chunk_matcher or RetrievalBenchmarkChunkMatcher()
+        self.candidate_canonicalizer = (
+            candidate_canonicalizer or RetrievalBenchmarkCandidateCanonicalizer()
+        )
         self.max_diagnostic_candidates = max_diagnostic_candidates
 
     def try_resolve_case(
@@ -37,24 +44,36 @@ class RetrievalBenchmarkCaseResolver:
             for candidate in candidates
             if candidate.viable
         ]
+        canonical_candidates = self.candidate_canonicalizer.canonicalize(
+            benchmark_case=benchmark_case,
+            candidates=viable_candidates,
+        )
 
-        if not viable_candidates:
+        if not canonical_candidates:
             return None, self._build_diagnostic(
                 benchmark_case,
                 "No final chunk matched the expected section/page/passage signals.",
                 candidates,
             )
 
-        best_candidate = viable_candidates[0]
-        second_candidate = viable_candidates[1] if len(viable_candidates) > 1 else None
-        if second_candidate is not None and self._is_ambiguous(
-            best_candidate,
-            second_candidate,
+        best_candidate = canonical_candidates[0]
+        second_candidate = (
+            canonical_candidates[1]
+            if len(canonical_candidates) > 1
+            else None
+        )
+        if (
+            second_candidate is not None
+            and not self._same_section_family(best_candidate, second_candidate)
+            and self._is_ambiguous(
+                best_candidate,
+                second_candidate,
+            )
         ):
             return None, self._build_diagnostic(
                 benchmark_case,
                 "Multiple final chunks matched this benchmark case ambiguously.",
-                viable_candidates,
+                canonical_candidates,
             )
 
         resolved_case = copy.deepcopy(benchmark_case)
@@ -120,3 +139,9 @@ class RetrievalBenchmarkCaseResolver:
             best_candidate.passage_overlap - second_candidate.passage_overlap
         )
         return score_gap < 1.0 and overlap_gap <= 0.05
+
+    @staticmethod
+    def _same_section_family(best_candidate, second_candidate) -> bool:
+        if best_candidate.section_id is None:
+            return False
+        return best_candidate.section_id == second_candidate.section_id

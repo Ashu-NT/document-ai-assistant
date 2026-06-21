@@ -69,7 +69,13 @@ class BgeEmbeddingProvider(EmbeddingProvider):
         if self._model is None:
             from sentence_transformers import SentenceTransformer
 
-            self._model = SentenceTransformer(self.model_name)
+            try:
+                self._model = SentenceTransformer(
+                    self.model_name,
+                    local_files_only=True,
+                )
+            except Exception:
+                self._model = SentenceTransformer(self.model_name)
 
         return self._model
 

@@ -8,6 +8,7 @@ class ChunkFragment:
     text: str
     chunk_type: ChunkType
     standalone: bool = False
+    order_index: int = 0
     section_id: str | None = None
     section_title: str | None = None
     section_path: list[str] = field(default_factory=list)

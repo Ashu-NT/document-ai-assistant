@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured_section_fragment_builder import (
+    StructuredSectionFragmentBuilder,
+)
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
@@ -9,6 +12,7 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
     is_low_value_fragment,
 )
 from src.domain.common import ChunkType, ElementType
+from src.domain.common import DocumentType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 
@@ -28,15 +32,31 @@ class ChunkFragmentBuilder:
         self.include_table_context = include_table_context
         self.asset_context_window = max(0, asset_context_window)
         self.asset_context_max_tokens = max(12, asset_context_max_tokens)
+        self.structured_fragment_builder = StructuredSectionFragmentBuilder(
+            text_splitter=text_splitter,
+        )
 
     def build_section_fragments(
         self,
+        *,
+        document_title: str | None,
+        document_type: DocumentType | None,
         section: DocumentSection,
         elements: list[CanonicalElement],
     ) -> list[ChunkFragment]:
-        fragments: list[ChunkFragment] = []
+        structured_fragments, consumed_element_ids = (
+            self.structured_fragment_builder.build(
+                document_title=document_title,
+                document_type=document_type,
+                section=section,
+                elements=elements,
+            )
+        )
+        fragments: list[ChunkFragment] = list(structured_fragments)
 
         for index, element in enumerate(elements):
+            if element.element_id in consumed_element_ids:
+                continue
             fragment = self._build_fragment_from_element(
                 section,
                 elements,
@@ -46,7 +66,7 @@ class ChunkFragmentBuilder:
             if fragment is not None:
                 fragments.append(fragment)
 
-        return fragments
+        return sorted(fragments, key=lambda fragment: fragment.order_index)
 
     def _build_fragment_from_element(
         self,
@@ -90,6 +110,7 @@ class ChunkFragmentBuilder:
             text=text,
             chunk_type=chunk_type,
             standalone=standalone,
+            order_index=element.reading_order or index,
             section_id=section.section_id,
             section_title=section.title,
             section_path=list(section.section_path),
