@@ -38,7 +38,10 @@ from src.application.workflows.classification import (  # noqa: E402
 from src.application.validation.classification import (  # noqa: E402
     DocumentClassificationValidator,
 )
-from src.application.services.ai import LLMService  # noqa: E402
+from src.application.services.ai import LLMService, OCRService  # noqa: E402
+from src.application.workflows.parsing.canonical_element_ocr_enricher import (  # noqa: E402
+    CanonicalElementOCREnricher,
+)
 from src.application.workflows.parsing.normalizers import (  # noqa: E402
     DoclingDocumentNormalizer,
 )
@@ -47,7 +50,9 @@ from src.application.workflows.parsing.builders.chunking.policies import (  # no
     DocumentChunkingPolicyResolver,
 )
 from src.config.paths import ensure_directory, resolve_project_path  # noqa: E402
+from src.config.settings import ocr_settings  # noqa: E402
 from src.domain.document import DocumentHashes  # noqa: E402
+from src.infrastructure.ai.ocr import build_ocr_provider  # noqa: E402
 from src.infrastructure.ai.llm import OllamaLLMProvider  # noqa: E402
 from src.infrastructure.parsing.docling import DoclingParser  # noqa: E402
 from src.shared.exceptions import ApplicationError  # noqa: E402
@@ -1081,6 +1086,15 @@ def run_document_classification(
     return classification, provider
 
 
+def build_optional_ocr_enricher() -> CanonicalElementOCREnricher | None:
+    if not ocr_settings.enabled:
+        return None
+
+    return CanonicalElementOCREnricher(
+        OCRService(build_ocr_provider()),
+    )
+
+
 def resolve_post_classification_chunks(
     *,
     document_graph: Any,
@@ -1155,6 +1169,9 @@ def main() -> int:
             raw_parsed_document,
             document_id,
         )
+        ocr_enricher = build_optional_ocr_enricher()
+        if ocr_enricher is not None:
+            canonical_elements = ocr_enricher.enrich(canonical_elements)
         document_graph = graph_builder.build(
             document_id=document_id,
             file_path=str(input_path),

@@ -48,6 +48,16 @@ class FakeDocumentGraphBuilder:
         return self.document_graph
 
 
+class FakeCanonicalElementOCREnricher:
+    def __init__(self, enriched_elements: list[ParsedCanonicalElement]) -> None:
+        self.enriched_elements = enriched_elements
+        self.calls: list[tuple[list[ParsedCanonicalElement], object]] = []
+
+    def enrich(self, canonical_elements, *, activity_context=None):
+        self.calls.append((canonical_elements, activity_context))
+        return self.enriched_elements
+
+
 class SpyDocumentGraphValidator:
     def __init__(self, validation_result: ValidationResult | None = None) -> None:
         self.validation_result = validation_result or ValidationResult()
@@ -153,3 +163,56 @@ def test_parse_raises_schema_validation_error_when_graph_validation_fails(
     assert parser.calls == ["data/input/pump_manual.pdf"]
     assert validator.calls == [sample_document_graph]
 
+
+def test_parse_runs_optional_ocr_enricher_before_graph_build(
+    sample_document_graph,
+) -> None:
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/pump_manual.pdf",
+        title="Hydraulic Pump Manual",
+        page_count=3,
+        raw_document=object(),
+        parser_name="docling",
+    )
+    canonical_elements = [
+        ParsedCanonicalElement(
+            element_id="pic_001",
+            document_id="doc_placeholder",
+            element_type=ElementType.PICTURE,
+            order_index=1,
+            metadata={"image_path": "outputs/images/pic_001.png"},
+        )
+    ]
+    enriched_elements = [
+        ParsedCanonicalElement(
+            element_id="pic_001",
+            document_id="doc_placeholder",
+            element_type=ElementType.PICTURE,
+            order_index=1,
+            metadata={
+                "image_path": "outputs/images/pic_001.png",
+                "ocr_text": "FILTER HOUSING HP-001",
+            },
+        )
+    ]
+    parser = FakeParser(raw_parsed_document)
+    normalizer = FakeNormalizer(canonical_elements)
+    builder = FakeDocumentGraphBuilder(sample_document_graph)
+    enricher = FakeCanonicalElementOCREnricher(enriched_elements)
+    workflow = ParsingWorkflow(
+        parser=parser,
+        normalizer=normalizer,
+        document_graph_builder=builder,
+        id_generator=IdGenerator(),
+        canonical_element_ocr_enricher=enricher,
+    )
+
+    workflow.parse(
+        file_path="data/input/pump_manual.pdf",
+        file_hash="file_hash_001",
+        content_hash="content_hash_001",
+    )
+
+    assert len(enricher.calls) == 1
+    assert enricher.calls[0][0] == canonical_elements
+    assert builder.calls[0]["canonical_elements"] == enriched_elements
