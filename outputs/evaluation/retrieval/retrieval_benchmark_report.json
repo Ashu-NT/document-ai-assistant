@@ -1,0 +1,2199 @@
+{
+  "status": "resolution_failed",
+  "subset": "full",
+  "truth_set_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\retrieval_truth_set.md",
+  "manifest_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\outputs\\evaluation\\retrieval\\benchmark_corpus_manifest.json",
+  "unresolved_case_count": 26,
+  "unresolved_case_ids": [
+    "M-002",
+    "M-007",
+    "M-014",
+    "M-016",
+    "M-018",
+    "M-022",
+    "C-003",
+    "C-004",
+    "C-005",
+    "D-001",
+    "D-002",
+    "D-003",
+    "D-004",
+    "D-005",
+    "D-006",
+    "D-007",
+    "D-008",
+    "DS-001",
+    "DS-003",
+    "DS-006",
+    "DS-010",
+    "R-001",
+    "R-002",
+    "R-003",
+    "R-004",
+    "R-018"
+  ],
+  "diagnostics": [
+    {
+      "case_id": "M-002",
+      "document_alias": "manual_fwc12",
+      "file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Title / Cover",
+        "expected_page": 1,
+        "expected_relevant_passage": "Serial No: 19P006-900-010-01; Plant Model: FWC12."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_3702a49c7b5e4534b8aa4cb3eda4026b",
+          "section_id": "sec_e76df2a1e1ce4166bd598a9c59fb7da5",
+          "section_path": [
+            "Responsible Solutions"
+          ],
+          "section_path_text": "Responsible Solutions",
+          "page_start": 45,
+          "page_end": 45,
+          "sequence_number": 214,
+          "score": 3.3333,
+          "passage_overlap": 0.3333,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "P14 1 Seal for stationary shredder -05 1 and 2 | | | | | | P15 1 Hood -16 | | | | | | P16 4 Locking nut and washer for hood assembly -25 1 and 2 | | | | | | P17 1 Seal for hood..."
+        },
+        {
+          "chunk_id": "chunk_f631d74cef2f445d9896d73963ec0ad5",
+          "section_id": "sec_167ecc817af54d658e8df9ddebd2aa6d",
+          "section_path": [
+            "2 Safety"
+          ],
+          "section_path_text": "2 Safety",
+          "page_start": 10,
+          "page_end": 10,
+          "sequence_number": 30,
+          "score": 2.2222,
+          "passage_overlap": 0.2222,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "The FWC12 may only be operated within the performance parameters specified. The FWC12 may only be used in conjunction with auxiliary equipment that is recommended and approved b..."
+        },
+        {
+          "chunk_id": "chunk_8cca077ed74e4c84a6084054eccf15e5",
+          "section_id": "sec_490814298230477f99d14e34cfbc1189",
+          "section_path": [
+            "5 Commissioning"
+          ],
+          "section_path_text": "5 Commissioning",
+          "page_start": 16,
+          "page_end": 16,
+          "sequence_number": 61,
+          "score": 2.2222,
+          "passage_overlap": 0.2222,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "All safety regulations and instructions are to be observed. The requirements and instructions in the Technical Manual must be observed. Prior to commissioning FMD must be consul..."
+        },
+        {
+          "chunk_id": "chunk_687c50fe47b04854a748be1d552f92a1",
+          "section_id": "sec_06b049af18b647378fdf05152ab45495",
+          "section_path": [
+            "6 Operation & General Maintenance"
+          ],
+          "section_path_text": "6 Operation & General Maintenance",
+          "page_start": 23,
+          "page_end": 23,
+          "sequence_number": 86,
+          "score": 2.2222,
+          "passage_overlap": 0.2222,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "The day-to-day operator involvement required during normal operation is minimal and consists of basic daily observations, minor maintenance that has come due and response to any..."
+        },
+        {
+          "chunk_id": "chunk_8c6d21cd766f410fb135667f5a6bb462",
+          "section_id": "sec_227336fab4c44772a190723de9d21f7e",
+          "section_path": [
+            "6 Operation & General Maintenance",
+            "Auto to De-watering Press 6.2.2"
+          ],
+          "section_path_text": "6 Operation & General Maintenance > Auto to De-watering Press 6.2.2",
+          "page_start": 23,
+          "page_end": 23,
+          "sequence_number": 87,
+          "score": 2.2222,
+          "passage_overlap": 0.2222,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Context: Select Auto to De-watering Press on the home page then press the Automatic Run button, this will set the FWC12 plant to automatic operation whereby pressing of the mace..."
+        }
+      ]
+    },
+    {
+      "case_id": "M-007",
+      "document_alias": "manual_fwc12",
+      "file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+      "message": "Multiple final chunks matched this benchmark case ambiguously.",
+      "details": {
+        "expected_section_path": "6 Operation & General Maintenance > 6.1 Navigation of the HMI > Manual Operation Page",
+        "expected_page": 20,
+        "expected_relevant_passage": "When operating in manual it may be possible to start pumps with valves closed; particular care must be taken not to damage the plant."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_b725b0da07ea4035ba1cbfa39c12a3db",
+          "section_id": "sec_563de6441a9d4f77bd7ce75559dfc653",
+          "section_path": [
+            "6 Operation & General Maintenance",
+            "6.1 Navigation of the HMI",
+            "HMI Symbols 6.1.1",
+            "Environmentally Responsible Solutions Engineered",
+            "Home Page 6.1.2",
+            "Automatic Operation Page 6.1.3",
+            "Environmentally",
+            "Responsible Solutions",
+            "Engineered",
+            "Manual Operation Page 6.1.4"
+          ],
+          "section_path_text": "6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4",
+          "page_start": 20,
+          "page_end": 20,
+          "sequence_number": 81,
+          "score": 16.5,
+          "passage_overlap": 1.0,
+          "exact_passage_match": true,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Section overview: Manual Operation Page 6.1.4 All main components fitted to the system can be operated manually from the HMI. All components usable in manual appear on the scree..."
+        },
+        {
+          "chunk_id": "chunk_cc0fc9cc89a14c479dffa8e95379b17e",
+          "section_id": "sec_563de6441a9d4f77bd7ce75559dfc653",
+          "section_path": [
+            "6 Operation & General Maintenance",
+            "6.1 Navigation of the HMI",
+            "HMI Symbols 6.1.1",
+            "Environmentally Responsible Solutions Engineered",
+            "Home Page 6.1.2",
+            "Automatic Operation Page 6.1.3",
+            "Environmentally",
+            "Responsible Solutions",
+            "Engineered",
+            "Manual Operation Page 6.1.4"
+          ],
+          "section_path_text": "6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4",
+          "page_start": 20,
+          "page_end": 20,
+          "sequence_number": 83,
+          "score": 16.5,
+          "passage_overlap": 1.0,
+          "exact_passage_match": true,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Context: All main components fitted to the system can be operated manually from the HMI. All components usable in manual appear on the screen with a yellow box highlighting them..."
+        },
+        {
+          "chunk_id": "chunk_b91ba1242e1644c79c73e6904c61f53b",
+          "section_id": "sec_563de6441a9d4f77bd7ce75559dfc653",
+          "section_path": [
+            "6 Operation & General Maintenance",
+            "6.1 Navigation of the HMI",
+            "HMI Symbols 6.1.1",
+            "Environmentally Responsible Solutions Engineered",
+            "Home Page 6.1.2",
+            "Automatic Operation Page 6.1.3",
+            "Environmentally",
+            "Responsible Solutions",
+            "Engineered",
+            "Manual Operation Page 6.1.4"
+          ],
+          "section_path_text": "6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4",
+          "page_start": 20,
+          "page_end": 20,
+          "sequence_number": 84,
+          "score": 16.5,
+          "passage_overlap": 1.0,
+          "exact_passage_match": true,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "CAUTION: When operating in manual it may be possible to start pumps with valves closed, particular care must be taken not to damage the plant with this type of operation."
+        },
+        {
+          "chunk_id": "chunk_53ed70ae5b90442281c915ca5f8af1d1",
+          "section_id": "sec_563de6441a9d4f77bd7ce75559dfc653",
+          "section_path": [
+            "6 Operation & General Maintenance",
+            "6.1 Navigation of the HMI",
+            "HMI Symbols 6.1.1",
+            "Environmentally Responsible Solutions Engineered",
+            "Home Page 6.1.2",
+            "Automatic Operation Page 6.1.3",
+            "Environmentally",
+            "Responsible Solutions",
+            "Engineered",
+            "Manual Operation Page 6.1.4"
+          ],
+          "section_path_text": "6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4",
+          "page_start": 20,
+          "page_end": 20,
+          "sequence_number": 85,
+          "score": 16.5,
+          "passage_overlap": 1.0,
+          "exact_passage_match": true,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Context: CAUTION: When operating in manual it may be possible to start pumps with valves closed, particular care must be taken not to damage the plant with this type of operation."
+        },
+        {
+          "chunk_id": "chunk_eb78ea7c985c4e0abe10a981d81501b7",
+          "section_id": "sec_d5495df937a343ff90326eaa300471d5",
+          "section_path": [
+            "6 Operation & General Maintenance",
+            "Manual Operation 6.2.4"
+          ],
+          "section_path_text": "6 Operation & General Maintenance > Manual Operation 6.2.4",
+          "page_start": 24,
+          "page_end": 24,
+          "sequence_number": 90,
+          "score": 14.0,
+          "passage_overlap": 1.0,
+          "exact_passage_match": true,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": true,
+          "content_preview": "Context: CAUTION: When operating in manual it may be possible to start pumps with valves closed, particular care must be taken not to damage the plant with this type of operation."
+        }
+      ]
+    },
+    {
+      "case_id": "M-014",
+      "document_alias": "manual_fwc12",
+      "file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+      "message": "Multiple final chunks matched this benchmark case ambiguously.",
+      "details": {
+        "expected_section_path": "7 Components > 7.2 Food Waste Press > Commissioning & Shutdown > Shutdown",
+        "expected_page": 55,
+        "expected_relevant_passage": "If idle or shut down for more than 72 hours, the solids plug can dry and solidify; open the service port, retract the cone, and remove the solidified solids plug before restarting."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_eec46dbb40c24981a5d6df4b45835703",
+          "section_id": "sec_3d588062c7424394967e1afac70c3305",
+          "section_path": [
+            "7 Components",
+            "7.1 Macerators",
+            "Commissioning & Shutdown 7.1.8"
+          ],
+          "section_path_text": "7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8",
+          "page_start": 55,
+          "page_end": 55,
+          "sequence_number": 274,
+          "score": 9.0385,
+          "passage_overlap": 0.6538,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "\uf0b7 Never set the air pressure higher than 2.0 bar. \uf0b7 Once the plug is established the optimum air pressure is generally 0.6 \u2013 0.8 bar for GW/BW and 1.0-1.5 bar for food waste. \uf0b7..."
+        },
+        {
+          "chunk_id": "chunk_cb17bbababcc4492987cb12c68d8fccb",
+          "section_id": "sec_ee328ed3ed7e48199371990d03751b43",
+          "section_path": [
+            "7 Components",
+            "7.1 Macerators",
+            "Commissioning & Shutdown 7.1.8",
+            "7.2.7.4 Shutdown"
+          ],
+          "section_path_text": "7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.4 Shutdown",
+          "page_start": 55,
+          "page_end": 55,
+          "sequence_number": 275,
+          "score": 9.0385,
+          "passage_overlap": 0.6538,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Context: \uf0b7 Put up signage to notify that the press has been taken out of operation. Take Note: If the press is to be idle or shut down for more than 72 hours, there is a risk th..."
+        },
+        {
+          "chunk_id": "chunk_2db1dfe6fa89404689ff76e98f56c15b",
+          "section_id": "sec_a1bb8693225d42fb84f686efc6b3bfe7",
+          "section_path": [
+            "7 Components",
+            "7.2 Food Waste Press",
+            "Avoid unexpected stress testing of the solids bag."
+          ],
+          "section_path_text": "7 Components > 7.2 Food Waste Press > Avoid unexpected stress testing of the solids bag.",
+          "page_start": 55,
+          "page_end": 55,
+          "sequence_number": 277,
+          "score": 7.0,
+          "passage_overlap": 0.5,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Open the service port, retract the cone and remove the solidified solids plug before restarting the press. Picture: Solids bag filled with wastewater"
+        },
+        {
+          "chunk_id": "chunk_792f98accc58404baa4297ad0a1493ff",
+          "section_id": "sec_a1bb8693225d42fb84f686efc6b3bfe7",
+          "section_path": [
+            "7 Components",
+            "7.2 Food Waste Press",
+            "Avoid unexpected stress testing of the solids bag."
+          ],
+          "section_path_text": "7 Components > 7.2 Food Waste Press > Avoid unexpected stress testing of the solids bag.",
+          "page_start": 55,
+          "page_end": 55,
+          "sequence_number": 278,
+          "score": 7.0,
+          "passage_overlap": 0.5,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Context: Open the service port, retract the cone and remove the solidified solids plug before restarting the press. Picture: Solids bag filled with wastewater"
+        },
+        {
+          "chunk_id": "chunk_6c9710776eff4ce7a2d64bd711c7622d",
+          "section_id": "sec_893aaffcded64662a0d6b93c5b945edf",
+          "section_path": [
+            "7 Components",
+            "7.1 Macerators",
+            "Commissioning & Shutdown 7.1.8",
+            "7.2.7.2 Initial Test Run"
+          ],
+          "section_path_text": "7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.2 Initial Test Run",
+          "page_start": 54,
+          "page_end": 54,
+          "sequence_number": 271,
+          "score": 5.2308,
+          "passage_overlap": 0.4231,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": true,
+          "content_preview": "WARNING: Risk of crushing / rupture of limbs! Ensure the inspection covers are fitted and secured before starting the machine. If all the pre-commissioning points are checked an..."
+        }
+      ]
+    },
+    {
+      "case_id": "M-016",
+      "document_alias": "manual_fwc12",
+      "file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+      "message": "Multiple final chunks matched this benchmark case ambiguously.",
+      "details": {
+        "expected_section_path": "7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket > Fitting the Press Zone",
+        "expected_page": 63,
+        "expected_relevant_passage": "After attaching the press zone, check all screws and tighten to the correct torque of 35 Nm."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_44d41c4083de4bf894ef9bdfdedd3bdb",
+          "section_id": "sec_e334dee05f0040f8948a4918bf240ada",
+          "section_path": [
+            "7 Components",
+            "7.2 Food Waste Press",
+            "Modifications to the Press 7.2.9",
+            "Environmentally",
+            "Responsible Solutions",
+            "Engineered",
+            "Spare Parts",
+            "Environmentally",
+            "Responsible Solutions Engineered",
+            "Preventive Maintenance 7.2.11",
+            "Environmentally",
+            "Responsible Solutions",
+            "Maintenance & Cleaning of the Screen Basket 7.2.12",
+            "Disassembly of Cylinder Retaining Plate",
+            "Removal of the Discharge Chute Retaining Plate and Enclosure",
+            "Environmentally",
+            "Responsible Solutions",
+            "Discharge Chute Removed",
+            "Removal of the Press Zone",
+            "Environmentally",
+            "Responsible Solutions",
+            "Removal of the Screen Basket",
+            "Ensure that this is carried out as straight as possible to prevent the screen basket jamming!",
+            "Check the Screen Basket",
+            "Environmentally",
+            "Responsible Solutions",
+            "Screen Basket Installation",
+            "Fitting the Press Zone"
+          ],
+          "section_path_text": "7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 > Environmentally > Responsible Solutions > Engineered > Spare Parts > Environmentally > Responsible Solutions Engineered > Preventive Maintenance 7.2.11 > Environmentally > Responsible Solutions > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Environmentally > Responsible Solutions > Discharge Chute Removed > Removal of the Press Zone > Environmentally > Responsible Solutions > Removal of the Screen Basket > Ensure that this is carried out as straight as possible to prevent the screen basket jamming! > Check the Screen Basket > Environmentally > Responsible Solutions > Screen Basket Installation > Fitting the Press Zone",
+          "page_start": 63,
+          "page_end": 63,
+          "sequence_number": 345,
+          "score": 17.0,
+          "passage_overlap": 1.0,
+          "exact_passage_match": true,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Section overview: Fitting the Press Zone If the screen basket has been inserted correctly, then the press zone can be re-attached to the press. Ensure it easily fastens without..."
+        },
+        {
+          "chunk_id": "chunk_5415455dff774a1cb0191f209c683f63",
+          "section_id": "sec_e334dee05f0040f8948a4918bf240ada",
+          "section_path": [
+            "7 Components",
+            "7.2 Food Waste Press",
+            "Modifications to the Press 7.2.9",
+            "Environmentally",
+            "Responsible Solutions",
+            "Engineered",
+            "Spare Parts",
+            "Environmentally",
+            "Responsible Solutions Engineered",
+            "Preventive Maintenance 7.2.11",
+            "Environmentally",
+            "Responsible Solutions",
+            "Maintenance & Cleaning of the Screen Basket 7.2.12",
+            "Disassembly of Cylinder Retaining Plate",
+            "Removal of the Discharge Chute Retaining Plate and Enclosure",
+            "Environmentally",
+            "Responsible Solutions",
+            "Discharge Chute Removed",
+            "Removal of the Press Zone",
+            "Environmentally",
+            "Responsible Solutions",
+            "Removal of the Screen Basket",
+            "Ensure that this is carried out as straight as possible to prevent the screen basket jamming!",
+            "Check the Screen Basket",
+            "Environmentally",
+            "Responsible Solutions",
+            "Screen Basket Installation",
+            "Fitting the Press Zone"
+          ],
+          "section_path_text": "7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 > Environmentally > Responsible Solutions > Engineered > Spare Parts > Environmentally > Responsible Solutions Engineered > Preventive Maintenance 7.2.11 > Environmentally > Responsible Solutions > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Environmentally > Responsible Solutions > Discharge Chute Removed > Removal of the Press Zone > Environmentally > Responsible Solutions > Removal of the Screen Basket > Ensure that this is carried out as straight as possible to prevent the screen basket jamming! > Check the Screen Basket > Environmentally > Responsible Solutions > Screen Basket Installation > Fitting the Press Zone",
+          "page_start": 63,
+          "page_end": 63,
+          "sequence_number": 346,
+          "score": 17.0,
+          "passage_overlap": 1.0,
+          "exact_passage_match": true,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Context: If the screen basket has been inserted correctly, then the press zone can be re-attached to the press. Ensure it easily fastens without any gap to the main housing. Aft..."
+        },
+        {
+          "chunk_id": "chunk_2030875ec3e24c499733e6cdf1c29df7",
+          "section_id": "sec_e334dee05f0040f8948a4918bf240ada",
+          "section_path": [
+            "7 Components",
+            "7.2 Food Waste Press",
+            "Modifications to the Press 7.2.9",
+            "Environmentally",
+            "Responsible Solutions",
+            "Engineered",
+            "Spare Parts",
+            "Environmentally",
+            "Responsible Solutions Engineered",
+            "Preventive Maintenance 7.2.11",
+            "Environmentally",
+            "Responsible Solutions",
+            "Maintenance & Cleaning of the Screen Basket 7.2.12",
+            "Disassembly of Cylinder Retaining Plate",
+            "Removal of the Discharge Chute Retaining Plate and Enclosure",
+            "Environmentally",
+            "Responsible Solutions",
+            "Discharge Chute Removed",
+            "Removal of the Press Zone",
+            "Environmentally",
+            "Responsible Solutions",
+            "Removal of the Screen Basket",
+            "Ensure that this is carried out as straight as possible to prevent the screen basket jamming!",
+            "Check the Screen Basket",
+            "Environmentally",
+            "Responsible Solutions",
+            "Screen Basket Installation",
+            "Fitting the Press Zone"
+          ],
+          "section_path_text": "7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 > Environmentally > Responsible Solutions > Engineered > Spare Parts > Environmentally > Responsible Solutions Engineered > Preventive Maintenance 7.2.11 > Environmentally > Responsible Solutions > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Environmentally > Responsible Solutions > Discharge Chute Removed > Removal of the Press Zone > Environmentally > Responsible Solutions > Removal of the Screen Basket > Ensure that this is carried out as straight as possible to prevent the screen basket jamming! > Check the Screen Basket > Environmentally > Responsible Solutions > Screen Basket Installation > Fitting the Press Zone",
+          "page_start": 63,
+          "page_end": 63,
+          "sequence_number": 347,
+          "score": 17.0,
+          "passage_overlap": 1.0,
+          "exact_passage_match": true,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "After attaching the press zone, check all screws and tighten to the correct torque of 35 Nm."
+        },
+        {
+          "chunk_id": "chunk_774e0ce965764107ae3cb49d2c2694de",
+          "section_id": "sec_e334dee05f0040f8948a4918bf240ada",
+          "section_path": [
+            "7 Components",
+            "7.2 Food Waste Press",
+            "Modifications to the Press 7.2.9",
+            "Environmentally",
+            "Responsible Solutions",
+            "Engineered",
+            "Spare Parts",
+            "Environmentally",
+            "Responsible Solutions Engineered",
+            "Preventive Maintenance 7.2.11",
+            "Environmentally",
+            "Responsible Solutions",
+            "Maintenance & Cleaning of the Screen Basket 7.2.12",
+            "Disassembly of Cylinder Retaining Plate",
+            "Removal of the Discharge Chute Retaining Plate and Enclosure",
+            "Environmentally",
+            "Responsible Solutions",
+            "Discharge Chute Removed",
+            "Removal of the Press Zone",
+            "Environmentally",
+            "Responsible Solutions",
+            "Removal of the Screen Basket",
+            "Ensure that this is carried out as straight as possible to prevent the screen basket jamming!",
+            "Check the Screen Basket",
+            "Environmentally",
+            "Responsible Solutions",
+            "Screen Basket Installation",
+            "Fitting the Press Zone"
+          ],
+          "section_path_text": "7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 > Environmentally > Responsible Solutions > Engineered > Spare Parts > Environmentally > Responsible Solutions Engineered > Preventive Maintenance 7.2.11 > Environmentally > Responsible Solutions > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Environmentally > Responsible Solutions > Discharge Chute Removed > Removal of the Press Zone > Environmentally > Responsible Solutions > Removal of the Screen Basket > Ensure that this is carried out as straight as possible to prevent the screen basket jamming! > Check the Screen Basket > Environmentally > Responsible Solutions > Screen Basket Installation > Fitting the Press Zone",
+          "page_start": 63,
+          "page_end": 63,
+          "sequence_number": 348,
+          "score": 17.0,
+          "passage_overlap": 1.0,
+          "exact_passage_match": true,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Context: After attaching the press zone, check all screws and tighten to the correct torque of 35 Nm."
+        },
+        {
+          "chunk_id": "chunk_1e85e3d704e4481aa8bf778f373f8be6",
+          "section_id": "sec_8ef5bd88efec4653b5481cc273360e17",
+          "section_path": [
+            "7 Components",
+            "7.2 Food Waste Press",
+            "Modifications to the Press 7.2.9",
+            "Environmentally",
+            "Responsible Solutions",
+            "Engineered",
+            "Spare Parts",
+            "Environmentally",
+            "Responsible Solutions Engineered",
+            "Preventive Maintenance 7.2.11",
+            "Environmentally",
+            "Responsible Solutions",
+            "Maintenance & Cleaning of the Screen Basket 7.2.12",
+            "Disassembly of Cylinder Retaining Plate",
+            "Removal of the Discharge Chute Retaining Plate and Enclosure",
+            "Environmentally",
+            "Responsible Solutions",
+            "Discharge Chute Removed",
+            "Removal of the Press Zone",
+            "Environmentally",
+            "Responsible Solutions",
+            "Removal of the Screen Basket",
+            "Ensure that this is carried out as straight as possible to prevent the screen basket jamming!",
+            "Check the Screen Basket",
+            "Environmentally",
+            "Responsible Solutions"
+          ],
+          "section_path_text": "7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 > Environmentally > Responsible Solutions > Engineered > Spare Parts > Environmentally > Responsible Solutions Engineered > Preventive Maintenance 7.2.11 > Environmentally > Responsible Solutions > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Environmentally > Responsible Solutions > Discharge Chute Removed > Removal of the Press Zone > Environmentally > Responsible Solutions > Removal of the Screen Basket > Ensure that this is carried out as straight as possible to prevent the screen basket jamming! > Check the Screen Basket > Environmentally > Responsible Solutions",
+          "page_start": 63,
+          "page_end": 63,
+          "sequence_number": 343,
+          "score": 5.75,
+          "passage_overlap": 0.375,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Engineered Screen Basket Installation The installation of a cleaned or new screen basket occurs in the reverse order to disassembly. When inserting the screen basket, be sure to..."
+        }
+      ]
+    },
+    {
+      "case_id": "M-018",
+      "document_alias": "manual_fwc12",
+      "file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+      "message": "Multiple final chunks matched this benchmark case ambiguously.",
+      "details": {
+        "expected_section_path": "7 Components > 7.3 Vacuum / Transfer Pump > Maintenance > Pump in General",
+        "expected_page": 78,
+        "expected_relevant_passage": "Never run the pump dry; a few rotations in dry condition will damage the rotor lobes."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_18a8d2faa112482a8bd60818b0566b47",
+          "section_id": "sec_beeaa5e471784a68805eb0ce47b9b5a8",
+          "section_path": [
+            "7 Components",
+            "7.3 Vacuum / Transfer Pump",
+            "7.3.7"
+          ],
+          "section_path_text": "7 Components > 7.3 Vacuum / Transfer Pump > 7.3.7",
+          "page_start": 78,
+          "page_end": 78,
+          "sequence_number": 428,
+          "score": 16.0,
+          "passage_overlap": 1.0,
+          "exact_passage_match": true,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Context: Start-Up Take Note: Never run the pump dry! - A few rotations in dry condition will damage the rotor lobes. Pay strict attention to the following:"
+        },
+        {
+          "chunk_id": "chunk_0b7c9b78b3e54077b805698b4d814263",
+          "section_id": "sec_beeaa5e471784a68805eb0ce47b9b5a8",
+          "section_path": [
+            "7 Components",
+            "7.3 Vacuum / Transfer Pump",
+            "7.3.7"
+          ],
+          "section_path_text": "7 Components > 7.3 Vacuum / Transfer Pump > 7.3.7",
+          "page_start": 78,
+          "page_end": 78,
+          "sequence_number": 429,
+          "score": 16.0,
+          "passage_overlap": 1.0,
+          "exact_passage_match": true,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Take Note: Never run the pump dry! - A few rotations in dry condition will damage the rotor lobes. Pay strict attention to the following: \uf0b7 Before starting up for the first time..."
+        },
+        {
+          "chunk_id": "chunk_ceb3214166364b54aa66e4296a9e1baf",
+          "section_id": "sec_beeaa5e471784a68805eb0ce47b9b5a8",
+          "section_path": [
+            "7 Components",
+            "7.3 Vacuum / Transfer Pump",
+            "7.3.7"
+          ],
+          "section_path_text": "7 Components > 7.3 Vacuum / Transfer Pump > 7.3.7",
+          "page_start": 78,
+          "page_end": 78,
+          "sequence_number": 432,
+          "score": 7.0,
+          "passage_overlap": 0.5,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Context: CAUTION: This a positive displacement pump, which is capable of generating pressures that could cause damage \u2013 in extreme cases the bursting of pipes or vessels. CAUTIO..."
+        },
+        {
+          "chunk_id": "chunk_089a411d4f7442ebb750b4a94e0bd267",
+          "section_id": "sec_beeaa5e471784a68805eb0ce47b9b5a8",
+          "section_path": [
+            "7 Components",
+            "7.3 Vacuum / Transfer Pump",
+            "7.3.7"
+          ],
+          "section_path_text": "7 Components > 7.3 Vacuum / Transfer Pump > 7.3.7",
+          "page_start": 78,
+          "page_end": 78,
+          "sequence_number": 433,
+          "score": 6.2857,
+          "passage_overlap": 0.4286,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "CAUTION: Possible damage to the pump by exceeding the pressure rating of the pump head and inlet and outlet connections. Never run the pump against a closed valve."
+        },
+        {
+          "chunk_id": "chunk_7f77c0fe8b7e4a6ab29aba284d90d1ad",
+          "section_id": "sec_beeaa5e471784a68805eb0ce47b9b5a8",
+          "section_path": [
+            "7 Components",
+            "7.3 Vacuum / Transfer Pump",
+            "7.3.7"
+          ],
+          "section_path_text": "7 Components > 7.3 Vacuum / Transfer Pump > 7.3.7",
+          "page_start": 78,
+          "page_end": 78,
+          "sequence_number": 430,
+          "score": 5.5714,
+          "passage_overlap": 0.3571,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Context: \uf0b7 Open valves and vents before starting the pump. \uf0b7 Check the direction of rotation and flow by briefly switching on the pump drive. CAUTION: This a positive displaceme..."
+        }
+      ]
+    },
+    {
+      "case_id": "M-022",
+      "document_alias": "manual_fwc12",
+      "file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "7 Components > 7.6 Sensor List",
+        "expected_page": 97,
+        "expected_relevant_passage": "P&ID Pos Nr. M.00.01.01; Service Tank level; Function HHL; Type Fixed point sensor, LMT100; Part No. A00071."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_812a8ff28d0946e8a30205bbb0bd1866",
+          "section_id": "sec_5fad0d9cd8d949209ce9ed9763a4d756",
+          "section_path": [
+            "7 Components",
+            "7.6 Sensor List"
+          ],
+          "section_path_text": "7 Components > 7.6 Sensor List",
+          "page_start": 97,
+          "page_end": 97,
+          "sequence_number": 527,
+          "score": 6.5,
+          "passage_overlap": 0.15,
+          "exact_passage_match": false,
+          "exact_section_path_match": true,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "Section overview: 7.6 Sensor List Refer to Annex 2 for P&ID-200429 showing sensor locations: Refer to Annex 3 for sensor data sheets: FMD FundamentalMarineDevelopments Subsectio..."
+        },
+        {
+          "chunk_id": "chunk_a5633c94acf140c7a80d1e1e0065c6ec",
+          "section_id": "sec_5fad0d9cd8d949209ce9ed9763a4d756",
+          "section_path": [
+            "7 Components",
+            "7.6 Sensor List"
+          ],
+          "section_path_text": "7 Components > 7.6 Sensor List",
+          "page_start": 97,
+          "page_end": 97,
+          "sequence_number": 528,
+          "score": 6.5,
+          "passage_overlap": 0.15,
+          "exact_passage_match": false,
+          "exact_section_path_match": true,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "Refer to Annex 2 for P&ID-200429 showing sensor locations: Refer to Annex 3 for sensor data sheets:"
+        },
+        {
+          "chunk_id": "chunk_1146e68f62064f4b9864a4ea5c849a05",
+          "section_id": "sec_5fad0d9cd8d949209ce9ed9763a4d756",
+          "section_path": [
+            "7 Components",
+            "7.6 Sensor List"
+          ],
+          "section_path_text": "7 Components > 7.6 Sensor List",
+          "page_start": 97,
+          "page_end": 97,
+          "sequence_number": 529,
+          "score": 5.5,
+          "passage_overlap": 0.05,
+          "exact_passage_match": false,
+          "exact_section_path_match": true,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "Context: Refer to Annex 3 for sensor data sheets:"
+        },
+        {
+          "chunk_id": "chunk_3ddef5f104c245a6bdd9f2f3b6d64fa7",
+          "section_id": "sec_ecc52898c9d645d491c5732c8cca413d",
+          "section_path": [
+            "6 Operation & General Maintenance",
+            "6.1 Navigation of the HMI",
+            "HMI Symbols 6.1.1",
+            "Environmentally Responsible Solutions Engineered",
+            "Home Page 6.1.2",
+            "Automatic Operation Page 6.1.3",
+            "Environmentally",
+            "Responsible Solutions",
+            "Engineered",
+            "Manual Operation Page 6.1.4",
+            "Environmentally",
+            "Settings Page 1 6.1.5"
+          ],
+          "section_path_text": "6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5",
+          "page_start": 21,
+          "page_end": 21,
+          "sequence_number": 533,
+          "score": 3.0,
+          "passage_overlap": 0.3,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Section overview: Settings Page 1 6.1.5 User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank 000 000 000 000 mbar M.00.03.01 Vac&Press/FoodwastePump 000 000 000..."
+        },
+        {
+          "chunk_id": "chunk_0287084627f24d548ffbe100103534e1",
+          "section_id": "sec_e76df2a1e1ce4166bd598a9c59fb7da5",
+          "section_path": [
+            "Responsible Solutions"
+          ],
+          "section_path_text": "Responsible Solutions",
+          "page_start": 45,
+          "page_end": 45,
+          "sequence_number": 213,
+          "score": 2.5,
+          "passage_overlap": 0.25,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "| Position No: | Qty: Denomination: Spare Part No: Included in Service Package: | | | | |----------------------------------------------------------------------------------------..."
+        }
+      ]
+    },
+    {
+      "case_id": "C-003",
+      "document_alias": "certificate_hoses_ham2423501",
+      "file_name": "0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Particulars",
+        "expected_page": 1,
+        "expected_relevant_passage": "Quantity 4 pcs; Description Flexible Hoses; Size DN 8."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_c09684f14d39433f80aa78d4567634a2",
+          "section_id": "sec_5a7c30f484c04165a4991a4b6eb62c1c",
+          "section_path": [
+            "Remarks"
+          ],
+          "section_path_text": "Remarks",
+          "page_start": 2,
+          "page_end": 2,
+          "sequence_number": 8,
+          "score": 2.7222,
+          "passage_overlap": 0.2222,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Hamburg Lloyd's Register Group Limited, its affiliates and subsidiaries and their respective officers, employees or agents are, individually and collectively, referred to in thi..."
+        },
+        {
+          "chunk_id": "chunk_b5fb5661b5da4afc8372c665d9915179",
+          "section_id": "sec_ccd53433786546ef96f684489d894e61",
+          "section_path": [
+            "0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501"
+          ],
+          "section_path_text": "0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 1,
+          "score": 2.0,
+          "passage_overlap": 0.0,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "Context: LR"
+        },
+        {
+          "chunk_id": "chunk_8e61248aa7d2411ab93d442143cb66e9",
+          "section_id": "sec_ccd53433786546ef96f684489d894e61",
+          "section_path": [
+            "0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501"
+          ],
+          "section_path_text": "0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 2,
+          "score": 2.0,
+          "passage_overlap": 0.0,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "LR"
+        },
+        {
+          "chunk_id": "chunk_92558b87b1e7454b874c7ac638ff91f0",
+          "section_id": "sec_17cb124eb28f4fe9a12b8ec8c7f59008",
+          "section_path": [
+            "Hoses"
+          ],
+          "section_path_text": "Hoses",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 3,
+          "score": 2.0,
+          "passage_overlap": 0.0,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "This is to certify that the undersigned Surveyor to LLOYD'S REGISTER did at the request of the below customer, attend the testing and examination of the product(s) described bel..."
+        },
+        {
+          "chunk_id": "chunk_d42fde148f094faabb0b4a92f2845619",
+          "section_id": "sec_5a7c30f484c04165a4991a4b6eb62c1c",
+          "section_path": [
+            "Remarks"
+          ],
+          "section_path_text": "Remarks",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 4,
+          "score": 2.0,
+          "passage_overlap": 0.0,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "Context: This LR certificate is only valid in conjunction with"
+        }
+      ]
+    },
+    {
+      "case_id": "C-004",
+      "document_alias": "certificate_hoses_ham2423501",
+      "file_name": "0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501.pdf",
+      "message": "Multiple final chunks matched this benchmark case ambiguously.",
+      "details": {
+        "expected_section_path": "Particulars",
+        "expected_page": 1,
+        "expected_relevant_passage": "Test pressure 700 bar; Design pressure 350 bar."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_e449fdb5019e4028ac9a672c74aa750a",
+          "section_id": "sec_7106da72350a4f7eb51fba4881e2dabb",
+          "section_path": [
+            "Messdaten:/results"
+          ],
+          "section_path_text": "Messdaten:/results",
+          "page_start": 3,
+          "page_end": 3,
+          "sequence_number": 13,
+          "score": 8.3333,
+          "passage_overlap": 0.8333,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": true,
+          "content_preview": "We certify,thatthe teslresultfromlests on lhemaleral tsef (ar from tocts on slandardized toslspecimen,whichispert oftho deliveredmaterill complies withthe lermsof the order. | S..."
+        },
+        {
+          "chunk_id": "chunk_51a902e132024e819333fbff97284745",
+          "section_id": "sec_7106da72350a4f7eb51fba4881e2dabb",
+          "section_path": [
+            "Messdaten:/results"
+          ],
+          "section_path_text": "Messdaten:/results",
+          "page_start": 5,
+          "page_end": 5,
+          "sequence_number": 31,
+          "score": 8.3333,
+          "passage_overlap": 0.8333,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": true,
+          "content_preview": "EswirdbesliitdsasPrfegbnisusPrfungenaderLiferung sbt(bwusPrufnenandnNmnanggobnnPrfenhitenodnndio LiferunginTlitdnVrinbrungnbi deBestanmentriht Weceritstfmtssthtrilslffmsnstndiim..."
+        },
+        {
+          "chunk_id": "chunk_cda88f4a75d3482f88b2e55db8946b12",
+          "section_id": "sec_7106da72350a4f7eb51fba4881e2dabb",
+          "section_path": [
+            "Messdaten:/results"
+          ],
+          "section_path_text": "Messdaten:/results",
+          "page_start": 6,
+          "page_end": 6,
+          "sequence_number": 40,
+          "score": 8.3333,
+          "passage_overlap": 0.8333,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": true,
+          "content_preview": "Eswirdbetii dsdasPrfgbisausPrfungnndLieferungbstbwusPrfngnandnnmnngennPrfnhtnvon dnnie LerunnTolisl dnVrnbrunenbdestonnhmntsprit. Wecerify,htestresulfromlestsonthmaterial itl(cr..."
+        }
+      ]
+    },
+    {
+      "case_id": "C-005",
+      "document_alias": "certificate_hoses_ham2423501",
+      "file_name": "0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "General information",
+        "expected_page": 1,
+        "expected_relevant_passage": "Manufacturer Schauenburg Industrietechnik GmbH; Intended for H. A. Schr\u00f6der GmbH + Co. KG, Schiffdorf-Wehden / Germany, For Stock."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_73098b1d249949e0986992317248c7f0",
+          "section_id": "sec_1c140b29b0714e2f8d6980088af2823f",
+          "section_path": [
+            "Industrietechnik GmbH"
+          ],
+          "section_path_text": "Industrietechnik GmbH",
+          "page_start": 3,
+          "page_end": 3,
+          "sequence_number": 11,
+          "score": 4.375,
+          "passage_overlap": 0.4375,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "SCHAUENBURG Industrietechnik GmbH HeinrichA.SchroderGmbH+Co.KG 27619 Schiffdorf-Wehden Datum/date: 25.11.2024 Sachbearbeiter/contact Fax-Nr./fax Telefon-Nr/telephone E-Mail / e-..."
+        },
+        {
+          "chunk_id": "chunk_cbcaabbf9d17457d85f92d1609b66ad6",
+          "section_id": "sec_b746139ffd6a4acbb86e5d122a758eb5",
+          "section_path": [
+            "SCHAUENBURG"
+          ],
+          "section_path_text": "SCHAUENBURG",
+          "page_start": 4,
+          "page_end": 4,
+          "sequence_number": 20,
+          "score": 4.375,
+          "passage_overlap": 0.4375,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Industrietechnik GmbH SCHAUENBURG Industrietechnik GmbH HeinrichA.Schroder GmbH+Co.KG 27619 Schiffdorf-Wehden Datum / date: 25.11.2024 Sachbearbeiter/contact Telefon-Nr/telephon..."
+        },
+        {
+          "chunk_id": "chunk_36062f3ed9084c33906e8090d65f02f3",
+          "section_id": "sec_b746139ffd6a4acbb86e5d122a758eb5",
+          "section_path": [
+            "SCHAUENBURG"
+          ],
+          "section_path_text": "SCHAUENBURG",
+          "page_start": 5,
+          "page_end": 5,
+          "sequence_number": 29,
+          "score": 4.375,
+          "passage_overlap": 0.4375,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Industrietechnik GmbH SCHAUENBURGIndustrietechnikGmbH Heinrich A.Schroder GmbH+ Co.KG 27619 Schiffdorf-Wehden Datum/date: 25.11.2024 Sachbearbeiter/contact Telefon-Nr/telephone..."
+        },
+        {
+          "chunk_id": "chunk_6d8c6a7ca7304d26a61877c31f90e64f",
+          "section_id": "sec_1c140b29b0714e2f8d6980088af2823f",
+          "section_path": [
+            "Industrietechnik GmbH"
+          ],
+          "section_path_text": "Industrietechnik GmbH",
+          "page_start": 6,
+          "page_end": 6,
+          "sequence_number": 38,
+          "score": 3.75,
+          "passage_overlap": 0.375,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "SCHAUENBURG Industrietechnik GmbH HeinrichA.Schroder GmbH+Co.KG HauptstraBe 77 27619Schiffdorf-Wehden Datum/date: 25.11.2024 Sachbearbeiter/contact Kirsten Freitag Telefon-Nr/te..."
+        },
+        {
+          "chunk_id": "chunk_92558b87b1e7454b874c7ac638ff91f0",
+          "section_id": "sec_17cb124eb28f4fe9a12b8ec8c7f59008",
+          "section_path": [
+            "Hoses"
+          ],
+          "section_path_text": "Hoses",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 3,
+          "score": 2.625,
+          "passage_overlap": 0.0625,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "This is to certify that the undersigned Surveyor to LLOYD'S REGISTER did at the request of the below customer, attend the testing and examination of the product(s) described bel..."
+        }
+      ]
+    },
+    {
+      "case_id": "D-001",
+      "document_alias": "drawing_nav_lights_13759_3540",
+      "file_name": "13759_3540_01.00_REV.05 Arrangement Navigation Lights and Signals_AS-BUILT.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Title block",
+        "expected_page": 1,
+        "expected_relevant_passage": "Drawing Number 13759/3540-01.00; title ARRANGEMENT NAVIGATION LIGHTS AND SIGNALS."
+      },
+      "candidate_summaries": []
+    },
+    {
+      "case_id": "D-002",
+      "document_alias": "drawing_nav_lights_13759_3540",
+      "file_name": "13759_3540_01.00_REV.05 Arrangement Navigation Lights and Signals_AS-BUILT.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Revision / modification table",
+        "expected_page": 1,
+        "expected_relevant_passage": "Revision 05 see modification protocol 14.11.2025; as built 18.11.2025."
+      },
+      "candidate_summaries": []
+    },
+    {
+      "case_id": "D-003",
+      "document_alias": "drawing_nav_lights_13759_3540",
+      "file_name": "13759_3540_01.00_REV.05 Arrangement Navigation Lights and Signals_AS-BUILT.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Title block / vessel particulars",
+        "expected_page": 1,
+        "expected_relevant_passage": "Length over all 114.20 m; breadth overall 21.00 m; draught to DWL 4.70 m; draught loadline 4.80 m."
+      },
+      "candidate_summaries": []
+    },
+    {
+      "case_id": "D-004",
+      "document_alias": "drawing_nav_lights_13759_3540",
+      "file_name": "13759_3540_01.00_REV.05 Arrangement Navigation Lights and Signals_AS-BUILT.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Lamp labels",
+        "expected_page": 1,
+        "expected_relevant_passage": "1 - MASTHEAD LAMP 1 (MAIN MAST) WHITE - 30\u00b0 3540.3000; 2 - MASTHEAD LAMP 2 (SB) WHITE - 97.5\u00b0 3540.3100; 3 - MASTHEAD LAMP 3 (PS) WHITE - 97.5\u00b0 3540.3200."
+      },
+      "candidate_summaries": []
+    },
+    {
+      "case_id": "D-005",
+      "document_alias": "drawing_nav_lights_13759_3540",
+      "file_name": "13759_3540_01.00_REV.05 Arrangement Navigation Lights and Signals_AS-BUILT.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Lamp labels",
+        "expected_page": 1,
+        "expected_relevant_passage": "13 - SIDE LAMP SB - GREEN; 14 - SIDE LAMP PS - RED."
+      },
+      "candidate_summaries": []
+    },
+    {
+      "case_id": "D-006",
+      "document_alias": "drawing_nav_lights_13759_3540",
+      "file_name": "13759_3540_01.00_REV.05 Arrangement Navigation Lights and Signals_AS-BUILT.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Lamp labels",
+        "expected_page": 1,
+        "expected_relevant_passage": "15 - COMBINED ANCHOR (360\u00b0) / MASTHEAD (225\u00b0) LIGHT WHITE / WHITE 3540.6000; 16 - COMBINED ANCHOR (360\u00b0) / TOWING (135\u00b0) LIGHT WHITE / YELLOW 3540.7000."
+      },
+      "candidate_summaries": []
+    },
+    {
+      "case_id": "D-007",
+      "document_alias": "drawing_nav_lights_13759_3540",
+      "file_name": "13759_3540_01.00_REV.05 Arrangement Navigation Lights and Signals_AS-BUILT.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "COLREG table",
+        "expected_page": 1,
+        "expected_relevant_passage": "Two masthead lights horizontal distance not less than 0.5 x length overall; desired >57.10 m; actual 62.23 m."
+      },
+      "candidate_summaries": []
+    },
+    {
+      "case_id": "D-008",
+      "document_alias": "drawing_nav_lights_13759_3540",
+      "file_name": "13759_3540_01.00_REV.05 Arrangement Navigation Lights and Signals_AS-BUILT.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "COLREG table",
+        "expected_page": 1,
+        "expected_relevant_passage": "Sidelights vertical distance not more than 75% of forward masthead; desired <9.00 m; actual 6.88 m."
+      },
+      "candidate_summaries": []
+    },
+    {
+      "case_id": "DS-001",
+      "document_alias": "datasheet_mk311xxx",
+      "file_name": "DN25 - DN80_MK311xxx.pdf",
+      "message": "Multiple final chunks matched this benchmark case ambiguously.",
+      "details": {
+        "expected_section_path": "Technical Data / Specification",
+        "expected_page": 1,
+        "expected_relevant_passage": "Type MK311xxx: 2-way Wafer-type Ball valve, full bore, PN16 / PN40, stainless steel."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_26a7f2f9d6fc4ecb9ff0c070059d6c0d",
+          "section_id": "sec_3086ba96e08b4867b85183c229f84870",
+          "section_path": [
+            "MK311xxx"
+          ],
+          "section_path_text": "MK311xxx",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 18,
+          "score": 11.2308,
+          "passage_overlap": 0.9231,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel"
+        },
+        {
+          "chunk_id": "chunk_960c9e83371f4b6fa797f6aad3412055",
+          "section_id": "sec_3086ba96e08b4867b85183c229f84870",
+          "section_path": [
+            "MK311xxx"
+          ],
+          "section_path_text": "MK311xxx",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 19,
+          "score": 11.2308,
+          "passage_overlap": 0.9231,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Context: 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel"
+        },
+        {
+          "chunk_id": "chunk_e22cca264ca5485491ce043a85752f62",
+          "section_id": "sec_99404a9df7c84648ae1673f76b4d4b17",
+          "section_path": [
+            "Ordering example: e.g. MK311007 ="
+          ],
+          "section_path_text": "Ordering example: e.g. MK311007 =",
+          "page_start": 2,
+          "page_end": 2,
+          "sequence_number": 23,
+          "score": 8.1923,
+          "passage_overlap": 0.7692,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": true,
+          "content_preview": "2-way Wafer-type Ball valve, Stainless steel, Handle, DN 50 | 1. + 2. Digit Product | 3. + 4. Digit Materials Body / seals / ball | 5. Digit Operation | 6. Digit Options | 7. +..."
+        },
+        {
+          "chunk_id": "chunk_49addd13c86443e99232566313b5bee8",
+          "section_id": "sec_dcf4f2737d4e4c6a876f63c0a224ba80",
+          "section_path": [
+            "DESIGN"
+          ],
+          "section_path_text": "DESIGN",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 8,
+          "score": 6.6154,
+          "passage_overlap": 0.4615,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem."
+        }
+      ]
+    },
+    {
+      "case_id": "DS-003",
+      "document_alias": "datasheet_mk311xxx",
+      "file_name": "DN25 - DN80_MK311xxx.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "CONNECTION",
+        "expected_page": 1,
+        "expected_relevant_passage": "Flange DN15 \u2026 DN200. DN15 \u2026 DN50 measured to PN40; DN65 \u2026 DN200 measured to PN16; ball valve DN65 delivered in 4-hole execution."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_26a7f2f9d6fc4ecb9ff0c070059d6c0d",
+          "section_id": "sec_3086ba96e08b4867b85183c229f84870",
+          "section_path": [
+            "MK311xxx"
+          ],
+          "section_path_text": "MK311xxx",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 18,
+          "score": 4.5,
+          "passage_overlap": 0.25,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel"
+        },
+        {
+          "chunk_id": "chunk_960c9e83371f4b6fa797f6aad3412055",
+          "section_id": "sec_3086ba96e08b4867b85183c229f84870",
+          "section_path": [
+            "MK311xxx"
+          ],
+          "section_path_text": "MK311xxx",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 19,
+          "score": 4.5,
+          "passage_overlap": 0.25,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "Context: 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel"
+        },
+        {
+          "chunk_id": "chunk_49addd13c86443e99232566313b5bee8",
+          "section_id": "sec_dcf4f2737d4e4c6a876f63c0a224ba80",
+          "section_path": [
+            "DESIGN"
+          ],
+          "section_path_text": "DESIGN",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 8,
+          "score": 3.875,
+          "passage_overlap": 0.1875,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem."
+        },
+        {
+          "chunk_id": "chunk_f5bfdf6d148d4d55b397a556619eff08",
+          "section_id": "sec_4475ad493a0442989031875b63b8baa7",
+          "section_path": [
+            "TEMPERATURE RANGE"
+          ],
+          "section_path_text": "TEMPERATURE RANGE",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 12,
+          "score": 3.875,
+          "passage_overlap": 0.1875,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "-25\u00b0C \u2026 +180\u00b0C At media temperature above 80\u00b0C or large oscilating media temperatures we recommend a pressure compensation bore in the ball. At media which tend to steam-buildin..."
+        },
+        {
+          "chunk_id": "chunk_d1154899d2624527926e578aceec62ef",
+          "section_id": "sec_3086ba96e08b4867b85183c229f84870",
+          "section_path": [
+            "MK311xxx"
+          ],
+          "section_path_text": "MK311xxx",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 15,
+          "score": 3.25,
+          "passage_overlap": 0.125,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "2-Wege Kompakt Kugelhahn voller Durchgang PN16 / PN40 Edelstahl"
+        }
+      ]
+    },
+    {
+      "case_id": "DS-006",
+      "document_alias": "datasheet_mk311xxx",
+      "file_name": "DN25 - DN80_MK311xxx.pdf",
+      "message": "Multiple final chunks matched this benchmark case ambiguously.",
+      "details": {
+        "expected_section_path": "Ordering example",
+        "expected_page": 2,
+        "expected_relevant_passage": "MK311007 = 2-way Wafer-type Ball valve, stainless steel, handle, DN 50."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_2bf543e372074b7e879372c4977b7ddb",
+          "section_id": "sec_99404a9df7c84648ae1673f76b4d4b17",
+          "section_path": [
+            "Ordering example: e.g. MK311007 ="
+          ],
+          "section_path_text": "Ordering example: e.g. MK311007 =",
+          "page_start": 2,
+          "page_end": 2,
+          "sequence_number": 22,
+          "score": 11.6667,
+          "passage_overlap": 0.9167,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "2-way Wafer-type Ball valve, Stainless steel, Handle, DN 50"
+        },
+        {
+          "chunk_id": "chunk_e22cca264ca5485491ce043a85752f62",
+          "section_id": "sec_99404a9df7c84648ae1673f76b4d4b17",
+          "section_path": [
+            "Ordering example: e.g. MK311007 ="
+          ],
+          "section_path_text": "Ordering example: e.g. MK311007 =",
+          "page_start": 2,
+          "page_end": 2,
+          "sequence_number": 23,
+          "score": 11.6667,
+          "passage_overlap": 0.9167,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "2-way Wafer-type Ball valve, Stainless steel, Handle, DN 50 | 1. + 2. Digit Product | 3. + 4. Digit Materials Body / seals / ball | 5. Digit Operation | 6. Digit Options | 7. +..."
+        }
+      ]
+    },
+    {
+      "case_id": "DS-010",
+      "document_alias": "datasheet_mk311xxx",
+      "file_name": "DN25 - DN80_MK311xxx.pdf",
+      "message": "Multiple final chunks matched this benchmark case ambiguously.",
+      "details": {
+        "expected_section_path": "Druck - Temperatur - Diagramm / Pressure - Temperature - Diagram",
+        "expected_page": 4,
+        "expected_relevant_passage": "Pressure-Temperature-Diagram (PTFE) shown on page 4."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_be788c4cfa1444dbac49366ddf80cd43",
+          "section_id": "sec_66aeb2a8a1454a8c94ac631f3c09ac5e",
+          "section_path": [
+            "Abmessung DN125 - DN200 / Dimension DN125 - DN200"
+          ],
+          "section_path_text": "Abmessung DN125 - DN200 / Dimension DN125 - DN200",
+          "page_start": 4,
+          "page_end": 4,
+          "sequence_number": 35,
+          "score": 5.75,
+          "passage_overlap": 0.375,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Context: 200 \u00b0C Druck-Temperatur-Diagramm (PTFE) Pressure-Temperature-Diagramm (PTFE)"
+        },
+        {
+          "chunk_id": "chunk_f33d2f9212af454caafe0ca78769c87d",
+          "section_id": "sec_66aeb2a8a1454a8c94ac631f3c09ac5e",
+          "section_path": [
+            "Abmessung DN125 - DN200 / Dimension DN125 - DN200"
+          ],
+          "section_path_text": "Abmessung DN125 - DN200 / Dimension DN125 - DN200",
+          "page_start": 4,
+          "page_end": 4,
+          "sequence_number": 36,
+          "score": 5.75,
+          "passage_overlap": 0.375,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": true,
+          "content_preview": "Druck-Temperatur-Diagramm (PTFE) Pressure-Temperature-Diagramm (PTFE) bar 80 100 180 200 \u00b0C bar Druck-Temperatur-Diagramm (PTFE) Pressure-Temperature-Diagramm (PTFE) 150 160 Dru..."
+        }
+      ]
+    },
+    {
+      "case_id": "R-001",
+      "document_alias": "report_pressure_transmitter",
+      "file_name": "Pressure transmitter.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Final Inspection Report > Device information",
+        "expected_page": 1,
+        "expected_relevant_passage": "Description Cerabar M PMP51; TAG 9180; serial number V8055401129."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_fbe46941a1f6476fa447cea1dda32539",
+          "section_id": "sec_2ffdd8414d814cdab2d5321b9bf71e97",
+          "section_path": [
+            "Endress+ Hauser"
+          ],
+          "section_path_text": "Endress+ Hauser",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 4,
+          "score": 5.3333,
+          "passage_overlap": 0.3333,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "Section overview: Endress+ Hauser {t People for Process Automation Subsections: Test Report; Final Inspection RePort; Deviation; Brief Operating Instructions; Cerabar M PMC51, P..."
+        },
+        {
+          "chunk_id": "chunk_bdf2a733a6704c2ea8cc674c0ac5cb32",
+          "section_id": "sec_e3f4114212a04ac0aa04ae9a5ab4fff2",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions",
+          "page_start": 31,
+          "page_end": 31,
+          "sequence_number": 141,
+          "score": 3.3333,
+          "passage_overlap": 0.3333,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Section overview: Safety Instructions Subsections: Cerabar M PMC51, PMP51, PMP55"
+        },
+        {
+          "chunk_id": "chunk_7787805c17934026baf2daa954082858",
+          "section_id": "sec_2c72498eda3f42278402daa46e9274af",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55",
+          "page_start": 31,
+          "page_end": 31,
+          "sequence_number": 142,
+          "score": 3.3333,
+          "passage_overlap": 0.3333,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Section overview: Cerabar M PMC51, PMP51, PMP55 4-20 mA HART, PROFIBUS PA, FOUNDATION Fieldbus ATEX, IECEx: Ex ic IIC Gc EX Subsections: Cerabar M PMC51, PMP51, PMP55"
+        },
+        {
+          "chunk_id": "chunk_f9c5a72cda264fb9adc90383c57cf10d",
+          "section_id": "sec_95184ffd2dc3455282e5dc5ff1507a32",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Table of contents",
+            "About this document",
+            "Associated documentation",
+            "Supplementary documentation",
+            "Manufacturer's certificates",
+            "EU Declaration of Conformity",
+            "EU type-examination certificate",
+            "Other standards",
+            "Extended order code",
+            "IEC Declaration of Conformity",
+            "Structure of the extended order code",
+            "* = Placeholder",
+            "Basic specifications",
+            "Optional specifications"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications",
+          "page_start": 36,
+          "page_end": 36,
+          "sequence_number": 160,
+          "score": 3.3333,
+          "passage_overlap": 0.3333,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Section overview: Optional specifications The optional specifications describe additional features for the device (optional features). The number of positions depends on the num..."
+        },
+        {
+          "chunk_id": "chunk_4746a915d3044382bf5ab7e8c19a2659",
+          "section_id": "sec_4549500f937e493fa11c8de80a6cf8af",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Table of contents",
+            "About this document",
+            "Associated documentation",
+            "Supplementary documentation",
+            "Manufacturer's certificates",
+            "EU Declaration of Conformity",
+            "EU type-examination certificate",
+            "Other standards",
+            "Extended order code",
+            "IEC Declaration of Conformity",
+            "Structure of the extended order code",
+            "* = Placeholder",
+            "Basic specifications",
+            "Optional specifications",
+            "Extended order code: Cerabar M"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M",
+          "page_start": 36,
+          "page_end": 36,
+          "sequence_number": 161,
+          "score": 3.3333,
+          "passage_overlap": 0.3333,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Section overview: Extended order code: Cerabar M The following specifications reproduce an extract from the product structure and are used to assign: This documentation to the d..."
+        }
+      ]
+    },
+    {
+      "case_id": "R-002",
+      "document_alias": "report_pressure_transmitter",
+      "file_name": "Pressure transmitter.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Final Inspection Report > Device information",
+        "expected_page": 1,
+        "expected_relevant_passage": "Order code PMP51-D5EU1/101; extended order code PMP51-BA2IRAISGJGRJAI+JALELGZI."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_4746a915d3044382bf5ab7e8c19a2659",
+          "section_id": "sec_4549500f937e493fa11c8de80a6cf8af",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Table of contents",
+            "About this document",
+            "Associated documentation",
+            "Supplementary documentation",
+            "Manufacturer's certificates",
+            "EU Declaration of Conformity",
+            "EU type-examination certificate",
+            "Other standards",
+            "Extended order code",
+            "IEC Declaration of Conformity",
+            "Structure of the extended order code",
+            "* = Placeholder",
+            "Basic specifications",
+            "Optional specifications",
+            "Extended order code: Cerabar M"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M",
+          "page_start": 36,
+          "page_end": 36,
+          "sequence_number": 161,
+          "score": 5.0,
+          "passage_overlap": 0.5,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Section overview: Extended order code: Cerabar M The following specifications reproduce an extract from the product structure and are used to assign: This documentation to the d..."
+        },
+        {
+          "chunk_id": "chunk_1aa52880dff644718fbee2dd38b103d8",
+          "section_id": "sec_5706859916e8489b8db94d010655b6cf",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Table of contents",
+            "About this document",
+            "Associated documentation",
+            "Supplementary documentation",
+            "Manufacturer's certificates",
+            "EU Declaration of Conformity",
+            "EU type-examination certificate",
+            "Other standards"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards",
+          "page_start": 35,
+          "page_end": 35,
+          "sequence_number": 154,
+          "score": 3.75,
+          "passage_overlap": 0.375,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Section overview: Other standards Subsections: Extended order code"
+        },
+        {
+          "chunk_id": "chunk_55e1ccc75525470d862e025bc9012345",
+          "section_id": "sec_1cbd8a5f2aef4d5086a8eab2dc97e545",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Table of contents",
+            "About this document",
+            "Associated documentation",
+            "Supplementary documentation",
+            "Manufacturer's certificates",
+            "EU Declaration of Conformity",
+            "EU type-examination certificate",
+            "Other standards",
+            "Extended order code"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code",
+          "page_start": 35,
+          "page_end": 35,
+          "sequence_number": 155,
+          "score": 3.75,
+          "passage_overlap": 0.375,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Section overview: Extended order code List of applied standards: See EU Declaration of Conformity. Subsections: IEC Declaration of Conformity"
+        },
+        {
+          "chunk_id": "chunk_cb8482a02b984c47941011b970a5eebf",
+          "section_id": "sec_968b10bad91348b787cba47b5aae8b77",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Table of contents",
+            "About this document",
+            "Associated documentation",
+            "Supplementary documentation",
+            "Manufacturer's certificates",
+            "EU Declaration of Conformity",
+            "EU type-examination certificate",
+            "Other standards",
+            "Extended order code",
+            "IEC Declaration of Conformity"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity",
+          "page_start": 35,
+          "page_end": 35,
+          "sequence_number": 156,
+          "score": 3.75,
+          "passage_overlap": 0.375,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Section overview: IEC Declaration of Conformity Certificate number: IECEx KEM 09.0016X Affixing the certificate number certifies conformity with the following standards (dependi..."
+        },
+        {
+          "chunk_id": "chunk_b70cd3765f2b40aaa74f3ea34c7e5b08",
+          "section_id": "sec_49282dc85bfb4aad8975eab193198306",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Table of contents",
+            "About this document",
+            "Associated documentation",
+            "Supplementary documentation",
+            "Manufacturer's certificates",
+            "EU Declaration of Conformity",
+            "EU type-examination certificate",
+            "Other standards",
+            "Extended order code",
+            "IEC Declaration of Conformity",
+            "Structure of the extended order code"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code",
+          "page_start": 35,
+          "page_end": 35,
+          "sequence_number": 157,
+          "score": 3.75,
+          "passage_overlap": 0.375,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Section overview: Structure of the extended order code PMC51, PMP5x \u2013 ************* + A*B*C*D*E*F*G*.. (Device type) (Basic specifications) (Optional specifications) Subsections..."
+        }
+      ]
+    },
+    {
+      "case_id": "R-003",
+      "document_alias": "report_pressure_transmitter",
+      "file_name": "Pressure transmitter.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Final Inspection Report > Additional information",
+        "expected_page": 1,
+        "expected_relevant_passage": "Output type 4...20 mA HART; sensor range -1...40 bar; adjusted measuring range 0...25 bar."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_69c5617d3c30469eb1900ac4bf948811",
+          "section_id": "sec_e7241c87811f48418b86a7337f0118c7",
+          "section_path": [
+            "8 Commissioning",
+            "8.2 Configuring pressure measurement",
+            "Example:"
+          ],
+          "section_path_text": "8 Commissioning > 8.2 Configuring pressure measurement > Example:",
+          "page_start": 26,
+          "page_end": 26,
+          "sequence_number": 122,
+          "score": 4.6667,
+          "passage_overlap": 0.4667,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "In this example, a device with a 400 mbar (6 psi) sensor is configured for the 0 to +300 mbar (0 to 4.5 psi) measuring range, i.e. the 4 mA value and 20 mA value are assigned 0..."
+        },
+        {
+          "chunk_id": "chunk_8572c3b96baa4d258e2c7c680b63f6b0",
+          "section_id": "sec_674c9d3fb8b74836bbbc9d1afff1df8f",
+          "section_path": [
+            "8 Commissioning",
+            "8.2 Configuring pressure measurement",
+            "Prerequisite:"
+          ],
+          "section_path_text": "8 Commissioning > 8.2 Configuring pressure measurement > Prerequisite:",
+          "page_start": 27,
+          "page_end": 27,
+          "sequence_number": 129,
+          "score": 4.6667,
+          "passage_overlap": 0.4667,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "| | Description | |----|---------------------------------------------------------------------------------------------------------------------------------------------------------..."
+        },
+        {
+          "chunk_id": "chunk_f5f01bece666423a98dd734e78a925ab",
+          "section_id": "sec_9ae4c95d53d5406295feb41aad028074",
+          "section_path": [
+            "8 Commissioning",
+            "8.2 Configuring pressure measurement",
+            "8.2.2 Calibration with reference pressure (wet calibration)",
+            "Example:"
+          ],
+          "section_path_text": "8 Commissioning > 8.2 Configuring pressure measurement > 8.2.2 Calibration with reference pressure (wet calibration) > Example:",
+          "page_start": 27,
+          "page_end": 27,
+          "sequence_number": 131,
+          "score": 4.6667,
+          "passage_overlap": 0.4667,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Section overview: Example: In this example, a device with a 400 mbar (6 psi) sensor module is configured for the 0 to +300 mbar (0 to 4.5 psi) measuring range, i.e. the 4 mA val..."
+        },
+        {
+          "chunk_id": "chunk_4a85d6c5a4d7470ba758ea1c01112639",
+          "section_id": "sec_9ae4c95d53d5406295feb41aad028074",
+          "section_path": [
+            "8 Commissioning",
+            "8.2 Configuring pressure measurement",
+            "8.2.2 Calibration with reference pressure (wet calibration)",
+            "Example:"
+          ],
+          "section_path_text": "8 Commissioning > 8.2 Configuring pressure measurement > 8.2.2 Calibration with reference pressure (wet calibration) > Example:",
+          "page_start": 27,
+          "page_end": 27,
+          "sequence_number": 132,
+          "score": 4.6667,
+          "passage_overlap": 0.4667,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "In this example, a device with a 400 mbar (6 psi) sensor module is configured for the 0 to +300 mbar (0 to 4.5 psi) measuring range, i.e. the 4 mA value and 20 mA value are assi..."
+        },
+        {
+          "chunk_id": "chunk_ef53abe7dc3d4567a75153b92f0efc22",
+          "section_id": "sec_d74b6a19810242f88f7c33fedf0bcc15",
+          "section_path": [
+            "8 Commissioning",
+            "8.2 Configuring pressure measurement",
+            "8.2.2 Calibration with reference pressure (wet calibration)",
+            "Example:",
+            "Prerequisite:",
+            "Description",
+            "Changing the measuring mode affects the span (URV)"
+          ],
+          "section_path_text": "8 Commissioning > 8.2 Configuring pressure measurement > 8.2.2 Calibration with reference pressure (wet calibration) > Example: > Prerequisite: > Description > Changing the measuring mode affects the span (URV)",
+          "page_start": 28,
+          "page_end": 30,
+          "sequence_number": 138,
+          "score": 4.6667,
+          "passage_overlap": 0.4667,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "This situation can result in product overflow. If the measuring mode is changed, the setting for the span (URV) must be checked in the \"Setup\" operating menu and readjusted if n..."
+        }
+      ]
+    },
+    {
+      "case_id": "R-004",
+      "document_alias": "report_pressure_transmitter",
+      "file_name": "Pressure transmitter.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Final Inspection Report > Additional information",
+        "expected_page": 1,
+        "expected_relevant_passage": "Maximum permissible error \u00b10.1%."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_293687630629448b970e4106e0855f5c",
+          "section_id": "sec_bfb712b0c2634e57bdd33cc2000b73de",
+          "section_path": [
+            "Endress+ Hauser",
+            "Deviation"
+          ],
+          "section_path_text": "Endress+ Hauser > Deviation",
+          "page_start": 2,
+          "page_end": 2,
+          "sequence_number": 8,
+          "score": 6.5,
+          "passage_overlap": 0.6,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Hereby we confirm that all applicable tests according to the QualitY Plan (IP0000BP) have been performed successfully | Test point | Reference pressure | UUT output (digital) lb..."
+        },
+        {
+          "chunk_id": "chunk_99e52a9f432d45c9952694898e0080dc",
+          "section_id": "sec_e7345162006b4c5db4312450371b7403",
+          "section_path": [
+            "6 Electrical connection",
+            "6.2 Connecting the device"
+          ],
+          "section_path_text": "6 Electrical connection > 6.2 Connecting the device",
+          "page_start": 16,
+          "page_end": 16,
+          "sequence_number": 82,
+          "score": 6.0,
+          "passage_overlap": 0.6,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "A 4 to 20 mA test signal may be measured via the test terminals without interrupting the measurement. 6.2.7 Terminals Supply voltage and internal ground terminal: 0.5 to 2.5 mm..."
+        },
+        {
+          "chunk_id": "chunk_b8d31357e38d4b7c8b5d126eda7a8a1e",
+          "section_id": "sec_31bf1d3813a24472b1a9e5e31d8b1e59",
+          "section_path": [
+            "7 Operation options",
+            "7.2 Operation with device display (optional)",
+            "7.2.3 Operating example: User-definable parameters"
+          ],
+          "section_path_text": "7 Operation options > 7.2 Operation with device display (optional) > 7.2.3 Operating example: User-definable parameters",
+          "page_start": 21,
+          "page_end": 21,
+          "sequence_number": 108,
+          "score": 4.0,
+          "passage_overlap": 0.4,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Example: Setting the \"Set URV (014)\" parameter from 100 mbar (1.5 psi) to 50 mbar (0.75 psi)."
+        },
+        {
+          "chunk_id": "chunk_390d41e7553e45fb8a61d07528cb1ba8",
+          "section_id": "sec_4bddd93302794999ab2462adebbe29af",
+          "section_path": [
+            "7 Operation options",
+            "7.2 Operation with device display (optional)",
+            "Menu path: Setup \u2192 Extended setup \u2192 Current output \u2192 Set URV"
+          ],
+          "section_path_text": "7 Operation options > 7.2 Operation with device display (optional) > Menu path: Setup \u2192 Extended setup \u2192 Current output \u2192 Set URV",
+          "page_start": 22,
+          "page_end": 22,
+          "sequence_number": 109,
+          "score": 4.0,
+          "passage_overlap": 0.4,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "| Set URV | 014 | Operation | |------------|-------|-----------------------------------------------------------------------------------------------------------------------------..."
+        },
+        {
+          "chunk_id": "chunk_1cc9e91699d44fa7960be2db2bf70d97",
+          "section_id": "sec_3889bd57ff764d4ea4052975c2419740",
+          "section_path": [
+            "8 Commissioning"
+          ],
+          "section_path_text": "8 Commissioning",
+          "page_start": 23,
+          "page_end": 23,
+          "sequence_number": 113,
+          "score": 4.0,
+          "passage_overlap": 0.4,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "The device is configured for the \"Pressure\" measuring mode as standard. The measuring range and the unit in which the measured value is transmitted correspond to the data on the..."
+        }
+      ]
+    },
+    {
+      "case_id": "R-018",
+      "document_alias": "report_pressure_transmitter",
+      "file_name": "Pressure transmitter.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Safety Instructions > Extended order code: Cerabar M > Basic specifications",
+        "expected_page": 36,
+        "expected_relevant_passage": "Approval BG: ATEX II 3 G Ex ic IIC T6...T4 Gc; IE: IECEx Ex ic IIC T6...T4 Gc."
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_7787805c17934026baf2daa954082858",
+          "section_id": "sec_2c72498eda3f42278402daa46e9274af",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55",
+          "page_start": 31,
+          "page_end": 31,
+          "sequence_number": 142,
+          "score": 4.2857,
+          "passage_overlap": 0.4286,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Section overview: Cerabar M PMC51, PMP51, PMP55 4-20 mA HART, PROFIBUS PA, FOUNDATION Fieldbus ATEX, IECEx: Ex ic IIC Gc EX Subsections: Cerabar M PMC51, PMP51, PMP55"
+        },
+        {
+          "chunk_id": "chunk_12cf4aca3a2b46e39e260ce19c5b613f",
+          "section_id": "sec_2c72498eda3f42278402daa46e9274af",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55",
+          "page_start": 31,
+          "page_end": 31,
+          "sequence_number": 143,
+          "score": 4.2857,
+          "passage_overlap": 0.4286,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "4-20 mA HART, PROFIBUS PA, FOUNDATION Fieldbus ATEX, IECEx: Ex ic IIC Gc"
+        },
+        {
+          "chunk_id": "chunk_6364b626565742cc8bcf5e0f1b809ace",
+          "section_id": "sec_2c72498eda3f42278402daa46e9274af",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55",
+          "page_start": 31,
+          "page_end": 31,
+          "sequence_number": 144,
+          "score": 4.2857,
+          "passage_overlap": 0.4286,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "content_preview": "Context: ATEX, IECEx: Ex ic IIC Gc"
+        },
+        {
+          "chunk_id": "chunk_f9c5a72cda264fb9adc90383c57cf10d",
+          "section_id": "sec_95184ffd2dc3455282e5dc5ff1507a32",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Table of contents",
+            "About this document",
+            "Associated documentation",
+            "Supplementary documentation",
+            "Manufacturer's certificates",
+            "EU Declaration of Conformity",
+            "EU type-examination certificate",
+            "Other standards",
+            "Extended order code",
+            "IEC Declaration of Conformity",
+            "Structure of the extended order code",
+            "* = Placeholder",
+            "Basic specifications",
+            "Optional specifications"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications",
+          "page_start": 36,
+          "page_end": 36,
+          "sequence_number": 160,
+          "score": 3.9286,
+          "passage_overlap": 0.1429,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "Section overview: Optional specifications The optional specifications describe additional features for the device (optional features). The number of positions depends on the num..."
+        },
+        {
+          "chunk_id": "chunk_dfaf4c1f3990474bac8f8694eb604c5d",
+          "section_id": "sec_94ff9bdc61d74d98a6e346fe5e212d3c",
+          "section_path": [
+            "8 Commissioning",
+            "Safety Instructions",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Cerabar M PMC51, PMP51, PMP55",
+            "Table of contents",
+            "About this document",
+            "Associated documentation",
+            "Supplementary documentation",
+            "Manufacturer's certificates",
+            "EU Declaration of Conformity",
+            "EU type-examination certificate",
+            "Other standards",
+            "Extended order code",
+            "IEC Declaration of Conformity",
+            "Structure of the extended order code",
+            "* = Placeholder",
+            "Basic specifications"
+          ],
+          "section_path_text": "8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications",
+          "page_start": 36,
+          "page_end": 36,
+          "sequence_number": 159,
+          "score": 3.0,
+          "passage_overlap": 0.0,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "content_preview": "Section overview: Basic specifications The features that are absolutely essential for the device (mandatory features) are specified in the basic specifications. The number of po..."
+        }
+      ]
+    }
+  ]
+}
