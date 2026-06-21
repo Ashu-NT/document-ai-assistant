@@ -69,6 +69,7 @@ from src.application.workflows.parsing.normalizers import (  # noqa: E402
 from src.bootstrap.startup import bootstrap_application  # noqa: E402
 from src.config.paths import ensure_directory, resolve_project_path  # noqa: E402
 from src.config.settings import (  # noqa: E402
+    docling_settings,
     embedding_settings,
     llm_settings,
     ocr_settings,
@@ -125,6 +126,24 @@ def parse_args() -> argparse.Namespace:
 
 def print_status(message: str) -> None:
     print(f"[seed-retrieval-corpus] {message}", flush=True)
+
+
+def print_runtime_ocr_configuration() -> None:
+    print_status(
+        "Docling OCR: "
+        f"enabled={docling_settings.enable_ocr}, "
+        f"engine={docling_settings.ocr_engine}, "
+        f"batch_size={docling_settings.ocr_batch_size}"
+    )
+    print_status(
+        "Provider OCR: "
+        f"enabled={ocr_settings.enabled}, "
+        f"provider={ocr_settings.provider}"
+    )
+    print_status(
+        "Canonical element OCR enricher: "
+        f"{'enabled' if ocr_settings.enabled else 'disabled'}"
+    )
 
 
 def resolve_path(value: str | None) -> Path | None:
@@ -311,6 +330,7 @@ def main() -> int:
     else:
         print_status(f"Input directory: {input_directory}")
     print_status(f"Manifest output path: {output_path}")
+    print_runtime_ocr_configuration()
     print_status("Building corpus seeder runtime...")
     runtime = build_corpus_seeder()
     seeder = runtime.seeder

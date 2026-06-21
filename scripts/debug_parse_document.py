@@ -50,7 +50,7 @@ from src.application.workflows.parsing.builders.chunking.policies import (  # no
     DocumentChunkingPolicyResolver,
 )
 from src.config.paths import ensure_directory, resolve_project_path  # noqa: E402
-from src.config.settings import ocr_settings  # noqa: E402
+from src.config.settings import docling_settings, ocr_settings  # noqa: E402
 from src.domain.document import DocumentHashes  # noqa: E402
 from src.infrastructure.ai.ocr import build_ocr_provider  # noqa: E402
 from src.infrastructure.ai.llm import OllamaLLMProvider  # noqa: E402
@@ -152,6 +152,28 @@ def parse_args() -> argparse.Namespace:
         help="Optional output Markdown path. Defaults to outputs/debug_parsing/<stem>_parsing_report.md",
     )
     return parser.parse_args()
+
+
+def print_status(message: str) -> None:
+    print(f"[debug-parse-document] {message}", flush=True)
+
+
+def print_runtime_ocr_configuration() -> None:
+    print_status(
+        "Docling OCR: "
+        f"enabled={docling_settings.enable_ocr}, "
+        f"engine={docling_settings.ocr_engine}, "
+        f"batch_size={docling_settings.ocr_batch_size}"
+    )
+    print_status(
+        "Provider OCR: "
+        f"enabled={ocr_settings.enabled}, "
+        f"provider={ocr_settings.provider}"
+    )
+    print_status(
+        "Canonical element OCR enricher: "
+        f"{'enabled' if ocr_settings.enabled else 'disabled'}"
+    )
 
 
 def resolve_input_path(input_value: str) -> Path:
@@ -1152,6 +1174,9 @@ def main() -> int:
         input_path = resolve_input_path(args.input)
         output_path = resolve_output_path(input_path, args.output)
         ensure_directory(output_path.parent)
+        print_status(f"Input path: {input_path}")
+        print_status(f"Output path: {output_path}")
+        print_runtime_ocr_configuration()
 
         file_hash, content_hash = compute_debug_hashes(input_path)
 
