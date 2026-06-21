@@ -13,6 +13,11 @@ class RetrievedChunkMapper:
         score: float = 1.0,
         retrieval_source: str = "sql_keyword",
     ) -> RetrievedChunk:
+        metadata = {
+            "sequence_number": str(row.sequence_number),
+            "chunk_index": str(row.chunk_index),
+            "chunk_total": str(row.chunk_total),
+        }
         return RetrievedChunk(
             chunk_id=row.id,
             document_id=row.document_id,
@@ -26,4 +31,5 @@ class RetrievedChunkMapper:
                 page_start=row.page_start,
                 page_end=row.page_end,
             ),
+            metadata=metadata,
         )

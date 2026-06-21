@@ -1,5 +1,6 @@
 import pytest
 
+from src.domain.common import ChunkType
 from src.application.validation.retrieval import RetrievalQueryValidator
 from src.application.workflows.retrieval import RetrievalWorkflow
 from src.domain.retrieval import RetrievalResult
@@ -32,6 +33,7 @@ def make_workflow(
     min_evidence_chunks: int = 1,
     strict_evidence: bool = False,
     context_expander=None,
+    candidate_pool_top_k: int = 5,
 ) -> RetrievalWorkflow:
     return RetrievalWorkflow(
         retrieval_service=retrieval_service,
@@ -39,6 +41,7 @@ def make_workflow(
         min_evidence_chunks=min_evidence_chunks,
         strict_evidence=strict_evidence,
         context_expander=context_expander,
+        candidate_pool_top_k=candidate_pool_top_k,
     )
 
 
@@ -167,3 +170,67 @@ def test_workflow_expands_context_chunks_when_expander_is_available(
         "chunk_context_001",
     ]
     assert result.context_result_count == 2
+
+
+def test_workflow_deduplicates_retrieval_candidates_before_final_results(
+    sample_retrieval_query,
+    sample_retrieved_chunk,
+) -> None:
+    atomic_chunk = sample_retrieved_chunk
+    context_chunk = sample_retrieved_chunk.__class__(
+        chunk_id="chunk_context_duplicate",
+        document_id=sample_retrieved_chunk.document_id,
+        content=f"Context: {sample_retrieved_chunk.content}",
+        score=0.97,
+        retrieval_source="sql_keyword",
+        chunk_type=sample_retrieved_chunk.chunk_type,
+        section_id=sample_retrieved_chunk.section_id,
+        section_path=sample_retrieved_chunk.section_path,
+        source=sample_retrieved_chunk.source,
+    )
+    overview_chunk = sample_retrieved_chunk.__class__(
+        chunk_id="chunk_overview_duplicate",
+        document_id=sample_retrieved_chunk.document_id,
+        content=f"Section overview: {sample_retrieved_chunk.content}",
+        score=0.96,
+        retrieval_source="dense",
+        chunk_type=ChunkType.OVERVIEW,
+        section_id="sec_parent",
+        section_path=["Maintenance"],
+        source=sample_retrieved_chunk.source,
+    )
+    unique_chunk = sample_retrieved_chunk.__class__(
+        chunk_id="chunk_unique",
+        document_id=sample_retrieved_chunk.document_id,
+        content="Inspect the filter housing for leaks before restart.",
+        score=0.95,
+        retrieval_source="dense",
+        chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+        section_id="sec_002",
+        section_path=["Procedure"],
+        source=sample_retrieved_chunk.source,
+    )
+    retrieval_result = RetrievalResult(
+        result_id="retrieval_result_dedup_001",
+        query=sample_retrieval_query,
+        chunks=[context_chunk, overview_chunk, atomic_chunk, unique_chunk],
+        citations=[],
+        used_dense=True,
+        used_keyword=True,
+        used_sql=False,
+        total_candidates=4,
+    )
+    retrieval_service = FakeHybridRetrievalService(retrieval_result)
+    workflow = make_workflow(
+        retrieval_service,
+        candidate_pool_top_k=10,
+    )
+
+    result = workflow.run(sample_retrieval_query)
+
+    assert retrieval_service.calls[0].top_k == 10
+    assert len(result.chunks) == 2
+    assert {chunk.chunk_id for chunk in result.chunks} == {
+        atomic_chunk.chunk_id,
+        "chunk_unique",
+    }
