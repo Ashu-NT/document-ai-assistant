@@ -14,8 +14,7 @@ def build_docling_converter() -> Any:
     rapid_ocr_options_class = components["RapidOcrOptions"]
 
     pipeline_options = pdf_pipeline_options_class()
-    pipeline_options.do_ocr = docling_settings.enable_ocr
-    pipeline_options.ocr_batch_size = docling_settings.ocr_batch_size
+    _configure_pipeline_options(pipeline_options)
 
     if docling_settings.enable_ocr:
         pipeline_options.ocr_options = _build_ocr_options(
@@ -30,6 +29,14 @@ def build_docling_converter() -> Any:
             )
         }
     )
+
+
+def _configure_pipeline_options(pipeline_options: Any) -> None:
+    pipeline_options.images_scale = docling_settings.images_scale
+    pipeline_options.do_table_structure = docling_settings.enable_table_structure
+    pipeline_options.do_ocr = docling_settings.enable_ocr
+    pipeline_options.ocr_batch_size = docling_settings.ocr_batch_size
+    pipeline_options.accelerator_options.num_threads = docling_settings.num_threads
 
 
 def _build_ocr_options(
