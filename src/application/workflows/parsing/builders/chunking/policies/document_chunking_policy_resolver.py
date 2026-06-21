@@ -54,7 +54,7 @@ class DocumentChunkingPolicyResolver:
     ) -> DocumentChunkingPolicy:
         if profile == ChunkingProfile.DATASHEET:
             return self._datasheet_policy()
-        if profile == ChunkingProfile.DRAWING:
+        if profile == ChunkingProfile.CERTIFICATE:
             return self._drawing_policy()
         if profile == ChunkingProfile.REPORT:
             return self._report_policy()
@@ -67,8 +67,8 @@ class DocumentChunkingPolicyResolver:
     def _manual_policy() -> DocumentChunkingPolicy:
         return DocumentChunkingPolicy(
             profile_name=ChunkingProfile.MANUAL,
-            max_chunk_tokens=240,
-            chunk_overlap=24,
+            max_chunk_tokens=1000,
+            chunk_overlap=100,
             same_topic_merge_tokens=120,
             intro_context_tokens=160,
             asset_context_window=2,
@@ -81,8 +81,8 @@ class DocumentChunkingPolicyResolver:
     def _datasheet_policy() -> DocumentChunkingPolicy:
         return DocumentChunkingPolicy(
             profile_name=ChunkingProfile.DATASHEET,
-            max_chunk_tokens=180,
-            chunk_overlap=16,
+            max_chunk_tokens=600,
+            chunk_overlap=75,
             same_topic_merge_tokens=80,
             intro_context_tokens=110,
             asset_context_window=1,
@@ -94,9 +94,9 @@ class DocumentChunkingPolicyResolver:
     @staticmethod
     def _drawing_policy() -> DocumentChunkingPolicy:
         return DocumentChunkingPolicy(
-            profile_name=ChunkingProfile.DRAWING,
-            max_chunk_tokens=140,
-            chunk_overlap=12,
+            profile_name=ChunkingProfile.CERTIFICATE,
+            max_chunk_tokens=300,
+            chunk_overlap=35,
             same_topic_merge_tokens=60,
             intro_context_tokens=80,
             asset_context_window=1,
@@ -109,8 +109,8 @@ class DocumentChunkingPolicyResolver:
     def _report_policy() -> DocumentChunkingPolicy:
         return DocumentChunkingPolicy(
             profile_name=ChunkingProfile.REPORT,
-            max_chunk_tokens=260,
-            chunk_overlap=24,
+            max_chunk_tokens=800,
+            chunk_overlap=100,
             same_topic_merge_tokens=100,
             intro_context_tokens=120,
             asset_context_window=1,
