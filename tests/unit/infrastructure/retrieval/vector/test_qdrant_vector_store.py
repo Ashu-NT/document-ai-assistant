@@ -2,6 +2,9 @@ from qdrant_client.http.models import models
 
 import pytest
 
+from src.domain.common import DocumentType
+from src.domain.document import Document, DocumentGraph
+from src.domain.document.value_objects import DocumentHashes
 from src.application.workflows.embedding.embedding_workflow import EmbeddedChunk
 from src.infrastructure.retrieval.vector import QdrantVectorStore
 from src.shared.exceptions import VectorStoreError
@@ -74,6 +77,19 @@ class FakeEmbeddingProvider:
         raise AssertionError("embed_batch should not be called in this test")
 
 
+class FakeDocumentRepository:
+    def get_document_graph(self, document_id: str):
+        return DocumentGraph(
+            document=Document(
+                document_id=document_id,
+                file_name="sample.pdf",
+                file_path="sample.pdf",
+                hashes=DocumentHashes(file_hash="hash", content_hash="content_hash"),
+                document_type=DocumentType.MANUAL,
+            )
+        )
+
+
 def test_qdrant_vector_store_search_embeds_query_and_maps_results(
     sample_retrieval_query,
 ) -> None:
@@ -121,6 +137,7 @@ def test_qdrant_vector_store_saves_chunk_payload_and_mapping(sample_chunk) -> No
         collection_name="document_chunks",
         embedding_model="BAAI/bge-small-en-v1.5",
         query_embedding_provider=FakeEmbeddingProvider(),
+        document_repository=FakeDocumentRepository(),
     )
     embedded_chunk = EmbeddedChunk(
         chunk_id=sample_chunk.chunk_id,
@@ -139,5 +156,31 @@ def test_qdrant_vector_store_saves_chunk_payload_and_mapping(sample_chunk) -> No
 
     assert len(client.upsert_calls) == 1
     assert client.upsert_calls[0]["points"][0].payload["content"] == sample_chunk.content
+    assert client.upsert_calls[0]["points"][0].payload["document_type"] == "manual"
     assert len(mapping_repository.save_calls) == 1
     assert mapping_repository.save_calls[0]["chunk_id"] == sample_chunk.chunk_id
+
+
+def test_qdrant_vector_store_search_builds_document_type_filter(
+    sample_retrieval_query,
+) -> None:
+    client = FakeQdrantClient()
+    provider = FakeEmbeddingProvider()
+    sample_retrieval_query.document_types = [DocumentType.MANUAL]
+    store = QdrantVectorStore(
+        client=client,
+        mapping_repository=FakeVectorMappingRepository(),
+        collection_name="document_chunks",
+        embedding_model="BAAI/bge-small-en-v1.5",
+        query_embedding_provider=provider,
+    )
+
+    store.search(sample_retrieval_query)
+
+    query_filter = client.query_points_calls[0]["query_filter"]
+    assert query_filter is not None
+    assert len(query_filter.must) == 2
+    assert {condition.key for condition in query_filter.must} == {
+        "chunk_type",
+        "document_type",
+    }

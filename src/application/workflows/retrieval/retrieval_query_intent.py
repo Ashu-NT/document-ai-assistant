@@ -2,6 +2,7 @@ from enum import StrEnum
 
 
 class RetrievalQueryIntent(StrEnum):
+    IDENTIFIER = "identifier"
     GENERAL = "general"
     OVERVIEW = "overview"
     PROCEDURE = "procedure"

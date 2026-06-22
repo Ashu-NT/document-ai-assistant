@@ -1,0 +1,86 @@
+from src.domain.common import ChunkType, SourceLocation
+from src.domain.retrieval import RetrievalQuery, RetrievedChunk
+from src.infrastructure.retrieval.rerankers import DeterministicHybridReranker
+
+
+def make_chunk(
+    *,
+    chunk_id: str,
+    content: str,
+    chunk_type: ChunkType,
+    score: float,
+    section_path: list[str],
+    metadata: dict[str, str] | None = None,
+) -> RetrievedChunk:
+    return RetrievedChunk(
+        chunk_id=chunk_id,
+        document_id="doc_001",
+        content=content,
+        score=score,
+        retrieval_source="hybrid",
+        chunk_type=chunk_type,
+        section_id="sec_001",
+        section_path=section_path,
+        source=SourceLocation(page_start=1, page_end=1),
+        metadata=metadata or {},
+    )
+
+
+def test_deterministic_hybrid_reranker_prefers_atomic_identifier_evidence() -> None:
+    reranker = DeterministicHybridReranker()
+    query = RetrievalQuery(
+        query_id="query_001",
+        query_text="What does ordering code MK311007 mean?",
+        detected_identifiers=["mk311007"],
+    )
+    overview_chunk = make_chunk(
+        chunk_id="chunk_overview",
+        content="Section overview: ordering code MK311007 appears in this table.",
+        chunk_type=ChunkType.OVERVIEW,
+        score=0.95,
+        section_path=["Ordering example"],
+        metadata={"sql_keyword_source_score": "4.0"},
+    )
+    atomic_chunk = make_chunk(
+        chunk_id="chunk_atomic",
+        content="MK311007 = 2-way Wafer-type Ball valve, stainless steel, handle, DN 50.",
+        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+        score=0.72,
+        section_path=["Ordering example"],
+        metadata={
+            "sql_keyword_source_score": "18.0",
+            "sql_exact_identifier_matches": "1",
+        },
+    )
+
+    reranked = reranker.rerank(query, [overview_chunk, atomic_chunk])
+
+    assert reranked[0].chunk_id == "chunk_atomic"
+
+
+def test_deterministic_hybrid_reranker_prefers_procedure_chunks_over_overviews() -> None:
+    reranker = DeterministicHybridReranker()
+    query = RetrievalQuery(
+        query_id="query_002",
+        query_text="How do I start and run the macerator?",
+    )
+    overview_chunk = make_chunk(
+        chunk_id="chunk_overview",
+        content="Section overview: Manual Operation Page 6.1.4",
+        chunk_type=ChunkType.OVERVIEW,
+        score=0.98,
+        section_path=["6 Operation & General Maintenance", "Manual Operation Page 6.1.4"],
+        metadata={"sql_keyword_source_score": "3.0"},
+    )
+    procedure_chunk = make_chunk(
+        chunk_id="chunk_procedure",
+        content="Start/Run illuminated solid green; fill food, close lid, press Start/Run.",
+        chunk_type=ChunkType.OPERATION_INSTRUCTION,
+        score=0.70,
+        section_path=["6 Operation & General Maintenance", "6.3 Operation Macerator"],
+        metadata={"sql_keyword_source_score": "8.0"},
+    )
+
+    reranked = reranker.rerank(query, [overview_chunk, procedure_chunk])
+
+    assert reranked[0].chunk_id == "chunk_procedure"

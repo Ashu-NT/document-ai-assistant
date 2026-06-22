@@ -104,7 +104,23 @@ class RetrievalContextAssembler:
             RetrievalQueryIntent.SAFETY,
             RetrievalQueryIntent.TROUBLESHOOTING,
         }:
-            ordered.extend(["ancestor_overview", "descendant_detail"])
+            ordered.extend(
+                [
+                    "ancestor_overview",
+                    "descendant_detail",
+                    "sibling_section",
+                    "asset_companion",
+                ]
+            )
+
+        if query_intent == RetrievalQueryIntent.IDENTIFIER:
+            ordered.extend(
+                [
+                    "asset_companion",
+                    "ancestor_overview",
+                    "sibling_section",
+                ]
+            )
 
         if query_intent in {
             RetrievalQueryIntent.TABLE,

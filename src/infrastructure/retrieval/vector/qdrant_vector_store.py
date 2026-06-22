@@ -5,6 +5,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import FieldCondition, Filter, MatchAny, PointStruct
 
 from src.application.contracts.ai import EmbeddingProvider
+from src.application.contracts.document import DocumentRepository
 from src.application.contracts.retrieval import VectorStore
 from src.domain.document.entities import DocumentChunk
 from src.domain.retrieval import RetrievalQuery, RetrievedChunk
@@ -26,15 +27,18 @@ class QdrantVectorStore(VectorStore):
         collection_name: str,
         embedding_model: str,
         query_embedding_provider: EmbeddingProvider | None = None,
+        document_repository: DocumentRepository | None = None,
     ) -> None:
         self.client = client
         self.mapping_repository = mapping_repository
         self.collection_name = collection_name
         self.embedding_model = embedding_model
         self.query_embedding_provider = query_embedding_provider
+        self.document_repository = document_repository
 
     def save_chunk_vectors(self, chunks: list[DocumentChunk]) -> None:
         points: list[PointStruct] = []
+        document_types_by_id = self._document_types_by_id(chunks)
 
         for chunk in chunks:
             embedding = getattr(chunk, "embedding", None)
@@ -49,7 +53,10 @@ class QdrantVectorStore(VectorStore):
                 PointStruct(
                     id=point_id,
                     vector=embedding,
-                    payload=QdrantPayloadMapper.from_chunk(chunk),
+                    payload=QdrantPayloadMapper.from_chunk(
+                        chunk,
+                        document_type=document_types_by_id.get(chunk.document_id),
+                    ),
                 )
             )
             self.mapping_repository.save_mapping(
@@ -140,10 +147,35 @@ class QdrantVectorStore(VectorStore):
                 )
             )
 
+        if query.document_types:
+            conditions.append(
+                FieldCondition(
+                    key="document_type",
+                    match=MatchAny(
+                        any=[document_type.value for document_type in query.document_types]
+                    ),
+                )
+            )
+
         if not conditions:
             return None
 
         return Filter(must=conditions)
+
+    def _document_types_by_id(
+        self,
+        chunks: list[DocumentChunk],
+    ) -> dict[str, str]:
+        if self.document_repository is None:
+            return {}
+
+        document_types_by_id: dict[str, str] = {}
+        for document_id in {chunk.document_id for chunk in chunks}:
+            document_graph = self.document_repository.get_document_graph(document_id)
+            if document_graph is None:
+                continue
+            document_types_by_id[document_id] = document_graph.document.document_type.value
+        return document_types_by_id
 
     @staticmethod
     def _embedding_text_hash(chunk: DocumentChunk) -> str:

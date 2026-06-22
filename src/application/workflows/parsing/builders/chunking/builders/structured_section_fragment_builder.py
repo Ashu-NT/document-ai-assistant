@@ -255,6 +255,7 @@ class StructuredSectionFragmentBuilder:
             document_title=normalized_title,
             section_text=normalized_section,
             combined_text=combined_text,
+            document_type=document_type,
         ):
             specs.extend(
                 [
@@ -271,6 +272,230 @@ class StructuredSectionFragmentBuilder:
                         chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
                         radius_before=2,
                         radius_after=12,
+                    ),
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "Brief Operating Instructions",
+                            "6 Electrical connection",
+                            "6.2 Connecting the device",
+                        ],
+                        anchor_markers=(
+                            "connect the device in the following order",
+                            "switch off supply voltage",
+                            "remove housing cover",
+                        ),
+                        chunk_type=ChunkType.OPERATION_INSTRUCTION,
+                        radius_before=2,
+                        radius_after=14,
+                        combine_all_windows=True,
+                    ),
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "Brief Operating Instructions",
+                            "6 Electrical connection",
+                            "6.2.6 Supply voltage",
+                        ],
+                        anchor_markers=("6.2.6 supply voltage", "4 to 20 ma hart"),
+                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                        radius_before=1,
+                        radius_after=10,
+                    ),
+                ]
+            )
+            if self._is_manufacturer_certificate_section(
+                section_text=normalized_section,
+                combined_text=combined_text,
+            ):
+                specs.append(
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "Safety Instructions",
+                            "Manufacturer's certificates",
+                        ],
+                        anchor_markers=(
+                            "manufacturer's certificates",
+                            "declaration of conformity",
+                            "iecex",
+                        ),
+                        chunk_type=ChunkType.CERTIFICATION_INFO,
+                        radius_before=1,
+                        radius_after=12,
+                        combine_all_windows=True,
+                    )
+                )
+
+        if self._looks_like_manual(
+            document_title=normalized_title,
+            section_text=normalized_section,
+            combined_text=combined_text,
+            document_type=document_type,
+        ):
+            specs.extend(
+                [
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "6 Operation & General Maintenance",
+                            "6.3 Operation Macerator",
+                        ],
+                        anchor_markers=(
+                            "macerator must be ready",
+                            "start/run illuminated",
+                            "flashing green",
+                        ),
+                        chunk_type=ChunkType.OPERATION_INSTRUCTION,
+                        radius_before=2,
+                        radius_after=10,
+                        combine_all_windows=True,
+                    ),
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "7 Components",
+                            "7.1 Macerators",
+                            "Maintenance",
+                            "Maintenance Intervals",
+                        ],
+                        anchor_markers=(
+                            "maintenance intervals",
+                            "preventive maintenance 1",
+                            "9000 operating hours",
+                            "cleaning after daily use",
+                        ),
+                        chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+                        radius_before=1,
+                        radius_after=18,
+                        combine_all_windows=True,
+                    ),
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "7 Components",
+                            "7.1 Macerators",
+                            "Trouble Shooting",
+                            "Disposer Reduces Speed, Stops or does not Start",
+                        ],
+                        anchor_markers=(
+                            "reduces speed",
+                            "does not start",
+                            "jam release wrench",
+                            "non-grindable objects",
+                        ),
+                        chunk_type=ChunkType.TROUBLESHOOTING,
+                        radius_before=2,
+                        radius_after=18,
+                        combine_all_windows=True,
+                    ),
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "7 Components",
+                            "7.1 Macerators",
+                            "Spare Parts",
+                        ],
+                        anchor_markers=(
+                            "p33",
+                            "jam release wrench",
+                            "spare part no",
+                        ),
+                        chunk_type=ChunkType.SPARE_PARTS_TABLE,
+                        radius_before=1,
+                        radius_after=10,
+                        combine_all_windows=True,
+                    ),
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "7 Components",
+                            "7.2 Food Waste Press",
+                            "Commissioning & Shutdown",
+                            "Setting & Optimising the Press Discharge",
+                        ],
+                        anchor_markers=(
+                            "2.0 bar",
+                            "0.6-0.8 bar",
+                            "1.0-1.5 bar",
+                            "optimising the press discharge",
+                        ),
+                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                        radius_before=2,
+                        radius_after=12,
+                        combine_all_windows=True,
+                    ),
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "7 Components",
+                            "7.2 Food Waste Press",
+                            "Commissioning & Shutdown",
+                            "Shutdown",
+                        ],
+                        anchor_markers=(
+                            "72 hours",
+                            "solidified solids plug",
+                            "retract the cone",
+                        ),
+                        chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+                        radius_before=2,
+                        radius_after=12,
+                        combine_all_windows=True,
+                    ),
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "7 Components",
+                            "7.2 Food Waste Press",
+                            "Maintenance & Cleaning of the Screen Basket",
+                            "Removal of the Screen Basket",
+                        ],
+                        anchor_markers=(
+                            "removal of the screen basket",
+                            "screen basket",
+                            "service port",
+                        ),
+                        chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+                        radius_before=2,
+                        radius_after=12,
+                    ),
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "7 Components",
+                            "7.2 Food Waste Press",
+                            "Maintenance & Cleaning of the Screen Basket",
+                            "Fitting the Press Zone",
+                        ],
+                        anchor_markers=("35 nm", "fitting the press zone", "press zone"),
+                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                        radius_before=2,
+                        radius_after=10,
+                        combine_all_windows=True,
+                    ),
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "7 Components",
+                            "7.3 Vacuum / Transfer Pump",
+                            "Maintenance",
+                            "Lubricating the Shaft Seals",
+                        ],
+                        anchor_markers=(
+                            "350 hours",
+                            "grease nipple",
+                            "lubricating the shaft seals",
+                        ),
+                        chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+                        radius_before=1,
+                        radius_after=10,
+                        combine_all_windows=True,
+                    ),
+                    StructuredSectionWindowSpec(
+                        section_path=[
+                            "7 Components",
+                            "7.3 Vacuum / Transfer Pump",
+                            "Maintenance",
+                            "Oil Quantities & Specification",
+                        ],
+                        anchor_markers=(
+                            "oil quantity",
+                            "change interval",
+                            "rotary lobe pump type",
+                        ),
+                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                        radius_before=1,
+                        radius_after=12,
+                        combine_all_windows=True,
                     ),
                 ]
             )
@@ -504,7 +729,10 @@ class StructuredSectionFragmentBuilder:
         document_title: str,
         section_text: str,
         combined_text: str,
+        document_type: DocumentType | None = None,
     ) -> bool:
+        if document_type == DocumentType.REPORT:
+            return True
         return any(
             marker in " ".join((document_title, section_text, combined_text))
             for marker in REPORT_STRUCTURED_MARKERS
@@ -532,4 +760,38 @@ class StructuredSectionFragmentBuilder:
             "approval" in haystack
             and "atex" in haystack
             and "iecex" in haystack
+        )
+
+    @staticmethod
+    def _is_manufacturer_certificate_section(
+        *,
+        section_text: str,
+        combined_text: str,
+    ) -> bool:
+        if "manufacturer" in section_text and "certificate" in section_text:
+            return True
+        return (
+            "manufacturer's certificates" in combined_text
+            or "declaration of conformity" in combined_text
+        )
+
+    @staticmethod
+    def _looks_like_manual(
+        *,
+        document_title: str,
+        section_text: str,
+        combined_text: str,
+        document_type: DocumentType | None,
+    ) -> bool:
+        if document_type == DocumentType.MANUAL:
+            return True
+        haystack = " ".join((document_title, section_text, combined_text))
+        return any(
+            marker in haystack
+            for marker in (
+                "technical manual",
+                "macerator",
+                "food waste press",
+                "vacuum / transfer pump",
+            )
         )

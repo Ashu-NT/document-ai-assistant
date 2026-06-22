@@ -260,6 +260,7 @@ def build_corpus_seeder() -> CorpusSeederRuntime:
         collection_name=qdrant_settings.collection,
         embedding_model=embedding_settings.model_name,
         query_embedding_provider=embedding_provider,
+        document_repository=uow.documents,
     )
     ensure_qdrant_collection(vector_store.client)
 

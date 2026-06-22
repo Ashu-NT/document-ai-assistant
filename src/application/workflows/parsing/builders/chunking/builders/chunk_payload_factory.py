@@ -12,6 +12,9 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
     common_path_prefix,
     unique_preserve_order,
 )
+from src.application.workflows.parsing.builders.chunking.text.section_path_sanitizer import (
+    sanitize_section_path,
+)
 
 
 class ChunkPayloadFactory:
@@ -32,6 +35,7 @@ class ChunkPayloadFactory:
     ) -> ChunkPayload:
         section_id, section_path = self._resolve_payload_section(
             fragments,
+            document_title=document_title,
             section_path_lookup=section_path_lookup,
         )
         content = content_override or self._assemble_chunk_content(fragments)
@@ -96,10 +100,14 @@ class ChunkPayloadFactory:
         self,
         fragments: list[ChunkFragment],
         *,
+        document_title: str | None,
         section_path_lookup: dict[tuple[str, ...], str] | None,
     ) -> tuple[str, list[str]]:
         section_paths = [
-            list(fragment.section_path)
+            sanitize_section_path(
+                list(fragment.section_path),
+                document_title=document_title,
+            )
             for fragment in fragments
             if fragment.section_path
         ]
@@ -111,9 +119,13 @@ class ChunkPayloadFactory:
                 return section_id, common_path
 
         first_fragment = fragments[0]
+        sanitized_first_path = sanitize_section_path(
+            list(first_fragment.section_path),
+            document_title=document_title,
+        )
         return (
             first_fragment.section_id or "",
-            list(first_fragment.section_path),
+            sanitized_first_path,
         )
 
     @staticmethod

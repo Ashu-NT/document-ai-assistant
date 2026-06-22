@@ -2,47 +2,154 @@
 
 ## Summary
 - cases: `66`
-- anchor hit rate: `0.636`
-- context hit rate: `0.636`
-- MRR: `0.440`
-- recall@1 / @3 / @5 / @10: `0.348` / `0.530` / `0.545` / `0.636`
-- identifier top-1 accuracy: `0.409`
-- section-path accuracy: `0.636`
-- evidence completeness: `0.388`
-- rank-target satisfaction: `0.515`
+- anchor hit rate: `0.727`
+- context hit rate: `0.727`
+- MRR: `0.561`
+- recall@1 / @3 / @5 / @10: `0.485` / `0.621` / `0.667` / `0.727`
+- identifier top-1 accuracy: `0.591`
+- section-path accuracy: `0.712`
+- evidence completeness: `0.422`
+- rank-target satisfaction: `0.621`
 
 ## Breakdown by Document Family
 
 | Group | Cases | Hit Rate | Context Hit Rate | Recall@3 | MRR | Rank Target |
 |---|---:|---:|---:|---:|---:|---:|
-| certificate | 8 | 0.875 | 0.875 | 0.625 | 0.496 | 0.625 |
-| datasheet | 10 | 0.600 | 0.600 | 0.500 | 0.411 | 0.400 |
-| drawing | 8 | 1.000 | 1.000 | 0.875 | 0.825 | 0.875 |
-| manual | 22 | 0.500 | 0.500 | 0.455 | 0.353 | 0.455 |
-| report | 18 | 0.556 | 0.556 | 0.444 | 0.367 | 0.444 |
+| certificate | 8 | 0.875 | 0.875 | 0.875 | 0.646 | 0.875 |
+| datasheet | 10 | 0.800 | 0.800 | 0.600 | 0.581 | 0.500 |
+| drawing | 8 | 1.000 | 1.000 | 1.000 | 0.854 | 1.000 |
+| manual | 22 | 0.591 | 0.591 | 0.455 | 0.457 | 0.455 |
+| report | 18 | 0.667 | 0.667 | 0.556 | 0.509 | 0.611 |
 
 ## Breakdown by Query Type
 
 | Group | Cases | Hit Rate | Context Hit Rate | Recall@3 | MRR | Rank Target |
 |---|---:|---:|---:|---:|---:|---:|
 | factual_lookup | 3 | 0.667 | 0.667 | 0.667 | 0.278 | 0.667 |
-| identifier_lookup | 17 | 0.706 | 0.706 | 0.471 | 0.406 | 0.412 |
-| identifier_semantic_lookup | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
-| identifier_table_lookup | 4 | 1.000 | 1.000 | 1.000 | 0.875 | 1.000 |
+| identifier_lookup | 17 | 0.882 | 0.882 | 0.824 | 0.733 | 0.765 |
+| identifier_semantic_lookup | 1 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
+| identifier_table_lookup | 4 | 1.000 | 1.000 | 0.750 | 0.625 | 0.750 |
 | maintenance_interval_lookup | 1 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
-| maintenance_spec_lookup | 1 | 1.000 | 1.000 | 0.000 | 0.100 | 0.000 |
+| maintenance_spec_lookup | 1 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
 | operation_lookup | 1 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
-| procedure_lookup | 8 | 0.250 | 0.250 | 0.250 | 0.104 | 0.250 |
-| safety_lookup | 2 | 1.000 | 1.000 | 0.500 | 0.550 | 0.500 |
+| procedure_lookup | 8 | 0.750 | 0.750 | 0.625 | 0.567 | 0.750 |
+| safety_lookup | 2 | 1.000 | 1.000 | 0.500 | 0.600 | 0.500 |
 | safety_semantic_lookup | 1 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
-| semantic_list_lookup | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| semantic_list_lookup | 1 | 1.000 | 1.000 | 0.000 | 0.250 | 0.000 |
 | semantic_location_lookup | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
-| semantic_lookup | 4 | 0.750 | 0.750 | 0.750 | 0.292 | 0.750 |
-| specification_lookup | 11 | 0.545 | 0.545 | 0.545 | 0.500 | 0.545 |
-| table_lookup | 8 | 0.875 | 0.875 | 0.750 | 0.764 | 0.750 |
-| troubleshooting_lookup | 2 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
+| semantic_lookup | 4 | 0.500 | 0.500 | 0.500 | 0.375 | 0.500 |
+| specification_lookup | 11 | 0.727 | 0.727 | 0.636 | 0.604 | 0.636 |
+| table_lookup | 8 | 0.750 | 0.750 | 0.750 | 0.750 | 0.750 |
+| troubleshooting_lookup | 2 | 0.500 | 0.500 | 0.000 | 0.050 | 0.000 |
 
 ## Failure Diagnostics
+
+### `M-005` What waste groups must not be processed in the macerators or FWC12 system?
+
+- query type: `semantic_list_lookup`
+- expected document: `manual_fwc12`
+- expected file: `19P006-31-FWC12-5-1-0_Manual.pdf`
+- expected section path: `3 System Introduction > 3.5 Don’ts`
+- expected page: `13`
+- expected rank target: `top_3`
+- anchor matched rank: `4`
+- context matched rank: `4`
+- expected passage: `Do not process cooking oils & fats, dough, cutlery, glass, crockery, plastic or solid waste, paints, aerosols, acids or alkali, chemicals, or substances that can potentially lead to explosion or infection.`
+- failure reasons:
+  - Anchor retrieval found relevant evidence, but later than the expected top_3 target (matched rank: 4).
+
+#### Anchor Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_e560cfe1ffcd4b4dbaad5946df394a14 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 45.900 | 35 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Maintenance 7.1.11 > Dismantling of Disposer | Context: In Service Package 2 a disassembly screw (P31) for the carrier (P2) is included. Use this screw on top of the carrier and screw it down. This will remove the carrier fr... |
+| 2 | chunk_7ec0c878293b45a0ba23b7abd5f5dd96 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 45.900 | 49 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Electrical System Precautions | Context: The electrical equipment must be secured against unauthorised access and may only be tested and maintained by trained specialists. WARNING: Electrical Hazard! ALWAYS ch... |
+| 3 | chunk_f7efc0824fa440b09e27d926b84a9325 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 45.900 | 49 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Electrical System Precautions > Biohazard | Context: The food waste press can contain a variety of bacteria and viruses. In general, these are nonpathogenic strains, however, the inhalation of aerosols and contact with th... |
+| 4 | chunk_be258f1ea6e34f40acb1b0e960297de1 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 45.100 | 13 | 3 System Introduction > 3.5 Don'ts | Do not attempt to process the following waste groups in the macerators or FWC12 system:  Cooking oils & Fats  Dough  Cutlery, glass, crockery  Plastic or solid waste  Paint... |
+| 5 | chunk_b7e152fafb914fe1a712f0f4b2480317 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 44.550 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start | Context:  Unlock and reset the main electrical isolator.  Press start button and check the disposer functions correctly. View of grinder and jam release wrench from above |
+
+
+#### Context Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_e560cfe1ffcd4b4dbaad5946df394a14 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 45.900 | 35 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Maintenance 7.1.11 > Dismantling of Disposer | Context: In Service Package 2 a disassembly screw (P31) for the carrier (P2) is included. Use this screw on top of the carrier and screw it down. This will remove the carrier fr... |
+| 2 | chunk_7ec0c878293b45a0ba23b7abd5f5dd96 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 45.900 | 49 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Electrical System Precautions | Context: The electrical equipment must be secured against unauthorised access and may only be tested and maintained by trained specialists. WARNING: Electrical Hazard! ALWAYS ch... |
+| 3 | chunk_f7efc0824fa440b09e27d926b84a9325 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 45.900 | 49 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Electrical System Precautions > Biohazard | Context: The food waste press can contain a variety of bacteria and viruses. In general, these are nonpathogenic strains, however, the inhalation of aerosols and contact with th... |
+| 4 | chunk_be258f1ea6e34f40acb1b0e960297de1 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 45.100 | 13 | 3 System Introduction > 3.5 Don'ts | Do not attempt to process the following waste groups in the macerators or FWC12 system:  Cooking oils & Fats  Dough  Cutlery, glass, crockery  Plastic or solid waste  Paint... |
+| 5 | chunk_b7e152fafb914fe1a712f0f4b2480317 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 44.550 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start | Context:  Unlock and reset the main electrical isolator.  Press start button and check the disposer functions correctly. View of grinder and jam release wrench from above |
+
+### `M-006` What is the objective of commissioning the FWC12?
+
+- query type: `semantic_lookup`
+- expected document: `manual_fwc12`
+- expected file: `19P006-31-FWC12-5-1-0_Manual.pdf`
+- expected section path: `5 Commissioning > 5.2 Objective`
+- expected page: `16`
+- expected rank target: `top_5`
+- anchor matched rank: `miss`
+- context matched rank: `miss`
+- expected passage: `The objective is to ensure the components are complete, installation is fit for purpose, and the system is safe and ready to be set to work.`
+- failure reasons:
+  - Anchor retrieval did not return the expected evidence.
+  - Anchor retrieval did not return the resolved expected chunk id.
+  - Anchor retrieval missed the expected section path.
+
+#### Anchor Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_f256633cba5048ba88065e62686c9156 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 40.700 | 14 | Technical Data / Specification | It is recommended that commissioning be completed by a service technician from FMD. The power supply may not vary from the contract specifications of the system. The installatio... |
+| 2 | chunk_0125dcb3fe5f48558706d7dbf13d5f34 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 40.700 | 17 | CONNECTION | All equipment is on site installed as per relevant instructions, GA, schematics & drawings with electrical connections and tests completed. Pre-commissioning starts after comple... |
+| 3 | chunk_a42a976a89df4f55a083a8e17013609f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 39.350 | 6 | General information | The components of other manufacturers which are used within the plant (e.g. e-motors), have a risk assessment from the respective manufacturer. The obligation to ensure that the... |
+| 4 | chunk_708fa8c28a2246c892bdf84db3733f70 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 39.350 | 6 | 1 General | DFW De-watered Food Waste Liquor FOG Fat Oil & Grease GWG Galley Grey Water (sinks, floor drains etc.) 1.4 Abbreviations °C Celsius DIN German Industry Standard DN Diameter Nomi... |
+| 5 | chunk_ac9a2d6bfbb046608aea5d51cb38fbf9 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 39.350 | 8 | General information | This technical manual has been compiled while taking into consideration the applicable regulations, current technology and the experiences and developments of many years. FMD as... |
+
+
+#### Context Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_f256633cba5048ba88065e62686c9156 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 40.700 | 14 | Technical Data / Specification | It is recommended that commissioning be completed by a service technician from FMD. The power supply may not vary from the contract specifications of the system. The installatio... |
+| 2 | chunk_0125dcb3fe5f48558706d7dbf13d5f34 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 40.700 | 17 | CONNECTION | All equipment is on site installed as per relevant instructions, GA, schematics & drawings with electrical connections and tests completed. Pre-commissioning starts after comple... |
+| 3 | chunk_a42a976a89df4f55a083a8e17013609f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 39.350 | 6 | General information | The components of other manufacturers which are used within the plant (e.g. e-motors), have a risk assessment from the respective manufacturer. The obligation to ensure that the... |
+| 4 | chunk_708fa8c28a2246c892bdf84db3733f70 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 39.350 | 6 | 1 General | DFW De-watered Food Waste Liquor FOG Fat Oil & Grease GWG Galley Grey Water (sinks, floor drains etc.) 1.4 Abbreviations °C Celsius DIN German Industry Standard DN Diameter Nomi... |
+| 5 | chunk_ac9a2d6bfbb046608aea5d51cb38fbf9 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 39.350 | 8 | General information | This technical manual has been compiled while taking into consideration the applicable regulations, current technology and the experiences and developments of many years. FMD as... |
+
+### `M-007` What is the caution when operating the FWC system manually?
+
+- query type: `safety_lookup`
+- expected document: `manual_fwc12`
+- expected file: `19P006-31-FWC12-5-1-0_Manual.pdf`
+- expected section path: `6 Operation & General Maintenance > 6.1 Navigation of the HMI > Manual Operation Page`
+- expected page: `20`
+- expected rank target: `top_3`
+- anchor matched rank: `5`
+- context matched rank: `5`
+- expected passage: `When operating in manual it may be possible to start pumps with valves closed; particular care must be taken not to damage the plant.`
+- failure reasons:
+  - Anchor retrieval found relevant evidence, but later than the expected top_3 target (matched rank: 5).
+
+#### Anchor Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_24c9283abfdc460592dc885b3da65008 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 9.050 | 26 | 7 Components > 7.1 Macerators > Electrical System Precautions | The electrical equipment must be secured against unauthorised access and may only be tested and maintained by trained specialists. |
+| 2 | chunk_dcd79e84e81e402fa6535c7d9bdabe71 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 9.050 | 49 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Electrical System Precautions > Biohazard | The food waste press can contain a variety of bacteria and viruses. In general, these are nonpathogenic strains, however, the inhalation of aerosols and contact with the skin an... |
+| 3 | chunk_ebb51bf30b384c2eba2ea9fbd44246e4 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 9.050 | 49 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Electrical System Precautions > Biohazard | WARNING: Biohazard! When working on the system the operator must wear suitable clothes, eye protection and rubber gloves suitable for contact with wastewater. Failure to do so c... |
+| 4 | chunk_1389e9a065df498fbcc4065eeab8c575 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 9.050 | 50 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Electrical System Precautions > Biohazard > Food Waste Press Description 7.2.2 > Technical Data > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
+| 5 | chunk_eabd8198c0f446afb5b5bee84bcee25e | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 7.250 | 20 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Manual Operation Page 6.1.4 | Context: All main components fitted to the system can be operated manually from the HMI. All components usable in manual appear on the screen with a yellow box highlighting them... |
+
+
+#### Context Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_24c9283abfdc460592dc885b3da65008 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 9.050 | 26 | 7 Components > 7.1 Macerators > Electrical System Precautions | The electrical equipment must be secured against unauthorised access and may only be tested and maintained by trained specialists. |
+| 2 | chunk_dcd79e84e81e402fa6535c7d9bdabe71 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 9.050 | 49 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Electrical System Precautions > Biohazard | The food waste press can contain a variety of bacteria and viruses. In general, these are nonpathogenic strains, however, the inhalation of aerosols and contact with the skin an... |
+| 3 | chunk_ebb51bf30b384c2eba2ea9fbd44246e4 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 9.050 | 49 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Electrical System Precautions > Biohazard | WARNING: Biohazard! When working on the system the operator must wear suitable clothes, eye protection and rubber gloves suitable for contact with wastewater. Failure to do so c... |
+| 4 | chunk_1389e9a065df498fbcc4065eeab8c575 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 9.050 | 50 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Electrical System Precautions > Biohazard > Food Waste Press Description 7.2.2 > Technical Data > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
+| 5 | chunk_eabd8198c0f446afb5b5bee84bcee25e | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 7.250 | 20 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Manual Operation Page 6.1.4 | Context: All main components fitted to the system can be operated manually from the HMI. All components usable in manual appear on the screen with a yellow box highlighting them... |
 
 ### `M-008` How do I start and run the macerator?
 
@@ -65,22 +172,22 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_9e7f976748b94a3dbc3029816b7a6d6d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 23 | 6 Operation & General Maintenance | User: Alarms History From: 10/26/21-09:48:04 Duration: 1Min Refresh To: 10/26/21-09:48:04 Name State Value Time Description Backward Forward 6.2 Operating Modes Food Waste Colle... |
-| 2 | chunk_2070dd15a2ed4b6ebb083fdfa84c6dcc | doc_4d45d944c738426c9c19072145b95121 | hybrid | 4.000 | 23 | 6 Operation & General Maintenance > Auto to De-watering Press 6.2.2 | Context: Select Auto to De-watering Press on the home page then press the Automatic Run button, this will set the FWC12 plant to automatic operation whereby pressing of the mace... |
-| 3 | chunk_776f4ca90c1c4da7a89d8f954788a498 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 13 | Revision / modification table | When a macerator station lid is closed and the start button is pressed, the control system of the FWC12 opens the appropriate valves based on the selected mode and then starts t... |
-| 4 | chunk_deb842272eaf45e481e055ec9300a064 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 18 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 | Home Page Forward/Back Settings Manual O Alarms Stop All Maintenance AUTO AutomaticRun User Login Manual FunctionButton Valve Macerator Reversible Pump De-WateringPress |
-| 5 | chunk_6682e8c273ad49f7b7f827fe61716f6b | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 | Section overview: Settings Page 2 6.1.6 User: O (Vacuum) Pump Rate 008 m3/hr Macerator1 (Discharge)Pump Rate 008 m3/hr Macerator2 (DewateringPressFeed)Pump Rate 005 m3/hr Macera... |
+| 1 | chunk_72e7e2aa57244cd28043373b39c159dc | doc_4d45d944c738426c9c19072145b95121 | hybrid | 16.400 | 55 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.4 Shutdown |  Turn off and isolate the inlet supply pumps to prevent them starting.  Wait until the feed pipes have emptied.  Reduce the pressing force and move the compressed air cylinde... |
+| 2 | chunk_5f627ba675da46c4abe4ad8824794ff7 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 30 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 | Food waste that is difficult to grind, such as fibrous vegetables, tough fish skins and sinewy meat, should be broken down in size and mixed with other food waste. Dry and stick... |
+| 3 | chunk_bf401ab25f1c46c096e108cb52ffe68d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water |  Is the water supply isolation valve open?  Is a clicking sound heard when activating the water solenoid valve? If not, change the coil.  Is the water strainer clogged? Isola... |
+| 4 | chunk_b23459206a044b4593d5f0e26d98f17b | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water | Open this nut in order to clean the line strainer Machine does not Start and makes no Sound  Check that the disposer inlet lid is in place and properly closed.  Check that the... |
+| 5 | chunk_18ad1608154d41cc8c3cadfaa212f444 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 39 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Maintenance 7.1.11 > Dismantling of Disposer > Assembly of Disposer | FMD |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_9e7f976748b94a3dbc3029816b7a6d6d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 23 | 6 Operation & General Maintenance | User: Alarms History From: 10/26/21-09:48:04 Duration: 1Min Refresh To: 10/26/21-09:48:04 Name State Value Time Description Backward Forward 6.2 Operating Modes Food Waste Colle... |
-| 2 | chunk_2070dd15a2ed4b6ebb083fdfa84c6dcc | doc_4d45d944c738426c9c19072145b95121 | hybrid | 4.000 | 23 | 6 Operation & General Maintenance > Auto to De-watering Press 6.2.2 | Context: Select Auto to De-watering Press on the home page then press the Automatic Run button, this will set the FWC12 plant to automatic operation whereby pressing of the mace... |
-| 3 | chunk_776f4ca90c1c4da7a89d8f954788a498 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 13 | Revision / modification table | When a macerator station lid is closed and the start button is pressed, the control system of the FWC12 opens the appropriate valves based on the selected mode and then starts t... |
-| 4 | chunk_deb842272eaf45e481e055ec9300a064 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 18 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 | Home Page Forward/Back Settings Manual O Alarms Stop All Maintenance AUTO AutomaticRun User Login Manual FunctionButton Valve Macerator Reversible Pump De-WateringPress |
-| 5 | chunk_6682e8c273ad49f7b7f827fe61716f6b | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 | Section overview: Settings Page 2 6.1.6 User: O (Vacuum) Pump Rate 008 m3/hr Macerator1 (Discharge)Pump Rate 008 m3/hr Macerator2 (DewateringPressFeed)Pump Rate 005 m3/hr Macera... |
+| 1 | chunk_72e7e2aa57244cd28043373b39c159dc | doc_4d45d944c738426c9c19072145b95121 | hybrid | 16.400 | 55 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.4 Shutdown |  Turn off and isolate the inlet supply pumps to prevent them starting.  Wait until the feed pipes have emptied.  Reduce the pressing force and move the compressed air cylinde... |
+| 2 | chunk_5f627ba675da46c4abe4ad8824794ff7 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 30 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 | Food waste that is difficult to grind, such as fibrous vegetables, tough fish skins and sinewy meat, should be broken down in size and mixed with other food waste. Dry and stick... |
+| 3 | chunk_bf401ab25f1c46c096e108cb52ffe68d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water |  Is the water supply isolation valve open?  Is a clicking sound heard when activating the water solenoid valve? If not, change the coil.  Is the water strainer clogged? Isola... |
+| 4 | chunk_b23459206a044b4593d5f0e26d98f17b | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water | Open this nut in order to clean the line strainer Machine does not Start and makes no Sound  Check that the disposer inlet lid is in place and properly closed.  Check that the... |
+| 5 | chunk_18ad1608154d41cc8c3cadfaa212f444 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 39 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Maintenance 7.1.11 > Dismantling of Disposer > Assembly of Disposer | FMD |
 
 ### `M-009` What are the maintenance intervals for the macerator?
 
@@ -103,22 +210,22 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_85a16089b1a0450eb3284eaebb277fa6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments | | 5.1 General .................................................................................................................................. |
-| 2 | chunk_deb842272eaf45e481e055ec9300a064 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 18 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 | Home Page Forward/Back Settings Manual O Alarms Stop All Maintenance AUTO AutomaticRun User Login Manual FunctionButton Valve Macerator Reversible Pump De-WateringPress |
-| 3 | chunk_6682e8c273ad49f7b7f827fe61716f6b | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 | Section overview: Settings Page 2 6.1.6 User: O (Vacuum) Pump Rate 008 m3/hr Macerator1 (Discharge)Pump Rate 008 m3/hr Macerator2 (DewateringPressFeed)Pump Rate 005 m3/hr Macera... |
-| 4 | chunk_aa86257aad26418c9b150aa6dd6a2497 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 | User: O (Vacuum) Pump Rate m3/hr Macerator1 (Discharge)Pump Rate m3/hr Macerator2 (DewateringPressFeed)Pump Rate m3/hr Macerator3 DewateringPressStopDelay sec's MaceratorStartDe... |
-| 5 | chunk_7837cec3f81a45a1a5fe1401fb71b7da | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | Section overview: Maintenance Page 6.1.7 User: O Hours Hours 0000 P.00.01.01-FoodwastePump 0000 G.01.01.01-Macerator1 0000 P.00.01.02-FoodwasteLiquorTransferPump 0000 G.02.01.01... |
+| 1 | chunk_42780a0b1155431aa3c9e41f13064360 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | To maintain operational readiness, possible damage should be detected at an early stage. To preserve warranty and guarantee entitlements the operator is obliged to carry out reg... |
+| 2 | chunk_dcf89e87a7ba412baff86832fa006137 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | CAUTION: Pay attention to all safety instructions during all maintenance and servicing work and the safety policies of the vessel. |
+| 3 | chunk_cae20a6820cc4ae6a3505a8e5065f583 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | WARNING: Before working on the press, isolate the power supply and lock out or remove fuses. There is a risk of crushed hands and limbs from the rotating shaft/screw in the driv... |
+| 4 | chunk_12323a0c899d44ef8f98939aaaaeb772 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 13.700 | 24 | 6 Operation & General Maintenance > 6.3 Operation Macerator | E-Stop |
+| 5 | chunk_18ad1608154d41cc8c3cadfaa212f444 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 13.700 | 39 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Maintenance 7.1.11 > Dismantling of Disposer > Assembly of Disposer | FMD |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_85a16089b1a0450eb3284eaebb277fa6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments | | 5.1 General .................................................................................................................................. |
-| 2 | chunk_deb842272eaf45e481e055ec9300a064 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 18 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 | Home Page Forward/Back Settings Manual O Alarms Stop All Maintenance AUTO AutomaticRun User Login Manual FunctionButton Valve Macerator Reversible Pump De-WateringPress |
-| 3 | chunk_6682e8c273ad49f7b7f827fe61716f6b | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 | Section overview: Settings Page 2 6.1.6 User: O (Vacuum) Pump Rate 008 m3/hr Macerator1 (Discharge)Pump Rate 008 m3/hr Macerator2 (DewateringPressFeed)Pump Rate 005 m3/hr Macera... |
-| 4 | chunk_aa86257aad26418c9b150aa6dd6a2497 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 | User: O (Vacuum) Pump Rate m3/hr Macerator1 (Discharge)Pump Rate m3/hr Macerator2 (DewateringPressFeed)Pump Rate m3/hr Macerator3 DewateringPressStopDelay sec's MaceratorStartDe... |
-| 5 | chunk_7837cec3f81a45a1a5fe1401fb71b7da | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | Section overview: Maintenance Page 6.1.7 User: O Hours Hours 0000 P.00.01.01-FoodwastePump 0000 G.01.01.01-Macerator1 0000 P.00.01.02-FoodwasteLiquorTransferPump 0000 G.02.01.01... |
+| 1 | chunk_42780a0b1155431aa3c9e41f13064360 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | To maintain operational readiness, possible damage should be detected at an early stage. To preserve warranty and guarantee entitlements the operator is obliged to carry out reg... |
+| 2 | chunk_dcf89e87a7ba412baff86832fa006137 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | CAUTION: Pay attention to all safety instructions during all maintenance and servicing work and the safety policies of the vessel. |
+| 3 | chunk_cae20a6820cc4ae6a3505a8e5065f583 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | WARNING: Before working on the press, isolate the power supply and lock out or remove fuses. There is a risk of crushed hands and limbs from the rotating shaft/screw in the driv... |
+| 4 | chunk_12323a0c899d44ef8f98939aaaaeb772 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 13.700 | 24 | 6 Operation & General Maintenance > 6.3 Operation Macerator | E-Stop |
+| 5 | chunk_18ad1608154d41cc8c3cadfaa212f444 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 13.700 | 39 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Maintenance 7.1.11 > Dismantling of Disposer > Assembly of Disposer | FMD |
 
 ### `M-010` What should I do if the disposer reduces speed, stops, or does not start?
 
@@ -128,72 +235,33 @@
 - expected section path: `7 Components > 7.1 Macerators > Trouble Shooting > Disposer Reduces Speed, Stops or does not Start`
 - expected page: `31`
 - expected rank target: `top_5`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
+- anchor matched rank: `10`
+- context matched rank: `10`
 - expected passage: `Press the red stop button, isolate and lock out power, use protective gloves, open the inlet lid, check for a jam, use the jam release wrench to rotate the grinding disc until it turns freely, remove non-grindable objects, close lid, reset breakers/overload, and restart.`
 - failure reasons:
-  - Anchor retrieval did not return the expected evidence.
+  - Anchor retrieval found relevant evidence, but later than the expected top_5 target (matched rank: 10).
   - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 2 | chunk_dc9636b68a0c4efc869dc3a23ef5ef28 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
-| 3 | chunk_639dad5eb15d486f816adcb3a5a567fe | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 10 | 2 Safety | All personnel that are instructed to work with or on the system must observe the rules and regulations for operational safety and accident prevention and must have read the syst... |
-| 4 | chunk_b050d0105122410f897632b109e864aa | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 20 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 | Section overview: Manual Operation Page 6.1.4 All main components fitted to the system can be operated manually from the HMI. All components usable in manual appear on the scree... |
-| 5 | chunk_581c8fcd611a4d20a23bebb4c089c66c | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 20 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 | Context: All main components fitted to the system can be operated manually from the HMI. All components usable in manual appear on the screen with a yellow box highlighting them... |
+| 1 | chunk_bf401ab25f1c46c096e108cb52ffe68d | doc_4d45d944c738426c9c19072145b95121 | hybrid | 23.150 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water |  Is the water supply isolation valve open?  Is a clicking sound heard when activating the water solenoid valve? If not, change the coil.  Is the water strainer clogged? Isola... |
+| 2 | chunk_b23459206a044b4593d5f0e26d98f17b | doc_4d45d944c738426c9c19072145b95121 | hybrid | 21.800 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water | Open this nut in order to clean the line strainer Machine does not Start and makes no Sound  Check that the disposer inlet lid is in place and properly closed.  Check that the... |
+| 3 | chunk_18ad1608154d41cc8c3cadfaa212f444 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 21.800 | 39 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Maintenance 7.1.11 > Dismantling of Disposer > Assembly of Disposer | FMD |
+| 4 | chunk_df87f379a51748e99f2baddae44658bb | doc_4d45d944c738426c9c19072145b95121 | hybrid | 21.800 | 41 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Maintenance 7.1.11 > Dismantling of Disposer > Assembly of Disposer > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
+| 5 | chunk_81efb36f770f436aa01c8391ec14b31f | doc_4d45d944c738426c9c19072145b95121 | hybrid | 21.800 | 42 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Maintenance 7.1.11 > Dismantling of Disposer > Assembly of Disposer > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P17 P18 P15 P14 P13 ® ® P16 |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 2 | chunk_dc9636b68a0c4efc869dc3a23ef5ef28 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
-| 3 | chunk_639dad5eb15d486f816adcb3a5a567fe | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 10 | 2 Safety | All personnel that are instructed to work with or on the system must observe the rules and regulations for operational safety and accident prevention and must have read the syst... |
-| 4 | chunk_b050d0105122410f897632b109e864aa | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 20 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 | Section overview: Manual Operation Page 6.1.4 All main components fitted to the system can be operated manually from the HMI. All components usable in manual appear on the scree... |
-| 5 | chunk_581c8fcd611a4d20a23bebb4c089c66c | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 20 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 | Context: All main components fitted to the system can be operated manually from the HMI. All components usable in manual appear on the screen with a yellow box highlighting them... |
-
-### `M-011` What is spare part P33 for the macerator?
-
-- query type: `identifier_lookup`
-- expected document: `manual_fwc12`
-- expected file: `19P006-31-FWC12-5-1-0_Manual.pdf`
-- expected section path: `7 Components > 7.1 Macerators > Spare Parts`
-- expected page: `46`
-- expected rank target: `top_3`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `P33 is the Jam release wrench for rotary shredder, spare part No. -31.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 46.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_3e4748c575e14486b608ec691d36e7d6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 33-34 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer | Section overview: Dismantling of Disposer The below designation within brackets refers to the position numbers on the exploded view drawing and spare part list. Isolate the powe... |
-| 2 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 3 | chunk_0b124c6d47cf47cb8e25b0a63dd2a0cc | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 5 | 7 Components > 7.6 Sensor List | FundamentalMarineDevelopments | 7.4.4 | 7.4.4 | Start-up and Operation.... .89 | |-----------------------------------------------------------------------------------------------... |
-| 4 | chunk_afa375b48e7a4c8e9ccc22117b722ad7 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 11 | General information | Note: Incorrect or faulty spare parts can lead to damage, malfunction or complete breakdown of the equipment! Installation of any parts or any modifications not authorised by FM... |
-| 5 | chunk_149bb83c05d74a468fb6148a46ed0f07 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 16-17 | 5 Commissioning | FMD FundamentalMarineDevelopments 5.4 Supporting Documentation A Commissioning Plan should be established referencing the following documents as required:  Plant drawings (GA,... |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_3e4748c575e14486b608ec691d36e7d6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 33-34 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer | Section overview: Dismantling of Disposer The below designation within brackets refers to the position numbers on the exploded view drawing and spare part list. Isolate the powe... |
-| 2 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 3 | chunk_0b124c6d47cf47cb8e25b0a63dd2a0cc | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 5 | 7 Components > 7.6 Sensor List | FundamentalMarineDevelopments | 7.4.4 | 7.4.4 | Start-up and Operation.... .89 | |-----------------------------------------------------------------------------------------------... |
-| 4 | chunk_afa375b48e7a4c8e9ccc22117b722ad7 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 11 | General information | Note: Incorrect or faulty spare parts can lead to damage, malfunction or complete breakdown of the equipment! Installation of any parts or any modifications not authorised by FM... |
-| 5 | chunk_149bb83c05d74a468fb6148a46ed0f07 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 16-17 | 5 Commissioning | FMD FundamentalMarineDevelopments 5.4 Supporting Documentation A Commissioning Plan should be established referencing the following documents as required:  Plant drawings (GA,... |
+| 1 | chunk_bf401ab25f1c46c096e108cb52ffe68d | doc_4d45d944c738426c9c19072145b95121 | hybrid | 23.150 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water |  Is the water supply isolation valve open?  Is a clicking sound heard when activating the water solenoid valve? If not, change the coil.  Is the water strainer clogged? Isola... |
+| 2 | chunk_b23459206a044b4593d5f0e26d98f17b | doc_4d45d944c738426c9c19072145b95121 | hybrid | 21.800 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water | Open this nut in order to clean the line strainer Machine does not Start and makes no Sound  Check that the disposer inlet lid is in place and properly closed.  Check that the... |
+| 3 | chunk_18ad1608154d41cc8c3cadfaa212f444 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 21.800 | 39 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Maintenance 7.1.11 > Dismantling of Disposer > Assembly of Disposer | FMD |
+| 4 | chunk_df87f379a51748e99f2baddae44658bb | doc_4d45d944c738426c9c19072145b95121 | hybrid | 21.800 | 41 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Maintenance 7.1.11 > Dismantling of Disposer > Assembly of Disposer > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
+| 5 | chunk_81efb36f770f436aa01c8391ec14b31f | doc_4d45d944c738426c9c19072145b95121 | hybrid | 21.800 | 42 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Maintenance 7.1.11 > Dismantling of Disposer > Assembly of Disposer > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P17 P18 P15 P14 P13 ® ® P16 |
 
 ### `M-013` What air pressure should be used to optimize the food waste press discharge?
 
@@ -216,135 +284,60 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_755e230463fd4b3891ac39b165c36b62 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 | Section overview: Settings Page 1 6.1.5 User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank 000 000 000 000 mbar M.00.03.01 Vac&Press/FoodwastePump 000 000 000... |
-| 2 | chunk_1725efe384fb4195aeb2924cfd9e73fa | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 | User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank mbar M.00.03.01 Vac&Press/FoodwastePump mbar M.00.04.01 Vac&Press/FoodwastePump mbar M.00.05.01 Press/Dewat... |
-| 3 | chunk_7837cec3f81a45a1a5fe1401fb71b7da | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | Section overview: Maintenance Page 6.1.7 User: O Hours Hours 0000 P.00.01.01-FoodwastePump 0000 G.01.01.01-Macerator1 0000 P.00.01.02-FoodwasteLiquorTransferPump 0000 G.02.01.01... |
-| 4 | chunk_fb689952de3b4605bc0b10d833f4401f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | User: O Hours Hours P.00.01.01-FoodwastePump G.01.01.01-Macerator1 P.00.01.02-FoodwasteLiquorTransferPump G.02.01.01-Macerator2 S.00.01.01-DewateringPress G.03.01.01-Macerator3... |
-| 5 | chunk_210ccc1ae4cb461180581821b6c0171a | doc_4d45d944c738426c9c19072145b95121 | hybrid | 5.000 | 50 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Environmentally > Responsible Solutions > Electrical System Precautions > Biohazard > Environmentally Responsible Solutions Engineered > Food Waste Press Description 7.2.2 | Section overview: Food Waste Press Description 7.2.2 The FMD food waste press is exclusively designed for separating solids from wastewater at a maximum inlet flow rate of up to... |
+| 1 | chunk_8261df0c886c49969275a66364850691 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 18.100 | 51 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket > Removal of the Screen Basket | The press has been designed specifically for screening solids from wastewater and sludge streams. The inlet wastewater should be such that it freely flows into the press without... |
+| 2 | chunk_148f2ae314144aaf9b003e6d78cd2112 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 18.100 | 54 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket > Fitting the Press Zone |  The press gearmotor should be bumped without water to verify the direction of rotation is correct. The press must not be operated in the wrong direction for more than a few se... |
+| 3 | chunk_0b39b9a496ab47a0b5b49426556cade9 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.400 | 65 | 7 Components > 7.2 Food Waste Press > Pulling out the Screw | The locating holes for the screw holder can be used for inserting a tool for pulling the screw from the shaft (available on request from FMD). Once the screw has been released a... |
+| 4 | chunk_b0c37dc923bb4e1690c7553456ea4743 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 61 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket > Removal of the Screen Basket | Now the screen basket can be pulled out of the separator using care. |
+| 5 | chunk_027484a8a05940908c389d6986987e3a | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 63 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket > Removal of the Screen Basket | The installation of a cleaned or new screen basket occurs in the reverse order to disassembly. When inserting the screen basket, be sure to push it in as straight as possible in... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_755e230463fd4b3891ac39b165c36b62 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 | Section overview: Settings Page 1 6.1.5 User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank 000 000 000 000 mbar M.00.03.01 Vac&Press/FoodwastePump 000 000 000... |
-| 2 | chunk_1725efe384fb4195aeb2924cfd9e73fa | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 | User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank mbar M.00.03.01 Vac&Press/FoodwastePump mbar M.00.04.01 Vac&Press/FoodwastePump mbar M.00.05.01 Press/Dewat... |
-| 3 | chunk_7837cec3f81a45a1a5fe1401fb71b7da | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | Section overview: Maintenance Page 6.1.7 User: O Hours Hours 0000 P.00.01.01-FoodwastePump 0000 G.01.01.01-Macerator1 0000 P.00.01.02-FoodwasteLiquorTransferPump 0000 G.02.01.01... |
-| 4 | chunk_fb689952de3b4605bc0b10d833f4401f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | User: O Hours Hours P.00.01.01-FoodwastePump G.01.01.01-Macerator1 P.00.01.02-FoodwasteLiquorTransferPump G.02.01.01-Macerator2 S.00.01.01-DewateringPress G.03.01.01-Macerator3... |
-| 5 | chunk_210ccc1ae4cb461180581821b6c0171a | doc_4d45d944c738426c9c19072145b95121 | hybrid | 5.000 | 50 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Environmentally > Responsible Solutions > Electrical System Precautions > Biohazard > Environmentally Responsible Solutions Engineered > Food Waste Press Description 7.2.2 | Section overview: Food Waste Press Description 7.2.2 The FMD food waste press is exclusively designed for separating solids from wastewater at a maximum inlet flow rate of up to... |
+| 1 | chunk_8261df0c886c49969275a66364850691 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 18.100 | 51 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket > Removal of the Screen Basket | The press has been designed specifically for screening solids from wastewater and sludge streams. The inlet wastewater should be such that it freely flows into the press without... |
+| 2 | chunk_148f2ae314144aaf9b003e6d78cd2112 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 18.100 | 54 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket > Fitting the Press Zone |  The press gearmotor should be bumped without water to verify the direction of rotation is correct. The press must not be operated in the wrong direction for more than a few se... |
+| 3 | chunk_0b39b9a496ab47a0b5b49426556cade9 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.400 | 65 | 7 Components > 7.2 Food Waste Press > Pulling out the Screw | The locating holes for the screw holder can be used for inserting a tool for pulling the screw from the shaft (available on request from FMD). Once the screw has been released a... |
+| 4 | chunk_b0c37dc923bb4e1690c7553456ea4743 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 61 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket > Removal of the Screen Basket | Now the screen basket can be pulled out of the separator using care. |
+| 5 | chunk_027484a8a05940908c389d6986987e3a | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 63 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket > Removal of the Screen Basket | The installation of a cleaned or new screen basket occurs in the reverse order to disassembly. When inserting the screen basket, be sure to push it in as straight as possible in... |
 
-### `M-014` What should be done before restarting the press if it has been idle for more than 72 hours?
+### `M-017` What are the pump type, serial number, power, RPM, flow rate, and max differential pressure of the vacuum transfer pump?
 
-- query type: `procedure_lookup`
+- query type: `table_lookup`
 - expected document: `manual_fwc12`
 - expected file: `19P006-31-FWC12-5-1-0_Manual.pdf`
-- expected section path: `7 Components > 7.2 Food Waste Press > Commissioning & Shutdown > Shutdown`
-- expected page: `55`
-- expected rank target: `top_5`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `If idle or shut down for more than 72 hours, the solids plug can dry and solidify; open the service port, retract the cone, and remove the solidified solids plug before restarting.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_dc9636b68a0c4efc869dc3a23ef5ef28 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
-| 2 | chunk_79cbf68b259c4a878ae3079f1c106fd6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 30 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 | Food waste that is difficult to grind, such as fibrous vegetables, tough fish skins and sinewy meat, should be broken down in size and mixed with other food waste. Dry and stick... |
-| 3 | chunk_b17e5fedba904e25848e38990f31fd83 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 25 | 7 Components > 7.1 Macerators > Owner / User Responsibility | The owner and/or user must have a sound understanding of the operating instructions and warnings before using this equipment. There are several forewarnings indicated throughout... |
-| 4 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 5 | chunk_1829dc2029484b9fad57081c8ae4a81c | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 6 | Revision / modification table | This documentation is designed to assist with becoming familiar with the system and how to operate it for its intended purposes. Important safety and hazard notices help you ope... |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_dc9636b68a0c4efc869dc3a23ef5ef28 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
-| 2 | chunk_79cbf68b259c4a878ae3079f1c106fd6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 30 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 | Food waste that is difficult to grind, such as fibrous vegetables, tough fish skins and sinewy meat, should be broken down in size and mixed with other food waste. Dry and stick... |
-| 3 | chunk_b17e5fedba904e25848e38990f31fd83 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 25 | 7 Components > 7.1 Macerators > Owner / User Responsibility | The owner and/or user must have a sound understanding of the operating instructions and warnings before using this equipment. There are several forewarnings indicated throughout... |
-| 4 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 5 | chunk_1829dc2029484b9fad57081c8ae4a81c | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 6 | Revision / modification table | This documentation is designed to assist with becoming familiar with the system and how to operate it for its intended purposes. Important safety and hazard notices help you ope... |
-
-### `M-015` How is the screen basket removed from the food waste press?
-
-- query type: `procedure_lookup`
-- expected document: `manual_fwc12`
-- expected file: `19P006-31-FWC12-5-1-0_Manual.pdf`
-- expected section path: `7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket > Removal of the Screen Basket`
-- expected page: `61`
-- expected rank target: `top_5`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `The screen basket can be pulled out carefully and as straight as possible to prevent jamming; after roughly half its length is pulled out, the initial resistance reduces considerably.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 61.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 2 | chunk_b869e6b6b3fe4b629d8f0c5e39d4cb06 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 19 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 | Section overview: Automatic Operation Page 6.1.3 Normal use mode with all control and safety systems active. From the home page select the Auto button on the screen, the Automat... |
-| 3 | chunk_5d3d20b7d13b45db9b2f41065e329d3f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 48 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: | Section overview: General Warnings: WARNING: Ensure you have read the safety definitions and symbols and understand all instructions before installing, operating, or servicing t... |
-| 4 | chunk_c2ba6f8280f8429fb36c61377776a002 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 48 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: | CAUTION: When installing or maintaining the pre-screen, shut off and lock out power before removing any covers. Never make adjustments while in operation, except for those presc... |
-| 5 | chunk_a8aac6b8ca6d44568e5d7f715426cf1d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 50 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Environmentally > Responsible Solutions > Electrical System Precautions > Biohazard > Environmentally Responsible Solutions Engineered > Food Waste Press Description 7.2.2 > Technical Data > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 2 | chunk_b869e6b6b3fe4b629d8f0c5e39d4cb06 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 19 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 | Section overview: Automatic Operation Page 6.1.3 Normal use mode with all control and safety systems active. From the home page select the Auto button on the screen, the Automat... |
-| 3 | chunk_5d3d20b7d13b45db9b2f41065e329d3f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 48 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: | Section overview: General Warnings: WARNING: Ensure you have read the safety definitions and symbols and understand all instructions before installing, operating, or servicing t... |
-| 4 | chunk_c2ba6f8280f8429fb36c61377776a002 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 48 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: | CAUTION: When installing or maintaining the pre-screen, shut off and lock out power before removing any covers. Never make adjustments while in operation, except for those presc... |
-| 5 | chunk_a8aac6b8ca6d44568e5d7f715426cf1d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 50 | 7 Components > 7.2 Food Waste Press > Safety Precautions 7.2.1 > Owner / User Responsibility > General Warnings: > Environmentally > Responsible Solutions > Electrical System Precautions > Biohazard > Environmentally Responsible Solutions Engineered > Food Waste Press Description 7.2.2 > Technical Data > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
-
-### `M-016` What torque is required after attaching the press zone?
-
-- query type: `specification_lookup`
-- expected document: `manual_fwc12`
-- expected file: `19P006-31-FWC12-5-1-0_Manual.pdf`
-- expected section path: `7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket > Fitting the Press Zone`
-- expected page: `63`
+- expected section path: `7 Components > 7.3 Vacuum / Transfer Pump > Technical Data`
+- expected page: `72`
 - expected rank target: `top_3`
 - anchor matched rank: `miss`
 - context matched rank: `miss`
-- expected passage: `After attaching the press zone, check all screws and tighten to the correct torque of 35 Nm.`
+- expected passage: `Pump Type MB-2; Serial Number D4093386; Power 3.0 kW; RPM 462 rpm at 50 Hz; Flow Rate 16 m³/hr at 50 Hz; Max. DP 6 bar.`
 - failure reasons:
   - Anchor retrieval did not return the expected evidence.
   - Anchor retrieval did not return the resolved expected chunk id.
   - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 63.
+  - Anchor retrieval did not return a chunk covering expected page 72.
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_776f4ca90c1c4da7a89d8f954788a498 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 13 | Revision / modification table | When a macerator station lid is closed and the start button is pressed, the control system of the FWC12 opens the appropriate valves based on the selected mode and then starts t... |
-| 2 | chunk_6a47caece0de40ab87a5d1c2b8917faf | doc_4d45d944c738426c9c19072145b95121 | hybrid | 3.000 | 54 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.2 Initial Test Run | WARNING: Risk of crushing / rupture of limbs! Ensure the inspection covers are fitted and secured before starting the machine. If all the pre-commissioning points are checked an... |
-| 3 | chunk_9e7f976748b94a3dbc3029816b7a6d6d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 23 | 6 Operation & General Maintenance | User: Alarms History From: 10/26/21-09:48:04 Duration: 1Min Refresh To: 10/26/21-09:48:04 Name State Value Time Description Backward Forward 6.2 Operating Modes Food Waste Colle... |
-| 4 | chunk_8b919a3194e84b76b2271dc22a721e0a | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | When mounting the legs:  Measure the height (X mm) between the flange of the mounting assembly and the floor/floor plate.  Measure the height (Y mm) of the disposer without le... |
-| 5 | chunk_bb088e6439a2422ea3b27cbb49918e0c | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | Context:  Use a jack or a lever to push up the disposer towards the flange of the mounting assembly. While this upward pressure is maintained, untighten each leg and pull it do... |
+| 1 | chunk_eb70ed711b0c4a71840971e7dc00d8ba | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 19.100 | 76 | 7 Components > 7.3 Vacuum / Transfer Pump > 7.3.6.2 Direction of Rotation and Flow | After bolting the baseplate to the foundation, remove the coupling guard and check the alignment of the coupling with a ruler and re-align if necessary. There is danger of disto... |
+| 2 | chunk_de5ae0fac9d245ceab52b0d24fec8c4e | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 17.750 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 |  The drive is attached to the drive shaft (1).  The drive shaft (1) is the extension of one of the two shafts (3) of the housing (2).  In the housing (2) the movement of the... |
+| 3 | chunk_8e27799f8e0b4e638abe1eb36e20e9ff | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 17.750 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump > General |  Stop the pump by turning off the power and make sure it cannot be turned on accidently.  Drain the pump head and if necessary, wash through if there is a risk of freezing or... |
+| 4 | chunk_310f59f1b8b14047b97a860dd46d5c76 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 17.750 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump | Where a standby pump is installed as a back-up for the main pump and it is likely to stand idle for an extended period then it is recommended that it is operated from time to ti... |
+| 5 | chunk_6f4a5dd87d6b42dd9f60c57c755cfa6a | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 17.750 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump > 7.3.9.1 Pump in General | A WARNING: Hands can be crushed by moving parts! Before opening the pump head (removing the cover plate) turn off the power supply and ensure it cannot be turned on accidently (... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_776f4ca90c1c4da7a89d8f954788a498 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 13 | Revision / modification table | When a macerator station lid is closed and the start button is pressed, the control system of the FWC12 opens the appropriate valves based on the selected mode and then starts t... |
-| 2 | chunk_6a47caece0de40ab87a5d1c2b8917faf | doc_4d45d944c738426c9c19072145b95121 | hybrid | 3.000 | 54 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.2 Initial Test Run | WARNING: Risk of crushing / rupture of limbs! Ensure the inspection covers are fitted and secured before starting the machine. If all the pre-commissioning points are checked an... |
-| 3 | chunk_9e7f976748b94a3dbc3029816b7a6d6d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 23 | 6 Operation & General Maintenance | User: Alarms History From: 10/26/21-09:48:04 Duration: 1Min Refresh To: 10/26/21-09:48:04 Name State Value Time Description Backward Forward 6.2 Operating Modes Food Waste Colle... |
-| 4 | chunk_8b919a3194e84b76b2271dc22a721e0a | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | When mounting the legs:  Measure the height (X mm) between the flange of the mounting assembly and the floor/floor plate.  Measure the height (Y mm) of the disposer without le... |
-| 5 | chunk_bb088e6439a2422ea3b27cbb49918e0c | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | Context:  Use a jack or a lever to push up the disposer towards the flange of the mounting assembly. While this upward pressure is maintained, untighten each leg and pull it do... |
+| 1 | chunk_eb70ed711b0c4a71840971e7dc00d8ba | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 19.100 | 76 | 7 Components > 7.3 Vacuum / Transfer Pump > 7.3.6.2 Direction of Rotation and Flow | After bolting the baseplate to the foundation, remove the coupling guard and check the alignment of the coupling with a ruler and re-align if necessary. There is danger of disto... |
+| 2 | chunk_de5ae0fac9d245ceab52b0d24fec8c4e | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 17.750 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 |  The drive is attached to the drive shaft (1).  The drive shaft (1) is the extension of one of the two shafts (3) of the housing (2).  In the housing (2) the movement of the... |
+| 3 | chunk_8e27799f8e0b4e638abe1eb36e20e9ff | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 17.750 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump > General |  Stop the pump by turning off the power and make sure it cannot be turned on accidently.  Drain the pump head and if necessary, wash through if there is a risk of freezing or... |
+| 4 | chunk_310f59f1b8b14047b97a860dd46d5c76 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 17.750 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump | Where a standby pump is installed as a back-up for the main pump and it is likely to stand idle for an extended period then it is recommended that it is operated from time to ti... |
+| 5 | chunk_6f4a5dd87d6b42dd9f60c57c755cfa6a | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 17.750 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump > 7.3.9.1 Pump in General | A WARNING: Hands can be crushed by moving parts! Before opening the pump head (removing the cover plate) turn off the power supply and ensure it cannot be turned on accidently (... |
 
 ### `M-018` Why must the vacuum transfer pump never run dry?
 
@@ -361,28 +354,27 @@
   - Anchor retrieval did not return the expected evidence.
   - Anchor retrieval did not return the resolved expected chunk id.
   - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 78.
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_7837cec3f81a45a1a5fe1401fb71b7da | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | Section overview: Maintenance Page 6.1.7 User: O Hours Hours 0000 P.00.01.01-FoodwastePump 0000 G.01.01.01-Macerator1 0000 P.00.01.02-FoodwasteLiquorTransferPump 0000 G.02.01.01... |
-| 2 | chunk_fb689952de3b4605bc0b10d833f4401f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | User: O Hours Hours P.00.01.01-FoodwastePump G.01.01.01-Macerator1 P.00.01.02-FoodwasteLiquorTransferPump G.02.01.01-Macerator2 S.00.01.01-DewateringPress G.03.01.01-Macerator3... |
-| 3 | chunk_b55aac821db14f159e6e791e59a0243e | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 54-55 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 | FMD FundamentalMarineDevelopments As general rules:  Never set the air pressure higher than 2.0 bar.  Once the plug is established the optimum air pressure is generally 0.6 –... |
-| 4 | chunk_c17b6e1123334ea98595d90d6b184af5 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 | Section overview: Safety Precautions 7.3.1 This manual contains basic instructions which must be observed when installing, operating and servicing the vacuum / transfer pump. It... |
-| 5 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
+| 1 | chunk_b6e33c8a0def402c8c3b00a96ab84db3 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 16.400 | 76 | 7 Components > 7.3 Vacuum / Transfer Pump | 口 No axial forces are allowed. Check the alignment after a short test run and make corrections if necessary. |
+| 2 | chunk_52a309e73cd14704ac816ceef8981735 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 > Technical Data 7.3.2 | FMD | Pump Type | MB-2 | |---------------|---------------------| | Serial Number | D4093386 | | Power | 3.0 kW | | RPM | 462rpm (at 50 Hz) | | Flow Rate | 16 m³/hr (at 50 Hz) |... |
+| 3 | chunk_f2dfecd41e89409a82aa54fb3642b4c9 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 73 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 > Technical Data 7.3.2 > Description 7.3.3 | .06 |
+| 4 | chunk_d5134401e86f421dac984e8e636781db | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 | The main parts of the lobe pump are shown below: |
+| 5 | chunk_2128609121c745a0ba54da71f709792d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 | (8) front cover  The drive is attached to the drive shaft (1).  The drive shaft (1) is the extension of one of the two shafts (3) of the housing (2). | (1) | drive shaft | (5)... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_7837cec3f81a45a1a5fe1401fb71b7da | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | Section overview: Maintenance Page 6.1.7 User: O Hours Hours 0000 P.00.01.01-FoodwastePump 0000 G.01.01.01-Macerator1 0000 P.00.01.02-FoodwasteLiquorTransferPump 0000 G.02.01.01... |
-| 2 | chunk_fb689952de3b4605bc0b10d833f4401f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | User: O Hours Hours P.00.01.01-FoodwastePump G.01.01.01-Macerator1 P.00.01.02-FoodwasteLiquorTransferPump G.02.01.01-Macerator2 S.00.01.01-DewateringPress G.03.01.01-Macerator3... |
-| 3 | chunk_b55aac821db14f159e6e791e59a0243e | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 54-55 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 | FMD FundamentalMarineDevelopments As general rules:  Never set the air pressure higher than 2.0 bar.  Once the plug is established the optimum air pressure is generally 0.6 –... |
-| 4 | chunk_c17b6e1123334ea98595d90d6b184af5 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 | Section overview: Safety Precautions 7.3.1 This manual contains basic instructions which must be observed when installing, operating and servicing the vacuum / transfer pump. It... |
-| 5 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
+| 1 | chunk_b6e33c8a0def402c8c3b00a96ab84db3 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 16.400 | 76 | 7 Components > 7.3 Vacuum / Transfer Pump | 口 No axial forces are allowed. Check the alignment after a short test run and make corrections if necessary. |
+| 2 | chunk_52a309e73cd14704ac816ceef8981735 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 > Technical Data 7.3.2 | FMD | Pump Type | MB-2 | |---------------|---------------------| | Serial Number | D4093386 | | Power | 3.0 kW | | RPM | 462rpm (at 50 Hz) | | Flow Rate | 16 m³/hr (at 50 Hz) |... |
+| 3 | chunk_f2dfecd41e89409a82aa54fb3642b4c9 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 73 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 > Technical Data 7.3.2 > Description 7.3.3 | .06 |
+| 4 | chunk_d5134401e86f421dac984e8e636781db | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 | The main parts of the lobe pump are shown below: |
+| 5 | chunk_2128609121c745a0ba54da71f709792d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 | (8) front cover  The drive is attached to the drive shaft (1).  The drive shaft (1) is the extension of one of the two shafts (3) of the housing (2). | (1) | drive shaft | (5)... |
 
 ### `M-019` How often should the vacuum transfer pump shaft seals be lubricated?
 
@@ -399,28 +391,27 @@
   - Anchor retrieval did not return the expected evidence.
   - Anchor retrieval did not return the resolved expected chunk id.
   - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 79.
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_5e8bf139653a4318b709a07498e83c6b | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 25 | 7 Components | Section overview: 7 Components Subsections: 7.1 Macerators; 7.2 Food Waste Press; Environmentally; Responsible Solutions; Mount the Retaining Plate; Inserting the Front Shaft Se... |
-| 2 | chunk_776f4ca90c1c4da7a89d8f954788a498 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 13 | Revision / modification table | When a macerator station lid is closed and the start button is pressed, the control system of the FWC12 opens the appropriate valves based on the selected mode and then starts t... |
-| 3 | chunk_a1fed9ef68aa421f9248a14b717ee128 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 | 3b 3a (1) drive shaft (5) hull (2) housing (6) lobe rotor (3) shaft (7) plate (4) wear plate (8) front cover |
-| 4 | chunk_7564f7ba73904fbfa2c82d227a7f6550 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 | (8) front cover  The drive is attached to the drive shaft (1).  The drive shaft (1) is the extension of one of the two shafts (3) of the housing (2). | (1) | drive shaft | (5)... |
-| 5 | chunk_c367675da50042cfbe79ac3a6e6af0cb | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 |  The drive is attached to the drive shaft (1).  The drive shaft (1) is the extension of one of the two shafts (3) of the housing (2).  In the housing (2) the movement of the... |
+| 1 | chunk_2128609121c745a0ba54da71f709792d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.400 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 | (8) front cover  The drive is attached to the drive shaft (1).  The drive shaft (1) is the extension of one of the two shafts (3) of the housing (2). | (1) | drive shaft | (5)... |
+| 2 | chunk_de5ae0fac9d245ceab52b0d24fec8c4e | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.400 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 |  The drive is attached to the drive shaft (1).  The drive shaft (1) is the extension of one of the two shafts (3) of the housing (2).  In the housing (2) the movement of the... |
+| 3 | chunk_e7baa954b59d427cb4a324d749968dd5 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 15.100 | 78-79 | 7 Components > 7.3 Vacuum / Transfer Pump | FMD FundamentalMarineDevelopments 7.3.9.2 Lubricating the Shaft Seals The pump shaft seals are lubricated with grease via two grease points on the side of the gear housing, with... |
+| 4 | chunk_52a309e73cd14704ac816ceef8981735 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 > Technical Data 7.3.2 | FMD | Pump Type | MB-2 | |---------------|---------------------| | Serial Number | D4093386 | | Power | 3.0 kW | | RPM | 462rpm (at 50 Hz) | | Flow Rate | 16 m³/hr (at 50 Hz) |... |
+| 5 | chunk_f2dfecd41e89409a82aa54fb3642b4c9 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 73 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 > Technical Data 7.3.2 > Description 7.3.3 | .06 |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_5e8bf139653a4318b709a07498e83c6b | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 25 | 7 Components | Section overview: 7 Components Subsections: 7.1 Macerators; 7.2 Food Waste Press; Environmentally; Responsible Solutions; Mount the Retaining Plate; Inserting the Front Shaft Se... |
-| 2 | chunk_776f4ca90c1c4da7a89d8f954788a498 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 13 | Revision / modification table | When a macerator station lid is closed and the start button is pressed, the control system of the FWC12 opens the appropriate valves based on the selected mode and then starts t... |
-| 3 | chunk_a1fed9ef68aa421f9248a14b717ee128 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 | 3b 3a (1) drive shaft (5) hull (2) housing (6) lobe rotor (3) shaft (7) plate (4) wear plate (8) front cover |
-| 4 | chunk_7564f7ba73904fbfa2c82d227a7f6550 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 | (8) front cover  The drive is attached to the drive shaft (1).  The drive shaft (1) is the extension of one of the two shafts (3) of the housing (2). | (1) | drive shaft | (5)... |
-| 5 | chunk_c367675da50042cfbe79ac3a6e6af0cb | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 |  The drive is attached to the drive shaft (1).  The drive shaft (1) is the extension of one of the two shafts (3) of the housing (2).  In the housing (2) the movement of the... |
+| 1 | chunk_2128609121c745a0ba54da71f709792d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.400 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 | (8) front cover  The drive is attached to the drive shaft (1).  The drive shaft (1) is the extension of one of the two shafts (3) of the housing (2). | (1) | drive shaft | (5)... |
+| 2 | chunk_de5ae0fac9d245ceab52b0d24fec8c4e | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.400 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 |  The drive is attached to the drive shaft (1).  The drive shaft (1) is the extension of one of the two shafts (3) of the housing (2).  In the housing (2) the movement of the... |
+| 3 | chunk_e7baa954b59d427cb4a324d749968dd5 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 15.100 | 78-79 | 7 Components > 7.3 Vacuum / Transfer Pump | FMD FundamentalMarineDevelopments 7.3.9.2 Lubricating the Shaft Seals The pump shaft seals are lubricated with grease via two grease points on the side of the gear housing, with... |
+| 4 | chunk_52a309e73cd14704ac816ceef8981735 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 > Technical Data 7.3.2 | FMD | Pump Type | MB-2 | |---------------|---------------------| | Serial Number | D4093386 | | Power | 3.0 kW | | RPM | 462rpm (at 50 Hz) | | Flow Rate | 16 m³/hr (at 50 Hz) |... |
+| 5 | chunk_f2dfecd41e89409a82aa54fb3642b4c9 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 15.050 | 73 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 > Technical Data 7.3.2 > Description 7.3.3 | .06 |
 
 ### `M-020` What oil quantity and oil change interval are specified for the rotary lobe pump?
 
@@ -430,32 +421,34 @@
 - expected section path: `7 Components > 7.3 Vacuum / Transfer Pump > Maintenance > Oil Quantities & Specification`
 - expected page: `80`
 - expected rank target: `top_3`
-- anchor matched rank: `10`
-- context matched rank: `10`
+- anchor matched rank: `miss`
+- context matched rank: `miss`
 - expected passage: `Oil quantity horizontal 0.6L, vertical 0.91L; first oil change after approx. 500 hours or 12 months, then after each 2000 hours or 12 months; oil specification SAE 75W-90 API GL-4 or GL-5.`
 - failure reasons:
-  - Anchor retrieval found relevant evidence, but later than the expected top_3 target (matched rank: 10).
+  - Anchor retrieval did not return the expected evidence.
+  - Anchor retrieval did not return the resolved expected chunk id.
+  - Anchor retrieval missed the expected section path.
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_4e801e8881844dca85bfd79ef7a89182 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start | View of grinder and jam release wrench from above 中 Disposer starts but there is no flushing water  Is the water supply isolation valve open?  Is a clicking sound heard when a... |
-| 2 | chunk_175e87a5ced247d8b7ce4cd8bd1b08b0 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water | Context:  Is a clicking sound heard when activating the water solenoid valve? If not, change the coil.  Is the water strainer clogged? Isolate the water supply, open strainer... |
-| 3 | chunk_7c2ede757af5499aa47edb62edd4cf95 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 46 | Responsible Solutions | FMD FundamentalMarineDevelopments Take Note: That the correct quality and strength of all nuts and screws used are important. FMD can not guarantee the safety if other screws an... |
-| 4 | chunk_25f2d53d0bc646d1baaa9e24d8442615 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 72-73 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 > Technical Data 7.3.2 | FMD FundamentalMarineDevelopments Description 7.3.3 The illustrations in these instructions may not always correspond exactly to the installed machine. But they correctly descri... |
-| 5 | chunk_3912be83bc034ef6bc78bb95cf57ec9f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 75 | 7 Components > 7.3 Vacuum / Transfer Pump | The pumps are preserved for transport and short-term storage unless specified otherwise. In cases of longer storage, the pumps should be handled as follows until commissioning:... |
+| 1 | chunk_626f843154054e209126ee9efc924e49 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 11.400 | 80 | 7 Components > 7.3 Vacuum / Transfer Pump | = 。 The deaeration screw (1) has always to be at the top position. The magnetic oil drain screw (3) has always to be on the lowest position. Draining  Open the magnetic drain s... |
+| 2 | chunk_bf401ab25f1c46c096e108cb52ffe68d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 10.050 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water |  Is the water supply isolation valve open?  Is a clicking sound heard when activating the water solenoid valve? If not, change the coil.  Is the water strainer clogged? Isola... |
+| 3 | chunk_391993d25b734127941b7c209ab816f3 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 10.050 | 75 | 7 Components > 7.3 Vacuum / Transfer Pump | The pumps are preserved for transport and short-term storage unless specified otherwise. In cases of longer storage, the pumps should be handled as follows until commissioning:... |
+| 4 | chunk_be258f1ea6e34f40acb1b0e960297de1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 8.700 | 13 | 3 System Introduction > 3.5 Don'ts | Do not attempt to process the following waste groups in the macerators or FWC12 system:  Cooking oils & Fats  Dough  Cutlery, glass, crockery  Plastic or solid waste  Paint... |
+| 5 | chunk_b26865d9ba0e4a0698ba11c46e776390 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 8.700 | 36 | General information | Clean all components carefully. Wipe the surface of the motor (P1) upper flange and its shaft. Make sure that there is no dust or grease residue. Make sure that the motor shaft... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_4e801e8881844dca85bfd79ef7a89182 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start | View of grinder and jam release wrench from above 中 Disposer starts but there is no flushing water  Is the water supply isolation valve open?  Is a clicking sound heard when a... |
-| 2 | chunk_175e87a5ced247d8b7ce4cd8bd1b08b0 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water | Context:  Is a clicking sound heard when activating the water solenoid valve? If not, change the coil.  Is the water strainer clogged? Isolate the water supply, open strainer... |
-| 3 | chunk_7c2ede757af5499aa47edb62edd4cf95 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 46 | Responsible Solutions | FMD FundamentalMarineDevelopments Take Note: That the correct quality and strength of all nuts and screws used are important. FMD can not guarantee the safety if other screws an... |
-| 4 | chunk_25f2d53d0bc646d1baaa9e24d8442615 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 72-73 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 > Technical Data 7.3.2 | FMD FundamentalMarineDevelopments Description 7.3.3 The illustrations in these instructions may not always correspond exactly to the installed machine. But they correctly descri... |
-| 5 | chunk_3912be83bc034ef6bc78bb95cf57ec9f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 75 | 7 Components > 7.3 Vacuum / Transfer Pump | The pumps are preserved for transport and short-term storage unless specified otherwise. In cases of longer storage, the pumps should be handled as follows until commissioning:... |
+| 1 | chunk_626f843154054e209126ee9efc924e49 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 11.400 | 80 | 7 Components > 7.3 Vacuum / Transfer Pump | = 。 The deaeration screw (1) has always to be at the top position. The magnetic oil drain screw (3) has always to be on the lowest position. Draining  Open the magnetic drain s... |
+| 2 | chunk_bf401ab25f1c46c096e108cb52ffe68d | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 10.050 | 31 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water |  Is the water supply isolation valve open?  Is a clicking sound heard when activating the water solenoid valve? If not, change the coil.  Is the water strainer clogged? Isola... |
+| 3 | chunk_391993d25b734127941b7c209ab816f3 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 10.050 | 75 | 7 Components > 7.3 Vacuum / Transfer Pump | The pumps are preserved for transport and short-term storage unless specified otherwise. In cases of longer storage, the pumps should be handled as follows until commissioning:... |
+| 4 | chunk_be258f1ea6e34f40acb1b0e960297de1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 8.700 | 13 | 3 System Introduction > 3.5 Don'ts | Do not attempt to process the following waste groups in the macerators or FWC12 system:  Cooking oils & Fats  Dough  Cutlery, glass, crockery  Plastic or solid waste  Paint... |
+| 5 | chunk_b26865d9ba0e4a0698ba11c46e776390 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 8.700 | 36 | General information | Clean all components carefully. Wipe the surface of the motor (P1) upper flange and its shaft. Make sure that there is no dust or grease residue. Make sure that the motor shaft... |
 
 ### `M-021` What are likely causes and remedies if the liquor transfer pump runs with no discharge?
 
@@ -478,106 +471,34 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_823b1f4361e84492a57342096e6aded4 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 12 | 3 System Introduction > 3.2 Identifying Features of the Plant | Food Waste Tank De-watering Press Vacuum & Transfer Pump Liquor transfer pump discharge FWC25 depicted |
-| 2 | chunk_776f4ca90c1c4da7a89d8f954788a498 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 13 | Revision / modification table | When a macerator station lid is closed and the start button is pressed, the control system of the FWC12 opens the appropriate valves based on the selected mode and then starts t... |
-| 3 | chunk_7837cec3f81a45a1a5fe1401fb71b7da | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | Section overview: Maintenance Page 6.1.7 User: O Hours Hours 0000 P.00.01.01-FoodwastePump 0000 G.01.01.01-Macerator1 0000 P.00.01.02-FoodwasteLiquorTransferPump 0000 G.02.01.01... |
-| 4 | chunk_fb689952de3b4605bc0b10d833f4401f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | User: O Hours Hours P.00.01.01-FoodwastePump G.01.01.01-Macerator1 P.00.01.02-FoodwasteLiquorTransferPump G.02.01.01-Macerator2 S.00.01.01-DewateringPress G.03.01.01-Macerator3... |
-| 5 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
+| 1 | chunk_94423d8af226420c9fad208561b7d31e | doc_4d45d944c738426c9c19072145b95121 | hybrid | 17.750 | 88 | 7 Components > 7.4 Liquor Transfer Pump > Safety Precautions & Symbols > Technical Data 7.4.2 > Description 7.4.3 | Close-coupled, centrifugal pumps; electric motor with extended shaft directly connected to the pump with open impeller. Intended use for moderately dirty liquids (maximum size o... |
+| 2 | chunk_b6e33c8a0def402c8c3b00a96ab84db3 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.400 | 76 | 7 Components > 7.3 Vacuum / Transfer Pump | 口 No axial forces are allowed. Check the alignment after a short test run and make corrections if necessary. |
+| 3 | chunk_8e27799f8e0b4e638abe1eb36e20e9ff | doc_4d45d944c738426c9c19072145b95121 | hybrid | 16.400 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump > General |  Stop the pump by turning off the power and make sure it cannot be turned on accidently.  Drain the pump head and if necessary, wash through if there is a risk of freezing or... |
+| 4 | chunk_310f59f1b8b14047b97a860dd46d5c76 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.400 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump | Where a standby pump is installed as a back-up for the main pump and it is likely to stand idle for an extended period then it is recommended that it is operated from time to ti... |
+| 5 | chunk_29b01088191d4aaea755f9472f80a5f9 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 16.400 | 88 | 7 Components > 7.4 Liquor Transfer Pump > Safety Precautions & Symbols | Take Note: Before using the pump carefully read the information contained in this instruction manual. |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_823b1f4361e84492a57342096e6aded4 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 12 | 3 System Introduction > 3.2 Identifying Features of the Plant | Food Waste Tank De-watering Press Vacuum & Transfer Pump Liquor transfer pump discharge FWC25 depicted |
-| 2 | chunk_776f4ca90c1c4da7a89d8f954788a498 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 13 | Revision / modification table | When a macerator station lid is closed and the start button is pressed, the control system of the FWC12 opens the appropriate valves based on the selected mode and then starts t... |
-| 3 | chunk_7837cec3f81a45a1a5fe1401fb71b7da | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | Section overview: Maintenance Page 6.1.7 User: O Hours Hours 0000 P.00.01.01-FoodwastePump 0000 G.01.01.01-Macerator1 0000 P.00.01.02-FoodwasteLiquorTransferPump 0000 G.02.01.01... |
-| 4 | chunk_fb689952de3b4605bc0b10d833f4401f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 22 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 > Settings Page 2 6.1.6 > Environmentally > Maintenance Page 6.1.7 | User: O Hours Hours P.00.01.01-FoodwastePump G.01.01.01-Macerator1 P.00.01.02-FoodwasteLiquorTransferPump G.02.01.01-Macerator2 S.00.01.01-DewateringPress G.03.01.01-Macerator3... |
-| 5 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
+| 1 | chunk_94423d8af226420c9fad208561b7d31e | doc_4d45d944c738426c9c19072145b95121 | hybrid | 17.750 | 88 | 7 Components > 7.4 Liquor Transfer Pump > Safety Precautions & Symbols > Technical Data 7.4.2 > Description 7.4.3 | Close-coupled, centrifugal pumps; electric motor with extended shaft directly connected to the pump with open impeller. Intended use for moderately dirty liquids (maximum size o... |
+| 2 | chunk_b6e33c8a0def402c8c3b00a96ab84db3 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.400 | 76 | 7 Components > 7.3 Vacuum / Transfer Pump | 口 No axial forces are allowed. Check the alignment after a short test run and make corrections if necessary. |
+| 3 | chunk_8e27799f8e0b4e638abe1eb36e20e9ff | doc_4d45d944c738426c9c19072145b95121 | hybrid | 16.400 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump > General |  Stop the pump by turning off the power and make sure it cannot be turned on accidently.  Drain the pump head and if necessary, wash through if there is a risk of freezing or... |
+| 4 | chunk_310f59f1b8b14047b97a860dd46d5c76 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 16.400 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump | Where a standby pump is installed as a back-up for the main pump and it is likely to stand idle for an extended period then it is recommended that it is operated from time to ti... |
+| 5 | chunk_29b01088191d4aaea755f9472f80a5f9 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 16.400 | 88 | 7 Components > 7.4 Liquor Transfer Pump > Safety Precautions & Symbols | Take Note: Before using the pump carefully read the information contained in this instruction manual. |
 
-### `C-001` What is the Lloyd's Register certificate number for the flexible hoses?
-
-- query type: `identifier_lookup`
-- expected document: `certificate_hoses_ham2423501`
-- expected file: `0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501.pdf`
-- expected section path: `Certificate header`
-- expected page: `1`
-- expected rank target: `top_1`
-- anchor matched rank: `5`
-- context matched rank: `5`
-- expected passage: `Certificate No. HAM2423501.`
-- failure reasons:
-  - Anchor retrieval found relevant evidence, but later than the expected top_1 target (matched rank: 5).
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_0b7a477d32b642ef94457aa973052a64 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 6.000 | 3 | Particulars | | Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------... |
-| 2 | chunk_fe008d16592f4a6db15c97ce65a39646 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 6.000 | 4 | Technical Data / Specification | | Spezifikation/specification | Soll/nominal | Istresult | |----------------------------------------------------------------------|--------------------|-------------------------... |
-| 3 | chunk_4a4a7c7d4b734e5dbdbda7db735700a8 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 6.000 | 5 | Particulars | | Spezifikation/specification | Soll/nominal | Ist/result | |----------------------------------------------------------------------|--------------------|------------------------... |
-| 4 | chunk_549711f633c94e7fb1721b85f5542cb0 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 6.000 | 6 | Particulars | | Spezifikation/specification | Soll/nominal | Ist/result | |----------------------------------------------------------------------|--------------------|------------------------... |
-| 5 | chunk_c3955251a0de49f898e998822605990d | doc_0e4e45c14f7f4918a408c2c0ab7902bb | hybrid | 5.000 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_0b7a477d32b642ef94457aa973052a64 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 6.000 | 3 | Particulars | | Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------... |
-| 2 | chunk_fe008d16592f4a6db15c97ce65a39646 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 6.000 | 4 | Technical Data / Specification | | Spezifikation/specification | Soll/nominal | Istresult | |----------------------------------------------------------------------|--------------------|-------------------------... |
-| 3 | chunk_4a4a7c7d4b734e5dbdbda7db735700a8 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 6.000 | 5 | Particulars | | Spezifikation/specification | Soll/nominal | Ist/result | |----------------------------------------------------------------------|--------------------|------------------------... |
-| 4 | chunk_549711f633c94e7fb1721b85f5542cb0 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 6.000 | 6 | Particulars | | Spezifikation/specification | Soll/nominal | Ist/result | |----------------------------------------------------------------------|--------------------|------------------------... |
-| 5 | chunk_c3955251a0de49f898e998822605990d | doc_0e4e45c14f7f4918a408c2c0ab7902bb | hybrid | 5.000 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
-
-### `C-002` What was the final date of inspection on certificate HAM2423501?
-
-- query type: `identifier_lookup`
-- expected document: `certificate_hoses_ham2423501`
-- expected file: `0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501.pdf`
-- expected section path: `Certificate header`
-- expected page: `1`
-- expected rank target: `top_1`
-- anchor matched rank: `10`
-- context matched rank: `10`
-- expected passage: `Final Date of Inspection 29 November 2024.`
-- failure reasons:
-  - Anchor retrieval found relevant evidence, but later than the expected top_1 target (matched rank: 10).
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval did not return a chunk covering expected page 1.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_dc9636b68a0c4efc869dc3a23ef5ef28 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
-| 2 | chunk_eea34537b57b42b691707b1fb41bdd7c | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 39 | CONNECTION | FundamentalMarineDevelopments Carefully fit the hood (P15). For the upper hole pattern of the hood to end up in the same way as before dismantling, the outside arrow mark on the... |
-| 3 | chunk_157cf28e40664714a8d75e7d582ba958 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 51 | 4 Installation > How it Works 7.2.5 | The press has been designed specifically for screening solids from wastewater and sludge streams. The inlet wastewater should be such that it freely flows into the press without... |
-| 4 | chunk_6a47caece0de40ab87a5d1c2b8917faf | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 54 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.2 Initial Test Run | WARNING: Risk of crushing / rupture of limbs! Ensure the inspection covers are fitted and secured before starting the machine. If all the pre-commissioning points are checked an... |
-| 5 | chunk_e069cf1ab93443d59c72eb2387615ae2 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 55-56 | 7 Components > 7.2 Food Waste Press | FMD FundamentalMarineDevelopments Overview & Maintenance Intervals To maintain operational readiness, possible damage should be detected at an early stage. To preserve warranty... |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_dc9636b68a0c4efc869dc3a23ef5ef28 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
-| 2 | chunk_eea34537b57b42b691707b1fb41bdd7c | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 39 | CONNECTION | FundamentalMarineDevelopments Carefully fit the hood (P15). For the upper hole pattern of the hood to end up in the same way as before dismantling, the outside arrow mark on the... |
-| 3 | chunk_157cf28e40664714a8d75e7d582ba958 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 51 | 4 Installation > How it Works 7.2.5 | The press has been designed specifically for screening solids from wastewater and sludge streams. The inlet wastewater should be such that it freely flows into the press without... |
-| 4 | chunk_6a47caece0de40ab87a5d1c2b8917faf | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 54 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.2 Initial Test Run | WARNING: Risk of crushing / rupture of limbs! Ensure the inspection covers are fitted and secured before starting the machine. If all the pre-commissioning points are checked an... |
-| 5 | chunk_e069cf1ab93443d59c72eb2387615ae2 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 55-56 | 7 Components > 7.2 Food Waste Press | FMD FundamentalMarineDevelopments Overview & Maintenance Intervals To maintain operational readiness, possible damage should be detected at an early stage. To preserve warranty... |
-
-### `C-003` What quantity and size of hoses are covered by the Lloyd's Register certificate?
+### `C-005` Who is the manufacturer and who is the certificate intended for?
 
 - query type: `factual_lookup`
 - expected document: `certificate_hoses_ham2423501`
 - expected file: `0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501.pdf`
-- expected section path: `Particulars`
+- expected section path: `General information`
 - expected page: `1`
 - expected rank target: `top_3`
 - anchor matched rank: `miss`
 - context matched rank: `miss`
-- expected passage: `Quantity 4 pcs; Description Flexible Hoses; Size DN 8.`
+- expected passage: `Manufacturer Schauenburg Industrietechnik GmbH; Intended for H. A. Schröder GmbH + Co. KG, Schiffdorf-Wehden / Germany, For Stock.`
 - failure reasons:
   - Anchor retrieval did not return the expected evidence.
   - Anchor retrieval did not return the resolved expected chunk id.
@@ -588,58 +509,22 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_adf485e15e9749a5a07f98ee81860c03 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 6 | General information | The components of other manufacturers which are used within the plant (e.g. e-motors), have a risk assessment from the respective manufacturer. The obligation to ensure that the... |
-| 2 | chunk_157cf28e40664714a8d75e7d582ba958 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 51 | 4 Installation > How it Works 7.2.5 | The press has been designed specifically for screening solids from wastewater and sludge streams. The inlet wastewater should be such that it freely flows into the press without... |
-| 3 | chunk_54e214bef0b94a08ba03c21d7479cdfc | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 51 | 4 Installation > How it Works 7.2.5 | Context: The solid content is a function of the input material, the installed basket screen size, and the press zone cone pre-load (which is adjusted using a precision air press... |
-| 4 | chunk_bee04a726c0e41f8a438719010477f9f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 6 | 1 General | DFW De-watered Food Waste Liquor FOG Fat Oil & Grease GWG Galley Grey Water (sinks, floor drains etc.) 1.4 Abbreviations °C Celsius DIN German Industry Standard DN Diameter Nomi... |
-| 5 | chunk_b5228521c2c04f6da561bc8572d4cfdd | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 6 | 1 General > 1.5 Symbols List | Context: Important safety-related notes in this technical manual are signified by symbols. These notes regarding work safety must be adhered to and complied with to secure the p... |
+| 1 | chunk_553043dd82ed4e8d8e47d5117f71bf46 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 17.700 | 34 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates | This document has been translated into several languages. Legally determined is solely the English source text. The document translated into EU languages is available: In the do... |
+| 2 | chunk_afcc44804f4f4f56a6370985ff998c44 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 17.700 | 35 | Safety Instructions > Manufacturer's certificates | List of applied standards: See EU Declaration of Conformity. |
+| 3 | chunk_eb5ab4083ddd4fa5afc09019a55f95b6 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 17.700 | 35 | Safety Instructions > Manufacturer's certificates | Certificate number: IECEx KEM 09.0016X Affixing the certificate number certifies conformity with the following standards (depending on the device version): IEC 60079-0 : 2017 IE... |
+| 4 | chunk_0fde49673bec441387f938eea3c3f478 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 17.700 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables | A B A Electronic; Zone 2 B Process; Zone 2 1 Certified associated apparatus 2 PMC51, PMP51, PMP55 3 Option: Separate enclosure Intrinsic safety The intrinsically safe input powe... |
+| 5 | chunk_682100e62e494179ab28d7c3e0cb2508 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 17.700 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety | The specified ambient and process temperature ranges exclusively refer to the explosion protection and must not be exceeded. Operationally permitted ambient temperature ranges c... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_adf485e15e9749a5a07f98ee81860c03 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 6 | General information | The components of other manufacturers which are used within the plant (e.g. e-motors), have a risk assessment from the respective manufacturer. The obligation to ensure that the... |
-| 2 | chunk_157cf28e40664714a8d75e7d582ba958 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 51 | 4 Installation > How it Works 7.2.5 | The press has been designed specifically for screening solids from wastewater and sludge streams. The inlet wastewater should be such that it freely flows into the press without... |
-| 3 | chunk_54e214bef0b94a08ba03c21d7479cdfc | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 51 | 4 Installation > How it Works 7.2.5 | Context: The solid content is a function of the input material, the installed basket screen size, and the press zone cone pre-load (which is adjusted using a precision air press... |
-| 4 | chunk_bee04a726c0e41f8a438719010477f9f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 6 | 1 General | DFW De-watered Food Waste Liquor FOG Fat Oil & Grease GWG Galley Grey Water (sinks, floor drains etc.) 1.4 Abbreviations °C Celsius DIN German Industry Standard DN Diameter Nomi... |
-| 5 | chunk_b5228521c2c04f6da561bc8572d4cfdd | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 6 | 1 General > 1.5 Symbols List | Context: Important safety-related notes in this technical manual are signified by symbols. These notes regarding work safety must be adhered to and complied with to secure the p... |
-
-### `D-004` Which item numbers and codes are used for the masthead lamps?
-
-- query type: `identifier_lookup`
-- expected document: `drawing_nav_lights_13759_3540`
-- expected file: `13759_3540_01.00_REV.05 Arrangement Navigation Lights and Signals_AS-BUILT.pdf`
-- expected section path: `Lamp labels`
-- expected page: `1`
-- expected rank target: `top_5`
-- anchor matched rank: `10`
-- context matched rank: `10`
-- expected passage: `1 - MASTHEAD LAMP 1 (MAIN MAST) WHITE - 30° 3540.3000; 2 - MASTHEAD LAMP 2 (SB) WHITE - 97.5° 3540.3100; 3 - MASTHEAD LAMP 3 (PS) WHITE - 97.5° 3540.3200.`
-- failure reasons:
-  - Anchor retrieval found relevant evidence, but later than the expected top_5 target (matched rank: 10).
-  - Anchor retrieval did not return the resolved expected chunk id.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_d3f36e66f2ec4d24a9a0357a98b53070 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 6 | 1, 2, 3, ... | Item numbers |
-| 2 | chunk_8b919a3194e84b76b2271dc22a721e0a | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | When mounting the legs:  Measure the height (X mm) between the flange of the mounting assembly and the floor/floor plate.  Measure the height (Y mm) of the disposer without le... |
-| 3 | chunk_bb088e6439a2422ea3b27cbb49918e0c | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | Context:  Use a jack or a lever to push up the disposer towards the flange of the mounting assembly. While this upward pressure is maintained, untighten each leg and pull it do... |
-| 4 | chunk_7e389504d4a947009c608e20b9cdd3b3 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 35 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer > Environmentally > Responsible Solutions > Environmentally > Responsible Solutions | Section overview: Responsible Solutions Engineered FMD FundamentalMarineDevelopments Examine the contact surfaces of the carrier (P2) for wear caused by the axle seals. There sh... |
-| 5 | chunk_be1a191c81a842bd834c336852f431ae | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 35 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer > Environmentally > Responsible Solutions > Environmentally > Responsible Solutions | FMD FundamentalMarineDevelopments Examine the contact surfaces of the carrier (P2) for wear caused by the axle seals. There should only be two small symmetrical (barely noticeab... |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_d3f36e66f2ec4d24a9a0357a98b53070 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 6 | 1, 2, 3, ... | Item numbers |
-| 2 | chunk_8b919a3194e84b76b2271dc22a721e0a | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | When mounting the legs:  Measure the height (X mm) between the flange of the mounting assembly and the floor/floor plate.  Measure the height (Y mm) of the disposer without le... |
-| 3 | chunk_bb088e6439a2422ea3b27cbb49918e0c | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | Context:  Use a jack or a lever to push up the disposer towards the flange of the mounting assembly. While this upward pressure is maintained, untighten each leg and pull it do... |
-| 4 | chunk_7e389504d4a947009c608e20b9cdd3b3 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 35 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer > Environmentally > Responsible Solutions > Environmentally > Responsible Solutions | Section overview: Responsible Solutions Engineered FMD FundamentalMarineDevelopments Examine the contact surfaces of the carrier (P2) for wear caused by the axle seals. There sh... |
-| 5 | chunk_be1a191c81a842bd834c336852f431ae | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 35 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer > Environmentally > Responsible Solutions > Environmentally > Responsible Solutions | FMD FundamentalMarineDevelopments Examine the contact surfaces of the carrier (P2) for wear caused by the axle seals. There should only be two small symmetrical (barely noticeab... |
+| 1 | chunk_553043dd82ed4e8d8e47d5117f71bf46 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 17.700 | 34 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates | This document has been translated into several languages. Legally determined is solely the English source text. The document translated into EU languages is available: In the do... |
+| 2 | chunk_afcc44804f4f4f56a6370985ff998c44 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 17.700 | 35 | Safety Instructions > Manufacturer's certificates | List of applied standards: See EU Declaration of Conformity. |
+| 3 | chunk_eb5ab4083ddd4fa5afc09019a55f95b6 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 17.700 | 35 | Safety Instructions > Manufacturer's certificates | Certificate number: IECEx KEM 09.0016X Affixing the certificate number certifies conformity with the following standards (depending on the device version): IEC 60079-0 : 2017 IE... |
+| 4 | chunk_0fde49673bec441387f938eea3c3f478 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 17.700 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables | A B A Electronic; Zone 2 B Process; Zone 2 1 Certified associated apparatus 2 PMC51, PMP51, PMP55 3 Option: Separate enclosure Intrinsic safety The intrinsically safe input powe... |
+| 5 | chunk_682100e62e494179ab28d7c3e0cb2508 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 17.700 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety | The specified ambient and process temperature ranges exclusively refer to the explosion protection and must not be exceeded. Operationally permitted ambient temperature ranges c... |
 
 ### `DS-001` What product is type MK311xxx?
 
@@ -659,22 +544,22 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_73948851424443d48792b1bfcb386f97 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 3.000 | 2 | CONNECTION | 2-way Wafer-type Ball valve, Stainless steel, Handle, DN 50 | 1. + 2. Digit Product | 3. + 4. Digit Materials Body / seals / ball | 5. Digit Operation | 6. Digit Options | 7. +... |
-| 2 | chunk_86537819cf9941f385b30fd7cfcf7dcb | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 2.000 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
-| 3 | chunk_b70e23d9378f43c1973d1b1e92d62b60 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 2.000 | 1 | MK311xxx | 2-Wege Kompakt Kugelhahn voller Durchgang PN16 / PN40 Edelstahl 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel |
-| 4 | chunk_f4192d3ebba04b26965aa0c9df2780e7 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 34 | 8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates | Section overview: Manufacturer's certificates This document has been translated into several languages. Legally determined is solely the English source text. The document transl... |
-| 5 | chunk_1606f5d980c94b6a8cbb7bee4a60cffb | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 34 | 8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates | This document has been translated into several languages. Legally determined is solely the English source text. The document translated into EU languages is available: In the do... |
+| 1 | chunk_b82a6bea38f24649bf41c3b8a9a94886 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 45.050 | 2 | CONNECTION | 2-way Wafer-type Ball valve, Stainless steel, Handle, DN 50 | 1. + 2. Digit Product | 3. + 4. Digit Materials Body / seals / ball | 5. Digit Operation | 6. Digit Options | 7. +... |
+| 2 | chunk_7ae862a501a446cdbaadbc5cb19fb232 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 40.700 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
+| 3 | chunk_d3ac362b5e894986983005b47ae412c6 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 1 | BAUFORM | 1-teilige kompakte Körperkonstruktion, voller Durchgang, Flanschplatte für Antriebsaufbau nach ISO 5211. Anti Statik Spindel. |
+| 4 | chunk_44132c967c7c4e8cb187e378496b1c96 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 2 | Abmessung / Dimension | | DN | d | L | D | D1 | D2 | b | f | H | W | C | ISO5211 | Z-M | h | s | Nm | |------|-----|--------|-----|------|------|-----|-----|-----|-----|-----|----------------|--------|... |
+| 5 | chunk_3380bca513aa473bb1e8c6d114d24804 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 3 | Stückliste / Parts list | 工 口 ISO5211 S b |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_73948851424443d48792b1bfcb386f97 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 3.000 | 2 | CONNECTION | 2-way Wafer-type Ball valve, Stainless steel, Handle, DN 50 | 1. + 2. Digit Product | 3. + 4. Digit Materials Body / seals / ball | 5. Digit Operation | 6. Digit Options | 7. +... |
-| 2 | chunk_86537819cf9941f385b30fd7cfcf7dcb | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 2.000 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
-| 3 | chunk_b70e23d9378f43c1973d1b1e92d62b60 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 2.000 | 1 | MK311xxx | 2-Wege Kompakt Kugelhahn voller Durchgang PN16 / PN40 Edelstahl 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel |
-| 4 | chunk_f4192d3ebba04b26965aa0c9df2780e7 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 34 | 8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates | Section overview: Manufacturer's certificates This document has been translated into several languages. Legally determined is solely the English source text. The document transl... |
-| 5 | chunk_1606f5d980c94b6a8cbb7bee4a60cffb | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 34 | 8 Commissioning > Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Cerabar M PMC51, PMP51, PMP55 > Table of contents > About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates | This document has been translated into several languages. Legally determined is solely the English source text. The document translated into EU languages is available: In the do... |
+| 1 | chunk_b82a6bea38f24649bf41c3b8a9a94886 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 45.050 | 2 | CONNECTION | 2-way Wafer-type Ball valve, Stainless steel, Handle, DN 50 | 1. + 2. Digit Product | 3. + 4. Digit Materials Body / seals / ball | 5. Digit Operation | 6. Digit Options | 7. +... |
+| 2 | chunk_7ae862a501a446cdbaadbc5cb19fb232 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 40.700 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
+| 3 | chunk_d3ac362b5e894986983005b47ae412c6 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 1 | BAUFORM | 1-teilige kompakte Körperkonstruktion, voller Durchgang, Flanschplatte für Antriebsaufbau nach ISO 5211. Anti Statik Spindel. |
+| 4 | chunk_44132c967c7c4e8cb187e378496b1c96 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 2 | Abmessung / Dimension | | DN | d | L | D | D1 | D2 | b | f | H | W | C | ISO5211 | Z-M | h | s | Nm | |------|-----|--------|-----|------|------|-----|-----|-----|-----|-----|----------------|--------|... |
+| 5 | chunk_3380bca513aa473bb1e8c6d114d24804 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 3 | Stückliste / Parts list | 工 口 ISO5211 S b |
 
 ### `DS-002` What are the design features of the MK311xxx valve?
 
@@ -696,94 +581,57 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_86537819cf9941f385b30fd7cfcf7dcb | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 3.000 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
-| 2 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 3 | chunk_7ddffdfc0fad4b8da44c310328c5ae1a | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 2.000 | 1 | CONNECTION | Flange DN15 … DN200. DN15 … DN50: measured to PN40 DN65 … DN200: measured to PN16 Flange produced with threaded holes. Ball valve DN65 will be delivered in 4-hole execution! |
-| 4 | chunk_b70e23d9378f43c1973d1b1e92d62b60 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 2.000 | 1 | MK311xxx | 2-Wege Kompakt Kugelhahn voller Durchgang PN16 / PN40 Edelstahl 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel |
-| 5 | chunk_73948851424443d48792b1bfcb386f97 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 2.000 | 2 | CONNECTION | 2-way Wafer-type Ball valve, Stainless steel, Handle, DN 50 | 1. + 2. Digit Product | 3. + 4. Digit Materials Body / seals / ball | 5. Digit Operation | 6. Digit Options | 7. +... |
+| 1 | chunk_7ae862a501a446cdbaadbc5cb19fb232 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 42.050 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
+| 2 | chunk_d3ac362b5e894986983005b47ae412c6 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 1 | BAUFORM | 1-teilige kompakte Körperkonstruktion, voller Durchgang, Flanschplatte für Antriebsaufbau nach ISO 5211. Anti Statik Spindel. |
+| 3 | chunk_44132c967c7c4e8cb187e378496b1c96 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 2 | Abmessung / Dimension | | DN | d | L | D | D1 | D2 | b | f | H | W | C | ISO5211 | Z-M | h | s | Nm | |------|-----|--------|-----|------|------|-----|-----|-----|-----|-----|----------------|--------|... |
+| 4 | chunk_3380bca513aa473bb1e8c6d114d24804 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 3 | Stückliste / Parts list | 工 口 ISO5211 S b |
+| 5 | chunk_dfc73afcd2c84183ba6d08cc68fb3006 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 4 | Druck - Temperatur - Diagramm / Pressure - Temperature - Diagram | 200 °C Druck-Temperatur-Diagramm (PTFE) Pressure-Temperature-Diagramm (PTFE) 0 0 16 25 40 50 64 75 bar 50 80 100 150 180 200 °C |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_86537819cf9941f385b30fd7cfcf7dcb | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 3.000 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
-| 2 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 3 | chunk_7ddffdfc0fad4b8da44c310328c5ae1a | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 2.000 | 1 | CONNECTION | Flange DN15 … DN200. DN15 … DN50: measured to PN40 DN65 … DN200: measured to PN16 Flange produced with threaded holes. Ball valve DN65 will be delivered in 4-hole execution! |
-| 4 | chunk_b70e23d9378f43c1973d1b1e92d62b60 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 2.000 | 1 | MK311xxx | 2-Wege Kompakt Kugelhahn voller Durchgang PN16 / PN40 Edelstahl 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel |
-| 5 | chunk_73948851424443d48792b1bfcb386f97 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 2.000 | 2 | CONNECTION | 2-way Wafer-type Ball valve, Stainless steel, Handle, DN 50 | 1. + 2. Digit Product | 3. + 4. Digit Materials Body / seals / ball | 5. Digit Operation | 6. Digit Options | 7. +... |
+| 1 | chunk_7ae862a501a446cdbaadbc5cb19fb232 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 42.050 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
+| 2 | chunk_d3ac362b5e894986983005b47ae412c6 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 1 | BAUFORM | 1-teilige kompakte Körperkonstruktion, voller Durchgang, Flanschplatte für Antriebsaufbau nach ISO 5211. Anti Statik Spindel. |
+| 3 | chunk_44132c967c7c4e8cb187e378496b1c96 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 2 | Abmessung / Dimension | | DN | d | L | D | D1 | D2 | b | f | H | W | C | ISO5211 | Z-M | h | s | Nm | |------|-----|--------|-----|------|------|-----|-----|-----|-----|-----|----------------|--------|... |
+| 4 | chunk_3380bca513aa473bb1e8c6d114d24804 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 3 | Stückliste / Parts list | 工 口 ISO5211 S b |
+| 5 | chunk_dfc73afcd2c84183ba6d08cc68fb3006 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 4 | Druck - Temperatur - Diagramm / Pressure - Temperature - Diagram | 200 °C Druck-Temperatur-Diagramm (PTFE) Pressure-Temperature-Diagramm (PTFE) 0 0 16 25 40 50 64 75 bar 50 80 100 150 180 200 °C |
 
-### `DS-004` What temperature range is specified for the MK311xxx valve?
+### `DS-003` What flange sizes and pressure classes are specified for MK311xxx?
 
 - query type: `specification_lookup`
 - expected document: `datasheet_mk311xxx`
 - expected file: `DN25 - DN80_MK311xxx.pdf`
-- expected section path: `TEMPERATURE RANGE`
-- expected page: `1`
-- expected rank target: `top_1`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `Temperature range -25°C … +180°C.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_7481b3a31a1e417ba6c72f694a088087 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 3.000 | 1 | PRESSURE RANGE | Almost vacuum up to nominal pressure (max. +80°C). For higher temperatures please refer to the Pressure- Temperature-Diagram. |
-| 2 | chunk_0f987724506549ac8749f067b5a2f035 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 2.000 | 1 | Druck - Temperatur - Diagramm / Pressure - Temperature - Diagram | Grobvakuum bis Nenndruck (bis +80°C): Bei Betriebstemperaturen über +80°C siehe Druck-Temperatur-Diagramm. |
-| 3 | chunk_002a61f9f1464d7f99ebaada3e018279 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 2.000 | 1 | TEMPERATUR | -25°C …. +180°C Bei Mediumtemperaturen über 80°C, bzw. stark schwankenden Mediumtemperaturen, empfehlen wir eine Druckausgleichsbohrung in der Kugel. Bei zur Dampfbildung neigen... |
-| 4 | chunk_86537819cf9941f385b30fd7cfcf7dcb | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 2.000 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
-| 5 | chunk_7ddffdfc0fad4b8da44c310328c5ae1a | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 2.000 | 1 | CONNECTION | Flange DN15 … DN200. DN15 … DN50: measured to PN40 DN65 … DN200: measured to PN16 Flange produced with threaded holes. Ball valve DN65 will be delivered in 4-hole execution! |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_7481b3a31a1e417ba6c72f694a088087 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 3.000 | 1 | PRESSURE RANGE | Almost vacuum up to nominal pressure (max. +80°C). For higher temperatures please refer to the Pressure- Temperature-Diagram. |
-| 2 | chunk_0f987724506549ac8749f067b5a2f035 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 2.000 | 1 | Druck - Temperatur - Diagramm / Pressure - Temperature - Diagram | Grobvakuum bis Nenndruck (bis +80°C): Bei Betriebstemperaturen über +80°C siehe Druck-Temperatur-Diagramm. |
-| 3 | chunk_002a61f9f1464d7f99ebaada3e018279 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 2.000 | 1 | TEMPERATUR | -25°C …. +180°C Bei Mediumtemperaturen über 80°C, bzw. stark schwankenden Mediumtemperaturen, empfehlen wir eine Druckausgleichsbohrung in der Kugel. Bei zur Dampfbildung neigen... |
-| 4 | chunk_86537819cf9941f385b30fd7cfcf7dcb | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 2.000 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
-| 5 | chunk_7ddffdfc0fad4b8da44c310328c5ae1a | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 2.000 | 1 | CONNECTION | Flange DN15 … DN200. DN15 … DN50: measured to PN40 DN65 … DN200: measured to PN16 Flange produced with threaded holes. Ball valve DN65 will be delivered in 4-hole execution! |
-
-### `DS-005` What materials are used for the body, ball, ball seal, and spindle seal of MK311xxx?
-
-- query type: `table_lookup`
-- expected document: `datasheet_mk311xxx`
-- expected file: `DN25 - DN80_MK311xxx.pdf`
-- expected section path: `MATERIALS`
+- expected section path: `CONNECTION`
 - expected page: `1`
 - expected rank target: `top_3`
-- anchor matched rank: `9`
-- context matched rank: `9`
-- expected passage: `Body: Stainless steel 1.4408; Ball: Stainless steel 1.4408; Ball seal: PTFE glassfiber reinforced; Spindle seal: PTFE / FKM.`
+- anchor matched rank: `7`
+- context matched rank: `7`
+- expected passage: `Flange DN15 … DN200. DN15 … DN50 measured to PN40; DN65 … DN200 measured to PN16; ball valve DN65 delivered in 4-hole execution.`
 - failure reasons:
-  - Anchor retrieval found relevant evidence, but later than the expected top_3 target (matched rank: 9).
+  - Anchor retrieval found relevant evidence, but later than the expected top_3 target (matched rank: 7).
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_f598435387714ee2af0f878eaf95f221 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 5.000 | 92 | 7 Components > 7.5 Actuated Valves > Safety Precautions 7.5.1 > Valve Description 7.5.2 > Environmentally > Responsible Solutions > Engineered > Exploded View 7.5.3 | 4 3 FMD | Pos. Description Material | |-------------------------------------------| | 1 Body Stainless steel 1.4408 | | 2 End Cap Stainless steel 1.4408 | | 3 Body seals PTFE |... |
-| 2 | chunk_8b919a3194e84b76b2271dc22a721e0a | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | When mounting the legs:  Measure the height (X mm) between the flange of the mounting assembly and the floor/floor plate.  Measure the height (Y mm) of the disposer without le... |
-| 3 | chunk_0cd202a0a9b642248dc530a37118d4fd | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 34 | CONNECTION | Remove the rotary shredder (P10) by placing two crowbars opposite one another under the edge of the shredder, supported by the side of the end shield (P3). (See photo below.) Re... |
-| 4 | chunk_7e389504d4a947009c608e20b9cdd3b3 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 35 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer > Environmentally > Responsible Solutions > Environmentally > Responsible Solutions | Section overview: Responsible Solutions Engineered FMD FundamentalMarineDevelopments Examine the contact surfaces of the carrier (P2) for wear caused by the axle seals. There sh... |
-| 5 | chunk_be1a191c81a842bd834c336852f431ae | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 35 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer > Environmentally > Responsible Solutions > Environmentally > Responsible Solutions | FMD FundamentalMarineDevelopments Examine the contact surfaces of the carrier (P2) for wear caused by the axle seals. There should only be two small symmetrical (barely noticeab... |
+| 1 | chunk_dfc73afcd2c84183ba6d08cc68fb3006 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 40.700 | 4 | Druck - Temperatur - Diagramm / Pressure - Temperature - Diagram | 200 °C Druck-Temperatur-Diagramm (PTFE) Pressure-Temperature-Diagramm (PTFE) 0 0 16 25 40 50 64 75 bar 50 80 100 150 180 200 °C |
+| 2 | chunk_d3ac362b5e894986983005b47ae412c6 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 1 | BAUFORM | 1-teilige kompakte Körperkonstruktion, voller Durchgang, Flanschplatte für Antriebsaufbau nach ISO 5211. Anti Statik Spindel. |
+| 3 | chunk_7ae862a501a446cdbaadbc5cb19fb232 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
+| 4 | chunk_44132c967c7c4e8cb187e378496b1c96 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 2 | Abmessung / Dimension | | DN | d | L | D | D1 | D2 | b | f | H | W | C | ISO5211 | Z-M | h | s | Nm | |------|-----|--------|-----|------|------|-----|-----|-----|-----|-----|----------------|--------|... |
+| 5 | chunk_3380bca513aa473bb1e8c6d114d24804 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 3 | Stückliste / Parts list | 工 口 ISO5211 S b |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_f598435387714ee2af0f878eaf95f221 | doc_4d45d944c738426c9c19072145b95121 | hybrid | 5.000 | 92 | 7 Components > 7.5 Actuated Valves > Safety Precautions 7.5.1 > Valve Description 7.5.2 > Environmentally > Responsible Solutions > Engineered > Exploded View 7.5.3 | 4 3 FMD | Pos. Description Material | |-------------------------------------------| | 1 Body Stainless steel 1.4408 | | 2 End Cap Stainless steel 1.4408 | | 3 Body seals PTFE |... |
-| 2 | chunk_8b919a3194e84b76b2271dc22a721e0a | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | When mounting the legs:  Measure the height (X mm) between the flange of the mounting assembly and the floor/floor plate.  Measure the height (Y mm) of the disposer without le... |
-| 3 | chunk_0cd202a0a9b642248dc530a37118d4fd | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 34 | CONNECTION | Remove the rotary shredder (P10) by placing two crowbars opposite one another under the edge of the shredder, supported by the side of the end shield (P3). (See photo below.) Re... |
-| 4 | chunk_7e389504d4a947009c608e20b9cdd3b3 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 35 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer > Environmentally > Responsible Solutions > Environmentally > Responsible Solutions | Section overview: Responsible Solutions Engineered FMD FundamentalMarineDevelopments Examine the contact surfaces of the carrier (P2) for wear caused by the axle seals. There sh... |
-| 5 | chunk_be1a191c81a842bd834c336852f431ae | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 35 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer > Environmentally > Responsible Solutions > Environmentally > Responsible Solutions | FMD FundamentalMarineDevelopments Examine the contact surfaces of the carrier (P2) for wear caused by the axle seals. There should only be two small symmetrical (barely noticeab... |
+| 1 | chunk_dfc73afcd2c84183ba6d08cc68fb3006 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 40.700 | 4 | Druck - Temperatur - Diagramm / Pressure - Temperature - Diagram | 200 °C Druck-Temperatur-Diagramm (PTFE) Pressure-Temperature-Diagramm (PTFE) 0 0 16 25 40 50 64 75 bar 50 80 100 150 180 200 °C |
+| 2 | chunk_d3ac362b5e894986983005b47ae412c6 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 1 | BAUFORM | 1-teilige kompakte Körperkonstruktion, voller Durchgang, Flanschplatte für Antriebsaufbau nach ISO 5211. Anti Statik Spindel. |
+| 3 | chunk_7ae862a501a446cdbaadbc5cb19fb232 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
+| 4 | chunk_44132c967c7c4e8cb187e378496b1c96 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 2 | Abmessung / Dimension | | DN | d | L | D | D1 | D2 | b | f | H | W | C | ISO5211 | Z-M | h | s | Nm | |------|-----|--------|-----|------|------|-----|-----|-----|-----|-----|----------------|--------|... |
+| 5 | chunk_3380bca513aa473bb1e8c6d114d24804 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 39.350 | 3 | Stückliste / Parts list | 工 口 ISO5211 S b |
 
 ### `DS-006` What does ordering code MK311007 mean?
 
@@ -800,66 +648,62 @@
   - Anchor retrieval did not return the expected evidence.
   - Anchor retrieval did not return the resolved expected chunk id.
   - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 2.
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_40f4abef89474ff88da6d71ce4326dbf | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 34 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer > Environmentally > Responsible Solutions | Section overview: Responsible Solutions Engineered Remove the rotary shredder (P10) by placing two crowbars opposite one another under the edge of the shredder, supported by the... |
-| 2 | chunk_81d382abc13d4418b29ff18c94b803fb | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 34 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer > Environmentally > Responsible Solutions | Context: Turn the end shield (P3) upside down and remove the locking ring (P6) by means of a circlip pliers. With some adequate protection in between (e.g. a piece of wood), app... |
-| 3 | chunk_6f25425ab0714b37b2f3a70fcac21a99 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 51 | 4 Installation > What it Does 7.2.4 | The press separates the solids from wastewater by means of a 150 micron screen and a rotating screw. The screened liquid falls by gravity to the intermediate tank and the solids... |
-| 4 | chunk_85a16089b1a0450eb3284eaebb277fa6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments | | 5.1 General .................................................................................................................................. |
-| 5 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
+| 1 | chunk_4a7e268738ef4fc0ace8df4dc896b1f1 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 35.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 |
+| 2 | chunk_ef7391760e5e4161b887cb581bb13384 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 35.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 | 1. + 2. Stelle Produkt | 3. + 4. Stelle Werkstoffe Gehäuse / Dichtung / Kugel | 5. Stelle Betätigung | 6. Stelle Optio... |
+| 3 | chunk_829cbbecefd54d87b12524efbe8feb5e | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 11.350 | 2 | Endress+ Hauser > Deviation | Hereby we confirm that all applicable tests according to the QualitY Plan (IP0000BP) have been performed successfully Herebywe confirm that all measuring equipment used to assur... |
+| 4 | chunk_a5c466c0a21f41989680ebda15245938 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 11.350 | 20 | Technical Data / Specification | The following table illustrates the symbols that can appear on the local display. Four symbols may appear at the same time. | Symbol | Meaning | |----------|--------------------... |
+| 5 | chunk_eb5ab4083ddd4fa5afc09019a55f95b6 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 11.350 | 35 | Safety Instructions > Manufacturer's certificates | Certificate number: IECEx KEM 09.0016X Affixing the certificate number certifies conformity with the following standards (depending on the device version): IEC 60079-0 : 2017 IE... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_40f4abef89474ff88da6d71ce4326dbf | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 34 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer > Environmentally > Responsible Solutions | Section overview: Responsible Solutions Engineered Remove the rotary shredder (P10) by placing two crowbars opposite one another under the edge of the shredder, supported by the... |
-| 2 | chunk_81d382abc13d4418b29ff18c94b803fb | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 34 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Environmentally Responsible Solutions Engineered > Checks during Start Up > Operation 7.1.9 > Start and stop > Trouble Shooting 7.1.10 > Disposer Reduces Speed, Stops or does not Start > Disposer starts but there is no flushing water > Machine does not Start and makes no Sound > Environmentally Responsible Solutions Engineered > Maintenance 7.1.11 > Environmentally Responsible Solutions Engineered > Dismantling of Disposer > Environmentally > Responsible Solutions | Context: Turn the end shield (P3) upside down and remove the locking ring (P6) by means of a circlip pliers. With some adequate protection in between (e.g. a piece of wood), app... |
-| 3 | chunk_6f25425ab0714b37b2f3a70fcac21a99 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 51 | 4 Installation > What it Does 7.2.4 | The press separates the solids from wastewater by means of a 150 micron screen and a rotating screw. The screened liquid falls by gravity to the intermediate tank and the solids... |
-| 4 | chunk_85a16089b1a0450eb3284eaebb277fa6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments | | 5.1 General .................................................................................................................................. |
-| 5 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
+| 1 | chunk_4a7e268738ef4fc0ace8df4dc896b1f1 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 35.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 |
+| 2 | chunk_ef7391760e5e4161b887cb581bb13384 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 35.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 | 1. + 2. Stelle Produkt | 3. + 4. Stelle Werkstoffe Gehäuse / Dichtung / Kugel | 5. Stelle Betätigung | 6. Stelle Optio... |
+| 3 | chunk_829cbbecefd54d87b12524efbe8feb5e | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 11.350 | 2 | Endress+ Hauser > Deviation | Hereby we confirm that all applicable tests according to the QualitY Plan (IP0000BP) have been performed successfully Herebywe confirm that all measuring equipment used to assur... |
+| 4 | chunk_a5c466c0a21f41989680ebda15245938 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 11.350 | 20 | Technical Data / Specification | The following table illustrates the symbols that can appear on the local display. Four symbols may appear at the same time. | Symbol | Meaning | |----------|--------------------... |
+| 5 | chunk_eb5ab4083ddd4fa5afc09019a55f95b6 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 11.350 | 35 | Safety Instructions > Manufacturer's certificates | Certificate number: IECEx KEM 09.0016X Affixing the certificate number certifies conformity with the following standards (depending on the device version): IEC 60079-0 : 2017 IE... |
 
-### `DS-009` What is position 8 in the MK311xxx parts list?
+### `DS-007` Which connection code corresponds to DN80 for MK311xxx?
 
-- query type: `identifier_lookup`
+- query type: `identifier_table_lookup`
 - expected document: `datasheet_mk311xxx`
 - expected file: `DN25 - DN80_MK311xxx.pdf`
-- expected section path: `Stückliste / Parts list`
-- expected page: `3`
+- expected section path: `Ordering code table`
+- expected page: `2`
 - expected rank target: `top_3`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `Position 8: O-ring; material FKM.`
+- anchor matched rank: `6`
+- context matched rank: `6`
+- expected passage: `Connection code 09 = DN 80.`
 - failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 3.
+  - Anchor retrieval found relevant evidence, but later than the expected top_3 target (matched rank: 6).
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_2398c4bbc76a425589bbe2dff26a992f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 45 | Responsible Solutions | FMD FundamentalMarineDevelopments FMD | Position No: | Qty: Denomination: Spare Part No: Included in Service Package: | | | | |--------------------------------------------------... |
-| 2 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 3 | chunk_0b124c6d47cf47cb8e25b0a63dd2a0cc | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 5 | 7 Components > 7.6 Sensor List | FundamentalMarineDevelopments | 7.4.4 | 7.4.4 | Start-up and Operation.... .89 | |-----------------------------------------------------------------------------------------------... |
-| 4 | chunk_149bb83c05d74a468fb6148a46ed0f07 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 16-17 | 5 Commissioning | FMD FundamentalMarineDevelopments 5.4 Supporting Documentation A Commissioning Plan should be established referencing the following documents as required:  Plant drawings (GA,... |
-| 5 | chunk_09bc7e77f02a4e659a32d57a4421c5c4 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 32 | CONNECTION | Maintenance Intervals | Description | Interval | Refers to | |-----------------------------------------------------|-------------------------------------------------------------... |
+| 1 | chunk_d3ac362b5e894986983005b47ae412c6 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 62.700 | 1 | BAUFORM | 1-teilige kompakte Körperkonstruktion, voller Durchgang, Flanschplatte für Antriebsaufbau nach ISO 5211. Anti Statik Spindel. |
+| 2 | chunk_7ae862a501a446cdbaadbc5cb19fb232 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 62.700 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
+| 3 | chunk_44132c967c7c4e8cb187e378496b1c96 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 62.700 | 2 | Abmessung / Dimension | | DN | d | L | D | D1 | D2 | b | f | H | W | C | ISO5211 | Z-M | h | s | Nm | |------|-----|--------|-----|------|------|-----|-----|-----|-----|-----|----------------|--------|... |
+| 4 | chunk_3380bca513aa473bb1e8c6d114d24804 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 62.700 | 3 | Stückliste / Parts list | 工 口 ISO5211 S b |
+| 5 | chunk_dfc73afcd2c84183ba6d08cc68fb3006 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 62.700 | 4 | Druck - Temperatur - Diagramm / Pressure - Temperature - Diagram | 200 °C Druck-Temperatur-Diagramm (PTFE) Pressure-Temperature-Diagramm (PTFE) 0 0 16 25 40 50 64 75 bar 50 80 100 150 180 200 °C |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_2398c4bbc76a425589bbe2dff26a992f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 45 | Responsible Solutions | FMD FundamentalMarineDevelopments FMD | Position No: | Qty: Denomination: Spare Part No: Included in Service Package: | | | | |--------------------------------------------------... |
-| 2 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 3 | chunk_0b124c6d47cf47cb8e25b0a63dd2a0cc | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 5 | 7 Components > 7.6 Sensor List | FundamentalMarineDevelopments | 7.4.4 | 7.4.4 | Start-up and Operation.... .89 | |-----------------------------------------------------------------------------------------------... |
-| 4 | chunk_149bb83c05d74a468fb6148a46ed0f07 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 16-17 | 5 Commissioning | FMD FundamentalMarineDevelopments 5.4 Supporting Documentation A Commissioning Plan should be established referencing the following documents as required:  Plant drawings (GA,... |
-| 5 | chunk_09bc7e77f02a4e659a32d57a4421c5c4 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 32 | CONNECTION | Maintenance Intervals | Description | Interval | Refers to | |-----------------------------------------------------|-------------------------------------------------------------... |
+| 1 | chunk_d3ac362b5e894986983005b47ae412c6 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 62.700 | 1 | BAUFORM | 1-teilige kompakte Körperkonstruktion, voller Durchgang, Flanschplatte für Antriebsaufbau nach ISO 5211. Anti Statik Spindel. |
+| 2 | chunk_7ae862a501a446cdbaadbc5cb19fb232 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 62.700 | 1 | Technical Data / Specification | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
+| 3 | chunk_44132c967c7c4e8cb187e378496b1c96 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 62.700 | 2 | Abmessung / Dimension | | DN | d | L | D | D1 | D2 | b | f | H | W | C | ISO5211 | Z-M | h | s | Nm | |------|-----|--------|-----|------|------|-----|-----|-----|-----|-----|----------------|--------|... |
+| 4 | chunk_3380bca513aa473bb1e8c6d114d24804 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | hybrid | 62.700 | 3 | Stückliste / Parts list | 工 口 ISO5211 S b |
+| 5 | chunk_dfc73afcd2c84183ba6d08cc68fb3006 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 62.700 | 4 | Druck - Temperatur - Diagramm / Pressure - Temperature - Diagram | 200 °C Druck-Temperatur-Diagramm (PTFE) Pressure-Temperature-Diagramm (PTFE) 0 0 16 25 40 50 64 75 bar 50 80 100 150 180 200 °C |
 
 ### `R-001` What device is described in the final inspection report?
 
@@ -881,94 +725,132 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_191fa1caf92449998ec8894ef64acaf5 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 3.000 | 1 | Endress+ Hauser | Section overview: Endress+ Hauser {t People for Process Automation Subsections: Test Report; Final Inspection RePort; Deviation; Brief Operating Instructions; Cerabar M PMC51, P... |
-| 2 | chunk_c3f89e13f2004f3a84cf8a2eff8b731a | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 3.000 | 1-2 | Endress+ Hauser | {t People for Process Automation Final Inspection RePort Test result |
-| 3 | chunk_4e762cffc2294d1f98039806cd22ce8b | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 3.000 | 5 | Final Inspection Report > Additional information | Procedures, processes or actions that are forbidden Tip Indicates additional information Reference to documentation A Reference to page Visual inspection Notice or individual st... |
-| 4 | chunk_c3955251a0de49f898e998822605990d | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 2.000 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
-| 5 | chunk_2520950168504c5594be0d8b148fb390 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 2.000 | 2 | Remarks | LR Page 2 of 2 Certificate No. HAM2423501 First Date of Inspection 29 November 2024 Final Date of Inspection 29 November 2024 Office |
+| 1 | chunk_4d4d8e49ff8141a3bb6c257f2dca81dd | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 14.400 | 35 | Final Inspection Report > Additional information | IEC/EN 60079-14: "Explosive atmospheres - Part 14: Electrical installations design, selection and erection" EN 1127-1: "Explosive atmospheres - Explosion prevention and protecti... |
+| 2 | chunk_4acafcfdb1bc494d9e30606e2de34cf7 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 9.050 | 5 | Final Inspection Report > Additional information | Procedures, processes or actions that are forbidden Tip Indicates additional information Reference to documentation A Reference to page Visual inspection Notice or individual st... |
+| 3 | chunk_6418f83289e643329e53a931ecb95443 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 8.050 | 1-2 | Endress+ Hauser | {t People for Process Automation Final Inspection RePort Test result |
+| 4 | chunk_9d134ca11d6044188e7ea0f04ddec257 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 6.700 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
+| 5 | chunk_829cbbecefd54d87b12524efbe8feb5e | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 6.700 | 2 | Endress+ Hauser > Deviation | Hereby we confirm that all applicable tests according to the QualitY Plan (IP0000BP) have been performed successfully Herebywe confirm that all measuring equipment used to assur... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_191fa1caf92449998ec8894ef64acaf5 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 3.000 | 1 | Endress+ Hauser | Section overview: Endress+ Hauser {t People for Process Automation Subsections: Test Report; Final Inspection RePort; Deviation; Brief Operating Instructions; Cerabar M PMC51, P... |
-| 2 | chunk_c3f89e13f2004f3a84cf8a2eff8b731a | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 3.000 | 1-2 | Endress+ Hauser | {t People for Process Automation Final Inspection RePort Test result |
-| 3 | chunk_4e762cffc2294d1f98039806cd22ce8b | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 3.000 | 5 | Final Inspection Report > Additional information | Procedures, processes or actions that are forbidden Tip Indicates additional information Reference to documentation A Reference to page Visual inspection Notice or individual st... |
-| 4 | chunk_c3955251a0de49f898e998822605990d | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 2.000 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
-| 5 | chunk_2520950168504c5594be0d8b148fb390 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 2.000 | 2 | Remarks | LR Page 2 of 2 Certificate No. HAM2423501 First Date of Inspection 29 November 2024 Final Date of Inspection 29 November 2024 Office |
+| 1 | chunk_4d4d8e49ff8141a3bb6c257f2dca81dd | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 14.400 | 35 | Final Inspection Report > Additional information | IEC/EN 60079-14: "Explosive atmospheres - Part 14: Electrical installations design, selection and erection" EN 1127-1: "Explosive atmospheres - Explosion prevention and protecti... |
+| 2 | chunk_4acafcfdb1bc494d9e30606e2de34cf7 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 9.050 | 5 | Final Inspection Report > Additional information | Procedures, processes or actions that are forbidden Tip Indicates additional information Reference to documentation A Reference to page Visual inspection Notice or individual st... |
+| 3 | chunk_6418f83289e643329e53a931ecb95443 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 8.050 | 1-2 | Endress+ Hauser | {t People for Process Automation Final Inspection RePort Test result |
+| 4 | chunk_9d134ca11d6044188e7ea0f04ddec257 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 6.700 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
+| 5 | chunk_829cbbecefd54d87b12524efbe8feb5e | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 6.700 | 2 | Endress+ Hauser > Deviation | Hereby we confirm that all applicable tests according to the QualitY Plan (IP0000BP) have been performed successfully Herebywe confirm that all measuring equipment used to assur... |
 
-### `R-005` Which test specification and test rig were used for the pressure transmitter inspection?
+### `R-002` What is the order code and extended order code of the Cerabar M PMP51?
 
 - query type: `identifier_lookup`
 - expected document: `report_pressure_transmitter`
 - expected file: `Pressure transmitter.pdf`
-- expected section path: `Final Inspection Report > Procedure`
+- expected section path: `Final Inspection Report > Device information`
 - expected page: `1`
 - expected rank target: `top_3`
-- anchor matched rank: `6`
-- context matched rank: `6`
-- expected passage: `Test specification P0043, Comparison of unit under test (UUT) with standard; test rig L230.`
+- anchor matched rank: `8`
+- context matched rank: `8`
+- expected passage: `Order code PMP51-D5EU1/101; extended order code PMP51-BA2IRAISGJGRJAI+JALELGZI.`
 - failure reasons:
-  - Anchor retrieval found relevant evidence, but later than the expected top_3 target (matched rank: 6).
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval did not return a chunk covering expected page 1.
+  - Anchor retrieval found relevant evidence, but later than the expected top_3 target (matched rank: 8).
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_c17b6e1123334ea98595d90d6b184af5 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 | Section overview: Safety Precautions 7.3.1 This manual contains basic instructions which must be observed when installing, operating and servicing the vacuum / transfer pump. It... |
-| 2 | chunk_6a47caece0de40ab87a5d1c2b8917faf | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 54 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.2 Initial Test Run | WARNING: Risk of crushing / rupture of limbs! Ensure the inspection covers are fitted and secured before starting the machine. If all the pre-commissioning points are checked an... |
-| 3 | chunk_982478e3adbd4651a7949bf2f26cc1ad | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 58 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 > Environmentally > Responsible Solutions > Engineered > Spare Parts > Environmentally > Responsible Solutions Engineered > Preventive Maintenance 7.2.11 | Section overview: Preventive Maintenance 7.2.11 The instructions for all visual inspections, maintenance and repair work must be observed. WARNING: Before working on the TSP, is... |
-| 4 | chunk_778f3d43274647089bd79f06e08adbb1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 72 | General information | Any work on the machine shall only be performed when it is at a standstill, it being imperative that the procedure for shutting down the machine described in this manual be foll... |
-| 5 | chunk_8c2616bc1ed64c45ab18e0326d1a2a05 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 10 | Revision / modification table | The FWC12 may only be operated within the performance parameters specified. The FWC12 may only be used in conjunction with auxiliary equipment that is recommended and approved b... |
+| 1 | chunk_0fde49673bec441387f938eea3c3f478 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables | A B A Electronic; Zone 2 B Process; Zone 2 1 Certified associated apparatus 2 PMC51, PMP51, PMP55 3 Option: Separate enclosure Intrinsic safety The intrinsically safe input powe... |
+| 2 | chunk_682100e62e494179ab28d7c3e0cb2508 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety | The specified ambient and process temperature ranges exclusively refer to the explosion protection and must not be exceeded. Operationally permitted ambient temperature ranges c... |
+| 3 | chunk_ecfcd9aaefa34897b15564cb228d418b | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 | Higher temperatures are permitted depending on the type of diaphragm seal. A0024001 | Temperature class | Process temperature T p (process) | Ambient temperature range | |------... |
+| 4 | chunk_df4d585977854d6497b8d13f5c165066 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 | A0024001 |
+| 5 | chunk_9069bf43c259420f9e8b24b39d842521 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 59.450 | 39 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 > Connection data > Basic specification, Position 3 = 2 | | Power supply | |----------------------------------------------------------| | U i ≤ 45 V DC I i ≤ 300 mA P i ≤ 1 W C i ≤ 10 nF L i = 0 | |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_c17b6e1123334ea98595d90d6b184af5 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 5.000 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 | Section overview: Safety Precautions 7.3.1 This manual contains basic instructions which must be observed when installing, operating and servicing the vacuum / transfer pump. It... |
-| 2 | chunk_6a47caece0de40ab87a5d1c2b8917faf | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 54 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.2 Initial Test Run | WARNING: Risk of crushing / rupture of limbs! Ensure the inspection covers are fitted and secured before starting the machine. If all the pre-commissioning points are checked an... |
-| 3 | chunk_982478e3adbd4651a7949bf2f26cc1ad | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 58 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 > Environmentally > Responsible Solutions > Engineered > Spare Parts > Environmentally > Responsible Solutions Engineered > Preventive Maintenance 7.2.11 | Section overview: Preventive Maintenance 7.2.11 The instructions for all visual inspections, maintenance and repair work must be observed. WARNING: Before working on the TSP, is... |
-| 4 | chunk_778f3d43274647089bd79f06e08adbb1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 72 | General information | Any work on the machine shall only be performed when it is at a standstill, it being imperative that the procedure for shutting down the machine described in this manual be foll... |
-| 5 | chunk_8c2616bc1ed64c45ab18e0326d1a2a05 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 10 | Revision / modification table | The FWC12 may only be operated within the performance parameters specified. The FWC12 may only be used in conjunction with auxiliary equipment that is recommended and approved b... |
+| 1 | chunk_0fde49673bec441387f938eea3c3f478 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables | A B A Electronic; Zone 2 B Process; Zone 2 1 Certified associated apparatus 2 PMC51, PMP51, PMP55 3 Option: Separate enclosure Intrinsic safety The intrinsically safe input powe... |
+| 2 | chunk_682100e62e494179ab28d7c3e0cb2508 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety | The specified ambient and process temperature ranges exclusively refer to the explosion protection and must not be exceeded. Operationally permitted ambient temperature ranges c... |
+| 3 | chunk_ecfcd9aaefa34897b15564cb228d418b | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 | Higher temperatures are permitted depending on the type of diaphragm seal. A0024001 | Temperature class | Process temperature T p (process) | Ambient temperature range | |------... |
+| 4 | chunk_df4d585977854d6497b8d13f5c165066 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 | A0024001 |
+| 5 | chunk_9069bf43c259420f9e8b24b39d842521 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 59.450 | 39 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 > Connection data > Basic specification, Position 3 = 2 | | Power supply | |----------------------------------------------------------| | U i ≤ 45 V DC I i ≤ 300 mA P i ≤ 1 W C i ≤ 10 nF L i = 0 | |
 
-### `R-007` What requirements must personnel meet before working with the Cerabar M?
+### `R-004` What is the maximum permissible error for the pressure transmitter?
 
-- query type: `safety_lookup`
+- query type: `specification_lookup`
 - expected document: `report_pressure_transmitter`
 - expected file: `Pressure transmitter.pdf`
-- expected section path: `Brief Operating Instructions > 3 Basic safety instructions > 3.1 Requirements for the personnel`
-- expected page: `6`
-- expected rank target: `top_5`
-- anchor matched rank: `10`
-- context matched rank: `10`
-- expected passage: `Personnel must be trained qualified specialists, authorized by the plant owner/operator, familiar with regulations, read and understood the manual and certificates, and follow instructions and conditions.`
+- expected section path: `Final Inspection Report > Additional information`
+- expected page: `1`
+- expected rank target: `top_3`
+- anchor matched rank: `miss`
+- context matched rank: `miss`
+- expected passage: `Maximum permissible error ±0.1%.`
 - failure reasons:
-  - Anchor retrieval found relevant evidence, but later than the expected top_5 target (matched rank: 10).
+  - Anchor retrieval did not return the expected evidence.
+  - Anchor retrieval did not return the resolved expected chunk id.
+  - Anchor retrieval missed the expected section path.
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_dc9636b68a0c4efc869dc3a23ef5ef28 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
-| 2 | chunk_639dad5eb15d486f816adcb3a5a567fe | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 10 | 2 Safety | All personnel that are instructed to work with or on the system must observe the rules and regulations for operational safety and accident prevention and must have read the syst... |
-| 3 | chunk_532418da1d4d4fd0a63b912460d32c25 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 26 | CONNECTION | WARNING: Electrical Hazard! ALWAYS check for no voltage before starting work! When working on the switchgear and motors, the system must de-energized, tagged out and secured aga... |
-| 4 | chunk_c5e6cf318a9644ca8b9d63556e9084bc | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 7 | General information | The technical manual must be treated confidential. It is distributed exclusively for those persons working on and with the plant. All content-related information, text, drawings... |
-| 5 | chunk_65c421b0bb364dae8e9bc3bda86f56d8 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 9 | 2 Safety | Section overview: 2 Safety This section includes instructions that must be observed during installation, operation, and maintenance of the equipment. The operation instructions... |
+| 1 | chunk_41b473637c634c3ea62cfb189903f81a | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 10.050 | 2 | Endress+ Hauser > Deviation | 0.000 -0.050 Hereby we confirm that all applicable tests according to the QualitY Plan (IP0000BP) have been performed successfully | Test point | Reference pressure | UUT output... |
+| 2 | chunk_222b93975f0e461e85710295655b2669 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 10.050 | 16 | 6 Electrical connection > 6.2 Connecting the device > 6.2.9 Load - 4 to 20 mA HART | U – 11.5 V 23 mA [ ] W 11.5 40 45 £ U [V] RLmax 3 RLmax 1 Power supply 11.5 to 30 V DC for intrinsically safe device versions 2 Supply voltage 11.5 to 45 V DC (versions with plu... |
+| 3 | chunk_a5c466c0a21f41989680ebda15245938 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 10.050 | 20 | Technical Data / Specification | The following table illustrates the symbols that can appear on the local display. Four symbols may appear at the same time. | Symbol | Meaning | |----------|--------------------... |
+| 4 | chunk_cab87cf54ee949c7a6b677c5e939868a | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 8.700 | 1 | Order information | Customer name J.H.K. Anlagenbau und Industrieservice GmbH & Co. KG Customer purchase order Sales order number / Item Internal order number / Item |
+| 5 | chunk_78f306ea95204e7a87f3d8d508614dcb | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 8.700 | 1 | Device information | 3L503395 302413l^65t/0010 Description TAG Serial number Order code Extended order code Cerabar M PMP51 v8055401129 PMP51-D5EU1/101 PMP5 1-BA2 IRAISGJGRJAI+JALELGZI |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_dc9636b68a0c4efc869dc3a23ef5ef28 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
-| 2 | chunk_639dad5eb15d486f816adcb3a5a567fe | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 10 | 2 Safety | All personnel that are instructed to work with or on the system must observe the rules and regulations for operational safety and accident prevention and must have read the syst... |
-| 3 | chunk_532418da1d4d4fd0a63b912460d32c25 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 26 | CONNECTION | WARNING: Electrical Hazard! ALWAYS check for no voltage before starting work! When working on the switchgear and motors, the system must de-energized, tagged out and secured aga... |
-| 4 | chunk_c5e6cf318a9644ca8b9d63556e9084bc | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 7 | General information | The technical manual must be treated confidential. It is distributed exclusively for those persons working on and with the plant. All content-related information, text, drawings... |
-| 5 | chunk_65c421b0bb364dae8e9bc3bda86f56d8 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 9 | 2 Safety | Section overview: 2 Safety This section includes instructions that must be observed during installation, operation, and maintenance of the equipment. The operation instructions... |
+| 1 | chunk_41b473637c634c3ea62cfb189903f81a | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 10.050 | 2 | Endress+ Hauser > Deviation | 0.000 -0.050 Hereby we confirm that all applicable tests according to the QualitY Plan (IP0000BP) have been performed successfully | Test point | Reference pressure | UUT output... |
+| 2 | chunk_222b93975f0e461e85710295655b2669 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 10.050 | 16 | 6 Electrical connection > 6.2 Connecting the device > 6.2.9 Load - 4 to 20 mA HART | U – 11.5 V 23 mA [ ] W 11.5 40 45 £ U [V] RLmax 3 RLmax 1 Power supply 11.5 to 30 V DC for intrinsically safe device versions 2 Supply voltage 11.5 to 45 V DC (versions with plu... |
+| 3 | chunk_a5c466c0a21f41989680ebda15245938 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 10.050 | 20 | Technical Data / Specification | The following table illustrates the symbols that can appear on the local display. Four symbols may appear at the same time. | Symbol | Meaning | |----------|--------------------... |
+| 4 | chunk_cab87cf54ee949c7a6b677c5e939868a | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 8.700 | 1 | Order information | Customer name J.H.K. Anlagenbau und Industrieservice GmbH & Co. KG Customer purchase order Sales order number / Item Internal order number / Item |
+| 5 | chunk_78f306ea95204e7a87f3d8d508614dcb | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 8.700 | 1 | Device information | 3L503395 302413l^65t/0010 Description TAG Serial number Order code Extended order code Cerabar M PMP51 v8055401129 PMP51-D5EU1/101 PMP5 1-BA2 IRAISGJGRJAI+JALELGZI |
+
+### `R-006` Which test procedure verifies lower range value, upper range value and output signal?
+
+- query type: `identifier_semantic_lookup`
+- expected document: `report_pressure_transmitter`
+- expected file: `Pressure transmitter.pdf`
+- expected section path: `Final Inspection Report > Test Procedure number / Test description`
+- expected page: `2`
+- expected rank target: `top_3`
+- anchor matched rank: `miss`
+- context matched rank: `miss`
+- expected passage: `Calibration of instrument TS00023P: Measurement, adjustment and verification of lower range value, upper range value and output signal.`
+- failure reasons:
+  - Anchor retrieval did not return the expected evidence.
+  - Anchor retrieval did not return the resolved expected chunk id.
+  - Anchor retrieval missed the expected section path.
+  - Anchor retrieval did not return a chunk covering expected page 2.
+
+#### Anchor Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_25a86fa19cba47a19e7fa73710f37e4b | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 14.100 | 17 | 7 Operation options > HART | on off Display Zero Span HART R HART R FIELD COMMUNICATION PROTOCOL SW / P2=High delta p only dampingSW / Alarm min SW / SW / on off SW / SW /SW / P2=High Alarm min damping SW /... |
+| 2 | chunk_a6ddc743e0f448a5b3cdae38ef01e88c | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 14.100 | 18 | 7 Operation options > Function of the operating elements | | Operating key(s) | Meaning | |--------------------------------------------------------------|----------------------------------------------------------------------------------... |
+| 3 | chunk_76d8456129e547e8943f6549611aa4f6 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 14.100 | 22 | 7 Operation options > 7.2 Operation with device display (optional) > Menu path: Setup → Extended setup → Current output → Set URV | 0 mbar | Set URV | 014 | Operation | |------------|-------|----------------------------------------------------------------------------------------------------------------------... |
+| 4 | chunk_98639cc795104ab8b83e9677e63543ed | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 14.100 | 27 | 8 Commissioning > 8.2 Configuring pressure measurement > Prerequisite: | LWARNING | | Description | |----|------------------------------------------------------------------------------------------------------------------------------------------------... |
+| 5 | chunk_39d9ee5bf0f34446ae072604123578c1 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 13.700 | 1 | PRESSURE RANGE | Almost vacuum up to nominal pressure (max. +80°C). For higher temperatures please refer to the Pressure- Temperature-Diagram. |
+
+
+#### Context Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_25a86fa19cba47a19e7fa73710f37e4b | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 14.100 | 17 | 7 Operation options > HART | on off Display Zero Span HART R HART R FIELD COMMUNICATION PROTOCOL SW / P2=High delta p only dampingSW / Alarm min SW / SW / on off SW / SW /SW / P2=High Alarm min damping SW /... |
+| 2 | chunk_a6ddc743e0f448a5b3cdae38ef01e88c | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 14.100 | 18 | 7 Operation options > Function of the operating elements | | Operating key(s) | Meaning | |--------------------------------------------------------------|----------------------------------------------------------------------------------... |
+| 3 | chunk_76d8456129e547e8943f6549611aa4f6 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 14.100 | 22 | 7 Operation options > 7.2 Operation with device display (optional) > Menu path: Setup → Extended setup → Current output → Set URV | 0 mbar | Set URV | 014 | Operation | |------------|-------|----------------------------------------------------------------------------------------------------------------------... |
+| 4 | chunk_98639cc795104ab8b83e9677e63543ed | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 14.100 | 27 | 8 Commissioning > 8.2 Configuring pressure measurement > Prerequisite: | LWARNING | | Description | |----|------------------------------------------------------------------------------------------------------------------------------------------------... |
+| 5 | chunk_39d9ee5bf0f34446ae072604123578c1 | doc_e3be4517b5af44d29ebc7d7243fc9a41 | sql_keyword | 13.700 | 1 | PRESSURE RANGE | Almost vacuum up to nominal pressure (max. +80°C). For higher temperatures please refer to the Pressure- Temperature-Diagram. |
 
 ### `R-010` In what order should the Cerabar M be electrically connected?
 
@@ -985,65 +867,28 @@
   - Anchor retrieval did not return the expected evidence.
   - Anchor retrieval did not return the resolved expected chunk id.
   - Anchor retrieval missed the expected section path.
+  - Anchor retrieval did not return a chunk covering expected page 12.
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_4c34e771725a4cb8ba87ebbf7077305e | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 1 | Device information | 3L503395 302413l^65t/0010 Description TAG Serial number Order code Extended order code Cerabar M PMP51 v8055401129 PMP51-D5EU1/101 PMP5 1-BA2 IRAISGJGRJAI+JALELGZI |
-| 2 | chunk_dc9636b68a0c4efc869dc3a23ef5ef28 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
-| 3 | chunk_6e90218c16684f13a58d71aaa2ce9d30 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 10 | 5 Mounting > 5.2 Installation instructions for devices without diaphragm seals – PMP51, PMC51 > Damage to the device! | A0028471 Keep the pressure compensation and GORE-TEX® filter (1) free from contamination. Cerabar M transmitters without diaphragm seals are mounted as per the norms for a manom... |
-| 4 | chunk_f256088ac7e4468e82ca040818216a33 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 11 | 5 Mounting | Cerabar M devices with diaphragm seals are screwed in, flanged or clamped, depending on the type of diaphragm seal. Please note that the hydrostatic pressure of the liquid colum... |
-| 5 | chunk_3241390a59c1403c9b2bf4dddac0dfcd | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 12 | 6 Electrical connection > 6.2 Connecting the device | Section overview: 6.2 Connecting the device Subsections: LWARNING; Supply voltage might be connected!; Connect the device in the following order:; 6.2.1 Connecting the cable ver... |
+| 1 | chunk_78f306ea95204e7a87f3d8d508614dcb | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 11.700 | 1 | Device information | 3L503395 302413l^65t/0010 Description TAG Serial number Order code Extended order code Cerabar M PMP51 v8055401129 PMP51-D5EU1/101 PMP5 1-BA2 IRAISGJGRJAI+JALELGZI |
+| 2 | chunk_2b95b41a6ce9423a81b2d779067a1219 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 8.700 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
+| 3 | chunk_cab87cf54ee949c7a6b677c5e939868a | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 7.350 | 1 | Order information | Customer name J.H.K. Anlagenbau und Industrieservice GmbH & Co. KG Customer purchase order Sales order number / Item Internal order number / Item |
+| 4 | chunk_002acf9c478d4accb8a19723b1816d55 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 7.350 | 1 | General information | Customer Schauenburg Industrietechnik GmbH Purchase Order No |
+| 5 | chunk_80976e5a23484443bec6a95a3c4df8c5 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 7.350 | 1 | General information | 801079 Manufacturer Schauenburg Industrietechnik GmbH Intended for H. A. Schröder GmbH + Co. KG, Schiffdorf-Wehden / Germany, For Stock Customer Work Order No 93013559 / BST2409... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_4c34e771725a4cb8ba87ebbf7077305e | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 1 | Device information | 3L503395 302413l^65t/0010 Description TAG Serial number Order code Extended order code Cerabar M PMP51 v8055401129 PMP51-D5EU1/101 PMP5 1-BA2 IRAISGJGRJAI+JALELGZI |
-| 2 | chunk_dc9636b68a0c4efc869dc3a23ef5ef28 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
-| 3 | chunk_6e90218c16684f13a58d71aaa2ce9d30 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 10 | 5 Mounting > 5.2 Installation instructions for devices without diaphragm seals – PMP51, PMC51 > Damage to the device! | A0028471 Keep the pressure compensation and GORE-TEX® filter (1) free from contamination. Cerabar M transmitters without diaphragm seals are mounted as per the norms for a manom... |
-| 4 | chunk_f256088ac7e4468e82ca040818216a33 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 11 | 5 Mounting | Cerabar M devices with diaphragm seals are screwed in, flanged or clamped, depending on the type of diaphragm seal. Please note that the hydrostatic pressure of the liquid colum... |
-| 5 | chunk_3241390a59c1403c9b2bf4dddac0dfcd | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 2.000 | 12 | 6 Electrical connection > 6.2 Connecting the device | Section overview: 6.2 Connecting the device Subsections: LWARNING; Supply voltage might be connected!; Connect the device in the following order:; 6.2.1 Connecting the cable ver... |
-
-### `R-012` What supply voltage is specified for 4 to 20 mA HART Cerabar M devices?
-
-- query type: `specification_lookup`
-- expected document: `report_pressure_transmitter`
-- expected file: `Pressure transmitter.pdf`
-- expected section path: `Brief Operating Instructions > 6 Electrical connection > 6.2.6 Supply voltage`
-- expected page: `15`
-- expected rank target: `top_3`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `Intrinsically safe: 11.5 to 30 V DC; other types of protection/devices without certificate: 11.5 to 45 V DC; plug connector versions 35 V DC.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 15.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_9b2726432ab443dd8b6f4509d18998e4 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 12 | 3 System Introduction > 3.1 Technical Data | | Tank Capacity | 1,200L | |---------------------|----------------| | Pump Capacity | max 16,000L/hr | | Dewatering Capacity | max 20,000L/hr | | Voltage | 400V 50Hz | | Install... |
-| 2 | chunk_85a16089b1a0450eb3284eaebb277fa6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments | | 5.1 General .................................................................................................................................. |
-| 3 | chunk_e059198ef4f347c3a5468ab7c5794304 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 97 | 7 Components > 7.6 Sensor List | Section overview: 7.6 Sensor List Refer to Annex 2 for P&ID-200429 showing sensor locations: Refer to Annex 3 for sensor data sheets: FMD FundamentalMarineDevelopments Subsectio... |
-| 4 | chunk_8c2616bc1ed64c45ab18e0326d1a2a05 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 10 | Revision / modification table | The FWC12 may only be operated within the performance parameters specified. The FWC12 may only be used in conjunction with auxiliary equipment that is recommended and approved b... |
-| 5 | chunk_81f4e6ef50e0495196c0f4457b71b704 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 14 | Technical Data / Specification | It is recommended that commissioning be completed by a service technician from FMD. The power supply may not vary from the contract specifications of the system. The installatio... |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_9b2726432ab443dd8b6f4509d18998e4 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 12 | 3 System Introduction > 3.1 Technical Data | | Tank Capacity | 1,200L | |---------------------|----------------| | Pump Capacity | max 16,000L/hr | | Dewatering Capacity | max 20,000L/hr | | Voltage | 400V 50Hz | | Install... |
-| 2 | chunk_85a16089b1a0450eb3284eaebb277fa6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments | | 5.1 General .................................................................................................................................. |
-| 3 | chunk_e059198ef4f347c3a5468ab7c5794304 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 97 | 7 Components > 7.6 Sensor List | Section overview: 7.6 Sensor List Refer to Annex 2 for P&ID-200429 showing sensor locations: Refer to Annex 3 for sensor data sheets: FMD FundamentalMarineDevelopments Subsectio... |
-| 4 | chunk_8c2616bc1ed64c45ab18e0326d1a2a05 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 10 | Revision / modification table | The FWC12 may only be operated within the performance parameters specified. The FWC12 may only be used in conjunction with auxiliary equipment that is recommended and approved b... |
-| 5 | chunk_81f4e6ef50e0495196c0f4457b71b704 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 14 | Technical Data / Specification | It is recommended that commissioning be completed by a service technician from FMD. The power supply may not vary from the contract specifications of the system. The installatio... |
+| 1 | chunk_78f306ea95204e7a87f3d8d508614dcb | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 11.700 | 1 | Device information | 3L503395 302413l^65t/0010 Description TAG Serial number Order code Extended order code Cerabar M PMP51 v8055401129 PMP51-D5EU1/101 PMP5 1-BA2 IRAISGJGRJAI+JALELGZI |
+| 2 | chunk_2b95b41a6ce9423a81b2d779067a1219 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 8.700 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
+| 3 | chunk_cab87cf54ee949c7a6b677c5e939868a | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 7.350 | 1 | Order information | Customer name J.H.K. Anlagenbau und Industrieservice GmbH & Co. KG Customer purchase order Sales order number / Item Internal order number / Item |
+| 4 | chunk_002acf9c478d4accb8a19723b1816d55 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 7.350 | 1 | General information | Customer Schauenburg Industrietechnik GmbH Purchase Order No |
+| 5 | chunk_80976e5a23484443bec6a95a3c4df8c5 | doc_0e4e45c14f7f4918a408c2c0ab7902bb | sql_keyword | 7.350 | 1 | General information | 801079 Manufacturer Schauenburg Industrietechnik GmbH Intended for H. A. Schröder GmbH + Co. KG, Schiffdorf-Wehden / Germany, For Stock Customer Work Order No 93013559 / BST2409... |
 
 ### `R-013` What happens when Zero and Span are pressed simultaneously for at least 12 seconds?
 
@@ -1066,136 +911,22 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_776f4ca90c1c4da7a89d8f954788a498 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 13 | Revision / modification table | When a macerator station lid is closed and the start button is pressed, the control system of the FWC12 opens the appropriate valves based on the selected mode and then starts t... |
-| 2 | chunk_9e2f6960e0ab47ecaef0a2b38012b00f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | Engineered |
-| 3 | chunk_21e809b25a614077b2f22781009979fd | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments |
-| 4 | chunk_85a16089b1a0450eb3284eaebb277fa6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments | | 5.1 General .................................................................................................................................. |
-| 5 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
+| 1 | chunk_b7fe222e786c4d7596616098b1b67511 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.700 | 28 | 7 Components > 7.1 Macerators | In order to weld a strong joint and to be able to grind to an even and fine surface between the discharge cone and the working bench/tabletop, the cone is welded with its upper... |
+| 2 | chunk_96c89a75e9a149b1b8f8b3ea7b3938e5 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.700 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | When mounting the legs:  Measure the height (X mm) between the flange of the mounting assembly and the floor/floor plate.  Measure the height (Y mm) of the disposer without le... |
+| 3 | chunk_5f627ba675da46c4abe4ad8824794ff7 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.700 | 30 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 | Food waste that is difficult to grind, such as fibrous vegetables, tough fish skins and sinewy meat, should be broken down in size and mixed with other food waste. Dry and stick... |
+| 4 | chunk_72e7e2aa57244cd28043373b39c159dc | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.700 | 55 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.4 Shutdown |  Turn off and isolate the inlet supply pumps to prevent them starting.  Wait until the feed pipes have emptied.  Reduce the pressing force and move the compressed air cylinde... |
+| 5 | chunk_a42a976a89df4f55a083a8e17013609f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.350 | 6 | General information | The components of other manufacturers which are used within the plant (e.g. e-motors), have a risk assessment from the respective manufacturer. The obligation to ensure that the... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_776f4ca90c1c4da7a89d8f954788a498 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 13 | Revision / modification table | When a macerator station lid is closed and the start button is pressed, the control system of the FWC12 opens the appropriate valves based on the selected mode and then starts t... |
-| 2 | chunk_9e2f6960e0ab47ecaef0a2b38012b00f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | Engineered |
-| 3 | chunk_21e809b25a614077b2f22781009979fd | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments |
-| 4 | chunk_85a16089b1a0450eb3284eaebb277fa6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments | | 5.1 General .................................................................................................................................. |
-| 5 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-
-### `R-015` How do I configure pressure measurement without reference pressure?
-
-- query type: `procedure_lookup`
-- expected document: `report_pressure_transmitter`
-- expected file: `Pressure transmitter.pdf`
-- expected section path: `Brief Operating Instructions > 8 Commissioning > 8.2 Configuring pressure measurement > 8.2.1 Calibration without reference pressure (dry calibration)`
-- expected page: `26`
-- expected rank target: `top_5`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `Select Pressure measuring mode, select pressure unit, select Set LRV and enter 0 mbar, select Set URV and enter 300 mbar; result measuring range configured 0 to +300 mbar.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 26.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_755e230463fd4b3891ac39b165c36b62 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 | Section overview: Settings Page 1 6.1.5 User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank 000 000 000 000 mbar M.00.03.01 Vac&Press/FoodwastePump 000 000 000... |
-| 2 | chunk_1725efe384fb4195aeb2924cfd9e73fa | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 | User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank mbar M.00.03.01 Vac&Press/FoodwastePump mbar M.00.04.01 Vac&Press/FoodwastePump mbar M.00.05.01 Press/Dewat... |
-| 3 | chunk_adf485e15e9749a5a07f98ee81860c03 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 6 | General information | The components of other manufacturers which are used within the plant (e.g. e-motors), have a risk assessment from the respective manufacturer. The obligation to ensure that the... |
-| 4 | chunk_c5e6cf318a9644ca8b9d63556e9084bc | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 7 | General information | The technical manual must be treated confidential. It is distributed exclusively for those persons working on and with the plant. All content-related information, text, drawings... |
-| 5 | chunk_f35d30e623f24fb2aee3dd5d3368ec81 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 7 | 1 General > 1.6 Copyright Protection | Context: It is not permitted to pass on the technical manual to third parties, to copy it in any way or form even extracts - or to recycle and/or communicate the contents withou... |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_755e230463fd4b3891ac39b165c36b62 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 | Section overview: Settings Page 1 6.1.5 User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank 000 000 000 000 mbar M.00.03.01 Vac&Press/FoodwastePump 000 000 000... |
-| 2 | chunk_1725efe384fb4195aeb2924cfd9e73fa | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 | User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank mbar M.00.03.01 Vac&Press/FoodwastePump mbar M.00.04.01 Vac&Press/FoodwastePump mbar M.00.05.01 Press/Dewat... |
-| 3 | chunk_adf485e15e9749a5a07f98ee81860c03 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 6 | General information | The components of other manufacturers which are used within the plant (e.g. e-motors), have a risk assessment from the respective manufacturer. The obligation to ensure that the... |
-| 4 | chunk_c5e6cf318a9644ca8b9d63556e9084bc | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 7 | General information | The technical manual must be treated confidential. It is distributed exclusively for those persons working on and with the plant. All content-related information, text, drawings... |
-| 5 | chunk_f35d30e623f24fb2aee3dd5d3368ec81 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 7 | 1 General > 1.6 Copyright Protection | Context: It is not permitted to pass on the technical manual to third parties, to copy it in any way or form even extracts - or to recycle and/or communicate the contents withou... |
-
-### `R-016` How do I configure pressure measurement with reference pressure?
-
-- query type: `procedure_lookup`
-- expected document: `report_pressure_transmitter`
-- expected file: `Pressure transmitter.pdf`
-- expected section path: `Brief Operating Instructions > 8 Commissioning > 8.2 Configuring pressure measurement > 8.2.2 Calibration with reference pressure (wet calibration)`
-- expected page: `27`
-- expected rank target: `top_5`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `Perform position adjustment, select Pressure mode, select pressure unit, apply LRV pressure and Get LRV, apply URV pressure and Get URV; result measuring range configured.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 27.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_755e230463fd4b3891ac39b165c36b62 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 | Section overview: Settings Page 1 6.1.5 User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank 000 000 000 000 mbar M.00.03.01 Vac&Press/FoodwastePump 000 000 000... |
-| 2 | chunk_1725efe384fb4195aeb2924cfd9e73fa | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 | User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank mbar M.00.03.01 Vac&Press/FoodwastePump mbar M.00.04.01 Vac&Press/FoodwastePump mbar M.00.05.01 Press/Dewat... |
-| 3 | chunk_9e2f6960e0ab47ecaef0a2b38012b00f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | Engineered |
-| 4 | chunk_21e809b25a614077b2f22781009979fd | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments |
-| 5 | chunk_85a16089b1a0450eb3284eaebb277fa6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments | | 5.1 General .................................................................................................................................. |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_755e230463fd4b3891ac39b165c36b62 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 | Section overview: Settings Page 1 6.1.5 User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank 000 000 000 000 mbar M.00.03.01 Vac&Press/FoodwastePump 000 000 000... |
-| 2 | chunk_1725efe384fb4195aeb2924cfd9e73fa | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 21 | 6 Operation & General Maintenance > 6.1 Navigation of the HMI > HMI Symbols 6.1.1 > Environmentally Responsible Solutions Engineered > Home Page 6.1.2 > Automatic Operation Page 6.1.3 > Environmentally > Responsible Solutions > Engineered > Manual Operation Page 6.1.4 > Environmentally > Settings Page 1 6.1.5 | User: O Sensor SetPoints LLL LL HL HHL M.00.02.01 Level/FoodwasteTank mbar M.00.03.01 Vac&Press/FoodwastePump mbar M.00.04.01 Vac&Press/FoodwastePump mbar M.00.05.01 Press/Dewat... |
-| 3 | chunk_9e2f6960e0ab47ecaef0a2b38012b00f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | Engineered |
-| 4 | chunk_21e809b25a614077b2f22781009979fd | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments |
-| 5 | chunk_85a16089b1a0450eb3284eaebb277fa6 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.000 | 3 | Responsible Solutions | FMD FundamentalMarineDevelopments | | 5.1 General .................................................................................................................................. |
-
-### `R-017` What IECEx certificate number is listed in the Cerabar M safety instructions?
-
-- query type: `identifier_lookup`
-- expected document: `report_pressure_transmitter`
-- expected file: `Pressure transmitter.pdf`
-- expected section path: `Safety Instructions > Manufacturer's certificates`
-- expected page: `35`
-- expected rank target: `top_3`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `IEC Declaration of Conformity certificate number IECEx KEM 09.0016X.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 35.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_adf485e15e9749a5a07f98ee81860c03 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 6 | General information | The components of other manufacturers which are used within the plant (e.g. e-motors), have a risk assessment from the respective manufacturer. The obligation to ensure that the... |
-| 2 | chunk_c17b6e1123334ea98595d90d6b184af5 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 | Section overview: Safety Precautions 7.3.1 This manual contains basic instructions which must be observed when installing, operating and servicing the vacuum / transfer pump. It... |
-| 3 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 4 | chunk_65c421b0bb364dae8e9bc3bda86f56d8 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 9 | 2 Safety | Section overview: 2 Safety This section includes instructions that must be observed during installation, operation, and maintenance of the equipment. The operation instructions... |
-| 5 | chunk_4f255adb7f8540d0960620b3549e8e93 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 9 | 2 Safety | This section includes instructions that must be observed during installation, operation, and maintenance of the equipment. The operation instructions must be read by any contrac... |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_adf485e15e9749a5a07f98ee81860c03 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 6 | General information | The components of other manufacturers which are used within the plant (e.g. e-motors), have a risk assessment from the respective manufacturer. The obligation to ensure that the... |
-| 2 | chunk_c17b6e1123334ea98595d90d6b184af5 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 | Section overview: Safety Precautions 7.3.1 This manual contains basic instructions which must be observed when installing, operating and servicing the vacuum / transfer pump. It... |
-| 3 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 4 | chunk_65c421b0bb364dae8e9bc3bda86f56d8 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 9 | 2 Safety | Section overview: 2 Safety This section includes instructions that must be observed during installation, operation, and maintenance of the equipment. The operation instructions... |
-| 5 | chunk_4f255adb7f8540d0960620b3549e8e93 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 9 | 2 Safety | This section includes instructions that must be observed during installation, operation, and maintenance of the equipment. The operation instructions must be read by any contrac... |
+| 1 | chunk_b7fe222e786c4d7596616098b1b67511 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.700 | 28 | 7 Components > 7.1 Macerators | In order to weld a strong joint and to be able to grind to an even and fine surface between the discharge cone and the working bench/tabletop, the cone is welded with its upper... |
+| 2 | chunk_96c89a75e9a149b1b8f8b3ea7b3938e5 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.700 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | When mounting the legs:  Measure the height (X mm) between the flange of the mounting assembly and the floor/floor plate.  Measure the height (Y mm) of the disposer without le... |
+| 3 | chunk_5f627ba675da46c4abe4ad8824794ff7 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.700 | 30 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > Check before Start Up > Checks during Start Up > Operation 7.1.9 | Food waste that is difficult to grind, such as fibrous vegetables, tough fish skins and sinewy meat, should be broken down in size and mixed with other food waste. Dry and stick... |
+| 4 | chunk_72e7e2aa57244cd28043373b39c159dc | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.700 | 55 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.4 Shutdown |  Turn off and isolate the inlet supply pumps to prevent them starting.  Wait until the feed pipes have emptied.  Reduce the pressing force and move the compressed air cylinde... |
+| 5 | chunk_a42a976a89df4f55a083a8e17013609f | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 1.350 | 6 | General information | The components of other manufacturers which are used within the plant (e.g. e-motors), have a risk assessment from the respective manufacturer. The obligation to ensure that the... |
 
 ### `R-018` What hazardous location approval is listed for Cerabar M in the safety instructions?
 
@@ -1218,19 +949,19 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_c17b6e1123334ea98595d90d6b184af5 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 | Section overview: Safety Precautions 7.3.1 This manual contains basic instructions which must be observed when installing, operating and servicing the vacuum / transfer pump. It... |
-| 2 | chunk_01494068d1bd4faca6519b16d7349096 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 10-11 | 2 Safety | FMD FundamentalMarineDevelopments 2.7 Risk of Ignored Safety Instructions There is a danger to life and limb for personnel if the plant is operated incorrectly or improperly. Ro... |
-| 3 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 4 | chunk_adf485e15e9749a5a07f98ee81860c03 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 6 | General information | The components of other manufacturers which are used within the plant (e.g. e-motors), have a risk assessment from the respective manufacturer. The obligation to ensure that the... |
-| 5 | chunk_65c421b0bb364dae8e9bc3bda86f56d8 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 9 | 2 Safety | Section overview: 2 Safety This section includes instructions that must be observed during installation, operation, and maintenance of the equipment. The operation instructions... |
+| 1 | chunk_0fde49673bec441387f938eea3c3f478 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 19.050 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables | A B A Electronic; Zone 2 B Process; Zone 2 1 Certified associated apparatus 2 PMC51, PMP51, PMP55 3 Option: Separate enclosure Intrinsic safety The intrinsically safe input powe... |
+| 2 | chunk_682100e62e494179ab28d7c3e0cb2508 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 19.050 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety | The specified ambient and process temperature ranges exclusively refer to the explosion protection and must not be exceeded. Operationally permitted ambient temperature ranges c... |
+| 3 | chunk_ecfcd9aaefa34897b15564cb228d418b | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 19.050 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 | Higher temperatures are permitted depending on the type of diaphragm seal. A0024001 | Temperature class | Process temperature T p (process) | Ambient temperature range | |------... |
+| 4 | chunk_df4d585977854d6497b8d13f5c165066 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 19.050 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 | A0024001 |
+| 5 | chunk_9069bf43c259420f9e8b24b39d842521 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 19.050 | 39 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 > Connection data > Basic specification, Position 3 = 2 | | Power supply | |----------------------------------------------------------| | U i ≤ 45 V DC I i ≤ 300 mA P i ≤ 1 W C i ≤ 10 nF L i = 0 | |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_c17b6e1123334ea98595d90d6b184af5 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 4.000 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 | Section overview: Safety Precautions 7.3.1 This manual contains basic instructions which must be observed when installing, operating and servicing the vacuum / transfer pump. It... |
-| 2 | chunk_01494068d1bd4faca6519b16d7349096 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 3.000 | 10-11 | 2 Safety | FMD FundamentalMarineDevelopments 2.7 Risk of Ignored Safety Instructions There is a danger to life and limb for personnel if the plant is operated incorrectly or improperly. Ro... |
-| 3 | chunk_d5da996efe164ee687d1f87d09ddb9f1 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 4-5 | Revision / modification table | FMD FundamentalMarineDevelopments | 7.1.10 | Trouble Shooting ..31 | | |---------------------------------------------------------------------------------------------------------... |
-| 4 | chunk_adf485e15e9749a5a07f98ee81860c03 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 6 | General information | The components of other manufacturers which are used within the plant (e.g. e-motors), have a risk assessment from the respective manufacturer. The obligation to ensure that the... |
-| 5 | chunk_65c421b0bb364dae8e9bc3bda86f56d8 | doc_4d45d944c738426c9c19072145b95121 | sql_keyword | 2.000 | 9 | 2 Safety | Section overview: 2 Safety This section includes instructions that must be observed during installation, operation, and maintenance of the equipment. The operation instructions... |
+| 1 | chunk_0fde49673bec441387f938eea3c3f478 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 19.050 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables | A B A Electronic; Zone 2 B Process; Zone 2 1 Certified associated apparatus 2 PMC51, PMP51, PMP55 3 Option: Separate enclosure Intrinsic safety The intrinsically safe input powe... |
+| 2 | chunk_682100e62e494179ab28d7c3e0cb2508 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 19.050 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety | The specified ambient and process temperature ranges exclusively refer to the explosion protection and must not be exceeded. Operationally permitted ambient temperature ranges c... |
+| 3 | chunk_ecfcd9aaefa34897b15564cb228d418b | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | hybrid | 19.050 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 | Higher temperatures are permitted depending on the type of diaphragm seal. A0024001 | Temperature class | Process temperature T p (process) | Ambient temperature range | |------... |
+| 4 | chunk_df4d585977854d6497b8d13f5c165066 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 19.050 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 | A0024001 |
+| 5 | chunk_9069bf43c259420f9e8b24b39d842521 | doc_f9a77f525e7a4f5eaa07e743f7d16e0a | sql_keyword | 19.050 | 39 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 > Connection data > Basic specification, Position 3 = 2 | | Power supply | |----------------------------------------------------------| | U i ≤ 45 V DC I i ≤ 300 mA P i ≤ 1 W C i ≤ 10 nF L i = 0 | |
