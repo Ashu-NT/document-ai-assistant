@@ -22,6 +22,7 @@ class ChunkFragmentBuilder:
         self,
         *,
         text_splitter: ChunkTextSplitter,
+        structured_fragment_builder: StructuredSectionFragmentBuilder | None = None,
         include_picture_chunks: bool = True,
         include_table_context: bool = True,
         asset_context_window: int = 1,
@@ -32,8 +33,11 @@ class ChunkFragmentBuilder:
         self.include_table_context = include_table_context
         self.asset_context_window = max(0, asset_context_window)
         self.asset_context_max_tokens = max(12, asset_context_max_tokens)
-        self.structured_fragment_builder = StructuredSectionFragmentBuilder(
-            text_splitter=text_splitter,
+        self.structured_fragment_builder = (
+            structured_fragment_builder
+            or StructuredSectionFragmentBuilder(
+                text_splitter=text_splitter,
+            )
         )
 
     def build_section_fragments(

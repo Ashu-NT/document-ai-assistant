@@ -4,6 +4,9 @@ from src.application.workflows.parsing.builders.chunking.builders.chunk_type_res
 from src.application.workflows.parsing.builders.chunking.builders.chunk_fragment_builder import (
     ChunkFragmentBuilder,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured_section_fragment_builder import (
+    StructuredSectionFragmentBuilder,
+)
 from src.application.workflows.parsing.builders.chunking.builders.chunk_payload_factory import (
     ChunkPayloadFactory,
 )
@@ -35,11 +38,13 @@ class ChunkingRuntimeFactory:
         self,
         *,
         policy_resolver: DocumentChunkingPolicyResolver | None = None,
+        structured_fragment_builder: StructuredSectionFragmentBuilder | None = None,
         max_chunk_tokens_override: int | None = None,
         chunk_overlap_override: int | None = None,
         min_section_text_length_override: int | None = None,
     ) -> None:
         self.policy_resolver = policy_resolver or DocumentChunkingPolicyResolver()
+        self.structured_fragment_builder = structured_fragment_builder
         self.max_chunk_tokens_override = max_chunk_tokens_override
         self.chunk_overlap_override = chunk_overlap_override
         self.min_section_text_length_override = min_section_text_length_override
@@ -81,6 +86,7 @@ class ChunkingRuntimeFactory:
             text_splitter=text_splitter,
             fragment_builder=ChunkFragmentBuilder(
                 text_splitter=text_splitter,
+                structured_fragment_builder=self.structured_fragment_builder,
                 include_picture_chunks=policy.include_picture_chunks,
                 include_table_context=policy.include_table_context,
                 asset_context_window=policy.asset_context_window,

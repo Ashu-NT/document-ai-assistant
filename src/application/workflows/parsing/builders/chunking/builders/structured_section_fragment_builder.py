@@ -1,11 +1,6 @@
-from dataclasses import dataclass
-
-from src.application.workflows.parsing.builders.chunking.builders.structured_section_markers import (
-    CERTIFICATE_STRUCTURED_MARKERS,
-    DATASHEET_STRUCTURED_MARKERS,
-    DRAWING_STRUCTURED_MARKERS,
-    REPORT_STRUCTURED_MARKERS,
-    SENSOR_LIST_STRUCTURED_MARKERS,
+from src.application.workflows.parsing.builders.chunking.builders.structured import (
+    StructuredFamilySpecFactory,
+    StructuredSectionWindowSpec,
 )
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
@@ -16,25 +11,20 @@ from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitte
 from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     clean_chunk_text,
 )
-from src.domain.common import ChunkType, DocumentType, ElementType
+from src.domain.common import DocumentType, ElementType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 
 
-@dataclass(slots=True, frozen=True)
-class StructuredSectionWindowSpec:
-    section_path: list[str]
-    anchor_markers: tuple[str, ...]
-    chunk_type: ChunkType = ChunkType.GENERAL
-    radius_before: int = 0
-    radius_after: int = 8
-    min_tokens: int = 6
-    combine_all_windows: bool = False
-
-
 class StructuredSectionFragmentBuilder:
-    def __init__(self, *, text_splitter: ChunkTextSplitter) -> None:
+    def __init__(
+        self,
+        *,
+        text_splitter: ChunkTextSplitter,
+        spec_factory: StructuredFamilySpecFactory | None = None,
+    ) -> None:
         self.text_splitter = text_splitter
+        self.spec_factory = spec_factory or StructuredFamilySpecFactory()
 
     def build(
         self,
@@ -52,19 +42,19 @@ class StructuredSectionFragmentBuilder:
         if not ordered_elements:
             return [], set()
 
-        detection = self._detect_structured_families(
+        selection = self.spec_factory.build(
             document_title=document_title,
             document_type=document_type,
             section=section,
             elements=ordered_elements,
+            normalizer=self._normalize_text,
         )
-        specs = detection["specs"]
-        if not specs:
+        if not selection.specs:
             return [], set()
 
         fragments: list[ChunkFragment] = []
         consumed_element_ids: set[str] = set()
-        for spec in specs:
+        for spec in selection.specs:
             for window in self._collect_windows(ordered_elements, spec):
                 fragment = self._build_fragment(
                     section=section,
@@ -76,7 +66,7 @@ class StructuredSectionFragmentBuilder:
                 fragments.append(fragment)
                 consumed_element_ids.update(fragment.element_ids)
 
-        if detection["drawing_mode"] and fragments:
+        if selection.consume_all_elements and fragments:
             consumed_element_ids.update(
                 element.element_id
                 for element in ordered_elements
@@ -86,462 +76,6 @@ class StructuredSectionFragmentBuilder:
             sorted(fragments, key=lambda fragment: fragment.order_index),
             consumed_element_ids,
         )
-
-    def _detect_structured_families(
-        self,
-        *,
-        document_title: str | None,
-        document_type: DocumentType | None,
-        section: DocumentSection,
-        elements: list[CanonicalElement],
-    ) -> dict[str, object]:
-        normalized_title = self._normalize_text(document_title)
-        normalized_section = self._normalize_text(
-            " > ".join(section.section_path or [section.title])
-        )
-        normalized_texts = [
-            self._normalize_text(element.text)
-            for element in elements
-        ]
-        combined_text = " ".join(text for text in normalized_texts if text)
-
-        specs: list[StructuredSectionWindowSpec] = []
-        drawing_mode = self._looks_like_drawing(
-            document_title=normalized_title,
-            section_text=normalized_section,
-            combined_text=combined_text,
-        )
-        if drawing_mode:
-            specs.extend(
-                [
-                    StructuredSectionWindowSpec(
-                        section_path=["Title block"],
-                        anchor_markers=("title arrangement", "drawing number"),
-                        chunk_type=ChunkType.GENERAL,
-                        radius_before=3,
-                        radius_after=8,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=["Revision / modification table"],
-                        anchor_markers=("modification", "revision", "as-built"),
-                        chunk_type=ChunkType.GENERAL,
-                        radius_before=4,
-                        radius_after=8,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=["Title block / vessel particulars"],
-                        anchor_markers=(
-                            "length over all",
-                            "breadth overall",
-                            "draught to dwl",
-                            "draught loadline",
-                        ),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=1,
-                        radius_after=6,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=["Lamp labels"],
-                        anchor_markers=(
-                            "masthead lamp",
-                            "side lamp",
-                            "combined anchor",
-                            "lantern",
-                        ),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=0,
-                        radius_after=4,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=["Lamp labels"],
-                        anchor_markers=(
-                            "15 - combined",
-                            "16 - combined",
-                            "3540.6000",
-                            "3540.7000",
-                            "anchor / masthead",
-                            "anchor/ towing",
-                        ),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=1,
-                        radius_after=4,
-                        combine_all_windows=True,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=["COLREG table"],
-                        anchor_markers=("colreg", "desired", "actual value"),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=2,
-                        radius_after=24,
-                    ),
-                ]
-            )
-
-        if self._looks_like_certificate(
-            document_title=normalized_title,
-            section_text=normalized_section,
-            combined_text=combined_text,
-            document_type=document_type,
-        ):
-            specs.extend(
-                [
-                    StructuredSectionWindowSpec(
-                        section_path=["General information"],
-                        anchor_markers=("general information", "manufacturer"),
-                        chunk_type=ChunkType.CERTIFICATION_INFO,
-                        radius_before=1,
-                        radius_after=14,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=["Particulars"],
-                        anchor_markers=(
-                            "particulars",
-                            "quantity",
-                            "test pressure",
-                            "design pressure",
-                        ),
-                        chunk_type=ChunkType.CERTIFICATION_INFO,
-                        radius_before=2,
-                        radius_after=16,
-                    ),
-                ]
-            )
-
-        if self._looks_like_datasheet(
-            document_title=normalized_title,
-            section_text=normalized_section,
-            combined_text=combined_text,
-            document_type=document_type,
-        ):
-            specs.extend(
-                [
-                    StructuredSectionWindowSpec(
-                        section_path=["Technical Data / Specification"],
-                        anchor_markers=("specification", "design", "characteristics"),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=1,
-                        radius_after=14,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=["CONNECTION"],
-                        anchor_markers=("connection", "flange"),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=1,
-                        radius_after=10,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=["Ordering example"],
-                        anchor_markers=("ordering example", "mk311007"),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=2,
-                        radius_after=10,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "Druck - Temperatur - Diagramm / Pressure - Temperature - Diagram"
-                        ],
-                        anchor_markers=(
-                            "pressure-temperature-diagramm",
-                            "druck-temperatur-diagramm",
-                        ),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=2,
-                        radius_after=14,
-                    ),
-                ]
-            )
-
-        if self._looks_like_report(
-            document_title=normalized_title,
-            section_text=normalized_section,
-            combined_text=combined_text,
-            document_type=document_type,
-        ):
-            specs.extend(
-                [
-                    StructuredSectionWindowSpec(
-                        section_path=["Final Inspection Report", "Device information"],
-                        anchor_markers=("device information",),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=3,
-                        radius_after=14,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=["Final Inspection Report", "Additional information"],
-                        anchor_markers=("additional information",),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=2,
-                        radius_after=12,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "Brief Operating Instructions",
-                            "6 Electrical connection",
-                            "6.2 Connecting the device",
-                        ],
-                        anchor_markers=(
-                            "connect the device in the following order",
-                            "switch off supply voltage",
-                            "remove housing cover",
-                        ),
-                        chunk_type=ChunkType.OPERATION_INSTRUCTION,
-                        radius_before=2,
-                        radius_after=14,
-                        combine_all_windows=True,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "Brief Operating Instructions",
-                            "6 Electrical connection",
-                            "6.2.6 Supply voltage",
-                        ],
-                        anchor_markers=("6.2.6 supply voltage", "4 to 20 ma hart"),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=1,
-                        radius_after=10,
-                    ),
-                ]
-            )
-            if self._is_manufacturer_certificate_section(
-                section_text=normalized_section,
-                combined_text=combined_text,
-            ):
-                specs.append(
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "Safety Instructions",
-                            "Manufacturer's certificates",
-                        ],
-                        anchor_markers=(
-                            "manufacturer's certificates",
-                            "declaration of conformity",
-                            "iecex",
-                        ),
-                        chunk_type=ChunkType.CERTIFICATION_INFO,
-                        radius_before=1,
-                        radius_after=12,
-                        combine_all_windows=True,
-                    )
-                )
-
-        if self._looks_like_manual(
-            document_title=normalized_title,
-            section_text=normalized_section,
-            combined_text=combined_text,
-            document_type=document_type,
-        ):
-            specs.extend(
-                [
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "6 Operation & General Maintenance",
-                            "6.3 Operation Macerator",
-                        ],
-                        anchor_markers=(
-                            "macerator must be ready",
-                            "start/run illuminated",
-                            "flashing green",
-                        ),
-                        chunk_type=ChunkType.OPERATION_INSTRUCTION,
-                        radius_before=2,
-                        radius_after=10,
-                        combine_all_windows=True,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "7 Components",
-                            "7.1 Macerators",
-                            "Maintenance",
-                            "Maintenance Intervals",
-                        ],
-                        anchor_markers=(
-                            "maintenance intervals",
-                            "preventive maintenance 1",
-                            "9000 operating hours",
-                            "cleaning after daily use",
-                        ),
-                        chunk_type=ChunkType.MAINTENANCE_INTERVAL,
-                        radius_before=1,
-                        radius_after=18,
-                        combine_all_windows=True,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "7 Components",
-                            "7.1 Macerators",
-                            "Trouble Shooting",
-                            "Disposer Reduces Speed, Stops or does not Start",
-                        ],
-                        anchor_markers=(
-                            "reduces speed",
-                            "does not start",
-                            "jam release wrench",
-                            "non-grindable objects",
-                        ),
-                        chunk_type=ChunkType.TROUBLESHOOTING,
-                        radius_before=2,
-                        radius_after=18,
-                        combine_all_windows=True,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "7 Components",
-                            "7.1 Macerators",
-                            "Spare Parts",
-                        ],
-                        anchor_markers=(
-                            "p33",
-                            "jam release wrench",
-                            "spare part no",
-                        ),
-                        chunk_type=ChunkType.SPARE_PARTS_TABLE,
-                        radius_before=1,
-                        radius_after=10,
-                        combine_all_windows=True,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "7 Components",
-                            "7.2 Food Waste Press",
-                            "Commissioning & Shutdown",
-                            "Setting & Optimising the Press Discharge",
-                        ],
-                        anchor_markers=(
-                            "2.0 bar",
-                            "0.6-0.8 bar",
-                            "1.0-1.5 bar",
-                            "optimising the press discharge",
-                        ),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=2,
-                        radius_after=12,
-                        combine_all_windows=True,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "7 Components",
-                            "7.2 Food Waste Press",
-                            "Commissioning & Shutdown",
-                            "Shutdown",
-                        ],
-                        anchor_markers=(
-                            "72 hours",
-                            "solidified solids plug",
-                            "retract the cone",
-                        ),
-                        chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
-                        radius_before=2,
-                        radius_after=12,
-                        combine_all_windows=True,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "7 Components",
-                            "7.2 Food Waste Press",
-                            "Maintenance & Cleaning of the Screen Basket",
-                            "Removal of the Screen Basket",
-                        ],
-                        anchor_markers=(
-                            "removal of the screen basket",
-                            "screen basket",
-                            "service port",
-                        ),
-                        chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
-                        radius_before=2,
-                        radius_after=12,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "7 Components",
-                            "7.2 Food Waste Press",
-                            "Maintenance & Cleaning of the Screen Basket",
-                            "Fitting the Press Zone",
-                        ],
-                        anchor_markers=("35 nm", "fitting the press zone", "press zone"),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=2,
-                        radius_after=10,
-                        combine_all_windows=True,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "7 Components",
-                            "7.3 Vacuum / Transfer Pump",
-                            "Maintenance",
-                            "Lubricating the Shaft Seals",
-                        ],
-                        anchor_markers=(
-                            "350 hours",
-                            "grease nipple",
-                            "lubricating the shaft seals",
-                        ),
-                        chunk_type=ChunkType.MAINTENANCE_INTERVAL,
-                        radius_before=1,
-                        radius_after=10,
-                        combine_all_windows=True,
-                    ),
-                    StructuredSectionWindowSpec(
-                        section_path=[
-                            "7 Components",
-                            "7.3 Vacuum / Transfer Pump",
-                            "Maintenance",
-                            "Oil Quantities & Specification",
-                        ],
-                        anchor_markers=(
-                            "oil quantity",
-                            "change interval",
-                            "rotary lobe pump type",
-                        ),
-                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                        radius_before=1,
-                        radius_after=12,
-                        combine_all_windows=True,
-                    ),
-                ]
-            )
-
-        if self._looks_like_sensor_section(
-            section_text=normalized_section,
-            combined_text=combined_text,
-        ):
-            specs.append(
-                StructuredSectionWindowSpec(
-                    section_path=["7 Components", "7.6 Sensor List"],
-                    anchor_markers=("7.6 sensor list", "p&id pos nr", "lmt100"),
-                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                    radius_before=1,
-                    radius_after=12,
-                )
-            )
-
-        if self._looks_like_approval_matrix(
-            section_text=normalized_section,
-            combined_text=combined_text,
-        ):
-            specs.append(
-                StructuredSectionWindowSpec(
-                    section_path=[
-                        "Safety Instructions",
-                        "Extended order code: Cerabar M",
-                        "Basic specifications",
-                    ],
-                    anchor_markers=(
-                        "position 1, 2 (approval)",
-                        "approval",
-                        "atex",
-                        "iecex",
-                    ),
-                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                    radius_before=0,
-                    radius_after=2,
-                    combine_all_windows=True,
-                )
-            )
-
-        return {
-            "drawing_mode": drawing_mode,
-            "specs": specs,
-        }
 
     def _collect_windows(
         self,
@@ -680,118 +214,3 @@ class StructuredSectionFragmentBuilder:
     @staticmethod
     def _normalize_text(value: str | None) -> str:
         return " ".join(str(value or "").strip().lower().split())
-
-    @staticmethod
-    def _looks_like_drawing(
-        *,
-        document_title: str,
-        section_text: str,
-        combined_text: str,
-    ) -> bool:
-        return any(
-            marker in " ".join((document_title, section_text, combined_text))
-            for marker in DRAWING_STRUCTURED_MARKERS
-        )
-
-    @staticmethod
-    def _looks_like_certificate(
-        *,
-        document_title: str,
-        section_text: str,
-        combined_text: str,
-        document_type: DocumentType | None,
-    ) -> bool:
-        if document_type == DocumentType.CERTIFICATE:
-            return True
-        return any(
-            marker in " ".join((document_title, section_text, combined_text))
-            for marker in CERTIFICATE_STRUCTURED_MARKERS
-        )
-
-    @staticmethod
-    def _looks_like_datasheet(
-        *,
-        document_title: str,
-        section_text: str,
-        combined_text: str,
-        document_type: DocumentType | None,
-    ) -> bool:
-        if document_type == DocumentType.DATASHEET:
-            return True
-        return any(
-            marker in " ".join((document_title, section_text, combined_text))
-            for marker in DATASHEET_STRUCTURED_MARKERS
-        )
-
-    @staticmethod
-    def _looks_like_report(
-        *,
-        document_title: str,
-        section_text: str,
-        combined_text: str,
-        document_type: DocumentType | None = None,
-    ) -> bool:
-        if document_type == DocumentType.REPORT:
-            return True
-        return any(
-            marker in " ".join((document_title, section_text, combined_text))
-            for marker in REPORT_STRUCTURED_MARKERS
-        )
-
-    @staticmethod
-    def _looks_like_sensor_section(
-        *,
-        section_text: str,
-        combined_text: str,
-    ) -> bool:
-        return any(
-            marker in " ".join((section_text, combined_text))
-            for marker in SENSOR_LIST_STRUCTURED_MARKERS
-        )
-
-    @staticmethod
-    def _looks_like_approval_matrix(
-        *,
-        section_text: str,
-        combined_text: str,
-    ) -> bool:
-        haystack = " ".join((section_text, combined_text))
-        return (
-            "approval" in haystack
-            and "atex" in haystack
-            and "iecex" in haystack
-        )
-
-    @staticmethod
-    def _is_manufacturer_certificate_section(
-        *,
-        section_text: str,
-        combined_text: str,
-    ) -> bool:
-        if "manufacturer" in section_text and "certificate" in section_text:
-            return True
-        return (
-            "manufacturer's certificates" in combined_text
-            or "declaration of conformity" in combined_text
-        )
-
-    @staticmethod
-    def _looks_like_manual(
-        *,
-        document_title: str,
-        section_text: str,
-        combined_text: str,
-        document_type: DocumentType | None,
-    ) -> bool:
-        if document_type == DocumentType.MANUAL:
-            return True
-        haystack = " ".join((document_title, section_text, combined_text))
-        return any(
-            marker in haystack
-            for marker in (
-                "technical manual",
-                "macerator",
-                "food waste press",
-                "vacuum / transfer pump",
-            )
-        )
