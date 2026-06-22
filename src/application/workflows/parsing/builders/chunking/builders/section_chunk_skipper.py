@@ -1,7 +1,7 @@
 import re
 
-from src.application.workflows.parsing.builders.chunking.builders.structured_section_markers import (
-    has_structured_markers,
+from src.application.workflows.parsing.builders.chunking.builders.structured import (
+    StructuredSignalDetector,
 )
 from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     clean_chunk_text,
@@ -18,8 +18,14 @@ from src.domain.elements import CanonicalElement
 
 
 class SectionChunkSkipper:
-    def __init__(self, *, text_splitter: ChunkTextSplitter) -> None:
+    def __init__(
+        self,
+        *,
+        text_splitter: ChunkTextSplitter,
+        signal_detector: StructuredSignalDetector | None = None,
+    ) -> None:
         self.text_splitter = text_splitter
+        self.signal_detector = signal_detector or StructuredSignalDetector()
 
     def should_skip_section(
         self,
@@ -63,7 +69,7 @@ class SectionChunkSkipper:
         if not texts:
             return False
 
-        if has_structured_markers(
+        if self.signal_detector.has_structured_markers(
             document_title=document_title,
             values=[
                 section.title,
@@ -121,7 +127,7 @@ class SectionChunkSkipper:
         if not texts:
             return True
 
-        if has_structured_markers(
+        if self.signal_detector.has_structured_markers(
             document_title=document_title,
             values=[
                 section.title,
