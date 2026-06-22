@@ -37,7 +37,12 @@ class ReportStructuredFamilyBuilder:
         marker_tuning: StructuredFamilyMarkerTuning | None,
     ) -> StructuredFamilySpecSelection:
         if (
-            context.document_type != DocumentType.REPORT
+            context.has_known_document_type()
+            and not context.matches_document_type(DocumentType.REPORT)
+        ):
+            return StructuredFamilySpecSelection()
+        if (
+            not context.has_known_document_type()
             and not context.contains_any(REPORT_DOCUMENT_MARKERS)
         ):
             return StructuredFamilySpecSelection()

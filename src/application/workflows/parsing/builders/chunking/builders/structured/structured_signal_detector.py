@@ -17,10 +17,6 @@ class StructuredSignalDetector:
         document_title: str | None,
         values: list[str],
     ) -> bool:
-        title = self._normalize(document_title)
-        if any(marker in title for marker in self.markers):
-            return True
-
         haystacks = [
             self._normalize(value)
             for value in values

@@ -12,7 +12,6 @@ REPORT_DEVICE_INFORMATION_MARKERS = (
     "device tag",
     "serial number",
     "device type",
-    "description",
 )
 
 REPORT_ADDITIONAL_INFORMATION_MARKERS = (
@@ -59,8 +58,6 @@ REPORT_OPERATING_INSTRUCTIONS_MARKERS = (
 REPORT_CERTIFICATION_SECTION_MARKERS = (
     "manufacturer's certificates",
     "declaration of conformity",
-    "certificate",
-    "iecex",
-    "atex",
-    "ce",
+    "certificate of conformity",
+    "conformity assessment",
 )

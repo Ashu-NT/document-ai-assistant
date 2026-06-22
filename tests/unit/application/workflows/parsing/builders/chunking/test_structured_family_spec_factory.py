@@ -265,3 +265,103 @@ def test_fragment_builder_detects_troubleshooting_without_equipment_names() -> N
 
     assert troubleshooting.chunk_type == ChunkType.TROUBLESHOOTING
     assert "Corrective action" in troubleshooting.text
+
+
+def test_fragment_builder_keeps_certificate_identification_table_out_of_general_information() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_006",
+        title="Remarks",
+        section_path=["Remarks"],
+        page=2,
+    )
+    elements = [
+        make_element(
+            element_id="txt_050",
+            text="Office Hamburg",
+            page=2,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="tbl_051",
+            text=(
+                "| Description | Manufacturer Designation | Serial Number | IMO Number |\n"
+                "|---|---|---|---|\n"
+                "| 2 pcs., EC881-5 | L=500 mm, PN 350 bar | SL060323 | 0 |"
+            ),
+            page=2,
+            reading_order=2,
+            element_type=ElementType.TABLE,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Inspection certificate",
+        document_type=DocumentType.CERTIFICATE,
+        section=section,
+        elements=elements,
+    )
+
+    assert any(
+        fragment.section_path
+        == ["Description / Manufacturer Designation / Serial Number table"]
+        for fragment in fragments
+    )
+    assert all(
+        fragment.section_path != ["General information"]
+        for fragment in fragments
+    )
+    assert all(
+        "Approval information" not in fragment.section_path
+        for fragment in fragments
+    )
+
+
+def test_fragment_builder_keeps_certificate_results_under_results_section() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_007",
+        title="Messdaten:/results",
+        section_path=["Messdaten:/results"],
+        page=3,
+    )
+    elements = [
+        make_element(
+            element_id="tbl_060",
+            text=(
+                "| Spezifikation/specification | Soll/nominal | Ist/result |\n"
+                "|---|---|---|\n"
+                "| Test pressure nominal | 700 bar | 730 bar |"
+            ),
+            page=3,
+            reading_order=1,
+            element_type=ElementType.TABLE,
+        ),
+        make_element(
+            element_id="txt_061",
+            text="Part number SL060323; hose length 500 mm; operation pressure 350 bar.",
+            page=3,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Inspection certificate",
+        document_type=DocumentType.CERTIFICATE,
+        section=section,
+        elements=elements,
+    )
+
+    assert any(
+        fragment.section_path == ["Messdaten:/results"]
+        and fragment.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+        for fragment in fragments
+    )
+    assert all(
+        "Approval information" not in fragment.section_path
+        for fragment in fragments
+    )
+    assert all(
+        fragment.section_path != ["Particulars"]
+        for fragment in fragments
+    )
