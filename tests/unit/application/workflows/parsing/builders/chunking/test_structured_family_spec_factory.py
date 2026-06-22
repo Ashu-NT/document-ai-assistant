@@ -549,6 +549,55 @@ def test_fragment_builder_emits_report_operation_options_chunk() -> None:
     assert "12 seconds" in op_options.text
 
 
+def test_fragment_builder_applies_datasheet_specs_to_manual_classified_datasheet_document() -> None:
+    # Regression guard: a doc classified as MANUAL but whose content contains "ordering example"
+    # (a DATASHEET_DOCUMENT_MARKER) must still produce datasheet structured chunks.
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_ds_001",
+        title="MK311xxx Ball Valve",
+        section_path=["MK311xxx Ball Valve"],
+        page=2,
+    )
+    elements = [
+        make_element(
+            element_id="txt_ds_001",
+            text="Ordering example",
+            page=2,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_ds_002",
+            text="MK311007 = 2-way Wafer-type Ball valve, stainless steel, handle, DN 50.",
+            page=2,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="DN25 - DN80 MK311xxx Datasheet",
+        document_type=DocumentType.MANUAL,
+        section=section,
+        elements=elements,
+    )
+
+    ordering_example = next(
+        (
+            fragment
+            for fragment in fragments
+            if fragment.section_path == ["Ordering example"]
+        ),
+        None,
+    )
+
+    assert ordering_example is not None, (
+        "Datasheet structured specs must activate for MANUAL-classified documents "
+        "whose content contains 'ordering example'"
+    )
+    assert ordering_example.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+    assert "MK311007" in ordering_example.text
+
+
 def test_fragment_builder_applies_report_specs_to_manual_classified_report_document() -> None:
     # Regression guard: a doc classified as MANUAL but whose title is "Final Inspection Report"
     # must still produce report structured chunks (the gate escape via REPORT_DOCUMENT_MARKERS).
