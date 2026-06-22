@@ -47,6 +47,7 @@ class ChunkFragmentBuilder:
         document_type: DocumentType | None,
         section: DocumentSection,
         elements: list[CanonicalElement],
+        document_sections_combined_text: str = "",
     ) -> list[ChunkFragment]:
         structured_fragments, consumed_element_ids = (
             self.structured_fragment_builder.build(
@@ -54,6 +55,7 @@ class ChunkFragmentBuilder:
                 document_type=document_type,
                 section=section,
                 elements=elements,
+                document_sections_combined_text=document_sections_combined_text,
             )
         )
         fragments: list[ChunkFragment] = list(structured_fragments)

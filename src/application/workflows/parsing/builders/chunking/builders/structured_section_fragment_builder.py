@@ -35,6 +35,7 @@ class StructuredSectionFragmentBuilder:
         document_type: DocumentType | None,
         section: DocumentSection,
         elements: list[CanonicalElement],
+        document_sections_combined_text: str = "",
     ) -> tuple[list[ChunkFragment], set[str]]:
         ordered_elements = [
             element
@@ -50,6 +51,7 @@ class StructuredSectionFragmentBuilder:
             section=section,
             elements=ordered_elements,
             normalizer=self._normalize_text,
+            document_sections_combined_text=document_sections_combined_text,
         )
         if not selection.specs:
             return [], set()

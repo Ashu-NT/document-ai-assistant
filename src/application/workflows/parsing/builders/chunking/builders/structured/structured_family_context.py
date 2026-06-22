@@ -15,6 +15,7 @@ class StructuredFamilyContext:
     normalized_section_text: str
     normalized_texts: tuple[str, ...]
     combined_text: str
+    document_sections_combined_text: str = ""
 
     @classmethod
     def from_inputs(
@@ -25,6 +26,7 @@ class StructuredFamilyContext:
         section: DocumentSection,
         elements: list[CanonicalElement],
         normalizer,
+        document_sections_combined_text: str = "",
     ) -> "StructuredFamilyContext":
         normalized_texts = tuple(
             normalizer(element.text)
@@ -42,6 +44,7 @@ class StructuredFamilyContext:
             ),
             normalized_texts=normalized_texts,
             combined_text=" ".join(normalized_texts),
+            document_sections_combined_text=normalizer(document_sections_combined_text),
         )
 
     def base_section_path(self) -> list[str]:
@@ -69,6 +72,7 @@ class StructuredFamilyContext:
             self.normalized_title,
             self.normalized_section_text,
             self.combined_text,
+            self.document_sections_combined_text,
         )
 
     def section_contains_any(
