@@ -61,3 +61,29 @@ REPORT_CERTIFICATION_SECTION_MARKERS = (
     "certificate of conformity",
     "conformity assessment",
 )
+
+REPORT_PROCEDURE_MARKERS = (
+    "procedure",
+    "test specification",
+    "test rig",
+    "reference standard",
+    "test method",
+)
+
+REPORT_MOUNTING_MARKERS = (
+    "mounting",
+    "tightening torque",
+    "process connection",
+    "npt",
+    "process fitting",
+    "installation note",
+)
+
+REPORT_OPERATION_OPTIONS_MARKERS = (
+    "operation options",
+    "zero and span",
+    "operating elements",
+    "push button",
+    "display",
+    "local operation",
+)

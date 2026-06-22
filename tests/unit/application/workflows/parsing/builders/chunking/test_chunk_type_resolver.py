@@ -256,6 +256,50 @@ def test_chunk_type_resolver_ignores_polluted_operation_path_inside_troubleshoot
     assert chunk_type == ChunkType.TROUBLESHOOTING
 
 
+def test_chunk_type_resolver_detects_lubrication_schedule_as_maintenance_interval() -> None:
+    resolver = ChunkTypeResolver()
+
+    chunk_type = resolver.resolve(
+        fragments=[
+            make_fragment(
+                section_title="Lubrication Schedule",
+                section_path=[
+                    "7 Components",
+                    "7.3 Vacuum / Transfer Pump",
+                    "7.3.9.2 Lubricating the Shaft Seals",
+                    "Lubrication Schedule",
+                ],
+                text="After every 350 hours of operation. Filling quantity: 2 to 3 strokes per grease nipple.",
+            )
+        ]
+    )
+
+    assert chunk_type == ChunkType.MAINTENANCE_INTERVAL
+
+
+def test_chunk_type_resolver_detects_oil_change_interval_as_maintenance_interval() -> None:
+    resolver = ChunkTypeResolver()
+
+    chunk_type = resolver.resolve(
+        fragments=[
+            make_fragment(
+                section_title="Oil Change Interval",
+                section_path=[
+                    "7 Components",
+                    "7.3 Vacuum / Transfer Pump",
+                    "Oil Change Interval",
+                ],
+                text=(
+                    "First oil change after approx. 500 hours or 12 months. "
+                    "Subsequent oil change after each 2000 hours or 12 months."
+                ),
+            )
+        ]
+    )
+
+    assert chunk_type == ChunkType.MAINTENANCE_INTERVAL
+
+
 def test_section_merge_policy_flushes_on_conflicting_semantic_sections() -> None:
     policy = SectionMergePolicy(
         text_splitter=ChunkTextSplitter(max_chunk_tokens=220, chunk_overlap=20),

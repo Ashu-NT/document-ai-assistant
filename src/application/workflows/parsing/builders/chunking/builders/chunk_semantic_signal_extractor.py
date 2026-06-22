@@ -23,6 +23,8 @@ _TITLE_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "inspection interval",
         "inspection schedule",
         "replacement interval",
+        "lubrication schedule",
+        "oil change interval",
     ),
     ChunkType.SAFETY_WARNING: (
         "safety",
