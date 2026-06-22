@@ -1,3 +1,5 @@
+import re
+
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     GENERIC_STRUCTURED_MARKERS,
 )
@@ -30,4 +32,5 @@ class StructuredSignalDetector:
 
     @staticmethod
     def _normalize(value: str | None) -> str:
-        return " ".join(str(value or "").strip().lower().split())
+        normalized = re.sub(r"[\W_]+", " ", str(value or ""), flags=re.UNICODE)
+        return " ".join(normalized.strip().lower().split())

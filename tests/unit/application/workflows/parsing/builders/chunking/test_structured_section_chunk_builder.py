@@ -78,6 +78,49 @@ def test_section_chunk_builder_sanitizes_branding_noise_from_section_paths() -> 
     ]
 
 
+def test_section_chunk_builder_resets_numbered_sibling_paths() -> None:
+    builder = SectionChunkBuilder()
+    section = make_section(
+        section_id="sec_001a",
+        title="Technical Data",
+        section_path=[
+            "7 Components",
+            "7.2 Food Waste Press",
+            "Safety Precautions 7.2.1",
+            "Owner / User Responsibility",
+            "General Warnings:",
+            "Electrical System Precautions",
+            "Biohazard",
+            "Food Waste Press Description 7.2.2",
+            "Technical Data",
+        ],
+        page=50,
+    )
+    elements = [
+        make_element(
+            element_id="txt_001a",
+            element_type=ElementType.TEXT,
+            text="Press Type TSP20 Serial Number 221010004Z507",
+            page=50,
+            reading_order=1,
+        )
+    ]
+
+    payloads = builder.build_chunk_payloads(
+        document_title="FWC12 Technical Manual",
+        section=section,
+        elements=elements,
+        document_type=DocumentType.MANUAL,
+    )
+
+    assert payloads[0].section_path == [
+        "7 Components",
+        "7.2 Food Waste Press",
+        "Food Waste Press Description 7.2.2",
+        "Technical Data",
+    ]
+
+
 def test_section_chunk_builder_emits_manual_maintenance_interval_chunk() -> None:
     builder = SectionChunkBuilder()
     section = make_section(
@@ -124,6 +167,47 @@ def test_section_chunk_builder_emits_manual_maintenance_interval_chunk() -> None
 
     assert interval_payload.chunk_type == ChunkType.MAINTENANCE_INTERVAL
     assert "9000 operating hours" in interval_payload.content
+
+
+def test_section_chunk_builder_resets_path_when_manual_sections_advance() -> None:
+    builder = SectionChunkBuilder()
+    section = make_section(
+        section_id="sec_002a",
+        title="Trouble Shooting 7.1.10",
+        section_path=[
+            "7 Components",
+            "7.1 Macerators",
+            "Commissioning & Shutdown 7.1.8",
+            "Check before Start Up",
+            "Checks during Start Up",
+            "Operation 7.1.9",
+            "Start and stop",
+            "Trouble Shooting 7.1.10",
+        ],
+        page=33,
+    )
+    elements = [
+        make_element(
+            element_id="txt_010a",
+            element_type=ElementType.TEXT,
+            text="Possible cause blocked inlet. Corrective action inspect and clear the inlet.",
+            page=33,
+            reading_order=1,
+        )
+    ]
+
+    payloads = builder.build_chunk_payloads(
+        document_title="FWC12 Technical Manual",
+        section=section,
+        elements=elements,
+        document_type=DocumentType.MANUAL,
+    )
+
+    assert payloads[0].section_path == [
+        "7 Components",
+        "7.1 Macerators",
+        "Trouble Shooting 7.1.10",
+    ]
 
 
 def test_section_chunk_builder_emits_report_connection_procedure_chunk() -> None:

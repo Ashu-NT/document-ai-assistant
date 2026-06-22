@@ -1,3 +1,5 @@
+import re
+
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_evidence_family import (
     StructuredEvidenceFamily,
 )
@@ -54,4 +56,5 @@ def path_contains_markers(
 
 
 def _normalize(value: str | None) -> str:
-    return " ".join(str(value or "").strip().lower().split())
+    normalized = re.sub(r"[\W_]+", " ", str(value or ""), flags=re.UNICODE)
+    return " ".join(normalized.strip().lower().split())

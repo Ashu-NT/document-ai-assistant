@@ -1,7 +1,7 @@
 {
   "truth_set_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\retrieval_truth_set.md",
   "input_directory": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc",
-  "generated_at": "2026-06-22T10:13:39.232259+00:00",
+  "generated_at": "2026-06-22T11:15:40.006782+00:00",
   "document_count": 5,
   "documents": [
     {
@@ -15,7 +15,7 @@
       "page_count": 98,
       "section_count": 339,
       "element_count": 2035,
-      "chunk_count": 475,
+      "chunk_count": 493,
       "question_count": 0,
       "classification_label": "manual",
       "classification_confidence": 0.95,
@@ -34,7 +34,7 @@
       "page_count": 6,
       "section_count": 21,
       "element_count": 208,
-      "chunk_count": 39,
+      "chunk_count": 40,
       "question_count": 0,
       "classification_label": "certificate",
       "classification_confidence": 0.95,

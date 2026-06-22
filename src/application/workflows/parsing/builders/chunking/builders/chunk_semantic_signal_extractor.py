@@ -3,6 +3,9 @@ import re
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
+from src.application.workflows.parsing.builders.chunking.text.section_path_sanitizer import (
+    sanitize_section_path,
+)
 from src.domain.common import ChunkType
 
 _TITLE_MARKERS: dict[ChunkType, tuple[str, ...]] = {
@@ -33,6 +36,13 @@ _TITLE_MARKERS: dict[ChunkType, tuple[str, ...]] = {
     ChunkType.TROUBLESHOOTING: (
         "troubleshooting",
         "trouble shooting",
+        "does not start",
+        "will not start",
+        "no sound",
+        "no discharge",
+        "low flow",
+        "leakage",
+        "leaking",
         "fault",
         "faults",
         "diagnostic",
@@ -102,12 +112,42 @@ _CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "protective equipment",
     ),
     ChunkType.TROUBLESHOOTING: (
+        "probable cause",
+        "probable causes",
         "possible cause",
+        "possible causes",
+        "possible problem",
+        "possible problems",
+        "possible remedy",
+        "possible remedies",
+        "potential remedy",
+        "potential remedies",
         "corrective action",
+        "no sound",
+        "no discharge",
+        "low flow",
+        "leakage",
+        "leaking",
         "if the",
         "not working",
         "fails to",
         "check whether",
+    ),
+    ChunkType.TECHNICAL_SPECIFICATION: (
+        "serial number",
+        "model number",
+        "part number",
+        "drawing number",
+        "type",
+        "specification",
+        "year of manufacture",
+        "flow rate",
+        "operating pressure",
+        "supply voltage",
+        "power",
+        "rpm",
+        "material",
+        "nominal size",
     ),
     ChunkType.INSTALLATION_INSTRUCTION: (
         "install",
@@ -131,6 +171,47 @@ _CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "ul",
         "rohs",
     ),
+}
+_CONTENT_SCORE_CAPS: dict[ChunkType, int] = {
+    ChunkType.TECHNICAL_SPECIFICATION: 4,
+    ChunkType.TROUBLESHOOTING: 4,
+}
+_TABLE_CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
+    ChunkType.TECHNICAL_SPECIFICATION: (
+        "serial number",
+        "model number",
+        "type",
+        "drive type",
+        "pump type",
+        "press type",
+        "year of manufacture",
+        "specification",
+        "flow rate",
+        "operating pressure",
+        "supply voltage",
+        "power",
+        "rpm",
+        "material",
+        "nominal size",
+    ),
+    ChunkType.TROUBLESHOOTING: (
+        "problem",
+        "problems",
+        "possible cause",
+        "possible causes",
+        "probable cause",
+        "probable causes",
+        "possible remedy",
+        "possible remedies",
+        "potential remedy",
+        "potential remedies",
+        "corrective action",
+        "remedy",
+    ),
+}
+_TABLE_SIGNAL_THRESHOLDS: dict[ChunkType, int] = {
+    ChunkType.TECHNICAL_SPECIFICATION: 2,
+    ChunkType.TROUBLESHOOTING: 2,
 }
 
 _INTERVAL_PATTERN = re.compile(
@@ -199,9 +280,10 @@ class ChunkSemanticSignalExtractor:
         table_ids: list[str] | None = None,
     ) -> dict[ChunkType, int]:
         title_text = self._normalize_text(section_title)
+        sanitized_path = sanitize_section_path(list(section_path))
         path_text = " > ".join(
             self._normalize_text(segment)
-            for segment in section_path
+            for segment in sanitized_path
             if segment
         )
         content_text = self._normalize_text(text)
@@ -218,7 +300,12 @@ class ChunkSemanticSignalExtractor:
         for chunk_type, markers in _CONTENT_MARKERS.items():
             content_hits = self._marker_hits(content_text, markers)
             if content_hits:
+                cap = _CONTENT_SCORE_CAPS.get(chunk_type, 2)
                 scores[chunk_type] = scores.get(chunk_type, 0) + min(content_hits, 2)
+                if cap != 2:
+                    scores[chunk_type] = scores.get(chunk_type, 0) + (
+                        min(content_hits, cap) - min(content_hits, 2)
+                    )
 
         if _INTERVAL_PATTERN.search(content_text):
             scores[ChunkType.MAINTENANCE_INTERVAL] = (
@@ -234,12 +321,27 @@ class ChunkSemanticSignalExtractor:
             scores[ChunkType.TECHNICAL_SPECIFICATION] = (
                 scores.get(ChunkType.TECHNICAL_SPECIFICATION, 0) + 1
             )
+            for chunk_type, bonus in self._table_signal_scores(content_text).items():
+                scores[chunk_type] = scores.get(chunk_type, 0) + bonus
 
         return {
             chunk_type: score
             for chunk_type, score in scores.items()
             if score > 0
         }
+
+    def _table_signal_scores(
+        self,
+        content_text: str,
+    ) -> dict[ChunkType, int]:
+        scores: dict[ChunkType, int] = {}
+        for chunk_type, markers in _TABLE_CONTENT_MARKERS.items():
+            marker_hits = self._marker_hits(content_text, markers)
+            threshold = _TABLE_SIGNAL_THRESHOLDS.get(chunk_type, 2)
+            if marker_hits < threshold:
+                continue
+            scores[chunk_type] = min(marker_hits + 1, 5)
+        return scores
 
     @staticmethod
     def _marker_hits(text: str, markers: tuple[str, ...]) -> int:
@@ -252,4 +354,5 @@ class ChunkSemanticSignalExtractor:
     def _normalize_text(value: str | None) -> str:
         if not value:
             return ""
-        return re.sub(r"\s+", " ", value).strip().lower()
+        normalized = re.sub(r"[\W_]+", " ", value, flags=re.UNICODE)
+        return re.sub(r"\s+", " ", normalized).strip().lower()
