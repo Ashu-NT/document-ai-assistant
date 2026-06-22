@@ -7,6 +7,7 @@ from src.application.evaluation.retrieval.benchmarking.resolution.matching.retri
     RetrievalBenchmarkChunkMatcher,
 )
 from src.application.evaluation.retrieval.benchmarking.resolution.models import (
+    RetrievalBenchmarkCandidateRole,
     RetrievalBenchmarkResolutionDiagnostic,
 )
 from src.application.evaluation.retrieval.benchmarking.resolution.resolvers.retrieval_benchmark_candidate_canonicalizer import (
@@ -92,6 +93,7 @@ class RetrievalBenchmarkCaseResolver:
         secondary_families = self._secondary_families(
             document_graph=document_graph,
             canonical_candidates=canonical_candidates[1:],
+            viable_candidates=viable_candidates,
             primary_section_id=best_candidate.section_id,
         )
         if secondary_families:
@@ -156,6 +158,7 @@ class RetrievalBenchmarkCaseResolver:
         *,
         document_graph: DocumentGraph,
         canonical_candidates: list,
+        viable_candidates: list,
         primary_section_id: str | None,
         min_passage_overlap: float = 0.6,
     ) -> list[tuple[list[str], list[str]]]:
@@ -163,17 +166,29 @@ class RetrievalBenchmarkCaseResolver:
             {primary_section_id} if primary_section_id else set()
         )
         result: list[tuple[list[str], list[str]]] = []
-        for candidate in canonical_candidates:
+
+        def _add_candidate(candidate) -> None:
             if not candidate.section_id or candidate.section_id in seen_section_ids:
-                continue
+                return
             if candidate.passage_overlap < min_passage_overlap:
-                continue
+                return
             seen_section_ids.add(candidate.section_id)
             chunk_ids = RetrievalBenchmarkCaseResolver._resolved_chunk_ids(
                 document_graph=document_graph,
                 chunk_id=candidate.chunk_id,
             )
             result.append((chunk_ids, list(candidate.section_path)))
+
+        for candidate in canonical_candidates:
+            _add_candidate(candidate)
+
+        # Also scan pre-dedup viable candidates to catch sections collapsed by the
+        # canonicalizer. Restricted to ATOMIC_EVIDENCE to avoid companions.
+        for candidate in viable_candidates:
+            if candidate.role != RetrievalBenchmarkCandidateRole.ATOMIC_EVIDENCE:
+                continue
+            _add_candidate(candidate)
+
         return result
 
     @staticmethod

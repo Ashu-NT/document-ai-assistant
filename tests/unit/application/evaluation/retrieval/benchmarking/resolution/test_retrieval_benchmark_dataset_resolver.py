@@ -487,7 +487,7 @@ def test_dataset_resolver_prefers_atomic_chunk_over_context_companion() -> None:
     assert resolved_dataset.cases[0].expected_chunk_ids == ["chunk_atomic"]
 
 
-def test_dataset_resolver_collapses_duplicate_atomic_chunks_with_same_evidence() -> None:
+def test_dataset_resolver_includes_both_sections_for_duplicate_atomic_chunks() -> None:
     benchmark_case = build_case(
         case_id="A-DUP-001",
         document_alias="manual_alias",
@@ -540,10 +540,10 @@ def test_dataset_resolver_collapses_duplicate_atomic_chunks_with_same_evidence()
         document_lookup_service=FakeDocumentLookupService({"doc_manual": graph}),
     ).resolve_dataset(dataset, manifest)
 
-    assert resolved_dataset.cases[0].expected_chunk_ids in (
-        ["chunk_primary"],
-        ["chunk_duplicate"],
-    )
+    # Both sections contain the same evidence — both are valid retrieval targets.
+    expected_ids = set(resolved_dataset.cases[0].expected_chunk_ids)
+    assert "chunk_primary" in expected_ids
+    assert "chunk_duplicate" in expected_ids
 
 
 def test_dataset_resolver_prefers_atomic_chunk_over_overview_companion() -> None:
