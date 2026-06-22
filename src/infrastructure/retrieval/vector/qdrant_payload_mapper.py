@@ -7,8 +7,12 @@ from src.domain.retrieval import RetrievedChunk
 
 class QdrantPayloadMapper:
     @staticmethod
-    def from_chunk(chunk: DocumentChunk) -> dict:
-        return {
+    def from_chunk(
+        chunk: DocumentChunk,
+        *,
+        document_type: str | None = None,
+    ) -> dict:
+        payload = {
             "document_id": chunk.document_id,
             "chunk_id": chunk.chunk_id,
             "section_id": chunk.section_id,
@@ -21,6 +25,9 @@ class QdrantPayloadMapper:
             "page_start": chunk.source.page_start,
             "page_end": chunk.source.page_end,
         }
+        if document_type is not None:
+            payload["document_type"] = document_type
+        return payload
 
     @staticmethod
     def to_retrieved_chunk(
@@ -41,6 +48,8 @@ class QdrantPayloadMapper:
             "chunk_index": str(payload.get("chunk_index") or ""),
             "chunk_total": str(payload.get("chunk_total") or ""),
         }
+        if payload.get("document_type") is not None:
+            metadata["document_type"] = str(payload.get("document_type"))
 
         return RetrievedChunk(
             chunk_id=str(payload.get("chunk_id") or point.id),

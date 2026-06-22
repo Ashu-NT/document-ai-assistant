@@ -12,12 +12,15 @@ class RetrievedChunkMapper:
         *,
         score: float = 1.0,
         retrieval_source: str = "sql_keyword",
+        extra_metadata: dict[str, str] | None = None,
     ) -> RetrievedChunk:
         metadata = {
             "sequence_number": str(row.sequence_number),
             "chunk_index": str(row.chunk_index),
             "chunk_total": str(row.chunk_total),
         }
+        if extra_metadata:
+            metadata.update(extra_metadata)
         return RetrievedChunk(
             chunk_id=row.id,
             document_id=row.document_id,

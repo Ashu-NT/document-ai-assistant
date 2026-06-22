@@ -182,7 +182,9 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
     from src.infrastructure.db.session import SessionLocal, engine  # noqa: WPS433
     from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork  # noqa: WPS433
     from src.infrastructure.retrieval.keyword import SqlKeywordIndex  # noqa: WPS433
-    from src.infrastructure.retrieval.rerankers import NoOpReranker  # noqa: WPS433
+    from src.infrastructure.retrieval.rerankers import (  # noqa: WPS433
+        DeterministicHybridReranker,
+    )
     from src.infrastructure.retrieval.vector import QdrantVectorStore  # noqa: WPS433
     from src.shared.ids import IdGenerator  # noqa: WPS433
 
@@ -202,6 +204,7 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
         collection_name=qdrant_settings.collection,
         embedding_model=embedding_settings.model_name,
         query_embedding_provider=embedding_provider,
+        document_repository=unit_of_work.documents,
     )
     document_lookup_service = DocumentLookupService(unit_of_work.documents)
     retrieval_service = HybridRetrievalService(
@@ -209,7 +212,7 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
         id_generator=IdGenerator(),
         retrieval_query_validator=query_validator,
         vector_store=vector_store,
-        reranker=NoOpReranker(),
+        reranker=DeterministicHybridReranker(),
     )
     workflow = RetrievalWorkflow(
         retrieval_service=retrieval_service,

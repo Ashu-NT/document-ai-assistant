@@ -22,6 +22,8 @@ class RetrievalQueryIntentInferer:
             return RetrievalQueryIntent.SAFETY
         if ChunkType.TROUBLESHOOTING in query.chunk_types:
             return RetrievalQueryIntent.TROUBLESHOOTING
+        if query.has_identifiers():
+            return RetrievalQueryIntent.IDENTIFIER
         if any(
             chunk_type in query.chunk_types
             for chunk_type in {
@@ -44,7 +46,23 @@ class RetrievalQueryIntentInferer:
             return RetrievalQueryIntent.FIGURE
         if any(
             marker in query_text
-            for marker in ("table", "part number", "part no", "spare part", "list")
+            for marker in (
+                "serial number",
+                "part number",
+                "part no",
+                "order code",
+                "order number",
+                "model number",
+                "drawing number",
+                "certificate number",
+                "what does ",
+                "what is position ",
+            )
+        ):
+            return RetrievalQueryIntent.IDENTIFIER
+        if any(
+            marker in query_text
+            for marker in ("table", "spare part", "parts list", "matrix", "list")
         ):
             return RetrievalQueryIntent.TABLE
         if any(
@@ -57,6 +75,10 @@ class RetrievalQueryIntentInferer:
                 "current",
                 "tolerance",
                 "dimension",
+                "torque",
+                "pressure",
+                "approval",
+                "certificate",
             )
         ):
             return RetrievalQueryIntent.SPECIFICATION
@@ -80,6 +102,16 @@ class RetrievalQueryIntentInferer:
                 "install",
                 "configure",
                 "calibrate",
+                "start",
+                "run",
+                "restart",
+                "remove",
+                "connect",
+                "shutdown",
+                "lubricate",
+                "maintenance",
+                "how often",
+                "interval",
             )
         ):
             return RetrievalQueryIntent.PROCEDURE

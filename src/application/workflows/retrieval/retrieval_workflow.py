@@ -12,6 +12,9 @@ from src.application.workflows.retrieval.retrieval_workflow_result import (
 from src.application.workflows.retrieval.retrieval_context_expander import (
     RetrievalContextExpander,
 )
+from src.application.workflows.retrieval.retrieval_query_analyzer import (
+    RetrievalQueryAnalyzer,
+)
 from src.domain.retrieval import RetrievalQuery
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import NoEvidenceFoundError
@@ -62,6 +65,7 @@ class RetrievalWorkflow:
         context_expander: RetrievalContextExpander | None = None,
         retrieved_chunk_deduplicator: RetrievedChunkDeduplicator | None = None,
         candidate_pool_top_k: int | None = None,
+        query_analyzer: RetrievalQueryAnalyzer | None = None,
     ) -> None:
         self.retrieval_service = retrieval_service
         self.query_validator = query_validator
@@ -75,6 +79,7 @@ class RetrievalWorkflow:
             )
         )
         self.candidate_pool_top_k = candidate_pool_top_k
+        self.query_analyzer = query_analyzer or RetrievalQueryAnalyzer()
 
     @tracked_action(
         action="retrieval.workflow_completed",
@@ -88,19 +93,20 @@ class RetrievalWorkflow:
         query: RetrievalQuery,
         activity_context: ActivityContext | None = None,
     ) -> RetrievalWorkflowResult:
-        validation = self.query_validator.validate(query)
+        working_query = self.query_analyzer.analyze(query)
+        validation = self.query_validator.validate(working_query)
         validation.raise_if_invalid()
 
-        candidate_query = self._candidate_query(query)
+        candidate_query = self._candidate_query(working_query)
         retrieval_result = self.retrieval_service.retrieve(candidate_query)
         deduplication_result = self.retrieved_chunk_deduplicator.deduplicate(
-            query=query,
+            query=working_query,
             chunks=retrieval_result.chunks,
         )
         retrieval_result = retrieval_result.__class__(
             result_id=retrieval_result.result_id,
-            query=query,
-            chunks=deduplication_result.chunks[: query.top_k],
+            query=working_query,
+            chunks=deduplication_result.chunks[: working_query.top_k],
             citations=list(retrieval_result.citations),
             used_dense=retrieval_result.used_dense,
             used_keyword=retrieval_result.used_keyword,
@@ -131,7 +137,10 @@ class RetrievalWorkflow:
             )
 
         context_chunks = (
-            self.context_expander.expand(retrieval_result.chunks, query=query)
+            self.context_expander.expand(
+                retrieval_result.chunks,
+                query=working_query,
+            )
             if self.context_expander is not None
             else list(retrieval_result.chunks)
         )

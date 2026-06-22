@@ -10,6 +10,9 @@ from src.application.workflows.retrieval.retrieval_query_intent import (
 from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
+from src.application.workflows.retrieval.retrieval_query_analyzer import (
+    RetrievalQueryAnalyzer,
+)
 from src.application.workflows.retrieval.retrieval_context_assembler import (
     RetrievalContextAssembler,
 )
@@ -29,6 +32,7 @@ __all__ = [
     "RetrievalContextAssembler",
     "RetrievalDeduplicationPolicy",
     "RetrievalDeduplicationResult",
+    "RetrievalQueryAnalyzer",
     "RetrievalQueryIntent",
     "RetrievalQueryIntentInferer",
     "RetrievalContextExpander",

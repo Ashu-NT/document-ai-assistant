@@ -1,5 +1,3 @@
-import re
-
 from sqlalchemy import and_, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -7,39 +5,19 @@ from sqlalchemy.orm import Session
 from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 from src.infrastructure.db.mappers import RetrievedChunkMapper
 from src.infrastructure.db.orm_models import ChunkORM, DocumentORM
+from src.infrastructure.retrieval.keyword.sql_keyword_query_terms import (
+    extract_query_terms,
+)
+from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
+    SqlKeywordScorer,
+)
 from src.shared.exceptions import DatabaseError
-
-_STOP_WORDS = {
-    "a",
-    "an",
-    "and",
-    "are",
-    "at",
-    "be",
-    "for",
-    "from",
-    "how",
-    "in",
-    "is",
-    "it",
-    "of",
-    "on",
-    "or",
-    "should",
-    "the",
-    "this",
-    "to",
-    "what",
-    "when",
-    "where",
-    "which",
-    "with",
-}
 
 
 class SqlKeywordRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
+        self.scorer = SqlKeywordScorer()
 
     def search_chunks(
         self,
@@ -66,7 +44,7 @@ class SqlKeywordRepository:
             if not query_text:
                 return []
 
-            query_terms = self._extract_terms(query_text)
+            query_terms = extract_query_terms(query_text)
             if not query_terms:
                 query_terms = [query_text.lower()]
 
@@ -76,31 +54,35 @@ class SqlKeywordRepository:
                 retrieval_query=retrieval_query,
                 result_limit=result_limit,
             )
-            rows = self.session.execute(statement).scalars().all()
+            rows = self.session.execute(statement).all()
             scored_rows = sorted(
                 (
                     (
-                        row,
-                        self._score_row(
-                            row=row,
+                        chunk_row,
+                        document_row,
+                        self.scorer.score(
+                            row=chunk_row,
+                            document=document_row,
+                            retrieval_query=retrieval_query,
                             query_text=query_text,
                             query_terms=query_terms,
                         ),
                     )
-                    for row in rows
+                    for chunk_row, document_row in rows
                 ),
-                key=lambda item: item[1],
+                key=lambda item: item[2].total_score,
                 reverse=True,
             )
 
             return [
                 RetrievedChunkMapper.from_chunk_orm(
                     row,
-                    score=score,
+                    score=score_breakdown.total_score,
                     retrieval_source="sql_keyword",
+                    extra_metadata=score_breakdown.metadata,
                 )
-                for row, score in scored_rows[:result_limit]
-                if score > 0
+                for row, _document_row, score_breakdown in scored_rows[:result_limit]
+                if score_breakdown.total_score > 0
             ]
 
         except SQLAlchemyError as exc:
@@ -122,22 +104,30 @@ class SqlKeywordRepository:
     ):
         patterns = [f"%{query_text}%"]
         patterns.extend(f"%{term}%" for term in query_terms)
+        if retrieval_query is not None:
+            patterns.extend(
+                f"%{identifier}%"
+                for identifier in retrieval_query.detected_identifiers
+                if identifier
+            )
 
         text_clauses = [
             or_(
                 ChunkORM.content.ilike(pattern),
                 ChunkORM.embedding_text.ilike(pattern),
+                ChunkORM.section_path.ilike(pattern),
+                DocumentORM.title.ilike(pattern),
+                DocumentORM.file_name.ilike(pattern),
             )
             for pattern in patterns
         ]
         conditions = [or_(*text_clauses)]
-        statement = select(ChunkORM)
+        statement = (
+            select(ChunkORM, DocumentORM)
+            .join(DocumentORM, DocumentORM.id == ChunkORM.document_id)
+        )
 
         if retrieval_query is not None and retrieval_query.document_types:
-            statement = statement.join(
-                DocumentORM,
-                DocumentORM.id == ChunkORM.document_id,
-            )
             conditions.append(
                 DocumentORM.document_type.in_(
                     [document_type.value for document_type in retrieval_query.document_types]
@@ -151,38 +141,5 @@ class SqlKeywordRepository:
                 )
             )
 
-        candidate_limit = max(result_limit * 5, result_limit)
+        candidate_limit = max(result_limit * 20, 50)
         return statement.where(and_(*conditions)).limit(candidate_limit)
-
-    @staticmethod
-    def _extract_terms(query_text: str) -> list[str]:
-        return [
-            term
-            for term in re.findall(r"[A-Za-z0-9][A-Za-z0-9_-]*", query_text.lower())
-            if len(term) > 1 and term not in _STOP_WORDS
-        ]
-
-    def _score_row(
-        self,
-        *,
-        row: ChunkORM,
-        query_text: str,
-        query_terms: list[str],
-    ) -> float:
-        haystack = " ".join(
-            part
-            for part in [row.content, row.embedding_text]
-            if part
-        ).lower()
-        if not haystack:
-            return 0.0
-
-        score = 0.0
-        if query_text.lower() in haystack:
-            score += max(2.0, len(query_terms) * 0.75)
-
-        for term in query_terms:
-            if term in haystack:
-                score += 1.0
-
-        return score
