@@ -547,3 +547,52 @@ def test_fragment_builder_emits_report_operation_options_chunk() -> None:
     assert op_options is not None
     assert op_options.chunk_type == ChunkType.OPERATION_INSTRUCTION
     assert "12 seconds" in op_options.text
+
+
+def test_fragment_builder_applies_report_specs_to_manual_classified_report_document() -> None:
+    # Regression guard: a doc classified as MANUAL but whose title is "Final Inspection Report"
+    # must still produce report structured chunks (the gate escape via REPORT_DOCUMENT_MARKERS).
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_hybrid_001",
+        title="Final Inspection Report",
+        section_path=["Final Inspection Report"],
+        page=1,
+    )
+    elements = [
+        make_element(
+            element_id="txt_hybrid_001",
+            text="Device information",
+            page=1,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_hybrid_002",
+            text="Serial number: PT-2024-00312; Tag number: FT-101",
+            page=1,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Final Inspection Report Cerabar M",
+        document_type=DocumentType.MANUAL,
+        section=section,
+        elements=elements,
+    )
+
+    device_info = next(
+        (
+            fragment
+            for fragment in fragments
+            if fragment.section_path == ["Final Inspection Report", "Device information"]
+        ),
+        None,
+    )
+
+    assert device_info is not None, (
+        "Report structured specs must activate for MANUAL-classified documents "
+        "whose title contains 'final inspection report'"
+    )
+    assert device_info.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+    assert "PT-2024-00312" in device_info.text
