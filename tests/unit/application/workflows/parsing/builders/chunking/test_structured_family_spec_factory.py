@@ -140,7 +140,7 @@ def test_fragment_builder_detects_certificate_particulars_from_generic_markers()
     particulars = next(
         fragment
         for fragment in fragments
-        if fragment.section_path == ["Particulars"]
+        if fragment.section_path == ["Certificate", "Particulars"]
     )
 
     assert particulars.chunk_type == ChunkType.CERTIFICATION_INFO
