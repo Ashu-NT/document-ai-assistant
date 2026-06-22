@@ -2,21 +2,21 @@
 
 ## Summary
 - cases: `66`
-- anchor hit rate: `0.788`
-- context hit rate: `0.788`
-- MRR: `0.641`
-- recall@1 / @3 / @5 / @10: `0.576` / `0.697` / `0.742` / `0.788`
+- anchor hit rate: `0.803`
+- context hit rate: `0.803`
+- MRR: `0.656`
+- recall@1 / @3 / @5 / @10: `0.591` / `0.712` / `0.758` / `0.803`
 - identifier top-1 accuracy: `0.727`
-- section-path accuracy: `0.742`
-- evidence completeness: `0.366`
-- rank-target satisfaction: `0.727`
+- section-path accuracy: `0.758`
+- evidence completeness: `0.359`
+- rank-target satisfaction: `0.742`
 
 ## Breakdown by Document Family
 
 | Group | Cases | Hit Rate | Context Hit Rate | Recall@3 | MRR | Rank Target |
 |---|---:|---:|---:|---:|---:|---:|
 | certificate | 8 | 0.750 | 0.750 | 0.750 | 0.667 | 0.750 |
-| datasheet | 10 | 0.800 | 0.800 | 0.800 | 0.683 | 0.800 |
+| datasheet | 10 | 0.900 | 0.900 | 0.900 | 0.783 | 0.900 |
 | drawing | 8 | 0.875 | 0.875 | 0.875 | 0.812 | 0.875 |
 | manual | 22 | 0.773 | 0.773 | 0.636 | 0.627 | 0.682 |
 | report | 18 | 0.778 | 0.778 | 0.611 | 0.548 | 0.667 |
@@ -37,7 +37,7 @@
 | safety_semantic_lookup | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
 | semantic_list_lookup | 1 | 1.000 | 1.000 | 1.000 | 0.333 | 1.000 |
 | semantic_location_lookup | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
-| semantic_lookup | 4 | 0.750 | 0.750 | 0.500 | 0.562 | 0.750 |
+| semantic_lookup | 4 | 1.000 | 1.000 | 0.750 | 0.812 | 1.000 |
 | specification_lookup | 11 | 0.818 | 0.818 | 0.818 | 0.606 | 0.818 |
 | table_lookup | 8 | 1.000 | 1.000 | 0.875 | 0.825 | 0.875 |
 | troubleshooting_lookup | 2 | 1.000 | 1.000 | 0.500 | 0.556 | 0.500 |
@@ -415,43 +415,6 @@
 | 3 | chunk_633deac7e8fb4bbda9b4d7b3ca6f82c5 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 2.700 | 58 | 7 Components > 7.2 Food Waste Press > Preventive Maintenance 7.2.11 | WARNING: Before working on the TSP, isolate the power supply and lock out or remove fuses. There is a risk of crushed hands and limbs from the rotating shaft/screw in the drive... |
 | 4 | chunk_b60a5128ac484c5f8dc7a1490a4de3a4 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 1.350 | 6 | 1 General | This documentation is designed to assist with becoming familiar with the system and how to operate it for its intended purposes. Important safety and hazard notices help you ope... |
 | 5 | chunk_e4806ca1110c4cdb8ea2dfbb1e4129e6 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 1.350 | 10 | Sensor List | The FWC12 may only be used in conjunction with auxiliary equipment that is recommended and approved by FMD. For safety and functionality reasons the FWC12 may not be altered or... |
-
-### `DS-002` What are the design features of the MK311xxx valve?
-
-- query type: `semantic_lookup`
-- expected document: `datasheet_mk311xxx`
-- expected file: `DN25 - DN80_MK311xxx.pdf`
-- expected section path: `DESIGN / CHARACTERISTICS`
-- expected page: `1`
-- expected rank target: `top_3`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211, anti-static stem; extra small dimensions, low weight, direct actuator mounting possible, low dead spot at container mounting, blow-out proofed stem.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_8fc83ef9ac1640e0a9b58109fb0fdc9e | doc_62c8f923ebc0473faa12a5bd3d69059e | hybrid | 42.050 | 1 | DESIGN | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
-| 2 | chunk_0b1a5bdaf5b9442e8665a804cf64e0b2 | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 40.700 | 2 | CONNECTION | 2-way Wafer-type Ball valve, Stainless steel, Handle, DN 50 | 1. + 2. Digit Product | 3. + 4. Digit Materials Body / seals / ball | 5. Digit Operation | 6. Digit Options | 7. +... |
-| 3 | chunk_4368e3702e9148a4a5fd5f5eff5e188c | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 39.350 | 1 | BAUFORM | 1-teilige kompakte Körperkonstruktion, voller Durchgang, Flanschplatte für Antriebsaufbau nach ISO 5211. Anti Statik Spindel. |
-| 4 | chunk_ee50e4f8504740d1886cb6aae0873b2e | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 39.350 | 2 | Abmessung / Dimension | | DN | d | L | D | D1 | D2 | b | f | H | W | C | ISO5211 | Z-M | h | s | Nm | |------|-----|--------|-----|------|------|-----|-----|-----|-----|-----|----------------|--------|... |
-| 5 | chunk_ba559b504b4248b8976f07b8d7551dd7 | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 39.350 | 3 | Stückliste / Parts list | 工 口 ISO5211 S b |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_8fc83ef9ac1640e0a9b58109fb0fdc9e | doc_62c8f923ebc0473faa12a5bd3d69059e | hybrid | 42.050 | 1 | DESIGN | 1-piece designed wafer-type ball valve, full bore, mounting pad for actuator according to ISO 5211. Anti static stem. |
-| 2 | chunk_0b1a5bdaf5b9442e8665a804cf64e0b2 | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 40.700 | 2 | CONNECTION | 2-way Wafer-type Ball valve, Stainless steel, Handle, DN 50 | 1. + 2. Digit Product | 3. + 4. Digit Materials Body / seals / ball | 5. Digit Operation | 6. Digit Options | 7. +... |
-| 3 | chunk_4368e3702e9148a4a5fd5f5eff5e188c | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 39.350 | 1 | BAUFORM | 1-teilige kompakte Körperkonstruktion, voller Durchgang, Flanschplatte für Antriebsaufbau nach ISO 5211. Anti Statik Spindel. |
-| 4 | chunk_ee50e4f8504740d1886cb6aae0873b2e | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 39.350 | 2 | Abmessung / Dimension | | DN | d | L | D | D1 | D2 | b | f | H | W | C | ISO5211 | Z-M | h | s | Nm | |------|-----|--------|-----|------|------|-----|-----|-----|-----|-----|----------------|--------|... |
-| 5 | chunk_ba559b504b4248b8976f07b8d7551dd7 | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 39.350 | 3 | Stückliste / Parts list | 工 口 ISO5211 S b |
 
 ### `DS-006` What does ordering code MK311007 mean?
 
