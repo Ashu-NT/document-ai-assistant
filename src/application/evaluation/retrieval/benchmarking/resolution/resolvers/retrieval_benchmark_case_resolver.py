@@ -160,7 +160,7 @@ class RetrievalBenchmarkCaseResolver:
         canonical_candidates: list,
         viable_candidates: list,
         primary_section_id: str | None,
-        min_passage_overlap: float = 0.6,
+        min_passage_overlap: float = 0.5,
     ) -> list[tuple[list[str], list[str]]]:
         seen_section_ids: set[str] = (
             {primary_section_id} if primary_section_id else set()
