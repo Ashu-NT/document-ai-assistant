@@ -36,7 +36,12 @@ class DrawingStructuredFamilyBuilder:
         marker_tuning: StructuredFamilyMarkerTuning | None,
     ) -> StructuredFamilySpecSelection:
         if (
-            context.document_type != DocumentType.DRAWING
+            context.has_known_document_type()
+            and not context.matches_document_type(DocumentType.DRAWING)
+        ):
+            return StructuredFamilySpecSelection()
+        if (
+            not context.has_known_document_type()
             and not context.contains_any(DRAWING_DOCUMENT_MARKERS)
         ):
             return StructuredFamilySpecSelection()
@@ -88,8 +93,8 @@ class DrawingStructuredFamilyBuilder:
                         marker_tuning=marker_tuning,
                     ),
                     chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                    radius_before=1,
-                    radius_after=4,
+                    radius_before=0,
+                    radius_after=2,
                     combine_all_windows=True,
                 ),
                 StructuredSectionWindowSpec(
@@ -102,7 +107,7 @@ class DrawingStructuredFamilyBuilder:
                     ),
                     chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
                     radius_before=2,
-                    radius_after=24,
+                    radius_after=3,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.DRAWING_EQUIPMENT_LEGEND,

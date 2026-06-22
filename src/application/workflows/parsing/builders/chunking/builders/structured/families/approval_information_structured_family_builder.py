@@ -16,7 +16,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.str
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_section_window_spec import (
     StructuredSectionWindowSpec,
 )
-from src.domain.common import ChunkType
+from src.domain.common import ChunkType, DocumentType
 
 _APPROVAL_INFORMATION_MARKERS = (
     "approval",
@@ -35,6 +35,8 @@ class ApprovalInformationStructuredFamilyBuilder:
         context: StructuredFamilyContext,
         marker_tuning: StructuredFamilyMarkerTuning | None,
     ) -> StructuredFamilySpecSelection:
+        if context.matches_document_type(DocumentType.CERTIFICATE):
+            return StructuredFamilySpecSelection()
         if not context.contains_any(_APPROVAL_INFORMATION_MARKERS):
             return StructuredFamilySpecSelection()
 
@@ -70,7 +72,12 @@ class ApprovalInformationStructuredFamilyBuilder:
         if current_title:
             path.append(current_title)
 
-        if context.contains_any(("basic specifications",)):
+        if (
+            context.contains_any(("basic specifications",))
+            or "extended order code" in ApprovalInformationStructuredFamilyBuilder._normalize(
+                current_title
+            )
+        ):
             path.append("Basic specifications")
         else:
             path.append("Approval information")

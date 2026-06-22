@@ -11,18 +11,24 @@ CERTIFICATE_GENERAL_INFORMATION_MARKERS = (
     "general information",
     "manufacturer",
     "certificate number",
-    "serial number",
+    "purchase order",
     "order number",
-    "description",
+    "customer work order",
+    "intended for",
+    "date of issue",
+    "customer",
 )
 
 CERTIFICATE_PARTICULARS_MARKERS = (
     "particulars",
     "quantity",
-    "description",
     "size",
     "type",
     "nominal size",
+    "manufacturer designation",
+    "serial number",
+    "imo number",
+    "description",
 )
 
 CERTIFICATE_COMPLIANCE_INFORMATION_MARKERS = (
@@ -38,9 +44,11 @@ CERTIFICATE_APPROVAL_INFORMATION_MARKERS = (
     "approval",
     "atex",
     "iecex",
-    "ce",
     "certified",
-    "ex ",
+    "certificate of conformity",
+    "conformity assessment",
+    "ex ic",
+    "ex ia",
 )
 
 CERTIFICATE_TEST_DATA_MARKERS = (
@@ -50,4 +58,8 @@ CERTIFICATE_TEST_DATA_MARKERS = (
     "hydrostatic test",
     "inspection result",
     "acceptance criteria",
+    "soll/nominal",
+    "ist/result",
+    "messdaten",
+    "results",
 )

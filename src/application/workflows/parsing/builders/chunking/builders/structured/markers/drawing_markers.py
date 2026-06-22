@@ -46,10 +46,12 @@ DRAWING_VESSEL_PARTICULARS_MARKERS = (
 DRAWING_COMPLIANCE_TABLE_MARKERS = (
     "colreg",
     "visibility arc",
+    "vertical and horizontal positioning",
+    "spacing of lights",
+    "horizontal distance",
+    "not less than",
     "desired",
-    "actual value",
-    "navigation light",
-    "signal light",
+    "actual",
     "compliance",
 )
 

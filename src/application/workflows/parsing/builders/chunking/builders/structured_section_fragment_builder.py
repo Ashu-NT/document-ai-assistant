@@ -205,6 +205,17 @@ class StructuredSectionFragmentBuilder:
             ElementType.TABLE,
         }:
             return False
+        parser_extra = (
+            element.parser_metadata.extra
+            if element.parser_metadata is not None
+            and element.parser_metadata.extra is not None
+            else {}
+        )
+        parent_ref = parser_extra.get("parent_ref")
+        if isinstance(parent_ref, str) and parent_ref.startswith("#/pictures/"):
+            return False
+        if parser_extra.get("content_layer") == "furniture":
+            return False
         return bool(clean_chunk_text(element.text))
 
     @staticmethod

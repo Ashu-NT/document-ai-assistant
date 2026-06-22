@@ -16,6 +16,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
     MANUAL_SHUTDOWN_MARKERS,
     MANUAL_SPARE_PARTS_MARKERS,
     MANUAL_TROUBLESHOOTING_MARKERS,
+    SENSOR_DOCUMENT_MARKERS,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_evidence_family import (
     StructuredEvidenceFamily,
@@ -49,9 +50,16 @@ class ManualStructuredFamilyBuilder:
         marker_tuning: StructuredFamilyMarkerTuning | None,
     ) -> StructuredFamilySpecSelection:
         if (
-            context.document_type != DocumentType.MANUAL
+            context.has_known_document_type()
+            and not context.matches_document_type(DocumentType.MANUAL)
+        ):
+            return StructuredFamilySpecSelection()
+        if (
+            not context.has_known_document_type()
             and not context.contains_any(MANUAL_DOCUMENT_MARKERS)
         ):
+            return StructuredFamilySpecSelection()
+        if context.contains_any(SENSOR_DOCUMENT_MARKERS):
             return StructuredFamilySpecSelection()
 
         base_path = sanitized_base_path(
@@ -59,6 +67,7 @@ class ManualStructuredFamilyBuilder:
             section_title=context.section.title,
             document_title=context.document_title,
         )
+        has_interval_signal = context.contains_any(MANUAL_MAINTENANCE_INTERVAL_MARKERS)
         return StructuredFamilySpecSelection(
             specs=[
                 StructuredSectionWindowSpec(
@@ -74,17 +83,23 @@ class ManualStructuredFamilyBuilder:
                     radius_after=10,
                     combine_all_windows=True,
                 ),
-                StructuredSectionWindowSpec(
-                    family=StructuredEvidenceFamily.MANUAL_MAINTENANCE_PROCEDURE,
-                    section_path=base_path,
-                    anchor_markers=extend_markers(
-                        family=StructuredEvidenceFamily.MANUAL_MAINTENANCE_PROCEDURE,
-                        base_markers=MANUAL_MAINTENANCE_PROCEDURE_MARKERS,
-                        marker_tuning=marker_tuning,
-                    ),
-                    chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
-                    radius_before=2,
-                    radius_after=12,
+                *(
+                    []
+                    if has_interval_signal
+                    else [
+                        StructuredSectionWindowSpec(
+                            family=StructuredEvidenceFamily.MANUAL_MAINTENANCE_PROCEDURE,
+                            section_path=base_path,
+                            anchor_markers=extend_markers(
+                                family=StructuredEvidenceFamily.MANUAL_MAINTENANCE_PROCEDURE,
+                                base_markers=MANUAL_MAINTENANCE_PROCEDURE_MARKERS,
+                                marker_tuning=marker_tuning,
+                            ),
+                            chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+                            radius_before=2,
+                            radius_after=12,
+                        )
+                    ]
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_MAINTENANCE_INTERVAL,

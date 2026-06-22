@@ -51,6 +51,15 @@ class StructuredFamilyContext:
             return [self.section.title]
         return []
 
+    def has_known_document_type(self) -> bool:
+        return self.document_type not in {None, DocumentType.UNKNOWN}
+
+    def matches_document_type(
+        self,
+        document_type: DocumentType,
+    ) -> bool:
+        return self.document_type == document_type
+
     def contains_any(
         self,
         markers: tuple[str, ...],

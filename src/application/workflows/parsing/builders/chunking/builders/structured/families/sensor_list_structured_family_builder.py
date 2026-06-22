@@ -44,70 +44,56 @@ class SensorListStructuredFamilyBuilder:
             section_title=context.section.title,
             document_title=context.document_title,
         )
-        return StructuredFamilySpecSelection(
-            specs=[
+        specs: list[StructuredSectionWindowSpec] = []
+        for family, label, markers in [
+            (
+                StructuredEvidenceFamily.SENSOR_LIST,
+                "Sensor List",
+                SENSOR_LIST_MARKERS,
+            ),
+            (
+                StructuredEvidenceFamily.INSTRUMENT_LIST,
+                "Instrument List",
+                INSTRUMENT_LIST_MARKERS,
+            ),
+            (
+                StructuredEvidenceFamily.TAG_LIST,
+                "Tag List",
+                TAG_LIST_MARKERS,
+            ),
+            (
+                StructuredEvidenceFamily.PID_LIST,
+                "P&ID List",
+                PID_LIST_MARKERS,
+            ),
+            (
+                StructuredEvidenceFamily.IO_LIST,
+                "I/O List",
+                IO_LIST_MARKERS,
+            ),
+        ]:
+            if not self._should_include_family(
+                base_path=base_path,
+                label=label,
+                context=context,
+                markers=markers,
+            ):
+                continue
+            specs.append(
                 StructuredSectionWindowSpec(
-                    family=StructuredEvidenceFamily.SENSOR_LIST,
-                    section_path=self._path_for_label(base_path, "Sensor List"),
+                    family=family,
+                    section_path=self._path_for_label(base_path, label),
                     anchor_markers=extend_markers(
-                        family=StructuredEvidenceFamily.SENSOR_LIST,
-                        base_markers=SENSOR_LIST_MARKERS,
+                        family=family,
+                        base_markers=markers,
                         marker_tuning=marker_tuning,
                     ),
                     chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
                     radius_before=1,
                     radius_after=12,
-                ),
-                StructuredSectionWindowSpec(
-                    family=StructuredEvidenceFamily.INSTRUMENT_LIST,
-                    section_path=self._path_for_label(base_path, "Instrument List"),
-                    anchor_markers=extend_markers(
-                        family=StructuredEvidenceFamily.INSTRUMENT_LIST,
-                        base_markers=INSTRUMENT_LIST_MARKERS,
-                        marker_tuning=marker_tuning,
-                    ),
-                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                    radius_before=1,
-                    radius_after=12,
-                ),
-                StructuredSectionWindowSpec(
-                    family=StructuredEvidenceFamily.TAG_LIST,
-                    section_path=self._path_for_label(base_path, "Tag List"),
-                    anchor_markers=extend_markers(
-                        family=StructuredEvidenceFamily.TAG_LIST,
-                        base_markers=TAG_LIST_MARKERS,
-                        marker_tuning=marker_tuning,
-                    ),
-                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                    radius_before=1,
-                    radius_after=12,
-                ),
-                StructuredSectionWindowSpec(
-                    family=StructuredEvidenceFamily.PID_LIST,
-                    section_path=self._path_for_label(base_path, "P&ID List"),
-                    anchor_markers=extend_markers(
-                        family=StructuredEvidenceFamily.PID_LIST,
-                        base_markers=PID_LIST_MARKERS,
-                        marker_tuning=marker_tuning,
-                    ),
-                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                    radius_before=1,
-                    radius_after=12,
-                ),
-                StructuredSectionWindowSpec(
-                    family=StructuredEvidenceFamily.IO_LIST,
-                    section_path=self._path_for_label(base_path, "I/O List"),
-                    anchor_markers=extend_markers(
-                        family=StructuredEvidenceFamily.IO_LIST,
-                        base_markers=IO_LIST_MARKERS,
-                        marker_tuning=marker_tuning,
-                    ),
-                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                    radius_before=1,
-                    radius_after=12,
-                ),
-            ]
-        )
+                )
+            )
+        return StructuredFamilySpecSelection(specs=specs)
 
     @staticmethod
     def _path_for_label(
@@ -116,3 +102,30 @@ class SensorListStructuredFamilyBuilder:
     ) -> list[str]:
         markers = (label.lower(),)
         return base_path if path_contains_markers(base_path, markers) else [label]
+
+    @staticmethod
+    def _should_include_family(
+        *,
+        base_path: list[str],
+        label: str,
+        context: StructuredFamilyContext,
+        markers: tuple[str, ...],
+    ) -> bool:
+        label_markers = (label.lower(),)
+        if path_contains_markers(base_path, label_markers):
+            return True
+        if any(
+            path_contains_markers(
+                base_path,
+                (other_label.lower(),),
+            )
+            for other_label in (
+                "Sensor List",
+                "Instrument List",
+                "Tag List",
+                "P&ID List",
+                "I/O List",
+            )
+        ):
+            return False
+        return context.contains_any(markers)

@@ -1,10 +1,10 @@
 DATASHEET_DOCUMENT_MARKERS = (
     "datasheet",
     "technical data",
-    "specification",
     "characteristics",
     "ordering information",
-    "connection",
+    "ordering example",
+    "pressure-temperature diagram",
 )
 
 DATASHEET_TECHNICAL_DATA_MARKERS = (

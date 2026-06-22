@@ -38,7 +38,12 @@ class DatasheetStructuredFamilyBuilder:
         marker_tuning: StructuredFamilyMarkerTuning | None,
     ) -> StructuredFamilySpecSelection:
         if (
-            context.document_type != DocumentType.DATASHEET
+            context.has_known_document_type()
+            and not context.matches_document_type(DocumentType.DATASHEET)
+        ):
+            return StructuredFamilySpecSelection()
+        if (
+            not context.has_known_document_type()
             and not context.contains_any(DATASHEET_DOCUMENT_MARKERS)
         ):
             return StructuredFamilySpecSelection()
