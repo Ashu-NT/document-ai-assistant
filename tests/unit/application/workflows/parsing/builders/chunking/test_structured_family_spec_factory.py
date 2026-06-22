@@ -267,6 +267,54 @@ def test_fragment_builder_detects_troubleshooting_without_equipment_names() -> N
     assert "Corrective action" in troubleshooting.text
 
 
+def test_fragment_builder_detects_hyphenated_troubleshooting_heading() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_005a",
+        title="Trouble-Shooting 7.3.10",
+        section_path=[
+            "7 Components",
+            "7.3 Vacuum / Transfer Pump",
+            "Trouble-Shooting 7.3.10",
+        ],
+        page=4,
+    )
+    elements = [
+        make_element(
+            element_id="txt_041a",
+            text="The troubleshooting charts list possible problems, probable causes and potential remedies.",
+            page=4,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_041b",
+            text="Possible cause: blocked inlet. Potential remedy: inspect the filter and restart the unit.",
+            page=4,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Service manual",
+        document_type=DocumentType.MANUAL,
+        section=section,
+        elements=elements,
+    )
+
+    troubleshooting = next(
+        fragment
+        for fragment in fragments
+        if fragment.chunk_type == ChunkType.TROUBLESHOOTING
+    )
+
+    assert "Potential remedy" in troubleshooting.text
+    assert troubleshooting.section_path == [
+        "7 Components",
+        "7.3 Vacuum / Transfer Pump",
+        "Trouble-Shooting 7.3.10",
+    ]
+
+
 def test_fragment_builder_keeps_certificate_identification_table_out_of_general_information() -> None:
     builder = make_builder()
     section = make_section(

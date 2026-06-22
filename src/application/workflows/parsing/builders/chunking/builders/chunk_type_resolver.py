@@ -60,9 +60,15 @@ class ChunkTypeResolver:
             key=lambda item: (-item[1], item[0].value),
         )
         chunk_type, top_score = ordered_scores[0]
+        second_type = ordered_scores[1][0] if len(ordered_scores) > 1 else None
         second_score = ordered_scores[1][1] if len(ordered_scores) > 1 else 0
 
-        if top_score < self.min_score or top_score - second_score < self.min_gap:
+        required_gap = self._required_gap(
+            fragments=fragments,
+            top_type=chunk_type,
+            second_type=second_type,
+        )
+        if top_score < self.min_score or top_score - second_score < required_gap:
             return ChunkType.GENERAL
 
         return chunk_type
@@ -93,6 +99,24 @@ class ChunkTypeResolver:
             for family in [self._semantic_family(chunk_type)]
             if family is not None
         }
+
+    def _required_gap(
+        self,
+        *,
+        fragments: list[ChunkFragment],
+        top_type: ChunkType,
+        second_type: ChunkType | None,
+    ) -> int:
+        if (
+            any(fragment.table_ids for fragment in fragments)
+            and top_type in {
+                ChunkType.TECHNICAL_SPECIFICATION,
+                ChunkType.TROUBLESHOOTING,
+            }
+            and second_type == ChunkType.SAFETY_WARNING
+        ):
+            return 1
+        return self.min_gap
 
     @staticmethod
     def _preserved_special_type(

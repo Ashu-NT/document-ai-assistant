@@ -1,3 +1,5 @@
+import re
+
 from src.application.workflows.parsing.builders.chunking.builders.structured import (
     StructuredFamilySpecFactory,
     StructuredSectionWindowSpec,
@@ -224,4 +226,5 @@ class StructuredSectionFragmentBuilder:
 
     @staticmethod
     def _normalize_text(value: str | None) -> str:
-        return " ".join(str(value or "").strip().lower().split())
+        normalized = re.sub(r"[\W_]+", " ", str(value or ""), flags=re.UNICODE)
+        return " ".join(normalized.strip().lower().split())
