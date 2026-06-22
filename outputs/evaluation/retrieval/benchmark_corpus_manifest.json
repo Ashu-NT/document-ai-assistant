@@ -1,12 +1,12 @@
 {
   "truth_set_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\retrieval_truth_set.md",
   "input_directory": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc",
-  "generated_at": "2026-06-21T22:55:37.836227+00:00",
+  "generated_at": "2026-06-21T23:58:58.368247+00:00",
   "document_count": 5,
   "documents": [
     {
       "document_alias": "manual_fwc12",
-      "document_id": "doc_d39ea7bd3fea4f82b6de3a487d02822d",
+      "document_id": "doc_4d45d944c738426c9c19072145b95121",
       "file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
       "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\19P006-31-FWC12-5-1-0_Manual.pdf",
       "file_hash": "708f50744466ccc60d874467b63003421e6d13eb5e86d38e69635b2b9a9dec35",
@@ -15,17 +15,17 @@
       "page_count": 98,
       "section_count": 339,
       "element_count": 2035,
-      "chunk_count": 723,
-      "question_count": 1144,
+      "chunk_count": 478,
+      "question_count": 736,
       "classification_label": "manual",
-      "classification_confidence": 0.98,
+      "classification_confidence": 0.95,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "refinalized_existing"
+      "seed_status": "seeded_new"
     },
     {
       "document_alias": "certificate_hoses_ham2423501",
-      "document_id": "doc_810018aa8a334446a569c0ad584bea90",
+      "document_id": "doc_0e4e45c14f7f4918a408c2c0ab7902bb",
       "file_name": "0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501.pdf",
       "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501.pdf",
       "file_hash": "64f0ee8bac148f965b17155ade6a758b1744289646009e4fce3400a9db4f1158",
@@ -34,36 +34,36 @@
       "page_count": 6,
       "section_count": 21,
       "element_count": 208,
-      "chunk_count": 55,
-      "question_count": 138,
+      "chunk_count": 41,
+      "question_count": 97,
       "classification_label": "certificate",
       "classification_confidence": 0.95,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "refinalized_existing"
+      "seed_status": "seeded_new"
     },
     {
       "document_alias": "drawing_nav_lights_13759_3540",
-      "document_id": "doc_b16868381d94460b89f18b168494160e",
+      "document_id": "doc_c5e69e7e56fb4ed59c28f86af5fcf456",
       "file_name": "13759_3540_01.00_REV.05 Arrangement Navigation Lights and Signals_AS-BUILT.pdf",
       "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\13759_3540_01.00_REV.05 Arrangement Navigation Lights and Signals_AS-BUILT.pdf",
       "file_hash": "b26ca2eb4f1aaa0b463783cae2e514fe1aac9c61ec9399ccd7d1bb0d11fc9abb",
       "content_hash": "b26ca2eb4f1aaa0b463783cae2e514fe1aac9c61ec9399ccd7d1bb0d11fc9abb",
-      "document_type": "manual",
+      "document_type": "unknown",
       "page_count": 1,
       "section_count": 1,
       "element_count": 604,
       "chunk_count": 12,
-      "question_count": 43,
-      "classification_label": "manual",
-      "classification_confidence": 0.96,
+      "question_count": 49,
+      "classification_label": "unknown",
+      "classification_confidence": 0.8,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "refinalized_existing"
+      "seed_status": "seeded_new"
     },
     {
       "document_alias": "datasheet_mk311xxx",
-      "document_id": "doc_a7bd3971dae54a37af6bb65a73fcba16",
+      "document_id": "doc_e3be4517b5af44d29ebc7d7243fc9a41",
       "file_name": "DN25 - DN80_MK311xxx.pdf",
       "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\DN25 - DN80_MK311xxx.pdf",
       "file_hash": "1481f98b7dc1e4f07a28567212aeaeced10f9448c374ad7ea462ba8b936feb39",
@@ -72,17 +72,17 @@
       "page_count": 4,
       "section_count": 27,
       "element_count": 177,
-      "chunk_count": 29,
-      "question_count": 90,
+      "chunk_count": 25,
+      "question_count": 78,
       "classification_label": "datasheet",
       "classification_confidence": 0.95,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "refinalized_existing"
+      "seed_status": "seeded_new"
     },
     {
       "document_alias": "report_pressure_transmitter",
-      "document_id": "doc_9fc66b5a17684d84ab240ed621d38beb",
+      "document_id": "doc_f9a77f525e7a4f5eaa07e743f7d16e0a",
       "file_name": "Pressure transmitter.pdf",
       "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\Pressure transmitter.pdf",
       "file_hash": "ec82b50a4c31bd697a6dce27888dd817cc62aca3ad1616b83e8508b20e631506",
@@ -91,13 +91,13 @@
       "page_count": 42,
       "section_count": 148,
       "element_count": 945,
-      "chunk_count": 237,
-      "question_count": 442,
+      "chunk_count": 197,
+      "question_count": 370,
       "classification_label": "manual",
-      "classification_confidence": 0.9,
+      "classification_confidence": 0.85,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "refinalized_existing"
+      "seed_status": "seeded_new"
     }
   ]
 }
