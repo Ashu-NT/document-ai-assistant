@@ -88,6 +88,25 @@ class RetrievalBenchmarkCaseResolver:
             resolved_case.expected_section_paths.append(
                 list(best_candidate.section_path)
             )
+
+        secondary_families = self._secondary_families(
+            document_graph=document_graph,
+            canonical_candidates=canonical_candidates[1:],
+            primary_section_id=best_candidate.section_id,
+        )
+        if secondary_families:
+            existing_ids = set(resolved_case.expected_chunk_ids)
+            for sec_chunk_ids, sec_section_path in secondary_families:
+                for cid in sec_chunk_ids:
+                    if cid not in existing_ids:
+                        resolved_case.expected_chunk_ids.append(cid)
+                        existing_ids.add(cid)
+                if (
+                    sec_section_path
+                    and sec_section_path not in resolved_case.expected_section_paths
+                ):
+                    resolved_case.expected_section_paths.append(sec_section_path)
+
         return resolved_case, None
 
     def _build_diagnostic(
@@ -131,6 +150,31 @@ class RetrievalBenchmarkCaseResolver:
                 key=lambda chunk: chunk.sequence_number,
             )
         ]
+
+    @staticmethod
+    def _secondary_families(
+        *,
+        document_graph: DocumentGraph,
+        canonical_candidates: list,
+        primary_section_id: str | None,
+        min_passage_overlap: float = 0.6,
+    ) -> list[tuple[list[str], list[str]]]:
+        seen_section_ids: set[str] = (
+            {primary_section_id} if primary_section_id else set()
+        )
+        result: list[tuple[list[str], list[str]]] = []
+        for candidate in canonical_candidates:
+            if not candidate.section_id or candidate.section_id in seen_section_ids:
+                continue
+            if candidate.passage_overlap < min_passage_overlap:
+                continue
+            seen_section_ids.add(candidate.section_id)
+            chunk_ids = RetrievalBenchmarkCaseResolver._resolved_chunk_ids(
+                document_graph=document_graph,
+                chunk_id=candidate.chunk_id,
+            )
+            result.append((chunk_ids, list(candidate.section_path)))
+        return result
 
     @staticmethod
     def _is_ambiguous(best_candidate, second_candidate) -> bool:

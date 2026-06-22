@@ -605,6 +605,137 @@ def test_dataset_resolver_prefers_atomic_chunk_over_overview_companion() -> None
     assert resolved_dataset.cases[0].expected_chunk_ids == ["chunk_atomic"]
 
 
+def test_dataset_resolver_includes_secondary_family_with_high_passage_overlap() -> None:
+    benchmark_case = build_case(
+        case_id="R-016",
+        document_alias="report_alias",
+        file_name="report.pdf",
+        section_path_text="Brief Operating Instructions > 8 Commissioning > 8.2.2",
+        expected_page=25,
+        expected_relevant_passage=(
+            "Perform position adjustment, select Pressure mode, apply LRV pressure "
+            "and Get LRV, apply URV pressure and Get URV; result measuring range configured."
+        ),
+    )
+    dataset = RetrievalBenchmarkDataset(
+        source_path=Path("TestDoc/retrieval_truth_set.md"),
+        cases=[benchmark_case],
+    )
+    manifest = build_manifest(
+        build_manifest_document(
+            document_alias="report_alias",
+            document_id="doc_report",
+            file_name="report.pdf",
+        )
+    )
+    graph = build_graph(
+        document_id="doc_report",
+        file_name="report.pdf",
+        chunks=[
+            build_chunk(
+                chunk_id="chunk_brief",
+                document_id="doc_report",
+                section_id="sec_brief",
+                content=(
+                    "8.2.2 Calibration: Perform position adjustment, select Pressure "
+                    "mode, apply LRV pressure and Get LRV, apply URV pressure and Get "
+                    "URV; result measuring range configured. Brief form."
+                ),
+                section_path=["Brief Operating Instructions", "8 Commissioning", "8.2.2"],
+                page_start=25,
+                page_end=25,
+                sequence_number=1,
+            ),
+            build_chunk(
+                chunk_id="chunk_full_chapter",
+                document_id="doc_report",
+                section_id="sec_full",
+                content=(
+                    "Example: Perform position adjustment, select Pressure mode, apply "
+                    "LRV pressure and Get LRV, apply URV pressure and Get URV; result "
+                    "measuring range configured. Full chapter with detailed prerequisites."
+                ),
+                section_path=["8 Commissioning", "8.2.2", "Example"],
+                page_start=25,
+                page_end=25,
+                sequence_number=2,
+            ),
+        ],
+    )
+
+    resolved_dataset = RetrievalBenchmarkDatasetResolver(
+        document_lookup_service=FakeDocumentLookupService({"doc_report": graph}),
+    ).resolve_dataset(dataset, manifest)
+
+    resolved_ids = resolved_dataset.cases[0].expected_chunk_ids
+    assert "chunk_brief" in resolved_ids
+    assert "chunk_full_chapter" in resolved_ids
+
+
+def test_dataset_resolver_excludes_secondary_family_with_low_passage_overlap() -> None:
+    benchmark_case = build_case(
+        case_id="R-999",
+        document_alias="report_alias",
+        file_name="report.pdf",
+        section_path_text="8 Commissioning > 8.2.1 Dry calibration",
+        expected_page=24,
+        expected_relevant_passage=(
+            "Apply zero pressure and press Get LRV to capture the lower range value."
+        ),
+    )
+    dataset = RetrievalBenchmarkDataset(
+        source_path=Path("TestDoc/retrieval_truth_set.md"),
+        cases=[benchmark_case],
+    )
+    manifest = build_manifest(
+        build_manifest_document(
+            document_alias="report_alias",
+            document_id="doc_report",
+            file_name="report.pdf",
+        )
+    )
+    graph = build_graph(
+        document_id="doc_report",
+        file_name="report.pdf",
+        chunks=[
+            build_chunk(
+                chunk_id="chunk_dry_cal",
+                document_id="doc_report",
+                section_id="sec_dry",
+                content=(
+                    "Apply zero pressure and press Get LRV to capture the lower range value. "
+                    "Then apply full-scale pressure and press Get URV."
+                ),
+                section_path=["8 Commissioning", "8.2.1 Dry calibration"],
+                page_start=24,
+                page_end=24,
+                sequence_number=1,
+            ),
+            build_chunk(
+                chunk_id="chunk_unrelated",
+                document_id="doc_report",
+                section_id="sec_other",
+                content=(
+                    "Safety warning: Do not exceed the maximum rated pressure. "
+                    "Ensure the enclosure is properly sealed before operation."
+                ),
+                section_path=["2 Safety", "2.1 General warnings"],
+                page_start=5,
+                page_end=5,
+                sequence_number=2,
+            ),
+        ],
+    )
+
+    resolved_dataset = RetrievalBenchmarkDatasetResolver(
+        document_lookup_service=FakeDocumentLookupService({"doc_report": graph}),
+    ).resolve_dataset(dataset, manifest)
+
+    resolved_ids = resolved_dataset.cases[0].expected_chunk_ids
+    assert "chunk_dry_cal" in resolved_ids
+    assert "chunk_unrelated" not in resolved_ids
+
+
 def test_dataset_resolver_raises_diagnostics_for_alias_file_mismatch() -> None:
     benchmark_case = build_case(
         case_id="X-001",
