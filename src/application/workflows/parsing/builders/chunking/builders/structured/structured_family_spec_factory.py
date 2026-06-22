@@ -62,6 +62,7 @@ class StructuredFamilySpecFactory:
         section: DocumentSection,
         elements: list[CanonicalElement],
         normalizer,
+        document_sections_combined_text: str = "",
     ) -> StructuredFamilySpecSelection:
         context = StructuredFamilyContext.from_inputs(
             document_title=document_title,
@@ -69,6 +70,7 @@ class StructuredFamilySpecFactory:
             section=section,
             elements=elements,
             normalizer=normalizer,
+            document_sections_combined_text=document_sections_combined_text,
         )
         selections = [
             builder.build(

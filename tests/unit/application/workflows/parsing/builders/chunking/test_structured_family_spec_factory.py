@@ -645,3 +645,106 @@ def test_fragment_builder_applies_report_specs_to_manual_classified_report_docum
     )
     assert device_info.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
     assert "PT-2024-00312" in device_info.text
+
+
+def test_fragment_builder_applies_report_specs_via_document_sections_signal() -> None:
+    # Regression guard: document_title="Pressure transmitter" contains no report marker, but
+    # the document has sibling sections "Test Report" / "Final Inspection Report".
+    # The gate must pass via document_sections_combined_text, not the title.
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_rpt_flat_001",
+        title="Device information",
+        section_path=["Device information"],
+        page=2,
+    )
+    elements = [
+        make_element(
+            element_id="txt_rpt_flat_001",
+            text="Device information",
+            page=2,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_rpt_flat_002",
+            text="Serial number: PT-2024-00312; Tag number: FT-101",
+            page=2,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Pressure transmitter",
+        document_type=DocumentType.MANUAL,
+        section=section,
+        elements=elements,
+        document_sections_combined_text=(
+            "Test Report > Final Inspection Report > Order information "
+            "> Device information > Procedure > Measuring condition"
+        ),
+    )
+
+    device_info = next(
+        (
+            f
+            for f in fragments
+            if f.section_path == ["Final Inspection Report", "Device information"]
+        ),
+        None,
+    )
+
+    assert device_info is not None, (
+        "Report specs must activate via document_sections_combined_text even when "
+        "document_title ('Pressure transmitter') contains no report marker"
+    )
+    assert device_info.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+    assert "PT-2024-00312" in device_info.text
+
+
+def test_fragment_builder_applies_datasheet_specs_via_document_sections_signal() -> None:
+    # Regression guard: document_title contains no datasheet marker, but sibling sections
+    # include "Ordering example" / "Technical Data".  Gate must pass via
+    # document_sections_combined_text, not the title.
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_ds_flat_001",
+        title="MK311xxx Ball Valve",
+        section_path=["MK311xxx Ball Valve"],
+        page=3,
+    )
+    elements = [
+        make_element(
+            element_id="txt_ds_flat_001",
+            text="Ordering example",
+            page=3,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_ds_flat_002",
+            text="MK311007 = 2-way Wafer-type Ball valve, stainless steel, handle, DN 50.",
+            page=3,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="DN25 DN80 MK311xxx",
+        document_type=DocumentType.MANUAL,
+        section=section,
+        elements=elements,
+        document_sections_combined_text=(
+            "MK311xxx Ball Valve > Ordering example > Technical Data > Operating limits"
+        ),
+    )
+
+    ordering_example = next(
+        (f for f in fragments if f.section_path == ["Ordering example"]),
+        None,
+    )
+
+    assert ordering_example is not None, (
+        "Datasheet specs must activate via document_sections_combined_text even when "
+        "document_title ('DN25 DN80 MK311xxx') contains no datasheet marker"
+    )
+    assert ordering_example.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+    assert "MK311007" in ordering_example.text

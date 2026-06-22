@@ -145,6 +145,11 @@ class SectionChunkBuilder:
             for section in ordered_sections
             if section.section_path
         }
+        document_sections_combined_text = " ".join(
+            " > ".join(sec.section_path or ([sec.title] if sec.title else []))
+            for sec in ordered_sections
+            if sec.section_path or sec.title
+        )
         fragments: list[ChunkFragment] = []
 
         for section in ordered_sections:
@@ -165,6 +170,7 @@ class SectionChunkBuilder:
                     document_type=document_type,
                     section=section,
                     elements=elements,
+                    document_sections_combined_text=document_sections_combined_text,
                 )
             )
 
