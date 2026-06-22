@@ -2,14 +2,14 @@
 
 ## Summary
 - cases: `66`
-- anchor hit rate: `0.803`
-- context hit rate: `0.803`
-- MRR: `0.656`
-- recall@1 / @3 / @5 / @10: `0.591` / `0.712` / `0.758` / `0.803`
+- anchor hit rate: `0.758`
+- context hit rate: `0.758`
+- MRR: `0.618`
+- recall@1 / @3 / @5 / @10: `0.561` / `0.667` / `0.712` / `0.758`
 - identifier top-1 accuracy: `0.727`
-- section-path accuracy: `0.758`
-- evidence completeness: `0.359`
-- rank-target satisfaction: `0.742`
+- section-path accuracy: `0.727`
+- evidence completeness: `0.323`
+- rank-target satisfaction: `0.697`
 
 ## Breakdown by Document Family
 
@@ -19,7 +19,7 @@
 | datasheet | 10 | 0.900 | 0.900 | 0.900 | 0.783 | 0.900 |
 | drawing | 8 | 0.875 | 0.875 | 0.875 | 0.812 | 0.875 |
 | manual | 22 | 0.773 | 0.773 | 0.636 | 0.627 | 0.682 |
-| report | 18 | 0.778 | 0.778 | 0.611 | 0.548 | 0.667 |
+| report | 18 | 0.611 | 0.611 | 0.444 | 0.409 | 0.500 |
 
 ## Breakdown by Query Type
 
@@ -32,13 +32,13 @@
 | maintenance_interval_lookup | 1 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
 | maintenance_spec_lookup | 1 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
 | operation_lookup | 1 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
-| procedure_lookup | 8 | 0.625 | 0.625 | 0.500 | 0.525 | 0.625 |
+| procedure_lookup | 8 | 0.375 | 0.375 | 0.250 | 0.275 | 0.375 |
 | safety_lookup | 2 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
 | safety_semantic_lookup | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
 | semantic_list_lookup | 1 | 1.000 | 1.000 | 1.000 | 0.333 | 1.000 |
 | semantic_location_lookup | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
 | semantic_lookup | 4 | 1.000 | 1.000 | 0.750 | 0.812 | 1.000 |
-| specification_lookup | 11 | 0.818 | 0.818 | 0.818 | 0.606 | 0.818 |
+| specification_lookup | 11 | 0.727 | 0.727 | 0.727 | 0.561 | 0.727 |
 | table_lookup | 8 | 1.000 | 1.000 | 0.875 | 0.825 | 0.875 |
 | troubleshooting_lookup | 2 | 1.000 | 1.000 | 0.500 | 0.556 | 0.500 |
 
@@ -176,7 +176,7 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_a003a33530d64ceeb2539500ffe2690a | doc_29f1aa7d45004e768e9937d1215bd208 | hybrid | 26.100 | 67 | 7 Components > 7.2 Food Waste Press > 7.2.13.1 Maintenance of the Shaft & Shaft Seals > Loosening the Retaining Plate Screw | If the screen basket and the screw are removed, maintenance work and replacement of the shaft and the shaft seals can be performed. To do this, the screw of the retaining plate... |
+| 1 | chunk_a003a33530d64ceeb2539500ffe2690a | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 26.100 | 67 | 7 Components > 7.2 Food Waste Press > 7.2.13.1 Maintenance of the Shaft & Shaft Seals > Loosening the Retaining Plate Screw | If the screen basket and the screw are removed, maintenance work and replacement of the shaft and the shaft seals can be performed. To do this, the screw of the retaining plate... |
 | 2 | chunk_096c5f58f0d54118a61c28aa20c8e2ea | doc_29f1aa7d45004e768e9937d1215bd208 | hybrid | 20.750 | 59 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 | WARNING: Before starting, ensure the compressed air hose to the pneumatic cylinder is disconnected, the cylinder is de-pressurised and has been secured against reactivation. Dis... |
 | 3 | chunk_a7c58fc1abcc4ce08a45864f4ad1e485 | doc_29f1aa7d45004e768e9937d1215bd208 | hybrid | 20.750 | 64 | 7 Components > 7.2 Food Waste Press > Maintenance of the Screw 7.2.13 | If it is necessary to change the screw or carry out an inspection, then first remove the screen basket as described above. After dismantling the screen basket, the outer holding... |
 | 4 | chunk_810c7c9a75bf48798df5f7905bd709d2 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 16.400 | 50 | 7 Components > 7.2 Food Waste Press > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
@@ -187,7 +187,7 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_a003a33530d64ceeb2539500ffe2690a | doc_29f1aa7d45004e768e9937d1215bd208 | hybrid | 26.100 | 67 | 7 Components > 7.2 Food Waste Press > 7.2.13.1 Maintenance of the Shaft & Shaft Seals > Loosening the Retaining Plate Screw | If the screen basket and the screw are removed, maintenance work and replacement of the shaft and the shaft seals can be performed. To do this, the screw of the retaining plate... |
+| 1 | chunk_a003a33530d64ceeb2539500ffe2690a | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 26.100 | 67 | 7 Components > 7.2 Food Waste Press > 7.2.13.1 Maintenance of the Shaft & Shaft Seals > Loosening the Retaining Plate Screw | If the screen basket and the screw are removed, maintenance work and replacement of the shaft and the shaft seals can be performed. To do this, the screw of the retaining plate... |
 | 2 | chunk_096c5f58f0d54118a61c28aa20c8e2ea | doc_29f1aa7d45004e768e9937d1215bd208 | hybrid | 20.750 | 59 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 | WARNING: Before starting, ensure the compressed air hose to the pneumatic cylinder is disconnected, the cylinder is de-pressurised and has been secured against reactivation. Dis... |
 | 3 | chunk_a7c58fc1abcc4ce08a45864f4ad1e485 | doc_29f1aa7d45004e768e9937d1215bd208 | hybrid | 20.750 | 64 | 7 Components > 7.2 Food Waste Press > Maintenance of the Screw 7.2.13 | If it is necessary to change the screw or carry out an inspection, then first remove the screen basket as described above. After dismantling the screen basket, the outer holding... |
 | 4 | chunk_810c7c9a75bf48798df5f7905bd709d2 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 16.400 | 50 | 7 Components > 7.2 Food Waste Press > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
@@ -216,7 +216,7 @@
 |---|---|---|---|---:|---|---|---|
 | 1 | chunk_bd78a2165ef44d6eba755d74fb62fc9c | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 15.050 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 | This manual contains basic instructions which must be observed when installing, operating and servicing the vacuum / transfer pump. It is essential for the user / installer or r... |
 | 2 | chunk_13b16e567dd849c6bf28a2e34a7d06c7 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 15.050 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 | The main parts of the lobe pump are shown below: |
-| 3 | chunk_1f6b6e0966574a9093e5a98c5167e995 | doc_29f1aa7d45004e768e9937d1215bd208 | hybrid | 15.050 | 75 | 7 Components > 7.3 Vacuum / Transfer Pump | The pumps are preserved for transport and short-term storage unless specified otherwise. In cases of longer storage, the pumps should be handled as follows until commissioning:... |
+| 3 | chunk_1f6b6e0966574a9093e5a98c5167e995 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 15.050 | 75 | 7 Components > 7.3 Vacuum / Transfer Pump | The pumps are preserved for transport and short-term storage unless specified otherwise. In cases of longer storage, the pumps should be handled as follows until commissioning:... |
 | 4 | chunk_c98601231ab5462a87768e8f2b90eb83 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 15.050 | 76 | 7 Components > 7.3 Vacuum / Transfer Pump > 7.3.6.1 Alignment of Pump and Drive | Pumps supplied as a machine compete with baseplate and drive will be aligned when assembled in the factory. |
 | 5 | chunk_4b437ba244024f5ba2b01f0e1928e256 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 15.050 | 76 | 7 Components > 7.3 Vacuum / Transfer Pump | 口 No axial forces are allowed. Check the alignment after a short test run and make corrections if necessary. |
 
@@ -227,7 +227,7 @@
 |---|---|---|---|---:|---|---|---|
 | 1 | chunk_bd78a2165ef44d6eba755d74fb62fc9c | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 15.050 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 | This manual contains basic instructions which must be observed when installing, operating and servicing the vacuum / transfer pump. It is essential for the user / installer or r... |
 | 2 | chunk_13b16e567dd849c6bf28a2e34a7d06c7 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 15.050 | 74 | 7 Components > 7.3 Vacuum / Transfer Pump > Main Parts 7.3.4 | The main parts of the lobe pump are shown below: |
-| 3 | chunk_1f6b6e0966574a9093e5a98c5167e995 | doc_29f1aa7d45004e768e9937d1215bd208 | hybrid | 15.050 | 75 | 7 Components > 7.3 Vacuum / Transfer Pump | The pumps are preserved for transport and short-term storage unless specified otherwise. In cases of longer storage, the pumps should be handled as follows until commissioning:... |
+| 3 | chunk_1f6b6e0966574a9093e5a98c5167e995 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 15.050 | 75 | 7 Components > 7.3 Vacuum / Transfer Pump | The pumps are preserved for transport and short-term storage unless specified otherwise. In cases of longer storage, the pumps should be handled as follows until commissioning:... |
 | 4 | chunk_c98601231ab5462a87768e8f2b90eb83 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 15.050 | 76 | 7 Components > 7.3 Vacuum / Transfer Pump > 7.3.6.1 Alignment of Pump and Drive | Pumps supplied as a machine compete with baseplate and drive will be aligned when assembled in the factory. |
 | 5 | chunk_4b437ba244024f5ba2b01f0e1928e256 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 15.050 | 76 | 7 Components > 7.3 Vacuum / Transfer Pump | 口 No axial forces are allowed. Check the alignment after a short test run and make corrections if necessary. |
 
@@ -289,7 +289,7 @@
 | 1 | chunk_4b437ba244024f5ba2b01f0e1928e256 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 16.400 | 76 | 7 Components > 7.3 Vacuum / Transfer Pump | 口 No axial forces are allowed. Check the alignment after a short test run and make corrections if necessary. |
 | 2 | chunk_ef455ee4feec4a78b0525ac419ae4689 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 16.400 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump > General |  Stop the pump by turning off the power and make sure it cannot be turned on accidently.  Drain the pump head and if necessary, wash through if there is a risk of freezing or... |
 | 3 | chunk_a67324b8ed61449a99fbd5454e0a803e | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 16.400 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump | Where a standby pump is installed as a back-up for the main pump and it is likely to stand idle for an extended period then it is recommended that it is operated from time to ti... |
-| 4 | chunk_7c76e200850f45c385ee8da88ed3e7d8 | doc_29f1aa7d45004e768e9937d1215bd208 | hybrid | 16.400 | 88 | 7 Components > 7.4 Liquor Transfer Pump > Safety Precautions & Symbols | Take Note: Before using the pump carefully read the information contained in this instruction manual. |
+| 4 | chunk_7c76e200850f45c385ee8da88ed3e7d8 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 16.400 | 88 | 7 Components > 7.4 Liquor Transfer Pump > Safety Precautions & Symbols | Take Note: Before using the pump carefully read the information contained in this instruction manual. |
 | 5 | chunk_bd78a2165ef44d6eba755d74fb62fc9c | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 15.050 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 | This manual contains basic instructions which must be observed when installing, operating and servicing the vacuum / transfer pump. It is essential for the user / installer or r... |
 
 
@@ -300,7 +300,7 @@
 | 1 | chunk_4b437ba244024f5ba2b01f0e1928e256 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 16.400 | 76 | 7 Components > 7.3 Vacuum / Transfer Pump | 口 No axial forces are allowed. Check the alignment after a short test run and make corrections if necessary. |
 | 2 | chunk_ef455ee4feec4a78b0525ac419ae4689 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 16.400 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump > General |  Stop the pump by turning off the power and make sure it cannot be turned on accidently.  Drain the pump head and if necessary, wash through if there is a risk of freezing or... |
 | 3 | chunk_a67324b8ed61449a99fbd5454e0a803e | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 16.400 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump | Where a standby pump is installed as a back-up for the main pump and it is likely to stand idle for an extended period then it is recommended that it is operated from time to ti... |
-| 4 | chunk_7c76e200850f45c385ee8da88ed3e7d8 | doc_29f1aa7d45004e768e9937d1215bd208 | hybrid | 16.400 | 88 | 7 Components > 7.4 Liquor Transfer Pump > Safety Precautions & Symbols | Take Note: Before using the pump carefully read the information contained in this instruction manual. |
+| 4 | chunk_7c76e200850f45c385ee8da88ed3e7d8 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 16.400 | 88 | 7 Components > 7.4 Liquor Transfer Pump > Safety Precautions & Symbols | Take Note: Before using the pump carefully read the information contained in this instruction manual. |
 | 5 | chunk_bd78a2165ef44d6eba755d74fb62fc9c | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 15.050 | 72 | 7 Components > 7.3 Vacuum / Transfer Pump > Safety Precautions 7.3.1 | This manual contains basic instructions which must be observed when installing, operating and servicing the vacuum / transfer pump. It is essential for the user / installer or r... |
 
 ### `C-003` What quantity and size of hoses are covered by the Lloyd's Register certificate?
@@ -323,7 +323,7 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_bfcf2f211b714756898c88f7c2a0d7c1 | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | hybrid | 15.400 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
+| 1 | chunk_bfcf2f211b714756898c88f7c2a0d7c1 | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | sql_keyword | 15.400 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
 | 2 | chunk_3d0ac3a42e3d44f98dae8809a1cac07e | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | hybrid | 15.400 | 2-3 | Description / Manufacturer Designation / Serial Number table | Office Hamburg | Description | Manufacturer Designation | Serial Number | IMO Number | |-----------------|----------------------------|-----------------|--------------| | 2 pcs.... |
 | 3 | chunk_709bf4251f6b43078a1dc2ef0618bb68 | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | sql_keyword | 15.400 | 3 | Messdaten:/results | | Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------... |
 | 4 | chunk_fb48dfa6fa364fe3a1ab391c37f77b0e | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | sql_keyword | 15.400 | 4 | Technical Data / Specification | | Spezifikation/specification | Soll/nominal | Istresult | |----------------------------------------------------------------------|--------------------|-------------------------... |
@@ -334,7 +334,7 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_bfcf2f211b714756898c88f7c2a0d7c1 | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | hybrid | 15.400 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
+| 1 | chunk_bfcf2f211b714756898c88f7c2a0d7c1 | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | sql_keyword | 15.400 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
 | 2 | chunk_3d0ac3a42e3d44f98dae8809a1cac07e | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | hybrid | 15.400 | 2-3 | Description / Manufacturer Designation / Serial Number table | Office Hamburg | Description | Manufacturer Designation | Serial Number | IMO Number | |-----------------|----------------------------|-----------------|--------------| | 2 pcs.... |
 | 3 | chunk_709bf4251f6b43078a1dc2ef0618bb68 | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | sql_keyword | 15.400 | 3 | Messdaten:/results | | Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------... |
 | 4 | chunk_fb48dfa6fa364fe3a1ab391c37f77b0e | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | sql_keyword | 15.400 | 4 | Technical Data / Specification | | Spezifikation/specification | Soll/nominal | Istresult | |----------------------------------------------------------------------|--------------------|-------------------------... |
@@ -362,10 +362,10 @@
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
 | 1 | chunk_db4f3f6c85e74ae7891535044f48b816 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 18.550 | 72 | Technical Data / Specification | It shall be the plant operator's responsibility to ensure that all maintenance, inspection and assembly work is performed by authorized and qualified personnel who have adequate... |
-| 2 | chunk_3c6c4cf0b4684228bcf917175de93107 | doc_649e60d62062460cae20474196fdda93 | hybrid | 17.700 | 7 | Safety Instructions > Manufacturer's certificates | This measuring device is designed in accordance with good engineering practice to meet stateof-the- art safety requirements, has been tested, and left the factory in a condition... |
+| 2 | chunk_3c6c4cf0b4684228bcf917175de93107 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 17.700 | 7 | Safety Instructions > Manufacturer's certificates | This measuring device is designed in accordance with good engineering practice to meet stateof-the- art safety requirements, has been tested, and left the factory in a condition... |
 | 3 | chunk_51d0a68db64c4b0f9ff098a6c3b64e52 | doc_649e60d62062460cae20474196fdda93 | hybrid | 17.700 | 34 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates | This document has been translated into several languages. Legally determined is solely the English source text. |
 | 4 | chunk_17060c0d6c374e879a5a8442db4688b2 | doc_649e60d62062460cae20474196fdda93 | hybrid | 17.700 | 35 | Safety Instructions > Manufacturer's certificates | List of applied standards: See EU Declaration of Conformity. |
-| 5 | chunk_da1db7a1fbf94793b4213b7c96f32cc4 | doc_649e60d62062460cae20474196fdda93 | hybrid | 17.700 | 35 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity | Certificate number: |
+| 5 | chunk_da1db7a1fbf94793b4213b7c96f32cc4 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 17.700 | 35 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity | Certificate number: |
 
 
 #### Context Top Chunks
@@ -373,10 +373,10 @@
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
 | 1 | chunk_db4f3f6c85e74ae7891535044f48b816 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 18.550 | 72 | Technical Data / Specification | It shall be the plant operator's responsibility to ensure that all maintenance, inspection and assembly work is performed by authorized and qualified personnel who have adequate... |
-| 2 | chunk_3c6c4cf0b4684228bcf917175de93107 | doc_649e60d62062460cae20474196fdda93 | hybrid | 17.700 | 7 | Safety Instructions > Manufacturer's certificates | This measuring device is designed in accordance with good engineering practice to meet stateof-the- art safety requirements, has been tested, and left the factory in a condition... |
+| 2 | chunk_3c6c4cf0b4684228bcf917175de93107 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 17.700 | 7 | Safety Instructions > Manufacturer's certificates | This measuring device is designed in accordance with good engineering practice to meet stateof-the- art safety requirements, has been tested, and left the factory in a condition... |
 | 3 | chunk_51d0a68db64c4b0f9ff098a6c3b64e52 | doc_649e60d62062460cae20474196fdda93 | hybrid | 17.700 | 34 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates | This document has been translated into several languages. Legally determined is solely the English source text. |
 | 4 | chunk_17060c0d6c374e879a5a8442db4688b2 | doc_649e60d62062460cae20474196fdda93 | hybrid | 17.700 | 35 | Safety Instructions > Manufacturer's certificates | List of applied standards: See EU Declaration of Conformity. |
-| 5 | chunk_da1db7a1fbf94793b4213b7c96f32cc4 | doc_649e60d62062460cae20474196fdda93 | hybrid | 17.700 | 35 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity | Certificate number: |
+| 5 | chunk_da1db7a1fbf94793b4213b7c96f32cc4 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 17.700 | 35 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity | Certificate number: |
 
 ### `D-004` Which item numbers and codes are used for the masthead lamps?
 
@@ -436,10 +436,10 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_83807bf6fc8543eda0acf986a15c24c6 | doc_62c8f923ebc0473faa12a5bd3d69059e | hybrid | 35.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 |
+| 1 | chunk_83807bf6fc8543eda0acf986a15c24c6 | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 35.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 |
 | 2 | chunk_f909f2022b7d4d469a25e4108300d1fc | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 35.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 | 1. + 2. Stelle Produkt | 3. + 4. Stelle Werkstoffe Gehäuse / Dichtung / Kugel | 5. Stelle Betätigung | 6. Stelle Optio... |
 | 3 | chunk_129955b5b1fb4afea84a56b392cf76b2 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 12.700 | 19-20 | Final Inspection Report > Inspection results | 8-digit measured value display incl. sign and decimal point, bargraph for 4 to 20 mA HART as current display. Three keys for operation Simple and complete menu guidance due to b... |
-| 4 | chunk_6cf67b3fdd1b482d8ffc98aab21167d4 | doc_649e60d62062460cae20474196fdda93 | hybrid | 11.350 | 1 | Device information > Basic specifications | Extended order code Cerabar M PMP51 9180 |
+| 4 | chunk_6cf67b3fdd1b482d8ffc98aab21167d4 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 11.350 | 1 | Device information > Basic specifications | Extended order code Cerabar M PMP51 9180 |
 | 5 | chunk_fab496cc882c42d190dc484162b86649 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 11.350 | 2 | Final Inspection Report > Calibration results | Upper tolerance limit Deviation (digital) Deviation (analog) Lower tolerance limit 0.0 10 zB 30 40 60 7a 80 90 100 0. Hereby we confirm that all applicable tests according to th... |
 
 
@@ -447,10 +447,10 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_83807bf6fc8543eda0acf986a15c24c6 | doc_62c8f923ebc0473faa12a5bd3d69059e | hybrid | 35.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 |
+| 1 | chunk_83807bf6fc8543eda0acf986a15c24c6 | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 35.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 |
 | 2 | chunk_f909f2022b7d4d469a25e4108300d1fc | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 35.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 | 1. + 2. Stelle Produkt | 3. + 4. Stelle Werkstoffe Gehäuse / Dichtung / Kugel | 5. Stelle Betätigung | 6. Stelle Optio... |
 | 3 | chunk_129955b5b1fb4afea84a56b392cf76b2 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 12.700 | 19-20 | Final Inspection Report > Inspection results | 8-digit measured value display incl. sign and decimal point, bargraph for 4 to 20 mA HART as current display. Three keys for operation Simple and complete menu guidance due to b... |
-| 4 | chunk_6cf67b3fdd1b482d8ffc98aab21167d4 | doc_649e60d62062460cae20474196fdda93 | hybrid | 11.350 | 1 | Device information > Basic specifications | Extended order code Cerabar M PMP51 9180 |
+| 4 | chunk_6cf67b3fdd1b482d8ffc98aab21167d4 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 11.350 | 1 | Device information > Basic specifications | Extended order code Cerabar M PMP51 9180 |
 | 5 | chunk_fab496cc882c42d190dc484162b86649 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 11.350 | 2 | Final Inspection Report > Calibration results | Upper tolerance limit Deviation (digital) Deviation (analog) Lower tolerance limit 0.0 10 zB 30 40 60 7a 80 90 100 0. Hereby we confirm that all applicable tests according to th... |
 
 ### `R-001` What device is described in the final inspection report?
@@ -509,7 +509,7 @@
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
 | 1 | chunk_4192543967b94173a0e087e0c73b2cb8 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables | A B A Electronic; Zone 2 B Process; Zone 2 1 Certified associated apparatus 2 PMC51, PMP51, PMP55 3 Option: Separate enclosure |
-| 2 | chunk_39b15b9e01e940b7b4273aca4fbb8dfc | doc_649e60d62062460cae20474196fdda93 | hybrid | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 | The process temperatures refer to the temperature at the separation membrane. Device type PMP55 Higher temperatures are permitted depending on the type of diaphragm seal. |
+| 2 | chunk_39b15b9e01e940b7b4273aca4fbb8dfc | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 | The process temperatures refer to the temperature at the separation membrane. Device type PMP55 Higher temperatures are permitted depending on the type of diaphragm seal. |
 | 3 | chunk_2ef1cd16a95c4196ad746779638f8d5a | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 | Higher temperatures are permitted depending on the type of diaphragm seal. A0024001 | Temperature class | Process temperature T p (process) | Ambient temperature range | |------... |
 | 4 | chunk_e2fd7ec230ae496b88aa96ce6034fef6 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 | A0024001 |
 | 5 | chunk_d47db66aad4746589dc7f9ce10bbdab0 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 59.450 | 39 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 > Connection data > Basic specification, Position 3 = 2 | | Power supply | |----------------------------------------------------------| | U i ≤ 45 V DC I i ≤ 300 mA P i ≤ 1 W C i ≤ 10 nF L i = 0 | |
@@ -520,7 +520,7 @@
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
 | 1 | chunk_4192543967b94173a0e087e0c73b2cb8 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables | A B A Electronic; Zone 2 B Process; Zone 2 1 Certified associated apparatus 2 PMC51, PMP51, PMP55 3 Option: Separate enclosure |
-| 2 | chunk_39b15b9e01e940b7b4273aca4fbb8dfc | doc_649e60d62062460cae20474196fdda93 | hybrid | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 | The process temperatures refer to the temperature at the separation membrane. Device type PMP55 Higher temperatures are permitted depending on the type of diaphragm seal. |
+| 2 | chunk_39b15b9e01e940b7b4273aca4fbb8dfc | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 | The process temperatures refer to the temperature at the separation membrane. Device type PMP55 Higher temperatures are permitted depending on the type of diaphragm seal. |
 | 3 | chunk_2ef1cd16a95c4196ad746779638f8d5a | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 | Higher temperatures are permitted depending on the type of diaphragm seal. A0024001 | Temperature class | Process temperature T p (process) | Ambient temperature range | |------... |
 | 4 | chunk_e2fd7ec230ae496b88aa96ce6034fef6 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 59.450 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 | A0024001 |
 | 5 | chunk_d47db66aad4746589dc7f9ce10bbdab0 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 59.450 | 39 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables > Intrinsic safety > Device type PMC51, PMP51 > Device type PMP55 > Connection data > Basic specification, Position 3 = 2 | | Power supply | |----------------------------------------------------------| | U i ≤ 45 V DC I i ≤ 300 mA P i ≤ 1 W C i ≤ 10 nF L i = 0 | |
@@ -583,22 +583,60 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_369276536e1e46469ac9990d4130461b | doc_649e60d62062460cae20474196fdda93 | hybrid | 11.700 | 1 | Final Inspection Report > Device information | 3021098915000010 Description TAG Serial number Order code Extended order code Cerabar M PMP51 9180 v8055401129 PMP51-D5EU1/101 PMP5 1-BA2 IRAISGJGRJAI+JALELGZI |
-| 2 | chunk_372ae14684b04defaa976aca1e41d89b | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 7.350 | 1 | Order information | Customer name J.H.K. Anlagenbau und Industrieservice GmbH & Co. KG Customer purchase order Sales order number / Item Internal order number / Item |
-| 3 | chunk_190e0f93d7c041c4a7df36292b2754b5 | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | sql_keyword | 7.350 | 1 | General information | Customer Schauenburg Industrietechnik GmbH Purchase Order No 801079 Manufacturer Schauenburg Industrietechnik GmbH Intended for H. A. Schröder GmbH + Co. KG, Schiffdorf-Wehden /... |
-| 4 | chunk_9bd65a09dbdc460d9fae7963a284a8fe | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 7.350 | 1 | TEMPERATUR | -25°C …. +180°C Bei Mediumtemperaturen über 80°C, bzw. stark schwankenden Mediumtemperaturen, empfehlen wir eine Druckausgleichsbohrung in der Kugel. Bei zur Dampfbildung neigen... |
-| 5 | chunk_e8da7dd516f44715b67c340535227311 | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 7.350 | 1 | TEMPERATURE RANGE | -25°C … +180°C At media temperature above 80°C or large oscilating media temperatures we recommend a pressure compensation bore in the ball. At media which tend to steam-buildin... |
+| 1 | chunk_369276536e1e46469ac9990d4130461b | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 11.700 | 1 | Final Inspection Report > Device information | 3021098915000010 Description TAG Serial number Order code Extended order code Cerabar M PMP51 9180 v8055401129 PMP51-D5EU1/101 PMP5 1-BA2 IRAISGJGRJAI+JALELGZI |
+| 2 | chunk_190e0f93d7c041c4a7df36292b2754b5 | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | sql_keyword | 7.350 | 1 | General information | Customer Schauenburg Industrietechnik GmbH Purchase Order No 801079 Manufacturer Schauenburg Industrietechnik GmbH Intended for H. A. Schröder GmbH + Co. KG, Schiffdorf-Wehden /... |
+| 3 | chunk_9bd65a09dbdc460d9fae7963a284a8fe | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 7.350 | 1 | TEMPERATUR | -25°C …. +180°C Bei Mediumtemperaturen über 80°C, bzw. stark schwankenden Mediumtemperaturen, empfehlen wir eine Druckausgleichsbohrung in der Kugel. Bei zur Dampfbildung neigen... |
+| 4 | chunk_e8da7dd516f44715b67c340535227311 | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 7.350 | 1 | TEMPERATURE RANGE | -25°C … +180°C At media temperature above 80°C or large oscilating media temperatures we recommend a pressure compensation bore in the ball. At media which tend to steam-buildin... |
+| 5 | chunk_1ec2e1acb52f4fe093f25f1b4b99f010 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 7.350 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_369276536e1e46469ac9990d4130461b | doc_649e60d62062460cae20474196fdda93 | hybrid | 11.700 | 1 | Final Inspection Report > Device information | 3021098915000010 Description TAG Serial number Order code Extended order code Cerabar M PMP51 9180 v8055401129 PMP51-D5EU1/101 PMP5 1-BA2 IRAISGJGRJAI+JALELGZI |
-| 2 | chunk_372ae14684b04defaa976aca1e41d89b | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 7.350 | 1 | Order information | Customer name J.H.K. Anlagenbau und Industrieservice GmbH & Co. KG Customer purchase order Sales order number / Item Internal order number / Item |
-| 3 | chunk_190e0f93d7c041c4a7df36292b2754b5 | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | sql_keyword | 7.350 | 1 | General information | Customer Schauenburg Industrietechnik GmbH Purchase Order No 801079 Manufacturer Schauenburg Industrietechnik GmbH Intended for H. A. Schröder GmbH + Co. KG, Schiffdorf-Wehden /... |
-| 4 | chunk_9bd65a09dbdc460d9fae7963a284a8fe | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 7.350 | 1 | TEMPERATUR | -25°C …. +180°C Bei Mediumtemperaturen über 80°C, bzw. stark schwankenden Mediumtemperaturen, empfehlen wir eine Druckausgleichsbohrung in der Kugel. Bei zur Dampfbildung neigen... |
-| 5 | chunk_e8da7dd516f44715b67c340535227311 | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 7.350 | 1 | TEMPERATURE RANGE | -25°C … +180°C At media temperature above 80°C or large oscilating media temperatures we recommend a pressure compensation bore in the ball. At media which tend to steam-buildin... |
+| 1 | chunk_369276536e1e46469ac9990d4130461b | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 11.700 | 1 | Final Inspection Report > Device information | 3021098915000010 Description TAG Serial number Order code Extended order code Cerabar M PMP51 9180 v8055401129 PMP51-D5EU1/101 PMP5 1-BA2 IRAISGJGRJAI+JALELGZI |
+| 2 | chunk_190e0f93d7c041c4a7df36292b2754b5 | doc_ec351be50d3c4dcf85b21ec9b2d5bbe7 | sql_keyword | 7.350 | 1 | General information | Customer Schauenburg Industrietechnik GmbH Purchase Order No 801079 Manufacturer Schauenburg Industrietechnik GmbH Intended for H. A. Schröder GmbH + Co. KG, Schiffdorf-Wehden /... |
+| 3 | chunk_9bd65a09dbdc460d9fae7963a284a8fe | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 7.350 | 1 | TEMPERATUR | -25°C …. +180°C Bei Mediumtemperaturen über 80°C, bzw. stark schwankenden Mediumtemperaturen, empfehlen wir eine Druckausgleichsbohrung in der Kugel. Bei zur Dampfbildung neigen... |
+| 4 | chunk_e8da7dd516f44715b67c340535227311 | doc_62c8f923ebc0473faa12a5bd3d69059e | sql_keyword | 7.350 | 1 | TEMPERATURE RANGE | -25°C … +180°C At media temperature above 80°C or large oscilating media temperatures we recommend a pressure compensation bore in the ball. At media which tend to steam-buildin... |
+| 5 | chunk_1ec2e1acb52f4fe093f25f1b4b99f010 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 7.350 | 9 | 2 Safety | Personnel charged with installation, operation, maintenance, inspection, and assembly must be appropriately qualified. Before carrying out any work which involves complete or pa... |
+
+### `R-012` What supply voltage is specified for 4 to 20 mA HART Cerabar M devices?
+
+- query type: `specification_lookup`
+- expected document: `report_pressure_transmitter`
+- expected file: `Pressure transmitter.pdf`
+- expected section path: `Brief Operating Instructions > 6 Electrical connection > 6.2.6 Supply voltage`
+- expected page: `15`
+- expected rank target: `top_3`
+- anchor matched rank: `miss`
+- context matched rank: `miss`
+- expected passage: `Intrinsically safe: 11.5 to 30 V DC; other types of protection/devices without certificate: 11.5 to 45 V DC; plug connector versions 35 V DC.`
+- failure reasons:
+  - Anchor retrieval did not return the expected evidence.
+  - Anchor retrieval did not return the resolved expected chunk id.
+  - Anchor retrieval missed the expected section path.
+  - Anchor retrieval did not return a chunk covering expected page 15.
+
+#### Anchor Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_1bb6b2d562a64dfdad6e40017a773e7f | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 24.900 | 29 | 7 Components > 7.1 Macerators > Supply Voltage | Check that the supply voltage to be connected corresponds to the specified voltage on the machine's serial number plate. Check that the supply voltage for the delivered machine... |
+| 2 | chunk_db74cdd9cf004d0fa21e6fd5ea0adb1a | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 17.700 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | When mounting the legs:  Measure the height (X mm) between the flange of the mounting assembly and the floor/floor plate.  Measure the height (Y mm) of the disposer without le... |
+| 3 | chunk_def7d58f43264733a061f7167b0be9ee | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 17.050 | 88 | 7 Components > 7.4 Liquor Transfer Pump > Safety Precautions & Symbols > Technical Data 7.4.2 | | Nominal Speed | 2900/3450 rpm | |----------------------------|------------------| | Protection | IP 54 | | Supply Voltage / Frequency | 480V 3~ 50/60 Hz | |
+| 4 | chunk_9c9aec15ce4c402ba676fc8a75867525 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 14.050 | 12 | 3 System Introduction > 3.1 Technical Data | | Tank Capacity | 1,200L | |---------------------|----------------| | Pump Capacity | max 16,000L/hr | | Dewatering Capacity | max 20,000L/hr | | Voltage | 400V 50Hz | | Install... |
+| 5 | chunk_12ef4a0d509346859ed51510947f6e14 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 14.050 | 29 | CONNECTION | Use connection cable having 1.5 mm² wires for machines having a rated current up to 14A. For machines having a rated current above 14A, use 2.5 mm² wires. The rated voltage and... |
+
+
+#### Context Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_1bb6b2d562a64dfdad6e40017a773e7f | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 24.900 | 29 | 7 Components > 7.1 Macerators > Supply Voltage | Check that the supply voltage to be connected corresponds to the specified voltage on the machine's serial number plate. Check that the supply voltage for the delivered machine... |
+| 2 | chunk_db74cdd9cf004d0fa21e6fd5ea0adb1a | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 17.700 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | When mounting the legs:  Measure the height (X mm) between the flange of the mounting assembly and the floor/floor plate.  Measure the height (Y mm) of the disposer without le... |
+| 3 | chunk_def7d58f43264733a061f7167b0be9ee | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 17.050 | 88 | 7 Components > 7.4 Liquor Transfer Pump > Safety Precautions & Symbols > Technical Data 7.4.2 | | Nominal Speed | 2900/3450 rpm | |----------------------------|------------------| | Protection | IP 54 | | Supply Voltage / Frequency | 480V 3~ 50/60 Hz | |
+| 4 | chunk_9c9aec15ce4c402ba676fc8a75867525 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 14.050 | 12 | 3 System Introduction > 3.1 Technical Data | | Tank Capacity | 1,200L | |---------------------|----------------| | Pump Capacity | max 16,000L/hr | | Dewatering Capacity | max 20,000L/hr | | Voltage | 400V 50Hz | | Install... |
+| 5 | chunk_12ef4a0d509346859ed51510947f6e14 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 14.050 | 29 | CONNECTION | Use connection cable having 1.5 mm² wires for machines having a rated current up to 14A. For machines having a rated current above 14A, use 2.5 mm² wires. The rated voltage and... |
 
 ### `R-013` What happens when Zero and Span are pressed simultaneously for at least 12 seconds?
 
@@ -625,7 +663,7 @@
 | 2 | chunk_11da7ab8c94b40eabc886e6676db6035 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 2.700 | 28 | 7 Components > 7.1 Macerators | In order to weld a strong joint and to be able to grind to an even and fine surface between the discharge cone and the working bench/tabletop, the cone is welded with its upper... |
 | 3 | chunk_db74cdd9cf004d0fa21e6fd5ea0adb1a | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 2.700 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | When mounting the legs:  Measure the height (X mm) between the flange of the mounting assembly and the floor/floor plate.  Measure the height (Y mm) of the disposer without le... |
 | 4 | chunk_81b0520a1dd743f4aab21d24ee465318 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 2.700 | 30 | 7 Components > 7.1 Macerators > Operation 7.1.9 | Food waste that is difficult to grind, such as fibrous vegetables, tough fish skins and sinewy meat, should be broken down in size and mixed with other food waste. Dry and stick... |
-| 5 | chunk_8d0873335719441eb9809c2aaea3a1ac | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 2.700 | 54 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.2 Initial Test Run | WARNING: Risk of crushing / rupture of limbs! Ensure the inspection covers are fitted and secured before starting the machine. If all the pre-commissioning points are checked an... |
+| 5 | chunk_3b48037df33345949f963865104a4605 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 1.350 | 1 | 19P006-31-FWC12-5-1-0_Manual | Environmentally Responsible Solutions Engineered |
 
 
 #### Context Top Chunks
@@ -636,7 +674,83 @@
 | 2 | chunk_11da7ab8c94b40eabc886e6676db6035 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 2.700 | 28 | 7 Components > 7.1 Macerators | In order to weld a strong joint and to be able to grind to an even and fine surface between the discharge cone and the working bench/tabletop, the cone is welded with its upper... |
 | 3 | chunk_db74cdd9cf004d0fa21e6fd5ea0adb1a | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 2.700 | 28 | 7 Components > 7.1 Macerators > Mounting of models 520, 530, 550 and 575, delivered with legs as standard | When mounting the legs:  Measure the height (X mm) between the flange of the mounting assembly and the floor/floor plate.  Measure the height (Y mm) of the disposer without le... |
 | 4 | chunk_81b0520a1dd743f4aab21d24ee465318 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 2.700 | 30 | 7 Components > 7.1 Macerators > Operation 7.1.9 | Food waste that is difficult to grind, such as fibrous vegetables, tough fish skins and sinewy meat, should be broken down in size and mixed with other food waste. Dry and stick... |
-| 5 | chunk_8d0873335719441eb9809c2aaea3a1ac | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 2.700 | 54 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.2 Initial Test Run | WARNING: Risk of crushing / rupture of limbs! Ensure the inspection covers are fitted and secured before starting the machine. If all the pre-commissioning points are checked an... |
+| 5 | chunk_3b48037df33345949f963865104a4605 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 1.350 | 1 | 19P006-31-FWC12-5-1-0_Manual | Environmentally Responsible Solutions Engineered |
+
+### `R-015` How do I configure pressure measurement without reference pressure?
+
+- query type: `procedure_lookup`
+- expected document: `report_pressure_transmitter`
+- expected file: `Pressure transmitter.pdf`
+- expected section path: `Brief Operating Instructions > 8 Commissioning > 8.2 Configuring pressure measurement > 8.2.1 Calibration without reference pressure (dry calibration)`
+- expected page: `26`
+- expected rank target: `top_5`
+- anchor matched rank: `miss`
+- context matched rank: `miss`
+- expected passage: `Select Pressure measuring mode, select pressure unit, select Set LRV and enter 0 mbar, select Set URV and enter 300 mbar; result measuring range configured 0 to +300 mbar.`
+- failure reasons:
+  - Anchor retrieval did not return the expected evidence.
+  - Anchor retrieval did not return the resolved expected chunk id.
+  - Anchor retrieval missed the expected section path.
+  - Anchor retrieval did not return a chunk covering expected page 26.
+
+#### Anchor Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_d91828e4bb524c3fa4f456c8e3894c56 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 10.050 | 78 | CONNECTION | CAUTION: This a positive displacement pump, which is capable of generating pressures that could cause damage – in extreme cases the bursting of pipes or vessels. CAUTION: Possib... |
+| 2 | chunk_22d51dd411824d0685efd13e190669c7 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 8.700 | 7 | 1 General | AL DANGER: This symbol indicates and identifies information that, if not complied with, will cause death or serious injury. 1.6 Copyright Protection The technical manual must be... |
+| 3 | chunk_8d04ca3c07fa4a208b1772f1bee2ea1a | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 8.700 | 14 | Sensor List | Prior to commissioning FMD must be consulted. It is recommended that commissioning be completed by a service technician from FMD. The power supply may not vary from the contract... |
+| 4 | chunk_70de3c3bebc44b42b9b26d058ba8c0e4 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 8.700 | 56 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 | No modifications, attachments or rebuilding of the press may occur without the prior written authorisation of FMD. Machine parts that are not in a safe usable condition are to b... |
+| 5 | chunk_740aec955d144fb7a47153674f5006fd | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 7.550 | 34 | 7 Components > 7.1 Macerators > Maintenance 7.1.11 > Dismantling of Disposer | Context: Turn the end shield (P3) upside down and remove the locking ring (P6) by means of a circlip pliers. With some adequate protection in between (e.g. a piece of wood), app... |
+
+
+#### Context Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_d91828e4bb524c3fa4f456c8e3894c56 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 10.050 | 78 | CONNECTION | CAUTION: This a positive displacement pump, which is capable of generating pressures that could cause damage – in extreme cases the bursting of pipes or vessels. CAUTION: Possib... |
+| 2 | chunk_22d51dd411824d0685efd13e190669c7 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 8.700 | 7 | 1 General | AL DANGER: This symbol indicates and identifies information that, if not complied with, will cause death or serious injury. 1.6 Copyright Protection The technical manual must be... |
+| 3 | chunk_8d04ca3c07fa4a208b1772f1bee2ea1a | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 8.700 | 14 | Sensor List | Prior to commissioning FMD must be consulted. It is recommended that commissioning be completed by a service technician from FMD. The power supply may not vary from the contract... |
+| 4 | chunk_70de3c3bebc44b42b9b26d058ba8c0e4 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 8.700 | 56 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 | No modifications, attachments or rebuilding of the press may occur without the prior written authorisation of FMD. Machine parts that are not in a safe usable condition are to b... |
+| 5 | chunk_740aec955d144fb7a47153674f5006fd | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 7.550 | 34 | 7 Components > 7.1 Macerators > Maintenance 7.1.11 > Dismantling of Disposer | Context: Turn the end shield (P3) upside down and remove the locking ring (P6) by means of a circlip pliers. With some adequate protection in between (e.g. a piece of wood), app... |
+
+### `R-016` How do I configure pressure measurement with reference pressure?
+
+- query type: `procedure_lookup`
+- expected document: `report_pressure_transmitter`
+- expected file: `Pressure transmitter.pdf`
+- expected section path: `Brief Operating Instructions > 8 Commissioning > 8.2 Configuring pressure measurement > 8.2.2 Calibration with reference pressure (wet calibration)`
+- expected page: `27`
+- expected rank target: `top_5`
+- anchor matched rank: `miss`
+- context matched rank: `miss`
+- expected passage: `Perform position adjustment, select Pressure mode, select pressure unit, apply LRV pressure and Get LRV, apply URV pressure and Get URV; result measuring range configured.`
+- failure reasons:
+  - Anchor retrieval did not return the expected evidence.
+  - Anchor retrieval did not return the resolved expected chunk id.
+  - Anchor retrieval missed the expected section path.
+  - Anchor retrieval did not return a chunk covering expected page 27.
+
+#### Anchor Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_d91828e4bb524c3fa4f456c8e3894c56 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 10.050 | 78 | CONNECTION | CAUTION: This a positive displacement pump, which is capable of generating pressures that could cause damage – in extreme cases the bursting of pipes or vessels. CAUTION: Possib... |
+| 2 | chunk_740aec955d144fb7a47153674f5006fd | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 7.550 | 34 | 7 Components > 7.1 Macerators > Maintenance 7.1.11 > Dismantling of Disposer | Context: Turn the end shield (P3) upside down and remove the locking ring (P6) by means of a circlip pliers. With some adequate protection in between (e.g. a piece of wood), app... |
+| 3 | chunk_ab2633d3eed743b4b6c4b89f94341f97 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 7.550 | 55 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.4 Shutdown | Context:  Put up signage to notify that the press has been taken out of operation. Take Note: If the press is to be idle or shut down for more than 72 hours, there is a risk th... |
+| 4 | chunk_58e6e9ac074a4d74b7628f0cef95c8aa | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 7.550 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump > 7.3.7 | Context:  Open valves and vents before starting the pump.  Check the direction of rotation and flow by briefly switching on the pump drive. CAUTION: This a positive displaceme... |
+| 5 | chunk_3b48037df33345949f963865104a4605 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 7.350 | 1 | 19P006-31-FWC12-5-1-0_Manual | Environmentally Responsible Solutions Engineered |
+
+
+#### Context Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_d91828e4bb524c3fa4f456c8e3894c56 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 10.050 | 78 | CONNECTION | CAUTION: This a positive displacement pump, which is capable of generating pressures that could cause damage – in extreme cases the bursting of pipes or vessels. CAUTION: Possib... |
+| 2 | chunk_740aec955d144fb7a47153674f5006fd | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 7.550 | 34 | 7 Components > 7.1 Macerators > Maintenance 7.1.11 > Dismantling of Disposer | Context: Turn the end shield (P3) upside down and remove the locking ring (P6) by means of a circlip pliers. With some adequate protection in between (e.g. a piece of wood), app... |
+| 3 | chunk_ab2633d3eed743b4b6c4b89f94341f97 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 7.550 | 55 | 7 Components > 7.1 Macerators > Commissioning & Shutdown 7.1.8 > 7.2.7.4 Shutdown | Context:  Put up signage to notify that the press has been taken out of operation. Take Note: If the press is to be idle or shut down for more than 72 hours, there is a risk th... |
+| 4 | chunk_58e6e9ac074a4d74b7628f0cef95c8aa | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 7.550 | 78 | 7 Components > 7.3 Vacuum / Transfer Pump > 7.3.7 | Context:  Open valves and vents before starting the pump.  Check the direction of rotation and flow by briefly switching on the pump drive. CAUTION: This a positive displaceme... |
+| 5 | chunk_3b48037df33345949f963865104a4605 | doc_29f1aa7d45004e768e9937d1215bd208 | sql_keyword | 7.350 | 1 | 19P006-31-FWC12-5-1-0_Manual | Environmentally Responsible Solutions Engineered |
 
 ### `R-018` What hazardous location approval is listed for Cerabar M in the safety instructions?
 
@@ -661,8 +775,8 @@
 | 1 | chunk_1dbff3e909914fceaf51984f07762dbd | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 20.400 | 36 | Safety Instructions > Optional specifications > Basic specifications | More detailed information about the device is provided in the following tables. These tables describe the individual positions and IDs in the extended order code which are relev... |
 | 2 | chunk_3c6c4cf0b4684228bcf917175de93107 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 19.050 | 7 | Safety Instructions > Manufacturer's certificates | This measuring device is designed in accordance with good engineering practice to meet stateof-the- art safety requirements, has been tested, and left the factory in a condition... |
 | 3 | chunk_1977816e1a4f4e7c858efe8f2771e025 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 19.050 | 7 | 3 Basic safety instructions > 3.5 Product safety > Basic specifications | It fulfills general safety requirements and legal requirements. It also conforms to the EC directives listed in the device-specific EC declaration of conformity. Endress+Hauser... |
-| 4 | chunk_ea0bd61fb7154b68a11e0e985268229a | doc_649e60d62062460cae20474196fdda93 | hybrid | 19.050 | 31 | Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Basic specifications | ATEX, IECEx: Ex ic IIC Gc EX |
-| 5 | chunk_4192543967b94173a0e087e0c73b2cb8 | doc_649e60d62062460cae20474196fdda93 | hybrid | 19.050 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables | A B A Electronic; Zone 2 B Process; Zone 2 1 Certified associated apparatus 2 PMC51, PMP51, PMP55 3 Option: Separate enclosure |
+| 4 | chunk_ea0bd61fb7154b68a11e0e985268229a | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 19.050 | 31 | Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Basic specifications | ATEX, IECEx: Ex ic IIC Gc EX |
+| 5 | chunk_4192543967b94173a0e087e0c73b2cb8 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 19.050 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables | A B A Electronic; Zone 2 B Process; Zone 2 1 Certified associated apparatus 2 PMC51, PMP51, PMP55 3 Option: Separate enclosure |
 
 
 #### Context Top Chunks
@@ -672,5 +786,5 @@
 | 1 | chunk_1dbff3e909914fceaf51984f07762dbd | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 20.400 | 36 | Safety Instructions > Optional specifications > Basic specifications | More detailed information about the device is provided in the following tables. These tables describe the individual positions and IDs in the extended order code which are relev... |
 | 2 | chunk_3c6c4cf0b4684228bcf917175de93107 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 19.050 | 7 | Safety Instructions > Manufacturer's certificates | This measuring device is designed in accordance with good engineering practice to meet stateof-the- art safety requirements, has been tested, and left the factory in a condition... |
 | 3 | chunk_1977816e1a4f4e7c858efe8f2771e025 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 19.050 | 7 | 3 Basic safety instructions > 3.5 Product safety > Basic specifications | It fulfills general safety requirements and legal requirements. It also conforms to the EC directives listed in the device-specific EC declaration of conformity. Endress+Hauser... |
-| 4 | chunk_ea0bd61fb7154b68a11e0e985268229a | doc_649e60d62062460cae20474196fdda93 | hybrid | 19.050 | 31 | Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Basic specifications | ATEX, IECEx: Ex ic IIC Gc EX |
-| 5 | chunk_4192543967b94173a0e087e0c73b2cb8 | doc_649e60d62062460cae20474196fdda93 | hybrid | 19.050 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables | A B A Electronic; Zone 2 B Process; Zone 2 1 Certified associated apparatus 2 PMC51, PMP51, PMP55 3 Option: Separate enclosure |
+| 4 | chunk_ea0bd61fb7154b68a11e0e985268229a | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 19.050 | 31 | Safety Instructions > Cerabar M PMC51, PMP51, PMP55 > Basic specifications | ATEX, IECEx: Ex ic IIC Gc EX |
+| 5 | chunk_4192543967b94173a0e087e0c73b2cb8 | doc_649e60d62062460cae20474196fdda93 | sql_keyword | 19.050 | 38 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications > Safety instructions: Installation > Temperature tables | A B A Electronic; Zone 2 B Process; Zone 2 1 Certified associated apparatus 2 PMC51, PMP51, PMP55 3 Option: Separate enclosure |
