@@ -413,3 +413,137 @@ def test_fragment_builder_keeps_certificate_results_under_results_section() -> N
         fragment.section_path != ["Particulars"]
         for fragment in fragments
     )
+
+
+def test_fragment_builder_emits_report_procedure_chunk() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_rpt_001",
+        title="Final Inspection Report",
+        section_path=["Final Inspection Report"],
+        page=1,
+    )
+    elements = [
+        make_element(
+            element_id="txt_rpt_001",
+            text="Test specification P0043",
+            page=1,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_rpt_002",
+            text="Test rig L230; reference standard ETS-100",
+            page=1,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Final Inspection Report",
+        document_type=DocumentType.REPORT,
+        section=section,
+        elements=elements,
+    )
+
+    procedure = next(
+        (
+            fragment
+            for fragment in fragments
+            if fragment.section_path == ["Final Inspection Report", "Procedure"]
+        ),
+        None,
+    )
+
+    assert procedure is not None
+    assert procedure.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+    assert "P0043" in procedure.text
+
+
+def test_fragment_builder_emits_report_mounting_chunk() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_rpt_002",
+        title="Brief Operating Instructions",
+        section_path=["Brief Operating Instructions"],
+        page=9,
+    )
+    elements = [
+        make_element(
+            element_id="txt_rpt_010",
+            text="Mounting instructions for process connection",
+            page=9,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_rpt_011",
+            text="NPT tightening torque: 25 Nm (18.4 lbf ft)",
+            page=9,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Final Inspection Report",
+        document_type=DocumentType.REPORT,
+        section=section,
+        elements=elements,
+    )
+
+    mounting = next(
+        (
+            fragment
+            for fragment in fragments
+            if fragment.section_path
+            == ["Brief Operating Instructions", "5 Mounting"]
+        ),
+        None,
+    )
+
+    assert mounting is not None
+    assert mounting.chunk_type == ChunkType.INSTALLATION_INSTRUCTION
+    assert "25 Nm" in mounting.text
+
+
+def test_fragment_builder_emits_report_operation_options_chunk() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_rpt_003",
+        title="Brief Operating Instructions",
+        section_path=["Brief Operating Instructions"],
+        page=18,
+    )
+    elements = [
+        make_element(
+            element_id="txt_rpt_020",
+            text="Operation options for zero and span calibration",
+            page=18,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_rpt_021",
+            text="Press and hold push button for 12 seconds to reset to factory defaults.",
+            page=18,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Final Inspection Report",
+        document_type=DocumentType.REPORT,
+        section=section,
+        elements=elements,
+    )
+
+    op_options = next(
+        (
+            fragment
+            for fragment in fragments
+            if fragment.section_path
+            == ["Brief Operating Instructions", "7 Operation options"]
+        ),
+        None,
+    )
+
+    assert op_options is not None
+    assert op_options.chunk_type == ChunkType.OPERATION_INSTRUCTION
+    assert "12 seconds" in op_options.text
