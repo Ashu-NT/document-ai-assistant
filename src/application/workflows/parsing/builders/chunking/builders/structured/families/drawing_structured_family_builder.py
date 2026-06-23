@@ -35,14 +35,13 @@ class DrawingStructuredFamilyBuilder:
         context: StructuredFamilyContext,
         marker_tuning: StructuredFamilyMarkerTuning | None,
     ) -> StructuredFamilySpecSelection:
-        if (
-            context.has_known_document_type()
-            and not context.matches_document_type(DocumentType.DRAWING)
-        ):
-            return StructuredFamilySpecSelection()
-        if (
-            not context.has_known_document_type()
-            and not context.contains_any(DRAWING_DOCUMENT_MARKERS)
+        # Exit early only when the type is definitively non-DRAWING AND the section
+        # content also lacks drawing-specific markers.  A document classified as
+        # "manual" may still contain a drawing appendix whose sections carry marker
+        # text ("navigation lights", "drawing number", etc.) that signals drawing
+        # content — those sections should still benefit from drawing specs.
+        if not context.matches_document_type(DocumentType.DRAWING) and not context.contains_any(
+            DRAWING_DOCUMENT_MARKERS
         ):
             return StructuredFamilySpecSelection()
 

@@ -13,7 +13,7 @@ from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitte
 from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     clean_chunk_text,
 )
-from src.domain.common import DocumentType, ElementType
+from src.domain.common import ChunkType, DocumentType, ElementType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 
@@ -140,14 +140,15 @@ class StructuredSectionFragmentBuilder:
         if token_count < spec.min_tokens:
             return None
 
+        section_path = self._enrich_section_path(spec, elements)
         first_element = elements[0]
         return ChunkFragment(
             text=content,
             chunk_type=spec.chunk_type,
             standalone=True,
             section_id=section.section_id,
-            section_title=spec.section_path[-1],
-            section_path=list(spec.section_path),
+            section_title=section_path[-1] if section_path else "",
+            section_path=section_path,
             section_level=section.level,
             parent_section_id=section.parent_section_id,
             element_ids=[element.element_id for element in elements],
@@ -225,6 +226,57 @@ class StructuredSectionFragmentBuilder:
     @staticmethod
     def _matches_markers(text: str, markers: tuple[str, ...]) -> bool:
         return any(marker in text for marker in markers)
+
+    @staticmethod
+    def _enrich_section_path(
+        spec: StructuredSectionWindowSpec,
+        elements: list[CanonicalElement],
+    ) -> list[str]:
+        """Append a subsection label when the anchor element is a heading-like text.
+
+        For individual (non-combined) procedural windows, the element that triggered
+        the anchor is often a sub-procedure heading such as "Removal of the Screen
+        Basket".  Appending it to the spec path gives the chunk a more specific,
+        searchable section path without hardcoding any document-specific strings.
+
+        Guards:
+        - combine_all_windows=True specs produce merged content — no single title fits.
+        - Non-procedural specs (drawing blocks, spec tables, etc.) must not be enriched
+          because their anchors are field labels, not section headings.
+        """
+        _PROCEDURAL_TYPES = {
+            ChunkType.MAINTENANCE_PROCEDURE,
+            ChunkType.OPERATION_INSTRUCTION,
+            ChunkType.INSTALLATION_INSTRUCTION,
+            ChunkType.TROUBLESHOOTING,
+        }
+        if spec.combine_all_windows:
+            return list(spec.section_path)
+        if spec.chunk_type not in _PROCEDURAL_TYPES:
+            return list(spec.section_path)
+
+        base_last = StructuredSectionFragmentBuilder._normalize_text(
+            spec.section_path[-1] if spec.section_path else None
+        )
+        for element in elements:
+            raw = (element.text or "").strip()
+            if not raw:
+                continue
+            normalized = StructuredSectionFragmentBuilder._normalize_text(raw)
+            if not any(marker in normalized for marker in spec.anchor_markers):
+                continue
+            words = raw.split()
+            if not (2 <= len(words) <= 12):
+                continue
+            if not raw[0].isupper():
+                continue
+            if raw.endswith("."):
+                continue
+            if normalized == base_last:
+                break
+            return [*spec.section_path, raw]
+
+        return list(spec.section_path)
 
     @staticmethod
     def _normalize_text(value: str | None) -> str:

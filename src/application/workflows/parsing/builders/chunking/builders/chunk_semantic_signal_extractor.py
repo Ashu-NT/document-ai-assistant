@@ -210,10 +210,19 @@ _TABLE_CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "corrective action",
         "remedy",
     ),
+    ChunkType.OPERATION_INSTRUCTION: (
+        "operating element",
+        "control element",
+        "operating key",
+        "function",
+        "display",
+        "indicator",
+    ),
 }
 _TABLE_SIGNAL_THRESHOLDS: dict[ChunkType, int] = {
     ChunkType.TECHNICAL_SPECIFICATION: 2,
     ChunkType.TROUBLESHOOTING: 2,
+    ChunkType.OPERATION_INSTRUCTION: 3,
 }
 
 _INTERVAL_PATTERN = re.compile(

@@ -125,6 +125,10 @@ class ChunkTypeResolver:
         for fragment in fragments:
             if fragment.chunk_type in _SPECIAL_CHUNK_TYPES:
                 return fragment.chunk_type
+     
+        for fragment in fragments:
+            if fragment.standalone and fragment.chunk_type in _SPECIFICATION_TYPES:
+                return fragment.chunk_type
         return None
 
     @staticmethod

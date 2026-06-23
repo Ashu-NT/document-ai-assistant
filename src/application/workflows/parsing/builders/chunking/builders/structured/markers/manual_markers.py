@@ -14,6 +14,9 @@ MANUAL_OPERATION_MARKERS = (
     "start/run",
     "ready for operation",
     "start and stop",
+    "operating elements",
+    "control elements",
+    "key functions",
 )
 
 MANUAL_MAINTENANCE_PROCEDURE_MARKERS = (
@@ -83,6 +86,10 @@ MANUAL_COMMISSIONING_MARKERS = (
     "ready to be set to work",
     "before start up",
     "start up",
+    "calibrating",
+    "calibration procedure",
+    "optimising",
+    "optimizing",
 )
 
 MANUAL_SHUTDOWN_MARKERS = (

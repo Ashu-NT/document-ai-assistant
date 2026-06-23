@@ -154,7 +154,7 @@ class ReportStructuredFamilyBuilder:
                         base_markers=REPORT_PROCEDURE_MARKERS,
                         marker_tuning=marker_tuning,
                     ),
-                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                    chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
                     radius_before=2,
                     radius_after=12,
                 ),
