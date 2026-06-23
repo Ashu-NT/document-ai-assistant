@@ -57,10 +57,25 @@ class ClassificationSettings(AppBaseSettings):
         alias="CHUNK_CLASSIFICATION_CONFIDENCE_THRESHOLD"
     )
 
+    strong_model_threshold: float = Field(
+        default=0.80,
+        alias="CLASSIFICATION_STRONG_MODEL_THRESHOLD"
+    )
+
+    strong_structural_threshold: float = Field(
+        default=0.75,
+        alias="CLASSIFICATION_STRONG_STRUCTURAL_THRESHOLD"
+    )
+
+    weak_signal_threshold: float = Field(
+        default=0.55,
+        alias="CLASSIFICATION_WEAK_SIGNAL_THRESHOLD"
+    )
+
     @property
     def supported_document_types(self) -> list[str]:
         return [
             item.strip()
             for item in self.document_types.split(",")
         ]
-        
+

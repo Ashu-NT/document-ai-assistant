@@ -69,4 +69,28 @@ class RetrievalSettings(AppBaseSettings):
         alias="RETRIEVAL_MIN_UNIQUE_TOKEN_COUNT"
     )
 
-           
+    context_neighbor_window: int = Field(
+        default=1,
+        alias="RETRIEVAL_NEIGHBOR_WINDOW"
+    )
+
+    context_max_chunks: int = Field(
+        default=8,
+        alias="RETRIEVAL_MAX_CONTEXT_CHUNKS"
+    )
+
+    context_token_budget: int = Field(
+        default=900,
+        alias="RETRIEVAL_CONTEXT_TOKEN_BUDGET"
+    )
+
+    min_retrieval_score: float = Field(
+        default=0.50,
+        alias="RETRIEVAL_MIN_SCORE"
+    )
+
+    relevance_score_threshold: float = Field(
+        default=0.40,
+        alias="RETRIEVAL_RELEVANCE_SCORE_THRESHOLD"
+    )
+

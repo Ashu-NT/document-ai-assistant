@@ -11,17 +11,53 @@ from src.domain.classification import DocumentClassification
 from src.domain.common import DocumentType
 
 
+def _default_strong_model_threshold() -> float:
+    try:
+        from src.config.settings import classification_settings
+        return classification_settings.strong_model_threshold
+    except Exception:
+        return 0.80
+
+
+def _default_strong_structural_threshold() -> float:
+    try:
+        from src.config.settings import classification_settings
+        return classification_settings.strong_structural_threshold
+    except Exception:
+        return 0.75
+
+
+def _default_weak_signal_threshold() -> float:
+    try:
+        from src.config.settings import classification_settings
+        return classification_settings.weak_signal_threshold
+    except Exception:
+        return 0.55
+
+
 class HybridDocumentTypeResolver:
     def __init__(
         self,
         *,
-        strong_model_threshold: float = 0.80,
-        strong_structural_threshold: float = 0.75,
-        weak_signal_threshold: float = 0.55,
+        strong_model_threshold: float | None = None,
+        strong_structural_threshold: float | None = None,
+        weak_signal_threshold: float | None = None,
     ) -> None:
-        self.strong_model_threshold = strong_model_threshold
-        self.strong_structural_threshold = strong_structural_threshold
-        self.weak_signal_threshold = weak_signal_threshold
+        self.strong_model_threshold = (
+            strong_model_threshold
+            if strong_model_threshold is not None
+            else _default_strong_model_threshold()
+        )
+        self.strong_structural_threshold = (
+            strong_structural_threshold
+            if strong_structural_threshold is not None
+            else _default_strong_structural_threshold()
+        )
+        self.weak_signal_threshold = (
+            weak_signal_threshold
+            if weak_signal_threshold is not None
+            else _default_weak_signal_threshold()
+        )
 
     def resolve(
         self,

@@ -16,9 +16,20 @@ class RetrievalContextCandidate:
     priority: int
 
 
+def _default_token_budget() -> int:
+    try:
+        from src.config.settings import retrieval_settings
+        return retrieval_settings.context_token_budget
+    except Exception:
+        return 900
+
+
 class RetrievalContextAssembler:
-    def __init__(self, *, token_budget: int = 900) -> None:
-        self.token_budget = max(1, token_budget)
+    def __init__(self, *, token_budget: int | None = None) -> None:
+        self.token_budget = max(
+            1,
+            token_budget if token_budget is not None else _default_token_budget(),
+        )
 
     def assemble(
         self,
