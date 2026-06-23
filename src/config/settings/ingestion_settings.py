@@ -20,4 +20,8 @@ class IngestionSettings(AppBaseSettings):
         alias="ENABLE_QUESTION_GENERATION"
     )
 
-        
+    enable_answer_generation: bool = Field(
+        default=False,
+        alias="ENABLE_ANSWER_GENERATION"
+    )
+
