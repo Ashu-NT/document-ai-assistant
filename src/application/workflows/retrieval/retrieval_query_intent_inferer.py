@@ -127,7 +127,7 @@ class RetrievalQueryIntentInferer:
             return RetrievalQueryIntent.IDENTIFIER
         if any(
             marker in query_text
-            for marker in ("table", "spare part", "parts list", "matrix", "list")
+            for marker in ("table", "spare part", "parts list", "spare parts list", "matrix")
         ):
             return RetrievalQueryIntent.TABLE
         if any(
