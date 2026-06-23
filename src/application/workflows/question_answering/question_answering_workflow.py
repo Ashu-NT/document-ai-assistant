@@ -25,9 +25,6 @@ from src.application.workflows.question_answering.question_answering_route impor
 from src.application.workflows.question_answering.question_answering_router import (
     QuestionAnsweringRouter,
 )
-from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
-    RetrievalQueryIntentInferer,
-)
 from src.application.workflows.retrieval.retrieval_workflow import RetrievalWorkflow
 from src.domain.retrieval import RetrievalQuery
 
@@ -182,7 +179,7 @@ class QuestionAnsweringWorkflow:
         gen_request = AnswerGenerationRequest(
             question=request.question,
             context_chunks=approved_chunks,
-            query_intent=str(RetrievalQueryIntentInferer().infer(analyzed_query)),
+            query_intent=analyzed_query.chunk_types[0].value if analyzed_query.chunk_types else None,
             document_id=request.document_id,
             require_citations=request.require_citations,
         )
