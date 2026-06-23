@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from src.application.contracts.guardrails.guardrail_result import GuardrailResult
 from src.domain.retrieval import RetrievalQuery, RetrievalResult, RetrievedChunk
 
 
@@ -9,6 +10,7 @@ class RetrievalWorkflowResult:
     enough_evidence: bool
     min_evidence_chunks: int = 1
     context_chunks: list[RetrievedChunk] | None = None
+    guardrail_result: GuardrailResult | None = None
 
     @property
     def query(self) -> RetrievalQuery:
