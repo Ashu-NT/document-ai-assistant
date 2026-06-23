@@ -1477,3 +1477,171 @@ def test_document_graph_builder_keeps_unrelated_sibling_sections_separate() -> N
         ["Procedure", "Safety warnings"],
         ["Procedure", "Troubleshooting"],
     ]
+
+
+# ---------------------------------------------------------------------------
+# Exploration metadata — populated during graph building
+# ---------------------------------------------------------------------------
+
+def test_document_graph_builder_populates_identifier_count_in_statistics() -> None:
+    builder = make_builder()
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(file_hash="h1", content_hash="h2"),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="Installation",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=2,
+                text="Install part HP-001 and HP-002 before proceeding.",
+                page_start=1,
+                metadata={"identifiers": ["HP-001", "HP-002"]},
+            ),
+        ],
+        raw_parsed_document=make_raw_parsed_document(),
+    )
+
+    assert graph.document.statistics.identifier_count == len(graph.identifiers)
+
+
+def test_document_graph_builder_populates_chunk_type_counts_in_statistics() -> None:
+    builder = make_builder()
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(file_hash="h1", content_hash="h2"),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="Maintenance",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=2,
+                text="Replace the hydraulic filter every 500 operating hours.",
+                page_start=1,
+            ),
+        ],
+        raw_parsed_document=make_raw_parsed_document(),
+    )
+
+    counts = graph.document.statistics.chunk_type_counts
+    assert isinstance(counts, dict)
+    assert len(counts) > 0
+    total_from_counts = sum(counts.values())
+    assert total_from_counts == len(graph.chunks)
+
+
+def test_document_graph_builder_populates_section_chunk_type_signals() -> None:
+    builder = make_builder()
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(file_hash="h1", content_hash="h2"),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="Safety",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="hdr_2",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=2,
+                text="Electrical hazards",
+                page_start=1,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=3,
+                text="WARNING: Disconnect power before servicing electrical components.",
+                page_start=1,
+            ),
+        ],
+        raw_parsed_document=make_raw_parsed_document(),
+    )
+
+    sections_with_signals = [
+        s for s in graph.sections.values() if s.chunk_type_signals
+    ]
+    assert len(sections_with_signals) > 0
+    combined_signals = {
+        sig for s in sections_with_signals for sig in s.chunk_type_signals
+    }
+    assert len(combined_signals) > 0
+
+
+def test_document_graph_builder_writes_overview_text_to_parent_section() -> None:
+    builder = make_builder()
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(file_hash="h1", content_hash="h2"),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="Maintenance",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="hdr_2",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=2,
+                text="Filter replacement",
+                page_start=1,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=3,
+                text="Replace filter every 500 hours.",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="hdr_3",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=4,
+                text="Oil change",
+                page_start=2,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="txt_2",
+                element_type=ElementType.TEXT,
+                order_index=5,
+                text="Change oil every 1000 hours.",
+                page_start=2,
+            ),
+        ],
+        raw_parsed_document=make_raw_parsed_document(),
+    )
+
+    parent_section = next(
+        s for s in graph.sections.values() if s.title == "Maintenance"
+    )
+    assert parent_section.overview_text is not None
+    assert "Maintenance" in parent_section.overview_text
+    assert "Filter replacement" in parent_section.overview_text or "Oil change" in parent_section.overview_text

@@ -22,6 +22,8 @@ class SectionMapper:
             sequence_number=section.sequence_number,
             reading_order_start=section.reading_order_start,
             reading_order_end=section.reading_order_end,
+            overview_text=section.overview_text,
+            chunk_type_signals=json.dumps(section.chunk_type_signals),
             created_at=section.audit.created_at,
         )
 
@@ -42,4 +44,6 @@ class SectionMapper:
             sequence_number=orm.sequence_number,
             reading_order_start=orm.reading_order_start,
             reading_order_end=orm.reading_order_end,
+            overview_text=orm.overview_text,
+            chunk_type_signals=json.loads(orm.chunk_type_signals or "[]"),
         )

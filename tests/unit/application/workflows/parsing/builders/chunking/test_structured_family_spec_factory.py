@@ -748,3 +748,97 @@ def test_fragment_builder_applies_datasheet_specs_via_document_sections_signal()
     )
     assert ordering_example.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
     assert "MK311007" in ordering_example.text
+
+
+def test_fragment_builder_applies_certificate_specs_to_certificate_document_type() -> None:
+    # Regression guard: a document classified as CERTIFICATE must activate the certificate
+    # structured family builder and produce CERTIFICATION_INFO chunks even when the section
+    # title alone does not contain certificate markers.
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_cert_001",
+        title="General Information",
+        section_path=["General Information"],
+        page=1,
+    )
+    elements = [
+        make_element(
+            element_id="txt_cert_001",
+            text="Certificate number: CERT-2024-00312",
+            page=1,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_cert_002",
+            text="Customer: ABC Shipping Ltd; Date of issue: 2024-03-15",
+            page=1,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Test Certificate",
+        document_type=DocumentType.CERTIFICATE,
+        section=section,
+        elements=elements,
+    )
+
+    general_info = next(
+        (f for f in fragments if f.section_path == ["General Information"]),
+        None,
+    )
+
+    assert general_info is not None, (
+        "Certificate structured specs must activate for CERTIFICATE-classified documents "
+        "whose content contains certificate general-information markers"
+    )
+    assert general_info.chunk_type == ChunkType.CERTIFICATION_INFO
+    assert "CERT-2024-00312" in general_info.text
+
+
+def test_fragment_builder_applies_certificate_specs_via_document_sections_signal() -> None:
+    # Regression guard: document_title contains no certificate marker, but sibling sections
+    # include "inspection certificate".  Gate must pass via document_sections_combined_text.
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_cert_flat_001",
+        title="General Information",
+        section_path=["General Information"],
+        page=1,
+    )
+    elements = [
+        make_element(
+            element_id="txt_cert_flat_001",
+            text="Certificate number: CERT-2024-00312",
+            page=1,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_cert_flat_002",
+            text="Customer: ABC Shipping Ltd",
+            page=1,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Pressure Transmitter PT-500",
+        document_type=DocumentType.MANUAL,
+        section=section,
+        elements=elements,
+        document_sections_combined_text=(
+            "Inspection Certificate > General Information > Particulars > Test Data"
+        ),
+    )
+
+    general_info = next(
+        (f for f in fragments if f.section_path == ["General Information"]),
+        None,
+    )
+
+    assert general_info is not None, (
+        "Certificate specs must activate via document_sections_combined_text even when "
+        "document_title ('Pressure Transmitter PT-500') contains no certificate marker"
+    )
+    assert general_info.chunk_type == ChunkType.CERTIFICATION_INFO
+    assert "CERT-2024-00312" in general_info.text

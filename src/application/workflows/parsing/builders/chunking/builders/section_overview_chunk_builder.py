@@ -66,6 +66,8 @@ class SectionOverviewChunkBuilder:
             if not overview_text:
                 continue
 
+            section.overview_text = overview_text
+
             payloads.append(
                 self.payload_factory.build_payload(
                     document_title=document_title,

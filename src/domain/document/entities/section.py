@@ -21,6 +21,9 @@ class DocumentSection:
     reading_order_start: int | None = None
     reading_order_end: int | None = None
 
+    overview_text: str | None = None
+    chunk_type_signals: list[str] = field(default_factory=list)
+
     audit: AuditMetadata = field(default_factory=AuditMetadata)
 
     def path_text(self) -> str:

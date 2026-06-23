@@ -7,4 +7,4 @@ class ChunkingProfile(StrEnum):
     DATASHEET = "datasheet"
     DRAWING = "drawing"
     REPORT = "report"
-    CERTIFICATE = "report"
+    CERTIFICATE = "certificate"
