@@ -361,7 +361,8 @@ def _print_context_chunks(result) -> None:
             preview += "\n  [… truncated]"
         print()
         for line in preview.splitlines():
-            print(f"    {line}")
+            safe = line.encode("ascii", errors="replace").decode("ascii")
+            print(f"    {safe}")
         print()
 
     print(sep)
