@@ -36,6 +36,15 @@ _ANSWER_GENERATION_NOT_CONFIGURED_MESSAGE = (
 )
 
 
+def _default_allow_answer_generation() -> bool:
+    try:
+        from src.config.settings import ingestion_settings
+
+        return ingestion_settings.enable_answer_generation
+    except Exception:
+        return False
+
+
 class QuestionAnsweringWorkflow:
     def __init__(
         self,
@@ -56,6 +65,10 @@ class QuestionAnsweringWorkflow:
         self._post_answer_guardrails: list[Guardrail] = post_answer_guardrails or []
 
     def run(self, request: QuestionAnsweringRequest) -> QuestionAnsweringResult:
+        allow_generation = (
+            request.allow_answer_generation or _default_allow_answer_generation()
+        )
+
         if self._pre_query_guardrails:
             context = GuardrailContext(query_text=request.question)
             blocking = GuardrailRunner(self._pre_query_guardrails).run(context)
@@ -80,7 +93,7 @@ class QuestionAnsweringWorkflow:
         if route == QuestionAnsweringRoute.DOCUMENT_EXPLORATION:
             return self._handle_exploration(request)
 
-        return self._handle_retrieval(request, analyzed_query)
+        return self._handle_retrieval(request, analyzed_query, allow_generation)
 
     def _handle_exploration(
         self, request: QuestionAnsweringRequest
@@ -111,6 +124,7 @@ class QuestionAnsweringWorkflow:
         self,
         request: QuestionAnsweringRequest,
         analyzed_query: RetrievalQuery,
+        allow_generation: bool = False,
     ) -> QuestionAnsweringResult:
         workflow_result = self._retrieval_workflow.run(analyzed_query)
 
@@ -139,7 +153,7 @@ class QuestionAnsweringWorkflow:
         confidence = str(round(best_score, 4)) if best_score is not None else None
 
         # Phase 5: answer generation
-        if not request.allow_answer_generation:
+        if not allow_generation:
             return QuestionAnsweringResult(
                 route=QuestionAnsweringRoute.RETRIEVAL_QA,
                 answer_text=_ANSWER_GENERATION_DISABLED_MESSAGE,
