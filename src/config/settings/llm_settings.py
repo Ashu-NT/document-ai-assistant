@@ -9,4 +9,5 @@ class LLMSettings(AppBaseSettings):
     classification_llm: str = Field(alias="CLASSIFICATION_LLM")
     question_generation_llm: str = Field(alias="QUESTION_GENERATION_LLM")
     extraction_llm: str = Field(alias="EXTRACTION_LLM")
+    answer_generation_llm: str = Field(alias="ANSWER_GENERATION_LLM")
         

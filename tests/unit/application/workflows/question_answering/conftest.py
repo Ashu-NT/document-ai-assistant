@@ -4,6 +4,12 @@ from src.application.contracts.guardrails.confidence_level import ConfidenceLeve
 from src.application.contracts.guardrails.guardrail_context import GuardrailContext
 from src.application.contracts.guardrails.guardrail_decision import GuardrailDecision
 from src.application.contracts.guardrails.guardrail_result import GuardrailResult
+from src.application.services.answer_generation.answer_generation_request import (
+    AnswerGenerationRequest,
+)
+from src.application.services.answer_generation.answer_generation_result import (
+    GeneratedAnswer,
+)
 from src.application.services.document_exploration.document_exploration_result import (
     DocumentCoverage,
     DocumentExplorationResult,
@@ -16,6 +22,7 @@ from src.application.workflows.retrieval.retrieval_workflow_result import (
     RetrievalWorkflowResult,
 )
 from src.domain.retrieval import RetrievalQuery, RetrievalResult
+from src.domain.retrieval.citation import Citation
 
 
 # ---------------------------------------------------------------------------
@@ -61,6 +68,7 @@ class FakeGuardrail:
         decision: GuardrailDecision,
         reason: str = "fake",
         safe_user_message: str | None = None,
+        approved_chunk_ids: list[str] | None = None,
     ) -> None:
         self._result = GuardrailResult(
             decision=decision,
@@ -68,10 +76,36 @@ class FakeGuardrail:
             reason=reason,
             confidence=ConfidenceLevel.HIGH,
             safe_user_message=safe_user_message,
+            approved_chunk_ids=approved_chunk_ids or [],
         )
 
     def check(self, context: GuardrailContext) -> GuardrailResult:
         return self._result
+
+
+class FakeAnswerGenerationService:
+    def __init__(
+        self,
+        answer_text: str = "The filter must be replaced every 1000 hours.",
+        citations: list[Citation] | None = None,
+        raises: Exception | None = None,
+    ) -> None:
+        self._answer_text = answer_text
+        self._citations = citations or []
+        self._raises = raises
+        self.called_with: AnswerGenerationRequest | None = None
+
+    def generate(self, request: AnswerGenerationRequest, activity_context=None) -> GeneratedAnswer:
+        self.called_with = request
+        if self._raises is not None:
+            raise self._raises
+        return GeneratedAnswer(
+            answer_text=self._answer_text,
+            citations=self._citations,
+            cited_chunk_ids=[c.chunk_id for c in self._citations if c.chunk_id],
+            prompt_version="v1",
+            model_name="qwen3:8b",
+        )
 
 
 # ---------------------------------------------------------------------------
