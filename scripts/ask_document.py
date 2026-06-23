@@ -31,6 +31,8 @@ class QARuntime:
     workflow: Any
     session: Any = None
     qdrant_client: Any = None
+    # Non-None when AnswerGenerationService was wired; holds the resolved model name.
+    generation_model: str | None = None
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -270,15 +272,22 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
     )
     exploration_service = DocumentExplorationService(document_lookup_service)
 
+    # Resolve the answer generation model once so we can report it to the user.
+    # answer_generation_llm falls back to general_llm when not explicitly set.
+    generation_model: str | None = None
     answer_generation_service = None
     if enable_generation:
+        generation_model = llm_settings.answer_generation_llm or llm_settings.general_llm
         llm_service = LLMService(
             OllamaLLMProvider(
                 base_url=llm_settings.ollama_base_url,
-                default_model=llm_settings.general_llm,
+                default_model=generation_model,
             )
         )
-        answer_generation_service = AnswerGenerationService(llm_service=llm_service)
+        answer_generation_service = AnswerGenerationService(
+            llm_service=llm_service,
+            answer_generation_model=generation_model,
+        )
 
     workflow = QuestionAnsweringWorkflow(
         retrieval_workflow=retrieval_workflow,
@@ -302,42 +311,114 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
             else []
         ),
     )
-    return QARuntime(workflow=workflow, session=session, qdrant_client=qdrant_client)
+    return QARuntime(
+        workflow=workflow,
+        session=session,
+        qdrant_client=qdrant_client,
+        generation_model=generation_model,
+    )
 
 
-def _print_context_chunks(result, *, indent: str = "  ") -> None:
+def _print_context_chunks(result) -> None:
+    """Print each retrieved chunk with full metadata and up to 1000 chars of content."""
     if result.retrieval_result is None:
+        print("  No retrieval result available.")
         return
     chunks = result.retrieval_result.final_chunks
     if not chunks:
-        print(f"{indent}No chunks retrieved.")
+        print("  No chunks retrieved.")
         return
 
     approved_set = set(result.approved_chunk_ids)
-    n_approved = len(result.approved_chunk_ids)
-    n_rejected = len(result.rejected_chunk_ids)
+    sep = "─" * 72
 
-    print(f"\nRetrieved Context ({n_approved} approved, {n_rejected} rejected):")
+    print()
     for i, chunk in enumerate(chunks, 1):
         status = "APPROVED" if chunk.chunk_id in approved_set else "REJECTED"
         page_info = _page_range(chunk.source)
         page_str = f" | {page_info}" if page_info else ""
         chunk_type = str(chunk.chunk_type).split(".")[-1].lower()
+        score_str = f"{chunk.score:.4f}" if chunk.score is not None else "n/a"
+
+        print(sep)
         print(
-            f"{indent}[{status}] #{i} | score: {chunk.score:.3f}"
-            f" | type: {chunk_type}{page_str}"
+            f"  [{status}] #{i}"
+            f" | score: {score_str}"
+            f" | type: {chunk_type}"
+            f"{page_str}"
         )
-        preview = chunk.content[:200].replace("\n", " ").strip()
-        if len(chunk.content) > 200:
-            preview += "..."
-        print(f"{indent}  {preview}")
+        print(
+            f"  chunk: {_trunc(chunk.chunk_id, 44)}"
+            f"  doc: {_trunc(chunk.document_id, 30)}"
+        )
+        if chunk.section_path:
+            path_str = " > ".join(chunk.section_path)
+            print(f"  path:  {_trunc(path_str, 80)}")
+
+        content = chunk.content or ""
+        preview = content[:1000].rstrip()
+        if len(content) > 1000:
+            preview += "\n  [… truncated]"
+        print()
+        for line in preview.splitlines():
+            print(f"    {line}")
+        print()
+
+    print(sep)
+
+    # Rejected IDs that didn't appear in final_chunks at all (shouldn't happen, guard only).
+    in_chunks = {c.chunk_id for c in chunks}
+    orphan = [rid for rid in result.rejected_chunk_ids if rid not in in_chunks]
+    if orphan:
+        print(f"\n  Rejected (not in retrieved set): {', '.join(_trunc(r, 20) for r in orphan)}")
 
 
-def _print_retrieval_result(result, *, show_context: bool) -> None:
+def _generation_status_line(
+    *,
+    enable_generation: bool,
+    service_configured: bool,
+    model_name: str | None,
+) -> str:
+    if not enable_generation:
+        return "disabled  (use --generate to enable)"
+    if not service_configured:
+        # This should not happen if ask_document.py is wired correctly.
+        return "enabled but service NOT CONFIGURED  ← bug, report this"
+    return f"enabled | model: {model_name or '(default)'}"
+
+
+def _print_retrieval_result(
+    result,
+    *,
+    show_context: bool,
+    enable_generation: bool,
+    service_configured: bool,
+    model_name: str | None,
+) -> None:
     n_approved = len(result.approved_chunk_ids)
     n_rejected = len(result.rejected_chunk_ids)
-    confidence = f" | Confidence: {result.confidence}" if result.confidence else ""
-    print(f"Route: retrieval_qa{confidence}\n")
+    confidence = result.confidence or "n/a"
+
+    enough_ev = result.diagnostics.get("enough_evidence")
+    evidence_str = ""
+    if enough_ev is not None:
+        evidence_str = f" | evidence: {'sufficient' if enough_ev else 'insufficient'}"
+
+    print(f"Route: retrieval_qa | confidence: {confidence}{evidence_str}")
+
+    gen_line = _generation_status_line(
+        enable_generation=enable_generation,
+        service_configured=service_configured,
+        model_name=model_name,
+    )
+    print(f"Generation: {gen_line}")
+
+    # Show the model actually used when the workflow reported it.
+    diag_model = result.diagnostics.get("model_name")
+    if diag_model and enable_generation and service_configured:
+        print(f"Model used: {diag_model}")
+
+    print()
 
     if result.answer_text:
         print("Answer")
@@ -409,17 +490,27 @@ def print_result(
     show_context: bool,
     document_id: str | None,
     document_name: str | None,
+    enable_generation: bool,
+    service_configured: bool,
+    model_name: str | None,
 ) -> None:
     from src.application.workflows.question_answering import (  # noqa: WPS433
         QuestionAnsweringRoute,
     )
 
     if document_id:
-        print(f"Document: {document_name or document_id} ({document_id[:16]}...)\n")
+        id_short = document_id[:16]
+        print(f"Document: {document_name or document_id}  [{id_short}...]\n")
 
     route = result.route
     if route == QuestionAnsweringRoute.RETRIEVAL_QA:
-        _print_retrieval_result(result, show_context=show_context)
+        _print_retrieval_result(
+            result,
+            show_context=show_context,
+            enable_generation=enable_generation,
+            service_configured=service_configured,
+            model_name=model_name,
+        )
     elif route == QuestionAnsweringRoute.DOCUMENT_EXPLORATION:
         _print_exploration_result(result)
     else:
@@ -433,6 +524,9 @@ def print_result_json(
     show_context: bool,
     document_id: str | None,
     document_name: str | None,
+    enable_generation: bool,
+    service_configured: bool,
+    model_name: str | None,
 ) -> None:
     from src.application.workflows.question_answering import (  # noqa: WPS433
         QuestionAnsweringRoute,
@@ -452,6 +546,9 @@ def print_result_json(
             else None
         ),
         "confidence": result.confidence,
+        "generation_enabled": enable_generation,
+        "generation_configured": service_configured,
+        "generation_model": model_name,
         "approved_chunk_ids": result.approved_chunk_ids,
         "rejected_chunk_ids": result.rejected_chunk_ids,
         "citations": [
@@ -493,8 +590,10 @@ def print_result_json(
         output["context_chunks"] = [
             {
                 "chunk_id": c.chunk_id,
+                "document_id": c.document_id,
                 "score": c.score,
                 "chunk_type": str(c.chunk_type).split(".")[-1].lower(),
+                "section_path": c.section_path,
                 "page_start": getattr(c.source, "page_start", None),
                 "page_end": getattr(c.source, "page_end", None),
                 "approved": c.chunk_id in approved_set,
@@ -543,6 +642,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         from src.bootstrap.startup import bootstrap_application  # noqa: WPS433
+        from src.config.settings import ingestion_settings  # noqa: WPS433
         from src.infrastructure.db.base import Base  # noqa: WPS433
         from src.infrastructure.db.orm_models import (  # noqa: WPS433,F401
             __all__ as _orm_models_loaded,
@@ -573,12 +673,25 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 1
 
+        # Honour both the CLI flag and the env-var default so that the workflow
+        # never requests generation without a wired AnswerGenerationService.
+        effective_generation = args.generate or ingestion_settings.enable_answer_generation
+
         if not args.json:
             disp = document_name or document_id
             print_status(f"Document: {disp}")
+            if effective_generation:
+                gen_src = "--generate" if args.generate else "ENABLE_ANSWER_GENERATION=true"
+                print_status(f"Generation: enabled ({gen_src})")
+            else:
+                print_status("Generation: disabled  (pass --generate to enable LLM)")
             print_status("Building QA runtime...")
 
-        runtime = build_qa_runtime(session, enable_generation=args.generate)
+        runtime = build_qa_runtime(session, enable_generation=effective_generation)
+
+        if not args.json and effective_generation:
+            model_str = runtime.generation_model or "(unknown)"
+            print_status(f"Answer generation model: {model_str}")
 
         if not args.json:
             print_status("Running question answering workflow...")
@@ -592,9 +705,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             document_id=document_id,
             top_k=args.top_k,
             include_context=args.show_context,
-            allow_answer_generation=args.generate,
+            allow_answer_generation=effective_generation,
         )
         result = runtime.workflow.run(request)
+
+        service_configured = runtime.generation_model is not None
 
         if args.json:
             print_result_json(
@@ -603,6 +718,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 show_context=args.show_context,
                 document_id=document_id,
                 document_name=document_name,
+                enable_generation=effective_generation,
+                service_configured=service_configured,
+                model_name=runtime.generation_model,
             )
         else:
             print()
@@ -611,6 +729,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 show_context=args.show_context,
                 document_id=document_id,
                 document_name=document_name,
+                enable_generation=effective_generation,
+                service_configured=service_configured,
+                model_name=runtime.generation_model,
             )
 
         return 0
