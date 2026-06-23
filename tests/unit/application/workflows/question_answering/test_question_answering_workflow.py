@@ -325,7 +325,7 @@ def test_answer_generation_disabled_returns_placeholder_message(
 
     assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
     assert result.answer_text is not None
-    assert "not configured" in result.answer_text
+    assert "not enabled" in result.answer_text
 
 
 # ---------------------------------------------------------------------------
