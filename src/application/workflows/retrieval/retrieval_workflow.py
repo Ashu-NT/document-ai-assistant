@@ -1,5 +1,8 @@
 from dataclasses import replace
 
+from src.application.contracts.guardrails.guardrail import Guardrail
+from src.application.contracts.guardrails.guardrail_context import GuardrailContext
+from src.application.contracts.guardrails.guardrail_result import GuardrailResult
 from src.application.services.retrieval import HybridRetrievalService
 from src.application.validation.retrieval import RetrievalQueryValidator
 from src.application.workflows.retrieval.deduplication import (
@@ -15,7 +18,8 @@ from src.application.workflows.retrieval.retrieval_context_expander import (
 from src.application.workflows.retrieval.retrieval_query_analyzer import (
     RetrievalQueryAnalyzer,
 )
-from src.domain.retrieval import RetrievalQuery
+from src.domain.common import new_id
+from src.domain.retrieval import RetrievalQuery, RetrievalResult
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import NoEvidenceFoundError
 from src.shared.execution import tracked_action
@@ -66,6 +70,8 @@ class RetrievalWorkflow:
         retrieved_chunk_deduplicator: RetrievedChunkDeduplicator | None = None,
         candidate_pool_top_k: int | None = None,
         query_analyzer: RetrievalQueryAnalyzer | None = None,
+        pre_retrieval_guardrails: list[Guardrail] | None = None,
+        post_retrieval_guardrails: list[Guardrail] | None = None,
     ) -> None:
         self.retrieval_service = retrieval_service
         self.query_validator = query_validator
@@ -80,6 +86,8 @@ class RetrievalWorkflow:
         )
         self.candidate_pool_top_k = candidate_pool_top_k
         self.query_analyzer = query_analyzer or RetrievalQueryAnalyzer()
+        self.pre_retrieval_guardrails = pre_retrieval_guardrails or []
+        self.post_retrieval_guardrails = post_retrieval_guardrails or []
 
     @tracked_action(
         action="retrieval.workflow_completed",
@@ -96,6 +104,26 @@ class RetrievalWorkflow:
         working_query = self.query_analyzer.analyze(query)
         validation = self.query_validator.validate(working_query)
         validation.raise_if_invalid()
+
+        if self.pre_retrieval_guardrails:
+            pre_context = self._build_guardrail_context(working_query)
+            pre_result = self._run_guardrail_chain(
+                self.pre_retrieval_guardrails, pre_context
+            )
+            if pre_result is not None and not pre_result.allowed:
+                empty_result = RetrievalResult(
+                    result_id=new_id("gr"),
+                    query=working_query,
+                    chunks=[],
+                    citations=[],
+                )
+                return RetrievalWorkflowResult(
+                    retrieval_result=empty_result,
+                    enough_evidence=False,
+                    min_evidence_chunks=self.min_evidence_chunks,
+                    context_chunks=[],
+                    guardrail_result=pre_result,
+                )
 
         candidate_query = self._candidate_query(working_query)
         retrieval_result = self.retrieval_service.retrieve(candidate_query)
@@ -116,6 +144,16 @@ class RetrievalWorkflow:
         enough_evidence = retrieval_result.has_enough_evidence(
             self.min_evidence_chunks
         )
+
+        post_guardrail_result: GuardrailResult | None = None
+        if self.post_retrieval_guardrails:
+            post_context = self._build_guardrail_context(
+                working_query,
+                retrieved_chunks=retrieval_result.chunks,
+            )
+            post_guardrail_result = self._run_guardrail_chain(
+                self.post_retrieval_guardrails, post_context
+            )
 
         if self.strict_evidence and not retrieval_result.has_results():
             raise NoEvidenceFoundError(
@@ -150,7 +188,34 @@ class RetrievalWorkflow:
             enough_evidence=enough_evidence,
             min_evidence_chunks=self.min_evidence_chunks,
             context_chunks=context_chunks,
+            guardrail_result=post_guardrail_result,
         )
+
+    def _build_guardrail_context(
+        self,
+        working_query: RetrievalQuery,
+        retrieved_chunks: list | None = None,
+    ) -> GuardrailContext:
+        intent = self.query_analyzer.intent_inferer.infer(working_query)
+        return GuardrailContext(
+            query_text=working_query.query_text,
+            detected_identifiers=list(working_query.detected_identifiers),
+            query_intent=str(intent),
+            query_chunk_types=[ct.value for ct in working_query.chunk_types],
+            retrieved_chunks=retrieved_chunks or [],
+            min_evidence_chunks=self.min_evidence_chunks,
+        )
+
+    @staticmethod
+    def _run_guardrail_chain(
+        guardrails: list[Guardrail],
+        context: GuardrailContext,
+    ) -> GuardrailResult | None:
+        for guardrail in guardrails:
+            result = guardrail.check(context)
+            if not result.allowed:
+                return result
+        return None
 
     def _candidate_query(
         self,
