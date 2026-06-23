@@ -1,4 +1,5 @@
 import json
+import re
 from dataclasses import dataclass
 
 from src.application.workflows.retrieval.deduplication.retrieved_chunk_signature import (
@@ -32,6 +33,29 @@ _NOISE_SECTION_TOKENS = {
     "revision / modification table",
 }
 
+_ALNUM_TOKEN_RE = re.compile(r"[a-z0-9]+")
+
+
+def _compact_alnum(s: str) -> str:
+    return "".join(_ALNUM_TOKEN_RE.findall(s.lower()))
+
+
+def _contains_compact_id(compact_id: str, text: str) -> bool:
+    """True if text contains compact_id after collapsing separators (hyphen/space/punctuation).
+
+    Checks sliding windows of 1–3 consecutive alphanumeric tokens so that
+    identifiers split by hyphens or spaces match their un-separated form and
+    vice-versa (e.g. 'MK-311007' matches identifier 'MK311007').
+    """
+    if not compact_id or not text:
+        return False
+    tokens = _ALNUM_TOKEN_RE.findall(text.lower())
+    for window in (1, 2, 3):
+        for i in range(len(tokens) - window + 1):
+            if "".join(tokens[i : i + window]) == compact_id:
+                return True
+    return False
+
 
 @dataclass(slots=True, frozen=True)
 class SqlKeywordScoreBreakdown:
@@ -49,51 +73,84 @@ class SqlKeywordScorer:
         query_text: str,
         query_terms: list[str],
     ) -> SqlKeywordScoreBreakdown:
-        query_identifiers = {
-            identifier.lower()
-            for identifier in (retrieval_query.detected_identifiers if retrieval_query else [])
-            if identifier and identifier.strip()
-        }
+        # Compact identifiers so hyphenation/punctuation differences are ignored.
+        query_identifiers_compact = {
+            _compact_alnum(idf)
+            for idf in (retrieval_query.detected_identifiers if retrieval_query else [])
+            if idf and idf.strip()
+        } - {""}  # drop empty strings produced by all-separator identifiers
+
+        # --- Source separation ---
+        content_text = " \n ".join(p for p in [row.content, row.embedding_text] if p)
         section_path_parts = self._section_path_parts(row.section_path)
         section_path_text = " > ".join(section_path_parts)
         document_title = document.title if document is not None and document.title else ""
         file_name = document.file_name if document is not None else ""
-        combined_text = " \n ".join(
-            part
-            for part in [
-                row.content,
-                row.embedding_text,
-                section_path_text,
-                document_title,
-                file_name,
-            ]
-            if part
-        )
-        normalized_combined = normalize_query_text(combined_text)
+        document_text = " \n ".join(p for p in [document_title, file_name] if p)
+
+        # Normalized forms (for term/phrase/ordered matching)
+        normalized_content = normalize_query_text(content_text)
+        normalized_section = normalize_query_text(section_path_text)
         normalized_query = normalize_query_text(query_text)
-        normalized_section_path = normalize_query_text(section_path_text)
+
+        # Section split: local = last 1-2 parts; ancestor = rest
+        local_parts, ancestor_parts = self._split_section_path(section_path_parts)
+        normalized_local = normalize_query_text(" > ".join(local_parts))
+        normalized_ancestor = normalize_query_text(" > ".join(ancestor_parts))
+
         chunk_role = detect_chunk_role(row.content)
 
-        exact_identifier_matches = sum(
-            1
-            for identifier in query_identifiers
-            if identifier in combined_text.lower()
+        # --- Identifier matching (source-differentiated) ---
+        # Each identifier is only counted in the highest-priority source where it appears.
+        content_identifier_matches = sum(
+            1 for cid in query_identifiers_compact
+            if _contains_compact_id(cid, content_text)
         )
+        section_identifier_matches = sum(
+            1 for cid in query_identifiers_compact
+            if not _contains_compact_id(cid, content_text)
+            and _contains_compact_id(cid, section_path_text)
+        )
+        document_identifier_matches = sum(
+            1 for cid in query_identifiers_compact
+            if not _contains_compact_id(cid, content_text)
+            and not _contains_compact_id(cid, section_path_text)
+            and _contains_compact_id(cid, document_text)
+        )
+        total_identifier_matches = (
+            content_identifier_matches
+            + section_identifier_matches
+            + document_identifier_matches
+        )
+        # For noise-penalty logic: only meaningful if content/section carries the evidence
+        meaningful_identifier_matches = content_identifier_matches + section_identifier_matches
+
+        # --- Term matching (content only, normalized for punctuation robustness) ---
         matched_terms = [
-            term
-            for term in query_terms
-            if term in combined_text.lower()
+            term for term in query_terms
+            if term in normalized_content
         ]
-        exact_phrase_match = bool(normalized_query and normalized_query in normalized_combined)
+
+        # --- Phrase / ordered matching (content only) ---
+        exact_phrase_match = bool(normalized_query and normalized_query in normalized_content)
         ordered_match = self._ordered_query_match(
-            normalized_combined=normalized_combined,
+            normalized_combined=normalized_content,
             query_terms=query_terms,
         )
-        section_path_match = bool(
+
+        # --- Section-path relevance (local >> ancestor) ---
+        threshold = min(2, len(query_terms))
+        local_term_hits = sum(1 for term in query_terms if term in normalized_local)
+        ancestor_term_hits = sum(1 for term in query_terms if term in normalized_ancestor)
+        local_section_match = bool(query_terms and local_term_hits >= threshold)
+        ancestor_section_match = bool(
             query_terms
-            and sum(1 for term in query_terms if term in normalized_section_path)
-            >= min(2, len(query_terms))
+            and not local_section_match
+            and ancestor_term_hits >= threshold
         )
+        section_path_match = local_section_match or ancestor_section_match
+
+        # --- Chunk-type fit ---
         chunk_type_fit = bool(
             retrieval_query is not None
             and retrieval_query.chunk_types
@@ -120,16 +177,29 @@ class SqlKeywordScorer:
             )
         )
 
+        # --- Score assembly ---
         score = 0.0
-        score += exact_identifier_matches * 22.0
-        if exact_identifier_matches > 0:
+
+        # Identifiers: content >> section >> document metadata
+        score += content_identifier_matches * 22.0
+        score += section_identifier_matches * 10.0
+        score += document_identifier_matches * 3.0
+        # Bonus only when content carries the identifier evidence
+        if content_identifier_matches > 0:
             score += 6.0
+
+        # Phrase / ordered / term matching (content-only)
         if exact_phrase_match:
             score += max(8.0, len(query_terms) * 1.5)
         score += ordered_match
         score += len(matched_terms) * 1.35
-        if section_path_match:
+
+        # Section-path: local subsection significantly more valuable than ancestor context
+        if local_section_match:
             score += 5.0
+        elif ancestor_section_match:
+            score += 1.5
+
         if chunk_type_fit:
             score += 6.0
         if structured_fit:
@@ -140,14 +210,23 @@ class SqlKeywordScorer:
             section_path_text=section_path_text,
             content=row.content,
             query_text=query_text,
-            exact_identifier_matches=exact_identifier_matches,
+            exact_identifier_matches=meaningful_identifier_matches,
         )
+
+        # Conservative depth penalty: only kicks in for unusually deep paths.
+        path_depth = len(section_path_parts)
+        if path_depth > 8:
+            score -= (path_depth - 8) * 0.7
 
         metadata = {
             "sql_keyword_source_score": f"{score:.6f}",
-            "sql_exact_identifier_matches": str(exact_identifier_matches),
+            "sql_exact_identifier_matches": str(total_identifier_matches),
+            "sql_content_identifier_matches": str(content_identifier_matches),
+            "sql_section_identifier_matches": str(section_identifier_matches),
+            "sql_document_identifier_matches": str(document_identifier_matches),
             "sql_exact_phrase_match": str(exact_phrase_match).lower(),
             "sql_section_path_match": str(section_path_match).lower(),
+            "sql_local_section_match": str(local_section_match).lower(),
             "sql_ordered_match_bonus": f"{ordered_match:.6f}",
             "sql_chunk_role": chunk_role,
         }
@@ -155,6 +234,15 @@ class SqlKeywordScorer:
             metadata["document_type"] = document.document_type
 
         return SqlKeywordScoreBreakdown(total_score=score, metadata=metadata)
+
+    @staticmethod
+    def _split_section_path(
+        parts: list[str],
+    ) -> tuple[list[str], list[str]]:
+        """Return (local, ancestor). Local = last 1-2 segments; ancestor = rest."""
+        if len(parts) <= 2:
+            return parts, []
+        return parts[-2:], parts[:-2]
 
     @staticmethod
     def _ordered_query_match(

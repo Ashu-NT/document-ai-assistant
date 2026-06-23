@@ -17,7 +17,6 @@ REPORT_DEVICE_INFORMATION_MARKERS = (
 REPORT_ADDITIONAL_INFORMATION_MARKERS = (
     "additional information",
     "output type",
-    "configuration",
     "software version",
     "measuring range",
 )

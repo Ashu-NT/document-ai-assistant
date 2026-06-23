@@ -40,7 +40,7 @@ class DatasheetStructuredFamilyBuilder:
         if (
             context.has_known_document_type()
             and not context.matches_document_type(DocumentType.DATASHEET)
-            and not context.contains_any(DATASHEET_DOCUMENT_MARKERS)
+            and not context.section_contains_any(DATASHEET_DOCUMENT_MARKERS)
         ):
             return StructuredFamilySpecSelection()
         if (

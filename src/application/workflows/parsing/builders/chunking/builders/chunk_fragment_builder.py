@@ -100,7 +100,7 @@ class ChunkFragmentBuilder:
             )
             if not text:
                 return None
-            chunk_type = ChunkType.DRAWING_REFERENCE
+            chunk_type = self._picture_chunk_type(text)
             standalone = True
         else:
             if not self._element_contributes_to_chunk(element):
@@ -253,6 +253,33 @@ class ChunkFragmentBuilder:
             return ChunkType.SPARE_PARTS_TABLE
 
         return ChunkType.GENERAL
+
+    @staticmethod
+    def _picture_chunk_type(text: str | None) -> ChunkType:
+        """Classify picture/figure chunks by their extracted text content.
+
+        Figures containing oil-quantity or lubricant-specification data (common in
+        service manuals as scanned tables) are maintenance intervals, not drawing
+        references.  All other figures keep the drawing_reference default.
+        """
+        if not text:
+            return ChunkType.DRAWING_REFERENCE
+        lowered = text.lower()
+        maintenance_signals = (
+            "oil quantity",
+            "oil specification",
+            "oil capacity",
+            "lubricant",
+            "lubrication",
+            "grease quantity",
+            "grease specification",
+            "service fill",
+            "fluid capacity",
+            "fluid specification",
+        )
+        if any(signal in lowered for signal in maintenance_signals):
+            return ChunkType.MAINTENANCE_INTERVAL
+        return ChunkType.DRAWING_REFERENCE
 
     def _nearby_text(
         self,

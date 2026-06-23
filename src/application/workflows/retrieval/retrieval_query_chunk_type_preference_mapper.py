@@ -45,6 +45,8 @@ class RetrievalQueryChunkTypePreferenceMapper:
                     ChunkType.TECHNICAL_SPECIFICATION,
                     ChunkType.CERTIFICATION_INFO,
                     ChunkType.SPARE_PARTS_TABLE,
+                    ChunkType.INSTALLATION_INSTRUCTION,
+                    ChunkType.MAINTENANCE_PROCEDURE,
                     ChunkType.GENERAL,
                 ]
             )
