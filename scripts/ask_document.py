@@ -330,7 +330,7 @@ def _print_context_chunks(result) -> None:
         return
 
     approved_set = set(result.approved_chunk_ids)
-    sep = "─" * 72
+    sep = "-" * 72
 
     print()
     for i, chunk in enumerate(chunks, 1):
