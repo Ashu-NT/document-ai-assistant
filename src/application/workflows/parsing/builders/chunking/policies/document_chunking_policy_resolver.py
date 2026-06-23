@@ -40,6 +40,8 @@ class DocumentChunkingPolicyResolver:
             return self._report_policy()
         if document_type == DocumentType.MANUAL:
             return self._manual_policy()
+        if document_type == DocumentType.CERTIFICATE:
+            return self._certificate_policy()
 
         profile = self.profile_inferer.infer(
             document_title=document_title,
@@ -55,6 +57,8 @@ class DocumentChunkingPolicyResolver:
         if profile == ChunkingProfile.DATASHEET:
             return self._datasheet_policy()
         if profile == ChunkingProfile.CERTIFICATE:
+            return self._certificate_policy()
+        if profile == ChunkingProfile.DRAWING:
             return self._drawing_policy()
         if profile == ChunkingProfile.REPORT:
             return self._report_policy()
@@ -94,7 +98,7 @@ class DocumentChunkingPolicyResolver:
     @staticmethod
     def _drawing_policy() -> DocumentChunkingPolicy:
         return DocumentChunkingPolicy(
-            profile_name=ChunkingProfile.CERTIFICATE,
+            profile_name=ChunkingProfile.DRAWING,
             max_chunk_tokens=300,
             chunk_overlap=35,
             same_topic_merge_tokens=60,
@@ -103,6 +107,20 @@ class DocumentChunkingPolicyResolver:
             asset_context_max_tokens=48,
             include_picture_chunks=True,
             include_table_context=False,
+        )
+
+    @staticmethod
+    def _certificate_policy() -> DocumentChunkingPolicy:
+        return DocumentChunkingPolicy(
+            profile_name=ChunkingProfile.CERTIFICATE,
+            max_chunk_tokens=500,
+            chunk_overlap=60,
+            same_topic_merge_tokens=80,
+            intro_context_tokens=100,
+            asset_context_window=1,
+            asset_context_max_tokens=60,
+            include_picture_chunks=False,
+            include_table_context=True,
         )
 
     @staticmethod

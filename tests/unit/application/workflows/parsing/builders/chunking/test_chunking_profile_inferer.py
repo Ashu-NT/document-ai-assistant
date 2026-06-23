@@ -404,6 +404,105 @@ def test_confidence_is_low_when_top_two_scores_are_close() -> None:
     assert result.confidence <= 0.65
 
 
+def test_certificate_like_document_selects_certificate_with_reasons() -> None:
+    result = infer_result(
+        document_title="Inspection Certificate",
+        sections=[
+            make_section(section_id="sec_1", title="General Information"),
+            make_section(section_id="sec_2", title="Particulars"),
+            make_section(section_id="sec_3", title="Test Certificate"),
+        ],
+        elements={
+            "sec_1": [
+                make_element(element_id="tbl_1", element_type=ElementType.TABLE),
+                make_element(
+                    element_id="txt_1",
+                    element_type=ElementType.TEXT,
+                    text="Certificate number: CERT-2024-00312",
+                ),
+            ],
+            "sec_2": [
+                make_element(element_id="tbl_2", element_type=ElementType.TABLE),
+                make_element(
+                    element_id="txt_2",
+                    element_type=ElementType.TEXT,
+                    text="Serial number: DN50-001",
+                ),
+            ],
+            "sec_3": [
+                make_element(element_id="tbl_3", element_type=ElementType.TABLE),
+                make_element(
+                    element_id="txt_3",
+                    element_type=ElementType.TEXT,
+                    text="Test pressure: 10 bar",
+                ),
+            ],
+        },
+    )
+
+    assert result.selected_profile == ChunkingProfile.CERTIFICATE
+    assert any(
+        "certificate markers" in reason.lower()
+        for reason in result.reasons[ChunkingProfile.CERTIFICATE]
+    )
+
+
+def test_certificate_marker_hits_are_counted_in_statistics() -> None:
+    result = infer_result(
+        document_title="Certificate of Conformity",
+        sections=[make_section(section_id="sec_1", title="Conformity Statement")],
+        elements={
+            "sec_1": [
+                make_element(
+                    element_id="txt_1",
+                    element_type=ElementType.TEXT,
+                    text="This certificate confirms conformity with the applicable standards.",
+                ),
+            ]
+        },
+    )
+
+    assert result.statistics.certificate_marker_hits >= 1
+
+
+def test_certificate_profile_does_not_select_for_manual_heavy_document() -> None:
+    result = infer_result(
+        document_title="Maintenance Manual",
+        sections=[
+            make_section(section_id="sec_1", title="Maintenance Procedure"),
+            make_section(section_id="sec_2", title="Installation Task", level=2, parent_section_id="sec_1"),
+            make_section(section_id="sec_3", title="Troubleshooting"),
+        ],
+        elements={
+            "sec_1": [
+                make_element(
+                    element_id="txt_1",
+                    element_type=ElementType.TEXT,
+                    text="Follow the maintenance procedure carefully before servicing the pump.",
+                ),
+                make_element(element_id="lst_1", element_type=ElementType.LIST_ITEM, text="Isolate power."),
+                make_element(element_id="lst_2", element_type=ElementType.LIST_ITEM, text="Replace seals."),
+            ],
+            "sec_2": [
+                make_element(
+                    element_id="txt_2",
+                    element_type=ElementType.TEXT,
+                    text="Installation steps must be completed in sequence per the service manual.",
+                ),
+            ],
+            "sec_3": [
+                make_element(
+                    element_id="txt_3",
+                    element_type=ElementType.TEXT,
+                    text="Troubleshooting guidance covers common faults and their remedies.",
+                ),
+            ],
+        },
+    )
+
+    assert result.selected_profile != ChunkingProfile.CERTIFICATE
+
+
 def test_returned_inference_contains_scores_reasons_and_statistics() -> None:
     result = infer_result(
         document_title="Pump Service Manual",

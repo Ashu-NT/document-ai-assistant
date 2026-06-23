@@ -58,6 +58,7 @@ class CertificateStructuredFamilyBuilder:
         if (
             context.has_known_document_type()
             and not context.matches_document_type(DocumentType.CERTIFICATE)
+            and not context.contains_any(CERTIFICATE_DOCUMENT_MARKERS)
         ):
             return StructuredFamilySpecSelection()
         if (

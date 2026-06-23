@@ -1,8 +1,10 @@
+from collections import Counter
+
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from src.domain.document import DocumentGraph
+from src.domain.document import DocumentGraph, DocumentStatistics
 from src.infrastructure.db.mappers import (
     ChunkMapper,
     DocumentMapper,
@@ -81,6 +83,18 @@ class DocumentReader:
             for identifier_orm in identifiers:
                 identifier = IdentifierMapper.to_domain(identifier_orm)
                 graph.identifiers[identifier.identifier_id] = identifier
+
+            chunk_type_counts = dict(
+                Counter(str(c.chunk_type) for c in graph.chunks.values())
+            )
+            graph.document.statistics = DocumentStatistics(
+                page_count=graph.document.statistics.page_count,
+                element_count=len(graph.elements),
+                section_count=len(graph.sections),
+                chunk_count=len(graph.chunks),
+                identifier_count=len(graph.identifiers),
+                chunk_type_counts=chunk_type_counts,
+            )
 
             return graph
 

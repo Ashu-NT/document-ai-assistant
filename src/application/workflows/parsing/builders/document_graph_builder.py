@@ -1,3 +1,4 @@
+from collections import Counter, defaultdict
 from pathlib import Path
 
 from src.application.workflows.parsing.builders.chunking import SectionChunkBuilder
@@ -15,7 +16,7 @@ from src.application.workflows.parsing.canonical_element import (
     CanonicalElement as ParsedCanonicalElement,
 )
 from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
-from src.domain.common import DocumentType, ElementType
+from src.domain.common import ChunkType, DocumentType, ElementType
 from src.domain.document import (
     Document,
     DocumentGraph,
@@ -161,6 +162,20 @@ class DocumentGraphBuilder:
             for chunk in self.chunk_builder.build_chunks(graph=graph, sections=sections):
                 graph.add_chunk(chunk)
 
+            section_signals: defaultdict[str, set[str]] = defaultdict(set)
+            chunk_type_counts: Counter[str] = Counter()
+            for chunk in graph.chunks.values():
+                chunk_type_counts[str(chunk.chunk_type)] += 1
+                if chunk.section_id and chunk.chunk_type not in {
+                    ChunkType.GENERAL,
+                    ChunkType.UNKNOWN,
+                }:
+                    section_signals[chunk.section_id].add(str(chunk.chunk_type))
+
+            for section_id, signals in section_signals.items():
+                if section_id in graph.sections:
+                    graph.sections[section_id].chunk_type_signals = sorted(signals)
+
             graph.document.statistics = DocumentStatistics(
                 page_count=raw_parsed_document.page_count,
                 element_count=len(graph.elements),
@@ -168,6 +183,8 @@ class DocumentGraphBuilder:
                 chunk_count=len(graph.chunks),
                 table_count=len(graph.tables),
                 picture_count=len(graph.pictures),
+                identifier_count=len(graph.identifiers),
+                chunk_type_counts=dict(chunk_type_counts),
             )
 
             return graph

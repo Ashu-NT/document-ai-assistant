@@ -56,6 +56,14 @@ _REPORT_MARKERS = (
     "methodology",
     "method",
 )
+_CERTIFICATE_MARKERS = (
+    "certificate",
+    "conformity",
+    "certification",
+    "inspection certificate",
+    "test certificate",
+    "certificate of conformity",
+)
 
 
 class ChunkingProfileStatisticsBuilder:
@@ -175,6 +183,10 @@ class ChunkingProfileStatisticsBuilder:
             ),
             drawing_marker_hits=self._count_marker_hits(all_titles, _DRAWING_MARKERS),
             report_marker_hits=self._count_marker_hits(all_titles, _REPORT_MARKERS),
+            certificate_marker_hits=self._count_marker_hits(
+                all_titles,
+                _CERTIFICATE_MARKERS,
+            ),
             procedure_like_section_count=procedure_like_section_count,
         )
 

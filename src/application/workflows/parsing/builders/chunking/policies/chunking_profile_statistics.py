@@ -33,6 +33,7 @@ class ChunkingProfileStatistics:
     datasheet_marker_hits: int = 0
     drawing_marker_hits: int = 0
     report_marker_hits: int = 0
+    certificate_marker_hits: int = 0
     procedure_like_section_count: int = 0
 
     @property
@@ -42,6 +43,7 @@ class ChunkingProfileStatistics:
             + self.datasheet_marker_hits
             + self.drawing_marker_hits
             + self.report_marker_hits
+            + self.certificate_marker_hits
         )
 
     def to_debug_dict(self) -> dict[str, int | float]:
@@ -73,5 +75,6 @@ class ChunkingProfileStatistics:
             "datasheet_marker_hits": self.datasheet_marker_hits,
             "drawing_marker_hits": self.drawing_marker_hits,
             "report_marker_hits": self.report_marker_hits,
+            "certificate_marker_hits": self.certificate_marker_hits,
             "procedure_like_section_count": self.procedure_like_section_count,
         }

@@ -66,6 +66,9 @@ class SectionORM(Base):
     reading_order_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
     reading_order_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    overview_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    chunk_type_signals: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     document: Mapped[DocumentORM] = relationship(back_populates="sections")
