@@ -4,7 +4,7 @@ from src.application.contracts.ai import LLMProvider
 from src.shared.exceptions import LLMProviderError
 
 DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
-DEFAULT_OLLAMA_MODEL = "qwen2.5:7b"
+DEFAULT_OLLAMA_MODEL = "qwen2.5:3b"
 
 
 def _default_ollama_base_url() -> str:
