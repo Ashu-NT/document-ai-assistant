@@ -14,6 +14,7 @@ from src.application.workflows.question_answering.question_answering_route impor
 from src.application.workflows.retrieval.retrieval_workflow_result import (
     RetrievalWorkflowResult,
 )
+from src.domain.retrieval.citation import Citation
 
 
 @dataclass(slots=True)
@@ -31,7 +32,7 @@ class QuestionAnsweringResult:
 
     approved_chunk_ids: list[str] = field(default_factory=list)
     rejected_chunk_ids: list[str] = field(default_factory=list)
-    citations: list[Any] = field(default_factory=list)
+    citations: list[Citation] = field(default_factory=list)
 
     confidence: str | None = None
     diagnostics: dict[str, Any] = field(default_factory=dict)
