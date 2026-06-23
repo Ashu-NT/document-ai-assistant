@@ -25,3 +25,18 @@ class IngestionSettings(AppBaseSettings):
         alias="ENABLE_ANSWER_GENERATION"
     )
 
+    max_chunk_tokens: int = Field(
+        default=1000,
+        alias="MAX_CHUNK_TOKENS"
+    )
+
+    chunk_overlap: int = Field(
+        default=150,
+        alias="CHUNK_OVERLAP"
+    )
+
+    min_section_text_length: int = Field(
+        default=150,
+        alias="MIN_SECTION_TEXT_LENGTH"
+    )
+

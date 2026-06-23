@@ -28,15 +28,39 @@ from src.shared.exceptions import ChunkingError
 from src.shared.ids import IdGenerator
 
 
+def _default_max_chunk_tokens() -> int:
+    try:
+        from src.config.settings import ingestion_settings
+        return ingestion_settings.max_chunk_tokens
+    except Exception:
+        return 1000
+
+
+def _default_chunk_overlap() -> int:
+    try:
+        from src.config.settings import ingestion_settings
+        return ingestion_settings.chunk_overlap
+    except Exception:
+        return 150
+
+
+def _default_min_section_text_length() -> int:
+    try:
+        from src.config.settings import ingestion_settings
+        return ingestion_settings.min_section_text_length
+    except Exception:
+        return 150
+
+
 class DocumentGraphBuilder:
     def __init__(
         self,
         id_generator: IdGenerator,
         section_builder: SectionBuilder,
         *,
-        max_chunk_tokens: int = 200,
-        chunk_overlap: int = 20,
-        min_section_text_length: int = 20,
+        max_chunk_tokens: int | None = None,
+        chunk_overlap: int | None = None,
+        min_section_text_length: int | None = None,
         section_chunk_builder: SectionChunkBuilder | None = None,
     ) -> None:
         self.id_generator = id_generator
@@ -44,17 +68,22 @@ class DocumentGraphBuilder:
         if section_chunk_builder is not None:
             self.section_chunk_builder = section_chunk_builder
         else:
-            section_chunk_builder_kwargs: dict[str, int] = {}
-            if max_chunk_tokens != 200:
-                section_chunk_builder_kwargs["max_chunk_tokens"] = max_chunk_tokens
-            if chunk_overlap != 20:
-                section_chunk_builder_kwargs["chunk_overlap"] = chunk_overlap
-            if min_section_text_length != 20:
-                section_chunk_builder_kwargs["min_section_text_length"] = (
-                    min_section_text_length
-                )
             self.section_chunk_builder = SectionChunkBuilder(
-                **section_chunk_builder_kwargs,
+                max_chunk_tokens=(
+                    max_chunk_tokens
+                    if max_chunk_tokens is not None
+                    else _default_max_chunk_tokens()
+                ),
+                chunk_overlap=(
+                    chunk_overlap
+                    if chunk_overlap is not None
+                    else _default_chunk_overlap()
+                ),
+                min_section_text_length=(
+                    min_section_text_length
+                    if min_section_text_length is not None
+                    else _default_min_section_text_length()
+                ),
             )
         self.asset_factory = ParsedAssetFactory(id_generator)
         self.asset_nearby_text_enricher = AssetNearbyTextEnricher()

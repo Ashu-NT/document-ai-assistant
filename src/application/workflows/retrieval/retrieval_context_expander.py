@@ -13,19 +13,41 @@ from src.domain.common import ChunkType
 from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 
 
+def _default_neighbor_window() -> int:
+    try:
+        from src.config.settings import retrieval_settings
+        return retrieval_settings.context_neighbor_window
+    except Exception:
+        return 1
+
+
+def _default_max_context_chunks() -> int:
+    try:
+        from src.config.settings import retrieval_settings
+        return retrieval_settings.context_max_chunks
+    except Exception:
+        return 8
+
+
 class RetrievalContextExpander:
     def __init__(
         self,
         document_lookup_service: DocumentLookupService,
         *,
-        neighbor_window: int = 1,
-        max_context_chunks: int = 8,
+        neighbor_window: int | None = None,
+        max_context_chunks: int | None = None,
         query_intent_inferer: RetrievalQueryIntentInferer | None = None,
         context_assembler: RetrievalContextAssembler | None = None,
     ) -> None:
         self.document_lookup_service = document_lookup_service
-        self.neighbor_window = max(0, neighbor_window)
-        self.max_context_chunks = max(1, max_context_chunks)
+        self.neighbor_window = max(
+            0,
+            neighbor_window if neighbor_window is not None else _default_neighbor_window(),
+        )
+        self.max_context_chunks = max(
+            1,
+            max_context_chunks if max_context_chunks is not None else _default_max_context_chunks(),
+        )
         self.query_intent_inferer = (
             query_intent_inferer or RetrievalQueryIntentInferer()
         )

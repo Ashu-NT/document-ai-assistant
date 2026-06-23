@@ -11,4 +11,7 @@ class GuardrailSettings(AppBaseSettings):
         alias="REQUIRE_CITATIONS"
     )
 
-        
+    min_claim_support_score: float = Field(
+        default=0.60,
+        alias="ANSWER_MIN_CLAIM_SUPPORT_SCORE"
+    )
