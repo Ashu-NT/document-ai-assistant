@@ -98,6 +98,12 @@ class RetrievalQueryChunkTypePreferenceMapper:
         if intent == RetrievalQueryIntent.OVERVIEW:
             return [ChunkType.OVERVIEW, ChunkType.GENERAL]
 
+        # QuestionAnsweringWorkflow should normally route DOCUMENT_EXPLORATION away from
+        # RetrievalWorkflow before a query reaches this mapper. This branch is a safety
+        # net for callers that use RetrievalWorkflow directly with an exploration question.
+        if intent == RetrievalQueryIntent.DOCUMENT_EXPLORATION:
+            return [ChunkType.OVERVIEW, ChunkType.GENERAL]
+
         return list(query.chunk_types)
 
     @staticmethod
