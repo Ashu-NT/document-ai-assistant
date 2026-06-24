@@ -139,6 +139,12 @@ class ChunkORM(Base):
         default="general",
     )
 
+    chunk_type_source: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        default="deterministic",
+    )
+
     section_path: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     page_start: Mapped[int | None] = mapped_column(Integer, nullable=True)

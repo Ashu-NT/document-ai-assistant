@@ -268,11 +268,11 @@ class CertificateStructuredFamilyBuilder:
             context
         ):
             return ["Description / Manufacturer Designation / Serial Number table"]
-        return CertificateStructuredFamilyBuilder._family_section_path(
-            base_path=base_path,
-            family_markers=_PARTICULARS_PATH_MARKERS,
-            label="Particulars",
-        )
+        # Use a standalone "Particulars" path so all certificate particulars chunks
+        # share a consistent section path regardless of the PDF section hierarchy.
+        if path_contains_markers(base_path, _PARTICULARS_PATH_MARKERS):
+            return base_path
+        return ["Particulars"]
 
     @staticmethod
     def _family_section_path(
