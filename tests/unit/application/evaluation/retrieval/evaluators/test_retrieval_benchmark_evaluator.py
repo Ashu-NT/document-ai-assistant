@@ -27,11 +27,12 @@ def make_chunk(
     chunk_id: str,
     section_path: list[str],
     score: float,
+    content: str | None = None,
 ) -> RetrievedChunk:
     return RetrievedChunk(
         chunk_id=chunk_id,
         document_id="doc_001",
-        content=f"Content for {chunk_id}",
+        content=content if content is not None else f"Content for {chunk_id}",
         score=score,
         retrieval_source="hybrid",
         chunk_type=ChunkType.GENERAL,
@@ -48,6 +49,7 @@ def make_case(
     rank_target: RetrievalBenchmarkRankTarget,
     expected_chunk_ids: list[str] | None = None,
     expected_section_paths: list[list[str]] | None = None,
+    expected_relevant_passage: str | None = None,
 ) -> RetrievalBenchmarkCase:
     return RetrievalBenchmarkCase(
         case_id=query.query_id,
@@ -57,6 +59,7 @@ def make_case(
         expected_rank_target=rank_target,
         expected_chunk_ids=expected_chunk_ids or [],
         expected_section_paths=expected_section_paths or [],
+        expected_relevant_passage=expected_relevant_passage,
     )
 
 
@@ -103,6 +106,7 @@ def test_retrieval_benchmark_evaluator_computes_metrics_and_keeps_anchor_misses_
                         chunk_id="chunk_identifier",
                         section_path=["Certificate", "Identity"],
                         score=0.98,
+                        content="The certificate serial number is ABC-12345.",
                     ),
                 ],
             ),
@@ -145,6 +149,7 @@ def test_retrieval_benchmark_evaluator_computes_metrics_and_keeps_anchor_misses_
                         chunk_id="chunk_context_target",
                         section_path=["Operation", "Manual Operation"],
                         score=0.77,
+                        content="Caution: manual operation hazard requires trained personnel.",
                     ),
                 ],
             ),
@@ -160,6 +165,7 @@ def test_retrieval_benchmark_evaluator_computes_metrics_and_keeps_anchor_misses_
                 query_type=RetrievalBenchmarkQueryType.IDENTIFIER_LOOKUP,
                 rank_target=RetrievalBenchmarkRankTarget.TOP_1,
                 expected_chunk_ids=["chunk_identifier"],
+                expected_relevant_passage="certificate serial number is ABC-12345",
             ),
             make_case(
                 query=semantic_query,
@@ -172,6 +178,7 @@ def test_retrieval_benchmark_evaluator_computes_metrics_and_keeps_anchor_misses_
                 query_type=RetrievalBenchmarkQueryType.SAFETY_LOOKUP,
                 rank_target=RetrievalBenchmarkRankTarget.TOP_3,
                 expected_chunk_ids=["chunk_context_target"],
+                expected_relevant_passage="manual operation hazard",
             ),
         ],
     )
@@ -243,3 +250,101 @@ def test_retrieval_benchmark_evaluator_emits_progress_messages() -> None:
         "[1/1] Running benchmark case query_progress",
         "[1/1] Completed query_progress (anchor_hit=yes, context_hit=yes)",
     ]
+
+
+def test_evidence_completeness_passage_primary_match() -> None:
+    """Passage text found in chunk content → 1.0, regardless of chunk ID or section path."""
+    query = RetrievalQuery(query_id="q_passage", query_text="What is the safety procedure?")
+    workflow = FakeWorkflow(
+        {
+            "q_passage": make_workflow_result(
+                query=query,
+                anchor_chunks=[
+                    make_chunk(
+                        chunk_id="any_id_stable_or_not",
+                        section_path=["Unrelated", "Section"],
+                        score=0.90,
+                        content="The valve must be closed before purging the system.",
+                    ),
+                ],
+            )
+        }
+    )
+    evaluator = RetrievalBenchmarkEvaluator()
+    report = evaluator.evaluate(
+        workflow,
+        [
+            make_case(
+                query=query,
+                query_type=RetrievalBenchmarkQueryType.SAFETY_LOOKUP,
+                rank_target=RetrievalBenchmarkRankTarget.TOP_3,
+                expected_relevant_passage="valve must be closed before purging",
+            ),
+        ],
+    )
+    assert report.case_results[0].evidence_completeness == 1.0
+
+
+def test_evidence_completeness_section_path_fallback_when_no_passage() -> None:
+    """No passage set → section path hit is the fallback → 1.0."""
+    query = RetrievalQuery(query_id="q_secpath", query_text="What is the safety procedure?")
+    workflow = FakeWorkflow(
+        {
+            "q_secpath": make_workflow_result(
+                query=query,
+                anchor_chunks=[
+                    make_chunk(
+                        chunk_id="new_chunk_id_after_reseed",
+                        section_path=["Safety", "Procedures"],
+                        score=0.90,
+                    ),
+                ],
+            )
+        }
+    )
+    evaluator = RetrievalBenchmarkEvaluator()
+    report = evaluator.evaluate(
+        workflow,
+        [
+            make_case(
+                query=query,
+                query_type=RetrievalBenchmarkQueryType.SAFETY_LOOKUP,
+                rank_target=RetrievalBenchmarkRankTarget.TOP_3,
+                expected_section_paths=[["Safety", "Procedures"]],
+            ),
+        ],
+    )
+    assert report.case_results[0].evidence_completeness == 1.0
+
+
+def test_evidence_completeness_zero_when_neither_passage_nor_section_found() -> None:
+    query = RetrievalQuery(query_id="q_miss", query_text="Unrelated question?")
+    workflow = FakeWorkflow(
+        {
+            "q_miss": make_workflow_result(
+                query=query,
+                anchor_chunks=[
+                    make_chunk(
+                        chunk_id="wrong_chunk",
+                        section_path=["Other", "Section"],
+                        score=0.5,
+                        content="Completely unrelated text about something else.",
+                    ),
+                ],
+            )
+        }
+    )
+    evaluator = RetrievalBenchmarkEvaluator()
+    report = evaluator.evaluate(
+        workflow,
+        [
+            make_case(
+                query=query,
+                query_type=RetrievalBenchmarkQueryType.SAFETY_LOOKUP,
+                rank_target=RetrievalBenchmarkRankTarget.TOP_3,
+                expected_relevant_passage="valve must be closed before purging",
+                expected_section_paths=[["Safety", "Details"]],
+            ),
+        ],
+    )
+    assert report.case_results[0].evidence_completeness == 0.0

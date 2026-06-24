@@ -193,18 +193,31 @@ class RetrievalBenchmarkEvaluator:
         context_chunks: list,
         context_section_path_hits: list[list[str]],
     ) -> float:
-        if benchmark_case.expected_chunk_ids:
-            matched_chunk_ids = {
-                chunk.chunk_id
-                for chunk in context_chunks
-                if chunk.chunk_id in benchmark_case.expected_chunk_ids
-            }
-            return len(matched_chunk_ids) / len(benchmark_case.expected_chunk_ids)
+        # Primary: passage text found verbatim (normalised) in a context chunk.
+        # Stable across corpus reseeds; authored directly in the truth set.
+        if benchmark_case.expected_relevant_passage:
+            if self._passage_found_in_chunks(
+                passage=benchmark_case.expected_relevant_passage,
+                chunks=context_chunks,
+            ):
+                return 1.0
 
-        if benchmark_case.expected_section_paths:
-            return 1.0 if context_section_path_hits else 0.0
+        # Fallback: section path present in context.
+        if context_section_path_hits:
+            return 1.0
 
         return 0.0
+
+    def _passage_found_in_chunks(self, *, passage: str, chunks: list) -> bool:
+        needle = self._normalise_text(passage)
+        return any(
+            needle in self._normalise_text(getattr(chunk, "content", ""))
+            for chunk in chunks
+        )
+
+    @staticmethod
+    def _normalise_text(text: str) -> str:
+        return " ".join((text or "").lower().split())
 
     def _build_chunk_snapshots(
         self,
