@@ -47,8 +47,11 @@ def test_embed_batch_calls_provider() -> None:
 
 
 def test_embed_chunk_uses_embedding_text_when_present(sample_chunk) -> None:
+    from src.domain.common import ChunkType
+
     provider = FakeEmbeddingProvider()
     service = EmbeddingService(provider)
+    sample_chunk.chunk_type = ChunkType.GENERAL
     sample_chunk.embedding_text = "Section: Maintenance\nReplace hydraulic filter."
 
     vector = service.embed_chunk(sample_chunk)
@@ -58,8 +61,11 @@ def test_embed_chunk_uses_embedding_text_when_present(sample_chunk) -> None:
 
 
 def test_embed_chunks_falls_back_to_chunk_content(sample_chunk) -> None:
+    from src.domain.common import ChunkType
+
     provider = FakeEmbeddingProvider()
     service = EmbeddingService(provider)
+    sample_chunk.chunk_type = ChunkType.GENERAL
     sample_chunk.embedding_text = None
 
     vectors = service.embed_chunks([sample_chunk])
@@ -80,3 +86,71 @@ def test_embed_batch_does_not_swallow_errors() -> None:
 
     with pytest.raises(InfrastructureError):
         service.embed_batch(["first", "second"])
+
+
+def test_embed_chunk_appends_enrichment_for_classified_maintenance_chunk(
+    sample_chunk,
+) -> None:
+    from src.domain.common import ChunkType
+
+    provider = FakeEmbeddingProvider()
+    service = EmbeddingService(provider)
+    sample_chunk.chunk_type = ChunkType.MAINTENANCE_INTERVAL
+    sample_chunk.section_path = ["7 Components", "7.3 Vacuum Pump", "Lubrication Schedule"]
+    sample_chunk.content = "After every 350 hours of operation, grease the nipple."
+    sample_chunk.embedding_text = (
+        "Document title: Manual\n\n"
+        "Section path: 7 Components > 7.3 Vacuum Pump > Lubrication Schedule\n\n"
+        "After every 350 hours of operation, grease the nipple."
+    )
+
+    service.embed_chunk(sample_chunk)
+
+    embedded_text = provider.text_calls[0]
+    assert "Section: Lubrication Schedule" in embedded_text
+    assert "Component: 7.3 Vacuum Pump" in embedded_text
+    assert "Related terms:" in embedded_text
+
+
+def test_embed_chunk_no_enrichment_for_general_chunk(sample_chunk) -> None:
+    from src.domain.common import ChunkType
+
+    provider = FakeEmbeddingProvider()
+    service = EmbeddingService(provider)
+    sample_chunk.chunk_type = ChunkType.GENERAL
+    sample_chunk.section_path = ["7 Components", "7.3 Vacuum Pump", "Overview"]
+    sample_chunk.content = "Overview text."
+    sample_chunk.embedding_text = (
+        "Document title: Manual\n\n"
+        "Section path: 7 Components > 7.3 Vacuum Pump > Overview\n\n"
+        "Overview text."
+    )
+
+    service.embed_chunk(sample_chunk)
+
+    embedded_text = provider.text_calls[0]
+    assert "Section:" not in embedded_text
+    assert "Related terms:" not in embedded_text
+
+
+def test_embed_chunk_does_not_double_enrich(sample_chunk) -> None:
+    from src.domain.common import ChunkType
+
+    provider = FakeEmbeddingProvider()
+    service = EmbeddingService(provider)
+    sample_chunk.chunk_type = ChunkType.MAINTENANCE_INTERVAL
+    sample_chunk.section_path = ["7 Components", "7.3 Vacuum Pump", "Lubrication Schedule"]
+    sample_chunk.content = "After every 350 hours, grease the nipple."
+    sample_chunk.embedding_text = (
+        "Document title: Manual\n\n"
+        "Section path: 7 Components > 7.3 Vacuum Pump > Lubrication Schedule\n\n"
+        "Section: Lubrication Schedule\n\n"
+        "Component: 7.3 Vacuum Pump\n\n"
+        "After every 350 hours, grease the nipple.\n\n"
+        "Related terms: lubrication interval, greasing, shaft seal lubrication, grease schedule"
+    )
+
+    service.embed_chunk(sample_chunk)
+
+    embedded_text = provider.text_calls[0]
+    assert embedded_text.count("Related terms:") == 1

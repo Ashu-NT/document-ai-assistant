@@ -15,45 +15,11 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
 from src.application.workflows.parsing.builders.chunking.text.section_path_sanitizer import (
     sanitize_section_path,
 )
-from src.domain.common import ChunkType
-
-# Chunk types that benefit from richer embedding context (component, section title, aliases).
-_ENRICHED_CHUNK_TYPES: frozenset[ChunkType] = frozenset(
-    {ChunkType.MAINTENANCE_INTERVAL, ChunkType.TECHNICAL_SPECIFICATION}
+from src.application.services.ai.chunk_embedding_enricher import (
+    ENRICHED_CHUNK_TYPES as _ENRICHED_CHUNK_TYPES,
+    maintenance_spec_aliases as _maintenance_spec_aliases,
 )
-
-
-def _maintenance_spec_aliases(*, content: str, section_path: list[str]) -> str | None:
-    combined = " ".join([content] + section_path).lower()
-    aliases: list[str] = []
-
-    if any(k in combined for k in ("lubricat", "grease", "grease nipple", "shaft seal")):
-        aliases.extend(
-            ["lubrication interval", "greasing", "shaft seal lubrication", "grease schedule"]
-        )
-
-    if any(k in combined for k in ("oil quantit", "oil capacity", "oil volume", "oil fill", "fluid capacity")):
-        aliases.extend(
-            ["oil quantity", "oil specification", "fluid capacity", "oil fill quantity"]
-        )
-
-    if any(k in combined for k in ("oil change", "change interval", "replace oil", "renew oil", "drain screw")):
-        aliases.extend(
-            ["oil change interval", "oil replacement", "change frequency", "service interval"]
-        )
-
-    if any(k in combined for k in ("hours of operation", "every", "operating hours", "maintenance schedule", "lubrication schedule")):
-        aliases.extend(
-            ["maintenance interval", "service frequency", "operating hours", "scheduled maintenance"]
-        )
-
-    seen: set[str] = set()
-    unique: list[str] = []
-    for alias in aliases:
-        if alias not in seen:
-            seen.add(alias)
-            unique.append(alias)
-    return ", ".join(unique) if unique else None
+from src.domain.common import ChunkType
 
 
 class ChunkPayloadFactory:

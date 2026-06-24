@@ -1,4 +1,5 @@
 from src.application.contracts.ai import EmbeddingProvider
+from src.application.services.ai.chunk_embedding_enricher import enrich_embedding_text
 from src.domain.document import DocumentChunk
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
@@ -60,7 +61,10 @@ class EmbeddingService:
         )
 
     def _text_from_chunk(self, chunk: DocumentChunk) -> str:
-        if chunk.has_embedding_text():
-            return chunk.embedding_text or chunk.content
-
-        return chunk.content
+        base = chunk.embedding_text if chunk.has_embedding_text() else chunk.content
+        return enrich_embedding_text(
+            base_text=base,
+            chunk_type=chunk.chunk_type,
+            section_path=list(chunk.section_path),
+            content=chunk.content,
+        )
