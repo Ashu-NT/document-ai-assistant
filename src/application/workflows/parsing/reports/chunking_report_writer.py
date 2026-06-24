@@ -5,12 +5,14 @@ from collections import Counter
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from src.config.paths import PROJECT_ROOT
+
 if TYPE_CHECKING:
     from src.application.workflows.parsing.parsing_workflow_result import (
         ParsingWorkflowResult,
     )
 
-_DEFAULT_OUTPUT_DIR = Path("outputs/debug_parsing")
+_DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "outputs" / "debug_parsing"
 
 
 class ChunkingReportWriter:

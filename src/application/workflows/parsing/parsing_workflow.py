@@ -11,6 +11,11 @@ from src.application.workflows.parsing.normalizers.docling_document_normalizer i
 from src.application.workflows.parsing.parsing_workflow_result import (
     ParsingWorkflowResult,
 )
+from src.application.workflows.parsing.reports import (
+    ChunkingReportWriter,
+    ParsingReportWriter,
+    QualityReportWriter,
+)
 from src.domain.document import DocumentGraph, DocumentHashes
 from src.infrastructure.parsing.docling.docling_parser import DoclingParser
 from src.shared.activity import ActivityContext
@@ -64,6 +69,9 @@ class ParsingWorkflow:
         id_generator: IdGenerator,
         document_graph_validator: DocumentGraphValidator | None = None,
         canonical_element_ocr_enricher: CanonicalElementOCREnricher | None = None,
+        parsing_report_writer: ParsingReportWriter | None = None,
+        chunking_report_writer: ChunkingReportWriter | None = None,
+        quality_report_writer: QualityReportWriter | None = None,
     ) -> None:
         self.parser = parser
         self.normalizer = normalizer
@@ -71,6 +79,9 @@ class ParsingWorkflow:
         self.id_generator = id_generator
         self.document_graph_validator = document_graph_validator
         self.canonical_element_ocr_enricher = canonical_element_ocr_enricher
+        self.parsing_report_writer = parsing_report_writer
+        self.chunking_report_writer = chunking_report_writer
+        self.quality_report_writer = quality_report_writer
 
     @tracked_action(
         action="parsing.workflow_completed",
@@ -116,11 +127,20 @@ class ParsingWorkflow:
             validation = self.document_graph_validator.validate(document_graph)
             validation.raise_if_invalid()
 
-        return self._build_result(
+        result = self._build_result(
             document_graph=document_graph,
             file_path=file_path,
             page_count=raw_parsed_document.page_count,
         )
+
+        if self.parsing_report_writer is not None:
+            self.parsing_report_writer.write(result)
+        if self.chunking_report_writer is not None:
+            self.chunking_report_writer.write(result)
+        if self.quality_report_writer is not None:
+            self.quality_report_writer.write(result)
+
+        return result
 
     @staticmethod
     def _build_result(
