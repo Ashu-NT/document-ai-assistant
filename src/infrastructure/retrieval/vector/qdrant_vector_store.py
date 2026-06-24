@@ -2,7 +2,7 @@ import hashlib
 from uuid import uuid4
 
 from qdrant_client import QdrantClient
-from qdrant_client.models import FieldCondition, Filter, MatchAny, PointStruct
+from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue, PointStruct
 
 from src.application.contracts.ai import EmbeddingProvider
 from src.application.contracts.document import DocumentRepository
@@ -154,6 +154,14 @@ class QdrantVectorStore(VectorStore):
                     match=MatchAny(
                         any=[document_type.value for document_type in query.document_types]
                     ),
+                )
+            )
+
+        if query.document_id:
+            conditions.append(
+                FieldCondition(
+                    key="document_id",
+                    match=MatchValue(value=query.document_id),
                 )
             )
 

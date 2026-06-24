@@ -184,3 +184,52 @@ def test_qdrant_vector_store_search_builds_document_type_filter(
         "chunk_type",
         "document_type",
     }
+
+
+def test_qdrant_vector_store_search_filters_by_document_id_when_set(
+    sample_retrieval_query,
+) -> None:
+    client = FakeQdrantClient()
+    provider = FakeEmbeddingProvider()
+    sample_retrieval_query.document_id = "doc_fwc12"
+    store = QdrantVectorStore(
+        client=client,
+        mapping_repository=FakeVectorMappingRepository(),
+        collection_name="document_chunks",
+        embedding_model="BAAI/bge-small-en-v1.5",
+        query_embedding_provider=provider,
+    )
+
+    store.search(sample_retrieval_query)
+
+    query_filter = client.query_points_calls[0]["query_filter"]
+    assert query_filter is not None
+    filter_keys = {c.key for c in query_filter.must}
+    assert "document_id" in filter_keys
+    doc_condition = next(c for c in query_filter.must if c.key == "document_id")
+    assert doc_condition.match.value == "doc_fwc12"
+
+
+def test_qdrant_vector_store_search_no_filter_when_document_id_not_set(
+    sample_retrieval_query,
+) -> None:
+    from src.domain.retrieval import RetrievalQuery
+
+    client = FakeQdrantClient()
+    provider = FakeEmbeddingProvider()
+    bare_query = RetrievalQuery(
+        query_id="q_bare",
+        query_text="What is the maintenance interval?",
+    )
+    store = QdrantVectorStore(
+        client=client,
+        mapping_repository=FakeVectorMappingRepository(),
+        collection_name="document_chunks",
+        embedding_model="BAAI/bge-small-en-v1.5",
+        query_embedding_provider=provider,
+    )
+
+    store.search(bare_query)
+
+    query_filter = client.query_points_calls[0]["query_filter"]
+    assert query_filter is None
