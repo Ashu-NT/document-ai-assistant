@@ -5,7 +5,7 @@ Run the retrieval quality gate against a benchmark report JSON file.
 
 Usage:
     python scripts/run_retrieval_quality_gate.py outputs/evaluation/retrieval/retrieval_benchmark_report.json
-    python scripts/run_retrieval_quality_gate.py outputs/evaluation/retrieval/retrieval_benchmark_report.json --thresholds config/evaluation/retrieval_thresholds.yaml
+    python scripts/run_retrieval_quality_gate.py outputs/evaluation/retrieval/retrieval_benchmark_report.json --thresholds src/config/evaluation/retrieval_thresholds.yaml
     python scripts/run_retrieval_quality_gate.py outputs/evaluation/retrieval/retrieval_benchmark_report.json --strict
 """
 
@@ -35,7 +35,7 @@ def parse_args(argv=None):
         "--thresholds",
         metavar="YAML",
         default=None,
-        help="Path to thresholds YAML (default: config/evaluation/retrieval_thresholds.yaml).",
+        help="Path to thresholds YAML (default: src/config/evaluation/retrieval_thresholds.yaml).",
     )
     parser.add_argument(
         "--strict",

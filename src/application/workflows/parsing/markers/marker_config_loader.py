@@ -4,8 +4,9 @@ from pathlib import Path
 from typing import Any
 
 from src.application.workflows.parsing.markers.marker_set import MarkerSet
+from src.config.paths import PROJECT_ROOT
 
-_CONFIG_DIR = Path("config/markers")
+_CONFIG_DIR = PROJECT_ROOT / "src" / "config" / "markers"
 
 _KNOWN_FILES: dict[str, str] = {
     "manual": "manual.yaml",

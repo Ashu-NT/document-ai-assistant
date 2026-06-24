@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-_DEFAULT_CONFIG = Path("config/evaluation/retrieval_thresholds.yaml")
+from src.config.paths import PROJECT_ROOT
+
+_DEFAULT_CONFIG = PROJECT_ROOT / "src" / "config" / "evaluation" / "retrieval_thresholds.yaml"
 
 
 @dataclass(frozen=True)

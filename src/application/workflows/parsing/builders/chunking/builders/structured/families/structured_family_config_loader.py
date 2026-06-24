@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-_CONFIG_DIR = Path("config/document_families")
+from src.config.paths import PROJECT_ROOT
+
+_CONFIG_DIR = PROJECT_ROOT / "src" / "config" / "document_families"
 
 _KNOWN_FILES = [
     "drawing.yaml",
