@@ -16,7 +16,7 @@
     "context_recall_at_10": 0.7727272727272727,
     "identifier_top_1_accuracy": 0.7727272727272727,
     "section_path_accuracy": 0.7575757575757576,
-    "evidence_completeness_rate": 0.4231016165798774,
+    "evidence_completeness_rate": 0.7575757575757576,
     "rank_target_satisfaction_rate": 0.696969696969697
   },
   "document_family_breakdown": [
@@ -684,7 +684,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.42857142857142855,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -1208,7 +1208,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -2172,7 +2172,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": false,
         "identifier_top_1_hit": false
       },
@@ -2648,7 +2648,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -3692,7 +3692,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -4222,7 +4222,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.3333333333333333,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": false,
         "identifier_top_1_hit": false
       },
@@ -5311,7 +5311,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.3333333333333333,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -5845,7 +5845,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.2857142857142857,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -6391,7 +6391,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -7483,7 +7483,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.25,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -8679,7 +8679,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.3333333333333333,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -9196,7 +9196,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -9726,7 +9726,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -11770,7 +11770,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -12228,7 +12228,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.4,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -12691,7 +12691,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5714285714285714,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -13649,7 +13649,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.17391304347826086,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -14293,7 +14293,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": false,
         "identifier_top_1_hit": false
       },
@@ -14748,7 +14748,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.4,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -15211,7 +15211,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.4,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -15701,7 +15701,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.19047619047619047,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -16157,7 +16157,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.7,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -17069,7 +17069,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.9,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -18060,7 +18060,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.1,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -18524,7 +18524,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.8,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -18992,7 +18992,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.6,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -19488,7 +19488,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -19943,7 +19943,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.6666666666666666,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -20397,7 +20397,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -21302,7 +21302,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.6,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -22703,7 +22703,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -24050,7 +24050,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.6666666666666666,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -24552,7 +24552,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.3333333333333333,
+        "evidence_completeness": 0.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -25556,7 +25556,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.2222222222222222,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -26064,7 +26064,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.0,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -26565,7 +26565,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.0,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -28049,7 +28049,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -30056,7 +30056,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.5,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
@@ -30602,7 +30602,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.75,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": false
       },
@@ -32705,7 +32705,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.2,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": false,
         "identifier_top_1_hit": false
       },
@@ -33290,7 +33290,7 @@
         ]
       },
       "evaluation": {
-        "evidence_completeness": 0.2857142857142857,
+        "evidence_completeness": 1.0,
         "meets_expected_rank_target": true,
         "identifier_top_1_hit": true
       },
