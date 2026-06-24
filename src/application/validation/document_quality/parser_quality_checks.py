@@ -22,7 +22,7 @@ def check_orphan_element_ratio(
     name = "parser.orphan_element_ratio"
     if not elements:
         return QualityCheckResult.ok(name)
-    orphans = [e for e in elements if not getattr(e, "section_id", None)]
+    orphans = [e for e in elements if not getattr(e, "parent_section_id", None)]
     ratio = len(orphans) / len(elements)
     if ratio > _MAX_ORPHAN_RATIO:
         return QualityCheckResult.warn(
@@ -39,7 +39,10 @@ def check_elements_have_pages(
     name = "parser.elements_without_page"
     if not elements:
         return QualityCheckResult.ok(name)
-    missing = [e for e in elements if getattr(e, "page_number", None) is None]
+    missing = [
+        e for e in elements
+        if getattr(getattr(e, "source", None), "page_start", None) is None
+    ]
     ratio = len(missing) / len(elements)
     if ratio > 0.5:
         return QualityCheckResult.warn(
