@@ -1,8 +1,10 @@
 import pytest
 
+from src.application.services.ai.chunk_embedding_enricher import (
+    maintenance_spec_aliases as _maintenance_spec_aliases,
+)
 from src.application.workflows.parsing.builders.chunking.builders.chunk_payload_factory import (
     ChunkPayloadFactory,
-    _maintenance_spec_aliases,
 )
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
