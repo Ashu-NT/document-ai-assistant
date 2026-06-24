@@ -13,6 +13,8 @@ class RetrievalQuery:
 
     detected_identifiers: list[str] = field(default_factory=list)
 
+    document_id: str | None = None
+
     top_k: int = 5
     use_dense: bool = True
     use_keyword: bool = True
