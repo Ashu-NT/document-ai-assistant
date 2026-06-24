@@ -12,9 +12,12 @@ from src.application.validation.document_quality.chunking_quality_checks import 
     check_maintenance_headings_have_chunks,
 )
 from src.application.validation.document_quality.parser_quality_checks import (
+    check_elements_have_pages,
     check_orphan_element_ratio,
     check_section_count,
 )
+from src.domain.common import ElementType, SourceLocation
+from src.domain.elements import CanonicalElement
 from src.application.validation.document_quality.retrieval_quality_checks import (
     check_retrieved_chunk_scores,
     check_retrieved_chunks_have_content,
@@ -127,6 +130,62 @@ class TestRetrievalQualityChecks:
     def test_passes_when_all_have_content(self):
         chunks = [_make_retrieved_chunk(content="Oil change every 500 hours.")]
         result = check_retrieved_chunks_have_content(chunks)
+        assert result.passed
+
+
+def _make_element(*, parent_section_id: str | None = None, page_start: int | None = None) -> CanonicalElement:
+    return CanonicalElement(
+        element_id="e_test",
+        document_id="doc_test",
+        element_type=ElementType.TEXT,
+        parent_section_id=parent_section_id,
+        source=SourceLocation(page_start=page_start),
+    )
+
+
+class TestOrphanElementRatioCheck:
+    def test_passes_when_all_elements_linked_to_section(self):
+        elements = [_make_element(parent_section_id="sec_1") for _ in range(5)]
+        result = check_orphan_element_ratio(elements, sections=[])
+        assert result.passed
+
+    def test_warns_when_orphan_ratio_exceeds_threshold(self):
+        # 3 orphans, 1 linked → 75% orphan ratio > 25% threshold
+        elements = [_make_element(parent_section_id=None)] * 3 + [_make_element(parent_section_id="sec_1")]
+        result = check_orphan_element_ratio(elements, sections=[])
+        assert not result.passed
+
+    def test_passes_when_orphan_ratio_below_threshold(self):
+        # 1 orphan, 9 linked → 10% orphan ratio < 25% threshold
+        elements = [_make_element(parent_section_id=None)] + [_make_element(parent_section_id="sec_1")] * 9
+        result = check_orphan_element_ratio(elements, sections=[])
+        assert result.passed
+
+    def test_passes_on_empty_elements(self):
+        result = check_orphan_element_ratio([], sections=[])
+        assert result.passed
+
+
+class TestElementsHavePagesCheck:
+    def test_passes_when_all_elements_have_page(self):
+        elements = [_make_element(page_start=i + 1) for i in range(5)]
+        result = check_elements_have_pages(elements)
+        assert result.passed
+
+    def test_warns_when_majority_missing_page(self):
+        # 6 without page, 4 with → 60% missing > 50% threshold
+        elements = [_make_element(page_start=None)] * 6 + [_make_element(page_start=1)] * 4
+        result = check_elements_have_pages(elements)
+        assert not result.passed
+
+    def test_passes_when_missing_ratio_at_or_below_threshold(self):
+        # 4 without page, 6 with → 40% missing ≤ 50% threshold
+        elements = [_make_element(page_start=None)] * 4 + [_make_element(page_start=1)] * 6
+        result = check_elements_have_pages(elements)
+        assert result.passed
+
+    def test_passes_on_empty_elements(self):
+        result = check_elements_have_pages([])
         assert result.passed
 
 

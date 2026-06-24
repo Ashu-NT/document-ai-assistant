@@ -141,5 +141,8 @@ class SqlKeywordRepository:
                 )
             )
 
+        if retrieval_query is not None and retrieval_query.document_id:
+            conditions.append(ChunkORM.document_id == retrieval_query.document_id)
+
         candidate_limit = max(result_limit * 20, 50)
         return statement.where(and_(*conditions)).limit(candidate_limit)
