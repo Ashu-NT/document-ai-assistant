@@ -139,9 +139,13 @@ class SqlKeywordScorer:
         )
 
         # --- Section-path relevance (local >> ancestor) ---
+        # Use whole-word matching so "do" does not falsely fire on "shutdown",
+        # "macerator" does not match "macerators", etc.
         threshold = min(2, len(query_terms))
-        local_term_hits = sum(1 for term in query_terms if term in normalized_local)
-        ancestor_term_hits = sum(1 for term in query_terms if term in normalized_ancestor)
+        padded_local = f" {normalized_local} "
+        padded_ancestor = f" {normalized_ancestor} "
+        local_term_hits = sum(1 for term in query_terms if f" {term} " in padded_local)
+        ancestor_term_hits = sum(1 for term in query_terms if f" {term} " in padded_ancestor)
         local_section_match = bool(query_terms and local_term_hits >= threshold)
         ancestor_section_match = bool(
             query_terms
@@ -157,6 +161,15 @@ class SqlKeywordScorer:
             and row.chunk_type in {
                 chunk_type.value for chunk_type in retrieval_query.chunk_types
             }
+        )
+        # Extra bonus when the chunk is the most-preferred type for this intent.
+        # This helps the best-fit type (e.g. TROUBLESHOOTING for a troubleshooting
+        # query) outrank acceptable-but-secondary types (e.g. OPERATION_INSTRUCTION).
+        primary_type_fit = (
+            chunk_type_fit
+            and retrieval_query is not None
+            and bool(retrieval_query.chunk_types)
+            and row.chunk_type == retrieval_query.chunk_types[0].value
         )
         structured_fit = (
             retrieval_query is not None
@@ -202,6 +215,8 @@ class SqlKeywordScorer:
 
         if chunk_type_fit:
             score += 6.0
+        if primary_type_fit:
+            score += 3.0
         if structured_fit:
             score += 4.0
 
@@ -229,6 +244,7 @@ class SqlKeywordScorer:
             "sql_local_section_match": str(local_section_match).lower(),
             "sql_ordered_match_bonus": f"{ordered_match:.6f}",
             "sql_chunk_role": chunk_role,
+            "sql_primary_type_fit": str(primary_type_fit).lower(),
         }
         if document is not None:
             metadata["document_type"] = document.document_type
