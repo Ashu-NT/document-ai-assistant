@@ -11,15 +11,15 @@ from src.application.evaluation.retrieval.retrieval_quality_thresholds import (
 
 
 def _make_report(**overrides) -> dict:
-    defaults = {
+    summary = {
         "hit_rate": 0.80,
-        "mrr": 0.70,
+        "mean_reciprocal_rank": 0.70,
         "recall_at_5": 0.75,
         "context_hit_rate": 0.72,
         "identifier_top_1_accuracy": 0.85,
     }
-    defaults.update(overrides)
-    return defaults
+    summary.update(overrides)
+    return {"summary": summary}
 
 
 class TestRetrievalQualityGate:
@@ -46,7 +46,7 @@ class TestRetrievalQualityGate:
     def test_fails_when_mrr_below_threshold(self):
         thresholds = RetrievalQualityThresholds(mrr=0.80)
         gate = RetrievalQualityGate(thresholds=thresholds)
-        result = gate.check(_make_report(mrr=0.60))
+        result = gate.check(_make_report(mean_reciprocal_rank=0.60))
         assert not result.passed
 
     def test_passes_when_threshold_disabled(self):

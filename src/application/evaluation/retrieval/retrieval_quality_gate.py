@@ -49,17 +49,22 @@ class RetrievalQualityGate:
         violations: list[ThresholdViolation] = []
         checked: dict[str, float | None] = {}
 
+        # Metrics live under "summary" in the benchmark report; fall back to root
+        # for callers that pass a pre-extracted summary dict.
+        summary = report.get("summary", report) if isinstance(report.get("summary"), dict) else report
+
+        # (display_name, report_key, threshold)
         checks = [
-            ("hit_rate", t.hit_rate),
-            ("mrr", t.mrr),
-            ("recall_at_5", t.recall_at_5),
-            ("context_hit_rate", t.context_hit_rate),
-            ("identifier_top_1_accuracy", t.identifier_top_1_accuracy),
+            ("hit_rate", "hit_rate", t.hit_rate),
+            ("mrr", "mean_reciprocal_rank", t.mrr),
+            ("recall_at_5", "recall_at_5", t.recall_at_5),
+            ("context_hit_rate", "context_hit_rate", t.context_hit_rate),
+            ("identifier_top_1_accuracy", "identifier_top_1_accuracy", t.identifier_top_1_accuracy),
         ]
-        for metric, threshold in checks:
+        for metric, report_key, threshold in checks:
             if threshold is None:
                 continue
-            raw = report.get(metric)
+            raw = summary.get(report_key)
             actual = float(raw) if raw is not None else None
             checked[metric] = actual
             if actual is None or actual < threshold:
