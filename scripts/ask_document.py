@@ -233,7 +233,7 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
         llm_settings,
         qdrant_settings,
     )
-    from src.infrastructure.ai.embeddings import BgeEmbeddingProvider  # noqa: WPS433
+    from src.infrastructure.ai.embeddings import create_embedding_provider  # noqa: WPS433
     from src.infrastructure.ai.llm import OllamaLLMProvider  # noqa: WPS433
     from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork  # noqa: WPS433
     from src.infrastructure.retrieval.keyword import SqlKeywordIndex  # noqa: WPS433
@@ -245,7 +245,7 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
 
     uow = SqlAlchemyUnitOfWork(session)
     query_validator = RetrievalQueryValidator()
-    embedding_provider = BgeEmbeddingProvider(model_name=embedding_settings.model_name)
+    embedding_provider = create_embedding_provider()
     qdrant_client = _create_qdrant_client(QdrantClient)
 
     vector_store = QdrantVectorStore(
