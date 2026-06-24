@@ -4,9 +4,9 @@ from __future__ import annotations
 Run the retrieval quality gate against a benchmark report JSON file.
 
 Usage:
-    python scripts/run_retrieval_quality_gate.py outputs/evaluation/report.json
-    python scripts/run_retrieval_quality_gate.py outputs/evaluation/report.json --thresholds config/evaluation/retrieval_thresholds.yaml
-    python scripts/run_retrieval_quality_gate.py outputs/evaluation/report.json --strict
+    python scripts/run_retrieval_quality_gate.py outputs/evaluation/retrieval/retrieval_benchmark_report.json
+    python scripts/run_retrieval_quality_gate.py outputs/evaluation/retrieval/retrieval_benchmark_report.json --thresholds config/evaluation/retrieval_thresholds.yaml
+    python scripts/run_retrieval_quality_gate.py outputs/evaluation/retrieval/retrieval_benchmark_report.json --strict
 """
 
 import argparse
