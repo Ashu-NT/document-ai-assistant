@@ -1,5 +1,6 @@
 from typing import Callable
 
+from src.application.services.ai import LLMService
 from src.application.workflows.parsing.builders.chunking.builders.chunk_type_llm_classifier import (
     ChunkTypeLLMClassifier,
 )
@@ -7,7 +8,6 @@ from src.domain.common import ChunkType
 from src.domain.document import DocumentChunk
 
 _UNRESOLVED_TYPES = {ChunkType.GENERAL, ChunkType.UNKNOWN}
-
 _CHUNK_TYPE_CLASSIFICATION_SOURCE = "llm"
 
 
@@ -20,7 +20,7 @@ def _default_chunk_type_classification_enabled() -> bool:
         return False
 
 
-def _default_classification_model() -> str | None:
+def _default_chunk_type_classification_model() -> str | None:
     try:
         from src.config.settings import classification_settings, llm_settings
 
@@ -46,10 +46,15 @@ class ChunkTypeClassificationWorkflow:
     def __init__(
         self,
         *,
-        llm_classifier: ChunkTypeLLMClassifier,
+        llm_service: LLMService,
+        classification_model: str | None = None,
         enable_chunk_type_classification: bool | None = None,
     ) -> None:
-        self.llm_classifier = llm_classifier
+        model = classification_model or _default_chunk_type_classification_model()
+        self.llm_classifier = ChunkTypeLLMClassifier(
+            llm_service=llm_service,
+            model=model,
+        )
         self.enable_chunk_type_classification = (
             enable_chunk_type_classification
             if enable_chunk_type_classification is not None

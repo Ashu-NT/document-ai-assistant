@@ -55,9 +55,6 @@ from src.application.workflows.classification import (  # noqa: E402
     DocumentClassificationWorkflow,
     PostClassificationChunkFinalizationWorkflow,
 )
-from src.application.workflows.parsing.builders.chunking.builders.chunk_type_llm_classifier import (  # noqa: E402
-    ChunkTypeLLMClassifier,
-)
 from src.application.workflows.embedding import EmbeddingWorkflow  # noqa: E402
 from src.application.workflows.parsing import ParsingWorkflow  # noqa: E402
 from src.application.workflows.parsing.canonical_element_ocr_enricher import (  # noqa: E402
@@ -309,7 +306,7 @@ def build_corpus_seeder() -> CorpusSeederRuntime:
                     classification_service=classification_service,
                     chunk_classification_workflow=chunk_classification_workflow,
                     chunk_type_classification_workflow=ChunkTypeClassificationWorkflow(
-                        llm_classifier=ChunkTypeLLMClassifier(llm_service=llm_service),
+                        llm_service=llm_service,
                     ),
                     question_generation_service=QuestionGenerationService(
                         llm_service=llm_service,
