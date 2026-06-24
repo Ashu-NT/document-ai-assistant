@@ -174,7 +174,7 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
         embedding_settings,
         qdrant_settings,
     )
-    from src.infrastructure.ai.embeddings import BgeEmbeddingProvider  # noqa: WPS433
+    from src.infrastructure.ai.embeddings import create_embedding_provider  # noqa: WPS433
     from src.infrastructure.db.base import Base  # noqa: WPS433
     from src.infrastructure.db.orm_models import (  # noqa: WPS433,F401
         __all__ as _orm_models_loaded,
@@ -194,9 +194,7 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
     session = SessionLocal()
     unit_of_work = SqlAlchemyUnitOfWork(session)
     query_validator = RetrievalQueryValidator()
-    embedding_provider = BgeEmbeddingProvider(
-        model_name=embedding_settings.model_name,
-    )
+    embedding_provider = create_embedding_provider()
     qdrant_client = _create_qdrant_client(QdrantClient)
     vector_store = QdrantVectorStore(
         client=qdrant_client,

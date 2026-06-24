@@ -76,7 +76,7 @@ from src.config.settings import (  # noqa: E402
     qdrant_settings,
     storage_settings,
 )
-from src.infrastructure.ai.embeddings import BgeEmbeddingProvider  # noqa: E402
+from src.infrastructure.ai.embeddings import create_embedding_provider  # noqa: E402
 from src.infrastructure.ai.llm import OllamaLLMProvider  # noqa: E402
 from src.infrastructure.ai.ocr import build_ocr_provider  # noqa: E402
 from src.infrastructure.db.base import Base  # noqa: E402
@@ -250,9 +250,7 @@ def build_corpus_seeder() -> CorpusSeederRuntime:
             default_model=llm_settings.general_llm,
         )
     )
-    embedding_provider = BgeEmbeddingProvider(
-        model_name=embedding_settings.model_name,
-    )
+    embedding_provider = create_embedding_provider()
     qdrant_client = create_qdrant_client()
     vector_store = QdrantVectorStore(
         client=qdrant_client,
