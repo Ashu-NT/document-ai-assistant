@@ -49,6 +49,14 @@ from src.application.workflows.parsing.builders.chunking.policies import (  # no
     ChunkingProfileInferer,
     DocumentChunkingPolicyResolver,
 )
+from src.application.workflows.parsing.parsing_workflow_result import (  # noqa: E402
+    ParsingWorkflowResult,
+)
+from src.application.workflows.parsing.reports import (  # noqa: E402
+    ChunkingReportWriter,
+    ParsingReportWriter,
+    QualityReportWriter,
+)
 from src.config.paths import ensure_directory, resolve_project_path  # noqa: E402
 from src.config.settings import docling_settings, ocr_settings  # noqa: E402
 from src.domain.document import DocumentHashes  # noqa: E402
@@ -1177,6 +1185,57 @@ def resolve_post_classification_chunks(
     )
 
 
+def _write_json_debug_reports(
+    *,
+    document_id: str,
+    file_path: str,
+    page_count: int | None,
+    document_graph: Any,
+) -> None:
+    elements = list(document_graph.elements.values())
+    orphan_count = sum(1 for e in elements if safe_getattr(e, "parent_section_id") is None)
+    no_page_count = sum(1 for e in elements if safe_getattr(e, "source", "page_start") is None)
+    element_count = len(elements)
+
+    if element_count > 0:
+        orphan_ratio = orphan_count / element_count
+        no_page_ratio = no_page_count / element_count
+        parse_confidence = round(1.0 - (orphan_ratio * 0.5 + no_page_ratio * 0.5), 4)
+    else:
+        parse_confidence = None
+
+    warnings: list[str] = []
+    if element_count > 0 and orphan_count / element_count > 0.25:
+        warnings.append(f"High orphan element ratio: {orphan_count}/{element_count} elements have no section")
+    if element_count > 0 and no_page_count / element_count > 0.5:
+        warnings.append(f"Many elements lack page numbers: {no_page_count}/{element_count}")
+    if not document_graph.sections:
+        warnings.append("Document produced no sections")
+    if not document_graph.chunks:
+        warnings.append("Document produced no chunks")
+
+    result = ParsingWorkflowResult(
+        document_id=document_id,
+        file_path=file_path,
+        page_count=page_count,
+        element_count=element_count,
+        section_count=len(document_graph.sections),
+        chunk_count=len(document_graph.chunks),
+        table_count=len(document_graph.tables),
+        picture_count=len(document_graph.pictures),
+        document_graph=document_graph,
+        parse_confidence=parse_confidence,
+        orphan_element_count=orphan_count,
+        elements_without_page_count=no_page_count,
+        parse_warnings=warnings,
+    )
+
+    parse_path = ParsingReportWriter().write(result)
+    chunk_path = ChunkingReportWriter().write(result)
+    quality_path = QualityReportWriter().write(result)
+    print_status(f"JSON reports: {parse_path.name}, {chunk_path.name}, {quality_path.name}")
+
+
 def main() -> int:
     args = parse_args()
 
@@ -1255,6 +1314,13 @@ def main() -> int:
             classification_provider=classification_provider,
         )
         write_markdown_report(output_path, report)
+
+        _write_json_debug_reports(
+            document_id=document_id,
+            file_path=str(input_path),
+            page_count=raw_parsed_document.page_count,
+            document_graph=document_graph,
+        )
 
         print(output_path)
         return 0
