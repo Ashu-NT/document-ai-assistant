@@ -1,0 +1,5 @@
+family: certificate
+document_type: CERTIFICATE
+builder_class: CertificateStructuredFamilyBuilder
+enabled: true
+description: Compliance, type-approval, and attestation certificates.

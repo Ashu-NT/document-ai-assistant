@@ -1,0 +1,41 @@
+# Marker tuples for CERTIFICATE document family.
+
+document:
+  - certificate
+  - cert
+  - declaration
+  - compliance
+  - attestation
+
+general_information:
+  - general information
+  - general data
+  - general details
+
+particulars:
+  - particulars
+  - vessel particulars
+  - ship particulars
+  - item particulars
+
+compliance_information:
+  - compliance
+  - conformity
+  - conformance
+  - meets requirements
+  - directive
+
+approval_information:
+  - approval
+  - approved by
+  - approved for
+  - certification authority
+  - notified body
+
+test_data:
+  - test data
+  - test results
+  - test report
+  - test certificate
+  - inspection data
+  - test values

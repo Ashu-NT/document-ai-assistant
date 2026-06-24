@@ -1,0 +1,5 @@
+family: drawing
+document_type: DRAWING
+builder_class: DrawingStructuredFamilyBuilder
+enabled: true
+description: P&IDs, isometrics, and general arrangement drawings with title blocks and revision tables.

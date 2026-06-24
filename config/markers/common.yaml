@@ -1,0 +1,16 @@
+# Common / cross-family markers used as fallbacks for generic structured detection.
+# These are not applied to any one family; they are used by the signal detector
+# to determine whether a section has structured content at all.
+
+overview:
+  - overview
+  - introduction
+  - summary
+  - abstract
+  - background
+
+general:
+  - general
+  - general information
+  - general description
+  - description

@@ -1,0 +1,62 @@
+# Marker tuples for DATASHEET document family.
+
+document:
+  - datasheet
+  - data sheet
+  - product data
+  - technical data sheet
+  - specification sheet
+
+technical_data:
+  - technical data
+  - technical information
+  - technical specifications
+  - product specifications
+
+specification_table:
+  - specification
+  - specifications
+  - technical specifications table
+  - parameter table
+  - performance data
+
+ordering_information:
+  - ordering information
+  - order code
+  - order number
+  - how to order
+  - ordering guide
+
+ordering_example:
+  - ordering example
+  - order example
+  - example order
+
+connection_information:
+  - connection
+  - connections
+  - electrical connections
+  - wiring connections
+  - terminal connections
+
+operating_limits:
+  - operating limits
+  - operating range
+  - limits
+  - maximum operating
+  - minimum operating
+  - ambient conditions
+
+pressure_temperature:
+  - pressure
+  - temperature
+  - pressure-temperature
+  - pressure temperature rating
+  - pt rating
+
+material_information:
+  - material
+  - materials
+  - wetted materials
+  - body material
+  - material of construction

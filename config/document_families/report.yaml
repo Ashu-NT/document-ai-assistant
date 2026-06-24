@@ -1,0 +1,5 @@
+family: report
+document_type: REPORT
+builder_class: ReportStructuredFamilyBuilder
+enabled: true
+description: Inspection, calibration, and commissioning reports.

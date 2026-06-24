@@ -1,0 +1,36 @@
+# Marker tuples for SENSOR_LIST / instrument list document family.
+
+document:
+  - sensor list
+  - instrument list
+  - instrument index
+  - tag list
+  - io list
+  - p&id list
+
+sensor_list:
+  - sensor list
+  - sensor listing
+  - sensors
+
+instrument_list:
+  - instrument list
+  - instrument listing
+  - instruments
+
+tag_list:
+  - tag list
+  - tag number list
+  - equipment tags
+
+pid_list:
+  - p&id
+  - pid
+  - p and id
+  - piping and instrumentation
+
+io_list:
+  - io list
+  - i/o list
+  - input output list
+  - i/o schedule

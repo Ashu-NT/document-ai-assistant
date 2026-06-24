@@ -1,0 +1,5 @@
+family: sensor_list
+document_type: null
+builder_class: SensorListStructuredFamilyBuilder
+enabled: true
+description: Instrument tag lists, I/O schedules, and P&ID equipment lists.

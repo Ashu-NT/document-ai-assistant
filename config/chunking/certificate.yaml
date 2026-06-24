@@ -1,0 +1,10 @@
+# Chunking policy for CERTIFICATE document type.
+profile_name: certificate
+max_chunk_tokens: 500
+chunk_overlap: 60
+same_topic_merge_tokens: 80
+intro_context_tokens: 100
+asset_context_window: 1
+asset_context_max_tokens: 60
+include_picture_chunks: false
+include_table_context: true

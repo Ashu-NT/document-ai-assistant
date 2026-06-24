@@ -28,8 +28,20 @@ from src.application.evaluation.retrieval.evaluators import (
     ChunkQualityEvaluator,
     RetrievalBenchmarkEvaluator,
 )
+from src.application.evaluation.retrieval.retrieval_quality_gate import (
+    RetrievalQualityGate,
+    RetrievalQualityGateResult,
+    ThresholdViolation,
+)
+from src.application.evaluation.retrieval.retrieval_quality_thresholds import (
+    RetrievalQualityThresholds,
+)
 
 __all__ = [
+    "RetrievalQualityGate",
+    "RetrievalQualityGateResult",
+    "RetrievalQualityThresholds",
+    "ThresholdViolation",
     "ChunkQualityEvaluator",
     "RetrievalBenchmarkEvaluator",
     "RetrievalBenchmarkCase",

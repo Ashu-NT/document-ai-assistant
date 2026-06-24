@@ -98,6 +98,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Output results as JSON.",
     )
+    parser.add_argument(
+        "--trace",
+        action="store_true",
+        help="Write a retrieval trace JSON to outputs/debug_retrieval/.",
+    )
     return parser.parse_args(list(argv) if argv is not None else None)
 
 
@@ -606,6 +611,41 @@ def print_result_json(
     print(json.dumps(output, indent=2))
 
 
+def _write_retrieval_trace(
+    *,
+    runtime: QARuntime,
+    question: str,
+    document_id: str | None,
+    top_k: int | None,
+) -> None:
+    try:
+        import datetime  # noqa: WPS433
+
+        from src.application.workflows.retrieval.tracing import (  # noqa: WPS433
+            RetrievalTraceRecorder,
+            RetrievalTraceWriter,
+        )
+        from src.domain.common import new_id  # noqa: WPS433
+        from src.domain.retrieval import RetrievalQuery  # noqa: WPS433
+
+        retrieval_wf = runtime.workflow._retrieval_workflow
+        recorder = RetrievalTraceRecorder()
+        query = RetrievalQuery(
+            query_id=new_id("q"),
+            query_text=question,
+            top_k=top_k or 5,
+            document_id=document_id,
+        )
+        retrieval_wf.run(query, trace_recorder=recorder)
+        ts = datetime.datetime.utcnow().isoformat()
+        trace = recorder.build(query_id=query.query_id, timestamp_iso=ts)
+        writer = RetrievalTraceWriter()
+        path = writer.write(trace)
+        print_status(f"Trace written → {path}")
+    except Exception as exc:
+        print_status(f"Trace write failed: {exc}")
+
+
 def close_runtime(runtime: QARuntime | None) -> None:
     if runtime is None:
         return
@@ -709,6 +749,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             allow_answer_generation=effective_generation,
         )
         result = runtime.workflow.run(request)
+
+        if getattr(args, "trace", False):
+            _write_retrieval_trace(
+                runtime=runtime,
+                question=question,
+                document_id=document_id,
+                top_k=args.top_k,
+            )
 
         service_configured = runtime.generation_model is not None
 

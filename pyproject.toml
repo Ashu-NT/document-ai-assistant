@@ -45,6 +45,7 @@ dependencies = [
 
     # Utilities
     "python-dotenv",
+    "pyyaml>=6.0",
 
 ]
 

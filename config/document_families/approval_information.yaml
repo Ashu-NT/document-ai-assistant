@@ -1,0 +1,5 @@
+family: approval_information
+document_type: null
+builder_class: ApprovalInformationStructuredFamilyBuilder
+enabled: true
+description: Approval-information sections within certificates and datasheets.

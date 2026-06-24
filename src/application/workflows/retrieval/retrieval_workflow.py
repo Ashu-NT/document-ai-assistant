@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import replace
+from typing import TYPE_CHECKING
 
 from src.application.contracts.guardrails.guardrail import Guardrail
 from src.application.contracts.guardrails.guardrail_context import GuardrailContext
@@ -23,6 +26,11 @@ from src.domain.retrieval import RetrievalQuery, RetrievalResult
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import NoEvidenceFoundError
 from src.shared.execution import tracked_action
+
+if TYPE_CHECKING:
+    from src.application.workflows.retrieval.tracing.retrieval_trace_recorder import (
+        RetrievalTraceRecorder,
+    )
 
 
 def _default_retrieval_deduplication_policy() -> RetrievalDeduplicationPolicy:
@@ -100,16 +108,22 @@ class RetrievalWorkflow:
         self,
         query: RetrievalQuery,
         activity_context: ActivityContext | None = None,
+        trace_recorder: RetrievalTraceRecorder | None = None,
     ) -> RetrievalWorkflowResult:
         working_query = self.query_analyzer.analyze(query)
         validation = self.query_validator.validate(working_query)
         validation.raise_if_invalid()
+
+        if trace_recorder is not None:
+            trace_recorder.record_query_analysis(working_query)
 
         if self.pre_retrieval_guardrails:
             pre_context = self._build_guardrail_context(working_query)
             pre_result = self._run_guardrail_chain(
                 self.pre_retrieval_guardrails, pre_context
             )
+            if trace_recorder is not None:
+                trace_recorder.record_pre_guardrail(pre_result)
             if pre_result is not None and not pre_result.allowed:
                 empty_result = RetrievalResult(
                     result_id=new_id("gr"),
@@ -127,14 +141,26 @@ class RetrievalWorkflow:
 
         candidate_query = self._candidate_query(working_query)
         retrieval_result = self.retrieval_service.retrieve(candidate_query)
+
+        if trace_recorder is not None:
+            trace_recorder.record_candidates(retrieval_result.chunks)
+
         deduplication_result = self.retrieved_chunk_deduplicator.deduplicate(
             query=working_query,
             chunks=retrieval_result.chunks,
         )
+        final_chunks = deduplication_result.chunks[: working_query.top_k]
+
+        if trace_recorder is not None:
+            trace_recorder.record_dedup(
+                before_count=len(retrieval_result.chunks),
+                after_chunks=final_chunks,
+            )
+
         retrieval_result = retrieval_result.__class__(
             result_id=retrieval_result.result_id,
             query=working_query,
-            chunks=deduplication_result.chunks[: working_query.top_k],
+            chunks=final_chunks,
             citations=list(retrieval_result.citations),
             used_dense=retrieval_result.used_dense,
             used_keyword=retrieval_result.used_keyword,
@@ -154,6 +180,8 @@ class RetrievalWorkflow:
             post_guardrail_result = self._run_guardrail_chain(
                 self.post_retrieval_guardrails, post_context
             )
+            if trace_recorder is not None:
+                trace_recorder.record_post_guardrail(post_guardrail_result)
 
         if self.strict_evidence and not retrieval_result.has_results():
             raise NoEvidenceFoundError(
@@ -182,6 +210,9 @@ class RetrievalWorkflow:
             if self.context_expander is not None
             else list(retrieval_result.chunks)
         )
+
+        if trace_recorder is not None:
+            trace_recorder.record_context_expansion(context_chunks)
 
         return RetrievalWorkflowResult(
             retrieval_result=retrieval_result,

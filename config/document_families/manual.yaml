@@ -1,0 +1,9 @@
+# Configuration for the MANUAL structured evidence family builder.
+# All fields are informational / for future override use.
+# Changing this file does NOT change the builder logic — edit the builder
+# Python class for logic changes.
+family: manual
+document_type: MANUAL
+builder_class: ManualStructuredFamilyBuilder
+enabled: true
+description: Technical operating and service manuals with maintenance, safety, and spare-parts content.
