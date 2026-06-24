@@ -149,7 +149,17 @@ class RetrievalQueryIntentInferer:
             return RetrievalQueryIntent.SPECIFICATION
         if any(
             marker in query_text
-            for marker in ("troubleshoot", "problem", "fault", "error", "not working")
+            for marker in (
+                "troubleshoot",
+                "problem",
+                "fault",
+                "error",
+                "not working",
+                "causes",
+                "remedies",
+                "diagnose",
+                "symptom",
+            )
         ):
             return RetrievalQueryIntent.TROUBLESHOOTING
         if any(

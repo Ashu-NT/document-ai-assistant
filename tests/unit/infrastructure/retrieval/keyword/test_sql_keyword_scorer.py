@@ -69,12 +69,14 @@ def _score(
     document: DocumentORM,
     query_text: str,
     identifiers: list[str] | None = None,
+    chunk_types: list[ChunkType] | None = None,
 ):
     scorer = SqlKeywordScorer()
     query = RetrievalQuery(
         query_id="q_test",
         query_text=query_text,
         detected_identifiers=identifiers or [],
+        chunk_types=chunk_types or [],
     )
     terms = extract_query_terms(query_text)
     return scorer.score(
@@ -308,4 +310,120 @@ def test_section_identifier_scores_between_content_and_document() -> None:
     )
     assert result_section.total_score > result_doc.total_score, (
         f"section ({result_section.total_score:.2f}) > doc-title ({result_doc.total_score:.2f})"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 7. Primary-type-fit bonus: most-preferred type gets +3 over secondary types
+# ---------------------------------------------------------------------------
+
+def test_primary_type_fit_boosts_primary_chunk_type() -> None:
+    """When chunk_types are ordered by preference, the chunk whose type matches
+    chunk_types[0] (primary) must score exactly 3.0 more than an otherwise
+    identical chunk whose type matches chunk_types[1] (secondary)."""
+    doc = _make_document(title="Pump Manual", file_name="pump.pdf")
+
+    # TROUBLESHOOTING intent preference order: [TROUBLESHOOTING, OPERATION_INSTRUCTION, ...]
+    preferred_types = [
+        ChunkType.TROUBLESHOOTING,
+        ChunkType.OPERATION_INSTRUCTION,
+        ChunkType.MAINTENANCE_PROCEDURE,
+        ChunkType.GENERAL,
+    ]
+    shared_content = "Pump seal failure: replace the shaft seal."
+
+    chunk_primary = _make_chunk(
+        chunk_id="c_primary",
+        content=shared_content,
+        chunk_type=ChunkType.TROUBLESHOOTING,
+        section_path='["7 Components", "Troubleshooting 7.4.5"]',
+    )
+    chunk_secondary = _make_chunk(
+        chunk_id="c_secondary",
+        content=shared_content,
+        chunk_type=ChunkType.OPERATION_INSTRUCTION,
+        section_path='["7 Components", "Troubleshooting 7.4.5"]',
+    )
+
+    result_primary = _score(chunk_primary, doc, "pump seal failure remedies", chunk_types=preferred_types)
+    result_secondary = _score(chunk_secondary, doc, "pump seal failure remedies", chunk_types=preferred_types)
+
+    assert result_primary.metadata["sql_primary_type_fit"] == "true"
+    assert result_secondary.metadata["sql_primary_type_fit"] == "false"
+    assert result_primary.total_score == pytest.approx(result_secondary.total_score + 3.0)
+
+
+def test_non_primary_type_still_gets_chunk_type_fit_bonus() -> None:
+    """A chunk whose type is in chunk_types but not position 0 still gets the
+    base chunk_type_fit bonus (+6.0), just not the primary bonus (+3.0)."""
+    doc = _make_document(title="Manual", file_name="manual.pdf")
+    preferred_types = [
+        ChunkType.TROUBLESHOOTING,
+        ChunkType.OPERATION_INSTRUCTION,
+        ChunkType.GENERAL,
+    ]
+    chunk_secondary = _make_chunk(
+        content="Operation steps for the pump.",
+        chunk_type=ChunkType.OPERATION_INSTRUCTION,
+    )
+    chunk_no_fit = _make_chunk(
+        chunk_id="c_no_fit",
+        content="Operation steps for the pump.",
+        chunk_type=ChunkType.INSTALLATION_INSTRUCTION,
+    )
+
+    result_secondary = _score(chunk_secondary, doc, "pump operation", chunk_types=preferred_types)
+    result_no_fit = _score(chunk_no_fit, doc, "pump operation", chunk_types=preferred_types)
+
+    assert result_secondary.total_score == pytest.approx(result_no_fit.total_score + 6.0)
+
+
+# ---------------------------------------------------------------------------
+# 8. Shallow section path: single matching term triggers section bonus
+# ---------------------------------------------------------------------------
+
+def test_section_path_requires_two_term_hits_for_any_depth() -> None:
+    """Both shallow and deep section paths require at least 2 query-term
+    hits in the local part to trigger the local_section_match bonus."""
+    doc = _make_document(title="Pump Manual", file_name="pump.pdf")
+
+    # 2-segment path with only 1 query-term match — no bonus
+    chunk_shallow = _make_chunk(
+        content="Press the green start button to run the macerator.",
+        section_path='["6 Operation & General Maintenance", "6.3 Operation Macerator"]',
+    )
+    result_shallow = _score(chunk_shallow, doc, "How do I start and run the macerator?")
+    assert result_shallow.metadata["sql_local_section_match"] == "false", (
+        "2-part section with only 1 matching term should not get local_section_match"
+    )
+
+    # 3-segment path: 'macerator' does not match 'Macerators' as a whole word — 0 hits
+    chunk_deep = _make_chunk(
+        chunk_id="c_deep",
+        content="Press the green button.",
+        section_path='["7 Components", "7.1 Macerators", "General Overview"]',
+    )
+    result_deep = _score(chunk_deep, doc, "How do I start and run the macerator?")
+    assert result_deep.metadata["sql_local_section_match"] == "false"
+
+
+# ---------------------------------------------------------------------------
+# 9. Section term matching is whole-word — substrings in longer tokens don't match
+# ---------------------------------------------------------------------------
+
+def test_section_term_match_requires_whole_word_not_substring() -> None:
+    """A query term must appear as a whole word in the section path, not as a
+    substring of a longer token: 'do' must not fire on 'shutdown'."""
+    doc = _make_document(title="Manual", file_name="manual.pdf")
+
+    # Section includes 'shutdown' (contains 'do') and 'Initial Test Run' (contains 'run').
+    # With substring matching: 'do' in 'shutdown' + 'run' in 'Initial Test Run' = 2 hits = threshold.
+    # With whole-word matching: only 'run' is a standalone word = 1 hit < threshold → no match.
+    chunk = _make_chunk(
+        content="Ensure covers are fitted before starting the machine.",
+        section_path='["7 Components", "7.1 Macerators", "Commissioning & Shutdown", "7.2.7.2 Initial Test Run"]',
+    )
+    result = _score(chunk, doc, "How do I start and run the macerator?")
+    assert result.metadata["sql_local_section_match"] == "false", (
+        "'do' must not match as substring of 'shutdown' — whole-word required"
     )

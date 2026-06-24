@@ -87,6 +87,9 @@ class RetrievalBenchmarkDatasetResolver:
                 diagnostics.append(diagnostic)
                 continue
 
+            if resolved_case.query is not None:
+                resolved_case.query.document_id = manifest_document.document_id
+
             resolved_cases.append(resolved_case)
 
         if diagnostics:

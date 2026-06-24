@@ -40,16 +40,20 @@ class RetrievalQueryChunkTypePreferenceMapper:
             )
 
         if intent == RetrievalQueryIntent.SPECIFICATION:
-            return self._unique(
-                [
-                    ChunkType.TECHNICAL_SPECIFICATION,
-                    ChunkType.CERTIFICATION_INFO,
-                    ChunkType.SPARE_PARTS_TABLE,
-                    ChunkType.INSTALLATION_INSTRUCTION,
-                    ChunkType.MAINTENANCE_PROCEDURE,
-                    ChunkType.GENERAL,
-                ]
-            )
+            preferences = [
+                ChunkType.TECHNICAL_SPECIFICATION,
+                ChunkType.CERTIFICATION_INFO,
+                ChunkType.SPARE_PARTS_TABLE,
+                ChunkType.INSTALLATION_INSTRUCTION,
+                ChunkType.MAINTENANCE_PROCEDURE,
+                ChunkType.GENERAL,
+            ]
+            if any(
+                marker in query_text
+                for marker in ("certificate", "approval", "iecex", "atex")
+            ):
+                preferences.insert(0, ChunkType.CERTIFICATION_INFO)
+            return self._unique(preferences)
 
         if intent == RetrievalQueryIntent.PROCEDURE:
             preferences = [
@@ -61,7 +65,7 @@ class RetrievalQueryChunkTypePreferenceMapper:
             ]
             if any(
                 marker in query_text
-                for marker in ("how often", "interval", "schedule", "lubricat", "hours")
+                for marker in ("how often", "task", "interval", "schedule", "lubricat", "hours")
             ):
                 preferences.insert(0, ChunkType.MAINTENANCE_INTERVAL)
             return self._unique(preferences)
