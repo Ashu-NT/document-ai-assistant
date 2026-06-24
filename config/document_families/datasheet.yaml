@@ -1,0 +1,5 @@
+family: datasheet
+document_type: DATASHEET
+builder_class: DatasheetStructuredFamilyBuilder
+enabled: true
+description: Product datasheets with technical specifications, ordering codes, and operating limits.

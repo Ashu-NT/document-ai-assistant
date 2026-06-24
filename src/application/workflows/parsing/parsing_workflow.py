@@ -18,6 +18,43 @@ from src.shared.execution import tracked_action
 from src.shared.ids import IdGenerator, IdPrefix
 
 
+def _compute_parse_confidence(
+    *,
+    element_count: int,
+    orphan_count: int,
+    no_page_count: int,
+) -> float | None:
+    if element_count == 0:
+        return None
+    orphan_ratio = orphan_count / element_count
+    no_page_ratio = no_page_count / element_count
+    return round(1.0 - (orphan_ratio * 0.5 + no_page_ratio * 0.5), 4)
+
+
+def _collect_parse_warnings(
+    *,
+    element_count: int,
+    orphan_count: int,
+    no_page_count: int,
+    section_count: int,
+    chunk_count: int,
+) -> list[str]:
+    warnings: list[str] = []
+    if element_count > 0 and orphan_count / element_count > 0.25:
+        warnings.append(
+            f"High orphan element ratio: {orphan_count}/{element_count} elements have no section"
+        )
+    if element_count > 0 and no_page_count / element_count > 0.5:
+        warnings.append(
+            f"Many elements lack page numbers: {no_page_count}/{element_count}"
+        )
+    if section_count == 0:
+        warnings.append("Document produced no sections")
+    if chunk_count == 0:
+        warnings.append("Document produced no chunks")
+    return warnings
+
+
 class ParsingWorkflow:
     def __init__(
         self,
@@ -92,14 +129,35 @@ class ParsingWorkflow:
         file_path: str,
         page_count: int | None,
     ) -> ParsingWorkflowResult:
+        elements = list(document_graph.elements.values())
+        orphan_count = sum(1 for e in elements if e.parent_section_id is None)
+        no_page_count = sum(
+            1 for e in elements if e.source.page_start is None
+        )
+        parse_confidence = _compute_parse_confidence(
+            element_count=len(elements),
+            orphan_count=orphan_count,
+            no_page_count=no_page_count,
+        )
+        warnings = _collect_parse_warnings(
+            element_count=len(elements),
+            orphan_count=orphan_count,
+            no_page_count=no_page_count,
+            section_count=len(document_graph.sections),
+            chunk_count=len(document_graph.chunks),
+        )
         return ParsingWorkflowResult(
             document_id=document_graph.document.document_id,
             file_path=file_path,
             page_count=page_count,
-            element_count=len(document_graph.elements),
+            element_count=len(elements),
             section_count=len(document_graph.sections),
             chunk_count=len(document_graph.chunks),
             table_count=len(document_graph.tables),
             picture_count=len(document_graph.pictures),
             document_graph=document_graph,
+            parse_confidence=parse_confidence,
+            orphan_element_count=orphan_count,
+            elements_without_page_count=no_page_count,
+            parse_warnings=warnings,
         )

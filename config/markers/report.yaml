@@ -1,0 +1,75 @@
+# Marker tuples for REPORT document family.
+
+document:
+  - report
+  - inspection report
+  - calibration report
+  - test report
+  - commissioning report
+
+device_information:
+  - device information
+  - instrument information
+  - equipment information
+  - device data
+  - instrument data
+
+additional_information:
+  - additional information
+  - remarks
+  - notes
+  - comments
+  - observations
+
+inspection_results:
+  - inspection results
+  - inspection findings
+  - inspection outcome
+  - inspection data
+  - findings
+
+calibration_results:
+  - calibration results
+  - calibration data
+  - calibration values
+  - as-found
+  - as-left
+  - calibration certificate
+
+electrical_connection:
+  - electrical connection
+  - wiring
+  - terminal block
+  - cable connection
+  - power supply
+
+operating_instructions:
+  - operating instructions
+  - operation instructions
+  - operational procedure
+  - how to operate
+
+certification_section:
+  - certification
+  - certifications
+  - certificate section
+  - applicable certificates
+
+procedure:
+  - procedure
+  - procedures
+  - method
+  - methods
+  - steps
+
+mounting:
+  - mounting
+  - installation location
+  - mounting arrangement
+  - installed position
+
+operation_options:
+  - operation options
+  - operating mode
+  - configuration options
+  - function options

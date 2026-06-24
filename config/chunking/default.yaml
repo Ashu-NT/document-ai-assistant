@@ -1,0 +1,10 @@
+# Default chunking policy — used when document type cannot be determined.
+profile_name: default
+max_chunk_tokens: 200
+chunk_overlap: 20
+same_topic_merge_tokens: 90
+intro_context_tokens: 120
+asset_context_window: 1
+asset_context_max_tokens: 72
+include_picture_chunks: true
+include_table_context: true

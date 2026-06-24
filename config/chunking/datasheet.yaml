@@ -1,0 +1,10 @@
+# Chunking policy for DATASHEET document type.
+profile_name: datasheet
+max_chunk_tokens: 600
+chunk_overlap: 75
+same_topic_merge_tokens: 80
+intro_context_tokens: 110
+asset_context_window: 1
+asset_context_max_tokens: 60
+include_picture_chunks: false
+include_table_context: true

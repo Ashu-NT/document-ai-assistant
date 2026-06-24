@@ -1,0 +1,120 @@
+# Marker tuples for MANUAL document family.
+# These mirror the Python constants in markers/manual_markers.py — edit here to
+# customize detection without changing source code.
+
+document:
+  - manual
+  - operating manual
+  - instruction manual
+  - service manual
+  - technical manual
+  - operation and maintenance
+
+operation:
+  - operation
+  - operating procedure
+  - startup
+  - start/run
+  - ready for operation
+  - start and stop
+  - operating elements
+  - control elements
+  - key functions
+
+maintenance_procedure:
+  - maintenance
+  - cleaning
+  - replacement
+  - removal
+  - fitting
+  - disassembly
+  - inspection
+  - service port
+
+maintenance_interval:
+  - maintenance interval
+  - maintenance intervals
+  - service interval
+  - inspection interval
+  - operating hours
+  - running hours
+  - preventive maintenance
+  - daily use
+  - monthly
+  - yearly
+  - change interval
+
+troubleshooting:
+  - troubleshooting
+  - trouble shooting
+  - probable cause
+  - probable causes
+  - possible cause
+  - possible causes
+  - possible remedy
+  - possible remedies
+  - potential remedy
+  - potential remedies
+  - corrective action
+  - possible problems
+  - probable problems
+  - does not start
+  - will not start
+  - no sound
+  - no discharge
+  - low flow
+  - leakage
+  - stops
+  - reduced speed
+  - fault
+
+spare_parts:
+  - spare parts
+  - spare part
+  - parts list
+  - part number
+  - part no
+  - service package
+  - item number
+
+commissioning:
+  - commissioning
+  - pre-commissioning
+  - fit for purpose
+  - ready to be set to work
+  - before start up
+  - start up
+  - calibrating
+  - calibration procedure
+  - optimising
+  - optimizing
+
+shutdown:
+  - shutdown
+  - shut down
+  - decommission
+  - stop procedure
+  - out of service
+
+safety:
+  - safety
+  - warning
+  - hazard
+  - precaution
+  - biohazard
+  - electrical hazard
+
+lubrication:
+  - lubrication
+  - lubricating
+  - grease
+  - oil quantity
+  - oil specification
+  - lubricant
+
+installation:
+  - installation
+  - mounting
+  - assemble
+  - fit
+  - connect according to diagram

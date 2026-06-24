@@ -8,6 +8,10 @@ class EmbeddingService:
     def __init__(self, embedding_provider: EmbeddingProvider) -> None:
         self.embedding_provider = embedding_provider
 
+    @property
+    def model_name(self) -> str:
+        return getattr(self.embedding_provider, "model_name", "unknown")
+
     @tracked_action(
         action="ai.embedding.text_embedded",
         activity=True,

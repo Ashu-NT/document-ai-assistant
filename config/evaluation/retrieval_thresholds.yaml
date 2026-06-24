@@ -1,0 +1,11 @@
+# Minimum acceptable thresholds for the retrieval benchmark report.
+# The quality gate script (scripts/run_retrieval_quality_gate.py) reads this
+# file and exits non-zero when any metric falls below its threshold.
+#
+# Set a threshold to null to disable that check.
+
+hit_rate: 0.70
+mrr: 0.55
+recall_at_5: 0.65
+context_hit_rate: 0.60
+identifier_top_1_accuracy: 0.75

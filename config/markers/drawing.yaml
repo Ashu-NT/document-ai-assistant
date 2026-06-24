@@ -1,0 +1,53 @@
+# Marker tuples for DRAWING document family.
+
+document:
+  - drawing
+  - engineering drawing
+  - technical drawing
+  - diagram
+  - p&id
+  - pid
+  - isometric
+  - schematic
+
+title_block:
+  - title block
+  - drawing title
+  - drawing number
+  - revision
+  - scale
+  - drawn by
+  - approved by
+
+revision_table:
+  - revision table
+  - revision history
+  - revision record
+  - change record
+  - rev
+
+vessel_particulars:
+  - vessel particulars
+  - vessel data
+  - ship data
+  - equipment data
+
+compliance_table:
+  - compliance
+  - code compliance
+  - standard compliance
+  - applicable codes
+
+label_block:
+  - label
+  - tag
+  - tag number
+  - instrument tag
+  - equipment tag
+
+equipment_legend:
+  - legend
+  - symbol legend
+  - drawing legend
+  - notation
+  - abbreviations

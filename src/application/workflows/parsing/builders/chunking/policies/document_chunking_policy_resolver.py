@@ -1,3 +1,7 @@
+from src.application.workflows.parsing.builders.chunking.policies.chunking_policy_registry import (
+    ChunkingPolicyRegistry,
+    default_registry,
+)
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
 )
@@ -17,8 +21,10 @@ class DocumentChunkingPolicyResolver:
         self,
         *,
         profile_inferer: ChunkingProfileInferer | None = None,
+        policy_registry: ChunkingPolicyRegistry | None = None,
     ) -> None:
         self.profile_inferer = profile_inferer or ChunkingProfileInferer()
+        self._policy_registry = policy_registry or default_registry()
 
     def resolve(
         self,
@@ -54,6 +60,10 @@ class DocumentChunkingPolicyResolver:
         self,
         profile: ChunkingProfile,
     ) -> DocumentChunkingPolicy:
+        yaml_policy = self._policy_registry.get(profile)
+        if yaml_policy is not None:
+            return yaml_policy
+
         if profile == ChunkingProfile.DATASHEET:
             return self._datasheet_policy()
         if profile == ChunkingProfile.CERTIFICATE:

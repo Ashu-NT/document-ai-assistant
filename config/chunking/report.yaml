@@ -1,0 +1,10 @@
+# Chunking policy for REPORT document type.
+profile_name: report
+max_chunk_tokens: 800
+chunk_overlap: 100
+same_topic_merge_tokens: 100
+intro_context_tokens: 120
+asset_context_window: 1
+asset_context_max_tokens: 70
+include_picture_chunks: true
+include_table_context: true

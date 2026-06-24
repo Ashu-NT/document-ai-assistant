@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from src.domain.document import DocumentGraph
 
@@ -14,3 +14,7 @@ class ParsingWorkflowResult:
     table_count: int
     picture_count: int
     document_graph: DocumentGraph
+    parse_confidence: float | None = None
+    orphan_element_count: int = 0
+    elements_without_page_count: int = 0
+    parse_warnings: list[str] = field(default_factory=list)

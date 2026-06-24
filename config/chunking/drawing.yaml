@@ -1,0 +1,10 @@
+# Chunking policy for DRAWING document type.
+profile_name: drawing
+max_chunk_tokens: 300
+chunk_overlap: 35
+same_topic_merge_tokens: 60
+intro_context_tokens: 80
+asset_context_window: 1
+asset_context_max_tokens: 48
+include_picture_chunks: true
+include_table_context: false
