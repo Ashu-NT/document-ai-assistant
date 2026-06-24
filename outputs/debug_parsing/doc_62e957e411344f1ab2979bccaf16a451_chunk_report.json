@@ -1,0 +1,20 @@
+{
+  "document_id": "doc_62e957e411344f1ab2979bccaf16a451",
+  "total_chunks": 414,
+  "type_distribution": {
+    "overview": 125,
+    "technical_specification": 92,
+    "drawing_reference": 63,
+    "general": 38,
+    "installation_instruction": 33,
+    "safety_warning": 20,
+    "operation_instruction": 17,
+    "certification_info": 14,
+    "maintenance_interval": 6,
+    "troubleshooting": 4,
+    "maintenance_procedure": 2
+  },
+  "chunks_with_section_path": 413,
+  "chunks_without_section_path": 1,
+  "avg_content_length_chars": 682.0
+}
