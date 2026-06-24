@@ -8,7 +8,7 @@
 - recall@1 / @3 / @5 / @10: `0.591` / `0.697` / `0.697` / `0.773`
 - identifier top-1 accuracy: `0.773`
 - section-path accuracy: `0.758`
-- evidence completeness: `0.423`
+- evidence completeness: `0.758`
 - rank-target satisfaction: `0.697`
 
 ## Breakdown by Document Family
