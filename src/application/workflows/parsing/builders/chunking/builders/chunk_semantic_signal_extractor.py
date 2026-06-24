@@ -15,11 +15,13 @@ _TITLE_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "repair procedure",
         "replacement procedure",
         "procedure",
+        "maintenance service",
     ),
     ChunkType.MAINTENANCE_INTERVAL: (
         "maintenance schedule",
         "service interval",
         "maintenance interval",
+        "maintenance task",
         "inspection interval",
         "inspection schedule",
         "replacement interval",
