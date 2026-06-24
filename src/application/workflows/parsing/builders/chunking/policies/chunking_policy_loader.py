@@ -9,8 +9,9 @@ from src.application.workflows.parsing.builders.chunking.policies.chunking_profi
 from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy import (
     DocumentChunkingPolicy,
 )
+from src.config.paths import PROJECT_ROOT
 
-_CONFIG_DIR = Path("config/chunking")
+_CONFIG_DIR = PROJECT_ROOT / "src" / "config" / "chunking"
 
 _PROFILE_FILES: dict[ChunkingProfile, str] = {
     ChunkingProfile.MANUAL: "manual.yaml",
