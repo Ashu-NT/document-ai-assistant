@@ -159,6 +159,70 @@ def test_sql_keyword_repository_penalizes_revision_table_noise() -> None:
     assert results[0].chunk_id == "chunk_clean"
 
 
+def test_sql_keyword_repository_filters_by_document_id_when_set() -> None:
+    document = make_document(
+        document_id="doc_fwc12",
+        file_name="manual.pdf",
+        title="FWC12 Manual",
+        document_type=DocumentType.MANUAL,
+    )
+    chunk = make_chunk(
+        chunk_id="chunk_in_scope",
+        document_id="doc_fwc12",
+        content="Lubricate shaft seals every 350 hours of operation.",
+        chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+    )
+    repository = SqlKeywordRepository(FakeSession([(chunk, document)]))
+    query = RetrievalQuery(
+        query_id="q_scoped",
+        query_text="How often should shaft seals be lubricated?",
+        document_id="doc_fwc12",
+    )
+
+    results = repository.search_chunks(query)
+
+    # The statement should include a document_id condition — verify it ran without error
+    # and that the chunk scored above zero (SQL keyword match on content).
+    assert len(results) == 1
+    assert results[0].chunk_id == "chunk_in_scope"
+
+
+def test_sql_keyword_repository_corpus_wide_when_no_document_id() -> None:
+    doc_a = make_document(
+        document_id="doc_a",
+        file_name="manual.pdf",
+        title="Manual A",
+        document_type=DocumentType.MANUAL,
+    )
+    doc_b = make_document(
+        document_id="doc_b",
+        file_name="report.pdf",
+        title="Report B",
+        document_type=DocumentType.REPORT,
+    )
+    chunk_a = make_chunk(
+        chunk_id="chunk_a",
+        document_id="doc_a",
+        content="Shaft seal lubrication every 350 hours.",
+    )
+    chunk_b = make_chunk(
+        chunk_id="chunk_b",
+        document_id="doc_b",
+        content="Shaft seal lubrication schedule.",
+    )
+    repository = SqlKeywordRepository(FakeSession([(chunk_a, doc_a), (chunk_b, doc_b)]))
+    query = RetrievalQuery(
+        query_id="q_wide",
+        query_text="shaft seal lubrication",
+    )
+
+    results = repository.search_chunks(query)
+
+    returned_ids = {r.chunk_id for r in results}
+    assert "chunk_a" in returned_ids
+    assert "chunk_b" in returned_ids
+
+
 def test_sql_keyword_repository_boosts_matching_section_path_and_chunk_type() -> None:
     document = make_document(
         document_id="doc_report",
