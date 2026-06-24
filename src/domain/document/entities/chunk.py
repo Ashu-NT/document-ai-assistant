@@ -12,6 +12,7 @@ class DocumentChunk:
 
     content: str
     chunk_type: ChunkType = ChunkType.GENERAL
+    chunk_type_source: str = "deterministic"
 
     section_path: list[str] = field(default_factory=list)
 

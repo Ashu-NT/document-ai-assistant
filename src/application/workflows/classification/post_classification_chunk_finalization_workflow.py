@@ -10,6 +10,9 @@ from src.application.services.question_generation import QuestionGenerationServi
 from src.application.workflows.classification.chunk_classification_workflow import (
     ChunkClassificationWorkflow,
 )
+from src.application.workflows.classification.chunk_type_classification_workflow import (
+    ChunkTypeClassificationWorkflow,
+)
 from src.application.workflows.classification.hybrid_document_type_resolver import (
     HybridDocumentTypeResolver,
 )
@@ -61,6 +64,7 @@ class PostClassificationChunkFinalizationWorkflow:
         vector_store: VectorStore,
         graph_chunk_builder: GraphChunkBuilder,
         chunk_classification_workflow: ChunkClassificationWorkflow | None = None,
+        chunk_type_classification_workflow: ChunkTypeClassificationWorkflow | None = None,
         chunking_profile_inferer: ChunkingProfileInferer | None = None,
         chunking_policy_resolver: DocumentChunkingPolicyResolver | None = None,
         document_type_resolver: HybridDocumentTypeResolver | None = None,
@@ -75,6 +79,7 @@ class PostClassificationChunkFinalizationWorkflow:
         self.vector_store = vector_store
         self.graph_chunk_builder = graph_chunk_builder
         self.chunk_classification_workflow = chunk_classification_workflow
+        self.chunk_type_classification_workflow = chunk_type_classification_workflow
         self.chunking_profile_inferer = (
             chunking_profile_inferer or ChunkingProfileInferer()
         )
@@ -186,6 +191,10 @@ class PostClassificationChunkFinalizationWorkflow:
             progress_callback,
             f"Final chunk set contains {len(final_chunks)} chunk(s).",
         )
+        self._classify_chunk_types_if_enabled(
+            chunks=final_chunks,
+            progress_callback=progress_callback,
+        )
         graph.document.document_type = decision.effective_document_type
         graph.replace_chunks(final_chunks)
         graph.clear_chunk_dependents()
@@ -262,6 +271,19 @@ class PostClassificationChunkFinalizationWorkflow:
         if self._chunk_structures_match(stored_chunks, rebuilt_chunks):
             return stored_chunks, "reused"
         return rebuilt_chunks, "refreshed_stale"
+
+    def _classify_chunk_types_if_enabled(
+        self,
+        *,
+        chunks: list[DocumentChunk],
+        progress_callback: Callable[[str], None] | None = None,
+    ) -> None:
+        if self.chunk_type_classification_workflow is None:
+            return
+        self.chunk_type_classification_workflow.classify_unresolved_chunks(
+            chunks,
+            progress_callback=progress_callback,
+        )
 
     def _classify_chunks_if_enabled(
         self,

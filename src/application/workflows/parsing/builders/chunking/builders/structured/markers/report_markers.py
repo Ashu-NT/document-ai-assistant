@@ -59,6 +59,12 @@ REPORT_CERTIFICATION_SECTION_MARKERS = (
     "declaration of conformity",
     "certificate of conformity",
     "conformity assessment",
+    # Hazardous-area approval content in safety instruction sections
+    "atex",
+    "iecex",
+    "approval",
+    "ex ic",
+    "ex ia",
 )
 
 REPORT_PROCEDURE_MARKERS = (
@@ -67,6 +73,13 @@ REPORT_PROCEDURE_MARKERS = (
     "test rig",
     "reference standard",
     "test method",
+    # Final inspection report test procedure tables
+    "test procedure number",
+    "calibration of",
+    "lower range value",
+    "upper range value",
+    "measurement adjustment",
+    "verification of",
 )
 
 REPORT_MOUNTING_MARKERS = (

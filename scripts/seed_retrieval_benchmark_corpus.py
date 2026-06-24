@@ -51,8 +51,12 @@ from src.application.validation.classification import (  # noqa: E402
 from src.application.validation.document import DocumentGraphValidator  # noqa: E402
 from src.application.workflows.classification import (  # noqa: E402
     ChunkClassificationWorkflow,
+    ChunkTypeClassificationWorkflow,
     DocumentClassificationWorkflow,
     PostClassificationChunkFinalizationWorkflow,
+)
+from src.application.workflows.parsing.builders.chunking.builders.chunk_type_llm_classifier import (  # noqa: E402
+    ChunkTypeLLMClassifier,
 )
 from src.application.workflows.embedding import EmbeddingWorkflow  # noqa: E402
 from src.application.workflows.parsing import ParsingWorkflow  # noqa: E402
@@ -304,6 +308,9 @@ def build_corpus_seeder() -> CorpusSeederRuntime:
                     document_registration_service=document_registration_service,
                     classification_service=classification_service,
                     chunk_classification_workflow=chunk_classification_workflow,
+                    chunk_type_classification_workflow=ChunkTypeClassificationWorkflow(
+                        llm_classifier=ChunkTypeLLMClassifier(llm_service=llm_service),
+                    ),
                     question_generation_service=QuestionGenerationService(
                         llm_service=llm_service,
                         id_generator=id_generator,
