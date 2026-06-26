@@ -46,6 +46,25 @@ _MORPH_FAMILIES: tuple[frozenset[str], ...] = (
     frozenset({"order", "ordered", "ordering"}),
     frozenset({"install", "installed", "installing", "installation"}),
     frozenset({"commission", "commissioned", "commissioning"}),
+    # Singular / plural noun pairs — allow query "macerator" to match path "Macerators"
+    frozenset({"macerator", "macerators"}),
+    frozenset({"pump", "pumps"}),
+    frozenset({"valve", "valves"}),
+    frozenset({"component", "components"}),
+    frozenset({"interval", "intervals"}),
+    frozenset({"quantity", "quantities"}),
+    frozenset({"procedure", "procedures"}),
+    frozenset({"instruction", "instructions"}),
+    frozenset({"specification", "specifications"}),
+    # Verb stem / gerund / verbal-noun families
+    frozenset({"remove", "removed", "removing", "removal"}),
+    frozenset({"inspect", "inspected", "inspecting", "inspection"}),
+    frozenset({"replace", "replaced", "replacing", "replacement"}),
+    frozenset({"adjust", "adjusted", "adjusting", "adjustment"}),
+    frozenset({"operate", "operated", "operating", "operation"}),
+    # British / American spelling variants
+    frozenset({"optimize", "optimise", "optimized", "optimised", "optimizing", "optimising"}),
+    frozenset({"analyse", "analyze", "analysing", "analyzing", "analysis"}),
 )
 # Reverse lookup: term → all variants in its morphological family.
 _MORPH_VARIANTS: dict[str, frozenset[str]] = {
@@ -266,6 +285,12 @@ class SqlKeywordScorer:
         # Section-path: local subsection significantly more valuable than ancestor context
         if local_section_match:
             score += 5.0
+            # Ancestor specificity tiebreaker: when local already matches, extra query
+            # terms in ancestor path signal which sub-section is relevant (e.g. "macerator"
+            # in ancestor "7.1 Macerators" discriminates against sibling "7.2 Food Waste
+            # Press" even when both have the same local section title).
+            if ancestor_term_hits > 0:
+                score += ancestor_term_hits * 1.5
         elif ancestor_section_match:
             score += 1.5
 
