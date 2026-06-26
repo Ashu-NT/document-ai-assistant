@@ -34,11 +34,6 @@ DATASHEET_ORDERING_EXAMPLE_MARKERS = (
     "ordering example",
     "order code",
     "configuration example",
-    # German equivalents for bilingual datasheets
-    "artikel",
-    "bestellangaben",
-    "bestellbeispiel",
-    "bestellcode",
 )
 
 DATASHEET_CONNECTION_INFORMATION_MARKERS = (

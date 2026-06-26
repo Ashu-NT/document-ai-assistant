@@ -1,7 +1,5 @@
 from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
     extend_markers,
-    path_contains_markers,
-    sanitized_base_path,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     REPORT_ADDITIONAL_INFORMATION_MARKERS,
@@ -53,20 +51,6 @@ class ReportStructuredFamilyBuilder:
         ):
             return StructuredFamilySpecSelection()
 
-        base_path = sanitized_base_path(
-            section_path=context.base_section_path(),
-            section_title=context.section.title,
-            document_title=context.document_title,
-        )
-        # Use a dynamic section_path for the certification spec so that ATEX/approval
-        # content deep in a PDF hierarchy (e.g. "Safety Instructions > Extended order
-        # code > Basic specifications") gets the exact PDF-derived path rather than a
-        # normalised fallback like "Manufacturer's certificates".
-        certification_section_path = (
-            base_path
-            if path_contains_markers(base_path, ("atex", "iecex", "approval", "ex ic"))
-            else ["Safety Instructions", "Manufacturer's certificates"]
-        )
         return StructuredFamilySpecSelection(
             specs=[
                 StructuredSectionWindowSpec(
@@ -151,7 +135,7 @@ class ReportStructuredFamilyBuilder:
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.REPORT_CERTIFICATION_SECTION,
-                    section_path=certification_section_path,
+                    section_path=["Safety Instructions", "Manufacturer's certificates"],
                     anchor_markers=extend_markers(
                         family=StructuredEvidenceFamily.REPORT_CERTIFICATION_SECTION,
                         base_markers=REPORT_CERTIFICATION_SECTION_MARKERS,
@@ -164,16 +148,13 @@ class ReportStructuredFamilyBuilder:
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.REPORT_PROCEDURE,
-                    section_path=[
-                        "Final Inspection Report",
-                        "Test Procedure number / Test description",
-                    ],
+                    section_path=["Final Inspection Report", "Procedure"],
                     anchor_markers=extend_markers(
                         family=StructuredEvidenceFamily.REPORT_PROCEDURE,
                         base_markers=REPORT_PROCEDURE_MARKERS,
                         marker_tuning=marker_tuning,
                     ),
-                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                    chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
                     radius_before=2,
                     radius_after=12,
                 ),

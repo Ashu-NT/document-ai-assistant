@@ -174,19 +174,11 @@ _CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "iso",
         "ul",
         "rohs",
-        # Hazardous-area approval markers — high-confidence CERTIFICATION_INFO signals
-        "atex",
-        "iecex",
-        "approval",
-        "ex ic",
-        "ex ia",
     ),
 }
 _CONTENT_SCORE_CAPS: dict[ChunkType, int] = {
     ChunkType.TECHNICAL_SPECIFICATION: 4,
     ChunkType.TROUBLESHOOTING: 4,
-    # Higher cap so ATEX/IECEx-dense content can outscore a competing title hit
-    ChunkType.CERTIFICATION_INFO: 6,
 }
 _TABLE_CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
     ChunkType.TECHNICAL_SPECIFICATION: (
