@@ -65,22 +65,22 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_70f6e13ad31a400a8fec46c6ca212e6b | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 45.050 | 56 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 | Take Note: Only original spare and wear parts may be used. Other parts are not warranted. |
-| 2 | chunk_4b1237190bc044848e3bc7ae9c99d06f | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 44.750 | 6 | 1 General | This documentation is designed to assist with becoming familiar with the system and how to operate it for its intended purposes. Important safety and hazard notices help you ope... |
-| 3 | chunk_701269a4e1944b95b035992294c82592 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 44.750 | 20 | Sensor List | All main components fitted to the system can be operated manually from the HMI. All components usable in manual appear on the screen with a yellow box highlighting them, this fo... |
-| 4 | chunk_43df994b966d4a62ab0f54d44d544142 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 43.700 | 27 | 7 Components > 7.1 Macerators > Macerator Description 7.1.2 | Discharge cone is pre-mounted with the following:  water flushing nozzles  solenoid valve G½" 24Vdc  inline strainer G½", with R½" external thread  safety interlock switch |
-| 5 | chunk_dde39fe995884358af2f32b9ca185919 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 43.700 | 41 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
+| 1 | chunk_70f6e13ad31a400a8fec46c6ca212e6b | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.050 | 56 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 | Take Note: Only original spare and wear parts may be used. Other parts are not warranted. |
+| 2 | chunk_4b1237190bc044848e3bc7ae9c99d06f | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 21.750 | 6 | 1 General | This documentation is designed to assist with becoming familiar with the system and how to operate it for its intended purposes. Important safety and hazard notices help you ope... |
+| 3 | chunk_701269a4e1944b95b035992294c82592 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 21.750 | 20 | Sensor List | All main components fitted to the system can be operated manually from the HMI. All components usable in manual appear on the screen with a yellow box highlighting them, this fo... |
+| 4 | chunk_43df994b966d4a62ab0f54d44d544142 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 20.700 | 27 | 7 Components > 7.1 Macerators > Macerator Description 7.1.2 | Discharge cone is pre-mounted with the following:  water flushing nozzles  solenoid valve G½" 24Vdc  inline strainer G½", with R½" external thread  safety interlock switch |
+| 5 | chunk_dde39fe995884358af2f32b9ca185919 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 20.700 | 41 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_70f6e13ad31a400a8fec46c6ca212e6b | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 45.050 | 56 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 | Take Note: Only original spare and wear parts may be used. Other parts are not warranted. |
-| 2 | chunk_4b1237190bc044848e3bc7ae9c99d06f | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 44.750 | 6 | 1 General | This documentation is designed to assist with becoming familiar with the system and how to operate it for its intended purposes. Important safety and hazard notices help you ope... |
-| 3 | chunk_701269a4e1944b95b035992294c82592 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 44.750 | 20 | Sensor List | All main components fitted to the system can be operated manually from the HMI. All components usable in manual appear on the screen with a yellow box highlighting them, this fo... |
-| 4 | chunk_43df994b966d4a62ab0f54d44d544142 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 43.700 | 27 | 7 Components > 7.1 Macerators > Macerator Description 7.1.2 | Discharge cone is pre-mounted with the following:  water flushing nozzles  solenoid valve G½" 24Vdc  inline strainer G½", with R½" external thread  safety interlock switch |
-| 5 | chunk_dde39fe995884358af2f32b9ca185919 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 43.700 | 41 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
+| 1 | chunk_70f6e13ad31a400a8fec46c6ca212e6b | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.050 | 56 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 | Take Note: Only original spare and wear parts may be used. Other parts are not warranted. |
+| 2 | chunk_4b1237190bc044848e3bc7ae9c99d06f | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 21.750 | 6 | 1 General | This documentation is designed to assist with becoming familiar with the system and how to operate it for its intended purposes. Important safety and hazard notices help you ope... |
+| 3 | chunk_701269a4e1944b95b035992294c82592 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 21.750 | 20 | Sensor List | All main components fitted to the system can be operated manually from the HMI. All components usable in manual appear on the screen with a yellow box highlighting them, this fo... |
+| 4 | chunk_43df994b966d4a62ab0f54d44d544142 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 20.700 | 27 | 7 Components > 7.1 Macerators > Macerator Description 7.1.2 | Discharge cone is pre-mounted with the following:  water flushing nozzles  solenoid valve G½" 24Vdc  inline strainer G½", with R½" external thread  safety interlock switch |
+| 5 | chunk_dde39fe995884358af2f32b9ca185919 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 20.700 | 41 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
 
 ### `M-006` What is the objective of commissioning the FWC12?
 
@@ -103,22 +103,22 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_64040772080a432390790b6e9bd2a713 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 42.350 | 17 | Title block |  Plant drawings (GA, P&ID)  Installation, Operation and Maintenance Manuals  Spare Parts List  Materials Safety Data Sheets |
-| 2 | chunk_43df994b966d4a62ab0f54d44d544142 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 42.350 | 27 | 7 Components > 7.1 Macerators > Macerator Description 7.1.2 | Discharge cone is pre-mounted with the following:  water flushing nozzles  solenoid valve G½" 24Vdc  inline strainer G½", with R½" external thread  safety interlock switch |
-| 3 | chunk_dde39fe995884358af2f32b9ca185919 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 42.350 | 41 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
-| 4 | chunk_50bfe67c378c4dd3afe8f32868e73c65 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 42.350 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | FMD FundamentalMarineDevelopments |
-| 5 | chunk_f99d1878872d4ebab035e0716809efcf | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 42.350 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P17 P18 P15 P14 P13 ® ® P16 |
+| 1 | chunk_64040772080a432390790b6e9bd2a713 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 17 | Title block |  Plant drawings (GA, P&ID)  Installation, Operation and Maintenance Manuals  Spare Parts List  Materials Safety Data Sheets |
+| 2 | chunk_43df994b966d4a62ab0f54d44d544142 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 27 | 7 Components > 7.1 Macerators > Macerator Description 7.1.2 | Discharge cone is pre-mounted with the following:  water flushing nozzles  solenoid valve G½" 24Vdc  inline strainer G½", with R½" external thread  safety interlock switch |
+| 3 | chunk_dde39fe995884358af2f32b9ca185919 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 41 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
+| 4 | chunk_50bfe67c378c4dd3afe8f32868e73c65 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | FMD FundamentalMarineDevelopments |
+| 5 | chunk_f99d1878872d4ebab035e0716809efcf | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P17 P18 P15 P14 P13 ® ® P16 |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_64040772080a432390790b6e9bd2a713 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 42.350 | 17 | Title block |  Plant drawings (GA, P&ID)  Installation, Operation and Maintenance Manuals  Spare Parts List  Materials Safety Data Sheets |
-| 2 | chunk_43df994b966d4a62ab0f54d44d544142 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 42.350 | 27 | 7 Components > 7.1 Macerators > Macerator Description 7.1.2 | Discharge cone is pre-mounted with the following:  water flushing nozzles  solenoid valve G½" 24Vdc  inline strainer G½", with R½" external thread  safety interlock switch |
-| 3 | chunk_dde39fe995884358af2f32b9ca185919 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 42.350 | 41 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
-| 4 | chunk_50bfe67c378c4dd3afe8f32868e73c65 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 42.350 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | FMD FundamentalMarineDevelopments |
-| 5 | chunk_f99d1878872d4ebab035e0716809efcf | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 42.350 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P17 P18 P15 P14 P13 ® ® P16 |
+| 1 | chunk_64040772080a432390790b6e9bd2a713 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 17 | Title block |  Plant drawings (GA, P&ID)  Installation, Operation and Maintenance Manuals  Spare Parts List  Materials Safety Data Sheets |
+| 2 | chunk_43df994b966d4a62ab0f54d44d544142 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 27 | 7 Components > 7.1 Macerators > Macerator Description 7.1.2 | Discharge cone is pre-mounted with the following:  water flushing nozzles  solenoid valve G½" 24Vdc  inline strainer G½", with R½" external thread  safety interlock switch |
+| 3 | chunk_dde39fe995884358af2f32b9ca185919 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 41 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
+| 4 | chunk_50bfe67c378c4dd3afe8f32868e73c65 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | FMD FundamentalMarineDevelopments |
+| 5 | chunk_f99d1878872d4ebab035e0716809efcf | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P17 P18 P15 P14 P13 ® ® P16 |
 
 ### `M-009` What are the maintenance intervals for the macerator?
 
@@ -330,19 +330,19 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_265dedc88ab84b44997429b0f9661851 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 38.350 | 1 | OPTIONS | pneumatic or electric actuator electrical position indicator The above information is intended for guidance only and the company reserves the right to change any data herein wit... |
-| 2 | chunk_3d6380d34016436d907fccbf7894b053 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 35.350 | 1 | ZUSATZAUSSTATTUNG | pneumatischer oder elektrischer Antrieb elektrische Stellungsanzeige Alle Angaben sind freibleibend und unverbindlich! |
+| 1 | chunk_265dedc88ab84b44997429b0f9661851 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 15.350 | 1 | OPTIONS | pneumatic or electric actuator electrical position indicator The above information is intended for guidance only and the company reserves the right to change any data herein wit... |
+| 2 | chunk_3d6380d34016436d907fccbf7894b053 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 12.350 | 1 | ZUSATZAUSSTATTUNG | pneumatischer oder elektrischer Antrieb elektrische Stellungsanzeige Alle Angaben sind freibleibend und unverbindlich! |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_265dedc88ab84b44997429b0f9661851 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 38.350 | 1 | OPTIONS | pneumatic or electric actuator electrical position indicator The above information is intended for guidance only and the company reserves the right to change any data herein wit... |
-| 2 | chunk_3d6380d34016436d907fccbf7894b053 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 35.350 | 1 | ZUSATZAUSSTATTUNG | pneumatischer oder elektrischer Antrieb elektrische Stellungsanzeige Alle Angaben sind freibleibend und unverbindlich! |
-| 3 | chunk_3b0ab55895ba4cd6b04cb7af92409b5b | doc_0576a2842be74d769f31c86079eac801 | context_expansion | 38.340 | 1 | MATERIALS | Body: Stainless steel 1.4408 Ball: Stainless steel 1.4408 Ball seal: PTFE glassfiber reinforced Spindle seal: PTFE /FKM |
-| 4 | chunk_e539737493f1412591c709b8bcf2fdc9 | doc_0576a2842be74d769f31c86079eac801 | context_expansion | 38.340 | 1 | MK311xxx | 2-Wege Kompakt Kugelhahn voller Durchgang PN16 / PN40 Edelstahl 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel |
-| 5 | chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6 | doc_0576a2842be74d769f31c86079eac801 | context_expansion | 35.340 | 1 | TEMPERATUR | -25°C …. +180°C Bei Mediumtemperaturen über 80°C, bzw. stark schwankenden Mediumtemperaturen, empfehlen wir eine Druckausgleichsbohrung in der Kugel. Bei zur Dampfbildung neigen... |
+| 1 | chunk_265dedc88ab84b44997429b0f9661851 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 15.350 | 1 | OPTIONS | pneumatic or electric actuator electrical position indicator The above information is intended for guidance only and the company reserves the right to change any data herein wit... |
+| 2 | chunk_3d6380d34016436d907fccbf7894b053 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 12.350 | 1 | ZUSATZAUSSTATTUNG | pneumatischer oder elektrischer Antrieb elektrische Stellungsanzeige Alle Angaben sind freibleibend und unverbindlich! |
+| 3 | chunk_3b0ab55895ba4cd6b04cb7af92409b5b | doc_0576a2842be74d769f31c86079eac801 | context_expansion | 15.340 | 1 | MATERIALS | Body: Stainless steel 1.4408 Ball: Stainless steel 1.4408 Ball seal: PTFE glassfiber reinforced Spindle seal: PTFE /FKM |
+| 4 | chunk_e539737493f1412591c709b8bcf2fdc9 | doc_0576a2842be74d769f31c86079eac801 | context_expansion | 15.340 | 1 | MK311xxx | 2-Wege Kompakt Kugelhahn voller Durchgang PN16 / PN40 Edelstahl 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel |
+| 5 | chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6 | doc_0576a2842be74d769f31c86079eac801 | context_expansion | 12.340 | 1 | TEMPERATUR | -25°C …. +180°C Bei Mediumtemperaturen über 80°C, bzw. stark schwankenden Mediumtemperaturen, empfehlen wir eine Druckausgleichsbohrung in der Kugel. Bei zur Dampfbildung neigen... |
 
 ### `DS-006` What does ordering code MK311007 mean?
 
@@ -396,7 +396,6 @@
   - Anchor retrieval did not return the expected evidence.
   - Anchor retrieval did not return the resolved expected chunk id.
   - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 12.
 
 #### Anchor Top Chunks
 
@@ -406,7 +405,7 @@
 | 2 | chunk_b5e3b03b74084a27bf04f8d59b2ce337 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 10.350 | 23 | 8 Commissioning > 8.1 Commissioning with an operating menu > 8.1.1 Selecting the language, measuring mode and pressure unit | Main menu → Language Write permission Operator/Maintenance/Expert Description Select the menu language for the local display. Selection English Another language (as selected whe... |
 | 3 | chunk_16859d80f726490eb7c7acb5d175e35b | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 10.350 | 24 | Brief Operating Instructions > 7 Operation options | Description Select the pressure unit. If a new pressure unit is selected, all pressure-specific parameters are converted and displayed with the new unit. Selection mbar, bar mmH... |
 | 4 | chunk_810ee670d9794018bc3e200452da4613 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 10.350 | 35 | Brief Operating Instructions | EN 1127-1: "Explosive atmospheres - Explosion prevention and protection - Part 1: Basic concepts and methodology" The extended order code is indicated on the nameplate, which is... |
-| 5 | chunk_2c113db36b2b486fb935a28a2bd7bf74 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 7.350 | 1 | Order information | Customer name J.H.K. Anlagenbau und Industrieservice GmbH & Co. KG Customer purchase order Sales order number / Item Internal order number / Item |
+| 5 | chunk_6fb3ff41e6ba456dbf39a132f14a681d | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 8.850 | 12 | 6 Electrical connection > 6.2 Connecting the device > Supply voltage might be connected! > Safety Instructions | Switch off the supply voltage before connecting the device. When using the measuring device in hazardous areas, installation must also comply with the applicable national standa... |
 
 
 #### Context Top Chunks
@@ -417,7 +416,7 @@
 | 2 | chunk_b5e3b03b74084a27bf04f8d59b2ce337 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 10.350 | 23 | 8 Commissioning > 8.1 Commissioning with an operating menu > 8.1.1 Selecting the language, measuring mode and pressure unit | Main menu → Language Write permission Operator/Maintenance/Expert Description Select the menu language for the local display. Selection English Another language (as selected whe... |
 | 3 | chunk_16859d80f726490eb7c7acb5d175e35b | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 10.350 | 24 | Brief Operating Instructions > 7 Operation options | Description Select the pressure unit. If a new pressure unit is selected, all pressure-specific parameters are converted and displayed with the new unit. Selection mbar, bar mmH... |
 | 4 | chunk_810ee670d9794018bc3e200452da4613 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 10.350 | 35 | Brief Operating Instructions | EN 1127-1: "Explosive atmospheres - Explosion prevention and protection - Part 1: Basic concepts and methodology" The extended order code is indicated on the nameplate, which is... |
-| 5 | chunk_2c113db36b2b486fb935a28a2bd7bf74 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 7.350 | 1 | Order information | Customer name J.H.K. Anlagenbau und Industrieservice GmbH & Co. KG Customer purchase order Sales order number / Item Internal order number / Item |
+| 5 | chunk_6fb3ff41e6ba456dbf39a132f14a681d | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 8.850 | 12 | 6 Electrical connection > 6.2 Connecting the device > Supply voltage might be connected! > Safety Instructions | Switch off the supply voltage before connecting the device. When using the measuring device in hazardous areas, installation must also comply with the applicable national standa... |
 
 ### `R-018` What hazardous location approval is listed for Cerabar M in the safety instructions?
 

@@ -1282,7 +1282,7 @@
             "chunk_id": "chunk_be0cdc8d34bf4640b6349d15dea1cac1",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 58.5,
+            "score": 35.5,
             "chunk_type": "technical_specification",
             "section_id": "sec_4e77d9544afc4092a910e7dd6248390f",
             "section_path": [
@@ -1298,7 +1298,7 @@
             "chunk_id": "chunk_fd79ab378c574507b7988c44b8742c35",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 46.1,
+            "score": 23.1,
             "chunk_type": "technical_specification",
             "section_id": "sec_d011b85864904855a5cd1b7be888c51c",
             "section_path": [
@@ -1315,7 +1315,7 @@
             "chunk_id": "chunk_4c5cdde907de4ba59fc2942524116115",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 44.75,
+            "score": 21.75,
             "chunk_type": "technical_specification",
             "section_id": "sec_11a5b72db72a4024924cf0be48d7a6ce",
             "section_path": [
@@ -1330,7 +1330,7 @@
             "chunk_id": "chunk_0e35c4096ef641ceae89cbefaf6d727b",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 44.75,
+            "score": 21.75,
             "chunk_type": "technical_specification",
             "section_id": "sec_11a5b72db72a4024924cf0be48d7a6ce",
             "section_path": [
@@ -1345,7 +1345,7 @@
             "chunk_id": "chunk_46104f06a9034d33bb5f1e7e848627c9",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_a4bdac79815b4db9a9f4d349737cf81b",
             "section_path": [
@@ -1361,7 +1361,7 @@
             "chunk_id": "chunk_21154ff6110446569781814274e47004",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_bba2393692c44f72861ebb0253f6ea57",
             "section_path": [
@@ -1377,7 +1377,7 @@
             "chunk_id": "chunk_14224cf263574df7ae223e122d5597de",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_89a3c90286d143c393cf825e775aea9c",
             "section_path": [
@@ -1392,7 +1392,7 @@
             "chunk_id": "chunk_91e3d13b298844bf8b3df8eaec740406",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_89a3c90286d143c393cf825e775aea9c",
             "section_path": [
@@ -1407,7 +1407,7 @@
             "chunk_id": "chunk_64040772080a432390790b6e9bd2a713",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_615a6f6b34204fb0ba3750035d3b17d4",
             "section_path": [
@@ -1422,7 +1422,7 @@
             "chunk_id": "chunk_43df994b966d4a62ab0f54d44d544142",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_d011b85864904855a5cd1b7be888c51c",
             "section_path": [
@@ -1504,7 +1504,7 @@
             "chunk_id": "chunk_be0cdc8d34bf4640b6349d15dea1cac1",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 58.5,
+            "score": 35.5,
             "chunk_type": "technical_specification",
             "section_id": "sec_4e77d9544afc4092a910e7dd6248390f",
             "section_path": [
@@ -1520,7 +1520,7 @@
             "chunk_id": "chunk_fd79ab378c574507b7988c44b8742c35",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 46.1,
+            "score": 23.1,
             "chunk_type": "technical_specification",
             "section_id": "sec_d011b85864904855a5cd1b7be888c51c",
             "section_path": [
@@ -1537,7 +1537,7 @@
             "chunk_id": "chunk_4c5cdde907de4ba59fc2942524116115",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 44.75,
+            "score": 21.75,
             "chunk_type": "technical_specification",
             "section_id": "sec_11a5b72db72a4024924cf0be48d7a6ce",
             "section_path": [
@@ -1552,7 +1552,7 @@
             "chunk_id": "chunk_0e35c4096ef641ceae89cbefaf6d727b",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 44.75,
+            "score": 21.75,
             "chunk_type": "technical_specification",
             "section_id": "sec_11a5b72db72a4024924cf0be48d7a6ce",
             "section_path": [
@@ -1567,7 +1567,7 @@
             "chunk_id": "chunk_46104f06a9034d33bb5f1e7e848627c9",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_a4bdac79815b4db9a9f4d349737cf81b",
             "section_path": [
@@ -1583,7 +1583,7 @@
             "chunk_id": "chunk_21154ff6110446569781814274e47004",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_bba2393692c44f72861ebb0253f6ea57",
             "section_path": [
@@ -1599,7 +1599,7 @@
             "chunk_id": "chunk_14224cf263574df7ae223e122d5597de",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_89a3c90286d143c393cf825e775aea9c",
             "section_path": [
@@ -1614,7 +1614,7 @@
             "chunk_id": "chunk_91e3d13b298844bf8b3df8eaec740406",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_89a3c90286d143c393cf825e775aea9c",
             "section_path": [
@@ -1629,7 +1629,7 @@
             "chunk_id": "chunk_64040772080a432390790b6e9bd2a713",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_615a6f6b34204fb0ba3750035d3b17d4",
             "section_path": [
@@ -1644,7 +1644,7 @@
             "chunk_id": "chunk_43df994b966d4a62ab0f54d44d544142",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_d011b85864904855a5cd1b7be888c51c",
             "section_path": [
@@ -2305,7 +2305,7 @@
             "chunk_id": "chunk_70f6e13ad31a400a8fec46c6ca212e6b",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_03c87a32b3d04ab1b143161576bdeccb",
             "section_path": [
@@ -2322,7 +2322,7 @@
             "chunk_id": "chunk_4b1237190bc044848e3bc7ae9c99d06f",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 44.75,
+            "score": 21.75,
             "chunk_type": "certification_info",
             "section_id": "sec_e8b0196463ce4eb58917fc30dab2346f",
             "section_path": [
@@ -2337,7 +2337,7 @@
             "chunk_id": "chunk_701269a4e1944b95b035992294c82592",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 44.75,
+            "score": 21.75,
             "chunk_type": "technical_specification",
             "section_id": "sec_e25a9d4be8e041dfb0b18d116ef51194",
             "section_path": [
@@ -2352,7 +2352,7 @@
             "chunk_id": "chunk_43df994b966d4a62ab0f54d44d544142",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_d011b85864904855a5cd1b7be888c51c",
             "section_path": [
@@ -2369,7 +2369,7 @@
             "chunk_id": "chunk_dde39fe995884358af2f32b9ca185919",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_74d5724eeab244ff96c63c38235be671",
             "section_path": [
@@ -2387,7 +2387,7 @@
             "chunk_id": "chunk_50bfe67c378c4dd3afe8f32868e73c65",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -2405,7 +2405,7 @@
             "chunk_id": "chunk_f99d1878872d4ebab035e0716809efcf",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -2423,7 +2423,7 @@
             "chunk_id": "chunk_b56376d548d9425dac03aeb442af8f0c",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -2441,7 +2441,7 @@
             "chunk_id": "chunk_dd43d8ce5a4c47f38b82f4329ce6d676",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -2459,7 +2459,7 @@
             "chunk_id": "chunk_a95511e3ab72448f9bb3471b92952043",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_b1cbf94b26f2461fb3d14b590f8ef1d7",
             "section_path": [
@@ -2551,7 +2551,7 @@
             "chunk_id": "chunk_70f6e13ad31a400a8fec46c6ca212e6b",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_03c87a32b3d04ab1b143161576bdeccb",
             "section_path": [
@@ -2568,7 +2568,7 @@
             "chunk_id": "chunk_4b1237190bc044848e3bc7ae9c99d06f",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 44.75,
+            "score": 21.75,
             "chunk_type": "certification_info",
             "section_id": "sec_e8b0196463ce4eb58917fc30dab2346f",
             "section_path": [
@@ -2583,7 +2583,7 @@
             "chunk_id": "chunk_701269a4e1944b95b035992294c82592",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 44.75,
+            "score": 21.75,
             "chunk_type": "technical_specification",
             "section_id": "sec_e25a9d4be8e041dfb0b18d116ef51194",
             "section_path": [
@@ -2598,7 +2598,7 @@
             "chunk_id": "chunk_43df994b966d4a62ab0f54d44d544142",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_d011b85864904855a5cd1b7be888c51c",
             "section_path": [
@@ -2615,7 +2615,7 @@
             "chunk_id": "chunk_dde39fe995884358af2f32b9ca185919",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_74d5724eeab244ff96c63c38235be671",
             "section_path": [
@@ -2633,7 +2633,7 @@
             "chunk_id": "chunk_50bfe67c378c4dd3afe8f32868e73c65",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -2651,7 +2651,7 @@
             "chunk_id": "chunk_f99d1878872d4ebab035e0716809efcf",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -2669,7 +2669,7 @@
             "chunk_id": "chunk_b56376d548d9425dac03aeb442af8f0c",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -2687,7 +2687,7 @@
             "chunk_id": "chunk_dd43d8ce5a4c47f38b82f4329ce6d676",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -2705,7 +2705,7 @@
             "chunk_id": "chunk_a95511e3ab72448f9bb3471b92952043",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_b1cbf94b26f2461fb3d14b590f8ef1d7",
             "section_path": [
@@ -2845,7 +2845,7 @@
             "chunk_id": "chunk_64040772080a432390790b6e9bd2a713",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_615a6f6b34204fb0ba3750035d3b17d4",
             "section_path": [
@@ -2860,7 +2860,7 @@
             "chunk_id": "chunk_43df994b966d4a62ab0f54d44d544142",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_d011b85864904855a5cd1b7be888c51c",
             "section_path": [
@@ -2877,7 +2877,7 @@
             "chunk_id": "chunk_dde39fe995884358af2f32b9ca185919",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_74d5724eeab244ff96c63c38235be671",
             "section_path": [
@@ -2895,7 +2895,7 @@
             "chunk_id": "chunk_50bfe67c378c4dd3afe8f32868e73c65",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -2913,7 +2913,7 @@
             "chunk_id": "chunk_f99d1878872d4ebab035e0716809efcf",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -2931,7 +2931,7 @@
             "chunk_id": "chunk_b56376d548d9425dac03aeb442af8f0c",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -2949,7 +2949,7 @@
             "chunk_id": "chunk_dd43d8ce5a4c47f38b82f4329ce6d676",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -2967,7 +2967,7 @@
             "chunk_id": "chunk_70f6e13ad31a400a8fec46c6ca212e6b",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_03c87a32b3d04ab1b143161576bdeccb",
             "section_path": [
@@ -2984,7 +2984,7 @@
             "chunk_id": "chunk_e062eaf78fe64ac58d93ce1269b82736",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_a4bdac79815b4db9a9f4d349737cf81b",
             "section_path": [
@@ -3000,7 +3000,7 @@
             "chunk_id": "chunk_46104f06a9034d33bb5f1e7e848627c9",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_a4bdac79815b4db9a9f4d349737cf81b",
             "section_path": [
@@ -3095,7 +3095,7 @@
             "chunk_id": "chunk_64040772080a432390790b6e9bd2a713",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_615a6f6b34204fb0ba3750035d3b17d4",
             "section_path": [
@@ -3110,7 +3110,7 @@
             "chunk_id": "chunk_43df994b966d4a62ab0f54d44d544142",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_d011b85864904855a5cd1b7be888c51c",
             "section_path": [
@@ -3127,7 +3127,7 @@
             "chunk_id": "chunk_dde39fe995884358af2f32b9ca185919",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_74d5724eeab244ff96c63c38235be671",
             "section_path": [
@@ -3145,7 +3145,7 @@
             "chunk_id": "chunk_50bfe67c378c4dd3afe8f32868e73c65",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -3163,7 +3163,7 @@
             "chunk_id": "chunk_f99d1878872d4ebab035e0716809efcf",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -3181,7 +3181,7 @@
             "chunk_id": "chunk_b56376d548d9425dac03aeb442af8f0c",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -3199,7 +3199,7 @@
             "chunk_id": "chunk_dd43d8ce5a4c47f38b82f4329ce6d676",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_766133b010c244f3b21f57577dd6185f",
             "section_path": [
@@ -3217,7 +3217,7 @@
             "chunk_id": "chunk_70f6e13ad31a400a8fec46c6ca212e6b",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_03c87a32b3d04ab1b143161576bdeccb",
             "section_path": [
@@ -3234,7 +3234,7 @@
             "chunk_id": "chunk_e062eaf78fe64ac58d93ce1269b82736",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_a4bdac79815b4db9a9f4d349737cf81b",
             "section_path": [
@@ -3250,7 +3250,7 @@
             "chunk_id": "chunk_46104f06a9034d33bb5f1e7e848627c9",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_a4bdac79815b4db9a9f4d349737cf81b",
             "section_path": [
@@ -11330,7 +11330,7 @@
             "chunk_id": "chunk_a73c3a7b623a42708092ec6913ff8ab3",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 56.8,
+            "score": 33.8,
             "chunk_type": "technical_specification",
             "section_id": "sec_5c0e3b5c7c4c4e2cb3c7a5f5b8d03406",
             "section_path": [
@@ -11345,7 +11345,7 @@
             "chunk_id": "chunk_ab0180ef99c74f888800f9903931794d",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 52.75,
+            "score": 29.75,
             "chunk_type": "technical_specification",
             "section_id": "sec_f572f31b9a4948b6bbb104c2f968b0eb",
             "section_path": [
@@ -11360,7 +11360,7 @@
             "chunk_id": "chunk_701269a4e1944b95b035992294c82592",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 52.45,
+            "score": 29.45,
             "chunk_type": "technical_specification",
             "section_id": "sec_e25a9d4be8e041dfb0b18d116ef51194",
             "section_path": [
@@ -11375,7 +11375,7 @@
             "chunk_id": "chunk_f692e19a92fc4e22a6329d0a574fc788",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 51.1,
+            "score": 28.1,
             "chunk_type": "technical_specification",
             "section_id": "sec_da9221c96d9a4ef1927e84d941338232",
             "section_path": [
@@ -11391,7 +11391,7 @@
             "chunk_id": "chunk_99bfe3d23df2425ebc380092ea3d0ee7",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 49.75,
+            "score": 26.75,
             "chunk_type": "technical_specification",
             "section_id": "sec_a4e9af30e3b1435ea533864b0b76d127",
             "section_path": [
@@ -11406,7 +11406,7 @@
             "chunk_id": "chunk_5c58658c47de4ee6bb5a878f598a2fa9",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 48.4,
+            "score": 25.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_b646dc3983fc43de80de3aa39a23d6fa",
             "section_path": [
@@ -11421,7 +11421,7 @@
             "chunk_id": "chunk_8e961c673bd6481a90802e233f5c5955",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 48.4,
+            "score": 25.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_765b63438e404ca9aff168085e8d1124",
             "section_path": [
@@ -11436,7 +11436,7 @@
             "chunk_id": "chunk_1949f675fb9f4ccca5855e71c2c52e28",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 48.4,
+            "score": 25.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_98cbcff5442243948a31cd5ac96beae8",
             "section_path": [
@@ -11451,7 +11451,7 @@
             "chunk_id": "chunk_11ae7cdcb7a2418f81bab9b8f10c97cf",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 48.4,
+            "score": 25.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_3f60590455014f31819a4ce39ba90b9a",
             "section_path": [
@@ -11466,7 +11466,7 @@
             "chunk_id": "chunk_3e431696c1a346218e2304bbd3dd7618",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 48.4,
+            "score": 25.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_69f34559ff6e40d7bf0388ce90cbfd15",
             "section_path": [
@@ -11540,7 +11540,7 @@
             "chunk_id": "chunk_a73c3a7b623a42708092ec6913ff8ab3",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 56.8,
+            "score": 33.8,
             "chunk_type": "technical_specification",
             "section_id": "sec_5c0e3b5c7c4c4e2cb3c7a5f5b8d03406",
             "section_path": [
@@ -11555,7 +11555,7 @@
             "chunk_id": "chunk_ab0180ef99c74f888800f9903931794d",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 52.75,
+            "score": 29.75,
             "chunk_type": "technical_specification",
             "section_id": "sec_f572f31b9a4948b6bbb104c2f968b0eb",
             "section_path": [
@@ -11570,7 +11570,7 @@
             "chunk_id": "chunk_701269a4e1944b95b035992294c82592",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 52.45,
+            "score": 29.45,
             "chunk_type": "technical_specification",
             "section_id": "sec_e25a9d4be8e041dfb0b18d116ef51194",
             "section_path": [
@@ -11585,7 +11585,7 @@
             "chunk_id": "chunk_f692e19a92fc4e22a6329d0a574fc788",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 51.1,
+            "score": 28.1,
             "chunk_type": "technical_specification",
             "section_id": "sec_da9221c96d9a4ef1927e84d941338232",
             "section_path": [
@@ -11601,7 +11601,7 @@
             "chunk_id": "chunk_99bfe3d23df2425ebc380092ea3d0ee7",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 49.75,
+            "score": 26.75,
             "chunk_type": "technical_specification",
             "section_id": "sec_a4e9af30e3b1435ea533864b0b76d127",
             "section_path": [
@@ -11616,7 +11616,7 @@
             "chunk_id": "chunk_5c58658c47de4ee6bb5a878f598a2fa9",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 48.4,
+            "score": 25.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_b646dc3983fc43de80de3aa39a23d6fa",
             "section_path": [
@@ -11631,7 +11631,7 @@
             "chunk_id": "chunk_8e961c673bd6481a90802e233f5c5955",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 48.4,
+            "score": 25.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_765b63438e404ca9aff168085e8d1124",
             "section_path": [
@@ -11646,7 +11646,7 @@
             "chunk_id": "chunk_1949f675fb9f4ccca5855e71c2c52e28",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 48.4,
+            "score": 25.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_98cbcff5442243948a31cd5ac96beae8",
             "section_path": [
@@ -11661,7 +11661,7 @@
             "chunk_id": "chunk_11ae7cdcb7a2418f81bab9b8f10c97cf",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "sql_keyword",
-            "score": 48.4,
+            "score": 25.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_3f60590455014f31819a4ce39ba90b9a",
             "section_path": [
@@ -11676,7 +11676,7 @@
             "chunk_id": "chunk_3e431696c1a346218e2304bbd3dd7618",
             "document_id": "doc_7786dfce1d194baf825cecb607c3b16b",
             "retrieval_source": "hybrid",
-            "score": 48.4,
+            "score": 25.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_69f34559ff6e40d7bf0388ce90cbfd15",
             "section_path": [
@@ -12252,7 +12252,7 @@
             "chunk_id": "chunk_a8f65905daed48aba47ca93e2c037b79",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 47.75,
+            "score": 24.75,
             "chunk_type": "certification_info",
             "section_id": "sec_40f883c33bf04e2e94049f9476b6cc54",
             "section_path": [
@@ -12267,7 +12267,7 @@
             "chunk_id": "chunk_381e010ece5343da95d22ba32260dbce",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "sql_keyword",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "certification_info",
             "section_id": "sec_90efecb844db422bb00fd56dd8260d00",
             "section_path": [
@@ -12282,7 +12282,7 @@
             "chunk_id": "chunk_10301563314a49e88ebe91e5282f9ad5",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "sql_keyword",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "certification_info",
             "section_id": "sec_90efecb844db422bb00fd56dd8260d00",
             "section_path": [
@@ -12298,7 +12298,7 @@
             "chunk_id": "chunk_35e44b07ea64451e9e7f36484a886cd1",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "certification_info",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -12313,7 +12313,7 @@
             "chunk_id": "chunk_867ed97623a54a1fafa28c62dab2ce45",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "sql_keyword",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "certification_info",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -12328,7 +12328,7 @@
             "chunk_id": "chunk_48fdfca798b04fd09cb2f78e0d938b1c",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "certification_info",
             "section_id": "sec_549d44f7894e4690825506efcbd667f0",
             "section_path": [
@@ -12344,7 +12344,7 @@
             "chunk_id": "chunk_f864c7ee22024f53b7a2ab190bbf4202",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "certification_info",
             "section_id": "sec_40f883c33bf04e2e94049f9476b6cc54",
             "section_path": [
@@ -12359,7 +12359,7 @@
             "chunk_id": "chunk_bfda5ea9617d4a97b320412f3fca1e89",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -12374,7 +12374,7 @@
             "chunk_id": "chunk_a19efe1fd27346eabeee75068ccd95f6",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_b6ed4a23c5d54300bbdde16a11ed39d1",
             "section_path": [
@@ -12389,7 +12389,7 @@
             "chunk_id": "chunk_9f2246ac11a248fc971823e567da97e3",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -12464,7 +12464,7 @@
             "chunk_id": "chunk_a8f65905daed48aba47ca93e2c037b79",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 47.75,
+            "score": 24.75,
             "chunk_type": "certification_info",
             "section_id": "sec_40f883c33bf04e2e94049f9476b6cc54",
             "section_path": [
@@ -12479,7 +12479,7 @@
             "chunk_id": "chunk_381e010ece5343da95d22ba32260dbce",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "sql_keyword",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "certification_info",
             "section_id": "sec_90efecb844db422bb00fd56dd8260d00",
             "section_path": [
@@ -12494,7 +12494,7 @@
             "chunk_id": "chunk_10301563314a49e88ebe91e5282f9ad5",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "sql_keyword",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "certification_info",
             "section_id": "sec_90efecb844db422bb00fd56dd8260d00",
             "section_path": [
@@ -12510,7 +12510,7 @@
             "chunk_id": "chunk_35e44b07ea64451e9e7f36484a886cd1",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "certification_info",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -12525,7 +12525,7 @@
             "chunk_id": "chunk_867ed97623a54a1fafa28c62dab2ce45",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "sql_keyword",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "certification_info",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -12540,7 +12540,7 @@
             "chunk_id": "chunk_48fdfca798b04fd09cb2f78e0d938b1c",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "certification_info",
             "section_id": "sec_549d44f7894e4690825506efcbd667f0",
             "section_path": [
@@ -12556,7 +12556,7 @@
             "chunk_id": "chunk_f864c7ee22024f53b7a2ab190bbf4202",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "certification_info",
             "section_id": "sec_40f883c33bf04e2e94049f9476b6cc54",
             "section_path": [
@@ -12571,7 +12571,7 @@
             "chunk_id": "chunk_bfda5ea9617d4a97b320412f3fca1e89",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -12586,7 +12586,7 @@
             "chunk_id": "chunk_a19efe1fd27346eabeee75068ccd95f6",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_b6ed4a23c5d54300bbdde16a11ed39d1",
             "section_path": [
@@ -12601,7 +12601,7 @@
             "chunk_id": "chunk_9f2246ac11a248fc971823e567da97e3",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -14100,7 +14100,7 @@
             "chunk_id": "chunk_a8f65905daed48aba47ca93e2c037b79",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 46.4,
+            "score": 23.4,
             "chunk_type": "certification_info",
             "section_id": "sec_40f883c33bf04e2e94049f9476b6cc54",
             "section_path": [
@@ -14115,7 +14115,7 @@
             "chunk_id": "chunk_f864c7ee22024f53b7a2ab190bbf4202",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 46.4,
+            "score": 23.4,
             "chunk_type": "certification_info",
             "section_id": "sec_40f883c33bf04e2e94049f9476b6cc54",
             "section_path": [
@@ -14130,7 +14130,7 @@
             "chunk_id": "chunk_48fdfca798b04fd09cb2f78e0d938b1c",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "certification_info",
             "section_id": "sec_549d44f7894e4690825506efcbd667f0",
             "section_path": [
@@ -14146,7 +14146,7 @@
             "chunk_id": "chunk_381e010ece5343da95d22ba32260dbce",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "certification_info",
             "section_id": "sec_90efecb844db422bb00fd56dd8260d00",
             "section_path": [
@@ -14161,7 +14161,7 @@
             "chunk_id": "chunk_10301563314a49e88ebe91e5282f9ad5",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "certification_info",
             "section_id": "sec_90efecb844db422bb00fd56dd8260d00",
             "section_path": [
@@ -14177,7 +14177,7 @@
             "chunk_id": "chunk_35e44b07ea64451e9e7f36484a886cd1",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "certification_info",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -14192,7 +14192,7 @@
             "chunk_id": "chunk_867ed97623a54a1fafa28c62dab2ce45",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "certification_info",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -14207,7 +14207,7 @@
             "chunk_id": "chunk_bfda5ea9617d4a97b320412f3fca1e89",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "sql_keyword",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -14222,7 +14222,7 @@
             "chunk_id": "chunk_4b47e69ee2e74a9091253819825a7284",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_20acfabc881946c8bb3ab848ad74a9e2",
             "section_path": [
@@ -14237,7 +14237,7 @@
             "chunk_id": "chunk_cd2eed7b085346e8b6b900a3667dcf3b",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_20acfabc881946c8bb3ab848ad74a9e2",
             "section_path": [
@@ -14312,7 +14312,7 @@
             "chunk_id": "chunk_a8f65905daed48aba47ca93e2c037b79",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 46.4,
+            "score": 23.4,
             "chunk_type": "certification_info",
             "section_id": "sec_40f883c33bf04e2e94049f9476b6cc54",
             "section_path": [
@@ -14327,7 +14327,7 @@
             "chunk_id": "chunk_f864c7ee22024f53b7a2ab190bbf4202",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 46.4,
+            "score": 23.4,
             "chunk_type": "certification_info",
             "section_id": "sec_40f883c33bf04e2e94049f9476b6cc54",
             "section_path": [
@@ -14342,7 +14342,7 @@
             "chunk_id": "chunk_48fdfca798b04fd09cb2f78e0d938b1c",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "certification_info",
             "section_id": "sec_549d44f7894e4690825506efcbd667f0",
             "section_path": [
@@ -14358,7 +14358,7 @@
             "chunk_id": "chunk_381e010ece5343da95d22ba32260dbce",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "certification_info",
             "section_id": "sec_90efecb844db422bb00fd56dd8260d00",
             "section_path": [
@@ -14373,7 +14373,7 @@
             "chunk_id": "chunk_10301563314a49e88ebe91e5282f9ad5",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "certification_info",
             "section_id": "sec_90efecb844db422bb00fd56dd8260d00",
             "section_path": [
@@ -14389,7 +14389,7 @@
             "chunk_id": "chunk_35e44b07ea64451e9e7f36484a886cd1",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "certification_info",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -14404,7 +14404,7 @@
             "chunk_id": "chunk_867ed97623a54a1fafa28c62dab2ce45",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "certification_info",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -14419,7 +14419,7 @@
             "chunk_id": "chunk_bfda5ea9617d4a97b320412f3fca1e89",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "sql_keyword",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
             "section_path": [
@@ -14434,7 +14434,7 @@
             "chunk_id": "chunk_4b47e69ee2e74a9091253819825a7284",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_20acfabc881946c8bb3ab848ad74a9e2",
             "section_path": [
@@ -14449,7 +14449,7 @@
             "chunk_id": "chunk_cd2eed7b085346e8b6b900a3667dcf3b",
             "document_id": "doc_3f12aa7f1fbf479897ea3e6c173828a3",
             "retrieval_source": "hybrid",
-            "score": 43.4,
+            "score": 20.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_20acfabc881946c8bb3ab848ad74a9e2",
             "section_path": [
@@ -18805,7 +18805,7 @@
             "chunk_id": "chunk_265dedc88ab84b44997429b0f9661851",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 38.35,
+            "score": 15.35,
             "chunk_type": "overview",
             "section_id": "sec_afb194e6570046ca8df5b8918a6cd1bb",
             "section_path": [
@@ -18820,7 +18820,7 @@
             "chunk_id": "chunk_3d6380d34016436d907fccbf7894b053",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 35.35,
+            "score": 12.35,
             "chunk_type": "general",
             "section_id": "sec_b0e01efc1d7d4c198fb40f8064b04774",
             "section_path": [
@@ -18877,7 +18877,7 @@
             "chunk_id": "chunk_265dedc88ab84b44997429b0f9661851",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 38.35,
+            "score": 15.35,
             "chunk_type": "overview",
             "section_id": "sec_afb194e6570046ca8df5b8918a6cd1bb",
             "section_path": [
@@ -18892,7 +18892,7 @@
             "chunk_id": "chunk_3d6380d34016436d907fccbf7894b053",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 35.35,
+            "score": 12.35,
             "chunk_type": "general",
             "section_id": "sec_b0e01efc1d7d4c198fb40f8064b04774",
             "section_path": [
@@ -18907,7 +18907,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "context_expansion",
-            "score": 38.34,
+            "score": 15.34,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -18922,7 +18922,7 @@
             "chunk_id": "chunk_e539737493f1412591c709b8bcf2fdc9",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "context_expansion",
-            "score": 38.34,
+            "score": 15.34,
             "chunk_type": "technical_specification",
             "section_id": "sec_3f6143768e48434797694273966bfec2",
             "section_path": [
@@ -18937,7 +18937,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "context_expansion",
-            "score": 35.34,
+            "score": 12.34,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -18952,7 +18952,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "context_expansion",
-            "score": 35.34,
+            "score": 12.34,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -19067,7 +19067,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -19082,7 +19082,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -19097,7 +19097,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -19112,7 +19112,7 @@
             "chunk_id": "chunk_e539737493f1412591c709b8bcf2fdc9",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_3f6143768e48434797694273966bfec2",
             "section_path": [
@@ -19127,7 +19127,7 @@
             "chunk_id": "chunk_a7a3c18521224cb98e3257bd7856939f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -19142,7 +19142,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -19157,7 +19157,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -19172,7 +19172,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -19187,7 +19187,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -19202,7 +19202,7 @@
             "chunk_id": "chunk_c713b04b94c948978500c6a3dc1f6c4f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_8959b0a9b1d5499e81cbed16a2a234cd",
             "section_path": [
@@ -19275,7 +19275,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -19290,7 +19290,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -19305,7 +19305,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -19320,7 +19320,7 @@
             "chunk_id": "chunk_e539737493f1412591c709b8bcf2fdc9",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_3f6143768e48434797694273966bfec2",
             "section_path": [
@@ -19335,7 +19335,7 @@
             "chunk_id": "chunk_a7a3c18521224cb98e3257bd7856939f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -19350,7 +19350,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -19365,7 +19365,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -19380,7 +19380,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -19395,7 +19395,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -19410,7 +19410,7 @@
             "chunk_id": "chunk_c713b04b94c948978500c6a3dc1f6c4f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_8959b0a9b1d5499e81cbed16a2a234cd",
             "section_path": [
@@ -19515,7 +19515,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -19530,7 +19530,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -19545,7 +19545,7 @@
             "chunk_id": "chunk_53eeaf8a4c4a4f97b14807ac4b6360c6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_b362be253e0e4570ba2de9948bc3062f",
             "section_path": [
@@ -19560,7 +19560,7 @@
             "chunk_id": "chunk_bc09bc026b0747d3b955449116f07d72",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_8a0ddfb96e684b839d74afd3e0d84b1c",
             "section_path": [
@@ -19575,7 +19575,7 @@
             "chunk_id": "chunk_d8c36691c90144f3bc66ecbb71568979",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_75363233fd5640d480c62edcd2b89b88",
             "section_path": [
@@ -19590,7 +19590,7 @@
             "chunk_id": "chunk_c3e03fe0f70f402fa0519b3d2b39cc9c",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_75363233fd5640d480c62edcd2b89b88",
             "section_path": [
@@ -19605,7 +19605,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -19620,7 +19620,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -19635,7 +19635,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -19650,7 +19650,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -19723,7 +19723,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -19738,7 +19738,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -19753,7 +19753,7 @@
             "chunk_id": "chunk_53eeaf8a4c4a4f97b14807ac4b6360c6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_b362be253e0e4570ba2de9948bc3062f",
             "section_path": [
@@ -19768,7 +19768,7 @@
             "chunk_id": "chunk_bc09bc026b0747d3b955449116f07d72",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_8a0ddfb96e684b839d74afd3e0d84b1c",
             "section_path": [
@@ -19783,7 +19783,7 @@
             "chunk_id": "chunk_d8c36691c90144f3bc66ecbb71568979",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_75363233fd5640d480c62edcd2b89b88",
             "section_path": [
@@ -19798,7 +19798,7 @@
             "chunk_id": "chunk_c3e03fe0f70f402fa0519b3d2b39cc9c",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_75363233fd5640d480c62edcd2b89b88",
             "section_path": [
@@ -19813,7 +19813,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -19828,7 +19828,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -19843,7 +19843,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -19858,7 +19858,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -19972,7 +19972,7 @@
             "chunk_id": "chunk_bc09bc026b0747d3b955449116f07d72",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 50.05,
+            "score": 27.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_8a0ddfb96e684b839d74afd3e0d84b1c",
             "section_path": [
@@ -19987,7 +19987,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -20002,7 +20002,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -20017,7 +20017,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -20032,7 +20032,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -20047,7 +20047,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -20062,7 +20062,7 @@
             "chunk_id": "chunk_53eeaf8a4c4a4f97b14807ac4b6360c6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_b362be253e0e4570ba2de9948bc3062f",
             "section_path": [
@@ -20077,7 +20077,7 @@
             "chunk_id": "chunk_e539737493f1412591c709b8bcf2fdc9",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_3f6143768e48434797694273966bfec2",
             "section_path": [
@@ -20092,7 +20092,7 @@
             "chunk_id": "chunk_a7a3c18521224cb98e3257bd7856939f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -20107,7 +20107,7 @@
             "chunk_id": "chunk_d8c36691c90144f3bc66ecbb71568979",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_75363233fd5640d480c62edcd2b89b88",
             "section_path": [
@@ -20180,7 +20180,7 @@
             "chunk_id": "chunk_bc09bc026b0747d3b955449116f07d72",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 50.05,
+            "score": 27.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_8a0ddfb96e684b839d74afd3e0d84b1c",
             "section_path": [
@@ -20195,7 +20195,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -20210,7 +20210,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -20225,7 +20225,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -20240,7 +20240,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -20255,7 +20255,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -20270,7 +20270,7 @@
             "chunk_id": "chunk_53eeaf8a4c4a4f97b14807ac4b6360c6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_b362be253e0e4570ba2de9948bc3062f",
             "section_path": [
@@ -20285,7 +20285,7 @@
             "chunk_id": "chunk_e539737493f1412591c709b8bcf2fdc9",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_3f6143768e48434797694273966bfec2",
             "section_path": [
@@ -20300,7 +20300,7 @@
             "chunk_id": "chunk_a7a3c18521224cb98e3257bd7856939f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -20315,7 +20315,7 @@
             "chunk_id": "chunk_d8c36691c90144f3bc66ecbb71568979",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_75363233fd5640d480c62edcd2b89b88",
             "section_path": [
@@ -20424,7 +20424,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 51.8,
+            "score": 28.8,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -20439,7 +20439,7 @@
             "chunk_id": "chunk_a7a3c18521224cb98e3257bd7856939f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 47.45,
+            "score": 24.45,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -20454,7 +20454,7 @@
             "chunk_id": "chunk_0f5ada9c531647d9a00a934bc4f39b42",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 47.45,
+            "score": 24.45,
             "chunk_type": "technical_specification",
             "section_id": "sec_9650d5f04db1431abc0fa74662f0e690",
             "section_path": [
@@ -20469,7 +20469,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -20484,7 +20484,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -20499,7 +20499,7 @@
             "chunk_id": "chunk_bc09bc026b0747d3b955449116f07d72",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_8a0ddfb96e684b839d74afd3e0d84b1c",
             "section_path": [
@@ -20514,7 +20514,7 @@
             "chunk_id": "chunk_e539737493f1412591c709b8bcf2fdc9",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_3f6143768e48434797694273966bfec2",
             "section_path": [
@@ -20529,7 +20529,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -20544,7 +20544,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -20559,7 +20559,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -20632,7 +20632,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 51.8,
+            "score": 28.8,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -20647,7 +20647,7 @@
             "chunk_id": "chunk_a7a3c18521224cb98e3257bd7856939f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 47.45,
+            "score": 24.45,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -20662,7 +20662,7 @@
             "chunk_id": "chunk_0f5ada9c531647d9a00a934bc4f39b42",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 47.45,
+            "score": 24.45,
             "chunk_type": "technical_specification",
             "section_id": "sec_9650d5f04db1431abc0fa74662f0e690",
             "section_path": [
@@ -20677,7 +20677,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -20692,7 +20692,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -20707,7 +20707,7 @@
             "chunk_id": "chunk_bc09bc026b0747d3b955449116f07d72",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_8a0ddfb96e684b839d74afd3e0d84b1c",
             "section_path": [
@@ -20722,7 +20722,7 @@
             "chunk_id": "chunk_e539737493f1412591c709b8bcf2fdc9",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_3f6143768e48434797694273966bfec2",
             "section_path": [
@@ -20737,7 +20737,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -20752,7 +20752,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -20767,7 +20767,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -21333,7 +21333,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 65.7,
+            "score": 24.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -21348,7 +21348,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 64.05,
+            "score": 23.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -21363,7 +21363,7 @@
             "chunk_id": "chunk_a7a3c18521224cb98e3257bd7856939f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 64.05,
+            "score": 23.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -21378,7 +21378,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -21393,7 +21393,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -21408,7 +21408,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -21423,7 +21423,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -21438,7 +21438,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -21453,7 +21453,7 @@
             "chunk_id": "chunk_c713b04b94c948978500c6a3dc1f6c4f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_8959b0a9b1d5499e81cbed16a2a234cd",
             "section_path": [
@@ -21468,7 +21468,7 @@
             "chunk_id": "chunk_53eeaf8a4c4a4f97b14807ac4b6360c6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_b362be253e0e4570ba2de9948bc3062f",
             "section_path": [
@@ -21541,7 +21541,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 65.7,
+            "score": 24.7,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -21556,7 +21556,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 64.05,
+            "score": 23.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -21571,7 +21571,7 @@
             "chunk_id": "chunk_a7a3c18521224cb98e3257bd7856939f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 64.05,
+            "score": 23.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -21586,7 +21586,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -21601,7 +21601,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -21616,7 +21616,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -21631,7 +21631,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -21646,7 +21646,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -21661,7 +21661,7 @@
             "chunk_id": "chunk_c713b04b94c948978500c6a3dc1f6c4f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_8959b0a9b1d5499e81cbed16a2a234cd",
             "section_path": [
@@ -21676,7 +21676,7 @@
             "chunk_id": "chunk_53eeaf8a4c4a4f97b14807ac4b6360c6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 62.7,
+            "score": 21.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_b362be253e0e4570ba2de9948bc3062f",
             "section_path": [
@@ -21780,7 +21780,7 @@
             "chunk_id": "chunk_4476c5f8749b4442ac08a072c7756443",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 86.05,
+            "score": 68.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_2c17d38178fb4d06b18d98351a953404",
             "section_path": [
@@ -21795,7 +21795,7 @@
             "chunk_id": "chunk_c713b04b94c948978500c6a3dc1f6c4f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_8959b0a9b1d5499e81cbed16a2a234cd",
             "section_path": [
@@ -21810,7 +21810,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -21825,7 +21825,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -21840,7 +21840,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -21855,7 +21855,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -21870,7 +21870,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -21885,7 +21885,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -21900,7 +21900,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -21915,7 +21915,7 @@
             "chunk_id": "chunk_53eeaf8a4c4a4f97b14807ac4b6360c6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b362be253e0e4570ba2de9948bc3062f",
             "section_path": [
@@ -21988,7 +21988,7 @@
             "chunk_id": "chunk_4476c5f8749b4442ac08a072c7756443",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 86.05,
+            "score": 68.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_2c17d38178fb4d06b18d98351a953404",
             "section_path": [
@@ -22003,7 +22003,7 @@
             "chunk_id": "chunk_c713b04b94c948978500c6a3dc1f6c4f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 43.7,
+            "score": 20.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_8959b0a9b1d5499e81cbed16a2a234cd",
             "section_path": [
@@ -22018,7 +22018,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -22033,7 +22033,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -22048,7 +22048,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -22063,7 +22063,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -22078,7 +22078,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -22093,7 +22093,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -22108,7 +22108,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -22123,7 +22123,7 @@
             "chunk_id": "chunk_53eeaf8a4c4a4f97b14807ac4b6360c6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b362be253e0e4570ba2de9948bc3062f",
             "section_path": [
@@ -22231,7 +22231,7 @@
             "chunk_id": "chunk_177c6073b7d34b4e9fa1d508cc49d23d",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 47.05,
+            "score": 24.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_9650d5f04db1431abc0fa74662f0e690",
             "section_path": [
@@ -22246,7 +22246,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -22261,7 +22261,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -22276,7 +22276,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -22291,7 +22291,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -22306,7 +22306,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -22321,7 +22321,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -22336,7 +22336,7 @@
             "chunk_id": "chunk_c713b04b94c948978500c6a3dc1f6c4f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_8959b0a9b1d5499e81cbed16a2a234cd",
             "section_path": [
@@ -22351,7 +22351,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -22366,7 +22366,7 @@
             "chunk_id": "chunk_53eeaf8a4c4a4f97b14807ac4b6360c6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b362be253e0e4570ba2de9948bc3062f",
             "section_path": [
@@ -22439,7 +22439,7 @@
             "chunk_id": "chunk_177c6073b7d34b4e9fa1d508cc49d23d",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 47.05,
+            "score": 24.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_9650d5f04db1431abc0fa74662f0e690",
             "section_path": [
@@ -22454,7 +22454,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -22469,7 +22469,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -22484,7 +22484,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -22499,7 +22499,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -22514,7 +22514,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -22529,7 +22529,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -22544,7 +22544,7 @@
             "chunk_id": "chunk_c713b04b94c948978500c6a3dc1f6c4f",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_8959b0a9b1d5499e81cbed16a2a234cd",
             "section_path": [
@@ -22559,7 +22559,7 @@
             "chunk_id": "chunk_d77e878db1864a9ab4b556551e41c8e6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_641bfc6bc42e4dbba30dbb60b00acfe5",
             "section_path": [
@@ -22574,7 +22574,7 @@
             "chunk_id": "chunk_53eeaf8a4c4a4f97b14807ac4b6360c6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b362be253e0e4570ba2de9948bc3062f",
             "section_path": [
@@ -22680,7 +22680,7 @@
             "chunk_id": "chunk_53eeaf8a4c4a4f97b14807ac4b6360c6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 55.4,
+            "score": 32.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_b362be253e0e4570ba2de9948bc3062f",
             "section_path": [
@@ -22695,7 +22695,7 @@
             "chunk_id": "chunk_d8c36691c90144f3bc66ecbb71568979",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 52.9,
+            "score": 29.9,
             "chunk_type": "technical_specification",
             "section_id": "sec_75363233fd5640d480c62edcd2b89b88",
             "section_path": [
@@ -22710,7 +22710,7 @@
             "chunk_id": "chunk_c3e03fe0f70f402fa0519b3d2b39cc9c",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 52.9,
+            "score": 29.9,
             "chunk_type": "technical_specification",
             "section_id": "sec_75363233fd5640d480c62edcd2b89b88",
             "section_path": [
@@ -22725,7 +22725,7 @@
             "chunk_id": "chunk_bc09bc026b0747d3b955449116f07d72",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_8a0ddfb96e684b839d74afd3e0d84b1c",
             "section_path": [
@@ -22740,7 +22740,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -22755,7 +22755,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -22770,7 +22770,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -22785,7 +22785,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -22800,7 +22800,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -22815,7 +22815,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -22888,7 +22888,7 @@
             "chunk_id": "chunk_53eeaf8a4c4a4f97b14807ac4b6360c6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 55.4,
+            "score": 32.4,
             "chunk_type": "technical_specification",
             "section_id": "sec_b362be253e0e4570ba2de9948bc3062f",
             "section_path": [
@@ -22903,7 +22903,7 @@
             "chunk_id": "chunk_d8c36691c90144f3bc66ecbb71568979",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 52.9,
+            "score": 29.9,
             "chunk_type": "technical_specification",
             "section_id": "sec_75363233fd5640d480c62edcd2b89b88",
             "section_path": [
@@ -22918,7 +22918,7 @@
             "chunk_id": "chunk_c3e03fe0f70f402fa0519b3d2b39cc9c",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 52.9,
+            "score": 29.9,
             "chunk_type": "technical_specification",
             "section_id": "sec_75363233fd5640d480c62edcd2b89b88",
             "section_path": [
@@ -22933,7 +22933,7 @@
             "chunk_id": "chunk_bc09bc026b0747d3b955449116f07d72",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 45.05,
+            "score": 22.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_8a0ddfb96e684b839d74afd3e0d84b1c",
             "section_path": [
@@ -22948,7 +22948,7 @@
             "chunk_id": "chunk_3b0ab55895ba4cd6b04cb7af92409b5b",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.35,
+            "score": 19.35,
             "chunk_type": "spare_parts_table",
             "section_id": "sec_e66e04607e4c47d18b8f6a6aa55132af",
             "section_path": [
@@ -22963,7 +22963,7 @@
             "chunk_id": "chunk_272fa7e9b424415bb5bd8a9ad2cbf6df",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 42.05,
+            "score": 19.05,
             "chunk_type": "technical_specification",
             "section_id": "sec_27ea5044866d49f9bcc7f507c357f233",
             "section_path": [
@@ -22978,7 +22978,7 @@
             "chunk_id": "chunk_9e8e90aa0f3745c3a6b167f67d3a7ac6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 40.7,
+            "score": 17.7,
             "chunk_type": "technical_specification",
             "section_id": "sec_062b3bed5179416298ad8d06e046239d",
             "section_path": [
@@ -22993,7 +22993,7 @@
             "chunk_id": "chunk_47e6b296981e4326b71104627c73bc33",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_e36a7cdecc1741cb91d3c3b70f464060",
             "section_path": [
@@ -23008,7 +23008,7 @@
             "chunk_id": "chunk_aa9c78cc42884c5b8f680b1f2d8619a6",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_b42502bbc85443d5b2cdd45f420d09af",
             "section_path": [
@@ -23023,7 +23023,7 @@
             "chunk_id": "chunk_d5078fde1ae442a386622b2eec6b3b36",
             "document_id": "doc_0576a2842be74d769f31c86079eac801",
             "retrieval_source": "hybrid",
-            "score": 39.35,
+            "score": 16.35,
             "chunk_type": "technical_specification",
             "section_id": "sec_f19f8815ffbd4697a2d7df418d6039fd",
             "section_path": [
@@ -28138,12 +28138,12 @@
           "chunk_b5e3b03b74084a27bf04f8d59b2ce337",
           "chunk_16859d80f726490eb7c7acb5d175e35b",
           "chunk_810ee670d9794018bc3e200452da4613",
+          "chunk_6fb3ff41e6ba456dbf39a132f14a681d",
           "chunk_2c113db36b2b486fb935a28a2bd7bf74",
           "chunk_0079777e56074a73aa321ad59671d7fb",
           "chunk_d14ff62bf7c9453aad8c0cf8cbf50537",
           "chunk_61f25d6ad9b8466db820a330eee82eab",
-          "chunk_16965dcd8cf34af79ec971d73961d9b3",
-          "chunk_9cf52c6efe1c4125bff3014242691ca9"
+          "chunk_16965dcd8cf34af79ec971d73961d9b3"
         ],
         "returned_section_paths": [
           [
@@ -28164,6 +28164,12 @@
             "Brief Operating Instructions"
           ],
           [
+            "6 Electrical connection",
+            "6.2 Connecting the device",
+            "Supply voltage might be connected!",
+            "Safety Instructions"
+          ],
+          [
             "Order information"
           ],
           [
@@ -28182,10 +28188,6 @@
             "3 Basic safety instructions",
             "3.2 Intended use",
             "3.2.1 Foreseeable incorrect use"
-          ],
-          [
-            "3 Basic safety instructions",
-            "Hazardous area"
           ]
         ],
         "chunks": [
@@ -28253,6 +28255,24 @@
             "page_start": 35,
             "page_end": 35,
             "content_preview": "EN 1127-1: \"Explosive atmospheres - Explosion prevention and protection - Part 1: Basic concepts and methodology\" The extended order code is indicated on the nameplate, which is..."
+          },
+          {
+            "chunk_id": "chunk_6fb3ff41e6ba456dbf39a132f14a681d",
+            "document_id": "doc_0fa8ef6b47eb468297ecee26c1c34e75",
+            "retrieval_source": "hybrid",
+            "score": 8.85,
+            "chunk_type": "safety_warning",
+            "section_id": "sec_da34522ead654a7a8706d719f9249f58",
+            "section_path": [
+              "6 Electrical connection",
+              "6.2 Connecting the device",
+              "Supply voltage might be connected!",
+              "Safety Instructions"
+            ],
+            "section_path_text": "6 Electrical connection > 6.2 Connecting the device > Supply voltage might be connected! > Safety Instructions",
+            "page_start": 12,
+            "page_end": 12,
+            "content_preview": "Switch off the supply voltage before connecting the device. When using the measuring device in hazardous areas, installation must also comply with the applicable national standa..."
           },
           {
             "chunk_id": "chunk_2c113db36b2b486fb935a28a2bd7bf74",
@@ -28333,22 +28353,6 @@
             "page_start": 6,
             "page_end": 6,
             "content_preview": "The manufacturer is not liable for damage caused by improper or non-intended use. Verification for borderline cases: For special fluids and fluids for cleaning, Endress+Hauser i..."
-          },
-          {
-            "chunk_id": "chunk_9cf52c6efe1c4125bff3014242691ca9",
-            "document_id": "doc_0fa8ef6b47eb468297ecee26c1c34e75",
-            "retrieval_source": "sql_keyword",
-            "score": 7.35,
-            "chunk_type": "safety_warning",
-            "section_id": "sec_83027412647e4ba7b6dc70ec9a5b8fd5",
-            "section_path": [
-              "3 Basic safety instructions",
-              "Hazardous area"
-            ],
-            "section_path_text": "3 Basic safety instructions > Hazardous area",
-            "page_start": 7,
-            "page_end": 7,
-            "content_preview": "To eliminate a danger for persons or for the facility when the device is used in the hazardous area (e.g. explosion protection, pressure vessel safety): Based on the nameplate,..."
           }
         ]
       },
@@ -28368,12 +28372,12 @@
           "chunk_b5e3b03b74084a27bf04f8d59b2ce337",
           "chunk_16859d80f726490eb7c7acb5d175e35b",
           "chunk_810ee670d9794018bc3e200452da4613",
+          "chunk_6fb3ff41e6ba456dbf39a132f14a681d",
           "chunk_2c113db36b2b486fb935a28a2bd7bf74",
           "chunk_0079777e56074a73aa321ad59671d7fb",
           "chunk_d14ff62bf7c9453aad8c0cf8cbf50537",
           "chunk_61f25d6ad9b8466db820a330eee82eab",
-          "chunk_16965dcd8cf34af79ec971d73961d9b3",
-          "chunk_9cf52c6efe1c4125bff3014242691ca9"
+          "chunk_16965dcd8cf34af79ec971d73961d9b3"
         ],
         "returned_section_paths": [
           [
@@ -28394,6 +28398,12 @@
             "Brief Operating Instructions"
           ],
           [
+            "6 Electrical connection",
+            "6.2 Connecting the device",
+            "Supply voltage might be connected!",
+            "Safety Instructions"
+          ],
+          [
             "Order information"
           ],
           [
@@ -28412,10 +28422,6 @@
             "3 Basic safety instructions",
             "3.2 Intended use",
             "3.2.1 Foreseeable incorrect use"
-          ],
-          [
-            "3 Basic safety instructions",
-            "Hazardous area"
           ]
         ],
         "chunks": [
@@ -28483,6 +28489,24 @@
             "page_start": 35,
             "page_end": 35,
             "content_preview": "EN 1127-1: \"Explosive atmospheres - Explosion prevention and protection - Part 1: Basic concepts and methodology\" The extended order code is indicated on the nameplate, which is..."
+          },
+          {
+            "chunk_id": "chunk_6fb3ff41e6ba456dbf39a132f14a681d",
+            "document_id": "doc_0fa8ef6b47eb468297ecee26c1c34e75",
+            "retrieval_source": "hybrid",
+            "score": 8.85,
+            "chunk_type": "safety_warning",
+            "section_id": "sec_da34522ead654a7a8706d719f9249f58",
+            "section_path": [
+              "6 Electrical connection",
+              "6.2 Connecting the device",
+              "Supply voltage might be connected!",
+              "Safety Instructions"
+            ],
+            "section_path_text": "6 Electrical connection > 6.2 Connecting the device > Supply voltage might be connected! > Safety Instructions",
+            "page_start": 12,
+            "page_end": 12,
+            "content_preview": "Switch off the supply voltage before connecting the device. When using the measuring device in hazardous areas, installation must also comply with the applicable national standa..."
           },
           {
             "chunk_id": "chunk_2c113db36b2b486fb935a28a2bd7bf74",
@@ -28563,22 +28587,6 @@
             "page_start": 6,
             "page_end": 6,
             "content_preview": "The manufacturer is not liable for damage caused by improper or non-intended use. Verification for borderline cases: For special fluids and fluids for cleaning, Endress+Hauser i..."
-          },
-          {
-            "chunk_id": "chunk_9cf52c6efe1c4125bff3014242691ca9",
-            "document_id": "doc_0fa8ef6b47eb468297ecee26c1c34e75",
-            "retrieval_source": "sql_keyword",
-            "score": 7.35,
-            "chunk_type": "safety_warning",
-            "section_id": "sec_83027412647e4ba7b6dc70ec9a5b8fd5",
-            "section_path": [
-              "3 Basic safety instructions",
-              "Hazardous area"
-            ],
-            "section_path_text": "3 Basic safety instructions > Hazardous area",
-            "page_start": 7,
-            "page_end": 7,
-            "content_preview": "To eliminate a danger for persons or for the facility when the device is used in the hazardous area (e.g. explosion protection, pressure vessel safety): Based on the nameplate,..."
           }
         ]
       },
@@ -28591,8 +28599,7 @@
         "failure_reasons": [
           "Anchor retrieval did not return the expected evidence.",
           "Anchor retrieval did not return the resolved expected chunk id.",
-          "Anchor retrieval missed the expected section path.",
-          "Anchor retrieval did not return a chunk covering expected page 12."
+          "Anchor retrieval missed the expected section path."
         ]
       }
     },
