@@ -43,13 +43,17 @@ class RetrievalTruthSetLoader:
 
         text = source_path.read_text(encoding="utf-8")
         sections = self._extract_sections(text)
-        truth_section = sections.get("4")
-        if truth_section is None:
-            raise SchemaValidationError(
-                "Retrieval truth set is missing section 4.",
-                details={"path": str(source_path)},
-            )
 
+        # Collect YAML blocks from the canonical section and any additional truth
+        # sections that may have been appended as the corpus grew (e.g. section 10).
+        # Blocks are only treated as cases if they carry a non-empty `id` field;
+        # template / schema illustration blocks are thereby skipped automatically.
+        all_yaml_blocks = [
+            block
+            for body in sections.values()
+            for block in self._extract_yaml_blocks(body)
+            if self._looks_like_case_block(block)
+        ]
         cases = [
             self._parse_case_block(
                 block_text,
@@ -57,7 +61,7 @@ class RetrievalTruthSetLoader:
                 block_index=block_index,
             )
             for block_index, block_text in enumerate(
-                self._extract_yaml_blocks(truth_section),
+                all_yaml_blocks,
                 start=1,
             )
         ]
@@ -101,6 +105,17 @@ class RetrievalTruthSetLoader:
             match.group("body").strip()
             for match in _YAML_BLOCK_PATTERN.finditer(section_text)
         ]
+
+    @staticmethod
+    def _looks_like_case_block(block_text: str) -> bool:
+        """True if the YAML block has a non-empty `id` value — distinguishes
+        real case blocks from schema template blocks (which have empty `id:`)."""
+        for line in block_text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("id:"):
+                value = stripped[3:].strip().strip('"').strip("'")
+                return bool(value)
+        return False
 
     def _parse_case_block(
         self,

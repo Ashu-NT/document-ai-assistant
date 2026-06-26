@@ -18,7 +18,7 @@ def test_loader_uses_default_truth_set_path() -> None:
     dataset = RetrievalTruthSetLoader().load()
 
     assert dataset.source_path == DEFAULT_RETRIEVAL_TRUTH_SET_PATH
-    assert dataset.case_count == 66
+    assert dataset.case_count == 122
 
 
 def test_loader_accepts_custom_path_override() -> None:
@@ -39,7 +39,7 @@ def test_loader_accepts_custom_path_override() -> None:
 def test_loader_parses_all_canonical_cases_and_ignores_schema_example() -> None:
     dataset = RetrievalTruthSetLoader().load()
 
-    assert dataset.case_count == 66
+    assert dataset.case_count == 122
     assert dataset.cases[0].case_id == "M-001"
     assert all(case.case_id for case in dataset.cases)
 
@@ -54,11 +54,11 @@ def test_loader_matches_document_family_counts() -> None:
     )
 
     assert family_counts == {
-        "manual": 22,
-        "certificate": 8,
-        "drawing": 8,
-        "datasheet": 10,
-        "report": 18,
+        "manual": 33,      # 22 (fwc12) + 4 (puro30) + 4 (bauer_mv320) + 3 (softener_9500)
+        "certificate": 29,  # 8 (hoses) + 3 (ehlers) + 3 (ac_generators) + 3 (motor_k2200110) + 3 (rolls_royce) + 3 (mtu) + 3 (ship_sanitation) + 3 (gea)
+        "drawing": 11,     # 8 (nav_lights) + 3 (ship_name_aft)
+        "datasheet": 22,   # 10 (mk311xxx) + 3 (motor_p62b355l4) + 3 (deck_fillers) + 3 (rule_bilge_pumps) + 3 (volvo_penta_d6_440)
+        "report": 27,      # 18 (pressure_transmitter) + 3 (transformer_d4000240) + 3 (man_shop_test) + 3 (vedder_maintenance)
     }
 
 
