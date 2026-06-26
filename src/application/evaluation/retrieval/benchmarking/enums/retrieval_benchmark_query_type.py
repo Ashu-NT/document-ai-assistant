@@ -18,6 +18,7 @@ class RetrievalBenchmarkQueryType(StrEnum):
     SPECIFICATION_LOOKUP = "specification_lookup"
     TABLE_LOOKUP = "table_lookup"
     TROUBLESHOOTING_LOOKUP = "troubleshooting_lookup"
+    DRAWING_LOOKUP = "drawing_lookup"
 
     @classmethod
     def from_value(
@@ -41,6 +42,7 @@ class RetrievalBenchmarkQueryType(StrEnum):
 
     def is_semantic_procedure_focused(self) -> bool:
         return self in {
+            RetrievalBenchmarkQueryType.DRAWING_LOOKUP,
             RetrievalBenchmarkQueryType.IDENTIFIER_SEMANTIC_LOOKUP,
             RetrievalBenchmarkQueryType.MAINTENANCE_INTERVAL_LOOKUP,
             RetrievalBenchmarkQueryType.MAINTENANCE_SPEC_LOOKUP,
