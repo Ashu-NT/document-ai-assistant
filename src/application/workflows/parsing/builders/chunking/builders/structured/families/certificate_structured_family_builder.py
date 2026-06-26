@@ -115,6 +115,10 @@ class CertificateStructuredFamilyBuilder:
                     chunk_type=ChunkType.CERTIFICATION_INFO,
                     radius_before=2,
                     radius_after=16,
+                    combine_all_windows=True,
+                    include_full_section_if_no_anchor=path_contains_markers(
+                        base_path, _PARTICULARS_PATH_MARKERS
+                    ),
                 )
             )
 

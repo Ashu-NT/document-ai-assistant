@@ -842,3 +842,108 @@ def test_fragment_builder_applies_certificate_specs_via_document_sections_signal
     )
     assert general_info.chunk_type == ChunkType.CERTIFICATION_INFO
     assert "CERT-2024-00312" in general_info.text
+
+
+# ---------------------------------------------------------------------------
+# G5 — Certificate Particulars: value-only rows must stay in one chunk
+# ---------------------------------------------------------------------------
+
+def test_fragment_builder_combines_particulars_rows_when_section_path_identifies_section() -> None:
+    """When the section path explicitly names 'Particulars', all element rows must be
+    captured in a single CERTIFICATION_INFO fragment even when individual element texts
+    do not contain standard anchor-marker words (e.g., pure-value rows like '4 pcs')."""
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_part_001",
+        title="Particulars",
+        section_path=["Certificate", "Particulars"],
+        page=2,
+    )
+    # Simulate a certificate where each Particulars row is a separate element
+    # and the text contains only the value (not the field label).
+    elements = [
+        make_element(element_id="e_qty", text="4 pcs", page=2, reading_order=1),
+        make_element(
+            element_id="e_size",
+            text="DN 8 (for 1/4\" hose connection)",
+            page=2,
+            reading_order=2,
+        ),
+        make_element(element_id="e_type", text="Ball valve", page=2, reading_order=3),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Inspection certificate",
+        document_type=DocumentType.CERTIFICATE,
+        section=section,
+        elements=elements,
+    )
+
+    cert_frags = [f for f in fragments if f.chunk_type == ChunkType.CERTIFICATION_INFO]
+    assert cert_frags, "At least one CERTIFICATION_INFO fragment must be produced"
+
+    combined = next(
+        (f for f in cert_frags if "4 pcs" in f.text and "DN 8" in f.text),
+        None,
+    )
+    assert combined is not None, (
+        "Both '4 pcs' and 'DN 8' must appear together in a single CERTIFICATION_INFO "
+        "fragment when section path identifies a Particulars section"
+    )
+    assert "Ball valve" in combined.text
+
+
+def test_fragment_builder_particulars_combine_all_windows_merges_multiple_anchors() -> None:
+    """When multiple elements in the Particulars section each contain anchor words,
+    combine_all_windows must merge them into one fragment rather than N separate ones."""
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_part_002",
+        title="Particulars",
+        section_path=["Certificate", "Particulars"],
+        page=3,
+    )
+    # Elements where BOTH contain anchor words — without combine_all_windows these
+    # would produce two overlapping windows → two fragments.
+    elements = [
+        make_element(
+            element_id="e_qty_label",
+            text="Quantity: 4 pcs",
+            page=3,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="e_size_label",
+            text="Size: DN 8",
+            page=3,
+            reading_order=2,
+        ),
+        make_element(
+            element_id="e_type_label",
+            text="Type: DHSF-0.25",
+            page=3,
+            reading_order=3,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Inspection certificate",
+        document_type=DocumentType.CERTIFICATE,
+        section=section,
+        elements=elements,
+    )
+
+    cert_frags = [f for f in fragments if f.chunk_type == ChunkType.CERTIFICATION_INFO]
+    # All content must be in a single combined fragment, not three separate ones.
+    combined = next(
+        (
+            f
+            for f in cert_frags
+            if "4 pcs" in f.text and "DN 8" in f.text and "DHSF-0.25" in f.text
+        ),
+        None,
+    )
+    assert combined is not None, (
+        "Particulars with multiple anchor rows must produce one combined fragment "
+        "containing all rows, not separate per-anchor fragments"
+    )

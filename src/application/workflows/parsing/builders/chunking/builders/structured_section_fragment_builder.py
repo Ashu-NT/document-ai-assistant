@@ -95,7 +95,10 @@ class StructuredSectionFragmentBuilder:
             )
         ]
         if not anchor_indexes:
-            return []
+            if spec.include_full_section_if_no_anchor and elements:
+                anchor_indexes = [0]
+            else:
+                return []
 
         windows: list[tuple[int, int]] = []
         for anchor_index in anchor_indexes:

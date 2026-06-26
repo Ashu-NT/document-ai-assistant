@@ -35,6 +35,23 @@ _NOISE_SECTION_TOKENS = {
 
 _ALNUM_TOKEN_RE = re.compile(r"[a-z0-9]+")
 
+# Morphological variant families for section-path matching only.
+# Each family groups inflected forms that should be treated as equivalent when
+# testing whether a query term appears in a section title/path.
+_MORPH_FAMILIES: tuple[frozenset[str], ...] = (
+    frozenset({"electrical", "electrically", "electric"}),
+    frozenset({"connect", "connected", "connecting", "connection", "connections"}),
+    frozenset({"calibrate", "calibrated", "calibrating", "calibration"}),
+    frozenset({"lubricate", "lubricated", "lubricating", "lubrication"}),
+    frozenset({"order", "ordered", "ordering"}),
+    frozenset({"install", "installed", "installing", "installation"}),
+    frozenset({"commission", "commissioned", "commissioning"}),
+)
+# Reverse lookup: term → all variants in its morphological family.
+_MORPH_VARIANTS: dict[str, frozenset[str]] = {
+    term: family for family in _MORPH_FAMILIES for term in family
+}
+
 
 def _compact_alnum(s: str) -> str:
     return "".join(_ALNUM_TOKEN_RE.findall(s.lower()))
@@ -54,6 +71,16 @@ def _contains_compact_id(compact_id: str, text: str) -> bool:
         for i in range(len(tokens) - window + 1):
             if "".join(tokens[i : i + window]) == compact_id:
                 return True
+    return False
+
+
+def _section_path_hit(term: str, padded_path: str) -> bool:
+    """True if *term* or any morphological variant appears as a whole word in *padded_path*."""
+    if f" {term} " in padded_path:
+        return True
+    for variant in _MORPH_VARIANTS.get(term, frozenset()):
+        if f" {variant} " in padded_path:
+            return True
     return False
 
 
@@ -100,17 +127,38 @@ class SqlKeywordScorer:
 
         chunk_role = detect_chunk_role(row.content)
 
-        # --- Identifier matching (source-differentiated) ---
-        # Each identifier is only counted in the highest-priority source where it appears.
+        # --- Identifier matching (source-differentiated, evidence vs document-scope) ---
+        # Identifiers that appear in the document title/filename label the entire document
+        # rather than a specific chunk; they are "document-scope" and therefore less
+        # discriminative.  Evidence identifiers (absent from the document name) carry much
+        # stronger retrieval signal and receive higher boosts.
+        document_scope_identifiers = {
+            cid for cid in query_identifiers_compact
+            if _contains_compact_id(cid, document_text)
+        }
+        # Each identifier is counted in the highest-priority source where it appears.
         content_identifier_matches = sum(
             1 for cid in query_identifiers_compact
             if _contains_compact_id(cid, content_text)
         )
+        content_evidence_matches = sum(
+            1 for cid in query_identifiers_compact
+            if cid not in document_scope_identifiers
+            and _contains_compact_id(cid, content_text)
+        )
+        content_docscope_matches = content_identifier_matches - content_evidence_matches
         section_identifier_matches = sum(
             1 for cid in query_identifiers_compact
             if not _contains_compact_id(cid, content_text)
             and _contains_compact_id(cid, section_path_text)
         )
+        section_evidence_matches = sum(
+            1 for cid in query_identifiers_compact
+            if cid not in document_scope_identifiers
+            and not _contains_compact_id(cid, content_text)
+            and _contains_compact_id(cid, section_path_text)
+        )
+        section_docscope_matches = section_identifier_matches - section_evidence_matches
         document_identifier_matches = sum(
             1 for cid in query_identifiers_compact
             if not _contains_compact_id(cid, content_text)
@@ -144,8 +192,8 @@ class SqlKeywordScorer:
         threshold = min(2, len(query_terms))
         padded_local = f" {normalized_local} "
         padded_ancestor = f" {normalized_ancestor} "
-        local_term_hits = sum(1 for term in query_terms if f" {term} " in padded_local)
-        ancestor_term_hits = sum(1 for term in query_terms if f" {term} " in padded_ancestor)
+        local_term_hits = sum(1 for term in query_terms if _section_path_hit(term, padded_local))
+        ancestor_term_hits = sum(1 for term in query_terms if _section_path_hit(term, padded_ancestor))
         local_section_match = bool(query_terms and local_term_hits >= threshold)
         ancestor_section_match = bool(
             query_terms
@@ -185,6 +233,8 @@ class SqlKeywordScorer:
                         "parts list",
                         "certificate",
                         "approval",
+                        "iecex",
+                        "atex",
                     )
                 )
             )
@@ -193,13 +243,19 @@ class SqlKeywordScorer:
         # --- Score assembly ---
         score = 0.0
 
-        # Identifiers: content >> section >> document metadata
-        score += content_identifier_matches * 22.0
-        score += section_identifier_matches * 10.0
-        score += document_identifier_matches * 3.0
-        # Bonus only when content carries the identifier evidence
-        if content_identifier_matches > 0:
+        # Identifiers: evidence identifiers carry full signal; document-scope identifiers
+        # (those present in the document name/title) receive reduced boosts because they
+        # appear across most chunks and are therefore poor discriminators.
+        score += content_evidence_matches * 22.0
+        score += content_docscope_matches * 4.0
+        score += section_evidence_matches * 10.0
+        score += section_docscope_matches * 3.0
+        score += document_identifier_matches * 2.0
+        # Flat content-presence bonus: full for evidence matches, small for doc-scope.
+        if content_evidence_matches > 0:
             score += 6.0
+        elif content_docscope_matches > 0:
+            score += 1.0
 
         # Phrase / ordered / term matching (content-only)
         if exact_phrase_match:
@@ -237,6 +293,8 @@ class SqlKeywordScorer:
             "sql_keyword_source_score": f"{score:.6f}",
             "sql_exact_identifier_matches": str(total_identifier_matches),
             "sql_content_identifier_matches": str(content_identifier_matches),
+            "sql_content_evidence_matches": str(content_evidence_matches),
+            "sql_content_docscope_matches": str(content_docscope_matches),
             "sql_section_identifier_matches": str(section_identifier_matches),
             "sql_document_identifier_matches": str(document_identifier_matches),
             "sql_exact_phrase_match": str(exact_phrase_match).lower(),
