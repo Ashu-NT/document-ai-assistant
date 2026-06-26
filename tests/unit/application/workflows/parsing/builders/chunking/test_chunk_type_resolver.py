@@ -328,3 +328,46 @@ def test_section_merge_policy_flushes_on_conflicting_semantic_sections() -> None
     )
 
     assert should_flush is True
+
+
+# ---------------------------------------------------------------------------
+# G3 — ATEX / IECEx section titles must resolve to CERTIFICATION_INFO
+# ---------------------------------------------------------------------------
+
+def test_atex_section_title_resolves_to_certification_info() -> None:
+    """A section whose title contains 'atex' must resolve to CERTIFICATION_INFO."""
+    resolver = ChunkTypeResolver()
+    fragment = make_fragment(
+        section_title="ATEX / IECEx Approval",
+        section_path=["Manufacturer's Certificates", "ATEX / IECEx Approval"],
+        text=(
+            "Ex II 2G Ex ia IIC T4 Gb. Certificate IECEx DEK 14.0052X. "
+            "The device may be used in zone 1 and zone 2 hazardous areas."
+        ),
+    )
+    result = ChunkTypeResolver().resolve(fragments=[fragment])
+    assert result == ChunkType.CERTIFICATION_INFO, (
+        "ATEX section title must resolve to CERTIFICATION_INFO"
+    )
+
+
+def test_iecex_section_title_resolves_to_certification_info() -> None:
+    """A section whose title contains 'iecex' must resolve to CERTIFICATION_INFO."""
+    fragment = make_fragment(
+        section_title="IECEx Certificate Details",
+        section_path=["Certificates", "IECEx Certificate Details"],
+        text="IECEx certificate number IECEx DEK 14.0052X is valid for zone 1.",
+    )
+    result = ChunkTypeResolver().resolve(fragments=[fragment])
+    assert result == ChunkType.CERTIFICATION_INFO
+
+
+def test_approval_section_title_resolves_to_certification_info() -> None:
+    """A section whose title contains 'approval' must resolve to CERTIFICATION_INFO."""
+    fragment = make_fragment(
+        section_title="Approval Information",
+        section_path=["Manufacturer's Certificates", "Approval Information"],
+        text="CE conformity declaration. Approved per applicable directives.",
+    )
+    result = ChunkTypeResolver().resolve(fragments=[fragment])
+    assert result == ChunkType.CERTIFICATION_INFO

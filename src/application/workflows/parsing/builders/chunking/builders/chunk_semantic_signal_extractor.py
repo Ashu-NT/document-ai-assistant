@@ -94,6 +94,9 @@ _TITLE_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "regulatory",
         "standards",
         "standard",
+        "atex",
+        "iecex",
+        "approval",
     ),
 }
 

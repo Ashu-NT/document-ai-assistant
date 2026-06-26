@@ -16,3 +16,4 @@ class StructuredSectionWindowSpec:
     radius_after: int = 8
     min_tokens: int = 6
     combine_all_windows: bool = False
+    include_full_section_if_no_anchor: bool = False
