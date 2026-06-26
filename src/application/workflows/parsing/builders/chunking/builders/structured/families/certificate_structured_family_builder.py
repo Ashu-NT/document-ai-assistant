@@ -58,7 +58,6 @@ class CertificateStructuredFamilyBuilder:
         if (
             context.has_known_document_type()
             and not context.matches_document_type(DocumentType.CERTIFICATE)
-            and not context.contains_any(CERTIFICATE_DOCUMENT_MARKERS)
         ):
             return StructuredFamilySpecSelection()
         if (
@@ -268,11 +267,11 @@ class CertificateStructuredFamilyBuilder:
             context
         ):
             return ["Description / Manufacturer Designation / Serial Number table"]
-        # Use a standalone "Particulars" path so all certificate particulars chunks
-        # share a consistent section path regardless of the PDF section hierarchy.
-        if path_contains_markers(base_path, _PARTICULARS_PATH_MARKERS):
-            return base_path
-        return ["Particulars"]
+        return CertificateStructuredFamilyBuilder._family_section_path(
+            base_path=base_path,
+            family_markers=_PARTICULARS_PATH_MARKERS,
+            label="Particulars",
+        )
 
     @staticmethod
     def _family_section_path(
