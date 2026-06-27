@@ -6,7 +6,7 @@
 - truth set path: `C:\Users\ashuf\Desktop\Projects\document-ai-assistant\TestDoc\retrieval_truth_set.md`
 - manifest path: `C:\Users\ashuf\Desktop\Projects\document-ai-assistant\outputs\evaluation\retrieval\benchmark_corpus_manifest.json`
 - unresolved case count: `12`
-- unresolved case ids: `C-008, VMOT-002, VMOT-003, DF-001, DF-003, MAN-003, RR-001, RR-002, RR-003, SSC-003, RULE-001, GEA-001`
+- unresolved case ids: `C-008, VMOT-002, VMOT-003, DF-001, DF-003, MAN-001, MAN-003, RR-001, RR-002, RR-003, SSC-003, RULE-001`
 
 ## Diagnostics
 
@@ -24,11 +24,11 @@
 
 | Rank | Chunk ID | Score | Overlap | Pages | Section Path | Preview |
 |---|---|---:|---:|---|---|---|
-| 1 | chunk_40ff5aa679c84279987a75ae3ab9c4f0 | 9.375 | 0.688 | 3 | Messdaten:/results | | Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------... |
-| 2 | chunk_0a8a03ef2c7a4e7787c69a8b8a209be7 | 8.875 | 0.688 | 3 | Technical Data / Specification | | Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------... |
-| 3 | chunk_c4314ae73eb9499196a0846cd3fa26c7 | 8.875 | 0.688 | 3 | Technical Data / Specification | | Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------... |
-| 4 | chunk_3d796f726130456083e0118d3b6e7d4b | 8.000 | 0.750 | 5 | Messdaten:/results | | Spezifikation/specification | Soll/nominal | Ist/result | |----------------------------------------------------------------------|--------------------|------------------------... |
-| 5 | chunk_e9d5becf14944f3999f3334f0e6cc149 | 6.750 | 0.625 | 6 | Messdaten:/results | | Spezifikation/specification | Soll/nominal | Ist/result | |----------------------------------------------------------------------|--------------------|------------------------... |
+| 1 | chunk_72758f0eaa9a4d3cbc9ed413cd74a9a1 | 9.375 | 0.688 | 3 | Messdaten:/results | | Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------... |
+| 2 | chunk_5ba65f5a68e540dc8097ee9b4cec5ff5 | 8.875 | 0.688 | 3 | Technical Data / Specification | | Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------... |
+| 3 | chunk_f8ab1df8230c4ed5bc2bb379df3f1716 | 8.875 | 0.688 | 3 | Technical Data / Specification | | Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------... |
+| 4 | chunk_62654028d796403ca620dfa781402926 | 8.000 | 0.750 | 5 | Messdaten:/results | | Spezifikation/specification | Soll/nominal | Ist/result | |----------------------------------------------------------------------|--------------------|------------------------... |
+| 5 | chunk_cf1b3dc68f8e40789cb5e4abb06de1d2 | 7.500 | 0.750 | 5 | Technical Data / Specification | | Spezifikation/specification | Soll/nominal | Ist/result | |----------------------------------------------------------------------|--------------------|------------------------... |
 
 ### `VMOT-002`
 
@@ -47,10 +47,10 @@
 
 | Rank | Chunk ID | Score | Overlap | Pages | Section Path | Preview |
 |---|---|---:|---:|---|---|---|
-| 1 | chunk_ce39b7ef3c4d481c83f81868bd7e56bd | 3.290 | 0.129 | 1 | Technical Data / Specification | 4. Short-circuit data max. aperiodic short-circuit current (peak value) initial periodic short-circuit current ( RMS ) continuous periodic short-circuit current ( RMS ) short-ci... |
-| 2 | chunk_b519da062fe440ebaec91842b0664d66 | 2.645 | 0.065 | 1 | 1. Rated data - Operation Point (OP1) | power output: voltage: stator current: frequency: classification: thermal class/rise max. altitude: [ kW ] [ V ] [ A ] 40,00 [ Hz ] Norske Veritas H / H |
-| 3 | chunk_8d08560878e24e8395b583262cf0339d | 2.645 | 0.065 | 1 | CONNECTION | number of phases connection speed mechanical torque: duty type UKL_max = U d 2 * U KL UKL 0,41342 [W] |
-| 4 | chunk_a6a6661920c74050b43fa74ceb493112 | 2.323 | 0.032 | 1 | Technical Data / Specification | q - valid for sinusoidal values only VEM Sachsenwerk GmbH Pirnaer Landstraße 176 01257 Dresden -0,94 4 3 star 1200,0 4,78 S1 965 [ V ] 1365 [Vdc] 499 [ V ] 0,772 [%] 65,36 [%] |
+| 1 | chunk_d077072f1e2548aeb19d4814ecf6a189 | 3.290 | 0.129 | 1 | Technical Data / Specification | 4. Short-circuit data max. aperiodic short-circuit current (peak value) initial periodic short-circuit current ( RMS ) continuous periodic short-circuit current ( RMS ) short-ci... |
+| 2 | chunk_4ad4a9c4122c4c80a6db9d437f6d4c3b | 2.645 | 0.065 | 1 | 1. Rated data - Operation Point (OP1) | power output: voltage: stator current: frequency: classification: thermal class/rise max. altitude: [ kW ] [ V ] [ A ] 40,00 [ Hz ] Norske Veritas H / H |
+| 3 | chunk_b7c50064f990420abdee7bba74919597 | 2.645 | 0.065 | 1 | CONNECTION | number of phases connection speed mechanical torque: duty type UKL_max = U d 2 * U KL UKL 0,41342 [W] |
+| 4 | chunk_41417593dc3840a8a6cbd338487f8fb5 | 2.323 | 0.032 | 1 | Technical Data / Specification | q - valid for sinusoidal values only VEM Sachsenwerk GmbH Pirnaer Landstraße 176 01257 Dresden -0,94 4 3 star 1200,0 4,78 S1 965 [ V ] 1365 [Vdc] 499 [ V ] 0,772 [%] 65,36 [%] |
 
 ### `VMOT-003`
 
@@ -69,10 +69,10 @@
 
 | Rank | Chunk ID | Score | Overlap | Pages | Section Path | Preview |
 |---|---|---:|---:|---|---|---|
-| 1 | chunk_a6a6661920c74050b43fa74ceb493112 | 2.667 | 0.067 | 1 | Technical Data / Specification | q - valid for sinusoidal values only VEM Sachsenwerk GmbH Pirnaer Landstraße 176 01257 Dresden -0,94 4 3 star 1200,0 4,78 S1 965 [ V ] 1365 [Vdc] 499 [ V ] 0,772 [%] 65,36 [%] |
-| 2 | chunk_ce39b7ef3c4d481c83f81868bd7e56bd | 2.333 | 0.033 | 1 | Technical Data / Specification | 4. Short-circuit data max. aperiodic short-circuit current (peak value) initial periodic short-circuit current ( RMS ) continuous periodic short-circuit current ( RMS ) short-ci... |
-| 3 | chunk_8d08560878e24e8395b583262cf0339d | 2.333 | 0.033 | 1 | CONNECTION | number of phases connection speed mechanical torque: duty type UKL_max = U d 2 * U KL UKL 0,41342 [W] |
-| 4 | chunk_b519da062fe440ebaec91842b0664d66 | 2.000 | 0.000 | 1 | 1. Rated data - Operation Point (OP1) | power output: voltage: stator current: frequency: classification: thermal class/rise max. altitude: [ kW ] [ V ] [ A ] 40,00 [ Hz ] Norske Veritas H / H |
+| 1 | chunk_41417593dc3840a8a6cbd338487f8fb5 | 2.667 | 0.067 | 1 | Technical Data / Specification | q - valid for sinusoidal values only VEM Sachsenwerk GmbH Pirnaer Landstraße 176 01257 Dresden -0,94 4 3 star 1200,0 4,78 S1 965 [ V ] 1365 [Vdc] 499 [ V ] 0,772 [%] 65,36 [%] |
+| 2 | chunk_d077072f1e2548aeb19d4814ecf6a189 | 2.333 | 0.033 | 1 | Technical Data / Specification | 4. Short-circuit data max. aperiodic short-circuit current (peak value) initial periodic short-circuit current ( RMS ) continuous periodic short-circuit current ( RMS ) short-ci... |
+| 3 | chunk_b7c50064f990420abdee7bba74919597 | 2.333 | 0.033 | 1 | CONNECTION | number of phases connection speed mechanical torque: duty type UKL_max = U d 2 * U KL UKL 0,41342 [W] |
+| 4 | chunk_4ad4a9c4122c4c80a6db9d437f6d4c3b | 2.000 | 0.000 | 1 | 1. Rated data - Operation Point (OP1) | power output: voltage: stator current: frequency: classification: thermal class/rise max. altitude: [ kW ] [ V ] [ A ] 40,00 [ Hz ] Norske Veritas H / H |
 
 ### `DF-001`
 
@@ -83,19 +83,19 @@
   - `expected_section_path`: `Technical features`
   - `expected_page`: `2`
   - `expected_relevant_passage`: `The deck fillers are CNC machined and anticorodal aluminium, silver anodized and CNC machined 316L stainless steel, mirror polished. Versions include one with drilled flange and bevelled edges for bolts from outside and one with flat flange and rounded edges for screws M6 from beneath.`
-  - `chunk_count`: `8`
-  - `candidate_count`: `8`
+  - `chunk_count`: `9`
+  - `candidate_count`: `9`
   - `viable_candidate_count`: `0`
 
 #### Candidate Summaries
 
 | Rank | Chunk ID | Score | Overlap | Pages | Section Path | Preview |
 |---|---|---:|---:|---|---|---|
-| 1 | chunk_bd096fd2d2ce426c8e7fb6a885084363 | 2.000 | 0.000 | 2-3 | caratteristiche tecniche | DIESEL DE4OAW WATER WATER DF40AX 寸WASTE seasmart |
-| 2 | chunk_9a828b236b1e42529ddbacbd6c94450a | 1.212 | 0.121 | 10 | Title block | WASTE DATE 04/09/15 SCALE: 1/ 1 A4 SIGNATURE Ing. Mirko Antonelli seasmart DESCRIPTION TAPP0 WASTE Φ40 ROUND DF40AW Sensmart is the proprietor of this drawing and is not be repr... |
-| 3 | chunk_33ca6118ebfc4dcabb79eead254102d6 | 0.909 | 0.091 | 9-10 | Title block | WASTE DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0WASTE40FLUSH ITEM DF40W Seasmart is the proprietor of this drwing and is not bereprod... |
-| 4 | chunk_90062f7908904896bee97bd4496b755c | 0.803 | 0.030 | 3-4 | Material information | | Type | Materials | A (mm) | B (mm) | C(mm) | D (mm) | E (mm) | F (mm) | Weight(g) | |--------|-------------|----------|----------|---------|----------|----------|----------|--... |
-| 5 | chunk_df0733686ec542ddbf8e7991dade3704 | 0.606 | 0.061 | 5-9 | Title block | Φ95 DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0IMBARCOΦ40FLUSH ITEM Sesmr is th prpritr of thisdrwing n isntereprdud rue fnypurse,thrh... |
+| 1 | chunk_89d90776cf2a42b292da61e2c4cbbf78 | 2.000 | 0.000 | 2-3 | caratteristiche tecniche | DIESEL DE4OAW WATER WATER DF40AX 寸WASTE seasmart |
+| 2 | chunk_d79695895dac489999571cd4dd34baea | 1.212 | 0.121 | 10 | Title block | WASTE DATE 04/09/15 SCALE: 1/ 1 A4 SIGNATURE Ing. Mirko Antonelli seasmart DESCRIPTION TAPP0 WASTE Φ40 ROUND DF40AW Sensmart is the proprietor of this drawing and is not be repr... |
+| 3 | chunk_2ac95421812741e68ba63c7722d403bb | 0.909 | 0.091 | 9-10 | Title block | WASTE DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0WASTE40FLUSH ITEM DF40W Seasmart is the proprietor of this drwing and is not bereprod... |
+| 4 | chunk_ffc486d653e642e38646b710f9e854a1 | 0.803 | 0.030 | 3-4 | Material information | | Type | Materials | A (mm) | B (mm) | C(mm) | D (mm) | E (mm) | F (mm) | Weight(g) | |--------|-------------|----------|----------|---------|----------|----------|----------|--... |
+| 5 | chunk_285292c0ae1248fea02d2dba1e298564 | 0.606 | 0.061 | 5-9 | Title block | Φ95 DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0IMBARCOΦ40FLUSH ITEM Sesmr is th prpritr of thisdrwing n isntereprdud rue fnypurse,thrh... |
 
 ### `DF-003`
 
@@ -106,19 +106,42 @@
   - `expected_section_path`: `Installation instructions and maintenance`
   - `expected_page`: `4`
   - `expected_relevant_passage`: `Maintenance: clean parts with fresh water; when using soap use mild dishwashing liquid and rinse thoroughly; never use abrasive cleaning products, steel or brass wool, polishing wheels or polishing compounds. Installation includes cutting the deck with a hole saw, applying marine sealant under the flange, screwing bolts firmly and tightening with thread sealant.`
-  - `chunk_count`: `8`
-  - `candidate_count`: `8`
+  - `chunk_count`: `9`
+  - `candidate_count`: `9`
   - `viable_candidate_count`: `0`
 
 #### Candidate Summaries
 
 | Rank | Chunk ID | Score | Overlap | Pages | Section Path | Preview |
 |---|---|---:|---:|---|---|---|
-| 1 | chunk_90062f7908904896bee97bd4496b755c | 2.222 | 0.022 | 3-4 | Material information | | Type | Materials | A (mm) | B (mm) | C(mm) | D (mm) | E (mm) | F (mm) | Weight(g) | |--------|-------------|----------|----------|---------|----------|----------|----------|--... |
-| 2 | chunk_df0733686ec542ddbf8e7991dade3704 | 0.944 | 0.044 | 5-9 | Title block | Φ95 DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0IMBARCOΦ40FLUSH ITEM Sesmr is th prpritr of thisdrwing n isntereprdud rue fnypurse,thrh... |
-| 3 | chunk_9a828b236b1e42529ddbacbd6c94450a | 0.889 | 0.089 | 10 | Title block | WASTE DATE 04/09/15 SCALE: 1/ 1 A4 SIGNATURE Ing. Mirko Antonelli seasmart DESCRIPTION TAPP0 WASTE Φ40 ROUND DF40AW Sensmart is the proprietor of this drawing and is not be repr... |
-| 4 | chunk_bd096fd2d2ce426c8e7fb6a885084363 | 0.722 | 0.022 | 2-3 | caratteristiche tecniche | DIESEL DE4OAW WATER WATER DF40AX 寸WASTE seasmart |
-| 5 | chunk_33ca6118ebfc4dcabb79eead254102d6 | 0.667 | 0.067 | 9-10 | Title block | WASTE DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0WASTE40FLUSH ITEM DF40W Seasmart is the proprietor of this drwing and is not bereprod... |
+| 1 | chunk_ffc486d653e642e38646b710f9e854a1 | 2.222 | 0.022 | 3-4 | Material information | | Type | Materials | A (mm) | B (mm) | C(mm) | D (mm) | E (mm) | F (mm) | Weight(g) | |--------|-------------|----------|----------|---------|----------|----------|----------|--... |
+| 2 | chunk_285292c0ae1248fea02d2dba1e298564 | 0.944 | 0.044 | 5-9 | Title block | Φ95 DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0IMBARCOΦ40FLUSH ITEM Sesmr is th prpritr of thisdrwing n isntereprdud rue fnypurse,thrh... |
+| 3 | chunk_d79695895dac489999571cd4dd34baea | 0.889 | 0.089 | 10 | Title block | WASTE DATE 04/09/15 SCALE: 1/ 1 A4 SIGNATURE Ing. Mirko Antonelli seasmart DESCRIPTION TAPP0 WASTE Φ40 ROUND DF40AW Sensmart is the proprietor of this drawing and is not be repr... |
+| 4 | chunk_89d90776cf2a42b292da61e2c4cbbf78 | 0.722 | 0.022 | 2-3 | caratteristiche tecniche | DIESEL DE4OAW WATER WATER DF40AX 寸WASTE seasmart |
+| 5 | chunk_2ac95421812741e68ba63c7722d403bb | 0.667 | 0.067 | 9-10 | Title block | WASTE DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0WASTE40FLUSH ITEM DF40W Seasmart is the proprietor of this drwing and is not bereprod... |
+
+### `MAN-001`
+
+- document alias: `report_man_shop_test_8351446`
+- file name: `preliminary_report_8351446.pdf`
+- message: `No final chunk matched the expected section/page/passage signals.`
+- details:
+  - `expected_section_path`: `Shop test protocol`
+  - `expected_page`: `1`
+  - `expected_relevant_passage`: `Engine type 12V175DML; engine number 8351446; engine output 2.400 kW; engine speed 2.000 rpm; classification society LR; customer Lürssen Ship Yard; place Frederikshavn / Denmark; date 21-09-2023.`
+  - `chunk_count`: `105`
+  - `candidate_count`: `105`
+  - `viable_candidate_count`: `0`
+
+#### Candidate Summaries
+
+| Rank | Chunk ID | Score | Overlap | Pages | Section Path | Preview |
+|---|---|---:|---:|---|---|---|
+| 1 | chunk_55980292098340f7bccb8b563d1210a9 | 5.370 | 0.037 | 1 | Shop test protocol | 12V175DML BuildingstandardA10 |
+| 2 | chunk_5c556c0cf902442cb0a6dbd25a182c09 | 5.333 | 0.333 | 1 | Engine type | Emission-Certification NOx-EmissionaccordingIMO-Regulation13 revisedMARPOLAnnexVI2008 IMO-TierIl-Certificationenginegroup(parent) Emission test cycleE3 ClassificationEngine CPN2... |
+| 3 | chunk_55a4bbdb4f3d4bb8acbf37d0e8e01e03 | 4.593 | 0.259 | 1 | Engine type > Performance Data | kW Engine speed 2.000 rpm Enginerotationdirection Counterclockwise Firing order A1-B2-A2-B4-A4-B6- A6-B5-A5-B3-A3-B1 Application 4-stroke Marinemainengine FPP:Fixedpitchpropelle... |
+| 4 | chunk_4bfcc7923e8b463982304b967bcb6386 | 3.852 | 0.185 | 1 | Engine type | Number of cylinders in vee angle Bore mm Stroke mm Engine number Featureident A10-MFAA2D109A Engine output 2.400 |
+| 5 | chunk_e9d1312c82b045b3b25983ca2db4064f | 3.704 | 0.370 | 6 | Performance Data | MANI | 50,1 MANI O ## 21-09-2023,10:45 engine type 12V175D-ML atmospheric pressure 995 mbar engineno. 8351446 ambienttemperaturel 24,2 °℃ turbochargertype TCR12-43063 abs.ambien... |
 
 ### `MAN-003`
 
@@ -134,11 +157,11 @@
 
 | Rank | Chunk ID | Score | Overlap | Pages | Section Path | Preview |
 |---|---|---:|---:|---|---|---|
-| 1 | chunk_5ad77cd6cf514b6fa99658e3b859ed3c | 10.357 | 0.786 | 9 | Performance Data 100,1 % | IMAN | engine type | 12V175D-ML | 12V175D-ML | 12V175D-ML | 12V175D-ML | 12V175D-ML | atmosphericpressure | atmosphericpressure | atmosphericpressure | atmosphericpressure | atm... |
-| 2 | chunk_5ab5545473594bcc910a1480ec5237ca | 10.000 | 0.750 | 10 | Performance Data | (MANI | engine type engine no. turbochargertype turbochargerno. attachedpumps | 12V175D-ML 8351446 TCR12-43063 1343-02/-03 5- | 12V175D-ML 8351446 TCR12-43063 1343-02/-03 5- | 1... |
-| 3 | chunk_954273dee261449897ae2c480c0d3eee | 8.429 | 0.643 | 17 | Performance Data | measurement-no:73 Performance Data FATpoint20_1170rpm_25% PRELIMINAR 25,0 IMANI 21-09-2023,13:19 engine type 12V175D-ML atmosphericpressure mbar engineno. ambienttemperature 25,... |
-| 4 | chunk_4fb944c2755f403798c4f10fe07d7125 | 8.071 | 0.607 | 6 | Performance Data | MANI 50,1 | 50,1 MANI O ## 21-09-2023,10:45 engine type 12V175D-ML atmospheric pressure 995 mbar engineno. 8351446 ambienttemperaturel 24,2 °℃ turbochargertype TCR12-43063 abs.a... |
-| 5 | chunk_5fdc48912df24409a184ca25c10b4c5c | 8.071 | 0.607 | 22 | Performance Data | 75,2 press.crankcase | 21-09-2023,13:48 | | | | | | | | | | | | | |--------------------------------------------------------------------------------------------------------------... |
+| 1 | chunk_137d8c6178db4beda801fc3d6cb9170f | 10.357 | 0.786 | 9 | Performance Data 100,1 % | IMAN | engine type | 12V175D-ML | 12V175D-ML | 12V175D-ML | 12V175D-ML | 12V175D-ML | atmosphericpressure | atmosphericpressure | atmosphericpressure | atmosphericpressure | atm... |
+| 2 | chunk_6b1d4bc4ee424f329a51001dc1d8700e | 10.000 | 0.750 | 10 | Performance Data | (MANI | engine type engine no. turbochargertype turbochargerno. attachedpumps | 12V175D-ML 8351446 TCR12-43063 1343-02/-03 5- | 12V175D-ML 8351446 TCR12-43063 1343-02/-03 5- | 1... |
+| 3 | chunk_e9d1312c82b045b3b25983ca2db4064f | 8.071 | 0.607 | 6 | Performance Data | MANI | 50,1 MANI O ## 21-09-2023,10:45 engine type 12V175D-ML atmospheric pressure 995 mbar engineno. 8351446 ambienttemperaturel 24,2 °℃ turbochargertype TCR12-43063 abs.ambien... |
+| 4 | chunk_5a2db44069234c719530236a12fec70e | 8.071 | 0.607 | 22 | Performance Data | 75,2 | 21-09-2023,13:48 | | | | | | | | | | | | | |------------------------------------------------------------------------------------------------------------------------------... |
+| 5 | chunk_67a6dbc9b06c428f83a3f17dd65326dc | 7.714 | 0.571 | 4 | Performance Data | TCR12-43063 abs.ambienthumidity ,42 g/kg turbocharger no. 1343-02/-03 relativehumidity % attached pumps 5- lube oil spec. ShellRimulaR6MS10W-40 testbed no. fuel oil spec. MGO wa... |
 
 ### `RR-001`
 
@@ -208,11 +231,11 @@
 
 | Rank | Chunk ID | Score | Overlap | Pages | Section Path | Preview |
 |---|---|---:|---:|---|---|---|
-| 1 | chunk_f6854fa741db492fa38d7d4b41c78e4f | 2.952 | 0.095 | 2 | C -C > Test data | ^ | E « | Evidencefound | Sampleresults | Documentsreviewed | Controlmeasuresapplied | Re-inspection date | Commentsregardingconditionsfound | |---------------------------------... |
-| 2 | chunk_6efadc23d8f747bfbaa6dc10747ab9f7 | 2.500 | 0.000 | 2 | £ l | :i: © V B |
-| 3 | chunk_98a3e851f27b48179ee89de796043838 | 2.476 | 0.048 | 1-2 | ShipSanitationControl Certificate > Test data | | Areasinspected | Evidencefound | Sampleresults2 | Documentsreviewed | |-----------------------------------------------------------|--------------------------------------------... |
-| 4 | chunk_f8dd80ca737e4976bb6ed8a6ca55c1d6 | 2.000 | 0.000 | 2 | ShipSanitationControl Certificate | Context: ,v 2 |
-| 5 | chunk_a2074bcf882b482291225396e7f16d7f | 2.000 | 0.000 | 2 | ShipSanitationControl Certificate | Context: reis 0) |
+| 1 | chunk_267a79620fc0465782c7868c304e8e9e | 2.952 | 0.095 | 2 | C -C > Test data | ^ | E « | Evidencefound | Sampleresults | Documentsreviewed | Controlmeasuresapplied | Re-inspection date | Commentsregardingconditionsfound | |---------------------------------... |
+| 2 | chunk_8ca8a0368dfd4bed8ba359def58dd8bd | 2.500 | 0.000 | 2 | £ l | :i: © V B |
+| 3 | chunk_a87a1c77119944748ee55eae9d6eab04 | 2.476 | 0.048 | 1-2 | ShipSanitationControl Certificate > Test data | | Areasinspected | Evidencefound | Sampleresults2 | Documentsreviewed | |-----------------------------------------------------------|--------------------------------------------... |
+| 4 | chunk_7a7228be29e7475798f1c526b5f61df7 | 2.000 | 0.000 | 2 | ShipSanitationControl Certificate | Context: ,v 2 |
+| 5 | chunk_fce1b82fae2442e9a1060e8dd8906b0d | 2.000 | 0.000 | 2 | ShipSanitationControl Certificate | Context: reis 0) |
 
 ### `RULE-001`
 
@@ -223,39 +246,16 @@
   - `expected_section_path`: `Rule Bilge Pumps > Product overview`
   - `expected_page`: `1`
   - `expected_relevant_passage`: `ISO 8849 Marine (Electric bilge pumps) and ISO 8846 Marine (Ignition protection).`
-  - `chunk_count`: `19`
-  - `candidate_count`: `19`
+  - `chunk_count`: `20`
+  - `candidate_count`: `20`
   - `viable_candidate_count`: `0`
 
 #### Candidate Summaries
 
 | Rank | Chunk ID | Score | Overlap | Pages | Section Path | Preview |
 |---|---|---:|---:|---|---|---|
-| 1 | chunk_2f9f130c97914e25ae515395715e1511 | 7.000 | 0.300 | 1 | Rule Bilge Pumps | 360-1100 GPH SUBMERSIBLE BILGE PUMPS Our bilge pumps provide ultimate pumping performance, which helps keep your bilge clear of nuisance water, building on the genuine Rule desi... |
-| 2 | chunk_0c5870b4bdb34fb38f00da2680430e4e | 5.000 | 0.300 | 1 | Our new designs include: | Back Flow Prevention - reduces the amount of water left over in the bilge, reducing odor and helping keep your bilge cleaner Hidden Air Vents in the Body – helps prevent air loc... |
-| 3 | chunk_54b0ea496e69488a9af8220889805143 | 4.000 | 0.200 | 1 | Our new designs include: | Context: Rule brand builds on over 50 years of operational excellence and application expertise with a broad range of solutions for the marine industry. |
-| 4 | chunk_b91c2f8ff75a41249d522ed14ae8fc49 | 4.000 | 0.200 | 1 | Our new designs include: | Context: Rule brand builds on over 50 years of operational excellence and application expertise with a broad range of solutions for the marine industry. NEW |
-| 5 | chunk_ad27ba9bf4be471ea58ca551a7200dc6 | 2.000 | 0.000 | 1 | Our new designs include: | Context: NEW |
-
-### `GEA-001`
-
-- document alias: `certificate_gea_compact_unit_fuel_system`
-- file name: `2130_405849_11_Gea_CER_Compact_Unit_Fuel_System_Certificate.pdf`
-- message: `No final chunk matched the expected section/page/passage signals.`
-- details:
-  - `expected_section_path`: `Cover sheet`
-  - `expected_page`: `1`
-  - `expected_relevant_passage`: `Customer Luerssen-Kroeger Werft; Project MY COSMOS; WS-Order No. 2452414325; Model 2 x CU F 6 / DO; Series 9606-382 / 9606-383; Revision 00; Edition 08.03.2022.`
-  - `chunk_count`: `43`
-  - `candidate_count`: `43`
-  - `viable_candidate_count`: `0`
-
-#### Candidate Summaries
-
-| Rank | Chunk ID | Score | Overlap | Pages | Section Path | Preview |
-|---|---|---:|---:|---|---|---|
-| 1 | chunk_f8ece5745f5f489aa0786576d66bea1c | 4.500 | 0.250 | 1 | Revision / modification table | NR.: MODEL / MODELL: SERIES / SERIE: 9606-382 / 9606-383 REVISION / REVISION: 00 |
-| 2 | chunk_8e2c85ccdc6c4112b8640ffd106d6b1c | 4.286 | 0.429 | 7 | 11 CERTIFICATE > 11.1 2881414325_02/12 > Date ft* 1 1 W; > Compliance information | - | Our Order-No.: 生产订单号 | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump... |
-| 3 | chunk_33042b161f0b4cf29d6d01a5f5dea13c | 3.929 | 0.393 | 7 | 11 CERTIFICATE > 11.1 2881414325_02/12 > Date ft* 1 1 W; > Particulars | cSV40°C - | Our Order-No.: 生产订单号 | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump height kPa/bar of the... |
-| 4 | chunk_18e8a2902eac45f69992fc5670c3b488 | 3.929 | 0.393 | 7 | Equipment legend | - | Our Order-No.: 生产订单号 | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump... |
-| 5 | chunk_68a152d8bb9e4ae2811b00c22654aa2a | 3.929 | 0.393 | 7 | 11 CERTIFICATE > 11.1 2881414325_02/12 > Date ft* 1 1 W; > General information | - | Our Order-No.: 生产订单号 | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump height kPa/bar of the | Pump... |
+| 1 | chunk_6aafef0b4062463380b066bcf69ef103 | 7.000 | 0.300 | 1 | Rule Bilge Pumps | 360-1100 GPH SUBMERSIBLE BILGE PUMPS Our bilge pumps provide ultimate pumping performance, which helps keep your bilge clear of nuisance water, building on the genuine Rule desi... |
+| 2 | chunk_b29f77935bac4450b97789e328210453 | 5.000 | 0.300 | 1 | Our new designs include: | Back Flow Prevention - reduces the amount of water left over in the bilge, reducing odor and helping keep your bilge cleaner Hidden Air Vents in the Body – helps prevent air loc... |
+| 3 | chunk_ee803359a31141ee8f9d67038b418d47 | 4.000 | 0.200 | 1 | Our new designs include: | Context: Rule brand builds on over 50 years of operational excellence and application expertise with a broad range of solutions for the marine industry. |
+| 4 | chunk_22409242482742319c05e46cb387935c | 4.000 | 0.200 | 1 | Our new designs include: | Context: Rule brand builds on over 50 years of operational excellence and application expertise with a broad range of solutions for the marine industry. NEW |
+| 5 | chunk_1ec54bffc98145cdbfb4b52a7ffc5e4a | 2.000 | 0.000 | 1 | Our new designs include: | Context: NEW |
