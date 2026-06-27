@@ -281,13 +281,25 @@ def run_benchmark(
         progress_callback,
         "Resolving benchmark cases to final persisted chunk IDs...",
     )
-    resolved_dataset = runtime.dataset_resolver.resolve_dataset(
-        selected_dataset,
-        manifest,
+    selected_dataset, skipped_case_ids = _resolve_with_fallback(
+        runtime=runtime,
+        selected_dataset=selected_dataset,
+        manifest=manifest,
+        truth_set_path=Path(truth_set_path) if truth_set_path else Path(DEFAULT_RETRIEVAL_TRUTH_SET_PATH),
+        manifest_path=Path(manifest_path),
+        output_directory=Path(output_directory),
+        subset=subset,
+        progress_callback=progress_callback,
     )
+    resolved_dataset = selected_dataset
     emit_progress(
         progress_callback,
-        "Benchmark case resolution completed successfully.",
+        f"Benchmark case resolution completed"
+        + (
+            f" ({len(skipped_case_ids)} case(s) skipped — see resolution warning report)."
+            if skipped_case_ids
+            else " successfully."
+        ),
     )
     emit_progress(progress_callback, "Evaluating retrieval workflow...")
     report = runtime.evaluator.evaluate(
@@ -316,6 +328,59 @@ def run_benchmark(
         markdown_output_path=markdown_output_path,
         report=report,
     )
+
+
+def _resolve_with_fallback(
+    *,
+    runtime: BenchmarkRuntime,
+    selected_dataset: "RetrievalBenchmarkDataset",
+    manifest: Any,
+    truth_set_path: Path,
+    manifest_path: Path,
+    output_directory: Path,
+    subset: str,
+    progress_callback,
+) -> tuple["RetrievalBenchmarkDataset", set[str]]:
+    """Attempt resolution; on partial failure, write a warning report and retry
+    with the unresolvable cases excluded.  Returns (resolved_dataset, skipped_ids)."""
+    try:
+        resolved = runtime.dataset_resolver.resolve_dataset(selected_dataset, manifest)
+        return resolved, set()
+    except SchemaValidationError as exc:
+        if not is_resolution_failure(exc):
+            raise
+        details = exc.details or {}
+        unresolved_ids: set[str] = set(details.get("unresolved_case_ids") or [])
+        emit_progress(
+            progress_callback,
+            f"WARNING: {len(unresolved_ids)} case(s) could not be resolved and will be "
+            f"skipped: {', '.join(sorted(unresolved_ids))}",
+        )
+        write_resolution_failure_reports(
+            details=details,
+            truth_set_path=truth_set_path,
+            manifest_path=manifest_path,
+            output_directory=output_directory,
+            subset=subset,
+        )
+        resolvable_cases = [
+            c for c in selected_dataset.cases if c.case_id not in unresolved_ids
+        ]
+        if not resolvable_cases:
+            raise SchemaValidationError(
+                "All benchmark cases failed to resolve — evaluation cannot proceed.",
+                details={"subset": subset, "unresolved_case_ids": sorted(unresolved_ids)},
+            ) from exc
+        partial_dataset = RetrievalBenchmarkDataset(
+            source_path=selected_dataset.source_path,
+            cases=resolvable_cases,
+            identifier_subset_definition=selected_dataset.identifier_subset_definition,
+            semantic_procedure_subset_definition=(
+                selected_dataset.semantic_procedure_subset_definition
+            ),
+        )
+        resolved = runtime.dataset_resolver.resolve_dataset(partial_dataset, manifest)
+        return resolved, unresolved_ids
 
 
 def select_subset_dataset(
