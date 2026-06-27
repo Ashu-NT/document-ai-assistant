@@ -3,8 +3,20 @@ CERTIFICATE_DOCUMENT_MARKERS = (
     "certificate of conformity",
     "inspection certificate",
     "test certificate",
+    "cover sheet",
     "general information",
     "particulars",
+)
+
+CERTIFICATE_COVER_SHEET_MARKERS = (
+    "cover sheet",
+    "customer",
+    "project",
+    "model",
+    "series",
+    "revision",
+    "edition",
+    "order no",
 )
 
 CERTIFICATE_GENERAL_INFORMATION_MARKERS = (
@@ -17,6 +29,17 @@ CERTIFICATE_GENERAL_INFORMATION_MARKERS = (
     "intended for",
     "date of issue",
     "customer",
+)
+
+CERTIFICATE_ATTACHMENT_INFORMATION_MARKERS = (
+    "attachment",
+    "areas inspected",
+    "areas/facilities inspected",
+    "food",
+    "water",
+    "waste",
+    "swimming pools",
+    "medical facilities",
 )
 
 CERTIFICATE_PARTICULARS_MARKERS = (

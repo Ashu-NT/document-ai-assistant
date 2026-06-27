@@ -5,8 +5,10 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.fam
     sanitized_base_path,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
+    CERTIFICATE_ATTACHMENT_INFORMATION_MARKERS,
     CERTIFICATE_APPROVAL_INFORMATION_MARKERS,
     CERTIFICATE_COMPLIANCE_INFORMATION_MARKERS,
+    CERTIFICATE_COVER_SHEET_MARKERS,
     CERTIFICATE_DOCUMENT_MARKERS,
     CERTIFICATE_GENERAL_INFORMATION_MARKERS,
     CERTIFICATE_PARTICULARS_MARKERS,
@@ -29,10 +31,16 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.str
 )
 from src.domain.common import ChunkType, DocumentType
 
+_COVER_SHEET_PATH_MARKERS = ("cover sheet",)
 _GENERAL_INFORMATION_PATH_MARKERS = ("general information",)
 _PARTICULARS_PATH_MARKERS = ("particulars",)
 _COMPLIANCE_INFORMATION_PATH_MARKERS = ("compliance", "conformity")
 _APPROVAL_INFORMATION_PATH_MARKERS = ("approval", "atex", "iecex")
+_ATTACHMENT_INFORMATION_PATH_MARKERS = (
+    "attachment",
+    "areas inspected",
+    "areas facilities inspected",
+)
 _TEST_DATA_PATH_MARKERS = (
     "test data",
     "results",
@@ -73,6 +81,34 @@ class CertificateStructuredFamilyBuilder:
             document_title=context.document_title,
         )
         specs: list[StructuredSectionWindowSpec] = []
+
+        if self._should_include_cover_sheet(
+            context=context,
+            base_path=base_path,
+        ):
+            specs.append(
+                StructuredSectionWindowSpec(
+                    family=StructuredEvidenceFamily.CERTIFICATE_COVER_SHEET,
+                    section_path=self._family_section_path(
+                        base_path=base_path,
+                        family_markers=_COVER_SHEET_PATH_MARKERS,
+                        label="Cover sheet",
+                    ),
+                    anchor_markers=extend_markers(
+                        family=StructuredEvidenceFamily.CERTIFICATE_COVER_SHEET,
+                        base_markers=CERTIFICATE_COVER_SHEET_MARKERS,
+                        marker_tuning=marker_tuning,
+                    ),
+                    chunk_type=ChunkType.CERTIFICATION_INFO,
+                    radius_before=1,
+                    radius_after=14,
+                    combine_all_windows=True,
+                    include_full_section_if_no_anchor=path_contains_markers(
+                        base_path,
+                        _COVER_SHEET_PATH_MARKERS,
+                    ),
+                )
+            )
 
         if self._should_include_general_information(
             context=context,
@@ -194,7 +230,51 @@ class CertificateStructuredFamilyBuilder:
                 )
             )
 
+        if self._should_include_attachment_information(
+            context=context,
+            base_path=base_path,
+        ):
+            specs.append(
+                StructuredSectionWindowSpec(
+                    family=StructuredEvidenceFamily.CERTIFICATE_ATTACHMENT_INFORMATION,
+                    section_path=self._family_section_path(
+                        base_path=base_path,
+                        family_markers=_ATTACHMENT_INFORMATION_PATH_MARKERS,
+                        label="Attachment to certificate",
+                    ),
+                    anchor_markers=extend_markers(
+                        family=StructuredEvidenceFamily.CERTIFICATE_ATTACHMENT_INFORMATION,
+                        base_markers=CERTIFICATE_ATTACHMENT_INFORMATION_MARKERS,
+                        marker_tuning=marker_tuning,
+                    ),
+                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                    radius_before=1,
+                    radius_after=16,
+                    combine_all_windows=True,
+                    include_full_section_if_no_anchor=path_contains_markers(
+                        base_path,
+                        _ATTACHMENT_INFORMATION_PATH_MARKERS,
+                    ),
+                )
+            )
+
         return StructuredFamilySpecSelection(specs=specs)
+
+    @staticmethod
+    def _should_include_cover_sheet(
+        *,
+        context: StructuredFamilyContext,
+        base_path: list[str],
+    ) -> bool:
+        if path_contains_markers(base_path, _COVER_SHEET_PATH_MARKERS):
+            return True
+        return (
+            CertificateStructuredFamilyBuilder._count_present_markers(
+                context,
+                CERTIFICATE_COVER_SHEET_MARKERS,
+            )
+            >= 2
+        )
 
     @staticmethod
     def _should_include_general_information(
@@ -261,6 +341,22 @@ class CertificateStructuredFamilyBuilder:
         if path_contains_markers(base_path, _TEST_DATA_PATH_MARKERS):
             return True
         return context.content_contains_any(CERTIFICATE_TEST_DATA_MARKERS)
+
+    @staticmethod
+    def _should_include_attachment_information(
+        *,
+        context: StructuredFamilyContext,
+        base_path: list[str],
+    ) -> bool:
+        if path_contains_markers(base_path, _ATTACHMENT_INFORMATION_PATH_MARKERS):
+            return True
+        return (
+            CertificateStructuredFamilyBuilder._count_present_markers(
+                context,
+                CERTIFICATE_ATTACHMENT_INFORMATION_MARKERS,
+            )
+            >= 2
+        )
 
     @staticmethod
     def _particulars_section_path(

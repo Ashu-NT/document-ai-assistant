@@ -1,10 +1,25 @@
 DATASHEET_DOCUMENT_MARKERS = (
     "datasheet",
+    "product overview",
+    "technical features",
     "technical data",
+    "specification",
     "characteristics",
     "ordering information",
     "ordering example",
+    "cooling system",
+    "sensors",
+    "installation instructions",
     "pressure-temperature diagram",
+)
+
+DATASHEET_PRODUCT_OVERVIEW_MARKERS = (
+    "product overview",
+    "general description",
+    "key features",
+    "main features",
+    "applications",
+    "benefits",
 )
 
 DATASHEET_TECHNICAL_DATA_MARKERS = (
@@ -12,6 +27,13 @@ DATASHEET_TECHNICAL_DATA_MARKERS = (
     "specification",
     "characteristics",
     "features",
+)
+
+DATASHEET_TECHNICAL_FEATURES_MARKERS = (
+    "technical features",
+    "features",
+    "characteristics",
+    "caratteristiche tecniche",
 )
 
 DATASHEET_SPECIFICATION_TABLE_MARKERS = (
@@ -42,6 +64,35 @@ DATASHEET_CONNECTION_INFORMATION_MARKERS = (
     "process connection",
     "terminal assignment",
     "wiring",
+)
+
+DATASHEET_COOLING_SYSTEM_MARKERS = (
+    "cooling system",
+    "cooling water",
+    "coolant",
+    "cooling medium",
+    "lt cw",
+    "ht cw",
+)
+
+DATASHEET_SENSOR_INFORMATION_MARKERS = (
+    "sensor",
+    "sensors",
+    "sensor equipment",
+    "temperature sensor",
+    "speed sensor",
+    "pt100",
+    "encoder",
+)
+
+DATASHEET_INSTALLATION_MAINTENANCE_MARKERS = (
+    "installation instructions",
+    "maintenance instructions",
+    "installation and maintenance",
+    "mounting and maintenance",
+    "service instructions",
+    "montaggio",
+    "manutenzione",
 )
 
 DATASHEET_OPERATING_LIMITS_MARKERS = (

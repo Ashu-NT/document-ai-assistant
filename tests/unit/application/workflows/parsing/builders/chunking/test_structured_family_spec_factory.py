@@ -7,7 +7,13 @@ from src.application.workflows.parsing.builders.chunking.builders.structured_sec
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
-from src.domain.common import ChunkType, DocumentType, ElementType, SourceLocation
+from src.domain.common import (
+    ChunkType,
+    DocumentType,
+    ElementType,
+    ParserMetadata,
+    SourceLocation,
+)
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 
@@ -38,6 +44,7 @@ def make_element(
     page: int,
     reading_order: int,
     element_type: ElementType = ElementType.TEXT,
+    parser_extra: dict | None = None,
 ) -> CanonicalElement:
     return CanonicalElement(
         element_id=element_id,
@@ -46,6 +53,15 @@ def make_element(
         text=text,
         reading_order=reading_order,
         source=SourceLocation(page_start=page, page_end=page),
+        parser_metadata=(
+            ParserMetadata(
+                parser_name="docling",
+                parser_version="1.0",
+                extra=parser_extra or {},
+            )
+            if parser_extra is not None
+            else None
+        ),
     )
 
 
@@ -147,6 +163,85 @@ def test_fragment_builder_detects_certificate_particulars_from_generic_markers()
     assert "Nominal size DN50" in particulars.text
 
 
+def test_fragment_builder_detects_certificate_cover_sheet_without_benchmark_values() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_002a",
+        title="COVER SHEET",
+        section_path=["COVER SHEET"],
+        page=1,
+    )
+    elements = [
+        make_element(
+            element_id="txt_011a",
+            text="Customer: Example Shipyard; Project: New Build 42; Model: Compact Fuel Unit; Series: 9606-382",
+            page=1,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_011b",
+            text="Revision 00; Edition 08.03.2022; Order No. 2452414325",
+            page=1,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Fuel system certificate",
+        document_type=DocumentType.CERTIFICATE,
+        section=section,
+        elements=elements,
+    )
+
+    cover_sheet = next(
+        fragment
+        for fragment in fragments
+        if fragment.section_path == ["COVER SHEET"]
+    )
+
+    assert cover_sheet.chunk_type == ChunkType.CERTIFICATION_INFO
+    assert "2452414325" in cover_sheet.text
+
+
+def test_fragment_builder_detects_certificate_attachment_information_from_generic_markers() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_002b",
+        title="Attachment",
+        section_path=["Attachment"],
+        page=2,
+    )
+    elements = [
+        make_element(
+            element_id="txt_011c",
+            text="Areas inspected",
+            page=2,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_011d",
+            text="Food: Source and Storage. Water: Source and Distribution. Waste: Holding and Disposal. Medical facilities: Equipment and Medicines.",
+            page=2,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Ship sanitation control exemption certificate",
+        document_type=DocumentType.CERTIFICATE,
+        section=section,
+        elements=elements,
+    )
+
+    attachment = next(
+        fragment
+        for fragment in fragments
+        if fragment.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+    )
+
+    assert "Medical facilities" in attachment.text
+
+
 def test_fragment_builder_detects_datasheet_ordering_example_without_benchmark_code() -> None:
     builder = make_builder()
     section = make_section(
@@ -185,6 +280,166 @@ def test_fragment_builder_detects_datasheet_ordering_example_without_benchmark_c
 
     assert ordering.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
     assert "Order code" in ordering.text
+
+
+def test_fragment_builder_detects_datasheet_cooling_system_without_exact_values() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_003a",
+        title="Cooling system",
+        section_path=["Cooling system"],
+        page=3,
+    )
+    elements = [
+        make_element(
+            element_id="txt_021a",
+            text="Cooling system",
+            page=3,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_021b",
+            text="Cooling water inlet and coolant return values are listed for each operating point.",
+            page=3,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Permanent magnet motor datasheet",
+        document_type=DocumentType.DATASHEET,
+        section=section,
+        elements=elements,
+    )
+
+    cooling = next(
+        fragment
+        for fragment in fragments
+        if fragment.section_path == ["Cooling system"]
+    )
+
+    assert cooling.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+    assert "cooling water inlet" in cooling.text.lower()
+
+
+def test_fragment_builder_detects_datasheet_sensor_information_without_part_numbers() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_003b",
+        title="Sensors",
+        section_path=["Sensors"],
+        page=4,
+    )
+    elements = [
+        make_element(
+            element_id="txt_021c",
+            text="Sensors",
+            page=4,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_021d",
+            text="Temperature sensors and encoder feedback are installed for monitoring and speed control.",
+            page=4,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Motor datasheet",
+        document_type=DocumentType.DATASHEET,
+        section=section,
+        elements=elements,
+    )
+
+    sensors = next(
+        fragment
+        for fragment in fragments
+        if fragment.section_path == ["Sensors"]
+    )
+
+    assert sensors.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+    assert "encoder feedback" in sensors.text.lower()
+
+
+def test_fragment_builder_detects_datasheet_technical_features_from_generic_markers() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_003c",
+        title="caratteristiche tecniche",
+        section_path=["caratteristiche tecniche"],
+        page=2,
+    )
+    elements = [
+        make_element(
+            element_id="txt_021e",
+            text="caratteristiche tecniche",
+            page=2,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_021f",
+            text="Technical features include AISI 316 housing and marine-grade sealing materials.",
+            page=2,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Deck filler datasheet",
+        document_type=DocumentType.DATASHEET,
+        section=section,
+        elements=elements,
+    )
+
+    technical_features = next(
+        fragment
+        for fragment in fragments
+        if fragment.section_path == ["caratteristiche tecniche"]
+    )
+
+    assert technical_features.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+    assert "aisi 316" in technical_features.text.lower()
+
+
+def test_fragment_builder_detects_datasheet_installation_maintenance_from_generic_markers() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_003d",
+        title="Istruzioni di montaggio e manutenzione",
+        section_path=["Istruzioni di montaggio e manutenzione"],
+        page=5,
+    )
+    elements = [
+        make_element(
+            element_id="txt_021g",
+            text="Istruzioni di montaggio e manutenzione",
+            page=5,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_021h",
+            text="Installation instructions and maintenance steps must be followed before commissioning the unit.",
+            page=5,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Deck filler datasheet",
+        document_type=DocumentType.DATASHEET,
+        section=section,
+        elements=elements,
+    )
+
+    installation_maintenance = next(
+        fragment
+        for fragment in fragments
+        if fragment.section_path == ["Istruzioni di montaggio e manutenzione"]
+    )
+
+    assert installation_maintenance.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+    assert "commissioning" in installation_maintenance.text.lower()
 
 
 def test_fragment_builder_detects_maintenance_intervals_without_specific_hour_values() -> None:
@@ -547,6 +802,50 @@ def test_fragment_builder_emits_report_operation_options_chunk() -> None:
     assert op_options is not None
     assert op_options.chunk_type == ChunkType.OPERATION_INSTRUCTION
     assert "12 seconds" in op_options.text
+
+
+def test_fragment_builder_emits_report_performance_data_chunk() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_rpt_004",
+        title="Performance Data 100%",
+        section_path=["Performance Data 100%"],
+        page=9,
+    )
+    elements = [
+        make_element(
+            element_id="txt_rpt_030",
+            text="Performance Data",
+            page=9,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_rpt_031",
+            text="Engine power 2400 kW; engine speed 2000 rpm; fuel consumption 208 g/kWh.",
+            page=9,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Shop test protocol",
+        document_type=DocumentType.REPORT,
+        section=section,
+        elements=elements,
+    )
+
+    performance = next(
+        (
+            fragment
+            for fragment in fragments
+            if fragment.section_path == ["Performance Data 100%"]
+        ),
+        None,
+    )
+
+    assert performance is not None
+    assert performance.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+    assert "fuel consumption" in performance.text.lower()
 
 
 def test_fragment_builder_applies_datasheet_specs_to_manual_classified_datasheet_document() -> None:

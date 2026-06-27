@@ -1,16 +1,24 @@
 from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
+    append_label_if_missing,
     extend_markers,
+    path_contains_markers,
+    sanitized_base_path,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
+    DATASHEET_COOLING_SYSTEM_MARKERS,
     DATASHEET_CONNECTION_INFORMATION_MARKERS,
     DATASHEET_DOCUMENT_MARKERS,
+    DATASHEET_INSTALLATION_MAINTENANCE_MARKERS,
     DATASHEET_MATERIAL_INFORMATION_MARKERS,
     DATASHEET_OPERATING_LIMITS_MARKERS,
     DATASHEET_ORDERING_EXAMPLE_MARKERS,
     DATASHEET_ORDERING_INFORMATION_MARKERS,
     DATASHEET_PRESSURE_TEMPERATURE_MARKERS,
+    DATASHEET_PRODUCT_OVERVIEW_MARKERS,
+    DATASHEET_SENSOR_INFORMATION_MARKERS,
     DATASHEET_SPECIFICATION_TABLE_MARKERS,
     DATASHEET_TECHNICAL_DATA_MARKERS,
+    DATASHEET_TECHNICAL_FEATURES_MARKERS,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_evidence_family import (
     StructuredEvidenceFamily,
@@ -28,6 +36,18 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.str
     StructuredSectionWindowSpec,
 )
 from src.domain.common import ChunkType, DocumentType
+
+_PRODUCT_OVERVIEW_PATH_MARKERS = ("product overview",)
+_TECHNICAL_FEATURES_PATH_MARKERS = ("technical features", "caratteristiche tecniche")
+_COOLING_SYSTEM_PATH_MARKERS = ("cooling system",)
+_SENSOR_INFORMATION_PATH_MARKERS = ("sensor", "sensors")
+_INSTALLATION_MAINTENANCE_PATH_MARKERS = (
+    "installation instructions",
+    "installation and maintenance",
+    "mounting and maintenance",
+    "montaggio",
+    "manutenzione",
+)
 
 
 class DatasheetStructuredFamilyBuilder:
@@ -49,8 +69,35 @@ class DatasheetStructuredFamilyBuilder:
         ):
             return StructuredFamilySpecSelection()
 
+        base_path = sanitized_base_path(
+            section_path=context.base_section_path(),
+            section_title=context.section.title,
+            document_title=context.document_title,
+        )
+
         return StructuredFamilySpecSelection(
             specs=[
+                StructuredSectionWindowSpec(
+                    family=StructuredEvidenceFamily.DATASHEET_PRODUCT_OVERVIEW,
+                    section_path=self._family_section_path(
+                        base_path=base_path,
+                        family_markers=_PRODUCT_OVERVIEW_PATH_MARKERS,
+                        label="Product overview",
+                    ),
+                    anchor_markers=extend_markers(
+                        family=StructuredEvidenceFamily.DATASHEET_PRODUCT_OVERVIEW,
+                        base_markers=DATASHEET_PRODUCT_OVERVIEW_MARKERS,
+                        marker_tuning=marker_tuning,
+                    ),
+                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                    radius_before=1,
+                    radius_after=12,
+                    combine_all_windows=True,
+                    include_full_section_if_no_anchor=path_contains_markers(
+                        base_path,
+                        _PRODUCT_OVERVIEW_PATH_MARKERS,
+                    ),
+                ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.DATASHEET_TECHNICAL_DATA,
                     section_path=["Technical Data / Specification"],
@@ -62,6 +109,27 @@ class DatasheetStructuredFamilyBuilder:
                     chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
                     radius_before=1,
                     radius_after=14,
+                ),
+                StructuredSectionWindowSpec(
+                    family=StructuredEvidenceFamily.DATASHEET_TECHNICAL_FEATURES,
+                    section_path=self._family_section_path(
+                        base_path=base_path,
+                        family_markers=_TECHNICAL_FEATURES_PATH_MARKERS,
+                        label="Technical features",
+                    ),
+                    anchor_markers=extend_markers(
+                        family=StructuredEvidenceFamily.DATASHEET_TECHNICAL_FEATURES,
+                        base_markers=DATASHEET_TECHNICAL_FEATURES_MARKERS,
+                        marker_tuning=marker_tuning,
+                    ),
+                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                    radius_before=1,
+                    radius_after=14,
+                    combine_all_windows=True,
+                    include_full_section_if_no_anchor=path_contains_markers(
+                        base_path,
+                        _TECHNICAL_FEATURES_PATH_MARKERS,
+                    ),
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.DATASHEET_SPECIFICATION_TABLE,
@@ -112,6 +180,48 @@ class DatasheetStructuredFamilyBuilder:
                     radius_after=10,
                 ),
                 StructuredSectionWindowSpec(
+                    family=StructuredEvidenceFamily.DATASHEET_COOLING_SYSTEM,
+                    section_path=self._family_section_path(
+                        base_path=base_path,
+                        family_markers=_COOLING_SYSTEM_PATH_MARKERS,
+                        label="Cooling system",
+                    ),
+                    anchor_markers=extend_markers(
+                        family=StructuredEvidenceFamily.DATASHEET_COOLING_SYSTEM,
+                        base_markers=DATASHEET_COOLING_SYSTEM_MARKERS,
+                        marker_tuning=marker_tuning,
+                    ),
+                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                    radius_before=1,
+                    radius_after=12,
+                    combine_all_windows=True,
+                    include_full_section_if_no_anchor=path_contains_markers(
+                        base_path,
+                        _COOLING_SYSTEM_PATH_MARKERS,
+                    ),
+                ),
+                StructuredSectionWindowSpec(
+                    family=StructuredEvidenceFamily.DATASHEET_SENSOR_INFORMATION,
+                    section_path=self._family_section_path(
+                        base_path=base_path,
+                        family_markers=_SENSOR_INFORMATION_PATH_MARKERS,
+                        label="Sensors",
+                    ),
+                    anchor_markers=extend_markers(
+                        family=StructuredEvidenceFamily.DATASHEET_SENSOR_INFORMATION,
+                        base_markers=DATASHEET_SENSOR_INFORMATION_MARKERS,
+                        marker_tuning=marker_tuning,
+                    ),
+                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                    radius_before=1,
+                    radius_after=12,
+                    combine_all_windows=True,
+                    include_full_section_if_no_anchor=path_contains_markers(
+                        base_path,
+                        _SENSOR_INFORMATION_PATH_MARKERS,
+                    ),
+                ),
+                StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.DATASHEET_OPERATING_LIMITS,
                     section_path=["Operating limits"],
                     anchor_markers=extend_markers(
@@ -149,5 +259,37 @@ class DatasheetStructuredFamilyBuilder:
                     radius_before=1,
                     radius_after=10,
                 ),
+                StructuredSectionWindowSpec(
+                    family=StructuredEvidenceFamily.DATASHEET_INSTALLATION_MAINTENANCE,
+                    section_path=self._family_section_path(
+                        base_path=base_path,
+                        family_markers=_INSTALLATION_MAINTENANCE_PATH_MARKERS,
+                        label="Installation instructions and maintenance",
+                    ),
+                    anchor_markers=extend_markers(
+                        family=StructuredEvidenceFamily.DATASHEET_INSTALLATION_MAINTENANCE,
+                        base_markers=DATASHEET_INSTALLATION_MAINTENANCE_MARKERS,
+                        marker_tuning=marker_tuning,
+                    ),
+                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                    radius_before=1,
+                    radius_after=12,
+                    combine_all_windows=True,
+                    include_full_section_if_no_anchor=path_contains_markers(
+                        base_path,
+                        _INSTALLATION_MAINTENANCE_PATH_MARKERS,
+                    ),
+                ),
             ]
         )
+
+    @staticmethod
+    def _family_section_path(
+        *,
+        base_path: list[str],
+        family_markers: tuple[str, ...],
+        label: str,
+    ) -> list[str]:
+        if path_contains_markers(base_path, family_markers):
+            return base_path
+        return append_label_if_missing(base_path, label)

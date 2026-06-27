@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 
+from src.application.workflows.parsing.builders.chunking.builders.structured.structured_element_text_resolver import (
+    StructuredElementTextResolver,
+)
 from src.domain.common import DocumentType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
@@ -28,11 +31,15 @@ class StructuredFamilyContext:
         normalizer,
         document_sections_combined_text: str = "",
     ) -> "StructuredFamilyContext":
-        normalized_texts = tuple(
-            normalizer(element.text)
-            for element in elements
-            if normalizer(element.text)
-        )
+        normalized_parts: list[str] = []
+        for element in elements:
+            normalized_text = normalizer(
+                StructuredElementTextResolver.resolve(element)
+            )
+            if normalized_text:
+                normalized_parts.append(normalized_text)
+
+        normalized_texts = tuple(normalized_parts)
         return cls(
             document_title=document_title,
             document_type=document_type,

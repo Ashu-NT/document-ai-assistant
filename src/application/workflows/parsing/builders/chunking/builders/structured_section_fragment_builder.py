@@ -4,6 +4,9 @@ from src.application.workflows.parsing.builders.chunking.builders.structured imp
     StructuredFamilySpecFactory,
     StructuredSectionWindowSpec,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured.structured_element_text_resolver import (
+    StructuredElementTextResolver,
+)
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
@@ -90,7 +93,7 @@ class StructuredSectionFragmentBuilder:
             index
             for index, element in enumerate(elements)
             if self._matches_markers(
-                self._normalize_text(element.text),
+                self._normalize_text(StructuredElementTextResolver.resolve(element)),
                 spec.anchor_markers,
             )
         ]
@@ -130,11 +133,11 @@ class StructuredSectionFragmentBuilder:
         elements: list[CanonicalElement],
         spec: StructuredSectionWindowSpec,
     ) -> ChunkFragment | None:
-        texts = [
-            clean_chunk_text(element.text)
-            for element in elements
-            if clean_chunk_text(element.text)
-        ]
+        texts: list[str] = []
+        for element in elements:
+            text = StructuredElementTextResolver.resolve(element)
+            if text:
+                texts.append(text)
         if not texts:
             return None
 
@@ -211,6 +214,7 @@ class StructuredSectionFragmentBuilder:
             ElementType.KEY_VALUE,
             ElementType.CODE,
             ElementType.TABLE,
+            ElementType.PICTURE,
         }:
             return False
         parser_extra = (
@@ -224,7 +228,7 @@ class StructuredSectionFragmentBuilder:
             return False
         if parser_extra.get("content_layer") == "furniture":
             return False
-        return bool(clean_chunk_text(element.text))
+        return bool(StructuredElementTextResolver.resolve(element))
 
     @staticmethod
     def _matches_markers(text: str, markers: tuple[str, ...]) -> bool:
@@ -262,7 +266,7 @@ class StructuredSectionFragmentBuilder:
             spec.section_path[-1] if spec.section_path else None
         )
         for element in elements:
-            raw = (element.text or "").strip()
+            raw = (StructuredElementTextResolver.resolve(element) or "").strip()
             if not raw:
                 continue
             normalized = StructuredSectionFragmentBuilder._normalize_text(raw)
