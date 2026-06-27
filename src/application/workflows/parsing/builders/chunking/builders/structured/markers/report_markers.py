@@ -69,6 +69,14 @@ REPORT_PROCEDURE_MARKERS = (
     "test method",
 )
 
+REPORT_PERFORMANCE_DATA_MARKERS = (
+    "performance data",
+    "engine power",
+    "engine speed",
+    "fuel consumption",
+    "load point",
+)
+
 REPORT_MOUNTING_MARKERS = (
     "mounting",
     "tightening torque",

@@ -1,5 +1,8 @@
 from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
+    append_label_if_missing,
     extend_markers,
+    path_contains_markers,
+    sanitized_base_path,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     REPORT_ADDITIONAL_INFORMATION_MARKERS,
@@ -12,6 +15,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
     REPORT_MOUNTING_MARKERS,
     REPORT_OPERATING_INSTRUCTIONS_MARKERS,
     REPORT_OPERATION_OPTIONS_MARKERS,
+    REPORT_PERFORMANCE_DATA_MARKERS,
     REPORT_PROCEDURE_MARKERS,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_evidence_family import (
@@ -30,6 +34,8 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.str
     StructuredSectionWindowSpec,
 )
 from src.domain.common import ChunkType, DocumentType
+
+_PERFORMANCE_DATA_PATH_MARKERS = ("performance data",)
 
 
 class ReportStructuredFamilyBuilder:
@@ -50,6 +56,12 @@ class ReportStructuredFamilyBuilder:
             and not context.contains_any(REPORT_DOCUMENT_MARKERS)
         ):
             return StructuredFamilySpecSelection()
+
+        base_path = sanitized_base_path(
+            section_path=context.base_section_path(),
+            section_title=context.section.title,
+            document_title=context.document_title,
+        )
 
         return StructuredFamilySpecSelection(
             specs=[
@@ -159,6 +171,27 @@ class ReportStructuredFamilyBuilder:
                     radius_after=12,
                 ),
                 StructuredSectionWindowSpec(
+                    family=StructuredEvidenceFamily.REPORT_PERFORMANCE_DATA,
+                    section_path=self._family_section_path(
+                        base_path=base_path,
+                        family_markers=_PERFORMANCE_DATA_PATH_MARKERS,
+                        label="Performance Data",
+                    ),
+                    anchor_markers=extend_markers(
+                        family=StructuredEvidenceFamily.REPORT_PERFORMANCE_DATA,
+                        base_markers=REPORT_PERFORMANCE_DATA_MARKERS,
+                        marker_tuning=marker_tuning,
+                    ),
+                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                    radius_before=1,
+                    radius_after=14,
+                    combine_all_windows=True,
+                    include_full_section_if_no_anchor=path_contains_markers(
+                        base_path,
+                        _PERFORMANCE_DATA_PATH_MARKERS,
+                    ),
+                ),
+                StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.REPORT_MOUNTING,
                     section_path=["Brief Operating Instructions", "5 Mounting"],
                     anchor_markers=extend_markers(
@@ -186,3 +219,14 @@ class ReportStructuredFamilyBuilder:
                 ),
             ]
         )
+
+    @staticmethod
+    def _family_section_path(
+        *,
+        base_path: list[str],
+        family_markers: tuple[str, ...],
+        label: str,
+    ) -> list[str]:
+        if path_contains_markers(base_path, family_markers):
+            return base_path
+        return append_label_if_missing(base_path, label)

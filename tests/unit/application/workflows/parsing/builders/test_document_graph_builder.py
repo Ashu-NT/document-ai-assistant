@@ -280,6 +280,60 @@ def test_document_graph_builder_creates_picture_reference_chunk_with_context() -
     )
 
 
+def test_document_graph_builder_creates_structured_chunk_from_picture_ocr_page() -> None:
+    builder = make_builder()
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/inspection_certificate.pdf",
+        title="Inspection certificate",
+        page_count=1,
+        raw_document=object(),
+        parser_name="docling",
+        parser_version="1.2.3",
+        metadata={"language": "en"},
+    )
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/inspection_certificate.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="pic_1",
+                element_type=ElementType.PICTURE,
+                order_index=1,
+                text=None,
+                page_start=1,
+                metadata={
+                    "ocr_text": (
+                        "Inspection certificate\n"
+                        "Particulars\n"
+                        "Quantity 1\n"
+                        "Description auxiliary diesel generator\n"
+                        "Serial number 536113910"
+                    ),
+                    "image_path": "outputs/images/pic_001.png",
+                },
+            ),
+        ],
+        raw_parsed_document=raw_parsed_document,
+    )
+
+    structured_chunk = next(
+        (
+            chunk
+            for chunk in graph.chunks.values()
+            if chunk.chunk_type.value == "certification_info"
+        ),
+        None,
+    )
+
+    assert structured_chunk is not None
+    assert "auxiliary diesel generator" in structured_chunk.content
+    assert "536113910" in structured_chunk.content
+
+
 def test_document_graph_builder_uses_datasheet_profile_to_skip_picture_chunks() -> None:
     builder = make_builder()
     raw_parsed_document = RawParsedDocument(
