@@ -43,31 +43,69 @@ class RetrievalQueryChunkTypePreferenceMapper:
             preferences = [
                 ChunkType.TECHNICAL_SPECIFICATION,
                 ChunkType.CERTIFICATION_INFO,
-                ChunkType.SPARE_PARTS_TABLE,
+                ChunkType.MAINTENANCE_INTERVAL,
+                ChunkType.OPERATION_INSTRUCTION,
                 ChunkType.INSTALLATION_INSTRUCTION,
                 ChunkType.MAINTENANCE_PROCEDURE,
                 ChunkType.GENERAL,
+                ChunkType.SPARE_PARTS_TABLE,
             ]
             if any(
                 marker in query_text
                 for marker in ("certificate", "approval", "iecex", "atex")
             ):
                 preferences.insert(0, ChunkType.CERTIFICATION_INFO)
+            if any(
+                marker in query_text
+                for marker in ("pressure", "torque", "flow", "set", "setting", "adjust", "optimis", "optimiz")
+            ):
+                preferences.insert(1, ChunkType.OPERATION_INSTRUCTION)
             return self._unique(preferences)
 
         if intent == RetrievalQueryIntent.PROCEDURE:
             preferences = [
                 ChunkType.OPERATION_INSTRUCTION,
                 ChunkType.MAINTENANCE_PROCEDURE,
+                ChunkType.INSTALLATION_INSTRUCTION,
+                ChunkType.MAINTENANCE_INTERVAL,
                 ChunkType.TROUBLESHOOTING,
+                ChunkType.TECHNICAL_SPECIFICATION,
                 ChunkType.SAFETY_WARNING,
                 ChunkType.GENERAL,
+                ChunkType.OVERVIEW,
             ]
             if any(
                 marker in query_text
                 for marker in ("how often", "task", "interval", "schedule", "lubricat", "hours")
             ):
-                preferences.insert(0, ChunkType.MAINTENANCE_INTERVAL)
+                preferences = [
+                    ChunkType.MAINTENANCE_INTERVAL,
+                    ChunkType.TECHNICAL_SPECIFICATION,
+                    ChunkType.MAINTENANCE_PROCEDURE,
+                    ChunkType.OPERATION_INSTRUCTION,
+                    ChunkType.INSTALLATION_INSTRUCTION,
+                    ChunkType.TROUBLESHOOTING,
+                    ChunkType.GENERAL,
+                    ChunkType.OVERVIEW,
+                ]
+            elif any(
+                marker in query_text
+                for marker in (
+                    "commission",
+                    "installation",
+                    "electrical connection",
+                    "connect",
+                    "objective",
+                )
+            ):
+                preferences = [
+                    ChunkType.INSTALLATION_INSTRUCTION,
+                    ChunkType.OPERATION_INSTRUCTION,
+                    ChunkType.MAINTENANCE_PROCEDURE,
+                    ChunkType.TECHNICAL_SPECIFICATION,
+                    ChunkType.GENERAL,
+                    ChunkType.OVERVIEW,
+                ]
             return self._unique(preferences)
 
         if intent == RetrievalQueryIntent.TROUBLESHOOTING:
@@ -100,7 +138,15 @@ class RetrievalQueryChunkTypePreferenceMapper:
             )
 
         if intent == RetrievalQueryIntent.OVERVIEW:
-            return [ChunkType.OVERVIEW, ChunkType.GENERAL]
+            return self._unique(
+                [
+                    ChunkType.OVERVIEW,
+                    ChunkType.GENERAL,
+                    ChunkType.OPERATION_INSTRUCTION,
+                    ChunkType.INSTALLATION_INSTRUCTION,
+                    ChunkType.TECHNICAL_SPECIFICATION,
+                ]
+            )
 
         # QuestionAnsweringWorkflow should normally route DOCUMENT_EXPLORATION away from
         # RetrievalWorkflow before a query reaches this mapper. This branch is a safety

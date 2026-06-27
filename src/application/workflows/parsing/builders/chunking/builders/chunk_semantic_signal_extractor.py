@@ -85,6 +85,7 @@ _TITLE_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "shutdown",
         "usage",
         "how to use",
+        "connecting the device",
     ),
     ChunkType.CERTIFICATION_INFO: (
         "certificate",
@@ -108,6 +109,18 @@ _CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "tighten",
         "verify",
         "reinstall",
+    ),
+    ChunkType.MAINTENANCE_INTERVAL: (
+        "maintenance interval",
+        "maintenance intervals",
+        "service interval",
+        "inspection interval",
+        "change interval",
+        "preventive maintenance",
+        "daily use",
+        "operating hours",
+        "running hours",
+        "wear replacement",
     ),
     ChunkType.SAFETY_WARNING: (
         "warning",
@@ -176,6 +189,10 @@ _CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "start",
         "run",
         "press",
+        "connect the device",
+        "connect according to diagram",
+        "check supply voltage",
+        "switch off supply voltage",
     ),
     ChunkType.CERTIFICATION_INFO: (
         "ce",
@@ -186,6 +203,7 @@ _CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
     ),
 }
 _CONTENT_SCORE_CAPS: dict[ChunkType, int] = {
+    ChunkType.MAINTENANCE_INTERVAL: 4,
     ChunkType.TECHNICAL_SPECIFICATION: 4,
     ChunkType.TROUBLESHOOTING: 4,
 }
@@ -306,21 +324,25 @@ class ChunkSemanticSignalExtractor:
     ) -> dict[ChunkType, int]:
         title_text = self._normalize_text(section_title)
         sanitized_path = sanitize_section_path(list(section_path))
-        path_text = " > ".join(
-            self._normalize_text(segment)
-            for segment in sanitized_path
-            if segment
-        )
+        local_path_text, ancestor_path_text = self._split_path_text(sanitized_path)
         content_text = self._normalize_text(text)
         scores: dict[ChunkType, int] = {}
 
         for chunk_type, markers in _TITLE_MARKERS.items():
             title_hits = self._marker_hits(title_text, markers)
-            path_hits = self._marker_hits(path_text, markers)
             if title_hits:
                 scores[chunk_type] = scores.get(chunk_type, 0) + (title_hits * 4)
-            elif path_hits:
-                scores[chunk_type] = scores.get(chunk_type, 0) + (path_hits * 3)
+            local_path_hits = self._marker_hits(local_path_text, markers)
+            ancestor_path_hits = self._marker_hits(ancestor_path_text, markers)
+            if local_path_hits:
+                scores[chunk_type] = scores.get(chunk_type, 0) + (local_path_hits * 3)
+            if ancestor_path_hits:
+                scores[chunk_type] = scores.get(chunk_type, 0) + self._ancestor_path_bonus(
+                    chunk_type=chunk_type,
+                    title_hits=title_hits,
+                    local_path_hits=local_path_hits,
+                    ancestor_path_hits=ancestor_path_hits,
+                )
 
         for chunk_type, markers in _CONTENT_MARKERS.items():
             content_hits = self._marker_hits(content_text, markers)
@@ -384,12 +406,41 @@ class ChunkSemanticSignalExtractor:
         if direct_table_type is None:
             return
 
-        scores[direct_table_type] = scores.get(direct_table_type, 0) + 3
+        scores[direct_table_type] = scores.get(direct_table_type, 0) + 5
         if scores.get(ChunkType.SAFETY_WARNING, 0) > 0:
             scores[ChunkType.SAFETY_WARNING] = min(
                 scores[ChunkType.SAFETY_WARNING],
+                1,
+            )
+        if scores.get(ChunkType.INSTALLATION_INSTRUCTION, 0) > 0:
+            scores[ChunkType.INSTALLATION_INSTRUCTION] = min(
+                scores[ChunkType.INSTALLATION_INSTRUCTION],
                 2,
             )
+
+    @staticmethod
+    def _ancestor_path_bonus(
+        *,
+        chunk_type: ChunkType,
+        title_hits: int,
+        local_path_hits: int,
+        ancestor_path_hits: int,
+    ) -> int:
+        if chunk_type == ChunkType.SAFETY_WARNING and title_hits == 0 and local_path_hits == 0:
+            return 1
+        return ancestor_path_hits
+
+    def _split_path_text(self, section_path: list[str]) -> tuple[str, str]:
+        normalized_parts = [
+            self._normalize_text(segment)
+            for segment in section_path
+            if segment
+        ]
+        if not normalized_parts:
+            return "", ""
+        if len(normalized_parts) <= 2:
+            return " > ".join(normalized_parts), ""
+        return " > ".join(normalized_parts[-2:]), " > ".join(normalized_parts[:-2])
 
     @staticmethod
     def _marker_hits(text: str, markers: tuple[str, ...]) -> int:

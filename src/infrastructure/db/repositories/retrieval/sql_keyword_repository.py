@@ -1,4 +1,4 @@
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, case, literal, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -103,15 +103,19 @@ class SqlKeywordRepository:
         retrieval_query: RetrievalQuery | None,
         result_limit: int,
     ):
-        patterns = [f"%{query_text}%"]
         expanded_terms = expand_query_terms_with_morph_variants(query_terms)
-        patterns.extend(f"%{term}%" for term in expanded_terms)
-        if retrieval_query is not None:
-            patterns.extend(
+        exact_patterns = [f"%{query_text}%"]
+        term_patterns = [f"%{term}%" for term in expanded_terms]
+        identifier_patterns = (
+            [
                 f"%{identifier}%"
                 for identifier in retrieval_query.detected_identifiers
                 if identifier
-            )
+            ]
+            if retrieval_query is not None
+            else []
+        )
+        patterns = [*exact_patterns, *term_patterns, *identifier_patterns]
 
         text_clauses = [
             or_(
@@ -147,4 +151,63 @@ class SqlKeywordRepository:
             conditions.append(ChunkORM.document_id == retrieval_query.document_id)
 
         candidate_limit = max(result_limit * 20, 50)
-        return statement.where(and_(*conditions)).limit(candidate_limit)
+        candidate_order = self._candidate_order_expression(
+            exact_patterns=exact_patterns,
+            term_patterns=term_patterns,
+            identifier_patterns=identifier_patterns,
+            retrieval_query=retrieval_query,
+        )
+        return (
+            statement.where(and_(*conditions))
+            .order_by(
+                candidate_order.desc(),
+                ChunkORM.page_start.asc(),
+                ChunkORM.sequence_number.asc(),
+            )
+            .limit(candidate_limit)
+        )
+
+    @staticmethod
+    def _candidate_order_expression(
+        *,
+        exact_patterns: list[str],
+        term_patterns: list[str],
+        identifier_patterns: list[str],
+        retrieval_query: RetrievalQuery | None,
+    ):
+        score = literal(0)
+
+        for pattern in exact_patterns:
+            score += case((ChunkORM.content.ilike(pattern), 40), else_=0)
+            score += case((ChunkORM.embedding_text.ilike(pattern), 36), else_=0)
+            score += case((ChunkORM.section_path.ilike(pattern), 24), else_=0)
+            score += case((DocumentORM.title.ilike(pattern), 12), else_=0)
+            score += case((DocumentORM.file_name.ilike(pattern), 10), else_=0)
+
+        for pattern in identifier_patterns:
+            score += case((ChunkORM.content.ilike(pattern), 24), else_=0)
+            score += case((ChunkORM.embedding_text.ilike(pattern), 20), else_=0)
+            score += case((ChunkORM.section_path.ilike(pattern), 14), else_=0)
+            score += case((DocumentORM.title.ilike(pattern), 6), else_=0)
+            score += case((DocumentORM.file_name.ilike(pattern), 6), else_=0)
+
+        for pattern in term_patterns:
+            score += case((ChunkORM.content.ilike(pattern), 4), else_=0)
+            score += case((ChunkORM.embedding_text.ilike(pattern), 4), else_=0)
+            score += case((ChunkORM.section_path.ilike(pattern), 3), else_=0)
+            score += case((DocumentORM.title.ilike(pattern), 1), else_=0)
+            score += case((DocumentORM.file_name.ilike(pattern), 1), else_=0)
+
+        if retrieval_query is not None:
+            for index, chunk_type in enumerate(retrieval_query.chunk_types[:6]):
+                score += case(
+                    (ChunkORM.chunk_type == chunk_type.value, max(6 - index, 1)),
+                    else_=0,
+                )
+            for index, document_type in enumerate(retrieval_query.document_types[:4]):
+                score += case(
+                    (DocumentORM.document_type == document_type.value, max(4 - index, 1)),
+                    else_=0,
+                )
+
+        return score

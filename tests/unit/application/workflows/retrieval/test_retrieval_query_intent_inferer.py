@@ -54,7 +54,6 @@ class TestTroubleshootingIntent:
         assert inferer.infer(query) == RetrievalQueryIntent.TROUBLESHOOTING
 
     def test_fault_keyword_still_works(self) -> None:
-        # "what does" triggers IDENTIFIER intent, so use a different phrasing
         query = _make_query("The pump has a fault. How can I fix it?")
         assert inferer.infer(query) == RetrievalQueryIntent.TROUBLESHOOTING
 
@@ -87,6 +86,26 @@ class TestTroubleshootingBeforeProcedure:
 # ---------------------------------------------------------------------------
 
 class TestOtherIntentsUnchanged:
+    def test_overview_intent_for_system_description_question(self) -> None:
+        query = _make_query("What does the FWC system do?")
+        assert inferer.infer(query) == RetrievalQueryIntent.OVERVIEW
+
+    def test_identifier_presence_does_not_override_conceptual_question(self) -> None:
+        query = RetrievalQuery(
+            query_id="q_conceptual",
+            query_text="What is the objective of commissioning the FWC12?",
+            detected_identifiers=["fwc12"],
+        )
+        assert inferer.infer(query) == RetrievalQueryIntent.PROCEDURE
+
+    def test_explicit_identifier_lookup_still_wins_when_identifier_is_present(self) -> None:
+        query = RetrievalQuery(
+            query_id="q_identifier",
+            query_text="What does ordering code MK311007 mean?",
+            detected_identifiers=["mk311007"],
+        )
+        assert inferer.infer(query) == RetrievalQueryIntent.IDENTIFIER
+
     def test_procedure_intent_for_start_run(self) -> None:
         query = _make_query("How do I start and run the macerator?")
         assert inferer.infer(query) == RetrievalQueryIntent.PROCEDURE

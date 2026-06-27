@@ -32,6 +32,25 @@ _NOISE_SECTION_TOKENS = {
     "table of contents",
     "revision / modification table",
 }
+_TABLE_QUERY_MARKERS = ("table", "spare part", "parts list", "part number", "order code")
+_FIGURE_QUERY_MARKERS = ("figure", "diagram", "drawing", "schematic", "image", "label")
+_OVERVIEW_QUERY_MARKERS = (
+    "what does",
+    "used for",
+    "purpose",
+    "function",
+    "objective",
+    "overview",
+    "summary",
+)
+_OVERVIEW_SECTION_MARKERS = (
+    "what it does",
+    "overview",
+    "introduction",
+    "purpose",
+    "function",
+    "objective",
+)
 
 _ALNUM_TOKEN_RE = re.compile(r"[a-z0-9]+")
 
@@ -156,6 +175,7 @@ class SqlKeywordScorer:
         normalized_content = normalize_query_text(content_text)
         normalized_section = normalize_query_text(section_path_text)
         normalized_query = normalize_query_text(query_text)
+        lowered_query = query_text.lower()
 
         # Section split: local = last 1-2 parts; ancestor = rest
         local_parts, ancestor_parts = self._split_section_path(section_path_parts)
@@ -262,7 +282,7 @@ class SqlKeywordScorer:
             and (
                 retrieval_query.has_identifiers()
                 or any(
-                    marker in query_text.lower()
+                    marker in lowered_query
                     for marker in (
                         "spec",
                         "specification",
@@ -308,9 +328,18 @@ class SqlKeywordScorer:
             # in ancestor "7.1 Macerators" discriminates against sibling "7.2 Food Waste
             # Press" even when both have the same local section title).
             if ancestor_term_hits > 0:
-                score += ancestor_term_hits * 1.5
+                score += ancestor_term_hits * self._ancestor_specificity_bonus(
+                    chunk_type=row.chunk_type,
+                    query_text=lowered_query,
+                )
         elif ancestor_section_match:
             score += 1.5
+
+        if any(marker in lowered_query for marker in _OVERVIEW_QUERY_MARKERS):
+            score += self._overview_section_bonus(
+                normalized_local=normalized_local,
+                normalized_ancestor=normalized_ancestor,
+            )
 
         if chunk_type_fit:
             score += 6.0
@@ -321,6 +350,7 @@ class SqlKeywordScorer:
 
         score -= self._chunk_role_penalty(chunk_role)
         score -= self._noise_penalty(
+            chunk_type=row.chunk_type,
             section_path_text=section_path_text,
             content=row.content,
             query_text=query_text,
@@ -399,9 +429,37 @@ class SqlKeywordScorer:
         }
         return penalties.get(chunk_role, 0.0)
 
+    @staticmethod
+    def _ancestor_specificity_bonus(
+        *,
+        chunk_type: str,
+        query_text: str,
+    ) -> float:
+        if chunk_type == ChunkType.MAINTENANCE_INTERVAL.value and any(
+            marker in query_text
+            for marker in ("maintenance", "interval", "lubrication", "service")
+        ):
+            return 2.5
+        if any(marker in query_text for marker in _OVERVIEW_QUERY_MARKERS):
+            return 2.0
+        return 1.5
+
+    @staticmethod
+    def _overview_section_bonus(
+        *,
+        normalized_local: str,
+        normalized_ancestor: str,
+    ) -> float:
+        if any(marker in normalized_local for marker in _OVERVIEW_SECTION_MARKERS):
+            return 5.0
+        if any(marker in normalized_ancestor for marker in _OVERVIEW_SECTION_MARKERS):
+            return 2.0
+        return 0.0
+
     def _noise_penalty(
         self,
         *,
+        chunk_type: str,
         section_path_text: str,
         content: str,
         query_text: str,
@@ -426,6 +484,17 @@ class SqlKeywordScorer:
             penalty += 8.0
         if exact_identifier_matches == 0 and normalized_content.count("fundamentalmarinedevelopments") > 0:
             penalty += 4.0
+        if exact_identifier_matches == 0 and chunk_type == ChunkType.SPARE_PARTS_TABLE.value:
+            if not any(marker in lowered_query for marker in _TABLE_QUERY_MARKERS):
+                penalty += 12.0
+            if any(marker in lowered_query for marker in _OVERVIEW_QUERY_MARKERS):
+                penalty += 6.0
+        if exact_identifier_matches == 0 and chunk_type == ChunkType.DRAWING_REFERENCE.value:
+            if not any(marker in lowered_query for marker in _FIGURE_QUERY_MARKERS):
+                penalty += 8.0
+        if exact_identifier_matches == 0 and chunk_type == ChunkType.TECHNICAL_SPECIFICATION.value:
+            if any(marker in lowered_query for marker in _OVERVIEW_QUERY_MARKERS):
+                penalty += 4.0
         return penalty
 
     @staticmethod

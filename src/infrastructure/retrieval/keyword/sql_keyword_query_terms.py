@@ -5,6 +5,8 @@ _STOP_WORDS = {
     "are",
     "at",
     "be",
+    "do",
+    "does",
     "for",
     "from",
     "how",

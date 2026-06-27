@@ -328,6 +328,54 @@ def test_chunk_type_resolver_detects_oil_change_interval_as_maintenance_interval
     assert chunk_type == ChunkType.MAINTENANCE_INTERVAL
 
 
+def test_chunk_type_resolver_detects_interval_content_without_explicit_interval_title() -> None:
+    resolver = ChunkTypeResolver()
+
+    chunk_type = resolver.resolve(
+        fragments=[
+            make_fragment(
+                section_title="Overview & Maintenance",
+                section_path=[
+                    "7 Components",
+                    "7.1 Macerators",
+                    "Overview & Maintenance",
+                ],
+                text=(
+                    "Cleaning after daily use. Preventive maintenance 1 first after 1 month "
+                    "then after 1 year and 3 yearly. Wear replacement after approx. "
+                    "9000 operating hours."
+                ),
+            )
+        ]
+    )
+
+    assert chunk_type == ChunkType.MAINTENANCE_INTERVAL
+
+
+def test_chunk_type_resolver_does_not_let_alarm_warning_ancestor_override_local_maintenance() -> None:
+    resolver = ChunkTypeResolver()
+
+    chunk_type = resolver.resolve(
+        fragments=[
+            make_fragment(
+                section_title="Maintenance Procedure",
+                section_path=[
+                    "6 Alarm and Warning Conditions",
+                    "6.1 Maintenance",
+                    "Maintenance Procedure",
+                ],
+                text=(
+                    "Conduct routine inspection on the pump and connected parts to check "
+                    "for a perfect seal. Check all support bearings and if necessary "
+                    "replace them."
+                ),
+            )
+        ]
+    )
+
+    assert chunk_type == ChunkType.MAINTENANCE_PROCEDURE
+
+
 def test_section_merge_policy_flushes_on_conflicting_semantic_sections() -> None:
     policy = SectionMergePolicy(
         text_splitter=ChunkTextSplitter(max_chunk_tokens=220, chunk_overlap=20),
