@@ -8,10 +8,14 @@ from src.shared.exceptions import SchemaValidationError
 class FakeDocumentRepository:
     def __init__(self) -> None:
         self.saved_graphs = []
+        self.replaced_full_graphs = []
         self.replaced_graphs = []
 
     def save_document_graph(self, document_graph) -> None:
         self.saved_graphs.append(document_graph)
+
+    def replace_document_graph(self, document_graph) -> None:
+        self.replaced_full_graphs.append(document_graph)
 
     def replace_document_chunk_artifacts(self, document_graph) -> None:
         self.replaced_graphs.append(document_graph)
@@ -60,3 +64,15 @@ def test_replace_document_chunk_artifacts(sample_document_graph, document_id) ->
     assert result.entity_id == document_id
     assert result.payload["document_id"] == document_id
     assert result.payload["question_count"] == 1
+
+
+def test_replace_document_graph(sample_document_graph, document_id) -> None:
+    repository = FakeDocumentRepository()
+    service = make_service(repository)
+
+    result = service.replace_document_graph(sample_document_graph)
+
+    assert len(repository.replaced_full_graphs) == 1
+    assert result.entity_id == document_id
+    assert result.payload["document_id"] == document_id
+    assert result.payload["chunk_count"] == 1

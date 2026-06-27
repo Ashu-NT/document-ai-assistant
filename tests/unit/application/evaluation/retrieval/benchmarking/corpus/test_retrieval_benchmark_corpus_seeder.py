@@ -80,6 +80,7 @@ class FakeDocumentRegistrationService:
     def __init__(self, operations: list[str]) -> None:
         self.operations = operations
         self.calls: list[DocumentGraph] = []
+        self.replace_calls: list[DocumentGraph] = []
 
     def register_document_graph(
         self,
@@ -88,6 +89,18 @@ class FakeDocumentRegistrationService:
     ) -> ActionResult:
         self.operations.append("register")
         self.calls.append(document_graph)
+        return ActionResult(
+            entity_type="document",
+            entity_id=document_graph.document.document_id,
+        )
+
+    def replace_document_graph(
+        self,
+        document_graph: DocumentGraph,
+        activity_context=None,
+    ) -> ActionResult:
+        self.operations.append("replace_graph")
+        self.replace_calls.append(document_graph)
         return ActionResult(
             entity_type="document",
             entity_id=document_graph.document.document_id,
@@ -609,6 +622,72 @@ def test_seed_corpus_classifies_existing_duplicate_when_classification_missing(
     assert operations == ["classify", "finalize"]
     assert unit_of_work.commit_calls == 2
     assert manifest.documents[0].classification_confidence == 0.79
+
+
+def test_seed_corpus_force_reparses_existing_duplicate_and_replaces_graph() -> None:
+    tmp_path = make_workspace_temp_dir()
+    truth_set_path = tmp_path / "retrieval_truth_set.md"
+    truth_set_path.write_text("truth set", encoding="utf-8")
+    input_directory = tmp_path / "docs"
+    input_directory.mkdir()
+    file_path = input_directory / "manual.pdf"
+    file_path.write_text("duplicate", encoding="utf-8")
+
+    dataset = build_dataset(
+        truth_set_path,
+        [
+            build_case(
+                case_id="D-003",
+                document_alias="manual_alias",
+                file_name=file_path.name,
+            )
+        ],
+    )
+    provisional_graph = build_document_graph(
+        document_id="doc_existing",
+        file_name=file_path.name,
+        file_path=str(file_path),
+        document_type=DocumentType.UNKNOWN,
+        chunk_texts=["provisional chunk"],
+    )
+    final_graph = build_document_graph(
+        document_id="doc_existing",
+        file_name=file_path.name,
+        file_path=str(file_path),
+        document_type=DocumentType.MANUAL,
+        chunk_texts=["final chunk"],
+        question_count=1,
+    )
+    file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(file_path)[0]
+    classification = build_document_classification(
+        document_id="doc_existing",
+        document_type=DocumentType.MANUAL,
+        confidence_score=0.92,
+    )
+    operations: list[str] = []
+    unit_of_work = FakeUnitOfWork()
+    seeder, _, parsing_workflow = build_seeder(
+        dataset=dataset,
+        operations=operations,
+        parsing_graphs_by_path={str(file_path): provisional_graph},
+        final_graphs_by_document_id={"doc_existing": final_graph},
+        duplicate_matches={file_hash: "doc_existing"},
+        classifications={"doc_existing": classification},
+        unit_of_work=unit_of_work,
+    )
+
+    manifest = seeder.seed_corpus(
+        truth_set_path=truth_set_path,
+        input_directory=input_directory,
+        force_reparse_existing=True,
+    )
+
+    assert len(parsing_workflow.calls) == 1
+    assert parsing_workflow.calls[0]["file_path"] == str(file_path)
+    assert operations == ["parse", "replace_graph", "classify", "finalize"]
+    assert unit_of_work.commit_calls == 3
+    assert manifest.documents[0].document_id == "doc_existing"
+    assert manifest.documents[0].seed_status == "reseeded_existing"
 
 
 def test_seed_corpus_rejects_conflicting_alias_mapping() -> None:

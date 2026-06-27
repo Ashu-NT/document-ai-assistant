@@ -13,8 +13,11 @@ from src.infrastructure.db.mappers import (
 )
 from src.infrastructure.db.orm_models import (
     ChunkORM,
+    ChunkClassificationORM,
     GeneratedQuestionORM,
     IdentifierORM,
+    ElementORM,
+    SectionORM,
 )
 from src.shared.exceptions import DatabaseError
 
@@ -29,6 +32,24 @@ class DocumentWriter:
         except SQLAlchemyError as exc:
             raise DatabaseError(
                 "Failed to save document graph.",
+                details={
+                    "document_id": document_graph.document.document_id,
+                    "section_count": len(document_graph.sections),
+                    "element_count": len(document_graph.elements),
+                    "chunk_count": len(document_graph.chunks),
+                },
+            ) from exc
+
+    def replace_document_graph(self, document_graph: DocumentGraph) -> None:
+        try:
+            document_id = document_graph.document.document_id
+            self.session.merge(DocumentMapper.to_orm(document_graph.document))
+            self._delete_document_chunk_artifacts(document_id)
+            self._delete_document_structure(document_id)
+            self._merge_document_graph(document_graph)
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to replace document graph.",
                 details={
                     "document_id": document_graph.document.document_id,
                     "section_count": len(document_graph.sections),
@@ -80,6 +101,11 @@ class DocumentWriter:
 
     def _delete_document_chunk_artifacts(self, document_id: str) -> None:
         self.session.execute(
+            delete(ChunkClassificationORM).where(
+                ChunkClassificationORM.document_id == document_id
+            )
+        )
+        self.session.execute(
             delete(GeneratedQuestionORM).where(
                 GeneratedQuestionORM.document_id == document_id
             )
@@ -92,5 +118,17 @@ class DocumentWriter:
         self.session.execute(
             delete(ChunkORM).where(
                 ChunkORM.document_id == document_id
+            )
+        )
+
+    def _delete_document_structure(self, document_id: str) -> None:
+        self.session.execute(
+            delete(ElementORM).where(
+                ElementORM.document_id == document_id
+            )
+        )
+        self.session.execute(
+            delete(SectionORM).where(
+                SectionORM.document_id == document_id
             )
         )
