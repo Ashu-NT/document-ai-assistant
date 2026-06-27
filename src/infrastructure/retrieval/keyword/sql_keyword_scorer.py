@@ -72,6 +72,24 @@ _MORPH_VARIANTS: dict[str, frozenset[str]] = {
 }
 
 
+def expand_query_terms_with_morph_variants(terms: list[str]) -> list[str]:
+    """Return *terms* plus any morphological variants not already present.
+
+    Used to widen SQL ILIKE candidate selection so that chunks whose text
+    contains only an inflected form (e.g. "Removal" for query term "removed",
+    or "Optimising" for "optimize") are retrieved as candidates before the
+    scorer's morph logic fires.
+    """
+    seen: set[str] = set(terms)
+    extra: list[str] = []
+    for term in terms:
+        for variant in _MORPH_VARIANTS.get(term, frozenset()):
+            if variant not in seen:
+                seen.add(variant)
+                extra.append(variant)
+    return terms + extra
+
+
 def _compact_alnum(s: str) -> str:
     return "".join(_ALNUM_TOKEN_RE.findall(s.lower()))
 
