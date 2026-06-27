@@ -806,3 +806,75 @@ def test_ancestor_tiebreaker_quantity_section_path() -> None:
         f"Oil Quantities section ({result_expected.total_score:.2f}) should outscore "
         f"Lubrication Schedule ({result_lubrication.total_score:.2f})"
     )
+
+
+# ---------------------------------------------------------------------------
+# expand_query_terms_with_morph_variants — SQL ILIKE candidate widening
+# ---------------------------------------------------------------------------
+
+def test_expand_query_terms_includes_morph_variants() -> None:
+    """expand_query_terms_with_morph_variants must return original terms plus
+    all morphological variants not already present."""
+    from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
+        expand_query_terms_with_morph_variants,
+    )
+
+    expanded = expand_query_terms_with_morph_variants(["removed"])
+    assert "removed" in expanded
+    assert "removal" in expanded
+    assert "remove" in expanded
+    assert "removing" in expanded
+
+
+def test_expand_query_terms_no_duplicates() -> None:
+    """When a variant is also an original term, it must not appear twice."""
+    from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
+        expand_query_terms_with_morph_variants,
+    )
+
+    expanded = expand_query_terms_with_morph_variants(["remove", "removed"])
+    assert expanded.count("remove") == 1
+    assert expanded.count("removed") == 1
+    # All other family members still present exactly once
+    for term in ("removal", "removing"):
+        assert expanded.count(term) == 1, f"'{term}' should appear exactly once, got {expanded.count(term)}"
+
+
+def test_expand_query_terms_unknown_term_returned_unchanged() -> None:
+    """Terms with no morph family are returned unchanged."""
+    from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
+        expand_query_terms_with_morph_variants,
+    )
+
+    expanded = expand_query_terms_with_morph_variants(["xyzunknownterm"])
+    assert expanded == ["xyzunknownterm"]
+
+
+def test_expand_query_terms_covers_optimize_family() -> None:
+    """Query term 'optimize' expands to include British spelling 'optimising',
+    fixing M-013 where the section title uses British spelling."""
+    from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
+        expand_query_terms_with_morph_variants,
+    )
+
+    expanded = expand_query_terms_with_morph_variants(["optimize"])
+    assert "optimising" in expanded, "'optimising' must be in expansion of 'optimize'"
+    assert "optimise" in expanded
+    assert "optimised" in expanded
+    assert "optimized" in expanded
+
+
+def test_expand_query_terms_preserves_original_term_order() -> None:
+    """Original terms appear first in the returned list, followed by new variants."""
+    from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
+        expand_query_terms_with_morph_variants,
+    )
+
+    terms = ["removal", "pump"]
+    expanded = expand_query_terms_with_morph_variants(terms)
+    assert expanded[0] == "removal"
+    assert expanded[1] == "pump"
+    # Variants appear after originals
+    for variant in ("remove", "removed", "removing"):
+        assert variant in expanded
+    assert "pumps" in expanded

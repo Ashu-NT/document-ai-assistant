@@ -10,6 +10,7 @@ from src.infrastructure.retrieval.keyword.sql_keyword_query_terms import (
 )
 from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
     SqlKeywordScorer,
+    expand_query_terms_with_morph_variants,
 )
 from src.shared.exceptions import DatabaseError
 
@@ -103,7 +104,8 @@ class SqlKeywordRepository:
         result_limit: int,
     ):
         patterns = [f"%{query_text}%"]
-        patterns.extend(f"%{term}%" for term in query_terms)
+        expanded_terms = expand_query_terms_with_morph_variants(query_terms)
+        patterns.extend(f"%{term}%" for term in expanded_terms)
         if retrieval_query is not None:
             patterns.extend(
                 f"%{identifier}%"

@@ -257,3 +257,88 @@ def test_sql_keyword_repository_boosts_matching_section_path_and_chunk_type() ->
 
     assert results[0].chunk_id == "chunk_specific"
     assert results[0].metadata["sql_section_path_match"] == "true"
+
+
+def test_sql_keyword_repository_scores_morph_variant_section_path_chunk() -> None:
+    """A chunk whose section path contains only a morphological variant of a query
+    term (e.g. 'Optimising' for query 'optimize') must still score above zero
+    so it can be returned from real DB searches via ILIKE morph expansion.
+
+    The FakeSession bypasses SQL filtering, so this test validates that the scorer
+    handles morph-variant section paths correctly — which is the second gate after
+    ILIKE candidate retrieval.
+    """
+    document = make_document(
+        document_id="doc_manual",
+        file_name="fwc12_manual.pdf",
+        title="FWC12 System Manual",
+        document_type=DocumentType.MANUAL,
+    )
+    morph_variant_chunk = make_chunk(
+        chunk_id="chunk_optimising",
+        document_id="doc_manual",
+        content=(
+            "Never set the air pressure higher than 2.0 bar. "
+            "Once the plug is established, optimum pressure is 0.6-0.8 bar."
+        ),
+        chunk_type=ChunkType.GENERAL,
+        section_path='["7 Components", "7.2 Food Waste Press", "Commissioning & Shutdown", "Setting & Optimising the Press Discharge"]',
+    )
+    competing_chunk = make_chunk(
+        chunk_id="chunk_other",
+        document_id="doc_manual",
+        content="General maintenance information for the food waste press system.",
+        chunk_type=ChunkType.GENERAL,
+        section_path='["1 General"]',
+    )
+    repository = SqlKeywordRepository(
+        FakeSession([(morph_variant_chunk, document), (competing_chunk, document)])
+    )
+    query = RetrievalQuery(
+        query_id="q_morph",
+        query_text="What air pressure should be used to optimize the food waste press discharge?",
+    )
+
+    results = repository.search_chunks(query)
+
+    assert len(results) > 0
+    morph_result = next((r for r in results if r.chunk_id == "chunk_optimising"), None)
+    assert morph_result is not None, "Morph-variant section chunk should be included in results"
+    assert morph_result.metadata["sql_section_path_match"] == "true", (
+        "'optimize' should match 'Optimising' in section path via morph family"
+    )
+
+
+def test_sql_keyword_repository_scores_removal_section_via_morph_variant() -> None:
+    """A chunk with 'Removal' in section path must score above zero for query
+    containing 'removed' — verifying that the morph family bridge works end-to-end
+    (ILIKE expansion in SQL + G2 section-path scoring)."""
+    document = make_document(
+        document_id="doc_manual",
+        file_name="fwc12_manual.pdf",
+        title="FWC12 System Manual",
+        document_type=DocumentType.MANUAL,
+    )
+    removal_chunk = make_chunk(
+        chunk_id="chunk_removal",
+        document_id="doc_manual",
+        content=(
+            "Pull the screen basket straight out carefully and as straight as possible. "
+            "After roughly half its length is pulled out, resistance reduces."
+        ),
+        chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+        section_path='["7 Components", "7.2 Food Waste Press", "Maintenance & Cleaning of the Screen Basket", "Removal of the Screen Basket"]',
+    )
+    repository = SqlKeywordRepository(FakeSession([(removal_chunk, document)]))
+    query = RetrievalQuery(
+        query_id="q_removal",
+        query_text="How is the screen basket removed from the food waste press?",
+    )
+
+    results = repository.search_chunks(query)
+
+    assert len(results) == 1
+    assert results[0].chunk_id == "chunk_removal"
+    assert results[0].metadata["sql_local_section_match"] == "true", (
+        "'removed' should match 'Removal' in local section path via morph family"
+    )
