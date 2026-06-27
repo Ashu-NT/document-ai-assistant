@@ -10,9 +10,13 @@ _RESET_MARKERS = {
     "table of contents",
     "contents",
 }
-_SECTION_NUMBER_PATTERN = re.compile(r"\b(\d+(?:\.\d+)+)\b")
-
-
+_LEADING_NUMBER_PATTERN = re.compile(
+    r"^\s*(?:chapter|section|part)?\s*(?P<number>\d+(?:\.\d+)*)\b",
+    re.IGNORECASE,
+)
+_TRAILING_NUMBER_PATTERN = re.compile(
+    r"(?P<prefix>.*?\S)\s+(?P<number>\d+\.\d+(?:\.\d+)*)\s*$"
+)
 def sanitize_section_path(
     section_path: list[str],
     *,
@@ -40,6 +44,13 @@ def sanitize_section_path(
         )
         if sibling_reset_index is not None:
             cleaned_parts = cleaned_parts[:sibling_reset_index]
+
+        numbering_reset_index = _find_numbering_conflict_reset_index(
+            cleaned_parts=cleaned_parts,
+            current_part=cleaned,
+        )
+        if numbering_reset_index is not None:
+            cleaned_parts = cleaned_parts[:numbering_reset_index]
 
         if (
             cleaned_parts
@@ -88,13 +99,69 @@ def _find_sibling_reset_index(
     return None
 
 
+def _find_numbering_conflict_reset_index(
+    *,
+    cleaned_parts: list[str],
+    current_part: str,
+) -> int | None:
+    current_number = _extract_section_number(current_part)
+    if current_number is None:
+        return None
+
+    numbered_indexes = [
+        index
+        for index, part in enumerate(cleaned_parts)
+        if _extract_section_number(part) is not None
+    ]
+    if not numbered_indexes:
+        return None
+
+    best_prefix_index = None
+    for index in numbered_indexes:
+        previous_number = _extract_section_number(cleaned_parts[index])
+        if previous_number is None:
+            continue
+        if current_number[: len(previous_number)] == previous_number:
+            best_prefix_index = index
+
+    if best_prefix_index is not None:
+        has_incompatible_descendant = any(
+            (
+                previous_number := _extract_section_number(cleaned_parts[index])
+            ) is not None
+            and current_number[: len(previous_number)] != previous_number
+            for index in numbered_indexes
+            if index > best_prefix_index
+        )
+        if has_incompatible_descendant:
+            return best_prefix_index + 1
+        return None
+
+    return numbered_indexes[0]
+
+
 def _extract_section_number(value: str | None) -> tuple[int, ...] | None:
-    normalized = _normalize(value)
-    match = _SECTION_NUMBER_PATTERN.search(normalized)
-    if match is None:
+    heading_number = _extract_heading_number_text(value)
+    if heading_number is None:
         return None
 
     try:
-        return tuple(int(part) for part in match.group(1).split("."))
+        return tuple(int(part) for part in heading_number.split("."))
     except ValueError:
         return None
+
+
+def _extract_heading_number_text(value: str | None) -> str | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+
+    leading_match = _LEADING_NUMBER_PATTERN.match(text)
+    if leading_match is not None:
+        return leading_match.group("number")
+
+    trailing_match = _TRAILING_NUMBER_PATTERN.match(text)
+    if trailing_match is None:
+        return None
+
+    return trailing_match.group("number")

@@ -159,3 +159,37 @@ def test_section_builder_resolves_trailing_numbered_manual_headings() -> None:
         "Commissioning & Shutdown 7.2.7",
         "7.2.7.3 Setting & Optimising the Press Discharge",
     ]
+
+
+def test_section_builder_ignores_filtered_headers_during_hierarchy_resolution() -> None:
+    elements = [
+        make_element("hdr_1", ElementType.SECTION_HEADER, "7 Components", 1, {"heading_level": 1}),
+        make_element("hdr_2", ElementType.SECTION_HEADER, "7.1 Macerators", 2, {"heading_level": 1}),
+        make_element(
+            "hdr_3",
+            ElementType.SECTION_HEADER,
+            "Commissioning & Shutdown 7.1.8",
+            3,
+            {"heading_level": 1},
+        ),
+        make_element(
+            "hdr_noise",
+            ElementType.SECTION_HEADER,
+            "Environmentally Responsible Solutions Engineered",
+            4,
+            {"heading_level": 1},
+        ),
+        make_element("hdr_4", ElementType.SECTION_HEADER, "Operation 7.1.9", 5, {"heading_level": 1}),
+        make_element("hdr_5", ElementType.SECTION_HEADER, "Trouble Shooting 7.1.10", 6, {"heading_level": 1}),
+        make_element("hdr_6", ElementType.SECTION_HEADER, "Maintenance 7.1.11", 7, {"heading_level": 1}),
+        make_element("txt_1", ElementType.TEXT, "Maintenance intervals", 8),
+    ]
+    builder = SectionBuilder(IdGenerator())
+
+    result = builder.build("doc_001", elements)
+
+    assert result.element_section_paths["txt_1"] == [
+        "7 Components",
+        "7.1 Macerators",
+        "Maintenance 7.1.11",
+    ]

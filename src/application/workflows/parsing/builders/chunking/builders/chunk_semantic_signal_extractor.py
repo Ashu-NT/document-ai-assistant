@@ -18,18 +18,26 @@ _TITLE_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "maintenance service",
     ),
     ChunkType.MAINTENANCE_INTERVAL: (
+        "maintenance table",
         "maintenance schedule",
         "service interval",
         "maintenance interval",
         "maintenance task",
+        "service life",
         "inspection interval",
         "inspection schedule",
+        "replacement intervals",
         "replacement interval",
         "lubrication schedule",
         "oil change interval",
+        "frequency",
     ),
     ChunkType.SAFETY_WARNING: (
         "safety",
+        "alarm condition",
+        "alarm conditions",
+        "warning condition",
+        "warning conditions",
         "warning",
         "warnings",
         "caution",
@@ -72,6 +80,8 @@ _TITLE_MARKERS: dict[ChunkType, tuple[str, ...]] = {
     ),
     ChunkType.INSTALLATION_INSTRUCTION: (
         "installation",
+        "electrical connection",
+        "pneumatic connection",
         "mounting",
         "assembly",
         "commissioning",
@@ -111,8 +121,10 @@ _CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "reinstall",
     ),
     ChunkType.MAINTENANCE_INTERVAL: (
+        "maintenance table",
         "maintenance interval",
         "maintenance intervals",
+        "maintenance schedule",
         "service interval",
         "inspection interval",
         "change interval",
@@ -120,9 +132,19 @@ _CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "daily use",
         "operating hours",
         "running hours",
+        "service life",
+        "frequency",
         "wear replacement",
     ),
     ChunkType.SAFETY_WARNING: (
+        "alarm condition",
+        "alarm conditions",
+        "warning condition",
+        "warning conditions",
+        "alarm relay",
+        "red alarm lamp",
+        "fault lamp",
+        "shut down immediately",
         "warning",
         "caution",
         "danger",
@@ -162,7 +184,6 @@ _CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "order number",
         "press type",
         "drive type",
-        "type",
         "specification",
         "year of manufacture",
         "flow rate",
@@ -181,6 +202,9 @@ _CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "attach",
         "secure",
         "align",
+        "electrical connection",
+        "pneumatic connection",
+        "wiring",
     ),
     ChunkType.OPERATION_INSTRUCTION: (
         "operate",
@@ -195,10 +219,12 @@ _CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "switch off supply voltage",
     ),
     ChunkType.CERTIFICATION_INFO: (
-        "ce",
+        "ce conformity",
+        "ce declaration",
+        "ce marking",
         "iec",
         "iso",
-        "ul",
+        "ul listed",
         "rohs",
     ),
 }
@@ -208,11 +234,28 @@ _CONTENT_SCORE_CAPS: dict[ChunkType, int] = {
     ChunkType.TROUBLESHOOTING: 4,
 }
 _TABLE_CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
+    ChunkType.MAINTENANCE_INTERVAL: (
+        "maintenance interval",
+        "maintenance intervals",
+        "maintenance schedule",
+        "maintenance table",
+        "service interval",
+        "replacement interval",
+        "replacement intervals",
+        "operating hours",
+        "running hours",
+        "service life",
+        "frequency",
+        "task",
+        "tasks",
+        "interval",
+        "done",
+        "comments",
+    ),
     ChunkType.TECHNICAL_SPECIFICATION: (
         "serial number",
         "model number",
         "order code",
-        "type",
         "drive type",
         "pump type",
         "press type",
@@ -252,6 +295,7 @@ _TABLE_CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
     ),
 }
 _TABLE_SIGNAL_THRESHOLDS: dict[ChunkType, int] = {
+    ChunkType.MAINTENANCE_INTERVAL: 2,
     ChunkType.TECHNICAL_SPECIFICATION: 2,
     ChunkType.TROUBLESHOOTING: 2,
     ChunkType.OPERATION_INSTRUCTION: 3,
@@ -398,7 +442,9 @@ class ChunkSemanticSignalExtractor:
         table_scores: dict[ChunkType, int],
     ) -> None:
         direct_table_type = None
-        if table_scores.get(ChunkType.TECHNICAL_SPECIFICATION, 0) >= 4:
+        if table_scores.get(ChunkType.MAINTENANCE_INTERVAL, 0) >= 3:
+            direct_table_type = ChunkType.MAINTENANCE_INTERVAL
+        elif table_scores.get(ChunkType.TECHNICAL_SPECIFICATION, 0) >= 4:
             direct_table_type = ChunkType.TECHNICAL_SPECIFICATION
         elif table_scores.get(ChunkType.TROUBLESHOOTING, 0) >= 4:
             direct_table_type = ChunkType.TROUBLESHOOTING
@@ -415,6 +461,17 @@ class ChunkSemanticSignalExtractor:
         if scores.get(ChunkType.INSTALLATION_INSTRUCTION, 0) > 0:
             scores[ChunkType.INSTALLATION_INSTRUCTION] = min(
                 scores[ChunkType.INSTALLATION_INSTRUCTION],
+                2,
+            )
+        if (
+            direct_table_type in {
+                ChunkType.MAINTENANCE_INTERVAL,
+                ChunkType.TROUBLESHOOTING,
+            }
+            and scores.get(ChunkType.TECHNICAL_SPECIFICATION, 0) > 0
+        ):
+            scores[ChunkType.TECHNICAL_SPECIFICATION] = min(
+                scores[ChunkType.TECHNICAL_SPECIFICATION],
                 2,
             )
 
@@ -447,7 +504,13 @@ class ChunkSemanticSignalExtractor:
         if not text:
             return 0
 
-        return sum(1 for marker in markers if marker in text)
+        padded_text = f" {text} "
+        hits = 0
+        for marker in markers:
+            normalized_marker = ChunkSemanticSignalExtractor._normalize_text(marker)
+            if normalized_marker and f" {normalized_marker} " in padded_text:
+                hits += 1
+        return hits
 
     @staticmethod
     def _normalize_text(value: str | None) -> str:

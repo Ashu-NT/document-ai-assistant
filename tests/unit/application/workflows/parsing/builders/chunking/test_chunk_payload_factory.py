@@ -194,6 +194,72 @@ class TestEmbeddingTextIncludesAliases:
         assert "Related terms:" not in payload.embedding_text
 
 
+    def test_manual_maintenance_table_embedding_text_includes_headers_and_row_labels(
+        self,
+    ) -> None:
+        factory = ChunkPayloadFactory()
+        fragment = _make_fragment(
+            text=(
+                "Lubrication schedule\n\n"
+                "| Description | Interval | Refers to |\n"
+                "| --- | --- | --- |\n"
+                "| Grease bearings | Every 500 h | Main shaft |\n"
+                "| Inspect seal | Every 1000 h | Pump housing |"
+            ),
+            section_path=["7 Components", "7.3 Vacuum Pump", "Lubrication Schedule"],
+            section_title="Lubrication Schedule",
+            chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+        )
+        payload = factory.build_payload(
+            document_title="Manual",
+            fragments=[fragment],
+        )
+        assert "Chunk type: maintenance interval" in payload.embedding_text
+        assert "Table headers: Description, Interval, Refers to" in payload.embedding_text
+        assert "Row labels: Grease bearings, Inspect seal" in payload.embedding_text
+        assert "Related terms:" in payload.embedding_text
+
+    def test_troubleshooting_table_embedding_text_includes_fault_headers(self) -> None:
+        factory = ChunkPayloadFactory()
+        fragment = _make_fragment(
+            text=(
+                "Troubleshooting table\n\n"
+                "| Fault | Possible cause | Remedy |\n"
+                "| --- | --- | --- |\n"
+                "| Pump will not start | Blown fuse | Replace fuse |\n"
+                "| Low pressure | Air leak | Tighten suction line |"
+            ),
+            section_path=["8 Service", "8.4 Troubleshooting", "Fault table"],
+            section_title="Fault table",
+            chunk_type=ChunkType.TROUBLESHOOTING,
+        )
+        payload = factory.build_payload(
+            document_title="Manual",
+            fragments=[fragment],
+        )
+        assert "Chunk type: troubleshooting" in payload.embedding_text
+        assert "Table headers: Fault, Possible cause, Remedy" in payload.embedding_text
+        assert "Row labels: Pump will not start, Low pressure" in payload.embedding_text
+        assert "Related terms: fault diagnosis" in payload.embedding_text
+
+    def test_manual_procedure_embedding_text_includes_chunk_type_and_component(self) -> None:
+        factory = ChunkPayloadFactory()
+        fragment = _make_fragment(
+            text="Remove the screen basket, inspect the seals, and reinstall the cover.",
+            section_path=["7 Components", "7.2 Food Waste Press", "Screen Basket Removal"],
+            section_title="Screen Basket Removal",
+            chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+        )
+        payload = factory.build_payload(
+            document_title="Manual",
+            fragments=[fragment],
+        )
+        assert "Chunk type: maintenance procedure" in payload.embedding_text
+        assert "Section: Screen Basket Removal" in payload.embedding_text
+        assert "Component: 7.2 Food Waste Press" in payload.embedding_text
+        assert "Related terms: maintenance procedure" in payload.embedding_text
+
+
 class TestMaintenanceSpecAliasHelper:
     def test_grease_content_triggers_lubrication_aliases(self) -> None:
         result = _maintenance_spec_aliases(

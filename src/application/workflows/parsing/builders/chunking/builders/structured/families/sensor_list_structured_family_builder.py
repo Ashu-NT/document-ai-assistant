@@ -36,7 +36,7 @@ class SensorListStructuredFamilyBuilder:
         context: StructuredFamilyContext,
         marker_tuning: StructuredFamilyMarkerTuning | None,
     ) -> StructuredFamilySpecSelection:
-        if not context.contains_any(SENSOR_DOCUMENT_MARKERS):
+        if not context.local_contains_any(SENSOR_DOCUMENT_MARKERS):
             return StructuredFamilySpecSelection()
 
         base_path = sanitized_base_path(
@@ -128,4 +128,4 @@ class SensorListStructuredFamilyBuilder:
             )
         ):
             return False
-        return context.contains_any(markers)
+        return context.local_contains_any(markers)

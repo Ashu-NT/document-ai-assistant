@@ -16,8 +16,7 @@ from src.application.workflows.parsing.builders.chunking.text.section_path_sanit
     sanitize_section_path,
 )
 from src.application.services.ai.chunk_embedding_enricher import (
-    ENRICHED_CHUNK_TYPES as _ENRICHED_CHUNK_TYPES,
-    maintenance_spec_aliases as _maintenance_spec_aliases,
+    enrich_embedding_text,
 )
 from src.domain.common import ChunkType
 
@@ -149,20 +148,15 @@ class ChunkPayloadFactory:
 
         if section_path:
             parts.append(f"Section path: {' > '.join(section_path)}")
-            if chunk_type in _ENRICHED_CHUNK_TYPES:
-                local_title = section_path[-1]
-                parts.append(f"Section: {local_title}")
-                if len(section_path) >= 2:
-                    parts.append(f"Component: {section_path[-2]}")
 
         parts.append(content)
-
-        if chunk_type in _ENRICHED_CHUNK_TYPES:
-            aliases = _maintenance_spec_aliases(content=content, section_path=section_path)
-            if aliases:
-                parts.append(f"Related terms: {aliases}")
-
-        return "\n\n".join(part for part in parts if part).strip()
+        base_text = "\n\n".join(part for part in parts if part).strip()
+        return enrich_embedding_text(
+            base_text=base_text,
+            chunk_type=chunk_type or ChunkType.UNKNOWN,
+            section_path=section_path,
+            content=content,
+        )
 
     @staticmethod
     def _min_fragment_page(fragments: list[ChunkFragment]) -> int | None:

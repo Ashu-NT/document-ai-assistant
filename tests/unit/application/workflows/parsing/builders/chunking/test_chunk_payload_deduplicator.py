@@ -174,3 +174,29 @@ def test_structured_evidence_wins_over_overview_duplicate() -> None:
     assert len(result.payloads) == 1
     assert result.payloads[0].chunk_type == ChunkType.TECHNICAL_SPECIFICATION
     assert result.diagnostics[0]["reason"] == "overview_duplicate"
+
+
+def test_maintenance_interval_wins_over_duplicate_technical_specification_table() -> None:
+    deduplicator = ChunkPayloadDeduplicator()
+    table_content = (
+        "| Description | Interval | Refers to |\n"
+        "| Clean rotor | monthly | macerator |\n"
+        "| Inspect seal | yearly | macerator |"
+    )
+    technical_payload = make_payload(
+        content=table_content,
+        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+        table_ids=["table_maintenance"],
+        section_path=["Sensor List"],
+    )
+    maintenance_payload = make_payload(
+        content=table_content,
+        chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+        table_ids=["table_maintenance"],
+        section_path=["7 Components", "7.1 Macerators", "Maintenance", "Maintenance Intervals"],
+    )
+
+    result = deduplicator.deduplicate([technical_payload, maintenance_payload])
+
+    assert len(result.payloads) == 1
+    assert result.payloads[0].chunk_type == ChunkType.MAINTENANCE_INTERVAL

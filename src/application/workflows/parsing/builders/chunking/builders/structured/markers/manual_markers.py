@@ -31,6 +31,8 @@ MANUAL_MAINTENANCE_PROCEDURE_MARKERS = (
 )
 
 MANUAL_MAINTENANCE_INTERVAL_MARKERS = (
+    "maintenance table",
+    "maintenance schedule",
     "maintenance interval",
     "maintenance intervals",
     "service interval",
@@ -38,6 +40,10 @@ MANUAL_MAINTENANCE_INTERVAL_MARKERS = (
     "operating hours",
     "running hours",
     "preventive maintenance",
+    "service life",
+    "replacement interval",
+    "replacement intervals",
+    "frequency",
     "daily use",
     "monthly",
     "yearly",
@@ -102,6 +108,13 @@ MANUAL_SHUTDOWN_MARKERS = (
 
 MANUAL_SAFETY_MARKERS = (
     "safety",
+    "alarm condition",
+    "alarm conditions",
+    "warning condition",
+    "warning conditions",
+    "alarm relay",
+    "fault lamp",
+    "shut down immediately",
     "warning",
     "hazard",
     "precaution",
@@ -120,6 +133,9 @@ MANUAL_LUBRICATION_MARKERS = (
 
 MANUAL_INSTALLATION_MARKERS = (
     "installation",
+    "electrical connection",
+    "pneumatic connection",
+    "wiring",
     "mounting",
     "assemble",
     "fit",

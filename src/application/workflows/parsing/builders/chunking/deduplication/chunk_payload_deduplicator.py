@@ -110,9 +110,10 @@ class ChunkPayloadDeduplicator:
     def _representative_sort_key(
         payload: ChunkPayload,
         signature: ChunkPayloadSignature,
-    ) -> tuple[int, int, int, int]:
+    ) -> tuple[int, int, int, int, int]:
         return (
             ChunkPayloadDeduplicator._category_rank(payload, signature),
+            ChunkPayloadDeduplicator._semantic_priority_rank(payload),
             len(signature.stripped_token_set),
             payload.page_start or payload.page_end or 10**6,
             len(payload.content),
@@ -143,6 +144,30 @@ class ChunkPayloadDeduplicator:
         }:
             return 3
         return 1
+
+    @staticmethod
+    def _semantic_priority_rank(payload: ChunkPayload) -> int:
+        if payload.chunk_type == ChunkType.SPARE_PARTS_TABLE:
+            return 0
+        if payload.chunk_type in {
+            ChunkType.MAINTENANCE_INTERVAL,
+            ChunkType.TROUBLESHOOTING,
+        }:
+            return 1
+        if payload.chunk_type in {
+            ChunkType.MAINTENANCE_PROCEDURE,
+            ChunkType.INSTALLATION_INSTRUCTION,
+            ChunkType.OPERATION_INSTRUCTION,
+            ChunkType.SAFETY_WARNING,
+        }:
+            return 2
+        if payload.chunk_type == ChunkType.TECHNICAL_SPECIFICATION:
+            return 3
+        if payload.chunk_type == ChunkType.CERTIFICATION_INFO:
+            return 4
+        if payload.chunk_type == ChunkType.OVERVIEW:
+            return 6
+        return 5
 
     @staticmethod
     def _diagnostic_for_group(group: dict[str, object]) -> dict[str, object]:

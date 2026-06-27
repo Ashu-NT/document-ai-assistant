@@ -56,10 +56,10 @@ class ManualStructuredFamilyBuilder:
             return StructuredFamilySpecSelection()
         if (
             not context.has_known_document_type()
-            and not context.contains_any(MANUAL_DOCUMENT_MARKERS)
+            and not context.local_contains_any(MANUAL_DOCUMENT_MARKERS)
         ):
             return StructuredFamilySpecSelection()
-        if context.contains_any(SENSOR_DOCUMENT_MARKERS):
+        if context.local_contains_any(SENSOR_DOCUMENT_MARKERS):
             return StructuredFamilySpecSelection()
 
         base_path = sanitized_base_path(
@@ -67,7 +67,9 @@ class ManualStructuredFamilyBuilder:
             section_title=context.section.title,
             document_title=context.document_title,
         )
-        has_interval_signal = context.contains_any(MANUAL_MAINTENANCE_INTERVAL_MARKERS)
+        has_interval_signal = context.local_contains_any(
+            MANUAL_MAINTENANCE_INTERVAL_MARKERS
+        )
         base_has_operation_path = path_contains_markers(base_path, MANUAL_OPERATION_MARKERS)
         base_has_maintenance_path = path_contains_markers(
             base_path,

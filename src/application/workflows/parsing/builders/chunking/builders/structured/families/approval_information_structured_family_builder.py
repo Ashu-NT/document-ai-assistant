@@ -37,7 +37,7 @@ class ApprovalInformationStructuredFamilyBuilder:
     ) -> StructuredFamilySpecSelection:
         if context.matches_document_type(DocumentType.CERTIFICATE):
             return StructuredFamilySpecSelection()
-        if not context.contains_any(_APPROVAL_INFORMATION_MARKERS):
+        if not context.local_contains_any(_APPROVAL_INFORMATION_MARKERS):
             return StructuredFamilySpecSelection()
 
         return StructuredFamilySpecSelection(
@@ -73,7 +73,7 @@ class ApprovalInformationStructuredFamilyBuilder:
             path.append(current_title)
 
         if (
-            context.contains_any(("basic specifications",))
+            context.local_contains_any(("basic specifications",))
             or "extended order code" in ApprovalInformationStructuredFamilyBuilder._normalize(
                 current_title
             )
