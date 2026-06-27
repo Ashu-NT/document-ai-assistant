@@ -99,7 +99,7 @@ class StructuredSectionFragmentBuilder:
         ]
         if not anchor_indexes:
             if spec.include_full_section_if_no_anchor and elements:
-                anchor_indexes = [0]
+                return [list(elements)]
             else:
                 return []
 

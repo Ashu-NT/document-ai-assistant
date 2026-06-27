@@ -442,6 +442,61 @@ def test_fragment_builder_detects_datasheet_installation_maintenance_from_generi
     assert "commissioning" in installation_maintenance.text.lower()
 
 
+def test_fragment_builder_does_not_bleed_datasheet_connection_family_into_manual_maintenance() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_manual_maintenance",
+        title="Maintenance 7.1.11",
+        section_path=["7 Components", "7.1 Macerators", "Maintenance 7.1.11"],
+        page=32,
+    )
+    elements = [
+        make_element(
+            element_id="txt_manual_001",
+            text="Maintenance Intervals",
+            page=32,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_manual_002",
+            text=(
+                "Preventive maintenance 1 first time after 1 month use, then after 1 year. "
+                "Check electrical connections. Check pipe connections for leaks."
+            ),
+            page=32,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="FWC12 Technical Manual",
+        document_type=DocumentType.MANUAL,
+        section=section,
+        elements=elements,
+        document_sections_combined_text=(
+            "Technical Data / Specification > Ordering example > Operating limits"
+        ),
+    )
+
+    assert not any(
+        fragment.section_path == ["CONNECTION"] for fragment in fragments
+    )
+    assert not any(
+        fragment.section_path == ["Technical Data / Specification"]
+        for fragment in fragments
+    )
+    assert any(
+        fragment.section_path
+        == [
+            "7 Components",
+            "7.1 Macerators",
+            "Maintenance 7.1.11",
+            "Maintenance Intervals",
+        ]
+        for fragment in fragments
+    )
+
+
 def test_fragment_builder_detects_maintenance_intervals_without_specific_hour_values() -> None:
     builder = make_builder()
     section = make_section(
@@ -568,6 +623,50 @@ def test_fragment_builder_detects_hyphenated_troubleshooting_heading() -> None:
         "7.3 Vacuum / Transfer Pump",
         "Trouble-Shooting 7.3.10",
     ]
+
+
+def test_fragment_builder_uses_full_section_when_path_identifies_troubleshooting() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_005b",
+        title="Trouble-Shooting 7.3.10",
+        section_path=[
+            "7 Components",
+            "7.3 Vacuum / Transfer Pump",
+            "Trouble-Shooting 7.3.10",
+        ],
+        page=5,
+    )
+    elements = [
+        make_element(
+            element_id="txt_041c",
+            text="The pump will not start.",
+            page=5,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_041d",
+            text="Possible causes and remedies are listed in the table below.",
+            page=5,
+            reading_order=2,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="Service manual",
+        document_type=DocumentType.MANUAL,
+        section=section,
+        elements=elements,
+    )
+
+    troubleshooting = next(
+        fragment
+        for fragment in fragments
+        if fragment.chunk_type == ChunkType.TROUBLESHOOTING
+    )
+
+    assert "The pump will not start." in troubleshooting.text
+    assert "Possible causes and remedies" in troubleshooting.text
 
 
 def test_fragment_builder_keeps_certificate_identification_table_out_of_general_information() -> None:

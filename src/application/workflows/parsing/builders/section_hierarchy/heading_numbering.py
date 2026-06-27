@@ -4,6 +4,9 @@ import re
 _LEADING_NUMBER_PATTERN = re.compile(
     r"^\s*(?P<number>\d+(?:\.\d+)*)\b"
 )
+_TRAILING_NUMBER_PATTERN = re.compile(
+    r"(?P<prefix>.*?\S)\s+(?P<number>\d+\.\d+(?:\.\d+)*)\s*$"
+)
 _CHAPTER_NUMBER_PATTERN = re.compile(
     r"^\s*(?:chapter|section|part)\s+(?P<number>\d+(?:\.\d+)*)\b",
     re.IGNORECASE,
@@ -23,10 +26,14 @@ def extract_heading_number(text: str | None) -> str | None:
         return chapter_match.group("number")
 
     match = _LEADING_NUMBER_PATTERN.match(text)
-    if match is None:
+    if match is not None:
+        return match.group("number")
+
+    trailing_match = _TRAILING_NUMBER_PATTERN.match(text.strip())
+    if trailing_match is None:
         return None
 
-    return match.group("number")
+    return trailing_match.group("number")
 
 
 def extract_contextual_number(text: str | None) -> str | None:
@@ -49,10 +56,14 @@ def strip_heading_number(text: str | None) -> str:
         return stripped.strip(" .:-")
 
     match = _LEADING_NUMBER_PATTERN.match(text)
-    if match is None:
+    if match is not None:
+        return text[match.end() :].strip(" .:-")
+
+    trailing_match = _TRAILING_NUMBER_PATTERN.match(text.strip())
+    if trailing_match is None:
         return text.strip()
 
-    return text[match.end() :].strip(" .:-")
+    return trailing_match.group("prefix").strip(" .:-")
 
 
 def numbering_depth(numbering: str | None) -> int | None:

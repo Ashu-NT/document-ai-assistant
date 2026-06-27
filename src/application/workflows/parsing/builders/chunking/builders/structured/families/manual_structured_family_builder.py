@@ -68,6 +68,28 @@ class ManualStructuredFamilyBuilder:
             document_title=context.document_title,
         )
         has_interval_signal = context.contains_any(MANUAL_MAINTENANCE_INTERVAL_MARKERS)
+        base_has_operation_path = path_contains_markers(base_path, MANUAL_OPERATION_MARKERS)
+        base_has_maintenance_path = path_contains_markers(
+            base_path,
+            MANUAL_MAINTENANCE_PROCEDURE_MARKERS,
+        )
+        base_has_interval_path = path_contains_markers(
+            base_path,
+            MANUAL_MAINTENANCE_INTERVAL_MARKERS,
+        ) or path_contains_markers(base_path, MANUAL_LUBRICATION_MARKERS)
+        base_has_troubleshooting_path = path_contains_markers(
+            base_path,
+            _TROUBLESHOOTING_PATH_MARKERS,
+        )
+        base_has_commissioning_path = path_contains_markers(
+            base_path,
+            _COMMISSIONING_PATH_MARKERS,
+        )
+        base_has_shutdown_path = path_contains_markers(
+            base_path,
+            _SHUTDOWN_PATH_MARKERS,
+        )
+        base_has_safety_path = path_contains_markers(base_path, _SAFETY_PATH_MARKERS)
         return StructuredFamilySpecSelection(
             specs=[
                 StructuredSectionWindowSpec(
@@ -79,9 +101,9 @@ class ManualStructuredFamilyBuilder:
                         marker_tuning=marker_tuning,
                     ),
                     chunk_type=ChunkType.OPERATION_INSTRUCTION,
-                    radius_before=2,
-                    radius_after=10,
-                    combine_all_windows=True,
+                    radius_before=1,
+                    radius_after=6,
+                    include_full_section_if_no_anchor=base_has_operation_path,
                 ),
                 *(
                     []
@@ -96,8 +118,9 @@ class ManualStructuredFamilyBuilder:
                                 marker_tuning=marker_tuning,
                             ),
                             chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
-                            radius_before=2,
-                            radius_after=12,
+                            radius_before=1,
+                            radius_after=6,
+                            include_full_section_if_no_anchor=base_has_maintenance_path,
                         )
                     ]
                 ),
@@ -111,14 +134,14 @@ class ManualStructuredFamilyBuilder:
                     ),
                     chunk_type=ChunkType.MAINTENANCE_INTERVAL,
                     radius_before=1,
-                    radius_after=18,
-                    combine_all_windows=True,
+                    radius_after=8,
+                    include_full_section_if_no_anchor=base_has_interval_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_TROUBLESHOOTING,
                     section_path=(
                         base_path
-                        if path_contains_markers(base_path, _TROUBLESHOOTING_PATH_MARKERS)
+                        if base_has_troubleshooting_path
                         else append_label_if_missing(base_path, "Troubleshooting")
                     ),
                     anchor_markers=extend_markers(
@@ -128,8 +151,8 @@ class ManualStructuredFamilyBuilder:
                     ),
                     chunk_type=ChunkType.TROUBLESHOOTING,
                     radius_before=2,
-                    radius_after=18,
-                    combine_all_windows=True,
+                    radius_after=10,
+                    include_full_section_if_no_anchor=base_has_troubleshooting_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_SPARE_PARTS,
@@ -161,15 +184,15 @@ class ManualStructuredFamilyBuilder:
                         marker_tuning=marker_tuning,
                     ),
                     chunk_type=ChunkType.OPERATION_INSTRUCTION,
-                    radius_before=2,
-                    radius_after=12,
-                    combine_all_windows=True,
+                    radius_before=1,
+                    radius_after=6,
+                    include_full_section_if_no_anchor=base_has_commissioning_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_SHUTDOWN,
                     section_path=(
                         base_path
-                        if path_contains_markers(base_path, _SHUTDOWN_PATH_MARKERS)
+                        if base_has_shutdown_path
                         else append_label_if_missing(base_path, "Shutdown")
                     ),
                     anchor_markers=extend_markers(
@@ -178,15 +201,15 @@ class ManualStructuredFamilyBuilder:
                         marker_tuning=marker_tuning,
                     ),
                     chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
-                    radius_before=2,
-                    radius_after=12,
-                    combine_all_windows=True,
+                    radius_before=1,
+                    radius_after=6,
+                    include_full_section_if_no_anchor=base_has_shutdown_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_SAFETY_INSTRUCTIONS,
                     section_path=(
                         base_path
-                        if path_contains_markers(base_path, _SAFETY_PATH_MARKERS)
+                        if base_has_safety_path
                         else append_label_if_missing(base_path, "Safety Instructions")
                     ),
                     anchor_markers=extend_markers(
@@ -196,8 +219,8 @@ class ManualStructuredFamilyBuilder:
                     ),
                     chunk_type=ChunkType.SAFETY_WARNING,
                     radius_before=1,
-                    radius_after=10,
-                    combine_all_windows=True,
+                    radius_after=8,
+                    include_full_section_if_no_anchor=base_has_safety_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_LUBRICATION,
@@ -209,8 +232,8 @@ class ManualStructuredFamilyBuilder:
                     ),
                     chunk_type=ChunkType.MAINTENANCE_INTERVAL,
                     radius_before=1,
-                    radius_after=12,
-                    combine_all_windows=True,
+                    radius_after=8,
+                    include_full_section_if_no_anchor=base_has_interval_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_INSTALLATION,
@@ -222,8 +245,11 @@ class ManualStructuredFamilyBuilder:
                     ),
                     chunk_type=ChunkType.INSTALLATION_INSTRUCTION,
                     radius_before=1,
-                    radius_after=10,
-                    combine_all_windows=True,
+                    radius_after=6,
+                    include_full_section_if_no_anchor=path_contains_markers(
+                        base_path,
+                        MANUAL_INSTALLATION_MARKERS,
+                    ),
                 ),
             ]
         )

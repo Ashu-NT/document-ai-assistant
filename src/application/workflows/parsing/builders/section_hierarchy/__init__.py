@@ -14,6 +14,12 @@ from src.application.workflows.parsing.builders.section_hierarchy.section_hierar
 from src.application.workflows.parsing.builders.section_hierarchy.section_hierarchy_strategy import (
     SectionHierarchyStrategy,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.section_header_filter import (
+    SectionHeaderFilter,
+)
+from src.application.workflows.parsing.builders.section_hierarchy.section_path_relinker import (
+    SectionPathRelinker,
+)
 from src.application.workflows.parsing.builders.section_hierarchy.section_stack_builder import (
     SectionStackBuilder,
 )
@@ -25,9 +31,11 @@ __all__ = [
     "HeadingLevelStrategy",
     "LayoutHeuristicStrategy",
     "NumberingHierarchyStrategy",
+    "SectionHeaderFilter",
     "SectionHierarchyResolution",
     "SectionHierarchyResolver",
     "SectionHierarchyStrategy",
+    "SectionPathRelinker",
     "SectionStackBuilder",
     "TocPageRangeStrategy",
 ]
