@@ -2,24 +2,24 @@
 
 ## Summary
 - cases: `110`
-- anchor hit rate: `0.845`
-- context hit rate: `0.855`
-- MRR: `0.703`
-- recall@1 / @3 / @5 / @10: `0.600` / `0.800` / `0.836` / `0.845`
-- identifier top-1 accuracy: `0.704`
-- section-path accuracy: `0.836`
-- evidence completeness: `0.845`
-- rank-target satisfaction: `0.827`
+- anchor hit rate: `0.891`
+- context hit rate: `0.900`
+- MRR: `0.763`
+- recall@1 / @3 / @5 / @10: `0.682` / `0.827` / `0.864` / `0.891`
+- identifier top-1 accuracy: `0.815`
+- section-path accuracy: `0.882`
+- evidence completeness: `0.891`
+- rank-target satisfaction: `0.855`
 
 ## Breakdown by Document Family
 
 | Group | Cases | Hit Rate | Context Hit Rate | Recall@3 | MRR | Rank Target |
 |---|---:|---:|---:|---:|---:|---:|
-| certificate | 25 | 0.920 | 0.920 | 0.800 | 0.730 | 0.880 |
-| datasheet | 16 | 0.812 | 0.875 | 0.812 | 0.656 | 0.812 |
+| certificate | 25 | 0.920 | 0.920 | 0.760 | 0.727 | 0.840 |
+| datasheet | 16 | 0.875 | 0.938 | 0.875 | 0.781 | 0.875 |
 | drawing | 11 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
-| manual | 33 | 0.697 | 0.697 | 0.667 | 0.577 | 0.667 |
-| report | 25 | 0.920 | 0.920 | 0.880 | 0.743 | 0.920 |
+| manual | 33 | 0.788 | 0.788 | 0.788 | 0.727 | 0.788 |
+| report | 25 | 0.960 | 0.960 | 0.840 | 0.732 | 0.880 |
 
 ## Breakdown by Query Type
 
@@ -27,58 +27,23 @@
 |---|---:|---:|---:|---:|---:|---:|
 | drawing_lookup | 3 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
 | factual_lookup | 3 | 0.667 | 0.667 | 0.667 | 0.667 | 0.667 |
-| identifier_lookup | 22 | 0.909 | 0.909 | 0.864 | 0.820 | 0.864 |
-| identifier_semantic_lookup | 1 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
-| identifier_table_lookup | 4 | 1.000 | 1.000 | 1.000 | 0.708 | 1.000 |
-| maintenance_interval_lookup | 7 | 0.714 | 0.714 | 0.714 | 0.619 | 0.714 |
-| maintenance_spec_lookup | 1 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 |
+| identifier_lookup | 22 | 0.909 | 0.955 | 0.864 | 0.852 | 0.864 |
+| identifier_semantic_lookup | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| identifier_table_lookup | 4 | 1.000 | 1.000 | 1.000 | 0.833 | 1.000 |
+| maintenance_interval_lookup | 7 | 0.714 | 0.714 | 0.571 | 0.586 | 0.571 |
+| maintenance_spec_lookup | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
 | operation_lookup | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
-| procedure_lookup | 11 | 0.818 | 0.818 | 0.727 | 0.598 | 0.818 |
+| procedure_lookup | 11 | 0.909 | 0.909 | 0.727 | 0.670 | 0.818 |
 | safety_lookup | 3 | 0.667 | 0.667 | 0.667 | 0.667 | 0.667 |
 | safety_semantic_lookup | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
 | semantic_list_lookup | 4 | 1.000 | 1.000 | 0.750 | 0.562 | 1.000 |
 | semantic_location_lookup | 1 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
-| semantic_lookup | 5 | 0.600 | 0.600 | 0.600 | 0.400 | 0.600 |
-| specification_lookup | 15 | 0.800 | 0.867 | 0.800 | 0.700 | 0.800 |
-| table_lookup | 26 | 0.923 | 0.923 | 0.846 | 0.762 | 0.885 |
-| troubleshooting_lookup | 2 | 1.000 | 1.000 | 1.000 | 0.500 | 1.000 |
+| semantic_lookup | 5 | 0.800 | 0.800 | 0.800 | 0.600 | 0.800 |
+| specification_lookup | 15 | 0.867 | 0.867 | 0.867 | 0.800 | 0.867 |
+| table_lookup | 26 | 0.923 | 0.923 | 0.846 | 0.757 | 0.885 |
+| troubleshooting_lookup | 2 | 1.000 | 1.000 | 1.000 | 0.750 | 1.000 |
 
 ## Failure Diagnostics
-
-### `M-002` What are the press type and serial number of the food waste press?
-
-- query type: `identifier_lookup`
-- expected document: `manual_fwc12`
-- expected file: `19P006-31-FWC12-5-1-0_Manual.pdf`
-- expected section path: `Technical Data / Specification`
-- expected page: `50`
-- expected rank target: `top_3`
-- anchor matched rank: `5`
-- context matched rank: `5`
-- expected passage: `Press Type TSP20; Serial Number 221010004Z507.`
-- failure reasons:
-  - Anchor retrieval found relevant evidence, but later than the expected top_3 target (matched rank: 5).
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_cf34523fa0fa41f5800029eee4de928e | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.400 | 50 | 7 Components > 7.2 Food Waste Press > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
-| 2 | chunk_e5d285ef989f40ec9efbc5c4383ee24f | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 19.900 | 57 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 > Spare Parts | Context: EATEE |
-| 3 | chunk_ec03b4b4a2ad4870ad1c46a5ba34e6fc | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 19.900 | 60 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Discharge Chute Removed > Removal of the Press Zone | Context: 3 |
-| 4 | chunk_4e9a042f8b9a42a49f953deb021d172f | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 19.400 | 56 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 | Take Note: Only original spare and wear parts may be used. Other parts are not warranted. |
-| 5 | chunk_074d86e05ef246879d542632a09218c4 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 18.750 | 50 | Technical Data / Specification | | Press Type | TSP20 | |----------------------------------|-------------------------------------| | Serial Number | 221010004Z507 | | Drive Type | BF30 | | Drive Specification |... |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_cf34523fa0fa41f5800029eee4de928e | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.400 | 50 | 7 Components > 7.2 Food Waste Press > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
-| 2 | chunk_e5d285ef989f40ec9efbc5c4383ee24f | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 19.900 | 57 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 > Spare Parts | Context: EATEE |
-| 3 | chunk_ec03b4b4a2ad4870ad1c46a5ba34e6fc | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 19.900 | 60 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Discharge Chute Removed > Removal of the Press Zone | Context: 3 |
-| 4 | chunk_4e9a042f8b9a42a49f953deb021d172f | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 19.400 | 56 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 | Take Note: Only original spare and wear parts may be used. Other parts are not warranted. |
-| 5 | chunk_074d86e05ef246879d542632a09218c4 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 18.750 | 50 | Technical Data / Specification | | Press Type | TSP20 | |----------------------------------|-------------------------------------| | Serial Number | 221010004Z507 | | Drive Type | BF30 | | Drive Specification |... |
 
 ### `M-004` What does the FWC system do?
 
@@ -101,60 +66,22 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_42420bb8872c4df2b976b517512d4281 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 11.700 | 17 | Title block |  Plant drawings (GA, P&ID)  Installation, Operation and Maintenance Manuals  Spare Parts List  Materials Safety Data Sheets |
-| 2 | chunk_69589d1f12f2465da9b190c8173ebcd9 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 11.700 | 27 | 7 Components > 7.1 Macerators > Macerator Description 7.1.2 | Discharge cone is pre-mounted with the following:  water flushing nozzles  solenoid valve G½" 24Vdc  inline strainer G½", with R½" external thread  safety interlock switch |
-| 3 | chunk_7597f1d1be664d72912d5d3321b0bb6f | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 11.700 | 41 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
-| 4 | chunk_cb83e7b4cbdc4ad1832ad51105c3755e | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 11.700 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P17 P18 P15 P14 P13 ® ® P16 |
-| 5 | chunk_c4aac1dfa74e4ee486b24930624cda73 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 11.700 | 43 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P12 P11 P9 P10 P3 P8 P4 P5 P6 P2 P7 P1 |
+| 1 | chunk_823d2be76af2401c88c4146e77e1c844 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 18.700 | 14 | 4 Installation | Lifting connections should only be made and executed as per the Lifting and Transport drawing supplied (where relevant). Transport and lifting should only be carried out with ap... |
+| 2 | chunk_8b44aecdd3f7405db2a319f7b3025d82 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 18.700 | 15 | 4 Installation | Note: If the ship's piping is of CuNi the FWC system piping will have to be correctly isolated. 4.6 Electrical Connections The FWC System electrical connections are to be in acc... |
+| 3 | chunk_cfcee8b1292d46c8a6202d26a467da08 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 16.700 | 12 | 3 System Introduction > 3.2 Identifying Features of the Plant | Food Waste Tank De-watering Press Vacuum & Transfer Pump Liquor transfer pump discharge FWC25 depicted |
+| 4 | chunk_8c1a2d313d634e198f7394150c7bdb30 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 14.700 | 14-15 | 4 Installation | FMD FundamentalMarineDevelopments 4.5 Pipe Connections The FWC System pipe connections are to be in accordance with the Mounting and Pipe Connection drawing supplied. FMD is to... |
+| 5 | chunk_bfa8aed239ca4ddeabb68e82093a3046 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 13.700 | 16 | 5 Commissioning > 5.2 Objective | The overall objective of commissioning is to ensure that the components of the system are complete, that installation is fit for purpose and the system is safe and ready to be s... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_42420bb8872c4df2b976b517512d4281 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 11.700 | 17 | Title block |  Plant drawings (GA, P&ID)  Installation, Operation and Maintenance Manuals  Spare Parts List  Materials Safety Data Sheets |
-| 2 | chunk_69589d1f12f2465da9b190c8173ebcd9 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 11.700 | 27 | 7 Components > 7.1 Macerators > Macerator Description 7.1.2 | Discharge cone is pre-mounted with the following:  water flushing nozzles  solenoid valve G½" 24Vdc  inline strainer G½", with R½" external thread  safety interlock switch |
-| 3 | chunk_7597f1d1be664d72912d5d3321b0bb6f | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 11.700 | 41 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
-| 4 | chunk_cb83e7b4cbdc4ad1832ad51105c3755e | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 11.700 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P17 P18 P15 P14 P13 ® ® P16 |
-| 5 | chunk_c4aac1dfa74e4ee486b24930624cda73 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 11.700 | 43 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P12 P11 P9 P10 P3 P8 P4 P5 P6 P2 P7 P1 |
-
-### `M-006` What is the objective of commissioning the FWC12?
-
-- query type: `semantic_lookup`
-- expected document: `manual_fwc12`
-- expected file: `19P006-31-FWC12-5-1-0_Manual.pdf`
-- expected section path: `5 Commissioning > 5.2 Objective`
-- expected page: `16`
-- expected rank target: `top_5`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `The objective is to ensure the components are complete, installation is fit for purpose, and the system is safe and ready to be set to work.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 16.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_42420bb8872c4df2b976b517512d4281 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 17 | Title block |  Plant drawings (GA, P&ID)  Installation, Operation and Maintenance Manuals  Spare Parts List  Materials Safety Data Sheets |
-| 2 | chunk_69589d1f12f2465da9b190c8173ebcd9 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 27 | 7 Components > 7.1 Macerators > Macerator Description 7.1.2 | Discharge cone is pre-mounted with the following:  water flushing nozzles  solenoid valve G½" 24Vdc  inline strainer G½", with R½" external thread  safety interlock switch |
-| 3 | chunk_7597f1d1be664d72912d5d3321b0bb6f | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 41 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
-| 4 | chunk_aab5363e1c3940d5a90d558c87c63535 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | FMD FundamentalMarineDevelopments |
-| 5 | chunk_cb83e7b4cbdc4ad1832ad51105c3755e | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P17 P18 P15 P14 P13 ® ® P16 |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_42420bb8872c4df2b976b517512d4281 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 17 | Title block |  Plant drawings (GA, P&ID)  Installation, Operation and Maintenance Manuals  Spare Parts List  Materials Safety Data Sheets |
-| 2 | chunk_69589d1f12f2465da9b190c8173ebcd9 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 27 | 7 Components > 7.1 Macerators > Macerator Description 7.1.2 | Discharge cone is pre-mounted with the following:  water flushing nozzles  solenoid valve G½" 24Vdc  inline strainer G½", with R½" external thread  safety interlock switch |
-| 3 | chunk_7597f1d1be664d72912d5d3321b0bb6f | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 41 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P20 P16 P22 P19 P25 P24 P23 |
-| 4 | chunk_aab5363e1c3940d5a90d558c87c63535 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | FMD FundamentalMarineDevelopments |
-| 5 | chunk_cb83e7b4cbdc4ad1832ad51105c3755e | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.350 | 42 | 7 Components > 7.1 Macerators > Spare Parts 7.1.12 > Exploded Views and Spare Parts List for the Disposer | P17 P18 P15 P14 P13 ® ® P16 |
+| 1 | chunk_823d2be76af2401c88c4146e77e1c844 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 18.700 | 14 | 4 Installation | Lifting connections should only be made and executed as per the Lifting and Transport drawing supplied (where relevant). Transport and lifting should only be carried out with ap... |
+| 2 | chunk_8b44aecdd3f7405db2a319f7b3025d82 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 18.700 | 15 | 4 Installation | Note: If the ship's piping is of CuNi the FWC system piping will have to be correctly isolated. 4.6 Electrical Connections The FWC System electrical connections are to be in acc... |
+| 3 | chunk_cfcee8b1292d46c8a6202d26a467da08 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 16.700 | 12 | 3 System Introduction > 3.2 Identifying Features of the Plant | Food Waste Tank De-watering Press Vacuum & Transfer Pump Liquor transfer pump discharge FWC25 depicted |
+| 4 | chunk_8c1a2d313d634e198f7394150c7bdb30 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 14.700 | 14-15 | 4 Installation | FMD FundamentalMarineDevelopments 4.5 Pipe Connections The FWC System pipe connections are to be in accordance with the Mounting and Pipe Connection drawing supplied. FMD is to... |
+| 5 | chunk_bfa8aed239ca4ddeabb68e82093a3046 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 13.700 | 16 | 5 Commissioning > 5.2 Objective | The overall objective of commissioning is to ensure that the components of the system are complete, that installation is fit for purpose and the system is safe and ready to be s... |
 
 ### `M-009` What are the maintenance intervals for the macerator?
 
@@ -177,22 +104,22 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_2cccae5059ad4857a6ce63756d901bfd | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 19.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | To maintain operational readiness, possible damage should be detected at an early stage. To preserve warranty and guarantee entitlements the operator is obliged to carry out reg... |
-| 2 | chunk_8cceed099a7a4c53be20d62f98dbd178 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | CAUTION: Pay attention to all safety instructions during all maintenance and servicing work and the safety policies of the vessel. |
-| 3 | chunk_9e2471e6e9974377943bf1d00453d071 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | WARNING: Before working on the press, isolate the power supply and lock out or remove fuses. There is a risk of crushed hands and limbs from the rotating shaft/screw in the driv... |
-| 4 | chunk_0c9eec474af746f190fe11b64cf8bf21 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 13.700 | 24 | 6 Operation & General Maintenance > 6.3 Operation Macerator | E-Stop Start / Run O To start the macerator, it must be in the ready status, the E-Stop should not be illuminated, and the Start / Run button should be illuminated solid green.... |
-| 5 | chunk_4c569b453b05485d90e190b367ee3101 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 10.350 | 58 | 7 Components > 7.2 Food Waste Press > Preventive Maintenance 7.2.11 | WARNING: Before working on the TSP, isolate the power supply and lock out or remove fuses. There is a risk of crushed hands and limbs from the rotating shaft/screw in the drive... |
+| 1 | chunk_62db8fcf350f4e91982e6146e051365c | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | To maintain operational readiness, possible damage should be detected at an early stage. To preserve warranty and guarantee entitlements the operator is obliged to carry out reg... |
+| 2 | chunk_95e05c5214f64b94bacefee8517bdfbd | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | CAUTION: Pay attention to all safety instructions during all maintenance and servicing work and the safety policies of the vessel. |
+| 3 | chunk_e2476b8f230344d982b93e50452f508b | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | WARNING: Before working on the press, isolate the power supply and lock out or remove fuses. There is a risk of crushed hands and limbs from the rotating shaft/screw in the driv... |
+| 4 | chunk_d79621aeb10f4f27983be5334a55af59 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 13.700 | 24 | 6 Operation & General Maintenance > 6.3 Operation Macerator | E-Stop Start / Run O To start the macerator, it must be in the ready status, the E-Stop should not be illuminated, and the Start / Run button should be illuminated solid green.... |
+| 5 | chunk_4449a52213414614b1bdbfd5309f49a8 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 10.350 | 58 | 7 Components > 7.2 Food Waste Press > Preventive Maintenance 7.2.11 | WARNING: Before working on the TSP, isolate the power supply and lock out or remove fuses. There is a risk of crushed hands and limbs from the rotating shaft/screw in the drive... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_2cccae5059ad4857a6ce63756d901bfd | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 19.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | To maintain operational readiness, possible damage should be detected at an early stage. To preserve warranty and guarantee entitlements the operator is obliged to carry out reg... |
-| 2 | chunk_8cceed099a7a4c53be20d62f98dbd178 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | CAUTION: Pay attention to all safety instructions during all maintenance and servicing work and the safety policies of the vessel. |
-| 3 | chunk_9e2471e6e9974377943bf1d00453d071 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | WARNING: Before working on the press, isolate the power supply and lock out or remove fuses. There is a risk of crushed hands and limbs from the rotating shaft/screw in the driv... |
-| 4 | chunk_0c9eec474af746f190fe11b64cf8bf21 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 13.700 | 24 | 6 Operation & General Maintenance > 6.3 Operation Macerator | E-Stop Start / Run O To start the macerator, it must be in the ready status, the E-Stop should not be illuminated, and the Start / Run button should be illuminated solid green.... |
-| 5 | chunk_4c569b453b05485d90e190b367ee3101 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 10.350 | 58 | 7 Components > 7.2 Food Waste Press > Preventive Maintenance 7.2.11 | WARNING: Before working on the TSP, isolate the power supply and lock out or remove fuses. There is a risk of crushed hands and limbs from the rotating shaft/screw in the drive... |
+| 1 | chunk_62db8fcf350f4e91982e6146e051365c | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | To maintain operational readiness, possible damage should be detected at an early stage. To preserve warranty and guarantee entitlements the operator is obliged to carry out reg... |
+| 2 | chunk_95e05c5214f64b94bacefee8517bdfbd | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | CAUTION: Pay attention to all safety instructions during all maintenance and servicing work and the safety policies of the vessel. |
+| 3 | chunk_e2476b8f230344d982b93e50452f508b | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 19.700 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | WARNING: Before working on the press, isolate the power supply and lock out or remove fuses. There is a risk of crushed hands and limbs from the rotating shaft/screw in the driv... |
+| 4 | chunk_d79621aeb10f4f27983be5334a55af59 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 13.700 | 24 | 6 Operation & General Maintenance > 6.3 Operation Macerator | E-Stop Start / Run O To start the macerator, it must be in the ready status, the E-Stop should not be illuminated, and the Start / Run button should be illuminated solid green.... |
+| 5 | chunk_4449a52213414614b1bdbfd5309f49a8 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 10.350 | 58 | 7 Components > 7.2 Food Waste Press > Preventive Maintenance 7.2.11 | WARNING: Before working on the TSP, isolate the power supply and lock out or remove fuses. There is a risk of crushed hands and limbs from the rotating shaft/screw in the drive... |
 
 ### `M-013` What air pressure should be used to optimize the food waste press discharge?
 
@@ -215,97 +142,22 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_aed5d3aef9b74c4cb65b68b999e5436c | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.400 | 60 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Discharge Chute Removed > Removal of the Press Zone | Loosen the 4 screws and remove the press zone. |
-| 2 | chunk_cf34523fa0fa41f5800029eee4de928e | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.250 | 50 | 7 Components > 7.2 Food Waste Press > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
-| 3 | chunk_958369b581d9410ca1b03c2ff1d9f782 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 18.400 | 60-61 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Discharge Chute Removed > Removal of the Press Zone | FMD FundamentalMarineDevelopments Responsible Solutions Engineered Removal of the Screen Basket Now the screen basket can be pulled out of the separator using care. Ensure that... |
-| 4 | chunk_534741f2659d456db5a1c3b5b1871956 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 17.750 | 59 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 | WARNING: Before starting, ensure the compressed air hose to the pneumatic cylinder is disconnected, the cylinder is de-pressurised and has been secured against reactivation. Dis... |
-| 5 | chunk_90c49ec750bb4b9a933507911c4eacd9 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 16.400 | 52 | 4 Installation > Installation of the Food Waste Press 7.2.6 | CAUTION: Ensure that the used lifting equipment is adequate for the load specified. When lifting the press with a crane or chain block, it is only permitted to lift the machine... |
+| 1 | chunk_1ab5db04c93e46ca8dc80e15fbd3945a | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.400 | 60 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Discharge Chute Removed > Removal of the Press Zone | Loosen the 4 screws and remove the press zone. |
+| 2 | chunk_14af7073277b48e9b08f1dc146c07c45 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.250 | 50 | 7 Components > 7.2 Food Waste Press > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
+| 3 | chunk_a82bc2b493854677b92463f61cae32e8 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 18.400 | 60-61 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Discharge Chute Removed > Removal of the Press Zone | FMD FundamentalMarineDevelopments Responsible Solutions Engineered Removal of the Screen Basket Now the screen basket can be pulled out of the separator using care. Ensure that... |
+| 4 | chunk_680c8af6eb9440778523a57b6dacc244 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 17.750 | 59 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 | WARNING: Before starting, ensure the compressed air hose to the pneumatic cylinder is disconnected, the cylinder is de-pressurised and has been secured against reactivation. Dis... |
+| 5 | chunk_719cbd6c76e54d38a75b8d6c6fa484da | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 16.400 | 52 | 4 Installation > Installation of the Food Waste Press 7.2.6 | CAUTION: Ensure that the used lifting equipment is adequate for the load specified. When lifting the press with a crane or chain block, it is only permitted to lift the machine... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_aed5d3aef9b74c4cb65b68b999e5436c | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.400 | 60 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Discharge Chute Removed > Removal of the Press Zone | Loosen the 4 screws and remove the press zone. |
-| 2 | chunk_cf34523fa0fa41f5800029eee4de928e | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.250 | 50 | 7 Components > 7.2 Food Waste Press > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
-| 3 | chunk_958369b581d9410ca1b03c2ff1d9f782 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 18.400 | 60-61 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Discharge Chute Removed > Removal of the Press Zone | FMD FundamentalMarineDevelopments Responsible Solutions Engineered Removal of the Screen Basket Now the screen basket can be pulled out of the separator using care. Ensure that... |
-| 4 | chunk_534741f2659d456db5a1c3b5b1871956 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 17.750 | 59 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 | WARNING: Before starting, ensure the compressed air hose to the pneumatic cylinder is disconnected, the cylinder is de-pressurised and has been secured against reactivation. Dis... |
-| 5 | chunk_90c49ec750bb4b9a933507911c4eacd9 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 16.400 | 52 | 4 Installation > Installation of the Food Waste Press 7.2.6 | CAUTION: Ensure that the used lifting equipment is adequate for the load specified. When lifting the press with a crane or chain block, it is only permitted to lift the machine... |
-
-### `M-015` How is the screen basket removed from the food waste press?
-
-- query type: `procedure_lookup`
-- expected document: `manual_fwc12`
-- expected file: `19P006-31-FWC12-5-1-0_Manual.pdf`
-- expected section path: `7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket > Removal of the Screen Basket`
-- expected page: `61`
-- expected rank target: `top_5`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `The screen basket can be pulled out carefully and as straight as possible to prevent jamming; after roughly half its length is pulled out, the initial resistance reduces considerably.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 61.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_02c464ceead44c5e9395c38e76c83f06 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.600 | 67 | 7 Components > 7.2 Food Waste Press > 7.2.13.1 Maintenance of the Shaft & Shaft Seals > Loosening the Retaining Plate Screw | If the screen basket and the screw are removed, maintenance work and replacement of the shaft and the shaft seals can be performed. To do this, the screw of the retaining plate... |
-| 2 | chunk_cf34523fa0fa41f5800029eee4de928e | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 20.900 | 50 | 7 Components > 7.2 Food Waste Press > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
-| 3 | chunk_534741f2659d456db5a1c3b5b1871956 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 20.750 | 59 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 | WARNING: Before starting, ensure the compressed air hose to the pneumatic cylinder is disconnected, the cylinder is de-pressurised and has been secured against reactivation. Dis... |
-| 4 | chunk_f70b653a120043ba95105ce49d6d4272 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 15.050 | 56 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 | No modifications, attachments or rebuilding of the press may occur without the prior written authorisation of FMD. Machine parts that are not in a safe usable condition are to b... |
-| 5 | chunk_e8643ea8db054e85bc51e7cb16db3b37 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 15.050 | 58 | 7 Components > 7.2 Food Waste Press > Preventive Maintenance 7.2.11 | The instructions for all visual inspections, maintenance and repair work must be observed. |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_02c464ceead44c5e9395c38e76c83f06 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.600 | 67 | 7 Components > 7.2 Food Waste Press > 7.2.13.1 Maintenance of the Shaft & Shaft Seals > Loosening the Retaining Plate Screw | If the screen basket and the screw are removed, maintenance work and replacement of the shaft and the shaft seals can be performed. To do this, the screw of the retaining plate... |
-| 2 | chunk_cf34523fa0fa41f5800029eee4de928e | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 20.900 | 50 | 7 Components > 7.2 Food Waste Press > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
-| 3 | chunk_534741f2659d456db5a1c3b5b1871956 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 20.750 | 59 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 | WARNING: Before starting, ensure the compressed air hose to the pneumatic cylinder is disconnected, the cylinder is de-pressurised and has been secured against reactivation. Dis... |
-| 4 | chunk_f70b653a120043ba95105ce49d6d4272 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 15.050 | 56 | 7 Components > 7.2 Food Waste Press > Modifications to the Press 7.2.9 | No modifications, attachments or rebuilding of the press may occur without the prior written authorisation of FMD. Machine parts that are not in a safe usable condition are to b... |
-| 5 | chunk_e8643ea8db054e85bc51e7cb16db3b37 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 15.050 | 58 | 7 Components > 7.2 Food Waste Press > Preventive Maintenance 7.2.11 | The instructions for all visual inspections, maintenance and repair work must be observed. |
-
-### `M-020` What oil quantity and oil change interval are specified for the rotary lobe pump?
-
-- query type: `maintenance_spec_lookup`
-- expected document: `manual_fwc12`
-- expected file: `19P006-31-FWC12-5-1-0_Manual.pdf`
-- expected section path: `7 Components > 7.3 Vacuum / Transfer Pump > Maintenance > Oil Quantities & Specification`
-- expected page: `80`
-- expected rank target: `top_3`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `Oil quantity horizontal 0.6L, vertical 0.91L; first oil change after approx. 500 hours or 12 months, then after each 2000 hours or 12 months; oil specification SAE 75W-90 API GL-4 or GL-5.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_0b5436c0adf44937b4bdd4b46c0248d1 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 13.050 | 79 | 7 Components > 7.3 Vacuum / Transfer Pump > Lubrication Schedule |  After every 350 hours of operation NB: The filling quantity with the hand-lever grease gun should not exceed 2 to 3 strokes per grease nipple. Recommended Lubricating Grease: |
-| 2 | chunk_bdba363fe917467aa9d5ea6b63b24a31 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 11.700 | 79 | 7 Components > 7.3 Vacuum / Transfer Pump > Lubrication Schedule | K 3K - 20 |
-| 3 | chunk_a95dbe26c7674a31b8a2008608940baa | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 11.700 | 79 | 7 Components > 7.3 Vacuum / Transfer Pump > Lubrication Schedule | KE 3R -30 |
-| 4 | chunk_e92ef4ff2fe8429eb5b5183dea9cde6e | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 11.400 | 80 | 7 Components > 7.3 Vacuum / Transfer Pump | = 。 The deaeration screw (1) has always to be at the top position. The magnetic oil drain screw (3) has always to be on the lowest position. Draining  Open the magnetic drain s... |
-| 5 | chunk_2cccae5059ad4857a6ce63756d901bfd | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 10.350 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | To maintain operational readiness, possible damage should be detected at an early stage. To preserve warranty and guarantee entitlements the operator is obliged to carry out reg... |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_0b5436c0adf44937b4bdd4b46c0248d1 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 13.050 | 79 | 7 Components > 7.3 Vacuum / Transfer Pump > Lubrication Schedule |  After every 350 hours of operation NB: The filling quantity with the hand-lever grease gun should not exceed 2 to 3 strokes per grease nipple. Recommended Lubricating Grease: |
-| 2 | chunk_bdba363fe917467aa9d5ea6b63b24a31 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 11.700 | 79 | 7 Components > 7.3 Vacuum / Transfer Pump > Lubrication Schedule | K 3K - 20 |
-| 3 | chunk_a95dbe26c7674a31b8a2008608940baa | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 11.700 | 79 | 7 Components > 7.3 Vacuum / Transfer Pump > Lubrication Schedule | KE 3R -30 |
-| 4 | chunk_e92ef4ff2fe8429eb5b5183dea9cde6e | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 11.400 | 80 | 7 Components > 7.3 Vacuum / Transfer Pump | = 。 The deaeration screw (1) has always to be at the top position. The magnetic oil drain screw (3) has always to be on the lowest position. Draining  Open the magnetic drain s... |
-| 5 | chunk_2cccae5059ad4857a6ce63756d901bfd | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 10.350 | 56 | 7 Components > 7.2 Food Waste Press > Overview & Maintenance Intervals | To maintain operational readiness, possible damage should be detected at an early stage. To preserve warranty and guarantee entitlements the operator is obliged to carry out reg... |
+| 1 | chunk_1ab5db04c93e46ca8dc80e15fbd3945a | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.400 | 60 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Discharge Chute Removed > Removal of the Press Zone | Loosen the 4 screws and remove the press zone. |
+| 2 | chunk_14af7073277b48e9b08f1dc146c07c45 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 22.250 | 50 | 7 Components > 7.2 Food Waste Press > Identifying Features of the Food Waste Press 7.2.3 > General Construction Section | Wastewater Inlet Screw PressZone AirCylinder GearDrive ScreenedWastewater Discharge SolidsDischarge |
+| 3 | chunk_a82bc2b493854677b92463f61cae32e8 | doc_7786dfce1d194baf825cecb607c3b16b | sql_keyword | 18.400 | 60-61 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 > Disassembly of Cylinder Retaining Plate > Removal of the Discharge Chute Retaining Plate and Enclosure > Discharge Chute Removed > Removal of the Press Zone | FMD FundamentalMarineDevelopments Responsible Solutions Engineered Removal of the Screen Basket Now the screen basket can be pulled out of the separator using care. Ensure that... |
+| 4 | chunk_680c8af6eb9440778523a57b6dacc244 | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 17.750 | 59 | 7 Components > 7.2 Food Waste Press > Maintenance & Cleaning of the Screen Basket 7.2.12 | WARNING: Before starting, ensure the compressed air hose to the pneumatic cylinder is disconnected, the cylinder is de-pressurised and has been secured against reactivation. Dis... |
+| 5 | chunk_719cbd6c76e54d38a75b8d6c6fa484da | doc_7786dfce1d194baf825cecb607c3b16b | hybrid | 16.400 | 52 | 4 Installation > Installation of the Food Waste Press 7.2.6 | CAUTION: Ensure that the used lifting equipment is adequate for the load specified. When lifting the press with a crane or chain block, it is only permitted to lift the machine... |
 
 ### `C-003` What quantity and size of hoses are covered by the Lloyd's Register certificate?
 
@@ -327,22 +179,22 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_7b1865148f4a495882e0ef8bf3e0a6e1 | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 18.400 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
-| 2 | chunk_8e1068c5dec043669cdaa04120130e02 | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 18.400 | 2-3 | Description / Manufacturer Designation / Serial Number table | Office Hamburg | Description | Manufacturer Designation | Serial Number | IMO Number | |-----------------|----------------------------|-----------------|--------------| | 2 pcs.... |
-| 3 | chunk_e04e6bea7a2e4c03bd8d43218620a3eb | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 17.050 | 1 | Hoses > General information | This is to certify that the undersigned Surveyor to LLOYD'S REGISTER did at the request of the below customer, attend the testing and examination of the product(s) described bel... |
-| 4 | chunk_5f14840fbb7844a68fb99b6bf6c72dda | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 17.050 | 5 | Messdaten:/results | U. Tischer Bremerhaven Office 29 November 2024 Lloyd's Register EMEA LR425 . 2022 |
-| 5 | chunk_5e442d6405674788b94b4a73d2db0b1c | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 15.700 | 1 | General information > Cover sheet | Customer Schauenburg Industrietechnik GmbH Purchase Order No 801079 Manufacturer Schauenburg Industrietechnik GmbH Intended for H. A. Schröder GmbH + Co. KG, Schiffdorf-Wehden /... |
+| 1 | chunk_d6237c78d9e44048b63017ef394c8306 | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 18.400 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
+| 2 | chunk_45f8f1299a3b4092a8525499e2ff7c35 | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 18.400 | 2-3 | Description / Manufacturer Designation / Serial Number table | Office Hamburg | Description | Manufacturer Designation | Serial Number | IMO Number | |-----------------|----------------------------|-----------------|--------------| | 2 pcs.... |
+| 3 | chunk_8ff38f49f9404a1abb160331e4a7d739 | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 17.050 | 1 | Hoses > General information | This is to certify that the undersigned Surveyor to LLOYD'S REGISTER did at the request of the below customer, attend the testing and examination of the product(s) described bel... |
+| 4 | chunk_e89facf5c1ff43beba47466ee4c7ac2e | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 15.700 | 1 | General information > Cover sheet | Customer Schauenburg Industrietechnik GmbH Purchase Order No 801079 Manufacturer Schauenburg Industrietechnik GmbH Intended for H. A. Schröder GmbH + Co. KG, Schiffdorf-Wehden /... |
+| 5 | chunk_318d56f274c549c687fe40b0bc9d0310 | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 15.700 | 1 | General information > Particulars | Date of issue 29 November 2024 Quantity 4 pcs |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_7b1865148f4a495882e0ef8bf3e0a6e1 | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 18.400 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
-| 2 | chunk_8e1068c5dec043669cdaa04120130e02 | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 18.400 | 2-3 | Description / Manufacturer Designation / Serial Number table | Office Hamburg | Description | Manufacturer Designation | Serial Number | IMO Number | |-----------------|----------------------------|-----------------|--------------| | 2 pcs.... |
-| 3 | chunk_e04e6bea7a2e4c03bd8d43218620a3eb | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 17.050 | 1 | Hoses > General information | This is to certify that the undersigned Surveyor to LLOYD'S REGISTER did at the request of the below customer, attend the testing and examination of the product(s) described bel... |
-| 4 | chunk_5f14840fbb7844a68fb99b6bf6c72dda | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 17.050 | 5 | Messdaten:/results | U. Tischer Bremerhaven Office 29 November 2024 Lloyd's Register EMEA LR425 . 2022 |
-| 5 | chunk_5e442d6405674788b94b4a73d2db0b1c | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 15.700 | 1 | General information > Cover sheet | Customer Schauenburg Industrietechnik GmbH Purchase Order No 801079 Manufacturer Schauenburg Industrietechnik GmbH Intended for H. A. Schröder GmbH + Co. KG, Schiffdorf-Wehden /... |
+| 1 | chunk_d6237c78d9e44048b63017ef394c8306 | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 18.400 | 1 | Remarks | This LR certificate is only valid in conjunction with the attached signed certificates (four certificates). Uwe Tischer Lloyd's Register EMEA A subsidiary of Lloyd's Register Gr... |
+| 2 | chunk_45f8f1299a3b4092a8525499e2ff7c35 | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 18.400 | 2-3 | Description / Manufacturer Designation / Serial Number table | Office Hamburg | Description | Manufacturer Designation | Serial Number | IMO Number | |-----------------|----------------------------|-----------------|--------------| | 2 pcs.... |
+| 3 | chunk_8ff38f49f9404a1abb160331e4a7d739 | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 17.050 | 1 | Hoses > General information | This is to certify that the undersigned Surveyor to LLOYD'S REGISTER did at the request of the below customer, attend the testing and examination of the product(s) described bel... |
+| 4 | chunk_e89facf5c1ff43beba47466ee4c7ac2e | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 15.700 | 1 | General information > Cover sheet | Customer Schauenburg Industrietechnik GmbH Purchase Order No 801079 Manufacturer Schauenburg Industrietechnik GmbH Intended for H. A. Schröder GmbH + Co. KG, Schiffdorf-Wehden /... |
+| 5 | chunk_318d56f274c549c687fe40b0bc9d0310 | doc_3f12aa7f1fbf479897ea3e6c173828a3 | hybrid | 15.700 | 1 | General information > Particulars | Date of issue 29 November 2024 Quantity 4 pcs |
 
 ### `DS-001` What product is type MK311xxx?
 
@@ -353,26 +205,29 @@
 - expected page: `1`
 - expected rank target: `top_1`
 - anchor matched rank: `miss`
-- context matched rank: `miss`
+- context matched rank: `3`
 - expected passage: `Type MK311xxx: 2-way Wafer-type Ball valve, full bore, PN16 / PN40, stainless steel.`
 - failure reasons:
   - Anchor retrieval did not return the expected evidence.
   - Anchor retrieval did not return the resolved expected chunk id.
   - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 1.
+  - Context expansion recovered the expected evidence after the anchor miss.
+  - Context expansion reached the expected section path even though the anchor results did not.
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| - | - | - | - | - | - | - | no chunks returned |
+| 1 | chunk_98af6d70222549ec9e948e4fc7c5316f | doc_0576a2842be74d769f31c86079eac801 | hybrid | 15.350 | 1 | OPTIONS | pneumatic or electric actuator electrical position indicator The above information is intended for guidance only and the company reserves the right to change any data herein wit... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| - | - | - | - | - | - | - | no chunks returned |
+| 1 | chunk_98af6d70222549ec9e948e4fc7c5316f | doc_0576a2842be74d769f31c86079eac801 | hybrid | 15.350 | 1 | OPTIONS | pneumatic or electric actuator electrical position indicator The above information is intended for guidance only and the company reserves the right to change any data herein wit... |
+| 2 | chunk_1ef302688f9941488a2f5994268f54a4 | doc_0576a2842be74d769f31c86079eac801 | context_expansion | 15.340 | 1 | MATERIALS | Body: Stainless steel 1.4408 Ball: Stainless steel 1.4408 Ball seal: PTFE glassfiber reinforced Spindle seal: PTFE /FKM |
+| 3 | chunk_025dd5725123489c92c6798c677b9631 | doc_0576a2842be74d769f31c86079eac801 | context_expansion | 15.340 | 1 | MK311xxx | 2-Wege Kompakt Kugelhahn voller Durchgang PN16 / PN40 Edelstahl 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel |
 
 ### `DS-006` What does ordering code MK311007 mean?
 
@@ -394,60 +249,59 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_779fe3fc1adf433288b8f4d149453028 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 39.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 |
-| 2 | chunk_692c91dc9bae4d6bbc9309aaafabd590 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 39.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 | 1. + 2. Stelle Produkt | 3. + 4. Stelle Werkstoffe Gehäuse / Dichtung / Kugel | 5. Stelle Betätigung | 6. Stelle Optio... |
-| 3 | chunk_50a9490141384297853b60ba53b98df3 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 10.000 | 1 | TEMPERATUR | -25°C …. +180°C Bei Mediumtemperaturen über 80°C, bzw. stark schwankenden Mediumtemperaturen, empfehlen wir eine Druckausgleichsbohrung in der Kugel. Bei zur Dampfbildung neigen... |
-| 4 | chunk_874511915b9d4123b8276093bb594a70 | doc_0576a2842be74d769f31c86079eac801 | sql_keyword | 10.000 | 1 | TEMPERATURE RANGE | -25°C … +180°C At media temperature above 80°C or large oscilating media temperatures we recommend a pressure compensation bore in the ball. At media which tend to steam-buildin... |
-| 5 | chunk_0032bf24fb23473cb628a2af12f29f08 | doc_0576a2842be74d769f31c86079eac801 | dense | 0.674 | 1 | MK311xxx | 2-Wege Kompakt Kugelhahn voller Durchgang PN16 / PN40 Edelstahl 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel |
+| 1 | chunk_ffa6ad4f8b6746948c25029ee92a4804 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 39.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 |
+| 2 | chunk_5b76261f529d4b5bafa50c97d92fc566 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 39.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 | 1. + 2. Stelle Produkt | 3. + 4. Stelle Werkstoffe Gehäuse / Dichtung / Kugel | 5. Stelle Betätigung | 6. Stelle Optio... |
+| 3 | chunk_00995e03834c4f65a4d176016000d316 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 6.000 | 1 | TEMPERATUR | -25°C …. +180°C Bei Mediumtemperaturen über 80°C, bzw. stark schwankenden Mediumtemperaturen, empfehlen wir eine Druckausgleichsbohrung in der Kugel. Bei zur Dampfbildung neigen... |
+| 4 | chunk_d89050eec4ec4dd294b06ebb8803f506 | doc_0576a2842be74d769f31c86079eac801 | sql_keyword | 6.000 | 1 | TEMPERATURE RANGE | -25°C … +180°C At media temperature above 80°C or large oscilating media temperatures we recommend a pressure compensation bore in the ball. At media which tend to steam-buildin... |
+| 5 | chunk_025dd5725123489c92c6798c677b9631 | doc_0576a2842be74d769f31c86079eac801 | dense | 0.674 | 1 | MK311xxx | 2-Wege Kompakt Kugelhahn voller Durchgang PN16 / PN40 Edelstahl 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_779fe3fc1adf433288b8f4d149453028 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 39.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 |
-| 2 | chunk_692c91dc9bae4d6bbc9309aaafabd590 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 39.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 | 1. + 2. Stelle Produkt | 3. + 4. Stelle Werkstoffe Gehäuse / Dichtung / Kugel | 5. Stelle Betätigung | 6. Stelle Optio... |
-| 3 | chunk_50a9490141384297853b60ba53b98df3 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 10.000 | 1 | TEMPERATUR | -25°C …. +180°C Bei Mediumtemperaturen über 80°C, bzw. stark schwankenden Mediumtemperaturen, empfehlen wir eine Druckausgleichsbohrung in der Kugel. Bei zur Dampfbildung neigen... |
-| 4 | chunk_874511915b9d4123b8276093bb594a70 | doc_0576a2842be74d769f31c86079eac801 | sql_keyword | 10.000 | 1 | TEMPERATURE RANGE | -25°C … +180°C At media temperature above 80°C or large oscilating media temperatures we recommend a pressure compensation bore in the ball. At media which tend to steam-buildin... |
-| 5 | chunk_0032bf24fb23473cb628a2af12f29f08 | doc_0576a2842be74d769f31c86079eac801 | dense | 0.674 | 1 | MK311xxx | 2-Wege Kompakt Kugelhahn voller Durchgang PN16 / PN40 Edelstahl 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel |
+| 1 | chunk_ffa6ad4f8b6746948c25029ee92a4804 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 39.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 |
+| 2 | chunk_5b76261f529d4b5bafa50c97d92fc566 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 39.350 | 2 | Artikel- u. Bestellangaben: z.B. MK311007 = | 2-Wege Kompakt Kugelhahn, Edelstahl, handbetätigt, DN 50 | 1. + 2. Stelle Produkt | 3. + 4. Stelle Werkstoffe Gehäuse / Dichtung / Kugel | 5. Stelle Betätigung | 6. Stelle Optio... |
+| 3 | chunk_00995e03834c4f65a4d176016000d316 | doc_0576a2842be74d769f31c86079eac801 | hybrid | 6.000 | 1 | TEMPERATUR | -25°C …. +180°C Bei Mediumtemperaturen über 80°C, bzw. stark schwankenden Mediumtemperaturen, empfehlen wir eine Druckausgleichsbohrung in der Kugel. Bei zur Dampfbildung neigen... |
+| 4 | chunk_d89050eec4ec4dd294b06ebb8803f506 | doc_0576a2842be74d769f31c86079eac801 | sql_keyword | 6.000 | 1 | TEMPERATURE RANGE | -25°C … +180°C At media temperature above 80°C or large oscilating media temperatures we recommend a pressure compensation bore in the ball. At media which tend to steam-buildin... |
+| 5 | chunk_025dd5725123489c92c6798c677b9631 | doc_0576a2842be74d769f31c86079eac801 | dense | 0.674 | 1 | MK311xxx | 2-Wege Kompakt Kugelhahn voller Durchgang PN16 / PN40 Edelstahl 2-way Wafer-type Ball valve full bore PN16 / PN40 Stainless steel |
 
-### `R-006` Which test procedure verifies lower range value, upper range value and output signal?
+### `R-010` In what order should the Cerabar M be electrically connected?
 
-- query type: `identifier_semantic_lookup`
+- query type: `procedure_lookup`
 - expected document: `report_pressure_transmitter`
 - expected file: `Pressure transmitter.pdf`
-- expected section path: `Final Inspection Report > Test Procedure number / Test description`
-- expected page: `2`
-- expected rank target: `top_3`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `Calibration of instrument TS00023P: Measurement, adjustment and verification of lower range value, upper range value and output signal.`
+- expected section path: `Brief Operating Instructions > 6 Electrical connection > 6.2 Connecting the device`
+- expected page: `12`
+- expected rank target: `top_5`
+- anchor matched rank: `6`
+- context matched rank: `6`
+- expected passage: `Check supply voltage, switch off supply voltage, remove housing cover, guide cable through gland, connect according to diagram, screw down housing cover, switch on supply voltage.`
 - failure reasons:
-  - Anchor retrieval did not return the expected evidence.
+  - Anchor retrieval found relevant evidence, but later than the expected top_5 target (matched rank: 6).
   - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 2.
+  - Anchor retrieval did not return a chunk covering expected page 12.
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_5172c0115f224ada8eedddf58024afea | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 17.100 | 17 | 7 Operation options > HART | 1 Operating keys for lower range value (zero) and upper range value (span) 2 Green LED to indicate successful operation 3 Slot for optional local display 4 DIP switch only for D... |
-| 2 | chunk_e00b97ddd5e44d9ca2755a13e5588430 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 17.100 | 22 | 7 Operation options > 7.2 Operation with device display (optional) > Menu path: Setup → Extended setup → Current output → Set URV | mbar | Set URV | 014 | Operation | |------------|-------|------------------------------------------------------------------------------------------------------------------------... |
-| 3 | chunk_fec25cb3ba624889aa040d531246c470 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 15.750 | 22 | Brief Operating Instructions > 7 Operation options | Operation The local display shows the parameter to be changed. The "mbar" unit is defined in another parameter and cannot be changed here. 1 1 0 0 . 0 0 0 mbar Press  or  to e... |
-| 4 | chunk_8f9218b5e0a741e08521e71efe8abe82 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 14.100 | 26-27 | 8 Commissioning > 8.2 Configuring pressure measurement > Prerequisite: | This is a theoretical calibration, i.e. the pressure values for the lower and upper range are known. Due to the orientation of the device, there may be pressure shifts in the me... |
-| 5 | chunk_a13f2c43f008474bb7ebb8f19d632f05 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 13.050 | 23 | Brief Operating Instructions > 7 Operation options | Messages are displayed if the pressure is too low. If a pressure smaller than the minimum permitted pressure or greater than the maximum permitted pressure is present at the dev... |
+| 1 | chunk_2a56c3beec85402f87d1d19332f10c88 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 14.700 | 11 | Brief Operating Instructions > 5 Mounting | A diaphragm seal and the pressure transmitter together form a closed, oil-filled calibrated system. The fill fluid hole is sealed and may not be opened. If a mounting bracket is... |
+| 2 | chunk_dd2fa64a34d84dda88185a1e7a86c2ef | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 11.700 | 1 | Final Inspection Report > Device information | 3021098915000010 Description TAG Serial number Order code Extended order code Cerabar M PMP51 9180 v8055401129 PMP51-D5EU1/101 PMP5 1-BA2 IRAISGJGRJAI+JALELGZI |
+| 3 | chunk_b9001748afdd454590263865235dc6a9 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 11.700 | 1 | Device information > Basic specifications | Extended order code Cerabar M PMP51 9180 |
+| 4 | chunk_cf340a8e135849568a4c7206be91d7c5 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 11.700 | 9-10 | 5 Mounting > 5.2 Installation instructions for devices without diaphragm seals – PMP51, PMC51 > Damage to the device! > Sensors | If a heated device is cooled during a cleaning process (e.g. by cold water), a vacuum develops for a short time and, as a result, moisture can enter the sensor through the press... |
+| 5 | chunk_9f52c317943949919d6facfc3dd73e93 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 11.700 | 10 | Material information | Keep the pressure compensation and GORE-TEX® filter (1) free from contamination. Cerabar M transmitters without diaphragm seals are mounted as per the norms for a manometer (DIN... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_5172c0115f224ada8eedddf58024afea | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 17.100 | 17 | 7 Operation options > HART | 1 Operating keys for lower range value (zero) and upper range value (span) 2 Green LED to indicate successful operation 3 Slot for optional local display 4 DIP switch only for D... |
-| 2 | chunk_e00b97ddd5e44d9ca2755a13e5588430 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 17.100 | 22 | 7 Operation options > 7.2 Operation with device display (optional) > Menu path: Setup → Extended setup → Current output → Set URV | mbar | Set URV | 014 | Operation | |------------|-------|------------------------------------------------------------------------------------------------------------------------... |
-| 3 | chunk_fec25cb3ba624889aa040d531246c470 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 15.750 | 22 | Brief Operating Instructions > 7 Operation options | Operation The local display shows the parameter to be changed. The "mbar" unit is defined in another parameter and cannot be changed here. 1 1 0 0 . 0 0 0 mbar Press  or  to e... |
-| 4 | chunk_8f9218b5e0a741e08521e71efe8abe82 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 14.100 | 26-27 | 8 Commissioning > 8.2 Configuring pressure measurement > Prerequisite: | This is a theoretical calibration, i.e. the pressure values for the lower and upper range are known. Due to the orientation of the device, there may be pressure shifts in the me... |
-| 5 | chunk_a13f2c43f008474bb7ebb8f19d632f05 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 13.050 | 23 | Brief Operating Instructions > 7 Operation options | Messages are displayed if the pressure is too low. If a pressure smaller than the minimum permitted pressure or greater than the maximum permitted pressure is present at the dev... |
+| 1 | chunk_2a56c3beec85402f87d1d19332f10c88 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 14.700 | 11 | Brief Operating Instructions > 5 Mounting | A diaphragm seal and the pressure transmitter together form a closed, oil-filled calibrated system. The fill fluid hole is sealed and may not be opened. If a mounting bracket is... |
+| 2 | chunk_dd2fa64a34d84dda88185a1e7a86c2ef | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 11.700 | 1 | Final Inspection Report > Device information | 3021098915000010 Description TAG Serial number Order code Extended order code Cerabar M PMP51 9180 v8055401129 PMP51-D5EU1/101 PMP5 1-BA2 IRAISGJGRJAI+JALELGZI |
+| 3 | chunk_b9001748afdd454590263865235dc6a9 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 11.700 | 1 | Device information > Basic specifications | Extended order code Cerabar M PMP51 9180 |
+| 4 | chunk_cf340a8e135849568a4c7206be91d7c5 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 11.700 | 9-10 | 5 Mounting > 5.2 Installation instructions for devices without diaphragm seals – PMP51, PMC51 > Damage to the device! > Sensors | If a heated device is cooled during a cleaning process (e.g. by cold water), a vacuum develops for a short time and, as a result, moisture can enter the sensor through the press... |
+| 5 | chunk_9f52c317943949919d6facfc3dd73e93 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 11.700 | 10 | Material information | Keep the pressure compensation and GORE-TEX® filter (1) free from contamination. Cerabar M transmitters without diaphragm seals are mounted as per the norms for a manometer (DIN... |
 
 ### `R-018` What hazardous location approval is listed for Cerabar M in the safety instructions?
 
@@ -469,58 +323,58 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_ce62cee041264ef6834ab342041ba389 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 20.700 | 34 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > Safety Instructions | The document translated into EU languages is available: In the download area of the Endress+Hauser website: www.endress.com -> Downloads -> Manuals and Datasheets -> Type: Ex Sa... |
-| 2 | chunk_04a21d2cad1b414f940b1419aacae596 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 20.250 | 37 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications | The device is intended to be used in explosive atmospheres as defined in the scope of IEC 60079-0 or equivalent national standards. If no potentially explosive atmospheres are p... |
-| 3 | chunk_49a22718bf9e473581338c3764fe4aca | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 18.550 | 7 | 3 Basic safety instructions > 3.5 Product safety > Compliance information | This measuring device is designed in accordance with good engineering practice to meet stateof-the- art safety requirements, has been tested, and left the factory in a condition... |
-| 4 | chunk_f427d88909de4353becfa8795407634b | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 17.700 | 36 | Safety Instructions > Basic specifications | The features that are absolutely essential for the device (mandatory features) are specified in the basic specifications. The number of positions depends on the number of featur... |
-| 5 | chunk_edc293e4b3b84789af4fb857f131cd7a | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 17.050 | 12 | 6 Electrical connection > 6.2 Connecting the device > Supply voltage might be connected! > Compliance information | Switch off the supply voltage before connecting the device. When using the measuring device in hazardous areas, installation must also comply with the applicable national standa... |
+| 1 | chunk_106c44ec339e4c028864e8bd353f1b2b | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 18.550 | 7 | 3 Basic safety instructions > 3.5 Product safety > Compliance information | This measuring device is designed in accordance with good engineering practice to meet stateof-the- art safety requirements, has been tested, and left the factory in a condition... |
+| 2 | chunk_31b775a1cba349a1b9bf56dd43c8e883 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 17.700 | 36 | Safety Instructions > Basic specifications | The features that are absolutely essential for the device (mandatory features) are specified in the basic specifications. The number of positions depends on the number of featur... |
+| 3 | chunk_8067266c27294473a2f0224af13fee91 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 17.250 | 37 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications | The device is intended to be used in explosive atmospheres as defined in the scope of IEC 60079-0 or equivalent national standards. If no potentially explosive atmospheres are p... |
+| 4 | chunk_544eb8ed136a49a48d2228d59febcce6 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 17.050 | 12 | 6 Electrical connection > 6.2 Connecting the device > Supply voltage might be connected! > Compliance information | Switch off the supply voltage before connecting the device. When using the measuring device in hazardous areas, installation must also comply with the applicable national standa... |
+| 5 | chunk_fd804944552641559be2fe8d5d758679 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 16.900 | 36 | Safety Instructions > Optional specifications > Basic specifications | More detailed information about the device is provided in the following tables. These tables describe the individual positions and IDs in the extended order code which are relev... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_ce62cee041264ef6834ab342041ba389 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 20.700 | 34 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > Safety Instructions | The document translated into EU languages is available: In the download area of the Endress+Hauser website: www.endress.com -> Downloads -> Manuals and Datasheets -> Type: Ex Sa... |
-| 2 | chunk_04a21d2cad1b414f940b1419aacae596 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 20.250 | 37 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications | The device is intended to be used in explosive atmospheres as defined in the scope of IEC 60079-0 or equivalent national standards. If no potentially explosive atmospheres are p... |
-| 3 | chunk_49a22718bf9e473581338c3764fe4aca | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 18.550 | 7 | 3 Basic safety instructions > 3.5 Product safety > Compliance information | This measuring device is designed in accordance with good engineering practice to meet stateof-the- art safety requirements, has been tested, and left the factory in a condition... |
-| 4 | chunk_f427d88909de4353becfa8795407634b | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 17.700 | 36 | Safety Instructions > Basic specifications | The features that are absolutely essential for the device (mandatory features) are specified in the basic specifications. The number of positions depends on the number of featur... |
-| 5 | chunk_edc293e4b3b84789af4fb857f131cd7a | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 17.050 | 12 | 6 Electrical connection > 6.2 Connecting the device > Supply voltage might be connected! > Compliance information | Switch off the supply voltage before connecting the device. When using the measuring device in hazardous areas, installation must also comply with the applicable national standa... |
+| 1 | chunk_106c44ec339e4c028864e8bd353f1b2b | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 18.550 | 7 | 3 Basic safety instructions > 3.5 Product safety > Compliance information | This measuring device is designed in accordance with good engineering practice to meet stateof-the- art safety requirements, has been tested, and left the factory in a condition... |
+| 2 | chunk_31b775a1cba349a1b9bf56dd43c8e883 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 17.700 | 36 | Safety Instructions > Basic specifications | The features that are absolutely essential for the device (mandatory features) are specified in the basic specifications. The number of positions depends on the number of featur... |
+| 3 | chunk_8067266c27294473a2f0224af13fee91 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | hybrid | 17.250 | 37 | About this document > Associated documentation > Supplementary documentation > Manufacturer's certificates > EU Declaration of Conformity > EU type-examination certificate > Other standards > Extended order code > IEC Declaration of Conformity > Structure of the extended order code > * = Placeholder > Basic specifications > Optional specifications > Extended order code: Cerabar M > Safety instructions: General > Safety instructions: Special conditions > Optional specifications | The device is intended to be used in explosive atmospheres as defined in the scope of IEC 60079-0 or equivalent national standards. If no potentially explosive atmospheres are p... |
+| 4 | chunk_544eb8ed136a49a48d2228d59febcce6 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 17.050 | 12 | 6 Electrical connection > 6.2 Connecting the device > Supply voltage might be connected! > Compliance information | Switch off the supply voltage before connecting the device. When using the measuring device in hazardous areas, installation must also comply with the applicable national standa... |
+| 5 | chunk_fd804944552641559be2fe8d5d758679 | doc_0fa8ef6b47eb468297ecee26c1c34e75 | sql_keyword | 16.900 | 36 | Safety Instructions > Optional specifications > Basic specifications | More detailed information about the device is provided in the following tables. These tables describe the individual positions and IDs in the extended order code which are relev... |
 
-### `VMOT-001` What are the rated power output, voltage, current, frequency, speed, and torque for the P62B 355L4 motor?
+### `LRAC-001` Which certificate does HAM2303402/1/A2 replace and when was the new certificate issued?
 
-- query type: `specification_lookup`
-- expected document: `datasheet_motor_p62b355l4`
-- expected file: `Datasheet_P62B355L4_7134295_10 revA.pdf`
-- expected section path: `Rated data - Operation Point (OP1)`
+- query type: `identifier_lookup`
+- expected document: `certificate_ac_generators_ham2303402`
+- expected file: `HAM2303402-001A3_Certificate.pdf`
+- expected section path: `Certificate for AC Generators or Motors`
 - expected page: `1`
-- expected rank target: `top_1`
-- anchor matched rank: `miss`
+- expected rank target: `top_3`
+- anchor matched rank: `4`
 - context matched rank: `4`
-- expected passage: `Typ P62B 355L4; power output 600 kW; voltage 520 V; stator current 726 A; frequency 40,00 Hz; speed 1200,0 rpm; mechanical torque 4,78 kNm.`
+- expected passage: `This certificate replaces the electronic certificate HAM2303402/1/A2, dated 24 September 2024, which is hereby cancelled. Date 06 June 2025. Certificate no: HAM2303402/1/A2.`
 - failure reasons:
-  - Anchor retrieval did not return the expected evidence.
+  - Anchor retrieval found relevant evidence, but later than the expected top_3 target (matched rank: 4).
   - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-  - Context expansion recovered the expected evidence after the anchor miss.
-  - Context expansion reached the expected section path even though the anchor results did not.
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_9e70b55e2ff04f2d9896fe1fd5972041 | doc_96a527e02a6b49b883fe30404aedd07c | hybrid | 15.400 | 1 | Technical Data / Specification | 4. Short-circuit data max. aperiodic short-circuit current (peak value) initial periodic short-circuit current ( RMS ) continuous periodic short-circuit current ( RMS ) short-ci... |
-| 2 | chunk_fcee4d46a0b94640a487336e948e5188 | doc_96a527e02a6b49b883fe30404aedd07c | hybrid | 15.400 | 1 | CONNECTION | number of phases connection speed mechanical torque: duty type UKL_max = U d 2 * U KL UKL 0,41342 [W] |
-| 3 | chunk_a4bbfa87ef5b4a04a5fc10c85c58d12a | doc_96a527e02a6b49b883fe30404aedd07c | hybrid | 12.700 | 1 | Technical Data / Specification | q - valid for sinusoidal values only VEM Sachsenwerk GmbH Pirnaer Landstraße 176 01257 Dresden -0,94 4 3 star 1200,0 4,78 S1 965 [ V ] 1365 [Vdc] 499 [ V ] 0,772 [%] 65,36 [%] |
+| 1 | chunk_09a9a5e3271f4f8c820446b767dd8389 | doc_e0fcea690de04ace8d4203812e4b3700 | hybrid | 25.050 | 1 | HAM2303402-001A3_Certificate | Certificate no: Page 1 of 1 |
+| 2 | chunk_54029ebb693b4c7495bb22db5ece715d | doc_e0fcea690de04ace8d4203812e4b3700 | hybrid | 25.050 | 3 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Inspection certificate Prüfbescheinigung |
+| 3 | chunk_b24907ebb951442cae21a626b39fca15 | doc_e0fcea690de04ace8d4203812e4b3700 | hybrid | 23.400 | 2 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Issued: Erstellt Knöfel Test bay engineer ID number: ID Nummer PB - K - 2200120 - 45615803 Date: Datum Gottschlich Authorized inspection representative |
+| 4 | chunk_bab78278270645edbb6998b7ee84956f | doc_e0fcea690de04ace8d4203812e4b3700 | hybrid | 22.050 | 1 | Certificate for AC Generators or Motors | Office Hamburg Client VEM Sachsenwerk GmbH Dresden - Germany Date |
+| 5 | chunk_8e81fe39cfbf42759a0753945aa55f30 | doc_e0fcea690de04ace8d4203812e4b3700 | hybrid | 22.050 | 1 | Certificate for AC Generators or Motors > General information | 06 June 2025 Order number on Manufacturer --- Work’s order number K - 2200120 Manufacturer Intended for VEM Sachsenwerk GmbH Besecke GmbH First date of inspection Final date of... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_9e70b55e2ff04f2d9896fe1fd5972041 | doc_96a527e02a6b49b883fe30404aedd07c | hybrid | 15.400 | 1 | Technical Data / Specification | 4. Short-circuit data max. aperiodic short-circuit current (peak value) initial periodic short-circuit current ( RMS ) continuous periodic short-circuit current ( RMS ) short-ci... |
-| 2 | chunk_fcee4d46a0b94640a487336e948e5188 | doc_96a527e02a6b49b883fe30404aedd07c | hybrid | 15.400 | 1 | CONNECTION | number of phases connection speed mechanical torque: duty type UKL_max = U d 2 * U KL UKL 0,41342 [W] |
-| 3 | chunk_a4bbfa87ef5b4a04a5fc10c85c58d12a | doc_96a527e02a6b49b883fe30404aedd07c | hybrid | 12.700 | 1 | Technical Data / Specification | q - valid for sinusoidal values only VEM Sachsenwerk GmbH Pirnaer Landstraße 176 01257 Dresden -0,94 4 3 star 1200,0 4,78 S1 965 [ V ] 1365 [Vdc] 499 [ V ] 0,772 [%] 65,36 [%] |
-| 4 | chunk_be10fe70ddcb4aceb05c78dc94c16391 | doc_96a527e02a6b49b883fe30404aedd07c | context_expansion | 15.390 | 1 | 1. Rated data - Operation Point (OP1) | power output: voltage: stator current: frequency: classification: thermal class/rise max. altitude: [ kW ] [ V ] [ A ] 40,00 [ Hz ] Norske Veritas H / H |
+| 1 | chunk_09a9a5e3271f4f8c820446b767dd8389 | doc_e0fcea690de04ace8d4203812e4b3700 | hybrid | 25.050 | 1 | HAM2303402-001A3_Certificate | Certificate no: Page 1 of 1 |
+| 2 | chunk_54029ebb693b4c7495bb22db5ece715d | doc_e0fcea690de04ace8d4203812e4b3700 | hybrid | 25.050 | 3 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Inspection certificate Prüfbescheinigung |
+| 3 | chunk_b24907ebb951442cae21a626b39fca15 | doc_e0fcea690de04ace8d4203812e4b3700 | hybrid | 23.400 | 2 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Issued: Erstellt Knöfel Test bay engineer ID number: ID Nummer PB - K - 2200120 - 45615803 Date: Datum Gottschlich Authorized inspection representative |
+| 4 | chunk_bab78278270645edbb6998b7ee84956f | doc_e0fcea690de04ace8d4203812e4b3700 | hybrid | 22.050 | 1 | Certificate for AC Generators or Motors | Office Hamburg Client VEM Sachsenwerk GmbH Dresden - Germany Date |
+| 5 | chunk_8e81fe39cfbf42759a0753945aa55f30 | doc_e0fcea690de04ace8d4203812e4b3700 | hybrid | 22.050 | 1 | Certificate for AC Generators or Motors > General information | 06 June 2025 Order number on Manufacturer --- Work’s order number K - 2200120 Manufacturer Intended for VEM Sachsenwerk GmbH Besecke GmbH First date of inspection Final date of... |
 
 ### `VEMC-001` What rated data and project title are listed for motor serial number 45558203?
 
@@ -530,32 +384,32 @@
 - expected section path: `Rated data / General data`
 - expected page: `1`
 - expected rank target: `top_3`
-- anchor matched rank: `8`
-- context matched rank: `8`
+- anchor matched rank: `7`
+- context matched rank: `7`
 - expected passage: `3ph Mot. Typ P62B 355LX4; Nr. 45558203 / 2023; Project title My Boardwalk - PTI/PTO PS; Customer Besecke GmbH; internal order no. K-2200110; 520/690 V; 40.0/73.3 Hz; 726/564 A; 600/600 kW; 1200/2200 rpm; IP 54; IC 71W.`
 - failure reasons:
-  - Anchor retrieval found relevant evidence, but later than the expected top_3 target (matched rank: 8).
+  - Anchor retrieval found relevant evidence, but later than the expected top_3 target (matched rank: 7).
 
 #### Anchor Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_00d7f7cb852041198f7b99d062353a4c | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 15.750 | 2 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | EZ 16 Check of space heater / Prüfung Stillstandsheizung Quantity Anzahl Rated data Bemessungsdaten DC resistance Gleichstromwiderstand Temperature Temperatur Insulation resista... |
-| 2 | chunk_ecf9d184536e42ea867f2064158b9d9d | doc_dbb5d60617604a81a385a20bd142adb0 | sql_keyword | 15.750 | 2 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Annex / Anlagen n/a This document was created automatically and is also valid without signature! / Dieses Dokument wurde maschinell erstellt und ist auch ohne Unterschrift gülti... |
-| 3 | chunk_54fbf7bed2db4ac38292b36576c98eab | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 14.400 | 1 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Rated data / Bemessungsdaten General data / Allgemeine Angaben 3ph Mot. |
-| 4 | chunk_b8c19f9bebff454aa5b3b2ddcd8777b2 | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 14.400 | 1 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | n/a | Rated data / Bemessungsdaten | General data / Allgemeine Angaben | Rated data / Bemessungsdaten | Rated data / Bemessungsdaten | Rated data / Bemessungsdaten | Rated data... |
-| 5 | chunk_e39fbeaff3f6429b9889b75290d2d190 | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 13.250 | 1 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Context: Synchronmotor Rated data / Bemessungsdaten |
+| 1 | chunk_1c03793bccb54779b8db7ad660dc2b54 | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 15.750 | 2 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | EZ 16 Check of space heater / Prüfung Stillstandsheizung Quantity Anzahl Rated data Bemessungsdaten DC resistance Gleichstromwiderstand Temperature Temperatur Insulation resista... |
+| 2 | chunk_5422dc7ab0c5462cb988cfe15306173a | doc_dbb5d60617604a81a385a20bd142adb0 | sql_keyword | 15.750 | 2 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Annex / Anlagen n/a This document was created automatically and is also valid without signature! / Dieses Dokument wurde maschinell erstellt und ist auch ohne Unterschrift gülti... |
+| 3 | chunk_157830c64ed147bb817b31fb63a19036 | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 14.400 | 1 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Rated data / Bemessungsdaten General data / Allgemeine Angaben 3ph Mot. |
+| 4 | chunk_55491b087ef6435ca3b4f18b48342c02 | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 14.400 | 1 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | n/a | Rated data / Bemessungsdaten | General data / Allgemeine Angaben | Rated data / Bemessungsdaten | Rated data / Bemessungsdaten | Rated data / Bemessungsdaten | Rated data... |
+| 5 | chunk_484deb870d364c29853a8d4e4ff10c46 | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 12.750 | 1 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | n/a °C Winding instruction Wickelanweisung n/a cos φ 0.94/0.91 < UVW Exciter machine type Erregermaschinentyp n/a 1200/2200 rpm IP 54 IC 71W Ex-protection data / Ex Schutz Angab... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_00d7f7cb852041198f7b99d062353a4c | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 15.750 | 2 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | EZ 16 Check of space heater / Prüfung Stillstandsheizung Quantity Anzahl Rated data Bemessungsdaten DC resistance Gleichstromwiderstand Temperature Temperatur Insulation resista... |
-| 2 | chunk_ecf9d184536e42ea867f2064158b9d9d | doc_dbb5d60617604a81a385a20bd142adb0 | sql_keyword | 15.750 | 2 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Annex / Anlagen n/a This document was created automatically and is also valid without signature! / Dieses Dokument wurde maschinell erstellt und ist auch ohne Unterschrift gülti... |
-| 3 | chunk_54fbf7bed2db4ac38292b36576c98eab | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 14.400 | 1 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Rated data / Bemessungsdaten General data / Allgemeine Angaben 3ph Mot. |
-| 4 | chunk_b8c19f9bebff454aa5b3b2ddcd8777b2 | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 14.400 | 1 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | n/a | Rated data / Bemessungsdaten | General data / Allgemeine Angaben | Rated data / Bemessungsdaten | Rated data / Bemessungsdaten | Rated data / Bemessungsdaten | Rated data... |
-| 5 | chunk_e39fbeaff3f6429b9889b75290d2d190 | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 13.250 | 1 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Context: Synchronmotor Rated data / Bemessungsdaten |
+| 1 | chunk_1c03793bccb54779b8db7ad660dc2b54 | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 15.750 | 2 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | EZ 16 Check of space heater / Prüfung Stillstandsheizung Quantity Anzahl Rated data Bemessungsdaten DC resistance Gleichstromwiderstand Temperature Temperatur Insulation resista... |
+| 2 | chunk_5422dc7ab0c5462cb988cfe15306173a | doc_dbb5d60617604a81a385a20bd142adb0 | sql_keyword | 15.750 | 2 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Annex / Anlagen n/a This document was created automatically and is also valid without signature! / Dieses Dokument wurde maschinell erstellt und ist auch ohne Unterschrift gülti... |
+| 3 | chunk_157830c64ed147bb817b31fb63a19036 | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 14.400 | 1 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | Rated data / Bemessungsdaten General data / Allgemeine Angaben 3ph Mot. |
+| 4 | chunk_55491b087ef6435ca3b4f18b48342c02 | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 14.400 | 1 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | n/a | Rated data / Bemessungsdaten | General data / Allgemeine Angaben | Rated data / Bemessungsdaten | Rated data / Bemessungsdaten | Rated data / Bemessungsdaten | Rated data... |
+| 5 | chunk_484deb870d364c29853a8d4e4ff10c46 | doc_dbb5d60617604a81a385a20bd142adb0 | hybrid | 12.750 | 1 | Inspection certificate 3.2 according to EN 10204 Abnahmeprüfzeugnis 3.2 nach EN 10204 | n/a °C Winding instruction Wickelanweisung n/a cos φ 0.94/0.91 < UVW Exciter machine type Erregermaschinentyp n/a 1200/2200 rpm IP 54 IC 71W Ex-protection data / Ex Schutz Angab... |
 
 ### `VEMC-003` What direction of rotation connection is specified in ES 20?
 
@@ -607,66 +461,52 @@
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_741f3bba54954be2bf1e053be1ca3ca3 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 19.100 | 40 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.1 MAINTENANCE | Under normal operating conditions the pump-motor unit will not require maintenance. Conduct routine inspection on the pump and connected parts to check for a perfect seal. Check... |
-| 2 | chunk_59acd0d933804882bdfe13369a7c27be | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 19.100 | 40-41 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.1 MAINTENANCE | Under normal operating conditions the pump-motor unit will not require maintenance. Conduct routine inspection on the pump and connected parts to check for a perfect seal. Check... |
-| 3 | chunk_f1cd90b070014111845b39534b8dea27 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 17.600 | 39-40 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > STARTING AND CHECKING OPERATIONS
+| 1 | chunk_ab88c37f1dcd4d429de5893016e3e8d9 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 19.100 | 40 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.1 MAINTENANCE | Under normal operating conditions the pump-motor unit will not require maintenance. Conduct routine inspection on the pump and connected parts to check for a perfect seal. Check... |
+| 2 | chunk_681a1b76f7824a91b8f2fb724332b347 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 19.100 | 40-41 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.1 MAINTENANCE | Under normal operating conditions the pump-motor unit will not require maintenance. Conduct routine inspection on the pump and connected parts to check for a perfect seal. Check... |
+| 3 | chunk_83c44a7eecee498fb2709a00ffff67a8 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 17.600 | 39-40 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > STARTING AND CHECKING OPERATIONS
 L2 L3L1 L2 L3 STA
 L1 L2 L3 NG AND 
 L1 L2 L3 | W2 U2 V2 U1 V1 W1 L3 L2 L1 Close the air vent holes (1). Tighten the needle screw (14.17) in the drainage plug (14.12) (Fig.3b) and close B 50 the air vent hole (14.04). ), MXV(... |
-| 4 | chunk_2cea149fd02d44518d4a294880f55429 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 14.750 | 16 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.2 WARNING CONDITIONS > 7. SYSTEM FLUSHING PROCEDURE | A PURO system does not have the same dilemma as a sea water RO unit where we have "live" sea water with a lot of organisms sitting in the filters, pumps and membranes. In a sea... |
-| 5 | chunk_3ead68ecb50a48f4aa7a56889cb95c0a | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 14.750 | 16 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.2 WARNING CONDITIONS > 7. SYSTEM FLUSHING PROCEDURE | Should you find it necessary to do a system flush, follow this procedure: 7.1 Ensure that valves isolating valves in/out V1 and V13, discharge V6, manual regulating valve V5 are... |
+| 4 | chunk_181e577dd7434c83a615dd041316abc6 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 14.900 | 205 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > Risk of data loss
+This is
+when the
+device is be
+asgug 
+8133)
+e statusof the functio
+S oss
+This is oss
+when the oss
+device is be-
+S isk of 
+8.13.3) | ENTERING The choices offered depend on the modules fitted and/or the options activated. See chapter "Consulting lih STATUS: Choose to activate (choose "ON") or deactivate (choos... |
+| 5 | chunk_6eb42dc9281b4ce2bd984d9891347ce7 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 14.750 | 16 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.2 WARNING CONDITIONS > 7. SYSTEM FLUSHING PROCEDURE | A PURO system does not have the same dilemma as a sea water RO unit where we have "live" sea water with a lot of organisms sitting in the filters, pumps and membranes. In a sea... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_741f3bba54954be2bf1e053be1ca3ca3 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 19.100 | 40 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.1 MAINTENANCE | Under normal operating conditions the pump-motor unit will not require maintenance. Conduct routine inspection on the pump and connected parts to check for a perfect seal. Check... |
-| 2 | chunk_59acd0d933804882bdfe13369a7c27be | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 19.100 | 40-41 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.1 MAINTENANCE | Under normal operating conditions the pump-motor unit will not require maintenance. Conduct routine inspection on the pump and connected parts to check for a perfect seal. Check... |
-| 3 | chunk_f1cd90b070014111845b39534b8dea27 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 17.600 | 39-40 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > STARTING AND CHECKING OPERATIONS
+| 1 | chunk_ab88c37f1dcd4d429de5893016e3e8d9 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 19.100 | 40 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.1 MAINTENANCE | Under normal operating conditions the pump-motor unit will not require maintenance. Conduct routine inspection on the pump and connected parts to check for a perfect seal. Check... |
+| 2 | chunk_681a1b76f7824a91b8f2fb724332b347 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 19.100 | 40-41 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.1 MAINTENANCE | Under normal operating conditions the pump-motor unit will not require maintenance. Conduct routine inspection on the pump and connected parts to check for a perfect seal. Check... |
+| 3 | chunk_83c44a7eecee498fb2709a00ffff67a8 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 17.600 | 39-40 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > STARTING AND CHECKING OPERATIONS
 L2 L3L1 L2 L3 STA
 L1 L2 L3 NG AND 
 L1 L2 L3 | W2 U2 V2 U1 V1 W1 L3 L2 L1 Close the air vent holes (1). Tighten the needle screw (14.17) in the drainage plug (14.12) (Fig.3b) and close B 50 the air vent hole (14.04). ), MXV(... |
-| 4 | chunk_2cea149fd02d44518d4a294880f55429 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 14.750 | 16 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.2 WARNING CONDITIONS > 7. SYSTEM FLUSHING PROCEDURE | A PURO system does not have the same dilemma as a sea water RO unit where we have "live" sea water with a lot of organisms sitting in the filters, pumps and membranes. In a sea... |
-| 5 | chunk_3ead68ecb50a48f4aa7a56889cb95c0a | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 14.750 | 16 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.2 WARNING CONDITIONS > 7. SYSTEM FLUSHING PROCEDURE | Should you find it necessary to do a system flush, follow this procedure: 7.1 Ensure that valves isolating valves in/out V1 and V13, discharge V6, manual regulating valve V5 are... |
-
-### `PURO-004` What maintenance intervals are listed for cartridge filters, low pressure switch, HP pump, cleaning pump, and electrical equipment?
-
-- query type: `maintenance_interval_lookup`
-- expected document: `manual_puro30_hem`
-- expected file: `PURO 30-OWNERS MANUAL-HM13378-ROS213.pdf`
-- expected section path: `9. SYSTEM MAINTENANCE > 9.1 MAINTENANCE SCHEDULE`
-- expected page: `19`
-- expected rank target: `top_3`
-- anchor matched rank: `miss`
-- context matched rank: `miss`
-- expected passage: `Cartridge filters: change when pressure after filter drops to 3.5 psi or every 3 months; low pressure switch: test once every 6 months; HP pump: every 8000 Hrs when leaking, check for leaks and motor bearing noise; cleaning pump: change shaft seal every 2,000 hours; electrical equipment and control box: check terminal connectors for tightness once per year.`
-- failure reasons:
-  - Anchor retrieval did not return the expected evidence.
-  - Anchor retrieval did not return the resolved expected chunk id.
-  - Anchor retrieval missed the expected section path.
-  - Anchor retrieval did not return a chunk covering expected page 19.
-
-#### Anchor Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_b3f0ecc8a0ea400692c4de3c0a5c22aa | doc_6e651d1245a548bcb9324d75408f5992 | hybrid | 18.450 | 15 | Lamp labels | The low pressure switch opens due to insufficient feed pressure under normal operation. Alarm relay R5 will be energized, the "LP Switch Fault" red alarm lamp will light up and... |
-| 2 | chunk_38b8553cafbd4bb68d5d5adc5073d9a1 | doc_6e651d1245a548bcb9324d75408f5992 | hybrid | 17.100 | 15 | Title block / vessel particulars | NB: With this new generation PURO, using a centrifugal pump as HP pump, the use of a High Pressure switch is redundant and is now omitted. The cleaning pump thermal overload or... |
-| 3 | chunk_cfb52ddf5b9b49ce9fac15f8b39a9179 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 17.100 | 37 | Title block | To ensure stability, insert, if necessary, small pieces of ATTENTION: Install a check valve between the alibrated metal plate next to the 4 anchoring screws. pump and the gate v... |
-| 4 | chunk_44f4b24a000d486e8f10bd6f3faa185d | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 17.100 | 51 | Lamp labels | ATTENTION : When the pump is fed by a frequency converter, the minimum Fig. 3 Sostegni ed ancoraggi delle tubazioni frequency should not fall below 25 Hz and in any case the tot... |
-| 5 | chunk_5f7fa9830fd34db6a7f45cc799824251 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 16.800 | 14 | 1. INTRODUCTION > 5. START-UP AND STOP PROCEDURE | The 3-way valve V16 should be set so as to divert water to the technical water tank. Make sure the following valves are closed: dump return to cleaning tank V12, discharge V6, b... |
-
-
-#### Context Top Chunks
-
-| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
-|---|---|---|---|---:|---|---|---|
-| 1 | chunk_b3f0ecc8a0ea400692c4de3c0a5c22aa | doc_6e651d1245a548bcb9324d75408f5992 | hybrid | 18.450 | 15 | Lamp labels | The low pressure switch opens due to insufficient feed pressure under normal operation. Alarm relay R5 will be energized, the "LP Switch Fault" red alarm lamp will light up and... |
-| 2 | chunk_38b8553cafbd4bb68d5d5adc5073d9a1 | doc_6e651d1245a548bcb9324d75408f5992 | hybrid | 17.100 | 15 | Title block / vessel particulars | NB: With this new generation PURO, using a centrifugal pump as HP pump, the use of a High Pressure switch is redundant and is now omitted. The cleaning pump thermal overload or... |
-| 3 | chunk_cfb52ddf5b9b49ce9fac15f8b39a9179 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 17.100 | 37 | Title block | To ensure stability, insert, if necessary, small pieces of ATTENTION: Install a check valve between the alibrated metal plate next to the 4 anchoring screws. pump and the gate v... |
-| 4 | chunk_44f4b24a000d486e8f10bd6f3faa185d | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 17.100 | 51 | Lamp labels | ATTENTION : When the pump is fed by a frequency converter, the minimum Fig. 3 Sostegni ed ancoraggi delle tubazioni frequency should not fall below 25 Hz and in any case the tot... |
-| 5 | chunk_5f7fa9830fd34db6a7f45cc799824251 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 16.800 | 14 | 1. INTRODUCTION > 5. START-UP AND STOP PROCEDURE | The 3-way valve V16 should be set so as to divert water to the technical water tank. Make sure the following valves are closed: dump return to cleaning tank V12, discharge V6, b... |
+| 4 | chunk_181e577dd7434c83a615dd041316abc6 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 14.900 | 205 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > Risk of data loss
+This is
+when the
+device is be
+asgug 
+8133)
+e statusof the functio
+S oss
+This is oss
+when the oss
+device is be-
+S isk of 
+8.13.3) | ENTERING The choices offered depend on the modules fitted and/or the options activated. See chapter "Consulting lih STATUS: Choose to activate (choose "ON") or deactivate (choos... |
+| 5 | chunk_6eb42dc9281b4ce2bd984d9891347ce7 | doc_6e651d1245a548bcb9324d75408f5992 | sql_keyword | 14.750 | 16 | 1. INTRODUCTION > 6. ALARM AND WARNING CONDITIONS > 6.2 WARNING CONDITIONS > 7. SYSTEM FLUSHING PROCEDURE | A PURO system does not have the same dilemma as a sea water RO unit where we have "live" sea water with a lot of organisms sitting in the filters, pumps and membranes. In a sea... |
 
 ### `BAUER-002` Where does the manual describe the electrical connection of the compressor unit?
 
@@ -689,22 +529,60 @@ L1 L2 L3 | W2 U2 V2 U1 V1 W1 L3 L2 L1 Close the air vent holes (1). Tighten the 
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_8b1bd1ae9b874935abc51b91d417e2d7 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 17.400 | 92 | 7 Commissioning and operation > 7.2 Starting up the unit > Do you get elevated measured values? | The optional purging device automatically directs the compressed air into the surroundings until the measured values are within the permissible range of values. Proceed as follo... |
-| 2 | chunk_c714a27a0f3e4de289f54e5a99c4d7b1 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 17.400 | 96 | 7 Commissioning and operation > Material damage due to incorrect direction of rotation of the unit! | The integrated oil pump lubricates the compressor block only if the direction of rotation is correct. Inadequate lubrication can lead to damage to the unit within a few seconds.... |
-| 3 | chunk_4bf4d672b1814a1497e7c36fd3b678a3 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 17.400 | 112-113 | 7 Commissioning and operation > 7.4 Configuring the electronic control system > 7.4.9 B-CLOUD Connection configuration > Prerequisites: | ü The electronic device control is fitted with the B-CLOUD ready option. ü The electronic device control is connected to the internet. Open the page "Cloud connection" on the de... |
-| 4 | chunk_380e6d2e8f3c4eb7a90621ae4a8122cc | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 17.400 | 125-127 | 7 Commissioning and operation > 7.5 Operation > 7.5.10 Operating the control system with the B-APP | The electronic control system B-CONTROL MICRO can be operated via WLAN using a smartphone. You can download the B-APP free of charge from the AppStore and from Google Play. Conn... |
-| 5 | chunk_1e41e69887b84214ac927aff443a469e | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 16.050 | 170 | 9 Maintenance > 9.12 Maintenance activities pressure retention valve > 9.12.1 Checking the pressure maintaining valve | ü A pressure gauge is connected upstream to the pressure maintaining valve. Check the pressure maintaining valve retention valve for leak-tightness on both the inside and the ou... |
+| 1 | chunk_70b44b79179a4e94827d5f0072a4c7fa | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 18.050 | 108 | 7 Commissioning and operation > 7.4 Configuring the electronic control system > Start page → Compressor Setup → Unit/compressor Setup→ Valves | For setting the interval and drain duration, login with authorisation level 0 is required, see Authorisations, Page 101 . For setting the valve type, login with authorisation le... |
+| 2 | chunk_e4255f9cddef40e6896534e37c517152 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 18.050 | 176 | 9 Maintenance > 9.16 Maintenance activities - Automatic condensate drain > Start page → Compressor setup → Unit/compressor setup → Valves → Valve test | Valve test 回 Cond.valve 1: Open Cond.valve 2: Open Cond.valve 3: Open Intake valve closed Ä A distinct click can be heard. No click heard. ？ The valve piston is jammed or the va... |
+| 3 | chunk_350c90112d2f4402a459bc94e80e09b7 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 14.400 | 180 | 9 Maintenance > 9.17 Maintenance activities gas measurement unit > 9.17.1 Checking the sensors | 2 Pressure reducer 3 Flow gauge 4 Plug connection Screw the pressure reducer with integrated flow meter onto the gas cylinder. |
+| 4 | chunk_d7f61663a212421d94427ee1027a17f2 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 14.400 | 189 | 10 Disassembly and disposal > Environmental damage in case of improper disposal! | Electrical waste, electronic components, lubricants and other auxiliary materials are subject to the provisions regarding the treatment of special waste. Ensure that these mater... |
+| 5 | chunk_f0de712710264c65852fd4d0e1fd9ad2 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 13.050 | 26-27 | 2 For your safety > 2.6 Organisational duties > 2.6.1 Personnel selection and qualification > Commissioning | BAUER KOMPRESSOREN carry out the assembly and installation activities. Ensure that only competent personnel carry out the first commissioning and recurrent tests. Ensure that on... |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_8b1bd1ae9b874935abc51b91d417e2d7 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 17.400 | 92 | 7 Commissioning and operation > 7.2 Starting up the unit > Do you get elevated measured values? | The optional purging device automatically directs the compressed air into the surroundings until the measured values are within the permissible range of values. Proceed as follo... |
-| 2 | chunk_c714a27a0f3e4de289f54e5a99c4d7b1 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 17.400 | 96 | 7 Commissioning and operation > Material damage due to incorrect direction of rotation of the unit! | The integrated oil pump lubricates the compressor block only if the direction of rotation is correct. Inadequate lubrication can lead to damage to the unit within a few seconds.... |
-| 3 | chunk_4bf4d672b1814a1497e7c36fd3b678a3 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 17.400 | 112-113 | 7 Commissioning and operation > 7.4 Configuring the electronic control system > 7.4.9 B-CLOUD Connection configuration > Prerequisites: | ü The electronic device control is fitted with the B-CLOUD ready option. ü The electronic device control is connected to the internet. Open the page "Cloud connection" on the de... |
-| 4 | chunk_380e6d2e8f3c4eb7a90621ae4a8122cc | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 17.400 | 125-127 | 7 Commissioning and operation > 7.5 Operation > 7.5.10 Operating the control system with the B-APP | The electronic control system B-CONTROL MICRO can be operated via WLAN using a smartphone. You can download the B-APP free of charge from the AppStore and from Google Play. Conn... |
-| 5 | chunk_1e41e69887b84214ac927aff443a469e | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 16.050 | 170 | 9 Maintenance > 9.12 Maintenance activities pressure retention valve > 9.12.1 Checking the pressure maintaining valve | ü A pressure gauge is connected upstream to the pressure maintaining valve. Check the pressure maintaining valve retention valve for leak-tightness on both the inside and the ou... |
+| 1 | chunk_70b44b79179a4e94827d5f0072a4c7fa | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 18.050 | 108 | 7 Commissioning and operation > 7.4 Configuring the electronic control system > Start page → Compressor Setup → Unit/compressor Setup→ Valves | For setting the interval and drain duration, login with authorisation level 0 is required, see Authorisations, Page 101 . For setting the valve type, login with authorisation le... |
+| 2 | chunk_e4255f9cddef40e6896534e37c517152 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 18.050 | 176 | 9 Maintenance > 9.16 Maintenance activities - Automatic condensate drain > Start page → Compressor setup → Unit/compressor setup → Valves → Valve test | Valve test 回 Cond.valve 1: Open Cond.valve 2: Open Cond.valve 3: Open Intake valve closed Ä A distinct click can be heard. No click heard. ？ The valve piston is jammed or the va... |
+| 3 | chunk_350c90112d2f4402a459bc94e80e09b7 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 14.400 | 180 | 9 Maintenance > 9.17 Maintenance activities gas measurement unit > 9.17.1 Checking the sensors | 2 Pressure reducer 3 Flow gauge 4 Plug connection Screw the pressure reducer with integrated flow meter onto the gas cylinder. |
+| 4 | chunk_d7f61663a212421d94427ee1027a17f2 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 14.400 | 189 | 10 Disassembly and disposal > Environmental damage in case of improper disposal! | Electrical waste, electronic components, lubricants and other auxiliary materials are subject to the provisions regarding the treatment of special waste. Ensure that these mater... |
+| 5 | chunk_f0de712710264c65852fd4d0e1fd9ad2 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 13.050 | 26-27 | 2 For your safety > 2.6 Organisational duties > 2.6.1 Personnel selection and qualification > Commissioning | BAUER KOMPRESSOREN carry out the assembly and installation activities. Ensure that only competent personnel carry out the first commissioning and recurrent tests. Ensure that on... |
+
+### `BAUER-003` Where is the maintenance table in the Bauer compressor manual?
+
+- query type: `maintenance_interval_lookup`
+- expected document: `manual_bauer_mv320_compressor`
+- expected file: `01 Operating Manual High Pressure Compressors MV320 20251125.pdf`
+- expected section path: `9 Maintenance > 9.2 Maintenance table`
+- expected page: `139`
+- expected rank target: `top_5`
+- anchor matched rank: `miss`
+- context matched rank: `miss`
+- expected passage: `The table of contents lists 9 Maintenance, 9.1 Evidence of maintenance on page 139, and 9.2 Maintenance table on page 139.`
+- failure reasons:
+  - Anchor retrieval did not return the expected evidence.
+  - Anchor retrieval did not return the resolved expected chunk id.
+  - Anchor retrieval missed the expected section path.
+  - Anchor retrieval did not return a chunk covering expected page 139.
+
+#### Anchor Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_a4b04e1b1ded4620925b454dfd983640 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 21.400 | 164 | 9 Maintenance > 9.10 Maintenance activities filter system > Determining the cartridge service life in cylinder fillings | Number of bottle fillings n and bottle size [l] Ambient temperature tU [°C] Temperature in final separator tAb [°C] Moisture content 7 l 10 l of air, saturated X [g/m3] 20 - 24... |
+| 2 | chunk_a38c8fdacd814f20a33ec25569976368 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 21.250 | 113 | 7 Commissioning and operation > 7.4 Configuring the electronic control system > 7.4.9 B-CLOUD Connection configuration > Prerequisites: > Compliance information | Set maximum "Access level" to limit the setting possibilities for the authorised B-CLOUD user. See table below: | Access level | Target group | Permitted settings | |-----------... |
+| 3 | chunk_787e279c3acc481bb0bdcfc52d8dc984 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 18.400 | 141 | 9 Maintenance > 9.3 Resources for maintenance and repairs > 9.3.3 Adhesive and sealant | Tab. 10 Adhesive and sealant table | Application range | Adhesive or sealant | |-------------------------------------------------|---------------------------------| | High-stren... |
+| 4 | chunk_3580e0a1ea3f438cb849033d0bfd8fc3 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 18.400 | 144 | 9 Maintenance > 9.3 Resources for maintenance and repairs > Order number | BAUERspecial compressor oils can be delivered in the following packing units: |
+| 5 | chunk_6b6730b9fd9743b2adefdc7023a593f6 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 18.400 | 145 | 9 Maintenance > 9.3 Resources for maintenance and repairs > 9.3.6 Test material | Tab. 12 Test medium table | Application range | Test medium | |-------------------------|-------------------------------------------| | Screwed fittings, lines | Leak detection... |
+
+
+#### Context Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_a4b04e1b1ded4620925b454dfd983640 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 21.400 | 164 | 9 Maintenance > 9.10 Maintenance activities filter system > Determining the cartridge service life in cylinder fillings | Number of bottle fillings n and bottle size [l] Ambient temperature tU [°C] Temperature in final separator tAb [°C] Moisture content 7 l 10 l of air, saturated X [g/m3] 20 - 24... |
+| 2 | chunk_a38c8fdacd814f20a33ec25569976368 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 21.250 | 113 | 7 Commissioning and operation > 7.4 Configuring the electronic control system > 7.4.9 B-CLOUD Connection configuration > Prerequisites: > Compliance information | Set maximum "Access level" to limit the setting possibilities for the authorised B-CLOUD user. See table below: | Access level | Target group | Permitted settings | |-----------... |
+| 3 | chunk_787e279c3acc481bb0bdcfc52d8dc984 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 18.400 | 141 | 9 Maintenance > 9.3 Resources for maintenance and repairs > 9.3.3 Adhesive and sealant | Tab. 10 Adhesive and sealant table | Application range | Adhesive or sealant | |-------------------------------------------------|---------------------------------| | High-stren... |
+| 4 | chunk_3580e0a1ea3f438cb849033d0bfd8fc3 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 18.400 | 144 | 9 Maintenance > 9.3 Resources for maintenance and repairs > Order number | BAUERspecial compressor oils can be delivered in the following packing units: |
+| 5 | chunk_6b6730b9fd9743b2adefdc7023a593f6 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 18.400 | 145 | 9 Maintenance > 9.3 Resources for maintenance and repairs > 9.3.6 Test material | Tab. 12 Test medium table | Application range | Test medium | |-------------------------|-------------------------------------------| | Screwed fittings, lines | Leak detection... |
 
 ### `BAUER-004` Where are filter cartridge replacement intervals documented for the MINI-VERTICUS compressor?
 
@@ -727,19 +605,56 @@ L1 L2 L3 | W2 U2 V2 U1 V1 W1 L3 L2 L1 Close the air vent holes (1). Tighten the 
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_3044baf23f7a47f7b0ff809a08453c23 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 38.450 | 195 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | Filter cartridge order number | Molecular sieve mass mMS [g] | |---------------------------------|--------------------------------| | 058826 | 1323 | |
-| 2 | chunk_cf6fdaa699344d788f033259645803bf | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 38.450 | 196 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | 30 | 40 - 44 | 172 - 141 | 129 - 106 | 81 - 66 | 57 - 47 | 48 - 39 | 38 - 31 | |------|-----------|-------------|-------------|-----------|-----------|-----------|-----------|... |
-| 3 | chunk_dba054fe7fb04fe0873f9e39a19f1746 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 38.450 | 196 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | | | | Number of cylinder fillings n according to cylinder size [l] | Number of cylinder fillings n according to cylinder size [l] | Number of cylinder fillings n according to... |
-| 4 | chunk_95cb2f43acfd4d3c8a585655c03cc2cb | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 38.450 | 197 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 > Filter cartridge 058827 | | Filter cartridge order number | Molecular sieve mass mMS [g] | |---------------------------------|--------------------------------| | 058827 | 1169 | |
-| 5 | chunk_c1d80cc323eb4fb4b39589fe0af1d533 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 38.450 | 198 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 > Filter cartridge 058827 | | 30 | 40 - 44 | 152 - 125 | 114 - 94 | 71 - 59 | 51 - 42 | 42 - 35 | 34 - 28 | |------|-----------|-------------|------------|-----------|-----------|-----------|-----------| |... |
+| 1 | chunk_a25ab975ba0e47dab2ff60cbaefd9756 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 35.450 | 195 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | Filter cartridge order number | Molecular sieve mass mMS [g] | |---------------------------------|--------------------------------| | 058826 | 1323 | |
+| 2 | chunk_ffbd630bc16548298c747addb6f20964 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 35.450 | 195 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge... |
+| 3 | chunk_9c6143a3822e40b3a2e710f2a0a2f370 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 35.450 | 195 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge... |
+| 4 | chunk_1488532835f74d30b13bf33ca45cb469 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 35.450 | 195 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge... |
+| 5 | chunk_4ebe360e48604ed2a9358eacbf3b0513 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 35.450 | 197 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 > Filter cartridge 058827 | | Filter cartridge order number | Molecular sieve mass mMS [g] | |---------------------------------|--------------------------------| | 058827 | 1169 | |
 
 
 #### Context Top Chunks
 
 | Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
 |---|---|---|---|---:|---|---|---|
-| 1 | chunk_3044baf23f7a47f7b0ff809a08453c23 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 38.450 | 195 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | Filter cartridge order number | Molecular sieve mass mMS [g] | |---------------------------------|--------------------------------| | 058826 | 1323 | |
-| 2 | chunk_cf6fdaa699344d788f033259645803bf | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 38.450 | 196 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | 30 | 40 - 44 | 172 - 141 | 129 - 106 | 81 - 66 | 57 - 47 | 48 - 39 | 38 - 31 | |------|-----------|-------------|-------------|-----------|-----------|-----------|-----------|... |
-| 3 | chunk_dba054fe7fb04fe0873f9e39a19f1746 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 38.450 | 196 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | | | | Number of cylinder fillings n according to cylinder size [l] | Number of cylinder fillings n according to cylinder size [l] | Number of cylinder fillings n according to... |
-| 4 | chunk_95cb2f43acfd4d3c8a585655c03cc2cb | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 38.450 | 197 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 > Filter cartridge 058827 | | Filter cartridge order number | Molecular sieve mass mMS [g] | |---------------------------------|--------------------------------| | 058827 | 1169 | |
-| 5 | chunk_c1d80cc323eb4fb4b39589fe0af1d533 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 38.450 | 198 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 > Filter cartridge 058827 | | 30 | 40 - 44 | 152 - 125 | 114 - 94 | 71 - 59 | 51 - 42 | 42 - 35 | 34 - 28 | |------|-----------|-------------|------------|-----------|-----------|-----------|-----------| |... |
+| 1 | chunk_a25ab975ba0e47dab2ff60cbaefd9756 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 35.450 | 195 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | Filter cartridge order number | Molecular sieve mass mMS [g] | |---------------------------------|--------------------------------| | 058826 | 1323 | |
+| 2 | chunk_ffbd630bc16548298c747addb6f20964 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 35.450 | 195 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge... |
+| 3 | chunk_9c6143a3822e40b3a2e710f2a0a2f370 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 35.450 | 195 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge... |
+| 4 | chunk_1488532835f74d30b13bf33ca45cb469 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | sql_keyword | 35.450 | 195 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 | | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge service life [hours] | Cartridge... |
+| 5 | chunk_4ebe360e48604ed2a9358eacbf3b0513 | doc_5fdcf53cc06b4c9783afe901a6b9a93d | hybrid | 35.450 | 197 | 11 Appendix > 11.2 Filter cartridge replacement intervals > 11.2.1 MINI-VERTICUS > Filter cartridge 062565 > Filter cartridge 058826 > Filter cartridge 058827 | | Filter cartridge order number | Molecular sieve mass mMS [g] | |---------------------------------|--------------------------------| | 058827 | 1169 | |
+
+### `VED-003` What maintenance tasks and intervals are listed for skylight blinds?
+
+- query type: `maintenance_interval_lookup`
+- expected document: `report_vedder_maintenance`
+- expected file: `99_Vedder_Maintenance Reports.pdf`
+- expected section path: `4. SKYLIGHT BLINDS - 01 PIECE`
+- expected page: `6`
+- expected rank target: `top_5`
+- anchor matched rank: `10`
+- context matched rank: `10`
+- expected passage: `Annual: check electrical connections inside control box and motors, check condition of all electrical wires, check tension of the belt, and lubricate all bearings. Monthly: check if all functions are working, check move-in mechanism, check fabric for cracks/damages, and clean all components. Check tension of fabric annually or if necessary.`
+- failure reasons:
+  - Anchor retrieval found relevant evidence, but later than the expected top_5 target (matched rank: 10).
+  - Anchor retrieval did not return the resolved expected chunk id.
+  - Anchor retrieval did not return a chunk covering expected page 6.
+
+#### Anchor Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_38e628213c7f4d6695075af9718fcf91 | doc_f2b714dc90024ac3900c37c35071b50b | sql_keyword | 10.350 | 1 | 99_Vedder_Maintenance Reports | V VEDDER |
+| 2 | chunk_4884f02bd8c8488eb0186568f2c3bff3 | doc_f2b714dc90024ac3900c37c35071b50b | hybrid | 10.350 | 7 | 1. INDOOR CLIMATE > MAINTENANCE DOCUMENTATION > 5. FLOOR AND MIRROR HEATING | | YEARLY FUNCTION CHECK | | DONE COMMENTS | |----------------------------------------------------|--------------|-----------------| | SD - V D 0 - Staircase xxxx | Floorheating... |
+| 3 | chunk_f3704a6e6d7c41dca118a883dd7cdea6 | doc_f2b714dc90024ac3900c37c35071b50b | hybrid | 10.350 | 8 | 1. INDOOR CLIMATE > MAINTENANCE DOCUMENTATION > VEDDERGmbH > MAINTENANCE DOCUMENTATION | VEDDER General comments | MD - VI H 3 - Day Head xxxx Floorheating | |----------------------------------------------| | MD - VI H 5 - Corrodor xxxx Floorheating | | LD - II Z 2... |
+| 4 | chunk_788c45132fc04ad08df98a05c592d6c6 | doc_f2b714dc90024ac3900c37c35071b50b | hybrid | 10.350 | 8 | 1. INDOOR CLIMATE > MAINTENANCE DOCUMENTATION > VEDDERGmbH > MAINTENANCE DOCUMENTATION | General comments ______________ ______________________ _______________________ DATE NAME ENGINEER SIGNATURE ENGINEER |
+| 5 | chunk_7bac48d2824042cab2b1d47586ff960d | doc_f2b714dc90024ac3900c37c35071b50b | hybrid | 10.350 | 10 | 1. INDOOR CLIMATE > MAINTENANCE DOCUMENTATION > VEDDERGmbH > MAINTENANCE DOCUMENTATION > 7. SAFES – SAFE-NO.: XX | General comments | TASK (for further info see user manual) | | INTERVAL DONE COMMENTS | |----------------------------------------------------------------------------------------... |
+
+
+#### Context Top Chunks
+
+| Rank | Chunk ID | Document ID | Source | Score | Pages | Section Path | Preview |
+|---|---|---|---|---:|---|---|---|
+| 1 | chunk_38e628213c7f4d6695075af9718fcf91 | doc_f2b714dc90024ac3900c37c35071b50b | sql_keyword | 10.350 | 1 | 99_Vedder_Maintenance Reports | V VEDDER |
+| 2 | chunk_4884f02bd8c8488eb0186568f2c3bff3 | doc_f2b714dc90024ac3900c37c35071b50b | hybrid | 10.350 | 7 | 1. INDOOR CLIMATE > MAINTENANCE DOCUMENTATION > 5. FLOOR AND MIRROR HEATING | | YEARLY FUNCTION CHECK | | DONE COMMENTS | |----------------------------------------------------|--------------|-----------------| | SD - V D 0 - Staircase xxxx | Floorheating... |
+| 3 | chunk_f3704a6e6d7c41dca118a883dd7cdea6 | doc_f2b714dc90024ac3900c37c35071b50b | hybrid | 10.350 | 8 | 1. INDOOR CLIMATE > MAINTENANCE DOCUMENTATION > VEDDERGmbH > MAINTENANCE DOCUMENTATION | VEDDER General comments | MD - VI H 3 - Day Head xxxx Floorheating | |----------------------------------------------| | MD - VI H 5 - Corrodor xxxx Floorheating | | LD - II Z 2... |
+| 4 | chunk_788c45132fc04ad08df98a05c592d6c6 | doc_f2b714dc90024ac3900c37c35071b50b | hybrid | 10.350 | 8 | 1. INDOOR CLIMATE > MAINTENANCE DOCUMENTATION > VEDDERGmbH > MAINTENANCE DOCUMENTATION | General comments ______________ ______________________ _______________________ DATE NAME ENGINEER SIGNATURE ENGINEER |
+| 5 | chunk_7bac48d2824042cab2b1d47586ff960d | doc_f2b714dc90024ac3900c37c35071b50b | hybrid | 10.350 | 10 | 1. INDOOR CLIMATE > MAINTENANCE DOCUMENTATION > VEDDERGmbH > MAINTENANCE DOCUMENTATION > 7. SAFES – SAFE-NO.: XX | General comments | TASK (for further info see user manual) | | INTERVAL DONE COMMENTS | |----------------------------------------------------------------------------------------... |

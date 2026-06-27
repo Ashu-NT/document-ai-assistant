@@ -43,3 +43,36 @@ def test_retrieval_query_analyzer_rewrites_common_identifier_abbreviations() -> 
     analyzed = analyzer.analyze(query)
 
     assert analyzed.rewritten_query == "What is spare part number P33?"
+
+
+def test_retrieval_query_analyzer_prefers_overview_for_conceptual_system_question() -> None:
+    analyzer = RetrievalQueryAnalyzer()
+    query = RetrievalQuery(
+        query_id="query_004",
+        query_text="What does the FWC system do?",
+    )
+
+    analyzed = analyzer.analyze(query)
+
+    assert analyzed.detected_identifiers == []
+    assert analyzed.chunk_types[:2] == [
+        ChunkType.OVERVIEW,
+        ChunkType.GENERAL,
+    ]
+
+
+def test_retrieval_query_analyzer_does_not_force_identifier_for_commissioning_objective() -> None:
+    analyzer = RetrievalQueryAnalyzer()
+    query = RetrievalQuery(
+        query_id="query_005",
+        query_text="What is the objective of commissioning the FWC12?",
+    )
+
+    analyzed = analyzer.analyze(query)
+
+    assert "fwc12" in analyzed.detected_identifiers
+    assert analyzed.chunk_types[:3] == [
+        ChunkType.INSTALLATION_INSTRUCTION,
+        ChunkType.OPERATION_INSTRUCTION,
+        ChunkType.MAINTENANCE_PROCEDURE,
+    ]

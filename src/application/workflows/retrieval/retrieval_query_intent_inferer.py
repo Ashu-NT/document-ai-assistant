@@ -58,6 +58,24 @@ _EXPLORATION_PATTERNS: tuple[re.Pattern[str], ...] = (
         r"what\s+is\s+(this|the)\s+(document|manual|pdf|file|report|guide|datasheet)\s+about\b"
     ),
 )
+_EXPLICIT_IDENTIFIER_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(
+        r"\b(serial|part|order|model|drawing|certificate|approval|position|tag)\s+"
+        r"(number|numbers|no|code|codes|designation)\b"
+    ),
+    re.compile(r"\bspare\s+part\s+(number|no|code)\b"),
+    re.compile(r"\bordering\s+code\b"),
+    re.compile(r"\border\s+code\b"),
+    re.compile(r"\bwhat\s+product\s+is\s+type\s+[a-z0-9-]+\b"),
+    re.compile(r"\bwhat\s+is\s+type\s+[a-z0-9-]+\b"),
+    re.compile(r"\bwhat\s+is\s+position\s+[a-z0-9-]+\b"),
+)
+_OVERVIEW_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"\bwhat\s+does\s+.+\s+do\b"),
+    re.compile(r"\bwhat\s+is\s+.+\s+used\s+for\b"),
+    re.compile(r"\bwhat\s+is\s+the\s+(purpose|function)\s+of\b"),
+    re.compile(r"\bhow\s+does\s+.+\s+work\b"),
+)
 
 
 def _is_document_exploration(query_text: str) -> bool:
@@ -65,6 +83,85 @@ def _is_document_exploration(query_text: str) -> bool:
         if pattern.search(query_text):
             return True
     return False
+
+
+def _is_explicit_identifier_lookup(
+    query_text: str,
+    query: RetrievalQuery | None,
+) -> bool:
+    if any(pattern.search(query_text) for pattern in _EXPLICIT_IDENTIFIER_PATTERNS):
+        return True
+
+    if query is None or not query.has_identifiers():
+        return False
+
+    if any(
+        marker in query_text
+        for marker in (
+            " mean",
+            " means",
+            "meaning",
+            "stand for",
+            "stands for",
+            "designation",
+            "position ",
+            "type ",
+        )
+    ):
+        return True
+
+    return bool(
+        re.search(r"\bwhat\s+does\s+[a-z0-9-]+\s+mean\b", query_text)
+        or re.search(r"\bwhat\s+is\s+position\s+[a-z0-9-]+\b", query_text)
+    )
+
+
+def _is_overview_query(query_text: str) -> bool:
+    if any(pattern.search(query_text) for pattern in _OVERVIEW_PATTERNS):
+        return True
+
+    return any(
+        marker in query_text
+        for marker in (
+            "overview",
+            "summary",
+            "introduction",
+            "explain",
+            "objective",
+            "purpose",
+            "function",
+        )
+    )
+
+
+def _infer_from_chunk_types(query: RetrievalQuery) -> RetrievalQueryIntent | None:
+    if ChunkType.SPARE_PARTS_TABLE in query.chunk_types:
+        return RetrievalQueryIntent.TABLE
+    if ChunkType.DRAWING_REFERENCE in query.chunk_types:
+        return RetrievalQueryIntent.FIGURE
+    if ChunkType.SAFETY_WARNING in query.chunk_types:
+        return RetrievalQueryIntent.SAFETY
+    if ChunkType.TROUBLESHOOTING in query.chunk_types:
+        return RetrievalQueryIntent.TROUBLESHOOTING
+    if any(
+        chunk_type in query.chunk_types
+        for chunk_type in {
+            ChunkType.MAINTENANCE_PROCEDURE,
+            ChunkType.MAINTENANCE_INTERVAL,
+            ChunkType.INSTALLATION_INSTRUCTION,
+            ChunkType.OPERATION_INSTRUCTION,
+        }
+    ):
+        return RetrievalQueryIntent.PROCEDURE
+    if any(
+        chunk_type in query.chunk_types
+        for chunk_type in {
+            ChunkType.TECHNICAL_SPECIFICATION,
+            ChunkType.CERTIFICATION_INFO,
+        }
+    ):
+        return RetrievalQueryIntent.SPECIFICATION
+    return None
 
 
 class RetrievalQueryIntentInferer:
@@ -76,39 +173,21 @@ class RetrievalQueryIntentInferer:
         if query_text and _is_document_exploration(query_text):
             return RetrievalQueryIntent.DOCUMENT_EXPLORATION
 
-        if ChunkType.SPARE_PARTS_TABLE in query.chunk_types:
-            return RetrievalQueryIntent.TABLE
-        if ChunkType.DRAWING_REFERENCE in query.chunk_types:
-            return RetrievalQueryIntent.FIGURE
-        if ChunkType.TECHNICAL_SPECIFICATION in query.chunk_types:
-            return RetrievalQueryIntent.SPECIFICATION
-        if ChunkType.CERTIFICATION_INFO in query.chunk_types:
-            return RetrievalQueryIntent.SPECIFICATION
-        if ChunkType.SAFETY_WARNING in query.chunk_types:
-            return RetrievalQueryIntent.SAFETY
-        if ChunkType.TROUBLESHOOTING in query.chunk_types:
-            return RetrievalQueryIntent.TROUBLESHOOTING
-        if query.has_identifiers():
-            return RetrievalQueryIntent.IDENTIFIER
-        if any(
-            chunk_type in query.chunk_types
-            for chunk_type in {
-                ChunkType.MAINTENANCE_PROCEDURE,
-                ChunkType.MAINTENANCE_INTERVAL,
-                ChunkType.INSTALLATION_INSTRUCTION,
-                ChunkType.OPERATION_INSTRUCTION,
-            }
-        ):
-            return RetrievalQueryIntent.PROCEDURE
-
         if not query_text:
-            return RetrievalQueryIntent.GENERAL
+            return _infer_from_chunk_types(query) or RetrievalQueryIntent.GENERAL
 
         if any(
             marker in query_text
             for marker in ("figure", "diagram", "drawing", "schematic", "image")
         ):
             return RetrievalQueryIntent.FIGURE
+        if any(
+            marker in query_text
+            for marker in ("table", "spare part", "parts list", "spare parts list", "matrix")
+        ):
+            return RetrievalQueryIntent.TABLE
+        if _is_explicit_identifier_lookup(query_text, query):
+            return RetrievalQueryIntent.IDENTIFIER
         if any(
             marker in query_text
             for marker in (
@@ -120,16 +199,10 @@ class RetrievalQueryIntentInferer:
                 "model number",
                 "drawing number",
                 "certificate number",
-                "what does ",
                 "what is position ",
             )
         ):
             return RetrievalQueryIntent.IDENTIFIER
-        if any(
-            marker in query_text
-            for marker in ("table", "spare part", "parts list", "spare parts list", "matrix")
-        ):
-            return RetrievalQueryIntent.TABLE
         if any(
             marker in query_text
             for marker in (
@@ -173,6 +246,7 @@ class RetrievalQueryIntentInferer:
                 "how to",
                 "procedure",
                 "steps",
+                "step",
                 "replace",
                 "install",
                 "configure",
@@ -183,6 +257,8 @@ class RetrievalQueryIntentInferer:
                 "remove",
                 "connect",
                 "shutdown",
+                "commission",
+                "commissioning",
                 "lubricate",
                 "maintenance",
                 "how often",
@@ -190,10 +266,12 @@ class RetrievalQueryIntentInferer:
             )
         ):
             return RetrievalQueryIntent.PROCEDURE
-        if any(
-            marker in query_text
-            for marker in ("overview", "summary", "introduction", "explain")
-        ):
+        if _is_overview_query(query_text):
             return RetrievalQueryIntent.OVERVIEW
+        chunk_type_intent = _infer_from_chunk_types(query)
+        if chunk_type_intent is not None:
+            return chunk_type_intent
+        if query.has_identifiers():
+            return RetrievalQueryIntent.IDENTIFIER
 
         return RetrievalQueryIntent.GENERAL

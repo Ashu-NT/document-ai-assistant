@@ -46,12 +46,14 @@ class DeterministicHybridReranker(Reranker):
             for identifier in query.detected_identifiers
             if identifier and identifier.strip()
         }
+        query_text = query.effective_query().lower()
         return sorted(
             chunks,
             key=lambda chunk: self._score_chunk(
                 query=query,
                 chunk=chunk,
                 intent=intent,
+                query_text=query_text,
                 query_terms=query_terms,
                 query_identifiers=query_identifiers,
             ),
@@ -64,6 +66,7 @@ class DeterministicHybridReranker(Reranker):
         query: RetrievalQuery,
         chunk: RetrievedChunk,
         intent: RetrievalQueryIntent,
+        query_text: str,
         query_terms: list[str],
         query_identifiers: set[str],
     ) -> tuple[float, float, int, int]:
@@ -83,9 +86,20 @@ class DeterministicHybridReranker(Reranker):
         score += dense_score * 1.25
         score += identifier_matches * 35.0
         score += self._role_score(role)
-        score += self._intent_chunk_type_score(intent, chunk.chunk_type, query)
+        score += self._intent_chunk_type_score(
+            intent,
+            chunk.chunk_type,
+            query,
+            query_text=query_text,
+        )
         score += float(section_hit_count) * 2.5
         score -= self._noise_penalty(chunk)
+        score -= self._intent_noise_penalty(
+            intent=intent,
+            chunk_type=chunk.chunk_type,
+            query_text=query_text,
+            identifier_matches=identifier_matches,
+        )
 
         return (
             score,
@@ -156,6 +170,8 @@ class DeterministicHybridReranker(Reranker):
         intent: RetrievalQueryIntent,
         chunk_type: ChunkType,
         query: RetrievalQuery,
+        *,
+        query_text: str,
     ) -> float:
         if query.chunk_types and chunk_type in query.chunk_types:
             base = 8.0
@@ -177,6 +193,13 @@ class DeterministicHybridReranker(Reranker):
         if intent == RetrievalQueryIntent.SPECIFICATION:
             if chunk_type in {ChunkType.TECHNICAL_SPECIFICATION, ChunkType.CERTIFICATION_INFO}:
                 return base + 15.0
+            if chunk_type == ChunkType.MAINTENANCE_INTERVAL:
+                return base + 12.0
+            if chunk_type == ChunkType.OPERATION_INSTRUCTION and any(
+                marker in query_text
+                for marker in ("pressure", "torque", "set", "setting", "adjust", "optimis", "optimiz")
+            ):
+                return base + 10.0
             if chunk_type == ChunkType.SPARE_PARTS_TABLE:
                 return base + 8.0
             if chunk_type == ChunkType.OVERVIEW:
@@ -186,10 +209,17 @@ class DeterministicHybridReranker(Reranker):
                 return base + 16.0
             if chunk_type == ChunkType.MAINTENANCE_PROCEDURE:
                 return base + 15.0
+            if chunk_type == ChunkType.INSTALLATION_INSTRUCTION:
+                return base + 14.0
             if chunk_type == ChunkType.MAINTENANCE_INTERVAL:
                 return base + 12.0
             if chunk_type == ChunkType.TROUBLESHOOTING:
                 return base + 9.0
+            if chunk_type == ChunkType.TECHNICAL_SPECIFICATION and any(
+                marker in query_text
+                for marker in ("quantity", "pressure", "torque", "voltage", "current", "specification", "oil")
+            ):
+                return base + 7.0
             if chunk_type == ChunkType.OVERVIEW:
                 return base - 8.0
             if chunk_type == ChunkType.GENERAL:
@@ -209,7 +239,21 @@ class DeterministicHybridReranker(Reranker):
                 return base + 16.0
         if intent == RetrievalQueryIntent.OVERVIEW:
             if chunk_type == ChunkType.OVERVIEW:
-                return base + 8.0
+                return base + 12.0
+            if chunk_type == ChunkType.GENERAL:
+                return base + 10.0
+            if chunk_type in {
+                ChunkType.OPERATION_INSTRUCTION,
+                ChunkType.INSTALLATION_INSTRUCTION,
+            }:
+                return base + 4.0
+            if chunk_type == ChunkType.TECHNICAL_SPECIFICATION:
+                return base + 1.0
+            if chunk_type in {
+                ChunkType.SPARE_PARTS_TABLE,
+                ChunkType.DRAWING_REFERENCE,
+            }:
+                return base - 12.0
 
         return base
 
@@ -220,3 +264,33 @@ class DeterministicHybridReranker(Reranker):
         if any(marker in normalized_path for marker in _NOISE_PATH_MARKERS):
             penalty += 8.0
         return penalty
+
+    @staticmethod
+    def _intent_noise_penalty(
+        *,
+        intent: RetrievalQueryIntent,
+        chunk_type: ChunkType,
+        query_text: str,
+        identifier_matches: int,
+    ) -> float:
+        if chunk_type == ChunkType.SPARE_PARTS_TABLE and intent not in {
+            RetrievalQueryIntent.IDENTIFIER,
+            RetrievalQueryIntent.TABLE,
+            RetrievalQueryIntent.SPECIFICATION,
+        }:
+            return 18.0
+
+        if chunk_type == ChunkType.DRAWING_REFERENCE and intent not in {
+            RetrievalQueryIntent.IDENTIFIER,
+            RetrievalQueryIntent.FIGURE,
+        }:
+            return 12.0
+
+        if (
+            intent == RetrievalQueryIntent.OVERVIEW
+            and chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+            and "specification" not in query_text
+        ):
+            return 5.0
+
+        return 0.0
