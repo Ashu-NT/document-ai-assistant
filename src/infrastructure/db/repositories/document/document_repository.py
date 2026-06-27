@@ -36,6 +36,9 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
     def save_document_graph(self, document_graph: DocumentGraph) -> None:
         self.writer.save_document_graph(document_graph)
 
+    def replace_document_graph(self, document_graph: DocumentGraph) -> None:
+        self.writer.replace_document_graph(document_graph)
+
     def replace_document_chunk_artifacts(self, document_graph: DocumentGraph) -> None:
         self.writer.replace_document_chunk_artifacts(document_graph)
 

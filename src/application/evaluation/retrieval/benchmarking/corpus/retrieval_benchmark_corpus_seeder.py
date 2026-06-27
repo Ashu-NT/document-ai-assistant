@@ -78,6 +78,7 @@ class RetrievalBenchmarkCorpusSeeder:
         *,
         truth_set_path: Path | str | None = None,
         input_directory: Path | str | None = None,
+        force_reparse_existing: bool = False,
         activity_context: ActivityContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
     ) -> RetrievalBenchmarkCorpusManifest:
@@ -119,6 +120,7 @@ class RetrievalBenchmarkCorpusSeeder:
             )
             document = self._seed_target(
                 seed_target,
+                force_reparse_existing=force_reparse_existing,
                 activity_context=activity_context,
                 progress_callback=progress_callback,
                 seed_index=index,
@@ -151,6 +153,7 @@ class RetrievalBenchmarkCorpusSeeder:
         self,
         seed_target: _CorpusSeedTarget,
         *,
+        force_reparse_existing: bool = False,
         activity_context: ActivityContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
         seed_index: int | None = None,
@@ -176,20 +179,41 @@ class RetrievalBenchmarkCorpusSeeder:
         existing_document_id = duplicate_result.payload.get("existing_document_id")
 
         if existing_document_id:
-            self._emit_progress(
-                progress_callback,
-                (
-                    f"{prefix} Existing document found for {seed_target.document_alias}: "
-                    f"{existing_document_id}"
-                ),
-            )
-            final_graph, classification, seed_status = self._refresh_existing_document(
-                document_id=existing_document_id,
-                activity_context=activity_context,
-                progress_callback=progress_callback,
-                seed_index=seed_index,
-                total_targets=total_targets,
-            )
+            if force_reparse_existing:
+                self._emit_progress(
+                    progress_callback,
+                    (
+                        f"{prefix} Existing document found for {seed_target.document_alias}: "
+                        f"{existing_document_id}. Force reparse enabled; rebuilding persisted document graph."
+                    ),
+                )
+                final_graph, classification, seed_status = (
+                    self._reseed_existing_document(
+                        document_id=existing_document_id,
+                        seed_target=seed_target,
+                        file_hash=file_hash,
+                        content_hash=content_hash,
+                        activity_context=activity_context,
+                        progress_callback=progress_callback,
+                        seed_index=seed_index,
+                        total_targets=total_targets,
+                    )
+                )
+            else:
+                self._emit_progress(
+                    progress_callback,
+                    (
+                        f"{prefix} Existing document found for {seed_target.document_alias}: "
+                        f"{existing_document_id}"
+                    ),
+                )
+                final_graph, classification, seed_status = self._refresh_existing_document(
+                    document_id=existing_document_id,
+                    activity_context=activity_context,
+                    progress_callback=progress_callback,
+                    seed_index=seed_index,
+                    total_targets=total_targets,
+                )
         else:
             self._emit_progress(
                 progress_callback,
@@ -280,6 +304,75 @@ class RetrievalBenchmarkCorpusSeeder:
         self._commit()
 
         return final_graph, classification, "seeded_new"
+
+    def _reseed_existing_document(
+        self,
+        *,
+        document_id: str,
+        seed_target: _CorpusSeedTarget,
+        file_hash: str,
+        content_hash: str | None,
+        activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
+        seed_index: int | None = None,
+        total_targets: int | None = None,
+    ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
+        prefix = self._progress_prefix(
+            seed_index=seed_index,
+            total_targets=total_targets,
+        )
+        self._emit_progress(
+            progress_callback,
+            f"{prefix} Reparsing document with the existing document ID...",
+        )
+        parsing_result = self.parsing_workflow.parse(
+            file_path=str(seed_target.file_path),
+            file_hash=file_hash,
+            content_hash=content_hash,
+            document_id=document_id,
+            activity_context=activity_context,
+        )
+        self._emit_progress(
+            progress_callback,
+            (
+                f"{prefix} Replacing persisted document graph "
+                f"({len(parsing_result.document_graph.chunks)} chunk(s))."
+            ),
+        )
+        self.document_registration_service.replace_document_graph(
+            parsing_result.document_graph,
+            activity_context=activity_context,
+        )
+        self._commit()
+
+        self._emit_progress(
+            progress_callback,
+            f"{prefix} Re-running document classification on rebuilt graph...",
+        )
+        classification = self.document_classification_workflow.classify_document(
+            parsing_result.document_graph,
+            activity_context=activity_context,
+        )
+        self._commit()
+
+        self._emit_progress(
+            progress_callback,
+            (
+                f"{prefix} Finalizing post-classification chunks, questions, "
+                "and embeddings for rebuilt document..."
+            ),
+        )
+        final_graph = self.post_classification_chunk_finalization_workflow.finalize(
+            document_id,
+            activity_context=activity_context,
+            progress_callback=self._scoped_progress_callback(
+                progress_callback,
+                prefix,
+            ),
+        )
+        self._commit()
+
+        return final_graph, classification, "reseeded_existing"
 
     def _refresh_existing_document(
         self,

@@ -122,6 +122,14 @@ def parse_args() -> argparse.Namespace:
             "outputs/evaluation/retrieval/benchmark_corpus_manifest.json"
         ),
     )
+    parser.add_argument(
+        "--force-reparse",
+        action="store_true",
+        help=(
+            "Reparse and replace full persisted document graphs when an input file "
+            "already exists instead of reusing the stored graph."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -343,6 +351,14 @@ def main() -> int:
     else:
         print_status(f"Input directory: {input_directory}")
     print_status(f"Manifest output path: {output_path}")
+    print_status(
+        "Duplicate handling: "
+        + (
+            "force reparse existing documents"
+            if args.force_reparse
+            else "reuse existing persisted graphs when file hash matches"
+        )
+    )
     print_runtime_ocr_configuration()
     print_status("Building corpus seeder runtime...")
     runtime = build_corpus_seeder()
@@ -354,6 +370,7 @@ def main() -> int:
         manifest = seeder.seed_corpus(
             truth_set_path=truth_set_path,
             input_directory=input_directory,
+            force_reparse_existing=args.force_reparse,
             progress_callback=print_status,
         )
         print_status(
