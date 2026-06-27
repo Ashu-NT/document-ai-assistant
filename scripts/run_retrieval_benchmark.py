@@ -356,12 +356,16 @@ def _resolve_with_fallback(
             f"WARNING: {len(unresolved_ids)} case(s) could not be resolved and will be "
             f"skipped: {', '.join(sorted(unresolved_ids))}",
         )
-        write_resolution_failure_reports(
+        json_warning_path, markdown_warning_path = write_resolution_failure_reports(
             details=details,
             truth_set_path=truth_set_path,
             manifest_path=manifest_path,
             output_directory=output_directory,
             subset=subset,
+        )
+        emit_progress(
+            progress_callback,
+            f"Resolution warning reports written to {json_warning_path} and {markdown_warning_path}.",
         )
         resolvable_cases = [
             c for c in selected_dataset.cases if c.case_id not in unresolved_ids
@@ -436,6 +440,25 @@ def resolve_output_paths(
     )
 
 
+def resolve_resolution_warning_output_paths(
+    *,
+    output_directory: Path,
+    subset: str,
+) -> tuple[Path, Path]:
+    json_output_path, markdown_output_path = resolve_output_paths(
+        output_directory=output_directory,
+        subset=subset,
+    )
+    return (
+        json_output_path.with_name(
+            f"{json_output_path.stem}_resolution_warning{json_output_path.suffix}"
+        ),
+        markdown_output_path.with_name(
+            f"{markdown_output_path.stem}_resolution_warning{markdown_output_path.suffix}"
+        ),
+    )
+
+
 def count_failed_cases(report: RetrievalBenchmarkReport) -> int:
     return sum(
         1
@@ -468,7 +491,7 @@ def write_resolution_failure_reports(
         RetrievalBenchmarkResolutionFailureWriter,
     )
 
-    json_output_path, markdown_output_path = resolve_output_paths(
+    json_output_path, markdown_output_path = resolve_resolution_warning_output_paths(
         output_directory=output_directory,
         subset=subset,
     )

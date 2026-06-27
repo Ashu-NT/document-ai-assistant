@@ -7,6 +7,7 @@ from scripts.run_retrieval_benchmark import (
     close_runtime,
     ensure_manifest_exists,
     main,
+    resolve_resolution_warning_output_paths,
     select_subset_dataset,
 )
 from src.application.evaluation import (
@@ -129,6 +130,31 @@ class FakeDatasetResolver:
         if self.error is not None:
             raise self.error
         self.calls.append((dataset, manifest))
+        return dataset
+
+
+class FakePartialFailureDatasetResolver:
+    def __init__(self, unresolved_case_ids: list[str]) -> None:
+        self.unresolved_case_ids = unresolved_case_ids
+        self.calls: list[list[str]] = []
+
+    def resolve_dataset(self, dataset, manifest):
+        case_ids = [case.case_id for case in dataset.cases]
+        self.calls.append(case_ids)
+        if len(self.calls) == 1:
+            raise SchemaValidationError(
+                "Resolution failed.",
+                details={
+                    "unresolved_case_ids": list(self.unresolved_case_ids),
+                    "diagnostics": [
+                        {
+                            "case_id": case_id,
+                            "message": "No final chunk matched the expected section/page/passage signals.",
+                        }
+                        for case_id in self.unresolved_case_ids
+                    ],
+                },
+            )
         return dataset
 
 
@@ -360,8 +386,10 @@ def test_main_returns_non_zero_for_unresolved_truth_cases(
         ]
     )
 
-    json_report_path = tmp_path / "reports" / "retrieval_benchmark_report.json"
-    markdown_report_path = tmp_path / "reports" / "retrieval_benchmark_report.md"
+    json_report_path, markdown_report_path = resolve_resolution_warning_output_paths(
+        output_directory=tmp_path / "reports",
+        subset="full",
+    )
 
     assert exit_code == 1
     assert json_report_path.exists()
@@ -370,6 +398,56 @@ def test_main_returns_non_zero_for_unresolved_truth_cases(
     assert "Retrieval Benchmark Resolution Failure" in markdown_report_path.read_text(
         encoding="utf-8"
     )
+
+
+def test_main_preserves_resolution_warning_report_when_partial_resolution_succeeds(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    partial_resolver = FakePartialFailureDatasetResolver(["SEM-001"])
+    runtime = BenchmarkRuntime(
+        truth_set_loader=FakeTruthSetLoader(build_dataset()),
+        manifest_loader=FakeManifestLoader(build_manifest()),
+        dataset_resolver=partial_resolver,
+        evaluator=FakeEvaluator(build_report(passing=True)),
+        report_writer=FakeReportWriter(),
+        workflow=object(),
+        session=None,
+    )
+
+    monkeypatch.setattr(
+        "scripts.run_retrieval_benchmark.build_benchmark_runtime",
+        FakeRuntimeBuilder(runtime),
+    )
+    monkeypatch.setattr(
+        "scripts.run_retrieval_benchmark.benchmark_evaluation_top_k",
+        lambda: 10,
+    )
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text("{}", encoding="utf-8")
+
+    exit_code = main(
+        [
+            "--manifest",
+            str(manifest_path),
+            "--output-dir",
+            str(tmp_path / "reports"),
+        ]
+    )
+
+    final_json_path = tmp_path / "reports" / "retrieval_benchmark_report.json"
+    warning_json_path, warning_markdown_path = resolve_resolution_warning_output_paths(
+        output_directory=tmp_path / "reports",
+        subset="full",
+    )
+
+    assert exit_code == 0
+    assert partial_resolver.calls == [["ID-001", "SEM-001"], ["ID-001"]]
+    assert final_json_path.exists()
+    assert warning_json_path.exists()
+    assert warning_markdown_path.exists()
+    assert "resolution_failed" in warning_json_path.read_text(encoding="utf-8")
+    assert json.loads(final_json_path.read_text(encoding="utf-8"))["case_count"] == 1
 
 
 def test_ensure_manifest_exists_raises_friendly_seed_guidance(
