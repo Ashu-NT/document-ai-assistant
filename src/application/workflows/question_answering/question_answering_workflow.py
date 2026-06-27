@@ -65,9 +65,7 @@ class QuestionAnsweringWorkflow:
         self._post_answer_guardrails: list[Guardrail] = post_answer_guardrails or []
 
     def run(self, request: QuestionAnsweringRequest) -> QuestionAnsweringResult:
-        allow_generation = (
-            request.allow_answer_generation or _default_allow_answer_generation()
-        )
+        allow_generation = request.allow_answer_generation
 
         if self._pre_query_guardrails:
             context = GuardrailContext(query_text=request.question)
