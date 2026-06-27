@@ -39,6 +39,15 @@ class RetrievalBenchmarkCaseResolver:
             document_graph.chunks.values(),
             key=lambda chunk: chunk.sequence_number,
         )
+        if not ordered_chunks:
+            return None, self._build_diagnostic(
+                benchmark_case,
+                "Final persisted document graph contains no chunks.",
+                [],
+                extra_details={
+                    "chunk_count": 0,
+                },
+            )
         candidates = self.chunk_matcher.match_chunks(benchmark_case, ordered_chunks)
         viable_candidates = [
             candidate
@@ -55,6 +64,11 @@ class RetrievalBenchmarkCaseResolver:
                 benchmark_case,
                 "No final chunk matched the expected section/page/passage signals.",
                 candidates,
+                extra_details={
+                    "chunk_count": len(ordered_chunks),
+                    "candidate_count": len(candidates),
+                    "viable_candidate_count": len(viable_candidates),
+                },
             )
 
         best_candidate = canonical_candidates[0]
@@ -116,17 +130,21 @@ class RetrievalBenchmarkCaseResolver:
         benchmark_case: RetrievalBenchmarkCase,
         message: str,
         candidates,
+        extra_details: dict | None = None,
     ) -> RetrievalBenchmarkResolutionDiagnostic:
+        details = {
+            "expected_section_path": benchmark_case.expected_section_path_text,
+            "expected_page": benchmark_case.expected_page,
+            "expected_relevant_passage": benchmark_case.expected_relevant_passage,
+        }
+        if extra_details:
+            details.update(extra_details)
         return RetrievalBenchmarkResolutionDiagnostic(
             case_id=benchmark_case.case_id,
             document_alias=benchmark_case.expected_document_alias,
             file_name=benchmark_case.expected_file_name,
             message=message,
-            details={
-                "expected_section_path": benchmark_case.expected_section_path_text,
-                "expected_page": benchmark_case.expected_page,
-                "expected_relevant_passage": benchmark_case.expected_relevant_passage,
-            },
+            details=details,
             candidate_summaries=list(candidates[: self.max_diagnostic_candidates]),
         )
 

@@ -114,16 +114,40 @@ class RetrievalBenchmarkChunkMatcher:
 
         return normalized_expected in normalized_content
 
-    @staticmethod
+    @classmethod
     def _section_match_score(
+        cls,
         benchmark_case: RetrievalBenchmarkCase,
         chunk: DocumentChunk,
     ) -> tuple[float, bool]:
-        expected_segments = normalize_path_segments(
-            benchmark_case.expected_section_path
-        )
         chunk_segments = normalize_path_segments(chunk.section_path)
+        expected_paths = benchmark_case.expected_section_paths or [
+            benchmark_case.expected_section_path
+        ]
+        if not expected_paths or not chunk_segments:
+            return 0.0, False
 
+        best_score = 0.0
+        best_exact_match = False
+        for expected_path in expected_paths:
+            score, exact_match = cls._path_match_score(
+                expected_path,
+                chunk_segments,
+            )
+            if exact_match:
+                return score, True
+            if score > best_score:
+                best_score = score
+                best_exact_match = exact_match
+
+        return best_score, best_exact_match
+
+    @staticmethod
+    def _path_match_score(
+        expected_path: list[str],
+        chunk_segments: list[str],
+    ) -> tuple[float, bool]:
+        expected_segments = normalize_path_segments(expected_path)
         if not expected_segments or not chunk_segments:
             return 0.0, False
 
@@ -133,16 +157,54 @@ class RetrievalBenchmarkChunkMatcher:
         if expected_text == chunk_text:
             return 3.0, True
 
-        if chunk_text.endswith(expected_text) or expected_text.endswith(chunk_text):
+        if RetrievalBenchmarkChunkMatcher._is_path_prefix_match(
+            expected_segments,
+            chunk_segments,
+        ):
             return 2.0, False
+
+        shared_tail_length = RetrievalBenchmarkChunkMatcher._shared_tail_length(
+            expected_segments,
+            chunk_segments,
+        )
+        if shared_tail_length >= 2:
+            return 1.5, False
 
         if expected_segments[-1] == chunk_segments[-1]:
             return 1.0, False
 
-        if expected_segments[-1] in chunk_text:
+        if (
+            expected_segments[-1] in chunk_text
+            or chunk_segments[-1] in expected_text
+        ):
             return 0.5, False
 
         return 0.0, False
+
+    @staticmethod
+    def _is_path_prefix_match(
+        expected_segments: list[str],
+        chunk_segments: list[str],
+    ) -> bool:
+        minimum_length = min(len(expected_segments), len(chunk_segments))
+        if minimum_length == 0:
+            return False
+        return expected_segments[:minimum_length] == chunk_segments[:minimum_length]
+
+    @staticmethod
+    def _shared_tail_length(
+        expected_segments: list[str],
+        chunk_segments: list[str],
+    ) -> int:
+        shared_length = 0
+        for expected_segment, chunk_segment in zip(
+            reversed(expected_segments),
+            reversed(chunk_segments),
+        ):
+            if expected_segment != chunk_segment:
+                break
+            shared_length += 1
+        return shared_length
 
     @staticmethod
     def _page_match_score(

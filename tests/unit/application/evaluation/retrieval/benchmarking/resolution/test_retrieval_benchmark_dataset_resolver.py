@@ -215,6 +215,67 @@ def test_dataset_resolver_resolves_case_to_single_final_chunk() -> None:
     assert ["3 System Introduction", "3.3 What it Does"] in resolved_dataset.cases[0].expected_section_paths
 
 
+def test_dataset_resolver_uses_all_expected_section_paths_for_matching() -> None:
+    benchmark_case = build_case(
+        case_id="M-ALT-001",
+        document_alias="manual_alias",
+        file_name="manual.pdf",
+        section_path_text="Wrong Path > Placeholder",
+        expected_page=13,
+        expected_relevant_passage=(
+            "The FWC system is designed to collect food waste from attached "
+            "macerator stations."
+        ),
+    )
+    benchmark_case.expected_section_paths.append(
+        ["3 System Introduction", "3.3 What it Does"]
+    )
+    dataset = RetrievalBenchmarkDataset(
+        source_path=Path("TestDoc/retrieval_truth_set.md"),
+        cases=[benchmark_case],
+    )
+    manifest = build_manifest(
+        build_manifest_document(
+            document_alias="manual_alias",
+            document_id="doc_manual",
+            file_name="manual.pdf",
+        )
+    )
+    lookup_service = FakeDocumentLookupService(
+        {
+            "doc_manual": build_graph(
+                document_id="doc_manual",
+                file_name="manual.pdf",
+                chunks=[
+                    build_chunk(
+                        chunk_id="chunk_manual_target",
+                        document_id="doc_manual",
+                        section_id="sec_001",
+                        content=(
+                            "The FWC system is designed to collect food waste "
+                            "from attached macerator stations."
+                        ),
+                        section_path=[
+                            "3 System Introduction",
+                            "3.3 What it Does",
+                        ],
+                        page_start=13,
+                        page_end=13,
+                        sequence_number=1,
+                    )
+                ],
+            )
+        }
+    )
+
+    resolved_dataset = RetrievalBenchmarkDatasetResolver(
+        document_lookup_service=lookup_service,
+    ).resolve_dataset(dataset, manifest)
+
+    assert resolved_dataset.cases[0].expected_chunk_ids == ["chunk_manual_target"]
+    assert ["3 System Introduction", "3.3 What it Does"] in resolved_dataset.cases[0].expected_section_paths
+
+
 def test_dataset_resolver_returns_same_family_chunk_ids_for_split_chunks() -> None:
     benchmark_case = build_case(
         case_id="M-002",
@@ -768,3 +829,45 @@ def test_dataset_resolver_raises_diagnostics_for_alias_file_mismatch() -> None:
     assert details["diagnostics"][0]["message"] == (
         "Benchmark case alias and file name point to different seeded documents."
     )
+
+
+def test_dataset_resolver_raises_specific_diagnostic_for_chunkless_graph() -> None:
+    benchmark_case = build_case(
+        case_id="RR-001",
+        document_alias="certificate_alias",
+        file_name="certificate.pdf",
+        section_path_text="Certificate body > Equipment description",
+        expected_page=1,
+        expected_relevant_passage="ONE (1) AUXILIARY MARINE DIESEL GENERATOR.",
+    )
+    dataset = RetrievalBenchmarkDataset(
+        source_path=Path("TestDoc/retrieval_truth_set.md"),
+        cases=[benchmark_case],
+    )
+    manifest = build_manifest(
+        build_manifest_document(
+            document_alias="certificate_alias",
+            document_id="doc_certificate",
+            file_name="certificate.pdf",
+        )
+    )
+    chunkless_graph = build_graph(
+        document_id="doc_certificate",
+        file_name="certificate.pdf",
+        chunks=[],
+    )
+
+    with pytest.raises(SchemaValidationError) as exc_info:
+        RetrievalBenchmarkDatasetResolver(
+            document_lookup_service=FakeDocumentLookupService(
+                {"doc_certificate": chunkless_graph}
+            ),
+        ).resolve_dataset(dataset, manifest)
+
+    details = exc_info.value.details
+    assert details is not None
+    assert details["unresolved_case_ids"] == ["RR-001"]
+    assert details["diagnostics"][0]["message"] == (
+        "Final persisted document graph contains no chunks."
+    )
+    assert details["diagnostics"][0]["details"]["chunk_count"] == 0
