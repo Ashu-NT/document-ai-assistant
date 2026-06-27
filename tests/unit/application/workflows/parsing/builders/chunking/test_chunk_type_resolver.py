@@ -352,6 +352,30 @@ def test_chunk_type_resolver_detects_interval_content_without_explicit_interval_
     assert chunk_type == ChunkType.MAINTENANCE_INTERVAL
 
 
+def test_chunk_type_resolver_detects_interval_table_under_generic_path() -> None:
+    resolver = ChunkTypeResolver()
+
+    chunk_type = resolver.resolve(
+        fragments=[
+            make_fragment(
+                section_title="Sensor List",
+                section_path=[
+                    "7 Components",
+                    "7.1 Macerators",
+                    "Sensor List",
+                ],
+                text=(
+                    "| Maintenance Intervals | Description | Interval | Refers to |\n"
+                    "| Cleaning after daily use | Inspect cutters | Daily | Cutter set |"
+                ),
+                table_ids=["table_004"],
+            )
+        ]
+    )
+
+    assert chunk_type == ChunkType.MAINTENANCE_INTERVAL
+
+
 def test_chunk_type_resolver_does_not_let_alarm_warning_ancestor_override_local_maintenance() -> None:
     resolver = ChunkTypeResolver()
 
@@ -374,6 +398,52 @@ def test_chunk_type_resolver_does_not_let_alarm_warning_ancestor_override_local_
     )
 
     assert chunk_type == ChunkType.MAINTENANCE_PROCEDURE
+
+
+def test_chunk_type_resolver_detects_alarm_conditions_as_safety_warning() -> None:
+    resolver = ChunkTypeResolver()
+
+    chunk_type = resolver.resolve(
+        fragments=[
+            make_fragment(
+                section_title="Alarm Conditions",
+                section_path=[
+                    "6 Alarm and Warning Conditions",
+                    "6.1 Alarm Conditions",
+                ],
+                text=(
+                    "Alarm relay R5 will remain energized until the reset pushbutton "
+                    "is pressed. The unit will shut down immediately when the low "
+                    "pressure switch fault occurs."
+                ),
+            )
+        ]
+    )
+
+    assert chunk_type == ChunkType.SAFETY_WARNING
+
+
+def test_chunk_type_resolver_avoids_certification_false_positive_from_short_marker_substrings() -> None:
+    resolver = ChunkTypeResolver()
+
+    chunk_type = resolver.resolve(
+        fragments=[
+            make_fragment(
+                section_title="System Introduction",
+                section_path=[
+                    "3 System Introduction",
+                    "3.3 What it Does",
+                ],
+                text=(
+                    "The FWC system is designed to collect food waste from attached "
+                    "macerator stations and transfer the slurry to the dewatering press."
+                ),
+            )
+        ]
+    )
+
+    assert chunk_type != ChunkType.CERTIFICATION_INFO
+    assert chunk_type == ChunkType.GENERAL
 
 
 def test_section_merge_policy_flushes_on_conflicting_semantic_sections() -> None:

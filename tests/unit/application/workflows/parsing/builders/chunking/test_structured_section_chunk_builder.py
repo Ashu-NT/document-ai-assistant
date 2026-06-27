@@ -210,6 +210,65 @@ def test_section_chunk_builder_resets_path_when_manual_sections_advance() -> Non
     ]
 
 
+def test_section_chunk_builder_resets_stale_manual_maintenance_branch_path() -> None:
+    builder = SectionChunkBuilder()
+    section = make_section(
+        section_id="sec_002b",
+        title="Maintenance 7.1.11",
+        section_path=[
+            "7 Components",
+            "7.1 Macerators",
+            "Commissioning & Shutdown 7.1.8",
+            "Check before Start Up",
+            "Checks during Start Up",
+            "Operation 7.1.9",
+            "Start and stop",
+            "Trouble Shooting 7.1.10",
+            "Maintenance 7.1.11",
+        ],
+        page=32,
+    )
+    elements = [
+        make_element(
+            element_id="txt_010b",
+            element_type=ElementType.TEXT,
+            text="Maintenance Intervals",
+            page=32,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="txt_011b",
+            element_type=ElementType.TEXT,
+            text=(
+                "Inspect monthly and yearly during regular operating hours. "
+                "Preventive maintenance remains required."
+            ),
+            page=32,
+            reading_order=2,
+        ),
+    ]
+
+    payloads = builder.build_chunk_payloads(
+        document_title="FWC12 Technical Manual",
+        section=section,
+        elements=elements,
+        document_type=DocumentType.MANUAL,
+    )
+
+    interval_payload = next(
+        payload
+        for payload in payloads
+        if payload.chunk_type == ChunkType.MAINTENANCE_INTERVAL
+    )
+
+    assert interval_payload.section_path == [
+        "7 Components",
+        "7.1 Macerators",
+        "Maintenance 7.1.11",
+        "Maintenance Intervals",
+    ]
+
+
 def test_section_chunk_builder_emits_report_connection_procedure_chunk() -> None:
     builder = SectionChunkBuilder()
     section = make_section(

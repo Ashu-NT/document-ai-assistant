@@ -40,8 +40,9 @@ class DrawingStructuredFamilyBuilder:
         # "manual" may still contain a drawing appendix whose sections carry marker
         # text ("navigation lights", "drawing number", etc.) that signals drawing
         # content — those sections should still benefit from drawing specs.
-        if not context.matches_document_type(DocumentType.DRAWING) and not context.contains_any(
-            DRAWING_DOCUMENT_MARKERS
+        if (
+            not context.matches_document_type(DocumentType.DRAWING)
+            and not context.local_contains_any(DRAWING_DOCUMENT_MARKERS)
         ):
             return StructuredFamilySpecSelection()
 

@@ -497,6 +497,62 @@ def test_fragment_builder_does_not_bleed_datasheet_connection_family_into_manual
     )
 
 
+def test_fragment_builder_keeps_manual_maintenance_family_when_sensor_list_exists_elsewhere() -> None:
+    builder = make_builder()
+    section = make_section(
+        section_id="sec_manual_maintenance_sensor",
+        title="Maintenance 7.1.11",
+        section_path=["7 Components", "7.1 Macerators", "Maintenance 7.1.11"],
+        page=32,
+    )
+    elements = [
+        make_element(
+            element_id="txt_manual_sensor_001",
+            text="Maintenance Intervals",
+            page=32,
+            reading_order=1,
+        ),
+        make_element(
+            element_id="tbl_manual_sensor_001",
+            text=(
+                "| Description | Interval | Drive Type |\n"
+                "| Clean rotor | monthly | BF30 |\n"
+                "| Inspect seal | yearly | BF30 |"
+            ),
+            page=32,
+            reading_order=2,
+            element_type=ElementType.TABLE,
+        ),
+    ]
+
+    fragments, _ = builder.build(
+        document_title="FWC12 Technical Manual",
+        document_type=DocumentType.MANUAL,
+        section=section,
+        elements=elements,
+        document_sections_combined_text=(
+            "7 Components > 7.1 Macerators > Maintenance 7.1.11 > "
+            "7 Components > 7.6 Sensor List"
+        ),
+    )
+
+    assert any(
+        fragment.section_path
+        == [
+            "7 Components",
+            "7.1 Macerators",
+            "Maintenance 7.1.11",
+            "Maintenance Intervals",
+        ]
+        and fragment.chunk_type == ChunkType.MAINTENANCE_INTERVAL
+        for fragment in fragments
+    )
+    assert not any(
+        fragment.section_path == ["Sensor List"]
+        for fragment in fragments
+    )
+
+
 def test_fragment_builder_detects_maintenance_intervals_without_specific_hour_values() -> None:
     builder = make_builder()
     section = make_section(

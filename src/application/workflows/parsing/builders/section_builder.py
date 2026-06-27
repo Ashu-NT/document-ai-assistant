@@ -52,6 +52,10 @@ class SectionBuilder:
                 key=lambda element: element.order_index,
             )
         )
+        filtered_header_ids = {
+            header.element_id
+            for header in headers
+        }
 
         if not headers:
             root_section = DocumentSection(
@@ -83,7 +87,14 @@ class SectionBuilder:
                 },
             )
 
-        hierarchy_resolution = self.hierarchy_resolver.resolve(ordered_elements)
+        hierarchy_resolution = self.hierarchy_resolver.resolve(
+            [
+                element
+                for element in ordered_elements
+                if element.element_type != ElementType.SECTION_HEADER
+                or element.element_id in filtered_header_ids
+            ]
+        )
         sections, header_section_ids = self.section_stack_builder.build(
             document_id,
             headers,

@@ -154,3 +154,32 @@ def test_embed_chunk_does_not_double_enrich(sample_chunk) -> None:
 
     embedded_text = provider.text_calls[0]
     assert embedded_text.count("Related terms:") == 1
+
+
+def test_embed_chunk_adds_table_metadata_for_manual_table(sample_chunk) -> None:
+    from src.domain.common import ChunkType
+
+    provider = FakeEmbeddingProvider()
+    service = EmbeddingService(provider)
+    sample_chunk.chunk_type = ChunkType.MAINTENANCE_INTERVAL
+    sample_chunk.section_path = ["7 Components", "7.3 Vacuum Pump", "Lubrication Schedule"]
+    sample_chunk.content = (
+        "Lubrication schedule\n\n"
+        "| Description | Interval | Refers to |\n"
+        "| --- | --- | --- |\n"
+        "| Grease bearings | Every 500 h | Main shaft |"
+    )
+    sample_chunk.embedding_text = (
+        "Document title: Manual\n\n"
+        "Section path: 7 Components > 7.3 Vacuum Pump > Lubrication Schedule\n\n"
+        "Lubrication schedule\n\n"
+        "| Description | Interval | Refers to |\n"
+        "| --- | --- | --- |\n"
+        "| Grease bearings | Every 500 h | Main shaft |"
+    )
+
+    service.embed_chunk(sample_chunk)
+
+    embedded_text = provider.text_calls[0]
+    assert "Table headers: Description, Interval, Refers to" in embedded_text
+    assert "Row labels: Grease bearings" in embedded_text

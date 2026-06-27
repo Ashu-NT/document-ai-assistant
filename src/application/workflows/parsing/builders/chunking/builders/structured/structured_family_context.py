@@ -82,6 +82,27 @@ class StructuredFamilyContext:
             self.document_sections_combined_text,
         )
 
+    def local_contains_any(
+        self,
+        markers: tuple[str, ...],
+    ) -> bool:
+        return self._contains_in(
+            markers,
+            self.normalized_title,
+            self.normalized_section_text,
+            self.combined_text,
+            *self.normalized_texts,
+        )
+
+    def document_contains_any(
+        self,
+        markers: tuple[str, ...],
+    ) -> bool:
+        return self._contains_in(
+            markers,
+            self.document_sections_combined_text,
+        )
+
     def section_contains_any(
         self,
         markers: tuple[str, ...],

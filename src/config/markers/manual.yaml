@@ -32,6 +32,8 @@ maintenance_procedure:
   - service port
 
 maintenance_interval:
+  - maintenance table
+  - maintenance schedule
   - maintenance interval
   - maintenance intervals
   - service interval
@@ -39,6 +41,10 @@ maintenance_interval:
   - operating hours
   - running hours
   - preventive maintenance
+  - service life
+  - replacement interval
+  - replacement intervals
+  - frequency
   - daily use
   - monthly
   - yearly
@@ -98,6 +104,13 @@ shutdown:
 
 safety:
   - safety
+  - alarm condition
+  - alarm conditions
+  - warning condition
+  - warning conditions
+  - alarm relay
+  - fault lamp
+  - shut down immediately
   - warning
   - hazard
   - precaution
@@ -114,6 +127,9 @@ lubrication:
 
 installation:
   - installation
+  - electrical connection
+  - pneumatic connection
+  - wiring
   - mounting
   - assemble
   - fit
