@@ -5,7 +5,6 @@
   "manifest_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\outputs\\evaluation\\retrieval\\benchmark_corpus_manifest.json",
   "unresolved_case_count": 12,
   "unresolved_case_ids": [
-    "C-008",
     "VMOT-002",
     "VMOT-003",
     "DF-001",
@@ -16,117 +15,10 @@
     "RR-002",
     "RR-003",
     "SSC-003",
-    "RULE-001"
+    "RULE-001",
+    "RULE-002"
   ],
   "diagnostics": [
-    {
-      "case_id": "C-008",
-      "document_alias": "certificate_hoses_ham2423501",
-      "file_name": "0762 0050 CER 1612 H.A.Schroeder Flexible Hoses HAM2423501.pdf",
-      "message": "Multiple final chunks matched this benchmark case ambiguously.",
-      "details": {
-        "expected_section_path": "Schauenburg certificate 3.2 / Messdaten results",
-        "expected_page": 3,
-        "expected_relevant_passage": "Part number SL060323; hose length 500 mm; operation pressure 350 bar; test pressure nominal 700 bar; result 730."
-      },
-      "candidate_summaries": [
-        {
-          "chunk_id": "chunk_72758f0eaa9a4d3cbc9ed413cd74a9a1",
-          "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
-          "section_path": [
-            "Messdaten:/results"
-          ],
-          "section_path_text": "Messdaten:/results",
-          "page_start": 3,
-          "page_end": 3,
-          "sequence_number": 14,
-          "score": 9.375,
-          "passage_overlap": 0.6875,
-          "exact_passage_match": false,
-          "exact_section_path_match": false,
-          "page_match": true,
-          "viable": true,
-          "role": "atomic_evidence",
-          "content_preview": "| Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------..."
-        },
-        {
-          "chunk_id": "chunk_5ba65f5a68e540dc8097ee9b4cec5ff5",
-          "section_id": "sec_20acfabc881946c8bb3ab848ad74a9e2",
-          "section_path": [
-            "Technical Data / Specification"
-          ],
-          "section_path_text": "Technical Data / Specification",
-          "page_start": 3,
-          "page_end": 3,
-          "sequence_number": 15,
-          "score": 8.875,
-          "passage_overlap": 0.6875,
-          "exact_passage_match": false,
-          "exact_section_path_match": false,
-          "page_match": true,
-          "viable": true,
-          "role": "atomic_evidence",
-          "content_preview": "| Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------..."
-        },
-        {
-          "chunk_id": "chunk_f8ab1df8230c4ed5bc2bb379df3f1716",
-          "section_id": "sec_20acfabc881946c8bb3ab848ad74a9e2",
-          "section_path": [
-            "Technical Data / Specification"
-          ],
-          "section_path_text": "Technical Data / Specification",
-          "page_start": 3,
-          "page_end": 3,
-          "sequence_number": 16,
-          "score": 8.875,
-          "passage_overlap": 0.6875,
-          "exact_passage_match": false,
-          "exact_section_path_match": false,
-          "page_match": true,
-          "viable": true,
-          "role": "atomic_evidence",
-          "content_preview": "| Spezifikation/specification | Soll/nominal | Ist/result | |-----------------------------------------------------------------------|--------------------|-----------------------..."
-        },
-        {
-          "chunk_id": "chunk_62654028d796403ca620dfa781402926",
-          "section_id": "sec_12a6c4a76fd54a789fcba426fb17861e",
-          "section_path": [
-            "Messdaten:/results"
-          ],
-          "section_path_text": "Messdaten:/results",
-          "page_start": 5,
-          "page_end": 5,
-          "sequence_number": 32,
-          "score": 8.0,
-          "passage_overlap": 0.75,
-          "exact_passage_match": false,
-          "exact_section_path_match": false,
-          "page_match": false,
-          "viable": true,
-          "role": "atomic_evidence",
-          "content_preview": "| Spezifikation/specification | Soll/nominal | Ist/result | |----------------------------------------------------------------------|--------------------|------------------------..."
-        },
-        {
-          "chunk_id": "chunk_cf1b3dc68f8e40789cb5e4abb06de1d2",
-          "section_id": "sec_92cfadff6fb347e6a680f02cd121ffb1",
-          "section_path": [
-            "Technical Data / Specification"
-          ],
-          "section_path_text": "Technical Data / Specification",
-          "page_start": 5,
-          "page_end": 5,
-          "sequence_number": 33,
-          "score": 7.5,
-          "passage_overlap": 0.75,
-          "exact_passage_match": false,
-          "exact_section_path_match": false,
-          "page_match": false,
-          "viable": true,
-          "role": "atomic_evidence",
-          "content_preview": "| Spezifikation/specification | Soll/nominal | Ist/result | |----------------------------------------------------------------------|--------------------|------------------------..."
-        }
-      ]
-    },
     {
       "case_id": "VMOT-002",
       "document_alias": "datasheet_motor_p62b355l4",
@@ -142,7 +34,7 @@
       },
       "candidate_summaries": [
         {
-          "chunk_id": "chunk_d077072f1e2548aeb19d4814ecf6a189",
+          "chunk_id": "chunk_9e70b55e2ff04f2d9896fe1fd5972041",
           "section_id": "sec_8f95ebc302534be4b81af000da68a2c7",
           "section_path": [
             "Technical Data / Specification"
@@ -161,7 +53,7 @@
           "content_preview": "4. Short-circuit data max. aperiodic short-circuit current (peak value) initial periodic short-circuit current ( RMS ) continuous periodic short-circuit current ( RMS ) short-ci..."
         },
         {
-          "chunk_id": "chunk_4ad4a9c4122c4c80a6db9d437f6d4c3b",
+          "chunk_id": "chunk_be10fe70ddcb4aceb05c78dc94c16391",
           "section_id": "sec_4c3b468842e14087b182052e48fc9fd5",
           "section_path": [
             "1. Rated data - Operation Point (OP1)"
@@ -180,7 +72,7 @@
           "content_preview": "power output: voltage: stator current: frequency: classification: thermal class/rise max. altitude: [ kW ] [ V ] [ A ] 40,00 [ Hz ] Norske Veritas H / H"
         },
         {
-          "chunk_id": "chunk_b7c50064f990420abdee7bba74919597",
+          "chunk_id": "chunk_fcee4d46a0b94640a487336e948e5188",
           "section_id": "sec_a7fb4085966a47b58726f6877a44bb66",
           "section_path": [
             "CONNECTION"
@@ -199,7 +91,7 @@
           "content_preview": "number of phases connection speed mechanical torque: duty type UKL_max = U d \uf0d62 * U KL UKL 0,41342 [W]"
         },
         {
-          "chunk_id": "chunk_41417593dc3840a8a6cbd338487f8fb5",
+          "chunk_id": "chunk_a4bbfa87ef5b4a04a5fc10c85c58d12a",
           "section_id": "sec_a7fb4085966a47b58726f6877a44bb66",
           "section_path": [
             "Technical Data / Specification"
@@ -234,7 +126,7 @@
       },
       "candidate_summaries": [
         {
-          "chunk_id": "chunk_41417593dc3840a8a6cbd338487f8fb5",
+          "chunk_id": "chunk_a4bbfa87ef5b4a04a5fc10c85c58d12a",
           "section_id": "sec_a7fb4085966a47b58726f6877a44bb66",
           "section_path": [
             "Technical Data / Specification"
@@ -253,7 +145,7 @@
           "content_preview": "q - valid for sinusoidal values only VEM Sachsenwerk GmbH Pirnaer Landstra\u00dfe 176 01257 Dresden -0,94 4 3 star 1200,0 4,78 S1 965 [ V ] 1365 [Vdc] 499 [ V ] 0,772 [%] 65,36 [%]"
         },
         {
-          "chunk_id": "chunk_d077072f1e2548aeb19d4814ecf6a189",
+          "chunk_id": "chunk_9e70b55e2ff04f2d9896fe1fd5972041",
           "section_id": "sec_8f95ebc302534be4b81af000da68a2c7",
           "section_path": [
             "Technical Data / Specification"
@@ -272,7 +164,7 @@
           "content_preview": "4. Short-circuit data max. aperiodic short-circuit current (peak value) initial periodic short-circuit current ( RMS ) continuous periodic short-circuit current ( RMS ) short-ci..."
         },
         {
-          "chunk_id": "chunk_b7c50064f990420abdee7bba74919597",
+          "chunk_id": "chunk_fcee4d46a0b94640a487336e948e5188",
           "section_id": "sec_a7fb4085966a47b58726f6877a44bb66",
           "section_path": [
             "CONNECTION"
@@ -291,7 +183,7 @@
           "content_preview": "number of phases connection speed mechanical torque: duty type UKL_max = U d \uf0d62 * U KL UKL 0,41342 [W]"
         },
         {
-          "chunk_id": "chunk_4ad4a9c4122c4c80a6db9d437f6d4c3b",
+          "chunk_id": "chunk_be10fe70ddcb4aceb05c78dc94c16391",
           "section_id": "sec_4c3b468842e14087b182052e48fc9fd5",
           "section_path": [
             "1. Rated data - Operation Point (OP1)"
@@ -326,7 +218,7 @@
       },
       "candidate_summaries": [
         {
-          "chunk_id": "chunk_89d90776cf2a42b292da61e2c4cbbf78",
+          "chunk_id": "chunk_29911f5f07d7456f83ba97b0073d626e",
           "section_id": "sec_33edd8eac6484db7a07368ddce865e66",
           "section_path": [
             "caratteristiche tecniche"
@@ -345,7 +237,26 @@
           "content_preview": "DIESEL DE4OAW WATER WATER DF40AX \u5bf8WASTE seasmart"
         },
         {
-          "chunk_id": "chunk_d79695895dac489999571cd4dd34baea",
+          "chunk_id": "chunk_81b64c43095c4ec985d4595e64fbe8b1",
+          "section_id": "sec_ccd7d98cf2db4b789644d12dee290b69",
+          "section_path": [
+            "Istruzioni di montaggio e manutenzione"
+          ],
+          "section_path_text": "Istruzioni di montaggio e manutenzione",
+          "page_start": 5,
+          "page_end": 10,
+          "sequence_number": 4,
+          "score": 1.5152,
+          "passage_overlap": 0.1515,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "role": "atomic_evidence",
+          "content_preview": "seasmart 8 \u03a6 38 \u03a6 65 9 52 \u03a695 DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0IMBARCO\u03a640FLUSH ITEM Sesmr is th prpritr of thisdrwing n isnt..."
+        },
+        {
+          "chunk_id": "chunk_d0efe71bf2c04cfc8b5dca021aa77799",
           "section_id": "sec_ccd7d98cf2db4b789644d12dee290b69",
           "section_path": [
             "Title block"
@@ -364,7 +275,7 @@
           "content_preview": "WASTE DATE 04/09/15 SCALE: 1/ 1 A4 SIGNATURE Ing. Mirko Antonelli seasmart DESCRIPTION TAPP0 WASTE \u03a640 ROUND DF40AW Sensmart is the proprietor of this drawing and is not be repr..."
         },
         {
-          "chunk_id": "chunk_2ac95421812741e68ba63c7722d403bb",
+          "chunk_id": "chunk_99e0659d5bb6404d9dfdb52a58fdebf8",
           "section_id": "sec_ccd7d98cf2db4b789644d12dee290b69",
           "section_path": [
             "Title block"
@@ -383,7 +294,7 @@
           "content_preview": "WASTE DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0WASTE40FLUSH ITEM DF40W Seasmart is the proprietor of this drwing and is not bereprod..."
         },
         {
-          "chunk_id": "chunk_ffc486d653e642e38646b710f9e854a1",
+          "chunk_id": "chunk_1465f95a583048818fff292c2a5f8b3f",
           "section_id": "sec_8fba0791cb5648c49aa1e668a39f7ca7",
           "section_path": [
             "Material information"
@@ -400,25 +311,6 @@
           "viable": false,
           "role": "atomic_evidence",
           "content_preview": "| Type | Materials | A (mm) | B (mm) | C(mm) | D (mm) | E (mm) | F (mm) | Weight(g) | |--------|-------------|----------|----------|---------|----------|----------|----------|--..."
-        },
-        {
-          "chunk_id": "chunk_285292c0ae1248fea02d2dba1e298564",
-          "section_id": "sec_ccd7d98cf2db4b789644d12dee290b69",
-          "section_path": [
-            "Title block"
-          ],
-          "section_path_text": "Title block",
-          "page_start": 5,
-          "page_end": 9,
-          "sequence_number": 5,
-          "score": 0.6061,
-          "passage_overlap": 0.0606,
-          "exact_passage_match": false,
-          "exact_section_path_match": false,
-          "page_match": false,
-          "viable": false,
-          "role": "atomic_evidence",
-          "content_preview": "\u03a695 DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0IMBARCO\u03a640FLUSH ITEM Sesmr is th prpritr of thisdrwing n isntereprdud rue fnypurse,thrh..."
         }
       ]
     },
@@ -437,7 +329,7 @@
       },
       "candidate_summaries": [
         {
-          "chunk_id": "chunk_ffc486d653e642e38646b710f9e854a1",
+          "chunk_id": "chunk_1465f95a583048818fff292c2a5f8b3f",
           "section_id": "sec_8fba0791cb5648c49aa1e668a39f7ca7",
           "section_path": [
             "Material information"
@@ -456,7 +348,26 @@
           "content_preview": "| Type | Materials | A (mm) | B (mm) | C(mm) | D (mm) | E (mm) | F (mm) | Weight(g) | |--------|-------------|----------|----------|---------|----------|----------|----------|--..."
         },
         {
-          "chunk_id": "chunk_285292c0ae1248fea02d2dba1e298564",
+          "chunk_id": "chunk_81b64c43095c4ec985d4595e64fbe8b1",
+          "section_id": "sec_ccd7d98cf2db4b789644d12dee290b69",
+          "section_path": [
+            "Istruzioni di montaggio e manutenzione"
+          ],
+          "section_path_text": "Istruzioni di montaggio e manutenzione",
+          "page_start": 5,
+          "page_end": 10,
+          "sequence_number": 4,
+          "score": 1.3889,
+          "passage_overlap": 0.0889,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "role": "atomic_evidence",
+          "content_preview": "seasmart 8 \u03a6 38 \u03a6 65 9 52 \u03a695 DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0IMBARCO\u03a640FLUSH ITEM Sesmr is th prpritr of thisdrwing n isnt..."
+        },
+        {
+          "chunk_id": "chunk_15f6368c09d847e2918f190539152535",
           "section_id": "sec_ccd7d98cf2db4b789644d12dee290b69",
           "section_path": [
             "Title block"
@@ -475,7 +386,7 @@
           "content_preview": "\u03a695 DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0IMBARCO\u03a640FLUSH ITEM Sesmr is th prpritr of thisdrwing n isntereprdud rue fnypurse,thrh..."
         },
         {
-          "chunk_id": "chunk_d79695895dac489999571cd4dd34baea",
+          "chunk_id": "chunk_d0efe71bf2c04cfc8b5dca021aa77799",
           "section_id": "sec_ccd7d98cf2db4b789644d12dee290b69",
           "section_path": [
             "Title block"
@@ -494,7 +405,7 @@
           "content_preview": "WASTE DATE 04/09/15 SCALE: 1/ 1 A4 SIGNATURE Ing. Mirko Antonelli seasmart DESCRIPTION TAPP0 WASTE \u03a640 ROUND DF40AW Sensmart is the proprietor of this drawing and is not be repr..."
         },
         {
-          "chunk_id": "chunk_89d90776cf2a42b292da61e2c4cbbf78",
+          "chunk_id": "chunk_29911f5f07d7456f83ba97b0073d626e",
           "section_id": "sec_33edd8eac6484db7a07368ddce865e66",
           "section_path": [
             "caratteristiche tecniche"
@@ -511,25 +422,6 @@
           "viable": false,
           "role": "atomic_evidence",
           "content_preview": "DIESEL DE4OAW WATER WATER DF40AX \u5bf8WASTE seasmart"
-        },
-        {
-          "chunk_id": "chunk_2ac95421812741e68ba63c7722d403bb",
-          "section_id": "sec_ccd7d98cf2db4b789644d12dee290b69",
-          "section_path": [
-            "Title block"
-          ],
-          "section_path_text": "Title block",
-          "page_start": 9,
-          "page_end": 10,
-          "sequence_number": 8,
-          "score": 0.6667,
-          "passage_overlap": 0.0667,
-          "exact_passage_match": false,
-          "exact_section_path_match": false,
-          "page_match": false,
-          "viable": false,
-          "role": "atomic_evidence",
-          "content_preview": "WASTE DATE 04/09/15 SCALE: 1/ 1 A4 seasmart SIGNATURE Ing. Mirko Antonelli DESCRIPTION TAPP0WASTE40FLUSH ITEM DF40W Seasmart is the proprietor of this drwing and is not bereprod..."
         }
       ]
     },
@@ -542,13 +434,13 @@
         "expected_section_path": "Shop test protocol",
         "expected_page": 1,
         "expected_relevant_passage": "Engine type 12V175DML; engine number 8351446; engine output 2.400 kW; engine speed 2.000 rpm; classification society LR; customer L\u00fcrssen Ship Yard; place Frederikshavn / Denmark; date 21-09-2023.",
-        "chunk_count": 105,
-        "candidate_count": 105,
+        "chunk_count": 104,
+        "candidate_count": 104,
         "viable_candidate_count": 0
       },
       "candidate_summaries": [
         {
-          "chunk_id": "chunk_55980292098340f7bccb8b563d1210a9",
+          "chunk_id": "chunk_7cc1f9be57d44be9b16a37d9b9c80847",
           "section_id": "sec_4ee7468418c44158a9bad692f5661ef3",
           "section_path": [
             "Shop test protocol"
@@ -567,7 +459,7 @@
           "content_preview": "12V175DML BuildingstandardA10"
         },
         {
-          "chunk_id": "chunk_5c556c0cf902442cb0a6dbd25a182c09",
+          "chunk_id": "chunk_e70f0518fe3c4a629838c5b50ecfa123",
           "section_id": "sec_74fb65a3a5924071880ab1def6748a86",
           "section_path": [
             "Engine type"
@@ -586,7 +478,7 @@
           "content_preview": "Emission-Certification NOx-EmissionaccordingIMO-Regulation13 revisedMARPOLAnnexVI2008 IMO-TierIl-Certificationenginegroup(parent) Emission test cycleE3 ClassificationEngine CPN2..."
         },
         {
-          "chunk_id": "chunk_55a4bbdb4f3d4bb8acbf37d0e8e01e03",
+          "chunk_id": "chunk_74acdf9a02574f12b3446ed5a278c4bf",
           "section_id": "sec_74fb65a3a5924071880ab1def6748a86",
           "section_path": [
             "Engine type",
@@ -606,7 +498,7 @@
           "content_preview": "kW Engine speed 2.000 rpm Enginerotationdirection Counterclockwise Firing order A1-B2-A2-B4-A4-B6- A6-B5-A5-B3-A3-B1 Application 4-stroke Marinemainengine FPP:Fixedpitchpropelle..."
         },
         {
-          "chunk_id": "chunk_4bfcc7923e8b463982304b967bcb6386",
+          "chunk_id": "chunk_97fb6ba9e688489e8cbe9064d009c1d2",
           "section_id": "sec_74fb65a3a5924071880ab1def6748a86",
           "section_path": [
             "Engine type"
@@ -625,15 +517,15 @@
           "content_preview": "Number of cylinders in vee angle Bore mm Stroke mm Engine number Featureident A10-MFAA2D109A Engine output 2.400"
         },
         {
-          "chunk_id": "chunk_e9d1312c82b045b3b25983ca2db4064f",
+          "chunk_id": "chunk_6a06a1aebd4c478ca3f05f39e35b9078",
           "section_id": "sec_0399cda2d2654248bf983ab09490401a",
           "section_path": [
             "Performance Data"
           ],
           "section_path_text": "Performance Data",
-          "page_start": 6,
-          "page_end": 6,
-          "sequence_number": 28,
+          "page_start": 4,
+          "page_end": 4,
+          "sequence_number": 22,
           "score": 3.7037,
           "passage_overlap": 0.3704,
           "exact_passage_match": false,
@@ -641,7 +533,7 @@
           "page_match": false,
           "viable": false,
           "role": "atomic_evidence",
-          "content_preview": "MANI | 50,1 MANI O ## 21-09-2023,10:45 engine type 12V175D-ML atmospheric pressure 995 mbar engineno. 8351446 ambienttemperaturel 24,2 \u00b0\u2103 turbochargertype TCR12-43063 abs.ambien..."
+          "content_preview": "25,0 % MAN 21-09-2023,10:10 engine type 12V175D-ML atmosphericpressure 995 mbar engine no. 8351446 ambienttemperature 23,2 \u00b0\u2103 turbochargertype TCR12-43063 abs.ambienthumidity ,4..."
         }
       ]
     },
@@ -657,7 +549,7 @@
       },
       "candidate_summaries": [
         {
-          "chunk_id": "chunk_137d8c6178db4beda801fc3d6cb9170f",
+          "chunk_id": "chunk_379b5965383c407ea1f8ed03eb05db18",
           "section_id": "sec_bcc7e0016c0443db8e4f62485eb897ae",
           "section_path": [
             "Performance Data 100,1 %"
@@ -676,7 +568,7 @@
           "content_preview": "IMAN | engine type | 12V175D-ML | 12V175D-ML | 12V175D-ML | 12V175D-ML | 12V175D-ML | atmosphericpressure | atmosphericpressure | atmosphericpressure | atmosphericpressure | atm..."
         },
         {
-          "chunk_id": "chunk_6b1d4bc4ee424f329a51001dc1d8700e",
+          "chunk_id": "chunk_e5d05e392a704e2dbf43efcf198e058f",
           "section_id": "sec_0399cda2d2654248bf983ab09490401a",
           "section_path": [
             "Performance Data"
@@ -695,7 +587,7 @@
           "content_preview": "(MANI | engine type engine no. turbochargertype turbochargerno. attachedpumps | 12V175D-ML 8351446 TCR12-43063 1343-02/-03 5- | 12V175D-ML 8351446 TCR12-43063 1343-02/-03 5- | 1..."
         },
         {
-          "chunk_id": "chunk_e9d1312c82b045b3b25983ca2db4064f",
+          "chunk_id": "chunk_fd7303a21bee45c183ebc1493cdd3daa",
           "section_id": "sec_0399cda2d2654248bf983ab09490401a",
           "section_path": [
             "Performance Data"
@@ -714,7 +606,7 @@
           "content_preview": "MANI | 50,1 MANI O ## 21-09-2023,10:45 engine type 12V175D-ML atmospheric pressure 995 mbar engineno. 8351446 ambienttemperaturel 24,2 \u00b0\u2103 turbochargertype TCR12-43063 abs.ambien..."
         },
         {
-          "chunk_id": "chunk_5a2db44069234c719530236a12fec70e",
+          "chunk_id": "chunk_6dbe176a2496411f9f2282186d29c464",
           "section_id": "sec_0399cda2d2654248bf983ab09490401a",
           "section_path": [
             "Performance Data"
@@ -722,7 +614,7 @@
           "section_path_text": "Performance Data",
           "page_start": 22,
           "page_end": 22,
-          "sequence_number": 85,
+          "sequence_number": 84,
           "score": 8.0714,
           "passage_overlap": 0.6071,
           "exact_passage_match": false,
@@ -733,7 +625,7 @@
           "content_preview": "75,2 | 21-09-2023,13:48 | | | | | | | | | | | | | |------------------------------------------------------------------------------------------------------------------------------..."
         },
         {
-          "chunk_id": "chunk_67a6dbc9b06c428f83a3f17dd65326dc",
+          "chunk_id": "chunk_6a06a1aebd4c478ca3f05f39e35b9078",
           "section_id": "sec_0399cda2d2654248bf983ab09490401a",
           "section_path": [
             "Performance Data"
@@ -749,7 +641,7 @@
           "page_match": false,
           "viable": true,
           "role": "atomic_evidence",
-          "content_preview": "TCR12-43063 abs.ambienthumidity ,42 g/kg turbocharger no. 1343-02/-03 relativehumidity % attached pumps 5- lube oil spec. ShellRimulaR6MS10W-40 testbed no. fuel oil spec. MGO wa..."
+          "content_preview": "25,0 % MAN 21-09-2023,10:10 engine type 12V175D-ML atmosphericpressure 995 mbar engine no. 8351446 ambienttemperature 23,2 \u00b0\u2103 turbochargertype TCR12-43063 abs.ambienthumidity ,4..."
         }
       ]
     },
@@ -807,7 +699,7 @@
       },
       "candidate_summaries": [
         {
-          "chunk_id": "chunk_267a79620fc0465782c7868c304e8e9e",
+          "chunk_id": "chunk_31fb4016dad14398b669b3c05a57726a",
           "section_id": "sec_a3b5f4477c634085850e1a3378b7e741",
           "section_path": [
             "C -C",
@@ -827,7 +719,7 @@
           "content_preview": "^ | E \u00ab | Evidencefound | Sampleresults | Documentsreviewed | Controlmeasuresapplied | Re-inspection date | Commentsregardingconditionsfound | |---------------------------------..."
         },
         {
-          "chunk_id": "chunk_8ca8a0368dfd4bed8ba359def58dd8bd",
+          "chunk_id": "chunk_f33995f312064dacba41a2522fe665c9",
           "section_id": "sec_62fdc5d688594d119f5289c1181be821",
           "section_path": [
             "\u00a3 l"
@@ -846,7 +738,7 @@
           "content_preview": ":i: \u00a9 V B"
         },
         {
-          "chunk_id": "chunk_a87a1c77119944748ee55eae9d6eab04",
+          "chunk_id": "chunk_1c709d1d2aa24c008a3db4729ad3f838",
           "section_id": "sec_de56c72b260641d09ea163a4b3820537",
           "section_path": [
             "ShipSanitationControl Certificate",
@@ -866,7 +758,7 @@
           "content_preview": "| Areasinspected | Evidencefound | Sampleresults2 | Documentsreviewed | |-----------------------------------------------------------|--------------------------------------------..."
         },
         {
-          "chunk_id": "chunk_7a7228be29e7475798f1c526b5f61df7",
+          "chunk_id": "chunk_f49ca6f45d1b4038a19c37831122d461",
           "section_id": "sec_de56c72b260641d09ea163a4b3820537",
           "section_path": [
             "ShipSanitationControl Certificate"
@@ -885,7 +777,7 @@
           "content_preview": "Context: ,v 2"
         },
         {
-          "chunk_id": "chunk_fce1b82fae2442e9a1060e8dd8906b0d",
+          "chunk_id": "chunk_b42d99ee7e54494eaaf581fed8a59f84",
           "section_id": "sec_de56c72b260641d09ea163a4b3820537",
           "section_path": [
             "ShipSanitationControl Certificate"
@@ -914,13 +806,13 @@
         "expected_section_path": "Rule Bilge Pumps > Product overview",
         "expected_page": 1,
         "expected_relevant_passage": "ISO 8849 Marine (Electric bilge pumps) and ISO 8846 Marine (Ignition protection).",
-        "chunk_count": 20,
-        "candidate_count": 20,
+        "chunk_count": 17,
+        "candidate_count": 17,
         "viable_candidate_count": 0
       },
       "candidate_summaries": [
         {
-          "chunk_id": "chunk_6aafef0b4062463380b066bcf69ef103",
+          "chunk_id": "chunk_b4245f46327e4dfc8eca1b6cafd8ceb3",
           "section_id": "sec_c740fca54d7641a89e5af9a5f17ed341",
           "section_path": [
             "Rule Bilge Pumps"
@@ -939,7 +831,7 @@
           "content_preview": "360-1100 GPH SUBMERSIBLE BILGE PUMPS Our bilge pumps provide ultimate pumping performance, which helps keep your bilge clear of nuisance water, building on the genuine Rule desi..."
         },
         {
-          "chunk_id": "chunk_b29f77935bac4450b97789e328210453",
+          "chunk_id": "chunk_ed7f28074e644650ba07e0c81c656bd9",
           "section_id": "sec_e979bb2776d243ddbc28e602eb41a523",
           "section_path": [
             "Our new designs include:"
@@ -948,17 +840,17 @@
           "page_start": 1,
           "page_end": 1,
           "sequence_number": 2,
-          "score": 5.0,
-          "passage_overlap": 0.3,
+          "score": 4.0,
+          "passage_overlap": 0.2,
           "exact_passage_match": false,
           "exact_section_path_match": false,
           "page_match": true,
           "viable": false,
           "role": "atomic_evidence",
-          "content_preview": "Back Flow Prevention - reduces the amount of water left over in the bilge, reducing odor and helping keep your bilge cleaner Hidden Air Vents in the Body \u2013 helps prevent air loc..."
+          "content_preview": "Threaded Discharge - easier installation, easier maintenance Rule brand builds on over 50 years of operational excellence and application expertise with a broad range of solutio..."
         },
         {
-          "chunk_id": "chunk_ee803359a31141ee8f9d67038b418d47",
+          "chunk_id": "chunk_8fc616d5b15e44638840420f86b0fecb",
           "section_id": "sec_e979bb2776d243ddbc28e602eb41a523",
           "section_path": [
             "Our new designs include:"
@@ -967,44 +859,6 @@
           "page_start": 1,
           "page_end": 1,
           "sequence_number": 3,
-          "score": 4.0,
-          "passage_overlap": 0.2,
-          "exact_passage_match": false,
-          "exact_section_path_match": false,
-          "page_match": true,
-          "viable": false,
-          "role": "context_companion",
-          "content_preview": "Context: Rule brand builds on over 50 years of operational excellence and application expertise with a broad range of solutions for the marine industry."
-        },
-        {
-          "chunk_id": "chunk_22409242482742319c05e46cb387935c",
-          "section_id": "sec_e979bb2776d243ddbc28e602eb41a523",
-          "section_path": [
-            "Our new designs include:"
-          ],
-          "section_path_text": "Our new designs include:",
-          "page_start": 1,
-          "page_end": 1,
-          "sequence_number": 4,
-          "score": 4.0,
-          "passage_overlap": 0.2,
-          "exact_passage_match": false,
-          "exact_section_path_match": false,
-          "page_match": true,
-          "viable": false,
-          "role": "context_companion",
-          "content_preview": "Context: Rule brand builds on over 50 years of operational excellence and application expertise with a broad range of solutions for the marine industry. NEW"
-        },
-        {
-          "chunk_id": "chunk_1ec54bffc98145cdbfb4b52a7ffc5e4a",
-          "section_id": "sec_e979bb2776d243ddbc28e602eb41a523",
-          "section_path": [
-            "Our new designs include:"
-          ],
-          "section_path_text": "Our new designs include:",
-          "page_start": 1,
-          "page_end": 1,
-          "sequence_number": 5,
           "score": 2.0,
           "passage_overlap": 0.0,
           "exact_passage_match": false,
@@ -1013,6 +867,157 @@
           "viable": false,
           "role": "context_companion",
           "content_preview": "Context: NEW"
+        },
+        {
+          "chunk_id": "chunk_2617d0630f2d4bf7a5b528c06fea469d",
+          "section_id": "sec_6c22aded6b594c788881683c8e36e6ee",
+          "section_path": [
+            "Rule Next Generation Bilge Pumps"
+          ],
+          "section_path_text": "Rule Next Generation Bilge Pumps",
+          "page_start": 2,
+          "page_end": 2,
+          "sequence_number": 4,
+          "score": 1.5,
+          "passage_overlap": 0.1,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "role": "atomic_evidence",
+          "content_preview": "| Nominal GPH/ LPH | Model No. | Volts | Amps @ 12V | Amps @ 13.6V | Ports | Check Valve | Hose Dia. | UPC | |---------------------|--------------|---------|---------------|----..."
+        },
+        {
+          "chunk_id": "chunk_ff2b0139f65846c797c27c2733551b6d",
+          "section_id": "sec_b57a805fbc2143208dbf18ca6ecbc4c6",
+          "section_path": [
+            "UK",
+            "Spare Parts"
+          ],
+          "section_path_text": "UK > Spare Parts",
+          "page_start": 2,
+          "page_end": 2,
+          "sequence_number": 12,
+          "score": 1.5,
+          "passage_overlap": 0.1,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "role": "atomic_evidence",
+          "content_preview": "17 | Description Extra Spare Parts | Model No. | |---------------------------------------|-------------| | 360/500 3/4\u201d Barbed Port | 1200R | | 360/500 3/4\u201d Barbed Port 90 Degre..."
+        }
+      ]
+    },
+    {
+      "case_id": "RULE-002",
+      "document_alias": "datasheet_rule_bilge_pumps",
+      "file_name": "Rule Pump cut-sheet.pdf",
+      "message": "No final chunk matched the expected section/page/passage signals.",
+      "details": {
+        "expected_section_path": "Our new designs include",
+        "expected_page": 1,
+        "expected_relevant_passage": "Higher Flow, Built-in Thermal Cut-Off (TCO), Back Flow Prevention, Hidden Air Vents in the Body, and Threaded Discharge.",
+        "chunk_count": 17,
+        "candidate_count": 17,
+        "viable_candidate_count": 0
+      },
+      "candidate_summaries": [
+        {
+          "chunk_id": "chunk_ed7f28074e644650ba07e0c81c656bd9",
+          "section_id": "sec_e979bb2776d243ddbc28e602eb41a523",
+          "section_path": [
+            "Our new designs include:"
+          ],
+          "section_path_text": "Our new designs include:",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 2,
+          "score": 7.2222,
+          "passage_overlap": 0.2222,
+          "exact_passage_match": false,
+          "exact_section_path_match": true,
+          "page_match": true,
+          "viable": false,
+          "role": "atomic_evidence",
+          "content_preview": "Threaded Discharge - easier installation, easier maintenance Rule brand builds on over 50 years of operational excellence and application expertise with a broad range of solutio..."
+        },
+        {
+          "chunk_id": "chunk_8fc616d5b15e44638840420f86b0fecb",
+          "section_id": "sec_e979bb2776d243ddbc28e602eb41a523",
+          "section_path": [
+            "Our new designs include:"
+          ],
+          "section_path_text": "Our new designs include:",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 3,
+          "score": 5.0,
+          "passage_overlap": 0.0,
+          "exact_passage_match": false,
+          "exact_section_path_match": true,
+          "page_match": true,
+          "viable": false,
+          "role": "context_companion",
+          "content_preview": "Context: NEW"
+        },
+        {
+          "chunk_id": "chunk_b4245f46327e4dfc8eca1b6cafd8ceb3",
+          "section_id": "sec_c740fca54d7641a89e5af9a5f17ed341",
+          "section_path": [
+            "Rule Bilge Pumps"
+          ],
+          "section_path_text": "Rule Bilge Pumps",
+          "page_start": 1,
+          "page_end": 1,
+          "sequence_number": 1,
+          "score": 4.7778,
+          "passage_overlap": 0.2778,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": true,
+          "viable": false,
+          "role": "atomic_evidence",
+          "content_preview": "360-1100 GPH SUBMERSIBLE BILGE PUMPS Our bilge pumps provide ultimate pumping performance, which helps keep your bilge clear of nuisance water, building on the genuine Rule desi..."
+        },
+        {
+          "chunk_id": "chunk_ff2b0139f65846c797c27c2733551b6d",
+          "section_id": "sec_b57a805fbc2143208dbf18ca6ecbc4c6",
+          "section_path": [
+            "UK",
+            "Spare Parts"
+          ],
+          "section_path_text": "UK > Spare Parts",
+          "page_start": 2,
+          "page_end": 2,
+          "sequence_number": 12,
+          "score": 1.6111,
+          "passage_overlap": 0.1111,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "role": "atomic_evidence",
+          "content_preview": "17 | Description Extra Spare Parts | Model No. | |---------------------------------------|-------------| | 360/500 3/4\u201d Barbed Port | 1200R | | 360/500 3/4\u201d Barbed Port 90 Degre..."
+        },
+        {
+          "chunk_id": "chunk_436e8f11c0394fe699c6c5cfa325c6a0",
+          "section_id": "sec_b57a805fbc2143208dbf18ca6ecbc4c6",
+          "section_path": [
+            "UK"
+          ],
+          "section_path_text": "UK",
+          "page_start": 2,
+          "page_end": 2,
+          "sequence_number": 15,
+          "score": 1.6111,
+          "passage_overlap": 0.1111,
+          "exact_passage_match": false,
+          "exact_section_path_match": false,
+          "page_match": false,
+          "viable": false,
+          "role": "context_companion",
+          "content_preview": "Context: 800/1100 Strainer 1232R 360/500 Strainer 1231R Warranty: All products of the company are sold and all services of the company are offered subject to the company's warra..."
         }
       ]
     }

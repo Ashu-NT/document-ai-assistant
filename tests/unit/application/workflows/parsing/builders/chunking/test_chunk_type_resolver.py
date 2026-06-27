@@ -201,6 +201,34 @@ def test_chunk_type_resolver_detects_troubleshooting_table_with_hyphenated_headi
     assert chunk_type == ChunkType.TROUBLESHOOTING
 
 
+def test_chunk_type_resolver_prioritizes_direct_table_evidence_over_safety_path() -> None:
+    resolver = ChunkTypeResolver()
+
+    chunk_type = resolver.resolve(
+        fragments=[
+            make_fragment(
+                section_title="General Warnings",
+                section_path=[
+                    "7 Components",
+                    "7.3 Vacuum / Transfer Pump",
+                    "Safety Precautions 7.3.1",
+                    "General Warnings",
+                ],
+                text=(
+                    "| Press Type | TSP20 |\n"
+                    "| Serial Number | 221010004Z507 |\n"
+                    "| Drive Type | BF30 |\n"
+                    "| Specification | 400V / 50Hz |\n"
+                    "| Year of Manufacture | 2020 |"
+                ),
+                table_ids=["table_003"],
+            )
+        ]
+    )
+
+    assert chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+
+
 def test_chunk_type_resolver_treats_symptom_subsection_inside_troubleshooting_as_troubleshooting() -> None:
     resolver = ChunkTypeResolver()
 

@@ -145,10 +145,16 @@ _CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
         "model number",
         "part number",
         "drawing number",
+        "order code",
+        "order number",
+        "press type",
+        "drive type",
         "type",
         "specification",
         "year of manufacture",
         "flow rate",
+        "oil quantity",
+        "change interval",
         "operating pressure",
         "supply voltage",
         "power",
@@ -187,12 +193,15 @@ _TABLE_CONTENT_MARKERS: dict[ChunkType, tuple[str, ...]] = {
     ChunkType.TECHNICAL_SPECIFICATION: (
         "serial number",
         "model number",
+        "order code",
         "type",
         "drive type",
         "pump type",
         "press type",
         "year of manufacture",
         "specification",
+        "oil quantity",
+        "change interval",
         "flow rate",
         "operating pressure",
         "supply voltage",
@@ -337,8 +346,10 @@ class ChunkSemanticSignalExtractor:
             scores[ChunkType.TECHNICAL_SPECIFICATION] = (
                 scores.get(ChunkType.TECHNICAL_SPECIFICATION, 0) + 1
             )
-            for chunk_type, bonus in self._table_signal_scores(content_text).items():
+            table_scores = self._table_signal_scores(content_text)
+            for chunk_type, bonus in table_scores.items():
                 scores[chunk_type] = scores.get(chunk_type, 0) + bonus
+            self._apply_direct_table_evidence_bias(scores, table_scores)
 
         return {
             chunk_type: score
@@ -358,6 +369,27 @@ class ChunkSemanticSignalExtractor:
                 continue
             scores[chunk_type] = min(marker_hits + 1, 5)
         return scores
+
+    @staticmethod
+    def _apply_direct_table_evidence_bias(
+        scores: dict[ChunkType, int],
+        table_scores: dict[ChunkType, int],
+    ) -> None:
+        direct_table_type = None
+        if table_scores.get(ChunkType.TECHNICAL_SPECIFICATION, 0) >= 4:
+            direct_table_type = ChunkType.TECHNICAL_SPECIFICATION
+        elif table_scores.get(ChunkType.TROUBLESHOOTING, 0) >= 4:
+            direct_table_type = ChunkType.TROUBLESHOOTING
+
+        if direct_table_type is None:
+            return
+
+        scores[direct_table_type] = scores.get(direct_table_type, 0) + 3
+        if scores.get(ChunkType.SAFETY_WARNING, 0) > 0:
+            scores[ChunkType.SAFETY_WARNING] = min(
+                scores[ChunkType.SAFETY_WARNING],
+                2,
+            )
 
     @staticmethod
     def _marker_hits(text: str, markers: tuple[str, ...]) -> int:

@@ -48,6 +48,19 @@ _INSTALLATION_MAINTENANCE_PATH_MARKERS = (
     "montaggio",
     "manutenzione",
 )
+_EMBEDDED_DATASHEET_REGION_MARKERS = (
+    "datasheet",
+    "product overview",
+    "technical data",
+    "technical features",
+    "ordering information",
+    "ordering example",
+    "cooling system",
+    "installation instructions",
+    "operating limits",
+    "pressure-temperature diagram",
+    "pressure temperature diagram",
+)
 
 
 class DatasheetStructuredFamilyBuilder:
@@ -57,16 +70,12 @@ class DatasheetStructuredFamilyBuilder:
         context: StructuredFamilyContext,
         marker_tuning: StructuredFamilyMarkerTuning | None,
     ) -> StructuredFamilySpecSelection:
-        if (
-            context.has_known_document_type()
-            and not context.matches_document_type(DocumentType.DATASHEET)
-            and not context.contains_any(DATASHEET_DOCUMENT_MARKERS)
-        ):
-            return StructuredFamilySpecSelection()
-        if (
-            not context.has_known_document_type()
-            and not context.contains_any(DATASHEET_DOCUMENT_MARKERS)
-        ):
+        if context.matches_document_type(DocumentType.DATASHEET):
+            pass
+        elif context.has_known_document_type():
+            if not self._has_embedded_datasheet_signal(context):
+                return StructuredFamilySpecSelection()
+        elif not context.contains_any(DATASHEET_DOCUMENT_MARKERS):
             return StructuredFamilySpecSelection()
 
         base_path = sanitized_base_path(
@@ -293,3 +302,13 @@ class DatasheetStructuredFamilyBuilder:
         if path_contains_markers(base_path, family_markers):
             return base_path
         return append_label_if_missing(base_path, label)
+
+    @staticmethod
+    def _has_embedded_datasheet_signal(
+        context: StructuredFamilyContext,
+    ) -> bool:
+        return context.section_contains_any(
+            _EMBEDDED_DATASHEET_REGION_MARKERS
+        ) or context.content_contains_any(
+            _EMBEDDED_DATASHEET_REGION_MARKERS
+        )

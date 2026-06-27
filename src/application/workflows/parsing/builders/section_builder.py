@@ -2,7 +2,9 @@ from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,
 )
 from src.application.workflows.parsing.builders.section_hierarchy import (
+    SectionHeaderFilter,
     SectionHierarchyResolver,
+    SectionPathRelinker,
     SectionStackBuilder,
 )
 from src.application.workflows.parsing.canonical_element import CanonicalElement
@@ -16,11 +18,15 @@ class SectionBuilder:
         self,
         id_generator: IdGenerator,
         *,
+        header_filter: SectionHeaderFilter | None = None,
         hierarchy_resolver: SectionHierarchyResolver | None = None,
+        section_path_relinker: SectionPathRelinker | None = None,
         section_stack_builder: SectionStackBuilder | None = None,
     ) -> None:
         self.id_generator = id_generator
+        self.header_filter = header_filter or SectionHeaderFilter()
         self.hierarchy_resolver = hierarchy_resolver or SectionHierarchyResolver()
+        self.section_path_relinker = section_path_relinker or SectionPathRelinker()
         self.section_stack_builder = section_stack_builder or SectionStackBuilder(
             id_generator
         )
@@ -36,13 +42,15 @@ class SectionBuilder:
             canonical_elements,
             key=lambda element: element.order_index,
         )
-        headers = sorted(
-            [
-                element
-                for element in canonical_elements
-                if element.element_type == ElementType.SECTION_HEADER
-            ],
-            key=lambda element: element.order_index,
+        headers = self.header_filter.filter(
+            sorted(
+                [
+                    element
+                    for element in canonical_elements
+                    if element.element_type == ElementType.SECTION_HEADER
+                ],
+                key=lambda element: element.order_index,
+            )
         )
 
         if not headers:
@@ -94,6 +102,7 @@ class SectionBuilder:
             sections.insert(0, root_section)
             section_lookup[root_section.section_id] = root_section
 
+        self.section_path_relinker.relink(sections)
         element_section_ids: dict[str, str] = {}
         element_section_paths: dict[str, list[str]] = {}
         active_section = root_section
