@@ -78,6 +78,29 @@ def test_graph_build_report_writer_writes_json_and_markdown(tmp_path) -> None:
                 "recommendation": "Keep the optimized index.",
             }
         ],
+        "operation_profiles": {
+            "docling_conversion": {
+                "elapsed_seconds": 3.0,
+                "cprofile": {
+                    "prof_path": "outputs/debug_graph_build/example/docling_conversion.prof",
+                    "top_cumulative": [
+                        {
+                            "calls": 1,
+                            "function": "docling_parser.parse",
+                            "cumulative_seconds": 3.0,
+                            "total_seconds": 0.1,
+                        }
+                    ],
+                    "top_call_count": [],
+                    "top_recursive": [],
+                },
+                "memory": {
+                    "current_bytes": 256,
+                    "peak_bytes": 4096,
+                    "top_allocations": [],
+                },
+            }
+        },
         "cprofile": {
             "prof_path": "outputs/debug_graph_build/example/graph_build.prof",
             "top_cumulative": [
@@ -115,4 +138,7 @@ def test_graph_build_report_writer_writes_json_and_markdown(tmp_path) -> None:
 
     assert json_path.exists()
     assert markdown_path.exists()
-    assert "Graph Build Performance Report" in markdown_path.read_text(encoding="utf-8")
+    markdown = markdown_path.read_text(encoding="utf-8")
+    assert "Parsing Pipeline Performance Report" in markdown
+    assert "## Operation Profiles" in markdown
+    assert "Docling Conversion" in markdown

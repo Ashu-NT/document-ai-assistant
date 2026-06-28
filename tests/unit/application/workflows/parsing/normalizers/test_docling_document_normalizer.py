@@ -60,8 +60,10 @@ class FakeDoclingItem:
         self.data = data
         self.requires_doc_for_markdown = requires_doc_for_markdown
         self.exported_markdown_doc = None
+        self.export_to_markdown_calls = 0
 
     def export_to_markdown(self, doc=None) -> str | None:
+        self.export_to_markdown_calls += 1
         if self.requires_doc_for_markdown and doc is None:
             raise AssertionError("doc argument is required for markdown export")
         self.exported_markdown_doc = doc
@@ -81,6 +83,7 @@ class FakeRawDocument:
         self.texts = texts or []
         self.tables = tables or []
         self.pictures = pictures or []
+        self.iterate_items_calls = 0
 
     def iterate_items(
         self,
@@ -89,6 +92,7 @@ class FakeRawDocument:
     ):
         del with_groups
         del traverse_pictures
+        self.iterate_items_calls += 1
         return [(item, 0) for item in self._items]
 
 
@@ -207,6 +211,43 @@ def test_table_item_passes_raw_document_to_markdown_export() -> None:
 
     assert normalized[0].element_type == ElementType.TABLE
     assert table_item.exported_markdown_doc is raw_document
+
+
+def test_table_markdown_export_runs_once_and_reuses_single_item_traversal() -> None:
+    table_item = FakeDoclingItem(
+        label="table",
+        self_ref="#/tables/42",
+        prov=[FakeProvenance(2)],
+        requires_doc_for_markdown=True,
+        data={
+            "table_cells": [
+                {
+                    "start_row_offset_idx": 0,
+                    "end_row_offset_idx": 1,
+                    "start_col_offset_idx": 0,
+                    "end_col_offset_idx": 1,
+                    "text": "Part",
+                },
+                {
+                    "start_row_offset_idx": 0,
+                    "end_row_offset_idx": 1,
+                    "start_col_offset_idx": 1,
+                    "end_col_offset_idx": 2,
+                    "text": "Value",
+                },
+            ]
+        },
+    )
+    raw_document = FakeRawDocument([table_item])
+
+    normalized = DoclingDocumentNormalizer().normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_001",
+    )
+
+    assert normalized[0].element_type == ElementType.TABLE
+    assert raw_document.iterate_items_calls == 1
+    assert table_item.export_to_markdown_calls == 1
 
 
 def test_picture_item_collects_caption_refs() -> None:

@@ -30,22 +30,36 @@ class DoclingDocumentNormalizer:
         document_id: str,
     ) -> list[CanonicalElement]:
         try:
+            raw_document = raw_parsed_document.raw_document
+            items = list(self.item_extractor.iter_items(raw_document))
             normalized: list[CanonicalElement] = []
-            caption_extractor = DoclingCaptionExtractor(raw_parsed_document.raw_document)
+            caption_extractor = DoclingCaptionExtractor(
+                raw_document,
+                items=items,
+            )
 
             for index, item in enumerate(
-                self.item_extractor.iter_items(raw_parsed_document.raw_document),
+                items,
                 start=1,
             ):
                 if self.item_extractor.should_skip(item):
                     continue
 
                 element_type = self.item_extractor.extract_element_type(item)
+                table_markdown = self._extract_table_markdown(
+                    item,
+                    element_type,
+                    raw_document=raw_document,
+                )
+                caption = self._extract_caption_text(
+                    item,
+                    caption_extractor,
+                )
                 text = self._extract_text(
                     item,
                     element_type,
-                    caption_extractor,
-                    raw_document=raw_parsed_document.raw_document,
+                    caption=caption,
+                    table_markdown=table_markdown,
                 )
                 page_start, page_end = self.provenance_extractor.extract_pages(item)
                 bbox = self.provenance_extractor.extract_bbox(item)
@@ -56,8 +70,8 @@ class DoclingDocumentNormalizer:
                     item,
                     raw_ref=raw_ref,
                     element_type=element_type,
-                    caption_extractor=caption_extractor,
-                    raw_document=raw_parsed_document.raw_document,
+                    caption=caption,
+                    markdown=table_markdown,
                 )
 
                 normalized.append(
@@ -93,20 +107,16 @@ class DoclingDocumentNormalizer:
         self,
         item: Any,
         element_type: ElementType,
-        caption_extractor: DoclingCaptionExtractor,
         *,
-        raw_document: Any,
+        caption: str | None,
+        table_markdown: str | None,
     ) -> str | None:
         if element_type == ElementType.TABLE:
-            return self.table_extractor.extract_markdown(
-                item,
-                doc=raw_document,
-            )
+            return table_markdown
 
         if element_type == ElementType.PICTURE:
             return self._clean_text(
-                caption_extractor.extract_caption(item)
-                or self._get_value(item, "caption")
+                caption
                 or self._get_value(item, "ocr_text")
                 or self._get_value(item, "text")
             )
@@ -128,6 +138,31 @@ class DoclingDocumentNormalizer:
 
         return None
 
+    def _extract_table_markdown(
+        self,
+        item: Any,
+        element_type: ElementType,
+        *,
+        raw_document: Any,
+    ) -> str | None:
+        if element_type != ElementType.TABLE:
+            return None
+
+        return self.table_extractor.extract_markdown(
+            item,
+            doc=raw_document,
+        )
+
+    def _extract_caption_text(
+        self,
+        item: Any,
+        caption_extractor: DoclingCaptionExtractor,
+    ) -> str | None:
+        return self._clean_text(
+            caption_extractor.extract_caption(item)
+            or self._get_value(item, "caption")
+        )
+
     @staticmethod
     def _extract_section_title(
         element_type: ElementType,
@@ -144,8 +179,8 @@ class DoclingDocumentNormalizer:
         *,
         raw_ref: str | None,
         element_type: ElementType,
-        caption_extractor: DoclingCaptionExtractor,
-        raw_document: Any,
+        caption: str | None,
+        markdown: str | None,
     ) -> dict[str, Any]:
         metadata: dict[str, Any] = {
             "raw_source_type": item.__class__.__name__,
@@ -170,10 +205,6 @@ class DoclingDocumentNormalizer:
             metadata["heading_level"] = heading_level
 
         if element_type == ElementType.TABLE:
-            markdown = self.table_extractor.extract_markdown(
-                item,
-                doc=raw_document,
-            )
             if markdown:
                 metadata["markdown"] = markdown
 
@@ -187,10 +218,6 @@ class DoclingDocumentNormalizer:
             if column_count is not None:
                 metadata["column_count"] = column_count
 
-        caption = self._clean_text(
-            caption_extractor.extract_caption(item)
-            or self._get_value(item, "caption")
-        )
         if caption:
             metadata["caption"] = caption
 

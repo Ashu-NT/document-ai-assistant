@@ -35,9 +35,10 @@ class GraphBuildReportWriter:
         memory = report_data["memory"]
         architecture_map = report_data["architecture_map"]
         bottlenecks = report_data["ranked_bottlenecks"]
+        operation_profiles = report_data.get("operation_profiles") or {}
 
         lines = [
-            "# Graph Build Performance Report",
+            "# Parsing Pipeline Performance Report",
             "",
             "## Input Document",
             f"- File: `{input_document['file_path']}`",
@@ -52,8 +53,8 @@ class GraphBuildReportWriter:
             f"- Pictures: `{counts['pictures']}`",
             "",
             "## Timings",
-            f"- Raw parse: `{timings['raw_parse_seconds']:.3f}s`",
-            f"- Normalize: `{timings['normalize_seconds']:.3f}s`",
+            f"- Docling conversion: `{self._resolve_timing(timings, 'docling_conversion_seconds', 'raw_parse_seconds'):.3f}s`",
+            f"- Canonical normalization: `{self._resolve_timing(timings, 'canonical_normalization_seconds', 'normalize_seconds'):.3f}s`",
             f"- Graph build: `{timings['graph_build_seconds']:.3f}s`",
         ]
         profiled = timings.get("profiled_graph_build_seconds")
@@ -65,6 +66,30 @@ class GraphBuildReportWriter:
             lines.append(f"- Baseline graph build: `{baseline:.3f}s`")
             if isinstance(improvement, (int, float)):
                 lines.append(f"- Improvement: `{improvement:.2f}%`")
+        if isinstance(operation_profiles, dict) and operation_profiles:
+            lines.extend(
+                [
+                    "",
+                    "## Operation Profiles",
+                    "| Operation | Elapsed | Peak Memory | cProfile Dump |",
+                    "| --- | ---: | ---: | --- |",
+                ]
+            )
+            for key, profile in operation_profiles.items():
+                if not isinstance(profile, dict):
+                    continue
+                memory_profile = profile.get("memory", {})
+                cprofile_profile = profile.get("cprofile", {})
+                elapsed_seconds = float(profile.get("elapsed_seconds", 0.0))
+                peak_bytes = memory_profile.get("peak_bytes", 0)
+                prof_path = cprofile_profile.get("prof_path", "")
+                lines.append(
+                    "| "
+                    f"{self._display_operation_name(key)} | "
+                    f"{elapsed_seconds:.3f}s | "
+                    f"{peak_bytes} | "
+                    f"`{prof_path}` |"
+                )
         lines.extend(
             [
                 "",
@@ -157,6 +182,37 @@ class GraphBuildReportWriter:
                 f"{entry['total_seconds']:.6f} |"
             )
 
+        if isinstance(operation_profiles, dict) and operation_profiles:
+            lines.extend(
+                [
+                    "",
+                    "## Operation cProfile Highlights",
+                ]
+            )
+            for key, profile in operation_profiles.items():
+                if not isinstance(profile, dict):
+                    continue
+                cprofile_profile = profile.get("cprofile", {})
+                top_cumulative = cprofile_profile.get("top_cumulative", [])
+                if not top_cumulative:
+                    continue
+                lines.extend(
+                    [
+                        "",
+                        f"### {self._display_operation_name(key)}",
+                        "| Calls | Function | Cumulative (s) | Total (s) |",
+                        "| ---: | --- | ---: | ---: |",
+                    ]
+                )
+                for entry in top_cumulative[:10]:
+                    lines.append(
+                        "| "
+                        f"{entry['calls']} | "
+                        f"{entry['function']} | "
+                        f"{entry['cumulative_seconds']:.6f} | "
+                        f"{entry['total_seconds']:.6f} |"
+                    )
+
         lines.extend(
             [
                 "",
@@ -182,3 +238,21 @@ class GraphBuildReportWriter:
             f"{key}={mapped_value}"
             for key, mapped_value in value.items()
         )
+
+    @staticmethod
+    def _resolve_timing(
+        timings: dict[str, object],
+        primary_key: str,
+        fallback_key: str,
+    ) -> float:
+        value = timings.get(primary_key, timings.get(fallback_key, 0.0))
+        return float(value) if isinstance(value, (int, float)) else 0.0
+
+    @staticmethod
+    def _display_operation_name(value: object) -> str:
+        operation_names = {
+            "docling_conversion": "Docling Conversion",
+            "canonical_normalization": "Canonical Normalization",
+            "graph_build": "Document Graph Build",
+        }
+        return operation_names.get(str(value), str(value).replace("_", " ").title())
