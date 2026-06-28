@@ -36,7 +36,7 @@ from src.shared.ids import IdGenerator
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Profile the document graph build stage for a single document.",
+        description="Profile the parsing pipeline stages for a single document.",
     )
     parser.add_argument(
         "--input",
@@ -175,15 +175,17 @@ def _profile_operation(
     profiler = cProfile.Profile()
     prof_path = output_dir / f"{output_prefix}.prof"
     _emit(f"[graph] Profiling {label}...")
+    started_at = perf_counter()
     tracemalloc.start()
     profiler.enable()
-    started_at = perf_counter()
-    result = operation()
-    elapsed_seconds = perf_counter() - started_at
-    profiler.disable()
-    current_bytes, peak_bytes = tracemalloc.get_traced_memory()
-    snapshot = tracemalloc.take_snapshot()
-    tracemalloc.stop()
+    try:
+        result = operation()
+    finally:
+        elapsed_seconds = perf_counter() - started_at
+        profiler.disable()
+        current_bytes, peak_bytes = tracemalloc.get_traced_memory()
+        snapshot = tracemalloc.take_snapshot()
+        tracemalloc.stop()
     profiler.dump_stats(str(prof_path))
 
     top_cumulative = _profile_entries(
@@ -208,6 +210,7 @@ def _profile_operation(
         call_count_entries=top_call_count,
         recursive_entries=top_recursive,
     )
+    _emit(f"[graph] {label} completed ({elapsed_seconds:.3f}s).")
     return result, {
         "elapsed_seconds": elapsed_seconds,
         "cprofile": {
@@ -289,25 +292,23 @@ def main() -> int:
     parser = DoclingParser()
     normalizer = DoclingDocumentNormalizer()
 
-    _emit("[graph] Running raw parse...")
-    raw_started_at = perf_counter()
-    raw_parsed_document = parser.parse(str(input_path))
-    raw_parse_seconds = perf_counter() - raw_started_at
-    _emit(
-        "[graph] Raw parse completed "
-        f"({raw_parse_seconds:.3f}s, pages={raw_parsed_document.page_count})."
+    raw_parsed_document, docling_conversion_profile = _profile_operation(
+        label="Docling conversion",
+        operation=lambda: parser.parse(str(input_path)),
+        output_dir=output_dir,
+        output_prefix="docling_conversion",
+        top_functions=args.top_functions,
     )
 
-    _emit("[graph] Normalizing canonical elements...")
-    normalize_started_at = perf_counter()
-    canonical_elements = normalizer.normalize(
-        raw_parsed_document,
-        "doc_graph_profile",
-    )
-    normalize_seconds = perf_counter() - normalize_started_at
-    _emit(
-        "[graph] Normalization completed "
-        f"({normalize_seconds:.3f}s, canonical_elements={len(canonical_elements)})."
+    canonical_elements, canonical_normalization_profile = _profile_operation(
+        label="canonical normalization",
+        operation=lambda: normalizer.normalize(
+            raw_parsed_document,
+            "doc_graph_profile",
+        ),
+        output_dir=output_dir,
+        output_prefix="canonical_normalization",
+        top_functions=args.top_functions,
     )
 
     _emit("[graph] Measuring unprofiled document graph build...")
@@ -334,8 +335,6 @@ def main() -> int:
         f"chunks={len(measured_document_graph.chunks)})."
     )
 
-    profiler = cProfile.Profile()
-    prof_path = output_dir / "graph_build.prof"
     graph_profiler = GraphBuildProfiler(progress_callback=_emit)
     profiled_id_generator = IdGenerator()
     profiled_builder = DocumentGraphBuilder(
@@ -343,52 +342,27 @@ def main() -> int:
         section_builder=SectionBuilder(profiled_id_generator),
         profiler=graph_profiler,
     )
-    _emit("[graph] Profiling document graph build...")
-    tracemalloc.start()
-    profiler.enable()
-    profiled_started_at = perf_counter()
-    profiled_document_graph = profiled_builder.build(
-        document_id="doc_graph_profile",
-        file_path=str(input_path),
-        hashes=DocumentHashes(
-            file_hash="graph_profile",
-            content_hash="graph_profile",
+    profiled_document_graph, graph_build_profile = _profile_operation(
+        label="document graph build",
+        operation=lambda: profiled_builder.build(
+            document_id="doc_graph_profile",
+            file_path=str(input_path),
+            hashes=DocumentHashes(
+                file_hash="graph_profile",
+                content_hash="graph_profile",
+            ),
+            canonical_elements=canonical_elements,
+            raw_parsed_document=raw_parsed_document,
         ),
-        canonical_elements=canonical_elements,
-        raw_parsed_document=raw_parsed_document,
+        output_dir=output_dir,
+        output_prefix="graph_build",
+        top_functions=args.top_functions,
     )
-    profiled_graph_build_seconds = perf_counter() - profiled_started_at
-    profiler.disable()
-    current_bytes, peak_bytes = tracemalloc.get_traced_memory()
-    snapshot = tracemalloc.take_snapshot()
-    tracemalloc.stop()
-    profiler.dump_stats(str(prof_path))
+    profiled_graph_build_seconds = float(graph_build_profile["elapsed_seconds"])
     _emit(
-        "[graph] Profiled graph build completed "
-        f"({profiled_graph_build_seconds:.3f}s, sections={len(profiled_document_graph.sections)}, "
+        "[graph] Profiled graph build counts "
+        f"(sections={len(profiled_document_graph.sections)}, "
         f"chunks={len(profiled_document_graph.chunks)})."
-    )
-
-    top_cumulative = _profile_entries(
-        profiler,
-        sort_key="cumulative_seconds",
-        limit=args.top_functions,
-    )
-    top_call_count = _profile_entries(
-        profiler,
-        sort_key="calls",
-        limit=args.top_functions,
-    )
-    top_recursive = _profile_entries(
-        profiler,
-        sort_key="recursive_calls",
-        limit=args.top_functions,
-    )
-    _write_profile_tables(
-        output_dir,
-        cumulative_entries=top_cumulative,
-        call_count_entries=top_call_count,
-        recursive_entries=top_recursive,
     )
 
     baseline = args.baseline_graph_build_seconds
@@ -411,8 +385,10 @@ def main() -> int:
             "pictures": len(measured_document_graph.pictures),
         },
         "timings": {
-            "raw_parse_seconds": raw_parse_seconds,
-            "normalize_seconds": normalize_seconds,
+            "docling_conversion_seconds": docling_conversion_profile["elapsed_seconds"],
+            "raw_parse_seconds": docling_conversion_profile["elapsed_seconds"],
+            "canonical_normalization_seconds": canonical_normalization_profile["elapsed_seconds"],
+            "normalize_seconds": canonical_normalization_profile["elapsed_seconds"],
             "graph_build_seconds": graph_build_seconds,
             "profiled_graph_build_seconds": profiled_graph_build_seconds,
             "baseline_graph_build_seconds": baseline,
@@ -427,24 +403,25 @@ def main() -> int:
             stage_metrics=stage_metrics,
             graph_build_seconds=profiled_graph_build_seconds,
         ),
-        "cprofile": {
-            "prof_path": str(prof_path),
-            "top_cumulative": top_cumulative,
-            "top_call_count": top_call_count,
-            "top_recursive": top_recursive,
+        "operation_profiles": {
+            "docling_conversion": docling_conversion_profile,
+            "canonical_normalization": canonical_normalization_profile,
+            "graph_build": graph_build_profile,
         },
-        "memory": {
-            "current_bytes": current_bytes,
-            "peak_bytes": peak_bytes,
-            "top_allocations": _top_allocations(snapshot),
-        },
+        "cprofile": graph_build_profile["cprofile"],
+        "memory": graph_build_profile["memory"],
     }
 
     writer = GraphBuildReportWriter(output_dir)
     json_path, markdown_path = writer.write(report_data=report_data)
     _emit(f"[graph] JSON report: {json_path.resolve()}")
     _emit(f"[graph] Markdown report: {markdown_path.resolve()}")
-    _emit(f"[graph] cProfile dump: {prof_path.resolve()}")
+    _emit(
+        "[graph] cProfile dumps: "
+        f"{Path(str(docling_conversion_profile['cprofile']['prof_path'])).resolve()}, "
+        f"{Path(str(canonical_normalization_profile['cprofile']['prof_path'])).resolve()}, "
+        f"{Path(str(graph_build_profile['cprofile']['prof_path'])).resolve()}"
+    )
     return 0
 
 

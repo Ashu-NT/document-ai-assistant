@@ -3,8 +3,16 @@ from typing import Any
 
 
 class DoclingCaptionExtractor:
-    def __init__(self, raw_document: Any) -> None:
-        self.reference_lookup = self._build_reference_lookup(raw_document)
+    def __init__(
+        self,
+        raw_document: Any,
+        *,
+        items: Iterable[Any] | None = None,
+    ) -> None:
+        self.reference_lookup = self._build_reference_lookup(
+            raw_document,
+            items=items,
+        )
 
     def extract_caption(self, item: Any) -> str | None:
         parts: list[str] = []
@@ -36,14 +44,23 @@ class DoclingCaptionExtractor:
 
         return "\n".join(unique_parts)
 
-    def _build_reference_lookup(self, raw_document: Any) -> dict[str, Any]:
+    def _build_reference_lookup(
+        self,
+        raw_document: Any,
+        *,
+        items: Iterable[Any] | None = None,
+    ) -> dict[str, Any]:
         lookup: dict[str, Any] = {}
 
         for attribute_name in ("texts", "tables", "pictures", "items"):
-            for item in list(self._get_value(raw_document, attribute_name) or []):
-                raw_ref = self._extract_raw_ref(item)
-                if raw_ref:
-                    lookup[raw_ref] = item
+            self._add_items_to_lookup(
+                lookup,
+                self._get_value(raw_document, attribute_name) or [],
+            )
+
+        if items is not None:
+            self._add_items_to_lookup(lookup, items)
+            return lookup
 
         iterate_items = getattr(raw_document, "iterate_items", None)
         if callable(iterate_items):
@@ -55,13 +72,26 @@ class DoclingCaptionExtractor:
                 except TypeError:
                     iterator = iterate_items()
 
-            for entry in iterator:
-                item = entry[0] if isinstance(entry, tuple) else entry
-                raw_ref = self._extract_raw_ref(item)
-                if raw_ref and raw_ref not in lookup:
-                    lookup[raw_ref] = item
+            self._add_items_to_lookup(
+                lookup,
+                (
+                    entry[0] if isinstance(entry, tuple) else entry
+                    for entry in iterator
+                ),
+            )
 
         return lookup
+
+    @classmethod
+    def _add_items_to_lookup(
+        cls,
+        lookup: dict[str, Any],
+        items: Iterable[Any],
+    ) -> None:
+        for item in items:
+            raw_ref = cls._extract_raw_ref(item)
+            if raw_ref and raw_ref not in lookup:
+                lookup[raw_ref] = item
 
     def _resolve_reference(self, reference: Any) -> Any | None:
         if reference is None:
