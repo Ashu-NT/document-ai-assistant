@@ -1,4 +1,5 @@
 import hashlib
+from time import perf_counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -167,7 +168,12 @@ class RetrievalBenchmarkCorpusSeeder:
             progress_callback,
             f"{prefix} Computing hashes for {seed_target.file_name}...",
         )
+        file_size_bytes = seed_target.file_path.stat().st_size
         file_hash, content_hash = self.hash_computer(seed_target.file_path)
+        self._emit_progress(
+            progress_callback,
+            f"{prefix} File size: {self._format_file_size(file_size_bytes)}",
+        )
         self._emit_progress(
             progress_callback,
             f"{prefix} Checking duplicate status...",
@@ -257,16 +263,25 @@ class RetrievalBenchmarkCorpusSeeder:
             progress_callback,
             f"{prefix} Parsing document into provisional graph...",
         )
+        parsing_progress = self._scoped_progress_callback(
+            progress_callback,
+            prefix,
+        )
+        parsing_started_at = perf_counter()
         parsing_result = self.parsing_workflow.parse(
             file_path=str(seed_target.file_path),
             file_hash=file_hash,
             content_hash=content_hash,
             activity_context=activity_context,
+            progress_callback=parsing_progress,
         )
+        parsing_elapsed_seconds = perf_counter() - parsing_started_at
         self._emit_progress(
             progress_callback,
             (
-                f"{prefix} Registering provisional document graph "
+                f"{prefix} Provisional parsing completed in "
+                f"{self._format_elapsed_seconds(parsing_elapsed_seconds)}. "
+                "Registering provisional document graph "
                 f"({len(parsing_result.document_graph.chunks)} chunk(s))."
             ),
         )
@@ -325,17 +340,26 @@ class RetrievalBenchmarkCorpusSeeder:
             progress_callback,
             f"{prefix} Reparsing document with the existing document ID...",
         )
+        parsing_progress = self._scoped_progress_callback(
+            progress_callback,
+            prefix,
+        )
+        parsing_started_at = perf_counter()
         parsing_result = self.parsing_workflow.parse(
             file_path=str(seed_target.file_path),
             file_hash=file_hash,
             content_hash=content_hash,
             document_id=document_id,
             activity_context=activity_context,
+            progress_callback=parsing_progress,
         )
+        parsing_elapsed_seconds = perf_counter() - parsing_started_at
         self._emit_progress(
             progress_callback,
             (
-                f"{prefix} Replacing persisted document graph "
+                f"{prefix} Reparse completed in "
+                f"{self._format_elapsed_seconds(parsing_elapsed_seconds)}. "
+                "Replacing persisted document graph "
                 f"({len(parsing_result.document_graph.chunks)} chunk(s))."
             ),
         )
@@ -572,6 +596,35 @@ class RetrievalBenchmarkCorpusSeeder:
 
         file_hash = digest.hexdigest()
         return file_hash, file_hash
+
+    @staticmethod
+    def _format_file_size(file_size_bytes: int) -> str:
+        if file_size_bytes < 1024:
+            return f"{file_size_bytes} B"
+
+        suffixes = ["KB", "MB", "GB", "TB"]
+        size = float(file_size_bytes)
+        suffix_index = -1
+        while size >= 1024 and suffix_index < len(suffixes) - 1:
+            size /= 1024
+            suffix_index += 1
+
+        precision = 0 if size >= 100 else 1
+        return f"{size:.{precision}f} {suffixes[max(suffix_index, 0)]}"
+
+    @staticmethod
+    def _format_elapsed_seconds(elapsed_seconds: float) -> str:
+        if elapsed_seconds < 1:
+            return f"{elapsed_seconds:.2f}s"
+        if elapsed_seconds < 60:
+            return f"{elapsed_seconds:.1f}s"
+
+        minutes, seconds = divmod(elapsed_seconds, 60.0)
+        if minutes < 60:
+            return f"{int(minutes)}m {seconds:.1f}s"
+
+        hours, minutes = divmod(minutes, 60.0)
+        return f"{int(hours)}h {int(minutes)}m {seconds:.1f}s"
 
     def _commit(self) -> None:
         if self.unit_of_work is None:
