@@ -2,6 +2,7 @@ TestDoc/
 .pytest_tmp_local
 .tmp
 outputs/debug_graph_build/
+outputs/debug_parsing/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
