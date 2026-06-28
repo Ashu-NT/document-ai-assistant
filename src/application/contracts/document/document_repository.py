@@ -2,6 +2,7 @@ from typing import Protocol
 
 from src.domain.document import DocumentGraph
 from src.domain.document.entities import DocumentChunk, Identifier
+from src.application.contracts.document.document_catalog_entry import DocumentCatalogEntry
 
 
 class DocumentRepository(Protocol):
@@ -21,6 +22,18 @@ class DocumentRepository(Protocol):
         ...
 
     def get_document_graph(self, document_id: str) -> DocumentGraph | None:
+        ...
+
+    def list_document_entries(self) -> list[DocumentCatalogEntry]:
+        ...
+
+    def find_document_entries(self, query_text: str) -> list[DocumentCatalogEntry]:
+        ...
+
+    def get_document_entry(self, document_id: str) -> DocumentCatalogEntry | None:
+        ...
+
+    def get_latest_document_entry(self) -> DocumentCatalogEntry | None:
         ...
 
     def list_chunks_by_document(self, document_id: str) -> list[DocumentChunk]:

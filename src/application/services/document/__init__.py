@@ -1,3 +1,6 @@
+from src.application.services.document.document_catalog_service import (
+    DocumentCatalogService,
+)
 from src.application.services.document.document_lookup_service import (
     DocumentLookupService,
 )
@@ -13,6 +16,7 @@ from src.application.services.document.document_application_service import (
 )
 
 __all__ = [
+    "DocumentCatalogService",
     "DocumentLookupService",
     "DuplicateDetectionResult",
     "DuplicateDetectionService",
