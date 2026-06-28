@@ -279,6 +279,114 @@ def print_trace(trace_entries: list[dict[str, Any]]) -> None:
         )
 
 
+def _short_id(value: str | None, limit: int = 12) -> str:
+    if not value:
+        return "-"
+    if len(value) <= limit:
+        return value
+    return value[:limit]
+
+
+def _preview_text(value: str | None, limit: int = 400) -> str:
+    if not value:
+        return "-"
+    normalized = " ".join(value.split())
+    if len(normalized) <= limit:
+        return normalized
+    return normalized[: limit - 3] + "..."
+
+
+def _page_range_label(chunk: dict[str, Any]) -> str:
+    source = chunk.get("source") or {}
+    if not isinstance(source, dict):
+        return "-"
+    page_start = source.get("page_start")
+    page_end = source.get("page_end")
+    if page_start is None:
+        return "-"
+    if page_end is not None and page_end != page_start:
+        return f"{page_start}-{page_end}"
+    return str(page_start)
+
+
+def _chunk_label(chunk: dict[str, Any]) -> str:
+    section_title = chunk.get("section_title")
+    if section_title:
+        return str(section_title)
+    section_path = chunk.get("section_path") or []
+    if isinstance(section_path, list) and section_path:
+        return str(section_path[-1])
+    chunk_id = chunk.get("chunk_id")
+    return _short_id(str(chunk_id) if chunk_id else None, limit=16)
+
+
+def print_context_chunks(
+    context_chunks: list[dict[str, Any]],
+) -> None:
+    print("\nContext Chunks")
+    print("--------------")
+    if not context_chunks:
+        print("No context chunks available.")
+        return
+
+    for index, chunk in enumerate(context_chunks, start=1):
+        chunk_type = chunk.get("chunk_type") or "unknown"
+        document_title = chunk.get("document_title") or "-"
+        document_id = _short_id(chunk.get("document_id"))
+        section_path = chunk.get("section_path") or []
+        section_path_text = (
+            " > ".join(str(part) for part in section_path)
+            if isinstance(section_path, list) and section_path
+            else "-"
+        )
+        score = chunk.get("score")
+        score_text = f"{float(score):.4f}" if isinstance(score, int | float) else "-"
+        print(f"[{index}] {_chunk_label(chunk)} | {chunk_type}")
+        print(f"  document: {document_title} ({document_id})")
+        print(f"  section:  {section_path_text}")
+        print(f"  pages:    {_page_range_label(chunk)}")
+        print(f"  score:    {score_text}")
+        print(f"  content:  {_preview_text(chunk.get('content'))}")
+        print()
+
+
+def build_json_output(
+    result,
+    *,
+    include_trace: bool,
+) -> dict[str, Any]:
+    data = result.data or {}
+    payload = {
+        "route": result.route,
+        "success": result.success,
+        "answer": data.get("answer") or result.response_text,
+        "document_id": data.get("document_id"),
+        "context_chunks": data.get("context_chunks", []),
+        "citations": data.get("citations", []),
+        "diagnostics": result.diagnostics or {},
+    }
+    if include_trace:
+        payload["trace"] = result.trace or []
+    return payload
+
+
+def print_graph_result(
+    result,
+    *,
+    show_context: bool,
+    show_trace: bool,
+) -> None:
+    print(f"Route: {result.route or '-'}")
+    print(f"Success: {result.success}")
+    if result.response_text:
+        print()
+        print(result.response_text)
+    if show_context:
+        print_context_chunks((result.data or {}).get("context_chunks", []))
+    if show_trace:
+        print_trace(result.trace or [])
+
+
 def close_runtime(runtime: AgentRuntime | None) -> None:
     if runtime is None:
         return
@@ -337,15 +445,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
 
         if args.json:
-            print(json.dumps(result.to_dict(), indent=2))
+            print(
+                json.dumps(
+                    build_json_output(
+                        result,
+                        include_trace=args.trace,
+                    ),
+                    indent=2,
+                )
+            )
         else:
-            print(f"Route: {result.route or '-'}")
-            print(f"Success: {result.success}")
-            if result.response_text:
-                print()
-                print(result.response_text)
-            if args.trace:
-                print_trace(result.trace or [])
+            print_graph_result(
+                result,
+                show_context=args.show_context,
+                show_trace=args.trace,
+            )
 
         return 0 if result.success else 1
 
