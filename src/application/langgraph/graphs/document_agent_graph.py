@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.application.langgraph.common import GraphMetadata, GraphResult
+from src.application.langgraph.common import GraphMetadata, GraphResult, serialize_graph_value
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.memory import ConversationMemory
 from src.application.langgraph.nodes import (
@@ -196,14 +196,26 @@ class DocumentAgentGraph:
 
     def _build_result(self, state: AgentState) -> GraphResult:
         route = state.get("route")
+        tool_results = state.get("tool_results", {})
+        answer = _extract_answer(tool_results, state.get("response_text"))
+        citations = _extract_citations(tool_results)
+        context_chunks = _extract_context_chunks(
+            tool_results=tool_results,
+            citations=citations,
+            fallback_document_title=state.get("document_title"),
+            selected_document_id=state.get("document_id"),
+        )
         diagnostics = {
             "needs_clarification": state.get("needs_clarification", False),
-            "configured_tools": sorted(state.get("tool_results", {}).keys()),
+            "configured_tools": sorted(tool_results.keys()),
         }
         data = {
             "document_id": state.get("document_id"),
             "document_title": state.get("document_title"),
-            "tool_results": state.get("tool_results", {}),
+            "answer": answer,
+            "context_chunks": context_chunks,
+            "citations": citations,
+            "tool_results": tool_results,
         }
         if state.get("needs_clarification") and state.get("error") is None:
             return GraphResult.ok(
@@ -331,3 +343,139 @@ def _optional_document_branch_target(state: AgentState, target: str) -> str:
     if state.get("document_query"):
         return "find_document"
     return target
+
+
+def _extract_answer(
+    tool_results: dict[str, Any],
+    response_text: str | None,
+) -> str | None:
+    answer_question_payload = _tool_payload(tool_results, "answer_question")
+    if isinstance(answer_question_payload, dict):
+        return (
+            answer_question_payload.get("answer_text")
+            or answer_question_payload.get("safe_user_message")
+            or response_text
+        )
+    return response_text
+
+
+def _extract_citations(tool_results: dict[str, Any]) -> list[dict[str, Any]]:
+    answer_question_payload = _tool_payload(tool_results, "answer_question")
+    if isinstance(answer_question_payload, dict):
+        citations = answer_question_payload.get("citations")
+        if isinstance(citations, list):
+            return serialize_graph_value(citations)
+
+    retrieve_evidence_payload = _tool_payload(tool_results, "retrieve_evidence")
+    if isinstance(retrieve_evidence_payload, dict):
+        citations = retrieve_evidence_payload.get("citations")
+        if isinstance(citations, list):
+            return serialize_graph_value(citations)
+
+    return []
+
+
+def _extract_context_chunks(
+    *,
+    tool_results: dict[str, Any],
+    citations: list[dict[str, Any]],
+    fallback_document_title: str | None,
+    selected_document_id: str | None,
+) -> list[dict[str, Any]]:
+    approved_chunk_ids: set[str] = set()
+    rejected_chunk_ids: set[str] = set()
+
+    answer_question_payload = _tool_payload(tool_results, "answer_question")
+    if isinstance(answer_question_payload, dict):
+        approved_chunk_ids = set(answer_question_payload.get("approved_chunk_ids", []))
+        rejected_chunk_ids = set(answer_question_payload.get("rejected_chunk_ids", []))
+        retrieval_workflow_result = answer_question_payload.get("retrieval_result")
+        if isinstance(retrieval_workflow_result, dict):
+            context_chunks = retrieval_workflow_result.get("context_chunks")
+            if isinstance(context_chunks, list):
+                return _enrich_context_chunks(
+                    context_chunks,
+                    citations=citations,
+                    fallback_document_title=fallback_document_title,
+                    selected_document_id=selected_document_id,
+                    approved_chunk_ids=approved_chunk_ids,
+                    rejected_chunk_ids=rejected_chunk_ids,
+                )
+
+    retrieve_evidence_payload = _tool_payload(tool_results, "retrieve_evidence")
+    if isinstance(retrieve_evidence_payload, dict):
+        context_chunks = retrieve_evidence_payload.get("context_chunks")
+        if isinstance(context_chunks, list):
+            return _enrich_context_chunks(
+                context_chunks,
+                citations=citations,
+                fallback_document_title=fallback_document_title,
+                selected_document_id=selected_document_id,
+                approved_chunk_ids=approved_chunk_ids,
+                rejected_chunk_ids=rejected_chunk_ids,
+            )
+
+    return []
+
+
+def _enrich_context_chunks(
+    context_chunks: list[dict[str, Any]],
+    *,
+    citations: list[dict[str, Any]],
+    fallback_document_title: str | None,
+    selected_document_id: str | None,
+    approved_chunk_ids: set[str],
+    rejected_chunk_ids: set[str],
+) -> list[dict[str, Any]]:
+    citation_by_chunk_id = {
+        citation.get("chunk_id"): citation
+        for citation in citations
+        if isinstance(citation, dict) and citation.get("chunk_id")
+    }
+
+    enriched_chunks: list[dict[str, Any]] = []
+    for chunk in context_chunks:
+        if not isinstance(chunk, dict):
+            continue
+
+        enriched_chunk = dict(chunk)
+        chunk_id = str(enriched_chunk.get("chunk_id") or "")
+        citation = citation_by_chunk_id.get(chunk_id)
+        embedded_citation = enriched_chunk.get("citation")
+        if isinstance(embedded_citation, dict) and citation is None:
+            citation = embedded_citation
+
+        document_id = enriched_chunk.get("document_id")
+        document_title = None
+        section_title = None
+        if isinstance(citation, dict):
+            document_title = citation.get("document_name")
+            section_title = citation.get("section_title")
+
+        if document_title is None and selected_document_id and document_id == selected_document_id:
+            document_title = fallback_document_title
+
+        if section_title is None:
+            section_path = enriched_chunk.get("section_path") or []
+            if isinstance(section_path, list) and section_path:
+                section_title = section_path[-1]
+
+        enriched_chunk["document_title"] = document_title
+        enriched_chunk["section_title"] = section_title
+        enriched_chunk["approved"] = chunk_id in approved_chunk_ids if approved_chunk_ids else None
+        enriched_chunk["rejected"] = chunk_id in rejected_chunk_ids if rejected_chunk_ids else None
+        enriched_chunks.append(serialize_graph_value(enriched_chunk))
+
+    return enriched_chunks
+
+
+def _tool_payload(
+    tool_results: dict[str, Any],
+    tool_name: str,
+) -> Any | None:
+    tool_result = tool_results.get(tool_name)
+    if not isinstance(tool_result, dict):
+        return None
+    if not tool_result.get("success", False):
+        return None
+    return tool_result.get("data")
