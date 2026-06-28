@@ -27,6 +27,7 @@ from src.application.workflows.question_answering.question_answering_router impo
 )
 from src.application.workflows.retrieval.retrieval_workflow import RetrievalWorkflow
 from src.domain.retrieval import RetrievalQuery
+from src.application.contracts.guardrails import GuardrailResult
 
 _ANSWER_GENERATION_DISABLED_MESSAGE = (
     "I found relevant document evidence, but answer generation is not enabled yet."
@@ -86,6 +87,7 @@ class QuestionAnsweringWorkflow:
         route, analyzed_query = self._router.decide(
             question=request.question,
             top_k=request.top_k or 5,
+            document_id=request.document_id,
         )
 
         if route == QuestionAnsweringRoute.DOCUMENT_EXPLORATION:
@@ -130,6 +132,7 @@ class QuestionAnsweringWorkflow:
         approved_chunks, context_blocking = self._context_guardrail_chain.run(
             retrieved_chunks=workflow_result.final_chunks,
             query_text=request.question,
+            document_id=request.document_id,
         )
         if context_blocking is not None:
             return QuestionAnsweringResult(
@@ -139,6 +142,23 @@ class QuestionAnsweringWorkflow:
                 guardrail_result=context_blocking,
                 retrieval_result=workflow_result,
                 diagnostics={"blocked_by": "context_guardrail"},
+            )
+
+        scope_violation = self._document_scope_violation(
+            approved_chunks=approved_chunks,
+            document_id=request.document_id,
+        )
+        if scope_violation is not None:
+            return QuestionAnsweringResult(
+                route=QuestionAnsweringRoute.BLOCKED_BY_GUARDRAIL,
+                safe_user_message=scope_violation.safe_user_message,
+                guardrail_decision=scope_violation.decision,
+                guardrail_result=scope_violation,
+                retrieval_result=workflow_result,
+                diagnostics={
+                    "blocked_by": "document_scope_guardrail",
+                    **workflow_result.diagnostics,
+                },
             )
 
         all_chunk_ids = {c.chunk_id for c in workflow_result.final_chunks}
@@ -159,7 +179,10 @@ class QuestionAnsweringWorkflow:
                 approved_chunk_ids=approved_ids,
                 rejected_chunk_ids=rejected_chunk_ids,
                 confidence=confidence,
-                diagnostics={"enough_evidence": workflow_result.enough_evidence},
+                diagnostics={
+                    "enough_evidence": workflow_result.enough_evidence,
+                    **workflow_result.diagnostics,
+                },
             )
 
         if self._answer_generation_service is None:
@@ -170,7 +193,10 @@ class QuestionAnsweringWorkflow:
                 approved_chunk_ids=approved_ids,
                 rejected_chunk_ids=rejected_chunk_ids,
                 confidence=confidence,
-                diagnostics={"enough_evidence": workflow_result.enough_evidence},
+                diagnostics={
+                    "enough_evidence": workflow_result.enough_evidence,
+                    **workflow_result.diagnostics,
+                },
             )
 
         # LLM only ever sees approved_chunks
@@ -217,5 +243,30 @@ class QuestionAnsweringWorkflow:
                 "enough_evidence": workflow_result.enough_evidence,
                 "prompt_version": generated.prompt_version,
                 "model_name": generated.model_name,
+                **workflow_result.diagnostics,
             },
+        )
+
+    @staticmethod
+    def _document_scope_violation(
+        *,
+        approved_chunks: list,
+        document_id: str | None,
+    ) -> GuardrailResult | None:
+        if document_id is None:
+            return None
+
+        leaking_chunks = [
+            chunk for chunk in approved_chunks if chunk.document_id != document_id
+        ]
+        if not leaking_chunks:
+            return None
+
+        return GuardrailResult(
+            decision=GuardrailDecision.INSUFFICIENT_EVIDENCE,
+            allowed=False,
+            reason="Approved chunks leaked outside the selected document scope.",
+            safe_user_message=(
+                "The selected document scope could not be enforced safely for this answer."
+            ),
         )

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from src.application.contracts.guardrails.guardrail_result import GuardrailResult
 from src.domain.retrieval import RetrievalQuery, RetrievalResult, RetrievedChunk
@@ -11,6 +11,7 @@ class RetrievalWorkflowResult:
     min_evidence_chunks: int = 1
     context_chunks: list[RetrievedChunk] | None = None
     guardrail_result: GuardrailResult | None = None
+    diagnostics: dict[str, object] = field(default_factory=dict)
 
     @property
     def query(self) -> RetrievalQuery:

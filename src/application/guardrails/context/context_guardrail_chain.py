@@ -20,6 +20,7 @@ class ContextGuardrailChain:
         self,
         retrieved_chunks: list[RetrievedChunk],
         query_text: str = "",
+        document_id: str | None = None,
     ) -> tuple[list[RetrievedChunk], GuardrailResult | None]:
         """Return (approved_chunks, None) on success or ([], blocking_result) on block."""
         if not self._guardrails:
@@ -30,6 +31,7 @@ class ContextGuardrailChain:
         }
         context = GuardrailContext(
             query_text=query_text,
+            document_id=document_id,
             retrieved_chunks=retrieved_chunks,
             approved_chunks=list(retrieved_chunks),
         )

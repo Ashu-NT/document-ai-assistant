@@ -113,6 +113,7 @@ class RetrievalWorkflow:
         working_query = self.query_analyzer.analyze(query)
         validation = self.query_validator.validate(working_query)
         validation.raise_if_invalid()
+        diagnostics: dict[str, object] = {}
 
         if trace_recorder is not None:
             trace_recorder.record_query_analysis(working_query)
@@ -137,6 +138,7 @@ class RetrievalWorkflow:
                     min_evidence_chunks=self.min_evidence_chunks,
                     context_chunks=[],
                     guardrail_result=pre_result,
+                    diagnostics=diagnostics,
                 )
 
         candidate_query = self._candidate_query(working_query)
@@ -167,6 +169,27 @@ class RetrievalWorkflow:
             used_sql=retrieval_result.used_sql,
             total_candidates=len(deduplication_result.chunks),
         )
+        scoped_retrieval_chunks, discarded_retrieval_chunks = self._enforce_document_scope(
+            chunks=retrieval_result.chunks,
+            document_id=working_query.document_id,
+        )
+        if discarded_retrieval_chunks:
+            diagnostics["retrieval_scope_discarded_chunk_ids"] = [
+                chunk.chunk_id for chunk in discarded_retrieval_chunks
+            ]
+            diagnostics["retrieval_scope_discarded_document_ids"] = sorted(
+                {chunk.document_id for chunk in discarded_retrieval_chunks}
+            )
+            retrieval_result = retrieval_result.__class__(
+                result_id=retrieval_result.result_id,
+                query=working_query,
+                chunks=scoped_retrieval_chunks,
+                citations=list(retrieval_result.citations),
+                used_dense=retrieval_result.used_dense,
+                used_keyword=retrieval_result.used_keyword,
+                used_sql=retrieval_result.used_sql,
+                total_candidates=retrieval_result.total_candidates,
+            )
         enough_evidence = retrieval_result.has_enough_evidence(
             self.min_evidence_chunks
         )
@@ -210,6 +233,17 @@ class RetrievalWorkflow:
             if self.context_expander is not None
             else list(retrieval_result.chunks)
         )
+        context_chunks, discarded_context_chunks = self._enforce_document_scope(
+            chunks=context_chunks,
+            document_id=working_query.document_id,
+        )
+        if discarded_context_chunks:
+            diagnostics["context_scope_discarded_chunk_ids"] = [
+                chunk.chunk_id for chunk in discarded_context_chunks
+            ]
+            diagnostics["context_scope_discarded_document_ids"] = sorted(
+                {chunk.document_id for chunk in discarded_context_chunks}
+            )
 
         if trace_recorder is not None:
             trace_recorder.record_context_expansion(context_chunks)
@@ -220,6 +254,7 @@ class RetrievalWorkflow:
             min_evidence_chunks=self.min_evidence_chunks,
             context_chunks=context_chunks,
             guardrail_result=post_guardrail_result,
+            diagnostics=diagnostics,
         )
 
     def _build_guardrail_context(
@@ -230,6 +265,7 @@ class RetrievalWorkflow:
         intent = self.query_analyzer.intent_inferer.infer(working_query)
         return GuardrailContext(
             query_text=working_query.query_text,
+            document_id=working_query.document_id,
             detected_identifiers=list(working_query.detected_identifiers),
             query_intent=str(intent),
             query_chunk_types=[ct.value for ct in working_query.chunk_types],
@@ -259,3 +295,16 @@ class RetrievalWorkflow:
         if candidate_pool_top_k == query.top_k:
             return query
         return replace(query, top_k=candidate_pool_top_k)
+
+    @staticmethod
+    def _enforce_document_scope(
+        *,
+        chunks: list,
+        document_id: str | None,
+    ) -> tuple[list, list]:
+        if document_id is None:
+            return list(chunks), []
+
+        approved = [chunk for chunk in chunks if chunk.document_id == document_id]
+        rejected = [chunk for chunk in chunks if chunk.document_id != document_id]
+        return approved, rejected

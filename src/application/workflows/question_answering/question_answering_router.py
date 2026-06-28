@@ -29,6 +29,7 @@ class QuestionAnsweringRouter:
         self,
         question: str,
         top_k: int = 5,
+        document_id: str | None = None,
     ) -> tuple[QuestionAnsweringRoute, RetrievalQuery]:
         """Return the route and the fully-analyzed RetrievalQuery in one call.
 
@@ -39,6 +40,7 @@ class QuestionAnsweringRouter:
             query_id=new_id("q"),
             query_text=question,
             top_k=top_k,
+            document_id=document_id,
         )
         analyzed = self._query_analyzer.analyze(raw_query)
         intent = self._query_analyzer.intent_inferer.infer(analyzed)

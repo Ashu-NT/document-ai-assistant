@@ -10,6 +10,7 @@ from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 class GuardrailContext:
     query_text: str
 
+    document_id: str | None = None
     detected_identifiers: list[str] = field(default_factory=list)
     query_intent: str | None = None
     query_chunk_types: list[str] = field(default_factory=list)
