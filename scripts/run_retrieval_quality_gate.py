@@ -10,9 +10,7 @@ Usage:
 """
 
 import argparse
-import json
 import sys
-from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = PROJECT_ROOT / "src"
@@ -52,36 +50,32 @@ def parse_args(argv=None):
 
 def main(argv=None) -> int:
     args = parse_args(argv)
+    from src.application.tools.evaluation import (  # noqa: WPS433
+        RunQualityGateRequest,
+        RunQualityGateTool,
+    )
 
-    report_path = Path(args.report)
-    if not report_path.exists():
-        print(f"ERROR: report file not found: {report_path}", file=sys.stderr)
-        return 2
-
-    try:
-        report_data = json.loads(report_path.read_text(encoding="utf-8"))
-    except Exception as exc:
-        print(f"ERROR: failed to read report: {exc}", file=sys.stderr)
-        return 2
-
-    from src.application.evaluation.retrieval import RetrievalQualityGate  # noqa: WPS433
-
-    gate = RetrievalQualityGate(thresholds_path=args.thresholds)
-    result = gate.check(report_data)
+    result = RunQualityGateTool().run(
+        RunQualityGateRequest(
+            report_path=args.report,
+            thresholds_path=args.thresholds,
+        )
+    )
 
     if args.json:
-        import dataclasses  # noqa: WPS433
+        import json  # noqa: WPS433
 
-        output = {
-            "passed": result.passed,
-            "violations": [dataclasses.asdict(v) for v in result.violations],
-            "checked_metrics": result.checked_metrics,
-        }
-        print(json.dumps(output, indent=2))
+        print(json.dumps(result.data or result.diagnostics, indent=2))
     else:
-        print(result.summary())
+        payload = result.data or result.diagnostics
+        print(payload.get("summary", result.message or "Quality gate failed."))
 
-    return 0 if result.passed else 1
+    if result.success:
+        return 0
+    if result.error_code == "quality_gate_failed":
+        return 1
+    print(f"ERROR: {result.message}", file=sys.stderr)
+    return 2
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.application.contracts.document import DocumentRepository
+from src.application.contracts.document import DocumentCatalogEntry, DocumentRepository
 from src.domain.document import DocumentGraph
 from src.domain.document.entities import DocumentChunk, Identifier
 from src.infrastructure.db.repositories.document.chunk_reader import ChunkReader
@@ -44,6 +44,18 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
 
     def get_document_graph(self, document_id: str) -> DocumentGraph | None:
         return self.reader.get_document_graph(document_id)
+
+    def list_document_entries(self) -> list[DocumentCatalogEntry]:
+        return self.reader.list_document_entries()
+
+    def find_document_entries(self, query_text: str) -> list[DocumentCatalogEntry]:
+        return self.reader.find_document_entries(query_text)
+
+    def get_document_entry(self, document_id: str) -> DocumentCatalogEntry | None:
+        return self.reader.get_document_entry(document_id)
+
+    def get_latest_document_entry(self) -> DocumentCatalogEntry | None:
+        return self.reader.get_latest_document_entry()
 
     def list_chunks_by_document(self, document_id: str) -> list[DocumentChunk]:
         return self.chunk_reader.list_chunks_by_document(document_id)

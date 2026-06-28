@@ -48,25 +48,7 @@ def _trunc(value: str | None, max_len: int, placeholder: str = "-") -> str:
     return value[: max_len - 3] + "..."
 
 
-def fetch_documents(session) -> list:
-    from sqlalchemy import func, select  # noqa: WPS433
-
-    from src.infrastructure.db.orm_models import ChunkORM, DocumentORM  # noqa: WPS433
-
-    chunk_count_subq = (
-        select(func.count(ChunkORM.id))
-        .where(ChunkORM.document_id == DocumentORM.id)
-        .correlate(DocumentORM)
-        .scalar_subquery()
-    )
-    stmt = (
-        select(DocumentORM, chunk_count_subq.label("chunk_count"))
-        .order_by(DocumentORM.created_at.desc())
-    )
-    return session.execute(stmt).all()
-
-
-def print_table(rows: list) -> None:
+def print_table(rows: list[dict[str, Any]]) -> None:
     w_id, w_title, w_file, w_type, w_pages, w_chunks = 20, 30, 28, 12, 5, 6
 
     header = (
@@ -76,40 +58,19 @@ def print_table(rows: list) -> None:
     print(header)
     print("-" * len(header))
 
-    for doc, chunk_count in rows:
-        pages = str(doc.page_count) if doc.page_count is not None else "-"
-        chunks = str(chunk_count if chunk_count is not None else 0)
-        created = (
-            doc.created_at.strftime("%Y-%m-%d %H:%M:%S")
-            if doc.created_at is not None
-            else "-"
-        )
+    for row in rows:
+        pages = str(row["page_count"]) if row["page_count"] is not None else "-"
+        chunks = str(row["chunk_count"])
+        created = row["ingested_at"] or "-"
         print(
-            f"{_trunc(doc.id, w_id):<{w_id}}  "
-            f"{_trunc(doc.title, w_title):<{w_title}}  "
-            f"{_trunc(doc.file_name, w_file):<{w_file}}  "
-            f"{_trunc(doc.document_type, w_type):<{w_type}}  "
+            f"{_trunc(row['document_id'], w_id):<{w_id}}  "
+            f"{_trunc(row['title'], w_title):<{w_title}}  "
+            f"{_trunc(row['file_name'], w_file):<{w_file}}  "
+            f"{_trunc(row['document_type'], w_type):<{w_type}}  "
             f"{pages:>{w_pages}}  "
             f"{chunks:>{w_chunks}}  "
             f"{created}"
         )
-
-
-def to_json_records(rows: list) -> list[dict[str, Any]]:
-    return [
-        {
-            "document_id": doc.id,
-            "title": doc.title,
-            "file_name": doc.file_name,
-            "document_type": doc.document_type,
-            "page_count": doc.page_count,
-            "chunk_count": chunk_count or 0,
-            "ingested_at": (
-                doc.created_at.isoformat() if doc.created_at is not None else None
-            ),
-        }
-        for doc, chunk_count in rows
-    ]
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -127,8 +88,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         bootstrap_application()
         Base.metadata.create_all(engine)
         session = SessionLocal()
+        from src.application.services.document import DocumentCatalogService  # noqa: WPS433
+        from src.application.tools.documents import (  # noqa: WPS433
+            ListDocumentsRequest,
+            ListDocumentsTool,
+        )
+        from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork  # noqa: WPS433
 
-        rows = fetch_documents(session)
+        uow = SqlAlchemyUnitOfWork(session)
+        tool = ListDocumentsTool(DocumentCatalogService(uow.documents))
+        result = tool.run(ListDocumentsRequest())
+        if not result.success:
+            print(result.message or "Failed to list documents.", file=sys.stderr)
+            return 1
+
+        rows = result.data or []
 
         if not rows:
             print("No documents found in the corpus.")
@@ -139,7 +113,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
 
         if args.json:
-            print(json.dumps(to_json_records(rows), indent=2))
+            print(json.dumps(rows, indent=2))
         else:
             print(f"Found {len(rows)} document(s).\n")
             print_table(rows)

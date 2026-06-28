@@ -181,6 +181,63 @@ def resolve_document(session, args: argparse.Namespace) -> tuple[str | None, str
     return None, None
 
 
+def resolve_document_with_tool(
+    session,
+    args: argparse.Namespace,
+) -> tuple[str | None, str | None]:
+    from src.application.services.document import DocumentCatalogService  # noqa: WPS433
+    from src.application.tools.documents import (  # noqa: WPS433
+        FindDocumentRequest,
+        FindDocumentTool,
+    )
+    from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork  # noqa: WPS433
+
+    uow = SqlAlchemyUnitOfWork(session)
+    tool = FindDocumentTool(DocumentCatalogService(uow.documents))
+
+    request = None
+    if args.document_id:
+        request = FindDocumentRequest(document_id=args.document_id)
+    elif args.document:
+        request = FindDocumentRequest(query_text=args.document)
+    elif args.latest:
+        request = FindDocumentRequest(latest=True)
+    else:
+        return None, None
+
+    result = tool.run(request)
+    if result.success:
+        entry = result.data
+        return entry["document_id"], entry["display_name"]
+
+    if result.error_code == "multiple_documents_found":
+        print(
+            f'Multiple documents match "{args.document}" - be more specific:',
+            file=sys.stderr,
+        )
+        for match in result.diagnostics.get("matches", []):
+            print(
+                f"  {match['document_id'][:20]}  {match['display_name']}",
+                file=sys.stderr,
+            )
+        return None, None
+
+    if result.error_code == "document_not_found":
+        if args.document_id:
+            print(f"Document ID not found: {args.document_id}", file=sys.stderr)
+        elif args.document:
+            print(f'No document found matching "{args.document}".', file=sys.stderr)
+        else:
+            print("No documents found in the corpus.", file=sys.stderr)
+        return None, None
+
+    print(result.message or "Document lookup failed.", file=sys.stderr)
+    return None, None
+
+
+resolve_document = resolve_document_with_tool
+
+
 def _create_qdrant_client(qdrant_client_class):
     from src.config.settings import qdrant_settings  # noqa: WPS433
 
@@ -694,7 +751,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         Base.metadata.create_all(engine)
         session = SessionLocal()
 
-        document_id, document_name = resolve_document(session, args)
+        document_id, document_name = resolve_document_with_tool(session, args)
 
         if document_id is None and (args.document_id or args.document or args.latest):
             print(
@@ -737,18 +794,38 @@ def main(argv: Sequence[str] | None = None) -> int:
         if not args.json:
             print_status("Running question answering workflow...")
 
-        from src.application.workflows.question_answering import (  # noqa: WPS433
-            QuestionAnsweringRequest,
+        from src.application.services.document import DocumentCatalogService  # noqa: WPS433
+        from src.application.tools.documents import FindDocumentTool  # noqa: WPS433
+        from src.application.tools.question_answering import (  # noqa: WPS433
+            AnswerQuestionRequest,
+            AnswerQuestionTool,
+        )
+        from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork  # noqa: WPS433
+
+        uow = SqlAlchemyUnitOfWork(session)
+        catalog_service = DocumentCatalogService(uow.documents)
+        answer_question_tool = AnswerQuestionTool(
+            runtime.workflow,
+            find_document_tool=FindDocumentTool(catalog_service),
         )
 
-        request = QuestionAnsweringRequest(
+        request = AnswerQuestionRequest(
             question=question,
             document_id=document_id,
             top_k=args.top_k,
             include_context=args.show_context,
             allow_answer_generation=effective_generation,
+            require_citations=True,
+            trace=args.trace,
         )
-        result = runtime.workflow.run(request)
+        tool_result = answer_question_tool.run(request)
+        if (
+            not tool_result.success
+            and tool_result.error_code != "generation_not_configured"
+        ):
+            print(tool_result.message or "Question answering failed.", file=sys.stderr)
+            return 1
+        result = tool_result.data
 
         if getattr(args, "trace", False):
             _write_retrieval_trace(
