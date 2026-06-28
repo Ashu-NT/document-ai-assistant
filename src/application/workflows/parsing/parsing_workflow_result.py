@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from src.domain.document import DocumentGraph
+from src.application.workflows.parsing.ocr import OCRTrace
 
 
 @dataclass(slots=True)
@@ -18,3 +19,4 @@ class ParsingWorkflowResult:
     orphan_element_count: int = 0
     elements_without_page_count: int = 0
     parse_warnings: list[str] = field(default_factory=list)
+    ocr_trace: OCRTrace | None = None

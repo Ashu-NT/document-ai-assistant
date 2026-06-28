@@ -38,10 +38,7 @@ from src.application.workflows.classification import (  # noqa: E402
 from src.application.validation.classification import (  # noqa: E402
     DocumentClassificationValidator,
 )
-from src.application.services.ai import LLMService, OCRService  # noqa: E402
-from src.application.workflows.parsing.canonical_element_ocr_enricher import (  # noqa: E402
-    CanonicalElementOCREnricher,
-)
+from src.application.services.ai import LLMService  # noqa: E402
 from src.application.workflows.parsing.normalizers import (  # noqa: E402
     DoclingDocumentNormalizer,
 )
@@ -49,6 +46,7 @@ from src.application.workflows.parsing.builders.chunking.policies import (  # no
     ChunkingProfileInferer,
     DocumentChunkingPolicyResolver,
 )
+from src.application.workflows.parsing.ocr import build_parsing_ocr_runtime  # noqa: E402
 from src.application.workflows.parsing.parsing_workflow_result import (  # noqa: E402
     ParsingWorkflowResult,
 )
@@ -60,7 +58,6 @@ from src.application.workflows.parsing.reports import (  # noqa: E402
 from src.config.paths import ensure_directory, resolve_project_path  # noqa: E402
 from src.config.settings import docling_settings, ocr_settings  # noqa: E402
 from src.domain.document import DocumentHashes  # noqa: E402
-from src.infrastructure.ai.ocr import build_ocr_provider  # noqa: E402
 from src.infrastructure.ai.llm import OllamaLLMProvider  # noqa: E402
 from src.infrastructure.parsing.docling import DoclingParser  # noqa: E402
 from src.shared.exceptions import ApplicationError  # noqa: E402
@@ -189,8 +186,11 @@ def print_runtime_ocr_configuration() -> None:
         f"provider={ocr_settings.provider}"
     )
     print_status(
-        "Canonical element OCR enricher: "
-        f"{'enabled' if ocr_settings.enabled else 'disabled'}"
+        "OCR fallback: "
+        f"asset={ocr_settings.asset_enabled}, "
+        f"page_fallback={ocr_settings.page_fallback_enabled}, "
+        f"region_fallback={ocr_settings.region_fallback_enabled}, "
+        f"trace={ocr_settings.trace_enabled}"
     )
 
 
@@ -489,6 +489,7 @@ def build_report(
     document_classification: Any | None = None,
     document_type_decision: Any | None = None,
     classification_provider: Any | None = None,
+    ocr_trace: Any | None = None,
 ) -> str:
     lines: list[str] = ["# Parsing Debug Report", ""]
     structural_profile_inference = (
@@ -521,6 +522,20 @@ def build_report(
             f"- title: `{safe_getattr(raw_parsed_document, 'title', default='')}`",
             f"- page count: `{safe_getattr(raw_parsed_document, 'page_count', default='')}`",
             f"- raw document type: `{type(safe_getattr(raw_parsed_document, 'raw_document')).__name__}`",
+            "",
+        ]
+    )
+
+    lines.extend(
+        [
+            "## OCR Summary",
+            f"- trace enabled: `{bool(ocr_trace)}`",
+            f"- text-poor pages: `{format_list_summary([safe_getattr(page, 'page_number') for page in safe_getattr(ocr_trace, 'analyzed_pages', default=[]) if safe_getattr(page, 'is_text_poor', default=False)])}`",
+            f"- selected target count: `{len(safe_getattr(ocr_trace, 'selected_targets', default=[]) or [])}`",
+            f"- execution count: `{len(safe_getattr(ocr_trace, 'execution_results', default=[]) or [])}`",
+            f"- added synthetic elements: `{safe_getattr(ocr_trace, 'added_synthetic_elements', default=0)}`",
+            f"- updated asset elements: `{safe_getattr(ocr_trace, 'updated_asset_elements', default=0)}`",
+            f"- trace path: `{safe_getattr(ocr_trace, 'trace_path', default='')}`",
             "",
         ]
     )
@@ -1126,15 +1141,6 @@ def run_document_classification(
     return classification, provider
 
 
-def build_optional_ocr_enricher() -> CanonicalElementOCREnricher | None:
-    if not ocr_settings.enabled:
-        return None
-
-    return CanonicalElementOCREnricher(
-        OCRService(build_ocr_provider()),
-    )
-
-
 def resolve_post_classification_chunks(
     *,
     document_graph: Any,
@@ -1191,6 +1197,7 @@ def _write_json_debug_reports(
     file_path: str,
     page_count: int | None,
     document_graph: Any,
+    ocr_trace: Any | None = None,
 ) -> None:
     elements = list(document_graph.elements.values())
     orphan_count = sum(1 for e in elements if safe_getattr(e, "parent_section_id") is None)
@@ -1228,6 +1235,7 @@ def _write_json_debug_reports(
         orphan_element_count=orphan_count,
         elements_without_page_count=no_page_count,
         parse_warnings=warnings,
+        ocr_trace=ocr_trace,
     )
 
     parse_path = ParsingReportWriter().write(result)
@@ -1251,21 +1259,31 @@ def main() -> int:
 
         id_generator = IdGenerator()
         document_id = id_generator.new_id(IdPrefix.DOCUMENT)
+        ocr_runtime = build_parsing_ocr_runtime(id_generator=id_generator)
         parser = DoclingParser()
         normalizer = DoclingDocumentNormalizer()
         graph_builder = DocumentGraphBuilder(
             id_generator=id_generator,
             section_builder=SectionBuilder(id_generator),
         )
+        ocr_trace = None
 
         raw_parsed_document = parser.parse(str(input_path))
         canonical_elements = normalizer.normalize(
             raw_parsed_document,
             document_id,
         )
-        ocr_enricher = build_optional_ocr_enricher()
+        ocr_enricher = ocr_runtime.canonical_element_ocr_enricher
         if ocr_enricher is not None:
             canonical_elements = ocr_enricher.enrich(canonical_elements)
+        if ocr_runtime.page_ocr_fallback_workflow is not None:
+            ocr_merge_result = ocr_runtime.page_ocr_fallback_workflow.run(
+                file_path=str(input_path),
+                canonical_elements=canonical_elements,
+                page_count=raw_parsed_document.page_count,
+            )
+            canonical_elements = ocr_merge_result.canonical_elements
+            ocr_trace = ocr_merge_result.ocr_trace
         document_graph = graph_builder.build(
             document_id=document_id,
             file_path=str(input_path),
@@ -1312,6 +1330,7 @@ def main() -> int:
             document_classification=document_classification,
             document_type_decision=document_type_decision,
             classification_provider=classification_provider,
+            ocr_trace=ocr_trace,
         )
         write_markdown_report(output_path, report)
 
@@ -1320,6 +1339,7 @@ def main() -> int:
             file_path=str(input_path),
             page_count=raw_parsed_document.page_count,
             document_graph=document_graph,
+            ocr_trace=ocr_trace,
         )
 
         print(output_path)

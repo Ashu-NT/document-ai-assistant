@@ -10,6 +10,10 @@ from src.application.validation.document_quality.chunking_quality_checks import 
 from src.application.validation.document_quality.document_quality_result import (
     DocumentQualityResult,
 )
+from src.application.validation.document_quality.ocr_quality_checks import (
+    check_ocr_target_failures,
+    check_ocr_targets_have_page_numbers,
+)
 from src.application.validation.document_quality.parser_quality_checks import (
     check_elements_have_pages,
     check_orphan_element_ratio,
@@ -35,11 +39,14 @@ class DocumentQualityGate:
         *,
         sections: list[DocumentSection],
         elements: list[CanonicalElement],
+        ocr_trace=None,
     ) -> DocumentQualityResult:
         result = DocumentQualityResult(document_id=document_id)
         result.checks.append(check_section_count(sections))
         result.checks.append(check_orphan_element_ratio(elements, sections))
         result.checks.append(check_elements_have_pages(elements))
+        result.checks.append(check_ocr_target_failures(ocr_trace))
+        result.checks.append(check_ocr_targets_have_page_numbers(ocr_trace))
         return result
 
     def check_chunking(

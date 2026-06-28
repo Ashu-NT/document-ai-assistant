@@ -1,5 +1,6 @@
 import pytest
 
+from src.application.contracts.ai import OCRResult
 from src.infrastructure.ai.ocr import PaddleOCRProvider
 from src.infrastructure.ai.ocr import paddle_ocr_provider
 from src.shared.exceptions import OCRProviderError
@@ -36,7 +37,9 @@ def test_extract_text_from_image_calls_paddle_ocr() -> None:
 
     result = provider.extract_text_from_image("outputs/images/pic_001.png")
 
-    assert result == "FILTER\nHOUSING\nHP-001"
+    assert isinstance(result, OCRResult)
+    assert result.text == "FILTER\nHOUSING\nHP-001"
+    assert result.provider_name == "PaddleOCRProvider"
     assert engine.calls == ["outputs/images/pic_001.png"]
 
 
@@ -46,7 +49,8 @@ def test_extract_text_from_image_normalizes_object_results() -> None:
 
     result = provider.extract_text_from_image("outputs/images/pic_001.png")
 
-    assert result == "FILTER\nHP-001"
+    assert result.text == "FILTER\nHP-001"
+    assert result.confidence == pytest.approx(0.99)
 
 
 def test_extract_text_from_image_wraps_underlying_errors() -> None:

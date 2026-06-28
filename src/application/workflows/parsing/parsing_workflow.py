@@ -5,6 +5,7 @@ from src.application.workflows.parsing.canonical_element_ocr_enricher import (
 from src.application.workflows.parsing.builders.document_graph_builder import (
     DocumentGraphBuilder,
 )
+from src.application.workflows.parsing.ocr import PageOCRFallbackWorkflow
 from src.application.workflows.parsing.normalizers.docling_document_normalizer import (
     DoclingDocumentNormalizer,
 )
@@ -69,6 +70,7 @@ class ParsingWorkflow:
         id_generator: IdGenerator,
         document_graph_validator: DocumentGraphValidator | None = None,
         canonical_element_ocr_enricher: CanonicalElementOCREnricher | None = None,
+        page_ocr_fallback_workflow: PageOCRFallbackWorkflow | None = None,
         parsing_report_writer: ParsingReportWriter | None = None,
         chunking_report_writer: ChunkingReportWriter | None = None,
         quality_report_writer: QualityReportWriter | None = None,
@@ -79,6 +81,7 @@ class ParsingWorkflow:
         self.id_generator = id_generator
         self.document_graph_validator = document_graph_validator
         self.canonical_element_ocr_enricher = canonical_element_ocr_enricher
+        self.page_ocr_fallback_workflow = page_ocr_fallback_workflow
         self.parsing_report_writer = parsing_report_writer
         self.chunking_report_writer = chunking_report_writer
         self.quality_report_writer = quality_report_writer
@@ -106,11 +109,21 @@ class ParsingWorkflow:
             raw_parsed_document,
             resolved_document_id,
         )
+        ocr_trace = None
         if self.canonical_element_ocr_enricher is not None:
             canonical_elements = self.canonical_element_ocr_enricher.enrich(
                 canonical_elements,
                 activity_context=activity_context,
             )
+        if self.page_ocr_fallback_workflow is not None:
+            ocr_merge_result = self.page_ocr_fallback_workflow.run(
+                file_path=file_path,
+                canonical_elements=canonical_elements,
+                page_count=raw_parsed_document.page_count,
+                activity_context=activity_context,
+            )
+            canonical_elements = ocr_merge_result.canonical_elements
+            ocr_trace = ocr_merge_result.ocr_trace
 
         document_graph = self.document_graph_builder.build(
             document_id=resolved_document_id,
@@ -131,6 +144,7 @@ class ParsingWorkflow:
             document_graph=document_graph,
             file_path=file_path,
             page_count=raw_parsed_document.page_count,
+            ocr_trace=ocr_trace,
         )
 
         if self.parsing_report_writer is not None:
@@ -148,6 +162,7 @@ class ParsingWorkflow:
         document_graph: DocumentGraph,
         file_path: str,
         page_count: int | None,
+        ocr_trace=None,
     ) -> ParsingWorkflowResult:
         elements = list(document_graph.elements.values())
         orphan_count = sum(1 for e in elements if e.parent_section_id is None)
@@ -166,6 +181,12 @@ class ParsingWorkflow:
             section_count=len(document_graph.sections),
             chunk_count=len(document_graph.chunks),
         )
+        if ocr_trace is not None:
+            warnings.extend(
+                warning
+                for warning in ocr_trace.warnings
+                if warning not in warnings
+            )
         return ParsingWorkflowResult(
             document_id=document_graph.document.document_id,
             file_path=file_path,
@@ -180,4 +201,5 @@ class ParsingWorkflow:
             orphan_element_count=orphan_count,
             elements_without_page_count=no_page_count,
             parse_warnings=warnings,
+            ocr_trace=ocr_trace,
         )

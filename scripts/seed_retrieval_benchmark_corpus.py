@@ -33,7 +33,6 @@ from src.application.evaluation.retrieval import (  # noqa: E402
 from src.application.services.ai import (  # noqa: E402
     EmbeddingService,
     LLMService,
-    OCRService,
 )
 from src.application.services.classification import ClassificationService  # noqa: E402
 from src.application.services.document import (  # noqa: E402
@@ -57,8 +56,8 @@ from src.application.workflows.classification import (  # noqa: E402
 )
 from src.application.workflows.embedding import EmbeddingWorkflow  # noqa: E402
 from src.application.workflows.parsing import ParsingWorkflow  # noqa: E402
-from src.application.workflows.parsing.canonical_element_ocr_enricher import (  # noqa: E402
-    CanonicalElementOCREnricher,
+from src.application.workflows.parsing.ocr import (  # noqa: E402
+    build_parsing_ocr_runtime,
 )
 from src.application.workflows.parsing.builders import (  # noqa: E402
     DocumentGraphBuilder,
@@ -79,7 +78,6 @@ from src.config.settings import (  # noqa: E402
 )
 from src.infrastructure.ai.embeddings import create_embedding_provider  # noqa: E402
 from src.infrastructure.ai.llm import OllamaLLMProvider  # noqa: E402
-from src.infrastructure.ai.ocr import build_ocr_provider  # noqa: E402
 from src.infrastructure.db.base import Base  # noqa: E402
 from src.infrastructure.db.orm_models import __all__ as _orm_models_loaded  # noqa: E402,F401
 from src.infrastructure.db.session import SessionLocal, engine  # noqa: E402
@@ -160,8 +158,11 @@ def print_runtime_ocr_configuration() -> None:
         f"provider={ocr_settings.provider}"
     )
     print_status(
-        "Canonical element OCR enricher: "
-        f"{'enabled' if ocr_settings.enabled else 'disabled'}"
+        "OCR fallback: "
+        f"asset={ocr_settings.asset_enabled}, "
+        f"page_fallback={ocr_settings.page_fallback_enabled}, "
+        f"region_fallback={ocr_settings.region_fallback_enabled}, "
+        f"trace={ocr_settings.trace_enabled}"
     )
 
 
@@ -217,6 +218,7 @@ def build_parsing_workflow(
     *,
     id_generator: IdGenerator,
 ) -> tuple[ParsingWorkflow, DocumentGraphBuilder]:
+    ocr_runtime = build_parsing_ocr_runtime(id_generator=id_generator)
     section_builder = SectionBuilder(id_generator)
     document_graph_builder = DocumentGraphBuilder(
         id_generator=id_generator,
@@ -228,18 +230,10 @@ def build_parsing_workflow(
         document_graph_builder=document_graph_builder,
         id_generator=id_generator,
         document_graph_validator=DocumentGraphValidator(),
-        canonical_element_ocr_enricher=build_optional_ocr_enricher(),
+        canonical_element_ocr_enricher=ocr_runtime.canonical_element_ocr_enricher,
+        page_ocr_fallback_workflow=ocr_runtime.page_ocr_fallback_workflow,
     )
     return workflow, document_graph_builder
-
-
-def build_optional_ocr_enricher() -> CanonicalElementOCREnricher | None:
-    if not ocr_settings.enabled:
-        return None
-
-    return CanonicalElementOCREnricher(
-        OCRService(build_ocr_provider()),
-    )
 
 
 def build_corpus_seeder() -> CorpusSeederRuntime:
