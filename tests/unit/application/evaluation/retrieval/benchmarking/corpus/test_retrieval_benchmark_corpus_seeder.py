@@ -169,6 +169,7 @@ class FakeParsingWorkflow:
         content_hash: str | None,
         document_id: str | None = None,
         activity_context=None,
+        progress_callback=None,
     ) -> ParsingWorkflowResult:
         self.operations.append("parse")
         self.calls.append(
@@ -178,6 +179,8 @@ class FakeParsingWorkflow:
                 "content_hash": content_hash,
             }
         )
+        if progress_callback is not None:
+            progress_callback("fake parsing progress")
         graph = self.graphs_by_path[file_path]
         return ParsingWorkflowResult(
             document_id=graph.document.document_id,
@@ -824,7 +827,10 @@ def test_seed_corpus_emits_progress_messages_for_major_stages() -> None:
 
     assert any("Loading retrieval benchmark truth set" in message for message in messages)
     assert any("Computing hashes" in message for message in messages)
+    assert any("File size:" in message for message in messages)
     assert any("Parsing document into provisional graph" in message for message in messages)
+    assert any("fake parsing progress" in message for message in messages)
+    assert any("Provisional parsing completed in" in message for message in messages)
     assert any("Running document classification" in message for message in messages)
     assert any("Finalizing post-classification chunks, questions, and embeddings" in message for message in messages)
     assert any("fake finalization for doc_manual" in message for message in messages)

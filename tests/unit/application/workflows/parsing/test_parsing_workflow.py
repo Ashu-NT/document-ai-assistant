@@ -125,6 +125,57 @@ def test_parse_orchestrates_parsing_normalization_build_and_validation(
     assert result.chunk_count == len(graph.chunks)
 
 
+def test_parse_emits_progress_messages_for_major_substages(
+    sample_document_graph,
+) -> None:
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/pump_manual.pdf",
+        title="Hydraulic Pump Manual",
+        page_count=3,
+        raw_document=object(),
+        parser_name="docling",
+    )
+    canonical_elements = [
+        ParsedCanonicalElement(
+            element_id="canon_001",
+            document_id="doc_placeholder",
+            element_type=ElementType.TEXT,
+            text="Replacement instructions.",
+            order_index=1,
+        )
+    ]
+    parser = FakeParser(raw_parsed_document)
+    normalizer = FakeNormalizer(canonical_elements)
+    builder = FakeDocumentGraphBuilder(copy.deepcopy(sample_document_graph))
+    validator = SpyDocumentGraphValidator()
+    workflow = ParsingWorkflow(
+        parser=parser,
+        normalizer=normalizer,
+        document_graph_builder=builder,
+        id_generator=IdGenerator(),
+        document_graph_validator=validator,
+    )
+    messages: list[str] = []
+
+    workflow.parse(
+        file_path="data/input/pump_manual.pdf",
+        file_hash="file_hash_001",
+        content_hash="content_hash_001",
+        progress_callback=messages.append,
+    )
+
+    assert any("Parsing workflow started for pump_manual.pdf." in message for message in messages)
+    assert any("Docling conversion started for pump_manual.pdf." in message for message in messages)
+    assert any("Docling conversion completed in" in message for message in messages)
+    assert any("Normalizing Docling output into canonical elements" in message for message in messages)
+    assert any("Canonical normalization completed in" in message for message in messages)
+    assert any("Building document graph from 1 canonical element(s)" in message for message in messages)
+    assert any("Document graph build completed in" in message for message in messages)
+    assert any("Validating document graph" in message for message in messages)
+    assert any("Document graph validation completed in" in message for message in messages)
+    assert any("Parsing workflow completed in" in message for message in messages)
+
+
 def test_parse_raises_schema_validation_error_when_graph_validation_fails(
     sample_document_graph,
 ) -> None:
