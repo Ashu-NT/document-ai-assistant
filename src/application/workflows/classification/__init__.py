@@ -16,14 +16,10 @@ from src.application.workflows.classification.chunk_type_classification_workflow
 from src.application.workflows.classification.document_classification_workflow import (
     DocumentClassificationWorkflow,
 )
-from src.application.workflows.classification.prompt_builders import (
-    ClassificationPromptBuilder,
-)
 
 __all__ = [
     "ChunkClassificationWorkflow",
     "ChunkTypeClassificationWorkflow",
-    "ClassificationPromptBuilder",
     "DocumentTypeDecision",
     "DocumentClassificationWorkflow",
     "HybridDocumentTypeResolver",

@@ -3,13 +3,11 @@ import json
 import re
 from typing import Any
 
+from src.application.prompts.extraction import IdentifierExtractionPromptBuilder
 from src.application.services.ai import LLMService
 from src.application.services.extraction import ExtractionService
 from src.application.validation.common import ValidationResult
 from src.application.validation.extraction import ExtractionResultValidator
-from src.application.workflows.extraction.prompt_builders import (
-    ExtractionPromptBuilder,
-)
 from src.domain.document import DocumentChunk
 from src.domain.extraction import (
     EquipmentInfo,
@@ -60,7 +58,7 @@ class ExtractionWorkflow:
         extraction_service: ExtractionService,
         extraction_result_validator: ExtractionResultValidator,
         id_generator: IdGenerator,
-        prompt_builder: ExtractionPromptBuilder | None = None,
+        prompt_builder: IdentifierExtractionPromptBuilder | None = None,
         extraction_model: str | None = None,
         confidence_threshold: float | None = None,
         require_human_review_default: bool | None = None,
@@ -69,7 +67,7 @@ class ExtractionWorkflow:
         self.extraction_service = extraction_service
         self.extraction_result_validator = extraction_result_validator
         self.id_generator = id_generator
-        self.prompt_builder = prompt_builder or ExtractionPromptBuilder()
+        self.prompt_builder = prompt_builder or IdentifierExtractionPromptBuilder()
         self.extraction_model = extraction_model or _default_extraction_model()
         self.confidence_threshold = (
             confidence_threshold
@@ -98,7 +96,7 @@ class ExtractionWorkflow:
         chunk_list = self._coerce_chunks(chunks)
         self._validate_input(document_id, chunk_list)
 
-        prompt = self.prompt_builder.build_extraction_prompt(
+        prompt = self.prompt_builder.build(
             document_id,
             chunk_list,
         )

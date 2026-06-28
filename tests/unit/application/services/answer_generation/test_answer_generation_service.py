@@ -1,10 +1,10 @@
 import pytest
 
+from src.application.prompts.answer_generation import ANSWER_PROMPT_VERSION
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
 )
 from src.application.services.answer_generation.answer_generation_service import (
-    ANSWER_PROMPT_VERSION,
     AnswerGenerationService,
 )
 from src.domain.common import ChunkType

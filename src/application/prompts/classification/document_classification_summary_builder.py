@@ -3,7 +3,7 @@ from collections import Counter
 from src.domain.document import DocumentGraph
 
 
-class DocumentGraphClassificationSummaryBuilder:
+class DocumentClassificationSummaryBuilder:
     def __init__(
         self,
         *,
@@ -30,25 +30,21 @@ class DocumentGraphClassificationSummaryBuilder:
             lines.extend(f"- {path}" for path in section_paths)
 
         element_type_counts = self._count_values(
-            value.element_type.value
-            for value in document_graph.elements.values()
+            value.element_type.value for value in document_graph.elements.values()
         )
         if element_type_counts:
             lines.append("Element type distribution:")
             lines.extend(
-                f"- {name}: {count}"
-                for name, count in element_type_counts.items()
+                f"- {name}: {count}" for name, count in element_type_counts.items()
             )
 
         chunk_type_counts = self._count_values(
-            value.chunk_type.value
-            for value in document_graph.chunks.values()
+            value.chunk_type.value for value in document_graph.chunks.values()
         )
         if chunk_type_counts:
             lines.append("Chunk type distribution:")
             lines.extend(
-                f"- {name}: {count}"
-                for name, count in chunk_type_counts.items()
+                f"- {name}: {count}" for name, count in chunk_type_counts.items()
             )
 
         chunk_previews = self._chunk_previews(document_graph)
@@ -145,7 +141,9 @@ class DocumentGraphClassificationSummaryBuilder:
                 if element.parent_section_id
                 else None
             )
-            section_path = section.path_text() if section is not None else element.element_type.value
+            section_path = (
+                section.path_text() if section is not None else element.element_type.value
+            )
             page_range = self._format_page_range(
                 element.source.page_start,
                 element.source.page_end,
@@ -164,9 +162,7 @@ class DocumentGraphClassificationSummaryBuilder:
             caption = (table.metadata.caption or "").strip()
             content = table.markdown.strip()
             if caption:
-                signals.append(
-                    f"{caption}: {self._preview_text(content)}"
-                )
+                signals.append(f"{caption}: {self._preview_text(content)}")
             elif content:
                 signals.append(self._preview_text(content))
 
@@ -192,7 +188,7 @@ class DocumentGraphClassificationSummaryBuilder:
         return signals
 
     @staticmethod
-    def _count_values(values: list[str] | tuple[str, ...] | object) -> dict[str, int]:
+    def _count_values(values: object) -> dict[str, int]:
         counts = Counter(str(value) for value in values if str(value).strip())
         return dict(sorted(counts.items(), key=lambda item: item[0]))
 

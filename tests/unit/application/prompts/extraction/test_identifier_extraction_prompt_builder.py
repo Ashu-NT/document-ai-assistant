@@ -1,5 +1,6 @@
-from src.application.workflows.extraction.prompt_builders import (
-    ExtractionPromptBuilder,
+from src.application.prompts.extraction import (
+    IDENTIFIER_EXTRACTION_PROMPT_VERSION,
+    IdentifierExtractionPromptBuilder,
 )
 
 
@@ -22,7 +23,7 @@ def clone_chunk(sample_chunk, *, chunk_id: str, content: str):
     )
 
 
-def test_build_extraction_prompt_includes_document_and_chunk_context(
+def test_identifier_extraction_prompt_builder_includes_source_text_and_instructions(
     sample_chunk,
 ) -> None:
     second_chunk = clone_chunk(
@@ -30,13 +31,14 @@ def test_build_extraction_prompt_includes_document_and_chunk_context(
         chunk_id="chunk_002",
         content="The spare part number is HP-001 and the manufacturer is Example Manufacturer.",
     )
-    builder = ExtractionPromptBuilder()
+    builder = IdentifierExtractionPromptBuilder()
 
-    prompt = builder.build_extraction_prompt(
+    prompt = builder.build(
         sample_chunk.document_id,
         [sample_chunk, second_chunk],
     )
 
+    assert builder.prompt_version == IDENTIFIER_EXTRACTION_PROMPT_VERSION
     assert sample_chunk.document_id in prompt
     assert sample_chunk.chunk_id in prompt
     assert second_chunk.chunk_id in prompt

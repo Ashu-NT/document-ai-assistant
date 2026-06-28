@@ -1,14 +1,15 @@
 import re
 from typing import Any
 
+from src.application.prompts.classification import (
+    CHUNK_TYPE_PROMPT_VERSION,
+    ChunkTypePromptBuilder,
+)
 from src.application.services.ai import LLMService
 from src.application.services.classification import ClassificationService
 from src.application.validation.classification import ChunkClassificationValidator
 from src.application.workflows.classification.classification_response_parser import (
     ClassificationResponseParser,
-)
-from src.application.workflows.classification.prompt_builders import (
-    ClassificationPromptBuilder,
 )
 from src.domain.classification import ChunkClassification, ClassificationResult
 from src.domain.common import ChunkType, ModelProcessingMetadata
@@ -41,14 +42,14 @@ class ChunkClassificationWorkflow:
         classification_service: ClassificationService,
         chunk_classification_validator: ChunkClassificationValidator,
         id_generator: IdGenerator,
-        prompt_builder: ClassificationPromptBuilder | None = None,
+        prompt_builder: ChunkTypePromptBuilder | None = None,
         classification_model: str | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.classification_service = classification_service
         self.chunk_classification_validator = chunk_classification_validator
         self.id_generator = id_generator
-        self.prompt_builder = prompt_builder or ClassificationPromptBuilder()
+        self.prompt_builder = prompt_builder or ChunkTypePromptBuilder()
         self.classification_model = (
             classification_model
             or _default_chunk_classification_model()
@@ -69,7 +70,7 @@ class ChunkClassificationWorkflow:
         chunk: DocumentChunk,
         activity_context: ActivityContext | None = None,
     ) -> ChunkClassification:
-        prompt = self.prompt_builder.build_chunk_classification_prompt(chunk)
+        prompt = self.prompt_builder.build(chunk)
         response = self.llm_service.generate(
             prompt,
             model=self.classification_model,
@@ -109,8 +110,8 @@ class ChunkClassificationWorkflow:
                 confidence=parsed["confidence_score"],
                 prompt_version=getattr(
                     self.prompt_builder,
-                    "chunk_prompt_version",
-                    getattr(self.prompt_builder, "prompt_version", None),
+                    "prompt_version",
+                    CHUNK_TYPE_PROMPT_VERSION,
                 ),
                 errors=metadata_errors,
             ),

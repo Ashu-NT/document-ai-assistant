@@ -1,8 +1,6 @@
 from src.application.validation.classification import ChunkClassificationValidator
+from src.application.prompts.classification import ChunkTypePromptBuilder
 from src.application.workflows.classification import ChunkClassificationWorkflow
-from src.application.workflows.classification.prompt_builders import (
-    ClassificationPromptBuilder,
-)
 from src.domain.common import ChunkType
 from src.shared.execution import ActionResult
 from src.shared.ids import IdGenerator
@@ -65,7 +63,7 @@ def make_workflow(
         classification_service=fake_classification_service,
         chunk_classification_validator=spy_validator,
         id_generator=IdGenerator(),
-        prompt_builder=ClassificationPromptBuilder(),
+        prompt_builder=ChunkTypePromptBuilder(),
         classification_model="qwen3:8b",
     )
     return workflow, spy_validator

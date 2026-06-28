@@ -1,6 +1,10 @@
 import re
 from typing import Callable
 
+from src.application.prompts.question_generation import (
+    QUESTION_PROMPT_VERSION,
+    QuestionPromptBuilder,
+)
 from src.application.services.ai import LLMService
 from src.domain.common import ModelProcessingMetadata
 from src.domain.document import DocumentChunk, GeneratedQuestion
@@ -8,7 +12,6 @@ from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
 from src.shared.ids import IdGenerator, IdPrefix
 
-QUESTION_PROMPT_VERSION = "v1"
 QUESTION_PREFIX_PATTERN = re.compile(r"^\s*(?:[-*]+|\d+[\.\)]|[A-Za-z]\))\s*")
 
 
@@ -29,10 +32,12 @@ class QuestionGenerationService:
         self,
         llm_service: LLMService,
         id_generator: IdGenerator,
+        prompt_builder: QuestionPromptBuilder | None = None,
         question_generation_model: str | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.id_generator = id_generator
+        self.prompt_builder = prompt_builder or QuestionPromptBuilder()
         self.question_generation_model = (
             question_generation_model
             or _default_question_generation_model()
@@ -118,7 +123,7 @@ class QuestionGenerationService:
         if max_questions <= 0:
             return []
 
-        prompt = self._build_prompt(
+        prompt = self.prompt_builder.build(
             chunk,
             max_questions=max_questions,
         )
@@ -141,24 +146,6 @@ class QuestionGenerationService:
             for question_text in question_texts
         ]
 
-    def _build_prompt(
-        self,
-        chunk: DocumentChunk,
-        *,
-        max_questions: int,
-    ) -> str:
-        section_path = " > ".join(chunk.section_path) if chunk.section_path else "N/A"
-
-        return (
-            "You generate concise user questions from technical document excerpts.\n"
-            "Return questions only, one per line.\n"
-            "Do not include numbering, bullets, explanations, or extra text.\n"
-            f"Maximum questions: {max_questions}\n"
-            f"Section path: {section_path}\n"
-            "Chunk content:\n"
-            f"{chunk.content}"
-        )
-
     def _build_question(
         self,
         chunk: DocumentChunk,
@@ -166,6 +153,11 @@ class QuestionGenerationService:
         question_text: str,
     ) -> GeneratedQuestion:
         model_name = self.question_generation_model or "default"
+        prompt_version = getattr(
+            self.prompt_builder,
+            "prompt_version",
+            QUESTION_PROMPT_VERSION,
+        )
 
         return GeneratedQuestion(
             question_id=self.id_generator.new_id(IdPrefix.QUESTION),
@@ -175,7 +167,7 @@ class QuestionGenerationService:
             processing_metadata=ModelProcessingMetadata(
                 model_name=model_name,
                 model_type="question_generation",
-                prompt_version=QUESTION_PROMPT_VERSION,
+                prompt_version=prompt_version,
             ),
         )
 

@@ -2,8 +2,8 @@ import pytest
 
 from src.application.validation.classification import DocumentClassificationValidator
 from src.application.workflows.classification import DocumentClassificationWorkflow
-from src.application.workflows.classification.prompt_builders import (
-    ClassificationPromptBuilder,
+from src.application.prompts.classification import (
+    DocumentClassificationPromptBuilder,
 )
 from src.domain.common import DocumentType
 from src.shared.exceptions import SchemaValidationError
@@ -68,7 +68,7 @@ def make_workflow(
         classification_service=fake_classification_service,
         document_classification_validator=spy_validator,
         id_generator=IdGenerator(),
-        prompt_builder=ClassificationPromptBuilder(),
+        prompt_builder=DocumentClassificationPromptBuilder(),
         classification_model="qwen3:8b",
     )
     return workflow, spy_validator
