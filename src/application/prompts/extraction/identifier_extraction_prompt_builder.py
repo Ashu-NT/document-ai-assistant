@@ -1,18 +1,26 @@
+from src.application.prompts.common import PromptMetadata
+from src.application.prompts.extraction.extraction_prompt_version import (
+    IDENTIFIER_EXTRACTION_PROMPT_VERSION,
+)
 from src.domain.document import DocumentChunk
 
 
-class ExtractionPromptBuilder:
-    prompt_version = "v1"
+class IdentifierExtractionPromptBuilder:
+    prompt_version = IDENTIFIER_EXTRACTION_PROMPT_VERSION
+    metadata = PromptMetadata(
+        name="identifier_extraction",
+        version=IDENTIFIER_EXTRACTION_PROMPT_VERSION,
+        task_type="extraction",
+        model_type="llm",
+        description="Extract maintenance, spare-part, equipment, and manufacturer data from chunks.",
+    )
 
-    def build_extraction_prompt(
+    def build(
         self,
         document_id: str,
         chunks: list[DocumentChunk],
     ) -> str:
-        chunk_blocks = "\n\n".join(
-            self._format_chunk_block(chunk)
-            for chunk in chunks
-        )
+        chunk_blocks = "\n\n".join(self._format_chunk_block(chunk) for chunk in chunks)
 
         return (
             "You extract structured maintenance information from technical document chunks.\n"
@@ -80,7 +88,10 @@ class ExtractionPromptBuilder:
     @staticmethod
     def _format_chunk_block(chunk: DocumentChunk) -> str:
         section_path = " > ".join(chunk.section_path) if chunk.section_path else "N/A"
-        page_range = ExtractionPromptBuilder._format_page_range(chunk)
+        page_range = IdentifierExtractionPromptBuilder._format_page_range(
+            chunk.source.page_start,
+            chunk.source.page_end,
+        )
 
         return (
             f"- Chunk id: {chunk.chunk_id}\n"
@@ -92,20 +103,13 @@ class ExtractionPromptBuilder:
         )
 
     @staticmethod
-    def _format_page_range(chunk: DocumentChunk) -> str:
-        page_start = chunk.source.page_start
-        page_end = chunk.source.page_end
-
+    def _format_page_range(page_start: int | None, page_end: int | None) -> str:
         if page_start is None and page_end is None:
             return "N/A"
-
         if page_start == page_end:
             return str(page_start)
-
         if page_start is None:
             return str(page_end)
-
         if page_end is None:
             return str(page_start)
-
         return f"{page_start}-{page_end}"

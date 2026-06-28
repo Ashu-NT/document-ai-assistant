@@ -1,3 +1,7 @@
+from src.application.prompts.answer_generation import (
+    ANSWER_PROMPT_VERSION,
+    AnswerPromptBuilder,
+)
 from src.application.services.ai.llm_service import LLMService
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
@@ -5,16 +9,11 @@ from src.application.services.answer_generation.answer_generation_request import
 from src.application.services.answer_generation.answer_generation_result import (
     GeneratedAnswer,
 )
-from src.application.services.answer_generation.grounded_prompt_builder import (
-    GroundedPromptBuilder,
-)
 from src.domain.common.processing_metadata import ModelProcessingMetadata
 from src.domain.retrieval.citation import Citation
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
-
-ANSWER_PROMPT_VERSION = "v1"
 
 
 def _default_answer_generation_model() -> str | None:
@@ -30,11 +29,11 @@ class AnswerGenerationService:
     def __init__(
         self,
         llm_service: LLMService,
-        prompt_builder: GroundedPromptBuilder | None = None,
+        prompt_builder: AnswerPromptBuilder | None = None,
         answer_generation_model: str | None = None,
     ) -> None:
         self.llm_service = llm_service
-        self.prompt_builder = prompt_builder or GroundedPromptBuilder()
+        self.prompt_builder = prompt_builder or AnswerPromptBuilder()
         self.answer_generation_model = (
             answer_generation_model or _default_answer_generation_model()
         )
@@ -52,6 +51,11 @@ class AnswerGenerationService:
         activity_context: ActivityContext | None = None,
     ) -> GeneratedAnswer:
         prompt = self.prompt_builder.build(request)
+        prompt_version = getattr(
+            self.prompt_builder,
+            "prompt_version",
+            ANSWER_PROMPT_VERSION,
+        )
 
         raw_output = self.llm_service.generate(
             prompt,
@@ -66,13 +70,13 @@ class AnswerGenerationService:
             answer_text=raw_output,
             citations=citations,
             cited_chunk_ids=cited_chunk_ids,
-            prompt_version=ANSWER_PROMPT_VERSION,
+            prompt_version=prompt_version,
             model_name=model_name,
             raw_model_output=raw_output,
             metadata=ModelProcessingMetadata(
                 model_name=model_name,
                 model_type="answer_generation",
-                prompt_version=ANSWER_PROMPT_VERSION,
+                prompt_version=prompt_version,
             ),
         )
 

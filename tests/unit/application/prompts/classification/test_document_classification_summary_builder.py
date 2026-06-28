@@ -1,14 +1,14 @@
 import copy
 
-from src.application.workflows.classification.prompt_builders import (
-    DocumentGraphClassificationSummaryBuilder,
+from src.application.prompts.classification import (
+    DocumentClassificationSummaryBuilder,
 )
 
 
 def test_summary_builder_includes_representative_graph_content(
     sample_document_graph,
 ) -> None:
-    builder = DocumentGraphClassificationSummaryBuilder()
+    builder = DocumentClassificationSummaryBuilder()
 
     summary = builder.build(sample_document_graph)
 
@@ -25,7 +25,7 @@ def test_summary_builder_includes_representative_graph_content(
 def test_summary_builder_falls_back_to_elements_when_chunks_are_missing(
     sample_document_graph,
 ) -> None:
-    builder = DocumentGraphClassificationSummaryBuilder()
+    builder = DocumentClassificationSummaryBuilder()
     document_graph = copy.deepcopy(sample_document_graph)
     document_graph.chunks = {}
 

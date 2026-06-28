@@ -1,10 +1,8 @@
 import pytest
 
+from src.application.prompts.extraction import IdentifierExtractionPromptBuilder
 from src.application.validation.extraction import ExtractionResultValidator
 from src.application.workflows.extraction import ExtractionWorkflow
-from src.application.workflows.extraction.prompt_builders import (
-    ExtractionPromptBuilder,
-)
 from src.shared.exceptions import SchemaValidationError
 from src.shared.execution import ActionResult
 from src.shared.ids import IdGenerator
@@ -86,7 +84,7 @@ def make_workflow(
         extraction_service=fake_extraction_service,
         extraction_result_validator=spy_validator,
         id_generator=IdGenerator(),
-        prompt_builder=ExtractionPromptBuilder(),
+        prompt_builder=IdentifierExtractionPromptBuilder(),
         extraction_model="qwen3:8b",
         confidence_threshold=0.8,
         require_human_review_default=False,

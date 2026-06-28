@@ -1,28 +1,34 @@
-from src.application.workflows.classification.prompt_builders.document_graph_classification_summary_builder import (
-    DocumentGraphClassificationSummaryBuilder,
+from src.application.prompts.classification.classification_prompt_version import (
+    DOCUMENT_CLASSIFICATION_PROMPT_VERSION,
 )
+from src.application.prompts.classification.document_classification_summary_builder import (
+    DocumentClassificationSummaryBuilder,
+)
+from src.application.prompts.common import PromptMetadata
 from src.domain.common import DocumentType
 from src.domain.document import Document, DocumentGraph
 
 
 class DocumentClassificationPromptBuilder:
-    prompt_version = "v2"
+    prompt_version = DOCUMENT_CLASSIFICATION_PROMPT_VERSION
+    metadata = PromptMetadata(
+        name="document_classification",
+        version=DOCUMENT_CLASSIFICATION_PROMPT_VERSION,
+        task_type="classification",
+        model_type="llm",
+        description="Classify a document from metadata, statistics, and graph-derived content.",
+    )
 
     def __init__(
         self,
         *,
-        summary_builder: DocumentGraphClassificationSummaryBuilder | None = None,
+        summary_builder: DocumentClassificationSummaryBuilder | None = None,
     ) -> None:
-        self.summary_builder = (
-            summary_builder or DocumentGraphClassificationSummaryBuilder()
-        )
+        self.summary_builder = summary_builder or DocumentClassificationSummaryBuilder()
 
     def build(self, document_or_graph: DocumentGraph | Document) -> str:
         document = self._resolve_document(document_or_graph)
-        document_types = ", ".join(
-            document_type.value
-            for document_type in DocumentType
-        )
+        document_types = ", ".join(document_type.value for document_type in DocumentType)
         title = document.title or "N/A"
         language = document.language or "N/A"
         stats = self._resolve_statistics(document_or_graph)
