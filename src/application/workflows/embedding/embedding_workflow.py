@@ -44,6 +44,30 @@ class EmbeddingWorkflow:
             )
             return []
 
+        embedded_chunks = self.embed_chunks(
+            chunks,
+            activity_context=activity_context,
+            progress_callback=progress_callback,
+        )
+        self.store_embedded_chunks(
+            embedded_chunks,
+            progress_callback=progress_callback,
+        )
+        return embedded_chunks
+
+    def embed_chunks(
+        self,
+        chunks: list[DocumentChunk],
+        activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
+    ) -> list[EmbeddedChunk]:
+        if not chunks:
+            self._emit_progress(
+                progress_callback,
+                "No chunks to embed; skipping vector storage.",
+            )
+            return []
+
         self._emit_progress(
             progress_callback,
             f"Generating embeddings for {len(chunks)} chunk(s)...",
@@ -66,7 +90,15 @@ class EmbeddingWorkflow:
             self._build_embedded_chunk(chunk, embedding)
             for chunk, embedding in zip(chunks, embeddings)
         ]
+        return embedded_chunks
 
+    def store_embedded_chunks(
+        self,
+        embedded_chunks: list[EmbeddedChunk],
+        progress_callback: Callable[[str], None] | None = None,
+    ) -> None:
+        if not embedded_chunks:
+            return
         self._emit_progress(
             progress_callback,
             f"Saving {len(embedded_chunks)} embedded chunk vector(s)...",
@@ -76,7 +108,6 @@ class EmbeddingWorkflow:
             progress_callback,
             "Embedding and vector storage completed.",
         )
-        return embedded_chunks
 
     @staticmethod
     def _build_embedded_chunk(
