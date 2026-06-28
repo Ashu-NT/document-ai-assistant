@@ -52,6 +52,13 @@ class IdentifierType(StrEnum):
 
 class IngestionStatus(StrEnum):
     PENDING = "pending"
+    PARSING = "parsing"
+    REGISTERED = "registered"
+    CLASSIFIED = "classified"
+    FINALIZED = "finalized"
+    EMBEDDED = "embedded"
+    INDEXED = "indexed"
+    COMPLETE = "complete"
     RUNNING = "running"
     SUCCESS = "success"
     FAILED = "failed"

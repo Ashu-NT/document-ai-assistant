@@ -112,6 +112,8 @@ class PostClassificationChunkFinalizationWorkflow:
         document_id: str,
         *,
         max_questions_per_chunk: int = 5,
+        embed_final_chunks: bool = True,
+        enable_question_generation: bool | None = None,
         activity_context: ActivityContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
     ) -> DocumentGraph:
@@ -206,6 +208,7 @@ class PostClassificationChunkFinalizationWorkflow:
         self._generate_questions_if_enabled(
             graph=graph,
             max_questions_per_chunk=max_questions_per_chunk,
+            enable_question_generation=enable_question_generation,
             activity_context=activity_context,
             progress_callback=progress_callback,
         )
@@ -218,11 +221,12 @@ class PostClassificationChunkFinalizationWorkflow:
             picture_count=len(graph.pictures),
         )
 
-        self._emit_progress(
-            progress_callback,
-            "Deleting existing vectors for this document...",
-        )
-        self.vector_store.delete_document_vectors(document_id)
+        if embed_final_chunks:
+            self._emit_progress(
+                progress_callback,
+                "Deleting existing vectors for this document...",
+            )
+            self.vector_store.delete_document_vectors(document_id)
         self._emit_progress(
             progress_callback,
             "Persisting final chunk artifacts to the document repository...",
@@ -231,15 +235,21 @@ class PostClassificationChunkFinalizationWorkflow:
             graph,
             activity_context=activity_context,
         )
-        self._emit_progress(
-            progress_callback,
-            f"Embedding and storing {len(final_chunks)} final chunk(s)...",
-        )
-        self.embedding_workflow.embed_and_store_chunks(
-            final_chunks,
-            activity_context=activity_context,
-            progress_callback=progress_callback,
-        )
+        if embed_final_chunks:
+            self._emit_progress(
+                progress_callback,
+                f"Embedding and storing {len(final_chunks)} final chunk(s)...",
+            )
+            self.embedding_workflow.embed_and_store_chunks(
+                final_chunks,
+                activity_context=activity_context,
+                progress_callback=progress_callback,
+            )
+        else:
+            self._emit_progress(
+                progress_callback,
+                "Skipping final embedding because the caller will embed and index later.",
+            )
         self._emit_progress(
             progress_callback,
             "Post-classification chunk finalization completed.",
@@ -331,10 +341,16 @@ class PostClassificationChunkFinalizationWorkflow:
         *,
         graph: DocumentGraph,
         max_questions_per_chunk: int,
+        enable_question_generation: bool | None = None,
         activity_context: ActivityContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
     ) -> None:
-        if not self.enable_question_generation:
+        resolved_enable_question_generation = (
+            self.enable_question_generation
+            if enable_question_generation is None
+            else enable_question_generation
+        )
+        if not resolved_enable_question_generation:
             self._emit_progress(
                 progress_callback,
                 "Question generation disabled; skipping final chunk questions.",

@@ -29,6 +29,18 @@ class IngestionRun:
 
     audit: AuditMetadata = field(default_factory=AuditMetadata)
 
+    def mark_status(
+        self,
+        status: IngestionStatus,
+        *,
+        finished_at: datetime | None = None,
+        error_message: str | None = None,
+    ) -> None:
+        self.status = status
+        if finished_at is not None:
+            self.finished_at = finished_at
+        self.error_message = error_message
+
     def mark_running(self, started_at: datetime) -> None:
         self.status = IngestionStatus.RUNNING
         self.started_at = started_at
@@ -50,3 +62,8 @@ class IngestionRun:
     def mark_content_duplicate(self, finished_at: datetime) -> None:
         self.status = IngestionStatus.SKIPPED_CONTENT_DUPLICATE
         self.finished_at = finished_at
+
+    def mark_complete(self, finished_at: datetime) -> None:
+        self.status = IngestionStatus.COMPLETE
+        self.finished_at = finished_at
+        self.error_message = None

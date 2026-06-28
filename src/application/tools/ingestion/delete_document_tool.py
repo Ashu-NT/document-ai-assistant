@@ -6,8 +6,11 @@ from src.application.tools.common import (
     ToolMetadata,
     ToolRequest,
     ToolResult,
-    not_implemented_result,
+    application_error_result,
+    invalid_request_result,
 )
+from src.application.workflows.ingestion import DeleteDocumentWorkflow
+from src.shared.exceptions import ApplicationError
 
 
 @dataclass(slots=True, kw_only=True)
@@ -23,8 +26,22 @@ class DeleteDocumentTool:
         mutates_state=True,
     )
 
+    def __init__(self, delete_document_workflow: DeleteDocumentWorkflow) -> None:
+        self.delete_document_workflow = delete_document_workflow
+
     def run(self, request: DeleteDocumentRequest) -> ToolResult:
-        return not_implemented_result(
+        if not request.document_id or not request.document_id.strip():
+            return invalid_request_result(
+                "document_id is required.",
+                metadata=self.metadata,
+            )
+
+        try:
+            self.delete_document_workflow.run(request.document_id)
+        except ApplicationError as exc:
+            return application_error_result(exc, metadata=self.metadata)
+
+        return ToolResult.ok(
+            data={"document_id": request.document_id},
             metadata=self.metadata,
-            message="Safe document deletion is not supported by the current application services.",
         )
