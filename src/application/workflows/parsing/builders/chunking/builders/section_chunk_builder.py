@@ -1,6 +1,7 @@
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
+from src.application.workflows.parsing.profiling import GraphBuildProfiler
 from src.application.workflows.parsing.builders.chunking.builders.chunk_fragment_builder import (
     ChunkFragmentBuilder,
 )
@@ -47,7 +48,9 @@ class SectionChunkBuilder:
         min_section_text_length: int | None = None,
         runtime_factory: ChunkingRuntimeFactory | None = None,
         payload_deduplicator: ChunkPayloadDeduplicator | None = None,
+        profiler: GraphBuildProfiler | None = None,
     ) -> None:
+        self.profiler = profiler or GraphBuildProfiler.disabled()
         text_splitter = text_splitter or (
             ChunkTextSplitter(
                 max_chunk_tokens=(
@@ -74,6 +77,10 @@ class SectionChunkBuilder:
         self.payload_deduplicator = (
             payload_deduplicator or ChunkPayloadDeduplicator()
         )
+
+    def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
+        self.profiler = profiler or GraphBuildProfiler.disabled()
+
     def build_chunk_payloads(
         self,
         *,
@@ -86,13 +93,18 @@ class SectionChunkBuilder:
         if not elements:
             return []
 
-        runtime = self.runtime_factory.create(
-            document_title=document_title,
-            document_type=document_type,
-            chunking_profile_override=chunking_profile_override,
-            sections=[section],
-            section_elements_by_id={section.section_id: elements},
-        )
+        with self.profiler.measure(
+            name="section_chunk_builder.create_runtime",
+            input_counts={"sections": 1, "elements": len(elements)},
+        ) as stage:
+            runtime = self.runtime_factory.create(
+                document_title=document_title,
+                document_type=document_type,
+                chunking_profile_override=chunking_profile_override,
+                sections=[section],
+                section_elements_by_id={section.section_id: elements},
+            )
+            stage.output_counts["sections"] = 1
 
         if runtime.section_skipper.should_skip_section(
             document_title=document_title,
@@ -129,77 +141,130 @@ class SectionChunkBuilder:
         document_type: DocumentType | None = None,
         chunking_profile_override: ChunkingProfile | None = None,
     ) -> list[ChunkPayload]:
-        runtime = self.runtime_factory.create(
-            document_title=document_title,
-            document_type=document_type,
-            chunking_profile_override=chunking_profile_override,
-            sections=sections,
-            section_elements_by_id=section_elements_by_id,
-        )
-        ordered_sections = sorted(
-            sections,
-            key=lambda value: value.sequence_number or 0,
-        )
-        section_path_lookup = {
-            tuple(section.section_path): section.section_id
-            for section in ordered_sections
-            if section.section_path
-        }
-        document_sections_combined_text = " ".join(
-            " > ".join(sec.section_path or ([sec.title] if sec.title else []))
-            for sec in ordered_sections
-            if sec.section_path or sec.title
-        )
+        with self.profiler.measure(
+            name="section_chunk_builder.create_runtime",
+            input_counts={"sections": len(sections)},
+        ) as stage:
+            runtime = self.runtime_factory.create(
+                document_title=document_title,
+                document_type=document_type,
+                chunking_profile_override=chunking_profile_override,
+                sections=sections,
+                section_elements_by_id=section_elements_by_id,
+            )
+            stage.output_counts["sections"] = len(sections)
+        with self.profiler.measure(
+            name="section_chunk_builder.order_sections",
+            input_counts={"sections": len(sections)},
+        ) as stage:
+            ordered_sections = sorted(
+                sections,
+                key=lambda value: value.sequence_number or 0,
+            )
+            stage.output_counts["ordered_sections"] = len(ordered_sections)
+        with self.profiler.measure(
+            name="section_chunk_builder.build_section_lookup",
+            input_counts={"sections": len(ordered_sections)},
+        ) as stage:
+            section_path_lookup = {
+                tuple(section.section_path): section.section_id
+                for section in ordered_sections
+                if section.section_path
+            }
+            stage.output_counts["section_paths"] = len(section_path_lookup)
+        with self.profiler.measure(
+            name="section_chunk_builder.combine_document_section_text",
+            input_counts={"sections": len(ordered_sections)},
+        ) as stage:
+            document_sections_combined_text = " ".join(
+                " > ".join(sec.section_path or ([sec.title] if sec.title else []))
+                for sec in ordered_sections
+                if sec.section_path or sec.title
+            )
+            stage.output_counts["combined_text_length"] = len(
+                document_sections_combined_text
+            )
         fragments: list[ChunkFragment] = []
 
-        for section in ordered_sections:
-            elements = section_elements_by_id.get(section.section_id, [])
-            if not elements:
-                continue
+        with self.profiler.measure(
+            name="section_chunk_builder.build_fragments",
+            input_counts={"sections": len(ordered_sections)},
+        ) as stage:
+            skipped_sections = 0
+            for section in ordered_sections:
+                elements = section_elements_by_id.get(section.section_id, [])
+                if not elements:
+                    continue
 
-            if runtime.section_skipper.should_skip_section(
-                document_title=document_title,
-                section=section,
-                elements=elements,
-            ):
-                continue
-
-            fragments.extend(
-                runtime.fragment_builder.build_section_fragments(
+                if runtime.section_skipper.should_skip_section(
                     document_title=document_title,
-                    document_type=document_type,
                     section=section,
                     elements=elements,
-                    document_sections_combined_text=document_sections_combined_text,
+                ):
+                    skipped_sections += 1
+                    continue
+
+                fragments.extend(
+                    runtime.fragment_builder.build_section_fragments(
+                        document_title=document_title,
+                        document_type=document_type,
+                        section=section,
+                        elements=elements,
+                        document_sections_combined_text=document_sections_combined_text,
+                    )
                 )
-            )
+            stage.output_counts["fragments"] = len(fragments)
+            stage.operations["skipped_sections"] = skipped_sections
 
         if not fragments:
             base_payloads: list[ChunkPayload] = []
         else:
-            base_payloads = self._chunk_payloads_from_fragments(
-                document_title=document_title,
-                fragments=fragments,
-                section_path_lookup=section_path_lookup,
+            with self.profiler.measure(
+                name="section_chunk_builder.build_base_payloads",
+                input_counts={"fragments": len(fragments)},
+            ) as stage:
+                base_payloads = self._chunk_payloads_from_fragments(
+                    document_title=document_title,
+                    fragments=fragments,
+                    section_path_lookup=section_path_lookup,
+                    text_splitter=runtime.text_splitter,
+                    payload_factory=runtime.payload_factory,
+                    merge_policy=runtime.merge_policy,
+                )
+                stage.output_counts["base_payloads"] = len(base_payloads)
+
+        with self.profiler.measure(
+            name="section_chunk_builder.build_overviews",
+            input_counts={"sections": len(ordered_sections)},
+        ) as stage:
+            overview_payloads = SectionOverviewChunkBuilder(
                 text_splitter=runtime.text_splitter,
                 payload_factory=runtime.payload_factory,
-                merge_policy=runtime.merge_policy,
+            ).build(
+                document_title=document_title,
+                sections=ordered_sections,
+                section_elements_by_id=section_elements_by_id,
             )
-
-        overview_payloads = SectionOverviewChunkBuilder(
-            text_splitter=runtime.text_splitter,
-            payload_factory=runtime.payload_factory,
-        ).build(
-            document_title=document_title,
-            sections=ordered_sections,
-            section_elements_by_id=section_elements_by_id,
-        )
-        return self._deduplicate_payloads(
-            self._merge_overview_payloads(
+            stage.output_counts["overview_payloads"] = len(overview_payloads)
+        with self.profiler.measure(
+            name="section_chunk_builder.merge_overviews",
+            input_counts={
+                "base_payloads": len(base_payloads),
+                "overview_payloads": len(overview_payloads),
+            },
+        ) as stage:
+            merged_payloads = self._merge_overview_payloads(
                 base_payloads=base_payloads,
                 overview_payloads=overview_payloads,
             )
-        )
+            stage.output_counts["merged_payloads"] = len(merged_payloads)
+        with self.profiler.measure(
+            name="section_chunk_builder.deduplicate_payloads",
+            input_counts={"merged_payloads": len(merged_payloads)},
+        ) as stage:
+            deduplicated_payloads = self._deduplicate_payloads(merged_payloads)
+            stage.output_counts["deduplicated_payloads"] = len(deduplicated_payloads)
+        return deduplicated_payloads
 
     def _deduplicate_payloads(
         self,

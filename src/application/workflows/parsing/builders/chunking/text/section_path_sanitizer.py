@@ -1,4 +1,5 @@
 import re
+from functools import lru_cache
 
 _BRANDING_PARTS = {
     "environmentally",
@@ -17,6 +18,9 @@ _LEADING_NUMBER_PATTERN = re.compile(
 _TRAILING_NUMBER_PATTERN = re.compile(
     r"(?P<prefix>.*?\S)\s+(?P<number>\d+\.\d+(?:\.\d+)*)\s*$"
 )
+_WHITESPACE_PATTERN = re.compile(r"\s+")
+
+
 def sanitize_section_path(
     section_path: list[str],
     *,
@@ -70,8 +74,9 @@ def sanitize_section_path(
     return cleaned_parts
 
 
+@lru_cache(maxsize=8192)
 def _normalize(value: str | None) -> str:
-    return re.sub(r"\s+", " ", str(value or "").strip().lower())
+    return _WHITESPACE_PATTERN.sub(" ", str(value or "").strip().lower())
 
 
 def _find_sibling_reset_index(
@@ -140,6 +145,7 @@ def _find_numbering_conflict_reset_index(
     return numbered_indexes[0]
 
 
+@lru_cache(maxsize=8192)
 def _extract_section_number(value: str | None) -> tuple[int, ...] | None:
     heading_number = _extract_heading_number_text(value)
     if heading_number is None:
@@ -151,6 +157,7 @@ def _extract_section_number(value: str | None) -> tuple[int, ...] | None:
         return None
 
 
+@lru_cache(maxsize=8192)
 def _extract_heading_number_text(value: str | None) -> str | None:
     text = str(value or "").strip()
     if not text:

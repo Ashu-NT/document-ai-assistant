@@ -12,6 +12,7 @@ from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,
 )
 from src.application.workflows.parsing.builders.section_builder import SectionBuilder
+from src.application.workflows.parsing.profiling import GraphBuildProfiler
 from src.application.workflows.parsing.canonical_element import (
     CanonicalElement as ParsedCanonicalElement,
 )
@@ -62,9 +63,11 @@ class DocumentGraphBuilder:
         chunk_overlap: int | None = None,
         min_section_text_length: int | None = None,
         section_chunk_builder: SectionChunkBuilder | None = None,
+        profiler: GraphBuildProfiler | None = None,
     ) -> None:
         self.id_generator = id_generator
         self.section_builder = section_builder
+        self.profiler = profiler or GraphBuildProfiler.disabled()
         if section_chunk_builder is not None:
             self.section_chunk_builder = section_chunk_builder
         else:
@@ -84,14 +87,33 @@ class DocumentGraphBuilder:
                     if min_section_text_length is not None
                     else _default_min_section_text_length()
                 ),
+                profiler=self.profiler,
             )
         self.asset_factory = ParsedAssetFactory(id_generator)
-        self.asset_nearby_text_enricher = AssetNearbyTextEnricher()
+        self.asset_nearby_text_enricher = AssetNearbyTextEnricher(
+            profiler=self.profiler
+        )
         self.chunk_builder = GraphChunkBuilder(
             id_generator=id_generator,
             section_chunk_builder=self.section_chunk_builder,
+            profiler=self.profiler,
         )
         self.last_section_build_result: SectionBuildResult | None = None
+        if hasattr(self.section_builder, "set_profiler"):
+            self.section_builder.set_profiler(self.profiler)
+        if hasattr(self.section_chunk_builder, "set_profiler"):
+            self.section_chunk_builder.set_profiler(self.profiler)
+
+    def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
+        self.profiler = profiler or GraphBuildProfiler.disabled()
+        if hasattr(self.section_builder, "set_profiler"):
+            self.section_builder.set_profiler(self.profiler)
+        if hasattr(self.section_chunk_builder, "set_profiler"):
+            self.section_chunk_builder.set_profiler(self.profiler)
+        if hasattr(self.asset_nearby_text_enricher, "set_profiler"):
+            self.asset_nearby_text_enricher.set_profiler(self.profiler)
+        if hasattr(self.chunk_builder, "set_profiler"):
+            self.chunk_builder.set_profiler(self.profiler)
 
     def build(
         self,
@@ -103,22 +125,27 @@ class DocumentGraphBuilder:
         raw_parsed_document: RawParsedDocument,
     ) -> DocumentGraph:
         try:
-            document = Document(
-                document_id=document_id,
-                file_name=Path(file_path).name,
-                file_path=file_path,
-                hashes=hashes,
-                title=raw_parsed_document.title or Path(file_path).stem,
-                document_type=self._extract_document_type(raw_parsed_document),
-                language=self._extract_language(raw_parsed_document),
-            )
+            with self.profiler.measure(
+                name="document_graph_builder.initialize_document",
+                input_counts={"canonical_elements": len(canonical_elements)},
+            ) as stage:
+                document = Document(
+                    document_id=document_id,
+                    file_name=Path(file_path).name,
+                    file_path=file_path,
+                    hashes=hashes,
+                    title=raw_parsed_document.title or Path(file_path).stem,
+                    document_type=self._extract_document_type(raw_parsed_document),
+                    language=self._extract_language(raw_parsed_document),
+                )
 
-            graph = DocumentGraph(document=document)
-            element_factory = ParsedElementFactory(
-                id_generator=self.id_generator,
-                parser_name=raw_parsed_document.parser_name,
-                parser_version=raw_parsed_document.parser_version,
-            )
+                graph = DocumentGraph(document=document)
+                element_factory = ParsedElementFactory(
+                    id_generator=self.id_generator,
+                    parser_name=raw_parsed_document.parser_name,
+                    parser_version=raw_parsed_document.parser_version,
+                )
+                stage.output_counts["document_id"] = document.document_id
 
             section_build_result = self.section_builder.build(
                 document_id,
@@ -129,92 +156,126 @@ class DocumentGraphBuilder:
             sections = section_build_result.sections
             section_lookup = {section.section_id: section for section in sections}
 
-            for section in sections:
-                graph.add_section(section)
+            with self.profiler.measure(
+                name="document_graph_builder.add_sections",
+                input_counts={"sections": len(sections)},
+            ) as stage:
+                for section in sections:
+                    graph.add_section(section)
+                stage.output_counts["graph_sections"] = len(graph.sections)
 
             ordered_elements = sorted(
                 canonical_elements,
                 key=lambda element: element.order_index,
             )
 
-            for parsed_element in ordered_elements:
-                parent_section_id = self.section_builder.resolve_section_id(
-                    parsed_element,
-                    section_build_result,
-                )
-                resolved_section_path = self.section_builder.resolve_section_path(
-                    parsed_element,
-                    section_build_result,
-                )
-                table_id = None
-                picture_id = None
-
-                if parsed_element.element_type == ElementType.TABLE:
-                    table_id, table_asset = self.asset_factory.build_table_asset(
-                        document_id=document_id,
-                        parent_section_id=parent_section_id,
-                        parsed_element=parsed_element,
+            with self.profiler.measure(
+                name="document_graph_builder.materialize_elements_assets",
+                input_counts={"ordered_elements": len(ordered_elements)},
+            ) as stage:
+                for parsed_element in ordered_elements:
+                    parent_section_id = self.section_builder.resolve_section_id(
+                        parsed_element,
+                        section_build_result,
                     )
-                    graph.tables[table_id] = table_asset
-
-                if parsed_element.element_type == ElementType.PICTURE:
-                    picture_id, picture_asset = self.asset_factory.build_picture_asset(
-                        document_id=document_id,
-                        parent_section_id=parent_section_id,
-                        parsed_element=parsed_element,
+                    resolved_section_path = self.section_builder.resolve_section_path(
+                        parsed_element,
+                        section_build_result,
                     )
-                    graph.pictures[picture_id] = picture_asset
+                    table_id = None
+                    picture_id = None
 
-                domain_element = element_factory.build(
-                    document_id=document_id,
-                    parsed_element=parsed_element,
-                    parent_section_id=parent_section_id,
-                    resolved_section_path=resolved_section_path,
-                    effective_heading_level=section_build_result.header_levels.get(
-                        parsed_element.element_id
-                    ),
-                    heading_level_source=section_build_result.header_sources.get(
-                        parsed_element.element_id
-                    ),
-                    table_id=table_id,
-                    picture_id=picture_id,
-                )
+                    if parsed_element.element_type == ElementType.TABLE:
+                        table_id, table_asset = self.asset_factory.build_table_asset(
+                            document_id=document_id,
+                            parent_section_id=parent_section_id,
+                            parsed_element=parsed_element,
+                        )
+                        graph.tables[table_id] = table_asset
 
-                graph.add_element(domain_element)
-                if parent_section_id and parent_section_id in section_lookup:
-                    section = section_lookup[parent_section_id]
-                    section.element_ids.append(domain_element.element_id)
-                    self._update_section_boundaries(section, domain_element)
+                    if parsed_element.element_type == ElementType.PICTURE:
+                        picture_id, picture_asset = self.asset_factory.build_picture_asset(
+                            document_id=document_id,
+                            parent_section_id=parent_section_id,
+                            parsed_element=parsed_element,
+                        )
+                        graph.pictures[picture_id] = picture_asset
+
+                    domain_element = element_factory.build(
+                        document_id=document_id,
+                        parsed_element=parsed_element,
+                        parent_section_id=parent_section_id,
+                        resolved_section_path=resolved_section_path,
+                        effective_heading_level=section_build_result.header_levels.get(
+                            parsed_element.element_id
+                        ),
+                        heading_level_source=section_build_result.header_sources.get(
+                            parsed_element.element_id
+                        ),
+                        table_id=table_id,
+                        picture_id=picture_id,
+                    )
+
+                    graph.add_element(domain_element)
+                    if parent_section_id and parent_section_id in section_lookup:
+                        section = section_lookup[parent_section_id]
+                        section.element_ids.append(domain_element.element_id)
+                        self._update_section_boundaries(section, domain_element)
+                stage.output_counts["graph_elements"] = len(graph.elements)
+                stage.output_counts["tables"] = len(graph.tables)
+                stage.output_counts["pictures"] = len(graph.pictures)
 
             self.asset_nearby_text_enricher.enrich(graph)
 
-            for chunk in self.chunk_builder.build_chunks(graph=graph, sections=sections):
-                graph.add_chunk(chunk)
+            with self.profiler.measure(
+                name="graph_chunk_builder.build_chunks",
+                input_counts={
+                    "sections": len(sections),
+                    "elements": len(graph.elements),
+                },
+            ) as stage:
+                for chunk in self.chunk_builder.build_chunks(graph=graph, sections=sections):
+                    graph.add_chunk(chunk)
+                stage.output_counts["graph_chunks"] = len(graph.chunks)
 
             section_signals: defaultdict[str, set[str]] = defaultdict(set)
             chunk_type_counts: Counter[str] = Counter()
-            for chunk in graph.chunks.values():
-                chunk_type_counts[str(chunk.chunk_type)] += 1
-                if chunk.section_id and chunk.chunk_type not in {
-                    ChunkType.GENERAL,
-                    ChunkType.UNKNOWN,
-                }:
-                    section_signals[chunk.section_id].add(str(chunk.chunk_type))
+            with self.profiler.measure(
+                name="document_graph_builder.aggregate_chunk_signals",
+                input_counts={"chunks": len(graph.chunks)},
+            ) as stage:
+                for chunk in graph.chunks.values():
+                    chunk_type_counts[str(chunk.chunk_type)] += 1
+                    if chunk.section_id and chunk.chunk_type not in {
+                        ChunkType.GENERAL,
+                        ChunkType.UNKNOWN,
+                    }:
+                        section_signals[chunk.section_id].add(str(chunk.chunk_type))
 
-            for section_id, signals in section_signals.items():
-                if section_id in graph.sections:
-                    graph.sections[section_id].chunk_type_signals = sorted(signals)
+                for section_id, signals in section_signals.items():
+                    if section_id in graph.sections:
+                        graph.sections[section_id].chunk_type_signals = sorted(signals)
+                stage.output_counts["sections_with_signals"] = len(section_signals)
 
-            graph.document.statistics = DocumentStatistics(
-                page_count=raw_parsed_document.page_count,
-                element_count=len(graph.elements),
-                section_count=len(graph.sections),
-                chunk_count=len(graph.chunks),
-                table_count=len(graph.tables),
-                picture_count=len(graph.pictures),
-                identifier_count=len(graph.identifiers),
-                chunk_type_counts=dict(chunk_type_counts),
-            )
+            with self.profiler.measure(
+                name="document_graph_builder.compute_statistics",
+                input_counts={
+                    "elements": len(graph.elements),
+                    "sections": len(graph.sections),
+                    "chunks": len(graph.chunks),
+                },
+            ) as stage:
+                graph.document.statistics = DocumentStatistics(
+                    page_count=raw_parsed_document.page_count,
+                    element_count=len(graph.elements),
+                    section_count=len(graph.sections),
+                    chunk_count=len(graph.chunks),
+                    table_count=len(graph.tables),
+                    picture_count=len(graph.pictures),
+                    identifier_count=len(graph.identifiers),
+                    chunk_type_counts=dict(chunk_type_counts),
+                )
+                stage.output_counts["chunk_type_counts"] = len(chunk_type_counts)
 
             return graph
         except ChunkingError:
