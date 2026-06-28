@@ -26,13 +26,20 @@ class ChunkPayloadDeduplicator:
         payloads: list[ChunkPayload],
     ) -> ChunkPayloadDeduplicationResult:
         groups: list[dict[str, object]] = []
+        group_indexes_by_key: dict[tuple[str, object], set[int]] = {}
 
         for index, payload in enumerate(payloads):
             signature = ChunkPayloadSignature.from_payload(payload)
+            candidate_keys = self._candidate_keys(payload)
+            matched_group_index: int | None = None
             matched_group: dict[str, object] | None = None
             matched_reason: str | None = None
 
-            for group in groups:
+            for group_index, group in self._candidate_groups(
+                groups=groups,
+                group_indexes_by_key=group_indexes_by_key,
+                candidate_keys=candidate_keys,
+            ):
                 reason = self.similarity_policy.duplicate_reason(
                     left_payload=group["representative"],
                     left_signature=group["signature"],
@@ -41,6 +48,7 @@ class ChunkPayloadDeduplicator:
                 )
                 if reason is None:
                     continue
+                matched_group_index = group_index
                 matched_group = group
                 matched_reason = reason
                 break
@@ -51,9 +59,15 @@ class ChunkPayloadDeduplicator:
                         "representative": payload,
                         "signature": signature,
                         "order_index": index,
+                        "candidate_keys": set(candidate_keys),
                         "collapsed": [],
                         "reason": None,
                     }
+                )
+                self._index_group_keys(
+                    group_indexes_by_key=group_indexes_by_key,
+                    group_index=len(groups) - 1,
+                    candidate_keys=candidate_keys,
                 )
                 continue
 
@@ -72,6 +86,12 @@ class ChunkPayloadDeduplicator:
             else:
                 matched_group["collapsed"].append(payload)
 
+            matched_group["candidate_keys"].update(candidate_keys)
+            self._index_group_keys(
+                group_indexes_by_key=group_indexes_by_key,
+                group_index=matched_group_index,
+                candidate_keys=candidate_keys,
+            )
             matched_group["reason"] = matched_reason
 
         ordered_groups = sorted(
@@ -187,3 +207,48 @@ class ChunkPayloadDeduplicator:
                 for payload in collapsed
             ],
         }
+
+    @staticmethod
+    def _candidate_groups(
+        *,
+        groups: list[dict[str, object]],
+        group_indexes_by_key: dict[tuple[str, object], set[int]],
+        candidate_keys: tuple[tuple[str, object], ...],
+    ) -> list[tuple[int, dict[str, object]]]:
+        group_indexes: set[int] = set()
+        for candidate_key in candidate_keys:
+            group_indexes.update(group_indexes_by_key.get(candidate_key, set()))
+        return [
+            (group_index, groups[group_index])
+            for group_index in sorted(group_indexes)
+        ]
+
+    @staticmethod
+    def _candidate_keys(
+        payload: ChunkPayload,
+    ) -> tuple[tuple[str, object], ...]:
+        keys: list[tuple[str, object]] = []
+        if payload.section_id:
+            keys.append(("section_id", payload.section_id))
+        if payload.section_path:
+            section_path = tuple(payload.section_path)
+            for index in range(1, len(section_path) + 1):
+                keys.append(("section_path_prefix", section_path[:index]))
+
+        page_start = payload.page_start if payload.page_start is not None else payload.page_end
+        page_end = payload.page_end if payload.page_end is not None else payload.page_start
+        if page_start is not None and page_end is not None:
+            for page_number in range(min(page_start, page_end), max(page_start, page_end) + 1):
+                keys.append(("page", page_number))
+
+        return tuple(keys)
+
+    @staticmethod
+    def _index_group_keys(
+        *,
+        group_indexes_by_key: dict[tuple[str, object], set[int]],
+        group_index: int,
+        candidate_keys: tuple[tuple[str, object], ...],
+    ) -> None:
+        for candidate_key in candidate_keys:
+            group_indexes_by_key.setdefault(candidate_key, set()).add(group_index)

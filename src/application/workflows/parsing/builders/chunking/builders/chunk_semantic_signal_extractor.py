@@ -1,4 +1,5 @@
 import re
+from functools import lru_cache
 
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
@@ -7,6 +8,30 @@ from src.application.workflows.parsing.builders.chunking.text.section_path_sanit
     sanitize_section_path,
 )
 from src.domain.common import ChunkType
+
+_NON_WORD_PATTERN = re.compile(r"[\W_]+", re.UNICODE)
+_WHITESPACE_PATTERN = re.compile(r"\s+")
+
+
+def _normalize_text_value(value: str | None) -> str:
+    if not value:
+        return ""
+    normalized = _NON_WORD_PATTERN.sub(" ", value)
+    return _WHITESPACE_PATTERN.sub(" ", normalized).strip().lower()
+
+
+def _normalize_marker_map(
+    marker_map: dict[ChunkType, tuple[str, ...]],
+) -> dict[ChunkType, tuple[str, ...]]:
+    normalized_map: dict[ChunkType, tuple[str, ...]] = {}
+    for chunk_type, markers in marker_map.items():
+        normalized_markers = tuple(
+            normalized_marker
+            for marker in markers
+            if (normalized_marker := _normalize_text_value(marker))
+        )
+        normalized_map[chunk_type] = normalized_markers
+    return normalized_map
 
 _TITLE_MARKERS: dict[ChunkType, tuple[str, ...]] = {
     ChunkType.MAINTENANCE_PROCEDURE: (
@@ -300,6 +325,9 @@ _TABLE_SIGNAL_THRESHOLDS: dict[ChunkType, int] = {
     ChunkType.TROUBLESHOOTING: 2,
     ChunkType.OPERATION_INSTRUCTION: 3,
 }
+_NORMALIZED_TITLE_MARKERS = _normalize_marker_map(_TITLE_MARKERS)
+_NORMALIZED_CONTENT_MARKERS = _normalize_marker_map(_CONTENT_MARKERS)
+_NORMALIZED_TABLE_CONTENT_MARKERS = _normalize_marker_map(_TABLE_CONTENT_MARKERS)
 
 _INTERVAL_PATTERN = re.compile(
     r"\b(?:every\s+\d+(?:[.,]\d+)?\s+(?:hour|hours|day|days|week|weeks|month|months|year|years|cycle|cycles)"
@@ -367,12 +395,11 @@ class ChunkSemanticSignalExtractor:
         table_ids: list[str] | None = None,
     ) -> dict[ChunkType, int]:
         title_text = self._normalize_text(section_title)
-        sanitized_path = sanitize_section_path(list(section_path))
-        local_path_text, ancestor_path_text = self._split_path_text(sanitized_path)
+        local_path_text, ancestor_path_text = self._path_texts(tuple(section_path))
         content_text = self._normalize_text(text)
         scores: dict[ChunkType, int] = {}
 
-        for chunk_type, markers in _TITLE_MARKERS.items():
+        for chunk_type, markers in _NORMALIZED_TITLE_MARKERS.items():
             title_hits = self._marker_hits(title_text, markers)
             if title_hits:
                 scores[chunk_type] = scores.get(chunk_type, 0) + (title_hits * 4)
@@ -388,7 +415,7 @@ class ChunkSemanticSignalExtractor:
                     ancestor_path_hits=ancestor_path_hits,
                 )
 
-        for chunk_type, markers in _CONTENT_MARKERS.items():
+        for chunk_type, markers in _NORMALIZED_CONTENT_MARKERS.items():
             content_hits = self._marker_hits(content_text, markers)
             if content_hits:
                 cap = _CONTENT_SCORE_CAPS.get(chunk_type, 2)
@@ -428,7 +455,7 @@ class ChunkSemanticSignalExtractor:
         content_text: str,
     ) -> dict[ChunkType, int]:
         scores: dict[ChunkType, int] = {}
-        for chunk_type, markers in _TABLE_CONTENT_MARKERS.items():
+        for chunk_type, markers in _NORMALIZED_TABLE_CONTENT_MARKERS.items():
             marker_hits = self._marker_hits(content_text, markers)
             threshold = _TABLE_SIGNAL_THRESHOLDS.get(chunk_type, 2)
             if marker_hits < threshold:
@@ -487,10 +514,13 @@ class ChunkSemanticSignalExtractor:
             return 1
         return ancestor_path_hits
 
-    def _split_path_text(self, section_path: list[str]) -> tuple[str, str]:
+    @staticmethod
+    @lru_cache(maxsize=4096)
+    def _path_texts(section_path: tuple[str, ...]) -> tuple[str, str]:
+        sanitized_path = sanitize_section_path(list(section_path))
         normalized_parts = [
-            self._normalize_text(segment)
-            for segment in section_path
+            _normalize_text_value(segment)
+            for segment in sanitized_path
             if segment
         ]
         if not normalized_parts:
@@ -501,20 +531,16 @@ class ChunkSemanticSignalExtractor:
 
     @staticmethod
     def _marker_hits(text: str, markers: tuple[str, ...]) -> int:
-        if not text:
+        if not text or not markers:
             return 0
 
         padded_text = f" {text} "
         hits = 0
         for marker in markers:
-            normalized_marker = ChunkSemanticSignalExtractor._normalize_text(marker)
-            if normalized_marker and f" {normalized_marker} " in padded_text:
+            if f" {marker} " in padded_text:
                 hits += 1
         return hits
 
     @staticmethod
     def _normalize_text(value: str | None) -> str:
-        if not value:
-            return ""
-        normalized = re.sub(r"[\W_]+", " ", value, flags=re.UNICODE)
-        return re.sub(r"\s+", " ", normalized).strip().lower()
+        return _normalize_text_value(value)

@@ -13,9 +13,12 @@ import hashlib
 import json
 import re
 import sys
+import time
 import traceback
 from collections import Counter
 from pathlib import Path
+from threading import Event, Thread
+from typing import Callable
 from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -62,6 +65,8 @@ from src.infrastructure.ai.llm import OllamaLLMProvider  # noqa: E402
 from src.infrastructure.parsing.docling import DoclingParser  # noqa: E402
 from src.shared.exceptions import ApplicationError  # noqa: E402
 from src.shared.ids import IdGenerator, IdPrefix  # noqa: E402
+
+_STAGE_HEARTBEAT_INTERVAL_SECONDS = 30.0
 
 
 class DebugClassificationService:
@@ -161,6 +166,89 @@ def parse_args() -> argparse.Namespace:
 
 def print_status(message: str) -> None:
     print(f"[debug-parse-document] {message}", flush=True)
+
+
+def format_elapsed_seconds(elapsed_seconds: float) -> str:
+    if elapsed_seconds < 1:
+        return f"{elapsed_seconds:.2f}s"
+    if elapsed_seconds < 60:
+        return f"{elapsed_seconds:.1f}s"
+
+    minutes, seconds = divmod(elapsed_seconds, 60.0)
+    if minutes < 60:
+        return f"{int(minutes)}m {seconds:.1f}s"
+
+    hours, minutes = divmod(minutes, 60.0)
+    return f"{int(hours)}h {int(minutes)}m {seconds:.1f}s"
+
+
+class StageHeartbeat:
+    def __init__(
+        self,
+        *,
+        label: str,
+        interval_seconds: float = _STAGE_HEARTBEAT_INTERVAL_SECONDS,
+    ) -> None:
+        self.label = label
+        self.interval_seconds = interval_seconds
+        self._started_at = 0.0
+        self._stop_event = Event()
+        self._thread: Thread | None = None
+
+    def start(self) -> None:
+        if self._thread is not None:
+            return
+
+        self._started_at = time.perf_counter()
+        self._thread = Thread(
+            target=self._run,
+            name="debug-parse-stage-heartbeat",
+            daemon=True,
+        )
+        self._thread.start()
+
+    def stop(self) -> None:
+        if self._thread is None:
+            return
+
+        self._stop_event.set()
+        if self._thread.is_alive():
+            self._thread.join(timeout=0.1)
+
+    def _run(self) -> None:
+        while not self._stop_event.wait(self.interval_seconds):
+            elapsed_seconds = time.perf_counter() - self._started_at
+            print_status(
+                f"{self.label} still running... ({format_elapsed_seconds(elapsed_seconds)} elapsed)"
+            )
+
+
+def run_stage(
+    *,
+    start_message: str,
+    heartbeat_label: str,
+    failure_label: str,
+    operation: Callable[[], Any],
+    completion_message_builder: Callable[[Any, float], str],
+) -> Any:
+    print_status(start_message)
+    started_at = time.perf_counter()
+    heartbeat = StageHeartbeat(label=heartbeat_label)
+    heartbeat.start()
+    try:
+        result = operation()
+    except Exception:
+        elapsed_seconds = time.perf_counter() - started_at
+        print_status(
+            f"{failure_label} failed after {format_elapsed_seconds(elapsed_seconds)}."
+        )
+        raise
+    finally:
+        heartbeat.stop()
+
+    elapsed_seconds = time.perf_counter() - started_at
+    print_status(completion_message_builder(result, elapsed_seconds))
+    return result
 
 
 def print_runtime_ocr_configuration() -> None:
@@ -1255,7 +1343,16 @@ def main() -> int:
         print_status(f"Output path: {output_path}")
         print_runtime_ocr_configuration()
 
-        file_hash, content_hash = compute_debug_hashes(input_path)
+        file_hash, content_hash = run_stage(
+            start_message="Computing file and content hashes...",
+            heartbeat_label="Hash computation",
+            failure_label="Hash computation",
+            operation=lambda: compute_debug_hashes(input_path),
+            completion_message_builder=lambda _result, elapsed_seconds: (
+                "Hash computation completed in "
+                f"{format_elapsed_seconds(elapsed_seconds)}."
+            ),
+        )
 
         id_generator = IdGenerator()
         document_id = id_generator.new_id(IdPrefix.DOCUMENT)
@@ -1268,50 +1365,137 @@ def main() -> int:
         )
         ocr_trace = None
 
-        raw_parsed_document = parser.parse(str(input_path))
-        canonical_elements = normalizer.normalize(
-            raw_parsed_document,
-            document_id,
+        raw_parsed_document = run_stage(
+            start_message=(
+                f"Docling conversion started for {input_path.name}. "
+                "This can take a while for large or image-heavy PDFs."
+            ),
+            heartbeat_label=f"Docling conversion for {input_path.name}",
+            failure_label=f"Docling conversion for {input_path.name}",
+            operation=lambda: parser.parse(str(input_path)),
+            completion_message_builder=lambda result, elapsed_seconds: (
+                "Docling conversion completed in "
+                f"{format_elapsed_seconds(elapsed_seconds)} "
+                f"(pages={safe_getattr(result, 'page_count', default='unknown')}, "
+                f"parser={safe_getattr(result, 'parser_name', default='')})."
+            ),
+        )
+        canonical_elements = run_stage(
+            start_message="Normalizing Docling output into canonical elements...",
+            heartbeat_label="Canonical normalization",
+            failure_label="Canonical normalization",
+            operation=lambda: normalizer.normalize(
+                raw_parsed_document,
+                document_id,
+            ),
+            completion_message_builder=lambda result, elapsed_seconds: (
+                "Canonical normalization completed in "
+                f"{format_elapsed_seconds(elapsed_seconds)} "
+                f"({len(result)} canonical element(s))."
+            ),
         )
         ocr_enricher = ocr_runtime.canonical_element_ocr_enricher
         if ocr_enricher is not None:
-            canonical_elements = ocr_enricher.enrich(canonical_elements)
+            canonical_elements = run_stage(
+                start_message=(
+                    "Running canonical element OCR enrichment for "
+                    f"{len(canonical_elements)} element(s)..."
+                ),
+                heartbeat_label="Canonical element OCR enrichment",
+                failure_label="Canonical element OCR enrichment",
+                operation=lambda: ocr_enricher.enrich(canonical_elements),
+                completion_message_builder=lambda result, elapsed_seconds: (
+                    "Canonical element OCR enrichment completed in "
+                    f"{format_elapsed_seconds(elapsed_seconds)} "
+                    f"({len(result)} element(s))."
+                ),
+            )
         if ocr_runtime.page_ocr_fallback_workflow is not None:
-            ocr_merge_result = ocr_runtime.page_ocr_fallback_workflow.run(
-                file_path=str(input_path),
-                canonical_elements=canonical_elements,
-                page_count=raw_parsed_document.page_count,
+            ocr_merge_result = run_stage(
+                start_message=(
+                    "Running page OCR fallback across "
+                    f"{safe_getattr(raw_parsed_document, 'page_count', default='unknown')} page(s)..."
+                ),
+                heartbeat_label="Page OCR fallback",
+                failure_label="Page OCR fallback",
+                operation=lambda: ocr_runtime.page_ocr_fallback_workflow.run(
+                    file_path=str(input_path),
+                    canonical_elements=canonical_elements,
+                    page_count=raw_parsed_document.page_count,
+                ),
+                completion_message_builder=lambda result, elapsed_seconds: (
+                    "Page OCR fallback completed in "
+                    f"{format_elapsed_seconds(elapsed_seconds)} "
+                    f"({len(result.canonical_elements)} element(s))."
+                ),
             )
             canonical_elements = ocr_merge_result.canonical_elements
             ocr_trace = ocr_merge_result.ocr_trace
-        document_graph = graph_builder.build(
-            document_id=document_id,
-            file_path=str(input_path),
-            hashes=DocumentHashes(
-                file_hash=file_hash,
-                content_hash=content_hash,
+        document_graph = run_stage(
+            start_message=(
+                "Building document graph from "
+                f"{len(canonical_elements)} canonical element(s)..."
             ),
-            canonical_elements=canonical_elements,
-            raw_parsed_document=raw_parsed_document,
+            heartbeat_label="Document graph build",
+            failure_label="Document graph build",
+            operation=lambda: graph_builder.build(
+                document_id=document_id,
+                file_path=str(input_path),
+                hashes=DocumentHashes(
+                    file_hash=file_hash,
+                    content_hash=content_hash,
+                ),
+                canonical_elements=canonical_elements,
+                raw_parsed_document=raw_parsed_document,
+            ),
+            completion_message_builder=lambda result, elapsed_seconds: (
+                "Document graph build completed in "
+                f"{format_elapsed_seconds(elapsed_seconds)} "
+                f"(sections={len(result.sections)}, "
+                f"elements={len(result.elements)}, "
+                f"chunks={len(result.chunks)})."
+            ),
         )
         section_build_result = graph_builder.last_section_build_result
         initial_chunks = sort_chunks(list(document_graph.chunks.values()))
         structural_profile_inference = infer_structural_profile_inference(
             document_graph
         )
-        document_classification, classification_provider = run_document_classification(
-            document_graph=document_graph,
-            id_generator=id_generator,
+        document_classification, classification_provider = run_stage(
+            start_message="Running document LLM classification...",
+            heartbeat_label="Document LLM classification",
+            failure_label="Document LLM classification",
+            operation=lambda: run_document_classification(
+                document_graph=document_graph,
+                id_generator=id_generator,
+            ),
+            completion_message_builder=lambda result, elapsed_seconds: (
+                "Document LLM classification completed in "
+                f"{format_elapsed_seconds(elapsed_seconds)} "
+                f"(document_type={display_value(safe_getattr(result[0], 'document_type'))}, "
+                f"confidence={safe_getattr(result[0], 'result', 'confidence_score', default='')})."
+            ),
         )
         (
             provisional_chunking_policy,
             document_type_decision,
             post_classification_chunks,
-        ) = resolve_post_classification_chunks(
-            document_graph=document_graph,
-            graph_builder=graph_builder,
-            document_classification=document_classification,
-            structural_profile_inference=structural_profile_inference,
+        ) = run_stage(
+            start_message="Resolving hybrid chunking decision and post-classification chunk set...",
+            heartbeat_label="Post-classification chunk resolution",
+            failure_label="Post-classification chunk resolution",
+            operation=lambda: resolve_post_classification_chunks(
+                document_graph=document_graph,
+                graph_builder=graph_builder,
+                document_classification=document_classification,
+                structural_profile_inference=structural_profile_inference,
+            ),
+            completion_message_builder=lambda result, elapsed_seconds: (
+                "Post-classification chunk resolution completed in "
+                f"{format_elapsed_seconds(elapsed_seconds)} "
+                f"(should_rechunk={safe_getattr(result[1], 'should_rechunk', default=False)}, "
+                f"final_chunks={len(result[2])})."
+            ),
         )
 
         report = build_report(
@@ -1332,14 +1516,32 @@ def main() -> int:
             classification_provider=classification_provider,
             ocr_trace=ocr_trace,
         )
-        write_markdown_report(output_path, report)
+        run_stage(
+            start_message="Writing Markdown inspection report...",
+            heartbeat_label="Markdown report write",
+            failure_label="Markdown report write",
+            operation=lambda: write_markdown_report(output_path, report),
+            completion_message_builder=lambda _result, elapsed_seconds: (
+                "Markdown inspection report written in "
+                f"{format_elapsed_seconds(elapsed_seconds)}."
+            ),
+        )
 
-        _write_json_debug_reports(
-            document_id=document_id,
-            file_path=str(input_path),
-            page_count=raw_parsed_document.page_count,
-            document_graph=document_graph,
-            ocr_trace=ocr_trace,
+        run_stage(
+            start_message="Writing JSON parse/chunk/quality reports...",
+            heartbeat_label="JSON report write",
+            failure_label="JSON report write",
+            operation=lambda: _write_json_debug_reports(
+                document_id=document_id,
+                file_path=str(input_path),
+                page_count=raw_parsed_document.page_count,
+                document_graph=document_graph,
+                ocr_trace=ocr_trace,
+            ),
+            completion_message_builder=lambda _result, elapsed_seconds: (
+                "JSON debug reports written in "
+                f"{format_elapsed_seconds(elapsed_seconds)}."
+            ),
         )
 
         print(output_path)

@@ -1,6 +1,7 @@
 from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     clean_chunk_text,
 )
+from src.application.workflows.parsing.profiling import GraphBuildProfiler
 from src.domain.common import ElementType
 from src.domain.document import DocumentGraph
 from src.domain.elements import CanonicalElement
@@ -12,39 +13,54 @@ class AssetNearbyTextEnricher:
         *,
         context_window: int = 2,
         max_context_tokens: int = 72,
+        profiler: GraphBuildProfiler | None = None,
     ) -> None:
         self.context_window = max(0, context_window)
         self.max_context_tokens = max(12, max_context_tokens)
+        self.profiler = profiler or GraphBuildProfiler.disabled()
+
+    def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
+        self.profiler = profiler or GraphBuildProfiler.disabled()
 
     def enrich(self, graph: DocumentGraph) -> None:
         if self.context_window <= 0:
             return
 
-        for asset_collection, asset_kind in (
-            (graph.tables, "table"),
-            (graph.pictures, "picture"),
-        ):
-            for asset_id, asset in asset_collection.items():
-                asset_element = self._find_asset_element(
-                    graph=graph,
-                    asset_id=asset_id,
-                    asset_kind=asset_kind,
-                )
-                if asset_element is None or asset_element.parent_section_id is None:
-                    continue
+        with self.profiler.measure(
+            name="document_graph_builder.asset_nearby_text_enrichment",
+            input_counts={
+                "tables": len(graph.tables),
+                "pictures": len(graph.pictures),
+            },
+        ) as stage:
+            enriched_assets = 0
+            for asset_collection, asset_kind in (
+                (graph.tables, "table"),
+                (graph.pictures, "picture"),
+            ):
+                for asset_id, asset in asset_collection.items():
+                    asset_element = self._find_asset_element(
+                        graph=graph,
+                        asset_id=asset_id,
+                        asset_kind=asset_kind,
+                    )
+                    if asset_element is None or asset_element.parent_section_id is None:
+                        continue
 
-                section_elements = graph.get_section_elements(asset_element.parent_section_id)
-                asset_index = self._find_element_index(
-                    section_elements=section_elements,
-                    asset_element=asset_element,
-                )
-                if asset_index is None:
-                    continue
+                    section_elements = graph.get_section_elements(asset_element.parent_section_id)
+                    asset_index = self._find_element_index(
+                        section_elements=section_elements,
+                        asset_element=asset_element,
+                    )
+                    if asset_index is None:
+                        continue
 
-                asset.metadata.nearby_text = self._nearby_text(
-                    section_elements=section_elements,
-                    asset_index=asset_index,
-                )
+                    asset.metadata.nearby_text = self._nearby_text(
+                        section_elements=section_elements,
+                        asset_index=asset_index,
+                    )
+                    enriched_assets += int(bool(asset.metadata.nearby_text))
+            stage.output_counts["enriched_assets"] = enriched_assets
 
     def _nearby_text(
         self,

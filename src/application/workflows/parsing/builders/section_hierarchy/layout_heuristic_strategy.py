@@ -43,19 +43,20 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
                 levels[header.element_id] = numbered_level
 
         text_between_cache = self._build_text_between_cache(elements)
+        top_level_anchor_ids = self._build_top_level_anchor_ids(sorted_headers, levels)
 
         for index, header in enumerate(sorted_headers):
             current_level = levels.get(header.element_id, 1)
             if current_level == 1:
                 continue
 
-            current_root_id = self._top_level_anchor_id(index, sorted_headers, levels)
+            current_root_id = top_level_anchor_ids[index]
             if current_root_id is None:
                 continue
 
             for candidate_index in range(index - 1, -1, -1):
                 candidate = sorted_headers[candidate_index]
-                candidate_root_id = self._top_level_anchor_id(candidate_index, sorted_headers, levels)
+                candidate_root_id = top_level_anchor_ids[candidate_index]
                 if candidate_root_id != current_root_id:
                     continue
 
@@ -137,19 +138,51 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
     ) -> dict[tuple[str, str], int]:
         ordered = sorted(elements, key=lambda element: element.order_index)
         cache: dict[tuple[str, str], int] = {}
-        headers = [element for element in ordered if element.element_type == ElementType.SECTION_HEADER]
+        headers: list[tuple[CanonicalElement, int]] = [
+            (element, index)
+            for index, element in enumerate(ordered)
+            if element.element_type == ElementType.SECTION_HEADER
+        ]
+        if len(headers) < 2:
+            return cache
 
-        for index, header in enumerate(headers):
-            for next_header in headers[index + 1 :]:
-                text_length = sum(
-                    len(element.text or "")
-                    for element in ordered
-                    if header.order_index < element.order_index < next_header.order_index
-                    and element.element_type in {ElementType.TEXT, ElementType.CAPTION, ElementType.LIST_ITEM}
+        prefix_text_lengths = [0]
+        running_total = 0
+        text_like_types = {
+            ElementType.TEXT,
+            ElementType.CAPTION,
+            ElementType.LIST_ITEM,
+        }
+        for element in ordered:
+            if element.element_type in text_like_types:
+                running_total += len(element.text or "")
+            prefix_text_lengths.append(running_total)
+
+        for index, (header, header_position) in enumerate(headers):
+            start_prefix_index = header_position + 1
+            for next_header, next_header_position in headers[index + 1 :]:
+                text_length = (
+                    prefix_text_lengths[next_header_position]
+                    - prefix_text_lengths[start_prefix_index]
                 )
                 cache[(header.element_id, next_header.element_id)] = text_length
 
         return cache
+
+    @staticmethod
+    def _build_top_level_anchor_ids(
+        headers: list[CanonicalElement],
+        levels: dict[str, int],
+    ) -> list[str | None]:
+        anchors: list[str | None] = []
+        current_anchor_id: str | None = None
+
+        for header in headers:
+            if levels.get(header.element_id, 1) == 1:
+                current_anchor_id = header.element_id
+            anchors.append(current_anchor_id)
+
+        return anchors
 
     @staticmethod
     def _top_level_anchor_id(

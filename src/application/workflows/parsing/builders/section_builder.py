@@ -1,3 +1,4 @@
+from src.application.workflows.parsing.profiling import GraphBuildProfiler
 from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,
 )
@@ -22,14 +23,19 @@ class SectionBuilder:
         hierarchy_resolver: SectionHierarchyResolver | None = None,
         section_path_relinker: SectionPathRelinker | None = None,
         section_stack_builder: SectionStackBuilder | None = None,
+        profiler: GraphBuildProfiler | None = None,
     ) -> None:
         self.id_generator = id_generator
+        self.profiler = profiler or GraphBuildProfiler.disabled()
         self.header_filter = header_filter or SectionHeaderFilter()
         self.hierarchy_resolver = hierarchy_resolver or SectionHierarchyResolver()
         self.section_path_relinker = section_path_relinker or SectionPathRelinker()
         self.section_stack_builder = section_stack_builder or SectionStackBuilder(
             id_generator
         )
+
+    def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
+        self.profiler = profiler or GraphBuildProfiler.disabled()
 
     def build(
         self,
@@ -38,20 +44,30 @@ class SectionBuilder:
         *,
         default_title: str = "Document",
     ) -> SectionBuildResult:
-        ordered_elements = sorted(
-            canonical_elements,
-            key=lambda element: element.order_index,
-        )
-        headers = self.header_filter.filter(
-            sorted(
-                [
-                    element
-                    for element in canonical_elements
-                    if element.element_type == ElementType.SECTION_HEADER
-                ],
+        with self.profiler.measure(
+            name="section_builder.sort_elements",
+            input_counts={"canonical_elements": len(canonical_elements)},
+        ) as stage:
+            ordered_elements = sorted(
+                canonical_elements,
                 key=lambda element: element.order_index,
             )
-        )
+            stage.output_counts["ordered_elements"] = len(ordered_elements)
+        with self.profiler.measure(
+            name="section_builder.collect_headers",
+            input_counts={"canonical_elements": len(canonical_elements)},
+        ) as stage:
+            headers = self.header_filter.filter(
+                sorted(
+                    [
+                        element
+                        for element in canonical_elements
+                        if element.element_type == ElementType.SECTION_HEADER
+                    ],
+                    key=lambda element: element.order_index,
+                )
+            )
+            stage.output_counts["headers"] = len(headers)
         filtered_header_ids = {
             header.element_id
             for header in headers
@@ -87,48 +103,81 @@ class SectionBuilder:
                 },
             )
 
-        hierarchy_resolution = self.hierarchy_resolver.resolve(
-            [
-                element
-                for element in ordered_elements
-                if element.element_type != ElementType.SECTION_HEADER
-                or element.element_id in filtered_header_ids
-            ]
-        )
-        sections, header_section_ids = self.section_stack_builder.build(
-            document_id,
-            headers,
-            hierarchy_resolution.effective_levels,
-            hierarchy_resolution.explicit_parent_headers,
-        )
+        with self.profiler.measure(
+            name="section_builder.resolve_hierarchy",
+            input_counts={
+                "headers": len(headers),
+                "ordered_elements": len(ordered_elements),
+            },
+        ) as stage:
+            hierarchy_resolution = self.hierarchy_resolver.resolve(
+                [
+                    element
+                    for element in ordered_elements
+                    if element.element_type != ElementType.SECTION_HEADER
+                    or element.element_id in filtered_header_ids
+                ]
+            )
+            stage.output_counts["resolved_headers"] = len(
+                hierarchy_resolution.effective_levels
+            )
+        with self.profiler.measure(
+            name="section_builder.build_section_stack",
+            input_counts={"headers": len(headers)},
+        ) as stage:
+            sections, header_section_ids = self.section_stack_builder.build(
+                document_id,
+                headers,
+                hierarchy_resolution.effective_levels,
+                hierarchy_resolution.explicit_parent_headers,
+            )
+            stage.output_counts["sections"] = len(sections)
         section_lookup = {section.section_id: section for section in sections}
 
-        root_section = self._build_leading_root_section(
-            document_id,
-            ordered_elements,
-            headers,
-            default_title,
-        )
+        with self.profiler.measure(
+            name="section_builder.build_leading_root_section",
+            input_counts={"ordered_elements": len(ordered_elements)},
+        ) as stage:
+            root_section = self._build_leading_root_section(
+                document_id,
+                ordered_elements,
+                headers,
+                default_title,
+            )
+            stage.output_counts["created_root_section"] = int(root_section is not None)
         if root_section is not None:
             sections.insert(0, root_section)
             section_lookup[root_section.section_id] = root_section
 
-        self.section_path_relinker.relink(sections)
-        element_section_ids: dict[str, str] = {}
-        element_section_paths: dict[str, list[str]] = {}
-        active_section = root_section
+        with self.profiler.measure(
+            name="section_builder.relink_section_paths",
+            input_counts={"sections": len(sections)},
+        ) as stage:
+            self.section_path_relinker.relink(sections)
+            stage.output_counts["sections"] = len(sections)
+        with self.profiler.measure(
+            name="section_builder.assign_elements_to_sections",
+            input_counts={
+                "ordered_elements": len(ordered_elements),
+                "sections": len(sections),
+            },
+        ) as stage:
+            element_section_ids: dict[str, str] = {}
+            element_section_paths: dict[str, list[str]] = {}
+            active_section = root_section
 
-        for element in ordered_elements:
-            if element.element_type == ElementType.SECTION_HEADER:
-                section_id = header_section_ids.get(element.element_id)
-                if section_id is not None:
-                    active_section = section_lookup[section_id]
+            for element in ordered_elements:
+                if element.element_type == ElementType.SECTION_HEADER:
+                    section_id = header_section_ids.get(element.element_id)
+                    if section_id is not None:
+                        active_section = section_lookup[section_id]
 
-            if active_section is None:
-                continue
+                if active_section is None:
+                    continue
 
-            element_section_ids[element.element_id] = active_section.section_id
-            element_section_paths[element.element_id] = list(active_section.section_path)
+                element_section_ids[element.element_id] = active_section.section_id
+                element_section_paths[element.element_id] = list(active_section.section_path)
+            stage.output_counts["assigned_elements"] = len(element_section_ids)
 
         return SectionBuildResult(
             sections=sections,
