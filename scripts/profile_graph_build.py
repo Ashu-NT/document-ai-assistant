@@ -7,6 +7,7 @@ import sys
 import tracemalloc
 from dataclasses import asdict
 from pathlib import Path
+from threading import Event, Thread
 from time import perf_counter
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +33,8 @@ from src.application.workflows.parsing.profiling import (
 from src.domain.document import DocumentHashes
 from src.infrastructure.parsing.docling.docling_parser import DoclingParser
 from src.shared.ids import IdGenerator
+
+_STAGE_HEARTBEAT_INTERVAL_SECONDS = 30.0
 
 
 def _parse_args() -> argparse.Namespace:
@@ -65,6 +68,62 @@ def _parse_args() -> argparse.Namespace:
 
 def _emit(message: str) -> None:
     print(message, flush=True)
+
+
+def _format_elapsed_seconds(elapsed_seconds: float) -> str:
+    if elapsed_seconds < 1:
+        return f"{elapsed_seconds:.2f}s"
+    if elapsed_seconds < 60:
+        return f"{elapsed_seconds:.1f}s"
+
+    minutes, seconds = divmod(elapsed_seconds, 60.0)
+    if minutes < 60:
+        return f"{int(minutes)}m {seconds:.1f}s"
+
+    hours, minutes = divmod(minutes, 60.0)
+    return f"{int(hours)}h {int(minutes)}m {seconds:.1f}s"
+
+
+class _StageHeartbeat:
+    def __init__(
+        self,
+        *,
+        label: str,
+        interval_seconds: float = _STAGE_HEARTBEAT_INTERVAL_SECONDS,
+    ) -> None:
+        self.label = label
+        self.interval_seconds = interval_seconds
+        self._started_at = 0.0
+        self._stop_event = Event()
+        self._thread: Thread | None = None
+
+    def start(self) -> None:
+        if self._thread is not None:
+            return
+
+        self._started_at = perf_counter()
+        self._thread = Thread(
+            target=self._run,
+            name="profile-graph-build-stage-heartbeat",
+            daemon=True,
+        )
+        self._thread.start()
+
+    def stop(self) -> None:
+        if self._thread is None:
+            return
+
+        self._stop_event.set()
+        if self._thread.is_alive():
+            self._thread.join(timeout=0.1)
+
+    def _run(self) -> None:
+        while not self._stop_event.wait(self.interval_seconds):
+            elapsed_seconds = perf_counter() - self._started_at
+            _emit(
+                f"[graph] {self.label} still running... "
+                f"({_format_elapsed_seconds(elapsed_seconds)} elapsed)"
+            )
 
 
 def _default_output_dir(input_path: Path) -> Path:
@@ -167,6 +226,9 @@ def _top_allocations(snapshot: tracemalloc.Snapshot, *, limit: int = 20) -> list
 def _profile_operation(
     *,
     label: str,
+    start_message: str,
+    heartbeat_label: str,
+    failure_label: str,
     operation,
     output_dir: Path,
     output_prefix: str,
@@ -174,15 +236,25 @@ def _profile_operation(
 ) -> tuple[object, dict[str, object]]:
     profiler = cProfile.Profile()
     prof_path = output_dir / f"{output_prefix}.prof"
-    _emit(f"[graph] Profiling {label}...")
+    _emit(start_message)
     started_at = perf_counter()
+    heartbeat = _StageHeartbeat(label=heartbeat_label)
     tracemalloc.start()
+    heartbeat.start()
     profiler.enable()
     try:
         result = operation()
+    except Exception:
+        elapsed_seconds = perf_counter() - started_at
+        _emit(
+            f"[graph] {failure_label} failed after "
+            f"{_format_elapsed_seconds(elapsed_seconds)}."
+        )
+        raise
     finally:
         elapsed_seconds = perf_counter() - started_at
         profiler.disable()
+        heartbeat.stop()
         current_bytes, peak_bytes = tracemalloc.get_traced_memory()
         snapshot = tracemalloc.take_snapshot()
         tracemalloc.stop()
@@ -210,7 +282,10 @@ def _profile_operation(
         call_count_entries=top_call_count,
         recursive_entries=top_recursive,
     )
-    _emit(f"[graph] {label} completed ({elapsed_seconds:.3f}s).")
+    _emit(
+        f"[graph] {label} completed "
+        f"({_format_elapsed_seconds(elapsed_seconds)})."
+    )
     return result, {
         "elapsed_seconds": elapsed_seconds,
         "cprofile": {
@@ -280,6 +355,35 @@ def _ranked_bottlenecks(
     return bottlenecks
 
 
+def _run_operation_with_heartbeat(
+    *,
+    start_message: str,
+    heartbeat_label: str,
+    failure_label: str,
+    completion_message_builder,
+    operation,
+) -> tuple[object, float]:
+    _emit(start_message)
+    started_at = perf_counter()
+    heartbeat = _StageHeartbeat(label=heartbeat_label)
+    heartbeat.start()
+    try:
+        result = operation()
+    except Exception:
+        elapsed_seconds = perf_counter() - started_at
+        _emit(
+            f"[graph] {failure_label} failed after "
+            f"{_format_elapsed_seconds(elapsed_seconds)}."
+        )
+        raise
+    finally:
+        heartbeat.stop()
+
+    elapsed_seconds = perf_counter() - started_at
+    _emit(completion_message_builder(result, elapsed_seconds))
+    return result, elapsed_seconds
+
+
 def main() -> int:
     args = _parse_args()
     input_path = Path(args.input).resolve()
@@ -294,6 +398,12 @@ def main() -> int:
 
     raw_parsed_document, docling_conversion_profile = _profile_operation(
         label="Docling conversion",
+        start_message=(
+            f"[graph] Docling conversion started for {input_path.name}. "
+            "This can take a while for large or image-heavy PDFs."
+        ),
+        heartbeat_label=f"Docling conversion for {input_path.name}",
+        failure_label=f"Docling conversion for {input_path.name}",
         operation=lambda: parser.parse(str(input_path)),
         output_dir=output_dir,
         output_prefix="docling_conversion",
@@ -302,6 +412,9 @@ def main() -> int:
 
     canonical_elements, canonical_normalization_profile = _profile_operation(
         label="canonical normalization",
+        start_message="[graph] Normalizing Docling output into canonical elements...",
+        heartbeat_label="Canonical normalization",
+        failure_label="Canonical normalization",
         operation=lambda: normalizer.normalize(
             raw_parsed_document,
             "doc_graph_profile",
@@ -311,28 +424,34 @@ def main() -> int:
         top_functions=args.top_functions,
     )
 
-    _emit("[graph] Measuring unprofiled document graph build...")
     measurement_id_generator = IdGenerator()
     measurement_builder = DocumentGraphBuilder(
         id_generator=measurement_id_generator,
         section_builder=SectionBuilder(measurement_id_generator),
     )
-    graph_started_at = perf_counter()
-    measured_document_graph = measurement_builder.build(
-        document_id="doc_graph_profile",
-        file_path=str(input_path),
-        hashes=DocumentHashes(
-            file_hash="graph_profile",
-            content_hash="graph_profile",
+    measured_document_graph, graph_build_seconds = _run_operation_with_heartbeat(
+        start_message=(
+            "[graph] Measuring unprofiled document graph build from "
+            f"{len(canonical_elements)} canonical element(s)..."
         ),
-        canonical_elements=canonical_elements,
-        raw_parsed_document=raw_parsed_document,
-    )
-    graph_build_seconds = perf_counter() - graph_started_at
-    _emit(
-        "[graph] Unprofiled graph build completed "
-        f"({graph_build_seconds:.3f}s, sections={len(measured_document_graph.sections)}, "
-        f"chunks={len(measured_document_graph.chunks)})."
+        heartbeat_label="Unprofiled document graph build",
+        failure_label="Unprofiled document graph build",
+        operation=lambda: measurement_builder.build(
+            document_id="doc_graph_profile",
+            file_path=str(input_path),
+            hashes=DocumentHashes(
+                file_hash="graph_profile",
+                content_hash="graph_profile",
+            ),
+            canonical_elements=canonical_elements,
+            raw_parsed_document=raw_parsed_document,
+        ),
+        completion_message_builder=lambda result, elapsed_seconds: (
+            "[graph] Unprofiled graph build completed "
+            f"({_format_elapsed_seconds(elapsed_seconds)}, "
+            f"sections={len(result.sections)}, "
+            f"chunks={len(result.chunks)})."
+        ),
     )
 
     graph_profiler = GraphBuildProfiler(progress_callback=_emit)
@@ -344,6 +463,12 @@ def main() -> int:
     )
     profiled_document_graph, graph_build_profile = _profile_operation(
         label="document graph build",
+        start_message=(
+            "[graph] Profiling document graph build from "
+            f"{len(canonical_elements)} canonical element(s)..."
+        ),
+        heartbeat_label="Profiled document graph build",
+        failure_label="Profiled document graph build",
         operation=lambda: profiled_builder.build(
             document_id="doc_graph_profile",
             file_path=str(input_path),
