@@ -1,0 +1,2 @@
+DEFAULT_AGENT_GRAPH_NAME = "document_agent_graph"
+DEFAULT_AGENT_GRAPH_VERSION = "v1"
