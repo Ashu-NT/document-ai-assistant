@@ -164,12 +164,17 @@ def test_identifier_query_routes_to_retrieval(
     fake_exploration_service: FakeDocumentExplorationService,
 ) -> None:
     workflow = make_workflow(fake_retrieval_workflow, fake_exploration_service)
-    request = QuestionAnsweringRequest(question="What is part number PN-12345?")
+    request = QuestionAnsweringRequest(
+        question="What is part number PN-12345?",
+        document_id="doc_001",
+    )
 
     result = workflow.run(request)
 
     assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
     assert fake_retrieval_workflow.called is True
+    assert fake_retrieval_workflow.last_query is not None
+    assert fake_retrieval_workflow.last_query.document_id == "doc_001"
 
 
 # ---------------------------------------------------------------------------
@@ -530,6 +535,32 @@ def test_answer_generation_receives_only_approved_chunks(
     assert fake_gen.called_with is not None
     assert len(fake_gen.called_with.context_chunks) == 1
     assert fake_gen.called_with.context_chunks[0].chunk_id == "chunk_a"
+
+
+def test_answer_generation_refuses_wrong_document_context_for_scoped_request(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    chunk = _make_chunk("chunk_wrong_scope")
+    chunk.document_id = "doc_other"
+    wf_result = _make_retrieval_result_with_chunks([chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+    fake_gen = FakeAnswerGenerationService()
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the specification?",
+        document_id="doc_001",
+        allow_answer_generation=True,
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.BLOCKED_BY_GUARDRAIL
+    assert result.guardrail_decision == GuardrailDecision.INSUFFICIENT_EVIDENCE
+    assert fake_gen.called_with is None
 
 
 # ---------------------------------------------------------------------------

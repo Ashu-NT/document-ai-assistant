@@ -234,3 +234,78 @@ def test_workflow_deduplicates_retrieval_candidates_before_final_results(
         atomic_chunk.chunk_id,
         "chunk_unique",
     }
+
+
+def test_workflow_preserves_document_scope_on_retrieval_results(
+    sample_retrieval_query,
+    sample_retrieved_chunk,
+) -> None:
+    sample_retrieval_query.document_id = sample_retrieved_chunk.document_id
+    leaked_chunk = sample_retrieved_chunk.__class__(
+        chunk_id="chunk_other_doc",
+        document_id="doc_other",
+        content="Leaked chunk content.",
+        score=0.98,
+        retrieval_source="dense",
+        chunk_type=sample_retrieved_chunk.chunk_type,
+        section_id=sample_retrieved_chunk.section_id,
+        section_path=sample_retrieved_chunk.section_path,
+        source=sample_retrieved_chunk.source,
+    )
+    retrieval_result = RetrievalResult(
+        result_id="retrieval_result_scope_001",
+        query=sample_retrieval_query,
+        chunks=[leaked_chunk, sample_retrieved_chunk],
+        citations=[],
+        used_dense=True,
+        used_keyword=True,
+        used_sql=True,
+        total_candidates=2,
+    )
+    retrieval_service = FakeHybridRetrievalService(retrieval_result)
+    workflow = make_workflow(retrieval_service)
+
+    result = workflow.run(sample_retrieval_query)
+
+    assert [chunk.document_id for chunk in result.chunks] == [
+        sample_retrieved_chunk.document_id
+    ]
+    assert result.diagnostics["retrieval_scope_discarded_chunk_ids"] == [
+        "chunk_other_doc"
+    ]
+
+
+def test_workflow_preserves_document_scope_on_context_expansion(
+    sample_retrieval_query,
+    sample_retrieval_result,
+    sample_retrieved_chunk,
+) -> None:
+    sample_retrieval_query.document_id = sample_retrieved_chunk.document_id
+    leaked_context_chunk = sample_retrieved_chunk.__class__(
+        chunk_id="chunk_context_other_doc",
+        document_id="doc_other",
+        content="Leaked context chunk.",
+        score=0.5,
+        retrieval_source="context_expansion",
+        chunk_type=sample_retrieved_chunk.chunk_type,
+        section_id=sample_retrieved_chunk.section_id,
+        section_path=sample_retrieved_chunk.section_path,
+        source=sample_retrieved_chunk.source,
+    )
+    context_expander = FakeContextExpander(
+        [sample_retrieved_chunk, leaked_context_chunk]
+    )
+    retrieval_service = FakeHybridRetrievalService(sample_retrieval_result)
+    workflow = make_workflow(
+        retrieval_service,
+        context_expander=context_expander,
+    )
+
+    result = workflow.run(sample_retrieval_query)
+
+    assert [chunk.document_id for chunk in result.final_chunks] == [
+        sample_retrieved_chunk.document_id
+    ]
+    assert result.diagnostics["context_scope_discarded_chunk_ids"] == [
+        "chunk_context_other_doc"
+    ]

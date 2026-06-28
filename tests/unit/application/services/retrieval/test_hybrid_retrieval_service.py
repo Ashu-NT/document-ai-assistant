@@ -26,12 +26,14 @@ class FakeKeywordIndex:
     def __init__(self, chunks) -> None:
         self.chunks = chunks
         self.search_calls = 0
+        self.queries = []
 
     def index_chunks(self, chunks) -> None:
         pass
 
     def search(self, query):
         self.search_calls += 1
+        self.queries.append(query)
         return self.chunks
 
 
@@ -39,12 +41,14 @@ class FakeVectorStore:
     def __init__(self, chunks) -> None:
         self.chunks = chunks
         self.search_calls = 0
+        self.queries = []
 
     def save_chunk_vectors(self, chunks) -> None:
         pass
 
     def search(self, query):
         self.search_calls += 1
+        self.queries.append(query)
         return self.chunks
 
     def delete_document_vectors(self, document_id: str) -> None:
@@ -210,3 +214,47 @@ def test_hybrid_retrieval_tracks_combined_sources_for_duplicate_hits(
 
     assert result.chunks[0].retrieval_source == "hybrid"
     assert result.chunks[0].metadata["retrieval_sources"] == "dense,sql_keyword"
+
+
+def test_hybrid_retrieval_passes_document_scope_to_sources_and_discards_leaks(
+    sample_retrieval_query,
+    sample_retrieved_chunk,
+) -> None:
+    sample_retrieval_query.document_id = sample_retrieved_chunk.document_id
+    leaked_keyword_chunk = sample_retrieved_chunk.__class__(
+        chunk_id="chunk_keyword_other_doc",
+        document_id="doc_other",
+        content=sample_retrieved_chunk.content,
+        score=0.95,
+        retrieval_source="sql_keyword",
+        chunk_type=sample_retrieved_chunk.chunk_type,
+        section_id=sample_retrieved_chunk.section_id,
+        section_path=sample_retrieved_chunk.section_path,
+        source=sample_retrieved_chunk.source,
+    )
+    leaked_dense_chunk = sample_retrieved_chunk.__class__(
+        chunk_id="chunk_dense_other_doc",
+        document_id="doc_other",
+        content=sample_retrieved_chunk.content,
+        score=0.94,
+        retrieval_source="dense",
+        chunk_type=sample_retrieved_chunk.chunk_type,
+        section_id=sample_retrieved_chunk.section_id,
+        section_path=sample_retrieved_chunk.section_path,
+        source=sample_retrieved_chunk.source,
+    )
+    keyword_index = FakeKeywordIndex([sample_retrieved_chunk, leaked_keyword_chunk])
+    vector_store = FakeVectorStore([sample_retrieved_chunk, leaked_dense_chunk])
+    service = make_service(
+        keyword_index=keyword_index,
+        vector_store=vector_store,
+    )
+
+    result = service.retrieve(sample_retrieval_query)
+
+    assert keyword_index.queries[0].document_id == sample_retrieval_query.document_id
+    assert vector_store.queries[0].document_id == sample_retrieval_query.document_id
+    assert all(
+        chunk.document_id == sample_retrieval_query.document_id
+        for chunk in result.chunks
+    )

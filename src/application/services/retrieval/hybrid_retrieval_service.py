@@ -61,12 +61,24 @@ class HybridRetrievalService(RetrievalBackend):
 
         if query.use_keyword or query.use_sql:
             source_results.append(
-                ("sql_keyword", self.keyword_index.search(query))
+                (
+                    "sql_keyword",
+                    self._filter_scoped_chunks(
+                        query,
+                        self.keyword_index.search(query),
+                    ),
+                )
             )
 
         if query.use_dense and self.vector_store is not None:
             source_results.append(
-                ("dense", self.vector_store.search(query))
+                (
+                    "dense",
+                    self._filter_scoped_chunks(
+                        query,
+                        self.vector_store.search(query),
+                    ),
+                )
             )
 
         return source_results
@@ -176,3 +188,14 @@ class HybridRetrievalService(RetrievalBackend):
             return float(raw_score)
         except (TypeError, ValueError):
             return chunk.score
+
+    @staticmethod
+    def _filter_scoped_chunks(
+        query: RetrievalQuery,
+        chunks: list[RetrievedChunk],
+    ) -> list[RetrievedChunk]:
+        if query.document_id is None:
+            return chunks
+        return [
+            chunk for chunk in chunks if chunk.document_id == query.document_id
+        ]

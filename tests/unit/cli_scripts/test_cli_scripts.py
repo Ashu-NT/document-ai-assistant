@@ -193,3 +193,62 @@ def test_ask_document_page_range_no_page():
     source = MagicMock()
     source.page_start = None
     assert mod._page_range(source) == ""
+
+
+def test_ask_document_print_result_shows_full_document_id_and_context_source(
+    capsys,
+):
+    mod = _load_script("ask_document")
+    from src.application.workflows.question_answering import (  # noqa: WPS433
+        QuestionAnsweringResult,
+        QuestionAnsweringRoute,
+    )
+    from src.application.workflows.retrieval import RetrievalWorkflowResult  # noqa: WPS433
+    from src.domain.common import ChunkType  # noqa: WPS433
+    from src.domain.common.source_location import SourceLocation  # noqa: WPS433
+    from src.domain.retrieval import RetrievalQuery, RetrievalResult  # noqa: WPS433
+    from src.domain.retrieval.retrieved_chunk import RetrievedChunk  # noqa: WPS433
+
+    chunk = RetrievedChunk(
+        chunk_id="chunk_001",
+        document_id="doc_001_full_scope",
+        content="Scoped chunk content.",
+        score=0.9,
+        retrieval_source="dense",
+        chunk_type=ChunkType.GENERAL,
+        section_path=["Section"],
+        source=SourceLocation(page_start=2, page_end=2),
+    )
+    query = RetrievalQuery(query_id="q_test", query_text="specification")
+    retrieval_result = RetrievalResult(
+        result_id="retrieval_001",
+        query=query,
+        chunks=[chunk],
+    )
+    workflow_result = RetrievalWorkflowResult(
+        retrieval_result=retrieval_result,
+        enough_evidence=True,
+        context_chunks=[chunk],
+    )
+    result = QuestionAnsweringResult(
+        route=QuestionAnsweringRoute.RETRIEVAL_QA,
+        answer_text="Answer text.",
+        retrieval_result=workflow_result,
+        approved_chunk_ids=["chunk_001"],
+        diagnostics={"enough_evidence": True},
+    )
+
+    mod.print_result(
+        result,
+        show_context=True,
+        document_id="doc_selected_full_identifier",
+        document_name="Selected Document",
+        enable_generation=False,
+        service_configured=False,
+        model_name=None,
+    )
+
+    output = capsys.readouterr().out
+    assert "Document ID: doc_selected_full_identifier" in output
+    assert "doc: doc_001_full_scope" in output
+    assert "source: dense" in output

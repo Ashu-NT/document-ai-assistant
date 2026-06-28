@@ -260,6 +260,7 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
         ContextBudgetGuardrail,
         ContextFilteringGuardrail,
         ContextQualityGuardrail,
+        ScopedDocumentConsistencyGuardrail,
     )
     from src.application.guardrails.retrieval import (  # noqa: WPS433
         DocumentRelevanceGuardrail,
@@ -356,6 +357,7 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
         exploration_service=exploration_service,
         router=QuestionAnsweringRouter(),
         context_guardrails=[
+            ScopedDocumentConsistencyGuardrail(),
             ContextFilteringGuardrail(),
             ContextQualityGuardrail(),
             ContextBudgetGuardrail(),
@@ -411,8 +413,9 @@ def _print_context_chunks(result) -> None:
         )
         print(
             f"  chunk: {_trunc(chunk.chunk_id, 44)}"
-            f"  doc: {_trunc(chunk.document_id, 30)}"
+            f"  doc: {chunk.document_id}"
         )
+        print(f"  source: {chunk.retrieval_source}")
         if chunk.section_path:
             path_str = " > ".join(chunk.section_path)
             print(f"  path:  {_trunc(path_str, 80)}")
@@ -562,8 +565,8 @@ def print_result(
     )
 
     if document_id:
-        id_short = document_id[:16]
-        print(f"Document: {document_name or document_id}  [{id_short}...]\n")
+        print(f"Document: {document_name or document_id}")
+        print(f"Document ID: {document_id}\n")
 
     route = result.route
     if route == QuestionAnsweringRoute.RETRIEVAL_QA:
@@ -614,6 +617,7 @@ def print_result_json(
         "generation_model": model_name,
         "approved_chunk_ids": result.approved_chunk_ids,
         "rejected_chunk_ids": result.rejected_chunk_ids,
+        "diagnostics": result.diagnostics,
         "citations": [
             {
                 "chunk_id": c.chunk_id,
