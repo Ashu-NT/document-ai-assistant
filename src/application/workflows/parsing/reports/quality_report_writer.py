@@ -31,7 +31,10 @@ class QualityReportWriter:
         chunks = list(result.document_graph.chunks.values())
 
         parse_result = self._gate.check_parsing(
-            result.document_id, sections=sections, elements=elements
+            result.document_id,
+            sections=sections,
+            elements=elements,
+            ocr_trace=result.ocr_trace,
         )
         chunk_result = self._gate.check_chunking(
             result.document_id, chunks=chunks
