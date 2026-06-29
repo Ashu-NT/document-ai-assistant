@@ -360,6 +360,7 @@ def build_json_output(
         "route": result.route,
         "success": result.success,
         "answer": data.get("answer") or result.response_text,
+        "answer_intent": data.get("answer_intent"),
         "document_id": data.get("document_id"),
         "context_chunks": data.get("context_chunks", []),
         "citations": data.get("citations", []),
@@ -381,6 +382,9 @@ def print_graph_result(
     if result.response_text:
         print()
         print(result.response_text)
+    answer_intent = (result.data or {}).get("answer_intent")
+    if answer_intent:
+        print(f"\nAnswer intent: {answer_intent}")
     if show_context:
         print_context_chunks((result.data or {}).get("context_chunks", []))
     if show_trace:

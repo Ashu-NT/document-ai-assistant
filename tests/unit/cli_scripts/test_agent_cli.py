@@ -40,6 +40,7 @@ def test_agent_cli_show_context_prints_context_chunks(capsys) -> None:
         data={
             "document_id": "doc_1234567890abcdef",
             "answer": "The interval is 500 hours.",
+            "answer_intent": "maintenance_summary",
             "context_chunks": [
                 {
                     "chunk_id": "chunk_001",
@@ -65,6 +66,7 @@ def test_agent_cli_show_context_prints_context_chunks(capsys) -> None:
 
     output = capsys.readouterr().out
     assert "Context Chunks" in output
+    assert "Answer intent: maintenance_summary" in output
     assert "[1] Maintenance Schedule | maintenance_interval" in output
     assert "Pump Manual (doc_12345678)" in output
     assert "6 Maintenance > Maintenance Schedule" in output
@@ -81,6 +83,7 @@ def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> Non
         data={
             "document_id": "doc_123",
             "answer": "The interval is 500 hours.",
+            "answer_intent": "maintenance_summary",
             "context_chunks": [{"chunk_id": "chunk_1"}],
             "citations": [{"citation_id": "cit_1"}],
         },
@@ -94,6 +97,7 @@ def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> Non
     assert without_trace["route"] == "answer_question"
     assert without_trace["success"] is True
     assert without_trace["answer"] == "The interval is 500 hours."
+    assert without_trace["answer_intent"] == "maintenance_summary"
     assert without_trace["document_id"] == "doc_123"
     assert without_trace["context_chunks"] == [{"chunk_id": "chunk_1"}]
     assert without_trace["citations"] == [{"citation_id": "cit_1"}]

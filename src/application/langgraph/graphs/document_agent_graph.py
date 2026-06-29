@@ -198,6 +198,7 @@ class DocumentAgentGraph:
         route = state.get("route")
         tool_results = state.get("tool_results", {})
         answer = _extract_answer(tool_results, state.get("response_text"))
+        answer_intent = _extract_answer_intent(tool_results)
         citations = _extract_citations(tool_results)
         context_chunks = _extract_context_chunks(
             tool_results=tool_results,
@@ -213,10 +214,13 @@ class DocumentAgentGraph:
             "document_id": state.get("document_id"),
             "document_title": state.get("document_title"),
             "answer": answer,
+            "answer_intent": answer_intent,
             "context_chunks": context_chunks,
             "citations": citations,
             "tool_results": tool_results,
         }
+        if answer_intent is not None:
+            diagnostics["answer_intent"] = answer_intent
         if state.get("needs_clarification") and state.get("error") is None:
             return GraphResult.ok(
                 response_text=state.get("response_text"),
@@ -373,6 +377,22 @@ def _extract_citations(tool_results: dict[str, Any]) -> list[dict[str, Any]]:
             return serialize_graph_value(citations)
 
     return []
+
+
+def _extract_answer_intent(tool_results: dict[str, Any]) -> str | None:
+    answer_question_payload = _tool_payload(tool_results, "answer_question")
+    if not isinstance(answer_question_payload, dict):
+        return None
+    answer_intent = answer_question_payload.get("answer_intent")
+    if isinstance(answer_intent, str) and answer_intent:
+        return answer_intent
+
+    diagnostics = answer_question_payload.get("diagnostics")
+    if isinstance(diagnostics, dict):
+        value = diagnostics.get("answer_intent")
+        if isinstance(value, str) and value:
+            return value
+    return None
 
 
 def _extract_context_chunks(

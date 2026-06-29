@@ -14,6 +14,7 @@ class GuardrailContext:
     detected_identifiers: list[str] = field(default_factory=list)
     query_intent: str | None = None
     query_chunk_types: list[str] = field(default_factory=list)
+    answer_intent: str | None = None
 
     retrieved_chunks: list[RetrievedChunk] = field(default_factory=list)
     approved_chunks: list[RetrievedChunk] = field(default_factory=list)

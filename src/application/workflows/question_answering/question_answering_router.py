@@ -30,7 +30,7 @@ class QuestionAnsweringRouter:
         question: str,
         top_k: int = 5,
         document_id: str | None = None,
-    ) -> tuple[QuestionAnsweringRoute, RetrievalQuery]:
+    ) -> tuple[QuestionAnsweringRoute, RetrievalQuery, RetrievalQueryIntent]:
         """Return the route and the fully-analyzed RetrievalQuery in one call.
 
         DOCUMENT_EXPLORATION is checked first; all other intents fall through to
@@ -46,6 +46,6 @@ class QuestionAnsweringRouter:
         intent = self._query_analyzer.intent_inferer.infer(analyzed)
 
         if intent == RetrievalQueryIntent.DOCUMENT_EXPLORATION:
-            return QuestionAnsweringRoute.DOCUMENT_EXPLORATION, analyzed
+            return QuestionAnsweringRoute.DOCUMENT_EXPLORATION, analyzed, intent
 
-        return QuestionAnsweringRoute.RETRIEVAL_QA, analyzed
+        return QuestionAnsweringRoute.RETRIEVAL_QA, analyzed, intent

@@ -5,6 +5,9 @@ from typing import Any
 
 from src.application.contracts.guardrails.guardrail_decision import GuardrailDecision
 from src.application.contracts.guardrails.guardrail_result import GuardrailResult
+from src.application.services.answer_generation.intent.answer_intent import (
+    AnswerIntent,
+)
 from src.application.services.document_exploration.document_exploration_result import (
     DocumentExplorationResult,
 )
@@ -35,4 +38,5 @@ class QuestionAnsweringResult:
     citations: list[Citation] = field(default_factory=list)
 
     confidence: str | None = None
+    answer_intent: AnswerIntent | None = None
     diagnostics: dict[str, Any] = field(default_factory=dict)

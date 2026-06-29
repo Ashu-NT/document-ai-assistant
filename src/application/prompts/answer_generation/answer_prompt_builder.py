@@ -26,24 +26,102 @@ class AnswerPromptBuilder:
     )
 
     def build(self, request: "AnswerGenerationRequest") -> str:
-        chunks = request.context_chunks
-        if request.max_context_chunks is not None:
-            chunks = chunks[: request.max_context_chunks]
-
-        source_blocks = "\n\n".join(
-            self._format_source_block(index + 1, chunk)
-            for index, chunk in enumerate(chunks)
-        )
-
-        intent_note = ""
-        if request.query_intent:
-            intent_note = f"Query intent: {request.query_intent}\n"
+        source_blocks = self._raw_source_block(request)
 
         return (
             f"{ANSWER_GROUNDING_RULES}\n\n"
-            f"{intent_note}"
+            f"{self._intent_block(request)}"
+            f"{self._format_policy_block(request)}"
             f"Question: {request.question}\n\n"
+            f"{self._organized_context_block(request)}"
+            "Raw sources:\n"
             f"{source_blocks}"
+        )
+
+    @staticmethod
+    def _intent_block(request: "AnswerGenerationRequest") -> str:
+        lines: list[str] = []
+        if request.answer_intent is not None:
+            lines.append(f"Answer intent: {request.answer_intent.value}")
+        if request.retrieval_intent:
+            lines.append(f"Retrieval intent: {request.retrieval_intent}")
+        elif request.query_intent:
+            lines.append(f"Legacy query intent: {request.query_intent}")
+        if not lines:
+            return ""
+        return "\n".join(lines) + "\n\n"
+
+    @staticmethod
+    def _format_policy_block(request: "AnswerGenerationRequest") -> str:
+        policy = request.format_policy
+        if policy is None:
+            return ""
+        lines = [
+            "Answer format policy:",
+            f"- Preferred format: {policy.preferred_format}",
+            f"- Response label: {policy.response_label}",
+            f"- Include bullets: {'yes' if policy.include_bullets else 'no'}",
+            f"- Include numbered steps: {'yes' if policy.include_steps else 'no'}",
+            f"- Include table-like structure: {'yes' if policy.include_table else 'no'}",
+        ]
+        if policy.max_bullets is not None:
+            lines.append(f"- Max bullets: {policy.max_bullets}")
+        lines.append("Task instructions:")
+        lines.extend(f"- {instruction}" for instruction in policy.instruction_lines)
+        return "\n".join(lines) + "\n\n"
+
+    def _organized_context_block(self, request: "AnswerGenerationRequest") -> str:
+        context = request.structured_context
+        if context is None:
+            return ""
+
+        lines = [
+            "Organized context:",
+            f"- Intent: {context.answer_intent.value}",
+            f"- Source count: {context.source_count}",
+        ]
+        if context.key_values:
+            lines.append("Key values:")
+            for item in context.key_values:
+                value = item.value
+                if item.unit and item.unit.lower() not in value.lower():
+                    value = f"{value} {item.unit}"
+                lines.append(
+                    f"- [SOURCE {item.source_number}] {item.key}: {value}"
+                )
+        if context.source_groups:
+            lines.append("Source groups:")
+            for group in context.source_groups:
+                source_refs = ", ".join(
+                    f"SOURCE {source.source_number}" for source in group.sources
+                )
+                lines.append(
+                    f"- {group.group_name}: {source_refs}"
+                )
+        if context.section_groups:
+            lines.append("Section groups:")
+            for group in context.section_groups:
+                page_range = self._format_page_bounds(group.page_start, group.page_end)
+                source_refs = ", ".join(
+                    f"SOURCE {source_number}"
+                    for source_number in group.source_numbers
+                )
+                lines.append(
+                    f"- {group.group_name} | Pages: {page_range} | Sources: {source_refs}"
+                )
+        return "\n".join(lines) + "\n\n"
+
+    def _raw_source_block(self, request: "AnswerGenerationRequest") -> str:
+        structured_context = request.structured_context
+        if structured_context is not None and structured_context.sources:
+            return "\n\n".join(
+                self._format_answer_source_block(source)
+                for source in structured_context.sources
+            )
+
+        return "\n\n".join(
+            self._format_source_block(index + 1, chunk)
+            for index, chunk in enumerate(request.context_chunks)
         )
 
     @staticmethod
@@ -61,10 +139,35 @@ class AnswerPromptBuilder:
         )
 
     @staticmethod
-    def _format_page_range(chunk: RetrievedChunk) -> str:
-        page_start = chunk.source.page_start
-        page_end = chunk.source.page_end
+    def _format_answer_source_block(source) -> str:
+        page_range = AnswerPromptBuilder._format_page_bounds(
+            source.page_start,
+            source.page_end,
+        )
+        section_path = source.section_path or "N/A"
+        document_id = source.document_id or "N/A"
+        document_title = source.document_title or document_id
+        return (
+            f"SOURCE {source.source_number}\n"
+            f"Document: {document_title} ({document_id})\n"
+            f"Section: {section_path}\n"
+            f"Pages: {page_range}\n"
+            "---\n"
+            f"{source.content}"
+        )
 
+    @staticmethod
+    def _format_page_range(chunk: RetrievedChunk) -> str:
+        return AnswerPromptBuilder._format_page_bounds(
+            chunk.source.page_start,
+            chunk.source.page_end,
+        )
+
+    @staticmethod
+    def _format_page_bounds(
+        page_start: int | None,
+        page_end: int | None,
+    ) -> str:
         if page_start is None and page_end is None:
             return "N/A"
         if page_start == page_end:

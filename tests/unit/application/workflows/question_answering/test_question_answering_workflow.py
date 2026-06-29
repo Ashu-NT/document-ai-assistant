@@ -16,6 +16,9 @@ from src.application.workflows.question_answering.question_answering_route impor
 from src.application.workflows.question_answering.question_answering_workflow import (
     QuestionAnsweringWorkflow,
 )
+from src.application.services.answer_generation.intent.answer_intent import (
+    AnswerIntent,
+)
 from src.application.workflows.retrieval.retrieval_query_chunk_type_preference_mapper import (
     RetrievalQueryChunkTypePreferenceMapper,
 )
@@ -700,6 +703,35 @@ def test_diagnostics_include_prompt_and_model_after_generation(
 
     assert "prompt_version" in result.diagnostics
     assert "model_name" in result.diagnostics
+
+
+def test_answer_generation_receives_retrieval_intent_and_chunk_preferences(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    chunk = _make_chunk("chunk_spec")
+    wf_result = _make_retrieval_result_with_chunks([chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+    fake_gen = FakeAnswerGenerationService(
+        answer_intent=AnswerIntent.SPECIFICATION_SUMMARY
+    )
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the pressure specification?",
+        allow_answer_generation=True,
+    )
+
+    result = workflow.run(request)
+
+    assert fake_gen.called_with is not None
+    assert fake_gen.called_with.retrieval_intent == RetrievalQueryIntent.SPECIFICATION.value
+    assert fake_gen.called_with.query_intent == RetrievalQueryIntent.SPECIFICATION.value
+    assert fake_gen.called_with.chunk_type_preferences
+    assert fake_gen.called_with.chunk_type_preferences[0] == ChunkType.TECHNICAL_SPECIFICATION
+    assert result.answer_intent == AnswerIntent.SPECIFICATION_SUMMARY
 
 
 # ---------------------------------------------------------------------------

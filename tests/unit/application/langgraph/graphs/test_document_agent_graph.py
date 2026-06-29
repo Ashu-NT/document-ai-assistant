@@ -8,6 +8,7 @@ from src.application.tools.common import ToolResult
 class FakeQAResult:
     answer_text: str | None = None
     safe_user_message: str | None = None
+    answer_intent: str | None = None
 
 
 @dataclass(slots=True)
@@ -46,7 +47,12 @@ class FakeExploreDocumentTool:
 
 class FakeAnswerQuestionTool:
     def run(self, request):
-        return ToolResult.ok(data=FakeQAResult(answer_text="The interval is 500 hours."))
+        return ToolResult.ok(
+            data=FakeQAResult(
+                answer_text="The interval is 500 hours.",
+                answer_intent="maintenance_summary",
+            )
+        )
 
 
 def test_document_agent_graph_list_documents_path_works() -> None:
@@ -71,6 +77,7 @@ def test_document_agent_graph_answer_question_path_works() -> None:
     assert result.success is True
     assert result.route == "answer_question"
     assert result.response_text == "The interval is 500 hours."
+    assert result.data["answer_intent"] == "maintenance_summary"
 
 
 def test_document_agent_graph_exploration_path_works() -> None:

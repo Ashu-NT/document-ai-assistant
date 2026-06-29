@@ -7,6 +7,9 @@ from src.application.contracts.guardrails.guardrail_result import GuardrailResul
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
 )
+from src.application.services.answer_generation.intent.answer_intent import (
+    AnswerIntent,
+)
 from src.application.services.answer_generation.answer_generation_result import (
     GeneratedAnswer,
 )
@@ -88,10 +91,12 @@ class FakeAnswerGenerationService:
         self,
         answer_text: str = "The filter must be replaced every 1000 hours.",
         citations: list[Citation] | None = None,
+        answer_intent: AnswerIntent | None = None,
         raises: Exception | None = None,
     ) -> None:
         self._answer_text = answer_text
         self._citations = citations or []
+        self._answer_intent = answer_intent
         self._raises = raises
         self.called_with: AnswerGenerationRequest | None = None
 
@@ -105,6 +110,12 @@ class FakeAnswerGenerationService:
             cited_chunk_ids=[c.chunk_id for c in self._citations if c.chunk_id],
             prompt_version="v1",
             model_name="qwen3:8b",
+            answer_intent=self._answer_intent,
+            diagnostics=(
+                {"answer_intent": self._answer_intent.value}
+                if self._answer_intent is not None
+                else {}
+            ),
         )
 
 
