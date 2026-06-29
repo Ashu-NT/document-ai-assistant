@@ -247,8 +247,43 @@ def test_generate_uses_maintenance_summary_path_and_reports_diagnostics() -> Non
     assert built_request.structured_context is not None
     assert len(built_request.structured_context.maintenance_entries) == 2
     assert built_request.format_policy is not None
-    assert built_request.format_policy.preferred_format == "structured_maintenance_table"
+    assert built_request.format_policy.preferred_format == "maintenance_numbered_entries"
     assert result.diagnostics["answer_intent"] == "maintenance_summary"
     assert result.diagnostics["maintenance_items_found"] == 2
     assert result.diagnostics["maintenance_items_with_interval"] == 1
     assert result.diagnostics["maintenance_items_without_interval"] == 1
+    assert result.diagnostics["maintenance_items_merged"] == 0
+
+
+def test_generate_merges_duplicate_maintenance_entries_before_prompt_building() -> None:
+    llm = FakeLLMService(response="Maintenance Tasks")
+    prompt_builder = FakePromptBuilder()
+    service = AnswerGenerationService(
+        llm_service=llm,
+        prompt_builder=prompt_builder,
+        answer_generation_model="qwen3:8b",
+    )
+    request = AnswerGenerationRequest(
+        question="What are the maintenance tasks in the document?",
+        context_chunks=[
+            _make_chunk(
+                content="Check gearbox every 6 months.",
+                chunk_id="chunk_a",
+            ),
+            _make_chunk(
+                content="Check gearbox for leaks every 6 months.",
+                chunk_id="chunk_b",
+            ),
+        ],
+    )
+
+    result = service.generate(request)
+
+    built_request = prompt_builder.requests[0]
+    assert built_request.structured_context is not None
+    assert len(built_request.structured_context.maintenance_entries) == 1
+    assert built_request.structured_context.maintenance_entries[0].task == (
+        "Check gearbox for leaks"
+    )
+    assert result.diagnostics["maintenance_items_found"] == 1
+    assert result.diagnostics["maintenance_items_merged"] == 1

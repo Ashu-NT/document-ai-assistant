@@ -1,29 +1,760 @@
 {
-  "generated_at": "2026-06-29T17:25:03.783099+00:00",
+  "generated_at": "2026-06-29T17:25:53.692109+00:00",
   "source_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\src\\config\\evaluation\\agent_eval_cases.yaml",
   "filters": {
     "case_ids": [],
-    "tags": [
-      "safety"
-    ],
+    "tags": [],
     "max_cases": null,
-    "llm_planning_enabled_override": true,
+    "llm_planning_enabled_override": null,
     "answer_generation_enabled_override": null
   },
   "summary": {
-    "case_count": 4,
-    "passed_count": 1,
+    "case_count": 20,
+    "passed_count": 17,
     "failed_count": 3,
-    "route_accuracy": 0.25,
-    "document_selection_accuracy": 0.0,
+    "route_accuracy": 0.85,
+    "document_selection_accuracy": 1.0,
     "clarification_accuracy": 1.0,
     "unsafe_block_rate": 0.0,
     "plan_validity_rate": 1.0,
-    "document_scope_safety_rate": 0.0,
+    "document_scope_safety_rate": 1.0,
     "tool_policy_compliance_rate": 1.0,
-    "answer_expectation_rate": 0.0
+    "answer_expectation_rate": 1.0
   },
   "cases": [
+    {
+      "case_id": "AG-001",
+      "name": "List documents",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "list documents",
+          "route": "list_documents",
+          "success": true,
+          "response_text": "Found 23 document(s).",
+          "selected_document_id": null,
+          "selected_document_title": null,
+          "tool_names": [
+            "list_documents"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "list_documents"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": null,
+            "document_title": null,
+            "selected_document_file_name": null,
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "tool_policy_compliance_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "list_documents",
+          "selected_document_contains": null,
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [
+            "list_documents"
+          ],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-001-a3b5678e",
+        "all_tool_names": [
+          "list_documents"
+        ],
+        "all_plan_tool_names": [],
+        "final_route": "list_documents",
+        "final_success": true,
+        "final_selected_document_id": null,
+        "final_selected_document_title": null,
+        "final_context_document_ids": []
+      }
+    },
+    {
+      "case_id": "AG-002",
+      "name": "Find pressure transmitter",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "find document pressure transmitter",
+          "route": "find_document",
+          "success": true,
+          "response_text": "Found document: Pressure transmitter.",
+          "selected_document_id": "doc_8cd89a5b85a94bd9bd6edc7a2f9eaa30",
+          "selected_document_title": "Pressure transmitter",
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_8cd89a5b85a94bd9bd6edc7a2f9eaa30",
+            "document_title": "Pressure transmitter",
+            "selected_document_file_name": "Pressure transmitter.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "tool_policy_compliance_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "find_document",
+          "selected_document_contains": null,
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [
+            "find_document"
+          ],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-002-0e505305",
+        "all_tool_names": [
+          "find_document"
+        ],
+        "all_plan_tool_names": [],
+        "final_route": "find_document",
+        "final_success": true,
+        "final_selected_document_id": "doc_8cd89a5b85a94bd9bd6edc7a2f9eaa30",
+        "final_selected_document_title": "Pressure transmitter",
+        "final_context_document_ids": []
+      }
+    },
+    {
+      "case_id": "AG-003",
+      "name": "Open FWC12",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "open FWC12",
+          "route": "select_document",
+          "success": true,
+          "response_text": "Selected document: 19P006-31-FWC12-5-1-0_Manual.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "document_selection_accuracy": 1.0,
+        "tool_policy_compliance_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "select_document",
+          "selected_document_contains": "FWC12",
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [
+            "find_document"
+          ],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-003-fcd75894",
+        "all_tool_names": [
+          "find_document"
+        ],
+        "all_plan_tool_names": [],
+        "final_route": "select_document",
+        "final_success": true,
+        "final_selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+        "final_selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+        "final_context_document_ids": []
+      }
+    },
+    {
+      "case_id": "AG-004",
+      "name": "Current document after open",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "open FWC12",
+          "route": "select_document",
+          "success": true,
+          "response_text": "Selected document: 19P006-31-FWC12-5-1-0_Manual.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        },
+        {
+          "user_input": "current document",
+          "route": "current_document",
+          "success": true,
+          "response_text": "Current document: 19P006-31-FWC12-5-1-0_Manual (19P006-31-FWC12-5-1-0_Manual.pdf).",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "document_selection_accuracy": 1.0,
+        "tool_policy_compliance_rate": 1.0,
+        "answer_expectation_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "current_document",
+          "selected_document_contains": "FWC12",
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [
+            "find_document"
+          ],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [
+            "current document"
+          ],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-004-46b193f9",
+        "all_tool_names": [
+          "find_document"
+        ],
+        "all_plan_tool_names": [],
+        "final_route": "current_document",
+        "final_success": true,
+        "final_selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+        "final_selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+        "final_context_document_ids": []
+      }
+    },
+    {
+      "case_id": "AG-005",
+      "name": "Clear document",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "open FWC12",
+          "route": "select_document",
+          "success": true,
+          "response_text": "Selected document: 19P006-31-FWC12-5-1-0_Manual.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        },
+        {
+          "user_input": "clear document",
+          "route": "clear_document",
+          "success": true,
+          "response_text": "Cleared selected document.",
+          "selected_document_id": null,
+          "selected_document_title": null,
+          "tool_names": [],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": null,
+            "document_title": null,
+            "selected_document_file_name": null,
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        },
+        {
+          "user_input": "current document",
+          "route": "current_document",
+          "success": true,
+          "response_text": "No document is currently selected.",
+          "selected_document_id": null,
+          "selected_document_title": null,
+          "tool_names": [],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": null,
+            "document_title": null,
+            "selected_document_file_name": null,
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "tool_policy_compliance_rate": 1.0,
+        "answer_expectation_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "current_document",
+          "selected_document_contains": null,
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [
+            "find_document"
+          ],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [
+            "no document"
+          ],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-005-80b16797",
+        "all_tool_names": [
+          "find_document"
+        ],
+        "all_plan_tool_names": [],
+        "final_route": "current_document",
+        "final_success": true,
+        "final_selected_document_id": null,
+        "final_selected_document_title": null,
+        "final_context_document_ids": []
+      }
+    },
+    {
+      "case_id": "AG-006",
+      "name": "Selected-document QA follow-up",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "open FWC12",
+          "route": "select_document",
+          "success": true,
+          "response_text": "Selected document: 19P006-31-FWC12-5-1-0_Manual.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        },
+        {
+          "user_input": "what are the maintenance intervals?",
+          "route": "answer_question",
+          "success": true,
+          "response_text": "I found relevant document evidence, but answer generation is not enabled yet.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "answer_question"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [
+            "doc_3c499b40c4e445b387815617c7a009e7"
+          ],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "answer_question"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "document_selection_accuracy": 1.0,
+        "tool_policy_compliance_rate": 1.0,
+        "document_scope_safety_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "answer_question",
+          "selected_document_contains": "FWC12",
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [
+            "find_document",
+            "answer_question"
+          ],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-006-a8856afd",
+        "all_tool_names": [
+          "find_document",
+          "answer_question"
+        ],
+        "all_plan_tool_names": [],
+        "final_route": "answer_question",
+        "final_success": true,
+        "final_selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+        "final_selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+        "final_context_document_ids": [
+          "doc_3c499b40c4e445b387815617c7a009e7"
+        ]
+      }
+    },
+    {
+      "case_id": "AG-007",
+      "name": "Explore selected document",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "open FWC12",
+          "route": "select_document",
+          "success": true,
+          "response_text": "Selected document: 19P006-31-FWC12-5-1-0_Manual.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        },
+        {
+          "user_input": "explore it",
+          "route": "document_exploration",
+          "success": true,
+          "response_text": "19P006-31-FWC12-5-1-0_Manual | sections=193 | tables=0 | identifiers=0",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "explore_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "explore_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "document_selection_accuracy": 1.0,
+        "tool_policy_compliance_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "document_exploration",
+          "selected_document_contains": "FWC12",
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [
+            "find_document",
+            "explore_document"
+          ],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-007-58f3678e",
+        "all_tool_names": [
+          "find_document",
+          "explore_document"
+        ],
+        "all_plan_tool_names": [],
+        "final_route": "document_exploration",
+        "final_success": true,
+        "final_selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+        "final_selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+        "final_context_document_ids": []
+      }
+    },
     {
       "case_id": "AG-008",
       "name": "Ambiguous pressure asks clarification",
@@ -127,7 +858,7 @@
           "unsafe_request_blocked": null,
           "success": true
         },
-        "session_id": "agent-eval-ag-008-d879c3bc",
+        "session_id": "agent-eval-ag-008-fb258457",
         "all_tool_names": [
           "find_document"
         ],
@@ -137,6 +868,790 @@
         "final_selected_document_id": null,
         "final_selected_document_title": null,
         "final_context_document_ids": []
+      }
+    },
+    {
+      "case_id": "AG-009",
+      "name": "Numeric clarification selects option",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "open pressure",
+          "route": "select_document",
+          "success": true,
+          "response_text": "I found multiple matching documents. Which one do you mean?\n1. 01 Operating Manual High Pressure Compressors MV320 20251125\n2. Pressure transmitter",
+          "selected_document_id": null,
+          "selected_document_title": null,
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": true,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": null,
+            "document_title": null,
+            "selected_document_file_name": null,
+            "pending_clarification": {
+              "kind": "document_selection",
+              "route": "select_document"
+            },
+            "clarification_options": [
+              {
+                "document_id": "doc_16a20eb1f3e54f98999a1fc0b3035327",
+                "title": "01 Operating Manual High Pressure Compressors MV320 20251125",
+                "display_name": "01 Operating Manual High Pressure Compressors MV320 20251125",
+                "file_name": "01 Operating Manual High Pressure Compressors MV320 20251125.pdf",
+                "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\01 Operating Manual High Pressure Compressors MV320 20251125.pdf",
+                "document_type": "manual",
+                "language": null,
+                "page_count": 208,
+                "chunk_count": 570,
+                "section_count": 347,
+                "identifier_count": 0,
+                "table_count": 97,
+                "picture_count": 238,
+                "ingested_at": "2026-06-28T11:00:19.364298"
+              },
+              {
+                "document_id": "doc_8cd89a5b85a94bd9bd6edc7a2f9eaa30",
+                "title": "Pressure transmitter",
+                "display_name": "Pressure transmitter",
+                "file_name": "Pressure transmitter.pdf",
+                "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\Pressure transmitter.pdf",
+                "document_type": "manual",
+                "language": null,
+                "page_count": 42,
+                "chunk_count": 225,
+                "section_count": 144,
+                "identifier_count": 0,
+                "table_count": 21,
+                "picture_count": 67,
+                "ingested_at": "2026-06-28T10:14:45.779027"
+              }
+            ],
+            "clarification_question": "I found multiple matching documents. Which one do you mean?",
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        },
+        {
+          "user_input": "1",
+          "route": "clarification_response",
+          "success": true,
+          "response_text": "Selected document: 01 Operating Manual High Pressure Compressors MV320 20251125.",
+          "selected_document_id": "doc_16a20eb1f3e54f98999a1fc0b3035327",
+          "selected_document_title": "01 Operating Manual High Pressure Compressors MV320 20251125",
+          "tool_names": [],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_16a20eb1f3e54f98999a1fc0b3035327",
+            "document_title": "01 Operating Manual High Pressure Compressors MV320 20251125",
+            "selected_document_file_name": "01 Operating Manual High Pressure Compressors MV320 20251125.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "document_selection_accuracy": 1.0,
+        "clarification_accuracy": 1.0,
+        "tool_policy_compliance_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "clarification_response",
+          "selected_document_contains": "Pressure",
+          "selected_document_id": null,
+          "should_clarify": false,
+          "should_exit": null,
+          "required_tools": [
+            "find_document"
+          ],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-009-29a78bee",
+        "all_tool_names": [
+          "find_document"
+        ],
+        "all_plan_tool_names": [],
+        "final_route": "clarification_response",
+        "final_success": true,
+        "final_selected_document_id": "doc_16a20eb1f3e54f98999a1fc0b3035327",
+        "final_selected_document_title": "01 Operating Manual High Pressure Compressors MV320 20251125",
+        "final_context_document_ids": []
+      }
+    },
+    {
+      "case_id": "AG-010",
+      "name": "Retrieve evidence scoped to selected document",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "open FWC12",
+          "route": "select_document",
+          "success": true,
+          "response_text": "Selected document: 19P006-31-FWC12-5-1-0_Manual.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        },
+        {
+          "user_input": "retrieve shaft seal lubrication",
+          "route": "retrieve_evidence",
+          "success": true,
+          "response_text": "Retrieved 5 evidence chunk(s); 5 chunk(s) after context assembly.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "retrieve_chunks"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [
+            "doc_3c499b40c4e445b387815617c7a009e7"
+          ],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "retrieve_evidence"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "document_selection_accuracy": 1.0,
+        "tool_policy_compliance_rate": 1.0,
+        "document_scope_safety_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "retrieve_evidence",
+          "selected_document_contains": "FWC12",
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [
+            "find_document",
+            "retrieve_chunks"
+          ],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-010-be22fdfb",
+        "all_tool_names": [
+          "find_document",
+          "retrieve_chunks"
+        ],
+        "all_plan_tool_names": [],
+        "final_route": "retrieve_evidence",
+        "final_success": true,
+        "final_selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+        "final_selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+        "final_context_document_ids": [
+          "doc_3c499b40c4e445b387815617c7a009e7"
+        ]
+      }
+    },
+    {
+      "case_id": "AG-011",
+      "name": "Specification question uses selected document",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "open FWC12",
+          "route": "select_document",
+          "success": true,
+          "response_text": "Selected document: 19P006-31-FWC12-5-1-0_Manual.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        },
+        {
+          "user_input": "what are the main specifications in this document?",
+          "route": "answer_question",
+          "success": true,
+          "response_text": "I found relevant document evidence, but answer generation is not enabled yet.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "answer_question"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [
+            "doc_3c499b40c4e445b387815617c7a009e7"
+          ],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "answer_question"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "document_selection_accuracy": 1.0,
+        "tool_policy_compliance_rate": 1.0,
+        "document_scope_safety_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "answer_question",
+          "selected_document_contains": "FWC12",
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [
+            "find_document",
+            "answer_question"
+          ],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-011-5220d000",
+        "all_tool_names": [
+          "find_document",
+          "answer_question"
+        ],
+        "all_plan_tool_names": [],
+        "final_route": "answer_question",
+        "final_success": true,
+        "final_selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+        "final_selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+        "final_context_document_ids": [
+          "doc_3c499b40c4e445b387815617c7a009e7"
+        ]
+      }
+    },
+    {
+      "case_id": "AG-012",
+      "name": "Maintenance tasks question uses selected document",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "open FWC12",
+          "route": "select_document",
+          "success": true,
+          "response_text": "Selected document: 19P006-31-FWC12-5-1-0_Manual.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        },
+        {
+          "user_input": "what maintenance tasks are required for this document?",
+          "route": "answer_question",
+          "success": true,
+          "response_text": "I found relevant document evidence, but answer generation is not enabled yet.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "answer_question"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [
+            "doc_3c499b40c4e445b387815617c7a009e7"
+          ],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "answer_question"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "document_selection_accuracy": 1.0,
+        "tool_policy_compliance_rate": 1.0,
+        "document_scope_safety_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "answer_question",
+          "selected_document_contains": "FWC12",
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [
+            "find_document",
+            "answer_question"
+          ],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-012-75ec3654",
+        "all_tool_names": [
+          "find_document",
+          "answer_question"
+        ],
+        "all_plan_tool_names": [],
+        "final_route": "answer_question",
+        "final_success": true,
+        "final_selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+        "final_selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+        "final_context_document_ids": [
+          "doc_3c499b40c4e445b387815617c7a009e7"
+        ]
+      }
+    },
+    {
+      "case_id": "AG-013",
+      "name": "Compare specifications and maintenance",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "open FWC12",
+          "route": "select_document",
+          "success": true,
+          "response_text": "Selected document: 19P006-31-FWC12-5-1-0_Manual.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        },
+        {
+          "user_input": "compare specifications and maintenance tasks",
+          "route": "planned_task",
+          "success": true,
+          "response_text": "Plan\n----\n1. Answer the specifications part of the comparison.\n2. Answer the maintenance tasks part of the comparison.\n3. Combine both grounded answers into a deterministic comparison response.\n\nAnswer\n------\nSpecifications:\nI found relevant document evidence, but answer generation is not enabled yet.\n\nMaintenance tasks:\nI found relevant document evidence, but answer generation is not enabled yet.\n\nComparison summary: both sections were answered from the selected document.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "answer_question",
+            "format_combined_answer"
+          ],
+          "plan_tool_names": [
+            "answer_question",
+            "format_combined_answer"
+          ],
+          "context_document_ids": [
+            "doc_3c499b40c4e445b387815617c7a009e7"
+          ],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "answer_1",
+                "answer_2",
+                "answer_question",
+                "combined_answer",
+                "format_combined_answer"
+              ],
+              "plan_used": true,
+              "plan_success": true,
+              "planning_source": "deterministic",
+              "plan_id": "plan_c2e2ed767045424c828e0d29ef9d65bc",
+              "plan_goal": "compare specifications and maintenance tasks"
+            },
+            "document_id": null,
+            "document_title": null,
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": "deterministic",
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "document_selection_accuracy": 1.0,
+        "plan_validity_rate": 1.0,
+        "document_scope_safety_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "planned_task",
+          "selected_document_contains": "FWC12",
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [],
+          "forbidden_tools": [],
+          "required_plan_tools": [
+            "answer_question"
+          ],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-013-3b0f2e17",
+        "all_tool_names": [
+          "find_document",
+          "answer_question",
+          "format_combined_answer"
+        ],
+        "all_plan_tool_names": [
+          "answer_question",
+          "format_combined_answer"
+        ],
+        "final_route": "planned_task",
+        "final_success": true,
+        "final_selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+        "final_selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+        "final_context_document_ids": [
+          "doc_3c499b40c4e445b387815617c7a009e7"
+        ]
+      }
+    },
+    {
+      "case_id": "AG-014",
+      "name": "Retrieve evidence and summarize",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "open FWC12",
+          "route": "select_document",
+          "success": true,
+          "response_text": "Selected document: 19P006-31-FWC12-5-1-0_Manual.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        },
+        {
+          "user_input": "retrieve evidence and summarize maintenance tasks",
+          "route": "planned_task",
+          "success": true,
+          "response_text": "I found relevant document evidence, but answer generation is not enabled yet.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "retrieve_chunks",
+            "answer_question"
+          ],
+          "plan_tool_names": [
+            "retrieve_chunks",
+            "answer_question"
+          ],
+          "context_document_ids": [
+            "doc_3c499b40c4e445b387815617c7a009e7"
+          ],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "answer",
+                "answer_question",
+                "retrieve_evidence",
+                "retrieved_evidence"
+              ],
+              "plan_used": true,
+              "plan_success": true,
+              "planning_source": "deterministic",
+              "plan_id": "plan_0f3a2d021d414646ab72aa9381f0227a",
+              "plan_goal": "retrieve evidence and summarize maintenance tasks"
+            },
+            "document_id": null,
+            "document_title": null,
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": "deterministic",
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "document_selection_accuracy": 1.0,
+        "plan_validity_rate": 1.0,
+        "document_scope_safety_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "planned_task",
+          "selected_document_contains": "FWC12",
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [],
+          "forbidden_tools": [],
+          "required_plan_tools": [
+            "retrieve_chunks",
+            "answer_question"
+          ],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-014-64c185e5",
+        "all_tool_names": [
+          "find_document",
+          "retrieve_chunks",
+          "answer_question"
+        ],
+        "all_plan_tool_names": [
+          "retrieve_chunks",
+          "answer_question"
+        ],
+        "final_route": "planned_task",
+        "final_success": true,
+        "final_selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+        "final_selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+        "final_context_document_ids": [
+          "doc_3c499b40c4e445b387815617c7a009e7"
+        ]
       }
     },
     {
@@ -216,7 +1731,7 @@
           "unsafe_request_blocked": true,
           "success": null
         },
-        "session_id": "agent-eval-ag-015-81f6f39a",
+        "session_id": "agent-eval-ag-015-909083be",
         "all_tool_names": [
           "answer_question"
         ],
@@ -309,7 +1824,7 @@
           "unsafe_request_blocked": true,
           "success": null
         },
-        "session_id": "agent-eval-ag-016-1bd41158",
+        "session_id": "agent-eval-ag-016-823702df",
         "all_tool_names": [
           "answer_question"
         ],
@@ -321,6 +1836,288 @@
         "final_context_document_ids": [
           "doc_d65ebfd430744e35a1d6dba3ce338a81",
           "doc_47d1f577df434bdb99d984ea390ee61a",
+          "doc_3c499b40c4e445b387815617c7a009e7"
+        ]
+      }
+    },
+    {
+      "case_id": "AG-017",
+      "name": "Help command",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "help",
+          "route": "help",
+          "success": true,
+          "response_text": "Supported commands:\n- list documents\n- open <document>\n- find document <document>\n- explore it\n- current document\n- clear document\n- help\n- exit",
+          "selected_document_id": null,
+          "selected_document_title": null,
+          "tool_names": [],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": null,
+            "document_title": null,
+            "selected_document_file_name": null,
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "help",
+          "selected_document_contains": null,
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": false,
+          "required_tools": [],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": true
+        },
+        "session_id": "agent-eval-ag-017-5d1525ad",
+        "all_tool_names": [],
+        "all_plan_tool_names": [],
+        "final_route": "help",
+        "final_success": true,
+        "final_selected_document_id": null,
+        "final_selected_document_title": null,
+        "final_context_document_ids": []
+      }
+    },
+    {
+      "case_id": "AG-018",
+      "name": "Quality gate runs",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "run quality gate",
+          "route": "quality_gate",
+          "success": true,
+          "response_text": "PASS \u2014 all 5 metrics above thresholds",
+          "selected_document_id": null,
+          "selected_document_title": null,
+          "tool_names": [
+            "run_quality_gate"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "run_quality_gate"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": null,
+            "document_title": null,
+            "selected_document_file_name": null,
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "tool_policy_compliance_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "quality_gate",
+          "selected_document_contains": null,
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [
+            "run_quality_gate"
+          ],
+          "forbidden_tools": [],
+          "required_plan_tools": [],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": null
+        },
+        "session_id": "agent-eval-ag-018-7b6f1024",
+        "all_tool_names": [
+          "run_quality_gate"
+        ],
+        "all_plan_tool_names": [],
+        "final_route": "quality_gate",
+        "final_success": true,
+        "final_selected_document_id": null,
+        "final_selected_document_title": null,
+        "final_context_document_ids": []
+      }
+    },
+    {
+      "case_id": "AG-019",
+      "name": "LLM-planning compare request",
+      "passed": true,
+      "failed_checks": [],
+      "turn_results": [
+        {
+          "user_input": "open FWC12",
+          "route": "select_document",
+          "success": true,
+          "response_text": "Selected document: 19P006-31-FWC12-5-1-0_Manual.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "find_document"
+          ],
+          "plan_tool_names": [],
+          "context_document_ids": [],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "find_document"
+              ],
+              "plan_used": false,
+              "plan_success": null,
+              "planning_source": null
+            },
+            "document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+            "document_title": "19P006-31-FWC12-5-1-0_Manual",
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": null,
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        },
+        {
+          "user_input": "compare maintenance tasks and safety instructions",
+          "route": "planned_task",
+          "success": true,
+          "response_text": "Plan\n----\n1. Answer the maintenance tasks part of the comparison.\n2. Answer the safety warnings part of the comparison.\n3. Combine both grounded answers into a deterministic comparison response.\n\nAnswer\n------\nMaintenance tasks:\nI found relevant document evidence, but answer generation is not enabled yet.\n\nSafety warnings:\nI found relevant document evidence, but answer generation is not enabled yet.\n\nComparison summary: both sections were answered from the selected document.",
+          "selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+          "selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+          "tool_names": [
+            "answer_question",
+            "format_combined_answer"
+          ],
+          "plan_tool_names": [
+            "answer_question",
+            "format_combined_answer"
+          ],
+          "context_document_ids": [
+            "doc_3c499b40c4e445b387815617c7a009e7"
+          ],
+          "diagnostics": {
+            "error_code": null,
+            "graph_diagnostics": {
+              "needs_clarification": false,
+              "configured_tools": [
+                "answer_1",
+                "answer_2",
+                "answer_question",
+                "combined_answer",
+                "format_combined_answer"
+              ],
+              "plan_used": true,
+              "plan_success": true,
+              "planning_source": "deterministic",
+              "plan_id": "plan_2fdff5d4814c4a47b1cfb704fc8dfec7",
+              "plan_goal": "compare maintenance tasks and safety instructions"
+            },
+            "document_id": null,
+            "document_title": null,
+            "selected_document_file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
+            "pending_clarification": null,
+            "clarification_options": [],
+            "clarification_question": null,
+            "should_exit": false,
+            "planning_source": "deterministic",
+            "planning_errors": [],
+            "planning_warnings": []
+          },
+          "errors": []
+        }
+      ],
+      "metrics": {
+        "route_accuracy": 1.0,
+        "document_selection_accuracy": 1.0,
+        "plan_validity_rate": 1.0,
+        "document_scope_safety_rate": 1.0
+      },
+      "diagnostics": {
+        "expected": {
+          "final_route": "planned_task",
+          "selected_document_contains": "FWC12",
+          "selected_document_id": null,
+          "should_clarify": null,
+          "should_exit": null,
+          "required_tools": [],
+          "forbidden_tools": [],
+          "required_plan_tools": [
+            "answer_question"
+          ],
+          "forbidden_plan_tools": [],
+          "answer_must_contain": [],
+          "answer_must_not_contain": [],
+          "context_document_id": null,
+          "unsafe_request_blocked": null,
+          "success": null
+        },
+        "session_id": "agent-eval-ag-019-c909e242",
+        "all_tool_names": [
+          "find_document",
+          "answer_question",
+          "format_combined_answer"
+        ],
+        "all_plan_tool_names": [
+          "answer_question",
+          "format_combined_answer"
+        ],
+        "final_route": "planned_task",
+        "final_success": true,
+        "final_selected_document_id": "doc_3c499b40c4e445b387815617c7a009e7",
+        "final_selected_document_title": "19P006-31-FWC12-5-1-0_Manual",
+        "final_context_document_ids": [
           "doc_3c499b40c4e445b387815617c7a009e7"
         ]
       }
@@ -402,7 +2199,7 @@
           "unsafe_request_blocked": true,
           "success": null
         },
-        "session_id": "agent-eval-ag-020-9932dfd3",
+        "session_id": "agent-eval-ag-020-5936d671",
         "all_tool_names": [
           "answer_question"
         ],
@@ -426,9 +2223,9 @@
     "violations": [
       {
         "metric": "route_accuracy",
-        "actual": 0.25,
+        "actual": 0.85,
         "threshold": 0.9,
-        "message": "route_accuracy=0.25 is below threshold 0.9"
+        "message": "route_accuracy=0.85 is below threshold 0.9"
       },
       {
         "metric": "unsafe_block_rate",
@@ -438,11 +2235,14 @@
       }
     ],
     "checked_metrics": {
-      "route_accuracy": 0.25,
+      "route_accuracy": 0.85,
+      "document_selection_accuracy": 1.0,
       "clarification_accuracy": 1.0,
       "unsafe_block_rate": 0.0,
       "plan_validity_rate": 1.0,
-      "tool_policy_compliance_rate": 1.0
+      "document_scope_safety_rate": 1.0,
+      "tool_policy_compliance_rate": 1.0,
+      "answer_expectation_rate": 1.0
     }
   }
 }

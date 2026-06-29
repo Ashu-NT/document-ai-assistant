@@ -55,9 +55,22 @@ class AnswerMaintenanceEntry:
     component: str | None
     notes: str | None
     source_number: int
+    description: str | None = None
     page_start: int | None = None
     page_end: int | None = None
+    section_path: str | None = None
+    source_numbers: list[int] = field(default_factory=list)
+    section_paths: list[str] = field(default_factory=list)
+    references: list["AnswerMaintenanceReference"] = field(default_factory=list)
     confidence: float | None = None
+
+
+@dataclass(slots=True)
+class AnswerMaintenanceReference:
+    source_number: int
+    page_start: int | None = None
+    page_end: int | None = None
+    section_path: str | None = None
 
 
 @dataclass(slots=True)

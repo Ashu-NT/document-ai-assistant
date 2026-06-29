@@ -17,7 +17,7 @@ from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 def _make_chunk(
     chunk_id: str = "chunk_001",
     document_id: str = "doc_001",
-    content: str = "Hydraulic filter must be replaced every 1000 hours.",
+    content: str = "Replace hydraulic filter every 1000 hours.",
     section_path: list[str] | None = None,
     page_start: int | None = 5,
     page_end: int | None = 5,
@@ -59,8 +59,12 @@ def test_answer_prompt_builder_produces_grounding_instructions() -> None:
     assert "Question: When should I replace the hydraulic filter?" in prompt
     assert "Answer format policy:" in prompt
     assert "Organized context:" in prompt
-    assert "Maintenance Task" in prompt
-    assert "Interval/Frequency" in prompt
+    assert "maintenance_numbered_entries" in prompt
+    assert "Do not output markdown tables" in prompt
+    assert "1. Replace hydraulic filter" in prompt
+    assert "Interval / Frequency" in prompt
+    assert "Reference" in prompt
+    assert "Page 5" in prompt
 
 
 def test_maintenance_prompt_includes_not_specified_for_missing_intervals() -> None:
@@ -86,9 +90,88 @@ def test_maintenance_prompt_includes_not_specified_for_missing_intervals() -> No
 
     prompt = builder.build(request)
 
-    assert "Maintenance Task: Inspect the feed water pressure gauge" in prompt
-    assert "Interval/Frequency: Not specified" in prompt
-    assert "Component: feed water pressure gauge" in prompt
+    assert "1. Inspect the feed water pressure gauge" in prompt
+    assert "Interval / Frequency" in prompt
+    assert "Not specified" in prompt
+    assert "Component" in prompt
+    assert "feed water pressure gauge" in prompt
+    assert "Notes:" not in prompt
+    assert "\n   X\n" not in prompt
+
+
+def test_maintenance_prompt_includes_not_specified_for_missing_component() -> None:
+    builder = AnswerPromptBuilder()
+    chunk = _make_chunk(
+        content="Lubricate every 1000 operating hours.",
+        section_path=["Maintenance", "Lubrication"],
+    )
+    structured_context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+        chunks=[chunk],
+    )
+    request = AnswerGenerationRequest(
+        question="What are the maintenance tasks?",
+        context_chunks=[chunk],
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+        structured_context=structured_context,
+        format_policy=AnswerFormatPolicy.resolve(
+            intent=AnswerIntent.MAINTENANCE_SUMMARY,
+            structured_context=structured_context,
+        ),
+    )
+
+    prompt = builder.build(request)
+
+    assert "1. Lubricate" in prompt
+    assert "Interval / Frequency" in prompt
+    assert "every 1000 operating hours" in prompt
+    assert "Component" in prompt
+    assert "Not specified" in prompt
+
+
+def test_maintenance_prompt_merges_duplicate_tasks_and_shows_multiple_references() -> None:
+    builder = AnswerPromptBuilder()
+    chunks = [
+        _make_chunk(
+            chunk_id="chunk_a",
+            content="Check gearbox every 6 months.",
+            section_path=["Preventive Maintenance", "Gearbox"],
+            page_start=45,
+            page_end=45,
+        ),
+        _make_chunk(
+            chunk_id="chunk_b",
+            content="Check gearbox for leaks every 6 months.",
+            section_path=["Preventive Maintenance", "Lubrication"],
+            page_start=46,
+            page_end=46,
+        ),
+    ]
+    structured_context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+        chunks=chunks,
+    )
+    request = AnswerGenerationRequest(
+        question="What are the maintenance tasks?",
+        context_chunks=chunks,
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+        structured_context=structured_context,
+        format_policy=AnswerFormatPolicy.resolve(
+            intent=AnswerIntent.MAINTENANCE_SUMMARY,
+            structured_context=structured_context,
+        ),
+    )
+
+    prompt = builder.build(request)
+
+    assert len(structured_context.maintenance_entries) == 1
+    assert "1. Check gearbox for leaks" in prompt
+    assert "2. Check gearbox" not in prompt
+    assert "Pages 45, 46" in prompt
+    assert "Sections:" in prompt
+    assert "Preventive Maintenance > Gearbox" in prompt
+    assert "Preventive Maintenance > Lubrication" in prompt
+    assert "SOURCE 1, SOURCE 2" in prompt
 
 
 def test_answer_prompt_builder_includes_provided_sources() -> None:
