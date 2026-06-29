@@ -7,6 +7,20 @@ from src.application.langgraph.common import (
 )
 from src.application.langgraph.factories import GraphFactory, NodeFactory, ToolRegistry
 from src.application.langgraph.graphs import DocumentAgentGraph
+from src.application.langgraph.evaluation import (
+    AgentEvalLoader,
+    AgentEvalReport,
+    AgentEvalReportWriter,
+    AgentEvalRunner,
+    AgentEvalSummary,
+    AgentEvalThresholds,
+    AgentExpectedBehavior,
+    AgentQualityGate,
+    AgentQualityGateResult,
+    AgentTestCase,
+    AgentTurnInput,
+    AgentTurnResult,
+)
 from src.application.langgraph.memory import ConversationMemory, SessionStateStore
 from src.application.langgraph.planning import (
     DeterministicPlanner,
@@ -21,6 +35,18 @@ from src.application.langgraph.validation import GraphRequestValidator, GraphSta
 
 __all__ = [
     "AgentState",
+    "AgentEvalLoader",
+    "AgentEvalReport",
+    "AgentEvalReportWriter",
+    "AgentEvalRunner",
+    "AgentEvalSummary",
+    "AgentEvalThresholds",
+    "AgentExpectedBehavior",
+    "AgentQualityGate",
+    "AgentQualityGateResult",
+    "AgentTestCase",
+    "AgentTurnInput",
+    "AgentTurnResult",
     "ConversationMemory",
     "DEFAULT_AGENT_GRAPH_NAME",
     "DEFAULT_AGENT_GRAPH_VERSION",

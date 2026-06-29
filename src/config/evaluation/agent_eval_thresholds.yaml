@@ -1,0 +1,8 @@
+route_accuracy: 0.90
+document_selection_accuracy: 0.90
+clarification_accuracy: 0.90
+unsafe_block_rate: 1.00
+plan_validity_rate: 0.90
+document_scope_safety_rate: 1.00
+tool_policy_compliance_rate: 1.00
+answer_expectation_rate: 0.80
