@@ -19,6 +19,7 @@ import traceback
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
+from uuid import uuid4
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = PROJECT_ROOT / "src"
@@ -51,6 +52,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "user_input",
         nargs="?",
         help="The command or question to route through the document agent.",
+    )
+    parser.add_argument(
+        "--session-id",
+        metavar="ID",
+        help="Optional session ID for stateful one-shot or interactive continuity.",
+    )
+    parser.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Run an interactive stateful CLI loop.",
     )
     parser.add_argument(
         "--document",
@@ -125,7 +136,12 @@ def build_agent_runtime(session, *, enable_generation: bool) -> AgentRuntime:
         DocumentRelevanceGuardrail,
         RetrievalEvidenceGuardrail,
     )
-    from src.application.langgraph import ConversationMemory, GraphFactory, ToolRegistry
+    from src.application.langgraph import (
+        ConversationMemory,
+        GraphFactory,
+        SessionStateStore,
+        ToolRegistry,
+    )
     from src.application.services.ai import LLMService
     from src.application.services.answer_generation import AnswerGenerationService
     from src.application.services.document import (
@@ -257,7 +273,10 @@ def build_agent_runtime(session, *, enable_generation: bool) -> AgentRuntime:
     )
     graph = GraphFactory().create_document_agent_graph(
         tool_registry=tool_registry,
-        memory=ConversationMemory(max_messages=20),
+        memory=ConversationMemory(
+            max_messages=20,
+            session_state_store=SessionStateStore(),
+        ),
     )
     return AgentRuntime(
         graph=graph,
@@ -362,6 +381,11 @@ def build_json_output(
         "answer": data.get("answer") or result.response_text,
         "answer_intent": data.get("answer_intent"),
         "document_id": data.get("document_id"),
+        "selected_document_id": data.get("selected_document_id"),
+        "selected_document_title": data.get("selected_document_title"),
+        "pending_clarification": data.get("pending_clarification"),
+        "clarification_options": data.get("clarification_options", []),
+        "should_exit": data.get("should_exit", False),
         "context_chunks": data.get("context_chunks", []),
         "citations": data.get("citations", []),
         "diagnostics": result.diagnostics or {},
@@ -391,6 +415,98 @@ def print_graph_result(
         print_trace(result.trace or [])
 
 
+def build_session_id(session_id: str | None) -> str:
+    if session_id:
+        return session_id
+    return f"cli-{uuid4().hex[:12]}"
+
+
+def run_graph_request(
+    runtime: AgentRuntime,
+    user_input: str,
+    *,
+    document_id: str | None,
+    document_query: str | None,
+    session_id: str | None,
+    allow_answer_generation: bool,
+    include_context: bool,
+    top_k: int | None,
+):
+    return runtime.graph.run(
+        user_input,
+        document_id=document_id,
+        document_query=document_query,
+        session_id=session_id,
+        allow_answer_generation=allow_answer_generation,
+        include_context=include_context,
+        top_k=top_k,
+    )
+
+
+def run_interactive_loop(
+    runtime: AgentRuntime,
+    *,
+    session_id: str,
+    initial_user_input: str | None,
+    document_id: str | None,
+    document_query: str | None,
+    allow_answer_generation: bool,
+    include_context: bool,
+    top_k: int | None,
+    emit_json: bool,
+    show_trace: bool,
+) -> int:
+    print_status(f"Interactive session started: {session_id}")
+
+    pending_inputs: list[str] = []
+    if initial_user_input:
+        pending_inputs.append(initial_user_input)
+
+    while True:
+        if pending_inputs:
+            user_input = pending_inputs.pop(0)
+        else:
+            try:
+                user_input = input("document-agent> ").strip()
+            except EOFError:
+                print()
+                return 0
+            except KeyboardInterrupt:
+                print("\nInterrupted.")
+                return 1
+
+        if not user_input:
+            continue
+
+        result = run_graph_request(
+            runtime,
+            user_input,
+            document_id=document_id,
+            document_query=document_query,
+            session_id=session_id,
+            allow_answer_generation=allow_answer_generation,
+            include_context=include_context,
+            top_k=top_k,
+        )
+
+        if emit_json:
+            print(
+                json.dumps(
+                    build_json_output(result, include_trace=show_trace),
+                    indent=2,
+                )
+            )
+        else:
+            print_graph_result(
+                result,
+                show_context=include_context,
+                show_trace=show_trace,
+            )
+
+        if (result.data or {}).get("should_exit"):
+            return 0 if result.success else 1
+
+
 def close_runtime(runtime: AgentRuntime | None) -> None:
     if runtime is None:
         return
@@ -414,7 +530,7 @@ def _close_quietly(resource: Any) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
-    if not args.user_input:
+    if not args.interactive and not args.user_input:
         print("Provide a command or question.", file=sys.stderr)
         return 1
 
@@ -433,16 +549,33 @@ def main(argv: Sequence[str] | None = None) -> int:
         session = SessionLocal()
 
         effective_generation = args.generate or ingestion_settings.enable_answer_generation
+        effective_session_id = build_session_id(args.session_id) if args.interactive else args.session_id
         print_status("Building document agent runtime...")
         runtime = build_agent_runtime(
             session,
             enable_generation=effective_generation,
         )
+        if args.interactive:
+            return run_interactive_loop(
+                runtime,
+                session_id=effective_session_id or build_session_id(None),
+                initial_user_input=args.user_input,
+                document_id=args.document_id,
+                document_query=args.document,
+                allow_answer_generation=effective_generation,
+                include_context=args.show_context,
+                top_k=args.top_k,
+                emit_json=args.json,
+                show_trace=args.trace,
+            )
+
         print_status("Running document agent graph...")
-        result = runtime.graph.run(
+        result = run_graph_request(
+            runtime,
             args.user_input,
             document_id=args.document_id,
             document_query=args.document,
+            session_id=effective_session_id,
             allow_answer_generation=effective_generation,
             include_context=args.show_context,
             top_k=args.top_k,

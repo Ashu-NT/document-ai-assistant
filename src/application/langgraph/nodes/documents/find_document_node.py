@@ -5,8 +5,10 @@ from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
     build_error,
     extend_trace,
+    format_document_options,
     serialize_tool_result,
 )
+from src.application.langgraph.routing import RouteType
 from src.application.langgraph.state import AgentState
 from src.application.langgraph.tracing import GraphRunRecorder
 from src.application.tools.documents import FindDocumentRequest
@@ -75,18 +77,47 @@ class FindDocumentNode:
         if result.success:
             data = result.data or {}
             if isinstance(data, dict):
+                selected_title = data.get("display_name") or data.get("title")
                 patch["document_id"] = data.get("document_id")
-                patch["document_title"] = data.get("display_name") or data.get("title")
+                patch["document_title"] = selected_title
+                patch["selected_document_id"] = data.get("document_id")
+                patch["selected_document_title"] = selected_title
+                patch["selected_document_file_name"] = data.get("file_name")
+                patch["pending_clarification"] = None
+                patch["clarification_options"] = []
+                patch["clarification_question"] = None
+                patch["clarification_candidate_index"] = None
+                patch["needs_clarification"] = False
+                patch["clarification_message"] = None
                 patch["response_text"] = (
-                    f"Found document: {patch['document_title']}."
-                    if patch["document_title"]
-                    else "Document resolved."
+                    f"Selected document: {selected_title}."
+                    if state.get("route") == RouteType.SELECT_DOCUMENT.value and selected_title
+                    else (
+                        f"Found document: {selected_title}."
+                        if selected_title
+                        else "Document resolved."
+                    )
                 )
             return patch
 
         if result.error_code in {"multiple_documents_found", "document_not_found"}:
-            patch["needs_clarification"] = True
-            patch["clarification_message"] = _clarification_message(result)
+            if result.error_code == "multiple_documents_found":
+                matches = _extract_matches(result)
+                patch.update(
+                    {
+                        "needs_clarification": True,
+                        "clarification_options": matches,
+                        "clarification_question": "I found multiple matching documents. Which one do you mean?",
+                        "pending_clarification": {
+                            "kind": "document_selection",
+                            "route": state.get("route"),
+                        },
+                        "clarification_message": format_document_options(matches),
+                    }
+                )
+            else:
+                patch["needs_clarification"] = True
+                patch["clarification_message"] = _clarification_message(result)
             return patch
 
         patch["error"] = build_error(
@@ -113,3 +144,11 @@ def _clarification_message(result) -> str:
             return f"Multiple documents matched your request: {names}. Please be more specific."
         return "Multiple documents matched your request. Please be more specific."
     return "I could not find that document. Please refine the document name or ID."
+
+
+def _extract_matches(result) -> list[dict]:
+    diagnostics = getattr(result, "diagnostics", {}) or {}
+    matches = diagnostics.get("matches", [])
+    if not isinstance(matches, list):
+        return []
+    return [match for match in matches if isinstance(match, dict)]

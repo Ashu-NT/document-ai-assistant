@@ -17,11 +17,15 @@ from src.application.langgraph.nodes import (
     RetrievalTraceNode,
     RetrieveEvidenceNode,
     RouteRequestNode,
+    SessionCommandNode,
     RunQualityGateNode,
 )
 from src.application.langgraph.routing import IntentRouter, RouteType
 from src.application.langgraph.state import AgentState, build_agent_state
-from src.application.langgraph.validation import GraphRequestValidator
+from src.application.langgraph.validation import (
+    GraphRequestValidator,
+    GraphStateValidator,
+)
 
 try:
     from langgraph.graph import END, START, StateGraph
@@ -38,12 +42,14 @@ class DocumentAgentGraph:
         *,
         memory: ConversationMemory | None = None,
         request_validator: GraphRequestValidator | None = None,
+        state_validator: GraphStateValidator | None = None,
         intent_router: IntentRouter | None = None,
         metadata: GraphMetadata | None = None,
     ) -> None:
         self.tool_registry = tool_registry
         self.memory = memory
         self.request_validator = request_validator or GraphRequestValidator()
+        self.state_validator = state_validator or GraphStateValidator()
         self.intent_router = intent_router or IntentRouter()
         self.metadata = metadata or GraphMetadata(
             supports_memory=memory is not None,
@@ -54,18 +60,46 @@ class DocumentAgentGraph:
     def run(
         self,
         user_input: str,
-        **options: Any,
+        document_id: str | None = None,
+        document_query: str | None = None,
+        session_id: str | None = None,
+        allow_answer_generation: bool = False,
+        include_context: bool = False,
+        top_k: int | None = None,
+        conversation_id: str | None = None,
     ) -> GraphResult:
         initial_state = build_agent_state(
             user_input=user_input,
-            document_id=options.get("document_id"),
-            document_query=options.get("document_query"),
-            allow_answer_generation=options.get("allow_answer_generation", False),
-            include_context=options.get("include_context", False),
-            top_k=options.get("top_k"),
-            conversation_id=options.get("conversation_id"),
-            history=self.memory.get_history() if self.memory is not None else [],
+            document_id=document_id,
+            document_query=document_query,
+            allow_answer_generation=allow_answer_generation,
+            include_context=include_context,
+            top_k=top_k,
+            conversation_id=conversation_id,
+            session_id=session_id,
+            history=[],
         )
+        if self.memory is not None:
+            session_snapshot = self.memory.load_session(initial_state["session_id"])
+            initial_state["history"] = list(session_snapshot.get("history", []))
+            initial_state["selected_document_id"] = session_snapshot.get(
+                "selected_document_id"
+            )
+            initial_state["selected_document_title"] = session_snapshot.get(
+                "selected_document_title"
+            )
+            initial_state["selected_document_file_name"] = session_snapshot.get(
+                "selected_document_file_name"
+            )
+            initial_state["pending_clarification"] = session_snapshot.get(
+                "pending_clarification"
+            )
+            initial_state["clarification_options"] = list(
+                session_snapshot.get("clarification_options", [])
+            )
+            initial_state["clarification_question"] = session_snapshot.get(
+                "clarification_question"
+            )
 
         validation = self.request_validator.validate(dict(initial_state))
         if not validation.is_valid:
@@ -86,10 +120,29 @@ class DocumentAgentGraph:
                 messages=initial_state["history"],
             )
 
+        state_validation = self.state_validator.validate(dict(initial_state))
+        if not state_validation.is_valid:
+            return GraphResult.fail(
+                response_text="Graph state validation failed.",
+                error_code="invalid_state",
+                diagnostics={
+                    "issues": [
+                        {
+                            "field": issue.field,
+                            "message": issue.message,
+                            "code": issue.code,
+                        }
+                        for issue in state_validation.issues
+                    ]
+                },
+                route=RouteType.UNKNOWN.value,
+                messages=initial_state["history"],
+            )
+
         if self.memory is not None:
             self.memory.append_user_message(
                 user_input,
-                conversation_id=initial_state["conversation_id"],
+                conversation_id=initial_state["session_id"],
             )
             initial_state["history"] = self.memory.get_history()
 
@@ -98,7 +151,7 @@ class DocumentAgentGraph:
         if self.memory is not None and response_text:
             self.memory.append_assistant_message(
                 response_text,
-                conversation_id=initial_state["conversation_id"],
+                conversation_id=initial_state["session_id"],
             )
             final_state["history"] = self.memory.get_history()
 
@@ -117,7 +170,8 @@ class DocumentAgentGraph:
             "retrieval_trace": RetrievalTraceNode(self.tool_registry),
             "clarify_request": ClarifyRequestNode(),
             "error_handler": ErrorHandlerNode(),
-            "final_response": FinalResponseNode(),
+            "session_command": SessionCommandNode(),
+            "final_response": FinalResponseNode(memory=self.memory),
         }
 
     def _compile_graph(self):
@@ -141,6 +195,7 @@ class DocumentAgentGraph:
                 "answer_question": "answer_question",
                 "run_quality_gate": "run_quality_gate",
                 "retrieval_trace": "retrieval_trace",
+                "session_command": "session_command",
                 "clarify_request": "clarify_request",
             },
         )
@@ -166,6 +221,7 @@ class DocumentAgentGraph:
             "answer_question",
             "run_quality_gate",
             "retrieval_trace",
+            "session_command",
         ):
             graph.add_conditional_edges(
                 action_node,
@@ -203,8 +259,10 @@ class DocumentAgentGraph:
         context_chunks = _extract_context_chunks(
             tool_results=tool_results,
             citations=citations,
-            fallback_document_title=state.get("document_title"),
-            selected_document_id=state.get("document_id"),
+            fallback_document_title=state.get("document_title")
+            or state.get("selected_document_title"),
+            selected_document_id=state.get("selected_document_id")
+            or state.get("document_id"),
         )
         diagnostics = {
             "needs_clarification": state.get("needs_clarification", False),
@@ -213,6 +271,13 @@ class DocumentAgentGraph:
         data = {
             "document_id": state.get("document_id"),
             "document_title": state.get("document_title"),
+            "selected_document_id": state.get("selected_document_id"),
+            "selected_document_title": state.get("selected_document_title"),
+            "selected_document_file_name": state.get("selected_document_file_name"),
+            "pending_clarification": state.get("pending_clarification"),
+            "clarification_options": state.get("clarification_options", []),
+            "clarification_question": state.get("clarification_question"),
+            "should_exit": state.get("should_exit", False),
             "answer": answer,
             "answer_intent": answer_intent,
             "context_chunks": context_chunks,
@@ -270,6 +335,7 @@ class DocumentAgentGraph:
             "answer_question",
             "run_quality_gate",
             "retrieval_trace",
+            "session_command",
         }:
             return self._post_action_branch(state)
         if current_node in {"clarify_request", "error_handler"}:
@@ -283,6 +349,17 @@ class DocumentAgentGraph:
         route = state.get("route")
         if route == RouteType.LIST_DOCUMENTS.value:
             return "list_documents"
+        if route == RouteType.SELECT_DOCUMENT.value:
+            return "find_document" if _has_document_selector(state) else "clarify_request"
+        if route in {
+            RouteType.CURRENT_DOCUMENT.value,
+            RouteType.CLEAR_DOCUMENT.value,
+            RouteType.HELP.value,
+            RouteType.EXIT.value,
+        }:
+            return "session_command"
+        if route == RouteType.CLARIFICATION_RESPONSE.value:
+            return "clarify_request"
         if route == RouteType.FIND_DOCUMENT.value:
             return "find_document" if _has_document_selector(state) else "clarify_request"
         if route == RouteType.DOCUMENT_DETAILS.value:
@@ -307,6 +384,8 @@ class DocumentAgentGraph:
             return "clarify_request"
         route = state.get("route")
         if route == RouteType.FIND_DOCUMENT.value:
+            return "final_response"
+        if route == RouteType.SELECT_DOCUMENT.value:
             return "final_response"
         if route == RouteType.DOCUMENT_DETAILS.value:
             return "document_details"
@@ -336,6 +415,8 @@ def _has_document_selector(state: AgentState) -> bool:
 def _document_branch_target(state: AgentState, target: str) -> str:
     if state.get("document_id"):
         return target
+    if state.get("selected_document_id"):
+        return target
     if state.get("document_query"):
         return "find_document"
     return "clarify_request"
@@ -343,6 +424,8 @@ def _document_branch_target(state: AgentState, target: str) -> str:
 
 def _optional_document_branch_target(state: AgentState, target: str) -> str:
     if state.get("document_id"):
+        return target
+    if state.get("selected_document_id"):
         return target
     if state.get("document_query"):
         return "find_document"

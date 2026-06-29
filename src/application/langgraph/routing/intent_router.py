@@ -6,6 +6,66 @@ from src.application.langgraph.routing.route_decision import RouteDecision
 from src.application.langgraph.routing.route_type import RouteType
 
 _WHITESPACE_RE = re.compile(r"\s+")
+_DIGIT_ONLY_RE = re.compile(r"^\d+$")
+_OPTION_SELECTION_RE = re.compile(r"^(?:option|choose|select)\s+(\d+)$")
+
+_LIST_DOCUMENTS_COMMANDS = {
+    "list documents",
+    "list docs",
+    "show documents",
+    "documents",
+}
+_HELP_COMMANDS = {"help", "commands", "what can you do"}
+_EXIT_COMMANDS = {"exit", "quit", "q"}
+_CURRENT_DOCUMENT_COMMANDS = {
+    "current document",
+    "what document is selected",
+    "show selected document",
+}
+_CLEAR_DOCUMENT_COMMANDS = {
+    "clear document",
+    "forget document",
+    "reset document",
+    "unset document",
+}
+_SELECT_DOCUMENT_PREFIXES = (
+    "open document ",
+    "open ",
+    "select document ",
+    "select ",
+    "use document ",
+    "set document ",
+    "switch to ",
+)
+_FIND_DOCUMENT_PREFIXES = ("find document ", "locate document ")
+_DETAILS_PREFIXES = (
+    "details for ",
+    "show details ",
+    "details ",
+    "statistics ",
+    "stats ",
+)
+_EXPLORATION_PREFIXES = ("explore document ", "explore ", "what is in ")
+_RETRIEVAL_PREFIXES = ("retrieve ", "show context ", "evidence ")
+_TRACE_PREFIXES = ("trace ", "show trace ", "retrieval trace ")
+_EXPLORATION_CURRENT_COMMANDS = {
+    "explore",
+    "explore document",
+    "explore it",
+    "show sections",
+    "sections",
+    "what is in this document",
+    "what is in it",
+}
+_QUESTION_CURRENT_REFERENCES = (
+    " this document",
+    " this manual",
+    " this report",
+    " this certificate",
+    " this drawing",
+    " this datasheet",
+    " it",
+)
 
 
 class IntentRouter:
@@ -19,64 +79,144 @@ class IntentRouter:
         normalized_input = _normalize(user_input)
         extracted_document_query = document_query
 
-        if normalized_input in {"list documents", "list docs", "show documents", "documents"}:
+        clarification_candidate_index = _extract_candidate_index(normalized_input)
+        if clarification_candidate_index is not None:
+            return RouteDecision(
+                route_type=RouteType.CLARIFICATION_RESPONSE,
+                confidence=0.99,
+                reason="Matched numeric clarification response.",
+                clarification_candidate_index=clarification_candidate_index,
+                is_session_command=True,
+            )
+
+        if normalized_input in _HELP_COMMANDS:
+            return RouteDecision(
+                route_type=RouteType.HELP,
+                confidence=0.99,
+                reason="Matched help command.",
+                is_session_command=True,
+            )
+
+        if normalized_input in _EXIT_COMMANDS:
+            return RouteDecision(
+                route_type=RouteType.EXIT,
+                confidence=0.99,
+                reason="Matched exit command.",
+                is_session_command=True,
+            )
+
+        if normalized_input in _CURRENT_DOCUMENT_COMMANDS:
+            return RouteDecision(
+                route_type=RouteType.CURRENT_DOCUMENT,
+                confidence=0.99,
+                reason="Matched current-document command.",
+                requires_document=False,
+                uses_current_document=True,
+                is_session_command=True,
+            )
+
+        if normalized_input in _CLEAR_DOCUMENT_COMMANDS:
+            return RouteDecision(
+                route_type=RouteType.CLEAR_DOCUMENT,
+                confidence=0.99,
+                reason="Matched clear-document command.",
+                is_session_command=True,
+            )
+
+        if normalized_input in _LIST_DOCUMENTS_COMMANDS:
             return RouteDecision(
                 route_type=RouteType.LIST_DOCUMENTS,
                 confidence=0.99,
                 reason="Matched explicit list-documents command.",
             )
 
-        if normalized_input in {"find document", "open document", "locate document"}:
+        if normalized_input in {
+            "open",
+            "open document",
+            "select",
+            "select document",
+            "use document",
+            "set document",
+            "switch to",
+        }:
+            return RouteDecision(
+                route_type=RouteType.NEEDS_CLARIFICATION,
+                confidence=0.9,
+                reason="Document selection command is missing a target query.",
+                requires_document=True,
+            )
+
+        if normalized_input.startswith(_SELECT_DOCUMENT_PREFIXES):
+            extracted_document_query = _strip_prefix(
+                normalized_input,
+                _SELECT_DOCUMENT_PREFIXES,
+            )
+            return RouteDecision(
+                route_type=RouteType.SELECT_DOCUMENT,
+                confidence=0.96,
+                reason="Matched explicit document selection command.",
+                extracted_document_query=extracted_document_query,
+                requires_document=True,
+            )
+
+        if normalized_input in {"find document", "locate document"}:
             return RouteDecision(
                 route_type=RouteType.NEEDS_CLARIFICATION,
                 confidence=0.9,
                 reason="Document lookup command is missing a target query.",
+                requires_document=True,
             )
 
-        if normalized_input.startswith(("find document ", "open document ", "locate document ")):
+        if normalized_input.startswith(_FIND_DOCUMENT_PREFIXES):
             extracted_document_query = _strip_prefix(
                 normalized_input,
-                ("find document ", "open document ", "locate document "),
+                _FIND_DOCUMENT_PREFIXES,
             )
             return RouteDecision(
                 route_type=RouteType.FIND_DOCUMENT,
                 confidence=0.96,
                 reason="Matched explicit document lookup command.",
                 extracted_document_query=extracted_document_query,
+                requires_document=True,
             )
 
-        if normalized_input.startswith(("details ", "details for ", "show details ", "stats ", "statistics ")):
+        if normalized_input.startswith(_DETAILS_PREFIXES):
             extracted_document_query = _strip_prefix(
                 normalized_input,
-                ("details for ", "show details ", "details ", "statistics ", "stats "),
+                _DETAILS_PREFIXES,
             )
             return RouteDecision(
                 route_type=RouteType.DOCUMENT_DETAILS,
                 confidence=0.94,
                 reason="Matched explicit document details command.",
                 extracted_document_query=extracted_document_query,
+                requires_document=True,
+                uses_current_document=extracted_document_query is None,
             )
 
-        if normalized_input in {"explore", "explore document", "show sections", "sections"}:
+        if normalized_input in _EXPLORATION_CURRENT_COMMANDS:
             return RouteDecision(
-                route_type=RouteType.NEEDS_CLARIFICATION,
-                confidence=0.9,
-                reason="Document exploration command is missing a target document.",
+                route_type=RouteType.DOCUMENT_EXPLORATION,
+                confidence=0.95,
+                reason="Matched current-document exploration command.",
+                requires_document=True,
+                uses_current_document=True,
             )
 
-        if normalized_input.startswith(("explore document ", "explore ", "what is in ")):
+        if normalized_input.startswith(_EXPLORATION_PREFIXES):
             extracted_document_query = _strip_prefix(
                 normalized_input,
-                ("explore document ", "explore ", "what is in "),
+                _EXPLORATION_PREFIXES,
             )
             return RouteDecision(
                 route_type=RouteType.DOCUMENT_EXPLORATION,
                 confidence=0.94,
                 reason="Matched explicit document exploration command.",
                 extracted_document_query=extracted_document_query,
+                requires_document=True,
             )
 
-        if normalized_input.startswith(("retrieve ", "show context ", "evidence ")):
+        if normalized_input.startswith(_RETRIEVAL_PREFIXES):
             return RouteDecision(
                 route_type=RouteType.RETRIEVE_EVIDENCE,
                 confidence=0.93,
@@ -84,7 +224,7 @@ class IntentRouter:
                 extracted_document_query=extracted_document_query,
                 extracted_question=_strip_prefix(
                     normalized_input,
-                    ("retrieve ", "show context ", "evidence "),
+                    _RETRIEVAL_PREFIXES,
                 ),
             )
 
@@ -102,7 +242,7 @@ class IntentRouter:
                 reason="Retrieval trace command is missing a query.",
             )
 
-        if normalized_input.startswith(("trace ", "show trace ", "retrieval trace ")):
+        if normalized_input.startswith(_TRACE_PREFIXES):
             return RouteDecision(
                 route_type=RouteType.RETRIEVAL_TRACE,
                 confidence=0.94,
@@ -110,7 +250,7 @@ class IntentRouter:
                 extracted_document_query=extracted_document_query,
                 extracted_question=_strip_prefix(
                     normalized_input,
-                    ("trace ", "show trace ", "retrieval trace "),
+                    _TRACE_PREFIXES,
                 ),
             )
 
@@ -127,6 +267,7 @@ class IntentRouter:
             reason="Fell back to question answering.",
             extracted_document_query=extracted_document_query,
             extracted_question=user_input.strip(),
+            uses_current_document=_references_current_document(normalized_input),
         )
 
 
@@ -140,3 +281,20 @@ def _strip_prefix(value: str, prefixes: tuple[str, ...]) -> str | None:
             stripped = value[len(prefix) :].strip()
             return stripped or None
     return None
+
+
+def _extract_candidate_index(value: str) -> int | None:
+    if not value:
+        return None
+    if _DIGIT_ONLY_RE.fullmatch(value):
+        return max(int(value) - 1, 0)
+    match = _OPTION_SELECTION_RE.fullmatch(value)
+    if match is None:
+        return None
+    return max(int(match.group(1)) - 1, 0)
+
+
+def _references_current_document(value: str) -> bool:
+    if value in {"answer this document", "answer from this document"}:
+        return True
+    return any(reference in f" {value}" for reference in _QUESTION_CURRENT_REFERENCES)

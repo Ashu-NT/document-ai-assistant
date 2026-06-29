@@ -85,3 +85,18 @@ def test_retrieve_evidence_node_calls_retrieve_chunks_tool() -> None:
     assert tool.requests[0].document_id == "doc-42"
     assert tool.requests[0].top_k == 3
     assert "Retrieved 1 evidence chunk" in patch["response_text"]
+
+
+def test_answer_question_node_uses_selected_document_when_request_document_missing() -> None:
+    tool = FakeAnswerQuestionTool()
+    node = AnswerQuestionNode(ToolRegistry(answer_question_tool=tool))
+
+    node(
+        build_agent_state(
+            user_input="What is the maintenance interval?",
+            selected_document_id="doc-selected",
+            selected_document_title="FWC12 Manual",
+        )
+    )
+
+    assert tool.requests[0].document_id == "doc-selected"

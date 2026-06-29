@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from src.application.validation.common import ValidationResult, Validator
+
+_SAFE_SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
 
 
 class GraphRequestValidator(Validator[dict[str, Any]]):
@@ -39,6 +42,21 @@ class GraphRequestValidator(Validator[dict[str, Any]]):
                 "document_id must be a string when provided.",
                 "langgraph.document_id.invalid_type",
             )
+
+        session_id = value.get("session_id")
+        if session_id is not None:
+            if not isinstance(session_id, str):
+                result.add_issue(
+                    "session_id",
+                    "session_id must be a string when provided.",
+                    "langgraph.session_id.invalid_type",
+                )
+            elif not _SAFE_SESSION_ID_RE.fullmatch(session_id):
+                result.add_issue(
+                    "session_id",
+                    "session_id may only contain letters, digits, underscore, dash, or dot.",
+                    "langgraph.session_id.invalid_value",
+                )
 
         for field_name in ("allow_answer_generation", "include_context"):
             raw_value = value.get(field_name)

@@ -2,6 +2,12 @@ from enum import StrEnum
 
 
 class RouteType(StrEnum):
+    SELECT_DOCUMENT = "select_document"
+    CURRENT_DOCUMENT = "current_document"
+    CLEAR_DOCUMENT = "clear_document"
+    CLARIFICATION_RESPONSE = "clarification_response"
+    HELP = "help"
+    EXIT = "exit"
     LIST_DOCUMENTS = "list_documents"
     FIND_DOCUMENT = "find_document"
     DOCUMENT_DETAILS = "document_details"

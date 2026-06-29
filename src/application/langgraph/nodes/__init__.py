@@ -3,6 +3,7 @@ from src.application.langgraph.nodes.control import (
     ErrorHandlerNode,
     FinalResponseNode,
     RouteRequestNode,
+    SessionCommandNode,
 )
 from src.application.langgraph.nodes.documents import (
     DocumentDetailsNode,
@@ -31,5 +32,6 @@ __all__ = [
     "RetrievalTraceNode",
     "RetrieveEvidenceNode",
     "RouteRequestNode",
+    "SessionCommandNode",
     "RunQualityGateNode",
 ]
