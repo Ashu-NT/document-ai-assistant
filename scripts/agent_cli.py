@@ -110,10 +110,29 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Disable validated LLM fallback planning even if enabled in settings.",
     )
     parser.set_defaults(llm_planning=None)
+    reflection_group = parser.add_mutually_exclusive_group()
+    reflection_group.add_argument(
+        "--reflection",
+        dest="reflection",
+        action="store_true",
+        help="Enable LangGraph V6 reflection review for generated answers.",
+    )
+    reflection_group.add_argument(
+        "--no-reflection",
+        dest="reflection",
+        action="store_false",
+        help="Disable LangGraph V6 reflection review.",
+    )
+    parser.set_defaults(reflection=None)
     parser.add_argument(
         "--show-raw-plan",
         action="store_true",
         help="Display the raw LLM planning output when tracing is enabled.",
+    )
+    parser.add_argument(
+        "--show-reflection",
+        action="store_true",
+        help="Print reflection reviewer decisions and scores when available.",
     )
     parser.add_argument(
         "--json",
@@ -169,6 +188,15 @@ def build_agent_runtime(
         ConversationMemory,
         GraphFactory,
         NodeFactory,
+        ReflectionService,
+        ReflectionValidator,
+        ReflectionPromptBuilder,
+        ReflectionJsonParser,
+        ReflectionPolicy,
+        EvidenceMerger,
+        RetryQueryBuilder,
+        ClarificationBuilder,
+        RetrievalRetryPolicy,
         SessionStateStore,
         ToolRegistry,
     )
@@ -263,6 +291,13 @@ def build_agent_runtime(
 
     answer_generation_service = None
     planning_llm_service = None
+    reflection_model = llm_settings.answer_generation_llm or llm_settings.general_llm
+    reflection_llm_service = LLMService(
+        OllamaLLMProvider(
+            base_url=llm_settings.ollama_base_url,
+            default_model=reflection_model,
+        )
+    )
     if enable_generation:
         generation_model = llm_settings.answer_generation_llm or llm_settings.general_llm
         llm_service = LLMService(
@@ -335,6 +370,18 @@ def build_agent_runtime(
         plan_validator=PlanValidator(),
         plan_policy=PlanPolicy(max_steps=langgraph_settings.max_steps),
         plan_repair=PlanRepair(),
+        reflection_service=ReflectionService(
+            llm_service=reflection_llm_service,
+            prompt_builder=ReflectionPromptBuilder(),
+            json_parser=ReflectionJsonParser(),
+            validator=ReflectionValidator(),
+            policy=ReflectionPolicy(enabled=True),
+            model=reflection_model,
+        ),
+        evidence_merger=EvidenceMerger(),
+        retry_query_builder=RetryQueryBuilder(),
+        clarification_builder=ClarificationBuilder(),
+        retrieval_retry_policy=RetrievalRetryPolicy(),
     )
     graph = GraphFactory(node_factory=node_factory).create_document_agent_graph(
         tool_registry=tool_registry,
@@ -434,6 +481,38 @@ def print_context_chunks(
         print()
 
 
+def print_reflection(result) -> None:
+    data = result.data or {}
+    reflection_result = data.get("reflection_result")
+    if not isinstance(reflection_result, dict):
+        print("\nReflection")
+        print("----------")
+        print("No reflection result available.")
+        return
+    decision = (reflection_result.get("decision") or {}).get("decision") or data.get(
+        "reflection_decision"
+    )
+    reason = (reflection_result.get("decision") or {}).get("reason")
+    retry_query = (reflection_result.get("decision") or {}).get("retry_query")
+    print("\nReflection")
+    print("----------")
+    print(f"Decision: {decision or '-'}")
+    print(f"Overall score: {data.get('reflection_score') if data.get('reflection_score') is not None else '-'}")
+    print(
+        f"Answer score: {(reflection_result.get('answer_quality_score') if reflection_result.get('answer_quality_score') is not None else '-')}"
+    )
+    print(
+        f"Evidence score: {(reflection_result.get('evidence_quality_score') if reflection_result.get('evidence_quality_score') is not None else '-')}"
+    )
+    if reason:
+        print(f"Reason: {reason}")
+    if retry_query:
+        print(f"Retry query: {retry_query}")
+    merged_chunk_ids = data.get("merged_chunk_ids") or []
+    if merged_chunk_ids:
+        print(f"Merged chunks: {len(merged_chunk_ids)}")
+
+
 def print_execution_plan(
     execution_plan: dict[str, Any] | None,
     plan_steps: list[dict[str, Any]],
@@ -469,6 +548,10 @@ def build_json_output(
         "answer": data.get("answer") or result.response_text,
         "answer_intent": data.get("answer_intent"),
         "document_id": data.get("document_id"),
+        "reflection_result": data.get("reflection_result"),
+        "reflection_decision": data.get("reflection_decision"),
+        "reflection_score": data.get("reflection_score"),
+        "retry_query": data.get("retry_query"),
         "selected_document_id": data.get("selected_document_id"),
         "selected_document_title": data.get("selected_document_title"),
         "pending_clarification": data.get("pending_clarification"),
@@ -501,6 +584,7 @@ def print_graph_result(
     show_raw_plan: bool = False,
     show_context: bool,
     show_trace: bool,
+    show_reflection: bool = False,
 ) -> None:
     print(f"Route: {result.route or '-'}")
     print(f"Success: {result.success}")
@@ -514,6 +598,8 @@ def print_graph_result(
         print_raw_plan((result.data or {}).get("raw_llm_plan"))
     if show_context:
         print_context_chunks((result.data or {}).get("context_chunks", []))
+    if show_reflection:
+        print_reflection(result)
     if show_trace:
         print_trace(result.trace or [])
 
@@ -534,6 +620,8 @@ def run_graph_request(
     allow_answer_generation: bool,
     include_context: bool,
     llm_planning_enabled: bool,
+    reflection_enabled: bool = False,
+    show_reflection: bool = False,
     show_plan: bool = False,
     show_raw_plan: bool = False,
     top_k: int | None,
@@ -546,6 +634,8 @@ def run_graph_request(
         allow_answer_generation=allow_answer_generation,
         include_context=include_context,
         llm_planning_enabled=llm_planning_enabled,
+        reflection_enabled=reflection_enabled,
+        show_reflection=show_reflection,
         show_plan=show_plan,
         show_raw_plan=show_raw_plan,
         top_k=top_k,
@@ -562,6 +652,8 @@ def run_interactive_loop(
     allow_answer_generation: bool,
     include_context: bool,
     llm_planning_enabled: bool,
+    reflection_enabled: bool = False,
+    show_reflection: bool = False,
     show_plan: bool = False,
     show_raw_plan: bool = False,
     top_k: int | None,
@@ -599,6 +691,8 @@ def run_interactive_loop(
             allow_answer_generation=allow_answer_generation,
             include_context=include_context,
             llm_planning_enabled=llm_planning_enabled,
+            reflection_enabled=reflection_enabled,
+            show_reflection=show_reflection,
             show_plan=show_plan,
             show_raw_plan=show_raw_plan,
             top_k=top_k,
@@ -618,6 +712,7 @@ def run_interactive_loop(
                 show_raw_plan=show_raw_plan and show_trace,
                 show_context=include_context,
                 show_trace=show_trace,
+                show_reflection=show_reflection,
             )
 
         if (result.data or {}).get("should_exit"):
@@ -671,6 +766,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.llm_planning is not None
             else langgraph_settings.llm_planning_enabled
         )
+        effective_reflection = (
+            args.reflection
+            if args.reflection is not None
+            else langgraph_settings.reflection_enabled
+        )
         effective_session_id = build_session_id(args.session_id) if args.interactive else args.session_id
         if args.show_raw_plan and not args.trace:
             print("--show-raw-plan requires --trace.", file=sys.stderr)
@@ -691,6 +791,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 allow_answer_generation=effective_generation,
                 include_context=args.show_context,
                 llm_planning_enabled=effective_llm_planning,
+                reflection_enabled=effective_reflection,
+                show_reflection=args.show_reflection,
                 show_plan=args.show_plan,
                 show_raw_plan=args.show_raw_plan,
                 top_k=args.top_k,
@@ -708,6 +810,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             allow_answer_generation=effective_generation,
             include_context=args.show_context,
             llm_planning_enabled=effective_llm_planning,
+            reflection_enabled=effective_reflection,
+            show_reflection=args.show_reflection,
             show_plan=args.show_plan,
             show_raw_plan=args.show_raw_plan,
             top_k=args.top_k,
@@ -730,6 +834,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 show_raw_plan=args.show_raw_plan and args.trace,
                 show_context=args.show_context,
                 show_trace=args.trace,
+                show_reflection=args.show_reflection,
             )
 
         return 0 if result.success else 1

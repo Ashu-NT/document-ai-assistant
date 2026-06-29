@@ -14,4 +14,11 @@ class LangGraphSettings(AppBaseSettings):
         default=False,
         alias="LANGGRAPH_LLM_PLANNING_ENABLED"
     )
-        
+    reflection_enabled: bool = Field(
+        default=False,
+        alias="LANGGRAPH_REFLECTION_ENABLED",
+    )
+    reflection_show: bool = Field(
+        default=False,
+        alias="LANGGRAPH_SHOW_REFLECTION",
+    )

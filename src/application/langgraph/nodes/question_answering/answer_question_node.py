@@ -11,6 +11,7 @@ from src.application.langgraph.nodes.node_utils import (
 from src.application.langgraph.state import AgentState
 from src.application.langgraph.tracing import GraphRunRecorder
 from src.application.tools.question_answering import AnswerQuestionRequest
+from src.application.langgraph.common import serialize_graph_value
 
 
 class AnswerQuestionNode:
@@ -78,6 +79,20 @@ class AnswerQuestionNode:
                 "safe_user_message",
                 None,
             )
+            retrieval_result = getattr(qa_result, "retrieval_result", None)
+            context_chunks = (
+                getattr(retrieval_result, "final_chunks", [])
+                if retrieval_result is not None
+                else []
+            )
+            serialized_chunks = serialize_graph_value(context_chunks)
+            patch["initial_context_chunks"] = serialized_chunks
+            patch["merged_context_chunks"] = serialized_chunks
+            patch["merged_chunk_ids"] = [
+                str(chunk.get("chunk_id"))
+                for chunk in serialized_chunks
+                if isinstance(chunk, dict) and chunk.get("chunk_id")
+            ]
             return patch
 
         patch["error"] = build_error(

@@ -28,6 +28,17 @@ from src.application.langgraph.planning import (
     PlanExecutor,
     PlanStep,
 )
+from src.application.langgraph.reflection import (
+    ClarificationBuilder,
+    EvidenceMerger,
+    ReflectionJsonParser,
+    ReflectionPolicy,
+    ReflectionPromptBuilder,
+    ReflectionService,
+    ReflectionValidator,
+    RetrievalRetryPolicy,
+    RetryQueryBuilder,
+)
 from src.application.langgraph.routing import IntentRouter, RouteDecision, RouteType
 from src.application.langgraph.state import AgentState, build_agent_state
 from src.application.langgraph.tracing import GraphRunRecorder, LangGraphTrace
@@ -65,6 +76,15 @@ __all__ = [
     "NodeFactory",
     "PlanExecutor",
     "PlanStep",
+    "ClarificationBuilder",
+    "EvidenceMerger",
+    "ReflectionJsonParser",
+    "ReflectionPolicy",
+    "ReflectionPromptBuilder",
+    "ReflectionService",
+    "ReflectionValidator",
+    "RetrievalRetryPolicy",
+    "RetryQueryBuilder",
     "RouteDecision",
     "RouteType",
     "SessionStateStore",
