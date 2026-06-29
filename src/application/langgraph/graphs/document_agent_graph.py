@@ -175,6 +175,7 @@ class DocumentAgentGraph:
             "route_request",
             self._entry_branch,
             {
+                "blocked_action": "blocked_action",
                 "create_plan": "create_plan",
                 "list_documents": "list_documents",
                 "find_document": "find_document",
@@ -223,6 +224,7 @@ class DocumentAgentGraph:
             },
         )
         for action_node in (
+            "blocked_action",
             "list_documents",
             "document_details",
             "explore_document",
@@ -280,6 +282,7 @@ class DocumentAgentGraph:
             "plan_used": bool(state.get("execution_plan")),
             "plan_success": state.get("plan_success"),
             "planning_source": state.get("planning_source"),
+            "unsafe_request_blocked": state.get("unsafe_request_blocked", False),
         }
         data = {
             "document_id": state.get("document_id"),
@@ -305,6 +308,9 @@ class DocumentAgentGraph:
             "planning_errors": state.get("planning_errors", []),
             "planning_warnings": state.get("planning_warnings", []),
             "raw_llm_plan": state.get("raw_llm_plan"),
+            "unsafe_request_blocked": state.get("unsafe_request_blocked", False),
+            "blocked_reason": state.get("blocked_reason"),
+            "blocked_terms": state.get("blocked_terms", []),
             "tool_results": tool_results,
         }
         execution_plan = state.get("execution_plan")
@@ -315,6 +321,10 @@ class DocumentAgentGraph:
             diagnostics["planning_errors"] = state.get("planning_errors", [])
         if state.get("planning_warnings"):
             diagnostics["planning_warnings"] = state.get("planning_warnings", [])
+        if state.get("blocked_reason"):
+            diagnostics["blocked_reason"] = state.get("blocked_reason")
+        if state.get("blocked_terms"):
+            diagnostics["blocked_terms"] = state.get("blocked_terms", [])
         if answer_intent is not None:
             diagnostics["answer_intent"] = answer_intent
         if state.get("needs_clarification") and state.get("error") is None:
@@ -363,6 +373,7 @@ class DocumentAgentGraph:
         if current_node == "execute_plan":
             return self._after_execute_plan_branch(state)
         if current_node in {
+            "blocked_action",
             "list_documents",
             "document_details",
             "explore_document",
@@ -383,6 +394,8 @@ class DocumentAgentGraph:
     @staticmethod
     def _entry_branch(state: AgentState) -> str:
         route = state.get("route")
+        if route == RouteType.BLOCKED_ACTION.value:
+            return "blocked_action"
         if route == RouteType.LIST_DOCUMENTS.value:
             return "list_documents"
         if route == RouteType.SELECT_DOCUMENT.value:

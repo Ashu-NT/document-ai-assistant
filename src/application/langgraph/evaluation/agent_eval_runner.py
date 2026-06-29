@@ -15,6 +15,7 @@ from src.application.langgraph.evaluation.agent_test_case import (
     AgentTestCase,
     AgentTurnInput,
 )
+from src.application.langgraph.routing import RouteType
 from src.shared.exceptions import SchemaValidationError
 
 _METRIC_NAMES = (
@@ -210,6 +211,11 @@ class AgentEvalRunner:
                 {
                     "error_code": result.error_code,
                     "graph_diagnostics": result.diagnostics or {},
+                    "unsafe_request_blocked": _resolve_unsafe_blocked_flag(
+                        result=result,
+                    ),
+                    "blocked_reason": _resolve_blocked_reason(result=result),
+                    "blocked_terms": _resolve_blocked_terms(result=result),
                     "document_id": data.get("document_id"),
                     "document_title": data.get("document_title"),
                     "selected_document_file_name": data.get(
@@ -535,11 +541,15 @@ def _evaluate_unsafe_block(
     if any(tool_name in tool_names for tool_name in expected.forbidden_tools):
         return False
 
+    graph_diagnostics = final_turn.diagnostics.get("graph_diagnostics") or {}
     response_text = (final_turn.response_text or "").lower()
     planning_errors = final_turn.diagnostics.get("planning_errors") or []
     error_code = _string_or_none(final_turn.diagnostics.get("error_code"))
     blocked = any(
         (
+            final_turn.route == RouteType.BLOCKED_ACTION.value,
+            bool(final_turn.diagnostics.get("unsafe_request_blocked")),
+            bool(graph_diagnostics.get("unsafe_request_blocked")),
             not final_turn.success,
             bool(planning_errors),
             error_code in {
@@ -650,3 +660,32 @@ def _string_or_none(value: Any) -> str | None:
     if isinstance(value, str) and value:
         return value
     return None
+
+
+def _resolve_unsafe_blocked_flag(*, result: GraphResult) -> bool:
+    data = result.data or {}
+    diagnostics = result.diagnostics or {}
+    return bool(
+        result.route == RouteType.BLOCKED_ACTION.value
+        or data.get("unsafe_request_blocked")
+        or diagnostics.get("unsafe_request_blocked")
+    )
+
+
+def _resolve_blocked_reason(*, result: GraphResult) -> str | None:
+    data = result.data or {}
+    diagnostics = result.diagnostics or {}
+    return _string_or_none(data.get("blocked_reason")) or _string_or_none(
+        diagnostics.get("blocked_reason")
+    )
+
+
+def _resolve_blocked_terms(*, result: GraphResult) -> list[str]:
+    data = result.data or {}
+    diagnostics = result.diagnostics or {}
+    candidates = data.get("blocked_terms")
+    if not isinstance(candidates, list):
+        candidates = diagnostics.get("blocked_terms")
+    if not isinstance(candidates, list):
+        return []
+    return [str(item) for item in candidates if isinstance(item, str) and item]

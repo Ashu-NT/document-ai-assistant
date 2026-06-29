@@ -1,4 +1,5 @@
 from src.application.langgraph.nodes.control import (
+    BlockedActionNode,
     ClarifyRequestNode,
     ErrorHandlerNode,
     FinalResponseNode,
@@ -27,6 +28,7 @@ from src.application.langgraph.nodes.planning import (
 
 __all__ = [
     "AnswerQuestionNode",
+    "BlockedActionNode",
     "ClarifyRequestNode",
     "CreatePlanNode",
     "DocumentDetailsNode",

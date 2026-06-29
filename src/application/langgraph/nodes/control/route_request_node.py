@@ -26,6 +26,11 @@ class RouteRequestNode:
             document_id=state.get("document_id"),
             document_query=state.get("document_query"),
         )
+        unsafe_request_blocked = bool(
+            decision.options.get("unsafe_request_blocked", False)
+        )
+        blocked_reason = decision.options.get("blocked_reason")
+        blocked_terms = decision.options.get("blocked_terms", [])
 
         clarification_message = None
         if decision.route_type in {RouteType.NEEDS_CLARIFICATION, RouteType.UNKNOWN}:
@@ -66,6 +71,9 @@ class RouteRequestNode:
                 "is_compound": decision.is_compound,
                 "requires_plan": decision.requires_plan,
                 "plan_hint": decision.plan_hint,
+                "unsafe_request_blocked": unsafe_request_blocked,
+                "blocked_reason": blocked_reason,
+                "blocked_terms": blocked_terms,
             },
         )
         return {
@@ -76,6 +84,9 @@ class RouteRequestNode:
             "document_query": decision.extracted_document_query
             or state.get("document_query"),
             "question": decision.extracted_question or state["user_input"].strip(),
+            "unsafe_request_blocked": unsafe_request_blocked,
+            "blocked_reason": blocked_reason,
+            "blocked_terms": list(blocked_terms) if isinstance(blocked_terms, list) else [],
             "needs_clarification": decision.route_type == RouteType.NEEDS_CLARIFICATION,
             "clarification_message": clarification_message,
             "session_command": (

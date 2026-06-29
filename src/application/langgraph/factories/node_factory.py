@@ -5,6 +5,7 @@ from typing import Any
 from src.application.langgraph.memory import ConversationMemory
 from src.application.langgraph.nodes import (
     AnswerQuestionNode,
+    BlockedActionNode,
     ClarifyRequestNode,
     CreatePlanNode,
     DocumentDetailsNode,
@@ -63,6 +64,7 @@ class NodeFactory:
     ) -> dict[str, Any]:
         return {
             "route_request": RouteRequestNode(intent_router),
+            "blocked_action": BlockedActionNode(),
             "create_plan": CreatePlanNode(
                 self.planner,
                 tool_registry=tool_registry,
