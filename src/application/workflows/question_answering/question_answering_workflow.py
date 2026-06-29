@@ -84,7 +84,7 @@ class QuestionAnsweringWorkflow:
                     guardrail_result=blocking,
                 )
 
-        route, analyzed_query = self._router.decide(
+        route, analyzed_query, analyzed_intent = self._router.decide(
             question=request.question,
             top_k=request.top_k or 5,
             document_id=request.document_id,
@@ -93,7 +93,12 @@ class QuestionAnsweringWorkflow:
         if route == QuestionAnsweringRoute.DOCUMENT_EXPLORATION:
             return self._handle_exploration(request)
 
-        return self._handle_retrieval(request, analyzed_query, allow_generation)
+        return self._handle_retrieval(
+            request,
+            analyzed_query,
+            analyzed_intent.value,
+            allow_generation,
+        )
 
     def _handle_exploration(
         self, request: QuestionAnsweringRequest
@@ -124,6 +129,7 @@ class QuestionAnsweringWorkflow:
         self,
         request: QuestionAnsweringRequest,
         analyzed_query: RetrievalQuery,
+        analyzed_intent: str,
         allow_generation: bool = False,
     ) -> QuestionAnsweringResult:
         workflow_result = self._retrieval_workflow.run(analyzed_query)
@@ -203,9 +209,12 @@ class QuestionAnsweringWorkflow:
         gen_request = AnswerGenerationRequest(
             question=request.question,
             context_chunks=approved_chunks,
-            query_intent=analyzed_query.chunk_types[0].value if analyzed_query.chunk_types else None,
+            query_intent=analyzed_intent,
+            retrieval_intent=analyzed_intent,
+            chunk_type_preferences=list(analyzed_query.chunk_types),
             document_id=request.document_id,
             require_citations=request.require_citations,
+            route=QuestionAnsweringRoute.RETRIEVAL_QA.value,
         )
         generated = self._answer_generation_service.generate(gen_request)
 
@@ -213,8 +222,16 @@ class QuestionAnsweringWorkflow:
         if self._post_answer_guardrails:
             post_context = GuardrailContext(
                 query_text=request.question,
+                query_intent=analyzed_intent,
+                query_chunk_types=[chunk_type.value for chunk_type in analyzed_query.chunk_types],
                 approved_chunks=approved_chunks,
                 answer_text=generated.answer_text,
+                answer_intent=(
+                    generated.answer_intent.value
+                    if generated.answer_intent is not None
+                    else None
+                ),
+                metadata=generated.diagnostics,
             )
             post_blocking = GuardrailRunner(self._post_answer_guardrails).run(
                 post_context
@@ -239,10 +256,12 @@ class QuestionAnsweringWorkflow:
             approved_chunk_ids=approved_ids,
             rejected_chunk_ids=rejected_chunk_ids,
             confidence=confidence,
+            answer_intent=generated.answer_intent,
             diagnostics={
                 "enough_evidence": workflow_result.enough_evidence,
                 "prompt_version": generated.prompt_version,
                 "model_name": generated.model_name,
+                **generated.diagnostics,
                 **workflow_result.diagnostics,
             },
         )

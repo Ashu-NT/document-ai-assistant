@@ -1,6 +1,7 @@
 import pytest
 
 from src.application.prompts.answer_generation import ANSWER_PROMPT_VERSION
+from src.application.services.answer_generation import AnswerIntent
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
 )
@@ -21,6 +22,17 @@ class FakeLLMService:
     def generate(self, prompt: str, model: str | None = None) -> str:
         self.calls.append({"prompt": prompt, "model": model})
         return self.response
+
+
+class FakePromptBuilder:
+    prompt_version = ANSWER_PROMPT_VERSION
+
+    def __init__(self) -> None:
+        self.requests: list[AnswerGenerationRequest] = []
+
+    def build(self, request: AnswerGenerationRequest) -> str:
+        self.requests.append(request)
+        return "PROMPT"
 
 
 def _make_chunk(
@@ -160,3 +172,48 @@ def test_generate_model_name_is_reflected_in_result_and_metadata() -> None:
     assert result.metadata.model_name == "qwen3:8b"
     assert result.metadata.model_type == "answer_generation"
     assert result.metadata.prompt_version == ANSWER_PROMPT_VERSION
+
+
+def test_generate_infers_answer_intent_when_missing() -> None:
+    service, _ = make_service()
+    request = AnswerGenerationRequest(
+        question="specification",
+        context_chunks=[
+            _make_chunk(
+                content="Test pressure: 700 bar\nDesign pressure: 350 bar\nSize: DN 8",
+            )
+        ],
+    )
+
+    result = service.generate(request)
+
+    assert result.answer_intent == AnswerIntent.SPECIFICATION_SUMMARY
+    assert result.diagnostics["answer_intent"] == "specification_summary"
+
+
+def test_generate_builds_structured_context_and_format_policy_before_prompt() -> None:
+    llm = FakeLLMService()
+    prompt_builder = FakePromptBuilder()
+    service = AnswerGenerationService(
+        llm_service=llm,
+        prompt_builder=prompt_builder,
+        answer_generation_model="qwen3:8b",
+    )
+    request = AnswerGenerationRequest(
+        question="specification",
+        context_chunks=[
+            _make_chunk(
+                content="Test pressure: 700 bar\nDesign pressure: 350 bar",
+                chunk_id="chunk_101",
+            )
+        ],
+    )
+
+    service.generate(request)
+
+    built_request = prompt_builder.requests[0]
+    assert built_request.answer_intent == AnswerIntent.SPECIFICATION_SUMMARY
+    assert built_request.structured_context is not None
+    assert built_request.structured_context.key_values
+    assert built_request.format_policy is not None
+    assert built_request.format_policy.preferred_format == "structured_bullets"

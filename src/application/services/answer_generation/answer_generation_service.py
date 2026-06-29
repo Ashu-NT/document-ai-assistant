@@ -1,13 +1,22 @@
-from src.application.prompts.answer_generation import (
-    ANSWER_PROMPT_VERSION,
-    AnswerPromptBuilder,
-)
+from dataclasses import replace
+
+from src.application.prompts.answer_generation import ANSWER_PROMPT_VERSION, AnswerPromptBuilder
 from src.application.services.ai.llm_service import LLMService
+from src.application.services.answer_generation.formatting.answer_format_policy import (
+    AnswerFormatPolicy,
+)
+from src.application.services.answer_generation.intent.answer_intent_analyzer import (
+    AnswerIntentAnalyzer,
+    AnswerIntentDecision,
+)
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
 )
 from src.application.services.answer_generation.answer_generation_result import (
     GeneratedAnswer,
+)
+from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
+    AnswerContextOrganizer,
 )
 from src.domain.common.processing_metadata import ModelProcessingMetadata
 from src.domain.retrieval.citation import Citation
@@ -30,10 +39,16 @@ class AnswerGenerationService:
         self,
         llm_service: LLMService,
         prompt_builder: AnswerPromptBuilder | None = None,
+        answer_intent_analyzer: AnswerIntentAnalyzer | None = None,
+        answer_context_organizer: AnswerContextOrganizer | None = None,
         answer_generation_model: str | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.prompt_builder = prompt_builder or AnswerPromptBuilder()
+        self.answer_intent_analyzer = answer_intent_analyzer or AnswerIntentAnalyzer()
+        self.answer_context_organizer = (
+            answer_context_organizer or AnswerContextOrganizer()
+        )
         self.answer_generation_model = (
             answer_generation_model or _default_answer_generation_model()
         )
@@ -50,19 +65,17 @@ class AnswerGenerationService:
         request: AnswerGenerationRequest,
         activity_context: ActivityContext | None = None,
     ) -> GeneratedAnswer:
-        prompt = self.prompt_builder.build(request)
+        resolved_request, intent_decision = self._resolve_request(request)
+        prompt = self.prompt_builder.build(resolved_request)
         prompt_version = getattr(
             self.prompt_builder,
             "prompt_version",
             ANSWER_PROMPT_VERSION,
         )
 
-        raw_output = self.llm_service.generate(
-            prompt,
-            model=self.answer_generation_model,
-        )
+        raw_output = self.llm_service.generate(prompt, model=self.answer_generation_model)
 
-        citations, cited_chunk_ids = self._build_citations(request.context_chunks)
+        citations, cited_chunk_ids = self._build_citations(resolved_request.context_chunks)
 
         model_name = self.answer_generation_model or "default"
 
@@ -76,8 +89,30 @@ class AnswerGenerationService:
             metadata=ModelProcessingMetadata(
                 model_name=model_name,
                 model_type="answer_generation",
+                confidence=intent_decision.confidence,
                 prompt_version=prompt_version,
             ),
+            answer_intent=resolved_request.answer_intent,
+            diagnostics={
+                "answer_intent": (
+                    resolved_request.answer_intent.value
+                    if resolved_request.answer_intent is not None
+                    else None
+                ),
+                "answer_intent_confidence": intent_decision.confidence,
+                "answer_intent_reason": intent_decision.reason,
+                "answer_intent_signals": intent_decision.matched_signals,
+                "format_policy": (
+                    resolved_request.format_policy.preferred_format
+                    if resolved_request.format_policy is not None
+                    else None
+                ),
+                "structured_context_source_count": (
+                    resolved_request.structured_context.source_count
+                    if resolved_request.structured_context is not None
+                    else 0
+                ),
+            },
         )
 
     @staticmethod
@@ -91,3 +126,44 @@ class AnswerGenerationService:
                 citations.append(chunk.citation)
                 cited_chunk_ids.append(chunk.chunk_id)
         return citations, cited_chunk_ids
+
+    def _resolve_request(
+        self,
+        request: AnswerGenerationRequest,
+    ) -> tuple[AnswerGenerationRequest, AnswerIntentDecision]:
+        context_chunks = request.context_chunks
+        if request.max_context_chunks is not None:
+            context_chunks = context_chunks[: request.max_context_chunks]
+
+        intent_decision = self.answer_intent_analyzer.analyze(
+            question=request.question,
+            retrieval_intent=request.retrieval_intent,
+            chunk_type_preferences=request.chunk_type_preferences,
+            approved_chunks=context_chunks,
+            legacy_query_intent=request.query_intent,
+            route=request.route,
+        )
+        answer_intent = request.answer_intent or intent_decision.intent
+        structured_context = request.structured_context
+        if structured_context is None:
+            structured_context = self.answer_context_organizer.organize(
+                answer_intent=answer_intent,
+                chunks=context_chunks,
+            )
+        elif structured_context.answer_intent != answer_intent:
+            structured_context = replace(
+                structured_context,
+                answer_intent=answer_intent,
+            )
+
+        format_policy = request.format_policy or AnswerFormatPolicy.for_intent(
+            answer_intent
+        )
+        resolved_request = replace(
+            request,
+            context_chunks=context_chunks,
+            answer_intent=answer_intent,
+            structured_context=structured_context,
+            format_policy=format_policy,
+        )
+        return resolved_request, intent_decision
