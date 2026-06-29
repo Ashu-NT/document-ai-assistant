@@ -58,6 +58,15 @@ def test_agent_cli_parses_raw_plan_flags() -> None:
     assert args.trace is True
 
 
+def test_agent_cli_parses_reflection_flags() -> None:
+    mod = _load_script("agent_cli")
+
+    args = mod.parse_args(["question", "--reflection", "--show-reflection"])
+
+    assert args.reflection is True
+    assert args.show_reflection is True
+
+
 def test_agent_cli_show_context_prints_context_chunks(capsys) -> None:
     mod = _load_script("agent_cli")
     result = GraphResult.ok(
@@ -99,6 +108,41 @@ def test_agent_cli_show_context_prints_context_chunks(capsys) -> None:
     assert "12-13" in output
     assert "0.9132" in output
     assert "Oil change interval is 500 hours." in output
+
+
+def test_agent_cli_show_reflection_prints_reflection_details(capsys) -> None:
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="The maintenance interval is 500 hours.",
+        route="answer_question",
+        data={
+            "answer": "The maintenance interval is 500 hours.",
+            "reflection_score": 0.83,
+            "merged_chunk_ids": ["chunk_1", "chunk_2"],
+            "reflection_result": {
+                "decision": {
+                    "decision": "RETRIEVE_AGAIN",
+                    "reason": "The answer is missing the service-interval context.",
+                    "retry_query": "maintenance interval service schedule operating hours",
+                },
+                "answer_quality_score": 0.62,
+                "evidence_quality_score": 0.74,
+            },
+        },
+    )
+
+    mod.print_graph_result(
+        result,
+        show_context=False,
+        show_trace=False,
+        show_reflection=True,
+    )
+
+    output = capsys.readouterr().out
+    assert "Reflection" in output
+    assert "Decision: RETRIEVE_AGAIN" in output
+    assert "Retry query: maintenance interval service schedule operating hours" in output
+    assert "Merged chunks: 2" in output
 
 
 def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> None:

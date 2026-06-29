@@ -14,6 +14,7 @@ from src.application.workflows.question_answering import (
     QuestionAnsweringRequest,
     QuestionAnsweringWorkflow,
 )
+from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 from src.shared.exceptions import ApplicationError
 
 _GENERATION_NOT_CONFIGURED_MESSAGE = "Answer generation is not configured."
@@ -29,6 +30,8 @@ class AnswerQuestionRequest(ToolRequest):
     include_context: bool = False
     require_citations: bool = True
     trace: bool = False
+    context_override_chunks: list[RetrievedChunk] | None = None
+    retry_query: str | None = None
 
 
 class AnswerQuestionTool:
@@ -85,6 +88,8 @@ class AnswerQuestionTool:
             include_context=request.include_context,
             allow_answer_generation=request.allow_answer_generation,
             require_citations=request.require_citations,
+            context_override_chunks=request.context_override_chunks,
+            retry_query=request.retry_query,
         )
 
         try:

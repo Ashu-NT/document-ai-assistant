@@ -26,7 +26,13 @@ from src.application.workflows.question_answering.question_answering_router impo
     QuestionAnsweringRouter,
 )
 from src.application.workflows.retrieval.retrieval_workflow import RetrievalWorkflow
+from src.application.workflows.retrieval.retrieval_workflow_result import (
+    RetrievalWorkflowResult,
+)
+from src.domain.common import new_id
 from src.domain.retrieval import RetrievalQuery
+from src.domain.retrieval.citation import Citation
+from src.domain.retrieval.retrieval_result import RetrievalResult
 from src.application.contracts.guardrails import GuardrailResult
 
 _ANSWER_GENERATION_DISABLED_MESSAGE = (
@@ -93,6 +99,19 @@ class QuestionAnsweringWorkflow:
         if route == QuestionAnsweringRoute.DOCUMENT_EXPLORATION:
             return self._handle_exploration(request)
 
+        if request.context_override_chunks is not None:
+            workflow_result = self._build_override_workflow_result(
+                request=request,
+                analyzed_query=analyzed_query,
+            )
+            return self._answer_from_chunks(
+                request=request,
+                analyzed_query=analyzed_query,
+                analyzed_intent=analyzed_intent,
+                allow_generation=allow_generation,
+                workflow_result=workflow_result,
+            )
+
         return self._handle_retrieval(
             request,
             analyzed_query,
@@ -133,6 +152,23 @@ class QuestionAnsweringWorkflow:
         allow_generation: bool = False,
     ) -> QuestionAnsweringResult:
         workflow_result = self._retrieval_workflow.run(analyzed_query)
+        return self._answer_from_chunks(
+            request=request,
+            analyzed_query=analyzed_query,
+            analyzed_intent=analyzed_intent,
+            allow_generation=allow_generation,
+            workflow_result=workflow_result,
+        )
+
+    def _answer_from_chunks(
+        self,
+        *,
+        request: QuestionAnsweringRequest,
+        analyzed_query: RetrievalQuery,
+        analyzed_intent: str,
+        allow_generation: bool,
+        workflow_result: RetrievalWorkflowResult,
+    ) -> QuestionAnsweringResult:
 
         # Phase 4: context guardrails — filter, budget, quality
         approved_chunks, context_blocking = self._context_guardrail_chain.run(
@@ -261,9 +297,42 @@ class QuestionAnsweringWorkflow:
                 "enough_evidence": workflow_result.enough_evidence,
                 "prompt_version": generated.prompt_version,
                 "model_name": generated.model_name,
+                "retry_query": request.retry_query,
                 **generated.diagnostics,
                 **workflow_result.diagnostics,
             },
+        )
+
+    @staticmethod
+    def _build_override_workflow_result(
+        *,
+        request: QuestionAnsweringRequest,
+        analyzed_query: RetrievalQuery,
+    ) -> RetrievalWorkflowResult:
+        override_chunks = list(request.context_override_chunks or [])
+        citations = [
+            chunk.citation
+            for chunk in override_chunks
+            if isinstance(chunk.citation, Citation)
+        ]
+        retrieval_result = RetrievalResult(
+            result_id=new_id("rr"),
+            query=analyzed_query,
+            chunks=override_chunks,
+            citations=citations,
+            total_candidates=len(override_chunks),
+        )
+        diagnostics: dict[str, object] = {
+            "context_override_used": True,
+        }
+        if request.retry_query:
+            diagnostics["retry_query"] = request.retry_query
+        return RetrievalWorkflowResult(
+            retrieval_result=retrieval_result,
+            enough_evidence=retrieval_result.has_enough_evidence(1),
+            min_evidence_chunks=1,
+            context_chunks=override_chunks,
+            diagnostics=diagnostics,
         )
 
     @staticmethod

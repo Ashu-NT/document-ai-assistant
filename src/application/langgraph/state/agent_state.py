@@ -19,7 +19,22 @@ class AgentState(TypedDict):
     llm_planning_enabled: bool
     show_plan: bool
     show_raw_plan: bool
+    reflection_enabled: bool
+    show_reflection: bool
     top_k: int | None
+    reflection_attempts: int
+    retrieval_retry_count: int
+    reflection_result: dict[str, Any] | None
+    reflection_decision: str | None
+    reflection_score: float | None
+    answer_quality: dict[str, Any] | None
+    evidence_quality: dict[str, Any] | None
+    retry_query: str | None
+    initial_context_chunks: list[dict[str, Any]]
+    retry_context_chunks: list[dict[str, Any]]
+    merged_context_chunks: list[dict[str, Any]]
+    merged_chunk_ids: list[str]
+    reflection_trace: list[dict[str, Any]]
     tool_results: dict[str, Any]
     execution_plan: dict[str, Any] | None
     validated_plan: dict[str, Any] | None
@@ -61,6 +76,8 @@ def build_agent_state(
     llm_planning_enabled: bool = False,
     show_plan: bool = False,
     show_raw_plan: bool = False,
+    reflection_enabled: bool = False,
+    show_reflection: bool = False,
     top_k: int | None = None,
     conversation_id: str | None = None,
     session_id: str | None = None,
@@ -89,7 +106,22 @@ def build_agent_state(
         llm_planning_enabled=llm_planning_enabled,
         show_plan=show_plan,
         show_raw_plan=show_raw_plan,
+        reflection_enabled=reflection_enabled,
+        show_reflection=show_reflection,
         top_k=top_k,
+        reflection_attempts=0,
+        retrieval_retry_count=0,
+        reflection_result=None,
+        reflection_decision=None,
+        reflection_score=None,
+        answer_quality=None,
+        evidence_quality=None,
+        retry_query=None,
+        initial_context_chunks=[],
+        retry_context_chunks=[],
+        merged_context_chunks=[],
+        merged_chunk_ids=[],
+        reflection_trace=[],
         tool_results={},
         execution_plan=None,
         validated_plan=None,

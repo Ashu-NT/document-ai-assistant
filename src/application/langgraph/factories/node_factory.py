@@ -16,11 +16,20 @@ from src.application.langgraph.nodes import (
     FindDocumentNode,
     ListDocumentsNode,
     PlanSummaryNode,
+    ReflectAnswerNode,
     RetrievalTraceNode,
     RetrieveEvidenceNode,
     RouteRequestNode,
+    RetryRetrievalNode,
     RunQualityGateNode,
     SessionCommandNode,
+)
+from src.application.langgraph.reflection import (
+    ClarificationBuilder,
+    EvidenceMerger,
+    ReflectionService,
+    RetryQueryBuilder,
+    RetrievalRetryPolicy,
 )
 from src.application.langgraph.planning import (
     DeterministicPlanner,
@@ -46,6 +55,11 @@ class NodeFactory:
         plan_validator: PlanValidator | None = None,
         plan_policy: PlanPolicy | None = None,
         plan_repair: PlanRepair | None = None,
+        reflection_service: ReflectionService | None = None,
+        evidence_merger: EvidenceMerger | None = None,
+        retry_query_builder: RetryQueryBuilder | None = None,
+        clarification_builder: ClarificationBuilder | None = None,
+        retrieval_retry_policy: RetrievalRetryPolicy | None = None,
     ) -> None:
         self.planner = planner or DeterministicPlanner()
         self.plan_executor = plan_executor or PlanExecutor()
@@ -54,6 +68,13 @@ class NodeFactory:
         self.plan_validator = plan_validator or PlanValidator()
         self.plan_policy = plan_policy or PlanPolicy.default()
         self.plan_repair = plan_repair or PlanRepair()
+        self.reflection_service = reflection_service
+        self.evidence_merger = evidence_merger or EvidenceMerger()
+        self.retry_query_builder = retry_query_builder or RetryQueryBuilder()
+        self.clarification_builder = clarification_builder or ClarificationBuilder()
+        self.retrieval_retry_policy = (
+            retrieval_retry_policy or RetrievalRetryPolicy()
+        )
 
     def build_document_agent_nodes(
         self,
@@ -81,6 +102,17 @@ class NodeFactory:
             "explore_document": ExploreDocumentNode(tool_registry),
             "retrieve_evidence": RetrieveEvidenceNode(tool_registry),
             "answer_question": AnswerQuestionNode(tool_registry),
+            "reflect_answer": ReflectAnswerNode(
+                tool_registry,
+                reflection_service=self.reflection_service,
+                clarification_builder=self.clarification_builder,
+            ),
+            "retry_retrieval": RetryRetrievalNode(
+                tool_registry,
+                evidence_merger=self.evidence_merger,
+                retry_query_builder=self.retry_query_builder,
+                retry_policy=self.retrieval_retry_policy,
+            ),
             "run_quality_gate": RunQualityGateNode(tool_registry),
             "retrieval_trace": RetrievalTraceNode(tool_registry),
             "clarify_request": ClarifyRequestNode(),

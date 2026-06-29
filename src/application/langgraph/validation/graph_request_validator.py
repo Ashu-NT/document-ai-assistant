@@ -64,6 +64,8 @@ class GraphRequestValidator(Validator[dict[str, Any]]):
             "llm_planning_enabled",
             "show_plan",
             "show_raw_plan",
+            "reflection_enabled",
+            "show_reflection",
         ):
             raw_value = value.get(field_name, False)
             if not isinstance(raw_value, bool):

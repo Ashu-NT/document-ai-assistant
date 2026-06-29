@@ -59,6 +59,8 @@ class DocumentAgentGraph:
         llm_planning_enabled: bool = False,
         show_plan: bool = False,
         show_raw_plan: bool = False,
+        reflection_enabled: bool = False,
+        show_reflection: bool = False,
         top_k: int | None = None,
         conversation_id: str | None = None,
     ) -> GraphResult:
@@ -71,6 +73,8 @@ class DocumentAgentGraph:
             llm_planning_enabled=llm_planning_enabled,
             show_plan=show_plan,
             show_raw_plan=show_raw_plan,
+            reflection_enabled=reflection_enabled,
+            show_reflection=show_reflection,
             top_k=top_k,
             conversation_id=conversation_id,
             session_id=session_id,
@@ -229,7 +233,6 @@ class DocumentAgentGraph:
             "document_details",
             "explore_document",
             "retrieve_evidence",
-            "answer_question",
             "run_quality_gate",
             "retrieval_trace",
             "session_command",
@@ -245,7 +248,44 @@ class DocumentAgentGraph:
                 },
             )
 
-        graph.add_edge("clarify_request", "final_response")
+        graph.add_conditional_edges(
+            "answer_question",
+            self._after_answer_question_branch,
+            {
+                "reflect_answer": "reflect_answer",
+                "final_response": "final_response",
+                "clarify_request": "clarify_request",
+                "error_handler": "error_handler",
+            },
+        )
+        graph.add_conditional_edges(
+            "reflect_answer",
+            self._after_reflect_answer_branch,
+            {
+                "retry_retrieval": "retry_retrieval",
+                "clarify_request": "clarify_request",
+                "final_response": "final_response",
+                "error_handler": "error_handler",
+            },
+        )
+        graph.add_conditional_edges(
+            "retry_retrieval",
+            self._after_retry_retrieval_branch,
+            {
+                "reflect_answer": "reflect_answer",
+                "final_response": "final_response",
+                "error_handler": "error_handler",
+            },
+        )
+        graph.add_conditional_edges(
+            "clarify_request",
+            self._after_clarify_request_branch,
+            {
+                "answer_question": "answer_question",
+                "final_response": "final_response",
+                "error_handler": "error_handler",
+            },
+        )
         graph.add_edge("error_handler", "final_response")
         graph.add_edge("final_response", END)
         return graph.compile()
@@ -283,6 +323,7 @@ class DocumentAgentGraph:
             "plan_success": state.get("plan_success"),
             "planning_source": state.get("planning_source"),
             "unsafe_request_blocked": state.get("unsafe_request_blocked", False),
+            "reflection_enabled": state.get("reflection_enabled", False),
         }
         data = {
             "document_id": state.get("document_id"),
@@ -298,6 +339,17 @@ class DocumentAgentGraph:
             "answer_intent": answer_intent,
             "context_chunks": context_chunks,
             "citations": citations,
+            "reflection_result": state.get("reflection_result"),
+            "reflection_decision": state.get("reflection_decision"),
+            "reflection_score": state.get("reflection_score"),
+            "answer_quality": state.get("answer_quality"),
+            "evidence_quality": state.get("evidence_quality"),
+            "retry_query": state.get("retry_query"),
+            "reflection_trace": state.get("reflection_trace", []),
+            "initial_context_chunks": state.get("initial_context_chunks", []),
+            "retry_context_chunks": state.get("retry_context_chunks", []),
+            "merged_context_chunks": state.get("merged_context_chunks", []),
+            "merged_chunk_ids": state.get("merged_chunk_ids", []),
             "execution_plan": state.get("execution_plan"),
             "validated_plan": state.get("validated_plan"),
             "plan_steps": state.get("plan_steps", []),
@@ -327,6 +379,9 @@ class DocumentAgentGraph:
             diagnostics["blocked_terms"] = state.get("blocked_terms", [])
         if answer_intent is not None:
             diagnostics["answer_intent"] = answer_intent
+        if state.get("reflection_decision"):
+            diagnostics["reflection_decision"] = state.get("reflection_decision")
+            diagnostics["reflection_score"] = state.get("reflection_score")
         if state.get("needs_clarification") and state.get("error") is None:
             return GraphResult.ok(
                 response_text=state.get("response_text"),
@@ -378,14 +433,21 @@ class DocumentAgentGraph:
             "document_details",
             "explore_document",
             "retrieve_evidence",
-            "answer_question",
             "run_quality_gate",
             "retrieval_trace",
             "session_command",
             "plan_summary",
         }:
             return self._post_action_branch(state)
-        if current_node in {"clarify_request", "error_handler"}:
+        if current_node == "answer_question":
+            return self._after_answer_question_branch(state)
+        if current_node == "reflect_answer":
+            return self._after_reflect_answer_branch(state)
+        if current_node == "retry_retrieval":
+            return self._after_retry_retrieval_branch(state)
+        if current_node == "clarify_request":
+            return self._after_clarify_request_branch(state)
+        if current_node == "error_handler":
             return "final_response"
         if current_node == "final_response":
             return END
@@ -476,6 +538,51 @@ class DocumentAgentGraph:
             return "clarify_request"
         return "final_response"
 
+    @staticmethod
+    def _after_answer_question_branch(state: AgentState) -> str:
+        if state.get("error") is not None:
+            return "error_handler"
+        if state.get("needs_clarification"):
+            return "clarify_request"
+        if _should_run_reflection(state):
+            return "reflect_answer"
+        return "final_response"
+
+    @staticmethod
+    def _after_reflect_answer_branch(state: AgentState) -> str:
+        if state.get("error") is not None:
+            return "error_handler"
+        if state.get("needs_clarification"):
+            return "clarify_request"
+        decision = state.get("reflection_decision")
+        if decision == "RETRIEVE_AGAIN":
+            return "retry_retrieval"
+        if decision == "CLARIFY":
+            return "clarify_request"
+        return "final_response"
+
+    @staticmethod
+    def _after_retry_retrieval_branch(state: AgentState) -> str:
+        if state.get("error") is not None:
+            return "error_handler"
+        if state.get("needs_clarification"):
+            return "clarify_request"
+        if state.get("reflection_decision") == "FAIL":
+            return "final_response"
+        if _should_run_reflection(state):
+            return "reflect_answer"
+        return "final_response"
+
+    @staticmethod
+    def _after_clarify_request_branch(state: AgentState) -> str:
+        if state.get("error") is not None:
+            return "error_handler"
+        if state.get("needs_clarification"):
+            return "final_response"
+        if state.get("route") == RouteType.ANSWER_QUESTION.value and state.get("question"):
+            return "answer_question"
+        return "final_response"
+
 
 def _has_document_selector(state: AgentState) -> bool:
     return bool(state.get("document_id") or state.get("document_query"))
@@ -499,6 +606,16 @@ def _optional_document_branch_target(state: AgentState, target: str) -> str:
     if state.get("document_query"):
         return "find_document"
     return target
+
+
+def _should_run_reflection(state: AgentState) -> bool:
+    if not state.get("reflection_enabled", False):
+        return False
+    if not state.get("allow_answer_generation", False):
+        return False
+    if state.get("route") != RouteType.ANSWER_QUESTION.value:
+        return False
+    return int(state.get("reflection_attempts", 0)) <= 1
 
 
 def _extract_answer(

@@ -19,7 +19,9 @@ from src.application.langgraph.nodes.evaluation import (
 from src.application.langgraph.nodes.question_answering import (
     AnswerQuestionNode,
     ExploreDocumentNode,
+    ReflectAnswerNode,
     RetrieveEvidenceNode,
+    RetryRetrievalNode,
 )
 from src.application.langgraph.nodes.planning import (
     CreatePlanNode,
@@ -39,9 +41,11 @@ __all__ = [
     "FindDocumentNode",
     "ListDocumentsNode",
     "PlanSummaryNode",
+    "ReflectAnswerNode",
     "RetrievalTraceNode",
     "RetrieveEvidenceNode",
     "RouteRequestNode",
+    "RetryRetrievalNode",
     "SessionCommandNode",
     "RunQualityGateNode",
 ]
