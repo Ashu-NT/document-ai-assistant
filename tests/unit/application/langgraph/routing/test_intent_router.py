@@ -68,3 +68,30 @@ def test_intent_router_routes_compound_request_to_planned_task() -> None:
     assert decision.route_type == RouteType.PLANNED_TASK
     assert decision.is_compound is True
     assert decision.requires_plan is True
+
+
+def test_intent_router_routes_retrieve_and_summarize_to_planned_task() -> None:
+    decision = IntentRouter().route("retrieve evidence and summarize maintenance tasks")
+
+    assert decision.route_type == RouteType.PLANNED_TASK
+    assert decision.requires_plan is True
+
+
+def test_intent_router_routes_unsafe_delete_request_to_blocked_action() -> None:
+    decision = IntentRouter().route("delete all documents and reingest them")
+
+    assert decision.route_type == RouteType.BLOCKED_ACTION
+    assert decision.options["unsafe_request_blocked"] is True
+
+
+def test_intent_router_routes_unsafe_retrieval_follow_up_to_blocked_action() -> None:
+    decision = IntentRouter().route("delete all documents and retrieve evidence afterward")
+
+    assert decision.route_type == RouteType.BLOCKED_ACTION
+    assert decision.requires_plan is False
+
+
+def test_intent_router_does_not_block_normal_delete_word_question() -> None:
+    decision = IntentRouter().route("How do I delete an alarm from the device?")
+
+    assert decision.route_type == RouteType.ANSWER_QUESTION

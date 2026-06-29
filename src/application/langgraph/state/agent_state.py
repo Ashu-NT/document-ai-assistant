@@ -33,6 +33,9 @@ class AgentState(TypedDict):
     failed_plan_step: str | None
     response_text: str | None
     error: dict[str, Any] | None
+    unsafe_request_blocked: bool
+    blocked_reason: str | None
+    blocked_terms: list[str]
     needs_clarification: bool
     clarification_message: str | None
     pending_clarification: dict[str, Any] | None
@@ -100,6 +103,9 @@ def build_agent_state(
         failed_plan_step=None,
         response_text=None,
         error=None,
+        unsafe_request_blocked=False,
+        blocked_reason=None,
+        blocked_terms=[],
         needs_clarification=False,
         clarification_message=None,
         pending_clarification=pending_clarification,

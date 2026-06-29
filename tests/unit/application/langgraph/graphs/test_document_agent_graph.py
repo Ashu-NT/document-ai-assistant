@@ -157,6 +157,21 @@ def test_document_agent_graph_answer_question_path_works() -> None:
     assert result.data["answer_intent"] == "maintenance_summary"
 
 
+def test_document_agent_graph_blocks_unsafe_corpus_mutation_request() -> None:
+    answer_tool = FakeAnswerQuestionTool()
+    graph = DocumentAgentGraph(
+        ToolRegistry(answer_question_tool=answer_tool)
+    )
+
+    result = graph.run("delete all documents and reingest them")
+
+    assert result.success is True
+    assert result.route == RouteType.BLOCKED_ACTION.value
+    assert result.diagnostics["unsafe_request_blocked"] is True
+    assert answer_tool.requests == []
+    assert "mutate the document corpus" in (result.response_text or "").lower()
+
+
 def test_document_agent_graph_exploration_path_works() -> None:
     find_tool = FakeFindDocumentTool()
     explore_tool = FakeExploreDocumentTool()

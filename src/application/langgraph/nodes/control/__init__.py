@@ -1,3 +1,6 @@
+from src.application.langgraph.nodes.control.blocked_action_node import (
+    BlockedActionNode,
+)
 from src.application.langgraph.nodes.control.clarify_request_node import (
     ClarifyRequestNode,
 )
@@ -12,6 +15,7 @@ from src.application.langgraph.nodes.control.session_command_node import (
 )
 
 __all__ = [
+    "BlockedActionNode",
     "ClarifyRequestNode",
     "ErrorHandlerNode",
     "FinalResponseNode",

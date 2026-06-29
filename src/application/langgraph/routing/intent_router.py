@@ -4,6 +4,9 @@ import re
 
 from src.application.langgraph.routing.route_decision import RouteDecision
 from src.application.langgraph.routing.route_type import RouteType
+from src.application.langgraph.routing.unsafe_action_detector import (
+    UnsafeActionDetector,
+)
 
 _WHITESPACE_RE = re.compile(r"\s+")
 _DIGIT_ONLY_RE = re.compile(r"^\d+$")
@@ -87,6 +90,12 @@ _PLANNED_FOLLOW_UP_MARKERS = (
 
 
 class IntentRouter:
+    def __init__(
+        self,
+        unsafe_action_detector: UnsafeActionDetector | None = None,
+    ) -> None:
+        self.unsafe_action_detector = unsafe_action_detector or UnsafeActionDetector()
+
     def route(
         self,
         user_input: str,
@@ -148,17 +157,22 @@ class IntentRouter:
                 reason="Matched explicit list-documents command.",
             )
 
-        if _looks_like_planned_task(normalized_input):
+        unsafe_action = self.unsafe_action_detector.detect(normalized_input)
+        if unsafe_action.is_unsafe:
             return RouteDecision(
-                route_type=RouteType.PLANNED_TASK,
-                confidence=0.9,
-                reason="Detected a deterministic compound request that should use the planning path.",
+                route_type=RouteType.BLOCKED_ACTION,
+                confidence=1.0,
+                reason=unsafe_action.reason
+                or "Request attempts unsafe corpus mutation.",
                 extracted_document_query=extracted_document_query,
                 extracted_question=user_input.strip(),
-                uses_current_document=_references_current_document(normalized_input),
-                is_compound=True,
-                requires_plan=True,
-                plan_hint=user_input.strip(),
+                options={
+                    "unsafe_request_blocked": True,
+                    "blocked_reason": unsafe_action.reason
+                    or "Request attempts unsafe corpus mutation.",
+                    "blocked_terms": list(unsafe_action.matched_terms),
+                    "blocked_severity": unsafe_action.severity,
+                },
             )
 
         if normalized_input in {
@@ -235,6 +249,12 @@ class IntentRouter:
             )
 
         if normalized_input.startswith(_EXPLORATION_PREFIXES):
+            if _looks_like_planned_task(normalized_input):
+                return _planned_task_decision(
+                    user_input=user_input,
+                    extracted_document_query=extracted_document_query,
+                    normalized_input=normalized_input,
+                )
             extracted_document_query = _strip_prefix(
                 normalized_input,
                 _EXPLORATION_PREFIXES,
@@ -248,6 +268,12 @@ class IntentRouter:
             )
 
         if normalized_input.startswith(_RETRIEVAL_PREFIXES):
+            if _looks_like_planned_task(normalized_input):
+                return _planned_task_decision(
+                    user_input=user_input,
+                    extracted_document_query=extracted_document_query,
+                    normalized_input=normalized_input,
+                )
             return RouteDecision(
                 route_type=RouteType.RETRIEVE_EVIDENCE,
                 confidence=0.93,
@@ -283,6 +309,13 @@ class IntentRouter:
                     normalized_input,
                     _TRACE_PREFIXES,
                 ),
+            )
+
+        if _looks_like_planned_task(normalized_input):
+            return _planned_task_decision(
+                user_input=user_input,
+                extracted_document_query=extracted_document_query,
+                normalized_input=normalized_input,
             )
 
         if not normalized_input and not document_id:
@@ -344,3 +377,22 @@ def _looks_like_planned_task(value: str) -> bool:
     ):
         return True
     return False
+
+
+def _planned_task_decision(
+    *,
+    user_input: str,
+    extracted_document_query: str | None,
+    normalized_input: str,
+) -> RouteDecision:
+    return RouteDecision(
+        route_type=RouteType.PLANNED_TASK,
+        confidence=0.9,
+        reason="Detected a deterministic compound request that should use the planning path.",
+        extracted_document_query=extracted_document_query,
+        extracted_question=user_input.strip(),
+        uses_current_document=_references_current_document(normalized_input),
+        is_compound=True,
+        requires_plan=True,
+        plan_hint=user_input.strip(),
+    )
