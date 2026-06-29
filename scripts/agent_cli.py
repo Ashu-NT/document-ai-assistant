@@ -92,6 +92,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Include expanded retrieval context in downstream QA/retrieval tools.",
     )
     parser.add_argument(
+        "--show-plan",
+        action="store_true",
+        help="Display the deterministic multi-step execution plan when one is used.",
+    )
+    parser.add_argument(
         "--json",
         action="store_true",
         help="Emit the graph result as JSON.",
@@ -369,6 +374,20 @@ def print_context_chunks(
         print()
 
 
+def print_execution_plan(
+    execution_plan: dict[str, Any] | None,
+    plan_steps: list[dict[str, Any]],
+) -> None:
+    print("\nPlan")
+    print("----")
+    if not isinstance(execution_plan, dict) or not plan_steps:
+        print("No multi-step plan was used.")
+        return
+    for index, step in enumerate(plan_steps, start=1):
+        description = step.get("description") or step.get("tool_name") or f"Step {index}"
+        print(f"{index}. {description}")
+
+
 def build_json_output(
     result,
     *,
@@ -388,6 +407,11 @@ def build_json_output(
         "should_exit": data.get("should_exit", False),
         "context_chunks": data.get("context_chunks", []),
         "citations": data.get("citations", []),
+        "execution_plan": data.get("execution_plan"),
+        "plan_steps": data.get("plan_steps", []),
+        "plan_results": data.get("plan_results", {}),
+        "plan_success": data.get("plan_success"),
+        "failed_plan_step": data.get("failed_plan_step"),
         "diagnostics": result.diagnostics or {},
     }
     if include_trace:
@@ -398,6 +422,7 @@ def build_json_output(
 def print_graph_result(
     result,
     *,
+    show_plan: bool = False,
     show_context: bool,
     show_trace: bool,
 ) -> None:
@@ -430,6 +455,7 @@ def run_graph_request(
     session_id: str | None,
     allow_answer_generation: bool,
     include_context: bool,
+    show_plan: bool = False,
     top_k: int | None,
 ):
     return runtime.graph.run(
@@ -439,6 +465,7 @@ def run_graph_request(
         session_id=session_id,
         allow_answer_generation=allow_answer_generation,
         include_context=include_context,
+        show_plan=show_plan,
         top_k=top_k,
     )
 
@@ -452,6 +479,7 @@ def run_interactive_loop(
     document_query: str | None,
     allow_answer_generation: bool,
     include_context: bool,
+    show_plan: bool = False,
     top_k: int | None,
     emit_json: bool,
     show_trace: bool,
@@ -486,6 +514,7 @@ def run_interactive_loop(
             session_id=session_id,
             allow_answer_generation=allow_answer_generation,
             include_context=include_context,
+            show_plan=show_plan,
             top_k=top_k,
         )
 
@@ -499,6 +528,7 @@ def run_interactive_loop(
         else:
             print_graph_result(
                 result,
+                show_plan=show_plan,
                 show_context=include_context,
                 show_trace=show_trace,
             )
@@ -564,6 +594,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 document_query=args.document,
                 allow_answer_generation=effective_generation,
                 include_context=args.show_context,
+                show_plan=args.show_plan,
                 top_k=args.top_k,
                 emit_json=args.json,
                 show_trace=args.trace,
@@ -578,6 +609,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             session_id=effective_session_id,
             allow_answer_generation=effective_generation,
             include_context=args.show_context,
+            show_plan=args.show_plan,
             top_k=args.top_k,
         )
 
@@ -594,6 +626,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             print_graph_result(
                 result,
+                show_plan=args.show_plan,
                 show_context=args.show_context,
                 show_trace=args.trace,
             )

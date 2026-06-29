@@ -9,6 +9,7 @@ def test_graph_request_validator_rejects_empty_input() -> None:
             "top_k": None,
             "allow_answer_generation": False,
             "include_context": False,
+            "show_plan": False,
         }
     )
 
@@ -24,6 +25,7 @@ def test_graph_request_validator_rejects_unsafe_session_id() -> None:
             "top_k": None,
             "allow_answer_generation": False,
             "include_context": False,
+            "show_plan": False,
             "session_id": "../bad",
         }
     )

@@ -3,23 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 from src.application.langgraph.common import GraphMetadata, GraphResult, serialize_graph_value
+from src.application.langgraph.factories.node_factory import NodeFactory
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.memory import ConversationMemory
-from src.application.langgraph.nodes import (
-    AnswerQuestionNode,
-    ClarifyRequestNode,
-    DocumentDetailsNode,
-    ErrorHandlerNode,
-    ExploreDocumentNode,
-    FinalResponseNode,
-    FindDocumentNode,
-    ListDocumentsNode,
-    RetrievalTraceNode,
-    RetrieveEvidenceNode,
-    RouteRequestNode,
-    SessionCommandNode,
-    RunQualityGateNode,
-)
 from src.application.langgraph.routing import IntentRouter, RouteType
 from src.application.langgraph.state import AgentState, build_agent_state
 from src.application.langgraph.validation import (
@@ -45,17 +31,22 @@ class DocumentAgentGraph:
         state_validator: GraphStateValidator | None = None,
         intent_router: IntentRouter | None = None,
         metadata: GraphMetadata | None = None,
+        nodes: dict[str, Any] | None = None,
     ) -> None:
         self.tool_registry = tool_registry
         self.memory = memory
         self.request_validator = request_validator or GraphRequestValidator()
         self.state_validator = state_validator or GraphStateValidator()
-        self.intent_router = intent_router or IntentRouter()
+        self.intent_router = intent_router or self.default_intent_router()
         self.metadata = metadata or GraphMetadata(
             supports_memory=memory is not None,
         )
-        self._nodes = self._build_nodes()
+        self._nodes = nodes or self._build_nodes()
         self._compiled_graph = self._compile_graph()
+
+    @staticmethod
+    def default_intent_router() -> IntentRouter:
+        return IntentRouter()
 
     def run(
         self,
@@ -65,6 +56,7 @@ class DocumentAgentGraph:
         session_id: str | None = None,
         allow_answer_generation: bool = False,
         include_context: bool = False,
+        show_plan: bool = False,
         top_k: int | None = None,
         conversation_id: str | None = None,
     ) -> GraphResult:
@@ -74,6 +66,7 @@ class DocumentAgentGraph:
             document_query=document_query,
             allow_answer_generation=allow_answer_generation,
             include_context=include_context,
+            show_plan=show_plan,
             top_k=top_k,
             conversation_id=conversation_id,
             session_id=session_id,
@@ -158,21 +151,12 @@ class DocumentAgentGraph:
         return self._build_result(final_state)
 
     def _build_nodes(self) -> dict[str, Any]:
-        return {
-            "route_request": RouteRequestNode(self.intent_router),
-            "list_documents": ListDocumentsNode(self.tool_registry),
-            "find_document": FindDocumentNode(self.tool_registry),
-            "document_details": DocumentDetailsNode(self.tool_registry),
-            "explore_document": ExploreDocumentNode(self.tool_registry),
-            "retrieve_evidence": RetrieveEvidenceNode(self.tool_registry),
-            "answer_question": AnswerQuestionNode(self.tool_registry),
-            "run_quality_gate": RunQualityGateNode(self.tool_registry),
-            "retrieval_trace": RetrievalTraceNode(self.tool_registry),
-            "clarify_request": ClarifyRequestNode(),
-            "error_handler": ErrorHandlerNode(),
-            "session_command": SessionCommandNode(),
-            "final_response": FinalResponseNode(memory=self.memory),
-        }
+        node_factory = NodeFactory()
+        return node_factory.build_document_agent_nodes(
+            tool_registry=self.tool_registry,
+            intent_router=self.intent_router,
+            memory=self.memory,
+        )
 
     def _compile_graph(self):
         if StateGraph is None:
@@ -187,6 +171,7 @@ class DocumentAgentGraph:
             "route_request",
             self._entry_branch,
             {
+                "create_plan": "create_plan",
                 "list_documents": "list_documents",
                 "find_document": "find_document",
                 "document_details": "document_details",
@@ -197,6 +182,17 @@ class DocumentAgentGraph:
                 "retrieval_trace": "retrieval_trace",
                 "session_command": "session_command",
                 "clarify_request": "clarify_request",
+            },
+        )
+        graph.add_conditional_edges(
+            "create_plan",
+            self._after_create_plan_branch,
+            {
+                "execute_plan": "execute_plan",
+                "find_document": "find_document",
+                "answer_question": "answer_question",
+                "clarify_request": "clarify_request",
+                "error_handler": "error_handler",
             },
         )
         graph.add_conditional_edges(
@@ -213,6 +209,15 @@ class DocumentAgentGraph:
                 "retrieval_trace": "retrieval_trace",
             },
         )
+        graph.add_conditional_edges(
+            "execute_plan",
+            self._after_execute_plan_branch,
+            {
+                "plan_summary": "plan_summary",
+                "clarify_request": "clarify_request",
+                "error_handler": "error_handler",
+            },
+        )
         for action_node in (
             "list_documents",
             "document_details",
@@ -222,6 +227,7 @@ class DocumentAgentGraph:
             "run_quality_gate",
             "retrieval_trace",
             "session_command",
+            "plan_summary",
         ):
             graph.add_conditional_edges(
                 action_node,
@@ -267,6 +273,8 @@ class DocumentAgentGraph:
         diagnostics = {
             "needs_clarification": state.get("needs_clarification", False),
             "configured_tools": sorted(tool_results.keys()),
+            "plan_used": bool(state.get("execution_plan")),
+            "plan_success": state.get("plan_success"),
         }
         data = {
             "document_id": state.get("document_id"),
@@ -282,8 +290,17 @@ class DocumentAgentGraph:
             "answer_intent": answer_intent,
             "context_chunks": context_chunks,
             "citations": citations,
+            "execution_plan": state.get("execution_plan"),
+            "plan_steps": state.get("plan_steps", []),
+            "plan_results": state.get("plan_results", {}),
+            "plan_success": state.get("plan_success"),
+            "failed_plan_step": state.get("failed_plan_step"),
             "tool_results": tool_results,
         }
+        execution_plan = state.get("execution_plan")
+        if isinstance(execution_plan, dict):
+            diagnostics["plan_id"] = execution_plan.get("plan_id")
+            diagnostics["plan_goal"] = execution_plan.get("goal")
         if answer_intent is not None:
             diagnostics["answer_intent"] = answer_intent
         if state.get("needs_clarification") and state.get("error") is None:
@@ -325,8 +342,12 @@ class DocumentAgentGraph:
     def _next_node_name(self, current_node: str, state: AgentState) -> str:
         if current_node == "route_request":
             return self._entry_branch(state)
+        if current_node == "create_plan":
+            return self._after_create_plan_branch(state)
         if current_node == "find_document":
             return self._after_find_document_branch(state)
+        if current_node == "execute_plan":
+            return self._after_execute_plan_branch(state)
         if current_node in {
             "list_documents",
             "document_details",
@@ -336,6 +357,7 @@ class DocumentAgentGraph:
             "run_quality_gate",
             "retrieval_trace",
             "session_command",
+            "plan_summary",
         }:
             return self._post_action_branch(state)
         if current_node in {"clarify_request", "error_handler"}:
@@ -362,6 +384,8 @@ class DocumentAgentGraph:
             return "clarify_request"
         if route == RouteType.FIND_DOCUMENT.value:
             return "find_document" if _has_document_selector(state) else "clarify_request"
+        if route == RouteType.PLANNED_TASK.value:
+            return "create_plan"
         if route == RouteType.DOCUMENT_DETAILS.value:
             return _document_branch_target(state, "document_details")
         if route == RouteType.DOCUMENT_EXPLORATION.value:
@@ -400,6 +424,24 @@ class DocumentAgentGraph:
         return "final_response"
 
     @staticmethod
+    def _after_create_plan_branch(state: AgentState) -> str:
+        if state.get("error") is not None:
+            return "error_handler"
+        if state.get("needs_clarification"):
+            return "clarify_request"
+        if state.get("execution_plan"):
+            return "execute_plan"
+        return _optional_document_branch_target(state, "answer_question")
+
+    @staticmethod
+    def _after_execute_plan_branch(state: AgentState) -> str:
+        if state.get("error") is not None:
+            return "error_handler"
+        if state.get("needs_clarification"):
+            return "clarify_request"
+        return "plan_summary"
+
+    @staticmethod
     def _post_action_branch(state: AgentState) -> str:
         if state.get("error") is not None:
             return "error_handler"
@@ -436,6 +478,13 @@ def _extract_answer(
     tool_results: dict[str, Any],
     response_text: str | None,
 ) -> str | None:
+    format_combined_payload = tool_results.get("format_combined_answer")
+    if (
+        response_text
+        and isinstance(format_combined_payload, dict)
+        and format_combined_payload.get("success", False)
+    ):
+        return response_text
     answer_question_payload = _tool_payload(tool_results, "answer_question")
     if isinstance(answer_question_payload, dict):
         return (

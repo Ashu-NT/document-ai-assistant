@@ -16,5 +16,8 @@ class RouteDecision:
     requires_document: bool = False
     uses_current_document: bool = False
     is_session_command: bool = False
+    is_compound: bool = False
+    requires_plan: bool = False
+    plan_hint: str | None = None
     clarification_candidate_index: int | None = None
     options: dict[str, Any] = field(default_factory=dict)

@@ -60,3 +60,11 @@ def test_intent_router_marks_explore_it_as_current_document_usage() -> None:
 
     assert decision.route_type == RouteType.DOCUMENT_EXPLORATION
     assert decision.uses_current_document is True
+
+
+def test_intent_router_routes_compound_request_to_planned_task() -> None:
+    decision = IntentRouter().route("compare specifications and maintenance tasks")
+
+    assert decision.route_type == RouteType.PLANNED_TASK
+    assert decision.is_compound is True
+    assert decision.requires_plan is True

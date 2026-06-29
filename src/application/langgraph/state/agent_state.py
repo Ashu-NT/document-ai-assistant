@@ -16,8 +16,14 @@ class AgentState(TypedDict):
     question: str | None
     allow_answer_generation: bool
     include_context: bool
+    show_plan: bool
     top_k: int | None
     tool_results: dict[str, Any]
+    execution_plan: dict[str, Any] | None
+    plan_steps: list[dict[str, Any]]
+    plan_results: dict[str, Any]
+    plan_success: bool | None
+    failed_plan_step: str | None
     response_text: str | None
     error: dict[str, Any] | None
     needs_clarification: bool
@@ -42,6 +48,7 @@ def build_agent_state(
     document_query: str | None = None,
     allow_answer_generation: bool = False,
     include_context: bool = False,
+    show_plan: bool = False,
     top_k: int | None = None,
     conversation_id: str | None = None,
     session_id: str | None = None,
@@ -67,8 +74,14 @@ def build_agent_state(
         question=None,
         allow_answer_generation=allow_answer_generation,
         include_context=include_context,
+        show_plan=show_plan,
         top_k=top_k,
         tool_results={},
+        execution_plan=None,
+        plan_steps=[],
+        plan_results={},
+        plan_success=None,
+        failed_plan_step=None,
         response_text=None,
         error=None,
         needs_clarification=False,

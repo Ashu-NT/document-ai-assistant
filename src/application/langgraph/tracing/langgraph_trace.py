@@ -13,6 +13,11 @@ class LangGraphTrace:
     route: str | None = None
     success: bool = True
     tool_name: str | None = None
+    plan_id: str | None = None
+    plan_goal: str | None = None
+    step_id: str | None = None
+    selected_document_id: str | None = None
+    fallback_reason: str | None = None
     error_code: str | None = None
     diagnostics: dict[str, Any] = field(default_factory=dict)
 
@@ -25,6 +30,11 @@ class LangGraphTrace:
             "route": self.route,
             "success": self.success,
             "tool_name": self.tool_name,
+            "plan_id": self.plan_id,
+            "plan_goal": self.plan_goal,
+            "step_id": self.step_id,
+            "selected_document_id": self.selected_document_id,
+            "fallback_reason": self.fallback_reason,
             "error_code": self.error_code,
             "diagnostics": dict(self.diagnostics),
         }

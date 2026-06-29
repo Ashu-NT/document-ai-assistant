@@ -95,6 +95,20 @@ class FakeAnswerQuestionTool:
         )
 
 
+class FakeRetrieveChunksTool:
+    def __init__(self) -> None:
+        self.requests = []
+
+    def run(self, request):
+        self.requests.append(request)
+        return ToolResult.ok(
+            data={
+                "chunks": [{"chunk_id": "chunk-1"}],
+                "context_chunks": [{"chunk_id": "chunk-1"}],
+            }
+        )
+
+
 def _memory_backed_graph(*, registry: ToolRegistry) -> DocumentAgentGraph:
     return DocumentAgentGraph(
         registry,
@@ -260,3 +274,76 @@ def test_document_agent_graph_explicit_document_id_overrides_selected_document()
     )
 
     assert answer_tool.requests[-1].document_id == "doc-explicit"
+
+
+def test_document_agent_graph_executes_planned_task_with_selected_document() -> None:
+    find_tool = FakeFindDocumentTool()
+    answer_tool = FakeAnswerQuestionTool()
+    graph = _memory_backed_graph(
+        registry=ToolRegistry(
+            find_document_tool=find_tool,
+            answer_question_tool=answer_tool,
+        )
+    )
+
+    graph.run("open FWC12", session_id="demo")
+    result = graph.run(
+        "compare specifications and maintenance tasks",
+        session_id="demo",
+        show_plan=True,
+    )
+
+    assert result.success is True
+    assert result.route == "planned_task"
+    assert "Plan" in (result.response_text or "")
+    assert len(answer_tool.requests) == 2
+    assert answer_tool.requests[-1].document_id == "doc-42"
+    assert result.data["plan_success"] is True
+
+
+def test_document_agent_graph_planned_task_requests_document_clarification_when_missing() -> None:
+    graph = DocumentAgentGraph(ToolRegistry(answer_question_tool=FakeAnswerQuestionTool()))
+
+    result = graph.run("compare specifications and maintenance tasks")
+
+    assert result.success is True
+    assert result.route == "planned_task"
+    assert result.data["pending_clarification"] is None
+    assert "needs a document" in (result.response_text or "").lower()
+
+
+def test_document_agent_graph_planning_falls_back_safely_when_planner_returns_none() -> None:
+    from src.application.langgraph.factories import NodeFactory
+    from src.application.langgraph.routing import RouteDecision, RouteType
+
+    class FakePlanner:
+        def create_plan(self, state):
+            return None
+
+    class FakePlannedIntentRouter:
+        def route(self, user_input, *, document_id=None, document_query=None):
+            return RouteDecision(
+                route_type=RouteType.PLANNED_TASK,
+                confidence=0.9,
+                reason="Forced planned route.",
+                extracted_question=user_input,
+                is_compound=True,
+                requires_plan=True,
+            )
+
+    router = FakePlannedIntentRouter()
+    nodes = NodeFactory(planner=FakePlanner()).build_document_agent_nodes(
+        tool_registry=ToolRegistry(answer_question_tool=FakeAnswerQuestionTool()),
+        intent_router=router,
+        memory=None,
+    )
+    graph = DocumentAgentGraph(
+        ToolRegistry(answer_question_tool=FakeAnswerQuestionTool()),
+        intent_router=router,
+        nodes=nodes,
+    )
+
+    result = graph.run("compare unsupported things")
+
+    assert result.success is True
+    assert result.route == "answer_question"

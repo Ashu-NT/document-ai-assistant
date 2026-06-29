@@ -58,8 +58,8 @@ class GraphRequestValidator(Validator[dict[str, Any]]):
                     "langgraph.session_id.invalid_value",
                 )
 
-        for field_name in ("allow_answer_generation", "include_context"):
-            raw_value = value.get(field_name)
+        for field_name in ("allow_answer_generation", "include_context", "show_plan"):
+            raw_value = value.get(field_name, False)
             if not isinstance(raw_value, bool):
                 result.add_issue(
                     field_name,
