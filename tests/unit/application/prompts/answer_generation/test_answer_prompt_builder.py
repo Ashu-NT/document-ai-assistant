@@ -59,6 +59,36 @@ def test_answer_prompt_builder_produces_grounding_instructions() -> None:
     assert "Question: When should I replace the hydraulic filter?" in prompt
     assert "Answer format policy:" in prompt
     assert "Organized context:" in prompt
+    assert "Maintenance Task" in prompt
+    assert "Interval/Frequency" in prompt
+
+
+def test_maintenance_prompt_includes_not_specified_for_missing_intervals() -> None:
+    builder = AnswerPromptBuilder()
+    chunk = _make_chunk(
+        content="Inspect the feed water pressure gauge.",
+        section_path=["Maintenance", "Checklist"],
+    )
+    structured_context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+        chunks=[chunk],
+    )
+    request = AnswerGenerationRequest(
+        question="What are maintenance tasks?",
+        context_chunks=[chunk],
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+        structured_context=structured_context,
+        format_policy=AnswerFormatPolicy.resolve(
+            intent=AnswerIntent.MAINTENANCE_SUMMARY,
+            structured_context=structured_context,
+        ),
+    )
+
+    prompt = builder.build(request)
+
+    assert "Maintenance Task: Inspect the feed water pressure gauge" in prompt
+    assert "Interval/Frequency: Not specified" in prompt
+    assert "Component: feed water pressure gauge" in prompt
 
 
 def test_answer_prompt_builder_includes_provided_sources() -> None:

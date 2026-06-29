@@ -8,6 +8,7 @@ from src.application.services.answer_generation.intent.answer_intent import (
 )
 from src.application.workflows.question_answering.answer_context.structured_answer_context import (
     AnswerKeyValue,
+    AnswerMaintenanceEntry,
     AnswerSource,
 )
 
@@ -45,7 +46,68 @@ _INLINE_PATTERN = re.compile(
     r")\b\s*(?:is|=)?\s*(?P<value>.+)$",
     re.IGNORECASE,
 )
-_UNIT_PATTERN = re.compile(r"\b(bar|mm|cm|m|kw|w|v|a|hz|dn|pcs|pc|°c|c)\b", re.IGNORECASE)
+_UNIT_PATTERN = re.compile(r"\b(bar|mm|cm|m|kw|w|v|a|hz|dn|pcs|pc|c)\b", re.IGNORECASE)
+_BULLET_PREFIX_PATTERN = re.compile(r"^\s*(?:[-*•]\s+|\d+[\).\s]+)")
+_HEADER_SEPARATOR_PATTERN = re.compile(
+    r"^\|?\s*:?-{2,}:?\s*(?:\|\s*:?-{2,}:?\s*)+\|?$"
+)
+_MAINTENANCE_INTERVAL_PATTERN = re.compile(
+    r"\b("
+    r"every\s+\d+\s+(?:operating\s+)?hours?"
+    r"|every\s+\d+\s+(?:day|days|week|weeks|month|months|year|years)"
+    r"|daily|weekly|monthly|quarterly|annually|yearly"
+    r"|every\s+shift|before\s+each\s+\w+|after\s+each\s+\w+|at\s+each\s+\w+"
+    r"|when\s+necessary|as\s+needed|if\s+necessary"
+    r")\b",
+    re.IGNORECASE,
+)
+_MAINTENANCE_ACTION_PATTERN = re.compile(
+    r"\b("
+    r"inspect|check|replace|lubricate|clean|test|drain|tighten|calibrate|"
+    r"change|grease|service|flush|verify|examine|adjust|renew"
+    r")\b",
+    re.IGNORECASE,
+)
+_MAINTENANCE_LINE_HINTS = (
+    "maintenance task",
+    "maintenance tasks",
+    "maintenance interval",
+    "maintenance intervals",
+    "maintenance schedule",
+    "preventive maintenance",
+    "service interval",
+    "service schedule",
+    "inspection schedule",
+    "routine maintenance",
+    "maintenance checklist",
+)
+_MAINTENANCE_COMPONENT_PATTERN = re.compile(
+    r"^(?:inspect|check|replace|lubricate|clean|test|drain|tighten|calibrate|"
+    r"change|grease|service|flush|verify|examine|adjust|renew)\s+"
+    r"(?:(?:the|a|an)\s+)?(?P<component>[^,.;:]+)",
+    re.IGNORECASE,
+)
+_TABLE_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
+    "task": (
+        "task",
+        "maintenance task",
+        "maintenance item",
+        "activity",
+        "action",
+        "operation",
+    ),
+    "interval": (
+        "interval",
+        "interval/frequency",
+        "frequency",
+        "frequency/interval",
+        "period",
+        "schedule",
+    ),
+    "component": ("component", "equipment", "part", "item", "location"),
+    "notes": ("notes", "remark", "remarks", "comment", "comments", "details"),
+}
+_NOT_SPECIFIED = "Not specified"
 _SUPPORTED_INTENTS = {
     AnswerIntent.SPECIFICATION_SUMMARY,
     AnswerIntent.CERTIFICATION_SUMMARY,
@@ -89,6 +151,44 @@ class KeyValueExtractor:
                 )
         return key_values
 
+    def extract_maintenance_entries(
+        self,
+        sources: Sequence[AnswerSource],
+        *,
+        answer_intent: AnswerIntent,
+    ) -> list[AnswerMaintenanceEntry]:
+        if answer_intent != AnswerIntent.MAINTENANCE_SUMMARY:
+            return []
+
+        entries: list[AnswerMaintenanceEntry] = []
+        seen: set[tuple[int, str, str, str]] = set()
+        for source in sources:
+            for task, interval, component, notes in self._maintenance_candidates(
+                source.content
+            ):
+                fingerprint = (
+                    source.source_number,
+                    task.lower(),
+                    interval.lower(),
+                    (component or "").lower(),
+                )
+                if fingerprint in seen:
+                    continue
+                seen.add(fingerprint)
+                entries.append(
+                    AnswerMaintenanceEntry(
+                        task=task,
+                        interval=interval,
+                        component=component,
+                        notes=notes,
+                        source_number=source.source_number,
+                        page_start=source.page_start,
+                        page_end=source.page_end,
+                        confidence=0.88,
+                    )
+                )
+        return entries
+
     def _candidate_pairs(self, content: str) -> list[tuple[str, str]]:
         pairs: list[tuple[str, str]] = []
         for line in content.splitlines():
@@ -116,6 +216,198 @@ class KeyValueExtractor:
             if inline_match is not None:
                 pairs.append((inline_match.group("key"), inline_match.group("value")))
         return pairs
+
+    def _maintenance_candidates(
+        self,
+        content: str,
+    ) -> list[tuple[str, str, str | None, str | None]]:
+        candidates: list[tuple[str, str, str | None, str | None]] = []
+        table_header: list[str] | None = None
+        for line in content.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                table_header = None
+                continue
+            if _HEADER_SEPARATOR_PATTERN.match(stripped):
+                continue
+            if "|" in stripped:
+                cells = self._table_cells(stripped)
+                if len(cells) >= 2:
+                    header = self._table_header(cells)
+                    if header is not None:
+                        table_header = header
+                        continue
+                    table_candidate = self._maintenance_candidate_from_table_row(
+                        cells,
+                        table_header=table_header,
+                    )
+                    if table_candidate is not None:
+                        candidates.append(table_candidate)
+                        continue
+
+            line_candidate = self._maintenance_candidate_from_line(stripped)
+            if line_candidate is not None:
+                candidates.append(line_candidate)
+        return candidates
+
+    @staticmethod
+    def _table_cells(line: str) -> list[str]:
+        if line.startswith("|") and line.endswith("|"):
+            line = line[1:-1]
+        return [cell.strip() for cell in line.split("|")]
+
+    def _table_header(self, cells: Sequence[str]) -> list[str] | None:
+        normalized = [self._normalize_table_header(cell) for cell in cells]
+        if any(value is None for value in normalized):
+            return None
+        if "task" not in normalized:
+            return None
+        return [value for value in normalized if value is not None]
+
+    @staticmethod
+    def _normalize_table_header(cell: str) -> str | None:
+        normalized = " ".join(cell.lower().split())
+        for canonical, aliases in _TABLE_HEADER_ALIASES.items():
+            if normalized == canonical or normalized in aliases:
+                return canonical
+        return None
+
+    def _maintenance_candidate_from_table_row(
+        self,
+        cells: Sequence[str],
+        *,
+        table_header: Sequence[str] | None,
+    ) -> tuple[str, str, str | None, str | None] | None:
+        if not cells:
+            return None
+        if table_header is not None and len(table_header) == len(cells):
+            mapped = {
+                table_header[index]: cells[index].strip()
+                for index in range(len(cells))
+            }
+            task = mapped.get("task", "").strip()
+            if not task or not self._looks_like_maintenance_task(task):
+                return None
+            interval = self._clean_interval(mapped.get("interval"))
+            component = self._clean_optional_text(mapped.get("component"))
+            notes = self._clean_optional_text(mapped.get("notes"))
+            if component is None:
+                component = self._extract_component(task)
+            return (task, interval, component, notes)
+
+        task_cell = next(
+            (cell.strip() for cell in cells if self._looks_like_maintenance_task(cell)),
+            None,
+        )
+        if task_cell is None:
+            return None
+        interval_cell = next(
+            (cell.strip() for cell in cells if _MAINTENANCE_INTERVAL_PATTERN.search(cell)),
+            None,
+        )
+        component = self._extract_component(task_cell)
+        notes_candidates = [
+            cell.strip()
+            for cell in cells
+            if cell.strip() and cell.strip() not in {task_cell, interval_cell}
+        ]
+        notes = "; ".join(notes_candidates) if notes_candidates else None
+        return (task_cell, self._clean_interval(interval_cell), component, notes)
+
+    def _maintenance_candidate_from_line(
+        self,
+        line: str,
+    ) -> tuple[str, str, str | None, str | None] | None:
+        cleaned = _BULLET_PREFIX_PATTERN.sub("", line).strip()
+        if not cleaned:
+            return None
+        lowered = cleaned.lower()
+        if not self._looks_like_maintenance_line(lowered):
+            return None
+
+        interval_match = _MAINTENANCE_INTERVAL_PATTERN.search(cleaned)
+        interval = self._clean_interval(interval_match.group(0) if interval_match else None)
+        if interval_match is not None and interval_match.start() == 0:
+            task_text = cleaned[interval_match.end() :].lstrip(" :-,")
+            notes = None
+        else:
+            task_text, notes = self._split_task_and_notes(cleaned, interval_match)
+        task = self._clean_task(task_text)
+        if not task or not self._looks_like_maintenance_task(task):
+            return None
+
+        component = self._extract_component(task)
+        notes = self._clean_optional_text(notes)
+        return (task, interval, component, notes)
+
+    @staticmethod
+    def _looks_like_maintenance_line(line: str) -> bool:
+        return bool(_MAINTENANCE_ACTION_PATTERN.search(line)) or any(
+            marker in line for marker in _MAINTENANCE_LINE_HINTS
+        ) or bool(_MAINTENANCE_INTERVAL_PATTERN.search(line))
+
+    @staticmethod
+    def _looks_like_maintenance_task(text: str) -> bool:
+        cleaned = " ".join(text.strip().split())
+        if not cleaned:
+            return False
+        lowered = cleaned.lower()
+        if lowered in _MAINTENANCE_LINE_HINTS:
+            return False
+        return bool(_MAINTENANCE_ACTION_PATTERN.search(cleaned)) or bool(
+            _MAINTENANCE_INTERVAL_PATTERN.search(cleaned)
+        )
+
+    def _split_task_and_notes(
+        self,
+        text: str,
+        interval_match: re.Match[str] | None,
+    ) -> tuple[str, str | None]:
+        if interval_match is None:
+            parts = re.split(r"(?<=[.;])\s+", text, maxsplit=1)
+            if len(parts) == 2:
+                return parts[0].strip(), parts[1].strip()
+            return text, None
+
+        task_text = text[: interval_match.start()].strip(" ,;:-")
+        remainder = text[interval_match.end() :].strip(" ,;:-")
+        if not task_text:
+            task_text = text
+            remainder = None
+        return task_text, remainder or None
+
+    @staticmethod
+    def _clean_task(task: str | None) -> str | None:
+        if task is None:
+            return None
+        cleaned = " ".join(task.strip().split())
+        if ":" in cleaned:
+            prefix, suffix = cleaned.split(":", 1)
+            if _MAINTENANCE_ACTION_PATTERN.search(suffix):
+                cleaned = suffix.strip()
+        return cleaned.rstrip(" .;:") or None
+
+    @staticmethod
+    def _clean_interval(interval: str | None) -> str:
+        if interval is None:
+            return _NOT_SPECIFIED
+        cleaned = " ".join(interval.strip().split())
+        return cleaned.rstrip(" .;:") or _NOT_SPECIFIED
+
+    @staticmethod
+    def _clean_optional_text(value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = " ".join(value.strip().split())
+        return cleaned.rstrip(" .;:") or None
+
+    @staticmethod
+    def _extract_component(task: str) -> str | None:
+        match = _MAINTENANCE_COMPONENT_PATTERN.match(task)
+        if match is None:
+            return None
+        component = " ".join(match.group("component").split())
+        return component.rstrip(" .;:") or None
 
     @staticmethod
     def _normalize_key(raw_key: str) -> str | None:

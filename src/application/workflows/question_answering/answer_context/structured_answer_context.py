@@ -49,11 +49,24 @@ class AnswerKeyValue:
 
 
 @dataclass(slots=True)
+class AnswerMaintenanceEntry:
+    task: str
+    interval: str
+    component: str | None
+    notes: str | None
+    source_number: int
+    page_start: int | None = None
+    page_end: int | None = None
+    confidence: float | None = None
+
+
+@dataclass(slots=True)
 class StructuredAnswerContext:
     answer_intent: AnswerIntent
     sources: list[AnswerSource] = field(default_factory=list)
     source_groups: list[AnswerSourceGroup] = field(default_factory=list)
     section_groups: list[AnswerSectionGroup] = field(default_factory=list)
     key_values: list[AnswerKeyValue] = field(default_factory=list)
+    maintenance_entries: list[AnswerMaintenanceEntry] = field(default_factory=list)
     source_count: int = 0
     diagnostics: dict[str, Any] = field(default_factory=dict)

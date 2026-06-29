@@ -80,6 +80,19 @@ class AnswerPromptBuilder:
             f"- Intent: {context.answer_intent.value}",
             f"- Source count: {context.source_count}",
         ]
+        if context.maintenance_entries:
+            lines.append("Maintenance entries:")
+            for entry in context.maintenance_entries:
+                page_range = self._format_page_bounds(entry.page_start, entry.page_end)
+                component = entry.component or "Not specified"
+                notes = entry.notes or "Not specified"
+                lines.append(
+                    f"- [SOURCE {entry.source_number} | Pages: {page_range}] "
+                    f"Maintenance Task: {entry.task} | "
+                    f"Interval/Frequency: {entry.interval} | "
+                    f"Component: {component} | "
+                    f"Notes: {notes}"
+                )
         if context.key_values:
             lines.append("Key values:")
             for item in context.key_values:

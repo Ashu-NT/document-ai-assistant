@@ -76,3 +76,33 @@ def test_context_organizer_groups_sources_by_chunk_type_and_section() -> None:
     assert context.source_groups[0].chunk_type == "operation_instruction"
     assert len(context.section_groups) == 1
     assert context.section_groups[0].section_path == "Operation > Stopping"
+
+
+def test_context_organizer_extracts_structured_maintenance_entries() -> None:
+    organizer = AnswerContextOrganizer()
+    context = organizer.organize(
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+        chunks=[
+            _make_chunk(
+                chunk_id="chunk_maintenance",
+                chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+                section_path=["Maintenance", "Schedule"],
+                content=(
+                    "Replace cartridge filters every 1000 operating hours.\n"
+                    "Inspect regulating valves."
+                ),
+            )
+        ],
+    )
+
+    assert len(context.maintenance_entries) == 2
+    assert context.maintenance_entries[0].task == "Replace cartridge filters"
+    assert context.maintenance_entries[0].interval == "every 1000 operating hours"
+    assert context.maintenance_entries[0].component == "cartridge filters"
+    assert context.maintenance_entries[0].source_number == 1
+    assert context.maintenance_entries[0].page_start == 2
+    assert context.maintenance_entries[1].task == "Inspect regulating valves"
+    assert context.maintenance_entries[1].interval == "Not specified"
+    assert context.diagnostics["maintenance_items_found"] == 2
+    assert context.diagnostics["maintenance_items_with_interval"] == 1
+    assert context.diagnostics["maintenance_items_without_interval"] == 1

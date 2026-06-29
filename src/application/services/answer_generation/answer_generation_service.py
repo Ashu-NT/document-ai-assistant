@@ -78,6 +78,8 @@ class AnswerGenerationService:
         citations, cited_chunk_ids = self._build_citations(resolved_request.context_chunks)
 
         model_name = self.answer_generation_model or "default"
+        structured_context = resolved_request.structured_context
+        maintenance_diagnostics = self._maintenance_diagnostics(structured_context)
 
         return GeneratedAnswer(
             answer_text=raw_output,
@@ -108,10 +110,11 @@ class AnswerGenerationService:
                     else None
                 ),
                 "structured_context_source_count": (
-                    resolved_request.structured_context.source_count
-                    if resolved_request.structured_context is not None
+                    structured_context.source_count
+                    if structured_context is not None
                     else 0
                 ),
+                **maintenance_diagnostics,
             },
         )
 
@@ -156,8 +159,9 @@ class AnswerGenerationService:
                 answer_intent=answer_intent,
             )
 
-        format_policy = request.format_policy or AnswerFormatPolicy.for_intent(
-            answer_intent
+        format_policy = request.format_policy or AnswerFormatPolicy.resolve(
+            intent=answer_intent,
+            structured_context=structured_context,
         )
         resolved_request = replace(
             request,
@@ -167,3 +171,26 @@ class AnswerGenerationService:
             format_policy=format_policy,
         )
         return resolved_request, intent_decision
+
+    @staticmethod
+    def _maintenance_diagnostics(
+        structured_context,
+    ) -> dict[str, int]:
+        if structured_context is None:
+            return {
+                "maintenance_items_found": 0,
+                "maintenance_items_with_interval": 0,
+                "maintenance_items_without_interval": 0,
+            }
+        diagnostics = structured_context.diagnostics
+        return {
+            "maintenance_items_found": int(
+                diagnostics.get("maintenance_items_found", 0)
+            ),
+            "maintenance_items_with_interval": int(
+                diagnostics.get("maintenance_items_with_interval", 0)
+            ),
+            "maintenance_items_without_interval": int(
+                diagnostics.get("maintenance_items_without_interval", 0)
+            ),
+        }
