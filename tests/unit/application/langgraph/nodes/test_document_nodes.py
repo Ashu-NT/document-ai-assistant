@@ -44,7 +44,11 @@ def test_list_documents_node_calls_list_documents_tool() -> None:
 
 def test_find_document_node_sets_document_id_on_single_match() -> None:
     result = ToolResult.ok(
-        data={"document_id": "doc-42", "display_name": "Pump Manual"},
+        data={
+            "document_id": "doc-42",
+            "display_name": "Pump Manual",
+            "file_name": "pump_manual.pdf",
+        },
     )
     node = FindDocumentNode(
         ToolRegistry(find_document_tool=FakeFindDocumentTool(result=result))
@@ -59,6 +63,8 @@ def test_find_document_node_sets_document_id_on_single_match() -> None:
 
     assert patch["document_id"] == "doc-42"
     assert patch["document_title"] == "Pump Manual"
+    assert patch["selected_document_id"] == "doc-42"
+    assert patch["selected_document_file_name"] == "pump_manual.pdf"
 
 
 def test_find_document_node_asks_for_clarification_on_multiple_matches() -> None:
@@ -85,3 +91,4 @@ def test_find_document_node_asks_for_clarification_on_multiple_matches() -> None
 
     assert patch["needs_clarification"] is True
     assert "Pump Manual" in patch["clarification_message"]
+    assert len(patch["clarification_options"]) == 2

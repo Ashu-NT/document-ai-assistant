@@ -5,6 +5,7 @@ from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
     build_error,
     extend_trace,
+    resolve_selected_document,
     serialize_tool_result,
 )
 from src.application.langgraph.state import AgentState
@@ -47,10 +48,11 @@ class RetrieveEvidenceNode:
             }
 
         query_text = state.get("question") or state["user_input"].strip()
+        resolved_document_id, _ = resolve_selected_document(state)
         result = tool.run(
             RetrieveChunksRequest(
                 query_text=query_text,
-                document_id=state.get("document_id"),
+                document_id=resolved_document_id,
                 top_k=state.get("top_k") or 5,
             )
         )

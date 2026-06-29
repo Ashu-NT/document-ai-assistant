@@ -5,6 +5,7 @@ from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
     build_error,
     extend_trace,
+    resolve_selected_document,
     serialize_tool_result,
 )
 from src.application.langgraph.state import AgentState
@@ -28,7 +29,8 @@ class ExploreDocumentNode:
             route=state.get("route"),
             tool_name="explore_document",
         )
-        if not state.get("document_id"):
+        resolved_document_id, _ = resolve_selected_document(state)
+        if not resolved_document_id:
             trace_entry = self.recorder.finish_node(
                 token,
                 success=False,
@@ -58,7 +60,7 @@ class ExploreDocumentNode:
                 "trace": extend_trace(state["trace"], trace_entry),
             }
 
-        result = tool.run(ExploreDocumentRequest(document_id=state["document_id"]))
+        result = tool.run(ExploreDocumentRequest(document_id=resolved_document_id))
         tool_results = dict(state["tool_results"])
         tool_results["explore_document"] = serialize_tool_result(result)
         trace_entry = self.recorder.finish_node(
@@ -82,6 +84,8 @@ class ExploreDocumentNode:
                 f"{title} | sections={sections} | tables={tables} | identifiers={identifiers}"
             )
             patch["document_title"] = title
+            patch["selected_document_id"] = resolved_document_id
+            patch["selected_document_title"] = title
             return patch
 
         patch["error"] = build_error(

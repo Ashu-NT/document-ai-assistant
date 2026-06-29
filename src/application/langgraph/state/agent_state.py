@@ -10,6 +10,9 @@ class AgentState(TypedDict):
     document_query: str | None
     document_id: str | None
     document_title: str | None
+    selected_document_id: str | None
+    selected_document_title: str | None
+    selected_document_file_name: str | None
     question: str | None
     allow_answer_generation: bool
     include_context: bool
@@ -19,9 +22,17 @@ class AgentState(TypedDict):
     error: dict[str, Any] | None
     needs_clarification: bool
     clarification_message: str | None
+    pending_clarification: dict[str, Any] | None
+    clarification_options: list[dict[str, Any]]
+    clarification_question: str | None
+    clarification_candidate_index: int | None
     trace: list[dict[str, Any]]
     conversation_id: str | None
+    session_id: str | None
+    session_command: str | None
     history: list[dict[str, Any]]
+    should_exit: bool
+    help_text: str | None
 
 
 def build_agent_state(
@@ -33,8 +44,16 @@ def build_agent_state(
     include_context: bool = False,
     top_k: int | None = None,
     conversation_id: str | None = None,
+    session_id: str | None = None,
     history: list[dict[str, Any]] | None = None,
+    selected_document_id: str | None = None,
+    selected_document_title: str | None = None,
+    selected_document_file_name: str | None = None,
+    pending_clarification: dict[str, Any] | None = None,
+    clarification_options: list[dict[str, Any]] | None = None,
+    clarification_question: str | None = None,
 ) -> AgentState:
+    effective_session_id = session_id or conversation_id
     return AgentState(
         user_input=user_input,
         normalized_input=None,
@@ -42,6 +61,9 @@ def build_agent_state(
         document_query=document_query,
         document_id=document_id,
         document_title=None,
+        selected_document_id=selected_document_id,
+        selected_document_title=selected_document_title,
+        selected_document_file_name=selected_document_file_name,
         question=None,
         allow_answer_generation=allow_answer_generation,
         include_context=include_context,
@@ -51,7 +73,15 @@ def build_agent_state(
         error=None,
         needs_clarification=False,
         clarification_message=None,
+        pending_clarification=pending_clarification,
+        clarification_options=list(clarification_options or []),
+        clarification_question=clarification_question,
+        clarification_candidate_index=None,
         trace=[],
-        conversation_id=conversation_id,
+        conversation_id=conversation_id or effective_session_id,
+        session_id=effective_session_id,
+        session_command=None,
         history=list(history or []),
+        should_exit=False,
+        help_text=None,
     )
