@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Sequence
 
 from src.application.services.answer_generation.intent.answer_intent import (
@@ -9,6 +10,7 @@ from src.application.services.answer_generation.intent.answer_intent import (
 from src.application.workflows.question_answering.answer_context.structured_answer_context import (
     AnswerKeyValue,
     AnswerMaintenanceEntry,
+    AnswerMaintenanceReference,
     AnswerSource,
 )
 
@@ -108,12 +110,22 @@ _TABLE_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "notes": ("notes", "remark", "remarks", "comment", "comments", "details"),
 }
 _NOT_SPECIFIED = "Not specified"
+_PLACEHOLDER_VALUES = {"x", "-", "n/a", "na", "unknown"}
 _SUPPORTED_INTENTS = {
     AnswerIntent.SPECIFICATION_SUMMARY,
     AnswerIntent.CERTIFICATION_SUMMARY,
     AnswerIntent.TABLE_SUMMARY,
     AnswerIntent.IDENTIFIER_LOOKUP,
 }
+
+
+@dataclass(slots=True, frozen=True)
+class _MaintenanceCandidate:
+    task: str
+    description: str | None
+    interval: str
+    component: str | None
+    notes: str | None
 
 
 class KeyValueExtractor:
@@ -163,27 +175,37 @@ class KeyValueExtractor:
         entries: list[AnswerMaintenanceEntry] = []
         seen: set[tuple[int, str, str, str]] = set()
         for source in sources:
-            for task, interval, component, notes in self._maintenance_candidates(
-                source.content
-            ):
+            for candidate in self._maintenance_candidates(source.content):
                 fingerprint = (
                     source.source_number,
-                    task.lower(),
-                    interval.lower(),
-                    (component or "").lower(),
+                    candidate.task.lower(),
+                    candidate.interval.lower(),
+                    (candidate.component or "").lower(),
                 )
                 if fingerprint in seen:
                     continue
                 seen.add(fingerprint)
                 entries.append(
                     AnswerMaintenanceEntry(
-                        task=task,
-                        interval=interval,
-                        component=component,
-                        notes=notes,
+                        task=candidate.task,
+                        description=candidate.description,
+                        interval=candidate.interval,
+                        component=candidate.component,
+                        notes=candidate.notes,
                         source_number=source.source_number,
+                        source_numbers=[source.source_number],
                         page_start=source.page_start,
                         page_end=source.page_end,
+                        section_path=source.section_path,
+                        section_paths=[source.section_path] if source.section_path else [],
+                        references=[
+                            AnswerMaintenanceReference(
+                                source_number=source.source_number,
+                                page_start=source.page_start,
+                                page_end=source.page_end,
+                                section_path=source.section_path,
+                            )
+                        ],
                         confidence=0.88,
                     )
                 )
@@ -220,8 +242,8 @@ class KeyValueExtractor:
     def _maintenance_candidates(
         self,
         content: str,
-    ) -> list[tuple[str, str, str | None, str | None]]:
-        candidates: list[tuple[str, str, str | None, str | None]] = []
+    ) -> list[_MaintenanceCandidate]:
+        candidates: list[_MaintenanceCandidate] = []
         table_header: list[str] | None = None
         for line in content.splitlines():
             stripped = line.strip()
@@ -277,7 +299,7 @@ class KeyValueExtractor:
         cells: Sequence[str],
         *,
         table_header: Sequence[str] | None,
-    ) -> tuple[str, str, str | None, str | None] | None:
+    ) -> _MaintenanceCandidate | None:
         if not cells:
             return None
         if table_header is not None and len(table_header) == len(cells):
@@ -293,7 +315,13 @@ class KeyValueExtractor:
             notes = self._clean_optional_text(mapped.get("notes"))
             if component is None:
                 component = self._extract_component(task)
-            return (task, interval, component, notes)
+            return _MaintenanceCandidate(
+                task=task,
+                description=self._build_description(task, notes),
+                interval=interval,
+                component=component,
+                notes=notes,
+            )
 
         task_cell = next(
             (cell.strip() for cell in cells if self._looks_like_maintenance_task(cell)),
@@ -311,13 +339,19 @@ class KeyValueExtractor:
             for cell in cells
             if cell.strip() and cell.strip() not in {task_cell, interval_cell}
         ]
-        notes = "; ".join(notes_candidates) if notes_candidates else None
-        return (task_cell, self._clean_interval(interval_cell), component, notes)
+        notes = self._clean_optional_text("; ".join(notes_candidates)) if notes_candidates else None
+        return _MaintenanceCandidate(
+            task=task_cell,
+            description=self._build_description(task_cell, notes),
+            interval=self._clean_interval(interval_cell),
+            component=component,
+            notes=notes,
+        )
 
     def _maintenance_candidate_from_line(
         self,
         line: str,
-    ) -> tuple[str, str, str | None, str | None] | None:
+    ) -> _MaintenanceCandidate | None:
         cleaned = _BULLET_PREFIX_PATTERN.sub("", line).strip()
         if not cleaned:
             return None
@@ -338,7 +372,13 @@ class KeyValueExtractor:
 
         component = self._extract_component(task)
         notes = self._clean_optional_text(notes)
-        return (task, interval, component, notes)
+        return _MaintenanceCandidate(
+            task=task,
+            description=self._build_description(cleaned, notes, task=task),
+            interval=interval,
+            component=component,
+            notes=notes,
+        )
 
     @staticmethod
     def _looks_like_maintenance_line(line: str) -> bool:
@@ -389,17 +429,22 @@ class KeyValueExtractor:
 
     @staticmethod
     def _clean_interval(interval: str | None) -> str:
-        if interval is None:
+        cleaned = KeyValueExtractor._clean_optional_text(interval)
+        if cleaned is None:
             return _NOT_SPECIFIED
-        cleaned = " ".join(interval.strip().split())
-        return cleaned.rstrip(" .;:") or _NOT_SPECIFIED
+        return cleaned or _NOT_SPECIFIED
 
     @staticmethod
     def _clean_optional_text(value: str | None) -> str | None:
         if value is None:
             return None
         cleaned = " ".join(value.strip().split())
-        return cleaned.rstrip(" .;:") or None
+        cleaned = cleaned.rstrip(" .;:")
+        if not cleaned:
+            return None
+        if cleaned.lower() in _PLACEHOLDER_VALUES:
+            return None
+        return cleaned
 
     @staticmethod
     def _extract_component(task: str) -> str | None:
@@ -407,7 +452,21 @@ class KeyValueExtractor:
         if match is None:
             return None
         component = " ".join(match.group("component").split())
+        component = re.split(r"\b(?:for|during|before|after|when|if)\b", component, maxsplit=1)[0]
         return component.rstrip(" .;:") or None
+
+    def _build_description(
+        self,
+        raw_line: str,
+        notes: str | None,
+        *,
+        task: str | None = None,
+    ) -> str | None:
+        task_text = self._clean_optional_text(task or raw_line)
+        notes_text = self._clean_optional_text(notes)
+        if notes_text is not None and task_text is not None:
+            return self._clean_optional_text(f"{task_text}. {notes_text}")
+        return notes_text or task_text
 
     @staticmethod
     def _normalize_key(raw_key: str) -> str | None:

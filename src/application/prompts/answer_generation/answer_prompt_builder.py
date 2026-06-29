@@ -1,5 +1,8 @@
 from typing import TYPE_CHECKING
 
+from src.application.prompts.answer_generation.maintenance_prompt_context_formatter import (
+    MaintenancePromptContextFormatter,
+)
 from src.application.prompts.answer_generation.answer_prompt_version import (
     ANSWER_PROMPT_VERSION,
 )
@@ -24,6 +27,14 @@ class AnswerPromptBuilder:
         model_type="llm",
         description="Grounded answer generation from retrieved document chunks.",
     )
+
+    def __init__(
+        self,
+        maintenance_context_formatter: MaintenancePromptContextFormatter | None = None,
+    ) -> None:
+        self.maintenance_context_formatter = (
+            maintenance_context_formatter or MaintenancePromptContextFormatter()
+        )
 
     def build(self, request: "AnswerGenerationRequest") -> str:
         source_blocks = self._raw_source_block(request)
@@ -81,18 +92,9 @@ class AnswerPromptBuilder:
             f"- Source count: {context.source_count}",
         ]
         if context.maintenance_entries:
-            lines.append("Maintenance entries:")
-            for entry in context.maintenance_entries:
-                page_range = self._format_page_bounds(entry.page_start, entry.page_end)
-                component = entry.component or "Not specified"
-                notes = entry.notes or "Not specified"
-                lines.append(
-                    f"- [SOURCE {entry.source_number} | Pages: {page_range}] "
-                    f"Maintenance Task: {entry.task} | "
-                    f"Interval/Frequency: {entry.interval} | "
-                    f"Component: {component} | "
-                    f"Notes: {notes}"
-                )
+            lines.extend(
+                self.maintenance_context_formatter.format(context.maintenance_entries)
+            )
         if context.key_values:
             lines.append("Key values:")
             for item in context.key_values:

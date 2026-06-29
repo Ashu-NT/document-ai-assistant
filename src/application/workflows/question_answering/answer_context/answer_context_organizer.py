@@ -9,6 +9,9 @@ from src.application.services.answer_generation.intent.answer_intent import (
 from src.application.workflows.question_answering.answer_context.key_value_extractor import (
     KeyValueExtractor,
 )
+from src.application.workflows.question_answering.answer_context.maintenance_entry_merger import (
+    MaintenanceEntryMerger,
+)
 from src.application.workflows.question_answering.answer_context.section_group_builder import (
     SectionGroupBuilder,
 )
@@ -27,10 +30,14 @@ class AnswerContextOrganizer:
         self,
         *,
         key_value_extractor: KeyValueExtractor | None = None,
+        maintenance_entry_merger: MaintenanceEntryMerger | None = None,
         source_group_builder: SourceGroupBuilder | None = None,
         section_group_builder: SectionGroupBuilder | None = None,
     ) -> None:
         self.key_value_extractor = key_value_extractor or KeyValueExtractor()
+        self.maintenance_entry_merger = (
+            maintenance_entry_merger or MaintenanceEntryMerger()
+        )
         self.source_group_builder = source_group_builder or SourceGroupBuilder()
         self.section_group_builder = section_group_builder or SectionGroupBuilder()
 
@@ -54,6 +61,8 @@ class AnswerContextOrganizer:
             sources,
             answer_intent=answer_intent,
         )
+        extracted_maintenance_entry_count = len(maintenance_entries)
+        maintenance_entries = self.maintenance_entry_merger.merge(maintenance_entries)
         maintenance_with_interval = sum(
             1
             for entry in maintenance_entries
@@ -75,6 +84,9 @@ class AnswerContextOrganizer:
             "maintenance_items_with_interval": maintenance_with_interval,
             "maintenance_items_without_interval": (
                 len(maintenance_entries) - maintenance_with_interval
+            ),
+            "maintenance_items_merged": (
+                extracted_maintenance_entry_count - len(maintenance_entries)
             ),
         }
         return StructuredAnswerContext(

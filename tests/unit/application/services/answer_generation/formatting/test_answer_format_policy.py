@@ -20,13 +20,14 @@ def test_specification_policy_uses_structured_bullets() -> None:
 def test_maintenance_policy_preserves_intervals() -> None:
     policy = AnswerFormatPolicy.for_intent(AnswerIntent.MAINTENANCE_SUMMARY)
 
-    assert policy.preferred_format == "structured_maintenance_table"
-    assert policy.include_table is True
+    assert policy.preferred_format == "maintenance_numbered_entries"
+    assert policy.include_table is False
     assert policy.include_bullets is False
     assert any("Not specified" in line for line in policy.instruction_lines)
+    assert any("Do not output markdown tables" in line for line in policy.instruction_lines)
 
 
-def test_maintenance_policy_falls_back_to_checklist_without_structured_entries() -> None:
+def test_maintenance_policy_resolve_is_stable_without_structured_entries() -> None:
     context = StructuredAnswerContext(answer_intent=AnswerIntent.MAINTENANCE_SUMMARY)
 
     policy = AnswerFormatPolicy.resolve(
@@ -34,17 +35,18 @@ def test_maintenance_policy_falls_back_to_checklist_without_structured_entries()
         structured_context=context,
     )
 
-    assert policy.preferred_format == "maintenance_checklist"
+    assert policy.preferred_format == "maintenance_numbered_entries"
     assert policy.include_table is False
-    assert policy.include_bullets is True
+    assert policy.include_bullets is False
 
 
-def test_maintenance_policy_prefers_table_with_structured_entries() -> None:
+def test_maintenance_policy_resolve_stays_numbered_with_structured_entries() -> None:
     context = StructuredAnswerContext(
         answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
         maintenance_entries=[
             AnswerMaintenanceEntry(
                 task="Replace cartridge filters",
+                description="Replace cartridge filters every 1000 operating hours",
                 interval="every 1000 operating hours",
                 component="cartridge filters",
                 notes=None,
@@ -58,8 +60,8 @@ def test_maintenance_policy_prefers_table_with_structured_entries() -> None:
         structured_context=context,
     )
 
-    assert policy.preferred_format == "structured_maintenance_table"
-    assert policy.include_table is True
+    assert policy.preferred_format == "maintenance_numbered_entries"
+    assert policy.include_table is False
 
 
 def test_procedure_policy_uses_numbered_steps() -> None:

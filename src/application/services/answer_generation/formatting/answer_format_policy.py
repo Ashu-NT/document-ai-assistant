@@ -36,11 +36,8 @@ class AnswerFormatPolicy:
         intent: AnswerIntent,
         structured_context: "StructuredAnswerContext | None" = None,
     ) -> "AnswerFormatPolicy":
-        if intent != AnswerIntent.MAINTENANCE_SUMMARY:
-            return cls.for_intent(intent)
-        if structured_context is not None and structured_context.maintenance_entries:
-            return _MAINTENANCE_TABLE_POLICY
-        return _MAINTENANCE_CHECKLIST_POLICY
+        _ = structured_context
+        return cls.for_intent(intent)
 
 
 _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
@@ -63,21 +60,28 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
     ),
     AnswerIntent.MAINTENANCE_SUMMARY: AnswerFormatPolicy(
         intent=AnswerIntent.MAINTENANCE_SUMMARY,
-        preferred_format="structured_maintenance_table",
-        include_table=True,
+        preferred_format="maintenance_numbered_entries",
+        include_table=False,
         include_bullets=False,
         include_steps=False,
         include_sources_inline=False,
         max_bullets=None,
-        response_label="Maintenance tasks",
+        response_label="Maintenance Tasks",
         instruction_lines=(
             "The user is asking for maintenance information.",
             "Summarize all maintenance tasks from the provided sources.",
-            "Present maintenance in a structured table whenever possible.",
-            "Use the columns Maintenance Task, Interval/Frequency, Component, and Notes.",
+            "Use the heading 'Maintenance Tasks'.",
+            "Use numbered entries only. Do not output markdown tables.",
+            "Each numbered entry must cover one maintenance task only.",
+            "For each task include Description, Interval / Frequency, Component, and Reference.",
+            "Merge duplicate maintenance tasks that describe the same activity.",
+            "Prefer document order unless the document explicitly presents a maintenance interval order.",
+            "Preserve intervals, units, and operating-hour values exactly as written in the sources.",
+            "Preserve page references and section paths when they are available.",
             "If an interval is not explicitly stated, write 'Not specified'.",
+            "If a component is not explicitly stated, write 'Not specified'.",
+            "Do not output placeholders such as X, -, N/A, or Unknown.",
             "Do not invent intervals, tasks, components, or frequencies.",
-            "Do not merge unrelated maintenance activities.",
             "Keep terminology from the document.",
             "Use only the provided sources.",
         ),
@@ -203,24 +207,3 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         ),
     ),
 }
-
-_MAINTENANCE_TABLE_POLICY = _POLICIES[AnswerIntent.MAINTENANCE_SUMMARY]
-_MAINTENANCE_CHECKLIST_POLICY = AnswerFormatPolicy(
-    intent=AnswerIntent.MAINTENANCE_SUMMARY,
-    preferred_format="maintenance_checklist",
-    include_table=False,
-    include_bullets=True,
-    include_steps=False,
-    include_sources_inline=False,
-    max_bullets=10,
-    response_label="Maintenance checklist",
-    instruction_lines=(
-        "The user is asking for maintenance information.",
-        "Summarize all maintenance tasks from the provided sources.",
-        "Use a bulleted maintenance checklist when a structured table is not possible.",
-        "If an interval is not explicitly stated, write 'Not specified'.",
-        "Do not invent intervals, tasks, components, or frequencies.",
-        "Keep terminology from the document.",
-        "Use only the provided sources.",
-    ),
-)

@@ -97,12 +97,76 @@ def test_context_organizer_extracts_structured_maintenance_entries() -> None:
 
     assert len(context.maintenance_entries) == 2
     assert context.maintenance_entries[0].task == "Replace cartridge filters"
+    assert context.maintenance_entries[0].description == "Replace cartridge filters"
     assert context.maintenance_entries[0].interval == "every 1000 operating hours"
     assert context.maintenance_entries[0].component == "cartridge filters"
     assert context.maintenance_entries[0].source_number == 1
+    assert context.maintenance_entries[0].source_numbers == [1]
     assert context.maintenance_entries[0].page_start == 2
+    assert context.maintenance_entries[0].section_path == "Maintenance > Schedule"
     assert context.maintenance_entries[1].task == "Inspect regulating valves"
     assert context.maintenance_entries[1].interval == "Not specified"
     assert context.diagnostics["maintenance_items_found"] == 2
     assert context.diagnostics["maintenance_items_with_interval"] == 1
     assert context.diagnostics["maintenance_items_without_interval"] == 1
+    assert context.diagnostics["maintenance_items_merged"] == 0
+
+
+def test_context_organizer_merges_duplicate_maintenance_tasks_and_references() -> None:
+    organizer = AnswerContextOrganizer()
+    context = organizer.organize(
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+        chunks=[
+            _make_chunk(
+                chunk_id="chunk_dup_a",
+                chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+                section_path=["Preventive Maintenance", "Gearbox"],
+                content="Check gearbox every 6 months.",
+            ),
+            _make_chunk(
+                chunk_id="chunk_dup_b",
+                chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+                section_path=["Preventive Maintenance", "Lubrication"],
+                content="Check gearbox for leaks every 6 months.",
+            ),
+        ],
+    )
+
+    assert len(context.maintenance_entries) == 1
+    entry = context.maintenance_entries[0]
+    assert entry.task == "Check gearbox for leaks"
+    assert entry.interval == "every 6 months"
+    assert entry.source_numbers == [1, 2]
+    assert entry.section_paths == [
+        "Preventive Maintenance > Gearbox",
+        "Preventive Maintenance > Lubrication",
+    ]
+    assert len(entry.references) == 2
+    assert context.diagnostics["maintenance_items_merged"] == 1
+
+
+def test_context_organizer_cleans_placeholder_maintenance_values() -> None:
+    organizer = AnswerContextOrganizer()
+    context = organizer.organize(
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+        chunks=[
+            _make_chunk(
+                chunk_id="chunk_table",
+                chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+                section_path=["Maintenance", "Checklist"],
+                content=(
+                    "| Maintenance Task | Interval/Frequency | Component | Notes |\n"
+                    "| --- | --- | --- | --- |\n"
+                    "| Inspect intake air filter | as required | - | X |"
+                ),
+            )
+        ],
+    )
+
+    assert len(context.maintenance_entries) == 1
+    entry = context.maintenance_entries[0]
+    assert entry.task == "Inspect intake air filter"
+    assert entry.interval == "as required"
+    assert entry.component == "intake air filter"
+    assert entry.notes is None
+    assert entry.description == "Inspect intake air filter"

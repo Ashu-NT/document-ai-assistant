@@ -181,6 +181,7 @@ class AnswerGenerationService:
                 "maintenance_items_found": 0,
                 "maintenance_items_with_interval": 0,
                 "maintenance_items_without_interval": 0,
+                "maintenance_items_merged": 0,
             }
         diagnostics = structured_context.diagnostics
         return {
@@ -192,5 +193,8 @@ class AnswerGenerationService:
             ),
             "maintenance_items_without_interval": int(
                 diagnostics.get("maintenance_items_without_interval", 0)
+            ),
+            "maintenance_items_merged": int(
+                diagnostics.get("maintenance_items_merged", 0)
             ),
         }
