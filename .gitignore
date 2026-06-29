@@ -3,6 +3,8 @@ TestDoc/
 .tmp
 outputs/debug_graph_build/
 outputs/debug_parsing/
+outputs/agent_sessions/
+outputs/debug_answer_generation/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

@@ -217,3 +217,38 @@ def test_generate_builds_structured_context_and_format_policy_before_prompt() ->
     assert built_request.structured_context.key_values
     assert built_request.format_policy is not None
     assert built_request.format_policy.preferred_format == "structured_bullets"
+
+
+def test_generate_uses_maintenance_summary_path_and_reports_diagnostics() -> None:
+    llm = FakeLLMService(response="Maintenance Tasks")
+    prompt_builder = FakePromptBuilder()
+    service = AnswerGenerationService(
+        llm_service=llm,
+        prompt_builder=prompt_builder,
+        answer_generation_model="qwen3:8b",
+    )
+    request = AnswerGenerationRequest(
+        question="What are maintenance tasks in the document?",
+        context_chunks=[
+            _make_chunk(
+                content=(
+                    "Replace cartridge filters every 1000 operating hours.\n"
+                    "Inspect regulating valves."
+                ),
+                chunk_id="chunk_maintenance",
+            )
+        ],
+    )
+
+    result = service.generate(request)
+
+    built_request = prompt_builder.requests[0]
+    assert built_request.answer_intent == AnswerIntent.MAINTENANCE_SUMMARY
+    assert built_request.structured_context is not None
+    assert len(built_request.structured_context.maintenance_entries) == 2
+    assert built_request.format_policy is not None
+    assert built_request.format_policy.preferred_format == "structured_maintenance_table"
+    assert result.diagnostics["answer_intent"] == "maintenance_summary"
+    assert result.diagnostics["maintenance_items_found"] == 2
+    assert result.diagnostics["maintenance_items_with_interval"] == 1
+    assert result.diagnostics["maintenance_items_without_interval"] == 1

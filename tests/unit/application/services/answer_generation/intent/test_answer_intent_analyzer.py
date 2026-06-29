@@ -61,6 +61,35 @@ def test_maintenance_interval_question_maps_to_maintenance_summary() -> None:
     assert decision.intent == AnswerIntent.MAINTENANCE_SUMMARY
 
 
+def test_maintenance_tasks_question_prefers_maintenance_summary() -> None:
+    decision = AnswerIntentAnalyzer().analyze(
+        question="What are maintenance tasks in the document?",
+        chunk_type_preferences=[ChunkType.MAINTENANCE_PROCEDURE],
+        approved_chunks=[
+            _make_chunk(
+                content="1. Check feed water pressure gauge\n2. Inspect the low pressure switch",
+                chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+            )
+        ],
+    )
+
+    assert decision.intent == AnswerIntent.MAINTENANCE_SUMMARY
+
+
+def test_preventive_maintenance_question_maps_to_maintenance_summary() -> None:
+    decision = AnswerIntentAnalyzer().analyze(
+        question="Show preventive maintenance.",
+        approved_chunks=[
+            _make_chunk(
+                content="Preventive maintenance: inspect the drive coupling every 6 months.",
+                chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+            )
+        ],
+    )
+
+    assert decision.intent == AnswerIntent.MAINTENANCE_SUMMARY
+
+
 def test_procedure_question_maps_to_procedure_steps() -> None:
     decision = AnswerIntentAnalyzer().analyze(
         question="how do I replace the filter?",
@@ -68,6 +97,20 @@ def test_procedure_question_maps_to_procedure_steps() -> None:
             _make_chunk(
                 content="1. Isolate the system\n2. Remove the cover\n3. Replace the filter",
                 chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+            )
+        ],
+    )
+
+    assert decision.intent == AnswerIntent.PROCEDURE_STEPS
+
+
+def test_install_question_maps_to_procedure_steps() -> None:
+    decision = AnswerIntentAnalyzer().analyze(
+        question="How do I install the pump?",
+        approved_chunks=[
+            _make_chunk(
+                content="1. Position the pump\n2. Connect the inlet\n3. Connect the outlet",
+                chunk_type=ChunkType.INSTALLATION_INSTRUCTION,
             )
         ],
     )

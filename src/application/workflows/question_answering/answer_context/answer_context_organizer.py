@@ -50,6 +50,15 @@ class AnswerContextOrganizer:
             sources,
             answer_intent=answer_intent,
         )
+        maintenance_entries = self.key_value_extractor.extract_maintenance_entries(
+            sources,
+            answer_intent=answer_intent,
+        )
+        maintenance_with_interval = sum(
+            1
+            for entry in maintenance_entries
+            if entry.interval.strip().lower() != "not specified"
+        )
         diagnostics = {
             "chunk_type_counts": dict(
                 Counter(source.chunk_type or "unknown" for source in sources)
@@ -62,6 +71,11 @@ class AnswerContextOrganizer:
                     if source.document_id
                 }
             ),
+            "maintenance_items_found": len(maintenance_entries),
+            "maintenance_items_with_interval": maintenance_with_interval,
+            "maintenance_items_without_interval": (
+                len(maintenance_entries) - maintenance_with_interval
+            ),
         }
         return StructuredAnswerContext(
             answer_intent=answer_intent,
@@ -69,6 +83,7 @@ class AnswerContextOrganizer:
             source_groups=source_groups,
             section_groups=section_groups,
             key_values=key_values,
+            maintenance_entries=maintenance_entries,
             source_count=len(sources),
             diagnostics=diagnostics,
         )

@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
+
+if TYPE_CHECKING:
+    from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+        StructuredAnswerContext,
+    )
 
 
 @dataclass(slots=True, frozen=True)
@@ -22,6 +28,19 @@ class AnswerFormatPolicy:
     @classmethod
     def for_intent(cls, intent: AnswerIntent) -> "AnswerFormatPolicy":
         return _POLICIES.get(intent, _POLICIES[AnswerIntent.GENERAL])
+
+    @classmethod
+    def resolve(
+        cls,
+        *,
+        intent: AnswerIntent,
+        structured_context: "StructuredAnswerContext | None" = None,
+    ) -> "AnswerFormatPolicy":
+        if intent != AnswerIntent.MAINTENANCE_SUMMARY:
+            return cls.for_intent(intent)
+        if structured_context is not None and structured_context.maintenance_entries:
+            return _MAINTENANCE_TABLE_POLICY
+        return _MAINTENANCE_CHECKLIST_POLICY
 
 
 _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
@@ -44,18 +63,23 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
     ),
     AnswerIntent.MAINTENANCE_SUMMARY: AnswerFormatPolicy(
         intent=AnswerIntent.MAINTENANCE_SUMMARY,
-        preferred_format="ordered_bullets",
-        include_table=False,
-        include_bullets=True,
+        preferred_format="structured_maintenance_table",
+        include_table=True,
+        include_bullets=False,
         include_steps=False,
         include_sources_inline=False,
-        max_bullets=8,
-        response_label="Maintenance information",
+        max_bullets=None,
+        response_label="Maintenance tasks",
         instruction_lines=(
             "The user is asking for maintenance information.",
-            "Summarize available maintenance intervals and tasks.",
-            "Preserve stated intervals exactly.",
-            "Do not invent intervals, tasks, or frequencies.",
+            "Summarize all maintenance tasks from the provided sources.",
+            "Present maintenance in a structured table whenever possible.",
+            "Use the columns Maintenance Task, Interval/Frequency, Component, and Notes.",
+            "If an interval is not explicitly stated, write 'Not specified'.",
+            "Do not invent intervals, tasks, components, or frequencies.",
+            "Do not merge unrelated maintenance activities.",
+            "Keep terminology from the document.",
+            "Use only the provided sources.",
         ),
     ),
     AnswerIntent.PROCEDURE_STEPS: AnswerFormatPolicy(
@@ -179,3 +203,24 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         ),
     ),
 }
+
+_MAINTENANCE_TABLE_POLICY = _POLICIES[AnswerIntent.MAINTENANCE_SUMMARY]
+_MAINTENANCE_CHECKLIST_POLICY = AnswerFormatPolicy(
+    intent=AnswerIntent.MAINTENANCE_SUMMARY,
+    preferred_format="maintenance_checklist",
+    include_table=False,
+    include_bullets=True,
+    include_steps=False,
+    include_sources_inline=False,
+    max_bullets=10,
+    response_label="Maintenance checklist",
+    instruction_lines=(
+        "The user is asking for maintenance information.",
+        "Summarize all maintenance tasks from the provided sources.",
+        "Use a bulleted maintenance checklist when a structured table is not possible.",
+        "If an interval is not explicitly stated, write 'Not specified'.",
+        "Do not invent intervals, tasks, components, or frequencies.",
+        "Keep terminology from the document.",
+        "Use only the provided sources.",
+    ),
+)

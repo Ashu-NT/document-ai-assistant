@@ -30,6 +30,17 @@ _SPECIFICATION_TERMS = (
 )
 _MAINTENANCE_TERMS = (
     "maintenance",
+    "maintenance task",
+    "maintenance tasks",
+    "maintenance schedule",
+    "maintenance interval",
+    "maintenance intervals",
+    "preventive maintenance",
+    "service interval",
+    "service schedule",
+    "inspection schedule",
+    "routine maintenance",
+    "maintenance checklist",
     "interval",
     "service",
     "inspection",
@@ -41,10 +52,14 @@ _MAINTENANCE_TERMS = (
 )
 _PROCEDURE_TERMS = (
     "how to",
+    "how do i",
+    "how can i",
     "procedure",
     "steps",
     "step",
     "install",
+    "disassemble",
+    "assemble",
     "remove",
     "replace",
     "start",
@@ -54,6 +69,7 @@ _PROCEDURE_TERMS = (
     "commission",
     "commissioning",
     "connect",
+    "configure",
 )
 _SAFETY_TERMS = ("warning", "danger", "safety", "caution", "hazard")
 _TROUBLESHOOTING_TERMS = (
@@ -96,6 +112,29 @@ _DOCUMENT_SUMMARY_TERMS = (
     "what's in",
     "what does this document contain",
     "what does the document contain",
+)
+_MAINTENANCE_SUMMARY_PHRASES = (
+    "maintenance task",
+    "maintenance tasks",
+    "maintenance schedule",
+    "maintenance interval",
+    "maintenance intervals",
+    "preventive maintenance",
+    "service interval",
+    "service schedule",
+    "inspection schedule",
+    "routine maintenance",
+    "maintenance checklist",
+)
+_EXPLICIT_PROCEDURE_PHRASES = (
+    "how to",
+    "how do i",
+    "how can i",
+    "show steps",
+    "show the steps",
+    "what are the steps",
+    "procedure for",
+    "steps for",
 )
 _TECHNICAL_VALUE_PATTERN = re.compile(
     r"\b("
@@ -184,6 +223,11 @@ class AnswerIntentAnalyzer:
             matched,
         )
         self._apply_chunk_content_signal(chunks, scores, matched)
+        self._apply_maintenance_procedure_disambiguation(
+            normalized_question,
+            scores,
+            matched,
+        )
 
         best_intent = self._pick_intent(scores)
         if scores[best_intent] <= 0:
@@ -293,6 +337,11 @@ class AnswerIntentAnalyzer:
         if "how often" in question:
             scores[AnswerIntent.MAINTENANCE_SUMMARY] += 3
             matched[AnswerIntent.MAINTENANCE_SUMMARY].append("question:how often")
+        if any(phrase in question for phrase in _MAINTENANCE_SUMMARY_PHRASES):
+            scores[AnswerIntent.MAINTENANCE_SUMMARY] += 4
+            matched[AnswerIntent.MAINTENANCE_SUMMARY].append(
+                "question:maintenance_summary_phrase"
+            )
         if "what is in" in question or "what's in" in question:
             scores[AnswerIntent.DOCUMENT_SUMMARY] += 2
             matched[AnswerIntent.DOCUMENT_SUMMARY].append("question:what is in")
@@ -383,6 +432,25 @@ class AnswerIntentAnalyzer:
                 "context:certification_text"
             )
 
+    def _apply_maintenance_procedure_disambiguation(
+        self,
+        question: str,
+        scores: dict[AnswerIntent, int],
+        matched: dict[AnswerIntent, list[str]],
+    ) -> None:
+        if not self._looks_like_maintenance_question(question):
+            return
+        if self._looks_like_explicit_procedure_question(question):
+            scores[AnswerIntent.PROCEDURE_STEPS] += 2
+            matched[AnswerIntent.PROCEDURE_STEPS].append(
+                "question:explicit_procedure_request"
+            )
+            return
+        scores[AnswerIntent.MAINTENANCE_SUMMARY] += 4
+        matched[AnswerIntent.MAINTENANCE_SUMMARY].append(
+            "question:maintenance_over_procedure"
+        )
+
     @staticmethod
     def _score_terms(
         text: str,
@@ -429,6 +497,16 @@ class AnswerIntentAnalyzer:
     @staticmethod
     def _looks_like_table(content: str) -> bool:
         return sum(1 for line in content.splitlines() if "|" in line) >= 2
+
+    @staticmethod
+    def _looks_like_maintenance_question(question: str) -> bool:
+        return "maintenance" in question or any(
+            phrase in question for phrase in _MAINTENANCE_SUMMARY_PHRASES
+        )
+
+    @staticmethod
+    def _looks_like_explicit_procedure_question(question: str) -> bool:
+        return any(phrase in question for phrase in _EXPLICIT_PROCEDURE_PHRASES)
 
     @staticmethod
     def _pick_intent(scores: dict[AnswerIntent, int]) -> AnswerIntent:
