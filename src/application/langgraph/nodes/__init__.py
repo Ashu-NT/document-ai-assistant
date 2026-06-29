@@ -2,6 +2,7 @@ from src.application.langgraph.nodes.control import (
     ClarifyRequestNode,
     ErrorHandlerNode,
     FinalResponseNode,
+    PlanSummaryNode,
     RouteRequestNode,
     SessionCommandNode,
 )
@@ -19,16 +20,23 @@ from src.application.langgraph.nodes.question_answering import (
     ExploreDocumentNode,
     RetrieveEvidenceNode,
 )
+from src.application.langgraph.nodes.planning import (
+    CreatePlanNode,
+    ExecutePlanNode,
+)
 
 __all__ = [
     "AnswerQuestionNode",
     "ClarifyRequestNode",
+    "CreatePlanNode",
     "DocumentDetailsNode",
     "ErrorHandlerNode",
+    "ExecutePlanNode",
     "ExploreDocumentNode",
     "FinalResponseNode",
     "FindDocumentNode",
     "ListDocumentsNode",
+    "PlanSummaryNode",
     "RetrievalTraceNode",
     "RetrieveEvidenceNode",
     "RouteRequestNode",

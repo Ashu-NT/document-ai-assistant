@@ -5,9 +5,15 @@ from src.application.langgraph.common import (
     GraphMetadata,
     GraphResult,
 )
-from src.application.langgraph.factories import GraphFactory, ToolRegistry
+from src.application.langgraph.factories import GraphFactory, NodeFactory, ToolRegistry
 from src.application.langgraph.graphs import DocumentAgentGraph
 from src.application.langgraph.memory import ConversationMemory, SessionStateStore
+from src.application.langgraph.planning import (
+    DeterministicPlanner,
+    ExecutionPlan,
+    PlanExecutor,
+    PlanStep,
+)
 from src.application.langgraph.routing import IntentRouter, RouteDecision, RouteType
 from src.application.langgraph.state import AgentState, build_agent_state
 from src.application.langgraph.tracing import GraphRunRecorder, LangGraphTrace
@@ -18,7 +24,9 @@ __all__ = [
     "ConversationMemory",
     "DEFAULT_AGENT_GRAPH_NAME",
     "DEFAULT_AGENT_GRAPH_VERSION",
+    "DeterministicPlanner",
     "DocumentAgentGraph",
+    "ExecutionPlan",
     "GraphFactory",
     "GraphError",
     "GraphMetadata",
@@ -28,6 +36,9 @@ __all__ = [
     "GraphRunRecorder",
     "IntentRouter",
     "LangGraphTrace",
+    "NodeFactory",
+    "PlanExecutor",
+    "PlanStep",
     "RouteDecision",
     "RouteType",
     "SessionStateStore",

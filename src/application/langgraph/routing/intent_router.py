@@ -66,6 +66,24 @@ _QUESTION_CURRENT_REFERENCES = (
     " this datasheet",
     " it",
 )
+_PLANNED_COMPARE_MARKERS = ("compare",)
+_PLANNED_RETRIEVE_MARKERS = (
+    "retrieve evidence",
+    "show context",
+    "summarize evidence",
+)
+_PLANNED_EXPLORE_MARKERS = ("explore",)
+_PLANNED_LIST_AND_FIND_MARKERS = ("show documents", "list documents")
+_PLANNED_FOLLOW_UP_MARKERS = (
+    "summarize",
+    "answer",
+    "maintenance",
+    "specification",
+    "safety",
+    "procedure",
+    "troubleshooting",
+    "tables",
+)
 
 
 class IntentRouter:
@@ -128,6 +146,19 @@ class IntentRouter:
                 route_type=RouteType.LIST_DOCUMENTS,
                 confidence=0.99,
                 reason="Matched explicit list-documents command.",
+            )
+
+        if _looks_like_planned_task(normalized_input):
+            return RouteDecision(
+                route_type=RouteType.PLANNED_TASK,
+                confidence=0.9,
+                reason="Detected a deterministic compound request that should use the planning path.",
+                extracted_document_query=extracted_document_query,
+                extracted_question=user_input.strip(),
+                uses_current_document=_references_current_document(normalized_input),
+                is_compound=True,
+                requires_plan=True,
+                plan_hint=user_input.strip(),
             )
 
         if normalized_input in {
@@ -298,3 +329,18 @@ def _references_current_document(value: str) -> bool:
     if value in {"answer this document", "answer from this document"}:
         return True
     return any(reference in f" {value}" for reference in _QUESTION_CURRENT_REFERENCES)
+
+
+def _looks_like_planned_task(value: str) -> bool:
+    padded = f" {value} "
+    if "compare" in value and " and " in padded:
+        return True
+    if any(marker in value for marker in _PLANNED_RETRIEVE_MARKERS) and " and " in padded:
+        return any(marker in value for marker in _PLANNED_FOLLOW_UP_MARKERS)
+    if any(marker in value for marker in _PLANNED_EXPLORE_MARKERS) and " and " in padded:
+        return any(marker in value for marker in _PLANNED_FOLLOW_UP_MARKERS)
+    if any(marker in value for marker in _PLANNED_LIST_AND_FIND_MARKERS) and any(
+        marker in value for marker in ("open ", "find ", "open document ")
+    ):
+        return True
+    return False

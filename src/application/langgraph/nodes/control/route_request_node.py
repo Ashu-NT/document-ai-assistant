@@ -63,6 +63,9 @@ class RouteRequestNode:
                 "reason": decision.reason,
                 "requires_document": decision.requires_document,
                 "uses_current_document": decision.uses_current_document,
+                "is_compound": decision.is_compound,
+                "requires_plan": decision.requires_plan,
+                "plan_hint": decision.plan_hint,
             },
         )
         return {

@@ -23,6 +23,7 @@ def test_agent_cli_parses_basic_arguments() -> None:
             "--top-k",
             "7",
             "--show-context",
+            "--show-plan",
             "--json",
         ]
     )
@@ -32,6 +33,7 @@ def test_agent_cli_parses_basic_arguments() -> None:
     assert args.document == "FWC12"
     assert args.top_k == 7
     assert args.show_context is True
+    assert args.show_plan is True
     assert args.json is True
 
 
@@ -103,6 +105,11 @@ def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> Non
             "answer_intent": "maintenance_summary",
             "context_chunks": [{"chunk_id": "chunk_1"}],
             "citations": [{"citation_id": "cit_1"}],
+            "execution_plan": {"plan_id": "plan_1"},
+            "plan_steps": [{"description": "Answer the question."}],
+            "plan_results": {"plan_success": True},
+            "plan_success": True,
+            "failed_plan_step": None,
         },
         diagnostics={"needs_clarification": False},
         trace=[{"node_name": "answer_question"}],
@@ -121,8 +128,39 @@ def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> Non
     assert without_trace["clarification_options"] == []
     assert without_trace["context_chunks"] == [{"chunk_id": "chunk_1"}]
     assert without_trace["citations"] == [{"citation_id": "cit_1"}]
+    assert without_trace["execution_plan"] == {"plan_id": "plan_1"}
+    assert without_trace["plan_steps"] == [{"description": "Answer the question."}]
+    assert without_trace["plan_results"] == {"plan_success": True}
+    assert without_trace["plan_success"] is True
+    assert without_trace["failed_plan_step"] is None
     assert "trace" not in without_trace
     assert with_trace["trace"] == [{"node_name": "answer_question"}]
+
+
+def test_agent_cli_show_plan_output_includes_plan_text(capsys) -> None:
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text=(
+            "Plan\n----\n1. Retrieve evidence chunks.\n2. Summarize the result.\n\n"
+            "Answer\n------\nThe interval is 500 hours."
+        ),
+        route="planned_task",
+        data={
+            "execution_plan": {"plan_id": "plan_1"},
+            "plan_steps": [{"description": "Retrieve evidence chunks."}],
+        },
+    )
+
+    mod.print_graph_result(
+        result,
+        show_plan=True,
+        show_context=False,
+        show_trace=False,
+    )
+
+    output = capsys.readouterr().out
+    assert "Plan" in output
+    assert "Retrieve evidence chunks." in output
 
 
 def test_agent_cli_interactive_loop_exits_on_exit_command(monkeypatch, capsys) -> None:

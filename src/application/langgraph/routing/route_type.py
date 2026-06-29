@@ -2,6 +2,7 @@ from enum import StrEnum
 
 
 class RouteType(StrEnum):
+    PLANNED_TASK = "planned_task"
     SELECT_DOCUMENT = "select_document"
     CURRENT_DOCUMENT = "current_document"
     CLEAR_DOCUMENT = "clear_document"
