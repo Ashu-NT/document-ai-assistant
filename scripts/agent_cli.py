@@ -96,6 +96,25 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Display the deterministic multi-step execution plan when one is used.",
     )
+    llm_planning_group = parser.add_mutually_exclusive_group()
+    llm_planning_group.add_argument(
+        "--llm-planning",
+        dest="llm_planning",
+        action="store_true",
+        help="Enable validated LLM fallback planning for planned-task requests.",
+    )
+    llm_planning_group.add_argument(
+        "--no-llm-planning",
+        dest="llm_planning",
+        action="store_false",
+        help="Disable validated LLM fallback planning even if enabled in settings.",
+    )
+    parser.set_defaults(llm_planning=None)
+    parser.add_argument(
+        "--show-raw-plan",
+        action="store_true",
+        help="Display the raw LLM planning output when tracing is enabled.",
+    )
     parser.add_argument(
         "--json",
         action="store_true",
@@ -121,7 +140,12 @@ def _create_qdrant_client(qdrant_client_class):
     return qdrant_client_class(host=qdrant_settings.host, port=qdrant_settings.port)
 
 
-def build_agent_runtime(session, *, enable_generation: bool) -> AgentRuntime:
+def build_agent_runtime(
+    session,
+    *,
+    enable_generation: bool,
+    enable_llm_planning: bool,
+) -> AgentRuntime:
     from qdrant_client import QdrantClient
 
     from src.application.guardrails.answering import (
@@ -144,8 +168,16 @@ def build_agent_runtime(session, *, enable_generation: bool) -> AgentRuntime:
     from src.application.langgraph import (
         ConversationMemory,
         GraphFactory,
+        NodeFactory,
         SessionStateStore,
         ToolRegistry,
+    )
+    from src.application.langgraph.planning import (
+        LLMPlanProposer,
+        PlanParser,
+        PlanPolicy,
+        PlanRepair,
+        PlanValidator,
     )
     from src.application.services.ai import LLMService
     from src.application.services.answer_generation import AnswerGenerationService
@@ -178,7 +210,12 @@ def build_agent_runtime(session, *, enable_generation: bool) -> AgentRuntime:
         RetrievalContextExpander,
         RetrievalWorkflow,
     )
-    from src.config.settings import embedding_settings, llm_settings, qdrant_settings
+    from src.config.settings import (
+        embedding_settings,
+        langgraph_settings,
+        llm_settings,
+        qdrant_settings,
+    )
     from src.infrastructure.ai.embeddings import create_embedding_provider
     from src.infrastructure.ai.llm import OllamaLLMProvider
     from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork
@@ -225,6 +262,7 @@ def build_agent_runtime(session, *, enable_generation: bool) -> AgentRuntime:
     exploration_service = DocumentExplorationService(document_lookup_service)
 
     answer_generation_service = None
+    planning_llm_service = None
     if enable_generation:
         generation_model = llm_settings.answer_generation_llm or llm_settings.general_llm
         llm_service = LLMService(
@@ -236,6 +274,14 @@ def build_agent_runtime(session, *, enable_generation: bool) -> AgentRuntime:
         answer_generation_service = AnswerGenerationService(
             llm_service=llm_service,
             answer_generation_model=generation_model,
+        )
+    if enable_llm_planning:
+        planning_model = llm_settings.planning_llm or llm_settings.general_llm
+        planning_llm_service = LLMService(
+            OllamaLLMProvider(
+                base_url=llm_settings.ollama_base_url,
+                default_model=planning_model,
+            )
         )
 
     qa_workflow = QuestionAnsweringWorkflow(
@@ -276,7 +322,21 @@ def build_agent_runtime(session, *, enable_generation: bool) -> AgentRuntime:
         run_quality_gate_tool=RunQualityGateTool(),
         retrieval_trace_tool=RetrievalTraceTool(retrieval_workflow),
     )
-    graph = GraphFactory().create_document_agent_graph(
+    node_factory = NodeFactory(
+        llm_plan_proposer=(
+            LLMPlanProposer(
+                planning_llm_service,
+                model=llm_settings.planning_llm or llm_settings.general_llm,
+            )
+            if planning_llm_service is not None
+            else None
+        ),
+        plan_parser=PlanParser(),
+        plan_validator=PlanValidator(),
+        plan_policy=PlanPolicy(max_steps=langgraph_settings.max_steps),
+        plan_repair=PlanRepair(),
+    )
+    graph = GraphFactory(node_factory=node_factory).create_document_agent_graph(
         tool_registry=tool_registry,
         memory=ConversationMemory(
             max_messages=20,
@@ -388,6 +448,15 @@ def print_execution_plan(
         print(f"{index}. {description}")
 
 
+def print_raw_plan(raw_llm_plan: str | None) -> None:
+    print("\nRaw Plan")
+    print("--------")
+    if not raw_llm_plan:
+        print("No raw LLM plan was captured.")
+        return
+    print(raw_llm_plan)
+
+
 def build_json_output(
     result,
     *,
@@ -408,14 +477,20 @@ def build_json_output(
         "context_chunks": data.get("context_chunks", []),
         "citations": data.get("citations", []),
         "execution_plan": data.get("execution_plan"),
+        "validated_plan": data.get("validated_plan"),
         "plan_steps": data.get("plan_steps", []),
         "plan_results": data.get("plan_results", {}),
         "plan_success": data.get("plan_success"),
         "failed_plan_step": data.get("failed_plan_step"),
+        "planning_source": data.get("planning_source"),
+        "planning_errors": data.get("planning_errors", []),
+        "planning_warnings": data.get("planning_warnings", []),
         "diagnostics": result.diagnostics or {},
     }
     if include_trace:
         payload["trace"] = result.trace or []
+        if data.get("raw_llm_plan"):
+            payload["raw_llm_plan"] = data.get("raw_llm_plan")
     return payload
 
 
@@ -423,6 +498,7 @@ def print_graph_result(
     result,
     *,
     show_plan: bool = False,
+    show_raw_plan: bool = False,
     show_context: bool,
     show_trace: bool,
 ) -> None:
@@ -434,6 +510,8 @@ def print_graph_result(
     answer_intent = (result.data or {}).get("answer_intent")
     if answer_intent:
         print(f"\nAnswer intent: {answer_intent}")
+    if show_raw_plan:
+        print_raw_plan((result.data or {}).get("raw_llm_plan"))
     if show_context:
         print_context_chunks((result.data or {}).get("context_chunks", []))
     if show_trace:
@@ -455,7 +533,9 @@ def run_graph_request(
     session_id: str | None,
     allow_answer_generation: bool,
     include_context: bool,
+    llm_planning_enabled: bool,
     show_plan: bool = False,
+    show_raw_plan: bool = False,
     top_k: int | None,
 ):
     return runtime.graph.run(
@@ -465,7 +545,9 @@ def run_graph_request(
         session_id=session_id,
         allow_answer_generation=allow_answer_generation,
         include_context=include_context,
+        llm_planning_enabled=llm_planning_enabled,
         show_plan=show_plan,
+        show_raw_plan=show_raw_plan,
         top_k=top_k,
     )
 
@@ -479,7 +561,9 @@ def run_interactive_loop(
     document_query: str | None,
     allow_answer_generation: bool,
     include_context: bool,
+    llm_planning_enabled: bool,
     show_plan: bool = False,
+    show_raw_plan: bool = False,
     top_k: int | None,
     emit_json: bool,
     show_trace: bool,
@@ -514,7 +598,9 @@ def run_interactive_loop(
             session_id=session_id,
             allow_answer_generation=allow_answer_generation,
             include_context=include_context,
+            llm_planning_enabled=llm_planning_enabled,
             show_plan=show_plan,
+            show_raw_plan=show_raw_plan,
             top_k=top_k,
         )
 
@@ -529,6 +615,7 @@ def run_interactive_loop(
             print_graph_result(
                 result,
                 show_plan=show_plan,
+                show_raw_plan=show_raw_plan and show_trace,
                 show_context=include_context,
                 show_trace=show_trace,
             )
@@ -569,7 +656,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     try:
         from src.bootstrap.startup import bootstrap_application
-        from src.config.settings import ingestion_settings
+        from src.config.settings import ingestion_settings, langgraph_settings
         from src.infrastructure.db.base import Base
         from src.infrastructure.db.orm_models import __all__ as _orm_models_loaded
         from src.infrastructure.db.session import SessionLocal, engine
@@ -579,11 +666,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         session = SessionLocal()
 
         effective_generation = args.generate or ingestion_settings.enable_answer_generation
+        effective_llm_planning = (
+            args.llm_planning
+            if args.llm_planning is not None
+            else langgraph_settings.llm_planning_enabled
+        )
         effective_session_id = build_session_id(args.session_id) if args.interactive else args.session_id
+        if args.show_raw_plan and not args.trace:
+            print("--show-raw-plan requires --trace.", file=sys.stderr)
+            return 1
         print_status("Building document agent runtime...")
         runtime = build_agent_runtime(
             session,
             enable_generation=effective_generation,
+            enable_llm_planning=effective_llm_planning,
         )
         if args.interactive:
             return run_interactive_loop(
@@ -594,7 +690,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 document_query=args.document,
                 allow_answer_generation=effective_generation,
                 include_context=args.show_context,
+                llm_planning_enabled=effective_llm_planning,
                 show_plan=args.show_plan,
+                show_raw_plan=args.show_raw_plan,
                 top_k=args.top_k,
                 emit_json=args.json,
                 show_trace=args.trace,
@@ -609,7 +707,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             session_id=effective_session_id,
             allow_answer_generation=effective_generation,
             include_context=args.show_context,
+            llm_planning_enabled=effective_llm_planning,
             show_plan=args.show_plan,
+            show_raw_plan=args.show_raw_plan,
             top_k=args.top_k,
         )
 
@@ -627,6 +727,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print_graph_result(
                 result,
                 show_plan=args.show_plan,
+                show_raw_plan=args.show_raw_plan and args.trace,
                 show_context=args.show_context,
                 show_trace=args.trace,
             )

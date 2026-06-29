@@ -14,6 +14,7 @@ class PlanStep:
     args: dict[str, Any] = field(default_factory=dict)
     depends_on: list[str] = field(default_factory=list)
     required: bool = True
+    source: str = "deterministic"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -25,6 +26,7 @@ class PlanStep:
             "args": dict(self.args),
             "depends_on": list(self.depends_on),
             "required": self.required,
+            "source": self.source,
         }
 
     @classmethod
@@ -38,4 +40,5 @@ class PlanStep:
             args=dict(value.get("args", {})),
             depends_on=list(value.get("depends_on", [])),
             required=bool(value.get("required", True)),
+            source=str(value.get("source", "deterministic")),
         )

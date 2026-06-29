@@ -21,7 +21,15 @@ from src.application.langgraph.nodes import (
     RunQualityGateNode,
     SessionCommandNode,
 )
-from src.application.langgraph.planning import DeterministicPlanner, PlanExecutor
+from src.application.langgraph.planning import (
+    DeterministicPlanner,
+    LLMPlanProposer,
+    PlanExecutor,
+    PlanParser,
+    PlanPolicy,
+    PlanRepair,
+    PlanValidator,
+)
 from src.application.langgraph.routing import IntentRouter
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 
@@ -32,9 +40,19 @@ class NodeFactory:
         *,
         planner: DeterministicPlanner | None = None,
         plan_executor: PlanExecutor | None = None,
+        llm_plan_proposer: LLMPlanProposer | None = None,
+        plan_parser: PlanParser | None = None,
+        plan_validator: PlanValidator | None = None,
+        plan_policy: PlanPolicy | None = None,
+        plan_repair: PlanRepair | None = None,
     ) -> None:
         self.planner = planner or DeterministicPlanner()
         self.plan_executor = plan_executor or PlanExecutor()
+        self.llm_plan_proposer = llm_plan_proposer
+        self.plan_parser = plan_parser or PlanParser()
+        self.plan_validator = plan_validator or PlanValidator()
+        self.plan_policy = plan_policy or PlanPolicy.default()
+        self.plan_repair = plan_repair or PlanRepair()
 
     def build_document_agent_nodes(
         self,
@@ -45,7 +63,15 @@ class NodeFactory:
     ) -> dict[str, Any]:
         return {
             "route_request": RouteRequestNode(intent_router),
-            "create_plan": CreatePlanNode(self.planner),
+            "create_plan": CreatePlanNode(
+                self.planner,
+                tool_registry=tool_registry,
+                llm_plan_proposer=self.llm_plan_proposer,
+                plan_parser=self.plan_parser,
+                plan_validator=self.plan_validator,
+                plan_policy=self.plan_policy,
+                plan_repair=self.plan_repair,
+            ),
             "execute_plan": ExecutePlanNode(self.plan_executor, tool_registry),
             "list_documents": ListDocumentsNode(tool_registry),
             "find_document": FindDocumentNode(tool_registry),

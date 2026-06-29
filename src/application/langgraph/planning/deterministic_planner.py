@@ -301,6 +301,10 @@ class DeterministicPlanner:
         document_title: str | None,
         diagnostics: dict[str, object],
     ) -> ExecutionPlan:
+        resolved_diagnostics = {
+            "planner_confidence": 0.95,
+            **diagnostics,
+        }
         return ExecutionPlan(
             plan_id=self.id_generator.new_id("plan"),
             goal=goal,
@@ -309,7 +313,7 @@ class DeterministicPlanner:
             requires_document=requires_document,
             document_id=document_id,
             document_title=document_title,
-            diagnostics=diagnostics,
+            diagnostics=resolved_diagnostics,
         )
 
     def _step(

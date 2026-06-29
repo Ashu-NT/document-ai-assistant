@@ -42,12 +42,13 @@ class PlanExecutor:
         tool_results = dict(next_state.get("tool_results", {}))
         trace = list(next_state.get("trace", []))
         step_outputs: dict[str, dict[str, Any]] = {}
+        completed_dependencies: set[str] = set()
         executed_steps: list[str] = []
         failed_step: str | None = None
         plan_success = True
 
         for step in plan.steps:
-            if not self._dependencies_satisfied(step.depends_on, step_outputs):
+            if not self._dependencies_satisfied(step.depends_on, completed_dependencies):
                 failed_step = step.step_id
                 plan_success = False
                 next_state["error"] = build_error(
@@ -100,6 +101,8 @@ class PlanExecutor:
                 "message": serialized.get("message"),
                 "error_code": serialized.get("error_code"),
             }
+            if step.step_id != step.output_key:
+                step_outputs[step.step_id] = step_outputs[step.output_key]
             executed_steps.append(step.step_id)
             trace.append(
                 self.recorder.finish_node(
@@ -120,6 +123,8 @@ class PlanExecutor:
             )
 
             if result.success:
+                completed_dependencies.add(step.output_key)
+                completed_dependencies.add(step.step_id)
                 continue
 
             failed_step = step.step_id
@@ -154,13 +159,9 @@ class PlanExecutor:
     @staticmethod
     def _dependencies_satisfied(
         depends_on: list[str],
-        step_outputs: dict[str, dict[str, Any]],
+        completed_dependencies: set[str],
     ) -> bool:
-        return all(
-            dependency in step_outputs
-            and bool(step_outputs[dependency].get("success"))
-            for dependency in depends_on
-        )
+        return all(dependency in completed_dependencies for dependency in depends_on)
 
     @staticmethod
     def _resolved_document_id(state: AgentState) -> str | None:

@@ -23,6 +23,7 @@ def test_plan_step_serializes_to_dict() -> None:
     assert payload["args"] == {"question": "What is the maintenance interval?"}
     assert payload["depends_on"] == ["find_document"]
     assert payload["required"] is True
+    assert payload["source"] == "deterministic"
 
 
 def test_execution_plan_reports_step_count_and_tool_names() -> None:
@@ -50,3 +51,4 @@ def test_execution_plan_reports_step_count_and_tool_names() -> None:
     assert plan.step_count == 2
     assert plan.tool_names == ["answer_question", "answer_question"]
     assert plan.to_dict()["goal"] == "compare specifications and maintenance tasks"
+    assert plan.to_dict()["source"] == "deterministic"

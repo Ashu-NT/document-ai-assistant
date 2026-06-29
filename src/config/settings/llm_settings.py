@@ -10,4 +10,5 @@ class LLMSettings(AppBaseSettings):
     question_generation_llm: str = Field(alias="QUESTION_GENERATION_LLM")
     extraction_llm: str = Field(alias="EXTRACTION_LLM")
     answer_generation_llm: str | None = Field(default=None, alias="ANSWER_GENERATION_LLM")
+    planning_llm: str | None = Field(default=None, alias="PLANNING_LLM")
         
