@@ -3,9 +3,12 @@ from dataclasses import dataclass, field
 from src.application.langgraph import (
     ConversationMemory,
     DocumentAgentGraph,
+    NodeFactory,
     SessionStateStore,
     ToolRegistry,
 )
+from src.application.langgraph.planning import LLMPlanProposer
+from src.application.langgraph.routing import RouteDecision, RouteType
 from src.application.tools.common import ToolResult
 
 
@@ -107,6 +110,16 @@ class FakeRetrieveChunksTool:
                 "context_chunks": [{"chunk_id": "chunk-1"}],
             }
         )
+
+
+class FakeLLMService:
+    def __init__(self, response: str) -> None:
+        self.response = response
+        self.calls = 0
+
+    def generate(self, prompt: str, model: str | None = None) -> str:
+        self.calls += 1
+        return self.response
 
 
 def _memory_backed_graph(*, registry: ToolRegistry) -> DocumentAgentGraph:
@@ -313,9 +326,6 @@ def test_document_agent_graph_planned_task_requests_document_clarification_when_
 
 
 def test_document_agent_graph_planning_falls_back_safely_when_planner_returns_none() -> None:
-    from src.application.langgraph.factories import NodeFactory
-    from src.application.langgraph.routing import RouteDecision, RouteType
-
     class FakePlanner:
         def create_plan(self, state):
             return None
@@ -347,3 +357,79 @@ def test_document_agent_graph_planning_falls_back_safely_when_planner_returns_no
 
     assert result.success is True
     assert result.route == "answer_question"
+
+
+def test_document_agent_graph_executes_validated_llm_plan() -> None:
+    class FakePlanner:
+        def create_plan(self, state):
+            return None
+
+    class FakePlannedIntentRouter:
+        def route(self, user_input, *, document_id=None, document_query=None):
+            return RouteDecision(
+                route_type=RouteType.PLANNED_TASK,
+                confidence=0.6,
+                reason="Forced planned route.",
+                extracted_question=user_input,
+                is_compound=True,
+                requires_plan=True,
+            )
+
+    llm_service = FakeLLMService(
+        """
+        {
+          "goal": "Find and answer",
+          "reason": "Resolve the document before answering.",
+          "steps": [
+            {
+              "step_id": "step_1",
+              "tool_name": "find_document",
+              "description": "Find the document",
+              "args": {"query_text": "FWC12"},
+              "output_key": "lookup",
+              "depends_on": [],
+              "required": true
+            },
+            {
+              "step_id": "step_2",
+              "tool_name": "answer_question",
+              "description": "Answer the question",
+              "args": {"question": "What is the maintenance interval?"},
+              "output_key": "answer",
+              "depends_on": ["step_1"],
+              "required": true
+            }
+          ]
+        }
+        """
+    )
+    answer_tool = FakeAnswerQuestionTool()
+    router = FakePlannedIntentRouter()
+    registry = ToolRegistry(
+        find_document_tool=FakeFindDocumentTool(),
+        answer_question_tool=answer_tool,
+    )
+    nodes = NodeFactory(
+        planner=FakePlanner(),
+        llm_plan_proposer=LLMPlanProposer(llm_service),
+    ).build_document_agent_nodes(
+        tool_registry=registry,
+        intent_router=router,
+        memory=None,
+    )
+    graph = DocumentAgentGraph(
+        registry,
+        intent_router=router,
+        nodes=nodes,
+    )
+
+    result = graph.run(
+        "find the best answer",
+        llm_planning_enabled=True,
+    )
+
+    assert result.success is True
+    assert result.route == "planned_task"
+    assert result.data["planning_source"] == "llm"
+    assert llm_service.calls == 1
+    assert answer_tool.requests

@@ -16,12 +16,19 @@ class AgentState(TypedDict):
     question: str | None
     allow_answer_generation: bool
     include_context: bool
+    llm_planning_enabled: bool
     show_plan: bool
+    show_raw_plan: bool
     top_k: int | None
     tool_results: dict[str, Any]
     execution_plan: dict[str, Any] | None
+    validated_plan: dict[str, Any] | None
     plan_steps: list[dict[str, Any]]
     plan_results: dict[str, Any]
+    planning_source: str | None
+    planning_errors: list[str]
+    planning_warnings: list[str]
+    raw_llm_plan: str | None
     plan_success: bool | None
     failed_plan_step: str | None
     response_text: str | None
@@ -48,7 +55,9 @@ def build_agent_state(
     document_query: str | None = None,
     allow_answer_generation: bool = False,
     include_context: bool = False,
+    llm_planning_enabled: bool = False,
     show_plan: bool = False,
+    show_raw_plan: bool = False,
     top_k: int | None = None,
     conversation_id: str | None = None,
     session_id: str | None = None,
@@ -74,12 +83,19 @@ def build_agent_state(
         question=None,
         allow_answer_generation=allow_answer_generation,
         include_context=include_context,
+        llm_planning_enabled=llm_planning_enabled,
         show_plan=show_plan,
+        show_raw_plan=show_raw_plan,
         top_k=top_k,
         tool_results={},
         execution_plan=None,
+        validated_plan=None,
         plan_steps=[],
         plan_results={},
+        planning_source=None,
+        planning_errors=[],
+        planning_warnings=[],
+        raw_llm_plan=None,
         plan_success=None,
         failed_plan_step=None,
         response_text=None,

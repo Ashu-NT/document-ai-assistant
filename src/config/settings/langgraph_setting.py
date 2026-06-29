@@ -10,4 +10,8 @@ class LangGraphSettings(AppBaseSettings):
     )
 
     max_steps: int = Field(alias="LANGGRAPH_MAX_STEPS")
+    llm_planning_enabled: bool = Field(
+        default=False,
+        alias="LANGGRAPH_LLM_PLANNING_ENABLED"
+    )
         

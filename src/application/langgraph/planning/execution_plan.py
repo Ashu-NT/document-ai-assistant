@@ -12,6 +12,7 @@ class ExecutionPlan:
     goal: str
     steps: list[PlanStep]
     reason: str
+    source: str = "deterministic"
     requires_document: bool = False
     document_id: str | None = None
     document_title: str | None = None
@@ -35,6 +36,7 @@ class ExecutionPlan:
             "goal": self.goal,
             "steps": [step.to_dict() for step in self.steps],
             "reason": self.reason,
+            "source": self.source,
             "requires_document": self.requires_document,
             "document_id": self.document_id,
             "document_title": self.document_title,
@@ -52,6 +54,7 @@ class ExecutionPlan:
                 if isinstance(item, dict)
             ],
             reason=str(value["reason"]),
+            source=str(value.get("source", "deterministic")),
             requires_document=bool(value.get("requires_document", False)),
             document_id=value.get("document_id"),
             document_title=value.get("document_title"),

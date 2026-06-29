@@ -24,6 +24,7 @@ def test_agent_cli_parses_basic_arguments() -> None:
             "7",
             "--show-context",
             "--show-plan",
+            "--llm-planning",
             "--json",
         ]
     )
@@ -34,6 +35,7 @@ def test_agent_cli_parses_basic_arguments() -> None:
     assert args.top_k == 7
     assert args.show_context is True
     assert args.show_plan is True
+    assert args.llm_planning is True
     assert args.json is True
 
 
@@ -44,6 +46,16 @@ def test_agent_cli_parses_interactive_flag() -> None:
 
     assert args.interactive is True
     assert args.session_id == "demo"
+
+
+def test_agent_cli_parses_raw_plan_flags() -> None:
+    mod = _load_script("agent_cli")
+
+    args = mod.parse_args(["question", "--llm-planning", "--show-raw-plan", "--trace"])
+
+    assert args.llm_planning is True
+    assert args.show_raw_plan is True
+    assert args.trace is True
 
 
 def test_agent_cli_show_context_prints_context_chunks(capsys) -> None:
@@ -106,10 +118,15 @@ def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> Non
             "context_chunks": [{"chunk_id": "chunk_1"}],
             "citations": [{"citation_id": "cit_1"}],
             "execution_plan": {"plan_id": "plan_1"},
+            "validated_plan": {"plan_id": "plan_1", "source": "llm"},
             "plan_steps": [{"description": "Answer the question."}],
             "plan_results": {"plan_success": True},
             "plan_success": True,
             "failed_plan_step": None,
+            "planning_source": "llm",
+            "planning_errors": [],
+            "planning_warnings": ["Repaired unsupported arg."],
+            "raw_llm_plan": '{"goal":"Answer"}',
         },
         diagnostics={"needs_clarification": False},
         trace=[{"node_name": "answer_question"}],
@@ -129,12 +146,17 @@ def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> Non
     assert without_trace["context_chunks"] == [{"chunk_id": "chunk_1"}]
     assert without_trace["citations"] == [{"citation_id": "cit_1"}]
     assert without_trace["execution_plan"] == {"plan_id": "plan_1"}
+    assert without_trace["validated_plan"] == {"plan_id": "plan_1", "source": "llm"}
     assert without_trace["plan_steps"] == [{"description": "Answer the question."}]
     assert without_trace["plan_results"] == {"plan_success": True}
     assert without_trace["plan_success"] is True
     assert without_trace["failed_plan_step"] is None
+    assert without_trace["planning_source"] == "llm"
+    assert without_trace["planning_warnings"] == ["Repaired unsupported arg."]
     assert "trace" not in without_trace
+    assert "raw_llm_plan" not in without_trace
     assert with_trace["trace"] == [{"node_name": "answer_question"}]
+    assert with_trace["raw_llm_plan"] == '{"goal":"Answer"}'
 
 
 def test_agent_cli_show_plan_output_includes_plan_text(capsys) -> None:
@@ -163,6 +185,27 @@ def test_agent_cli_show_plan_output_includes_plan_text(capsys) -> None:
     assert "Retrieve evidence chunks." in output
 
 
+def test_agent_cli_show_raw_plan_output_requires_data(capsys) -> None:
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="Answer text.",
+        route="planned_task",
+        data={"raw_llm_plan": '{"goal":"Answer"}'},
+    )
+
+    mod.print_graph_result(
+        result,
+        show_plan=False,
+        show_raw_plan=True,
+        show_context=False,
+        show_trace=False,
+    )
+
+    output = capsys.readouterr().out
+    assert "Raw Plan" in output
+    assert '{"goal":"Answer"}' in output
+
+
 def test_agent_cli_interactive_loop_exits_on_exit_command(monkeypatch, capsys) -> None:
     mod = _load_script("agent_cli")
 
@@ -189,8 +232,10 @@ def test_agent_cli_interactive_loop_exits_on_exit_command(monkeypatch, capsys) -
         document_query=None,
         allow_answer_generation=False,
         include_context=False,
+        llm_planning_enabled=False,
         top_k=None,
         emit_json=False,
+        show_raw_plan=False,
         show_trace=False,
     )
 

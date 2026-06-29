@@ -56,7 +56,9 @@ class DocumentAgentGraph:
         session_id: str | None = None,
         allow_answer_generation: bool = False,
         include_context: bool = False,
+        llm_planning_enabled: bool = False,
         show_plan: bool = False,
+        show_raw_plan: bool = False,
         top_k: int | None = None,
         conversation_id: str | None = None,
     ) -> GraphResult:
@@ -66,7 +68,9 @@ class DocumentAgentGraph:
             document_query=document_query,
             allow_answer_generation=allow_answer_generation,
             include_context=include_context,
+            llm_planning_enabled=llm_planning_enabled,
             show_plan=show_plan,
+            show_raw_plan=show_raw_plan,
             top_k=top_k,
             conversation_id=conversation_id,
             session_id=session_id,
@@ -275,6 +279,7 @@ class DocumentAgentGraph:
             "configured_tools": sorted(tool_results.keys()),
             "plan_used": bool(state.get("execution_plan")),
             "plan_success": state.get("plan_success"),
+            "planning_source": state.get("planning_source"),
         }
         data = {
             "document_id": state.get("document_id"),
@@ -291,16 +296,25 @@ class DocumentAgentGraph:
             "context_chunks": context_chunks,
             "citations": citations,
             "execution_plan": state.get("execution_plan"),
+            "validated_plan": state.get("validated_plan"),
             "plan_steps": state.get("plan_steps", []),
             "plan_results": state.get("plan_results", {}),
             "plan_success": state.get("plan_success"),
             "failed_plan_step": state.get("failed_plan_step"),
+            "planning_source": state.get("planning_source"),
+            "planning_errors": state.get("planning_errors", []),
+            "planning_warnings": state.get("planning_warnings", []),
+            "raw_llm_plan": state.get("raw_llm_plan"),
             "tool_results": tool_results,
         }
         execution_plan = state.get("execution_plan")
         if isinstance(execution_plan, dict):
             diagnostics["plan_id"] = execution_plan.get("plan_id")
             diagnostics["plan_goal"] = execution_plan.get("goal")
+        if state.get("planning_errors"):
+            diagnostics["planning_errors"] = state.get("planning_errors", [])
+        if state.get("planning_warnings"):
+            diagnostics["planning_warnings"] = state.get("planning_warnings", [])
         if answer_intent is not None:
             diagnostics["answer_intent"] = answer_intent
         if state.get("needs_clarification") and state.get("error") is None:
