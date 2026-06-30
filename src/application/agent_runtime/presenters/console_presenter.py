@@ -275,6 +275,7 @@ def _route_mode_label(route: str) -> str:
         "planned_task": "Planned Task",
         "answer_question": "Question Answering",
         "retrieve_evidence": "Evidence Retrieval",
+        "out_of_scope": "Scope Redirect",
         "blocked_action": "Safety Block",
     }
     return mapping.get(route, route.replace("_", " ").title())

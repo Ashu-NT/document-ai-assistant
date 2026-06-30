@@ -10,6 +10,7 @@ class ReactEvent(StrEnum):
     ACTION = "action"
     OBSERVATION = "observation"
     REFLECTION = "reflection"
+    GUARDRAIL = "guardrail"
     SAFETY_BLOCK = "safety_block"
     FINAL_ANSWER = "final_answer"
     ERROR = "error"

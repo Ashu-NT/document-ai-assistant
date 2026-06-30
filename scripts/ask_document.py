@@ -264,6 +264,7 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
     )
     from src.application.guardrails.retrieval import (  # noqa: WPS433
         DocumentRelevanceGuardrail,
+        QueryScopeGuardrail,
         RetrievalEvidenceGuardrail,
     )
     from src.application.services.ai import LLMService  # noqa: WPS433
@@ -328,6 +329,7 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
         context_expander=RetrievalContextExpander(
             document_lookup_service=document_lookup_service,
         ),
+        pre_retrieval_guardrails=[QueryScopeGuardrail()],
         post_retrieval_guardrails=[
             DocumentRelevanceGuardrail(),
             RetrievalEvidenceGuardrail(),
@@ -356,6 +358,7 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
         retrieval_workflow=retrieval_workflow,
         exploration_service=exploration_service,
         router=QuestionAnsweringRouter(),
+        pre_query_guardrails=[QueryScopeGuardrail()],
         context_guardrails=[
             ScopedDocumentConsistencyGuardrail(),
             ContextFilteringGuardrail(),

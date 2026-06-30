@@ -29,12 +29,22 @@ class ReactTraceBuilder:
             "Thought Summary",
             _thought_summary(result.route, data),
         )
+        if result.route == "out_of_scope":
+            self._append(
+                trace,
+                ReactEvent.GUARDRAIL,
+                "Guardrail",
+                _guardrail_message(data, result.response_text),
+            )
+            return trace
         if result.route == "blocked_action" or data.get("unsafe_request_blocked"):
             self._append(
                 trace,
-                ReactEvent.SAFETY_BLOCK,
-                "Safety Block",
-                _safety_message(data, result.response_text),
+                ReactEvent.SAFETY_BLOCK
+                if data.get("unsafe_request_blocked")
+                else ReactEvent.GUARDRAIL,
+                "Safety Block" if data.get("unsafe_request_blocked") else "Guardrail",
+                _guardrail_message(data, result.response_text),
             )
             return trace
         if isinstance(data.get("execution_plan"), dict) and data.get("plan_steps"):
@@ -134,10 +144,20 @@ def _thought_summary(route: str | None, data: dict[str, Any]) -> str:
             "The request requires synthesis across evidence groups, so I will "
             "collect task-specific evidence before writing the report."
         )
-    if route == "blocked_action" or data.get("unsafe_request_blocked"):
+    if route == "out_of_scope":
         return (
-            "The request attempts a destructive corpus operation, so I will stop "
-            "before executing tools."
+            "This request is outside the document assistant scope, so I will not "
+            "run retrieval or tools."
+        )
+    if route == "blocked_action" or data.get("unsafe_request_blocked"):
+        if data.get("unsafe_request_blocked"):
+            return (
+                "The request attempts a destructive corpus operation, so I will stop "
+                "before executing tools."
+            )
+        return (
+            "The request violates a guardrail policy, so I will stop before "
+            "running tools or answer generation."
         )
     if data.get("pending_clarification"):
         return "The request is ambiguous, so I need clarification before continuing."
@@ -149,13 +169,17 @@ def _thought_summary(route: str | None, data: dict[str, Any]) -> str:
     return "The request will be handled through the grounded document workflow."
 
 
-def _safety_message(data: dict[str, Any], response_text: str | None) -> str:
-    reason = data.get("blocked_reason") or response_text
+def _guardrail_message(data: dict[str, Any], response_text: str | None) -> str:
+    reason = (
+        data.get("guardrail_user_message")
+        or data.get("blocked_reason")
+        or response_text
+    )
     if isinstance(reason, str) and reason.strip():
         return reason.strip()
     return (
-        "This request is blocked because destructive corpus operations require an "
-        "explicit supported workflow and approval."
+        "This request was stopped by a runtime guardrail before any unsupported "
+        "actions were executed."
     )
 
 

@@ -65,6 +65,13 @@ class AgentEvalSummary:
     multi_strategy_success_rate: float
     strategy_document_scope_safety_rate: float
     strategy_trace_coverage_rate: float
+    guardrail_block_rate: float = 0.0
+    out_of_scope_redirect_rate: float = 0.0
+    false_positive_guardrail_rate: float = 0.0
+    false_negative_guardrail_rate: float = 0.0
+    prompt_injection_block_rate: float = 0.0
+    destructive_tool_block_rate: float = 0.0
+    grounding_failure_catch_rate: float = 0.0
     deep_research_route_accuracy: float = 0.0
     research_plan_validity_rate: float = 0.0
     research_task_success_rate: float = 0.0

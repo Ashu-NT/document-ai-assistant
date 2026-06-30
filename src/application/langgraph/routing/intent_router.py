@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+from src.application.guardrails import GuardrailContext, GuardrailDecision
+from src.application.guardrails.services import PreRouteGuardrailService
 from src.application.langgraph.routing.route_decision import RouteDecision
 from src.application.langgraph.routing.route_type import RouteType
 from src.application.langgraph.routing.unsafe_action_detector import (
@@ -120,8 +122,15 @@ class IntentRouter:
     def __init__(
         self,
         unsafe_action_detector: UnsafeActionDetector | None = None,
+        pre_route_guardrail_service: PreRouteGuardrailService | None = None,
     ) -> None:
         self.unsafe_action_detector = unsafe_action_detector or UnsafeActionDetector()
+        self.pre_route_guardrail_service = (
+            pre_route_guardrail_service
+            or PreRouteGuardrailService(
+                unsafe_action_detector=self.unsafe_action_detector,
+            )
+        )
 
     def route(
         self,
@@ -185,22 +194,18 @@ class IntentRouter:
                 reason="Matched explicit list-documents command.",
             )
 
-        unsafe_action = self.unsafe_action_detector.detect(normalized_input)
-        if unsafe_action.is_unsafe:
-            return RouteDecision(
-                route_type=RouteType.BLOCKED_ACTION,
-                confidence=1.0,
-                reason=unsafe_action.reason
-                or "Request attempts unsafe corpus mutation.",
+        pre_route_result = self.pre_route_guardrail_service.check(
+            GuardrailContext(
+                user_input=user_input,
+                query_text=user_input,
+                selected_document_id=document_id,
+            )
+        )
+        if not pre_route_result.allowed:
+            return self._guardrail_decision(
+                result=pre_route_result,
+                user_input=user_input,
                 extracted_document_query=extracted_document_query,
-                extracted_question=user_input.strip(),
-                options={
-                    "unsafe_request_blocked": True,
-                    "blocked_reason": unsafe_action.reason
-                    or "Request attempts unsafe corpus mutation.",
-                    "blocked_terms": list(unsafe_action.matched_terms),
-                    "blocked_severity": unsafe_action.severity,
-                },
             )
 
         if normalized_input in {
@@ -375,6 +380,69 @@ class IntentRouter:
             extracted_document_query=extracted_document_query,
             extracted_question=user_input.strip(),
             uses_current_document=_references_current_document(normalized_input),
+        )
+
+    @staticmethod
+    def _guardrail_decision(
+        *,
+        result,
+        user_input: str,
+        extracted_document_query: str | None,
+    ) -> RouteDecision:
+        options = {
+            "guardrail_decision": result.decision.value,
+            "guardrail_reason": result.reason,
+            "guardrail_user_message": result.user_message,
+            "guardrail_result": result.to_dict(),
+            "guardrail_trace_id": result.trace_id,
+            "guardrail_trace": result.diagnostics.get("guardrail_trace", []),
+            "blocked_tools": list(result.blocked_tools),
+        }
+        violations = result.violations
+        if violations:
+            first_violation = violations[0]
+            options["blocked_terms"] = list(first_violation.matched_terms)
+            options["blocked_severity"] = (
+                first_violation.severity.value
+                if first_violation.severity is not None
+                else result.severity.value
+            )
+        if result.decision in {
+            GuardrailDecision.REDIRECT,
+            GuardrailDecision.OUT_OF_SCOPE,
+        }:
+            return RouteDecision(
+                route_type=RouteType.OUT_OF_SCOPE,
+                confidence=1.0,
+                reason=result.reason,
+                extracted_document_query=extracted_document_query,
+                extracted_question=user_input.strip(),
+                options=options,
+            )
+        if result.decision in {
+            GuardrailDecision.CLARIFY,
+            GuardrailDecision.NEEDS_CLARIFICATION,
+        }:
+            return RouteDecision(
+                route_type=RouteType.NEEDS_CLARIFICATION,
+                confidence=0.95,
+                reason=result.reason,
+                extracted_document_query=extracted_document_query,
+                extracted_question=user_input.strip(),
+                options=options,
+            )
+        options["unsafe_request_blocked"] = (
+            result.diagnostics.get("scope_category")
+            == "unsafe_destructive"
+        )
+        options["blocked_reason"] = result.reason
+        return RouteDecision(
+            route_type=RouteType.BLOCKED_ACTION,
+            confidence=1.0,
+            reason=result.reason,
+            extracted_document_query=extracted_document_query,
+            extracted_question=user_input.strip(),
+            options=options,
         )
 
 

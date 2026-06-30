@@ -30,7 +30,8 @@ class BlockedActionNode:
             },
         )
         return {
-            "unsafe_request_blocked": True,
-            "response_text": _BLOCKED_ACTION_RESPONSE,
+            "unsafe_request_blocked": bool(state.get("unsafe_request_blocked", False)),
+            "response_text": state.get("guardrail_user_message")
+            or _BLOCKED_ACTION_RESPONSE,
             "trace": extend_trace(state["trace"], trace_entry),
         }

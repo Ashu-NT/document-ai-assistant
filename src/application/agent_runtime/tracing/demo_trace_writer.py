@@ -24,9 +24,7 @@ class DemoTraceWriter:
         react_trace,
     ) -> dict[str, str]:
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        markdown_path = self.output_dir / f"demo_trace_{timestamp}.md"
-        json_path = self.output_dir / f"demo_trace_{timestamp}.json"
+        markdown_path, json_path = self._next_output_paths()
         markdown_path.write_text(
             self.markdown_presenter.render(
                 session=session,
@@ -49,3 +47,15 @@ class DemoTraceWriter:
             "markdown_path": str(markdown_path),
             "json_path": str(json_path),
         }
+
+    def _next_output_paths(self) -> tuple[Path, Path]:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        attempt = 0
+        while True:
+            suffix = "" if attempt == 0 else f"_{attempt:02d}"
+            stem = f"demo_trace_{timestamp}{suffix}"
+            markdown_path = self.output_dir / f"{stem}.md"
+            json_path = self.output_dir / f"{stem}.json"
+            if not markdown_path.exists() and not json_path.exists():
+                return markdown_path, json_path
+            attempt += 1

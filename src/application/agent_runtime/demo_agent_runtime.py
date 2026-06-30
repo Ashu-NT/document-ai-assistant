@@ -110,6 +110,7 @@ def build_agent_runtime(
     )
     from src.application.guardrails.retrieval import (
         DocumentRelevanceGuardrail,
+        QueryScopeGuardrail,
         RetrievalEvidenceGuardrail,
     )
     from src.application.langgraph import (
@@ -223,6 +224,7 @@ def build_agent_runtime(
         context_expander=RetrievalContextExpander(
             document_lookup_service=document_lookup_service,
         ),
+        pre_retrieval_guardrails=[QueryScopeGuardrail()],
         post_retrieval_guardrails=[
             DocumentRelevanceGuardrail(),
             RetrievalEvidenceGuardrail(),
@@ -271,6 +273,7 @@ def build_agent_runtime(
         retrieval_workflow=retrieval_workflow,
         exploration_service=exploration_service,
         router=QuestionAnsweringRouter(),
+        pre_query_guardrails=[QueryScopeGuardrail()],
         context_guardrails=[
             ScopedDocumentConsistencyGuardrail(),
             ContextFilteringGuardrail(),

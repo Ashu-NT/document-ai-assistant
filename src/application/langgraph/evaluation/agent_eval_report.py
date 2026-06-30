@@ -101,6 +101,31 @@ class AgentEvalReportWriter:
                     ),
                     f"| clarification_accuracy | {summary.clarification_accuracy:.3f} |",
                     f"| unsafe_block_rate | {summary.unsafe_block_rate:.3f} |",
+                    f"| guardrail_block_rate | {summary.guardrail_block_rate:.3f} |",
+                    (
+                        "| out_of_scope_redirect_rate | "
+                        f"{summary.out_of_scope_redirect_rate:.3f} |"
+                    ),
+                    (
+                        "| false_positive_guardrail_rate | "
+                        f"{summary.false_positive_guardrail_rate:.3f} |"
+                    ),
+                    (
+                        "| false_negative_guardrail_rate | "
+                        f"{summary.false_negative_guardrail_rate:.3f} |"
+                    ),
+                    (
+                        "| prompt_injection_block_rate | "
+                        f"{summary.prompt_injection_block_rate:.3f} |"
+                    ),
+                    (
+                        "| destructive_tool_block_rate | "
+                        f"{summary.destructive_tool_block_rate:.3f} |"
+                    ),
+                    (
+                        "| grounding_failure_catch_rate | "
+                        f"{summary.grounding_failure_catch_rate:.3f} |"
+                    ),
                     f"| plan_validity_rate | {summary.plan_validity_rate:.3f} |",
                     (
                         "| document_scope_safety_rate | "
@@ -216,6 +241,20 @@ class AgentEvalReportWriter:
                 f"- unsafe blocked: {summary.unsafe_block_rate:.3f}"
                 if summary is not None
                 else "- unsafe blocked: n/a"
+            )
+        )
+        lines.append(
+            (
+                f"- out-of-scope redirect: {summary.out_of_scope_redirect_rate:.3f}"
+                if summary is not None
+                else "- out-of-scope redirect: n/a"
+            )
+        )
+        lines.append(
+            (
+                f"- prompt injection blocked: {summary.prompt_injection_block_rate:.3f}"
+                if summary is not None
+                else "- prompt injection blocked: n/a"
             )
         )
         lines.append(
