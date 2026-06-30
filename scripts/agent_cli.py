@@ -134,6 +134,44 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Display the deterministic multi-step execution plan when one is used.",
     )
+    deep_research_group = parser.add_mutually_exclusive_group()
+    deep_research_group.add_argument(
+        "--deep-research",
+        dest="deep_research",
+        action="store_true",
+        help="Enable LangGraph V8 deep research routing and execution.",
+    )
+    deep_research_group.add_argument(
+        "--no-deep-research",
+        dest="deep_research",
+        action="store_false",
+        help="Disable LangGraph V8 deep research routing for this run.",
+    )
+    parser.set_defaults(deep_research=None)
+    llm_research_planning_group = parser.add_mutually_exclusive_group()
+    llm_research_planning_group.add_argument(
+        "--llm-research-planning",
+        dest="llm_research_planning",
+        action="store_true",
+        help="Enable validated LLM research planning for deep research requests.",
+    )
+    llm_research_planning_group.add_argument(
+        "--no-llm-research-planning",
+        dest="llm_research_planning",
+        action="store_false",
+        help="Disable validated LLM research planning for deep research requests.",
+    )
+    parser.set_defaults(llm_research_planning=None)
+    parser.add_argument(
+        "--show-research-plan",
+        action="store_true",
+        help="Print the deep research task plan when a V8 research route is used.",
+    )
+    parser.add_argument(
+        "--show-research-trace",
+        action="store_true",
+        help="Print the deep research execution trace when a V8 research route is used.",
+    )
     llm_planning_group = parser.add_mutually_exclusive_group()
     llm_planning_group.add_argument(
         "--llm-planning",
@@ -202,6 +240,7 @@ def build_agent_runtime(
     *,
     enable_generation: bool,
     enable_llm_planning: bool,
+    enable_llm_research_planning: bool,
 ) -> AgentRuntime:
     from qdrant_client import QdrantClient
 
@@ -225,6 +264,7 @@ def build_agent_runtime(
     from src.application.langgraph import (
         ConversationMemory,
         GraphFactory,
+        LLMResearchPlanner,
         NodeFactory,
         ReflectionService,
         ReflectionValidator,
@@ -232,6 +272,7 @@ def build_agent_runtime(
         ReflectionJsonParser,
         ReflectionPolicy,
         EvidenceMerger,
+        ResearchPolicy,
         RetryQueryBuilder,
         ClarificationBuilder,
         RetrievalRetryPolicy,
@@ -360,7 +401,7 @@ def build_agent_runtime(
             llm_service=llm_service,
             answer_generation_model=generation_model,
         )
-    if enable_llm_planning:
+    if enable_llm_planning or enable_llm_research_planning:
         planning_model = llm_settings.planning_llm or llm_settings.general_llm
         planning_llm_service = LLMService(
             OllamaLLMProvider(
@@ -470,6 +511,20 @@ def build_agent_runtime(
         retrieval_plan_executor=RetrievalPlanExecutor(),
         retrieval_strategy_policy=retrieval_strategy_policy,
         strategy_retry_policy=StrategyRetryPolicy(),
+        llm_research_planner=(
+            LLMResearchPlanner(
+                planning_llm_service,
+                model=llm_settings.planning_llm or llm_settings.general_llm,
+            )
+            if planning_llm_service is not None and enable_llm_research_planning
+            else None
+        ),
+        research_policy=ResearchPolicy(
+            enabled=langgraph_settings.deep_research_enabled,
+            llm_research_planning_enabled=(
+                langgraph_settings.llm_research_planning_enabled
+            ),
+        ),
     )
     graph = GraphFactory(node_factory=node_factory).create_document_agent_graph(
         tool_registry=tool_registry,
@@ -660,6 +715,41 @@ def print_raw_plan(raw_llm_plan: str | None) -> None:
     print(raw_llm_plan)
 
 
+def print_research_plan(research_plan: dict[str, Any] | None) -> None:
+    print("\nResearch Plan")
+    print("-------------")
+    if not isinstance(research_plan, dict):
+        print("No deep research plan was recorded.")
+        return
+    tasks = research_plan.get("tasks") or []
+    if not isinstance(tasks, list) or not tasks:
+        print("No research tasks were recorded.")
+        return
+    for index, task in enumerate(tasks, start=1):
+        if not isinstance(task, dict):
+            continue
+        title = task.get("title") or f"Task {index}"
+        strategy_hint = task.get("strategy_hint") or "-"
+        print(f"{index}. {title} ({strategy_hint})")
+
+
+def print_research_trace(research_trace: dict[str, Any] | None) -> None:
+    print("\nResearch Trace")
+    print("--------------")
+    if not isinstance(research_trace, dict):
+        print("No deep research trace was recorded.")
+        return
+    print(f"Plan source: {research_trace.get('plan_source') or '-'}")
+    evidence_counts = research_trace.get("evidence_counts_per_task") or {}
+    if isinstance(evidence_counts, dict) and evidence_counts:
+        print("Evidence counts:")
+        for task_id, count in evidence_counts.items():
+            print(f"- {task_id}: {count}")
+    gaps = research_trace.get("gaps") or []
+    if isinstance(gaps, list):
+        print(f"Gaps: {len(gaps)}")
+
+
 def build_json_output(
     result,
     *,
@@ -698,12 +788,20 @@ def build_json_output(
         "planning_source": data.get("planning_source"),
         "planning_errors": data.get("planning_errors", []),
         "planning_warnings": data.get("planning_warnings", []),
+        "research_goal": data.get("research_goal"),
+        "research_plan": data.get("research_plan"),
+        "research_task_results": data.get("research_task_results", []),
+        "research_gaps": data.get("research_gaps", []),
+        "research_report": data.get("research_report"),
+        "research_trace": data.get("research_trace"),
         "diagnostics": result.diagnostics or {},
     }
     if include_trace:
         payload["trace"] = result.trace or []
         if data.get("raw_llm_plan"):
             payload["raw_llm_plan"] = data.get("raw_llm_plan")
+        if data.get("raw_llm_research_plan"):
+            payload["raw_llm_research_plan"] = data.get("raw_llm_research_plan")
     return payload
 
 
@@ -712,6 +810,8 @@ def print_graph_result(
     *,
     show_plan: bool = False,
     show_raw_plan: bool = False,
+    show_research_plan: bool = False,
+    show_research_trace: bool = False,
     show_context: bool,
     show_trace: bool,
     show_reflection: bool = False,
@@ -725,10 +825,19 @@ def print_graph_result(
     answer_intent = (result.data or {}).get("answer_intent")
     if answer_intent:
         print(f"\nAnswer intent: {answer_intent}")
+    if show_plan:
+        print_execution_plan(
+            (result.data or {}).get("execution_plan"),
+            (result.data or {}).get("plan_steps", []),
+        )
     if show_retrieval_strategy:
         print_retrieval_strategy(result)
     if show_raw_plan:
         print_raw_plan((result.data or {}).get("raw_llm_plan"))
+    if show_research_plan:
+        print_research_plan((result.data or {}).get("research_plan"))
+    if show_research_trace:
+        print_research_trace((result.data or {}).get("research_trace"))
     if show_context:
         print_context_chunks((result.data or {}).get("context_chunks", []))
     if show_reflection:
@@ -753,6 +862,10 @@ def run_graph_request(
     allow_answer_generation: bool,
     include_context: bool,
     llm_planning_enabled: bool,
+    deep_research_enabled: bool = False,
+    llm_research_planning_enabled: bool = False,
+    show_research_plan: bool = False,
+    show_research_trace: bool = False,
     reflection_enabled: bool = False,
     show_reflection: bool = False,
     retrieval_strategy_enabled: bool = False,
@@ -771,6 +884,10 @@ def run_graph_request(
         allow_answer_generation=allow_answer_generation,
         include_context=include_context,
         llm_planning_enabled=llm_planning_enabled,
+        deep_research_enabled=deep_research_enabled,
+        llm_research_planning_enabled=llm_research_planning_enabled,
+        show_research_plan=show_research_plan,
+        show_research_trace=show_research_trace,
         reflection_enabled=reflection_enabled,
         show_reflection=show_reflection,
         retrieval_strategy_enabled=retrieval_strategy_enabled,
@@ -793,6 +910,10 @@ def run_interactive_loop(
     allow_answer_generation: bool,
     include_context: bool,
     llm_planning_enabled: bool,
+    deep_research_enabled: bool = False,
+    llm_research_planning_enabled: bool = False,
+    show_research_plan: bool = False,
+    show_research_trace: bool = False,
     reflection_enabled: bool = False,
     show_reflection: bool = False,
     retrieval_strategy_enabled: bool = False,
@@ -836,6 +957,10 @@ def run_interactive_loop(
             allow_answer_generation=allow_answer_generation,
             include_context=include_context,
             llm_planning_enabled=llm_planning_enabled,
+            deep_research_enabled=deep_research_enabled,
+            llm_research_planning_enabled=llm_research_planning_enabled,
+            show_research_plan=show_research_plan,
+            show_research_trace=show_research_trace,
             reflection_enabled=reflection_enabled,
             show_reflection=show_reflection,
             retrieval_strategy_enabled=retrieval_strategy_enabled,
@@ -859,6 +984,8 @@ def run_interactive_loop(
                 result,
                 show_plan=show_plan,
                 show_raw_plan=show_raw_plan and show_trace,
+                show_research_plan=show_research_plan,
+                show_research_trace=show_research_trace,
                 show_context=include_context,
                 show_trace=show_trace,
                 show_reflection=show_reflection,
@@ -926,6 +1053,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.llm_retrieval_strategy is not None
             else langgraph_settings.llm_retrieval_strategy_enabled
         )
+        effective_deep_research = (
+            args.deep_research
+            if args.deep_research is not None
+            else langgraph_settings.deep_research_enabled
+        )
+        effective_llm_research_planning = (
+            args.llm_research_planning
+            if args.llm_research_planning is not None
+            else langgraph_settings.llm_research_planning_enabled
+        )
         effective_retrieval_strategy = (
             langgraph_settings.retrieval_strategy_enabled
             or args.retrieval_strategy is not None
@@ -941,6 +1078,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             session,
             enable_generation=effective_generation,
             enable_llm_planning=effective_llm_planning,
+            enable_llm_research_planning=effective_llm_research_planning,
         )
         if args.interactive:
             return run_interactive_loop(
@@ -952,6 +1090,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 allow_answer_generation=effective_generation,
                 include_context=args.show_context,
                 llm_planning_enabled=effective_llm_planning,
+                deep_research_enabled=effective_deep_research,
+                llm_research_planning_enabled=effective_llm_research_planning,
+                show_research_plan=args.show_research_plan,
+                show_research_trace=args.show_research_trace,
                 reflection_enabled=effective_reflection,
                 show_reflection=args.show_reflection,
                 retrieval_strategy_enabled=effective_retrieval_strategy,
@@ -975,6 +1117,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             allow_answer_generation=effective_generation,
             include_context=args.show_context,
             llm_planning_enabled=effective_llm_planning,
+            deep_research_enabled=effective_deep_research,
+            llm_research_planning_enabled=effective_llm_research_planning,
+            show_research_plan=args.show_research_plan,
+            show_research_trace=args.show_research_trace,
             reflection_enabled=effective_reflection,
             show_reflection=args.show_reflection,
             retrieval_strategy_enabled=effective_retrieval_strategy,
@@ -1001,6 +1147,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 result,
                 show_plan=args.show_plan,
                 show_raw_plan=args.show_raw_plan and args.trace,
+                show_research_plan=args.show_research_plan,
+                show_research_trace=args.show_research_trace,
                 show_context=args.show_context,
                 show_trace=args.trace,
                 show_reflection=args.show_reflection,

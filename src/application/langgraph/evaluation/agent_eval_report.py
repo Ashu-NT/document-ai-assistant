@@ -92,6 +92,10 @@ class AgentEvalReportWriter:
                     f"| failed_count | {summary.failed_count} |",
                     f"| route_accuracy | {summary.route_accuracy:.3f} |",
                     (
+                        "| deep_research_route_accuracy | "
+                        f"{summary.deep_research_route_accuracy:.3f} |"
+                    ),
+                    (
                         "| document_selection_accuracy | "
                         f"{summary.document_selection_accuracy:.3f} |"
                     ),
@@ -133,6 +137,30 @@ class AgentEvalReportWriter:
                     (
                         "| strategy_trace_coverage_rate | "
                         f"{summary.strategy_trace_coverage_rate:.3f} |"
+                    ),
+                    (
+                        "| research_plan_validity_rate | "
+                        f"{summary.research_plan_validity_rate:.3f} |"
+                    ),
+                    (
+                        "| research_task_success_rate | "
+                        f"{summary.research_task_success_rate:.3f} |"
+                    ),
+                    (
+                        "| research_gap_detection_rate | "
+                        f"{summary.research_gap_detection_rate:.3f} |"
+                    ),
+                    (
+                        "| research_document_scope_safety_rate | "
+                        f"{summary.research_document_scope_safety_rate:.3f} |"
+                    ),
+                    (
+                        "| research_report_completeness_rate | "
+                        f"{summary.research_report_completeness_rate:.3f} |"
+                    ),
+                    (
+                        "| research_citation_coverage_rate | "
+                        f"{summary.research_citation_coverage_rate:.3f} |"
                     ),
                 ]
             )
@@ -250,6 +278,38 @@ class AgentEvalReportWriter:
                         (
                             f"- Turn {index} retrieval strategy trace present: "
                             f"{'yes' if turn_result.retrieval_strategy_trace_present else 'no'}"
+                        ),
+                    ]
+                )
+            if (
+                turn_result.research_plan_present
+                or turn_result.research_report_present
+                or turn_result.research_task_count > 0
+            ):
+                lines.extend(
+                    [
+                        (
+                            f"- Turn {index} research plan: "
+                            f"{'yes' if turn_result.research_plan_present else 'no'} "
+                            f"(tasks={turn_result.research_plan_task_count})"
+                        ),
+                        (
+                            f"- Turn {index} research tasks: "
+                            f"{turn_result.research_task_success_count}/"
+                            f"{turn_result.research_task_count} succeeded"
+                        ),
+                        (
+                            f"- Turn {index} research gaps: "
+                            f"{turn_result.research_gap_count}"
+                        ),
+                        (
+                            f"- Turn {index} research report: "
+                            f"{'yes' if turn_result.research_report_present else 'no'} "
+                            f"(sections={turn_result.research_report_section_count})"
+                        ),
+                        (
+                            f"- Turn {index} research citations: "
+                            f"{turn_result.research_citation_count}"
                         ),
                     ]
                 )

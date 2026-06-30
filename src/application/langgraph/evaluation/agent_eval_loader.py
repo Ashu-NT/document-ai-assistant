@@ -195,6 +195,14 @@ class AgentEvalLoader:
                 payload.get("llm_planning_enabled"),
                 default=False,
             ),
+            deep_research_enabled=self._bool_value(
+                payload.get("deep_research_enabled"),
+                default=False,
+            ),
+            llm_research_planning_enabled=self._bool_value(
+                payload.get("llm_research_planning_enabled"),
+                default=False,
+            ),
             retrieval_strategy_enabled=self._bool_value(
                 payload.get("retrieval_strategy_enabled"),
                 default=False,
@@ -216,6 +224,14 @@ class AgentEvalLoader:
             ),
             show_plan=self._bool_value(
                 payload.get("show_plan"),
+                default=False,
+            ),
+            show_research_plan=self._bool_value(
+                payload.get("show_research_plan"),
+                default=False,
+            ),
+            show_research_trace=self._bool_value(
+                payload.get("show_research_trace"),
                 default=False,
             ),
         )
@@ -268,6 +284,21 @@ class AgentEvalLoader:
                 ),
                 retrieval_strategy_trace_required=self._optional_bool(
                     payload.get("retrieval_strategy_trace_required")
+                ),
+                research_plan_required=self._optional_bool(
+                    payload.get("research_plan_required")
+                ),
+                research_report_required=self._optional_bool(
+                    payload.get("research_report_required")
+                ),
+                research_gap_detection_required=self._optional_bool(
+                    payload.get("research_gap_detection_required")
+                ),
+                research_citation_required=self._optional_bool(
+                    payload.get("research_citation_required")
+                ),
+                research_task_success_min_rate=self._optional_float(
+                    payload.get("research_task_success_min_rate")
                 ),
             )
         except ValueError as exc:
@@ -375,3 +406,11 @@ class AgentEvalLoader:
         if isinstance(value, bool):
             return value
         raise ValueError("Expected boolean or null value.")
+
+    @staticmethod
+    def _optional_float(value: Any) -> float | None:
+        if value is None:
+            return None
+        if isinstance(value, int | float):
+            return float(value)
+        raise ValueError("Expected numeric or null value.")

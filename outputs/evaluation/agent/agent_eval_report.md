@@ -6,10 +6,11 @@ Source: `C:\Users\ashuf\Desktop\Projects\document-ai-assistant\src\config\evalua
 
 | Metric | Value |
 |---|---:|
-| case_count | 22 |
-| passed_count | 21 |
-| failed_count | 1 |
+| case_count | 27 |
+| passed_count | 24 |
+| failed_count | 3 |
 | route_accuracy | 1.000 |
+| deep_research_route_accuracy | 1.000 |
 | document_selection_accuracy | 1.000 |
 | clarification_accuracy | 1.000 |
 | unsafe_block_rate | 1.000 |
@@ -23,18 +24,29 @@ Source: `C:\Users\ashuf\Desktop\Projects\document-ai-assistant\src\config\evalua
 | multi_strategy_success_rate | 0.000 |
 | strategy_document_scope_safety_rate | 1.000 |
 | strategy_trace_coverage_rate | 1.000 |
+| research_plan_validity_rate | 0.857 |
+| research_task_success_rate | 1.000 |
+| research_gap_detection_rate | 0.000 |
+| research_document_scope_safety_rate | 0.857 |
+| research_report_completeness_rate | 0.857 |
+| research_citation_coverage_rate | 0.857 |
 
 ## Threshold Result
 
 FAIL
 
 - retrieval_strategy_selection_rate: 0.750 < 0.800
+- research_plan_validity_rate: 0.857 < 0.900
+- research_gap_detection_rate: 0.000 < 0.800
+- research_document_scope_safety_rate: 0.857 < 1.000
 
 ## Failed Cases
 
 | Case | Name | Failed Checks |
 |---|---|---|
 | AG-012 | Maintenance tasks question uses selected document | retrieval_strategy_selection_rate |
+| AG-024 | Commissioning checklist research | success, research_plan_validity_rate, research_document_scope_safety_rate, research_report_completeness_rate, research_citation_coverage_rate |
+| AG-025 | Missing evidence analysis | research_gap_detection_rate |
 
 ## Cases
 
@@ -205,11 +217,16 @@ FAIL
 - Turn 1 tools: find_document
 - Turn 1 plan tools: -
 - Turn 1 response excerpt: Selected document: 19P006-31-FWC12-5-1-0_Manual.
-- Turn 2 route: planned_task
+- Turn 2 route: deep_research
 - Turn 2 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
-- Turn 2 tools: answer_question, format_combined_answer
-- Turn 2 plan tools: answer_question, format_combined_answer
-- Turn 2 response excerpt: Plan ---- 1. Answer the specifications part of the comparison. 2. Answer the maintenance tasks part of the comparison. 3. Combine both grounded answers into a deterministic comp...
+- Turn 2 tools: -
+- Turn 2 plan tools: -
+- Turn 2 response excerpt: Research Plan: 1. Collect maintenance tasks 2. Collect technical specifications # Comparison Summary ## Executive Summary Comparison Summary ## Collect maintenance tasks - The i...
+- Turn 2 research plan: yes (tasks=2)
+- Turn 2 research tasks: 2/2 succeeded
+- Turn 2 research gaps: 0
+- Turn 2 research report: yes (sections=2)
+- Turn 2 research citations: 14
 
 ### AG-014 - Retrieve evidence and summarize
 - Passed: yes
@@ -261,7 +278,7 @@ FAIL
 - Turn 1 plan tools: -
 - Turn 1 response excerpt: PASS — all 5 metrics above thresholds
 
-### AG-019 - LLM-planning compare request
+### AG-019 - LLM research planning compare request
 - Passed: yes
 - Failed checks: -
 - Turn 1 route: select_document
@@ -269,11 +286,16 @@ FAIL
 - Turn 1 tools: find_document
 - Turn 1 plan tools: -
 - Turn 1 response excerpt: Selected document: 19P006-31-FWC12-5-1-0_Manual.
-- Turn 2 route: planned_task
+- Turn 2 route: deep_research
 - Turn 2 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
-- Turn 2 tools: answer_question, format_combined_answer
-- Turn 2 plan tools: answer_question, format_combined_answer
-- Turn 2 response excerpt: Plan ---- 1. Answer the maintenance tasks part of the comparison. 2. Answer the safety warnings part of the comparison. 3. Combine both grounded answers into a deterministic com...
+- Turn 2 tools: -
+- Turn 2 plan tools: -
+- Turn 2 response excerpt: Research Plan: 1. Collect maintenance tasks 2. Follow-up research: Comparison evidence is one-sided. # Comparison Summary ## Executive Summary Comparison Summary ## Collect main...
+- Turn 2 research plan: yes (tasks=2)
+- Turn 2 research tasks: 2/2 succeeded
+- Turn 2 research gaps: 0
+- Turn 2 research report: yes (sections=2)
+- Turn 2 research citations: 10
 
 ### AG-020 - LLM-planning bad plan rejected
 - Passed: yes
@@ -317,6 +339,101 @@ FAIL
 - Turn 2 retrieval strategy: TABLE_LOOKUP
 - Turn 2 retrieval strategy secondary: -
 - Turn 2 retrieval strategy trace present: yes
+
+### AG-023 - Preventive maintenance research report
+- Passed: yes
+- Failed checks: -
+- Turn 1 route: select_document
+- Turn 1 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 1 tools: find_document
+- Turn 1 plan tools: -
+- Turn 1 response excerpt: Selected document: 19P006-31-FWC12-5-1-0_Manual.
+- Turn 2 route: deep_research
+- Turn 2 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 2 tools: -
+- Turn 2 plan tools: -
+- Turn 2 response excerpt: # Research Report ## Executive Summary Maintenance Research Report ## Collect maintenance tasks -  After every 350 hours of operation NB: The filling quantity with the hand-lev...
+- Turn 2 research plan: yes (tasks=3)
+- Turn 2 research tasks: 3/3 succeeded
+- Turn 2 research gaps: 0
+- Turn 2 research report: yes (sections=3)
+- Turn 2 research citations: 12
+
+### AG-024 - Commissioning checklist research
+- Passed: no
+- Failed checks: success, research_plan_validity_rate, research_document_scope_safety_rate, research_report_completeness_rate, research_citation_coverage_rate
+- Turn 1 route: select_document
+- Turn 1 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 1 tools: find_document
+- Turn 1 plan tools: -
+- Turn 1 response excerpt: Selected document: 19P006-31-FWC12-5-1-0_Manual.
+- Turn 2 route: deep_research
+- Turn 2 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 2 tools: -
+- Turn 2 plan tools: -
+- Turn 2 response excerpt: Validation failed.
+- Turn 2 research plan: yes (tasks=3)
+- Turn 2 research tasks: 3/3 succeeded
+- Turn 2 research gaps: 0
+- Turn 2 research report: no (sections=0)
+- Turn 2 research citations: 0
+
+### AG-025 - Missing evidence analysis
+- Passed: no
+- Failed checks: research_gap_detection_rate
+- Turn 1 route: select_document
+- Turn 1 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 1 tools: find_document
+- Turn 1 plan tools: -
+- Turn 1 response excerpt: Selected document: 19P006-31-FWC12-5-1-0_Manual.
+- Turn 2 route: deep_research
+- Turn 2 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 2 tools: -
+- Turn 2 plan tools: -
+- Turn 2 response excerpt: # Evidence Review ## Executive Summary Collected 12 evidence item(s) across 2 research task(s). ## Collect primary evidence - The instructions for all visual inspections, mainte...
+- Turn 2 research plan: yes (tasks=2)
+- Turn 2 research tasks: 2/2 succeeded
+- Turn 2 research gaps: 0
+- Turn 2 research report: yes (sections=2)
+- Turn 2 research citations: 12
+
+### AG-026 - Maintenance warnings summary
+- Passed: yes
+- Failed checks: -
+- Turn 1 route: select_document
+- Turn 1 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 1 tools: find_document
+- Turn 1 plan tools: -
+- Turn 1 response excerpt: Selected document: 19P006-31-FWC12-5-1-0_Manual.
+- Turn 2 route: deep_research
+- Turn 2 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 2 tools: -
+- Turn 2 plan tools: -
+- Turn 2 response excerpt: # Research Summary ## Executive Summary Collected 10 evidence item(s) across 3 research task(s). ## Collect maintenance tasks -  After every 350 hours of operation NB: The fill...
+- Turn 2 research plan: yes (tasks=3)
+- Turn 2 research tasks: 3/3 succeeded
+- Turn 2 research gaps: 0
+- Turn 2 research report: yes (sections=2)
+- Turn 2 research citations: 10
+
+### AG-027 - Cross-check certificate pressure values
+- Passed: yes
+- Failed checks: -
+- Turn 1 route: select_document
+- Turn 1 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 1 tools: find_document
+- Turn 1 plan tools: -
+- Turn 1 response excerpt: Selected document: 19P006-31-FWC12-5-1-0_Manual.
+- Turn 2 route: deep_research
+- Turn 2 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 2 tools: -
+- Turn 2 plan tools: -
+- Turn 2 response excerpt: Research Plan: 1. Collect technical specifications 2. Collect certificate evidence # Comparison Summary ## Executive Summary Comparison Summary ## Collect technical specificatio...
+- Turn 2 research plan: yes (tasks=2)
+- Turn 2 research tasks: 2/2 succeeded
+- Turn 2 research gaps: 0
+- Turn 2 research report: yes (sections=2)
+- Turn 2 research citations: 14
 
 
 ## Safety Checks

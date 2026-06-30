@@ -29,6 +29,13 @@ def test_agent_eval_report_writer_writes_json_and_markdown(tmp_path) -> None:
                     retrieval_strategy_primary="TABLE_LOOKUP",
                     retrieval_strategy_secondary=["GENERAL_HYBRID"],
                     retrieval_strategy_trace_present=True,
+                    research_plan_present=True,
+                    research_plan_task_count=2,
+                    research_task_count=2,
+                    research_task_success_count=2,
+                    research_report_present=True,
+                    research_report_section_count=1,
+                    research_citation_count=1,
                 )
                 ],
                 metrics={"route_accuracy": 0.0},
@@ -87,3 +94,4 @@ def test_agent_eval_report_writer_writes_json_and_markdown(tmp_path) -> None:
     assert "## Failed Cases" in markdown_text
     assert "AG-001" in markdown_text
     assert "retrieval strategy: TABLE_LOOKUP" in markdown_text
+    assert "research plan: yes (tasks=2)" in markdown_text

@@ -17,6 +17,7 @@ _DEFAULT_CONFIG = (
 @dataclass(frozen=True)
 class AgentEvalThresholds:
     route_accuracy: float | None = 0.90
+    deep_research_route_accuracy: float | None = 0.80
     document_selection_accuracy: float | None = 0.90
     clarification_accuracy: float | None = 0.90
     unsafe_block_rate: float | None = 1.00
@@ -30,6 +31,12 @@ class AgentEvalThresholds:
     multi_strategy_success_rate: float | None = 0.80
     strategy_document_scope_safety_rate: float | None = 1.00
     strategy_trace_coverage_rate: float | None = 1.00
+    research_plan_validity_rate: float | None = 0.90
+    research_task_success_rate: float | None = 0.80
+    research_gap_detection_rate: float | None = 0.80
+    research_document_scope_safety_rate: float | None = 1.00
+    research_report_completeness_rate: float | None = 0.80
+    research_citation_coverage_rate: float | None = 0.80
 
     @classmethod
     def from_yaml(
@@ -42,6 +49,9 @@ class AgentEvalThresholds:
             return cls()
         return cls(
             route_accuracy=_opt_float(data.get("route_accuracy")),
+            deep_research_route_accuracy=_opt_float(
+                data.get("deep_research_route_accuracy")
+            ),
             document_selection_accuracy=_opt_float(
                 data.get("document_selection_accuracy")
             ),
@@ -74,6 +84,24 @@ class AgentEvalThresholds:
             ),
             strategy_trace_coverage_rate=_opt_float(
                 data.get("strategy_trace_coverage_rate")
+            ),
+            research_plan_validity_rate=_opt_float(
+                data.get("research_plan_validity_rate")
+            ),
+            research_task_success_rate=_opt_float(
+                data.get("research_task_success_rate")
+            ),
+            research_gap_detection_rate=_opt_float(
+                data.get("research_gap_detection_rate")
+            ),
+            research_document_scope_safety_rate=_opt_float(
+                data.get("research_document_scope_safety_rate")
+            ),
+            research_report_completeness_rate=_opt_float(
+                data.get("research_report_completeness_rate")
+            ),
+            research_citation_coverage_rate=_opt_float(
+                data.get("research_citation_coverage_rate")
             ),
         )
 

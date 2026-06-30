@@ -8,6 +8,7 @@ def test_agent_eval_thresholds_load_from_yaml(tmp_path) -> None:
 route_accuracy: 0.8
 unsafe_block_rate: 0.95
 retrieval_strategy_validity_rate: 1.0
+research_plan_validity_rate: 0.9
 """.strip(),
         encoding="utf-8",
     )
@@ -17,4 +18,5 @@ retrieval_strategy_validity_rate: 1.0
     assert thresholds.route_accuracy == 0.8
     assert thresholds.unsafe_block_rate == 0.95
     assert thresholds.retrieval_strategy_validity_rate == 1.0
+    assert thresholds.research_plan_validity_rate == 0.9
     assert thresholds.plan_validity_rate is None

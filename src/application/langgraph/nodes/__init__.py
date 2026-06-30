@@ -27,25 +27,37 @@ from src.application.langgraph.nodes.planning import (
     CreatePlanNode,
     ExecutePlanNode,
 )
+from src.application.langgraph.nodes.research import (
+    CreateResearchPlanNode,
+    EvaluateResearchNode,
+    ExecuteResearchNode,
+    ResearchSummaryNode,
+    SynthesizeResearchNode,
+)
 
 __all__ = [
     "AnswerQuestionNode",
     "BlockedActionNode",
     "ClarifyRequestNode",
     "CreatePlanNode",
+    "CreateResearchPlanNode",
     "DocumentDetailsNode",
     "ErrorHandlerNode",
     "ExecutePlanNode",
+    "ExecuteResearchNode",
+    "EvaluateResearchNode",
     "ExploreDocumentNode",
     "FinalResponseNode",
     "FindDocumentNode",
     "ListDocumentsNode",
     "PlanSummaryNode",
     "ReflectAnswerNode",
+    "ResearchSummaryNode",
     "RetrievalTraceNode",
     "RetrieveEvidenceNode",
     "RouteRequestNode",
     "RetryRetrievalNode",
     "SessionCommandNode",
+    "SynthesizeResearchNode",
     "RunQualityGateNode",
 ]

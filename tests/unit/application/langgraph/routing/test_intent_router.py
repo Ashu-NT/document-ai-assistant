@@ -62,12 +62,12 @@ def test_intent_router_marks_explore_it_as_current_document_usage() -> None:
     assert decision.uses_current_document is True
 
 
-def test_intent_router_routes_compound_request_to_planned_task() -> None:
+def test_intent_router_routes_compare_request_to_deep_research() -> None:
     decision = IntentRouter().route("compare specifications and maintenance tasks")
 
-    assert decision.route_type == RouteType.PLANNED_TASK
+    assert decision.route_type == RouteType.DEEP_RESEARCH
     assert decision.is_compound is True
-    assert decision.requires_plan is True
+    assert decision.requires_document is True
 
 
 def test_intent_router_routes_retrieve_and_summarize_to_planned_task() -> None:
@@ -75,6 +75,13 @@ def test_intent_router_routes_retrieve_and_summarize_to_planned_task() -> None:
 
     assert decision.route_type == RouteType.PLANNED_TASK
     assert decision.requires_plan is True
+
+
+def test_intent_router_routes_document_wide_summary_to_deep_research() -> None:
+    decision = IntentRouter().route("summarize all maintenance tasks")
+
+    assert decision.route_type == RouteType.DEEP_RESEARCH
+    assert decision.requires_document is True
 
 
 def test_intent_router_routes_unsafe_delete_request_to_blocked_action() -> None:

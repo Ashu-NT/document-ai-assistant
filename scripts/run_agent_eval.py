@@ -97,6 +97,34 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Force LLM planning off for all evaluated turns.",
     )
     parser.set_defaults(llm_planning=None)
+    deep_research_group = parser.add_mutually_exclusive_group()
+    deep_research_group.add_argument(
+        "--deep-research",
+        dest="deep_research",
+        action="store_true",
+        help="Force deep research on for all evaluated turns.",
+    )
+    deep_research_group.add_argument(
+        "--no-deep-research",
+        dest="deep_research",
+        action="store_false",
+        help="Force deep research off for all evaluated turns.",
+    )
+    parser.set_defaults(deep_research=None)
+    llm_research_planning_group = parser.add_mutually_exclusive_group()
+    llm_research_planning_group.add_argument(
+        "--llm-research-planning",
+        dest="llm_research_planning",
+        action="store_true",
+        help="Force validated LLM research planning on for all evaluated turns.",
+    )
+    llm_research_planning_group.add_argument(
+        "--no-llm-research-planning",
+        dest="llm_research_planning",
+        action="store_false",
+        help="Force validated LLM research planning off for all evaluated turns.",
+    )
+    parser.set_defaults(llm_research_planning=None)
     parser.add_argument(
         "--retrieval-strategy",
         choices=(
@@ -181,6 +209,8 @@ def build_runtime(
     *,
     enable_generation: bool,
     enable_llm_planning: bool,
+    enable_deep_research: bool,
+    enable_llm_research_planning: bool,
     thresholds_path: Path | None,
 ) -> AgentEvalRuntime:
     from src.bootstrap.startup import bootstrap_application  # noqa: WPS433
@@ -193,10 +223,12 @@ def build_runtime(
     bootstrap_application()
     Base.metadata.create_all(engine)
     session = SessionLocal()
+    _ = enable_deep_research
     graph_runtime = agent_cli.build_agent_runtime(
         session,
         enable_generation=enable_generation,
         enable_llm_planning=enable_llm_planning,
+        enable_llm_research_planning=enable_llm_research_planning,
     )
     return AgentEvalRuntime(
         graph_runtime=graph_runtime,
@@ -246,6 +278,30 @@ def needs_llm_planning(cases, override: bool | None) -> bool:
     )
 
 
+def needs_deep_research(cases, override: bool | None) -> bool:
+    if override is False:
+        return False
+    if override is True:
+        return True
+    return any(
+        turn.deep_research_enabled
+        for case in cases
+        for turn in case.inputs
+    )
+
+
+def needs_llm_research_planning(cases, override: bool | None) -> bool:
+    if override is False:
+        return False
+    if override is True:
+        return True
+    return any(
+        turn.llm_research_planning_enabled
+        for case in cases
+        for turn in case.inputs
+    )
+
+
 def needs_generation(cases, override: bool | None) -> bool:
     if override is False:
         return False
@@ -266,6 +322,8 @@ def run_agent_eval(
     tags: list[str],
     max_cases: int | None,
     llm_planning_override: bool | None,
+    deep_research_override: bool | None,
+    llm_research_planning_override: bool | None,
     generation_override: bool | None,
     retrieval_strategy_override: str | None,
     llm_retrieval_strategy_override: bool | None,
@@ -292,16 +350,28 @@ def run_agent_eval(
     print_status(f"Loaded {len(all_cases)} case(s) from {cases_path}")
     print_status(f"Selected {len(selected_cases)} case(s) for evaluation.")
     enable_llm_planning = needs_llm_planning(selected_cases, llm_planning_override)
+    enable_deep_research = needs_deep_research(
+        selected_cases,
+        deep_research_override,
+    )
+    enable_llm_research_planning = needs_llm_research_planning(
+        selected_cases,
+        llm_research_planning_override,
+    )
     enable_generation = needs_generation(selected_cases, generation_override)
     print_status(
         "Runtime flags: "
         f"llm_planning={enable_llm_planning}, "
+        f"deep_research={enable_deep_research}, "
+        f"llm_research_planning={enable_llm_research_planning}, "
         f"answer_generation={enable_generation}"
     )
     print_status("Building agent evaluation runtime...")
     runtime = build_runtime(
         enable_generation=enable_generation,
         enable_llm_planning=enable_llm_planning,
+        enable_deep_research=enable_deep_research,
+        enable_llm_research_planning=enable_llm_research_planning,
         thresholds_path=thresholds_path,
     )
     print_status("Agent evaluation runtime ready.")
@@ -313,6 +383,10 @@ def run_agent_eval(
             tags=tags,
             max_cases=max_cases,
             llm_planning_enabled_override=llm_planning_override,
+            deep_research_enabled_override=deep_research_override,
+            llm_research_planning_enabled_override=(
+                llm_research_planning_override
+            ),
             answer_generation_enabled_override=generation_override,
             retrieval_strategy_enabled_override=(
                 True
@@ -365,6 +439,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             tags=args.tag,
             max_cases=args.max_cases,
             llm_planning_override=args.llm_planning,
+            deep_research_override=args.deep_research,
+            llm_research_planning_override=args.llm_research_planning,
             generation_override=args.generate,
             retrieval_strategy_override=args.retrieval_strategy,
             llm_retrieval_strategy_override=args.llm_retrieval_strategy,
@@ -405,6 +481,34 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             "strategy_trace_coverage_rate: "
             f"{summary.strategy_trace_coverage_rate:.3f}"
+        )
+        print(
+            "deep_research_route_accuracy: "
+            f"{summary.deep_research_route_accuracy:.3f}"
+        )
+        print(
+            "research_plan_validity_rate: "
+            f"{summary.research_plan_validity_rate:.3f}"
+        )
+        print(
+            "research_task_success_rate: "
+            f"{summary.research_task_success_rate:.3f}"
+        )
+        print(
+            "research_gap_detection_rate: "
+            f"{summary.research_gap_detection_rate:.3f}"
+        )
+        print(
+            "research_document_scope_safety_rate: "
+            f"{summary.research_document_scope_safety_rate:.3f}"
+        )
+        print(
+            "research_report_completeness_rate: "
+            f"{summary.research_report_completeness_rate:.3f}"
+        )
+        print(
+            "research_citation_coverage_rate: "
+            f"{summary.research_citation_coverage_rate:.3f}"
         )
         print(f"threshold_passed: {gate_result.passed}")
         print(json_output_path)

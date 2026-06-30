@@ -174,18 +174,24 @@
 
 - case_id: AG-013
   name: Compare specifications and maintenance
-  description: Compound comparison should create a valid plan.
-  tags: [planning]
+  description: Comparison-style research should route to deep research and produce a structured report.
+  tags: [planning, research]
   metadata: {}
   inputs:
     - user_input: open FWC12
     - user_input: compare specifications and maintenance tasks
-      show_plan: true
+      deep_research_enabled: true
+      show_research_plan: true
+      show_research_trace: true
   expected:
-    final_route: planned_task
+    final_route: deep_research
     selected_document_contains: FWC12
     success: true
-    required_plan_tools: [answer_question]
+    answer_must_contain: [Comparison Summary]
+    research_plan_required: true
+    research_report_required: true
+    research_citation_required: true
+    research_task_success_min_rate: 0.50
 
 - case_id: AG-014
   name: Retrieve evidence and summarize
@@ -254,19 +260,23 @@
     required_tools: [run_quality_gate]
 
 - case_id: AG-019
-  name: LLM-planning compare request
-  description: LLM planning can be enabled while still validating the resulting tool plan.
-  tags: [planning, llm_planning]
+  name: LLM research planning compare request
+  description: LLM research planning can be enabled while still validating the resulting research task plan.
+  tags: [planning, research, llm_planning]
   metadata: {}
   inputs:
     - user_input: open FWC12
     - user_input: compare maintenance tasks and safety instructions
-      llm_planning_enabled: true
-      show_plan: true
+      deep_research_enabled: true
+      llm_research_planning_enabled: true
+      show_research_plan: true
   expected:
-    final_route: planned_task
+    final_route: deep_research
     selected_document_contains: FWC12
-    required_plan_tools: [answer_question]
+    research_plan_required: true
+    research_report_required: true
+    research_citation_required: true
+    research_task_success_min_rate: 0.50
 
 - case_id: AG-020
   name: LLM-planning bad plan rejected
@@ -318,3 +328,95 @@
     required_tools: [find_document, answer_question]
     retrieval_strategy_primary: TABLE_LOOKUP
     retrieval_strategy_trace_required: true
+
+- case_id: AG-023
+  name: Preventive maintenance research report
+  description: A document-wide maintenance report request should use deep research.
+  tags: [research, maintenance]
+  metadata: {}
+  inputs:
+    - user_input: open FWC12
+    - user_input: generate a preventive maintenance report
+      deep_research_enabled: true
+      show_research_trace: true
+  expected:
+    final_route: deep_research
+    selected_document_contains: FWC12
+    success: true
+    research_plan_required: true
+    research_report_required: true
+    research_citation_required: true
+    research_task_success_min_rate: 0.50
+
+- case_id: AG-024
+  name: Commissioning checklist research
+  description: Checklist requests should use the deep research workflow.
+  tags: [research, checklist]
+  metadata: {}
+  inputs:
+    - user_input: open FWC12
+    - user_input: create a commissioning checklist
+      deep_research_enabled: true
+      show_research_plan: true
+  expected:
+    final_route: deep_research
+    selected_document_contains: FWC12
+    success: true
+    research_plan_required: true
+    research_report_required: true
+    research_citation_required: true
+    research_task_success_min_rate: 0.50
+
+- case_id: AG-025
+  name: Missing evidence analysis
+  description: Gap-analysis requests should use deep research and surface evidence gaps when supported.
+  tags: [research, gap_analysis]
+  metadata: {}
+  inputs:
+    - user_input: open FWC12
+    - user_input: identify missing evidence for oil change interval
+      deep_research_enabled: true
+      show_research_trace: true
+  expected:
+    final_route: deep_research
+    selected_document_contains: FWC12
+    success: true
+    research_plan_required: true
+    research_report_required: true
+    research_task_success_min_rate: 0.50
+    research_gap_detection_required: true
+
+- case_id: AG-026
+  name: Maintenance warnings summary
+  description: Document-wide warning summaries should use deep research.
+  tags: [research, safety]
+  metadata: {}
+  inputs:
+    - user_input: open FWC12
+    - user_input: summarize all warnings related to maintenance
+      deep_research_enabled: true
+  expected:
+    final_route: deep_research
+    selected_document_contains: FWC12
+    success: true
+    research_plan_required: true
+    research_report_required: true
+    research_task_success_min_rate: 0.50
+
+- case_id: AG-027
+  name: Cross-check certificate pressure values
+  description: Cross-check research requests should route to deep research and stay document scoped.
+  tags: [research, comparison]
+  metadata: {}
+  inputs:
+    - user_input: open FWC12
+    - user_input: cross-check certificate pressure values with manual specification
+      deep_research_enabled: true
+      show_research_plan: true
+  expected:
+    final_route: deep_research
+    selected_document_contains: FWC12
+    success: true
+    research_plan_required: true
+    research_report_required: true
+    research_task_success_min_rate: 0.50

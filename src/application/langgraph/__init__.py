@@ -41,6 +41,11 @@ from src.application.langgraph.retrieval_strategy import (
     RetrievalStrategyTrace,
     StrategyRetryPolicy,
 )
+from src.application.langgraph.research import (
+    LLMResearchPlanner,
+    ResearchPolicy,
+    ResearchService,
+)
 from src.application.langgraph.reflection import (
     ClarificationBuilder,
     EvidenceMerger,
@@ -98,6 +103,9 @@ __all__ = [
     "ReflectionPromptBuilder",
     "ReflectionService",
     "ReflectionValidator",
+    "ResearchPolicy",
+    "ResearchService",
+    "LLMResearchPlanner",
     "RetrievalPlan",
     "RetrievalPlanExecutor",
     "RetrievalPlanStep",
