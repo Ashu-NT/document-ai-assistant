@@ -81,6 +81,12 @@ class AgentState(TypedDict):
     unsafe_request_blocked: bool
     blocked_reason: str | None
     blocked_terms: list[str]
+    blocked_tools: list[str]
+    guardrail_decision: str | None
+    guardrail_result: dict[str, Any] | None
+    guardrail_user_message: str | None
+    guardrail_trace_id: str | None
+    guardrail_trace: list[dict[str, Any]]
     needs_clarification: bool
     clarification_message: str | None
     pending_clarification: dict[str, Any] | None
@@ -206,6 +212,12 @@ def build_agent_state(
         unsafe_request_blocked=False,
         blocked_reason=None,
         blocked_terms=[],
+        blocked_tools=[],
+        guardrail_decision=None,
+        guardrail_result=None,
+        guardrail_user_message=None,
+        guardrail_trace_id=None,
+        guardrail_trace=[],
         needs_clarification=False,
         clarification_message=None,
         pending_clarification=pending_clarification,

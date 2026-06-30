@@ -26,6 +26,9 @@ class ToolRegistry:
     def maybe(self, name: str) -> Any | None:
         return self.get(name)
 
+    def names(self) -> set[str]:
+        return set(self._tool_map().keys())
+
     def require(self, name: str) -> Any:
         tool = self.get(name)
         if tool is None:

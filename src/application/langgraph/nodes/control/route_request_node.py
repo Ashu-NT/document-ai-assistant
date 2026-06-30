@@ -29,14 +29,24 @@ class RouteRequestNode:
         )
         blocked_reason = decision.options.get("blocked_reason")
         blocked_terms = decision.options.get("blocked_terms", [])
+        guardrail_decision = decision.options.get("guardrail_decision")
+        guardrail_user_message = decision.options.get("guardrail_user_message")
+        guardrail_trace_id = decision.options.get("guardrail_trace_id")
+        guardrail_trace = decision.options.get("guardrail_trace", [])
+        blocked_tools = decision.options.get("blocked_tools", [])
 
         clarification_message = None
         if decision.route_type in {RouteType.NEEDS_CLARIFICATION, RouteType.UNKNOWN}:
-            clarification_message = (
-                "Please clarify what you want me to do."
-                if decision.route_type == RouteType.UNKNOWN
-                else "Please specify the document or query more clearly."
-            )
+            if decision.route_type == RouteType.UNKNOWN:
+                clarification_message = (
+                    guardrail_user_message
+                    or "Please clarify what you want me to do."
+                )
+            else:
+                clarification_message = (
+                    guardrail_user_message
+                    or "Please specify the document or query more clearly."
+                )
 
         resolved_document_id = state.get("document_id")
         resolved_document_title = state.get("document_title")
@@ -73,6 +83,9 @@ class RouteRequestNode:
                 "unsafe_request_blocked": unsafe_request_blocked,
                 "blocked_reason": blocked_reason,
                 "blocked_terms": blocked_terms,
+                "guardrail_decision": guardrail_decision,
+                "guardrail_trace_id": guardrail_trace_id,
+                "blocked_tools": blocked_tools,
             },
         )
         return {
@@ -86,6 +99,14 @@ class RouteRequestNode:
             "unsafe_request_blocked": unsafe_request_blocked,
             "blocked_reason": blocked_reason,
             "blocked_terms": list(blocked_terms) if isinstance(blocked_terms, list) else [],
+            "guardrail_decision": guardrail_decision,
+            "guardrail_user_message": guardrail_user_message,
+            "guardrail_result": decision.options.get("guardrail_result"),
+            "guardrail_trace_id": guardrail_trace_id,
+            "guardrail_trace": list(guardrail_trace)
+            if isinstance(guardrail_trace, list)
+            else [],
+            "blocked_tools": list(blocked_tools) if isinstance(blocked_tools, list) else [],
             "needs_clarification": decision.route_type == RouteType.NEEDS_CLARIFICATION,
             "clarification_message": clarification_message,
             "session_command": (

@@ -1,8 +1,3 @@
-from enum import StrEnum
+from src.application.guardrails.models.confidence_level import ConfidenceLevel
 
-
-class ConfidenceLevel(StrEnum):
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
-    NONE = "none"
+__all__ = ["ConfidenceLevel"]

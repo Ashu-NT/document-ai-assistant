@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.application.guardrails import GuardrailContext
+from src.application.guardrails.services import PreToolGuardrailService
 from src.application.langgraph.common import GraphError
 from src.application.langgraph.common import serialize_graph_value
 from src.application.langgraph.factories.tool_registry import ToolRegistry
@@ -29,7 +31,15 @@ from src.application.tools.retrieval import RetrieveChunksRequest
 
 
 class PlanExecutor:
-    def __init__(self, *, recorder: GraphRunRecorder | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        pre_tool_guardrail_service: PreToolGuardrailService | None = None,
+        recorder: GraphRunRecorder | None = None,
+    ) -> None:
+        self.pre_tool_guardrail_service = (
+            pre_tool_guardrail_service or PreToolGuardrailService()
+        )
         self.recorder = recorder or GraphRunRecorder()
 
     def execute(
@@ -177,6 +187,27 @@ class PlanExecutor:
     ) -> ToolResult:
         if step.tool_name == "format_combined_answer":
             return self._format_combined_answer(step=step, step_outputs=step_outputs)
+
+        guardrail_result = self.pre_tool_guardrail_service.check(
+            GuardrailContext(
+                user_input=state.get("user_input") or "",
+                query_text=state.get("user_input") or "",
+                route=state.get("route"),
+                document_id=self._resolved_document_id(state),
+                selected_document_id=state.get("selected_document_id"),
+                requested_tool=step.tool_name,
+                requested_action=f"execute:{step.tool_name}",
+                tool_arguments=dict(step.args or {}),
+                runtime_mode="graph_plan",
+            ),
+            available_tool_names=tool_registry.names(),
+        )
+        if not guardrail_result.allowed:
+            return ToolResult.fail(
+                guardrail_result.user_message or guardrail_result.reason,
+                error_code="guardrail_blocked",
+                diagnostics={"guardrail_result": guardrail_result.to_dict()},
+            )
 
         tool = tool_registry.require(step.tool_name)
         request = self._build_request(

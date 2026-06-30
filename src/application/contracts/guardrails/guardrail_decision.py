@@ -1,14 +1,3 @@
-from enum import StrEnum
+from src.application.guardrails.models.guardrail_decision import GuardrailDecision
 
-
-class GuardrailDecision(StrEnum):
-    ALLOW = "allow"
-    ALLOW_WITH_CAUTION = "allow_with_caution"
-    NEEDS_CLARIFICATION = "needs_clarification"
-    OUT_OF_SCOPE = "out_of_scope"
-    NO_EVIDENCE = "no_evidence"
-    LOW_CONFIDENCE = "low_confidence"
-    INSUFFICIENT_EVIDENCE = "insufficient_evidence"
-    CITATION_REQUIRED = "citation_required"
-    UNSUPPORTED_CLAIMS = "unsupported_claims"
-    SAFETY_BLOCKED = "safety_blocked"
+__all__ = ["GuardrailDecision"]

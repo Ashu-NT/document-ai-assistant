@@ -201,6 +201,7 @@ class DocumentAgentGraph:
             self._entry_branch,
             {
                 "blocked_action": "blocked_action",
+                "out_of_scope": "out_of_scope",
                 "create_plan": "create_plan",
                 "create_research_plan": "create_research_plan",
                 "list_documents": "list_documents",
@@ -390,6 +391,8 @@ class DocumentAgentGraph:
             "plan_success": state.get("plan_success"),
             "planning_source": state.get("planning_source"),
             "unsafe_request_blocked": state.get("unsafe_request_blocked", False),
+            "guardrail_decision": state.get("guardrail_decision"),
+            "guardrail_trace_id": state.get("guardrail_trace_id"),
             "reflection_enabled": state.get("reflection_enabled", False),
             "retrieval_strategy_enabled": state.get("retrieval_strategy_enabled", False),
             "deep_research_enabled": state.get("deep_research_enabled", False),
@@ -459,6 +462,12 @@ class DocumentAgentGraph:
             "unsafe_request_blocked": state.get("unsafe_request_blocked", False),
             "blocked_reason": state.get("blocked_reason"),
             "blocked_terms": state.get("blocked_terms", []),
+            "blocked_tools": state.get("blocked_tools", []),
+            "guardrail_decision": state.get("guardrail_decision"),
+            "guardrail_result": state.get("guardrail_result"),
+            "guardrail_user_message": state.get("guardrail_user_message"),
+            "guardrail_trace_id": state.get("guardrail_trace_id"),
+            "guardrail_trace": state.get("guardrail_trace", []),
             "tool_results": tool_results,
         }
         execution_plan = state.get("execution_plan")
@@ -473,6 +482,10 @@ class DocumentAgentGraph:
             diagnostics["blocked_reason"] = state.get("blocked_reason")
         if state.get("blocked_terms"):
             diagnostics["blocked_terms"] = state.get("blocked_terms", [])
+        if state.get("blocked_tools"):
+            diagnostics["blocked_tools"] = state.get("blocked_tools", [])
+        if state.get("guardrail_trace"):
+            diagnostics["guardrail_trace"] = state.get("guardrail_trace", [])
         if answer_intent is not None:
             diagnostics["answer_intent"] = answer_intent
         if state.get("reflection_decision"):
@@ -560,6 +573,7 @@ class DocumentAgentGraph:
             return self._after_research_summary_branch(state)
         if current_node in {
             "blocked_action",
+            "out_of_scope",
             "list_documents",
             "document_details",
             "explore_document",
@@ -589,6 +603,8 @@ class DocumentAgentGraph:
         route = state.get("route")
         if route == RouteType.BLOCKED_ACTION.value:
             return "blocked_action"
+        if route == RouteType.OUT_OF_SCOPE.value:
+            return "out_of_scope"
         if route == RouteType.LIST_DOCUMENTS.value:
             return "list_documents"
         if route == RouteType.SELECT_DOCUMENT.value:

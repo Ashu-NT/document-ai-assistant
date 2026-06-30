@@ -3,6 +3,7 @@ from src.application.contracts.guardrails.guardrail_context import GuardrailCont
 from src.application.contracts.guardrails.guardrail_decision import GuardrailDecision
 from src.application.guardrails.guardrail_runner import GuardrailRunner
 from src.application.guardrails.context.context_guardrail_chain import ContextGuardrailChain
+from src.application.guardrails.services import PreGenerationGuardrailService
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
 )
@@ -60,6 +61,7 @@ class QuestionAnsweringWorkflow:
         router: QuestionAnsweringRouter | None = None,
         pre_query_guardrails: list[Guardrail] | None = None,
         context_guardrails: list[Guardrail] | None = None,
+        pre_generation_guardrail_service: PreGenerationGuardrailService | None = None,
         answer_generation_service: AnswerGenerationService | None = None,
         post_answer_guardrails: list[Guardrail] | None = None,
     ) -> None:
@@ -68,6 +70,9 @@ class QuestionAnsweringWorkflow:
         self._router = router or QuestionAnsweringRouter()
         self._pre_query_guardrails: list[Guardrail] = pre_query_guardrails or []
         self._context_guardrail_chain = ContextGuardrailChain(context_guardrails or [])
+        self._pre_generation_guardrail_service = (
+            pre_generation_guardrail_service or PreGenerationGuardrailService()
+        )
         self._answer_generation_service = answer_generation_service
         self._post_answer_guardrails: list[Guardrail] = post_answer_guardrails or []
 
@@ -239,6 +244,32 @@ class QuestionAnsweringWorkflow:
                     "enough_evidence": workflow_result.enough_evidence,
                     **workflow_result.diagnostics,
                 },
+            )
+
+        pre_generation_result = self._pre_generation_guardrail_service.check(
+            GuardrailContext(
+                user_input=request.question,
+                query_text=request.question,
+                route=QuestionAnsweringRoute.RETRIEVAL_QA.value,
+                document_id=request.document_id,
+                selected_document_id=request.document_id,
+                query_intent=analyzed_intent,
+                query_chunk_types=[chunk_type.value for chunk_type in analyzed_query.chunk_types],
+                approved_chunks=list(approved_chunks),
+                evidence_chunks=list(approved_chunks),
+                runtime_mode="workflow",
+            )
+        )
+        if not pre_generation_result.allowed:
+            return QuestionAnsweringResult(
+                route=QuestionAnsweringRoute.BLOCKED_BY_GUARDRAIL,
+                safe_user_message=pre_generation_result.safe_user_message,
+                guardrail_decision=pre_generation_result.decision,
+                guardrail_result=pre_generation_result,
+                retrieval_result=workflow_result,
+                approved_chunk_ids=approved_ids,
+                rejected_chunk_ids=rejected_chunk_ids,
+                diagnostics={"blocked_by": "pre_generation_guardrail"},
             )
 
         # LLM only ever sees approved_chunks

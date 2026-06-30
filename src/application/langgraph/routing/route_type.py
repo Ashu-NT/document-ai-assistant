@@ -3,6 +3,7 @@ from enum import StrEnum
 
 class RouteType(StrEnum):
     BLOCKED_ACTION = "blocked_action"
+    OUT_OF_SCOPE = "out_of_scope"
     PLANNED_TASK = "planned_task"
     DEEP_RESEARCH = "deep_research"
     SELECT_DOCUMENT = "select_document"

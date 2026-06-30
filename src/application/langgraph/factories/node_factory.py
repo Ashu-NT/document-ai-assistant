@@ -18,6 +18,7 @@ from src.application.langgraph.nodes import (
     FinalResponseNode,
     FindDocumentNode,
     ListDocumentsNode,
+    OutOfScopeNode,
     PlanSummaryNode,
     ReflectAnswerNode,
     ResearchSummaryNode,
@@ -133,6 +134,7 @@ class NodeFactory:
         return {
             "route_request": RouteRequestNode(intent_router),
             "blocked_action": BlockedActionNode(),
+            "out_of_scope": OutOfScopeNode(),
             "create_plan": CreatePlanNode(
                 self.planner,
                 tool_registry=tool_registry,
