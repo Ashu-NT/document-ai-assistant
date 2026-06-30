@@ -6,6 +6,10 @@ from src.application.langgraph.research.models import (
     ResearchSynthesis,
 )
 from src.application.langgraph.research.policies import ResearchSynthesisPolicy
+from src.application.langgraph.research.presentation import (
+    EnterpriseResearchReportFormatter,
+    ResearchExecutiveSummaryBuilder,
+)
 from src.application.langgraph.research.synthesizers.checklist_synthesizer import (
     ChecklistSynthesizer,
 )
@@ -28,6 +32,8 @@ class ResearchReportBuilder:
         maintenance_report_synthesizer: MaintenanceReportSynthesizer | None = None,
         checklist_synthesizer: ChecklistSynthesizer | None = None,
         evidence_synthesizer: EvidenceSynthesizer | None = None,
+        executive_summary_builder: ResearchExecutiveSummaryBuilder | None = None,
+        formatter: EnterpriseResearchReportFormatter | None = None,
     ) -> None:
         self.comparison_synthesizer = comparison_synthesizer or ComparisonSynthesizer()
         self.maintenance_report_synthesizer = (
@@ -35,6 +41,10 @@ class ResearchReportBuilder:
         )
         self.checklist_synthesizer = checklist_synthesizer or ChecklistSynthesizer()
         self.evidence_synthesizer = evidence_synthesizer or EvidenceSynthesizer()
+        self.executive_summary_builder = (
+            executive_summary_builder or ResearchExecutiveSummaryBuilder()
+        )
+        self.formatter = formatter or EnterpriseResearchReportFormatter()
 
     def build_synthesis(self, result) -> ResearchSynthesis:
         goal_type = result.goal.goal_type
@@ -62,7 +72,10 @@ class ResearchReportBuilder:
         ]
         return ResearchReport(
             title=title,
-            executive_summary=synthesis.summary,
+            executive_summary=self.executive_summary_builder.build(
+                result=result,
+                sections=list(synthesis.sections),
+            ),
             sections=list(synthesis.sections),
             findings=findings,
             gaps=[gap.to_dict() for gap in synthesis.gaps] if policy.include_gaps else [],
@@ -75,33 +88,11 @@ class ResearchReportBuilder:
             diagnostics=dict(synthesis.diagnostics),
         )
 
+    def render_text(self, report: ResearchReport, *, policy: ResearchSynthesisPolicy) -> str:
+        return self.formatter.render(report, policy=policy)
+
     def to_markdown(self, report: ResearchReport, *, policy: ResearchSynthesisPolicy) -> str:
-        lines = [f"# {report.title}", "", "## Executive Summary", report.executive_summary]
-        for section in report.sections:
-            title = str(section.get("title") or "Section")
-            body = str(section.get("body") or "").strip()
-            lines.extend(["", f"## {title}", body or "No evidence summary available."])
-        checklist_items = report.appendix.get("checklist_items", [])
-        if checklist_items:
-            lines.extend(["", "## Checklist"])
-            for item in checklist_items:
-                label = item.get("label") or "Item"
-                evidence = item.get("evidence") or "-"
-                lines.append(f"{policy.checklist_prefix} {label}")
-                lines.append(f"Evidence: {evidence}")
-        if report.gaps:
-            lines.extend(["", "## Missing Evidence"])
-            for gap in report.gaps:
-                lines.append(f"- {gap.get('description')}")
-        if report.references:
-            lines.extend(["", "## References"])
-            for ref in report.references:
-                section_path = " > ".join(ref.get("section_path") or [])
-                lines.append(
-                    f"- {ref.get('document_id')} | {section_path or '-'} | "
-                    f"p. {ref.get('page_start') or '-'}-{ref.get('page_end') or ref.get('page_start') or '-'}"
-                )
-        return "\n".join(lines).strip()
+        return self.render_text(report, policy=policy)
 
 
 def _report_title(goal_type) -> str:

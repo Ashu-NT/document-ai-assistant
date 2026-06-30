@@ -39,17 +39,10 @@ class ResearchSummaryNode:
                 "trace": extend_trace(state["trace"], trace_entry),
             }
 
-        report_markdown = self.research_service.report_builder.to_markdown(
+        response_text = self.research_service.report_builder.render_text(
             result.report,
             policy=self.research_service.synthesis_policy,
         )
-        response_sections: list[str] = []
-        if state.get("show_research_plan") and isinstance(state.get("research_plan"), dict):
-            response_sections.append(_format_plan(state["research_plan"]))
-        response_sections.append(report_markdown)
-        if state.get("show_research_trace") and isinstance(state.get("research_trace"), dict):
-            response_sections.append(_format_trace(state["research_trace"]))
-        response_text = "\n\n".join(section for section in response_sections if section).strip()
 
         context_chunks = _build_context_chunks(state.get("research_evidence"))
         citations = _build_citations(state.get("research_evidence"))
@@ -92,34 +85,6 @@ class ResearchSummaryNode:
             "tool_results": tool_results,
             "trace": extend_trace(state["trace"], trace_entry),
         }
-
-
-def _format_plan(plan: dict[str, Any]) -> str:
-    tasks = plan.get("tasks") or []
-    if not isinstance(tasks, list) or not tasks:
-        return ""
-    lines = ["Research Plan:"]
-    for index, task in enumerate(tasks, start=1):
-        if not isinstance(task, dict):
-            continue
-        title = str(task.get("title") or f"Task {index}")
-        lines.append(f"{index}. {title}")
-    return "\n".join(lines)
-
-
-def _format_trace(trace: dict[str, Any]) -> str:
-    lines = ["Research Trace:"]
-    plan_source = trace.get("plan_source")
-    if plan_source:
-        lines.append(f"- plan source: {plan_source}")
-    evidence_counts = trace.get("evidence_counts_per_task") or {}
-    if isinstance(evidence_counts, dict):
-        for task_id, count in evidence_counts.items():
-            lines.append(f"- {task_id}: {count} evidence chunk(s)")
-    gaps = trace.get("gaps") or []
-    if isinstance(gaps, list):
-        lines.append(f"- gaps: {len(gaps)}")
-    return "\n".join(lines)
 
 
 def _build_context_chunks(value: Any) -> list[dict[str, Any]]:

@@ -220,11 +220,17 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Print the graph node trace after execution.",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Print CLI execution metadata and debug-oriented status details.",
+    )
     return parser.parse_args(list(argv) if argv is not None else None)
 
 
-def print_status(message: str) -> None:
-    print(f"[agent-cli] {message}", flush=True)
+def print_status(message: str, *, enabled: bool = True) -> None:
+    if enabled:
+        print(f"[agent-cli] {message}", flush=True)
 
 
 def _create_qdrant_client(qdrant_client_class):
@@ -818,6 +824,7 @@ def build_json_output(
 def print_graph_result(
     result,
     *,
+    show_debug: bool = False,
     show_plan: bool = False,
     show_raw_plan: bool = False,
     show_research_plan: bool = False,
@@ -827,14 +834,16 @@ def print_graph_result(
     show_reflection: bool = False,
     show_retrieval_strategy: bool = False,
 ) -> None:
-    print(f"Route: {result.route or '-'}")
-    print(f"Success: {result.success}")
+    if show_debug:
+        print(f"Route: {result.route or '-'}")
+        print(f"Success: {result.success}")
     answer_text = (result.data or {}).get("answer") or result.response_text
     if answer_text:
-        print()
+        if show_debug:
+            print()
         print(_console_safe_text(answer_text))
     answer_intent = (result.data or {}).get("answer_intent")
-    if answer_intent:
+    if answer_intent and show_debug:
         print(f"\nAnswer intent: {answer_intent}")
     if show_plan:
         print_execution_plan(
@@ -936,6 +945,7 @@ def run_interactive_loop(
     top_k: int | None = None,
     emit_json: bool = False,
     show_trace: bool = False,
+    show_debug: bool = False,
 ) -> int:
     print_status(f"Interactive session started: {session_id}")
 
@@ -993,6 +1003,7 @@ def run_interactive_loop(
         else:
             print_graph_result(
                 result,
+                show_debug=show_debug,
                 show_plan=show_plan,
                 show_raw_plan=show_raw_plan and show_trace,
                 show_research_plan=show_research_plan,
@@ -1084,7 +1095,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.show_raw_plan and not args.trace:
             print("--show-raw-plan requires --trace.", file=sys.stderr)
             return 1
-        print_status("Building document agent runtime...")
+        print_status("Building document agent runtime...", enabled=args.debug)
         runtime = build_agent_runtime(
             session,
             enable_generation=effective_generation,
@@ -1116,9 +1127,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 top_k=args.top_k,
                 emit_json=args.json,
                 show_trace=args.trace,
+                show_debug=args.debug,
             )
 
-        print_status("Running document agent graph...")
+        print_status("Running document agent graph...", enabled=args.debug)
         result = run_graph_request(
             runtime,
             args.user_input,
@@ -1156,6 +1168,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             print_graph_result(
                 result,
+                show_debug=args.debug,
                 show_plan=args.show_plan,
                 show_raw_plan=args.show_raw_plan and args.trace,
                 show_research_plan=args.show_research_plan,

@@ -192,9 +192,7 @@ def test_plan_summary_node_includes_plan_when_show_plan_enabled() -> None:
         }
     )
 
-    assert "Plan" in patch["response_text"]
-    assert "1. Answer specifications." in patch["response_text"]
-    assert "Answer" in patch["response_text"]
+    assert patch["response_text"] == "Specifications:\n...\n\nMaintenance:\n..."
 
 
 def test_plan_summary_node_hides_plan_when_show_plan_disabled() -> None:

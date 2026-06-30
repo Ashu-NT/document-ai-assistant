@@ -138,13 +138,14 @@ def test_agent_cli_show_context_prints_context_chunks(capsys) -> None:
 
     output = capsys.readouterr().out
     assert "Context Chunks" in output
-    assert "Answer intent: maintenance_summary" in output
     assert "[1] Maintenance Schedule | maintenance_interval" in output
     assert "Pump Manual (doc_12345678)" in output
     assert "6 Maintenance > Maintenance Schedule" in output
     assert "12-13" in output
     assert "0.9132" in output
     assert "Oil change interval is 500 hours." in output
+    assert "Route:" not in output
+    assert "Success:" not in output
 
 
 def test_agent_cli_print_graph_result_prefers_payload_answer(capsys) -> None:
@@ -290,6 +291,14 @@ def test_agent_cli_show_research_outputs_plan_and_trace(capsys) -> None:
     assert "Research Trace" in output
     assert "Plan source: deterministic" in output
     assert "task_1: 2" in output
+
+
+def test_agent_cli_parse_args_supports_debug_flag() -> None:
+    mod = _load_script("agent_cli")
+
+    args = mod.parse_args(["What is the oil change interval?", "--debug"])
+
+    assert args.debug is True
 
 
 def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> None:
@@ -448,3 +457,23 @@ def test_agent_cli_interactive_loop_exits_on_exit_command(monkeypatch, capsys) -
     assert exit_code == 0
     assert "Interactive session started: demo" in output
     assert "Exiting document agent." in output
+
+
+def test_agent_cli_print_graph_result_shows_debug_metadata_only_when_requested(capsys) -> None:
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="Answer text.",
+        route="answer_question",
+        data={"answer": "Answer text."},
+    )
+
+    mod.print_graph_result(
+        result,
+        show_debug=True,
+        show_context=False,
+        show_trace=False,
+    )
+
+    output = capsys.readouterr().out
+    assert "Route: answer_question" in output
+    assert "Success: True" in output
