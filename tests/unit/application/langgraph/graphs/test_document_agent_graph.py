@@ -367,7 +367,8 @@ def test_document_agent_graph_executes_deep_research_with_selected_document() ->
 
     assert result.success is True
     assert result.route == "deep_research"
-    assert "Research Plan" in (result.response_text or "")
+    assert "Comparison Summary" in (result.response_text or "")
+    assert "Research Plan" not in (result.response_text or "")
     assert retrieve_tool.requests
     assert result.data["research_plan"] is not None
     assert result.data["research_task_results"]

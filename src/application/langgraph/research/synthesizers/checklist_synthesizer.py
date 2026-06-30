@@ -1,9 +1,17 @@
 from __future__ import annotations
 
 from src.application.langgraph.research.models import ResearchSynthesis
+from src.application.langgraph.research.presentation import ResearchFindingBuilder
 
 
 class ChecklistSynthesizer:
+    def __init__(
+        self,
+        *,
+        finding_builder: ResearchFindingBuilder | None = None,
+    ) -> None:
+        self.finding_builder = finding_builder or ResearchFindingBuilder()
+
     def synthesize(self, result) -> ResearchSynthesis:
         checklist_items = []
         references = []
@@ -19,6 +27,7 @@ class ChecklistSynthesizer:
             references.append(
                 {
                     "chunk_id": evidence.chunk_id,
+                    "document_title": evidence.document_title,
                     "page_start": evidence.page_start,
                     "page_end": evidence.page_end,
                     "section_path": evidence.section_path,
@@ -32,13 +41,15 @@ class ChecklistSynthesizer:
             ]
             if not task_evidence:
                 continue
+            findings = self.finding_builder.build_findings(task_evidence, max_findings=4)
             sections.append(
                 {
                     "title": task.title,
                     "body": "\n".join(
-                        f"- {item.content_excerpt} (p. {item.page_start or '-'})"
-                        for item in task_evidence[:4]
+                        f"- {finding['text']}"
+                        for finding in findings
                     ),
+                    "findings": findings,
                     "evidence_count": len(task_evidence),
                 }
             )

@@ -35,27 +35,11 @@ class PlanSummaryNode:
         }
 
     def _build_response_text(self, state: AgentState) -> str:
-        answer_text = (
+        return (
             _string_value(state.get("response_text"))
             or _string_value((state.get("plan_results") or {}).get("final_response_text"))
             or "Planned task completed."
         )
-        if not state.get("show_plan"):
-            return answer_text
-
-        plan_lines = ["Plan", "----"]
-        for index, step in enumerate(state.get("plan_steps", []), start=1):
-            if not isinstance(step, dict):
-                continue
-            description = _string_value(step.get("description")) or _string_value(
-                step.get("tool_name")
-            )
-            plan_lines.append(f"{index}. {description}")
-        if len(plan_lines) == 2:
-            plan_lines.append("No multi-step plan was used.")
-
-        answer_lines = ["", "Answer", "------", answer_text]
-        return "\n".join([*plan_lines, *answer_lines]).strip()
 
 
 def _string_value(value: Any) -> str | None:

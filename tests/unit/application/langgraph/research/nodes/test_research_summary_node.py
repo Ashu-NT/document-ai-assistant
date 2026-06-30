@@ -96,7 +96,7 @@ def test_research_summary_node_formats_plan_trace_and_citations() -> None:
     node = ResearchSummaryNode(
         SimpleNamespace(
             report_builder=SimpleNamespace(
-                to_markdown=lambda report, policy: "# Comparison Summary\n\n## Executive Summary\nCompared."
+                render_text=lambda report, policy: "Comparison Summary\n\nExecutive Summary\n\nCompared."
             ),
             synthesis_policy=ResearchSynthesisPolicy(),
         )
@@ -104,8 +104,9 @@ def test_research_summary_node_formats_plan_trace_and_citations() -> None:
 
     patch = node(state)
 
-    assert "Research Plan" in patch["response_text"]
-    assert "Research Trace" in patch["response_text"]
+    assert "Comparison Summary" in patch["response_text"]
+    assert "Research Plan" not in patch["response_text"]
+    assert "Research Trace" not in patch["response_text"]
     answer_payload = patch["tool_results"]["answer_question"]["data"]
     assert answer_payload["route"] == "deep_research"
     assert answer_payload["answer_intent"] == "research_comparison"

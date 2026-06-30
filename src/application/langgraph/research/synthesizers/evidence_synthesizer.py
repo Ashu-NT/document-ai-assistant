@@ -1,9 +1,17 @@
 from __future__ import annotations
 
 from src.application.langgraph.research.models import ResearchSynthesis
+from src.application.langgraph.research.presentation import ResearchFindingBuilder
 
 
 class EvidenceSynthesizer:
+    def __init__(
+        self,
+        *,
+        finding_builder: ResearchFindingBuilder | None = None,
+    ) -> None:
+        self.finding_builder = finding_builder or ResearchFindingBuilder()
+
     def synthesize(self, result) -> ResearchSynthesis:
         sections = []
         references = []
@@ -11,13 +19,15 @@ class EvidenceSynthesizer:
             task_evidence = _task_evidence(result, task.task_id)
             if not task_evidence:
                 continue
+            findings = self.finding_builder.build_findings(task_evidence)
             sections.append(
                 {
                     "title": task.title,
                     "body": "\n".join(
-                        f"- {item.content_excerpt} (p. {item.page_start or '-'})"
-                        for item in task_evidence[:5]
+                        f"- {finding['text']}"
+                        for finding in findings
                     ),
+                    "findings": findings,
                     "evidence_count": len(task_evidence),
                 }
             )
@@ -25,6 +35,7 @@ class EvidenceSynthesizer:
                 {
                     "chunk_id": item.chunk_id,
                     "document_id": item.document_id,
+                    "document_title": item.document_title,
                     "section_path": item.section_path,
                     "page_start": item.page_start,
                     "page_end": item.page_end,
