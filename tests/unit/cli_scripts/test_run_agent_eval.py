@@ -28,6 +28,9 @@ def test_run_agent_eval_parses_arguments() -> None:
             "--tag",
             "safety",
             "--llm-planning",
+            "--retrieval-strategy",
+            "table",
+            "--llm-retrieval-strategy",
             "--fail-on-threshold",
             "--json",
         ]
@@ -36,6 +39,8 @@ def test_run_agent_eval_parses_arguments() -> None:
     assert args.case_id == ["AG-001"]
     assert args.tag == ["safety"]
     assert args.llm_planning is True
+    assert args.retrieval_strategy == "table"
+    assert args.llm_retrieval_strategy is True
     assert args.fail_on_threshold is True
     assert args.json is True
 
@@ -58,6 +63,12 @@ def test_run_agent_eval_main_exits_non_zero_when_threshold_fails(
             document_scope_safety_rate=0.0,
             tool_policy_compliance_rate=0.0,
             answer_expectation_rate=0.0,
+            retrieval_strategy_selection_rate=0.0,
+            retrieval_strategy_validity_rate=0.0,
+            strategy_fallback_rate=0.0,
+            multi_strategy_success_rate=0.0,
+            strategy_document_scope_safety_rate=0.0,
+            strategy_trace_coverage_rate=0.0,
         )
     )
     gate_result = AgentQualityGateResult(

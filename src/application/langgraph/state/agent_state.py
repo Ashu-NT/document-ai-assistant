@@ -21,6 +21,10 @@ class AgentState(TypedDict):
     show_raw_plan: bool
     reflection_enabled: bool
     show_reflection: bool
+    retrieval_strategy_enabled: bool
+    llm_retrieval_strategy_enabled: bool
+    show_retrieval_strategy: bool
+    requested_retrieval_strategy: str | None
     top_k: int | None
     reflection_attempts: int
     retrieval_retry_count: int
@@ -30,6 +34,12 @@ class AgentState(TypedDict):
     answer_quality: dict[str, Any] | None
     evidence_quality: dict[str, Any] | None
     retry_query: str | None
+    retrieval_strategy_decision: dict[str, Any] | None
+    retrieval_plan: dict[str, Any] | None
+    retrieval_execution_result: dict[str, Any] | None
+    retrieval_strategy_trace: dict[str, Any] | None
+    selected_retrieval_strategies: list[str]
+    retrieval_strategy_errors: list[str]
     initial_context_chunks: list[dict[str, Any]]
     retry_context_chunks: list[dict[str, Any]]
     merged_context_chunks: list[dict[str, Any]]
@@ -78,6 +88,10 @@ def build_agent_state(
     show_raw_plan: bool = False,
     reflection_enabled: bool = False,
     show_reflection: bool = False,
+    retrieval_strategy_enabled: bool = False,
+    llm_retrieval_strategy_enabled: bool = False,
+    show_retrieval_strategy: bool = False,
+    requested_retrieval_strategy: str | None = None,
     top_k: int | None = None,
     conversation_id: str | None = None,
     session_id: str | None = None,
@@ -108,6 +122,10 @@ def build_agent_state(
         show_raw_plan=show_raw_plan,
         reflection_enabled=reflection_enabled,
         show_reflection=show_reflection,
+        retrieval_strategy_enabled=retrieval_strategy_enabled,
+        llm_retrieval_strategy_enabled=llm_retrieval_strategy_enabled,
+        show_retrieval_strategy=show_retrieval_strategy,
+        requested_retrieval_strategy=requested_retrieval_strategy,
         top_k=top_k,
         reflection_attempts=0,
         retrieval_retry_count=0,
@@ -117,6 +135,12 @@ def build_agent_state(
         answer_quality=None,
         evidence_quality=None,
         retry_query=None,
+        retrieval_strategy_decision=None,
+        retrieval_plan=None,
+        retrieval_execution_result=None,
+        retrieval_strategy_trace=None,
+        selected_retrieval_strategies=[],
+        retrieval_strategy_errors=[],
         initial_context_chunks=[],
         retry_context_chunks=[],
         merged_context_chunks=[],

@@ -24,6 +24,12 @@ class AgentEvalThresholds:
     document_scope_safety_rate: float | None = 1.00
     tool_policy_compliance_rate: float | None = 1.00
     answer_expectation_rate: float | None = 0.80
+    retrieval_strategy_selection_rate: float | None = 0.80
+    retrieval_strategy_validity_rate: float | None = 1.00
+    strategy_fallback_rate: float | None = None
+    multi_strategy_success_rate: float | None = 0.80
+    strategy_document_scope_safety_rate: float | None = 1.00
+    strategy_trace_coverage_rate: float | None = 1.00
 
     @classmethod
     def from_yaml(
@@ -50,6 +56,24 @@ class AgentEvalThresholds:
             ),
             answer_expectation_rate=_opt_float(
                 data.get("answer_expectation_rate")
+            ),
+            retrieval_strategy_selection_rate=_opt_float(
+                data.get("retrieval_strategy_selection_rate")
+            ),
+            retrieval_strategy_validity_rate=_opt_float(
+                data.get("retrieval_strategy_validity_rate")
+            ),
+            strategy_fallback_rate=_opt_float(
+                data.get("strategy_fallback_rate")
+            ),
+            multi_strategy_success_rate=_opt_float(
+                data.get("multi_strategy_success_rate")
+            ),
+            strategy_document_scope_safety_rate=_opt_float(
+                data.get("strategy_document_scope_safety_rate")
+            ),
+            strategy_trace_coverage_rate=_opt_float(
+                data.get("strategy_trace_coverage_rate")
             ),
         )
 

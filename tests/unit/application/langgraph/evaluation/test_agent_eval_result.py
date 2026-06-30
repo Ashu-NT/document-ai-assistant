@@ -23,6 +23,12 @@ def test_agent_eval_report_exposes_case_count() -> None:
             document_scope_safety_rate=1.0,
             tool_policy_compliance_rate=1.0,
             answer_expectation_rate=1.0,
+            retrieval_strategy_selection_rate=1.0,
+            retrieval_strategy_validity_rate=1.0,
+            strategy_fallback_rate=0.0,
+            multi_strategy_success_rate=1.0,
+            strategy_document_scope_safety_rate=1.0,
+            strategy_trace_coverage_rate=1.0,
         ),
     )
 

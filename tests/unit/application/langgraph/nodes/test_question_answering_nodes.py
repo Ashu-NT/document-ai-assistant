@@ -6,8 +6,15 @@ from src.application.langgraph.nodes.question_answering import (
     ExploreDocumentNode,
     RetrieveEvidenceNode,
 )
+from src.application.langgraph.retrieval_strategy import (
+    RetrievalPlanExecutor,
+    RetrievalStrategyPolicy,
+    RetrievalStrategyService,
+)
 from src.application.langgraph.state import build_agent_state
 from src.application.tools.common import ToolResult
+from src.domain.common import ChunkType, SourceLocation
+from src.domain.retrieval import RetrievedChunk
 
 
 @dataclass(slots=True)
@@ -43,6 +50,29 @@ class FakeRetrieveChunksTool:
             data={
                 "chunks": [{"chunk_id": "chunk-1"}],
                 "context_chunks": [{"chunk_id": "chunk-1"}, {"chunk_id": "chunk-2"}],
+            }
+        )
+
+
+class FakeRetrieveTablesTool:
+    def __init__(self) -> None:
+        self.requests = []
+
+    def run(self, request):
+        self.requests.append(request)
+        chunk = RetrievedChunk(
+            chunk_id="chunk-table-1",
+            document_id=request.document_id or "doc-42",
+            content="Maintenance schedule table row",
+            score=0.91,
+            retrieval_source="table",
+            chunk_type=ChunkType.SPARE_PARTS_TABLE,
+            source=SourceLocation(page_start=12, page_end=12),
+        )
+        return ToolResult.ok(
+            data={
+                "chunks": [chunk],
+                "context_chunks": [chunk],
             }
         )
 
@@ -100,3 +130,59 @@ def test_answer_question_node_uses_selected_document_when_request_document_missi
     )
 
     assert tool.requests[0].document_id == "doc-selected"
+
+
+def test_retrieve_evidence_node_uses_strategy_selected_table_tool_when_requested() -> None:
+    chunk_tool = FakeRetrieveChunksTool()
+    table_tool = FakeRetrieveTablesTool()
+    node = RetrieveEvidenceNode(
+        ToolRegistry(
+            retrieve_chunks_tool=chunk_tool,
+            retrieve_tables_tool=table_tool,
+        ),
+        retrieval_strategy_service=RetrievalStrategyService(),
+        retrieval_plan_executor=RetrievalPlanExecutor(),
+        retrieval_strategy_policy=RetrievalStrategyPolicy(enabled=True),
+    )
+
+    patch = node(
+        build_agent_state(
+            user_input="show maintenance table",
+            document_id="doc-42",
+            top_k=3,
+            retrieval_strategy_enabled=True,
+            requested_retrieval_strategy="table",
+        )
+    )
+
+    assert table_tool.requests
+    assert patch["retrieval_strategy_decision"]["primary_strategy"] == "TABLE_LOOKUP"
+    assert "Retrieved 1 evidence chunk" in patch["response_text"]
+
+
+def test_answer_question_node_passes_strategy_selected_chunks_as_override() -> None:
+    answer_tool = FakeAnswerQuestionTool()
+    table_tool = FakeRetrieveTablesTool()
+    node = AnswerQuestionNode(
+        ToolRegistry(
+            answer_question_tool=answer_tool,
+            retrieve_chunks_tool=FakeRetrieveChunksTool(),
+            retrieve_tables_tool=table_tool,
+        ),
+        retrieval_strategy_service=RetrievalStrategyService(),
+        retrieval_plan_executor=RetrievalPlanExecutor(),
+        retrieval_strategy_policy=RetrievalStrategyPolicy(enabled=True),
+    )
+
+    node(
+        build_agent_state(
+            user_input="show maintenance table",
+            document_id="doc-42",
+            retrieval_strategy_enabled=True,
+            requested_retrieval_strategy="table",
+        )
+    )
+
+    assert table_tool.requests
+    assert answer_tool.requests[0].context_override_chunks is not None
+    assert len(answer_tool.requests[0].context_override_chunks) == 1

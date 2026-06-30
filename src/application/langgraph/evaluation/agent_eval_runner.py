@@ -15,6 +15,7 @@ from src.application.langgraph.evaluation.agent_test_case import (
     AgentTestCase,
     AgentTurnInput,
 )
+from src.application.langgraph.retrieval_strategy.models import RetrievalStrategy
 from src.application.langgraph.routing import RouteType
 from src.shared.exceptions import SchemaValidationError
 
@@ -27,6 +28,12 @@ _METRIC_NAMES = (
     "document_scope_safety_rate",
     "tool_policy_compliance_rate",
     "answer_expectation_rate",
+    "retrieval_strategy_selection_rate",
+    "retrieval_strategy_validity_rate",
+    "strategy_fallback_rate",
+    "multi_strategy_success_rate",
+    "strategy_document_scope_safety_rate",
+    "strategy_trace_coverage_rate",
 )
 
 
@@ -51,6 +58,9 @@ class AgentEvalRunner:
         max_cases: int | None = None,
         llm_planning_enabled_override: bool | None = None,
         answer_generation_enabled_override: bool | None = None,
+        retrieval_strategy_enabled_override: bool | None = None,
+        llm_retrieval_strategy_enabled_override: bool | None = None,
+        requested_retrieval_strategy_override: str | None = None,
         source_path: str | None = None,
     ) -> AgentEvalReport:
         selected_cases = self._select_cases(
@@ -75,6 +85,13 @@ class AgentEvalRunner:
                 case,
                 llm_planning_enabled_override=llm_planning_enabled_override,
                 answer_generation_enabled_override=answer_generation_enabled_override,
+                retrieval_strategy_enabled_override=retrieval_strategy_enabled_override,
+                llm_retrieval_strategy_enabled_override=(
+                    llm_retrieval_strategy_enabled_override
+                ),
+                requested_retrieval_strategy_override=(
+                    requested_retrieval_strategy_override
+                ),
             )
             for case in selected_cases
         ]
@@ -91,6 +108,15 @@ class AgentEvalRunner:
                     "llm_planning_enabled_override": llm_planning_enabled_override,
                     "answer_generation_enabled_override": (
                         answer_generation_enabled_override
+                    ),
+                    "retrieval_strategy_enabled_override": (
+                        retrieval_strategy_enabled_override
+                    ),
+                    "llm_retrieval_strategy_enabled_override": (
+                        llm_retrieval_strategy_enabled_override
+                    ),
+                    "requested_retrieval_strategy_override": (
+                        requested_retrieval_strategy_override
                     ),
                 }
             ),
@@ -131,6 +157,9 @@ class AgentEvalRunner:
         *,
         llm_planning_enabled_override: bool | None,
         answer_generation_enabled_override: bool | None,
+        retrieval_strategy_enabled_override: bool | None,
+        llm_retrieval_strategy_enabled_override: bool | None,
+        requested_retrieval_strategy_override: str | None,
     ) -> AgentCaseResult:
         session_id = f"agent-eval-{case.case_id.lower()}-{uuid4().hex[:8]}"
         turn_results = [
@@ -140,6 +169,13 @@ class AgentEvalRunner:
                 session_id=session_id,
                 llm_planning_enabled_override=llm_planning_enabled_override,
                 answer_generation_enabled_override=answer_generation_enabled_override,
+                retrieval_strategy_enabled_override=retrieval_strategy_enabled_override,
+                llm_retrieval_strategy_enabled_override=(
+                    llm_retrieval_strategy_enabled_override
+                ),
+                requested_retrieval_strategy_override=(
+                    requested_retrieval_strategy_override
+                ),
             )
             for turn_input in case.inputs
         ]
@@ -171,7 +207,29 @@ class AgentEvalRunner:
         session_id: str,
         llm_planning_enabled_override: bool | None,
         answer_generation_enabled_override: bool | None,
+        retrieval_strategy_enabled_override: bool | None,
+        llm_retrieval_strategy_enabled_override: bool | None,
+        requested_retrieval_strategy_override: str | None,
     ) -> AgentTurnResult:
+        requested_retrieval_strategy = (
+            requested_retrieval_strategy_override
+            if requested_retrieval_strategy_override is not None
+            else turn_input.requested_retrieval_strategy
+        )
+        llm_retrieval_strategy_enabled = (
+            llm_retrieval_strategy_enabled_override
+            if llm_retrieval_strategy_enabled_override is not None
+            else turn_input.llm_retrieval_strategy_enabled
+        )
+        retrieval_strategy_enabled = (
+            retrieval_strategy_enabled_override
+            if retrieval_strategy_enabled_override is not None
+            else (
+                turn_input.retrieval_strategy_enabled
+                or requested_retrieval_strategy is not None
+                or llm_retrieval_strategy_enabled
+            )
+        )
         result: GraphResult = graph.run(
             turn_input.user_input,
             document_id=turn_input.document_id,
@@ -188,9 +246,28 @@ class AgentEvalRunner:
                 if llm_planning_enabled_override is not None
                 else turn_input.llm_planning_enabled
             ),
+            retrieval_strategy_enabled=retrieval_strategy_enabled,
+            llm_retrieval_strategy_enabled=llm_retrieval_strategy_enabled,
+            requested_retrieval_strategy=requested_retrieval_strategy,
+            show_retrieval_strategy=turn_input.show_retrieval_strategy,
             show_plan=turn_input.show_plan,
         )
         data = result.data or {}
+        retrieval_strategy_decision = data.get("retrieval_strategy_decision")
+        retrieval_strategy_primary = None
+        retrieval_strategy_secondary: list[str] = []
+        if isinstance(retrieval_strategy_decision, dict):
+            primary = retrieval_strategy_decision.get("primary_strategy")
+            if isinstance(primary, str) and primary:
+                retrieval_strategy_primary = primary
+            secondaries = retrieval_strategy_decision.get("secondary_strategies")
+            if isinstance(secondaries, list):
+                retrieval_strategy_secondary = [
+                    str(item)
+                    for item in secondaries
+                    if isinstance(item, str) and item
+                ]
+        retrieval_strategy_trace = data.get("retrieval_strategy_trace")
         selected_document_id = _string_or_none(
             data.get("selected_document_id")
         ) or _string_or_none(data.get("document_id"))
@@ -207,6 +284,17 @@ class AgentEvalRunner:
             tool_names=_extract_trace_tool_names(result.trace or []),
             plan_tool_names=_extract_plan_tool_names(data),
             context_document_ids=_extract_context_document_ids(data),
+            retrieval_strategy_primary=retrieval_strategy_primary,
+            retrieval_strategy_secondary=retrieval_strategy_secondary,
+            retrieval_strategy_trace_present=isinstance(
+                retrieval_strategy_trace,
+                dict,
+            ),
+            retrieval_strategy_fallback_used=bool(
+                isinstance(retrieval_strategy_trace, dict)
+                and retrieval_strategy_trace.get("fallback_reason")
+            ),
+            retrieval_strategy_enabled=retrieval_strategy_enabled,
             diagnostics=serialize_graph_value(
                 {
                     "error_code": result.error_code,
@@ -228,6 +316,10 @@ class AgentEvalRunner:
                     "planning_source": data.get("planning_source"),
                     "planning_errors": data.get("planning_errors", []),
                     "planning_warnings": data.get("planning_warnings", []),
+                    "retrieval_strategy_errors": data.get(
+                        "retrieval_strategy_errors",
+                        [],
+                    ),
                 }
             ),
             errors=_extract_turn_errors(result),
@@ -356,6 +448,68 @@ class AgentEvalRunner:
             failed_checks,
         )
 
+        retrieval_strategy_selection_pass = _evaluate_retrieval_strategy_selection(
+            expected,
+            final_turn=final_turn,
+        )
+        _record_check(
+            "retrieval_strategy_selection_rate",
+            retrieval_strategy_selection_pass,
+            metrics,
+            failed_checks,
+        )
+
+        retrieval_strategy_validity_pass = _evaluate_retrieval_strategy_validity(
+            expected,
+            final_turn=final_turn,
+        )
+        _record_check(
+            "retrieval_strategy_validity_rate",
+            retrieval_strategy_validity_pass,
+            metrics,
+            failed_checks,
+        )
+
+        multi_strategy_success_pass = _evaluate_multi_strategy_success(
+            expected,
+            final_turn=final_turn,
+        )
+        _record_check(
+            "multi_strategy_success_rate",
+            multi_strategy_success_pass,
+            metrics,
+            failed_checks,
+        )
+
+        strategy_document_scope_pass = _evaluate_strategy_document_scope(
+            expected,
+            final_turn=final_turn,
+        )
+        _record_check(
+            "strategy_document_scope_safety_rate",
+            strategy_document_scope_pass,
+            metrics,
+            failed_checks,
+        )
+
+        strategy_trace_coverage_pass = _evaluate_strategy_trace_coverage(
+            expected,
+            final_turn=final_turn,
+        )
+        _record_check(
+            "strategy_trace_coverage_rate",
+            strategy_trace_coverage_pass,
+            metrics,
+            failed_checks,
+        )
+
+        strategy_fallback_rate = _evaluate_strategy_fallback_rate(
+            expected,
+            final_turn=final_turn,
+        )
+        if strategy_fallback_rate is not None:
+            metrics["strategy_fallback_rate"] = strategy_fallback_rate
+
         return failed_checks, metrics, {
             "all_tool_names": all_tool_names,
             "all_plan_tool_names": all_plan_tool_names,
@@ -364,6 +518,10 @@ class AgentEvalRunner:
             "final_selected_document_id": final_turn.selected_document_id,
             "final_selected_document_title": final_turn.selected_document_title,
             "final_context_document_ids": final_turn.context_document_ids,
+            "final_retrieval_strategy_primary": final_turn.retrieval_strategy_primary,
+            "final_retrieval_strategy_secondary": (
+                final_turn.retrieval_strategy_secondary
+            ),
         }
 
     def _build_summary(
@@ -396,6 +554,30 @@ class AgentEvalRunner:
             answer_expectation_rate=_average_metric(
                 case_results,
                 "answer_expectation_rate",
+            ),
+            retrieval_strategy_selection_rate=_average_metric(
+                case_results,
+                "retrieval_strategy_selection_rate",
+            ),
+            retrieval_strategy_validity_rate=_average_metric(
+                case_results,
+                "retrieval_strategy_validity_rate",
+            ),
+            strategy_fallback_rate=_average_metric(
+                case_results,
+                "strategy_fallback_rate",
+            ),
+            multi_strategy_success_rate=_average_metric(
+                case_results,
+                "multi_strategy_success_rate",
+            ),
+            strategy_document_scope_safety_rate=_average_metric(
+                case_results,
+                "strategy_document_scope_safety_rate",
+            ),
+            strategy_trace_coverage_rate=_average_metric(
+                case_results,
+                "strategy_trace_coverage_rate",
             ),
         )
 
@@ -599,6 +781,106 @@ def _evaluate_answer_expectations(
     if any(fragment.lower() in answer_text for fragment in expected.answer_must_not_contain):
         return False
     return True
+
+
+def _evaluate_retrieval_strategy_selection(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool | None:
+    if (
+        expected.retrieval_strategy_primary is None
+        and not expected.retrieval_strategy_secondary_contains
+    ):
+        return None
+    if final_turn.retrieval_strategy_primary != expected.retrieval_strategy_primary:
+        return False
+    actual_secondaries = set(final_turn.retrieval_strategy_secondary)
+    return all(
+        expected_secondary in actual_secondaries
+        for expected_secondary in expected.retrieval_strategy_secondary_contains
+    )
+
+
+def _evaluate_retrieval_strategy_validity(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool | None:
+    if not _strategy_metric_applicable(expected, final_turn=final_turn):
+        return None
+    if final_turn.retrieval_strategy_primary is None:
+        return False
+    allowed = {strategy.value for strategy in RetrievalStrategy}
+    if final_turn.retrieval_strategy_primary not in allowed:
+        return False
+    if any(
+        secondary not in allowed for secondary in final_turn.retrieval_strategy_secondary
+    ):
+        return False
+    if len(final_turn.retrieval_strategy_secondary) != len(
+        set(final_turn.retrieval_strategy_secondary)
+    ):
+        return False
+    return True
+
+
+def _evaluate_multi_strategy_success(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool | None:
+    if expected.retrieval_strategy_primary != RetrievalStrategy.MULTI_STRATEGY.value:
+        return None
+    return _evaluate_retrieval_strategy_selection(expected, final_turn=final_turn)
+
+
+def _evaluate_strategy_document_scope(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool | None:
+    if not _strategy_metric_applicable(expected, final_turn=final_turn):
+        return None
+    return _evaluate_document_scope(expected, final_turn=final_turn)
+
+
+def _evaluate_strategy_trace_coverage(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool | None:
+    if expected.retrieval_strategy_trace_required is not None:
+        return (
+            final_turn.retrieval_strategy_trace_present
+            == expected.retrieval_strategy_trace_required
+        )
+    if not _strategy_metric_applicable(expected, final_turn=final_turn):
+        return None
+    return final_turn.retrieval_strategy_trace_present
+
+
+def _evaluate_strategy_fallback_rate(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> float | None:
+    if not _strategy_metric_applicable(expected, final_turn=final_turn):
+        return None
+    return 1.0 if final_turn.retrieval_strategy_fallback_used else 0.0
+
+
+def _strategy_metric_applicable(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool:
+    return bool(
+        expected.retrieval_strategy_primary is not None
+        or expected.retrieval_strategy_trace_required is not None
+        or final_turn.retrieval_strategy_enabled
+        or final_turn.retrieval_strategy_primary is not None
+    )
 
 
 def _turn_requires_clarification(turn_result: AgentTurnResult) -> bool:

@@ -144,11 +144,15 @@
   inputs:
     - user_input: open FWC12
     - user_input: what are the main specifications in this document?
+      retrieval_strategy_enabled: true
+      show_retrieval_strategy: true
   expected:
     final_route: answer_question
     selected_document_contains: FWC12
     success: true
     required_tools: [find_document, answer_question]
+    retrieval_strategy_primary: TECHNICAL_SPECIFICATION
+    retrieval_strategy_trace_required: true
 
 - case_id: AG-012
   name: Maintenance tasks question uses selected document
@@ -158,11 +162,15 @@
   inputs:
     - user_input: open FWC12
     - user_input: what maintenance tasks are required for this document?
+      retrieval_strategy_enabled: true
+      show_retrieval_strategy: true
   expected:
     final_route: answer_question
     selected_document_contains: FWC12
     success: true
     required_tools: [find_document, answer_question]
+    retrieval_strategy_primary: MAINTENANCE_LOOKUP
+    retrieval_strategy_trace_required: true
 
 - case_id: AG-013
   name: Compare specifications and maintenance
@@ -273,3 +281,40 @@
     final_route: blocked_action
     unsafe_request_blocked: true
     forbidden_tools: [delete_document, reingest_document, ingest_document]
+
+- case_id: AG-021
+  name: Maintenance interval strategy selection
+  description: V7 should select maintenance retrieval for interval-focused questions.
+  tags: [qa, retrieval_strategy]
+  metadata: {}
+  inputs:
+    - user_input: open FWC12
+    - user_input: what are the maintenance intervals?
+      retrieval_strategy_enabled: true
+      show_retrieval_strategy: true
+  expected:
+    final_route: answer_question
+    selected_document_contains: FWC12
+    success: true
+    required_tools: [find_document, answer_question]
+    retrieval_strategy_primary: MAINTENANCE_LOOKUP
+    retrieval_strategy_trace_required: true
+
+- case_id: AG-022
+  name: Explicit retrieval strategy override
+  description: An explicit retrieval strategy override should bypass auto selection.
+  tags: [qa, retrieval_strategy, override]
+  metadata: {}
+  inputs:
+    - user_input: open FWC12
+    - user_input: what are the maintenance intervals?
+      retrieval_strategy_enabled: true
+      requested_retrieval_strategy: table
+      show_retrieval_strategy: true
+  expected:
+    final_route: answer_question
+    selected_document_contains: FWC12
+    success: true
+    required_tools: [find_document, answer_question]
+    retrieval_strategy_primary: TABLE_LOOKUP
+    retrieval_strategy_trace_required: true

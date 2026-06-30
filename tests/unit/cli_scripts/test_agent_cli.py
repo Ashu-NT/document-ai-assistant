@@ -67,6 +67,24 @@ def test_agent_cli_parses_reflection_flags() -> None:
     assert args.show_reflection is True
 
 
+def test_agent_cli_parses_retrieval_strategy_flags() -> None:
+    mod = _load_script("agent_cli")
+
+    args = mod.parse_args(
+        [
+            "question",
+            "--retrieval-strategy",
+            "table",
+            "--llm-retrieval-strategy",
+            "--show-retrieval-strategy",
+        ]
+    )
+
+    assert args.retrieval_strategy == "table"
+    assert args.llm_retrieval_strategy is True
+    assert args.show_retrieval_strategy is True
+
+
 def test_agent_cli_show_context_prints_context_chunks(capsys) -> None:
     mod = _load_script("agent_cli")
     result = GraphResult.ok(
@@ -145,6 +163,45 @@ def test_agent_cli_show_reflection_prints_reflection_details(capsys) -> None:
     assert "Merged chunks: 2" in output
 
 
+def test_agent_cli_show_retrieval_strategy_prints_decision_and_plan(capsys) -> None:
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="The maintenance interval is 500 hours.",
+        route="answer_question",
+        data={
+            "answer": "The maintenance interval is 500 hours.",
+            "retrieval_strategy_decision": {
+                "primary_strategy": "MAINTENANCE_LOOKUP",
+                "secondary_strategies": ["TABLE_LOOKUP"],
+                "confidence": 0.91,
+                "reason": "Maintenance and schedule signals were detected.",
+            },
+            "retrieval_plan": {
+                "steps": [
+                    {
+                        "tool_name": "retrieve_chunks",
+                        "query": "maintenance interval schedule table",
+                    }
+                ]
+            },
+            "retrieval_strategy_errors": [],
+        },
+    )
+
+    mod.print_graph_result(
+        result,
+        show_context=False,
+        show_trace=False,
+        show_retrieval_strategy=True,
+    )
+
+    output = capsys.readouterr().out
+    assert "Retrieval Strategy" in output
+    assert "Primary: MAINTENANCE_LOOKUP" in output
+    assert "Secondary: TABLE_LOOKUP" in output
+    assert "retrieve_chunks - maintenance interval schedule table" in output
+
+
 def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> None:
     mod = _load_script("agent_cli")
     result = GraphResult.ok(
@@ -159,6 +216,14 @@ def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> Non
             "should_exit": False,
             "answer": "The interval is 500 hours.",
             "answer_intent": "maintenance_summary",
+            "retrieval_strategy_decision": {
+                "primary_strategy": "MAINTENANCE_LOOKUP"
+            },
+            "retrieval_plan": {"steps": [{"tool_name": "retrieve_chunks"}]},
+            "retrieval_execution_result": {"success": True},
+            "retrieval_strategy_trace": {"signals": []},
+            "selected_retrieval_strategies": ["MAINTENANCE_LOOKUP"],
+            "retrieval_strategy_errors": [],
             "context_chunks": [{"chunk_id": "chunk_1"}],
             "citations": [{"citation_id": "cit_1"}],
             "execution_plan": {"plan_id": "plan_1"},
@@ -186,6 +251,12 @@ def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> Non
     assert without_trace["document_id"] == "doc_123"
     assert without_trace["selected_document_id"] == "doc_123"
     assert without_trace["selected_document_title"] == "Pump Manual"
+    assert without_trace["retrieval_strategy_decision"] == {
+        "primary_strategy": "MAINTENANCE_LOOKUP"
+    }
+    assert without_trace["retrieval_plan"] == {"steps": [{"tool_name": "retrieve_chunks"}]}
+    assert without_trace["retrieval_execution_result"] == {"success": True}
+    assert without_trace["selected_retrieval_strategies"] == ["MAINTENANCE_LOOKUP"]
     assert without_trace["clarification_options"] == []
     assert without_trace["context_chunks"] == [{"chunk_id": "chunk_1"}]
     assert without_trace["citations"] == [{"citation_id": "cit_1"}]

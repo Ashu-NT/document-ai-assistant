@@ -13,6 +13,9 @@ class ToolRegistry:
     document_details_tool: Any | None = None
     explore_document_tool: Any | None = None
     retrieve_chunks_tool: Any | None = None
+    retrieve_tables_tool: Any | None = None
+    retrieve_identifiers_tool: Any | None = None
+    retrieve_figures_tool: Any | None = None
     answer_question_tool: Any | None = None
     run_quality_gate_tool: Any | None = None
     retrieval_trace_tool: Any | None = None
@@ -40,6 +43,9 @@ class ToolRegistry:
             "document_details": self.document_details_tool,
             "explore_document": self.explore_document_tool,
             "retrieve_chunks": self.retrieve_chunks_tool,
+            "retrieve_tables": self.retrieve_tables_tool,
+            "retrieve_identifiers": self.retrieve_identifiers_tool,
+            "retrieve_figures": self.retrieve_figures_tool,
             "answer_question": self.answer_question_tool,
             "run_quality_gate": self.run_quality_gate_tool,
             "retrieval_trace": self.retrieval_trace_tool,

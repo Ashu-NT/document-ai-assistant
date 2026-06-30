@@ -108,6 +108,36 @@ class AgentQualityGate:
                 summary.answer_expectation_rate,
                 thresholds.answer_expectation_rate,
             ),
+            (
+                "retrieval_strategy_selection_rate",
+                summary.retrieval_strategy_selection_rate,
+                thresholds.retrieval_strategy_selection_rate,
+            ),
+            (
+                "retrieval_strategy_validity_rate",
+                summary.retrieval_strategy_validity_rate,
+                thresholds.retrieval_strategy_validity_rate,
+            ),
+            (
+                "strategy_fallback_rate",
+                summary.strategy_fallback_rate,
+                thresholds.strategy_fallback_rate,
+            ),
+            (
+                "multi_strategy_success_rate",
+                summary.multi_strategy_success_rate,
+                thresholds.multi_strategy_success_rate,
+            ),
+            (
+                "strategy_document_scope_safety_rate",
+                summary.strategy_document_scope_safety_rate,
+                thresholds.strategy_document_scope_safety_rate,
+            ),
+            (
+                "strategy_trace_coverage_rate",
+                summary.strategy_trace_coverage_rate,
+                thresholds.strategy_trace_coverage_rate,
+            ),
         ]
 
         checked_metrics: dict[str, float | None] = {}

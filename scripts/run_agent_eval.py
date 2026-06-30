@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 """
-Run LangGraph V5 agent evaluation against the real document agent graph.
+Run LangGraph agent evaluation against the real document agent graph.
 
 Usage:
     python scripts/run_agent_eval.py
@@ -97,6 +97,39 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Force LLM planning off for all evaluated turns.",
     )
     parser.set_defaults(llm_planning=None)
+    parser.add_argument(
+        "--retrieval-strategy",
+        choices=(
+            "auto",
+            "hybrid",
+            "identifier",
+            "table",
+            "section",
+            "figure",
+            "maintenance",
+            "procedure",
+            "specification",
+            "troubleshooting",
+            "certification",
+            "drawing",
+        ),
+        default=None,
+        help="Optional retrieval strategy override for all evaluated turns.",
+    )
+    llm_retrieval_strategy_group = parser.add_mutually_exclusive_group()
+    llm_retrieval_strategy_group.add_argument(
+        "--llm-retrieval-strategy",
+        dest="llm_retrieval_strategy",
+        action="store_true",
+        help="Force validated LLM retrieval-strategy selection on for all turns.",
+    )
+    llm_retrieval_strategy_group.add_argument(
+        "--no-llm-retrieval-strategy",
+        dest="llm_retrieval_strategy",
+        action="store_false",
+        help="Force validated LLM retrieval-strategy selection off for all turns.",
+    )
+    parser.set_defaults(llm_retrieval_strategy=None)
     generation_group = parser.add_mutually_exclusive_group()
     generation_group.add_argument(
         "--generate",
@@ -234,6 +267,8 @@ def run_agent_eval(
     max_cases: int | None,
     llm_planning_override: bool | None,
     generation_override: bool | None,
+    retrieval_strategy_override: str | None,
+    llm_retrieval_strategy_override: bool | None,
     output_directory: Path,
 ) -> tuple[Any, Any]:
     loader = AgentEvalLoader()
@@ -279,6 +314,16 @@ def run_agent_eval(
             max_cases=max_cases,
             llm_planning_enabled_override=llm_planning_override,
             answer_generation_enabled_override=generation_override,
+            retrieval_strategy_enabled_override=(
+                True
+                if retrieval_strategy_override is not None
+                or llm_retrieval_strategy_override is True
+                else None
+            ),
+            llm_retrieval_strategy_enabled_override=(
+                llm_retrieval_strategy_override
+            ),
+            requested_retrieval_strategy_override=retrieval_strategy_override,
             source_path=str(cases_path),
         )
         print_status("Evaluating agent quality gate...")
@@ -321,6 +366,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             max_cases=args.max_cases,
             llm_planning_override=args.llm_planning,
             generation_override=args.generate,
+            retrieval_strategy_override=args.retrieval_strategy,
+            llm_retrieval_strategy_override=args.llm_retrieval_strategy,
             output_directory=output_directory,
         )
         report, gate_result, json_output_path, markdown_output_path = result
@@ -338,6 +385,27 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"tool_policy_compliance_rate: {summary.tool_policy_compliance_rate:.3f}"
         )
         print(f"answer_expectation_rate: {summary.answer_expectation_rate:.3f}")
+        print(
+            "retrieval_strategy_selection_rate: "
+            f"{summary.retrieval_strategy_selection_rate:.3f}"
+        )
+        print(
+            "retrieval_strategy_validity_rate: "
+            f"{summary.retrieval_strategy_validity_rate:.3f}"
+        )
+        print(f"strategy_fallback_rate: {summary.strategy_fallback_rate:.3f}")
+        print(
+            "multi_strategy_success_rate: "
+            f"{summary.multi_strategy_success_rate:.3f}"
+        )
+        print(
+            "strategy_document_scope_safety_rate: "
+            f"{summary.strategy_document_scope_safety_rate:.3f}"
+        )
+        print(
+            "strategy_trace_coverage_rate: "
+            f"{summary.strategy_trace_coverage_rate:.3f}"
+        )
         print(f"threshold_passed: {gate_result.passed}")
         print(json_output_path)
         print(markdown_output_path)
