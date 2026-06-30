@@ -76,6 +76,39 @@ _OVERVIEW_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bwhat\s+is\s+the\s+(purpose|function)\s+of\b"),
     re.compile(r"\bhow\s+does\s+.+\s+work\b"),
 )
+_EXPLICIT_PROCEDURE_MARKERS: tuple[str, ...] = (
+    "how to",
+    "procedure",
+    "steps",
+    "step",
+    "install",
+    "configure",
+    "calibrate",
+    "start",
+    "run",
+    "restart",
+    "remove",
+    "connect",
+    "shutdown",
+    "commission",
+    "commissioning",
+)
+_MAINTENANCE_MARKERS: tuple[str, ...] = (
+    "maintenance",
+    "service interval",
+    "service schedule",
+    "inspection schedule",
+    "maintenance interval",
+    "maintenance intervals",
+    "maintenance task",
+    "maintenance tasks",
+    "preventive maintenance",
+    "oil change",
+    "lubricat",
+    "grease",
+    "how often",
+    "interval",
+)
 
 
 def _is_document_exploration(query_text: str) -> bool:
@@ -134,6 +167,14 @@ def _is_overview_query(query_text: str) -> bool:
     )
 
 
+def _is_maintenance_query(query_text: str) -> bool:
+    return any(marker in query_text for marker in _MAINTENANCE_MARKERS)
+
+
+def _is_explicit_procedure_query(query_text: str) -> bool:
+    return any(marker in query_text for marker in _EXPLICIT_PROCEDURE_MARKERS)
+
+
 def _infer_from_chunk_types(query: RetrievalQuery) -> RetrievalQueryIntent | None:
     if ChunkType.SPARE_PARTS_TABLE in query.chunk_types:
         return RetrievalQueryIntent.TABLE
@@ -146,8 +187,14 @@ def _infer_from_chunk_types(query: RetrievalQuery) -> RetrievalQueryIntent | Non
     if any(
         chunk_type in query.chunk_types
         for chunk_type in {
-            ChunkType.MAINTENANCE_PROCEDURE,
             ChunkType.MAINTENANCE_INTERVAL,
+            ChunkType.MAINTENANCE_PROCEDURE,
+        }
+    ):
+        return RetrievalQueryIntent.MAINTENANCE
+    if any(
+        chunk_type in query.chunk_types
+        for chunk_type in {
             ChunkType.INSTALLATION_INSTRUCTION,
             ChunkType.OPERATION_INSTRUCTION,
         }
@@ -240,6 +287,10 @@ class RetrievalQueryIntentInferer:
             for marker in ("safety", "warning", "danger", "hazard")
         ):
             return RetrievalQueryIntent.SAFETY
+        if _is_maintenance_query(query_text) and not _is_explicit_procedure_query(
+            query_text
+        ):
+            return RetrievalQueryIntent.MAINTENANCE
         if any(
             marker in query_text
             for marker in (
@@ -260,9 +311,6 @@ class RetrievalQueryIntentInferer:
                 "commission",
                 "commissioning",
                 "lubricate",
-                "maintenance",
-                "how often",
-                "interval",
             )
         ):
             return RetrievalQueryIntent.PROCEDURE

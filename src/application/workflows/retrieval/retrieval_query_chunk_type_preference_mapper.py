@@ -62,6 +62,30 @@ class RetrievalQueryChunkTypePreferenceMapper:
                 preferences.insert(1, ChunkType.OPERATION_INSTRUCTION)
             return self._unique(preferences)
 
+        if intent == RetrievalQueryIntent.MAINTENANCE:
+            preferences = [
+                ChunkType.MAINTENANCE_INTERVAL,
+                ChunkType.MAINTENANCE_PROCEDURE,
+                ChunkType.SPARE_PARTS_TABLE,
+                ChunkType.TECHNICAL_SPECIFICATION,
+                ChunkType.SAFETY_WARNING,
+                ChunkType.GENERAL,
+                ChunkType.OVERVIEW,
+            ]
+            if any(
+                marker in query_text
+                for marker in ("interval", "schedule", "how often", "hours", "daily", "weekly")
+            ):
+                preferences = [
+                    ChunkType.MAINTENANCE_INTERVAL,
+                    ChunkType.SPARE_PARTS_TABLE,
+                    ChunkType.MAINTENANCE_PROCEDURE,
+                    ChunkType.TECHNICAL_SPECIFICATION,
+                    ChunkType.GENERAL,
+                    ChunkType.OVERVIEW,
+                ]
+            return self._unique(preferences)
+
         if intent == RetrievalQueryIntent.PROCEDURE:
             preferences = [
                 ChunkType.OPERATION_INSTRUCTION,

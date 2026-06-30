@@ -278,7 +278,7 @@ _CHUNK_TYPE_TO_CATEGORY: dict[ChunkType, str] = {
     ChunkType.SPARE_PARTS_TABLE: "table",
     ChunkType.CERTIFICATION_INFO: "certification",
     ChunkType.MAINTENANCE_INTERVAL: "maintenance",
-    ChunkType.MAINTENANCE_PROCEDURE: "procedure",
+    ChunkType.MAINTENANCE_PROCEDURE: "maintenance",
     ChunkType.OPERATION_INSTRUCTION: "procedure",
     ChunkType.INSTALLATION_INSTRUCTION: "procedure",
     ChunkType.TROUBLESHOOTING: "troubleshooting",

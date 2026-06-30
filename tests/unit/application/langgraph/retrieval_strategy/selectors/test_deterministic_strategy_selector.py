@@ -31,6 +31,12 @@ def test_deterministic_selector_picks_maintenance_with_table_secondary() -> None
     assert "TABLE_LOOKUP" in [item.value for item in decision.secondary_strategies]
 
 
+def test_deterministic_selector_picks_maintenance_for_required_tasks_question() -> None:
+    decision = _select("What maintenance tasks are required for this document?")
+
+    assert decision.primary_strategy.value == "MAINTENANCE_LOOKUP"
+
+
 def test_deterministic_selector_picks_identifier_lookup() -> None:
     decision = _select("Find part number HAM2423501")
 
