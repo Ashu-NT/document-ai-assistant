@@ -8,27 +8,39 @@ from src.application.langgraph.nodes import (
     BlockedActionNode,
     ClarifyRequestNode,
     CreatePlanNode,
+    CreateResearchPlanNode,
     DocumentDetailsNode,
     ErrorHandlerNode,
     ExecutePlanNode,
+    ExecuteResearchNode,
+    EvaluateResearchNode,
     ExploreDocumentNode,
     FinalResponseNode,
     FindDocumentNode,
     ListDocumentsNode,
     PlanSummaryNode,
     ReflectAnswerNode,
+    ResearchSummaryNode,
     RetrievalTraceNode,
     RetrieveEvidenceNode,
     RouteRequestNode,
     RetryRetrievalNode,
     RunQualityGateNode,
     SessionCommandNode,
+    SynthesizeResearchNode,
 )
 from src.application.langgraph.retrieval_strategy import (
     RetrievalPlanExecutor,
     RetrievalStrategyPolicy,
     RetrievalStrategyService,
     StrategyRetryPolicy,
+)
+from src.application.langgraph.research import (
+    LLMResearchPlanner,
+    ResearchExecutor,
+    ResearchPolicy,
+    ResearchService,
+    ResearchTaskExecutor,
 )
 from src.application.langgraph.reflection import (
     ClarificationBuilder,
@@ -70,6 +82,9 @@ class NodeFactory:
         retrieval_plan_executor: RetrievalPlanExecutor | None = None,
         retrieval_strategy_policy: RetrievalStrategyPolicy | None = None,
         strategy_retry_policy: StrategyRetryPolicy | None = None,
+        research_service: ResearchService | None = None,
+        llm_research_planner: LLMResearchPlanner | None = None,
+        research_policy: ResearchPolicy | None = None,
     ) -> None:
         self.planner = planner or DeterministicPlanner()
         self.plan_executor = plan_executor or PlanExecutor()
@@ -95,6 +110,18 @@ class NodeFactory:
             retrieval_strategy_policy or RetrievalStrategyPolicy()
         )
         self.strategy_retry_policy = strategy_retry_policy or StrategyRetryPolicy()
+        self.llm_research_planner = llm_research_planner
+        self.research_policy = research_policy or ResearchPolicy()
+        self.research_service = research_service or ResearchService(
+            llm_planner=self.llm_research_planner,
+            executor=ResearchExecutor(
+                task_executor=ResearchTaskExecutor(
+                    retrieval_strategy_service=self.retrieval_strategy_service,
+                    retrieval_plan_executor=self.retrieval_plan_executor,
+                )
+            ),
+            policy=self.research_policy,
+        )
 
     def build_document_agent_nodes(
         self,
@@ -116,6 +143,14 @@ class NodeFactory:
                 plan_repair=self.plan_repair,
             ),
             "execute_plan": ExecutePlanNode(self.plan_executor, tool_registry),
+            "create_research_plan": CreateResearchPlanNode(self.research_service),
+            "execute_research": ExecuteResearchNode(
+                self.research_service,
+                tool_registry,
+            ),
+            "evaluate_research": EvaluateResearchNode(self.research_service),
+            "synthesize_research": SynthesizeResearchNode(self.research_service),
+            "research_summary": ResearchSummaryNode(self.research_service),
             "list_documents": ListDocumentsNode(tool_registry),
             "find_document": FindDocumentNode(tool_registry),
             "document_details": DocumentDetailsNode(tool_registry),

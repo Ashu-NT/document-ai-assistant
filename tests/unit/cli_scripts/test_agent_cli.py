@@ -67,6 +67,25 @@ def test_agent_cli_parses_reflection_flags() -> None:
     assert args.show_reflection is True
 
 
+def test_agent_cli_parses_deep_research_flags() -> None:
+    mod = _load_script("agent_cli")
+
+    args = mod.parse_args(
+        [
+            "question",
+            "--deep-research",
+            "--llm-research-planning",
+            "--show-research-plan",
+            "--show-research-trace",
+        ]
+    )
+
+    assert args.deep_research is True
+    assert args.llm_research_planning is True
+    assert args.show_research_plan is True
+    assert args.show_research_trace is True
+
+
 def test_agent_cli_parses_retrieval_strategy_flags() -> None:
     mod = _load_script("agent_cli")
 
@@ -200,6 +219,45 @@ def test_agent_cli_show_retrieval_strategy_prints_decision_and_plan(capsys) -> N
     assert "Primary: MAINTENANCE_LOOKUP" in output
     assert "Secondary: TABLE_LOOKUP" in output
     assert "retrieve_chunks - maintenance interval schedule table" in output
+
+
+def test_agent_cli_show_research_outputs_plan_and_trace(capsys) -> None:
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="# Research Report\n\n## Executive Summary\nSummary text.",
+        route="deep_research",
+        data={
+            "answer": "# Research Report\n\n## Executive Summary\nSummary text.",
+            "research_plan": {
+                "tasks": [
+                    {
+                        "title": "Collect maintenance tasks",
+                        "strategy_hint": "MAINTENANCE_LOOKUP",
+                    }
+                ]
+            },
+            "research_trace": {
+                "plan_source": "deterministic",
+                "evidence_counts_per_task": {"task_1": 2},
+                "gaps": [],
+            },
+        },
+    )
+
+    mod.print_graph_result(
+        result,
+        show_context=False,
+        show_trace=False,
+        show_research_plan=True,
+        show_research_trace=True,
+    )
+
+    output = capsys.readouterr().out
+    assert "Research Plan" in output
+    assert "Collect maintenance tasks (MAINTENANCE_LOOKUP)" in output
+    assert "Research Trace" in output
+    assert "Plan source: deterministic" in output
+    assert "task_1: 2" in output
 
 
 def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> None:

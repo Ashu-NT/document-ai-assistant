@@ -21,6 +21,7 @@ from src.shared.exceptions import SchemaValidationError
 
 _METRIC_NAMES = (
     "route_accuracy",
+    "deep_research_route_accuracy",
     "document_selection_accuracy",
     "clarification_accuracy",
     "unsafe_block_rate",
@@ -34,6 +35,12 @@ _METRIC_NAMES = (
     "multi_strategy_success_rate",
     "strategy_document_scope_safety_rate",
     "strategy_trace_coverage_rate",
+    "research_plan_validity_rate",
+    "research_task_success_rate",
+    "research_gap_detection_rate",
+    "research_document_scope_safety_rate",
+    "research_report_completeness_rate",
+    "research_citation_coverage_rate",
 )
 
 
@@ -57,6 +64,8 @@ class AgentEvalRunner:
         tags: Iterable[str] | None = None,
         max_cases: int | None = None,
         llm_planning_enabled_override: bool | None = None,
+        deep_research_enabled_override: bool | None = None,
+        llm_research_planning_enabled_override: bool | None = None,
         answer_generation_enabled_override: bool | None = None,
         retrieval_strategy_enabled_override: bool | None = None,
         llm_retrieval_strategy_enabled_override: bool | None = None,
@@ -84,6 +93,10 @@ class AgentEvalRunner:
                 graph,
                 case,
                 llm_planning_enabled_override=llm_planning_enabled_override,
+                deep_research_enabled_override=deep_research_enabled_override,
+                llm_research_planning_enabled_override=(
+                    llm_research_planning_enabled_override
+                ),
                 answer_generation_enabled_override=answer_generation_enabled_override,
                 retrieval_strategy_enabled_override=retrieval_strategy_enabled_override,
                 llm_retrieval_strategy_enabled_override=(
@@ -106,6 +119,10 @@ class AgentEvalRunner:
                     "tags": list(tags or []),
                     "max_cases": max_cases,
                     "llm_planning_enabled_override": llm_planning_enabled_override,
+                    "deep_research_enabled_override": deep_research_enabled_override,
+                    "llm_research_planning_enabled_override": (
+                        llm_research_planning_enabled_override
+                    ),
                     "answer_generation_enabled_override": (
                         answer_generation_enabled_override
                     ),
@@ -156,6 +173,8 @@ class AgentEvalRunner:
         case: AgentTestCase,
         *,
         llm_planning_enabled_override: bool | None,
+        deep_research_enabled_override: bool | None,
+        llm_research_planning_enabled_override: bool | None,
         answer_generation_enabled_override: bool | None,
         retrieval_strategy_enabled_override: bool | None,
         llm_retrieval_strategy_enabled_override: bool | None,
@@ -168,6 +187,10 @@ class AgentEvalRunner:
                 turn_input,
                 session_id=session_id,
                 llm_planning_enabled_override=llm_planning_enabled_override,
+                deep_research_enabled_override=deep_research_enabled_override,
+                llm_research_planning_enabled_override=(
+                    llm_research_planning_enabled_override
+                ),
                 answer_generation_enabled_override=answer_generation_enabled_override,
                 retrieval_strategy_enabled_override=retrieval_strategy_enabled_override,
                 llm_retrieval_strategy_enabled_override=(
@@ -206,6 +229,8 @@ class AgentEvalRunner:
         *,
         session_id: str,
         llm_planning_enabled_override: bool | None,
+        deep_research_enabled_override: bool | None,
+        llm_research_planning_enabled_override: bool | None,
         answer_generation_enabled_override: bool | None,
         retrieval_strategy_enabled_override: bool | None,
         llm_retrieval_strategy_enabled_override: bool | None,
@@ -230,6 +255,16 @@ class AgentEvalRunner:
                 or llm_retrieval_strategy_enabled
             )
         )
+        deep_research_enabled = (
+            deep_research_enabled_override
+            if deep_research_enabled_override is not None
+            else turn_input.deep_research_enabled
+        )
+        llm_research_planning_enabled = (
+            llm_research_planning_enabled_override
+            if llm_research_planning_enabled_override is not None
+            else turn_input.llm_research_planning_enabled
+        )
         result: GraphResult = graph.run(
             turn_input.user_input,
             document_id=turn_input.document_id,
@@ -246,11 +281,15 @@ class AgentEvalRunner:
                 if llm_planning_enabled_override is not None
                 else turn_input.llm_planning_enabled
             ),
+            deep_research_enabled=deep_research_enabled,
+            llm_research_planning_enabled=llm_research_planning_enabled,
             retrieval_strategy_enabled=retrieval_strategy_enabled,
             llm_retrieval_strategy_enabled=llm_retrieval_strategy_enabled,
             requested_retrieval_strategy=requested_retrieval_strategy,
             show_retrieval_strategy=turn_input.show_retrieval_strategy,
             show_plan=turn_input.show_plan,
+            show_research_plan=turn_input.show_research_plan,
+            show_research_trace=turn_input.show_research_trace,
         )
         data = result.data or {}
         retrieval_strategy_decision = data.get("retrieval_strategy_decision")
@@ -267,6 +306,15 @@ class AgentEvalRunner:
                     for item in secondaries
                     if isinstance(item, str) and item
                 ]
+        research_plan = data.get("research_plan")
+        research_task_results = data.get("research_task_results")
+        research_gaps = data.get("research_gaps")
+        research_report = data.get("research_report")
+        research_trace = data.get("research_trace")
+        citations = data.get("citations")
+        research_task_count, research_task_success_count = _research_task_counts(
+            research_task_results
+        )
         retrieval_strategy_trace = data.get("retrieval_strategy_trace")
         selected_document_id = _string_or_none(
             data.get("selected_document_id")
@@ -295,6 +343,18 @@ class AgentEvalRunner:
                 and retrieval_strategy_trace.get("fallback_reason")
             ),
             retrieval_strategy_enabled=retrieval_strategy_enabled,
+            research_plan_present=isinstance(research_plan, dict),
+            research_plan_task_count=_research_plan_task_count(research_plan),
+            research_plan_source=_string_or_none(data.get("research_plan_source")),
+            research_task_count=research_task_count,
+            research_task_success_count=research_task_success_count,
+            research_gap_count=len(research_gaps) if isinstance(research_gaps, list) else 0,
+            research_report_present=isinstance(research_report, dict),
+            research_report_section_count=_research_report_section_count(
+                research_report
+            ),
+            research_citation_count=len(citations) if isinstance(citations, list) else 0,
+            research_trace_present=isinstance(research_trace, dict),
             diagnostics=serialize_graph_value(
                 {
                     "error_code": result.error_code,
@@ -316,6 +376,11 @@ class AgentEvalRunner:
                     "planning_source": data.get("planning_source"),
                     "planning_errors": data.get("planning_errors", []),
                     "planning_warnings": data.get("planning_warnings", []),
+                    "research_plan": research_plan,
+                    "research_task_results": research_task_results,
+                    "research_gaps": research_gaps,
+                    "research_report": research_report,
+                    "research_trace": research_trace,
                     "retrieval_strategy_errors": data.get(
                         "retrieval_strategy_errors",
                         [],
@@ -352,6 +417,17 @@ class AgentEvalRunner:
         _record_check(
             "route_accuracy",
             route_pass,
+            metrics,
+            failed_checks,
+        )
+
+        deep_research_route_pass = _evaluate_deep_research_route(
+            expected,
+            final_turn=final_turn,
+        )
+        _record_check(
+            "deep_research_route_accuracy",
+            deep_research_route_pass,
             metrics,
             failed_checks,
         )
@@ -503,6 +579,69 @@ class AgentEvalRunner:
             failed_checks,
         )
 
+        research_plan_validity_pass = _evaluate_research_plan_validity(
+            expected,
+            final_turn=final_turn,
+        )
+        _record_check(
+            "research_plan_validity_rate",
+            research_plan_validity_pass,
+            metrics,
+            failed_checks,
+        )
+
+        research_task_success_rate = _evaluate_research_task_success_rate(
+            expected,
+            final_turn=final_turn,
+            failed_checks=failed_checks,
+        )
+        if research_task_success_rate is not None:
+            metrics["research_task_success_rate"] = research_task_success_rate
+
+        research_gap_detection_pass = _evaluate_research_gap_detection(
+            expected,
+            final_turn=final_turn,
+        )
+        _record_check(
+            "research_gap_detection_rate",
+            research_gap_detection_pass,
+            metrics,
+            failed_checks,
+        )
+
+        research_document_scope_pass = _evaluate_research_document_scope(
+            expected,
+            final_turn=final_turn,
+        )
+        _record_check(
+            "research_document_scope_safety_rate",
+            research_document_scope_pass,
+            metrics,
+            failed_checks,
+        )
+
+        research_report_completeness_pass = _evaluate_research_report_completeness(
+            expected,
+            final_turn=final_turn,
+        )
+        _record_check(
+            "research_report_completeness_rate",
+            research_report_completeness_pass,
+            metrics,
+            failed_checks,
+        )
+
+        research_citation_coverage_pass = _evaluate_research_citation_coverage(
+            expected,
+            final_turn=final_turn,
+        )
+        _record_check(
+            "research_citation_coverage_rate",
+            research_citation_coverage_pass,
+            metrics,
+            failed_checks,
+        )
+
         strategy_fallback_rate = _evaluate_strategy_fallback_rate(
             expected,
             final_turn=final_turn,
@@ -578,6 +717,34 @@ class AgentEvalRunner:
             strategy_trace_coverage_rate=_average_metric(
                 case_results,
                 "strategy_trace_coverage_rate",
+            ),
+            deep_research_route_accuracy=_average_metric(
+                case_results,
+                "deep_research_route_accuracy",
+            ),
+            research_plan_validity_rate=_average_metric(
+                case_results,
+                "research_plan_validity_rate",
+            ),
+            research_task_success_rate=_average_metric(
+                case_results,
+                "research_task_success_rate",
+            ),
+            research_gap_detection_rate=_average_metric(
+                case_results,
+                "research_gap_detection_rate",
+            ),
+            research_document_scope_safety_rate=_average_metric(
+                case_results,
+                "research_document_scope_safety_rate",
+            ),
+            research_report_completeness_rate=_average_metric(
+                case_results,
+                "research_report_completeness_rate",
+            ),
+            research_citation_coverage_rate=_average_metric(
+                case_results,
+                "research_citation_coverage_rate",
             ),
         )
 
@@ -825,6 +992,114 @@ def _evaluate_retrieval_strategy_validity(
     return True
 
 
+def _evaluate_deep_research_route(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool | None:
+    if not _research_metric_applicable(expected, final_turn=final_turn):
+        return None
+    return final_turn.route == RouteType.DEEP_RESEARCH.value
+
+
+def _evaluate_research_plan_validity(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool | None:
+    if not _research_metric_applicable(expected, final_turn=final_turn):
+        return None
+    if expected.research_plan_required is False:
+        return not final_turn.research_plan_present
+    return (
+        final_turn.research_plan_present
+        and final_turn.research_plan_task_count > 0
+        and not final_turn.errors
+    )
+
+
+def _evaluate_research_task_success_rate(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+    failed_checks: list[str],
+) -> float | None:
+    if not _research_metric_applicable(expected, final_turn=final_turn):
+        return None
+    if final_turn.research_task_count <= 0:
+        rate = 0.0
+    else:
+        rate = final_turn.research_task_success_count / final_turn.research_task_count
+    minimum = expected.research_task_success_min_rate
+    if minimum is not None and rate < minimum:
+        failed_checks.append("research_task_success_rate")
+    return rate
+
+
+def _evaluate_research_gap_detection(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool | None:
+    if expected.research_gap_detection_required is None:
+        return None
+    return bool(final_turn.research_gap_count > 0) == expected.research_gap_detection_required
+
+
+def _evaluate_research_document_scope(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool | None:
+    if not _research_metric_applicable(expected, final_turn=final_turn):
+        return None
+    expected_scope_id = (
+        expected.context_document_id
+        or expected.selected_document_id
+        or final_turn.selected_document_id
+    )
+    if expected_scope_id is None:
+        return None
+    if not final_turn.context_document_ids:
+        return False
+    return all(
+        document_id == expected_scope_id
+        for document_id in final_turn.context_document_ids
+    )
+
+
+def _evaluate_research_report_completeness(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool | None:
+    if not _research_metric_applicable(expected, final_turn=final_turn):
+        return None
+    if expected.research_report_required is False:
+        return not final_turn.research_report_present
+    return (
+        final_turn.research_report_present
+        and final_turn.research_report_section_count > 0
+        and bool(final_turn.response_text)
+    )
+
+
+def _evaluate_research_citation_coverage(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool | None:
+    if (
+        expected.research_citation_required is None
+        and not _research_metric_applicable(expected, final_turn=final_turn)
+    ):
+        return None
+    has_citations = final_turn.research_citation_count > 0
+    if expected.research_citation_required is not None:
+        return has_citations == expected.research_citation_required
+    return has_citations
+
+
 def _evaluate_multi_strategy_success(
     expected: AgentExpectedBehavior,
     *,
@@ -880,6 +1155,25 @@ def _strategy_metric_applicable(
         or expected.retrieval_strategy_trace_required is not None
         or final_turn.retrieval_strategy_enabled
         or final_turn.retrieval_strategy_primary is not None
+    )
+
+
+def _research_metric_applicable(
+    expected: AgentExpectedBehavior,
+    *,
+    final_turn: AgentTurnResult,
+) -> bool:
+    return bool(
+        expected.final_route == RouteType.DEEP_RESEARCH.value
+        or expected.research_plan_required is not None
+        or expected.research_report_required is not None
+        or expected.research_gap_detection_required is not None
+        or expected.research_citation_required is not None
+        or expected.research_task_success_min_rate is not None
+        or final_turn.route == RouteType.DEEP_RESEARCH.value
+        or final_turn.research_plan_present
+        or final_turn.research_report_present
+        or final_turn.research_task_count > 0
     )
 
 
@@ -942,6 +1236,38 @@ def _string_or_none(value: Any) -> str | None:
     if isinstance(value, str) and value:
         return value
     return None
+
+
+def _research_plan_task_count(value: Any) -> int:
+    if not isinstance(value, dict):
+        return 0
+    tasks = value.get("tasks")
+    if not isinstance(tasks, list):
+        return 0
+    return sum(1 for task in tasks if isinstance(task, dict))
+
+
+def _research_report_section_count(value: Any) -> int:
+    if not isinstance(value, dict):
+        return 0
+    sections = value.get("sections")
+    if not isinstance(sections, list):
+        return 0
+    return sum(1 for section in sections if isinstance(section, dict))
+
+
+def _research_task_counts(value: Any) -> tuple[int, int]:
+    if not isinstance(value, list):
+        return 0, 0
+    task_count = 0
+    success_count = 0
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        task_count += 1
+        if bool(item.get("success")):
+            success_count += 1
+    return task_count, success_count
 
 
 def _resolve_unsafe_blocked_flag(*, result: GraphResult) -> bool:

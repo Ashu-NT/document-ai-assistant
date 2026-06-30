@@ -59,6 +59,10 @@ class DocumentAgentGraph:
         llm_planning_enabled: bool = False,
         show_plan: bool = False,
         show_raw_plan: bool = False,
+        deep_research_enabled: bool = False,
+        llm_research_planning_enabled: bool = False,
+        show_research_plan: bool = False,
+        show_research_trace: bool = False,
         reflection_enabled: bool = False,
         show_reflection: bool = False,
         retrieval_strategy_enabled: bool = False,
@@ -77,6 +81,10 @@ class DocumentAgentGraph:
             llm_planning_enabled=llm_planning_enabled,
             show_plan=show_plan,
             show_raw_plan=show_raw_plan,
+            deep_research_enabled=deep_research_enabled,
+            llm_research_planning_enabled=llm_research_planning_enabled,
+            show_research_plan=show_research_plan,
+            show_research_trace=show_research_trace,
             reflection_enabled=reflection_enabled,
             show_reflection=show_reflection,
             retrieval_strategy_enabled=retrieval_strategy_enabled,
@@ -189,6 +197,7 @@ class DocumentAgentGraph:
             {
                 "blocked_action": "blocked_action",
                 "create_plan": "create_plan",
+                "create_research_plan": "create_research_plan",
                 "list_documents": "list_documents",
                 "find_document": "find_document",
                 "document_details": "document_details",
@@ -213,6 +222,16 @@ class DocumentAgentGraph:
             },
         )
         graph.add_conditional_edges(
+            "create_research_plan",
+            self._after_create_research_plan_branch,
+            {
+                "execute_research": "execute_research",
+                "answer_question": "answer_question",
+                "clarify_request": "clarify_request",
+                "error_handler": "error_handler",
+            },
+        )
+        graph.add_conditional_edges(
             "find_document",
             self._after_find_document_branch,
             {
@@ -220,6 +239,7 @@ class DocumentAgentGraph:
                 "explore_document": "explore_document",
                 "retrieve_evidence": "retrieve_evidence",
                 "answer_question": "answer_question",
+                "create_research_plan": "create_research_plan",
                 "final_response": "final_response",
                 "clarify_request": "clarify_request",
                 "error_handler": "error_handler",
@@ -232,6 +252,40 @@ class DocumentAgentGraph:
             {
                 "plan_summary": "plan_summary",
                 "clarify_request": "clarify_request",
+                "error_handler": "error_handler",
+            },
+        )
+        graph.add_conditional_edges(
+            "execute_research",
+            self._after_execute_research_branch,
+            {
+                "evaluate_research": "evaluate_research",
+                "error_handler": "error_handler",
+            },
+        )
+        graph.add_conditional_edges(
+            "evaluate_research",
+            self._after_evaluate_research_branch,
+            {
+                "execute_research": "execute_research",
+                "synthesize_research": "synthesize_research",
+                "error_handler": "error_handler",
+            },
+        )
+        graph.add_conditional_edges(
+            "synthesize_research",
+            self._after_synthesize_research_branch,
+            {
+                "research_summary": "research_summary",
+                "error_handler": "error_handler",
+            },
+        )
+        graph.add_conditional_edges(
+            "research_summary",
+            self._after_research_summary_branch,
+            {
+                "reflect_answer": "reflect_answer",
+                "final_response": "final_response",
                 "error_handler": "error_handler",
             },
         )
@@ -333,6 +387,8 @@ class DocumentAgentGraph:
             "unsafe_request_blocked": state.get("unsafe_request_blocked", False),
             "reflection_enabled": state.get("reflection_enabled", False),
             "retrieval_strategy_enabled": state.get("retrieval_strategy_enabled", False),
+            "deep_research_enabled": state.get("deep_research_enabled", False),
+            "research_plan_source": state.get("research_plan_source"),
         }
         data = {
             "document_id": state.get("document_id"),
@@ -378,6 +434,23 @@ class DocumentAgentGraph:
             "planning_errors": state.get("planning_errors", []),
             "planning_warnings": state.get("planning_warnings", []),
             "raw_llm_plan": state.get("raw_llm_plan"),
+            "research_goal": state.get("research_goal"),
+            "research_plan": state.get("research_plan"),
+            "research_task_results": state.get("research_task_results", []),
+            "research_evidence": state.get("research_evidence", []),
+            "research_gaps": state.get("research_gaps", []),
+            "research_iterations": state.get("research_iterations", 0),
+            "research_synthesis": state.get("research_synthesis"),
+            "research_report": state.get("research_report"),
+            "research_errors": state.get("research_errors", []),
+            "research_trace": state.get("research_trace"),
+            "research_plan_source": state.get("research_plan_source"),
+            "research_planning_errors": state.get("research_planning_errors", []),
+            "research_planning_warnings": state.get(
+                "research_planning_warnings",
+                [],
+            ),
+            "raw_llm_research_plan": state.get("raw_llm_research_plan"),
             "unsafe_request_blocked": state.get("unsafe_request_blocked", False),
             "blocked_reason": state.get("blocked_reason"),
             "blocked_terms": state.get("blocked_terms", []),
@@ -413,6 +486,18 @@ class DocumentAgentGraph:
                 "retrieval_strategy_errors",
                 [],
             )
+        if state.get("research_planning_errors"):
+            diagnostics["research_planning_errors"] = state.get(
+                "research_planning_errors",
+                [],
+            )
+        if state.get("research_planning_warnings"):
+            diagnostics["research_planning_warnings"] = state.get(
+                "research_planning_warnings",
+                [],
+            )
+        if state.get("research_errors"):
+            diagnostics["research_errors"] = state.get("research_errors", [])
         if state.get("needs_clarification") and state.get("error") is None:
             return GraphResult.ok(
                 response_text=state.get("response_text"),
@@ -454,10 +539,20 @@ class DocumentAgentGraph:
             return self._entry_branch(state)
         if current_node == "create_plan":
             return self._after_create_plan_branch(state)
+        if current_node == "create_research_plan":
+            return self._after_create_research_plan_branch(state)
         if current_node == "find_document":
             return self._after_find_document_branch(state)
         if current_node == "execute_plan":
             return self._after_execute_plan_branch(state)
+        if current_node == "execute_research":
+            return self._after_execute_research_branch(state)
+        if current_node == "evaluate_research":
+            return self._after_evaluate_research_branch(state)
+        if current_node == "synthesize_research":
+            return self._after_synthesize_research_branch(state)
+        if current_node == "research_summary":
+            return self._after_research_summary_branch(state)
         if current_node in {
             "blocked_action",
             "list_documents",
@@ -506,6 +601,8 @@ class DocumentAgentGraph:
             return "find_document" if _has_document_selector(state) else "clarify_request"
         if route == RouteType.PLANNED_TASK.value:
             return "create_plan"
+        if route == RouteType.DEEP_RESEARCH.value:
+            return _deep_research_branch_target(state)
         if route == RouteType.DOCUMENT_DETAILS.value:
             return _document_branch_target(state, "document_details")
         if route == RouteType.DOCUMENT_EXPLORATION.value:
@@ -539,6 +636,8 @@ class DocumentAgentGraph:
             return "retrieve_evidence"
         if route == RouteType.ANSWER_QUESTION.value:
             return "answer_question"
+        if route == RouteType.DEEP_RESEARCH.value:
+            return "create_research_plan"
         if route == RouteType.RETRIEVAL_TRACE.value:
             return "retrieval_trace"
         return "final_response"
@@ -554,12 +653,52 @@ class DocumentAgentGraph:
         return _optional_document_branch_target(state, "answer_question")
 
     @staticmethod
+    def _after_create_research_plan_branch(state: AgentState) -> str:
+        if state.get("error") is not None:
+            return "error_handler"
+        if state.get("needs_clarification"):
+            return "clarify_request"
+        if state.get("research_plan"):
+            return "execute_research"
+        if state.get("route") == RouteType.ANSWER_QUESTION.value:
+            return _optional_document_branch_target(state, "answer_question")
+        return "error_handler"
+
+    @staticmethod
     def _after_execute_plan_branch(state: AgentState) -> str:
         if state.get("error") is not None:
             return "error_handler"
         if state.get("needs_clarification"):
             return "clarify_request"
         return "plan_summary"
+
+    @staticmethod
+    def _after_execute_research_branch(state: AgentState) -> str:
+        if state.get("error") is not None:
+            return "error_handler"
+        return "evaluate_research"
+
+    @staticmethod
+    def _after_evaluate_research_branch(state: AgentState) -> str:
+        if state.get("error") is not None:
+            return "error_handler"
+        if state.get("research_followup_pending"):
+            return "execute_research"
+        return "synthesize_research"
+
+    @staticmethod
+    def _after_synthesize_research_branch(state: AgentState) -> str:
+        if state.get("error") is not None:
+            return "error_handler"
+        return "research_summary"
+
+    @staticmethod
+    def _after_research_summary_branch(state: AgentState) -> str:
+        if state.get("error") is not None:
+            return "error_handler"
+        if _should_run_reflection(state):
+            return "reflect_answer"
+        return "final_response"
 
     @staticmethod
     def _post_action_branch(state: AgentState) -> str:
@@ -639,12 +778,24 @@ def _optional_document_branch_target(state: AgentState, target: str) -> str:
     return target
 
 
+def _deep_research_branch_target(state: AgentState) -> str:
+    if state.get("document_id"):
+        return "create_research_plan"
+    if state.get("selected_document_id"):
+        return "create_research_plan"
+    if state.get("document_query"):
+        return "find_document"
+    return "create_research_plan"
+
+
 def _should_run_reflection(state: AgentState) -> bool:
     if not state.get("reflection_enabled", False):
         return False
-    if not state.get("allow_answer_generation", False):
-        return False
-    if state.get("route") != RouteType.ANSWER_QUESTION.value:
+    route = state.get("route")
+    if route == RouteType.ANSWER_QUESTION.value:
+        if not state.get("allow_answer_generation", False):
+            return False
+    elif route != RouteType.DEEP_RESEARCH.value:
         return False
     return int(state.get("reflection_attempts", 0)) <= 1
 

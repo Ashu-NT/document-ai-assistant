@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-
 from src.application.langgraph.routing.route_decision import RouteDecision
 from src.application.langgraph.routing.route_type import RouteType
 from src.application.langgraph.routing.unsafe_action_detector import (
@@ -87,6 +86,34 @@ _PLANNED_FOLLOW_UP_MARKERS = (
     "troubleshooting",
     "tables",
 )
+_DEEP_RESEARCH_ROUTE_MARKERS = (
+    "compare",
+    "analyze",
+    "research",
+    "report",
+    "checklist",
+    "summarize all",
+    "find every",
+    "identify missing",
+    "cross-check",
+    "across the document",
+    "all maintenance",
+    "all inspection",
+    "all warnings",
+    "all specifications",
+    "preventive maintenance",
+    "evidence supports",
+)
+_DEEP_RESEARCH_COMPLEX_MARKERS = (
+    "compare",
+    "summarize all",
+    "find every",
+    "all maintenance",
+    "all inspection",
+    "all warnings",
+    "all specifications",
+    "preventive maintenance",
+)
 
 
 class IntentRouter:
@@ -102,6 +129,7 @@ class IntentRouter:
         *,
         document_id: str | None = None,
         document_query: str | None = None,
+        deep_research_enabled: bool = False,
     ) -> RouteDecision:
         normalized_input = _normalize(user_input)
         extracted_document_query = document_query
@@ -311,6 +339,21 @@ class IntentRouter:
                 ),
             )
 
+        if _looks_like_deep_research(
+            normalized_input,
+            deep_research_enabled=deep_research_enabled,
+        ):
+            return RouteDecision(
+                route_type=RouteType.DEEP_RESEARCH,
+                confidence=0.92 if deep_research_enabled else 0.88,
+                reason="Detected a document research request that needs multi-hop evidence collection and synthesis.",
+                extracted_document_query=extracted_document_query,
+                extracted_question=user_input.strip(),
+                requires_document=True,
+                uses_current_document=_references_current_document(normalized_input),
+                is_compound=True,
+            )
+
         if _looks_like_planned_task(normalized_input):
             return _planned_task_decision(
                 user_input=user_input,
@@ -384,7 +427,7 @@ def _planned_task_decision(
     user_input: str,
     extracted_document_query: str | None,
     normalized_input: str,
-) -> RouteDecision:
+    ) -> RouteDecision:
     return RouteDecision(
         route_type=RouteType.PLANNED_TASK,
         confidence=0.9,
@@ -396,3 +439,18 @@ def _planned_task_decision(
         requires_plan=True,
         plan_hint=user_input.strip(),
     )
+
+
+def _looks_like_deep_research(
+    value: str,
+    *,
+    deep_research_enabled: bool,
+) -> bool:
+    padded = f" {value} "
+    if any(marker in value for marker in _DEEP_RESEARCH_ROUTE_MARKERS if marker != "compare"):
+        return True
+    if "compare" in value and (" and " in padded or " with " in padded):
+        return True
+    if deep_research_enabled and any(marker in value for marker in _DEEP_RESEARCH_COMPLEX_MARKERS):
+        return True
+    return False

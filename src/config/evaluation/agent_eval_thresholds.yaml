@@ -1,4 +1,5 @@
 route_accuracy: 0.90
+deep_research_route_accuracy: 0.80
 document_selection_accuracy: 0.90
 clarification_accuracy: 0.90
 unsafe_block_rate: 1.00
@@ -12,3 +13,9 @@ strategy_fallback_rate:
 multi_strategy_success_rate: 0.80
 strategy_document_scope_safety_rate: 1.00
 strategy_trace_coverage_rate: 1.00
+research_plan_validity_rate: 0.90
+research_task_success_rate: 0.80
+research_gap_detection_rate: 0.80
+research_document_scope_safety_rate: 1.00
+research_report_completeness_rate: 0.80
+research_citation_coverage_rate: 0.80

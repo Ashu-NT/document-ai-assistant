@@ -11,12 +11,16 @@ class AgentTurnInput:
     document_id: str | None = None
     allow_answer_generation: bool = False
     llm_planning_enabled: bool = False
+    deep_research_enabled: bool = False
+    llm_research_planning_enabled: bool = False
     retrieval_strategy_enabled: bool = False
     llm_retrieval_strategy_enabled: bool = False
     requested_retrieval_strategy: str | None = None
     show_retrieval_strategy: bool = False
     show_context: bool = False
     show_plan: bool = False
+    show_research_plan: bool = False
+    show_research_trace: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +42,11 @@ class AgentExpectedBehavior:
     retrieval_strategy_primary: str | None = None
     retrieval_strategy_secondary_contains: list[str] = field(default_factory=list)
     retrieval_strategy_trace_required: bool | None = None
+    research_plan_required: bool | None = None
+    research_report_required: bool | None = None
+    research_gap_detection_required: bool | None = None
+    research_citation_required: bool | None = None
+    research_task_success_min_rate: float | None = None
 
 
 @dataclass(frozen=True, slots=True)

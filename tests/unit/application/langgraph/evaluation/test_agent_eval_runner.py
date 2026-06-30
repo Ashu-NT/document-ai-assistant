@@ -165,6 +165,53 @@ class FakeGraph:
                 ],
             )
 
+        if normalized.startswith("generate a preventive maintenance report"):
+            document_id, title = self.selected_by_session[session_id]
+            return GraphResult.ok(
+                response_text=(
+                    "# Research Report\n\n## Executive Summary\nMaintenance tasks and intervals were collected."
+                ),
+                route="deep_research",
+                data={
+                    "selected_document_id": document_id,
+                    "selected_document_title": title,
+                    "context_chunks": [
+                        {"chunk_id": "chunk-r1", "document_id": document_id}
+                    ],
+                    "citations": [{"citation_id": "cit-r1"}],
+                    "research_plan": {
+                        "plan_id": "research-plan-1",
+                        "tasks": [
+                            {"task_id": "task-1", "title": "Collect maintenance tasks"},
+                            {"task_id": "task-2", "title": "Collect maintenance intervals"},
+                        ],
+                    },
+                    "research_task_results": [
+                        {"task_id": "task-1", "success": True},
+                        {"task_id": "task-2", "success": True},
+                    ],
+                    "research_gaps": [],
+                    "research_report": {
+                        "title": "Research Report",
+                        "executive_summary": "Maintenance tasks and intervals were collected.",
+                        "sections": [
+                            {
+                                "title": "Scheduled Tasks",
+                                "body": "Lubrication and inspection tasks were found.",
+                            }
+                        ],
+                    },
+                    "research_trace": {"plan_source": "deterministic"},
+                    "research_plan_source": "deterministic",
+                },
+                diagnostics={"needs_clarification": False},
+                trace=[
+                    {
+                        "node_name": "execute_research",
+                    }
+                ],
+            )
+
         if "delete all documents" in normalized:
             return GraphResult.ok(
                 response_text="This request was blocked because it attempts to mutate the document corpus.",
@@ -407,3 +454,41 @@ def test_agent_eval_runner_tracks_retrieval_strategy_metrics() -> None:
     assert case_result.metrics["retrieval_strategy_selection_rate"] == 1.0
     assert case_result.metrics["retrieval_strategy_validity_rate"] == 1.0
     assert case_result.metrics["strategy_trace_coverage_rate"] == 1.0
+
+
+def test_agent_eval_runner_tracks_deep_research_metrics() -> None:
+    graph = FakeGraph()
+    cases = [
+        AgentTestCase(
+            case_id="AG-009",
+            name="Deep research report",
+            description=None,
+            inputs=[
+                AgentTurnInput(user_input="open FWC12"),
+                AgentTurnInput(
+                    user_input="Generate a preventive maintenance report",
+                    deep_research_enabled=True,
+                    show_research_plan=True,
+                    show_research_trace=True,
+                ),
+            ],
+            expected=AgentExpectedBehavior(
+                final_route="deep_research",
+                selected_document_contains="FWC12",
+                research_plan_required=True,
+                research_report_required=True,
+                research_citation_required=True,
+                research_task_success_min_rate=1.0,
+            ),
+        )
+    ]
+
+    report = AgentEvalRunner(graph=graph).run_cases(cases)
+
+    case_result = report.case_results[0]
+    assert case_result.passed is True
+    assert case_result.metrics["deep_research_route_accuracy"] == 1.0
+    assert case_result.metrics["research_plan_validity_rate"] == 1.0
+    assert case_result.metrics["research_task_success_rate"] == 1.0
+    assert case_result.metrics["research_report_completeness_rate"] == 1.0
+    assert case_result.metrics["research_citation_coverage_rate"] == 1.0

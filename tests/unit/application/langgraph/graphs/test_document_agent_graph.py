@@ -10,6 +10,8 @@ from src.application.langgraph import (
 from src.application.langgraph.planning import LLMPlanProposer
 from src.application.langgraph.routing import RouteDecision, RouteType
 from src.application.tools.common import ToolResult
+from src.domain.common import ChunkType, SourceLocation
+from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
 
 @dataclass(slots=True)
@@ -106,8 +108,50 @@ class FakeRetrieveChunksTool:
         self.requests.append(request)
         return ToolResult.ok(
             data={
-                "chunks": [{"chunk_id": "chunk-1"}],
-                "context_chunks": [{"chunk_id": "chunk-1"}],
+                "chunks": [
+                    RetrievedChunk(
+                        chunk_id="chunk-1",
+                        document_id="doc-42",
+                        content="Maintenance tasks include lubrication every 250 hours.",
+                        score=0.91,
+                        retrieval_source="hybrid",
+                        chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+                        section_path=["6 Maintenance", "Lubrication"],
+                        source=SourceLocation(page_start=12, page_end=12),
+                    ),
+                    RetrievedChunk(
+                        chunk_id="chunk-2",
+                        document_id="doc-42",
+                        content="Technical specifications include operating pressure and motor power.",
+                        score=0.88,
+                        retrieval_source="hybrid",
+                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                        section_path=["3 Specifications", "Technical Data"],
+                        source=SourceLocation(page_start=5, page_end=5),
+                    ),
+                ],
+                "context_chunks": [
+                    RetrievedChunk(
+                        chunk_id="chunk-1",
+                        document_id="doc-42",
+                        content="Maintenance tasks include lubrication every 250 hours.",
+                        score=0.91,
+                        retrieval_source="hybrid",
+                        chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+                        section_path=["6 Maintenance", "Lubrication"],
+                        source=SourceLocation(page_start=12, page_end=12),
+                    ),
+                    RetrievedChunk(
+                        chunk_id="chunk-2",
+                        document_id="doc-42",
+                        content="Technical specifications include operating pressure and motor power.",
+                        score=0.88,
+                        retrieval_source="hybrid",
+                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                        section_path=["3 Specifications", "Technical Data"],
+                        source=SourceLocation(page_start=5, page_end=5),
+                    ),
+                ],
             }
         )
 
@@ -304,13 +348,13 @@ def test_document_agent_graph_explicit_document_id_overrides_selected_document()
     assert answer_tool.requests[-1].document_id == "doc-explicit"
 
 
-def test_document_agent_graph_executes_planned_task_with_selected_document() -> None:
+def test_document_agent_graph_executes_deep_research_with_selected_document() -> None:
     find_tool = FakeFindDocumentTool()
-    answer_tool = FakeAnswerQuestionTool()
+    retrieve_tool = FakeRetrieveChunksTool()
     graph = _memory_backed_graph(
         registry=ToolRegistry(
             find_document_tool=find_tool,
-            answer_question_tool=answer_tool,
+            retrieve_chunks_tool=retrieve_tool,
         )
     )
 
@@ -318,26 +362,26 @@ def test_document_agent_graph_executes_planned_task_with_selected_document() -> 
     result = graph.run(
         "compare specifications and maintenance tasks",
         session_id="demo",
-        show_plan=True,
+        show_research_plan=True,
     )
 
     assert result.success is True
-    assert result.route == "planned_task"
-    assert "Plan" in (result.response_text or "")
-    assert len(answer_tool.requests) == 2
-    assert answer_tool.requests[-1].document_id == "doc-42"
-    assert result.data["plan_success"] is True
+    assert result.route == "deep_research"
+    assert "Research Plan" in (result.response_text or "")
+    assert retrieve_tool.requests
+    assert result.data["research_plan"] is not None
+    assert result.data["research_task_results"]
 
 
-def test_document_agent_graph_planned_task_requests_document_clarification_when_missing() -> None:
-    graph = DocumentAgentGraph(ToolRegistry(answer_question_tool=FakeAnswerQuestionTool()))
+def test_document_agent_graph_deep_research_requests_document_clarification_when_missing() -> None:
+    graph = DocumentAgentGraph(ToolRegistry(retrieve_chunks_tool=FakeRetrieveChunksTool()))
 
     result = graph.run("compare specifications and maintenance tasks")
 
     assert result.success is True
-    assert result.route == "planned_task"
+    assert result.route == "deep_research"
     assert result.data["pending_clarification"] is None
-    assert "needs a document" in (result.response_text or "").lower()
+    assert "select one first" in (result.response_text or "").lower()
 
 
 def test_document_agent_graph_planning_falls_back_safely_when_planner_returns_none() -> None:

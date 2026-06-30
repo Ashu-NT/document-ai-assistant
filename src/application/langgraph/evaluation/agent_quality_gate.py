@@ -74,6 +74,11 @@ class AgentQualityGate:
         checks = [
             ("route_accuracy", summary.route_accuracy, thresholds.route_accuracy),
             (
+                "deep_research_route_accuracy",
+                summary.deep_research_route_accuracy,
+                thresholds.deep_research_route_accuracy,
+            ),
+            (
                 "document_selection_accuracy",
                 summary.document_selection_accuracy,
                 thresholds.document_selection_accuracy,
@@ -137,6 +142,36 @@ class AgentQualityGate:
                 "strategy_trace_coverage_rate",
                 summary.strategy_trace_coverage_rate,
                 thresholds.strategy_trace_coverage_rate,
+            ),
+            (
+                "research_plan_validity_rate",
+                summary.research_plan_validity_rate,
+                thresholds.research_plan_validity_rate,
+            ),
+            (
+                "research_task_success_rate",
+                summary.research_task_success_rate,
+                thresholds.research_task_success_rate,
+            ),
+            (
+                "research_gap_detection_rate",
+                summary.research_gap_detection_rate,
+                thresholds.research_gap_detection_rate,
+            ),
+            (
+                "research_document_scope_safety_rate",
+                summary.research_document_scope_safety_rate,
+                thresholds.research_document_scope_safety_rate,
+            ),
+            (
+                "research_report_completeness_rate",
+                summary.research_report_completeness_rate,
+                thresholds.research_report_completeness_rate,
+            ),
+            (
+                "research_citation_coverage_rate",
+                summary.research_citation_coverage_rate,
+                thresholds.research_citation_coverage_rate,
             ),
         ]
 

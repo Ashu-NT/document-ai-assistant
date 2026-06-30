@@ -28,6 +28,8 @@ def test_run_agent_eval_parses_arguments() -> None:
             "--tag",
             "safety",
             "--llm-planning",
+            "--deep-research",
+            "--llm-research-planning",
             "--retrieval-strategy",
             "table",
             "--llm-retrieval-strategy",
@@ -39,6 +41,8 @@ def test_run_agent_eval_parses_arguments() -> None:
     assert args.case_id == ["AG-001"]
     assert args.tag == ["safety"]
     assert args.llm_planning is True
+    assert args.deep_research is True
+    assert args.llm_research_planning is True
     assert args.retrieval_strategy == "table"
     assert args.llm_retrieval_strategy is True
     assert args.fail_on_threshold is True

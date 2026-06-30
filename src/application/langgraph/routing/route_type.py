@@ -4,6 +4,7 @@ from enum import StrEnum
 class RouteType(StrEnum):
     BLOCKED_ACTION = "blocked_action"
     PLANNED_TASK = "planned_task"
+    DEEP_RESEARCH = "deep_research"
     SELECT_DOCUMENT = "select_document"
     CURRENT_DOCUMENT = "current_document"
     CLEAR_DOCUMENT = "clear_document"

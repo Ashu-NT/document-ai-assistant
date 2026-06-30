@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import inspect
+
 from src.application.langgraph.routing import IntentRouter, RouteType
 from src.application.langgraph.state import AgentState
 from src.application.langgraph.tracing import GraphRunRecorder
@@ -21,11 +23,7 @@ class RouteRequestNode:
             "route_request",
             route=state.get("route"),
         )
-        decision = self.intent_router.route(
-            state["user_input"],
-            document_id=state.get("document_id"),
-            document_query=state.get("document_query"),
-        )
+        decision = self._route(state)
         unsafe_request_blocked = bool(
             decision.options.get("unsafe_request_blocked", False)
         )
@@ -51,6 +49,7 @@ class RouteRequestNode:
                 or decision.route_type
                 in {
                     RouteType.ANSWER_QUESTION,
+                    RouteType.DEEP_RESEARCH,
                     RouteType.RETRIEVE_EVIDENCE,
                     RouteType.RETRIEVAL_TRACE,
                 }
@@ -95,3 +94,18 @@ class RouteRequestNode:
             "clarification_candidate_index": decision.clarification_candidate_index,
             "trace": extend_trace(state["trace"], trace_entry),
         }
+
+    def _route(self, state: AgentState):
+        route_kwargs = {
+            "document_id": state.get("document_id"),
+            "document_query": state.get("document_query"),
+        }
+        signature = inspect.signature(self.intent_router.route)
+        if "deep_research_enabled" in signature.parameters:
+            route_kwargs["deep_research_enabled"] = bool(
+                state.get("deep_research_enabled", False)
+            )
+        return self.intent_router.route(
+            state["user_input"],
+            **route_kwargs,
+        )

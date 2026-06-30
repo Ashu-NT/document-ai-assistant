@@ -19,6 +19,10 @@ class AgentState(TypedDict):
     llm_planning_enabled: bool
     show_plan: bool
     show_raw_plan: bool
+    deep_research_enabled: bool
+    llm_research_planning_enabled: bool
+    show_research_plan: bool
+    show_research_trace: bool
     reflection_enabled: bool
     show_reflection: bool
     retrieval_strategy_enabled: bool
@@ -56,6 +60,22 @@ class AgentState(TypedDict):
     raw_llm_plan: str | None
     plan_success: bool | None
     failed_plan_step: str | None
+    research_goal: dict[str, Any] | None
+    research_plan: dict[str, Any] | None
+    research_task_results: list[dict[str, Any]]
+    research_evidence: list[dict[str, Any]]
+    research_gaps: list[dict[str, Any]]
+    research_iterations: int
+    research_synthesis: dict[str, Any] | None
+    research_report: dict[str, Any] | None
+    research_errors: list[str]
+    research_trace: dict[str, Any] | None
+    research_followup_pending: bool
+    research_plan_source: str | None
+    research_planning_errors: list[str]
+    research_planning_warnings: list[str]
+    raw_llm_research_plan: str | None
+    research_result: dict[str, Any] | None
     response_text: str | None
     error: dict[str, Any] | None
     unsafe_request_blocked: bool
@@ -86,6 +106,10 @@ def build_agent_state(
     llm_planning_enabled: bool = False,
     show_plan: bool = False,
     show_raw_plan: bool = False,
+    deep_research_enabled: bool = False,
+    llm_research_planning_enabled: bool = False,
+    show_research_plan: bool = False,
+    show_research_trace: bool = False,
     reflection_enabled: bool = False,
     show_reflection: bool = False,
     retrieval_strategy_enabled: bool = False,
@@ -120,6 +144,10 @@ def build_agent_state(
         llm_planning_enabled=llm_planning_enabled,
         show_plan=show_plan,
         show_raw_plan=show_raw_plan,
+        deep_research_enabled=deep_research_enabled,
+        llm_research_planning_enabled=llm_research_planning_enabled,
+        show_research_plan=show_research_plan,
+        show_research_trace=show_research_trace,
         reflection_enabled=reflection_enabled,
         show_reflection=show_reflection,
         retrieval_strategy_enabled=retrieval_strategy_enabled,
@@ -157,6 +185,22 @@ def build_agent_state(
         raw_llm_plan=None,
         plan_success=None,
         failed_plan_step=None,
+        research_goal=None,
+        research_plan=None,
+        research_task_results=[],
+        research_evidence=[],
+        research_gaps=[],
+        research_iterations=0,
+        research_synthesis=None,
+        research_report=None,
+        research_errors=[],
+        research_trace=None,
+        research_followup_pending=False,
+        research_plan_source=None,
+        research_planning_errors=[],
+        research_planning_warnings=[],
+        raw_llm_research_plan=None,
+        research_result=None,
         response_text=None,
         error=None,
         unsafe_request_blocked=False,

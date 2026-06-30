@@ -21,6 +21,16 @@ class AgentTurnResult:
     retrieval_strategy_trace_present: bool = False
     retrieval_strategy_fallback_used: bool = False
     retrieval_strategy_enabled: bool = False
+    research_plan_present: bool = False
+    research_plan_task_count: int = 0
+    research_plan_source: str | None = None
+    research_task_count: int = 0
+    research_task_success_count: int = 0
+    research_gap_count: int = 0
+    research_report_present: bool = False
+    research_report_section_count: int = 0
+    research_citation_count: int = 0
+    research_trace_present: bool = False
     diagnostics: dict[str, Any] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
 
@@ -55,6 +65,13 @@ class AgentEvalSummary:
     multi_strategy_success_rate: float
     strategy_document_scope_safety_rate: float
     strategy_trace_coverage_rate: float
+    deep_research_route_accuracy: float = 0.0
+    research_plan_validity_rate: float = 0.0
+    research_task_success_rate: float = 0.0
+    research_gap_detection_rate: float = 0.0
+    research_document_scope_safety_rate: float = 0.0
+    research_report_completeness_rate: float = 0.0
+    research_citation_coverage_rate: float = 0.0
 
 
 @dataclass(slots=True)
