@@ -647,6 +647,8 @@ def print_retrieval_strategy(result) -> None:
     print("\nRetrieval Strategy")
     print("------------------")
     if not isinstance(decision, dict):
+        if _print_research_task_strategies(data):
+            return
         print("No retrieval strategy decision was recorded.")
         return
     print(f"Primary: {decision.get('primary_strategy') or '-'}")
@@ -674,6 +676,52 @@ def print_retrieval_strategy(result) -> None:
     errors = data.get("retrieval_strategy_errors") or []
     if errors:
         print(f"Errors: {', '.join(str(item) for item in errors)}")
+
+
+def _print_research_task_strategies(data: dict[str, Any]) -> bool:
+    research_plan = data.get("research_plan")
+    if not isinstance(research_plan, dict):
+        return False
+    tasks = research_plan.get("tasks") or []
+    if not isinstance(tasks, list) or not tasks:
+        return False
+    research_trace = data.get("research_trace") or {}
+    strategy_by_task = {}
+    if isinstance(research_trace, dict):
+        raw = research_trace.get("retrieval_strategies_per_task")
+        if isinstance(raw, dict):
+            strategy_by_task = raw
+    for task in tasks:
+        if not isinstance(task, dict):
+            continue
+        title = str(task.get("title") or "Task").strip()
+        task_id = str(task.get("task_id") or "")
+        primary = (
+            str(strategy_by_task.get(task_id) or "").strip()
+            or str(task.get("strategy_hint") or "").strip()
+            or "-"
+        )
+        secondaries = _task_secondary_strategy_hints(task)
+        print(f"Task: {title}")
+        print(f"Primary: {primary}")
+        print(
+            "Secondary: "
+            + (", ".join(secondaries) if secondaries else "-")
+        )
+        print()
+    return True
+
+
+def _task_secondary_strategy_hints(task: dict[str, Any]) -> list[str]:
+    diagnostics = task.get("diagnostics")
+    if isinstance(diagnostics, dict):
+        secondaries = diagnostics.get("secondary_strategies")
+        if isinstance(secondaries, list):
+            return [str(item) for item in secondaries if str(item).strip()]
+    title = str(task.get("title") or "").casefold()
+    if "maintenance" in title or "specification" in title or "technical" in title:
+        return ["TABLE_LOOKUP"]
+    return []
 
 
 def print_reflection(result) -> None:

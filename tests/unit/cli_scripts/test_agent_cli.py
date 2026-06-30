@@ -254,6 +254,52 @@ def test_agent_cli_show_retrieval_strategy_prints_decision_and_plan(capsys) -> N
     assert "retrieve_chunks - maintenance interval schedule table" in output
 
 
+def test_agent_cli_show_retrieval_strategy_falls_back_to_research_tasks(capsys) -> None:
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="Comparison Summary\n\nProfessional answer.",
+        route="deep_research",
+        data={
+            "answer": "Comparison Summary\n\nProfessional answer.",
+            "research_plan": {
+                "tasks": [
+                    {
+                        "task_id": "task-1",
+                        "title": "Collect maintenance tasks",
+                        "strategy_hint": "MAINTENANCE_LOOKUP",
+                    },
+                    {
+                        "task_id": "task-2",
+                        "title": "Collect technical specifications",
+                        "strategy_hint": "TECHNICAL_SPECIFICATION",
+                    },
+                ]
+            },
+            "research_trace": {
+                "retrieval_strategies_per_task": {
+                    "task-1": "MAINTENANCE_LOOKUP",
+                    "task-2": "TECHNICAL_SPECIFICATION",
+                }
+            },
+        },
+    )
+
+    mod.print_graph_result(
+        result,
+        show_context=False,
+        show_trace=False,
+        show_retrieval_strategy=True,
+    )
+
+    output = capsys.readouterr().out
+    assert "Task: Collect maintenance tasks" in output
+    assert "Primary: MAINTENANCE_LOOKUP" in output
+    assert "Secondary: TABLE_LOOKUP" in output
+    assert "Task: Collect technical specifications" in output
+    assert "Primary: TECHNICAL_SPECIFICATION" in output
+    assert "No retrieval strategy decision was recorded." not in output
+
+
 def test_agent_cli_show_research_outputs_plan_and_trace(capsys) -> None:
     mod = _load_script("agent_cli")
     result = GraphResult.ok(

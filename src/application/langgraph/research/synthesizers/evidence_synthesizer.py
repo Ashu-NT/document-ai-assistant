@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from src.application.langgraph.research.models import ResearchSynthesis
-from src.application.langgraph.research.presentation import ResearchFindingBuilder
+from src.application.langgraph.research.presentation import (
+    ResearchFindingBuilder,
+    ResearchSectionTitleMapper,
+)
 
 
 class EvidenceSynthesizer:
@@ -9,8 +12,10 @@ class EvidenceSynthesizer:
         self,
         *,
         finding_builder: ResearchFindingBuilder | None = None,
+        section_title_mapper: ResearchSectionTitleMapper | None = None,
     ) -> None:
         self.finding_builder = finding_builder or ResearchFindingBuilder()
+        self.section_title_mapper = section_title_mapper or ResearchSectionTitleMapper()
 
     def synthesize(self, result) -> ResearchSynthesis:
         sections = []
@@ -19,10 +24,13 @@ class EvidenceSynthesizer:
             task_evidence = _task_evidence(result, task.task_id)
             if not task_evidence:
                 continue
-            findings = self.finding_builder.build_findings(task_evidence)
+            findings = self.finding_builder.build_findings(
+                task_evidence,
+                task_title=task.title,
+            )
             sections.append(
                 {
-                    "title": task.title,
+                    "title": self.section_title_mapper.display_title(task.title),
                     "body": "\n".join(
                         f"- {finding['text']}"
                         for finding in findings

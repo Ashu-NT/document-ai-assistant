@@ -66,6 +66,6 @@ def test_checklist_synthesizer_emits_sections_and_checklist_items() -> None:
     synthesis = ChecklistSynthesizer().synthesize(result)
 
     assert synthesis.sections
-    assert synthesis.sections[0]["title"] == "Collect commissioning procedures"
+    assert synthesis.sections[0]["title"] == "Procedures"
     assert synthesis.checklist_items
     assert synthesis.references[0]["chunk_id"] == "chunk-1"
