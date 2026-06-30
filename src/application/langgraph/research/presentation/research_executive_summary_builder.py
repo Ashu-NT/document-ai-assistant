@@ -3,9 +3,19 @@ from __future__ import annotations
 from typing import Any
 
 from src.application.langgraph.research.models import ResearchGoalType
+from src.application.langgraph.research.presentation.research_section_title_mapper import (
+    ResearchSectionTitleMapper,
+)
 
 
 class ResearchExecutiveSummaryBuilder:
+    def __init__(
+        self,
+        *,
+        section_title_mapper: ResearchSectionTitleMapper | None = None,
+    ) -> None:
+        self.section_title_mapper = section_title_mapper or ResearchSectionTitleMapper()
+
     def build(
         self,
         *,
@@ -24,13 +34,11 @@ class ResearchExecutiveSummaryBuilder:
     def _build_comparison_summary(self, sections: list[dict[str, Any]]) -> str:
         topics = [self._topic_label(section.get("title")) for section in sections[:2]]
         if len(topics) >= 2:
-            return "\n\n".join(
-                [
-                    f"The selected document separates {topics[0]} from {topics[1]}.",
-                    f"{topics[0].capitalize()} findings focus on {self._topic_description(topics[0])}.",
-                    f"{topics[1].capitalize()} findings focus on {self._topic_description(topics[1])}.",
-                ]
-            )
+            return "\n\n".join([
+                f"The selected document separates {topics[0]} from {topics[1]}.",
+                f"{topics[0].capitalize()} findings focus on {self._topic_description(topics[0])}.",
+                f"{topics[1].capitalize()} findings focus on {self._topic_description(topics[1])}.",
+            ])
         if topics:
             topic = topics[0]
             return "\n\n".join(
@@ -85,11 +93,15 @@ class ResearchExecutiveSummaryBuilder:
         return f"{document_name} was reviewed and grounded findings were compiled."
 
     @staticmethod
-    def _topic_label(value: Any) -> str:
+    def _normalize_topic_text(value: Any) -> str:
         text = str(value or "the requested topic").strip()
         if text.lower().startswith("collect "):
             text = text[8:]
         return text.lower()
+
+    def _topic_label(self, value: Any) -> str:
+        text = self.section_title_mapper.display_title(str(value or "the requested topic"))
+        return self._normalize_topic_text(text)
 
     @staticmethod
     def _topic_description(topic: str) -> str:

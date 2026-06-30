@@ -7,6 +7,9 @@ from src.application.langgraph.research.policies import ResearchSynthesisPolicy
 from src.application.langgraph.research.presentation.research_citation_formatter import (
     ResearchCitationFormatter,
 )
+from src.application.langgraph.research.presentation.research_section_title_mapper import (
+    ResearchSectionTitleMapper,
+)
 
 
 class EnterpriseResearchReportFormatter:
@@ -14,8 +17,10 @@ class EnterpriseResearchReportFormatter:
         self,
         *,
         citation_formatter: ResearchCitationFormatter | None = None,
+        section_title_mapper: ResearchSectionTitleMapper | None = None,
     ) -> None:
         self.citation_formatter = citation_formatter or ResearchCitationFormatter()
+        self.section_title_mapper = section_title_mapper or ResearchSectionTitleMapper()
 
     def render(
         self,
@@ -34,19 +39,18 @@ class EnterpriseResearchReportFormatter:
         ]
         lines.extend(self._paragraph_lines(report.executive_summary))
         for section in report.sections:
+            section_title = self._section_title(section)
             lines.extend(
                 [
                     "",
-                    self._section_title(section),
-                    "-" * len(self._section_title(section)),
+                    section_title,
+                    "-" * len(section_title),
                     "",
                 ]
             )
             findings = self._section_findings(section)
             if findings:
-                for finding in findings:
-                    citation = self.citation_formatter.format_inline_citation(finding)
-                    lines.append(f"- {finding['text']} {citation}".strip())
+                lines.extend(self._render_findings(section_title=section_title, findings=findings))
             else:
                 lines.append("No grounded findings were available for this section.")
         if report.gaps:
@@ -67,15 +71,37 @@ class EnterpriseResearchReportFormatter:
                     if page_list:
                         label = f"{label}, {page_list}"
                     lines.append(label)
-                    if entry["sections"]:
-                        lines.append(
-                            f"    Sections: {'; '.join(entry['sections'][:3])}"
-                        )
+                    section_path = entry.get("section_path")
+                    if section_path:
+                        lines.append(f"    Path: {section_path}")
         return "\n".join(lines).strip()
 
-    @staticmethod
-    def _section_title(section: dict[str, Any]) -> str:
-        return str(section.get("title") or "Section")
+    def _render_findings(
+        self,
+        *,
+        section_title: str,
+        findings: list[dict[str, Any]],
+    ) -> list[str]:
+        lines: list[str] = []
+        is_comparison = section_title.casefold() == "comparison"
+        for index, finding in enumerate(findings, start=1):
+            prefix = "-" if is_comparison else f"{index}."
+            lines.append(f"{prefix} {finding['text']}")
+            for detail in self._details(finding):
+                lines.append(f"   - {detail}")
+            reference_detail = self.citation_formatter.format_reference_detail(finding)
+            path_detail = self.citation_formatter.format_path_detail(finding)
+            if reference_detail:
+                lines.append(f"   Reference: {reference_detail}")
+            if path_detail:
+                lines.append(f"   Path: {path_detail}")
+            lines.append("")
+        if lines and not lines[-1]:
+            lines.pop()
+        return lines
+
+    def _section_title(self, section: dict[str, Any]) -> str:
+        return self.section_title_mapper.display_title(str(section.get("title") or "Section"))
 
     @staticmethod
     def _section_findings(section: dict[str, Any]) -> list[dict[str, Any]]:
@@ -83,6 +109,13 @@ class EnterpriseResearchReportFormatter:
         if isinstance(findings, list):
             return [item for item in findings if isinstance(item, dict) and item.get("text")]
         return []
+
+    @staticmethod
+    def _details(finding: dict[str, Any]) -> list[str]:
+        details = finding.get("details")
+        if not isinstance(details, list):
+            return []
+        return [str(item).strip() for item in details if isinstance(item, str) and item.strip()]
 
     @staticmethod
     def _paragraph_lines(text: str) -> list[str]:
@@ -100,10 +133,13 @@ class EnterpriseResearchReportFormatter:
         return lines or ["No executive summary was available."]
 
     def _reference_payloads(self, report: ResearchReport) -> list[dict[str, Any]]:
-        if report.references:
-            return [item for item in report.references if isinstance(item, dict)]
         references: list[dict[str, Any]] = []
         for section in report.sections:
             for finding in self._section_findings(section):
-                references.append(finding)
-        return references
+                if finding.get("document_title") or finding.get("document_name"):
+                    references.append(finding)
+        if references:
+            return references
+        if report.references:
+            return [item for item in report.references if isinstance(item, dict)]
+        return []

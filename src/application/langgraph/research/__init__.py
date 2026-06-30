@@ -42,10 +42,13 @@ from src.application.langgraph.research.policies import (
     ResearchTaskPolicy,
 )
 from src.application.langgraph.research.presentation import (
+    EvidenceFindingExtractor,
     EnterpriseResearchReportFormatter,
     ResearchCitationFormatter,
     ResearchExecutiveSummaryBuilder,
     ResearchFindingBuilder,
+    ResearchSectionTitleMapper,
+    TableTextSummarizer,
 )
 from src.application.langgraph.research.prompts import (
     RESEARCH_PLANNING_PROMPT_VERSION,
@@ -84,6 +87,7 @@ __all__ = [
     "DeterministicResearchPlanner",
     "EvidenceCoverageEvaluator",
     "EvidenceSynthesizer",
+    "EvidenceFindingExtractor",
     "EnterpriseResearchReportFormatter",
     "LLMResearchPlanner",
     "MaintenanceReportSynthesizer",
@@ -97,6 +101,7 @@ __all__ = [
     "ResearchExecutiveSummaryBuilder",
     "ResearchExecutor",
     "ResearchFindingBuilder",
+    "ResearchSectionTitleMapper",
     "ResearchGap",
     "ResearchGapDetector",
     "ResearchGapSeverity",
@@ -128,4 +133,5 @@ __all__ = [
     "ResearchTaskResult",
     "ResearchTaskValidator",
     "ResearchTrace",
+    "TableTextSummarizer",
 ]
