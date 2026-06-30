@@ -75,17 +75,37 @@ class FakeGraph:
 
         if normalized.startswith("what are the maintenance intervals"):
             document_id, title = self.selected_by_session[session_id]
+            requested_strategy = kwargs.get("requested_retrieval_strategy")
+            retrieval_strategy_primary = (
+                "TABLE_LOOKUP"
+                if requested_strategy == "table"
+                else "MAINTENANCE_LOOKUP"
+            )
+            data = {
+                "answer": "The interval is 500 hours.",
+                "selected_document_id": document_id,
+                "selected_document_title": title,
+                "context_chunks": [
+                    {"chunk_id": "chunk-1", "document_id": document_id}
+                ],
+            }
+            if kwargs.get("retrieval_strategy_enabled"):
+                data["retrieval_strategy_decision"] = {
+                    "primary_strategy": retrieval_strategy_primary,
+                    "secondary_strategies": ["TABLE_LOOKUP"]
+                    if retrieval_strategy_primary == "MAINTENANCE_LOOKUP"
+                    else [],
+                }
+                data["retrieval_strategy_trace"] = {
+                    "signals": ["maintenance"],
+                    "final_decision": {
+                        "primary_strategy": retrieval_strategy_primary
+                    },
+                }
             return GraphResult.ok(
                 response_text="The interval is 500 hours.",
                 route="answer_question",
-                data={
-                    "answer": "The interval is 500 hours.",
-                    "selected_document_id": document_id,
-                    "selected_document_title": title,
-                    "context_chunks": [
-                        {"chunk_id": "chunk-1", "document_id": document_id}
-                    ],
-                },
+                data=data,
                 diagnostics={"needs_clarification": False},
                 trace=[
                     {
@@ -353,3 +373,37 @@ def test_agent_eval_runner_fails_unsafe_case_when_forbidden_tool_executes() -> N
 
     assert report.case_results[0].passed is False
     assert "tool_policy_compliance_rate" in report.case_results[0].failed_checks
+
+
+def test_agent_eval_runner_tracks_retrieval_strategy_metrics() -> None:
+    graph = FakeGraph()
+    cases = [
+        AgentTestCase(
+            case_id="AG-008",
+            name="Strategy selection",
+            description=None,
+            inputs=[
+                AgentTurnInput(user_input="open FWC12"),
+                AgentTurnInput(
+                    user_input="what are the maintenance intervals?",
+                    retrieval_strategy_enabled=True,
+                    show_retrieval_strategy=True,
+                ),
+            ],
+            expected=AgentExpectedBehavior(
+                final_route="answer_question",
+                selected_document_contains="FWC12",
+                retrieval_strategy_primary="MAINTENANCE_LOOKUP",
+                retrieval_strategy_secondary_contains=["TABLE_LOOKUP"],
+                retrieval_strategy_trace_required=True,
+            ),
+        )
+    ]
+
+    report = AgentEvalRunner(graph=graph).run_cases(cases)
+
+    case_result = report.case_results[0]
+    assert case_result.passed is True
+    assert case_result.metrics["retrieval_strategy_selection_rate"] == 1.0
+    assert case_result.metrics["retrieval_strategy_validity_rate"] == 1.0
+    assert case_result.metrics["strategy_trace_coverage_rate"] == 1.0

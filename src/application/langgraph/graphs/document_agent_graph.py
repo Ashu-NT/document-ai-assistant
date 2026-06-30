@@ -61,6 +61,10 @@ class DocumentAgentGraph:
         show_raw_plan: bool = False,
         reflection_enabled: bool = False,
         show_reflection: bool = False,
+        retrieval_strategy_enabled: bool = False,
+        llm_retrieval_strategy_enabled: bool = False,
+        show_retrieval_strategy: bool = False,
+        requested_retrieval_strategy: str | None = None,
         top_k: int | None = None,
         conversation_id: str | None = None,
     ) -> GraphResult:
@@ -75,6 +79,10 @@ class DocumentAgentGraph:
             show_raw_plan=show_raw_plan,
             reflection_enabled=reflection_enabled,
             show_reflection=show_reflection,
+            retrieval_strategy_enabled=retrieval_strategy_enabled,
+            llm_retrieval_strategy_enabled=llm_retrieval_strategy_enabled,
+            show_retrieval_strategy=show_retrieval_strategy,
+            requested_retrieval_strategy=requested_retrieval_strategy,
             top_k=top_k,
             conversation_id=conversation_id,
             session_id=session_id,
@@ -324,6 +332,7 @@ class DocumentAgentGraph:
             "planning_source": state.get("planning_source"),
             "unsafe_request_blocked": state.get("unsafe_request_blocked", False),
             "reflection_enabled": state.get("reflection_enabled", False),
+            "retrieval_strategy_enabled": state.get("retrieval_strategy_enabled", False),
         }
         data = {
             "document_id": state.get("document_id"),
@@ -350,6 +359,15 @@ class DocumentAgentGraph:
             "retry_context_chunks": state.get("retry_context_chunks", []),
             "merged_context_chunks": state.get("merged_context_chunks", []),
             "merged_chunk_ids": state.get("merged_chunk_ids", []),
+            "retrieval_strategy_decision": state.get("retrieval_strategy_decision"),
+            "retrieval_plan": state.get("retrieval_plan"),
+            "retrieval_execution_result": state.get("retrieval_execution_result"),
+            "retrieval_strategy_trace": state.get("retrieval_strategy_trace"),
+            "selected_retrieval_strategies": state.get(
+                "selected_retrieval_strategies",
+                [],
+            ),
+            "retrieval_strategy_errors": state.get("retrieval_strategy_errors", []),
             "execution_plan": state.get("execution_plan"),
             "validated_plan": state.get("validated_plan"),
             "plan_steps": state.get("plan_steps", []),
@@ -382,6 +400,19 @@ class DocumentAgentGraph:
         if state.get("reflection_decision"):
             diagnostics["reflection_decision"] = state.get("reflection_decision")
             diagnostics["reflection_score"] = state.get("reflection_score")
+        retrieval_strategy_decision = state.get("retrieval_strategy_decision")
+        if isinstance(retrieval_strategy_decision, dict):
+            diagnostics["retrieval_strategy_primary"] = retrieval_strategy_decision.get(
+                "primary_strategy"
+            )
+            diagnostics["retrieval_strategy_secondaries"] = (
+                retrieval_strategy_decision.get("secondary_strategies", [])
+            )
+        if state.get("retrieval_strategy_errors"):
+            diagnostics["retrieval_strategy_errors"] = state.get(
+                "retrieval_strategy_errors",
+                [],
+            )
         if state.get("needs_clarification") and state.get("error") is None:
             return GraphResult.ok(
                 response_text=state.get("response_text"),

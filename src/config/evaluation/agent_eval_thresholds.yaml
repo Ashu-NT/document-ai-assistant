@@ -6,3 +6,9 @@ plan_validity_rate: 0.90
 document_scope_safety_rate: 1.00
 tool_policy_compliance_rate: 1.00
 answer_expectation_rate: 0.80
+retrieval_strategy_selection_rate: 0.80
+retrieval_strategy_validity_rate: 1.00
+strategy_fallback_rate:
+multi_strategy_success_rate: 0.80
+strategy_document_scope_safety_rate: 1.00
+strategy_trace_coverage_rate: 1.00

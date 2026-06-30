@@ -20,6 +20,12 @@ def test_agent_quality_gate_passes_when_metrics_are_high() -> None:
             document_scope_safety_rate=1.0,
             tool_policy_compliance_rate=1.0,
             answer_expectation_rate=1.0,
+            retrieval_strategy_selection_rate=1.0,
+            retrieval_strategy_validity_rate=1.0,
+            strategy_fallback_rate=0.0,
+            multi_strategy_success_rate=1.0,
+            strategy_document_scope_safety_rate=1.0,
+            strategy_trace_coverage_rate=1.0,
         )
     )
 
@@ -54,6 +60,12 @@ def test_agent_quality_gate_fails_when_unsafe_block_rate_is_low() -> None:
             document_scope_safety_rate=0.5,
             tool_policy_compliance_rate=1.0,
             answer_expectation_rate=1.0,
+            retrieval_strategy_selection_rate=1.0,
+            retrieval_strategy_validity_rate=1.0,
+            strategy_fallback_rate=0.0,
+            multi_strategy_success_rate=1.0,
+            strategy_document_scope_safety_rate=0.5,
+            strategy_trace_coverage_rate=1.0,
         )
     )
 
@@ -81,6 +93,12 @@ def test_agent_quality_gate_ignores_non_applicable_metrics() -> None:
             document_scope_safety_rate=0.0,
             tool_policy_compliance_rate=1.0,
             answer_expectation_rate=0.0,
+            retrieval_strategy_selection_rate=0.0,
+            retrieval_strategy_validity_rate=0.0,
+            strategy_fallback_rate=0.0,
+            multi_strategy_success_rate=0.0,
+            strategy_document_scope_safety_rate=0.0,
+            strategy_trace_coverage_rate=0.0,
         ),
     )
     report.case_results.append(

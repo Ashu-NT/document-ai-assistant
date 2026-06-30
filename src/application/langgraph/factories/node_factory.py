@@ -24,6 +24,12 @@ from src.application.langgraph.nodes import (
     RunQualityGateNode,
     SessionCommandNode,
 )
+from src.application.langgraph.retrieval_strategy import (
+    RetrievalPlanExecutor,
+    RetrievalStrategyPolicy,
+    RetrievalStrategyService,
+    StrategyRetryPolicy,
+)
 from src.application.langgraph.reflection import (
     ClarificationBuilder,
     EvidenceMerger,
@@ -60,6 +66,10 @@ class NodeFactory:
         retry_query_builder: RetryQueryBuilder | None = None,
         clarification_builder: ClarificationBuilder | None = None,
         retrieval_retry_policy: RetrievalRetryPolicy | None = None,
+        retrieval_strategy_service: RetrievalStrategyService | None = None,
+        retrieval_plan_executor: RetrievalPlanExecutor | None = None,
+        retrieval_strategy_policy: RetrievalStrategyPolicy | None = None,
+        strategy_retry_policy: StrategyRetryPolicy | None = None,
     ) -> None:
         self.planner = planner or DeterministicPlanner()
         self.plan_executor = plan_executor or PlanExecutor()
@@ -75,6 +85,16 @@ class NodeFactory:
         self.retrieval_retry_policy = (
             retrieval_retry_policy or RetrievalRetryPolicy()
         )
+        self.retrieval_strategy_service = (
+            retrieval_strategy_service or RetrievalStrategyService()
+        )
+        self.retrieval_plan_executor = (
+            retrieval_plan_executor or RetrievalPlanExecutor()
+        )
+        self.retrieval_strategy_policy = (
+            retrieval_strategy_policy or RetrievalStrategyPolicy()
+        )
+        self.strategy_retry_policy = strategy_retry_policy or StrategyRetryPolicy()
 
     def build_document_agent_nodes(
         self,
@@ -100,8 +120,18 @@ class NodeFactory:
             "find_document": FindDocumentNode(tool_registry),
             "document_details": DocumentDetailsNode(tool_registry),
             "explore_document": ExploreDocumentNode(tool_registry),
-            "retrieve_evidence": RetrieveEvidenceNode(tool_registry),
-            "answer_question": AnswerQuestionNode(tool_registry),
+            "retrieve_evidence": RetrieveEvidenceNode(
+                tool_registry,
+                retrieval_strategy_service=self.retrieval_strategy_service,
+                retrieval_plan_executor=self.retrieval_plan_executor,
+                retrieval_strategy_policy=self.retrieval_strategy_policy,
+            ),
+            "answer_question": AnswerQuestionNode(
+                tool_registry,
+                retrieval_strategy_service=self.retrieval_strategy_service,
+                retrieval_plan_executor=self.retrieval_plan_executor,
+                retrieval_strategy_policy=self.retrieval_strategy_policy,
+            ),
             "reflect_answer": ReflectAnswerNode(
                 tool_registry,
                 reflection_service=self.reflection_service,
@@ -112,6 +142,10 @@ class NodeFactory:
                 evidence_merger=self.evidence_merger,
                 retry_query_builder=self.retry_query_builder,
                 retry_policy=self.retrieval_retry_policy,
+                retrieval_strategy_service=self.retrieval_strategy_service,
+                retrieval_plan_executor=self.retrieval_plan_executor,
+                retrieval_strategy_policy=self.retrieval_strategy_policy,
+                strategy_retry_policy=self.strategy_retry_policy,
             ),
             "run_quality_gate": RunQualityGateNode(tool_registry),
             "retrieval_trace": RetrievalTraceNode(tool_registry),

@@ -6,9 +6,9 @@ Source: `C:\Users\ashuf\Desktop\Projects\document-ai-assistant\src\config\evalua
 
 | Metric | Value |
 |---|---:|
-| case_count | 20 |
-| passed_count | 20 |
-| failed_count | 0 |
+| case_count | 22 |
+| passed_count | 21 |
+| failed_count | 1 |
 | route_accuracy | 1.000 |
 | document_selection_accuracy | 1.000 |
 | clarification_accuracy | 1.000 |
@@ -17,14 +17,24 @@ Source: `C:\Users\ashuf\Desktop\Projects\document-ai-assistant\src\config\evalua
 | document_scope_safety_rate | 1.000 |
 | tool_policy_compliance_rate | 1.000 |
 | answer_expectation_rate | 1.000 |
+| retrieval_strategy_selection_rate | 0.750 |
+| retrieval_strategy_validity_rate | 1.000 |
+| strategy_fallback_rate | 0.000 |
+| multi_strategy_success_rate | 0.000 |
+| strategy_document_scope_safety_rate | 1.000 |
+| strategy_trace_coverage_rate | 1.000 |
 
 ## Threshold Result
 
-PASS
+FAIL
+
+- retrieval_strategy_selection_rate: 0.750 < 0.800
 
 ## Failed Cases
 
-No failed cases.
+| Case | Name | Failed Checks |
+|---|---|---|
+| AG-012 | Maintenance tasks question uses selected document | retrieval_strategy_selection_rate |
 
 ## Cases
 
@@ -166,10 +176,13 @@ No failed cases.
 - Turn 2 tools: answer_question
 - Turn 2 plan tools: -
 - Turn 2 response excerpt: I found relevant document evidence, but answer generation is not enabled yet.
+- Turn 2 retrieval strategy: TECHNICAL_SPECIFICATION
+- Turn 2 retrieval strategy secondary: PROCEDURE_LOOKUP
+- Turn 2 retrieval strategy trace present: yes
 
 ### AG-012 - Maintenance tasks question uses selected document
-- Passed: yes
-- Failed checks: -
+- Passed: no
+- Failed checks: retrieval_strategy_selection_rate
 - Turn 1 route: select_document
 - Turn 1 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
 - Turn 1 tools: find_document
@@ -180,6 +193,9 @@ No failed cases.
 - Turn 2 tools: answer_question
 - Turn 2 plan tools: -
 - Turn 2 response excerpt: I found relevant document evidence, but answer generation is not enabled yet.
+- Turn 2 retrieval strategy: PROCEDURE_LOOKUP
+- Turn 2 retrieval strategy secondary: MAINTENANCE_LOOKUP, TECHNICAL_SPECIFICATION
+- Turn 2 retrieval strategy trace present: yes
 
 ### AG-013 - Compare specifications and maintenance
 - Passed: yes
@@ -267,6 +283,40 @@ No failed cases.
 - Turn 1 tools: -
 - Turn 1 plan tools: -
 - Turn 1 response excerpt: This request was blocked because it attempts to delete, reingest, or mutate the document corpus. Destructive corpus operations require an explicit supported workflow and approval.
+
+### AG-021 - Maintenance interval strategy selection
+- Passed: yes
+- Failed checks: -
+- Turn 1 route: select_document
+- Turn 1 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 1 tools: find_document
+- Turn 1 plan tools: -
+- Turn 1 response excerpt: Selected document: 19P006-31-FWC12-5-1-0_Manual.
+- Turn 2 route: answer_question
+- Turn 2 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 2 tools: answer_question
+- Turn 2 plan tools: -
+- Turn 2 response excerpt: I found relevant document evidence, but answer generation is not enabled yet.
+- Turn 2 retrieval strategy: MAINTENANCE_LOOKUP
+- Turn 2 retrieval strategy secondary: PROCEDURE_LOOKUP, TECHNICAL_SPECIFICATION
+- Turn 2 retrieval strategy trace present: yes
+
+### AG-022 - Explicit retrieval strategy override
+- Passed: yes
+- Failed checks: -
+- Turn 1 route: select_document
+- Turn 1 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 1 tools: find_document
+- Turn 1 plan tools: -
+- Turn 1 response excerpt: Selected document: 19P006-31-FWC12-5-1-0_Manual.
+- Turn 2 route: answer_question
+- Turn 2 selected document: 19P006-31-FWC12-5-1-0_Manual (doc_3c499b40c4e445b387815617c7a009e7)
+- Turn 2 tools: answer_question
+- Turn 2 plan tools: -
+- Turn 2 response excerpt: I found relevant document evidence, but answer generation is not enabled yet.
+- Turn 2 retrieval strategy: TABLE_LOOKUP
+- Turn 2 retrieval strategy secondary: -
+- Turn 2 retrieval strategy trace present: yes
 
 
 ## Safety Checks

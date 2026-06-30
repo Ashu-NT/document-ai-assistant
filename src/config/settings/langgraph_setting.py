@@ -22,3 +22,15 @@ class LangGraphSettings(AppBaseSettings):
         default=False,
         alias="LANGGRAPH_SHOW_REFLECTION",
     )
+    retrieval_strategy_enabled: bool = Field(
+        default=True,
+        alias="LANGGRAPH_RETRIEVAL_STRATEGY_ENABLED",
+    )
+    llm_retrieval_strategy_enabled: bool = Field(
+        default=False,
+        alias="LANGGRAPH_LLM_RETRIEVAL_STRATEGY_ENABLED",
+    )
+    show_retrieval_strategy: bool = Field(
+        default=False,
+        alias="LANGGRAPH_SHOW_RETRIEVAL_STRATEGY",
+    )

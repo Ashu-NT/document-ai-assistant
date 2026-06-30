@@ -1,10 +1,19 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from typing import Any
 
 from src.application.langgraph.common import GraphError, serialize_graph_value
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import build_error, extend_trace
+from src.application.langgraph.retrieval_strategy import (
+    CLI_RETRIEVAL_STRATEGY_ALIASES,
+    RetrievalContext,
+    RetrievalPlanExecutor,
+    RetrievalStrategyPolicy,
+    RetrievalStrategyService,
+    StrategyRetryPolicy,
+)
 from src.application.langgraph.reflection import (
     EvidenceMerger,
     RetryQueryBuilder,
@@ -27,12 +36,22 @@ class RetryRetrievalNode:
         evidence_merger: EvidenceMerger | None = None,
         retry_query_builder: RetryQueryBuilder | None = None,
         retry_policy: RetrievalRetryPolicy | None = None,
+        retrieval_strategy_service: RetrievalStrategyService | None = None,
+        retrieval_plan_executor: RetrievalPlanExecutor | None = None,
+        retrieval_strategy_policy: RetrievalStrategyPolicy | None = None,
+        strategy_retry_policy: StrategyRetryPolicy | None = None,
         recorder: GraphRunRecorder | None = None,
     ) -> None:
         self.tool_registry = tool_registry
         self.evidence_merger = evidence_merger or EvidenceMerger()
         self.retry_query_builder = retry_query_builder or RetryQueryBuilder()
         self.retry_policy = retry_policy or RetrievalRetryPolicy()
+        self.retrieval_strategy_service = retrieval_strategy_service
+        self.retrieval_plan_executor = retrieval_plan_executor
+        self.retrieval_strategy_policy = (
+            retrieval_strategy_policy or RetrievalStrategyPolicy()
+        )
+        self.strategy_retry_policy = strategy_retry_policy or StrategyRetryPolicy()
         self.recorder = recorder or GraphRunRecorder()
 
     def __call__(self, state: AgentState) -> dict:
@@ -74,13 +93,63 @@ class RetryRetrievalNode:
             )
             retry_query = retry_plan.retry_query
         retry_top_k = self._retry_top_k(state.get("top_k"))
-        retry_result = retrieve_tool.run(
-            RetrieveChunksRequest(
-                query_text=retry_query,
-                document_id=state.get("selected_document_id") or state.get("document_id"),
-                top_k=retry_top_k,
+        retry_result = None
+        strategy_patch: dict[str, object] = {}
+        if (
+            state.get("retrieval_strategy_enabled")
+            and self.retrieval_strategy_policy.enabled
+            and self.retrieval_strategy_service is not None
+            and self.retrieval_plan_executor is not None
+        ):
+            recommended_strategies = self.strategy_retry_policy.recommend(
+                retry_reason=reason,
+                retry_query=retry_query,
+                initial_primary_strategy=_current_primary_strategy(state),
             )
-        )
+            strategy_context = RetrievalContext(
+                query_text=retry_query,
+                route=state.get("route"),
+                document_id=state.get("selected_document_id") or state.get("document_id"),
+                selected_document_id=state.get("selected_document_id"),
+                document_title=state.get("document_title"),
+                selected_document_title=state.get("selected_document_title"),
+                top_k=retry_top_k,
+                answer_intent=_extract_answer_intent(state),
+                retry_reason=reason,
+                retry_query=retry_query,
+                requested_strategy=recommended_strategies[0]
+                if len(recommended_strategies) == 1
+                else _requested_strategy_from_state(state),
+                use_llm_selector=bool(state.get("llm_retrieval_strategy_enabled")),
+            )
+            try:
+                strategy_result = self.retrieval_strategy_service.select_and_plan(
+                    strategy_context,
+                    tool_registry=self.tool_registry,
+                )
+                execution_result = self.retrieval_plan_executor.execute(
+                    strategy_result.plan,
+                    tool_registry=self.tool_registry,
+                    max_chunks=self.retrieval_strategy_policy.max_merged_chunks,
+                )
+                strategy_patch = _strategy_patch(
+                    strategy_result=strategy_result,
+                    execution_result=execution_result,
+                )
+                retry_result = _execution_result_to_tool_result(execution_result)
+            except Exception as exc:
+                strategy_patch = {
+                    "retrieval_strategy_errors": [str(exc)],
+                }
+
+        if retry_result is None:
+            retry_result = retrieve_tool.run(
+                RetrieveChunksRequest(
+                    query_text=retry_query,
+                    document_id=state.get("selected_document_id") or state.get("document_id"),
+                    top_k=retry_top_k,
+                )
+            )
         if not retry_result.success:
             trace_entry = self.recorder.finish_node(
                 token,
@@ -144,6 +213,7 @@ class RetryRetrievalNode:
             "merged_context_chunks": serialize_graph_value(merged_chunks),
             "merged_chunk_ids": [chunk.chunk_id for chunk in merged_chunks],
             "trace": extend_trace(state["trace"], trace_entry),
+            **strategy_patch,
         }
         if regenerated.success:
             qa_result = regenerated.data
@@ -209,6 +279,87 @@ def _extract_answer_intent(state: AgentState) -> str | None:
             if isinstance(diag_value, str) and diag_value:
                 return diag_value
     return None
+
+
+def _current_primary_strategy(state: AgentState):
+    decision = state.get("retrieval_strategy_decision")
+    if not isinstance(decision, dict):
+        return None
+    value = decision.get("primary_strategy")
+    try:
+        from src.application.langgraph.retrieval_strategy.models import RetrievalStrategy
+
+        return RetrievalStrategy(str(value))
+    except Exception:
+        return None
+
+
+def _requested_strategy_from_state(state: AgentState):
+    raw_value = state.get("requested_retrieval_strategy")
+    if not isinstance(raw_value, str) or not raw_value:
+        return None
+    return CLI_RETRIEVAL_STRATEGY_ALIASES.get(raw_value.strip().lower())
+
+
+def _strategy_patch(
+    *,
+    strategy_result,
+    execution_result,
+) -> dict[str, object]:
+    decision = strategy_result.decision
+    return {
+        "retrieval_strategy_decision": serialize_graph_value(asdict(decision)),
+        "retrieval_plan": serialize_graph_value(strategy_result.plan.to_dict()),
+        "retrieval_execution_result": serialize_graph_value(
+            execution_result.to_dict()
+        ),
+        "retrieval_strategy_trace": serialize_graph_value(asdict(strategy_result.trace)),
+        "selected_retrieval_strategies": [
+            strategy.value for strategy in decision.selected_strategies
+        ],
+        "retrieval_strategy_errors": list(execution_result.errors),
+    }
+
+
+def _execution_result_to_tool_result(execution_result):
+    from src.application.tools.common import ToolMetadata, ToolResult
+    from src.domain.retrieval.citation import Citation
+
+    citations = [
+        chunk.citation
+        for chunk in execution_result.evidence_chunks
+        if isinstance(chunk.citation, Citation)
+    ]
+    metadata = ToolMetadata(
+        tool_name="retry_retrieval",
+        category="retrieval",
+        description="LangGraph retrieval-strategy retry execution result.",
+        mutates_state=False,
+        supports_trace=True,
+    )
+    return ToolResult(
+        success=execution_result.success,
+        message=(
+            "Retry evidence retrieved successfully."
+            if execution_result.success
+            else "Retry retrieval strategy execution failed."
+        ),
+        data={
+            "chunks": execution_result.evidence_chunks,
+            "context_chunks": execution_result.evidence_chunks,
+            "citations": citations,
+            "retrieval_execution_result": execution_result,
+        },
+        error_code=(
+            None
+            if execution_result.success
+            else execution_result.errors[0]
+            if execution_result.errors
+            else "retrieval_strategy_failed"
+        ),
+        diagnostics=dict(execution_result.diagnostics),
+        metadata=metadata,
+    )
 
 
 def _dict_to_chunk(payload: dict[str, Any]) -> RetrievedChunk:

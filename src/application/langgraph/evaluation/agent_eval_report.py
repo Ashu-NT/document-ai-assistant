@@ -110,6 +110,30 @@ class AgentEvalReportWriter:
                         "| answer_expectation_rate | "
                         f"{summary.answer_expectation_rate:.3f} |"
                     ),
+                    (
+                        "| retrieval_strategy_selection_rate | "
+                        f"{summary.retrieval_strategy_selection_rate:.3f} |"
+                    ),
+                    (
+                        "| retrieval_strategy_validity_rate | "
+                        f"{summary.retrieval_strategy_validity_rate:.3f} |"
+                    ),
+                    (
+                        "| strategy_fallback_rate | "
+                        f"{summary.strategy_fallback_rate:.3f} |"
+                    ),
+                    (
+                        "| multi_strategy_success_rate | "
+                        f"{summary.multi_strategy_success_rate:.3f} |"
+                    ),
+                    (
+                        "| strategy_document_scope_safety_rate | "
+                        f"{summary.strategy_document_scope_safety_rate:.3f} |"
+                    ),
+                    (
+                        "| strategy_trace_coverage_rate | "
+                        f"{summary.strategy_trace_coverage_rate:.3f} |"
+                    ),
                 ]
             )
 
@@ -212,6 +236,23 @@ class AgentEvalReportWriter:
                     ),
                 ]
             )
+            if turn_result.retrieval_strategy_primary is not None:
+                lines.extend(
+                    [
+                        (
+                            f"- Turn {index} retrieval strategy: "
+                            f"{turn_result.retrieval_strategy_primary}"
+                        ),
+                        (
+                            f"- Turn {index} retrieval strategy secondary: "
+                            f"{', '.join(turn_result.retrieval_strategy_secondary) or '-'}"
+                        ),
+                        (
+                            f"- Turn {index} retrieval strategy trace present: "
+                            f"{'yes' if turn_result.retrieval_strategy_trace_present else 'no'}"
+                        ),
+                    ]
+                )
         lines.append("")
         return lines
 

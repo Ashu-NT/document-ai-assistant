@@ -22,11 +22,14 @@ def test_agent_eval_report_writer_writes_json_and_markdown(tmp_path) -> None:
                         user_input="list documents",
                         route="list_documents",
                         success=True,
-                        response_text="Found documents.",
-                        selected_document_id=None,
-                        selected_document_title=None,
-                        tool_names=["list_documents"],
-                    )
+                    response_text="Found documents.",
+                    selected_document_id=None,
+                    selected_document_title=None,
+                    tool_names=["list_documents"],
+                    retrieval_strategy_primary="TABLE_LOOKUP",
+                    retrieval_strategy_secondary=["GENERAL_HYBRID"],
+                    retrieval_strategy_trace_present=True,
+                )
                 ],
                 metrics={"route_accuracy": 0.0},
             )
@@ -43,6 +46,12 @@ def test_agent_eval_report_writer_writes_json_and_markdown(tmp_path) -> None:
             document_scope_safety_rate=1.0,
             tool_policy_compliance_rate=1.0,
             answer_expectation_rate=1.0,
+            retrieval_strategy_selection_rate=1.0,
+            retrieval_strategy_validity_rate=1.0,
+            strategy_fallback_rate=0.0,
+            multi_strategy_success_rate=1.0,
+            strategy_document_scope_safety_rate=1.0,
+            strategy_trace_coverage_rate=1.0,
         ),
         source_path="src/config/evaluation/agent_eval_cases.yaml",
     )
@@ -77,3 +86,4 @@ def test_agent_eval_report_writer_writes_json_and_markdown(tmp_path) -> None:
     assert "# Agent Evaluation Report" in markdown_text
     assert "## Failed Cases" in markdown_text
     assert "AG-001" in markdown_text
+    assert "retrieval strategy: TABLE_LOOKUP" in markdown_text

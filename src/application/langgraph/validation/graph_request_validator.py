@@ -66,6 +66,9 @@ class GraphRequestValidator(Validator[dict[str, Any]]):
             "show_raw_plan",
             "reflection_enabled",
             "show_reflection",
+            "retrieval_strategy_enabled",
+            "llm_retrieval_strategy_enabled",
+            "show_retrieval_strategy",
         ):
             raw_value = value.get(field_name, False)
             if not isinstance(raw_value, bool):
@@ -74,5 +77,16 @@ class GraphRequestValidator(Validator[dict[str, Any]]):
                     f"{field_name} must be a boolean.",
                     f"langgraph.{field_name}.invalid_type",
                 )
+
+        requested_retrieval_strategy = value.get("requested_retrieval_strategy")
+        if (
+            requested_retrieval_strategy is not None
+            and not isinstance(requested_retrieval_strategy, str)
+        ):
+            result.add_issue(
+                "requested_retrieval_strategy",
+                "requested_retrieval_strategy must be a string when provided.",
+                "langgraph.requested_retrieval_strategy.invalid_type",
+            )
 
         return result

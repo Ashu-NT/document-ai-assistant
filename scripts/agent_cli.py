@@ -92,6 +92,44 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Include expanded retrieval context in downstream QA/retrieval tools.",
     )
     parser.add_argument(
+        "--retrieval-strategy",
+        choices=(
+            "auto",
+            "hybrid",
+            "identifier",
+            "table",
+            "section",
+            "figure",
+            "maintenance",
+            "procedure",
+            "specification",
+            "troubleshooting",
+            "certification",
+            "drawing",
+        ),
+        default=None,
+        help="Override V7 retrieval strategy selection or use auto selection.",
+    )
+    llm_retrieval_strategy_group = parser.add_mutually_exclusive_group()
+    llm_retrieval_strategy_group.add_argument(
+        "--llm-retrieval-strategy",
+        dest="llm_retrieval_strategy",
+        action="store_true",
+        help="Enable validated LLM retrieval-strategy selection.",
+    )
+    llm_retrieval_strategy_group.add_argument(
+        "--no-llm-retrieval-strategy",
+        dest="llm_retrieval_strategy",
+        action="store_false",
+        help="Disable validated LLM retrieval-strategy selection.",
+    )
+    parser.set_defaults(llm_retrieval_strategy=None)
+    parser.add_argument(
+        "--show-retrieval-strategy",
+        action="store_true",
+        help="Print the selected retrieval strategy, reasoning, and plan.",
+    )
+    parser.add_argument(
         "--show-plan",
         action="store_true",
         help="Display the deterministic multi-step execution plan when one is used.",
@@ -200,6 +238,13 @@ def build_agent_runtime(
         SessionStateStore,
         ToolRegistry,
     )
+    from src.application.langgraph.retrieval_strategy import (
+        LLMStrategySelector,
+        RetrievalPlanExecutor,
+        RetrievalStrategyPolicy,
+        RetrievalStrategyService,
+        StrategyRetryPolicy,
+    )
     from src.application.langgraph.planning import (
         LLMPlanProposer,
         PlanParser,
@@ -228,7 +273,12 @@ def build_agent_runtime(
     )
     from src.application.tools.exploration import ExploreDocumentTool
     from src.application.tools.question_answering import AnswerQuestionTool
-    from src.application.tools.retrieval import RetrieveChunksTool
+    from src.application.tools.retrieval import (
+        RetrieveChunksTool,
+        RetrieveFiguresTool,
+        RetrieveIdentifiersTool,
+        RetrieveTablesTool,
+    )
     from src.application.validation.retrieval import RetrievalQueryValidator
     from src.application.workflows.question_answering import (
         QuestionAnsweringRouter,
@@ -318,6 +368,13 @@ def build_agent_runtime(
                 default_model=planning_model,
             )
         )
+    retrieval_strategy_model = llm_settings.general_llm
+    retrieval_strategy_llm_service = LLMService(
+        OllamaLLMProvider(
+            base_url=llm_settings.ollama_base_url,
+            default_model=retrieval_strategy_model,
+        )
+    )
 
     qa_workflow = QuestionAnsweringWorkflow(
         retrieval_workflow=retrieval_workflow,
@@ -344,18 +401,39 @@ def build_agent_runtime(
     )
 
     find_document_tool = FindDocumentTool(document_catalog_service)
+    retrieve_chunks_tool = RetrieveChunksTool(retrieval_workflow)
+    retrieve_tables_tool = RetrieveTablesTool(
+        retrieve_chunks_tool,
+        exploration_service,
+    )
+    retrieve_identifiers_tool = RetrieveIdentifiersTool(
+        document_lookup_service,
+        exploration_service,
+        retrieve_chunks_tool,
+    )
+    retrieve_figures_tool = RetrieveFiguresTool(
+        retrieve_chunks_tool,
+        exploration_service,
+    )
     tool_registry = ToolRegistry(
         list_documents_tool=ListDocumentsTool(document_catalog_service),
         find_document_tool=find_document_tool,
         document_details_tool=DocumentDetailsTool(document_catalog_service),
         explore_document_tool=ExploreDocumentTool(exploration_service),
-        retrieve_chunks_tool=RetrieveChunksTool(retrieval_workflow),
+        retrieve_chunks_tool=retrieve_chunks_tool,
+        retrieve_tables_tool=retrieve_tables_tool,
+        retrieve_identifiers_tool=retrieve_identifiers_tool,
+        retrieve_figures_tool=retrieve_figures_tool,
         answer_question_tool=AnswerQuestionTool(
             qa_workflow,
             find_document_tool=find_document_tool,
         ),
         run_quality_gate_tool=RunQualityGateTool(),
         retrieval_trace_tool=RetrievalTraceTool(retrieval_workflow),
+    )
+    retrieval_strategy_policy = RetrievalStrategyPolicy(
+        enabled=langgraph_settings.retrieval_strategy_enabled,
+        llm_strategy_enabled=langgraph_settings.llm_retrieval_strategy_enabled,
     )
     node_factory = NodeFactory(
         llm_plan_proposer=(
@@ -382,6 +460,16 @@ def build_agent_runtime(
         retry_query_builder=RetryQueryBuilder(),
         clarification_builder=ClarificationBuilder(),
         retrieval_retry_policy=RetrievalRetryPolicy(),
+        retrieval_strategy_service=RetrievalStrategyService(
+            llm_selector=LLMStrategySelector(
+                retrieval_strategy_llm_service,
+                model=retrieval_strategy_model,
+            ),
+            policy=retrieval_strategy_policy,
+        ),
+        retrieval_plan_executor=RetrievalPlanExecutor(),
+        retrieval_strategy_policy=retrieval_strategy_policy,
+        strategy_retry_policy=StrategyRetryPolicy(),
     )
     graph = GraphFactory(node_factory=node_factory).create_document_agent_graph(
         tool_registry=tool_registry,
@@ -481,6 +569,42 @@ def print_context_chunks(
         print()
 
 
+def print_retrieval_strategy(result) -> None:
+    data = result.data or {}
+    decision = data.get("retrieval_strategy_decision")
+    plan = data.get("retrieval_plan")
+    print("\nRetrieval Strategy")
+    print("------------------")
+    if not isinstance(decision, dict):
+        print("No retrieval strategy decision was recorded.")
+        return
+    print(f"Primary: {decision.get('primary_strategy') or '-'}")
+    secondaries = decision.get("secondary_strategies") or []
+    print(
+        "Secondary: "
+        + (", ".join(str(item) for item in secondaries) if secondaries else "-")
+    )
+    confidence = decision.get("confidence")
+    if isinstance(confidence, int | float):
+        print(f"Confidence: {float(confidence):.2f}")
+    else:
+        print("Confidence: -")
+    print(f"Reason: {decision.get('reason') or '-'}")
+    if isinstance(plan, dict):
+        steps = plan.get("steps") or []
+        if isinstance(steps, list) and steps:
+            print("Plan:")
+            for index, step in enumerate(steps, start=1):
+                if not isinstance(step, dict):
+                    continue
+                tool_name = step.get("tool_name") or "-"
+                query = _preview_text(step.get("query"), limit=120)
+                print(f"{index}. {tool_name} - {query}")
+    errors = data.get("retrieval_strategy_errors") or []
+    if errors:
+        print(f"Errors: {', '.join(str(item) for item in errors)}")
+
+
 def print_reflection(result) -> None:
     data = result.data or {}
     reflection_result = data.get("reflection_result")
@@ -554,6 +678,12 @@ def build_json_output(
         "retry_query": data.get("retry_query"),
         "selected_document_id": data.get("selected_document_id"),
         "selected_document_title": data.get("selected_document_title"),
+        "retrieval_strategy_decision": data.get("retrieval_strategy_decision"),
+        "retrieval_plan": data.get("retrieval_plan"),
+        "retrieval_execution_result": data.get("retrieval_execution_result"),
+        "retrieval_strategy_trace": data.get("retrieval_strategy_trace"),
+        "selected_retrieval_strategies": data.get("selected_retrieval_strategies", []),
+        "retrieval_strategy_errors": data.get("retrieval_strategy_errors", []),
         "pending_clarification": data.get("pending_clarification"),
         "clarification_options": data.get("clarification_options", []),
         "should_exit": data.get("should_exit", False),
@@ -585,6 +715,7 @@ def print_graph_result(
     show_context: bool,
     show_trace: bool,
     show_reflection: bool = False,
+    show_retrieval_strategy: bool = False,
 ) -> None:
     print(f"Route: {result.route or '-'}")
     print(f"Success: {result.success}")
@@ -594,6 +725,8 @@ def print_graph_result(
     answer_intent = (result.data or {}).get("answer_intent")
     if answer_intent:
         print(f"\nAnswer intent: {answer_intent}")
+    if show_retrieval_strategy:
+        print_retrieval_strategy(result)
     if show_raw_plan:
         print_raw_plan((result.data or {}).get("raw_llm_plan"))
     if show_context:
@@ -622,9 +755,13 @@ def run_graph_request(
     llm_planning_enabled: bool,
     reflection_enabled: bool = False,
     show_reflection: bool = False,
+    retrieval_strategy_enabled: bool = False,
+    llm_retrieval_strategy_enabled: bool = False,
+    show_retrieval_strategy: bool = False,
+    requested_retrieval_strategy: str | None = None,
     show_plan: bool = False,
     show_raw_plan: bool = False,
-    top_k: int | None,
+    top_k: int | None = None,
 ):
     return runtime.graph.run(
         user_input,
@@ -636,6 +773,10 @@ def run_graph_request(
         llm_planning_enabled=llm_planning_enabled,
         reflection_enabled=reflection_enabled,
         show_reflection=show_reflection,
+        retrieval_strategy_enabled=retrieval_strategy_enabled,
+        llm_retrieval_strategy_enabled=llm_retrieval_strategy_enabled,
+        show_retrieval_strategy=show_retrieval_strategy,
+        requested_retrieval_strategy=requested_retrieval_strategy,
         show_plan=show_plan,
         show_raw_plan=show_raw_plan,
         top_k=top_k,
@@ -654,11 +795,15 @@ def run_interactive_loop(
     llm_planning_enabled: bool,
     reflection_enabled: bool = False,
     show_reflection: bool = False,
+    retrieval_strategy_enabled: bool = False,
+    llm_retrieval_strategy_enabled: bool = False,
+    show_retrieval_strategy: bool = False,
+    requested_retrieval_strategy: str | None = None,
     show_plan: bool = False,
     show_raw_plan: bool = False,
-    top_k: int | None,
-    emit_json: bool,
-    show_trace: bool,
+    top_k: int | None = None,
+    emit_json: bool = False,
+    show_trace: bool = False,
 ) -> int:
     print_status(f"Interactive session started: {session_id}")
 
@@ -693,6 +838,10 @@ def run_interactive_loop(
             llm_planning_enabled=llm_planning_enabled,
             reflection_enabled=reflection_enabled,
             show_reflection=show_reflection,
+            retrieval_strategy_enabled=retrieval_strategy_enabled,
+            llm_retrieval_strategy_enabled=llm_retrieval_strategy_enabled,
+            show_retrieval_strategy=show_retrieval_strategy,
+            requested_retrieval_strategy=requested_retrieval_strategy,
             show_plan=show_plan,
             show_raw_plan=show_raw_plan,
             top_k=top_k,
@@ -713,6 +862,7 @@ def run_interactive_loop(
                 show_context=include_context,
                 show_trace=show_trace,
                 show_reflection=show_reflection,
+                show_retrieval_strategy=show_retrieval_strategy,
             )
 
         if (result.data or {}).get("should_exit"):
@@ -771,6 +921,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.reflection is not None
             else langgraph_settings.reflection_enabled
         )
+        effective_llm_retrieval_strategy = (
+            args.llm_retrieval_strategy
+            if args.llm_retrieval_strategy is not None
+            else langgraph_settings.llm_retrieval_strategy_enabled
+        )
+        effective_retrieval_strategy = (
+            langgraph_settings.retrieval_strategy_enabled
+            or args.retrieval_strategy is not None
+            or effective_llm_retrieval_strategy
+            or args.show_retrieval_strategy
+        )
         effective_session_id = build_session_id(args.session_id) if args.interactive else args.session_id
         if args.show_raw_plan and not args.trace:
             print("--show-raw-plan requires --trace.", file=sys.stderr)
@@ -793,6 +954,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 llm_planning_enabled=effective_llm_planning,
                 reflection_enabled=effective_reflection,
                 show_reflection=args.show_reflection,
+                retrieval_strategy_enabled=effective_retrieval_strategy,
+                llm_retrieval_strategy_enabled=effective_llm_retrieval_strategy,
+                show_retrieval_strategy=args.show_retrieval_strategy,
+                requested_retrieval_strategy=args.retrieval_strategy,
                 show_plan=args.show_plan,
                 show_raw_plan=args.show_raw_plan,
                 top_k=args.top_k,
@@ -812,6 +977,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             llm_planning_enabled=effective_llm_planning,
             reflection_enabled=effective_reflection,
             show_reflection=args.show_reflection,
+            retrieval_strategy_enabled=effective_retrieval_strategy,
+            llm_retrieval_strategy_enabled=effective_llm_retrieval_strategy,
+            show_retrieval_strategy=args.show_retrieval_strategy,
+            requested_retrieval_strategy=args.retrieval_strategy,
             show_plan=args.show_plan,
             show_raw_plan=args.show_raw_plan,
             top_k=args.top_k,
@@ -835,6 +1004,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 show_context=args.show_context,
                 show_trace=args.trace,
                 show_reflection=args.show_reflection,
+                show_retrieval_strategy=args.show_retrieval_strategy,
             )
 
         return 0 if result.success else 1

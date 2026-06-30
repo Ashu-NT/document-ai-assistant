@@ -17,6 +17,21 @@ def test_tool_registry_returns_registered_tool() -> None:
     assert registry.require("list_documents") is tool
 
 
+def test_tool_registry_returns_registered_specialized_retrieval_tools() -> None:
+    table_tool = DummyTool()
+    identifier_tool = DummyTool()
+    figure_tool = DummyTool()
+    registry = ToolRegistry(
+        retrieve_tables_tool=table_tool,
+        retrieve_identifiers_tool=identifier_tool,
+        retrieve_figures_tool=figure_tool,
+    )
+
+    assert registry.get("retrieve_tables") is table_tool
+    assert registry.get("retrieve_identifiers") is identifier_tool
+    assert registry.get("retrieve_figures") is figure_tool
+
+
 def test_tool_registry_fails_clearly_for_missing_tool() -> None:
     registry = ToolRegistry()
 

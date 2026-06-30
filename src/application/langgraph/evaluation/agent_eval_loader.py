@@ -195,6 +195,21 @@ class AgentEvalLoader:
                 payload.get("llm_planning_enabled"),
                 default=False,
             ),
+            retrieval_strategy_enabled=self._bool_value(
+                payload.get("retrieval_strategy_enabled"),
+                default=False,
+            ),
+            llm_retrieval_strategy_enabled=self._bool_value(
+                payload.get("llm_retrieval_strategy_enabled"),
+                default=False,
+            ),
+            requested_retrieval_strategy=self._optional_string(
+                payload.get("requested_retrieval_strategy")
+            ),
+            show_retrieval_strategy=self._bool_value(
+                payload.get("show_retrieval_strategy"),
+                default=False,
+            ),
             show_context=self._bool_value(
                 payload.get("show_context"),
                 default=False,
@@ -245,6 +260,15 @@ class AgentEvalLoader:
                     payload.get("unsafe_request_blocked")
                 ),
                 success=self._optional_bool(payload.get("success")),
+                retrieval_strategy_primary=self._optional_string(
+                    payload.get("retrieval_strategy_primary")
+                ),
+                retrieval_strategy_secondary_contains=self._string_list(
+                    payload.get("retrieval_strategy_secondary_contains")
+                ),
+                retrieval_strategy_trace_required=self._optional_bool(
+                    payload.get("retrieval_strategy_trace_required")
+                ),
             )
         except ValueError as exc:
             raise SchemaValidationError(

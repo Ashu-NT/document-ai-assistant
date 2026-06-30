@@ -16,6 +16,11 @@ class AgentTurnResult:
     tool_names: list[str] = field(default_factory=list)
     plan_tool_names: list[str] = field(default_factory=list)
     context_document_ids: list[str] = field(default_factory=list)
+    retrieval_strategy_primary: str | None = None
+    retrieval_strategy_secondary: list[str] = field(default_factory=list)
+    retrieval_strategy_trace_present: bool = False
+    retrieval_strategy_fallback_used: bool = False
+    retrieval_strategy_enabled: bool = False
     diagnostics: dict[str, Any] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
 
@@ -44,6 +49,12 @@ class AgentEvalSummary:
     document_scope_safety_rate: float
     tool_policy_compliance_rate: float
     answer_expectation_rate: float
+    retrieval_strategy_selection_rate: float
+    retrieval_strategy_validity_rate: float
+    strategy_fallback_rate: float
+    multi_strategy_success_rate: float
+    strategy_document_scope_safety_rate: float
+    strategy_trace_coverage_rate: float
 
 
 @dataclass(slots=True)

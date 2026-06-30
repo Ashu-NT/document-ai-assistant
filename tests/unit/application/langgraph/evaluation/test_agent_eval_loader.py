@@ -15,9 +15,14 @@ def test_agent_eval_loader_loads_yaml_cases(tmp_path) -> None:
   tags: [routing]
   inputs:
     - user_input: list documents
+      retrieval_strategy_enabled: true
+      requested_retrieval_strategy: table
+      show_retrieval_strategy: true
   expected:
     final_route: list_documents
     success: true
+    retrieval_strategy_primary: TABLE_LOOKUP
+    retrieval_strategy_trace_required: true
 """.strip(),
         encoding="utf-8",
     )
@@ -27,7 +32,10 @@ def test_agent_eval_loader_loads_yaml_cases(tmp_path) -> None:
     assert len(cases) == 1
     assert cases[0].case_id == "AG-001"
     assert cases[0].inputs[0].user_input == "list documents"
+    assert cases[0].inputs[0].retrieval_strategy_enabled is True
+    assert cases[0].inputs[0].requested_retrieval_strategy == "table"
     assert cases[0].expected.final_route == "list_documents"
+    assert cases[0].expected.retrieval_strategy_primary == "TABLE_LOOKUP"
 
 
 def test_agent_eval_loader_loads_json_cases(tmp_path) -> None:
