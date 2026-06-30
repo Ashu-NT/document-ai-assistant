@@ -68,7 +68,7 @@ class ResearchSummaryNode:
             },
             "metadata": None,
             "data": {
-                "route": "retrieval_qa",
+                "route": "deep_research",
                 "answer_text": response_text,
                 "answer_intent": _answer_intent(result.goal.goal_type.value),
                 "citations": citations,
@@ -126,9 +126,15 @@ def _build_context_chunks(value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
     chunks: list[dict[str, Any]] = []
+    seen_chunk_ids: set[str] = set()
     for item in value:
         if not isinstance(item, dict):
             continue
+        chunk_id = str(item.get("chunk_id") or "").strip()
+        if chunk_id and chunk_id in seen_chunk_ids:
+            continue
+        if chunk_id:
+            seen_chunk_ids.add(chunk_id)
         chunks.append(
             {
                 "chunk_id": item.get("chunk_id"),
@@ -152,9 +158,15 @@ def _build_citations(value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
     citations: list[dict[str, Any]] = []
+    seen_chunk_ids: set[str] = set()
     for index, item in enumerate(value, start=1):
         if not isinstance(item, dict):
             continue
+        chunk_id = str(item.get("chunk_id") or "").strip()
+        if chunk_id and chunk_id in seen_chunk_ids:
+            continue
+        if chunk_id:
+            seen_chunk_ids.add(chunk_id)
         section_path = list(item.get("section_path") or [])
         citations.append(
             {

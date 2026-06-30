@@ -8,11 +8,7 @@ class EvidenceSynthesizer:
         sections = []
         references = []
         for task in result.plan.tasks:
-            task_evidence = [
-                evidence
-                for evidence in result.evidence
-                if evidence.task_id == task.task_id
-            ]
+            task_evidence = _task_evidence(result, task.task_id)
             if not task_evidence:
                 continue
             sections.append(
@@ -46,3 +42,14 @@ class EvidenceSynthesizer:
             references=references,
             diagnostics={"section_count": len(sections)},
         )
+
+
+def _task_evidence(result, task_id: str):
+    for task_result in result.task_results:
+        if task_result.task_id == task_id and task_result.evidence:
+            return list(task_result.evidence)
+    return [
+        evidence
+        for evidence in result.evidence
+        if evidence.task_id == task_id
+    ]

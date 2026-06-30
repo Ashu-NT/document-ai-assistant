@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from src.application.langgraph.research.models import ResearchGoalType
 from src.application.langgraph.research.policies import ResearchPolicy, ResearchTaskPolicy
 from src.application.langgraph.research.validation.research_task_validator import (
@@ -74,4 +76,66 @@ class ResearchPlanValidator(Validator):
                 "Research plan max_iterations is outside the allowed range.",
                 "research.plan.max_iterations.invalid",
             )
+        self._validate_goal_specific_rules(
+            goal_type=getattr(goal, "goal_type", None),
+            tasks=tasks,
+            result=result,
+        )
         return result
+
+    def _validate_goal_specific_rules(
+        self,
+        *,
+        goal_type,
+        tasks: list[object],
+        result: ValidationResult,
+    ) -> None:
+        if goal_type != ResearchGoalType.COMPARISON:
+            return
+
+        required_tasks = [
+            task
+            for task in tasks
+            if getattr(task, "required", True)
+        ]
+        if len(required_tasks) < 2:
+            result.add_issue(
+                "tasks",
+                "Comparison research plans must contain at least two required tasks.",
+                "research.plan.comparison.tasks.required",
+            )
+            return
+
+        themes = {
+            theme
+            for theme in (
+                self._task_theme(task)
+                for task in required_tasks
+            )
+            if theme
+        }
+        if len(themes) < 2:
+            result.add_issue(
+                "tasks",
+                "Comparison research plans must cover at least two distinct task themes.",
+                "research.plan.comparison.themes.required",
+            )
+
+    def _task_theme(self, task: object) -> str | None:
+        for candidate in (
+            getattr(task, "expected_evidence_type", None),
+            getattr(task, "strategy_hint", None),
+            getattr(task, "title", None),
+            getattr(task, "question", None),
+        ):
+            if not isinstance(candidate, str):
+                continue
+            normalized = self._normalize_theme(candidate)
+            if normalized:
+                return normalized
+        return None
+
+    @staticmethod
+    def _normalize_theme(value: str) -> str:
+        normalized = re.sub(r"[^a-z0-9]+", " ", value.strip().lower())
+        return " ".join(normalized.split())

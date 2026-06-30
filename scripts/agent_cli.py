@@ -570,6 +570,16 @@ def _preview_text(value: str | None, limit: int = 400) -> str:
     return normalized[: limit - 3] + "..."
 
 
+def _console_safe_text(value: str | None) -> str:
+    if value is None:
+        return ""
+    encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+    try:
+        return value.encode(encoding, errors="replace").decode(encoding, errors="replace")
+    except LookupError:
+        return value.encode("utf-8", errors="replace").decode("utf-8", errors="replace")
+
+
 def _page_range_label(chunk: dict[str, Any]) -> str:
     source = chunk.get("source") or {}
     if not isinstance(source, dict):
@@ -615,12 +625,12 @@ def print_context_chunks(
         )
         score = chunk.get("score")
         score_text = f"{float(score):.4f}" if isinstance(score, int | float) else "-"
-        print(f"[{index}] {_chunk_label(chunk)} | {chunk_type}")
-        print(f"  document: {document_title} ({document_id})")
-        print(f"  section:  {section_path_text}")
+        print(_console_safe_text(f"[{index}] {_chunk_label(chunk)} | {chunk_type}"))
+        print(_console_safe_text(f"  document: {document_title} ({document_id})"))
+        print(_console_safe_text(f"  section:  {section_path_text}"))
         print(f"  pages:    {_page_range_label(chunk)}")
         print(f"  score:    {score_text}")
-        print(f"  content:  {_preview_text(chunk.get('content'))}")
+        print(_console_safe_text(f"  content:  {_preview_text(chunk.get('content'))}"))
         print()
 
 
@@ -819,9 +829,10 @@ def print_graph_result(
 ) -> None:
     print(f"Route: {result.route or '-'}")
     print(f"Success: {result.success}")
-    if result.response_text:
+    answer_text = (result.data or {}).get("answer") or result.response_text
+    if answer_text:
         print()
-        print(result.response_text)
+        print(_console_safe_text(answer_text))
     answer_intent = (result.data or {}).get("answer_intent")
     if answer_intent:
         print(f"\nAnswer intent: {answer_intent}")

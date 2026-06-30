@@ -373,6 +373,39 @@ def test_document_agent_graph_executes_deep_research_with_selected_document() ->
     assert result.data["research_task_results"]
 
 
+def test_document_agent_graph_deep_research_skips_reflection_path() -> None:
+    class FailingReflectionService:
+        def review(self, **kwargs):
+            raise AssertionError("Deep research should not enter QA reflection.")
+
+    registry = ToolRegistry(
+        find_document_tool=FakeFindDocumentTool(),
+        retrieve_chunks_tool=FakeRetrieveChunksTool(),
+    )
+    nodes = NodeFactory(
+        reflection_service=FailingReflectionService(),
+    ).build_document_agent_nodes(
+        tool_registry=registry,
+        intent_router=DocumentAgentGraph.default_intent_router(),
+        memory=None,
+    )
+    graph = DocumentAgentGraph(
+        registry,
+        nodes=nodes,
+    )
+
+    result = graph.run(
+        "compare specifications and maintenance tasks",
+        document_id="doc-42",
+        reflection_enabled=True,
+        allow_answer_generation=True,
+    )
+
+    assert result.success is True
+    assert result.route == "deep_research"
+    assert "Comparison Summary" in (result.response_text or "")
+
+
 def test_document_agent_graph_deep_research_requests_document_clarification_when_missing() -> None:
     graph = DocumentAgentGraph(ToolRegistry(retrieve_chunks_tool=FakeRetrieveChunksTool()))
 
