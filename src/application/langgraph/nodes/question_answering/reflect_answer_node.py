@@ -11,6 +11,7 @@ from src.application.langgraph.reflection.constants import (
     REFLECTION_CLARIFICATION_KIND,
     REFLECTION_SAFE_FAILURE_MESSAGE,
 )
+from src.application.langgraph.routing import RouteType
 from src.application.langgraph.state import AgentState
 from src.application.langgraph.tracing import GraphRunRecorder
 
@@ -35,6 +36,11 @@ class ReflectAnswerNode:
             route=state.get("route"),
         )
         if self.reflection_service is None or not state.get("reflection_enabled", False):
+            trace_entry = self.recorder.finish_node(token, success=True)
+            return {
+                "trace": extend_trace(state["trace"], trace_entry),
+            }
+        if state.get("route") == RouteType.DEEP_RESEARCH.value:
             trace_entry = self.recorder.finish_node(token, success=True)
             return {
                 "trace": extend_trace(state["trace"], trace_entry),

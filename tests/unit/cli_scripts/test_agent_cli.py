@@ -147,6 +147,38 @@ def test_agent_cli_show_context_prints_context_chunks(capsys) -> None:
     assert "Oil change interval is 500 hours." in output
 
 
+def test_agent_cli_print_graph_result_prefers_payload_answer(capsys) -> None:
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="Fallback response.",
+        route="deep_research",
+        data={
+            "answer": "# Comparison Summary\n\nPreferred research answer.",
+        },
+    )
+
+    mod.print_graph_result(
+        result,
+        show_context=False,
+        show_trace=False,
+    )
+
+    output = capsys.readouterr().out
+    assert "Preferred research answer." in output
+    assert "Fallback response." not in output
+
+
+def test_agent_cli_console_safe_text_replaces_unencodable_chars(monkeypatch) -> None:
+    mod = _load_script("agent_cli")
+
+    class _Stdout:
+        encoding = "cp1252"
+
+    monkeypatch.setattr(mod.sys, "stdout", _Stdout())
+
+    assert mod._console_safe_text("\uf0b7 item") == "? item"
+
+
 def test_agent_cli_show_reflection_prints_reflection_details(capsys) -> None:
     mod = _load_script("agent_cli")
     result = GraphResult.ok(

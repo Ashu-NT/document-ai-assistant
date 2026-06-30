@@ -107,6 +107,7 @@ def test_research_summary_node_formats_plan_trace_and_citations() -> None:
     assert "Research Plan" in patch["response_text"]
     assert "Research Trace" in patch["response_text"]
     answer_payload = patch["tool_results"]["answer_question"]["data"]
+    assert answer_payload["route"] == "deep_research"
     assert answer_payload["answer_intent"] == "research_comparison"
     assert answer_payload["citations"][0]["chunk_id"] == "chunk-1"
     assert answer_payload["retrieval_result"]["context_chunks"][0]["chunk_id"] == "chunk-1"

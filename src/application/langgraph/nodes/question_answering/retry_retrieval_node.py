@@ -3,7 +3,11 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
-from src.application.langgraph.common import GraphError, serialize_graph_value
+from src.application.langgraph.common import (
+    GraphError,
+    resolve_state_response_text,
+    serialize_graph_value,
+)
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import build_error, extend_trace
 from src.application.langgraph.retrieval_strategy import (
@@ -19,6 +23,7 @@ from src.application.langgraph.reflection import (
     RetryQueryBuilder,
     RetrievalRetryPolicy,
 )
+from src.application.langgraph.routing import RouteType
 from src.application.langgraph.state import AgentState
 from src.application.langgraph.tracing import GraphRunRecorder
 from src.application.tools.question_answering import AnswerQuestionRequest
@@ -59,6 +64,17 @@ class RetryRetrievalNode:
             "retry_retrieval",
             route=state.get("route"),
         )
+        if state.get("route") == RouteType.DEEP_RESEARCH.value:
+            trace_entry = self.recorder.finish_node(
+                token,
+                success=True,
+                diagnostics={"skipped": "deep_research"},
+            )
+            return {
+                "response_text": resolve_state_response_text(state)
+                or state.get("response_text"),
+                "trace": extend_trace(state["trace"], trace_entry),
+            }
         try:
             retrieve_tool = self.tool_registry.require("retrieve_chunks")
             answer_tool = self.tool_registry.require("answer_question")

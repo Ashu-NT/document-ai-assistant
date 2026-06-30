@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.application.langgraph.common import GraphMetadata, GraphResult, serialize_graph_value
+from src.application.langgraph.common import (
+    GraphMetadata,
+    GraphResult,
+    resolve_answer_text,
+    serialize_graph_value,
+)
 from src.application.langgraph.factories.node_factory import NodeFactory
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.memory import ConversationMemory
@@ -520,7 +525,7 @@ class DocumentAgentGraph:
                 messages=state.get("history", []),
             )
         return GraphResult.ok(
-            response_text=state.get("response_text"),
+            response_text=answer or state.get("response_text"),
             data=data,
             route=route,
             diagnostics=diagnostics,
@@ -791,11 +796,9 @@ def _deep_research_branch_target(state: AgentState) -> str:
 def _should_run_reflection(state: AgentState) -> bool:
     if not state.get("reflection_enabled", False):
         return False
-    route = state.get("route")
-    if route == RouteType.ANSWER_QUESTION.value:
-        if not state.get("allow_answer_generation", False):
-            return False
-    elif route != RouteType.DEEP_RESEARCH.value:
+    if state.get("route") != RouteType.ANSWER_QUESTION.value:
+        return False
+    if not state.get("allow_answer_generation", False):
         return False
     return int(state.get("reflection_attempts", 0)) <= 1
 
@@ -804,21 +807,10 @@ def _extract_answer(
     tool_results: dict[str, Any],
     response_text: str | None,
 ) -> str | None:
-    format_combined_payload = tool_results.get("format_combined_answer")
-    if (
-        response_text
-        and isinstance(format_combined_payload, dict)
-        and format_combined_payload.get("success", False)
-    ):
-        return response_text
-    answer_question_payload = _tool_payload(tool_results, "answer_question")
-    if isinstance(answer_question_payload, dict):
-        return (
-            answer_question_payload.get("answer_text")
-            or answer_question_payload.get("safe_user_message")
-            or response_text
-        )
-    return response_text
+    return resolve_answer_text(
+        tool_results=tool_results,
+        fallback_response_text=response_text,
+    )
 
 
 def _extract_citations(tool_results: dict[str, Any]) -> list[dict[str, Any]]:

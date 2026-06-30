@@ -91,3 +91,73 @@ def test_research_plan_validator_rejects_invalid_dependency() -> None:
 
     assert validation.is_valid is False
     assert any(issue.code == "research.plan.depends_on.invalid" for issue in validation.issues)
+
+
+def test_research_plan_validator_rejects_comparison_plan_with_one_required_task() -> None:
+    validator = ResearchPlanValidator()
+    plan = ResearchPlan(
+        plan_id="plan-1",
+        goal=_goal(),
+        tasks=[
+            ResearchTask(
+                task_id="task-1",
+                title="Collect maintenance tasks",
+                question="What maintenance tasks are described?",
+                strategy_hint="MAINTENANCE_LOOKUP",
+                answer_intent_hint="comparison",
+                document_id="doc-42",
+            )
+        ],
+        reason="comparison",
+        source="llm",
+        requires_document=True,
+        max_iterations=1,
+    )
+
+    validation = validator.validate(plan)
+
+    assert validation.is_valid is False
+    assert any(
+        issue.code == "research.plan.comparison.tasks.required"
+        for issue in validation.issues
+    )
+
+
+def test_research_plan_validator_rejects_comparison_plan_with_one_theme() -> None:
+    validator = ResearchPlanValidator()
+    plan = ResearchPlan(
+        plan_id="plan-1",
+        goal=_goal(),
+        tasks=[
+            ResearchTask(
+                task_id="task-1",
+                title="Collect maintenance tasks",
+                question="What maintenance tasks are described?",
+                strategy_hint="MAINTENANCE_LOOKUP",
+                answer_intent_hint="comparison",
+                document_id="doc-42",
+                expected_evidence_type="maintenance",
+            ),
+            ResearchTask(
+                task_id="task-2",
+                title="Collect service tasks",
+                question="What service tasks are described?",
+                strategy_hint="MAINTENANCE_LOOKUP",
+                answer_intent_hint="comparison",
+                document_id="doc-42",
+                expected_evidence_type="maintenance",
+            ),
+        ],
+        reason="comparison",
+        source="llm",
+        requires_document=True,
+        max_iterations=1,
+    )
+
+    validation = validator.validate(plan)
+
+    assert validation.is_valid is False
+    assert any(
+        issue.code == "research.plan.comparison.themes.required"
+        for issue in validation.issues
+    )

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from src.application.langgraph.common import resolve_state_response_text
 from src.application.langgraph.memory import ConversationMemory
 from src.application.langgraph.state import AgentState
 from src.application.langgraph.tracing import GraphRunRecorder
@@ -31,7 +32,11 @@ class FinalResponseNode:
                 clarification_options=state.get("clarification_options"),
                 clarification_question=state.get("clarification_question"),
             )
-        response_text = state.get("response_text") or "Request completed."
+        response_text = (
+            resolve_state_response_text(state)
+            or state.get("response_text")
+            or "Request completed."
+        )
         trace_entry = self.recorder.finish_node(token, success=state.get("error") is None)
         return {
             "response_text": response_text,
