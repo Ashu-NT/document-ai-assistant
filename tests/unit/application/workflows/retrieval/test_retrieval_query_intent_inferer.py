@@ -110,6 +110,10 @@ class TestOtherIntentsUnchanged:
         query = _make_query("How do I start and run the macerator?")
         assert inferer.infer(query) == RetrievalQueryIntent.PROCEDURE
 
+    def test_maintenance_tasks_map_to_maintenance(self) -> None:
+        query = _make_query("What maintenance tasks are required for this document?")
+        assert inferer.infer(query) == RetrievalQueryIntent.MAINTENANCE
+
     def test_procedure_intent_for_remove(self) -> None:
         query = _make_query("How do I remove the screen basket?")
         assert inferer.infer(query) == RetrievalQueryIntent.PROCEDURE

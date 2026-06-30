@@ -182,8 +182,8 @@ def test_start_pump_maps_to_procedure(inferer: RetrievalQueryIntentInferer) -> N
     assert inferer.infer(_query("How do I start the pump?")) == RetrievalQueryIntent.PROCEDURE
 
 
-def test_maintenance_interval_maps_to_procedure(inferer: RetrievalQueryIntentInferer) -> None:
-    assert inferer.infer(_query("How often should I lubricate the bearing?")) == RetrievalQueryIntent.PROCEDURE
+def test_maintenance_interval_maps_to_maintenance(inferer: RetrievalQueryIntentInferer) -> None:
+    assert inferer.infer(_query("How often should I lubricate the bearing?")) == RetrievalQueryIntent.MAINTENANCE
 
 
 def test_troubleshooting_query_maps_to_troubleshooting(inferer: RetrievalQueryIntentInferer) -> None:

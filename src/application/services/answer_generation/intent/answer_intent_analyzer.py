@@ -163,6 +163,7 @@ _CHUNK_TYPE_TO_INTENT: dict[ChunkType, AnswerIntent] = {
     ChunkType.OVERVIEW: AnswerIntent.DOCUMENT_SUMMARY,
 }
 _RETRIEVAL_INTENT_TO_ANSWER_INTENT: dict[str, AnswerIntent] = {
+    "maintenance": AnswerIntent.MAINTENANCE_SUMMARY,
     "specification": AnswerIntent.SPECIFICATION_SUMMARY,
     "procedure": AnswerIntent.PROCEDURE_STEPS,
     "troubleshooting": AnswerIntent.TROUBLESHOOTING,
