@@ -83,6 +83,7 @@ def make_workflow(
     **kwargs,
 ) -> tuple[ExtractionWorkflow, SpyExtractionResultValidator]:
     spy_validator = validator or SpyExtractionResultValidator()
+    workflow_kwargs = {"max_attempts": 1, **kwargs}
     workflow = ExtractionWorkflow(
         llm_service=fake_llm_service,
         extraction_service=fake_extraction_service,
@@ -92,7 +93,7 @@ def make_workflow(
         extraction_model="qwen3:8b",
         confidence_threshold=0.8,
         require_human_review_default=False,
-        **kwargs,
+        **workflow_kwargs,
     )
     return workflow, spy_validator
 
@@ -415,6 +416,128 @@ identifiers:
     assert result.extracted_identifiers[0].raw_value == "PT-500"
 
 
+def test_extract_derives_overall_confidence_from_item_confidences(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": null,
+  "requires_human_review": null,
+  "maintenance_tasks": [],
+  "spare_parts": [
+    {
+      "part_number": "EC881-5",
+      "quantity": "2 pcs.",
+      "manufacturer_name": "Schauenburg Industrietechnik GmbH",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 1.0,
+      "requires_human_review": false
+    }
+  ],
+  "equipment": [],
+  "manufacturers": [],
+  "identifiers": []
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert result.confidence_score == pytest.approx(1.0)
+    assert len(result.spare_parts) == 1
+    assert result.spare_parts[0].part_number == "EC881-5"
+    assert result.requires_human_review is False
+
+
+def test_extract_falls_back_to_low_confidence_when_top_level_confidence_missing(
+    sample_chunk,
+) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "identifiers": [
+    {
+      "raw_value": "HAM2423501",
+      "identifier_type": "serial_number"
+    }
+  ]
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert result.confidence_score == pytest.approx(0.0)
+    assert result.requires_human_review is True
+    assert len(result.extracted_identifiers) == 1
+    assert result.extracted_identifiers[0].raw_value == "HAM2423501"
+    assert result.extracted_identifiers[0].confidence_score == pytest.approx(0.0)
+
+
+def test_extraction_ignores_fully_empty_placeholder_items(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.81,
+  "requires_human_review": false,
+  "maintenance_tasks": [
+    {
+      "title": "",
+      "description": "N/A",
+      "interval": null,
+      "component_name": "-",
+      "equipment_id": null
+    }
+  ],
+  "spare_parts": [
+    {
+      "part_number": null,
+      "description": "N/A",
+      "quantity": "",
+      "component_name": "not available",
+      "manufacturer_name": "-"
+    }
+  ],
+  "equipment": [
+    {
+      "name": null,
+      "model_number": "",
+      "serial_number": "N/A",
+      "manufacturer_name": "-"
+    }
+  ],
+  "manufacturers": [
+    {
+      "name": "",
+      "website": "N/A",
+      "country": null
+    }
+  ],
+  "identifiers": [
+    {
+      "raw_value": "",
+      "identifier_type": "",
+      "source_chunk_id": null
+    }
+  ]
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert result.maintenance_tasks == []
+    assert result.spare_parts == []
+    assert result.equipment == []
+    assert result.manufacturers == []
+    assert result.extracted_identifiers == []
+
+
 def test_extraction_batches_large_chunk_set_by_char_limit(sample_chunk) -> None:
     second_chunk = clone_chunk(
         sample_chunk,
@@ -497,6 +620,85 @@ def test_extraction_small_document_uses_single_batch(sample_chunk) -> None:
 
     assert len(fake_llm_service.calls) == 1
     assert workflow.last_batch_diagnostics[0].batch_count == 1
+
+
+def test_extraction_retries_after_schema_failure_and_restarts_batches(sample_chunk) -> None:
+    second_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_002",
+        content="Filter element FLT-100 is used in QP100A.",
+    )
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.9,
+  "identifiers": [{"value": "QP100A", "identifier_type": "model_number"}],
+  "spare_parts": [],
+  "maintenance_tasks": [],
+  "equipment": [],
+  "manufacturers": []
+}""",
+            """{
+  "confidence_score": 0.85,
+  "identifiers": [],
+  "spare_parts": [{
+    "description": "Filter Element",
+    "source_chunk_id": "missing_chunk"
+  }],
+  "maintenance_tasks": [],
+  "equipment": [],
+  "manufacturers": []
+}""",
+            """{
+  "confidence_score": 0.88,
+  "identifiers": [{"value": "QP100A", "identifier_type": "model_number"}],
+  "spare_parts": [],
+  "maintenance_tasks": [],
+  "equipment": [],
+  "manufacturers": []
+}""",
+            """{
+  "confidence_score": 0.84,
+  "identifiers": [],
+  "spare_parts": [{"part_number": "FLT-100", "description": "Filter Element"}],
+  "maintenance_tasks": [],
+  "equipment": [],
+  "manufacturers": []
+}""",
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        max_attempts=2,
+        chunk_batcher=ExtractionChunkBatcher(
+            max_chunks_per_batch=1,
+            max_chars_per_batch=10_000,
+        ),
+    )
+    progress_messages: list[str] = []
+
+    result = workflow.extract(
+        sample_chunk.document_id,
+        [sample_chunk, second_chunk],
+        progress_callback=progress_messages.append,
+    )
+
+    assert len(fake_llm_service.calls) == 4
+    assert len(result.extracted_identifiers) == 1
+    assert result.extracted_identifiers[0].raw_value == "QP100A"
+    assert len(result.spare_parts) == 1
+    assert result.spare_parts[0].part_number == "FLT-100"
+    assert any(
+        "Extraction attempt 1/2 failed:" in message
+        and "Restarting extraction from the first batch" in message
+        for message in progress_messages
+    )
+    assert any(
+        "Extraction attempt 2/2 started." in message
+        for message in progress_messages
+    )
 
 
 def test_extraction_merges_partial_results_and_deduplicates_identifiers(sample_chunk) -> None:
@@ -583,3 +785,37 @@ def test_extraction_fails_with_clear_batch_error_and_safe_preview(sample_chunk) 
     assert "[path]" in exc_info.value.details["raw_response_preview"]
     assert "C:\\Users\\ashuf\\secret\\device.pdf" not in exc_info.value.details["raw_response_preview"]
     assert fake_extraction_service.saved_results == []
+
+
+def test_extraction_emits_failure_preview_progress_message(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.9,
+  "maintenance_tasks": [],
+  "spare_parts": [],
+  "equipment": [],
+  "manufacturers": [
+    {
+      "website": "https://example.com"
+    }
+  ],
+  "identifiers": []
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+    progress_messages: list[str] = []
+
+    with pytest.raises(SchemaValidationError):
+        workflow.extract(
+            sample_chunk.document_id,
+            sample_chunk,
+            progress_callback=progress_messages.append,
+        )
+
+    assert any(
+        "Schema parsing failed:" in message and "Response preview:" in message
+        for message in progress_messages
+    )

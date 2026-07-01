@@ -33,3 +33,8 @@ class ExtractionSettings(AppBaseSettings):
         default=1200,
         alias="EXTRACTION_FAILURE_PREVIEW_CHARS",
     )
+
+    extraction_max_attempts: int = Field(
+        default=2,
+        alias="EXTRACTION_MAX_ATTEMPTS",
+    )
