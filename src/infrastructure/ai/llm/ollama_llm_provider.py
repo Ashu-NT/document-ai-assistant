@@ -44,10 +44,13 @@ class OllamaLLMProvider(LLMProvider):
         *,
         temperature: float | None = None,
         json_mode: bool = False,
+        response_schema: dict[str, Any] | None = None,
     ) -> str:
         model_name = model or self.default_model
         extra_kwargs: dict[str, Any] = {}
-        if json_mode:
+        if response_schema is not None:
+            extra_kwargs["format"] = response_schema
+        elif json_mode:
             extra_kwargs["format"] = "json"
         if temperature is not None:
             extra_kwargs["options"] = {"temperature": temperature}

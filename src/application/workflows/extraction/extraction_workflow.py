@@ -21,12 +21,14 @@ from src.application.workflows.extraction.extraction_result_merger import (
 from src.application.workflows.extraction.extraction_response_parser import (
     ExtractionResponseParser,
 )
+from src.application.workflows.extraction.extraction_response_schema import (
+    build_extraction_response_json_schema,
+)
 from src.domain.common import SourceLocation
 from src.domain.document import DocumentChunk
 from src.domain.extraction import (
     EquipmentInfo,
     ExtractedIdentifier,
-    ExtractionProfile,
     ExtractionResult,
     MaintenanceTask,
     Manufacturer,
@@ -227,14 +229,8 @@ class ExtractionWorkflow:
         chunks: DocumentChunk | list[DocumentChunk],
         activity_context: ActivityContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
-        *,
-        profile: ExtractionProfile = ExtractionProfile.FULL,
     ) -> ExtractionResult:
         chunk_list = self._coerce_chunks(chunks)
-        self._emit_progress(
-            progress_callback,
-            f"Extraction started with profile={profile.value}.",
-        )
         self._emit_progress(
             progress_callback,
             f"Preparing extraction input from {len(chunk_list)} final chunk(s)...",
@@ -255,7 +251,6 @@ class ExtractionWorkflow:
                 batch=batch,
                 activity_context=activity_context,
                 progress_callback=progress_callback,
-                profile=profile,
             )
             if partial_result is not None:
                 partial_results.append(partial_result)
@@ -344,7 +339,6 @@ class ExtractionWorkflow:
         batch: ExtractionBatch,
         activity_context: ActivityContext | None,
         progress_callback: Callable[[str], None] | None,
-        profile: ExtractionProfile,
     ) -> ExtractionResult | None:
         last_exc: SchemaValidationError | None = None
         for attempt_index in range(1, self.max_attempts + 1):
@@ -354,7 +348,11 @@ class ExtractionWorkflow:
                     batch=batch,
                     activity_context=activity_context,
                     progress_callback=progress_callback,
-                    profile=profile,
+                    previous_error=(
+                        self._describe_error_for_feedback(last_exc)
+                        if last_exc is not None
+                        else None
+                    ),
                 )
             except SchemaValidationError as exc:
                 last_exc = exc
@@ -382,6 +380,11 @@ class ExtractionWorkflow:
         assert last_exc is not None
         raise last_exc
 
+    @staticmethod
+    def _describe_error_for_feedback(exc: SchemaValidationError) -> str:
+        parse_error = exc.details.get("parse_error")
+        return parse_error if isinstance(parse_error, str) else str(exc)
+
     def _extract_batch_once(
         self,
         *,
@@ -389,7 +392,7 @@ class ExtractionWorkflow:
         batch: ExtractionBatch,
         activity_context: ActivityContext | None,
         progress_callback: Callable[[str], None] | None,
-        profile: ExtractionProfile,
+        previous_error: str | None = None,
     ) -> ExtractionResult:
         self._emit_progress(
             progress_callback,
@@ -399,7 +402,11 @@ class ExtractionWorkflow:
                 f"({batch.char_count} chars, {batch.word_count} words)..."
             ),
         )
-        prompt = self.prompt_builder.build(document_id, batch.chunks, profile=profile)
+        prompt = self.prompt_builder.build(
+            document_id,
+            batch.chunks,
+            previous_error=previous_error,
+        )
         self._emit_progress(
             progress_callback,
             (
@@ -413,6 +420,7 @@ class ExtractionWorkflow:
             activity_context=activity_context,
             temperature=self.temperature,
             json_mode=self.json_mode,
+            response_schema=build_extraction_response_json_schema() if self.json_mode else None,
         )
         self._emit_progress(
             progress_callback,
@@ -426,7 +434,6 @@ class ExtractionWorkflow:
                 document_id,
                 batch.chunks,
                 response,
-                profile=profile,
             )
         except SchemaValidationError as exc:
             preview = safe_response_preview(
@@ -543,11 +550,9 @@ class ExtractionWorkflow:
         document_id: str,
         chunks: list[DocumentChunk],
         response: str,
-        *,
-        profile: ExtractionProfile,
     ) -> ExtractionResult:
         self._invalid_source_chunk_id_events = []
-        payload = self.response_parser.parse(response, profile=profile)
+        payload = self.response_parser.parse(response)
         chunk_lookup = {chunk.chunk_id: chunk for chunk in chunks}
         default_source_chunk_id = chunks[0].chunk_id if len(chunks) == 1 else None
         overall_confidence = payload["confidence_score"]
@@ -659,7 +664,6 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
                 default_source_chunk_id=default_source_chunk_id,
                 default_confidence=overall_confidence,
-                strict_source_chunk_id=profile is ExtractionProfile.RETRIEVAL_IDENTIFIERS,
             )
             for item in identifier_payloads
         ]
@@ -932,7 +936,6 @@ class ExtractionWorkflow:
         chunk_lookup: dict[str, DocumentChunk],
         default_source_chunk_id: str | None,
         default_confidence: float,
-        strict_source_chunk_id: bool = False,
     ) -> ExtractedIdentifier:
         raw_value = self._required_text(
             payload,
@@ -951,7 +954,6 @@ class ExtractionWorkflow:
             chunk_lookup=chunk_lookup,
             default_source_chunk_id=default_source_chunk_id,
             item_type="identifiers",
-            strict=strict_source_chunk_id,
         )
 
         return ExtractedIdentifier(
@@ -1102,7 +1104,6 @@ class ExtractionWorkflow:
         chunk_lookup: dict[str, DocumentChunk],
         default_source_chunk_id: str | None,
         item_type: str,
-        strict: bool = False,
     ) -> tuple[str | None, bool]:
         source_chunk_id = self._optional_text(
             payload,
@@ -1110,28 +1111,9 @@ class ExtractionWorkflow:
             "chunk_id",
         )
         if source_chunk_id is None:
-            if strict and default_source_chunk_id is None:
-                raise SchemaValidationError(
-                    f"{item_type}.source_chunk_id is required and must reference "
-                    "one of the provided chunks.",
-                    details={
-                        "item_type": item_type,
-                        "available_chunk_ids": list(chunk_lookup),
-                    },
-                )
             return default_source_chunk_id, False
 
         if source_chunk_id not in chunk_lookup:
-            if strict:
-                raise SchemaValidationError(
-                    f"{item_type}.source_chunk_id must reference one of the "
-                    "provided chunks.",
-                    details={
-                        "item_type": item_type,
-                        "invalid_source_chunk_id": source_chunk_id,
-                        "available_chunk_ids": list(chunk_lookup),
-                    },
-                )
             self._invalid_source_chunk_id_events.append(
                 {
                     "item_type": item_type,

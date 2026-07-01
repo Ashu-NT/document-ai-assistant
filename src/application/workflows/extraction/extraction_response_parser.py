@@ -3,8 +3,13 @@ import json
 import re
 from typing import Any
 
+from pydantic import ValidationError
+
 from src.application.validation.common import ValidationResult
-from src.domain.extraction import ExtractionProfile
+from src.application.workflows.extraction.extraction_response_schema import (
+    ExtractionResponsePayload,
+    coerce_raw_list,
+)
 from src.shared.exceptions import SchemaValidationError
 
 KEY_PATTERN = re.compile(r"[^a-z0-9]+")
@@ -14,58 +19,41 @@ CODE_FENCE_PATTERN = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
+_LIST_FIELD_ALIASES: dict[str, tuple[str, ...]] = {
+    "maintenance_tasks": ("maintenance_tasks", "tasks"),
+    "spare_parts": ("spare_parts", "parts"),
+    "equipment": ("equipment", "equipment_info"),
+    "manufacturers": ("manufacturers", "manufacturer_list"),
+    "identifiers": ("identifiers", "identifier_list"),
+}
+
 
 class ExtractionResponseParser:
     def __init__(self) -> None:
         self.last_null_items_stripped: dict[str, int] = {}
 
-    def parse(
-        self,
-        response: str,
-        *,
-        profile: ExtractionProfile = ExtractionProfile.FULL,
-    ) -> dict[str, Any]:
+    def parse(self, response: str) -> dict[str, Any]:
         self.last_null_items_stripped = {}
-        payload = self._extract_payload(response)
+        raw_payload = self._extract_payload(response)
+        self._record_null_items_stripped(raw_payload)
 
-        if profile is ExtractionProfile.RETRIEVAL_IDENTIFIERS:
-            # Unused families are not part of the requested schema, so their
-            # raw values (even if malformed) are never inspected or validated.
-            maintenance_tasks: list[dict[str, Any]] = []
-            spare_parts: list[dict[str, Any]] = []
-            equipment: list[dict[str, Any]] = []
-            manufacturers: list[dict[str, Any]] = []
-        else:
-            maintenance_tasks = self._coerce_item_list(
-                self._pick(payload, "maintenance_tasks", "tasks"),
-                field_name="maintenance_tasks",
-            )
-            spare_parts = self._coerce_item_list(
-                self._pick(payload, "spare_parts", "parts"),
-                field_name="spare_parts",
-            )
-            equipment = self._coerce_item_list(
-                self._pick(payload, "equipment", "equipment_info"),
-                field_name="equipment",
-            )
-            manufacturers = self._coerce_item_list(
-                self._pick(payload, "manufacturers", "manufacturer_list"),
-                field_name="manufacturers",
-            )
-        identifiers = self._coerce_item_list(
-            self._pick(payload, "identifiers", "identifier_list"),
-            field_name="identifiers",
+        try:
+            validated = ExtractionResponsePayload.model_validate(raw_payload)
+        except ValidationError as exc:
+            raise SchemaValidationError(
+                f"Extraction response failed schema validation: {self._format_validation_error(exc)}",
+                details={"response": response, "errors": exc.errors()},
+            ) from exc
+
+        item_groups = (
+            validated.maintenance_tasks,
+            validated.spare_parts,
+            validated.equipment,
+            validated.manufacturers,
+            validated.identifiers,
         )
-        confidence_score = self._resolve_overall_confidence(
-            payload=payload,
-            item_groups=(
-                maintenance_tasks,
-                spare_parts,
-                equipment,
-                manufacturers,
-                identifiers,
-            ),
-        )
+        confidence_score = self._resolve_overall_confidence(validated, item_groups)
+
         validation = ValidationResult()
         if confidence_score < 0 or confidence_score > 1:
             validation.add_issue(
@@ -77,17 +65,30 @@ class ExtractionResponseParser:
 
         return {
             "confidence_score": confidence_score,
-            "requires_human_review": self._pick(
-                payload,
-                "requires_human_review",
-                "requires_review",
-            ),
-            "maintenance_tasks": maintenance_tasks,
-            "spare_parts": spare_parts,
-            "equipment": equipment,
-            "manufacturers": manufacturers,
-            "identifiers": identifiers,
+            "requires_human_review": validated.requires_human_review,
+            "maintenance_tasks": [item.model_dump() for item in validated.maintenance_tasks],
+            "spare_parts": [item.model_dump() for item in validated.spare_parts],
+            "equipment": [item.model_dump() for item in validated.equipment],
+            "manufacturers": [item.model_dump() for item in validated.manufacturers],
+            "identifiers": [item.model_dump() for item in validated.identifiers],
         }
+
+    def _record_null_items_stripped(self, raw_payload: dict[str, Any]) -> None:
+        for field_name, aliases in _LIST_FIELD_ALIASES.items():
+            coerced = coerce_raw_list(self._pick(raw_payload, *aliases))
+            if not isinstance(coerced, list):
+                continue
+            null_count = sum(1 for item in coerced if item is None)
+            if null_count:
+                self.last_null_items_stripped[field_name] = null_count
+
+    @staticmethod
+    def _format_validation_error(exc: ValidationError) -> str:
+        messages = [
+            f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}"
+            for error in exc.errors()
+        ]
+        return "; ".join(messages)
 
     def _extract_payload(self, response: str) -> dict[str, Any]:
         candidate_texts = self._candidate_texts(response)
@@ -181,114 +182,28 @@ class ExtractionResponseParser:
 
         return None
 
-    def _coerce_item_list(
-        self,
-        value: Any,
-        *,
-        field_name: str,
-    ) -> list[dict[str, Any]]:
-        if value is None:
-            return []
-
-        parsed_value = value
-        if isinstance(value, str):
-            stripped = value.strip()
-            if not stripped:
-                return []
-
-            for loader in (json.loads, ast.literal_eval, _try_yaml_load):
-                try:
-                    parsed_value = loader(stripped)
-                    break
-                except (json.JSONDecodeError, SyntaxError, ValueError, TypeError):
-                    continue
-
-        if isinstance(parsed_value, dict):
-            parsed_value = [parsed_value]
-
-        if not isinstance(parsed_value, list):
-            raise SchemaValidationError(
-                f"{field_name} must be a list.",
-                details={field_name: value},
-            )
-
-        items: list[dict[str, Any]] = []
-        null_item_count = 0
-        for item in parsed_value:
-            if item is None:
-                null_item_count += 1
-                continue
-            if not isinstance(item, dict):
-                raise SchemaValidationError(
-                    f"{field_name} items must be objects.",
-                    details={field_name: value},
-                )
-            items.append(item)
-
-        if null_item_count:
-            self.last_null_items_stripped[field_name] = (
-                self.last_null_items_stripped.get(field_name, 0) + null_item_count
-            )
-
-        return items
-
     @staticmethod
-    def _parse_confidence(value: Any) -> float | None:
-        if value is None:
-            return None
-
-        if isinstance(value, (int, float)):
-            return float(value)
-
-        text = str(value).strip().strip('"').strip("'").strip()
-        if not text:
-            return None
-
-        try:
-            if text.endswith("%"):
-                return float(text[:-1].strip()) / 100
-
-            return float(text)
-        except ValueError:
-            return None
-
-    @classmethod
     def _resolve_overall_confidence(
-        cls,
-        *,
-        payload: dict[str, Any],
-        item_groups: tuple[list[dict[str, Any]], ...],
+        validated: ExtractionResponsePayload,
+        item_groups: tuple[list[Any], ...],
     ) -> float:
-        top_level_confidence = cls._parse_confidence(
-            cls._pick(
-                payload,
-                "confidence_score",
-                "confidence",
-                "overall_confidence",
-            )
-        )
-        if top_level_confidence is not None:
-            return top_level_confidence
+        if validated.confidence_score is not None:
+            return validated.confidence_score
 
-        derived_confidence = cls._derive_confidence_from_items(item_groups)
+        derived_confidence = ExtractionResponseParser._derive_confidence_from_items(item_groups)
         if derived_confidence is not None:
             return derived_confidence
 
         return 0.0
 
-    @classmethod
-    def _derive_confidence_from_items(
-        cls,
-        item_groups: tuple[list[dict[str, Any]], ...],
-    ) -> float | None:
-        confidences: list[float] = []
-        for items in item_groups:
-            for item in items:
-                confidence = cls._parse_confidence(
-                    cls._pick(item, "confidence_score", "confidence")
-                )
-                if confidence is not None:
-                    confidences.append(confidence)
+    @staticmethod
+    def _derive_confidence_from_items(item_groups: tuple[list[Any], ...]) -> float | None:
+        confidences = [
+            item.confidence_score
+            for items in item_groups
+            for item in items
+            if item.confidence_score is not None
+        ]
 
         if not confidences:
             return None

@@ -18,7 +18,6 @@ from src.application.workflows.ingestion import (
 from src.application.workflows.parsing import ParsingWorkflowResult
 from src.domain.common import DocumentType
 from src.domain.document.value_objects import DocumentStatistics
-from src.domain.extraction import ExtractionProfile
 from src.shared.exceptions import DocumentParsingError
 from src.shared.execution import ActionResult
 from src.shared.ids import IdGenerator
@@ -221,15 +220,12 @@ class FakeExtractionWorkflow:
         chunks,
         activity_context=None,
         progress_callback=None,
-        *,
-        profile=None,
     ):
         self.calls.append(
             {
                 "document_id": document_id,
                 "chunks": list(chunks),
                 "progress_callback": progress_callback,
-                "profile": profile,
             }
         )
         result = copy.deepcopy(self.extraction_result)
@@ -249,8 +245,6 @@ class FailingExtractionWorkflow:
         chunks,
         activity_context=None,
         progress_callback=None,
-        *,
-        profile=None,
     ):
         self.calls.append(
             {
@@ -377,7 +371,6 @@ def test_ingestion_workflow_persists_run_and_emits_stage_events(
     assert result.generated_question_count == len(sample_document_graph.questions)
     assert result.current_stage == IngestionStage.COMPLETE
     assert "parser warning" in result.warnings
-    assert workflow.extraction_workflow.calls[0]["profile"] == ExtractionProfile.FULL
 
     stored_statuses = [
         workflow.unit_of_work.ingestion_runs.created[0].status,
@@ -539,28 +532,3 @@ def test_ingestion_workflow_persists_extraction_model_before_extraction_failure(
         for run in workflow.unit_of_work.ingestion_runs.updated
     )
     assert workflow.unit_of_work.ingestion_runs.updated[-1].status == IngestionStatus.FAILED
-
-
-def test_ingestion_workflow_passes_requested_extraction_profile_through(
-    tmp_path,
-    sample_document_graph,
-    sample_document_classification,
-    sample_extraction_result,
-) -> None:
-    input_file = tmp_path / "manual.pdf"
-    input_file.write_bytes(b"%PDF-1.4\nidentifiers-only")
-    workflow = _build_workflow(
-        sample_document_graph=sample_document_graph,
-        sample_document_classification=sample_document_classification,
-        sample_extraction_result=sample_extraction_result,
-    )
-
-    workflow.run(
-        IngestionRequest(
-            file_path=str(input_file),
-            run_quality_checks=False,
-            extraction_profile=ExtractionProfile.RETRIEVAL_IDENTIFIERS,
-        )
-    )
-
-    assert workflow.extraction_workflow.calls[0]["profile"] == ExtractionProfile.RETRIEVAL_IDENTIFIERS

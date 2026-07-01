@@ -3,7 +3,6 @@ from src.application.prompts.extraction.extraction_prompt_version import (
     IDENTIFIER_EXTRACTION_PROMPT_VERSION,
 )
 from src.domain.document import DocumentChunk
-from src.domain.extraction import ExtractionProfile
 
 
 class IdentifierExtractionPromptBuilder:
@@ -21,87 +20,15 @@ class IdentifierExtractionPromptBuilder:
         document_id: str,
         chunks: list[DocumentChunk],
         *,
-        profile: ExtractionProfile = ExtractionProfile.FULL,
-    ) -> str:
-        if profile is ExtractionProfile.RETRIEVAL_IDENTIFIERS:
-            return self._build_retrieval_identifiers_prompt(document_id, chunks)
-        return self._build_full_prompt(document_id, chunks)
-
-    def _build_retrieval_identifiers_prompt(
-        self,
-        document_id: str,
-        chunks: list[DocumentChunk],
+        previous_error: str | None = None,
     ) -> str:
         chunk_blocks = "\n\n".join(self._format_chunk_block(chunk) for chunk in chunks)
         allowed_chunk_ids = ", ".join(chunk.chunk_id for chunk in chunks)
+        correction_notice = self._build_correction_notice(previous_error)
 
         return (
-            "You extract retrieval-critical technical identifiers from document chunks.\n"
-            "This includes identifiers that would normally appear inside maintenance "
-            "tasks, spare parts, equipment, and manufacturer records — but you must "
-            "output them as a single flat identifiers list, not as nested objects.\n"
-            "Return JSON only. Do not return markdown. Do not return prose.\n"
-            "Do not output maintenance_tasks, spare_parts, equipment, or manufacturers arrays.\n"
-            "Output only confidence_score, requires_human_review, and identifiers.\n"
-            "Use this schema:\n"
-            "{\n"
-            '  "confidence_score": <float between 0 and 1>,\n'
-            '  "requires_human_review": <true or false>,\n'
-            '  "identifiers": [\n'
-            "    {\n"
-            '      "raw_value": "<exact string as it appears in text>",\n'
-            '      "identifier_type": "part_number|model_number|serial_number|equipment_id|equipment_name|component_code|tag_number|drawing_number|document_number|manufacturer_name|brand_name|system_name|task_component_name|maintenance_interval|maintenance_code|unknown",\n'
-            '      "source_chunk_id": "<chunk id>",\n'
-            '      "confidence_score": <float between 0 and 1 or null>,\n'
-            '      "requires_human_review": <true or false>\n'
-            "    }\n"
-            "  ]\n"
-            "}\n"
-            "Identifier type guidance:\n"
-            '- "part_number": P/N codes, part numbers, order numbers from spare parts (e.g. HP-001, 4321-A).\n'
-            '- "model_number": Model designations for equipment (e.g. FWC-12, Model 500).\n'
-            '- "serial_number": S/N codes, unit serial numbers (e.g. SN-1234, SER-2024-001).\n'
-            '- "equipment_id": Tags or ids identifying a specific piece of equipment.\n'
-            '- "equipment_name": The name of a piece of equipment (e.g. Hydraulic Pump, Macerator).\n'
-            '- "component_code": Order codes, component codes from spare parts (e.g. TAG-42, OC-8800).\n'
-            '- "tag_number": Instrument or asset tag numbers.\n'
-            '- "drawing_number": DRG or DWG references (e.g. DRG-1234, DWG 500).\n'
-            '- "document_number": Document, certificate, or reference numbers (e.g. ISO 9001, ATEX II 2G).\n'
-            '- "manufacturer_name": Manufacturer or supplier names.\n'
-            '- "brand_name": Brand names distinct from the manufacturer legal name.\n'
-            '- "system_name": The name of a system or subsystem the equipment belongs to.\n'
-            '- "task_component_name": The component a maintenance task applies to.\n'
-            '- "maintenance_interval": A maintenance frequency or interval (e.g. "1000 operating hours", "Daily").\n'
-            '- "maintenance_code": A coded reference for a maintenance task or procedure.\n'
-            '- "unknown": Any identifier that does not fit the types above.\n'
-            "Rules:\n"
-            "- Use only the provided chunk content.\n"
-            "- Do not extract generic PPE or generic nouns (e.g. \"safety helmet\", \"gloves\", "
-            "\"cover\", \"pipe\", \"valve\") unless they are explicitly used as a part number, "
-            "model number, tag, equipment name, manufacturer name, drawing number, document "
-            "number, or coded component reference.\n"
-            "- Every identifier MUST include a source_chunk_id that is one of the allowed chunk ids below.\n"
-            "- source_chunk_id MUST be copied EXACTLY, character for character, from the allowed list below.\n"
-            "- Never invent, abbreviate, guess, or reuse a chunk_id that is not in the allowed list below.\n"
-            "- If no identifiers exist, return \"identifiers\": [].\n"
-            "- An empty array MUST be written as [] exactly. Never write [null] or put null as an item inside an array.\n"
-            "- Always include a top-level confidence_score. If uncertain, use 0.0 instead of null or omitting the field.\n"
-            f"Allowed chunk_id values (use one of these EXACTLY): {allowed_chunk_ids}\n"
-            f"Document id: {document_id}\n"
-            "Chunks:\n"
-            f"{chunk_blocks}"
-        )
-
-    def _build_full_prompt(
-        self,
-        document_id: str,
-        chunks: list[DocumentChunk],
-    ) -> str:
-        chunk_blocks = "\n\n".join(self._format_chunk_block(chunk) for chunk in chunks)
-        allowed_chunk_ids = ", ".join(chunk.chunk_id for chunk in chunks)
-
-        return (
-            "You extract structured information from technical document chunks.\n"
+            correction_notice
+            + "You extract structured information from technical document chunks.\n"
             "Return JSON only.\n"
             "Use this schema:\n"
             "{\n"
@@ -188,6 +115,18 @@ class IdentifierExtractionPromptBuilder:
             f"Document id: {document_id}\n"
             "Chunks:\n"
             f"{chunk_blocks}"
+        )
+
+    @staticmethod
+    def _build_correction_notice(previous_error: str | None) -> str:
+        if not previous_error:
+            return ""
+
+        return (
+            "Your previous response was rejected because it did not match the "
+            f"required schema: {previous_error}\n"
+            "Fix this specific problem and return a corrected JSON response that "
+            "matches the schema exactly.\n\n"
         )
 
     @staticmethod
