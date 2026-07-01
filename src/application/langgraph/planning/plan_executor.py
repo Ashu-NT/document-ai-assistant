@@ -28,6 +28,7 @@ from src.application.tools.evaluation import (
 from src.application.tools.exploration import ExploreDocumentRequest
 from src.application.tools.question_answering import AnswerQuestionRequest
 from src.application.tools.retrieval import RetrieveChunksRequest
+from src.application.tools.retrieval.retrieve_identifiers_tool import RetrieveIdentifiersRequest
 
 
 class PlanExecutor:
@@ -238,6 +239,13 @@ class PlanExecutor:
                 document_id=document_id,
                 top_k=state.get("top_k") or 5,
             )
+        if step.tool_name == "retrieve_identifiers":
+            return RetrieveIdentifiersRequest(
+                identifier_value=args.get("identifier_value"),
+                query_text=str(args.get("query_text") or state.get("question") or state["user_input"]),
+                document_id=document_id,
+                top_k=state.get("top_k") or 5,
+            )
         if step.tool_name == "answer_question":
             return AnswerQuestionRequest(
                 question=str(args.get("question") or state.get("question") or state["user_input"]),
@@ -270,6 +278,7 @@ class PlanExecutor:
     ) -> None:
         canonical_key = {
             "retrieve_chunks": "retrieve_evidence",
+            "retrieve_identifiers": "retrieve_evidence",
         }.get(tool_name, tool_name)
         tool_results[canonical_key] = serialized
 

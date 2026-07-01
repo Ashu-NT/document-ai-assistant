@@ -44,3 +44,6 @@ class DocumentRepository(Protocol):
 
     def search_identifiers(self, value: str) -> list[Identifier]:
         ...
+
+    def write_document_identifiers(self, identifiers: list[Identifier]) -> None:
+        ...

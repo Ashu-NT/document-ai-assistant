@@ -10,6 +10,7 @@ from src.application.workflows.question_answering.answer_context.structured_answ
     StructuredAnswerContext,
 )
 from src.domain.common import ChunkType
+from src.domain.document.entities.identifier import Identifier
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
 
@@ -27,3 +28,4 @@ class AnswerGenerationRequest:
     document_id: str | None = None
     require_citations: bool = True
     max_context_chunks: int | None = None
+    resolved_identifiers: list[Identifier] = field(default_factory=list)
