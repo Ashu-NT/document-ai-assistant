@@ -72,5 +72,8 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
     def get_identifiers_for_chunk(self, chunk_id: str) -> list[Identifier]:
         return self.identifier_reader.get_identifiers_for_chunk(chunk_id)
 
+    def get_identifiers_on_page(self, document_id: str, page: int) -> list[Identifier]:
+        return self.identifier_reader.get_identifiers_on_page(document_id, page)
+
     def write_document_identifiers(self, identifiers: list[Identifier]) -> None:
         self.writer.write_identifiers(identifiers)

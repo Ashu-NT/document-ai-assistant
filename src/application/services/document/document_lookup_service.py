@@ -37,3 +37,6 @@ class DocumentLookupService:
 
     def get_identifiers_for_chunk(self, chunk_id: str) -> list[Identifier]:
         return self.document_repository.get_identifiers_for_chunk(chunk_id)
+
+    def get_identifiers_on_page(self, document_id: str, page: int) -> list[Identifier]:
+        return self.document_repository.get_identifiers_on_page(document_id, page)
