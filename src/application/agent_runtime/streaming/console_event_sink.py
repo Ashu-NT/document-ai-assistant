@@ -69,8 +69,10 @@ class ConsoleLiveEventSink:
             return
 
         if t == LiveAgentEventType.OBSERVATION:
+            kind = str(p.get("kind") or "").strip()
             detail = str(p.get("detail") or "").strip()
-            self._println(f"\n    Observation")
+            label = "Evaluate" if kind == "evaluate" else "Observation"
+            self._println(f"\n    {label}")
             if detail:
                 self._println(f"    {detail}")
             return

@@ -18,8 +18,8 @@ _NODE_EVENT_MAP: dict[str, LiveAgentEventType] = {
     "create_research_plan": LiveAgentEventType.PLAN_COMPLETED,
     "execute_plan": LiveAgentEventType.ACTION_COMPLETED,
     "execute_research": LiveAgentEventType.ACTION_COMPLETED,
+    "evaluate_research": LiveAgentEventType.OBSERVATION,
     "synthesize_research": LiveAgentEventType.OBSERVATION,
-    "research_summary": LiveAgentEventType.OBSERVATION,
     "plan_summary": LiveAgentEventType.OBSERVATION,
     "blocked_action": LiveAgentEventType.BLOCKED,
     "out_of_scope": LiveAgentEventType.BLOCKED,
@@ -50,12 +50,13 @@ class EventStreamAdapter:
         event_type = _NODE_EVENT_MAP.get(node_name)
         if event_type is None:
             return None
-        payload = self._extract_payload(event_type, patch, state)
+        payload = self._extract_payload(event_type, node_name, patch, state)
         return LiveAgentEvent(event_type=event_type, payload=payload)
 
     def _extract_payload(
         self,
         event_type: LiveAgentEventType,
+        node_name: str,
         patch: dict[str, Any],
         state: dict[str, Any],
     ) -> dict[str, Any]:
@@ -79,6 +80,8 @@ class EventStreamAdapter:
             description = _build_retrieve_description(chunks)
             return {"chunk_count": count, "description": description}
         if event_type == LiveAgentEventType.OBSERVATION:
+            if node_name == "evaluate_research":
+                return _build_evaluate_payload(state)
             detail = (
                 str(patch.get("synthesis") or "").strip()
                 or str(patch.get("summary") or "").strip()
@@ -88,7 +91,7 @@ class EventStreamAdapter:
                 chunks = state.get("context_chunks") or []
                 count = len(chunks) if isinstance(chunks, list) else 0
                 detail = f"Processed {count} evidence group(s)." if count else "Evidence gathered."
-            return {"detail": detail[:300]}
+            return {"kind": "observation", "detail": detail[:300]}
         if event_type == LiveAgentEventType.REFLECTION_COMPLETED:
             reflection_result = state.get("reflection_result") or {}
             decision_obj = (
@@ -118,6 +121,32 @@ class EventStreamAdapter:
                 )
             }
         return {}
+
+
+def _build_evaluate_payload(state: dict[str, Any]) -> dict[str, Any]:
+    research_trace = state.get("research_trace") or {}
+    coverage = (
+        research_trace.get("strategy_coverage") or {}
+        if isinstance(research_trace, dict)
+        else {}
+    )
+    ratio = coverage.get("ratio") if isinstance(coverage, dict) else None
+    uncovered = coverage.get("uncovered_concepts") or [] if isinstance(coverage, dict) else []
+    pending = bool(state.get("research_followup_pending"))
+
+    parts: list[str] = []
+    if ratio is not None:
+        parts.append(f"Coverage: {float(ratio):.0%}")
+    if uncovered:
+        concepts = ", ".join(str(c) for c in uncovered[:3])
+        parts.append(f"gap: {concepts}")
+    if pending:
+        parts.append("running follow-up retrieval")
+    else:
+        parts.append("moving to synthesis")
+
+    detail = " — ".join(parts) if parts else "Evaluation complete."
+    return {"kind": "evaluate", "detail": detail}
 
 
 def _build_retrieve_description(chunks: list) -> str:

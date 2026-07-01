@@ -165,3 +165,24 @@ def test_react_presenter_title_is_agent_trace_not_loop():
     rendered = ReactPresenter().render(trace, policy=DemoVisibilityPolicy())
     assert "Agent Trace" in rendered
     assert "Agent Loop" not in rendered
+
+
+# 15. Deep research loop: Evaluate block appears between Retrieve iterations
+def test_deep_research_loop_shows_evaluate_between_retrieve_steps():
+    output = _run_sink(
+        (LiveAgentEventType.UNDERSTAND_REQUEST, {"route": "deep_research"}),
+        (LiveAgentEventType.PLAN_COMPLETED, {"task_titles": ["Collect maintenance data"]}),
+        (LiveAgentEventType.ACTION_COMPLETED, {"description": "Retrieved 8 evidence chunk(s)."}),
+        (LiveAgentEventType.OBSERVATION, {"kind": "evaluate", "detail": "Coverage: 67% — gap: troubleshooting — running follow-up retrieval."}),
+        (LiveAgentEventType.ACTION_COMPLETED, {"description": "Retrieved 4 evidence chunk(s)."}),
+        (LiveAgentEventType.OBSERVATION, {"kind": "evaluate", "detail": "Coverage: 100% — moving to synthesis."}),
+        (LiveAgentEventType.OBSERVATION, {"kind": "observation", "detail": "Synthesis complete."}),
+    )
+    assert "Evaluate" in output
+    assert "Coverage: 67%" in output
+    assert "running follow-up retrieval" in output
+    assert "Coverage: 100%" in output
+    assert "Observation" in output
+    assert "Synthesis complete." in output
+    # Evaluate must appear before the second Retrieve
+    assert output.index("Coverage: 67%") < output.index("Coverage: 100%")

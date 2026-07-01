@@ -169,3 +169,73 @@ def test_adapter_observation_includes_detail():
     adapter.run(graph, {})
     obs_events = [e for e in sink.events if e.event_type == LiveAgentEventType.OBSERVATION]
     assert "Cross-section analysis complete." in obs_events[0].payload.get("detail", "")
+
+
+def test_adapter_evaluate_research_emits_observation_with_evaluate_kind():
+    graph = _FakeCompiledGraph([
+        {"evaluate_research": {
+            "research_trace": {
+                "strategy_coverage": {
+                    "ratio": 0.67,
+                    "covered_concepts": ["maintenance"],
+                    "uncovered_concepts": ["troubleshooting", "safety"],
+                    "passed": False,
+                }
+            },
+            "research_followup_pending": True,
+        }},
+    ])
+    sink = _CollectingSink()
+    adapter = EventStreamAdapter(sink)
+    adapter.run(graph, {})
+    obs_events = [e for e in sink.events if e.event_type == LiveAgentEventType.OBSERVATION]
+    assert len(obs_events) == 1
+    payload = obs_events[0].payload
+    assert payload.get("kind") == "evaluate"
+    assert "67%" in payload.get("detail", "")
+    assert "troubleshooting" in payload.get("detail", "")
+    assert "running follow-up" in payload.get("detail", "")
+
+
+def test_adapter_evaluate_research_moving_to_synthesis_when_no_followup():
+    graph = _FakeCompiledGraph([
+        {"evaluate_research": {
+            "research_trace": {
+                "strategy_coverage": {
+                    "ratio": 1.0,
+                    "covered_concepts": ["maintenance", "safety"],
+                    "uncovered_concepts": [],
+                    "passed": True,
+                }
+            },
+            "research_followup_pending": False,
+        }},
+    ])
+    sink = _CollectingSink()
+    adapter = EventStreamAdapter(sink)
+    adapter.run(graph, {})
+    obs_events = [e for e in sink.events if e.event_type == LiveAgentEventType.OBSERVATION]
+    detail = obs_events[0].payload.get("detail", "")
+    assert "100%" in detail
+    assert "moving to synthesis" in detail
+
+
+def test_adapter_synthesize_research_emits_observation_kind():
+    graph = _FakeCompiledGraph([
+        {"synthesize_research": {}},
+    ])
+    sink = _CollectingSink()
+    adapter = EventStreamAdapter(sink)
+    adapter.run(graph, {})
+    obs_events = [e for e in sink.events if e.event_type == LiveAgentEventType.OBSERVATION]
+    assert obs_events[0].payload.get("kind") == "observation"
+
+
+def test_adapter_research_summary_node_is_silent():
+    graph = _FakeCompiledGraph([
+        {"research_summary": {"response_text": "Final report."}},
+    ])
+    sink = _CollectingSink()
+    adapter = EventStreamAdapter(sink)
+    adapter.run(graph, {})
+    assert len(sink.events) == 0
