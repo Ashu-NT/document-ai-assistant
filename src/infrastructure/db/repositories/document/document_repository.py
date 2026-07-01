@@ -65,3 +65,6 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
 
     def search_identifiers(self, value: str) -> list[Identifier]:
         return self.identifier_reader.search_identifiers(value)
+
+    def write_document_identifiers(self, identifiers: list[Identifier]) -> None:
+        self.writer.write_identifiers(identifiers)

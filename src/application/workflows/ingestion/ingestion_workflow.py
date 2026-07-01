@@ -9,6 +9,7 @@ from src.application.contracts import UnitOfWork
 from src.application.services.document import (
     DocumentRegistrationService,
     DuplicateDetectionService,
+    IdentifierPromotionService,
 )
 from src.application.validation.document_quality import DocumentQualityGate
 from src.application.validation.ingestion import IngestionRequestValidator
@@ -74,6 +75,7 @@ class IngestionWorkflow:
         embedding_workflow: EmbeddingWorkflow,
         id_generator: IdGenerator,
         quality_gate: DocumentQualityGate | None = None,
+        identifier_promotion_service: IdentifierPromotionService | None = None,
         activity_service=None,
         audit_service=None,
         event_service=None,
@@ -91,6 +93,7 @@ class IngestionWorkflow:
         self.embedding_workflow = embedding_workflow
         self.id_generator = id_generator
         self.quality_gate = quality_gate or DocumentQualityGate()
+        self.identifier_promotion_service = identifier_promotion_service
         self.activity_service = activity_service
         self.audit_service = audit_service
         self.event_service = event_service
@@ -445,6 +448,20 @@ class IngestionWorkflow:
                 activity_context=resolved_activity_context,
             )
             self.unit_of_work.commit()
+            if self.identifier_promotion_service is not None:
+                promoted_identifiers = self.identifier_promotion_service.promote(
+                    extraction_result=extraction_result,
+                    document_graph=final_graph,
+                    id_generator=self.id_generator,
+                )
+                if promoted_identifiers:
+                    for identifier in promoted_identifiers:
+                        final_graph.identifiers[identifier.identifier_id] = identifier
+                    self.document_registration_service.register_document_identifiers(
+                        promoted_identifiers,
+                        activity_context=resolved_activity_context,
+                    )
+                    self.unit_of_work.commit()
             ingestion_run.extraction_model = self.extraction_workflow.extraction_model
             self._publish_stage_completed(
                 ingestion_run=ingestion_run,
