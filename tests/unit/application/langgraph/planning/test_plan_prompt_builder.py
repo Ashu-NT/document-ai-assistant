@@ -38,6 +38,51 @@ def test_plan_prompt_builder_includes_allowed_tools_and_json_rules() -> None:
     assert "Selected document title: Pump Manual" in prompt
 
 
+def test_plan_prompt_builder_includes_retrieve_identifiers_hint() -> None:
+    builder = PlanPromptBuilder()
+    prompt = builder.build(
+        user_input="find part number HP-001",
+        state=build_agent_state(user_input="find part number HP-001"),
+        route_decision=RouteDecision(
+            route_type=RouteType.PLANNED_TASK,
+            confidence=0.9,
+            reason="Identifier lookup.",
+            extracted_question="find part number HP-001",
+            is_compound=True,
+            requires_plan=True,
+        ),
+        tool_registry=ToolRegistry(
+            retrieve_identifiers_tool=object(),
+            answer_question_tool=object(),
+        ),
+        policy=PlanPolicy.default(),
+    )
+
+    assert "retrieve_identifiers" in prompt
+    assert "part_number" in prompt
+
+
+def test_plan_prompt_builder_hint_describes_identifier_types() -> None:
+    builder = PlanPromptBuilder()
+    prompt = builder.build(
+        user_input="find serial number SN-001",
+        state=build_agent_state(user_input="find serial number SN-001"),
+        route_decision=RouteDecision(
+            route_type=RouteType.PLANNED_TASK,
+            confidence=0.9,
+            reason="Identifier lookup.",
+            extracted_question="find serial number SN-001",
+            is_compound=True,
+            requires_plan=True,
+        ),
+        tool_registry=ToolRegistry(retrieve_identifiers_tool=object()),
+        policy=PlanPolicy.default(),
+    )
+
+    assert "serial_number" in prompt
+    assert "model_number" in prompt
+
+
 def test_plan_prompt_builder_includes_recent_history_summary() -> None:
     builder = PlanPromptBuilder()
     prompt = builder.build(

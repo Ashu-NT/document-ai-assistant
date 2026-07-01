@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 
 from src.application.langgraph.planning.execution_plan import ExecutionPlan
@@ -35,6 +36,15 @@ _COMPARISON_TOPICS: tuple[tuple[str, str, str], ...] = (
     ("procedure", "Procedures", "What procedures are described in this document?"),
     ("troubleshooting", "Troubleshooting", "What troubleshooting information is described in this document?"),
 )
+_IDENTIFIER_VALUE_RE = re.compile(
+    r"\b([A-Z]{1,5}-?\d{1,6}[A-Z0-9-]*|\d{3,}[A-Z0-9-]+|DN\s*\d+)\b"
+)
+_IDENTIFIER_TERM_RE = re.compile(
+    r"\b(?:part\s*(?:number|no\.?)|p/?n\.?|serial\s*(?:number|no\.?)|s/?n\.?|"
+    r"model\s*(?:number|no\.?)|order\s*code|drawing\s*(?:number|no\.?)|"
+    r"tag\s*(?:number|no\.?)?|certificate\s*(?:number|no\.?)|component\s*code)\b",
+    re.IGNORECASE,
+)
 
 
 class DeterministicPlanner:
@@ -45,14 +55,25 @@ class DeterministicPlanner:
         normalized_input = self._normalize(
             state.get("question") or state.get("user_input") or ""
         )
-        if not self._looks_compound(normalized_input):
-            return None
 
         explicit_document_id = state.get("document_id")
         selected_document_id = state.get("selected_document_id")
         document_query = state.get("document_query")
         document_id = explicit_document_id or selected_document_id
         document_title = state.get("document_title") or state.get("selected_document_title")
+
+        identifier_value = self._extract_identifier_value(normalized_input)
+        if identifier_value or self._has_identifier_term(normalized_input):
+            return self._build_identifier_plan(
+                normalized_input=normalized_input,
+                identifier_value=identifier_value,
+                document_query=document_query,
+                document_id=document_id,
+                document_title=document_title,
+            )
+
+        if not self._looks_compound(normalized_input):
+            return None
 
         if self._is_list_and_find_request(normalized_input):
             return self._build_list_and_find_plan(
@@ -90,6 +111,126 @@ class DeterministicPlanner:
     @staticmethod
     def _normalize(value: str) -> str:
         return " ".join(value.strip().lower().split())
+
+    @staticmethod
+    def _extract_identifier_value(normalized_input: str) -> str | None:
+        match = _IDENTIFIER_VALUE_RE.search(normalized_input.upper())
+        return match.group(0).replace(" ", "") if match else None
+
+    @staticmethod
+    def _has_identifier_term(normalized_input: str) -> bool:
+        return bool(_IDENTIFIER_TERM_RE.search(normalized_input))
+
+    @staticmethod
+    def _identifier_type_from_input(normalized_input: str) -> str | None:
+        lower = normalized_input.lower()
+        if re.search(r"\bpart\s*(?:number|no\.?)\b|\bp/?n\.?\b", lower):
+            return "part_number"
+        if re.search(r"\bserial\s*(?:number|no\.?)\b|\bs/?n\.?\b", lower):
+            return "serial_number"
+        if re.search(r"\bmodel\s*(?:number|no\.?)\b", lower):
+            return "model_number"
+        if re.search(r"\border\s*code\b", lower):
+            return "order_code"
+        if re.search(r"\bdrawing\s*(?:number|no\.?)\b", lower):
+            return "drawing_number"
+        return None
+
+    def _build_identifier_plan(
+        self,
+        *,
+        normalized_input: str,
+        identifier_value: str | None,
+        document_query: str | None,
+        document_id: str | None,
+        document_title: str | None,
+    ) -> ExecutionPlan:
+        identifier_type = self._identifier_type_from_input(normalized_input)
+        retrieve_args: dict[str, object] = {}
+        if identifier_value:
+            retrieve_args["identifier_value"] = identifier_value
+        if identifier_type:
+            retrieve_args["identifier_type"] = identifier_type
+        if document_id:
+            retrieve_args["document_id"] = document_id
+
+        plan_steps = self._document_resolution_steps(document_query=document_query, document_id=document_id)
+        plan_steps.append(
+            self._step(
+                tool_name="retrieve_identifiers",
+                description="Look up identifiers matching the requested value or type.",
+                output_key="identifier_hits",
+                args=retrieve_args,
+            )
+        )
+
+        if "maintenance" in normalized_input:
+            plan_steps.append(
+                self._step(
+                    tool_name="retrieve_chunks",
+                    description="Retrieve maintenance procedure chunks linked to this identifier.",
+                    output_key="context_chunks",
+                    args={
+                        "query_text": f"{identifier_value or 'identifier'} maintenance replacement procedure",
+                        "chunk_types": ["maintenance_procedure"],
+                        **({"document_id": document_id} if document_id else {}),
+                    },
+                    depends_on=["identifier_hits"],
+                )
+            )
+        elif "specification" in normalized_input or "spec" in normalized_input:
+            plan_steps.append(
+                self._step(
+                    tool_name="retrieve_chunks",
+                    description="Retrieve technical specification chunks linked to this identifier.",
+                    output_key="context_chunks",
+                    args={
+                        "query_text": f"{identifier_value or 'identifier'} technical specification",
+                        "chunk_types": ["technical_specification"],
+                        **({"document_id": document_id} if document_id else {}),
+                    },
+                    depends_on=["identifier_hits"],
+                )
+            )
+        elif "context" in normalized_input or "where" in normalized_input or "used" in normalized_input:
+            plan_steps.append(
+                self._step(
+                    tool_name="retrieve_chunks",
+                    description="Retrieve chunks providing context for this identifier.",
+                    output_key="context_chunks",
+                    args={
+                        "query_text": f"{identifier_value or 'identifier'} context usage",
+                        **({"document_id": document_id} if document_id else {}),
+                    },
+                    depends_on=["identifier_hits"],
+                )
+            )
+
+        last_output = plan_steps[-1].output_key
+        plan_steps.append(
+            self._step(
+                tool_name="answer_question",
+                description="Answer the identifier query using the retrieved evidence.",
+                output_key="answer",
+                input_key=last_output if last_output != "identifier_hits" else None,
+                args={"question": normalized_input},
+                depends_on=[last_output],
+            )
+        )
+
+        return self._plan(
+            goal=normalized_input,
+            steps=plan_steps,
+            reason="Detected an identifier lookup request requiring structured identifier retrieval.",
+            requires_document=bool(document_id or document_query),
+            document_id=document_id,
+            document_title=document_title or document_query,
+            diagnostics={
+                "plan_kind": "identifier_lookup",
+                "identifier_value": identifier_value,
+                "identifier_type": identifier_type,
+            },
+        )
 
     def _looks_compound(self, normalized_input: str) -> bool:
         if any(marker in f" {normalized_input} " for marker in _COMPOUND_MARKERS):
