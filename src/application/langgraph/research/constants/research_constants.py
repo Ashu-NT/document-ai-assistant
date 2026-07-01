@@ -11,6 +11,8 @@ RESEARCH_ROUTE_TRIGGER_TERMS: tuple[str, ...] = (
     "checklist",
     "summarize all",
     "find every",
+    "difference",
+    "relationship betwwen"
     "identify missing",
     "cross-check",
     "across the document",
