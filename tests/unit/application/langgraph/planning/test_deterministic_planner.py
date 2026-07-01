@@ -115,6 +115,36 @@ def test_planner_identifier_plan_scopes_to_selected_document() -> None:
     assert first_step.args.get("document_id") == "doc-99"
 
 
+def test_planner_identifier_plan_infers_certificate_number_type() -> None:
+    plan = DeterministicPlanner().create_plan(
+        build_agent_state(user_input="find certificate number ISO-9001")
+    )
+
+    assert plan is not None
+    first_step = plan.steps[0]
+    assert first_step.args.get("identifier_type") == "certificate_number"
+
+
+def test_planner_identifier_plan_infers_manufacturer_name_type() -> None:
+    plan = DeterministicPlanner().create_plan(
+        build_agent_state(user_input="who is the manufacturer of this pump")
+    )
+
+    assert plan is not None
+    first_step = plan.steps[0]
+    assert first_step.args.get("identifier_type") == "manufacturer_name"
+
+
+def test_planner_identifier_plan_infers_component_code_for_order_code_term() -> None:
+    plan = DeterministicPlanner().create_plan(
+        build_agent_state(user_input="find order code FT-200")
+    )
+
+    assert plan is not None
+    first_step = plan.steps[0]
+    assert first_step.args.get("identifier_type") == "component_code"
+
+
 def test_planner_simple_question_not_matched_as_identifier() -> None:
     plan = DeterministicPlanner().create_plan(
         build_agent_state(user_input="what is the oil change interval")

@@ -51,3 +51,29 @@ def test_retrieval_signal_extractor_detects_certification_and_drawing_signals() 
 
     assert "certification" in categories
     assert "drawing" in categories or "figure" in categories
+
+
+def test_retrieval_signal_extractor_manufacturer_triggers_identifier_signal() -> None:
+    extractor = RetrievalSignalExtractor()
+    context = RetrievalContext(
+        query_text="who is the manufacturer of this pump",
+    )
+
+    signals = extractor.extract(context)
+    identifier_signals = [s for s in signals if s.category == "identifier"]
+
+    assert identifier_signals, "Expected identifier signal for manufacturer query"
+    assert any(s.value == "manufacturer" for s in identifier_signals)
+
+
+def test_retrieval_signal_extractor_supplier_triggers_identifier_signal() -> None:
+    extractor = RetrievalSignalExtractor()
+    context = RetrievalContext(
+        query_text="what supplier provides the spare parts",
+    )
+
+    signals = extractor.extract(context)
+    identifier_signals = [s for s in signals if s.category == "identifier"]
+
+    assert identifier_signals, "Expected identifier signal for supplier query"
+    assert any(s.value == "supplier" for s in identifier_signals)

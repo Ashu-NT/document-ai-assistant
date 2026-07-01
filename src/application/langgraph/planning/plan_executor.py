@@ -29,6 +29,8 @@ from src.application.tools.exploration import ExploreDocumentRequest
 from src.application.tools.question_answering import AnswerQuestionRequest
 from src.application.tools.retrieval import RetrieveChunksRequest
 from src.application.tools.retrieval.retrieve_identifiers_tool import RetrieveIdentifiersRequest
+from src.domain.common.enums import IdentifierType
+from src.domain.document.entities.identifier import Identifier
 
 
 class PlanExecutor:
@@ -214,10 +216,11 @@ class PlanExecutor:
         request = self._build_request(
             step=step,
             state=state,
+            step_outputs=step_outputs,
         )
         return tool.run(request)
 
-    def _build_request(self, *, step, state: AgentState):
+    def _build_request(self, *, step, state: AgentState, step_outputs: dict[str, dict[str, Any]] | None = None):
         document_id = self._resolved_document_id(state)
         args = step.args
         if step.tool_name == "list_documents":
@@ -254,6 +257,7 @@ class PlanExecutor:
                 allow_answer_generation=state["allow_answer_generation"],
                 include_context=state["include_context"],
                 require_citations=True,
+                resolved_identifiers=self._extract_resolved_identifiers(step_outputs or {}),
             )
         if step.tool_name == "run_quality_gate":
             return RunQualityGateRequest(
@@ -270,6 +274,32 @@ class PlanExecutor:
         raise ValueError(f"Unsupported plan tool: {step.tool_name}")
 
     @staticmethod
+    def _extract_resolved_identifiers(step_outputs: dict[str, dict[str, Any]]) -> list[Identifier]:
+        identifier_hits = step_outputs.get("identifier_hits", {})
+        raw_identifiers = (identifier_hits.get("data") or {}).get("identifiers") or []
+        result: list[Identifier] = []
+        for item in raw_identifiers:
+            if not isinstance(item, dict):
+                continue
+            try:
+                result.append(
+                    Identifier(
+                        identifier_id=item.get("identifier_id", ""),
+                        document_id=item.get("document_id", ""),
+                        raw_value=item.get("raw_value", ""),
+                        identifier_type=IdentifierType(item.get("identifier_type", "unknown")),
+                        normalized_value=item.get("normalized_value"),
+                        chunk_id=item.get("chunk_id"),
+                        section_id=item.get("section_id"),
+                        page_start=item.get("page_start"),
+                        page_end=item.get("page_end"),
+                    )
+                )
+            except (ValueError, KeyError):
+                continue
+        return result
+
+    @staticmethod
     def _store_canonical_tool_result(
         *,
         tool_results: dict[str, Any],
@@ -278,7 +308,6 @@ class PlanExecutor:
     ) -> None:
         canonical_key = {
             "retrieve_chunks": "retrieve_evidence",
-            "retrieve_identifiers": "retrieve_evidence",
         }.get(tool_name, tool_name)
         tool_results[canonical_key] = serialized
 

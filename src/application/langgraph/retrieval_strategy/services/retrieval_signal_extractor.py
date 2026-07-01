@@ -21,6 +21,10 @@ _IDENTIFIER_TERMS = (
     "tag",
     "certificate number",
     "drawing number",
+    "manufacturer",
+    "supplier",
+    "made by",
+    "manufactured by",
     "id ",
 )
 _SPECIFICATION_TERMS = (

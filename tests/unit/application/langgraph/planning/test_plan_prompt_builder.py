@@ -83,6 +83,48 @@ def test_plan_prompt_builder_hint_describes_identifier_types() -> None:
     assert "model_number" in prompt
 
 
+def test_plan_prompt_builder_hint_uses_component_code_not_order_code() -> None:
+    builder = PlanPromptBuilder()
+    prompt = builder.build(
+        user_input="find component code",
+        state=build_agent_state(user_input="find component code"),
+        route_decision=RouteDecision(
+            route_type=RouteType.PLANNED_TASK,
+            confidence=0.9,
+            reason="Identifier lookup.",
+            extracted_question="find component code",
+            is_compound=True,
+            requires_plan=True,
+        ),
+        tool_registry=ToolRegistry(retrieve_identifiers_tool=object()),
+        policy=PlanPolicy.default(),
+    )
+
+    assert "component_code" in prompt
+    assert "order_code" not in prompt
+
+
+def test_plan_prompt_builder_hint_includes_certificate_number_and_manufacturer_name() -> None:
+    builder = PlanPromptBuilder()
+    prompt = builder.build(
+        user_input="find certificate number ISO-9001",
+        state=build_agent_state(user_input="find certificate number ISO-9001"),
+        route_decision=RouteDecision(
+            route_type=RouteType.PLANNED_TASK,
+            confidence=0.9,
+            reason="Identifier lookup.",
+            extracted_question="find certificate number ISO-9001",
+            is_compound=True,
+            requires_plan=True,
+        ),
+        tool_registry=ToolRegistry(retrieve_identifiers_tool=object()),
+        policy=PlanPolicy.default(),
+    )
+
+    assert "certificate_number" in prompt
+    assert "manufacturer_name" in prompt
+
+
 def test_plan_prompt_builder_includes_recent_history_summary() -> None:
     builder = PlanPromptBuilder()
     prompt = builder.build(
