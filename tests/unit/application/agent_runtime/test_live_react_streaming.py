@@ -125,8 +125,10 @@ def test_events_printed_in_emission_order():
     ]
     for et in types:
         sink.emit(LiveAgentEvent(event_type=et, payload={}))
-    lines = [l for l in stream.getvalue().splitlines() if l.strip()]
-    assert len(lines) == len(types)
+    output = stream.getvalue()
+    # Header appears once; Understand precedes Retrieve; silent events produce no output
+    assert "Agent Loop" in output
+    assert output.index("Understand") < output.index("Retrieve")
 
 
 def test_deep_research_events_include_plan():
@@ -134,11 +136,15 @@ def test_deep_research_events_include_plan():
     sink = ConsoleLiveEventSink(stream=stream)
     sink.emit(LiveAgentEvent(
         event_type=LiveAgentEventType.PLAN_COMPLETED,
-        payload={"task_count": 4},
+        payload={"task_count": 4, "task_titles": ["Task A", "Task B", "Task C", "Task D"]},
     ))
     sink.emit(LiveAgentEvent(event_type=LiveAgentEventType.ACTION_STARTED))
-    sink.emit(LiveAgentEvent(event_type=LiveAgentEventType.ACTION_COMPLETED, payload={"chunk_count": 12}))
+    sink.emit(LiveAgentEvent(
+        event_type=LiveAgentEventType.ACTION_COMPLETED,
+        payload={"description": "Retrieved 12 evidence chunk(s)."},
+    ))
     sink.emit(LiveAgentEvent(event_type=LiveAgentEventType.RUN_COMPLETED))
     output = stream.getvalue()
-    assert "4 task(s)" in output
-    assert "12 chunk(s)" in output
+    assert "Plan" in output
+    assert "Task A" in output
+    assert "Retrieved 12" in output

@@ -8,58 +8,108 @@ from src.application.agent_runtime.streaming.live_agent_event import (
     LiveAgentEventType,
 )
 
-_EVENT_LABELS: dict[LiveAgentEventType, str] = {
-    LiveAgentEventType.RUN_STARTED: "Starting",
-    LiveAgentEventType.UNDERSTAND_REQUEST: "Routing request",
-    LiveAgentEventType.STRATEGY_STARTED: "Selecting retrieval strategy",
-    LiveAgentEventType.STRATEGY_COMPLETED: "Strategy selected",
-    LiveAgentEventType.PLAN_STARTED: "Creating plan",
-    LiveAgentEventType.PLAN_COMPLETED: "Plan ready",
-    LiveAgentEventType.ACTION_STARTED: "Retrieving evidence",
-    LiveAgentEventType.ACTION_COMPLETED: "Evidence collected",
-    LiveAgentEventType.OBSERVATION: "Processing evidence",
-    LiveAgentEventType.REFLECTION_STARTED: "Reviewing answer",
-    LiveAgentEventType.REFLECTION_COMPLETED: "Review complete",
-    LiveAgentEventType.FINAL_STARTED: "Generating grounded answer",
-    LiveAgentEventType.FINAL_COMPLETED: "Answer ready",
-    LiveAgentEventType.RUN_COMPLETED: "Done",
-    LiveAgentEventType.ERROR: "Error",
-    LiveAgentEventType.BLOCKED: "Request blocked",
-}
+_SILENT: frozenset[LiveAgentEventType] = frozenset({
+    LiveAgentEventType.RUN_COMPLETED,
+    LiveAgentEventType.FINAL_STARTED,
+    LiveAgentEventType.FINAL_COMPLETED,
+    LiveAgentEventType.STRATEGY_STARTED,
+    LiveAgentEventType.STRATEGY_COMPLETED,
+    LiveAgentEventType.PLAN_STARTED,
+    LiveAgentEventType.ACTION_STARTED,
+    LiveAgentEventType.REFLECTION_STARTED,
+})
 
 
 class ConsoleLiveEventSink:
     def __init__(self, stream: TextIO | None = None) -> None:
         self._stream = stream or sys.stdout
+        self._step = 0
+        self._header_printed = False
 
     def emit(self, event: LiveAgentEvent) -> None:
-        label = _EVENT_LABELS.get(event.event_type)
-        if label is None:
+        t = event.event_type
+        p: dict[str, Any] = event.payload or {}
+
+        if t in _SILENT:
             return
-        detail = _event_detail(event)
-        if detail:
-            print(f"{label}: {detail}...", file=self._stream, flush=True)
-        else:
-            print(f"{label}...", file=self._stream, flush=True)
 
+        if t == LiveAgentEventType.RUN_STARTED:
+            self._ensure_header()
+            return
 
-def _event_detail(event: LiveAgentEvent) -> str:
-    payload: dict[str, Any] = event.payload or {}
-    if event.event_type == LiveAgentEventType.UNDERSTAND_REQUEST:
-        route = str(payload.get("route") or "").replace("_", " ").strip()
-        return route
-    if event.event_type == LiveAgentEventType.STRATEGY_COMPLETED:
-        return str(payload.get("strategy") or "").strip()
-    if event.event_type == LiveAgentEventType.PLAN_COMPLETED:
-        count = payload.get("task_count")
-        return f"{count} task(s)" if count else ""
-    if event.event_type == LiveAgentEventType.REFLECTION_COMPLETED:
-        return str(payload.get("decision") or "").strip()
-    if event.event_type == LiveAgentEventType.ACTION_COMPLETED:
-        count = payload.get("chunk_count")
-        return f"{count} chunk(s)" if count else ""
-    if event.event_type == LiveAgentEventType.ERROR:
-        return str(payload.get("message") or "").strip()
-    if event.event_type == LiveAgentEventType.BLOCKED:
-        return str(payload.get("reason") or "").strip()
-    return ""
+        if t == LiveAgentEventType.UNDERSTAND_REQUEST:
+            self._ensure_header()
+            n = self._next_step()
+            route = str(p.get("route") or "").replace("_", " ").strip()
+            self._println(f"\n[{n}] Understand")
+            if route:
+                self._println(f"    Route → {route}")
+            return
+
+        if t == LiveAgentEventType.PLAN_COMPLETED:
+            self._ensure_header()
+            n = self._next_step()
+            titles: list[str] = p.get("task_titles") or []
+            task_count: int = p.get("task_count") or 0
+            self._println(f"\n[{n}] Plan")
+            if titles:
+                for i, title in enumerate(titles, 1):
+                    self._println(f"    {i}. {title}")
+            elif task_count:
+                self._println(f"    {task_count} task(s)")
+            return
+
+        if t == LiveAgentEventType.ACTION_COMPLETED:
+            self._ensure_header()
+            n = self._next_step()
+            description = str(p.get("description") or "").strip()
+            self._println(f"\n[{n}] Retrieve")
+            if description:
+                self._println(f"    {description}")
+            return
+
+        if t == LiveAgentEventType.OBSERVATION:
+            detail = str(p.get("detail") or "").strip()
+            self._println(f"\n    Observation")
+            if detail:
+                self._println(f"    {detail}")
+            return
+
+        if t == LiveAgentEventType.REFLECTION_COMPLETED:
+            self._ensure_header()
+            n = self._next_step()
+            decision = str(p.get("decision") or "").strip()
+            reason = str(p.get("reason") or "").strip()
+            self._println(f"\n[{n}] Reflect")
+            if decision:
+                self._println(f"    Decision: {decision}")
+            if reason:
+                self._println(f"    {reason}")
+            return
+
+        if t == LiveAgentEventType.BLOCKED:
+            self._ensure_header()
+            n = self._next_step()
+            reason = str(p.get("reason") or "").strip()
+            self._println(f"\n[{n}] Guardrail")
+            if reason:
+                self._println(f"    {reason}")
+            return
+
+        if t == LiveAgentEventType.ERROR:
+            message = str(p.get("message") or "").strip()
+            self._println(f"\n    Error: {message}")
+            return
+
+    def _ensure_header(self) -> None:
+        if not self._header_printed:
+            self._header_printed = True
+            print("Agent Loop", file=self._stream, flush=True)
+            print("----------", file=self._stream, flush=True)
+
+    def _next_step(self) -> int:
+        self._step += 1
+        return self._step
+
+    def _println(self, text: str) -> None:
+        print(text, file=self._stream, flush=True)
