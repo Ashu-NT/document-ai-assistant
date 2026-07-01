@@ -121,6 +121,25 @@ def test_step_counter_increments_across_events():
     assert "[3]" in output
 
 
+def test_observation_with_evaluate_kind_prints_evaluate_label():
+    output = _emit(LiveAgentEventType.OBSERVATION, {"kind": "evaluate", "detail": "Coverage: 67% — gap: troubleshooting."})
+    assert "Evaluate" in output
+    assert "Coverage: 67%" in output
+    assert "Observation" not in output
+
+
+def test_observation_with_observation_kind_prints_observation_label():
+    output = _emit(LiveAgentEventType.OBSERVATION, {"kind": "observation", "detail": "Synthesis complete."})
+    assert "Observation" in output
+    assert "Evaluate" not in output
+
+
+def test_observation_without_kind_defaults_to_observation_label():
+    output = _emit(LiveAgentEventType.OBSERVATION, {"detail": "Evidence gathered."})
+    assert "Observation" in output
+    assert "Evaluate" not in output
+
+
 def test_header_printed_only_once_across_multiple_events():
     stream = io.StringIO()
     sink = ConsoleLiveEventSink(stream=stream)

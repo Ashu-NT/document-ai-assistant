@@ -67,15 +67,20 @@ class BgeEmbeddingProvider(EmbeddingProvider):
 
     def _get_model(self) -> Any:
         if self._model is None:
+            import contextlib
+            import io
             from sentence_transformers import SentenceTransformer
 
-            try:
-                self._model = SentenceTransformer(
-                    self.model_name,
-                    local_files_only=True,
-                )
-            except Exception:
-                self._model = SentenceTransformer(self.model_name)
+            # SentenceTransformer.__init__ emits a tqdm weight-loading bar to stderr.
+            # Suppress it here; encode() calls already pass show_progress_bar=False.
+            with contextlib.redirect_stderr(io.StringIO()):
+                try:
+                    self._model = SentenceTransformer(
+                        self.model_name,
+                        local_files_only=True,
+                    )
+                except Exception:
+                    self._model = SentenceTransformer(self.model_name)
 
         return self._model
 
