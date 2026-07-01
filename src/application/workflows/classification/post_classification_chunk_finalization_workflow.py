@@ -310,6 +310,17 @@ class PostClassificationChunkFinalizationWorkflow:
         if fallback_chunks:
             return fallback_chunks, "asset_fallback"
 
+        if stored_chunks:
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"Rebuilding produced zero chunks under the "
+                    f"{decision.effective_chunking_profile.value} profile; falling back to "
+                    f"{len(stored_chunks)} previously stored chunk(s) instead of failing."
+                ),
+            )
+            return stored_chunks, "reused_after_empty_rebuild"
+
         raise ApplicationError(
             "Post-classification chunk finalization produced zero chunks for a non-empty parsed document.",
             details=self._build_zero_chunk_diagnostics(
@@ -552,6 +563,8 @@ class PostClassificationChunkFinalizationWorkflow:
             return "Refreshing stored final chunk set using the current chunk builder..."
         if mode == "asset_fallback":
             return "Using asset-aware fallback chunk set..."
+        if mode == "reused_after_empty_rebuild":
+            return "Keeping previously stored final chunk set after rebuild produced none..."
         return "Reusing stored final chunk set..."
 
     @staticmethod
