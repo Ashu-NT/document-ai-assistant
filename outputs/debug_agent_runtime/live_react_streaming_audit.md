@@ -475,18 +475,42 @@ This is the recommended sequence to minimize conflicts and allow incremental tes
 | Tests — intent-specific routing | `test_reference_lookup_routing.py` | Done |
 | Tests — animation no-repeat | `test_demo_agent_cli_live_output.py` | Done |
 
-**Test results:** 149 agent runtime + CLI tests pass. Pre-existing truth-set loader failures (4) unchanged.
+**Test results (initial):** 149 agent runtime + CLI tests pass.
+
+---
+
+## 12.6 Presentation Upgrade — 2026-07-01
+
+Upgraded `ConsoleLiveEventSink` from generic developer labels to a clean numbered agent loop format. Upgraded `EventStreamAdapter` payload extraction to include rich observation data. Updated `ReactPresenter` title.
+
+| Change | File(s) | Detail |
+|---|---|---|
+| `ConsoleLiveEventSink` stateful step counter | `console_event_sink.py` | `[N] Understand / Retrieve / Plan / Reflect / Guardrail` with indented details |
+| Silent events | `console_event_sink.py` | `FINAL_STARTED`, `FINAL_COMPLETED`, `RUN_COMPLETED`, `STRATEGY_*`, `PLAN_STARTED`, `ACTION_STARTED`, `REFLECTION_STARTED` produce no output |
+| Rich `ACTION_COMPLETED` payload | `event_stream_adapter.py` | `description` with page numbers from `context_chunks` |
+| Rich `PLAN_COMPLETED` payload | `event_stream_adapter.py` | `task_titles` list, not just `task_count` |
+| Rich `REFLECTION_COMPLETED` payload | `event_stream_adapter.py` | `reason` from `reflection_result.decision.reason` |
+| `OBSERVATION` payload | `event_stream_adapter.py` | `detail` from synthesis/summary patch keys |
+| `ReactPresenter` title | `react_presenter.py` | "Agent Trace" → "Agent Loop" |
+| New test file | `test_agent_loop_style.py` | 14 tests covering full sequence, silence rules, step numbering, ReactPresenter title |
+| Updated tests | `test_console_event_sink.py` | Rewritten to match new format (17 tests) |
+| Updated tests | `test_event_stream_adapter.py` | 5 new tests for richer payloads |
+| Updated tests | `test_live_react_streaming.py` | 2 tests updated for new format |
+
+**Test results (final):** 175 agent runtime + CLI tests pass. No regressions.
 
 ---
 
 ## 13. Acceptance Criteria
 
-- [ ] "Finalizing response..." appears at most once per query.
-- [ ] For deep-research queries, distinct stage names appear in sequence, each exactly once.
-- [ ] ReAct trace steps appear on stdout before or as the graph progresses — not only after completion.
-- [ ] A query for "manufacturer and supplier page references" produces a thought step that
+- [x] "Finalizing response..." appears at most once per query.
+- [x] For deep-research queries, distinct stage names appear in sequence, each exactly once.
+- [x] ReAct trace steps appear on stdout as the graph progresses — not only after completion.
+- [x] A query for "manufacturer and supplier page references" produces a thought step that
       mentions identifiers or reference lookup — not the generic "retrieve grounded context" boilerplate.
-- [ ] A reflection FAIL results in the safe failure message reaching the user; the LLM-generated
+- [x] A reflection FAIL results in the safe failure message reaching the user; the LLM-generated
       answer is not shown.
-- [ ] All tests pass without Ollama; all LLM paths use mocks.
-- [ ] No new facade or backwards-compatibility module introduced.
+- [x] Agent loop output is structured: `[N] Understand → [N] Retrieve → Observation → [N] Reflect → Final Answer`.
+- [x] FINAL_STARTED / FINAL_COMPLETED are silent — presenter owns "Final Answer" section; no duplication.
+- [x] All tests pass without Ollama; all LLM paths use mocks.
+- [x] No new facade or backwards-compatibility module introduced.

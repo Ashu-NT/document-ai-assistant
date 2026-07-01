@@ -114,3 +114,58 @@ def test_adapter_action_completed_includes_chunk_count():
     adapter.run(graph, {})
     action_events = [e for e in sink.events if e.event_type == LiveAgentEventType.ACTION_COMPLETED]
     assert action_events[0].payload["chunk_count"] == 2
+
+
+def test_adapter_action_completed_includes_page_description():
+    graph = _FakeCompiledGraph([
+        {"retrieve_evidence": {"context_chunks": [
+            {"source": {"page_start": 42, "page_end": 43}, "content": "text"},
+            {"source": {"page_start": 58, "page_end": 58}, "content": "text"},
+        ]}},
+    ])
+    sink = _CollectingSink()
+    adapter = EventStreamAdapter(sink)
+    adapter.run(graph, {})
+    action_events = [e for e in sink.events if e.event_type == LiveAgentEventType.ACTION_COMPLETED]
+    description = action_events[0].payload.get("description", "")
+    assert "p.42" in description
+    assert "p.58" in description
+
+
+def test_adapter_plan_completed_includes_task_titles():
+    graph = _FakeCompiledGraph([
+        {"create_research_plan": {"research_plan": {"tasks": [
+            {"title": "Collect maintenance tasks"},
+            {"title": "Collect specifications"},
+        ]}}},
+    ])
+    sink = _CollectingSink()
+    adapter = EventStreamAdapter(sink)
+    adapter.run(graph, {})
+    plan_events = [e for e in sink.events if e.event_type == LiveAgentEventType.PLAN_COMPLETED]
+    titles = plan_events[0].payload.get("task_titles", [])
+    assert "Collect maintenance tasks" in titles
+    assert "Collect specifications" in titles
+
+
+def test_adapter_reflection_completed_includes_reason():
+    graph = _FakeCompiledGraph([
+        {"reflect_answer": {"reflection_result": {"decision": {"decision": "ACCEPT", "reason": "Grounded."}}}},
+    ])
+    sink = _CollectingSink()
+    adapter = EventStreamAdapter(sink)
+    adapter.run(graph, {})
+    reflection_events = [e for e in sink.events if e.event_type == LiveAgentEventType.REFLECTION_COMPLETED]
+    assert reflection_events[0].payload["decision"] == "ACCEPT"
+    assert reflection_events[0].payload["reason"] == "Grounded."
+
+
+def test_adapter_observation_includes_detail():
+    graph = _FakeCompiledGraph([
+        {"synthesize_research": {"synthesis": "Cross-section analysis complete."}},
+    ])
+    sink = _CollectingSink()
+    adapter = EventStreamAdapter(sink)
+    adapter.run(graph, {})
+    obs_events = [e for e in sink.events if e.event_type == LiveAgentEventType.OBSERVATION]
+    assert "Cross-section analysis complete." in obs_events[0].payload.get("detail", "")

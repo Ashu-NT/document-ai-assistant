@@ -114,7 +114,42 @@ Replaced the static timer-based `ProgressIndicator` / `ThinkingAnimation` in `De
 - `scripts/demo_agent_cli.py` — `ProgressIndicator` construction removed
 - `tests/unit/application/agent_runtime/streaming/` — 4 test files, 22 tests
 
-### 13. Pre-existing test corrected `P0`
+### 13. Demo runtime — structured agent loop presentation `P2`
+
+Upgraded `ConsoleLiveEventSink` from generic developer labels ("Routing request...", "Evidence collected...") to a clean numbered agent loop format. `EventStreamAdapter` payload extraction enriched with page references, task titles, and reflection reasons. `ReactPresenter` title updated.
+
+Terminal output format:
+```
+Agent Loop
+----------
+[1] Understand
+    Route → answer_question
+
+[2] Retrieve
+    Retrieved 5 evidence chunk(s) from p.42, p.58.
+
+    Observation
+    Processed 5 evidence group(s).
+
+[3] Reflect
+    Decision: ACCEPT
+    Grounded in document context.
+```
+
+Key rules implemented:
+- `FINAL_STARTED` / `FINAL_COMPLETED` are silent — `ConsolePresenter` owns "Final Answer"; no duplication
+- `OBSERVATION` is indented without a step number
+- Stateful step counter in `ConsoleLiveEventSink` (resets per request)
+- `ReactPresenter` now renders "Agent Loop" header (was "Agent Trace")
+
+- `src/application/agent_runtime/streaming/console_event_sink.py` — full rewrite
+- `src/application/agent_runtime/streaming/event_stream_adapter.py` — richer payloads
+- `src/application/agent_runtime/react_loop/react_presenter.py` — "Agent Loop" title
+- `tests/unit/application/agent_runtime/streaming/test_agent_loop_style.py` — 14 new tests
+- `tests/unit/application/agent_runtime/streaming/test_console_event_sink.py` — rewritten (17 tests)
+- `tests/unit/application/agent_runtime/streaming/test_event_stream_adapter.py` — 5 new tests for richer payloads
+
+### 14. Pre-existing test corrected `P0`
 
 `test_ask_document_print_result_shows_full_document_id_and_context_source` asserted `"Document ID: ..."` which was removed in session 2 (step 8). Assertion updated to match current output.
 

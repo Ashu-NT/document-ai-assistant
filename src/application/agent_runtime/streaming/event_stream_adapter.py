@@ -60,16 +60,53 @@ class EventStreamAdapter:
         state: dict[str, Any],
     ) -> dict[str, Any]:
         if event_type == LiveAgentEventType.UNDERSTAND_REQUEST:
-            return {"route": state.get("route_type") or state.get("route") or ""}
+            return {
+                "route": str(state.get("route_type") or state.get("route") or ""),
+                "intent": str(state.get("answer_intent") or ""),
+            }
         if event_type == LiveAgentEventType.PLAN_COMPLETED:
             plan = state.get("research_plan") or state.get("execution_plan") or {}
             tasks = plan.get("tasks", []) if isinstance(plan, dict) else []
-            return {"task_count": len(tasks)}
+            titles = [
+                str(t.get("title") or t.get("description") or "").strip()
+                for t in tasks
+                if isinstance(t, dict) and (t.get("title") or t.get("description"))
+            ]
+            return {"task_count": len(tasks), "task_titles": titles}
         if event_type == LiveAgentEventType.ACTION_COMPLETED:
             chunks = state.get("context_chunks") or []
-            return {"chunk_count": len(chunks) if isinstance(chunks, list) else 0}
+            count = len(chunks) if isinstance(chunks, list) else 0
+            description = _build_retrieve_description(chunks)
+            return {"chunk_count": count, "description": description}
+        if event_type == LiveAgentEventType.OBSERVATION:
+            detail = (
+                str(patch.get("synthesis") or "").strip()
+                or str(patch.get("summary") or "").strip()
+                or str(state.get("research_summary") or "").strip()
+            )
+            if not detail:
+                chunks = state.get("context_chunks") or []
+                count = len(chunks) if isinstance(chunks, list) else 0
+                detail = f"Processed {count} evidence group(s)." if count else "Evidence gathered."
+            return {"detail": detail[:300]}
         if event_type == LiveAgentEventType.REFLECTION_COMPLETED:
-            return {"decision": str(state.get("reflection_decision") or "")}
+            reflection_result = state.get("reflection_result") or {}
+            decision_obj = (
+                reflection_result.get("decision") or {}
+                if isinstance(reflection_result, dict)
+                else {}
+            )
+            decision = (
+                (decision_obj.get("decision") if isinstance(decision_obj, dict) else None)
+                or state.get("reflection_decision")
+                or ""
+            )
+            reason = (
+                decision_obj.get("reason") or ""
+                if isinstance(decision_obj, dict)
+                else ""
+            )
+            return {"decision": str(decision), "reason": str(reason)}
         if event_type == LiveAgentEventType.ERROR:
             return {"message": str(state.get("error") or "")}
         if event_type == LiveAgentEventType.BLOCKED:
@@ -81,3 +118,26 @@ class EventStreamAdapter:
                 )
             }
         return {}
+
+
+def _build_retrieve_description(chunks: list) -> str:
+    if not isinstance(chunks, list) or not chunks:
+        return ""
+    count = len(chunks)
+    pages: list[str] = []
+    for chunk in chunks:
+        if not isinstance(chunk, dict):
+            continue
+        source = chunk.get("source") or {}
+        if not isinstance(source, dict):
+            continue
+        pg = source.get("page_start")
+        if pg is not None:
+            pg_str = str(pg)
+            if pg_str not in pages:
+                pages.append(pg_str)
+        if len(pages) >= 3:
+            break
+    if pages:
+        return f"Retrieved {count} evidence chunk(s) from p.{', p.'.join(pages)}."
+    return f"Retrieved {count} evidence chunk(s)."
