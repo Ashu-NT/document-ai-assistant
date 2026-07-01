@@ -15,6 +15,12 @@ _TOOL_HINTS: dict[str, str] = {
     "document_details": "Get metadata/details for the current document.",
     "explore_document": "Explore section-level content for a selected document.",
     "retrieve_chunks": "Retrieve evidence chunks for a query.",
+    "retrieve_identifiers": (
+        "Search for specific identifiers such as part numbers, serial numbers, model numbers, "
+        "order codes, or drawing numbers. Args: identifier_value (str, required), "
+        "identifier_type (optional: 'part_number'|'serial_number'|'model_number'|'order_code'|'drawing_number'), "
+        "document_id (optional, to scope to a single document)."
+    ),
     "answer_question": "Answer a question using the existing QA workflow.",
     "run_quality_gate": "Run an evaluation quality gate.",
     "retrieval_trace": "Trace retrieval behavior for a query.",

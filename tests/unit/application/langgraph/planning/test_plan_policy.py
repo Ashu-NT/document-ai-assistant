@@ -9,6 +9,18 @@ def test_plan_policy_default_allows_read_only_tools() -> None:
     assert "answer_question" in policy.allowed_tools
 
 
+def test_plan_policy_default_allows_retrieve_identifiers() -> None:
+    policy = PlanPolicy.default()
+
+    assert "retrieve_identifiers" in policy.allowed_tools
+
+
+def test_plan_policy_retrieve_identifiers_not_blocked() -> None:
+    policy = PlanPolicy.default()
+
+    assert "retrieve_identifiers" not in policy.blocked_tools
+
+
 def test_plan_policy_default_blocks_mutating_tools() -> None:
     policy = PlanPolicy.default()
 

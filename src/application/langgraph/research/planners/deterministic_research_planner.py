@@ -419,6 +419,15 @@ class DeterministicResearchPlanner:
         answer_intent: str,
         max_results: int,
     ):
+        diagnostics: dict[str, object] = {
+            "concept": concept,
+            "concept_role": "primary",
+            "strategy_hint": strategy.value,
+        }
+        if strategy == RetrievalStrategy.IDENTIFIER_LOOKUP:
+            identifier_value = self._extract_identifier_value(concept)
+            if identifier_value:
+                diagnostics["identifier_value"] = identifier_value
         return self.plan_builder.build_task(
             title=f"Collect evidence for {concept}",
             question=question,
@@ -427,12 +436,16 @@ class DeterministicResearchPlanner:
             document_id=goal.document_id,
             expected_evidence_type=self._normalize_theme(concept),
             max_results=max_results,
-            diagnostics={
-                "concept": concept,
-                "concept_role": "primary",
-                "strategy_hint": strategy.value,
-            },
+            diagnostics=diagnostics,
         )
+
+    @staticmethod
+    def _extract_identifier_value(concept: str) -> str | None:
+        match = re.search(
+            r"\b([A-Z]{1,5}\d{1,6}[A-Z0-9-]*|\d{3,}[A-Z0-9-]+|DN\s*\d+)\b",
+            concept.upper(),
+        )
+        return match.group(0).replace(" ", "") if match else None
 
     def _resolve_concepts(
         self,

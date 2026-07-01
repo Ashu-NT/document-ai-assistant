@@ -10,6 +10,7 @@ def _tool_registry() -> ToolRegistry:
         document_details_tool=object(),
         explore_document_tool=object(),
         retrieve_chunks_tool=object(),
+        retrieve_identifiers_tool=object(),
         answer_question_tool=object(),
         run_quality_gate_tool=object(),
         retrieval_trace_tool=object(),
@@ -165,6 +166,72 @@ def test_plan_validator_rejects_document_mismatch() -> None:
 
     assert result.success is False
     assert any("does not match the selected document" in error for error in result.errors)
+
+
+def test_plan_validator_accepts_retrieve_identifiers_step() -> None:
+    result = PlanValidator().validate(
+        ExecutionPlan(
+            plan_id="plan_1",
+            goal="Find part number HP-001",
+            steps=[
+                PlanStep(
+                    step_id="step_1",
+                    tool_name="retrieve_identifiers",
+                    description="Look up identifier HP-001",
+                    output_key="identifier_hits",
+                    args={"identifier_value": "HP-001", "identifier_type": "part_number"},
+                    source="llm",
+                ),
+                PlanStep(
+                    step_id="step_2",
+                    tool_name="answer_question",
+                    description="Answer what HP-001 is",
+                    output_key="answer",
+                    args={"question": "What is part number HP-001?", "document_id": "doc-42"},
+                    depends_on=["step_1"],
+                    source="llm",
+                ),
+            ],
+            reason="identifier lookup",
+            source="llm",
+        ),
+        policy=PlanPolicy.default(),
+        tool_registry=_tool_registry(),
+        state=build_agent_state(
+            user_input="what is part number HP-001",
+            selected_document_id="doc-42",
+        ),
+    )
+
+    assert result.success is True
+    assert result.validated_plan is not None
+
+
+def test_plan_validator_rejects_retrieve_identifiers_with_unknown_args() -> None:
+    result = PlanValidator().validate(
+        ExecutionPlan(
+            plan_id="plan_1",
+            goal="Find part number",
+            steps=[
+                PlanStep(
+                    step_id="step_1",
+                    tool_name="retrieve_identifiers",
+                    description="Look up identifier",
+                    output_key="identifier_hits",
+                    args={"identifier_value": "HP-001", "unknown_arg": "bad"},
+                    source="llm",
+                ),
+            ],
+            reason="identifier lookup",
+            source="llm",
+        ),
+        policy=PlanPolicy.default(),
+        tool_registry=_tool_registry(),
+        state=build_agent_state(user_input="what is HP-001"),
+    )
+
+    assert result.success is False
+    assert any("unsupported args" in error for error in result.errors)
 
 
 def test_plan_validator_accepts_valid_retrieve_and_answer_plan() -> None:
