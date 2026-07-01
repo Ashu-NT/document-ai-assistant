@@ -38,3 +38,13 @@ class ExtractionSettings(AppBaseSettings):
         default=2,
         alias="EXTRACTION_MAX_ATTEMPTS",
     )
+
+    extraction_temperature: float = Field(
+        default=0.0,
+        alias="EXTRACTION_TEMPERATURE",
+    )
+
+    extraction_json_mode: bool = Field(
+        default=True,
+        alias="EXTRACTION_JSON_MODE",
+    )

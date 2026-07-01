@@ -122,6 +122,24 @@ def _default_extraction_max_attempts() -> int:
         return 2
 
 
+def _default_extraction_temperature() -> float:
+    try:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.extraction_temperature
+    except Exception:
+        return 0.0
+
+
+def _default_extraction_json_mode() -> bool:
+    try:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.extraction_json_mode
+    except Exception:
+        return True
+
+
 class ExtractionWorkflow:
     def __init__(
         self,
@@ -139,6 +157,8 @@ class ExtractionWorkflow:
         allow_partial_batches: bool | None = None,
         failure_preview_chars: int | None = None,
         max_attempts: int | None = None,
+        temperature: float | None = None,
+        json_mode: bool | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.extraction_service = extraction_service
@@ -179,6 +199,16 @@ class ExtractionWorkflow:
             max_attempts
             if max_attempts is not None
             else _default_extraction_max_attempts(),
+        )
+        self.temperature = (
+            temperature
+            if temperature is not None
+            else _default_extraction_temperature()
+        )
+        self.json_mode = (
+            json_mode
+            if json_mode is not None
+            else _default_extraction_json_mode()
         )
         self.last_batch_diagnostics: list[ExtractionBatchDiagnostics] = []
         self._invalid_source_chunk_id_events: list[dict[str, Any]] = []
@@ -370,8 +400,8 @@ class ExtractionWorkflow:
             prompt,
             model=self.extraction_model,
             activity_context=activity_context,
-            temperature=0.0,
-            json_mode=True,
+            temperature=self.temperature,
+            json_mode=self.json_mode,
         )
         self._emit_progress(
             progress_callback,
