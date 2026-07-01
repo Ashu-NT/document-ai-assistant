@@ -20,7 +20,7 @@ class ResearchPlanningPromptBuilder:
             "Do not invent tools.\n"
             f"Maximum tasks: {policy.max_tasks}\n"
             "Allowed strategy hints are retrieval strategy names such as "
-            "MAINTENANCE_LOOKUP, TECHNICAL_SPECIFICATION, PROCEDURE_LOOKUP, "
+            "MAINTENANCE_LOOKUP, TECHNICAL_SPECIFICATION, IDENTIFIER_LOOKUP, PROCEDURE_LOOKUP, "
             "TROUBLESHOOTING_LOOKUP, CERTIFICATION_LOOKUP, DRAWING_LOOKUP, "
             "FIGURE_LOOKUP, TABLE_LOOKUP, SECTION_LOOKUP, GENERAL_HYBRID.\n"
             "The response schema is:\n"

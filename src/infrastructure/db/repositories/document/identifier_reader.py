@@ -54,3 +54,24 @@ class IdentifierReader:
                 "Failed to get identifiers for chunk.",
                 details={"chunk_id": chunk_id},
             ) from exc
+
+    def get_identifiers_on_page(self, document_id: str, page: int) -> list[Identifier]:
+        from sqlalchemy import or_
+
+        try:
+            statement = select(IdentifierORM).where(
+                IdentifierORM.document_id == document_id,
+                IdentifierORM.page_start.is_not(None),
+                IdentifierORM.page_start <= page,
+                or_(
+                    IdentifierORM.page_end.is_(None),
+                    IdentifierORM.page_end >= page,
+                ),
+            )
+            rows = self.session.execute(statement).scalars().all()
+            return [IdentifierMapper.to_domain(row) for row in rows]
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to get identifiers on page.",
+                details={"document_id": document_id, "page": page},
+            ) from exc
