@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Any, Protocol
 
 
 class LLMProvider(Protocol):
@@ -9,5 +9,6 @@ class LLMProvider(Protocol):
         *,
         temperature: float | None = None,
         json_mode: bool = False,
+        response_schema: dict[str, Any] | None = None,
     ) -> str:
         ...

@@ -53,3 +53,31 @@ def test_identifier_extraction_prompt_builder_includes_source_text_and_instructi
     assert "Allowed chunk_id values" in prompt
     assert f"{sample_chunk.chunk_id}, {second_chunk.chunk_id}" in prompt
     assert "Never write [null]" in prompt
+
+
+def test_identifier_extraction_prompt_builder_omits_correction_notice_by_default(
+    sample_chunk,
+) -> None:
+    builder = IdentifierExtractionPromptBuilder()
+
+    prompt = builder.build(sample_chunk.document_id, [sample_chunk])
+
+    assert "Your previous response was rejected" not in prompt
+
+
+def test_identifier_extraction_prompt_builder_includes_previous_error_when_retrying(
+    sample_chunk,
+) -> None:
+    builder = IdentifierExtractionPromptBuilder()
+
+    prompt = builder.build(
+        sample_chunk.document_id,
+        [sample_chunk],
+        previous_error="spare_parts.0: Input should be a valid dictionary",
+    )
+
+    assert "Your previous response was rejected" in prompt
+    assert "spare_parts.0: Input should be a valid dictionary" in prompt
+    assert prompt.index("Your previous response was rejected") < prompt.index(
+        "You extract structured information"
+    )

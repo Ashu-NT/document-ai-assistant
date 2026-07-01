@@ -133,3 +133,27 @@ def test_generate_passes_json_mode_and_temperature_to_client() -> None:
             "options": {"temperature": 0.0},
         }
     ]
+
+
+def test_generate_response_schema_overrides_json_mode() -> None:
+    client = FakeOllamaClient(FakeOllamaResponse("{}"))
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434",
+        default_model="qwen3:8b",
+        client=client,
+    )
+    schema = {"type": "object", "properties": {"identifiers": {"type": "array"}}}
+
+    provider.generate(
+        "Extract structured data.",
+        json_mode=True,
+        response_schema=schema,
+    )
+
+    assert client.calls == [
+        {
+            "model": "qwen3:8b",
+            "prompt": "Extract structured data.",
+            "format": schema,
+        }
+    ]
