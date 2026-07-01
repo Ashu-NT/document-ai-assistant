@@ -26,6 +26,8 @@ from src.application.workflows.classification import (
     DocumentClassificationWorkflow,
     PostClassificationChunkFinalizationWorkflow,
 )
+from src.application.workflows.ingestion import IngestionWorkflow
+from src.application.workflows.ingestion.ingestion_request import IngestionRequest
 from src.application.workflows.parsing import ParsingWorkflow
 from src.domain.classification import DocumentClassification
 from src.domain.document import DocumentGraph
@@ -44,6 +46,7 @@ class RetrievalBenchmarkCorpusSeeder:
     def __init__(
         self,
         *,
+        ingestion_workflow: IngestionWorkflow,
         parsing_workflow: ParsingWorkflow,
         document_registration_service: DocumentRegistrationService,
         duplicate_detection_service: DuplicateDetectionService,
@@ -59,6 +62,7 @@ class RetrievalBenchmarkCorpusSeeder:
         vector_collection: str | None = None,
         hash_computer: Callable[[Path], tuple[str, str | None]] | None = None,
     ) -> None:
+        self.ingestion_workflow = ingestion_workflow
         self.parsing_workflow = parsing_workflow
         self.document_registration_service = document_registration_service
         self.duplicate_detection_service = duplicate_detection_service
@@ -228,17 +232,17 @@ class RetrievalBenchmarkCorpusSeeder:
             final_graph, classification, seed_status = self._seed_new_document(
                 seed_target=seed_target,
                 file_hash=file_hash,
-                content_hash=content_hash,
                 activity_context=activity_context,
                 progress_callback=progress_callback,
                 seed_index=seed_index,
                 total_targets=total_targets,
             )
 
+        manifest_content_hash = final_graph.document.hashes.content_hash or content_hash
         return self._build_manifest_document(
             seed_target=seed_target,
             file_hash=file_hash,
-            content_hash=content_hash,
+            content_hash=manifest_content_hash,
             document_graph=final_graph,
             classification=classification,
             seed_status=seed_status,
@@ -249,75 +253,33 @@ class RetrievalBenchmarkCorpusSeeder:
         *,
         seed_target: _CorpusSeedTarget,
         file_hash: str,
-        content_hash: str | None,
         activity_context: ActivityContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
         seed_index: int | None = None,
         total_targets: int | None = None,
     ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
-        prefix = self._progress_prefix(
-            seed_index=seed_index,
-            total_targets=total_targets,
-        )
+        prefix = self._progress_prefix(seed_index=seed_index, total_targets=total_targets)
         self._emit_progress(
             progress_callback,
-            f"{prefix} Parsing document into provisional graph...",
+            f"{prefix} Delegating to canonical IngestionWorkflow...",
         )
-        parsing_progress = self._scoped_progress_callback(
-            progress_callback,
-            prefix,
-        )
-        parsing_started_at = perf_counter()
-        parsing_result = self.parsing_workflow.parse(
+        request = IngestionRequest(
             file_path=str(seed_target.file_path),
-            file_hash=file_hash,
-            content_hash=content_hash,
-            activity_context=activity_context,
-            progress_callback=parsing_progress,
+            force=True,
+            requested_by="benchmark_seeder",
+            run_quality_checks=False,
         )
-        parsing_elapsed_seconds = perf_counter() - parsing_started_at
-        self._emit_progress(
-            progress_callback,
-            (
-                f"{prefix} Provisional parsing completed in "
-                f"{self._format_elapsed_seconds(parsing_elapsed_seconds)}. "
-                "Registering provisional document graph "
-                f"({len(parsing_result.document_graph.chunks)} chunk(s))."
-            ),
+        result = self.ingestion_workflow.run(
+            request,
+            progress_callback=self._scoped_progress_callback(progress_callback, prefix),
         )
-        self.document_registration_service.register_document_graph(
-            parsing_result.document_graph,
-            activity_context=activity_context,
-        )
-        self._commit()
-
-        self._emit_progress(
-            progress_callback,
-            f"{prefix} Running document classification...",
-        )
-        classification = self.document_classification_workflow.classify_document(
-            parsing_result.document_graph,
-            activity_context=activity_context,
-        )
-        self._commit()
-
-        self._emit_progress(
-            progress_callback,
-            (
-                f"{prefix} Finalizing post-classification chunks, questions, "
-                "and embeddings..."
-            ),
-        )
-        final_graph = self.post_classification_chunk_finalization_workflow.finalize(
-            parsing_result.document_id,
-            activity_context=activity_context,
-            progress_callback=self._scoped_progress_callback(
-                progress_callback,
-                prefix,
-            ),
-        )
-        self._commit()
-
+        final_graph = self.document_lookup_service.get_document_graph(result.document_id)
+        if final_graph is None:
+            raise ApplicationError(
+                "Seeded document graph could not be loaded after ingestion.",
+                details={"document_id": result.document_id},
+            )
+        classification = self.classification_service.get_document_classification(result.document_id)
         return final_graph, classification, "seeded_new"
 
     def _reseed_existing_document(

@@ -27,6 +27,7 @@ _DEFAULT_ALLOWED_TOOLS = (
     "document_details",
     "explore_document",
     "retrieve_chunks",
+    "retrieve_identifiers",
     "answer_question",
     "run_quality_gate",
     "retrieval_trace",

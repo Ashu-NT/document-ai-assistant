@@ -1,6 +1,7 @@
 from src.application.contracts.document import DocumentRepository
 from src.application.validation.document import DocumentGraphValidator
 from src.domain.document import DocumentGraph
+from src.domain.document.entities.identifier import Identifier
 from src.shared.activity import ActivityContext
 from src.shared.execution import ActionResult, tracked_action
 
@@ -110,3 +111,10 @@ class DocumentRegistrationService:
                 "identifier_count": len(document_graph.identifiers),
             },
         )
+
+    def register_document_identifiers(
+        self,
+        identifiers: list[Identifier],
+        activity_context: ActivityContext | None = None,
+    ) -> None:
+        self.document_repository.write_document_identifiers(identifiers)

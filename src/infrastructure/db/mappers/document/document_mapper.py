@@ -16,6 +16,7 @@ class DocumentMapper:
             title=document.title,
             document_type=document.document_type.value,
             language=document.language,
+            source_name=document.source_name,
             page_count=document.statistics.page_count,
             created_at=document.audit.created_at,
         )
@@ -33,6 +34,7 @@ class DocumentMapper:
             title=orm.title,
             document_type=DocumentType(orm.document_type),
             language=orm.language,
+            source_name=orm.source_name,
             statistics=DocumentStatistics(
                 page_count=orm.page_count,
             ),

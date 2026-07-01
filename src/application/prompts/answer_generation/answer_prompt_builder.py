@@ -44,10 +44,25 @@ class AnswerPromptBuilder:
             f"{self._intent_block(request)}"
             f"{self._format_policy_block(request)}"
             f"Question: {request.question}\n\n"
+            f"{self._identifier_block(request)}"
             f"{self._organized_context_block(request)}"
             "Raw sources:\n"
             f"{source_blocks}"
         )
+
+    @staticmethod
+    def _identifier_block(request: "AnswerGenerationRequest") -> str:
+        identifiers = getattr(request, "resolved_identifiers", None)
+        if not identifiers:
+            return ""
+        lines = ["Resolved identifiers:"]
+        for identifier in identifiers:
+            type_label = identifier.identifier_type.value.replace("_", " ").title()
+            lines.append(
+                f"- {type_label}: {identifier.raw_value}"
+                f" (normalized: {identifier.normalized_value})"
+            )
+        return "\n".join(lines) + "\n\n"
 
     @staticmethod
     def _intent_block(request: "AnswerGenerationRequest") -> str:

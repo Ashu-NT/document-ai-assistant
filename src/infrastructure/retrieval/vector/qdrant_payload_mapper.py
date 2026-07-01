@@ -11,6 +11,7 @@ class QdrantPayloadMapper:
         chunk: DocumentChunk,
         *,
         document_type: str | None = None,
+        identifier_values: list[str] | None = None,
     ) -> dict:
         payload = {
             "document_id": chunk.document_id,
@@ -27,6 +28,8 @@ class QdrantPayloadMapper:
         }
         if document_type is not None:
             payload["document_type"] = document_type
+        if identifier_values:
+            payload["identifier_values"] = identifier_values
         return payload
 
     @staticmethod

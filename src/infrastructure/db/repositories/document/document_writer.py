@@ -3,6 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.domain.document import DocumentGraph
+from src.domain.document.entities.identifier import Identifier
 from src.infrastructure.db.mappers import (
     ChunkMapper,
     DocumentMapper,
@@ -120,6 +121,16 @@ class DocumentWriter:
                 ChunkORM.document_id == document_id
             )
         )
+
+    def write_identifiers(self, identifiers: list[Identifier]) -> None:
+        try:
+            for identifier in identifiers:
+                self.session.merge(IdentifierMapper.to_orm(identifier))
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to write identifiers.",
+                details={"identifier_count": len(identifiers)},
+            ) from exc
 
     def _delete_document_structure(self, document_id: str) -> None:
         self.session.execute(

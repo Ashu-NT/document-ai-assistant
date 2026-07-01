@@ -13,9 +13,12 @@ class Identifier:
 
     chunk_id: str | None = None
     element_id: str | None = None
+    section_id: str | None = None
 
     normalized_value: str | None = None
     confidence_score: float | None = None
+    page_start: int | None = None
+    page_end: int | None = None
 
     audit: AuditMetadata = field(default_factory=AuditMetadata)
 

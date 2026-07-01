@@ -54,7 +54,12 @@ from src.application.workflows.classification import (  # noqa: E402
     DocumentClassificationWorkflow,
     PostClassificationChunkFinalizationWorkflow,
 )
+from src.application.services.extraction import ExtractionService  # noqa: E402
+from src.application.validation.extraction import ExtractionResultValidator  # noqa: E402
 from src.application.workflows.embedding import EmbeddingWorkflow  # noqa: E402
+from src.application.workflows.extraction import ExtractionWorkflow  # noqa: E402
+from src.application.workflows.ingestion import IngestionWorkflow  # noqa: E402
+from src.application.validation.ingestion import IngestionRequestValidator  # noqa: E402
 from src.application.workflows.parsing import ParsingWorkflow  # noqa: E402
 from src.application.workflows.parsing.ocr import (  # noqa: E402
     build_parsing_ocr_runtime,
@@ -287,41 +292,65 @@ def build_corpus_seeder() -> CorpusSeederRuntime:
         chunk_classification_validator=chunk_validator,
         id_generator=id_generator,
     )
+    document_classification_workflow = DocumentClassificationWorkflow(
+        llm_service=llm_service,
+        classification_service=classification_service,
+        document_classification_validator=document_validator,
+        id_generator=id_generator,
+    )
+    embedding_workflow = EmbeddingWorkflow(
+        embedding_service=EmbeddingService(embedding_provider),
+        vector_store=vector_store,
+    )
+    post_classification_workflow = PostClassificationChunkFinalizationWorkflow(
+        document_lookup_service=document_lookup_service,
+        document_registration_service=document_registration_service,
+        classification_service=classification_service,
+        chunk_classification_workflow=chunk_classification_workflow,
+        chunk_type_classification_workflow=ChunkTypeClassificationWorkflow(
+            llm_service=llm_service,
+        ),
+        question_generation_service=QuestionGenerationService(
+            llm_service=llm_service,
+            id_generator=id_generator,
+        ),
+        embedding_workflow=embedding_workflow,
+        vector_store=vector_store,
+        graph_chunk_builder=document_graph_builder.chunk_builder,
+    )
+    extraction_result_validator = ExtractionResultValidator()
+    extraction_service = ExtractionService(
+        extraction_repository=uow.extractions,
+        extraction_result_validator=extraction_result_validator,
+    )
+    ingestion_workflow = IngestionWorkflow(
+        unit_of_work=uow,
+        ingestion_request_validator=IngestionRequestValidator(),
+        duplicate_detection_service=DuplicateDetectionService(document_repository),
+        parsing_workflow=parsing_workflow,
+        document_registration_service=document_registration_service,
+        document_classification_workflow=document_classification_workflow,
+        post_classification_chunk_finalization_workflow=post_classification_workflow,
+        extraction_workflow=ExtractionWorkflow(
+            llm_service=llm_service,
+            extraction_service=extraction_service,
+            extraction_result_validator=extraction_result_validator,
+            id_generator=id_generator,
+        ),
+        embedding_workflow=embedding_workflow,
+        id_generator=id_generator,
+    )
 
     return CorpusSeederRuntime(
         seeder=RetrievalBenchmarkCorpusSeeder(
+            ingestion_workflow=ingestion_workflow,
             parsing_workflow=parsing_workflow,
             document_registration_service=document_registration_service,
             duplicate_detection_service=DuplicateDetectionService(document_repository),
             document_lookup_service=document_lookup_service,
             classification_service=classification_service,
-            document_classification_workflow=DocumentClassificationWorkflow(
-                llm_service=llm_service,
-                classification_service=classification_service,
-                document_classification_validator=document_validator,
-                id_generator=id_generator,
-            ),
-            post_classification_chunk_finalization_workflow=(
-                PostClassificationChunkFinalizationWorkflow(
-                    document_lookup_service=document_lookup_service,
-                    document_registration_service=document_registration_service,
-                    classification_service=classification_service,
-                    chunk_classification_workflow=chunk_classification_workflow,
-                    chunk_type_classification_workflow=ChunkTypeClassificationWorkflow(
-                        llm_service=llm_service,
-                    ),
-                    question_generation_service=QuestionGenerationService(
-                        llm_service=llm_service,
-                        id_generator=id_generator,
-                    ),
-                    embedding_workflow=EmbeddingWorkflow(
-                        embedding_service=EmbeddingService(embedding_provider),
-                        vector_store=vector_store,
-                    ),
-                    vector_store=vector_store,
-                    graph_chunk_builder=document_graph_builder.chunk_builder,
-                )
-            ),
+            document_classification_workflow=document_classification_workflow,
+            post_classification_chunk_finalization_workflow=post_classification_workflow,
             unit_of_work=uow,
             embedding_model=embedding_settings.model_name,
             vector_collection=qdrant_settings.collection,

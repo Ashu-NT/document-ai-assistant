@@ -1,5 +1,5 @@
 from src.domain.common import IngestionStatus
-from src.domain.workflows import IngestionRun
+from src.domain.workflow import IngestionRun
 from src.infrastructure.db.orm_models import IngestionRunORM
 
 
