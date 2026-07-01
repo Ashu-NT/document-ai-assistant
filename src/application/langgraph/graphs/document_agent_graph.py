@@ -397,6 +397,11 @@ class DocumentAgentGraph:
             "retrieval_strategy_enabled": state.get("retrieval_strategy_enabled", False),
             "deep_research_enabled": state.get("deep_research_enabled", False),
             "research_plan_source": state.get("research_plan_source"),
+            "strategy_advisor_status": (
+                (state.get("strategy_advisor_result") or {}).get("status")
+                if isinstance(state.get("strategy_advisor_result"), dict)
+                else None
+            ),
         }
         data = {
             "document_id": state.get("document_id"),
@@ -427,6 +432,8 @@ class DocumentAgentGraph:
             "retrieval_plan": state.get("retrieval_plan"),
             "retrieval_execution_result": state.get("retrieval_execution_result"),
             "retrieval_strategy_trace": state.get("retrieval_strategy_trace"),
+            "strategy_advisor_result": state.get("strategy_advisor_result"),
+            "strategy_advisor_trace": state.get("strategy_advisor_trace"),
             "selected_retrieval_strategies": state.get(
                 "selected_retrieval_strategies",
                 [],

@@ -60,6 +60,7 @@ from src.application.langgraph.planning import (
     PlanValidator,
 )
 from src.application.langgraph.routing import IntentRouter
+from src.application.langgraph.strategy_advisor.advisor import StrategyAdvisor
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 
 
@@ -83,6 +84,7 @@ class NodeFactory:
         retrieval_plan_executor: RetrievalPlanExecutor | None = None,
         retrieval_strategy_policy: RetrievalStrategyPolicy | None = None,
         strategy_retry_policy: StrategyRetryPolicy | None = None,
+        strategy_advisor: StrategyAdvisor | None = None,
         research_service: ResearchService | None = None,
         llm_research_planner: LLMResearchPlanner | None = None,
         research_policy: ResearchPolicy | None = None,
@@ -101,8 +103,10 @@ class NodeFactory:
         self.retrieval_retry_policy = (
             retrieval_retry_policy or RetrievalRetryPolicy()
         )
+        self.strategy_advisor = strategy_advisor
         self.retrieval_strategy_service = (
-            retrieval_strategy_service or RetrievalStrategyService()
+            retrieval_strategy_service
+            or RetrievalStrategyService(strategy_advisor=self.strategy_advisor)
         )
         self.retrieval_plan_executor = (
             retrieval_plan_executor or RetrievalPlanExecutor()
@@ -132,7 +136,10 @@ class NodeFactory:
         memory: ConversationMemory | None,
     ) -> dict[str, Any]:
         return {
-            "route_request": RouteRequestNode(intent_router),
+            "route_request": RouteRequestNode(
+                intent_router,
+                strategy_advisor=self.strategy_advisor,
+            ),
             "blocked_action": BlockedActionNode(),
             "out_of_scope": OutOfScopeNode(),
             "create_plan": CreatePlanNode(

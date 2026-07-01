@@ -213,6 +213,7 @@ def _format_research_plan(research_plan: dict[str, Any]) -> str:
 
 
 def _format_retrieval_strategy(data: dict[str, Any]) -> str:
+    advisor_lines = _format_strategy_advisor(data)
     decision = data.get("retrieval_strategy_decision")
     if isinstance(decision, dict):
         primary = str(decision.get("primary_strategy") or "-")
@@ -228,21 +229,25 @@ def _format_retrieval_strategy(data: dict[str, Any]) -> str:
         reason = str(decision.get("reason") or "").strip()
         if reason:
             lines.append(f"Reason: {reason}")
+        if advisor_lines:
+            lines = advisor_lines + [""] + lines
         return "\n".join(lines)
 
     research_plan = data.get("research_plan")
     research_trace = data.get("research_trace")
     if not isinstance(research_plan, dict):
-        return ""
+        return "\n".join(advisor_lines).strip()
     tasks = research_plan.get("tasks")
     if not isinstance(tasks, list):
-        return ""
+        return "\n".join(advisor_lines).strip()
     strategies_per_task = {}
     if isinstance(research_trace, dict):
         raw_map = research_trace.get("retrieval_strategies_per_task")
         if isinstance(raw_map, dict):
             strategies_per_task = raw_map
-    lines: list[str] = []
+    lines: list[str] = list(advisor_lines)
+    if lines:
+        lines.append("")
     for task in tasks:
         if not isinstance(task, dict):
             continue
@@ -335,7 +340,30 @@ def _format_observation(data: dict[str, Any], *, max_chars: int) -> str:
 def _format_reflection(data: dict[str, Any]) -> str:
     reflection_result = data.get("reflection_result")
     if not isinstance(reflection_result, dict):
-        return ""
+        research_trace = data.get("research_trace")
+        if not isinstance(research_trace, dict):
+            return ""
+        strategy_coverage = research_trace.get("strategy_coverage")
+        if not isinstance(strategy_coverage, dict):
+            return ""
+        ratio = strategy_coverage.get("ratio")
+        covered = strategy_coverage.get("covered_concepts", [])
+        uncovered = strategy_coverage.get("uncovered_concepts", [])
+        passed = bool(strategy_coverage.get("passed", False))
+        lines = [
+            f"Decision: {'PASS' if passed else 'REPLAN_REQUIRED'}",
+        ]
+        if isinstance(ratio, int | float):
+            lines.append(f"Concept coverage: {float(ratio):.0%}")
+        if covered:
+            lines.append(
+                "Covered concepts: " + ", ".join(str(item) for item in covered)
+            )
+        if uncovered:
+            lines.append(
+                "Uncovered concepts: " + ", ".join(str(item) for item in uncovered)
+            )
+        return "\n".join(lines)
     decision = (reflection_result.get("decision") or {}).get("decision") or data.get(
         "reflection_decision"
     )
@@ -376,3 +404,39 @@ def _truncate(value: str, limit: int) -> str:
     if len(normalized) <= limit:
         return normalized
     return normalized[: limit - 3] + "..."
+
+
+def _format_strategy_advisor(data: dict[str, Any]) -> list[str]:
+    advisor_result = data.get("strategy_advisor_result")
+    if not isinstance(advisor_result, dict):
+        return []
+    status = str(advisor_result.get("status") or "").strip()
+    proposal = advisor_result.get("proposal")
+    if status == "skipped":
+        return []
+    lines = [f"Advisor: {status or '-'}"]
+    if isinstance(proposal, dict):
+        concepts = proposal.get("concepts") or []
+        recommended = proposal.get("recommended_strategies") or []
+        route = str(proposal.get("route") or "").strip()
+        reason = str(proposal.get("reason") or "").strip()
+        if concepts:
+            lines.append("Concepts: " + ", ".join(str(item) for item in concepts))
+        if recommended:
+            lines.append(
+                "Recommended: " + ", ".join(str(item) for item in recommended)
+            )
+        if route:
+            lines.append(f"Route recommendation: {route}")
+        if reason:
+            lines.append(f"Advisor reason: {reason}")
+    events = (((data.get("strategy_advisor_trace") or {}).get("events")) if isinstance(data.get("strategy_advisor_trace"), dict) else None) or []
+    if isinstance(events, list) and events:
+        lines.append(
+            "Events: " + " -> ".join(
+                str(event.get("name") or "").strip()
+                for event in events
+                if isinstance(event, dict) and str(event.get("name") or "").strip()
+            )
+        )
+    return lines

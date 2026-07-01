@@ -96,6 +96,8 @@ class ResearchTaskExecutor:
             evidence=evidence,
             errors=list(execution_result.errors),
             diagnostics={
+                "concept": getattr(task, "diagnostics", {}).get("concept"),
+                "concept_role": getattr(task, "diagnostics", {}).get("concept_role"),
                 "retrieval_plan": strategy_result.plan.to_dict(),
                 "retrieval_trace": strategy_result.trace,
                 "execution_result": execution_result.to_dict(),

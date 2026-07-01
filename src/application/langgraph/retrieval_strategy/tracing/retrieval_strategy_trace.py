@@ -9,6 +9,9 @@ class RetrievalStrategyTrace:
     signals: list[dict[str, Any]] = field(default_factory=list)
     deterministic_decision: dict[str, Any] | None = None
     llm_decision: dict[str, Any] | None = None
+    advisor_proposal: dict[str, Any] | None = None
+    advisor_status: str | None = None
+    advisor_events: list[dict[str, Any]] = field(default_factory=list)
     final_decision: dict[str, Any] | None = None
     fallback_reason: str | None = None
     plan_steps: list[dict[str, Any]] = field(default_factory=list)

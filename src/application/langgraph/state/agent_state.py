@@ -42,6 +42,8 @@ class AgentState(TypedDict):
     retrieval_plan: dict[str, Any] | None
     retrieval_execution_result: dict[str, Any] | None
     retrieval_strategy_trace: dict[str, Any] | None
+    strategy_advisor_result: dict[str, Any] | None
+    strategy_advisor_trace: dict[str, Any] | None
     selected_retrieval_strategies: list[str]
     retrieval_strategy_errors: list[str]
     initial_context_chunks: list[dict[str, Any]]
@@ -173,6 +175,8 @@ def build_agent_state(
         retrieval_plan=None,
         retrieval_execution_result=None,
         retrieval_strategy_trace=None,
+        strategy_advisor_result=None,
+        strategy_advisor_trace=None,
         selected_retrieval_strategies=[],
         retrieval_strategy_errors=[],
         initial_context_chunks=[],

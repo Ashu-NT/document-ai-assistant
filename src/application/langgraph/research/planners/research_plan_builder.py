@@ -82,6 +82,7 @@ class ResearchPlanBuilder:
         depends_on: list[str] | None = None,
         expected_evidence_type: str | None = None,
         max_results: int = 5,
+        diagnostics: dict | None = None,
     ) -> ResearchTask:
         return ResearchTask(
             task_id=self.id_generator.new_id("research_task"),
@@ -94,6 +95,7 @@ class ResearchPlanBuilder:
             depends_on=list(depends_on or []),
             expected_evidence_type=expected_evidence_type,
             max_results=max_results,
+            diagnostics=dict(diagnostics or {}),
         )
 
     @staticmethod
