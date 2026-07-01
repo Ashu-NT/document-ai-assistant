@@ -58,7 +58,31 @@ class RetrieveIdentifiersTool:
                 )
             except ApplicationError as exc:
                 return application_error_result(exc, metadata=self.metadata)
-            return ToolResult.ok(data=identifiers, metadata=self.metadata)
+            chunk_result = self.retrieve_chunks_tool.run(
+                RetrieveChunksRequest(
+                    query_text=request.identifier_value.strip(),
+                    document_id=request.document_id,
+                    top_k=request.top_k,
+                    chunk_types=[
+                        ChunkType.TECHNICAL_SPECIFICATION,
+                        ChunkType.SPARE_PARTS_TABLE,
+                        ChunkType.CERTIFICATION_INFO,
+                        ChunkType.DRAWING_REFERENCE,
+                    ],
+                    trace=request.trace,
+                )
+            )
+            chunks: list = []
+            if chunk_result.success and isinstance(chunk_result.data, dict):
+                chunks = (
+                    chunk_result.data.get("context_chunks")
+                    or chunk_result.data.get("chunks")
+                    or []
+                )
+            return ToolResult.ok(
+                data={"chunks": chunks, "context_chunks": chunks, "identifiers": identifiers},
+                metadata=self.metadata,
+            )
 
         if request.query_text and request.query_text.strip():
             result = self.retrieve_chunks_tool.run(

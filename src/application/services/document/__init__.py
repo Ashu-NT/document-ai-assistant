@@ -17,6 +17,9 @@ from src.application.services.document.document_application_service import (
 from src.application.services.document.identifier_promotion_service import (
     IdentifierPromotionService,
 )
+from src.application.services.document.deterministic_identifier_scanner import (
+    DeterministicIdentifierScanner,
+)
 
 __all__ = [
     "DocumentCatalogService",
@@ -26,4 +29,5 @@ __all__ = [
     "DocumentRegistrationService",
     "DocumentApplicationService",
     "IdentifierPromotionService",
+    "DeterministicIdentifierScanner",
 ]

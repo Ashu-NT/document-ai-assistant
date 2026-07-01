@@ -7,6 +7,7 @@ from typing import Callable
 
 from src.application.contracts import UnitOfWork
 from src.application.services.document import (
+    DeterministicIdentifierScanner,
     DocumentRegistrationService,
     DuplicateDetectionService,
     IdentifierPromotionService,
@@ -76,6 +77,7 @@ class IngestionWorkflow:
         id_generator: IdGenerator,
         quality_gate: DocumentQualityGate | None = None,
         identifier_promotion_service: IdentifierPromotionService | None = None,
+        deterministic_identifier_scanner: DeterministicIdentifierScanner | None = None,
         activity_service=None,
         audit_service=None,
         event_service=None,
@@ -94,6 +96,7 @@ class IngestionWorkflow:
         self.id_generator = id_generator
         self.quality_gate = quality_gate or DocumentQualityGate()
         self.identifier_promotion_service = identifier_promotion_service
+        self.deterministic_identifier_scanner = deterministic_identifier_scanner
         self.activity_service = activity_service
         self.audit_service = audit_service
         self.event_service = event_service
@@ -459,6 +462,24 @@ class IngestionWorkflow:
                         final_graph.identifiers[identifier.identifier_id] = identifier
                     self.document_registration_service.register_document_identifiers(
                         promoted_identifiers,
+                        activity_context=resolved_activity_context,
+                    )
+                    self.unit_of_work.commit()
+            if self.deterministic_identifier_scanner is not None:
+                existing_normalized = {
+                    (i.normalized_value or "", i.identifier_type.value)
+                    for i in final_graph.identifiers.values()
+                }
+                scanned_identifiers = self.deterministic_identifier_scanner.scan(
+                    final_graph,
+                    self.id_generator,
+                    existing_normalized=existing_normalized,
+                )
+                if scanned_identifiers:
+                    for identifier in scanned_identifiers:
+                        final_graph.identifiers[identifier.identifier_id] = identifier
+                    self.document_registration_service.register_document_identifiers(
+                        scanned_identifiers,
                         activity_context=resolved_activity_context,
                     )
                     self.unit_of_work.commit()

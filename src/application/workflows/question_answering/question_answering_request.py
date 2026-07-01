@@ -1,4 +1,6 @@
-from dataclasses import dataclass
+from __future__ import annotations
+
+from dataclasses import dataclass, field
 
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
@@ -14,3 +16,4 @@ class QuestionAnsweringRequest:
     require_citations: bool = True
     context_override_chunks: list[RetrievedChunk] | None = None
     retry_query: str | None = None
+    resolved_identifiers: list = field(default_factory=list)
