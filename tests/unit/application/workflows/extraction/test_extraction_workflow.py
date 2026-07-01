@@ -934,6 +934,33 @@ def test_extraction_skips_persistently_failing_batch_when_partial_batches_allowe
     )
 
 
+def test_extraction_allows_overriding_temperature_and_json_mode(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.8,
+  "maintenance_tasks": [],
+  "spare_parts": [],
+  "equipment": [],
+  "manufacturers": [],
+  "identifiers": []
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        temperature=0.4,
+        json_mode=False,
+    )
+
+    workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert fake_llm_service.calls[0]["temperature"] == 0.4
+    assert fake_llm_service.calls[0]["json_mode"] is False
+
+
 def test_extraction_repairs_truncated_json_with_trailing_comma(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
