@@ -109,7 +109,7 @@ class IngestionRequestValidator(Validator["IngestionRequest"]):
                     f"ingestion.{field_name}.invalid",
                 )
 
-        for field_name in ("generate_questions", "enable_ocr"):
+        for field_name in ("generate_questions",):
             raw_value = getattr(value, field_name)
             if raw_value is not None and not isinstance(raw_value, bool):
                 result.add_issue(

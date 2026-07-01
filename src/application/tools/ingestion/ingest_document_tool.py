@@ -56,7 +56,6 @@ class IngestDocumentTool:
                     metadata=dict(request.extra_metadata),
                     force=request.force,
                     generate_questions=request.generate_questions,
-                    enable_ocr=request.enable_ocr,
                     run_quality_checks=request.run_quality_checks,
                     trace=request.trace,
                     requested_by=request.user_id,

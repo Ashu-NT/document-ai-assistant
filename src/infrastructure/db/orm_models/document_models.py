@@ -33,6 +33,7 @@ class DocumentORM(Base):
         default="unknown",
     )
     language: Mapped[str | None] = mapped_column(String, nullable=True)
+    source_name: Mapped[str | None] = mapped_column(String, nullable=True)
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
