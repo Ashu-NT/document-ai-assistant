@@ -62,6 +62,35 @@ class ResearchGapDetector:
                 )
             )
 
+        for concept in list(coverage.get("uncovered_concepts", [])):
+            concept_text = str(concept).strip()
+            if not concept_text:
+                continue
+            related_task = next(
+                (
+                    task
+                    for task in result.plan.tasks
+                    if str((task.diagnostics or {}).get("concept") or "").strip().lower()
+                    == concept_text.lower()
+                ),
+                None,
+            )
+            gaps.append(
+                ResearchGap(
+                    gap_id=self.id_generator.new_id("research_gap"),
+                    description=f"Research evidence did not cover the concept '{concept_text}'.",
+                    severity=ResearchGapSeverity.HIGH,
+                    related_task_id=getattr(related_task, "task_id", None),
+                    suggested_followup_query=(
+                        getattr(related_task, "question", None)
+                        or f"What evidence in this document describes {concept_text}?"
+                    ),
+                    suggested_strategy=getattr(related_task, "strategy_hint", None),
+                    can_retry=True,
+                    diagnostics={"concept": concept_text},
+                )
+            )
+
         if result.goal.goal_type == ResearchGoalType.CHECKLIST:
             safety_hits = sum(
                 1

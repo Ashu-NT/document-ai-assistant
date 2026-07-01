@@ -145,6 +145,7 @@ def build_agent_runtime(
         RetrievalStrategyService,
         StrategyRetryPolicy,
     )
+    from src.application.langgraph.strategy_advisor.advisor import StrategyAdvisor
     from src.application.services.ai import LLMService
     from src.application.services.answer_generation import AnswerGenerationService
     from src.application.services.document import (
@@ -268,6 +269,10 @@ def build_agent_runtime(
             default_model=retrieval_strategy_model,
         )
     )
+    strategy_advisor = StrategyAdvisor(
+        retrieval_strategy_llm_service,
+        model=retrieval_strategy_model,
+    )
 
     qa_workflow = QuestionAnsweringWorkflow(
         retrieval_workflow=retrieval_workflow,
@@ -359,11 +364,13 @@ def build_agent_runtime(
                 retrieval_strategy_llm_service,
                 model=retrieval_strategy_model,
             ),
+            strategy_advisor=strategy_advisor,
             policy=retrieval_strategy_policy,
         ),
         retrieval_plan_executor=RetrievalPlanExecutor(),
         retrieval_strategy_policy=retrieval_strategy_policy,
         strategy_retry_policy=StrategyRetryPolicy(),
+        strategy_advisor=strategy_advisor,
         llm_research_planner=(
             LLMResearchPlanner(
                 planning_llm_service,

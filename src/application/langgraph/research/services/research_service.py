@@ -52,6 +52,9 @@ from src.application.langgraph.research.validation.research_plan_validator impor
 from src.application.langgraph.research.validation.research_report_validator import (
     ResearchReportValidator,
 )
+from src.application.langgraph.strategy_advisor.advisor_models import (
+    StrategyAdvisorProposal,
+)
 from src.shared.exceptions import SchemaValidationError
 
 
@@ -99,6 +102,7 @@ class ResearchService:
         user_input: str,
         document_id: str | None,
         document_title: str | None,
+        advisor_proposal: StrategyAdvisorProposal | None = None,
         use_llm_planner: bool = False,
     ) -> tuple[ResearchPlan, dict[str, Any]]:
         deterministic_plan = self.deterministic_planner.plan(
@@ -106,12 +110,20 @@ class ResearchService:
             document_id=document_id,
             document_title=document_title,
             policy=self.policy,
+            advisor_proposal=advisor_proposal,
         )
         diagnostics: dict[str, Any] = {
             "planning_source": "deterministic",
             "planning_warnings": [],
             "planning_errors": [],
             "raw_llm_plan": None,
+            "advisor_concepts": (
+                list(advisor_proposal.concepts)
+                if advisor_proposal is not None
+                else list(
+                    (deterministic_plan.goal.diagnostics or {}).get("concepts", [])
+                )
+            ),
         }
         accepted_plan = deterministic_plan
 

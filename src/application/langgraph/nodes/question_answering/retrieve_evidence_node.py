@@ -19,6 +19,9 @@ from src.application.langgraph.retrieval_strategy import (
     RetrievalStrategyService,
 )
 from src.application.langgraph.state import AgentState
+from src.application.langgraph.strategy_advisor.advisor_models import (
+    StrategyAdvisorProposal,
+)
 from src.application.langgraph.tracing import GraphRunRecorder
 from src.application.tools.retrieval import RetrieveChunksRequest
 from src.domain.retrieval.citation import Citation
@@ -86,6 +89,7 @@ class RetrieveEvidenceNode:
                 top_k=state.get("top_k") or self.retrieval_strategy_policy.default_top_k,
                 requested_strategy=_requested_strategy_from_state(state),
                 use_llm_selector=bool(state.get("llm_retrieval_strategy_enabled")),
+                strategy_advisor_proposal=_advisor_proposal_from_state(state),
             )
             try:
                 strategy_result = self.retrieval_strategy_service.select_and_plan(
@@ -154,6 +158,16 @@ def _requested_strategy_from_state(state: AgentState):
     if not isinstance(raw_value, str) or not raw_value:
         return None
     return CLI_RETRIEVAL_STRATEGY_ALIASES.get(raw_value.strip().lower())
+
+
+def _advisor_proposal_from_state(state: AgentState) -> StrategyAdvisorProposal | None:
+    payload = state.get("strategy_advisor_result")
+    if not isinstance(payload, dict):
+        return None
+    proposal = payload.get("proposal")
+    if not isinstance(proposal, dict):
+        return None
+    return StrategyAdvisorProposal.from_dict(proposal)
 
 
 def _strategy_patch(

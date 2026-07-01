@@ -42,8 +42,15 @@ class EvaluateResearchNode:
 
         result, followup_tasks = self.research_service.evaluate_research(result)
         research_trace = dict(state.get("research_trace") or {})
+        coverage = dict(result.diagnostics.get("coverage") or {})
         research_trace["gaps"] = [gap.to_dict() for gap in result.gaps]
         research_trace["followup_iteration"] = bool(followup_tasks)
+        research_trace["strategy_coverage"] = {
+            "ratio": coverage.get("concept_coverage_ratio"),
+            "covered_concepts": list(coverage.get("covered_concepts", [])),
+            "uncovered_concepts": list(coverage.get("uncovered_concepts", [])),
+            "passed": not bool(coverage.get("uncovered_concepts", [])),
+        }
         next_iterations = int(state.get("research_iterations") or 0)
         next_plan = plan
         if followup_tasks:
@@ -59,6 +66,7 @@ class EvaluateResearchNode:
             diagnostics={
                 "gap_count": len(result.gaps),
                 "followup_task_count": len(followup_tasks),
+                "concept_coverage_ratio": coverage.get("concept_coverage_ratio"),
             },
         )
         return {

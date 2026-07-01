@@ -40,6 +40,8 @@ def test_research_service_falls_back_to_deterministic_plan_for_invalid_llm_compa
     assert diagnostics["planning_source"] == "deterministic"
     assert diagnostics["raw_llm_plan"] == '{"tasks":[{"task_id":"task-1"}]}'
     assert [task.title for task in plan.tasks] == [
-        "Collect maintenance tasks",
-        "Collect technical specifications",
+        "Collect evidence for maintenance tasks",
+        "Collect evidence for specifications",
+        "Collect overlap evidence",
+        "Collect distinguishing evidence",
     ]

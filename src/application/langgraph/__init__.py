@@ -59,6 +59,16 @@ from src.application.langgraph.reflection import (
 )
 from src.application.langgraph.routing import IntentRouter, RouteDecision, RouteType
 from src.application.langgraph.state import AgentState, build_agent_state
+from src.application.langgraph.strategy_advisor import (
+    StrategyAdvisor,
+    StrategyAdvisorIntent,
+    StrategyAdvisorOutcome,
+    StrategyAdvisorProposal,
+    StrategyAdvisorRequest,
+    StrategyAdvisorStatus,
+    StrategyAdvisorValidator,
+    StrategyDecisionMerger,
+)
 from src.application.langgraph.tracing import GraphRunRecorder, LangGraphTrace
 from src.application.langgraph.validation import GraphRequestValidator, GraphStateValidator
 
@@ -121,5 +131,13 @@ __all__ = [
     "SessionStateStore",
     "ToolRegistry",
     "StrategyRetryPolicy",
+    "StrategyAdvisor",
+    "StrategyAdvisorIntent",
+    "StrategyAdvisorOutcome",
+    "StrategyAdvisorProposal",
+    "StrategyAdvisorRequest",
+    "StrategyAdvisorStatus",
+    "StrategyAdvisorValidator",
+    "StrategyDecisionMerger",
     "build_agent_state",
 ]
