@@ -7,9 +7,21 @@ from src.application.services.ai import LLMService
 from src.application.services.extraction import ExtractionService
 from src.application.validation.common import ValidationResult
 from src.application.validation.extraction import ExtractionResultValidator
+from src.application.workflows.extraction.extraction_batch import ExtractionBatch
+from src.application.workflows.extraction.extraction_batch_diagnostics import (
+    ExtractionBatchDiagnostics,
+    safe_response_preview,
+)
+from src.application.workflows.extraction.extraction_chunk_batcher import (
+    ExtractionChunkBatcher,
+)
+from src.application.workflows.extraction.extraction_result_merger import (
+    ExtractionResultMerger,
+)
 from src.application.workflows.extraction.extraction_response_parser import (
     ExtractionResponseParser,
 )
+from src.domain.common import SourceLocation
 from src.domain.document import DocumentChunk
 from src.domain.extraction import (
     EquipmentInfo,
@@ -54,6 +66,42 @@ def _default_extraction_require_human_review() -> bool:
         return True
 
 
+def _default_max_chunks_per_batch() -> int:
+    try:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.extraction_max_chunks_per_batch
+    except Exception:
+        return 16
+
+
+def _default_max_chars_per_batch() -> int:
+    try:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.extraction_max_chars_per_batch
+    except Exception:
+        return 16_000
+
+
+def _default_allow_partial_batches() -> bool:
+    try:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.extraction_allow_partial_batches
+    except Exception:
+        return False
+
+
+def _default_failure_preview_chars() -> int:
+    try:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.extraction_failure_preview_chars
+    except Exception:
+        return 1_200
+
+
 class ExtractionWorkflow:
     def __init__(
         self,
@@ -66,6 +114,10 @@ class ExtractionWorkflow:
         extraction_model: str | None = None,
         confidence_threshold: float | None = None,
         require_human_review_default: bool | None = None,
+        chunk_batcher: ExtractionChunkBatcher | None = None,
+        result_merger: ExtractionResultMerger | None = None,
+        allow_partial_batches: bool | None = None,
+        failure_preview_chars: int | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.extraction_service = extraction_service
@@ -84,6 +136,24 @@ class ExtractionWorkflow:
             if require_human_review_default is not None
             else _default_extraction_require_human_review()
         )
+        self.chunk_batcher = chunk_batcher or ExtractionChunkBatcher(
+            max_chunks_per_batch=_default_max_chunks_per_batch(),
+            max_chars_per_batch=_default_max_chars_per_batch(),
+        )
+        self.result_merger = result_merger or ExtractionResultMerger(
+            id_generator=id_generator
+        )
+        self.allow_partial_batches = (
+            allow_partial_batches
+            if allow_partial_batches is not None
+            else _default_allow_partial_batches()
+        )
+        self.failure_preview_chars = (
+            failure_preview_chars
+            if failure_preview_chars is not None
+            else _default_failure_preview_chars()
+        )
+        self.last_batch_diagnostics: list[ExtractionBatchDiagnostics] = []
 
     @tracked_action(
         action="extraction.generated",
@@ -100,42 +170,62 @@ class ExtractionWorkflow:
         progress_callback: Callable[[str], None] | None = None,
     ) -> ExtractionResult:
         chunk_list = self._coerce_chunks(chunks)
+        self.last_batch_diagnostics = []
         self._emit_progress(
             progress_callback,
             f"Preparing extraction input from {len(chunk_list)} final chunk(s)...",
         )
         self._validate_input(document_id, chunk_list)
 
+        batches = self.chunk_batcher.build_batches(chunk_list)
         self._emit_progress(
             progress_callback,
-            f"Building extraction prompt from {len(chunk_list)} chunk(s)...",
+            f"Prepared {len(batches)} extraction batch(es).",
         )
-        prompt = self.prompt_builder.build(
-            document_id,
-            chunk_list,
-        )
-        self._emit_progress(
-            progress_callback,
-            (
-                "Calling extraction model "
-                f"{self.extraction_model or 'default'} with "
-                f"{len(chunk_list)} chunk(s)..."
-            ),
-        )
-        response = self.llm_service.generate(
-            prompt,
-            model=self.extraction_model,
-            activity_context=activity_context,
-        )
-        self._emit_progress(
-            progress_callback,
-            "Extraction model response received. Parsing structured payload...",
-        )
+        partial_results: list[ExtractionResult] = []
+        for batch in batches:
+            partial_result = self._extract_batch(
+                document_id=document_id,
+                batch=batch,
+                activity_context=activity_context,
+                progress_callback=progress_callback,
+            )
+            if partial_result is not None:
+                partial_results.append(partial_result)
 
-        extraction_result = self._build_extraction_result(
-            document_id,
-            chunk_list,
-            response,
+        if not partial_results:
+            raise SchemaValidationError(
+                "Extraction produced no valid batch results.",
+                details={
+                    "document_id": document_id,
+                    "batch_count": len(batches),
+                    "diagnostics": [
+                        diagnostic.to_dict()
+                        for diagnostic in self.last_batch_diagnostics
+                    ],
+                },
+            )
+
+        extraction_result = self.result_merger.merge(
+            document_id=document_id,
+            partial_results=partial_results,
+        )
+        extraction_result.requires_human_review = (
+            self._resolve_requires_human_review(
+                None,
+                extraction_result.confidence_score,
+            )
+            or extraction_result.requires_human_review
+            or any(
+                item.requires_human_review
+                for item in [
+                    *extraction_result.maintenance_tasks,
+                    *extraction_result.spare_parts,
+                    *extraction_result.equipment,
+                    *extraction_result.manufacturers,
+                    *extraction_result.extracted_identifiers,
+                ]
+            )
         )
 
         self._emit_progress(
@@ -161,8 +251,94 @@ class ExtractionWorkflow:
                 f"spare_parts={len(extraction_result.spare_parts)}, "
                 f"equipment={len(extraction_result.equipment)}, "
                 f"manufacturers={len(extraction_result.manufacturers)}, "
-                f"identifiers={len(extraction_result.extracted_identifiers)})."
+                f"identifiers={len(extraction_result.extracted_identifiers)}, "
+                f"batches={len(batches)})."
             ),
+        )
+        return extraction_result
+
+    def _extract_batch(
+        self,
+        *,
+        document_id: str,
+        batch: ExtractionBatch,
+        activity_context: ActivityContext | None,
+        progress_callback: Callable[[str], None] | None,
+    ) -> ExtractionResult | None:
+        self._emit_progress(
+            progress_callback,
+            (
+                f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                f"Building extraction prompt from {len(batch.chunks)} chunk(s) "
+                f"({batch.char_count} chars, {batch.word_count} words)..."
+            ),
+        )
+        prompt = self.prompt_builder.build(document_id, batch.chunks)
+        self._emit_progress(
+            progress_callback,
+            (
+                f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                f"Calling extraction model {self.extraction_model or 'default'}..."
+            ),
+        )
+        response = self.llm_service.generate(
+            prompt,
+            model=self.extraction_model,
+            activity_context=activity_context,
+        )
+        self._emit_progress(
+            progress_callback,
+            (
+                f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                "Extraction model response received. Parsing structured payload..."
+            ),
+        )
+        try:
+            extraction_result = self._build_extraction_result(
+                document_id,
+                batch.chunks,
+                response,
+            )
+        except SchemaValidationError as exc:
+            diagnostics = ExtractionBatchDiagnostics(
+                batch_index=batch.batch_index,
+                batch_count=batch.batch_count,
+                chunk_ids=batch.chunk_ids,
+                char_count=batch.char_count,
+                word_count=batch.word_count,
+                model_name=self.extraction_model,
+                parse_success=False,
+                parse_error=str(exc),
+                raw_response_preview=safe_response_preview(
+                    response,
+                    max_chars=self.failure_preview_chars,
+                ),
+            )
+            self.last_batch_diagnostics.append(diagnostics)
+            if self.allow_partial_batches:
+                self._emit_progress(
+                    progress_callback,
+                    (
+                        f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                        "Schema parsing failed; continuing because partial batches are enabled."
+                    ),
+                )
+                return None
+            raise SchemaValidationError(
+                f"Extraction batch {batch.batch_index}/{batch.batch_count} failed schema parsing.",
+                details=diagnostics.to_dict(),
+            ) from exc
+
+        self.last_batch_diagnostics.append(
+            ExtractionBatchDiagnostics(
+                batch_index=batch.batch_index,
+                batch_count=batch.batch_count,
+                chunk_ids=batch.chunk_ids,
+                char_count=batch.char_count,
+                word_count=batch.word_count,
+                model_name=self.extraction_model,
+                parse_success=True,
+            )
         )
         return extraction_result
 
@@ -328,6 +504,11 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
                 default_source_chunk_id=default_source_chunk_id,
             ),
+            source=self._resolve_source_location(
+                payload,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+            ),
             confidence_score=confidence_score,
             requires_human_review=self._resolve_requires_human_review(
                 self._pick(payload, "requires_human_review", "requires_review"),
@@ -383,6 +564,11 @@ class ExtractionWorkflow:
             component_name=component_name,
             manufacturer_name=manufacturer_name,
             source_chunk_id=self._resolve_source_chunk_id(
+                payload,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+            ),
+            source=self._resolve_source_location(
                 payload,
                 chunk_lookup=chunk_lookup,
                 default_source_chunk_id=default_source_chunk_id,
@@ -443,6 +629,11 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
                 default_source_chunk_id=default_source_chunk_id,
             ),
+            source=self._resolve_source_location(
+                payload,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+            ),
             confidence_score=confidence_score,
             requires_human_review=self._resolve_requires_human_review(
                 self._pick(payload, "requires_human_review", "requires_review"),
@@ -477,6 +668,11 @@ class ExtractionWorkflow:
             website=self._optional_text(payload, "website", "url"),
             country=self._optional_text(payload, "country"),
             source_chunk_id=self._resolve_source_chunk_id(
+                payload,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+            ),
+            source=self._resolve_source_location(
                 payload,
                 chunk_lookup=chunk_lookup,
                 default_source_chunk_id=default_source_chunk_id,
@@ -651,3 +847,29 @@ class ExtractionWorkflow:
             )
 
         return source_chunk_id
+
+    @classmethod
+    def _resolve_source_location(
+        cls,
+        payload: dict[str, Any],
+        *,
+        chunk_lookup: dict[str, DocumentChunk],
+        default_source_chunk_id: str | None,
+    ) -> SourceLocation:
+        source_chunk_id = cls._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+        )
+        if source_chunk_id is None:
+            return SourceLocation()
+
+        chunk = chunk_lookup.get(source_chunk_id)
+        if chunk is None:
+            return SourceLocation()
+
+        return SourceLocation(
+            page_start=chunk.source.page_start,
+            page_end=chunk.source.page_end,
+            bbox=chunk.source.bbox,
+        )

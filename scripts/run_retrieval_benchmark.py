@@ -176,6 +176,7 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
     )
     from src.infrastructure.ai.embeddings import create_embedding_provider  # noqa: WPS433
     from src.infrastructure.db.base import Base  # noqa: WPS433
+    from src.infrastructure.db.schema_management import ensure_database_schema  # noqa: WPS433
     from src.infrastructure.db.orm_models import (  # noqa: WPS433,F401
         __all__ as _orm_models_loaded,
     )
@@ -189,7 +190,7 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
     from src.shared.ids import IdGenerator  # noqa: WPS433
 
     bootstrap_application()
-    Base.metadata.create_all(engine)
+    ensure_database_schema(engine)
 
     session = SessionLocal()
     unit_of_work = SqlAlchemyUnitOfWork(session)

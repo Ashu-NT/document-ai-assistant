@@ -748,13 +748,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         from src.bootstrap.startup import bootstrap_application  # noqa: WPS433
         from src.config.settings import ingestion_settings  # noqa: WPS433
         from src.infrastructure.db.base import Base  # noqa: WPS433
+        from src.infrastructure.db.schema_management import ensure_database_schema  # noqa: WPS433
         from src.infrastructure.db.orm_models import (  # noqa: WPS433,F401
             __all__ as _orm_models_loaded,
         )
         from src.infrastructure.db.session import SessionLocal, engine  # noqa: WPS433
 
         bootstrap_application()
-        Base.metadata.create_all(engine)
+        ensure_database_schema(engine)
         session = SessionLocal()
 
         document_id, document_name = resolve_document_with_tool(session, args)

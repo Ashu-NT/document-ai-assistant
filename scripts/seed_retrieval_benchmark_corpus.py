@@ -84,6 +84,7 @@ from src.config.settings import (  # noqa: E402
 from src.infrastructure.ai.embeddings import create_embedding_provider  # noqa: E402
 from src.infrastructure.ai.llm import OllamaLLMProvider  # noqa: E402
 from src.infrastructure.db.base import Base  # noqa: E402
+from src.infrastructure.db.schema_management import ensure_database_schema  # noqa: E402
 from src.infrastructure.db.orm_models import __all__ as _orm_models_loaded  # noqa: E402,F401
 from src.infrastructure.db.session import SessionLocal, engine  # noqa: E402
 from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork  # noqa: E402
@@ -243,7 +244,7 @@ def build_parsing_workflow(
 
 def build_corpus_seeder() -> CorpusSeederRuntime:
     bootstrap_application()
-    Base.metadata.create_all(engine)
+    ensure_database_schema(engine)
 
     id_generator = IdGenerator()
     parsing_workflow, document_graph_builder = build_parsing_workflow(

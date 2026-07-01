@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.application.contracts.document import DocumentCatalogEntry
+from src.domain.assets import AssetMetadata, PictureAsset, TableAsset
 from src.domain.document import DocumentGraph, DocumentStatistics
 from src.infrastructure.db.mappers import (
     ChunkMapper,
@@ -134,6 +135,8 @@ class DocumentReader:
             for element_orm in elements:
                 graph.add_element(ElementMapper.to_domain(element_orm))
 
+            self._rehydrate_assets(graph)
+
             for chunk_orm in chunks:
                 graph.add_chunk(ChunkMapper.to_domain(chunk_orm))
 
@@ -148,27 +151,13 @@ class DocumentReader:
             chunk_type_counts = dict(
                 Counter(str(c.chunk_type) for c in graph.chunks.values())
             )
-            table_count = len(
-                {
-                    element.table_id
-                    for element in graph.elements.values()
-                    if getattr(element, "table_id", None)
-                }
-            )
-            picture_count = len(
-                {
-                    element.picture_id
-                    for element in graph.elements.values()
-                    if getattr(element, "picture_id", None)
-                }
-            )
             graph.document.statistics = DocumentStatistics(
                 page_count=graph.document.statistics.page_count,
                 element_count=len(graph.elements),
                 section_count=len(graph.sections),
                 chunk_count=len(graph.chunks),
-                table_count=table_count,
-                picture_count=picture_count,
+                table_count=len(graph.tables),
+                picture_count=len(graph.pictures),
                 identifier_count=len(graph.identifiers),
                 chunk_type_counts=chunk_type_counts,
             )
@@ -194,6 +183,63 @@ class DocumentReader:
             grouped.setdefault(element.parent_section_id, []).append(element.id)
 
         return grouped
+
+    @staticmethod
+    def _rehydrate_assets(graph: DocumentGraph) -> None:
+        for element in graph.elements.values():
+            parser_metadata = element.parser_metadata
+            parser_extra = parser_metadata.extra if parser_metadata is not None else {}
+
+            if element.table_id is not None and element.table_id not in graph.tables:
+                graph.tables[element.table_id] = TableAsset(
+                    table_id=element.table_id,
+                    document_id=element.document_id,
+                    parent_section_id=element.parent_section_id,
+                    markdown=str(parser_extra.get("markdown") or element.text or ""),
+                    metadata=AssetMetadata(
+                        source=element.source,
+                        caption=(
+                            str(parser_extra.get("caption"))
+                            if parser_extra.get("caption") is not None
+                            else None
+                        ),
+                        nearby_text=(
+                            str(parser_extra.get("nearby_text"))
+                            if parser_extra.get("nearby_text") is not None
+                            else None
+                        ),
+                    ),
+                )
+
+            if element.picture_id is not None and element.picture_id not in graph.pictures:
+                graph.pictures[element.picture_id] = PictureAsset(
+                    picture_id=element.picture_id,
+                    document_id=element.document_id,
+                    parent_section_id=element.parent_section_id,
+                    image_path=(
+                        str(parser_extra.get("image_path"))
+                        if parser_extra.get("image_path") is not None
+                        else None
+                    ),
+                    ocr_text=(
+                        str(parser_extra.get("ocr_text"))
+                        if parser_extra.get("ocr_text") is not None
+                        else None
+                    ),
+                    metadata=AssetMetadata(
+                        source=element.source,
+                        caption=(
+                            str(parser_extra.get("caption") or element.text)
+                            if parser_extra.get("caption") is not None or element.text is not None
+                            else None
+                        ),
+                        nearby_text=(
+                            str(parser_extra.get("nearby_text"))
+                            if parser_extra.get("nearby_text") is not None
+                            else None
+                        ),
+                    ),
+                )
 
     @staticmethod
     def _document_entry_statement():
