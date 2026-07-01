@@ -82,7 +82,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             MarkdownPresenter,
             StartupBanner,
         )
-        from src.application.agent_runtime.progress import ProgressIndicator
         from src.application.agent_runtime.react_loop import ReactTraceBuilder
         from src.application.agent_runtime.session import RuntimeOptions, SessionManager
         from src.application.agent_runtime.tracing import DemoTraceWriter
@@ -136,9 +135,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             command_dispatcher=CommandDispatcher(),
             trace_builder=ReactTraceBuilder(),
             visibility_policy=DemoVisibilityPolicy(debug=args.debug),
-            progress_indicator=ProgressIndicator(
-                enabled=not args.quiet and not args.json,
-            ),
             trace_writer=trace_writer,
         )
         banner_text = StartupBanner().render(

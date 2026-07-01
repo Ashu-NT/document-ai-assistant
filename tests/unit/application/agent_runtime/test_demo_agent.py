@@ -4,7 +4,6 @@ from src.application.agent_runtime.commands import CommandDispatcher
 from src.application.agent_runtime.demo_agent import DemoAgent
 from src.application.agent_runtime.policies import DemoVisibilityPolicy
 from src.application.agent_runtime.presenters import JsonPresenter, MarkdownPresenter
-from src.application.agent_runtime.progress import ProgressIndicator
 from src.application.agent_runtime.react_loop import ReactTraceBuilder
 from src.application.agent_runtime.session import RuntimeOptions, SessionManager
 from src.application.agent_runtime.tracing import DemoTraceWriter
@@ -98,7 +97,6 @@ def _build_demo_agent() -> DemoAgent:
         command_dispatcher=CommandDispatcher(),
         trace_builder=ReactTraceBuilder(),
         visibility_policy=DemoVisibilityPolicy(),
-        progress_indicator=ProgressIndicator(enabled=False),
         trace_writer=DemoTraceWriter(
             markdown_presenter=MarkdownPresenter(),
             json_presenter=JsonPresenter(),

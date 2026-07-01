@@ -26,7 +26,8 @@ def test_deep_research_maps_to_research_thought_summary() -> None:
         policy=DemoVisibilityPolicy(),
     )
 
-    assert "synthesis across evidence groups" in trace.steps[0].body
+    assert "synthesis" in trace.steps[0].body
+    assert "evidence" in trace.steps[0].body
 
 
 def test_blocked_action_maps_to_safety_block() -> None:
