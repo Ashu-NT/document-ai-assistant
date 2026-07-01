@@ -459,6 +459,20 @@ class ExtractionWorkflow:
                 ),
             )
 
+        if self.response_parser.last_null_items_stripped:
+            stripped_summary = ", ".join(
+                f"{field}={count}"
+                for field, count in self.response_parser.last_null_items_stripped.items()
+            )
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                    f"Normalized null placeholder item(s) in model output: "
+                    f"{stripped_summary}."
+                ),
+            )
+
         self.last_batch_diagnostics.append(
             ExtractionBatchDiagnostics(
                 batch_index=batch.batch_index,

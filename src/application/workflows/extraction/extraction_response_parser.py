@@ -15,7 +15,11 @@ CODE_FENCE_PATTERN = re.compile(
 
 
 class ExtractionResponseParser:
+    def __init__(self) -> None:
+        self.last_null_items_stripped: dict[str, int] = {}
+
     def parse(self, response: str) -> dict[str, Any]:
+        self.last_null_items_stripped = {}
         payload = self._extract_payload(response)
         maintenance_tasks = self._coerce_item_list(
             self._pick(payload, "maintenance_tasks", "tasks"),
@@ -162,9 +166,8 @@ class ExtractionResponseParser:
 
         return None
 
-    @classmethod
     def _coerce_item_list(
-        cls,
+        self,
         value: Any,
         *,
         field_name: str,
@@ -195,13 +198,22 @@ class ExtractionResponseParser:
             )
 
         items: list[dict[str, Any]] = []
+        null_item_count = 0
         for item in parsed_value:
+            if item is None:
+                null_item_count += 1
+                continue
             if not isinstance(item, dict):
                 raise SchemaValidationError(
                     f"{field_name} items must be objects.",
                     details={field_name: value},
                 )
             items.append(item)
+
+        if null_item_count:
+            self.last_null_items_stripped[field_name] = (
+                self.last_null_items_stripped.get(field_name, 0) + null_item_count
+            )
 
         return items
 

@@ -52,3 +52,4 @@ def test_identifier_extraction_prompt_builder_includes_source_text_and_instructi
     assert "Return JSON only." in prompt
     assert "Allowed chunk_id values" in prompt
     assert f"{sample_chunk.chunk_id}, {second_chunk.chunk_id}" in prompt
+    assert "Never write [null]" in prompt
