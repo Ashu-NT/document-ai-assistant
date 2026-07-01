@@ -11,10 +11,13 @@ class IdentifierMapper:
             document_id=identifier.document_id,
             chunk_id=identifier.chunk_id,
             element_id=identifier.element_id,
+            section_id=identifier.section_id,
             raw_value=identifier.raw_value,
             normalized_value=identifier.normalized_value or identifier.raw_value,
             identifier_type=identifier.identifier_type.value,
             confidence_score=identifier.confidence_score,
+            page_start=identifier.page_start,
+            page_end=identifier.page_end,
             created_at=identifier.audit.created_at,
         )
 
@@ -25,8 +28,11 @@ class IdentifierMapper:
             document_id=orm.document_id,
             chunk_id=orm.chunk_id,
             element_id=orm.element_id,
+            section_id=orm.section_id,
             raw_value=orm.raw_value,
             normalized_value=orm.normalized_value,
             identifier_type=IdentifierType(orm.identifier_type),
             confidence_score=orm.confidence_score,
+            page_start=orm.page_start,
+            page_end=orm.page_end,
         )

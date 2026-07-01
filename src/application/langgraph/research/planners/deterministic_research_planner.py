@@ -32,6 +32,13 @@ _WHITESPACE_RE = re.compile(r"\s+")
 _CATEGORY_PATTERNS: tuple[tuple[re.Pattern[str], RetrievalStrategy], ...] = (
     (
         re.compile(
+            r"\b(?:part\s*number|part\s*no\.?|p/?n\.?|serial\s*number|serial\s*no\.?|s/?n\.?|model\s*number|model\s*no\.?|drawing\s*number|drawing\s*no\.?|component\s*code|identifier|[A-Z]{2,3}-\d{3,})\b",
+            re.IGNORECASE,
+        ),
+        RetrievalStrategy.IDENTIFIER_LOOKUP,
+    ),
+    (
+        re.compile(
             r"\b(?:troubleshoot|troubleshooting|fault|error|alarm|failure|symptom|cause|remedy|recovery)\b",
             re.IGNORECASE,
         ),

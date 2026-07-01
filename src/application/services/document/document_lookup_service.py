@@ -31,3 +31,9 @@ class DocumentLookupService:
 
     def search_identifiers(self, value: str) -> list[Identifier]:
         return self.document_repository.search_identifiers(value)
+
+    def search_identifiers_by_type(self, identifier_type: str, document_id: str) -> list[Identifier]:
+        return self.document_repository.search_identifiers_by_type(identifier_type, document_id)
+
+    def get_identifiers_for_chunk(self, chunk_id: str) -> list[Identifier]:
+        return self.document_repository.get_identifiers_for_chunk(chunk_id)
