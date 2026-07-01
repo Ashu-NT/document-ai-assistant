@@ -23,7 +23,7 @@ class IdentifierExtractionPromptBuilder:
         chunk_blocks = "\n\n".join(self._format_chunk_block(chunk) for chunk in chunks)
 
         return (
-            "You extract structured maintenance information from technical document chunks.\n"
+            "You extract structured information from technical document chunks.\n"
             "Return JSON only.\n"
             "Use this schema:\n"
             "{\n"
@@ -73,13 +73,33 @@ class IdentifierExtractionPromptBuilder:
             '      "confidence_score": <float between 0 and 1 or null>,\n'
             '      "requires_human_review": <true or false>\n'
             "    }\n"
+            "  ],\n"
+            '  "identifiers": [\n'
+            "    {\n"
+            '      "raw_value": "<exact string as it appears in text>",\n'
+            '      "identifier_type": "part_number|serial_number|model_number|certificate_number|drawing_number|component_code|manufacturer_name|unknown",\n'
+            '      "source_chunk_id": "<chunk id or null>",\n'
+            '      "confidence_score": <float between 0 and 1 or null>,\n'
+            '      "requires_human_review": <true or false>\n'
+            "    }\n"
             "  ]\n"
             "}\n"
+            "Identifier type guidance:\n"
+            '- "part_number": P/N codes, part numbers, order numbers (e.g. HP-001, 4321-A).\n'
+            '- "serial_number": S/N codes, unit serial numbers (e.g. SN-1234, SER-2024-001).\n'
+            '- "model_number": Model designations for equipment (e.g. FWC-12, Model 500).\n'
+            '- "certificate_number": ISO, IEC, EN, ATEX, CERT numbers (e.g. ISO 9001, ATEX II 2G).\n'
+            '- "drawing_number": DRG or DWG references (e.g. DRG-1234, DWG 500).\n'
+            '- "component_code": Order codes, component codes, tag numbers (e.g. TAG-42, OC-8800).\n'
+            '- "manufacturer_name": Manufacturer or supplier names not captured in the manufacturers list.\n'
+            '- "unknown": Any identifier that does not fit the types above.\n'
             "Rules:\n"
             "- Use only the provided chunk content.\n"
             "- Use only the provided chunk ids when setting source_chunk_id.\n"
             "- Return empty arrays when nothing is found.\n"
             "- Use null for unknown optional values.\n"
+            "- For identifiers: only extract values not already captured in spare_parts, equipment, or manufacturers.\n"
+            "- Do not invent identifiers — only extract values explicitly present in the text.\n"
             f"Document id: {document_id}\n"
             "Chunks:\n"
             f"{chunk_blocks}"

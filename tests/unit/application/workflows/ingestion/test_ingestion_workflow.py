@@ -342,6 +342,7 @@ def test_ingestion_workflow_persists_run_and_emits_stage_events(
         IngestionStatus.REGISTERED,
         IngestionStatus.CLASSIFIED,
         IngestionStatus.FINALIZED,
+        IngestionStatus.EXTRACTED,
         IngestionStatus.EMBEDDED,
         IngestionStatus.INDEXED,
         IngestionStatus.COMPLETE,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from src.application.tools.common import (
     ToolMetadata,
@@ -32,6 +32,7 @@ class AnswerQuestionRequest(ToolRequest):
     trace: bool = False
     context_override_chunks: list[RetrievedChunk] | None = None
     retry_query: str | None = None
+    resolved_identifiers: list = field(default_factory=list)
 
 
 class AnswerQuestionTool:
@@ -90,6 +91,7 @@ class AnswerQuestionTool:
             require_citations=request.require_citations,
             context_override_chunks=request.context_override_chunks,
             retry_query=request.retry_query,
+            resolved_identifiers=list(getattr(request, "resolved_identifiers", [])),
         )
 
         try:

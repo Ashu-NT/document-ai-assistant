@@ -39,6 +39,7 @@ class QdrantVectorStore(VectorStore):
     def save_chunk_vectors(self, chunks: list[DocumentChunk]) -> None:
         points: list[PointStruct] = []
         document_types_by_id = self._document_types_by_id(chunks)
+        identifier_values_by_chunk_id = self._identifier_values_by_chunk_id(chunks)
 
         for chunk in chunks:
             embedding = getattr(chunk, "embedding", None)
@@ -56,6 +57,7 @@ class QdrantVectorStore(VectorStore):
                     payload=QdrantPayloadMapper.from_chunk(
                         chunk,
                         document_type=document_types_by_id.get(chunk.document_id),
+                        identifier_values=identifier_values_by_chunk_id.get(chunk.chunk_id),
                     ),
                 )
             )
@@ -169,6 +171,24 @@ class QdrantVectorStore(VectorStore):
             return None
 
         return Filter(must=conditions)
+
+    def _identifier_values_by_chunk_id(
+        self,
+        chunks: list[DocumentChunk],
+    ) -> dict[str, list[str]]:
+        if self.document_repository is None:
+            return {}
+        result: dict[str, list[str]] = {}
+        for document_id in {chunk.document_id for chunk in chunks}:
+            graph = self.document_repository.get_document_graph(document_id)
+            if graph is None:
+                continue
+            for identifier in graph.identifiers.values():
+                if identifier.chunk_id and identifier.normalized_value:
+                    result.setdefault(identifier.chunk_id, []).append(
+                        identifier.normalized_value
+                    )
+        return result
 
     def _document_types_by_id(
         self,

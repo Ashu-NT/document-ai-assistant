@@ -7,8 +7,10 @@ from typing import Callable
 
 from src.application.contracts import UnitOfWork
 from src.application.services.document import (
+    DeterministicIdentifierScanner,
     DocumentRegistrationService,
     DuplicateDetectionService,
+    IdentifierPromotionService,
 )
 from src.application.validation.document_quality import DocumentQualityGate
 from src.application.validation.ingestion import IngestionRequestValidator
@@ -18,6 +20,7 @@ from src.application.workflows.classification import (
 )
 from src.application.workflows.embedding import EmbeddedChunk, EmbeddingWorkflow
 from src.application.workflows.extraction import ExtractionWorkflow
+from src.application.workflows.ingestion.content_hash import compute_content_hash_from_graph
 from src.application.workflows.ingestion.ingestion_exceptions import (
     IngestionWorkflowError,
     ReingestionNotSupportedError,
@@ -31,6 +34,7 @@ from src.application.workflows.ingestion.reingestion_request import (
 )
 from src.application.workflows.parsing import ParsingWorkflow
 from src.domain.common import DocumentType
+from src.domain.document.value_objects import DocumentHashes
 from src.domain.events import IngestionEvent
 from src.domain.workflow import IngestionRun
 from src.shared.activity import ActivityContext
@@ -72,6 +76,8 @@ class IngestionWorkflow:
         embedding_workflow: EmbeddingWorkflow,
         id_generator: IdGenerator,
         quality_gate: DocumentQualityGate | None = None,
+        identifier_promotion_service: IdentifierPromotionService | None = None,
+        deterministic_identifier_scanner: DeterministicIdentifierScanner | None = None,
         activity_service=None,
         audit_service=None,
         event_service=None,
@@ -89,6 +95,8 @@ class IngestionWorkflow:
         self.embedding_workflow = embedding_workflow
         self.id_generator = id_generator
         self.quality_gate = quality_gate or DocumentQualityGate()
+        self.identifier_promotion_service = identifier_promotion_service
+        self.deterministic_identifier_scanner = deterministic_identifier_scanner
         self.activity_service = activity_service
         self.audit_service = audit_service
         self.event_service = event_service
@@ -114,7 +122,8 @@ class IngestionWorkflow:
 
         file_path = str(Path(request.file_path).expanduser().resolve())
         file_name = _file_name_from_path(file_path)
-        file_hash, content_hash = self._compute_hashes(Path(file_path))
+        file_hash = self._compute_file_hash(Path(file_path))
+        content_hash: str | None = None
         run_id = self.id_generator.new_id(IdPrefix.INGESTION_RUN)
         correlation_id = request.correlation_id or run_id
         resolved_activity_context = self._resolve_activity_context(
@@ -152,14 +161,6 @@ class IngestionWorkflow:
         )
 
         warnings: list[str] = []
-        if request.enable_ocr is not None:
-            warnings.append(
-                "Per-request OCR overrides are not supported by the current parsing runtime; configured parser settings were used."
-            )
-        if request.source_name:
-            warnings.append(
-                "source_name is not persisted by the current document model and was kept only in diagnostics."
-            )
 
         self._emit_progress(progress_callback, f"Starting ingestion for {file_name}...")
         self._publish_stage_started(
@@ -170,25 +171,23 @@ class IngestionWorkflow:
             progress_callback=progress_callback,
         )
         current_stage = IngestionStage.DUPLICATE_CHECK
-        duplicate_of_document_id, duplicate_status = self._check_duplicate(
+        file_duplicate_document_id = self._check_file_hash_duplicate(
             request=request,
             file_hash=file_hash,
-            content_hash=content_hash,
             activity_context=resolved_activity_context,
         )
-        if duplicate_status is not None:
+        if file_duplicate_document_id is not None:
+            duplicate_status = IngestionStatus.SKIPPED_FILE_DUPLICATE
             ingestion_run.status = duplicate_status
-        self._publish_stage_completed(
-            ingestion_run=ingestion_run,
-            stage=IngestionStage.DUPLICATE_CHECK,
-            status=ingestion_run.status,
-            event_context=resolved_event_context,
-            file_name=file_name,
-            payload={"duplicate": bool(duplicate_of_document_id)},
-        )
-        if duplicate_of_document_id is not None:
-            duplicate_status = ingestion_run.status
-            ingestion_run.document_id = duplicate_of_document_id
+            self._publish_stage_completed(
+                ingestion_run=ingestion_run,
+                stage=IngestionStage.DUPLICATE_CHECK,
+                status=ingestion_run.status,
+                event_context=resolved_event_context,
+                file_name=file_name,
+                payload={"duplicate": True, "type": "file_hash"},
+            )
+            ingestion_run.document_id = file_duplicate_document_id
             ingestion_run.finished_at = datetime.now(UTC)
             self._persist_run(ingestion_run)
             self._publish_event(
@@ -196,13 +195,9 @@ class IngestionWorkflow:
                     event_id=self.id_generator.new_event_id(),
                     ingestion_run_id=run_id,
                     status=duplicate_status.value,
-                    duplicate_of_document_id=duplicate_of_document_id,
-                    duplicate_type=(
-                        "content_hash"
-                        if duplicate_status == IngestionStatus.SKIPPED_CONTENT_DUPLICATE
-                        else "file_hash"
-                    ),
-                    document_id=duplicate_of_document_id,
+                    duplicate_of_document_id=file_duplicate_document_id,
+                    duplicate_type="file_hash",
+                    document_id=file_duplicate_document_id,
                     file_path=file_path,
                     file_name=file_name,
                 ),
@@ -211,19 +206,27 @@ class IngestionWorkflow:
             return IngestionResult(
                 status=duplicate_status,
                 ingestion_run_id=run_id,
-                document_id=duplicate_of_document_id,
+                document_id=file_duplicate_document_id,
                 file_name=file_name,
-                duplicate_of_document_id=duplicate_of_document_id,
+                duplicate_of_document_id=file_duplicate_document_id,
                 warnings=warnings,
                 diagnostics={
                     "file_path": file_path,
                     "file_hash": file_hash,
-                    "content_hash": content_hash,
+                    "content_hash": None,
                     "metadata": dict(request.metadata),
                 },
                 current_stage=IngestionStage.DUPLICATE_CHECK,
                 correlation_id=correlation_id,
             )
+        self._publish_stage_completed(
+            ingestion_run=ingestion_run,
+            stage=IngestionStage.DUPLICATE_CHECK,
+            status=ingestion_run.status,
+            event_context=resolved_event_context,
+            file_name=file_name,
+            payload={"duplicate": False},
+        )
 
         parsing_result = None
         final_graph = None
@@ -256,6 +259,8 @@ class IngestionWorkflow:
             requested_document_type = _coerce_document_type(request.document_type)
             if requested_document_type is not None:
                 parsing_result.document_graph.document.document_type = requested_document_type
+            if request.source_name:
+                parsing_result.document_graph.document.source_name = request.source_name
             ingestion_run.document_id = parsing_result.document_id
             parser = getattr(self.parsing_workflow, "parser", None)
             ingestion_run.parser_name = getattr(parser, "parser_name", None)
@@ -273,6 +278,53 @@ class IngestionWorkflow:
                 },
             )
             warnings.extend(parsing_result.parse_warnings)
+            content_hash = compute_content_hash_from_graph(parsing_result.document_graph)
+            ingestion_run.content_hash = content_hash
+            parsing_result.document_graph.document.hashes = DocumentHashes(
+                file_hash=file_hash,
+                content_hash=content_hash,
+            )
+
+            content_duplicate_document_id = self._check_content_hash_duplicate(
+                request=request,
+                content_hash=content_hash,
+                activity_context=resolved_activity_context,
+            )
+            if content_duplicate_document_id is not None:
+                duplicate_status = IngestionStatus.SKIPPED_CONTENT_DUPLICATE
+                ingestion_run.status = duplicate_status
+                ingestion_run.document_id = content_duplicate_document_id
+                ingestion_run.finished_at = datetime.now(UTC)
+                self._persist_run(ingestion_run)
+                self._publish_event(
+                    IngestionEvent.skipped_duplicate(
+                        event_id=self.id_generator.new_event_id(),
+                        ingestion_run_id=run_id,
+                        status=duplicate_status.value,
+                        duplicate_of_document_id=content_duplicate_document_id,
+                        duplicate_type="content_hash",
+                        document_id=content_duplicate_document_id,
+                        file_path=file_path,
+                        file_name=file_name,
+                    ),
+                    event_context=resolved_event_context,
+                )
+                return IngestionResult(
+                    status=duplicate_status,
+                    ingestion_run_id=run_id,
+                    document_id=content_duplicate_document_id,
+                    file_name=file_name,
+                    duplicate_of_document_id=content_duplicate_document_id,
+                    warnings=warnings,
+                    diagnostics={
+                        "file_path": file_path,
+                        "file_hash": file_hash,
+                        "content_hash": content_hash,
+                        "metadata": dict(request.metadata),
+                    },
+                    current_stage=IngestionStage.PARSING,
+                    correlation_id=correlation_id,
+                )
 
             current_stage = IngestionStage.REGISTRATION
             self._publish_stage_started(
@@ -399,6 +451,38 @@ class IngestionWorkflow:
                 activity_context=resolved_activity_context,
             )
             self.unit_of_work.commit()
+            if self.identifier_promotion_service is not None:
+                promoted_identifiers = self.identifier_promotion_service.promote(
+                    extraction_result=extraction_result,
+                    document_graph=final_graph,
+                    id_generator=self.id_generator,
+                )
+                if promoted_identifiers:
+                    for identifier in promoted_identifiers:
+                        final_graph.identifiers[identifier.identifier_id] = identifier
+                    self.document_registration_service.register_document_identifiers(
+                        promoted_identifiers,
+                        activity_context=resolved_activity_context,
+                    )
+                    self.unit_of_work.commit()
+            if self.deterministic_identifier_scanner is not None:
+                existing_normalized = {
+                    (i.normalized_value or "", i.identifier_type.value)
+                    for i in final_graph.identifiers.values()
+                }
+                scanned_identifiers = self.deterministic_identifier_scanner.scan(
+                    final_graph,
+                    self.id_generator,
+                    existing_normalized=existing_normalized,
+                )
+                if scanned_identifiers:
+                    for identifier in scanned_identifiers:
+                        final_graph.identifiers[identifier.identifier_id] = identifier
+                    self.document_registration_service.register_document_identifiers(
+                        scanned_identifiers,
+                        activity_context=resolved_activity_context,
+                    )
+                    self.unit_of_work.commit()
             ingestion_run.extraction_model = self.extraction_workflow.extraction_model
             self._publish_stage_completed(
                 ingestion_run=ingestion_run,
@@ -412,6 +496,10 @@ class IngestionWorkflow:
                     "maintenance_task_count": len(extraction_result.maintenance_tasks),
                     "spare_part_count": len(extraction_result.spare_parts),
                 },
+            )
+            self._set_run_status(
+                ingestion_run,
+                IngestionStatus.EXTRACTED,
             )
 
             current_stage = IngestionStage.EMBEDDING
@@ -585,53 +673,47 @@ class IngestionWorkflow:
             details={"document_id": request.document_id},
         )
 
-    def _check_duplicate(
+    def _check_file_hash_duplicate(
         self,
         *,
         request: IngestionRequest,
         file_hash: str,
-        content_hash: str | None,
-        activity_context: ActivityContext | None,
-    ) -> tuple[str | None, IngestionStatus | None]:
+        activity_context,
+    ) -> str | None:
         from src.config.settings import duplicate_detection_settings
 
         if request.force:
-            return None, None
+            return None
 
-        if duplicate_detection_settings.enable_file_hash_check:
-            file_duplicate_result = self.duplicate_detection_service.check_file_hash(
-                file_hash,
-                activity_context=activity_context,
-            )
-            duplicate_of_document_id = file_duplicate_result.payload.get(
-                "existing_document_id"
-            )
-            if duplicate_of_document_id:
-                return (
-                    duplicate_of_document_id,
-                    IngestionStatus.SKIPPED_FILE_DUPLICATE,
-                )
+        if not duplicate_detection_settings.enable_file_hash_check:
+            return None
 
-        if (
-            content_hash
-            and duplicate_detection_settings.enable_content_hash_check
-        ):
-            content_duplicate_result = (
-                self.duplicate_detection_service.check_content_hash(
-                    content_hash,
-                    activity_context=activity_context,
-                )
-            )
-            duplicate_of_document_id = content_duplicate_result.payload.get(
-                "existing_document_id"
-            )
-            if duplicate_of_document_id:
-                return (
-                    duplicate_of_document_id,
-                    IngestionStatus.SKIPPED_CONTENT_DUPLICATE,
-                )
+        result = self.duplicate_detection_service.check_file_hash(
+            file_hash,
+            activity_context=activity_context,
+        )
+        return result.payload.get("existing_document_id")
 
-        return None, None
+    def _check_content_hash_duplicate(
+        self,
+        *,
+        request: IngestionRequest,
+        content_hash: str,
+        activity_context,
+    ) -> str | None:
+        from src.config.settings import duplicate_detection_settings
+
+        if request.force:
+            return None
+
+        if not duplicate_detection_settings.enable_content_hash_check:
+            return None
+
+        result = self.duplicate_detection_service.check_content_hash(
+            content_hash,
+            activity_context=activity_context,
+        )
+        return result.payload.get("existing_document_id")
 
     def _run_quality_checks(
         self,
@@ -792,13 +874,12 @@ class IngestionWorkflow:
             progress_callback(message)
 
     @staticmethod
-    def _compute_hashes(file_path: Path) -> tuple[str, str]:
+    def _compute_file_hash(file_path: Path) -> str:
         digest = hashlib.sha256()
         with file_path.open("rb") as handle:
             for chunk in iter(lambda: handle.read(1024 * 1024), b""):
                 digest.update(chunk)
-        file_hash = digest.hexdigest()
-        return file_hash, file_hash
+        return digest.hexdigest()
 
     def _resolve_activity_context(
         self,

@@ -15,6 +15,7 @@ class Document:
     title: str | None = None
     document_type: DocumentType = DocumentType.UNKNOWN
     language: str | None = None
+    source_name: str | None = None
 
     statistics: DocumentStatistics = field(default_factory=DocumentStatistics)
     audit: AuditMetadata = field(default_factory=AuditMetadata)

@@ -33,6 +33,7 @@ class DocumentORM(Base):
         default="unknown",
     )
     language: Mapped[str | None] = mapped_column(String, nullable=True)
+    source_name: Mapped[str | None] = mapped_column(String, nullable=True)
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
@@ -209,10 +210,14 @@ class IdentifierORM(Base):
         index=True,
     )
 
+    section_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+
     raw_value: Mapped[str] = mapped_column(String, nullable=False)
     normalized_value: Mapped[str] = mapped_column(String, nullable=False, index=True)
     identifier_type: Mapped[str] = mapped_column(String, nullable=False)
 
     confidence_score: Mapped[float | None] = mapped_column(nullable=True)
+    page_start: Mapped[int | None] = mapped_column(nullable=True)
+    page_end: Mapped[int | None] = mapped_column(nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

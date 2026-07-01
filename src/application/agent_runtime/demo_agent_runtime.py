@@ -48,6 +48,7 @@ class AgentRuntime:
         show_plan: bool = False,
         show_raw_plan: bool = False,
         top_k: int | None = None,
+        event_sink: Any = None,
     ) -> GraphResult:
         return self.graph.run(
             user_input,
@@ -70,6 +71,7 @@ class AgentRuntime:
             show_plan=show_plan,
             show_raw_plan=show_raw_plan,
             top_k=top_k,
+            event_sink=event_sink,
         )
 
     def load_session_snapshot(self, session_id: str | None) -> dict[str, Any]:

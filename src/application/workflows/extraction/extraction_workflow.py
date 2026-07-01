@@ -11,6 +11,7 @@ from src.application.validation.extraction import ExtractionResultValidator
 from src.domain.document import DocumentChunk
 from src.domain.extraction import (
     EquipmentInfo,
+    ExtractedIdentifier,
     ExtractionResult,
     MaintenanceTask,
     Manufacturer,
@@ -212,6 +213,15 @@ class ExtractionWorkflow:
             )
             for item in payload["manufacturers"]
         ]
+        extracted_identifiers = [
+            self._build_extracted_identifier(
+                item,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+                default_confidence=overall_confidence,
+            )
+            for item in payload["identifiers"]
+        ]
 
         requires_human_review = self._resolve_requires_human_review(
             payload.get("requires_human_review"),
@@ -224,6 +234,7 @@ class ExtractionWorkflow:
                 *spare_parts,
                 *equipment,
                 *manufacturers,
+                *extracted_identifiers,
             ]
         )
 
@@ -234,6 +245,7 @@ class ExtractionWorkflow:
             spare_parts=spare_parts,
             equipment=equipment,
             manufacturers=manufacturers,
+            extracted_identifiers=extracted_identifiers,
             source_chunk_ids=list(chunk_lookup),
             confidence_score=overall_confidence,
             requires_human_review=requires_human_review,
@@ -283,6 +295,10 @@ class ExtractionWorkflow:
             "manufacturers": cls._coerce_item_list(
                 cls._pick(payload, "manufacturers", "manufacturer_list"),
                 field_name="manufacturers",
+            ),
+            "identifiers": cls._coerce_item_list(
+                cls._pick(payload, "identifiers", "identifier_list"),
+                field_name="identifiers",
             ),
         }
 
@@ -553,6 +569,41 @@ class ExtractionWorkflow:
             name=name,
             website=self._optional_text(payload, "website", "url"),
             country=self._optional_text(payload, "country"),
+            source_chunk_id=self._resolve_source_chunk_id(
+                payload,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+            ),
+            confidence_score=confidence_score,
+            requires_human_review=self._resolve_requires_human_review(
+                self._pick(payload, "requires_human_review", "requires_review"),
+                confidence_score,
+            ),
+        )
+
+    def _build_extracted_identifier(
+        self,
+        payload: dict[str, Any],
+        *,
+        chunk_lookup: dict[str, DocumentChunk],
+        default_source_chunk_id: str | None,
+        default_confidence: float,
+    ) -> ExtractedIdentifier:
+        raw_value = self._required_text(
+            payload,
+            field_name="identifiers.raw_value",
+            keys=("raw_value", "value"),
+        )
+        identifier_type = self._optional_text(payload, "identifier_type", "type") or "unknown"
+        confidence_score = self._parse_confidence(
+            self._pick(payload, "confidence_score", "confidence")
+        )
+        if confidence_score is None:
+            confidence_score = default_confidence
+
+        return ExtractedIdentifier(
+            raw_value=raw_value,
+            identifier_type=identifier_type,
             source_chunk_id=self._resolve_source_chunk_id(
                 payload,
                 chunk_lookup=chunk_lookup,

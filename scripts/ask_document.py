@@ -568,8 +568,7 @@ def print_result(
     )
 
     if document_id:
-        print(f"Document: {document_name or document_id}")
-        print(f"Document ID: {document_id}\n")
+        print(f"Document: {document_name or document_id}\n")
 
     route = result.route
     if route == QuestionAnsweringRoute.RETRIEVAL_QA:

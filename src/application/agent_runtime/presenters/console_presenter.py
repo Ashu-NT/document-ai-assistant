@@ -73,7 +73,7 @@ class ConsolePresenter:
             [
                 "Final Answer",
                 "------------",
-                _console_safe_text((result.data or {}).get("answer") or result.response_text or ""),
+                _console_safe_text(result.response_text or (result.data or {}).get("answer") or ""),
                 "",
             ]
         )

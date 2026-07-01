@@ -181,6 +181,71 @@ def test_extract_builds_extraction_result_and_saves_it(sample_chunk) -> None:
     assert fake_llm_service.calls[0]["model"] == "qwen3:8b"
 
 
+def test_extract_parses_identifiers_from_llm_response(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.85,
+  "requires_human_review": false,
+  "maintenance_tasks": [],
+  "spare_parts": [],
+  "equipment": [],
+  "manufacturers": [],
+  "identifiers": [
+    {
+      "raw_value": "DRG-5001",
+      "identifier_type": "drawing_number",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    },
+    {
+      "raw_value": "ISO 9001",
+      "identifier_type": "certificate_number",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.95,
+      "requires_human_review": false
+    }
+  ]
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert len(result.extracted_identifiers) == 2
+    drawing = result.extracted_identifiers[0]
+    assert drawing.raw_value == "DRG-5001"
+    assert drawing.identifier_type == "drawing_number"
+    assert drawing.source_chunk_id == sample_chunk.chunk_id
+    cert = result.extracted_identifiers[1]
+    assert cert.raw_value == "ISO 9001"
+    assert cert.identifier_type == "certificate_number"
+
+
+def test_extract_identifiers_omitted_returns_empty_list(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.7,
+  "requires_human_review": false,
+  "maintenance_tasks": [],
+  "spare_parts": [],
+  "equipment": [],
+  "manufacturers": []
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert result.extracted_identifiers == []
+
+
 def test_extract_raises_for_malformed_response(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [

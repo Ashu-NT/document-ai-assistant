@@ -18,7 +18,8 @@ _ALLOWED_ARGS: dict[str, set[str]] = {
     "find_document": {"document_id", "query_text", "query"},
     "document_details": {"document_id"},
     "explore_document": {"document_id"},
-    "retrieve_chunks": {"document_id", "query_text", "question", "top_k"},
+    "retrieve_chunks": {"document_id", "query_text", "question", "top_k", "chunk_types"},
+    "retrieve_identifiers": {"identifier_value", "identifier_type", "document_id", "query"},
     "answer_question": {"document_id", "question", "top_k"},
     "run_quality_gate": {"report_path", "thresholds_path"},
     "retrieval_trace": {"document_id", "query_text", "top_k", "write_output"},
@@ -118,6 +119,7 @@ class PlanRepair:
                 tool_name
                 in {
                     "retrieve_chunks",
+                    "retrieve_identifiers",
                     "answer_question",
                     "explore_document",
                     "document_details",

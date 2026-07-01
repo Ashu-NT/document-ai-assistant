@@ -282,6 +282,7 @@ class QuestionAnsweringWorkflow:
             document_id=request.document_id,
             require_citations=request.require_citations,
             route=QuestionAnsweringRoute.RETRIEVAL_QA.value,
+            resolved_identifiers=list(request.resolved_identifiers),
         )
         generated = self._answer_generation_service.generate(gen_request)
 
