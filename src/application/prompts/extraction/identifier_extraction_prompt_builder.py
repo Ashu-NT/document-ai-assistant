@@ -97,6 +97,8 @@ class IdentifierExtractionPromptBuilder:
             "- Use only the provided chunk content.\n"
             "- Use only the provided chunk ids when setting source_chunk_id.\n"
             "- Return empty arrays when nothing is found.\n"
+            "- Do not return empty placeholder objects inside arrays. Use [] instead of objects whose fields are null, blank, N/A, or not available.\n"
+            "- Always include a top-level confidence_score. If uncertain, use 0.0 instead of null or omitting the field.\n"
             "- Use null for unknown optional values.\n"
             "- For identifiers: only extract values not already captured in spare_parts, equipment, or manufacturers.\n"
             "- Do not invent identifiers — only extract values explicitly present in the text.\n"

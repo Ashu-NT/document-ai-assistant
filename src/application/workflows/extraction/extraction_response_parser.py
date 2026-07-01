@@ -17,23 +17,43 @@ CODE_FENCE_PATTERN = re.compile(
 class ExtractionResponseParser:
     def parse(self, response: str) -> dict[str, Any]:
         payload = self._extract_payload(response)
-        validation = ValidationResult()
-
-        confidence_score = self._parse_confidence(
-            self._pick(
-                payload,
-                "confidence_score",
-                "confidence",
-                "overall_confidence",
-            )
+        maintenance_tasks = self._coerce_item_list(
+            self._pick(payload, "maintenance_tasks", "tasks"),
+            field_name="maintenance_tasks",
         )
-        if confidence_score is None:
+        spare_parts = self._coerce_item_list(
+            self._pick(payload, "spare_parts", "parts"),
+            field_name="spare_parts",
+        )
+        equipment = self._coerce_item_list(
+            self._pick(payload, "equipment", "equipment_info"),
+            field_name="equipment",
+        )
+        manufacturers = self._coerce_item_list(
+            self._pick(payload, "manufacturers", "manufacturer_list"),
+            field_name="manufacturers",
+        )
+        identifiers = self._coerce_item_list(
+            self._pick(payload, "identifiers", "identifier_list"),
+            field_name="identifiers",
+        )
+        confidence_score = self._resolve_overall_confidence(
+            payload=payload,
+            item_groups=(
+                maintenance_tasks,
+                spare_parts,
+                equipment,
+                manufacturers,
+                identifiers,
+            ),
+        )
+        validation = ValidationResult()
+        if confidence_score < 0 or confidence_score > 1:
             validation.add_issue(
                 "confidence_score",
                 "Confidence score must be a number between 0 and 1.",
                 "extraction.response.confidence.invalid",
             )
-
         validation.raise_if_invalid()
 
         return {
@@ -43,26 +63,11 @@ class ExtractionResponseParser:
                 "requires_human_review",
                 "requires_review",
             ),
-            "maintenance_tasks": self._coerce_item_list(
-                self._pick(payload, "maintenance_tasks", "tasks"),
-                field_name="maintenance_tasks",
-            ),
-            "spare_parts": self._coerce_item_list(
-                self._pick(payload, "spare_parts", "parts"),
-                field_name="spare_parts",
-            ),
-            "equipment": self._coerce_item_list(
-                self._pick(payload, "equipment", "equipment_info"),
-                field_name="equipment",
-            ),
-            "manufacturers": self._coerce_item_list(
-                self._pick(payload, "manufacturers", "manufacturer_list"),
-                field_name="manufacturers",
-            ),
-            "identifiers": self._coerce_item_list(
-                self._pick(payload, "identifiers", "identifier_list"),
-                field_name="identifiers",
-            ),
+            "maintenance_tasks": maintenance_tasks,
+            "spare_parts": spare_parts,
+            "equipment": equipment,
+            "manufacturers": manufacturers,
+            "identifiers": identifiers,
         }
 
     def _extract_payload(self, response: str) -> dict[str, Any]:
@@ -209,6 +214,49 @@ class ExtractionResponseParser:
             return float(text)
         except ValueError:
             return None
+
+    @classmethod
+    def _resolve_overall_confidence(
+        cls,
+        *,
+        payload: dict[str, Any],
+        item_groups: tuple[list[dict[str, Any]], ...],
+    ) -> float:
+        top_level_confidence = cls._parse_confidence(
+            cls._pick(
+                payload,
+                "confidence_score",
+                "confidence",
+                "overall_confidence",
+            )
+        )
+        if top_level_confidence is not None:
+            return top_level_confidence
+
+        derived_confidence = cls._derive_confidence_from_items(item_groups)
+        if derived_confidence is not None:
+            return derived_confidence
+
+        return 0.0
+
+    @classmethod
+    def _derive_confidence_from_items(
+        cls,
+        item_groups: tuple[list[dict[str, Any]], ...],
+    ) -> float | None:
+        confidences: list[float] = []
+        for items in item_groups:
+            for item in items:
+                confidence = cls._parse_confidence(
+                    cls._pick(item, "confidence_score", "confidence")
+                )
+                if confidence is not None:
+                    confidences.append(confidence)
+
+        if not confidences:
+            return None
+
+        return sum(confidences) / len(confidences)
 
 
 def _try_yaml_load(candidate: str) -> Any:

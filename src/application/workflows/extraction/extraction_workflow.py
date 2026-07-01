@@ -37,6 +37,17 @@ from src.shared.exceptions import SchemaValidationError
 from src.shared.ids import IdGenerator, IdPrefix
 
 KEY_PATTERN = re.compile(r"[^a-z0-9]+")
+NULL_LIKE_TEXT_VALUES = {
+    "",
+    "null",
+    "none",
+    "n/a",
+    "na",
+    "not available",
+    "not applicable",
+    "-",
+    "--",
+}
 
 
 def _default_extraction_model() -> str | None:
@@ -102,6 +113,15 @@ def _default_failure_preview_chars() -> int:
         return 1_200
 
 
+def _default_extraction_max_attempts() -> int:
+    try:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.extraction_max_attempts
+    except Exception:
+        return 2
+
+
 class ExtractionWorkflow:
     def __init__(
         self,
@@ -118,6 +138,7 @@ class ExtractionWorkflow:
         result_merger: ExtractionResultMerger | None = None,
         allow_partial_batches: bool | None = None,
         failure_preview_chars: int | None = None,
+        max_attempts: int | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.extraction_service = extraction_service
@@ -153,6 +174,12 @@ class ExtractionWorkflow:
             if failure_preview_chars is not None
             else _default_failure_preview_chars()
         )
+        self.max_attempts = max(
+            1,
+            max_attempts
+            if max_attempts is not None
+            else _default_extraction_max_attempts(),
+        )
         self.last_batch_diagnostics: list[ExtractionBatchDiagnostics] = []
 
     @tracked_action(
@@ -170,12 +197,54 @@ class ExtractionWorkflow:
         progress_callback: Callable[[str], None] | None = None,
     ) -> ExtractionResult:
         chunk_list = self._coerce_chunks(chunks)
-        self.last_batch_diagnostics = []
         self._emit_progress(
             progress_callback,
             f"Preparing extraction input from {len(chunk_list)} final chunk(s)...",
         )
         self._validate_input(document_id, chunk_list)
+
+        last_error: SchemaValidationError | None = None
+        for attempt_index in range(1, self.max_attempts + 1):
+            self.last_batch_diagnostics = []
+            if self.max_attempts > 1:
+                self._emit_progress(
+                    progress_callback,
+                    f"Extraction attempt {attempt_index}/{self.max_attempts} started.",
+                )
+            try:
+                return self._extract_once(
+                    document_id=document_id,
+                    chunk_list=chunk_list,
+                    activity_context=activity_context,
+                    progress_callback=progress_callback,
+                )
+            except SchemaValidationError as exc:
+                last_error = exc
+                if attempt_index >= self.max_attempts:
+                    raise
+                self._emit_progress(
+                    progress_callback,
+                    (
+                        f"Extraction attempt {attempt_index}/{self.max_attempts} failed: {exc}. "
+                        "Restarting extraction from the first batch..."
+                    ),
+                )
+
+        if last_error is not None:
+            raise last_error
+        raise SchemaValidationError(
+            "Extraction failed before producing a result.",
+            details={"document_id": document_id},
+        )
+
+    def _extract_once(
+        self,
+        *,
+        document_id: str,
+        chunk_list: list[DocumentChunk],
+        activity_context: ActivityContext | None,
+        progress_callback: Callable[[str], None] | None,
+    ) -> ExtractionResult:
 
         batches = self.chunk_batcher.build_batches(chunk_list)
         self._emit_progress(
@@ -300,6 +369,10 @@ class ExtractionWorkflow:
                 response,
             )
         except SchemaValidationError as exc:
+            preview = safe_response_preview(
+                response,
+                max_chars=self.failure_preview_chars,
+            )
             diagnostics = ExtractionBatchDiagnostics(
                 batch_index=batch.batch_index,
                 batch_count=batch.batch_count,
@@ -309,12 +382,18 @@ class ExtractionWorkflow:
                 model_name=self.extraction_model,
                 parse_success=False,
                 parse_error=str(exc),
-                raw_response_preview=safe_response_preview(
-                    response,
-                    max_chars=self.failure_preview_chars,
-                ),
+                raw_response_preview=preview,
             )
             self.last_batch_diagnostics.append(diagnostics)
+            compact_preview = " ".join(preview.split())
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                    f"Schema parsing failed: {exc}. "
+                    f"Response preview: {compact_preview}"
+                ),
+            )
             if self.allow_partial_batches:
                 self._emit_progress(
                     progress_callback,
@@ -392,6 +471,67 @@ class ExtractionWorkflow:
         chunk_lookup = {chunk.chunk_id: chunk for chunk in chunks}
         default_source_chunk_id = chunks[0].chunk_id if len(chunks) == 1 else None
         overall_confidence = payload["confidence_score"]
+        maintenance_task_payloads = self._filter_empty_extraction_items(
+            payload["maintenance_tasks"],
+            content_keys=(
+                "title",
+                "task",
+                "name",
+                "description",
+                "details",
+                "interval",
+                "frequency",
+                "component_name",
+                "component",
+                "equipment_id",
+            ),
+        )
+        spare_part_payloads = self._filter_empty_extraction_items(
+            payload["spare_parts"],
+            content_keys=(
+                "part_number",
+                "part",
+                "description",
+                "quantity",
+                "qty",
+                "component_name",
+                "component",
+                "manufacturer_name",
+                "manufacturer",
+            ),
+        )
+        equipment_payloads = self._filter_empty_extraction_items(
+            payload["equipment"],
+            content_keys=(
+                "name",
+                "equipment_name",
+                "model_number",
+                "model",
+                "serial_number",
+                "serial",
+                "manufacturer_name",
+                "manufacturer",
+            ),
+        )
+        manufacturer_payloads = self._filter_empty_extraction_items(
+            payload["manufacturers"],
+            content_keys=(
+                "name",
+                "manufacturer_name",
+                "website",
+                "url",
+                "country",
+            ),
+        )
+        identifier_payloads = self._filter_empty_extraction_items(
+            payload["identifiers"],
+            content_keys=(
+                "raw_value",
+                "value",
+                "identifier_type",
+                "type",
+            ),
+        )
 
         maintenance_tasks = [
             self._build_maintenance_task(
@@ -401,7 +541,7 @@ class ExtractionWorkflow:
                 default_source_chunk_id=default_source_chunk_id,
                 default_confidence=overall_confidence,
             )
-            for item in payload["maintenance_tasks"]
+            for item in maintenance_task_payloads
         ]
         spare_parts = [
             self._build_spare_part(
@@ -411,7 +551,7 @@ class ExtractionWorkflow:
                 default_source_chunk_id=default_source_chunk_id,
                 default_confidence=overall_confidence,
             )
-            for item in payload["spare_parts"]
+            for item in spare_part_payloads
         ]
         equipment = [
             self._build_equipment_info(
@@ -421,7 +561,7 @@ class ExtractionWorkflow:
                 default_source_chunk_id=default_source_chunk_id,
                 default_confidence=overall_confidence,
             )
-            for item in payload["equipment"]
+            for item in equipment_payloads
         ]
         manufacturers = [
             self._build_manufacturer(
@@ -431,7 +571,7 @@ class ExtractionWorkflow:
                 default_source_chunk_id=default_source_chunk_id,
                 default_confidence=overall_confidence,
             )
-            for item in payload["manufacturers"]
+            for item in manufacturer_payloads
         ]
         extracted_identifiers = [
             self._build_extracted_identifier(
@@ -440,7 +580,7 @@ class ExtractionWorkflow:
                 default_source_chunk_id=default_source_chunk_id,
                 default_confidence=overall_confidence,
             )
-            for item in payload["identifiers"]
+            for item in identifier_payloads
         ]
 
         requires_human_review = self._resolve_requires_human_review(
@@ -764,8 +904,33 @@ class ExtractionWorkflow:
         if value is None:
             return None
 
-        text = str(value).strip().strip('"').strip("'").strip()
+        text = " ".join(str(value).strip().strip('"').strip("'").split())
+        text = text.rstrip(" .;:")
+        if text.lower() in NULL_LIKE_TEXT_VALUES:
+            return None
         return text or None
+
+    @classmethod
+    def _filter_empty_extraction_items(
+        cls,
+        items: list[dict[str, Any]],
+        *,
+        content_keys: tuple[str, ...],
+    ) -> list[dict[str, Any]]:
+        return [
+            item
+            for item in items
+            if cls._has_meaningful_item_content(item, content_keys=content_keys)
+        ]
+
+    @classmethod
+    def _has_meaningful_item_content(
+        cls,
+        payload: dict[str, Any],
+        *,
+        content_keys: tuple[str, ...],
+    ) -> bool:
+        return any(cls._optional_text(payload, key) for key in content_keys)
 
     @staticmethod
     def _parse_confidence(value: Any) -> float | None:
