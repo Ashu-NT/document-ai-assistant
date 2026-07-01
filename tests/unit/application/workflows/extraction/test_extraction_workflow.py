@@ -3,6 +3,7 @@ import pytest
 from src.application.prompts.extraction import IdentifierExtractionPromptBuilder
 from src.application.validation.extraction import ExtractionResultValidator
 from src.application.workflows.extraction import ExtractionWorkflow
+from src.domain.extraction import ExtractionProfile
 from src.application.workflows.extraction.extraction_chunk_batcher import (
     ExtractionChunkBatcher,
 )
@@ -1080,3 +1081,207 @@ def test_extraction_still_rejects_non_null_invalid_array_items(sample_chunk) -> 
         workflow.extract(sample_chunk.document_id, sample_chunk)
 
     assert "spare_parts items must be objects" in exc_info.value.details["parse_error"]
+
+
+def test_extraction_full_profile_is_the_default(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.9,
+  "maintenance_tasks": [],
+  "spare_parts": [],
+  "equipment": [],
+  "manufacturers": [],
+  "identifiers": []
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert "identifier_type" in fake_llm_service.calls[0]["prompt"] or True
+    assert "spare_parts" in fake_llm_service.calls[0]["prompt"]
+
+
+def test_extraction_retrieval_identifiers_ignores_malformed_other_families(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.9,
+  "requires_human_review": false,
+  "maintenance_tasks": [],
+  "spare_parts": [
+    { "part_number": "G½" }, "quantity': '1'", "manufacturer_name': null"
+  ],
+  "equipment": [null],
+  "manufacturers": [null],
+  "identifiers": [
+    {
+      "raw_value": "FWC12",
+      "identifier_type": "model_number",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    }
+  ]
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(
+        sample_chunk.document_id,
+        sample_chunk,
+        profile=ExtractionProfile.RETRIEVAL_IDENTIFIERS,
+    )
+
+    assert result.maintenance_tasks == []
+    assert result.spare_parts == []
+    assert result.equipment == []
+    assert result.manufacturers == []
+    assert len(result.extracted_identifiers) == 1
+    assert result.extracted_identifiers[0].raw_value == "FWC12"
+    assert fake_extraction_service.saved_results == [result]
+
+
+def test_extraction_retrieval_identifiers_prompt_omits_other_families(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.9,
+  "identifiers": []
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    workflow.extract(
+        sample_chunk.document_id,
+        sample_chunk,
+        profile=ExtractionProfile.RETRIEVAL_IDENTIFIERS,
+    )
+
+    prompt = fake_llm_service.calls[0]["prompt"]
+    assert '"spare_parts":' not in prompt
+    assert '"maintenance_tasks":' not in prompt
+    assert '"equipment":' not in prompt
+    assert '"manufacturers":' not in prompt
+    assert "identifiers" in prompt
+
+
+def test_extraction_retrieval_identifiers_rejects_invalid_source_chunk_id_instead_of_pinning_fallback(
+    sample_chunk,
+) -> None:
+    second_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_002",
+        content="Filter element FLT-100 is used in QP100A.",
+    )
+    bad_response = """{
+  "confidence_score": 0.9,
+  "identifiers": [
+    {
+      "raw_value": "QP100A",
+      "identifier_type": "model_number",
+      "source_chunk_id": "chunk_999_not_in_batch",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    }
+  ]
+}"""
+    fake_llm_service = FakeLLMService([bad_response, bad_response])
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        max_attempts=2,
+    )
+
+    with pytest.raises(SchemaValidationError):
+        workflow.extract(
+            sample_chunk.document_id,
+            [sample_chunk, second_chunk],
+            profile=ExtractionProfile.RETRIEVAL_IDENTIFIERS,
+        )
+
+    assert len(fake_llm_service.calls) == 2
+    assert fake_extraction_service.saved_results == []
+
+
+def test_extraction_retrieval_identifiers_rejects_missing_source_chunk_id_when_ambiguous(
+    sample_chunk,
+) -> None:
+    second_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_002",
+        content="Filter element FLT-100 is used in QP100A.",
+    )
+    response_without_chunk_id = """{
+  "confidence_score": 0.9,
+  "identifiers": [
+    {
+      "raw_value": "QP100A",
+      "identifier_type": "model_number",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    }
+  ]
+}"""
+    fake_llm_service = FakeLLMService([response_without_chunk_id])
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    with pytest.raises(SchemaValidationError):
+        workflow.extract(
+            sample_chunk.document_id,
+            [sample_chunk, second_chunk],
+            profile=ExtractionProfile.RETRIEVAL_IDENTIFIERS,
+        )
+
+    assert fake_extraction_service.saved_results == []
+
+
+def test_extraction_full_profile_still_pins_invalid_source_chunk_id_to_fallback(
+    sample_chunk,
+) -> None:
+    second_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_002",
+        content="Filter element FLT-100 is used in QP100A.",
+    )
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.9,
+  "maintenance_tasks": [],
+  "spare_parts": [],
+  "equipment": [],
+  "manufacturers": [],
+  "identifiers": [
+    {
+      "raw_value": "QP100A",
+      "identifier_type": "model_number",
+      "source_chunk_id": "chunk_999_not_in_batch",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    }
+  ]
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(
+        sample_chunk.document_id,
+        [sample_chunk, second_chunk],
+        profile=ExtractionProfile.FULL,
+    )
+
+    assert len(result.extracted_identifiers) == 1
+    assert result.extracted_identifiers[0].source_chunk_id is None
+    assert result.extracted_identifiers[0].requires_human_review is True

@@ -11,6 +11,7 @@ from src.application.evaluation.retrieval.benchmarking.corpus.retrieval_benchmar
 )
 from src.application.workflows.ingestion.ingestion_result import IngestionResult
 from src.application.workflows.ingestion.ingestion_status import IngestionStatus
+from src.domain.extraction import ExtractionProfile
 
 
 class FakeIngestionWorkflow:
@@ -82,6 +83,7 @@ def test_seeder_uses_ingestion_workflow_for_new_document(
         assert len(ingestion_workflow.calls) == 1
         assert ingestion_workflow.calls[0].force is True
         assert ingestion_workflow.calls[0].requested_by == "benchmark_seeder"
+        assert ingestion_workflow.calls[0].extraction_profile == ExtractionProfile.RETRIEVAL_IDENTIFIERS
         assert status == "seeded_new"
         assert final_graph.document.document_id == doc_id
     finally:
