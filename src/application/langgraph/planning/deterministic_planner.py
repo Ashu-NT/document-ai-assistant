@@ -42,7 +42,8 @@ _IDENTIFIER_VALUE_RE = re.compile(
 _IDENTIFIER_TERM_RE = re.compile(
     r"\b(?:part\s*(?:number|no\.?)|p/?n\.?|serial\s*(?:number|no\.?)|s/?n\.?|"
     r"model\s*(?:number|no\.?)|order\s*code|drawing\s*(?:number|no\.?)|"
-    r"tag\s*(?:number|no\.?)?|certificate\s*(?:number|no\.?)|component\s*code)\b",
+    r"tag\s*(?:number|no\.?)?|certificate\s*(?:number|no\.?)|component\s*code|"
+    r"manufacturer|supplier|made\s*by|manufactured\s*by)\b",
     re.IGNORECASE,
 )
 
@@ -130,10 +131,14 @@ class DeterministicPlanner:
             return "serial_number"
         if re.search(r"\bmodel\s*(?:number|no\.?)\b", lower):
             return "model_number"
-        if re.search(r"\border\s*code\b", lower):
-            return "order_code"
+        if re.search(r"\bcertificate\s*(?:number|no\.?)?\b|\bcert\b", lower):
+            return "certificate_number"
         if re.search(r"\bdrawing\s*(?:number|no\.?)\b", lower):
             return "drawing_number"
+        if re.search(r"\border\s*code\b|\bcomponent\s*code\b", lower):
+            return "component_code"
+        if re.search(r"\bmanufacturer\b|\bsupplier\b|\bmade\s*by\b|\bmanufactured\s*by\b", lower):
+            return "manufacturer_name"
         return None
 
     def _build_identifier_plan(

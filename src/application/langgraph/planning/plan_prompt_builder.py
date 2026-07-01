@@ -17,8 +17,10 @@ _TOOL_HINTS: dict[str, str] = {
     "retrieve_chunks": "Retrieve evidence chunks for a query.",
     "retrieve_identifiers": (
         "Search for specific identifiers such as part numbers, serial numbers, model numbers, "
-        "order codes, or drawing numbers. Args: identifier_value (str, required), "
-        "identifier_type (optional: 'part_number'|'serial_number'|'model_number'|'order_code'|'drawing_number'), "
+        "certificate numbers, drawing numbers, component codes, or manufacturer names. "
+        "Args: identifier_value (str, required), "
+        "identifier_type (optional: 'part_number'|'serial_number'|'model_number'|"
+        "'certificate_number'|'drawing_number'|'component_code'|'manufacturer_name'), "
         "document_id (optional, to scope to a single document)."
     ),
     "answer_question": "Answer a question using the existing QA workflow.",

@@ -10,7 +10,9 @@ from src.domain.document import Document, DocumentChunk, DocumentGraph
 from src.domain.document.value_objects import DocumentHashes
 from src.domain.common import ChunkType, DocumentType, SourceLocation
 from src.domain.extraction.equipment_info import EquipmentInfo
+from src.domain.extraction.extracted_identifier import ExtractedIdentifier
 from src.domain.extraction.extraction_result import ExtractionResult
+from src.domain.extraction.manufacturer import Manufacturer
 from src.domain.extraction.spare_part import SparePart
 from src.shared.ids import IdGenerator
 
@@ -272,3 +274,182 @@ def test_document_id_is_taken_from_graph():
     identifiers = _service().promote(extraction, graph, IdGenerator())
 
     assert identifiers[0].document_id == "doc_XYZ"
+
+
+# --- manufacturer name tests --------------------------------------------------
+
+def _make_manufacturer(
+    name: str = "Grundfos",
+    document_id: str = "doc_001",
+    source_chunk_id: str | None = "chunk_001",
+    confidence_score: float | None = 0.9,
+) -> Manufacturer:
+    return Manufacturer(
+        manufacturer_id="mfr_001",
+        document_id=document_id,
+        name=name,
+        source_chunk_id=source_chunk_id,
+        confidence_score=confidence_score,
+    )
+
+
+def _make_extraction_with_manufacturers(
+    manufacturers: list[Manufacturer] | None = None,
+    document_id: str = "doc_001",
+) -> ExtractionResult:
+    return ExtractionResult(
+        extraction_id="extraction_001",
+        document_id=document_id,
+        manufacturers=manufacturers or [],
+    )
+
+
+def test_promote_manufacturer_name_creates_identifier():
+    graph = _make_graph()
+    extraction = _make_extraction_with_manufacturers(
+        manufacturers=[_make_manufacturer("Grundfos")]
+    )
+    identifiers = _service().promote(extraction, graph, IdGenerator())
+
+    assert len(identifiers) == 1
+    id_ = identifiers[0]
+    assert id_.identifier_type == IdentifierType.MANUFACTURER_NAME
+    assert id_.raw_value == "Grundfos"
+    assert id_.document_id == "doc_001"
+    assert id_.confidence_score == 0.9
+
+
+def test_blank_manufacturer_name_skipped():
+    graph = _make_graph()
+    extraction = _make_extraction_with_manufacturers(
+        manufacturers=[_make_manufacturer("   ")]
+    )
+    identifiers = _service().promote(extraction, graph, IdGenerator())
+
+    assert identifiers == []
+
+
+def test_manufacturer_name_deduplication():
+    graph = _make_graph(chunk_ids=["chunk_001", "chunk_002"])
+    extraction = _make_extraction_with_manufacturers(
+        manufacturers=[
+            _make_manufacturer("Grundfos", source_chunk_id="chunk_001"),
+            _make_manufacturer("grundfos", source_chunk_id="chunk_002"),
+        ]
+    )
+    identifiers = _service().promote(extraction, graph, IdGenerator())
+
+    assert len(identifiers) == 1
+    assert identifiers[0].raw_value == "Grundfos"
+
+
+def test_manufacturer_and_part_number_both_promoted():
+    graph = _make_graph()
+    extraction = ExtractionResult(
+        extraction_id="e001",
+        document_id="doc_001",
+        spare_parts=[_make_spare_part("HP-001")],
+        manufacturers=[_make_manufacturer("Grundfos")],
+    )
+    identifiers = _service().promote(extraction, graph, IdGenerator())
+
+    assert len(identifiers) == 2
+    types = {i.identifier_type for i in identifiers}
+    assert IdentifierType.PART_NUMBER in types
+    assert IdentifierType.MANUFACTURER_NAME in types
+
+
+# --- extracted_identifiers promotion -----------------------------------------
+
+def test_promote_extracted_identifier_creates_identifier():
+    graph = _make_graph()
+    extraction = ExtractionResult(
+        extraction_id="e001",
+        document_id="doc_001",
+        extracted_identifiers=[
+            ExtractedIdentifier(
+                raw_value="DRG-5001",
+                identifier_type="drawing_number",
+                source_chunk_id="chunk_001",
+                confidence_score=0.9,
+            )
+        ],
+    )
+    identifiers = _service().promote(extraction, graph, IdGenerator())
+
+    assert len(identifiers) == 1
+    id_ = identifiers[0]
+    assert id_.identifier_type == IdentifierType.DRAWING_NUMBER
+    assert id_.raw_value == "DRG-5001"
+    assert id_.document_id == "doc_001"
+    assert id_.chunk_id == "chunk_001"
+    assert id_.confidence_score == 0.9
+
+
+def test_promote_extracted_identifier_unknown_type_falls_back():
+    graph = _make_graph()
+    extraction = ExtractionResult(
+        extraction_id="e001",
+        document_id="doc_001",
+        extracted_identifiers=[
+            ExtractedIdentifier(
+                raw_value="XYZ-999",
+                identifier_type="not_a_real_type",
+                source_chunk_id="chunk_001",
+                confidence_score=0.7,
+            )
+        ],
+    )
+    identifiers = _service().promote(extraction, graph, IdGenerator())
+
+    assert len(identifiers) == 1
+    assert identifiers[0].identifier_type == IdentifierType.UNKNOWN
+
+
+def test_promote_extracted_identifier_deduped_against_structured():
+    graph = _make_graph()
+    extraction = ExtractionResult(
+        extraction_id="e001",
+        document_id="doc_001",
+        spare_parts=[_make_spare_part("HP-001")],
+        extracted_identifiers=[
+            ExtractedIdentifier(
+                raw_value="HP-001",
+                identifier_type="part_number",
+                source_chunk_id="chunk_001",
+                confidence_score=0.9,
+            )
+        ],
+    )
+    identifiers = _service().promote(extraction, graph, IdGenerator())
+
+    assert len(identifiers) == 1
+    assert identifiers[0].raw_value == "HP-001"
+
+
+def test_promote_multiple_extracted_identifiers():
+    graph = _make_graph()
+    extraction = ExtractionResult(
+        extraction_id="e001",
+        document_id="doc_001",
+        extracted_identifiers=[
+            ExtractedIdentifier(
+                raw_value="DRG-5001",
+                identifier_type="drawing_number",
+                source_chunk_id="chunk_001",
+                confidence_score=0.9,
+            ),
+            ExtractedIdentifier(
+                raw_value="ISO 9001",
+                identifier_type="certificate_number",
+                source_chunk_id="chunk_001",
+                confidence_score=0.95,
+            ),
+        ],
+    )
+    identifiers = _service().promote(extraction, graph, IdGenerator())
+
+    assert len(identifiers) == 2
+    types = {i.identifier_type for i in identifiers}
+    assert IdentifierType.DRAWING_NUMBER in types
+    assert IdentifierType.CERTIFICATE_NUMBER in types

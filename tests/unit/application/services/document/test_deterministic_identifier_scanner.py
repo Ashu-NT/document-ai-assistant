@@ -77,14 +77,14 @@ def test_scans_cert_number_iso_pattern():
     graph = _make_graph([_make_chunk(content="Certified to ISO 9001 standards.")])
     results = _scanner().scan(graph, IdGenerator())
     assert len(results) == 1
-    assert results[0].identifier_type == IdentifierType.COMPONENT_CODE
+    assert results[0].identifier_type == IdentifierType.CERTIFICATE_NUMBER
 
 
 def test_scans_cert_number_iec_pattern():
     graph = _make_graph([_make_chunk(content="Compliant with IEC 61508 safety.")])
     results = _scanner().scan(graph, IdGenerator())
     assert len(results) == 1
-    assert results[0].identifier_type == IdentifierType.COMPONENT_CODE
+    assert results[0].identifier_type == IdentifierType.CERTIFICATE_NUMBER
 
 
 def test_deduplication_across_chunks():
@@ -109,7 +109,7 @@ def test_multiple_patterns_in_same_chunk():
     assert len(results) == 2
     types = {r.identifier_type for r in results}
     assert IdentifierType.DRAWING_NUMBER in types
-    assert IdentifierType.COMPONENT_CODE in types
+    assert IdentifierType.CERTIFICATE_NUMBER in types
 
 
 def test_chunk_metadata_attached_to_identifier():
@@ -157,3 +157,69 @@ def test_identifier_ids_are_unique():
     results = _scanner().scan(graph, IdGenerator())
     ids = [r.identifier_id for r in results]
     assert len(ids) == len(set(ids))
+
+
+# --- generic part number tests (G-03) -----------------------------------------
+
+def test_scans_generic_part_number_letter_hyphen_digit():
+    graph = _make_graph([_make_chunk(content="Replace filter HP-001 before maintenance.")])
+    results = _scanner().scan(graph, IdGenerator())
+    assert len(results) == 1
+    assert results[0].identifier_type == IdentifierType.PART_NUMBER
+    assert "HP-001" in results[0].raw_value.upper()
+
+
+def test_generic_part_scanner_does_not_double_classify_drawing_number():
+    graph = _make_graph([_make_chunk(content="See drawing DRG-1234 for assembly.")])
+    results = _scanner().scan(graph, IdGenerator())
+    assert len(results) == 1
+    assert results[0].identifier_type == IdentifierType.DRAWING_NUMBER
+
+
+def test_generic_part_scanner_does_not_double_classify_certificate():
+    graph = _make_graph([_make_chunk(content="Certified to ISO 9001.")])
+    results = _scanner().scan(graph, IdGenerator())
+    assert len(results) == 1
+    assert results[0].identifier_type == IdentifierType.CERTIFICATE_NUMBER
+
+
+def test_multiple_generic_part_numbers_in_chunk():
+    graph = _make_graph([_make_chunk(content="Parts HP-001 and FLT-100 are required.")])
+    results = _scanner().scan(graph, IdGenerator())
+    assert len(results) == 2
+    types = {r.identifier_type for r in results}
+    assert types == {IdentifierType.PART_NUMBER}
+
+
+def test_generic_part_and_drawing_in_same_chunk():
+    graph = _make_graph([_make_chunk(content="Part HP-001 is shown in DRG-5000.")])
+    results = _scanner().scan(graph, IdGenerator())
+    assert len(results) == 2
+    types = {r.identifier_type for r in results}
+    assert IdentifierType.PART_NUMBER in types
+    assert IdentifierType.DRAWING_NUMBER in types
+
+
+# --- serial number tests (G-09) -----------------------------------------------
+
+def test_scans_serial_number_sn_prefix():
+    graph = _make_graph([_make_chunk(content="Serial number SN-12345 installed.")])
+    results = _scanner().scan(graph, IdGenerator())
+    assert len(results) == 1
+    assert results[0].identifier_type == IdentifierType.SERIAL_NUMBER
+
+
+def test_serial_number_not_double_classified_as_part_number():
+    graph = _make_graph([_make_chunk(content="Unit SN-9876 is under warranty.")])
+    results = _scanner().scan(graph, IdGenerator())
+    assert len(results) == 1
+    assert results[0].identifier_type == IdentifierType.SERIAL_NUMBER
+
+
+def test_serial_and_drawing_in_same_chunk():
+    graph = _make_graph([_make_chunk(content="SN-1234 is shown in DRG-5000.")])
+    results = _scanner().scan(graph, IdGenerator())
+    assert len(results) == 2
+    types = {r.identifier_type for r in results}
+    assert IdentifierType.SERIAL_NUMBER in types
+    assert IdentifierType.DRAWING_NUMBER in types

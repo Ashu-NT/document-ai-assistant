@@ -47,6 +47,8 @@ class IdentifierType(StrEnum):
     MODEL_NUMBER = "model_number"
     DRAWING_NUMBER = "drawing_number"
     COMPONENT_CODE = "component_code"
+    CERTIFICATE_NUMBER = "certificate_number"
+    MANUFACTURER_NAME = "manufacturer_name"
     UNKNOWN = "unknown"
 
 

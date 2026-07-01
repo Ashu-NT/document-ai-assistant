@@ -58,6 +58,44 @@ class IdentifierPromotionService:
                     if identifier is not None:
                         identifiers.append(identifier)
 
+        for manufacturer in extraction_result.manufacturers:
+            if manufacturer.name and manufacturer.name.strip():
+                chunk = document_graph.chunks.get(manufacturer.source_chunk_id or "")
+                identifier = self._make(
+                    document_id=document_id,
+                    raw_value=manufacturer.name,
+                    identifier_type=IdentifierType.MANUFACTURER_NAME,
+                    source_chunk_id=manufacturer.source_chunk_id,
+                    valid_chunk_ids=valid_chunk_ids,
+                    confidence_score=manufacturer.confidence_score,
+                    id_generator=id_generator,
+                    seen=seen,
+                    chunk=chunk,
+                )
+                if identifier is not None:
+                    identifiers.append(identifier)
+
+        for extracted in extraction_result.extracted_identifiers:
+            if extracted.raw_value and extracted.raw_value.strip():
+                try:
+                    identifier_type = IdentifierType(extracted.identifier_type)
+                except ValueError:
+                    identifier_type = IdentifierType.UNKNOWN
+                chunk = document_graph.chunks.get(extracted.source_chunk_id or "")
+                identifier = self._make(
+                    document_id=document_id,
+                    raw_value=extracted.raw_value,
+                    identifier_type=identifier_type,
+                    source_chunk_id=extracted.source_chunk_id,
+                    valid_chunk_ids=valid_chunk_ids,
+                    confidence_score=extracted.confidence_score,
+                    id_generator=id_generator,
+                    seen=seen,
+                    chunk=chunk,
+                )
+                if identifier is not None:
+                    identifiers.append(identifier)
+
         return identifiers
 
     @staticmethod
