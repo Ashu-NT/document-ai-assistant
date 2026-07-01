@@ -110,6 +110,7 @@ class ElementORM(Base):
 
     raw_source_type: Mapped[str | None] = mapped_column(String, nullable=True)
     raw_ref: Mapped[str | None] = mapped_column(String, nullable=True)
+    parser_extra_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 

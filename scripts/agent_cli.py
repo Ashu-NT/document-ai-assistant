@@ -808,11 +808,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         from src.bootstrap.startup import bootstrap_application
         from src.config.settings import ingestion_settings, langgraph_settings
         from src.infrastructure.db.base import Base
+        from src.infrastructure.db.schema_management import ensure_database_schema
         from src.infrastructure.db.orm_models import __all__ as _orm_models_loaded
         from src.infrastructure.db.session import SessionLocal, engine
 
         bootstrap_application()
-        Base.metadata.create_all(engine)
+        ensure_database_schema(engine)
         session = SessionLocal()
 
         effective_generation = args.generate or ingestion_settings.enable_answer_generation

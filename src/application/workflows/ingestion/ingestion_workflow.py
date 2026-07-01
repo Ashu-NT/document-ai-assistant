@@ -412,6 +412,7 @@ class IngestionWorkflow:
             )
             self.unit_of_work.commit()
             ingestion_run.question_generation_model = self._question_generation_model()
+            ingestion_run.extraction_model = self.extraction_workflow.extraction_model
             self._set_run_status(
                 ingestion_run,
                 IngestionStatus.FINALIZED,
@@ -484,7 +485,6 @@ class IngestionWorkflow:
                         activity_context=resolved_activity_context,
                     )
                     self.unit_of_work.commit()
-            ingestion_run.extraction_model = self.extraction_workflow.extraction_model
             self._publish_stage_completed(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.EXTRACTION,

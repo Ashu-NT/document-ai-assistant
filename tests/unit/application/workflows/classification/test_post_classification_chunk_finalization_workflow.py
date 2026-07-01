@@ -1,8 +1,16 @@
 import copy
 
+import pytest
+
 from src.application.workflows.classification import (
     DocumentTypeDecision,
     PostClassificationChunkFinalizationWorkflow,
+)
+from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (
+    GraphChunkBuilder,
+)
+from src.application.workflows.parsing.builders.chunking.builders.section_chunk_builder import (
+    SectionChunkBuilder,
 )
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
@@ -16,9 +24,13 @@ from src.application.workflows.parsing.builders.chunking.policies.chunking_profi
 from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy import (
     DocumentChunkingPolicy,
 )
-from src.domain.common import ChunkType, DocumentType
-from src.domain.document import DocumentChunk, GeneratedQuestion
+from src.domain.assets import AssetMetadata, PictureAsset, TableAsset
+from src.domain.common import ChunkType, DocumentType, ElementType, ParserMetadata
+from src.domain.document import DocumentChunk, DocumentGraph, DocumentSection, GeneratedQuestion
+from src.domain.elements import CanonicalElement
+from src.shared.exceptions import ApplicationError
 from src.shared.execution import ActionResult
+from src.shared.ids import IdGenerator
 
 
 class FakeDocumentLookupService:
@@ -154,6 +166,8 @@ class FakeChunkingPolicyResolver:
             intro_context_tokens=120,
             asset_context_window=1,
             asset_context_max_tokens=72,
+            include_picture_chunks=self.profile_name
+            not in {ChunkingProfile.DATASHEET, ChunkingProfile.CERTIFICATE},
         )
 
 
@@ -210,6 +224,7 @@ def make_workflow(
     chunk_classification_workflow: FakeChunkClassificationWorkflow | None = None,
     enable_chunk_classification: bool = False,
     enable_question_generation: bool = True,
+    graph_chunk_builder=None,
 ) -> tuple[
     PostClassificationChunkFinalizationWorkflow,
     FakeQuestionGenerationService,
@@ -225,7 +240,7 @@ def make_workflow(
     registration_service = FakeDocumentRegistrationService(operations)
     vector_store = FakeVectorStore(operations)
     embedding_workflow = FakeEmbeddingWorkflow(operations)
-    graph_chunk_builder = FakeGraphChunkBuilder(rechunked_chunks)
+    graph_chunk_builder = graph_chunk_builder or FakeGraphChunkBuilder(rechunked_chunks)
     workflow = PostClassificationChunkFinalizationWorkflow(
         document_lookup_service=FakeDocumentLookupService(graph),
         document_registration_service=registration_service,
@@ -253,6 +268,106 @@ def make_workflow(
         graph_chunk_builder,
         operations,
     )
+
+
+def make_asset_element(
+    *,
+    element_id: str,
+    document_id: str,
+    section_id: str,
+    element_type: ElementType,
+    page: int,
+    table_id: str | None = None,
+    picture_id: str | None = None,
+    text: str | None = None,
+    extra: dict | None = None,
+) -> CanonicalElement:
+    from src.domain.common import SourceLocation
+
+    return CanonicalElement(
+        element_id=element_id,
+        document_id=document_id,
+        element_type=element_type,
+        text=text,
+        parent_section_id=section_id,
+        reading_order=page,
+        source=SourceLocation(page_start=page, page_end=page),
+        table_id=table_id,
+        picture_id=picture_id,
+        parser_metadata=ParserMetadata(
+            parser_name="docling",
+            raw_source_type=element_type.value,
+            extra=extra or {},
+        ),
+    )
+
+
+def make_asset_heavy_datasheet_graph(sample_document) -> DocumentGraph:
+    from src.domain.common import SourceLocation
+
+    document = copy.deepcopy(sample_document)
+    document.title = "Deck fillers datasheet"
+    document.document_type = DocumentType.DATASHEET
+    graph = DocumentGraph(document=document)
+    section = DocumentSection(
+        section_id="sec_asset",
+        document_id=document.document_id,
+        title="Technical Data",
+        level=1,
+        section_path=["Technical Data"],
+        source=SourceLocation(page_start=1, page_end=1),
+        element_ids=[],
+        sequence_number=1,
+    )
+    graph.add_section(section)
+    table_element = make_asset_element(
+        element_id="el_table_001",
+        document_id=document.document_id,
+        section_id=section.section_id,
+        element_type=ElementType.TABLE,
+        table_id="table_001",
+        page=1,
+        extra={
+            "markdown": "| Order Code | Size |\n|---|---|\n| DF-100 | DN100 |",
+            "caption": "Ordering information",
+            "row_count": 2,
+            "column_count": 2,
+        },
+    )
+    picture_element = make_asset_element(
+        element_id="el_picture_001",
+        document_id=document.document_id,
+        section_id=section.section_id,
+        element_type=ElementType.PICTURE,
+        picture_id="picture_001",
+        page=1,
+        extra={
+            "caption": "Deck filler dimensions",
+            "ocr_text": "DN100 hose connection deck filler",
+            "image_path": "outputs/images/deck_filler.png",
+        },
+    )
+    for element in (table_element, picture_element):
+        graph.add_element(element)
+        section.element_ids.append(element.element_id)
+
+    graph.tables["table_001"] = TableAsset(
+        table_id="table_001",
+        document_id=document.document_id,
+        parent_section_id=section.section_id,
+        markdown="| Order Code | Size |\n|---|---|\n| DF-100 | DN100 |",
+        metadata=AssetMetadata(caption="Ordering information"),
+    )
+    graph.pictures["picture_001"] = PictureAsset(
+        picture_id="picture_001",
+        document_id=document.document_id,
+        parent_section_id=section.section_id,
+        image_path="outputs/images/deck_filler.png",
+        ocr_text="DN100 hose connection deck filler",
+        metadata=AssetMetadata(caption="Deck filler dimensions"),
+    )
+    graph.replace_chunks([])
+    return graph
 
 
 def test_post_classification_finalization_reuses_chunks_and_runs_questions_and_embeddings_once(
@@ -624,3 +739,160 @@ def test_post_classification_finalization_classifies_chunks_when_enabled(
     assert chunk_workflow.calls == ["chunk_a", "chunk_b"]
     assert any("Classifying 2 final chunk(s)..." in message for message in messages)
     assert any("Classified 2 final chunk(s)." in message for message in messages)
+
+
+def test_asset_heavy_datasheet_finalization_does_not_produce_zero_chunks(
+    sample_document,
+    sample_document_classification,
+) -> None:
+    graph = make_asset_heavy_datasheet_graph(sample_document)
+    classification = copy.deepcopy(sample_document_classification)
+    classification.document_type = DocumentType.DATASHEET
+    classification.result.predicted_label = DocumentType.DATASHEET.value
+    decision = DocumentTypeDecision(
+        effective_document_type=DocumentType.DATASHEET,
+        effective_chunking_profile=ChunkingProfile.DATASHEET,
+        confidence=0.91,
+        reasons=["asset-heavy datasheet"],
+        should_rechunk=False,
+    )
+    real_graph_chunk_builder = GraphChunkBuilder(
+        id_generator=IdGenerator(),
+        section_chunk_builder=SectionChunkBuilder(),
+    )
+    (
+        workflow,
+        _,
+        _,
+        _,
+        _,
+        embedding_workflow,
+        _,
+        _,
+    ) = make_workflow(
+        graph=graph,
+        classification=classification,
+        decision=decision,
+        rechunked_chunks=[],
+        provisional_profile=ChunkingProfile.DATASHEET,
+        enable_question_generation=False,
+        graph_chunk_builder=real_graph_chunk_builder,
+    )
+
+    result = workflow.finalize(graph.document.document_id)
+
+    assert result.chunks
+    assert embedding_workflow.calls
+    recovered_chunks = list(result.chunks.values())
+    assert any(
+        "DF-100" in chunk.content or "DN100" in chunk.content
+        for chunk in recovered_chunks
+    )
+    assert all(chunk.source.page_start == 1 for chunk in recovered_chunks)
+    assert any(chunk.table_ids or chunk.picture_ids for chunk in recovered_chunks)
+
+
+def test_datasheet_policy_allows_asset_fallback_when_no_text_chunks_exist(
+    sample_document,
+    sample_document_classification,
+) -> None:
+    graph = make_asset_heavy_datasheet_graph(sample_document)
+    graph.tables = {}
+    graph.elements.pop("el_table_001")
+    graph.sections["sec_asset"].element_ids = ["el_picture_001"]
+    classification = copy.deepcopy(sample_document_classification)
+    classification.document_type = DocumentType.DATASHEET
+    classification.result.predicted_label = DocumentType.DATASHEET.value
+    decision = DocumentTypeDecision(
+        effective_document_type=DocumentType.DATASHEET,
+        effective_chunking_profile=ChunkingProfile.DATASHEET,
+        confidence=0.91,
+        reasons=["picture-only datasheet"],
+        should_rechunk=False,
+    )
+    real_graph_chunk_builder = GraphChunkBuilder(
+        id_generator=IdGenerator(),
+        section_chunk_builder=SectionChunkBuilder(),
+    )
+    workflow, _, _, _, _, _, _, _ = make_workflow(
+        graph=graph,
+        classification=classification,
+        decision=decision,
+        rechunked_chunks=[],
+        provisional_profile=ChunkingProfile.DATASHEET,
+        enable_question_generation=False,
+        graph_chunk_builder=real_graph_chunk_builder,
+    )
+
+    result = workflow.finalize(graph.document.document_id)
+
+    assert result.chunks
+    assert any(
+        chunk.chunk_type == ChunkType.DRAWING_REFERENCE
+        for chunk in result.chunks.values()
+    )
+
+
+def test_zero_chunk_finalization_raises_clear_error_when_no_asset_evidence_exists(
+    sample_document,
+    sample_document_classification,
+) -> None:
+    from src.domain.common import SourceLocation
+
+    document = copy.deepcopy(sample_document)
+    document.title = "Blank datasheet"
+    document.document_type = DocumentType.DATASHEET
+    graph = DocumentGraph(document=document)
+    section = DocumentSection(
+        section_id="sec_blank",
+        document_id=document.document_id,
+        title="Technical Data",
+        level=1,
+        section_path=["Technical Data"],
+        source=SourceLocation(page_start=1, page_end=1),
+        element_ids=[],
+        sequence_number=1,
+    )
+    graph.add_section(section)
+    blank_picture = make_asset_element(
+        element_id="el_picture_blank",
+        document_id=document.document_id,
+        section_id=section.section_id,
+        element_type=ElementType.PICTURE,
+        picture_id="picture_blank",
+        page=1,
+        extra={},
+    )
+    graph.add_element(blank_picture)
+    section.element_ids.append(blank_picture.element_id)
+    graph.replace_chunks([])
+    classification = copy.deepcopy(sample_document_classification)
+    classification.document_type = DocumentType.DATASHEET
+    classification.result.predicted_label = DocumentType.DATASHEET.value
+    decision = DocumentTypeDecision(
+        effective_document_type=DocumentType.DATASHEET,
+        effective_chunking_profile=ChunkingProfile.DATASHEET,
+        confidence=0.8,
+        reasons=["no asset evidence"],
+        should_rechunk=False,
+    )
+    real_graph_chunk_builder = GraphChunkBuilder(
+        id_generator=IdGenerator(),
+        section_chunk_builder=SectionChunkBuilder(),
+    )
+    workflow, _, _, _, _, _, _, _ = make_workflow(
+        graph=graph,
+        classification=classification,
+        decision=decision,
+        rechunked_chunks=[],
+        provisional_profile=ChunkingProfile.DATASHEET,
+        enable_question_generation=False,
+        graph_chunk_builder=real_graph_chunk_builder,
+    )
+
+    with pytest.raises(ApplicationError) as exc_info:
+        workflow.finalize(graph.document.document_id)
+
+    assert exc_info.value.details["document_type"] == DocumentType.DATASHEET.value
+    assert exc_info.value.details["include_picture_chunks"] is False
+    assert exc_info.value.details["asset_fallback_attempted"] is True

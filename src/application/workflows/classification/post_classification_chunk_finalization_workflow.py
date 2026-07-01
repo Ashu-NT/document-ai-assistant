@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import Callable
 
 from src.application.contracts.retrieval import VectorStore
@@ -19,6 +20,9 @@ from src.application.workflows.classification.hybrid_document_type_resolver impo
 from src.application.workflows.embedding import EmbeddingWorkflow
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_inferer import (
     ChunkingProfileInferer,
+)
+from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+    ChunkingProfile,
 )
 from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy_resolver import (
     DocumentChunkingPolicyResolver,
@@ -180,10 +184,19 @@ class PostClassificationChunkFinalizationWorkflow:
             ),
         )
 
+        effective_policy = self.chunking_policy_resolver.resolve(
+            document_title=graph.document.title,
+            document_type=decision.effective_document_type,
+            sections=sections,
+            section_elements_by_id=section_elements_by_id,
+            chunking_profile_override=decision.effective_chunking_profile,
+        )
         final_chunks, final_chunk_mode = self._final_chunks(
             graph=graph,
             sections=sections,
             decision=decision,
+            effective_include_picture_chunks=effective_policy.include_picture_chunks,
+            progress_callback=progress_callback,
         )
         self._emit_progress(
             progress_callback,
@@ -263,6 +276,8 @@ class PostClassificationChunkFinalizationWorkflow:
         graph: DocumentGraph,
         sections: list[DocumentSection],
         decision,
+        effective_include_picture_chunks: bool,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> tuple[list[DocumentChunk], str]:
         stored_chunks = sorted(
             graph.chunks.values(),
@@ -275,12 +290,117 @@ class PostClassificationChunkFinalizationWorkflow:
             chunking_profile_override=decision.effective_chunking_profile,
         )
         if decision.should_rechunk:
-            return rebuilt_chunks, "rechunked"
-        if not stored_chunks:
-            return rebuilt_chunks, "rebuilt_missing"
-        if self._chunk_structures_match(stored_chunks, rebuilt_chunks):
-            return stored_chunks, "reused"
-        return rebuilt_chunks, "refreshed_stale"
+            selected_chunks, selected_mode = rebuilt_chunks, "rechunked"
+        elif not stored_chunks:
+            selected_chunks, selected_mode = rebuilt_chunks, "rebuilt_missing"
+        elif self._chunk_structures_match(stored_chunks, rebuilt_chunks):
+            selected_chunks, selected_mode = stored_chunks, "reused"
+        else:
+            selected_chunks, selected_mode = rebuilt_chunks, "refreshed_stale"
+
+        if selected_chunks:
+            return selected_chunks, selected_mode
+
+        fallback_chunks = self._attempt_asset_fallback(
+            graph=graph,
+            sections=sections,
+            decision=decision,
+            progress_callback=progress_callback,
+        )
+        if fallback_chunks:
+            return fallback_chunks, "asset_fallback"
+
+        raise ApplicationError(
+            "Post-classification chunk finalization produced zero chunks for a non-empty parsed document.",
+            details=self._build_zero_chunk_diagnostics(
+                graph=graph,
+                decision=decision,
+                effective_include_picture_chunks=effective_include_picture_chunks,
+                fallback_attempted=True,
+            ),
+        )
+
+    def _attempt_asset_fallback(
+        self,
+        *,
+        graph: DocumentGraph,
+        sections: list[DocumentSection],
+        decision,
+        progress_callback: Callable[[str], None] | None,
+    ) -> list[DocumentChunk]:
+        if not self._has_meaningful_asset_evidence(graph):
+            return []
+
+        self._emit_progress(
+            progress_callback,
+            "No final chunks were produced. Retrying with an asset-aware fallback chunking policy...",
+        )
+        fallback_chunks = self.graph_chunk_builder.build_chunks(
+            graph=graph,
+            sections=sections,
+            document_type_override=decision.effective_document_type,
+            chunking_profile_override=ChunkingProfile.DEFAULT,
+        )
+        if fallback_chunks:
+            self._emit_progress(
+                progress_callback,
+                f"Asset-aware fallback recovered {len(fallback_chunks)} chunk(s).",
+            )
+        return fallback_chunks
+
+    @staticmethod
+    def _has_meaningful_asset_evidence(graph: DocumentGraph) -> bool:
+        for asset in graph.tables.values():
+            if asset.has_content():
+                return True
+
+        for asset in graph.pictures.values():
+            if (
+                asset.has_ocr_text()
+                or bool(asset.metadata.caption and asset.metadata.caption.strip())
+                or bool(asset.metadata.nearby_text and asset.metadata.nearby_text.strip())
+            ):
+                return True
+
+        for element in graph.elements.values():
+            parser_extra = (
+                element.parser_metadata.extra
+                if element.parser_metadata is not None
+                else {}
+            )
+            if element.table_id and str(parser_extra.get("markdown") or "").strip():
+                return True
+            if element.picture_id and any(
+                str(parser_extra.get(key) or "").strip()
+                for key in ("caption", "ocr_text", "nearby_text")
+            ):
+                return True
+        return False
+
+    @staticmethod
+    def _build_zero_chunk_diagnostics(
+        *,
+        graph: DocumentGraph,
+        decision,
+        effective_include_picture_chunks: bool,
+        fallback_attempted: bool,
+    ) -> dict[str, object]:
+        element_type_counts = Counter(
+            element.element_type.value
+            for element in graph.elements.values()
+        )
+        return {
+            "document_id": graph.document.document_id,
+            "document_type": decision.effective_document_type.value,
+            "chunking_profile": decision.effective_chunking_profile.value,
+            "element_count": len(graph.elements),
+            "element_type_counts": dict(element_type_counts),
+            "table_count": len(graph.tables),
+            "picture_count": len(graph.pictures),
+            "stored_chunk_count": len(graph.chunks),
+            "include_picture_chunks": effective_include_picture_chunks,
+            "asset_fallback_attempted": fallback_attempted,
+        }
 
     def _classify_chunk_types_if_enabled(
         self,
@@ -430,6 +550,8 @@ class PostClassificationChunkFinalizationWorkflow:
             return "Rebuilding final chunk set because no stored final chunks were available..."
         if mode == "refreshed_stale":
             return "Refreshing stored final chunk set using the current chunk builder..."
+        if mode == "asset_fallback":
+            return "Using asset-aware fallback chunk set..."
         return "Reusing stored final chunk set..."
 
     @staticmethod

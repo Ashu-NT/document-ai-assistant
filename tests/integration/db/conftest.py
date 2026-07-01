@@ -5,6 +5,7 @@ from collections.abc import Generator
 
 from src.infrastructure.db import orm_models  # noqa: F401
 from src.infrastructure.db.base import Base
+from src.infrastructure.db.schema_management import ensure_database_schema
 from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork
 from src.domain.classification import (
     ChunkClassification,
@@ -20,7 +21,7 @@ def test_engine():
         future=True,
     )
 
-    Base.metadata.create_all(bind=engine)
+    ensure_database_schema(engine)
 
     yield engine
 

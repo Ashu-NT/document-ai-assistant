@@ -233,6 +233,30 @@ class FakeExtractionWorkflow:
         return result
 
 
+class FailingExtractionWorkflow:
+    def __init__(self, message: str = "Malformed extraction response.") -> None:
+        self.extraction_model = "extract-test"
+        self.message = message
+        self.calls = []
+
+    def extract(
+        self,
+        document_id: str,
+        chunks,
+        activity_context=None,
+        progress_callback=None,
+    ):
+        self.calls.append(
+            {
+                "document_id": document_id,
+                "chunks": list(chunks),
+            }
+        )
+        from src.shared.exceptions import SchemaValidationError
+
+        raise SchemaValidationError(self.message)
+
+
 class FakeEmbeddingWorkflow:
     def __init__(self) -> None:
         self.embedding_service = type(
@@ -291,6 +315,7 @@ def _build_workflow(
     duplicate_service: FakeDuplicateDetectionService | None = None,
     parsing_workflow=None,
     event_service=None,
+    extraction_workflow=None,
 ):
     return IngestionWorkflow(
         unit_of_work=FakeUnitOfWork(),
@@ -304,7 +329,10 @@ def _build_workflow(
         post_classification_chunk_finalization_workflow=(
             FakePostClassificationChunkFinalizationWorkflow(sample_document_graph)
         ),
-        extraction_workflow=FakeExtractionWorkflow(sample_extraction_result),
+        extraction_workflow=(
+            extraction_workflow
+            or FakeExtractionWorkflow(sample_extraction_result)
+        ),
         embedding_workflow=FakeEmbeddingWorkflow(),
         id_generator=IdGenerator(),
         event_service=event_service,
@@ -474,3 +502,33 @@ def test_reingestion_is_not_supported_yet(
 
     with pytest.raises(ReingestionNotSupportedError):
         workflow.reingest(ReingestionRequest(document_id="doc_001"))
+
+
+def test_ingestion_workflow_persists_extraction_model_before_extraction_failure(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nextract-failure")
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        extraction_workflow=FailingExtractionWorkflow(),
+    )
+
+    with pytest.raises(Exception):
+        workflow.run(
+            IngestionRequest(
+                file_path=str(input_file),
+                run_quality_checks=False,
+            )
+        )
+
+    assert any(
+        run.extraction_model == "extract-test"
+        for run in workflow.unit_of_work.ingestion_runs.updated
+    )
+    assert workflow.unit_of_work.ingestion_runs.updated[-1].status == IngestionStatus.FAILED

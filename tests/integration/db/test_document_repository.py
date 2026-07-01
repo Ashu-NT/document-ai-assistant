@@ -1,3 +1,8 @@
+import copy
+
+from src.domain.common import ElementType
+
+
 def test_document_repository_saves_and_loads_document_graph(
     db_uow,
     sample_document_graph,
@@ -15,6 +20,75 @@ def test_document_repository_saves_and_loads_document_graph(
     assert len(loaded.chunks) == 1
     assert len(loaded.questions) == 1
     assert len(loaded.identifiers) == 1
+
+
+def test_document_repository_rehydrates_asset_metadata_for_rechunking(
+    db_uow,
+    sample_document_graph,
+    sample_element,
+    document_id,
+) -> None:
+    from src.domain.common import ParserMetadata
+
+    sample_element.table_id = "table_001"
+    sample_element.element_type = ElementType.TABLE
+    sample_element.parser_metadata = ParserMetadata(
+        parser_name="docling",
+        raw_source_type="table",
+        raw_ref="#/pages/9/elements/1",
+        extra={
+            "markdown": "| Order Code | Size |\n|---|---|\n| DF-100 | DN100 |",
+            "caption": "Ordering information",
+            "ocr_text": "DN100 hose connection deck filler",
+            "nearby_text": "Use with standard hose connection.",
+            "image_path": "outputs/images/deck_filler.png",
+        },
+    )
+    picture_element = sample_element.__class__(
+        element_id="el_002",
+        document_id=sample_element.document_id,
+        element_type=ElementType.PICTURE,
+        text=None,
+        parent_section_id=sample_element.parent_section_id,
+        reading_order=2,
+        source=sample_element.source,
+        picture_id="pic_001",
+        parser_metadata=ParserMetadata(
+            parser_name="docling",
+            raw_source_type="picture",
+            raw_ref="#/pages/9/elements/2",
+            extra={
+                "caption": "Deck filler dimensions",
+                "ocr_text": "DN100 hose connection deck filler",
+                "nearby_text": "Use with standard hose connection.",
+                "image_path": "outputs/images/deck_filler.png",
+            },
+        ),
+    )
+    sample_document_graph.add_element(picture_element)
+    sample_document_graph.sections["sec_001"].element_ids.append(picture_element.element_id)
+    sample_document_graph.tables["table_001"].markdown = (
+        "| Order Code | Size |\n|---|---|\n| DF-100 | DN100 |"
+    )
+    sample_document_graph.tables["table_001"].metadata.caption = "Ordering information"
+    sample_document_graph.pictures["pic_001"].ocr_text = "DN100 hose connection deck filler"
+    sample_document_graph.pictures["pic_001"].metadata.caption = "Deck filler dimensions"
+    sample_document_graph.pictures["pic_001"].metadata.nearby_text = (
+        "Use with standard hose connection."
+    )
+
+    db_uow.documents.save_document_graph(sample_document_graph)
+    db_uow.commit()
+
+    loaded = db_uow.documents.get_document_graph(document_id)
+
+    assert loaded is not None
+    loaded_element = loaded.elements[sample_element.element_id]
+    assert loaded_element.parser_metadata is not None
+    assert loaded_element.parser_metadata.extra["markdown"].startswith("| Order Code |")
+    assert loaded_element.parser_metadata.extra["ocr_text"] == "DN100 hose connection deck filler"
+    assert loaded.tables["table_001"].metadata.caption == "Ordering information"
+    assert loaded.pictures["pic_001"].metadata.nearby_text == "Use with standard hose connection."
 
 
 def test_document_repository_finds_duplicate_by_file_hash(
@@ -212,4 +286,3 @@ def test_document_repository_replaces_document_graph(
     assert list(loaded.chunks) == ["chunk_002"]
     assert list(loaded.questions) == ["question_002"]
     assert list(loaded.identifiers) == ["identifier_002"]
-import copy
