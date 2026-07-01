@@ -17,6 +17,8 @@ from src.application.evaluation.retrieval.benchmarking.enums import (
 from src.application.evaluation.retrieval.benchmarking.models import (
     RetrievalBenchmarkCase,
 )
+from src.application.workflows.ingestion import IngestionResult, IngestionStatus
+from src.application.workflows.ingestion.ingestion_request import IngestionRequest
 from src.application.workflows.parsing.parsing_workflow_result import (
     ParsingWorkflowResult,
 )
@@ -216,6 +218,29 @@ class FakePostClassificationChunkFinalizationWorkflow:
         return self.graphs_by_document_id[document_id]
 
 
+class FakeIngestionWorkflow:
+    def __init__(self, results_by_path: dict[str, IngestionResult] | None = None) -> None:
+        self.results_by_path = results_by_path or {}
+        self.calls: list[IngestionRequest] = []
+
+    def run(
+        self,
+        request: IngestionRequest,
+        *,
+        progress_callback=None,
+        activity_context=None,
+        audit_context=None,
+        event_context=None,
+    ) -> IngestionResult:
+        self.calls.append(request)
+        if progress_callback:
+            progress_callback(f"fake ingestion for {request.file_path}")
+        result = self.results_by_path.get(request.file_path)
+        if result is None:
+            raise KeyError(f"FakeIngestionWorkflow: no result configured for {request.file_path}")
+        return result
+
+
 class FakeUnitOfWork:
     def __init__(self) -> None:
         self.commit_calls = 0
@@ -358,6 +383,7 @@ def build_seeder(
     operations: list[str],
     parsing_graphs_by_path: dict[str, DocumentGraph],
     final_graphs_by_document_id: dict[str, DocumentGraph],
+    ingestion_workflow: FakeIngestionWorkflow | None = None,
     duplicate_matches: dict[str, str] | None = None,
     classifications: dict[str, DocumentClassification] | None = None,
     unit_of_work: FakeUnitOfWork | None = None,
@@ -366,6 +392,7 @@ def build_seeder(
     classification_lookup = classifications or {}
     parsing_workflow = FakeParsingWorkflow(operations, parsing_graphs_by_path)
     seeder = RetrievalBenchmarkCorpusSeeder(
+        ingestion_workflow=ingestion_workflow or FakeIngestionWorkflow(),
         parsing_workflow=parsing_workflow,
         document_registration_service=FakeDocumentRegistrationService(operations),
         duplicate_detection_service=FakeDuplicateDetectionService(duplicate_matches),
@@ -458,19 +485,31 @@ def test_seed_corpus_runs_workflows_and_builds_manifest_from_final_chunks(
             confidence_score=0.84,
         ),
     }
+    fake_ingestion_workflow = FakeIngestionWorkflow(
+        results_by_path={
+            str(first_file): IngestionResult(
+                status=IngestionStatus.COMPLETE,
+                document_id="doc_manual",
+                file_name=first_file.name,
+            ),
+            str(second_file): IngestionResult(
+                status=IngestionStatus.COMPLETE,
+                document_id="doc_report",
+                file_name=second_file.name,
+            ),
+        }
+    )
     operations: list[str] = []
     unit_of_work = FakeUnitOfWork()
     seeder, truth_set_loader, parsing_workflow = build_seeder(
         dataset=dataset,
         operations=operations,
-        parsing_graphs_by_path={
-            str(first_file): provisional_manual,
-            str(second_file): provisional_report,
-        },
+        parsing_graphs_by_path={},
         final_graphs_by_document_id={
             "doc_manual": final_manual,
             "doc_report": final_report,
         },
+        ingestion_workflow=fake_ingestion_workflow,
         classifications=classifications,
         unit_of_work=unit_of_work,
     )
@@ -481,21 +520,12 @@ def test_seed_corpus_runs_workflows_and_builds_manifest_from_final_chunks(
     )
 
     assert truth_set_loader.calls == [truth_set_path]
-    assert [call["file_path"] for call in parsing_workflow.calls] == [
-        str(first_file),
-        str(second_file),
-    ]
-    assert operations == [
-        "parse",
-        "register",
-        "classify",
-        "finalize",
-        "parse",
-        "register",
-        "classify",
-        "finalize",
-    ]
-    assert unit_of_work.commit_calls == 6
+    assert parsing_workflow.calls == []
+    assert len(fake_ingestion_workflow.calls) == 2
+    assert fake_ingestion_workflow.calls[0].file_path == str(first_file)
+    assert fake_ingestion_workflow.calls[0].force is True
+    assert fake_ingestion_workflow.calls[1].file_path == str(second_file)
+    assert operations == []
     assert manifest.document_count == 2
     assert manifest.documents[0].document_alias == "manual_alias"
     assert manifest.documents[0].chunk_count == 2
@@ -807,13 +837,23 @@ def test_seed_corpus_emits_progress_messages_for_major_stages() -> None:
             confidence_score=0.9,
         )
     }
+    fake_ingestion_workflow = FakeIngestionWorkflow(
+        results_by_path={
+            str(file_path): IngestionResult(
+                status=IngestionStatus.COMPLETE,
+                document_id="doc_manual",
+                file_name=file_path.name,
+            ),
+        }
+    )
     operations: list[str] = []
     unit_of_work = FakeUnitOfWork()
     seeder, _, _ = build_seeder(
         dataset=dataset,
         operations=operations,
-        parsing_graphs_by_path={str(file_path): provisional_graph},
+        parsing_graphs_by_path={},
         final_graphs_by_document_id={"doc_manual": final_graph},
+        ingestion_workflow=fake_ingestion_workflow,
         classifications=classifications,
         unit_of_work=unit_of_work,
     )
@@ -828,10 +868,6 @@ def test_seed_corpus_emits_progress_messages_for_major_stages() -> None:
     assert any("Loading retrieval benchmark truth set" in message for message in messages)
     assert any("Computing hashes" in message for message in messages)
     assert any("File size:" in message for message in messages)
-    assert any("Parsing document into provisional graph" in message for message in messages)
-    assert any("fake parsing progress" in message for message in messages)
-    assert any("Provisional parsing completed in" in message for message in messages)
-    assert any("Running document classification" in message for message in messages)
-    assert any("Finalizing post-classification chunks, questions, and embeddings" in message for message in messages)
-    assert any("fake finalization for doc_manual" in message for message in messages)
+    assert any("Delegating to canonical IngestionWorkflow" in message for message in messages)
+    assert any("fake ingestion for" in message for message in messages)
     assert any("Corpus seeding completed for 1 document(s)." in message for message in messages)

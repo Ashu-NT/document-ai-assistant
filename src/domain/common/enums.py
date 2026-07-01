@@ -56,6 +56,7 @@ class IngestionStatus(StrEnum):
     REGISTERED = "registered"
     CLASSIFIED = "classified"
     FINALIZED = "finalized"
+    EXTRACTED = "extracted"
     EMBEDDED = "embedded"
     INDEXED = "indexed"
     COMPLETE = "complete"
