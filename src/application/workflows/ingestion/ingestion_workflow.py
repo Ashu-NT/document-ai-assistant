@@ -449,6 +449,7 @@ class IngestionWorkflow:
                 final_graph.document.document_id,
                 list(final_graph.chunks.values()),
                 activity_context=resolved_activity_context,
+                progress_callback=progress_callback,
             )
             self.unit_of_work.commit()
             if self.identifier_promotion_service is not None:
