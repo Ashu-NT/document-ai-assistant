@@ -55,11 +55,9 @@ class _RunningAnimation:
             return
         index = 0
         while not self._stop_event.is_set():
-            self._last_stage = self.stages[min(index, len(self.stages) - 1)]
-            print(f"{self._last_stage}...", file=self.stream, flush=True)
+            if index < len(self.stages):
+                self._last_stage = self.stages[index]
+                print(f"{self._last_stage}...", file=self.stream, flush=True)
+                index += 1
             if self._stop_event.wait(self.interval_seconds):
                 return
-            if index < len(self.stages) - 1:
-                index += 1
-            else:
-                index = len(self.stages) - 1

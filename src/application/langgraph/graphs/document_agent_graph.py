@@ -76,6 +76,7 @@ class DocumentAgentGraph:
         requested_retrieval_strategy: str | None = None,
         top_k: int | None = None,
         conversation_id: str | None = None,
+        event_sink: Any = None,
     ) -> GraphResult:
         initial_state = build_agent_state(
             user_input=user_input,
@@ -168,7 +169,7 @@ class DocumentAgentGraph:
             )
             initial_state["history"] = self.memory.get_history()
 
-        final_state = self._invoke(initial_state)
+        final_state = self._invoke(initial_state, event_sink=event_sink)
         response_text = final_state.get("response_text")
         if self.memory is not None and response_text:
             self.memory.append_assistant_message(
@@ -358,8 +359,13 @@ class DocumentAgentGraph:
         graph.add_edge("final_response", END)
         return graph.compile()
 
-    def _invoke(self, initial_state: AgentState) -> AgentState:
+    def _invoke(self, initial_state: AgentState, event_sink: Any = None) -> AgentState:
         if self._compiled_graph is not None:
+            if event_sink is not None:
+                from src.application.agent_runtime.streaming.event_stream_adapter import (
+                    EventStreamAdapter,
+                )
+                return EventStreamAdapter(event_sink).run(self._compiled_graph, initial_state)
             return self._compiled_graph.invoke(initial_state)
 
         state: AgentState = dict(initial_state)  # type: ignore[assignment]

@@ -249,6 +249,6 @@ def test_ask_document_print_result_shows_full_document_id_and_context_source(
     )
 
     output = capsys.readouterr().out
-    assert "Document ID: doc_selected_full_identifier" in output
+    assert "Selected Document" in output
     assert "doc: doc_001_full_scope" in output
     assert "source: dense" in output

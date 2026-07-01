@@ -9,9 +9,9 @@ from src.application.agent_runtime.demo_agent_runtime import (
     close_agent_runtime,
 )
 from src.application.agent_runtime.policies import DemoVisibilityPolicy
-from src.application.agent_runtime.progress import ProgressIndicator
 from src.application.agent_runtime.react_loop import ReactTrace, ReactTraceBuilder
-from src.application.agent_runtime.session import RuntimeOptions, Session, SessionManager
+from src.application.agent_runtime.session import Session, SessionManager
+from src.application.agent_runtime.streaming import ConsoleLiveEventSink, NullEventSink
 from src.application.agent_runtime.tracing import DemoTraceWriter
 
 
@@ -40,7 +40,6 @@ class DemoAgent:
         command_dispatcher: CommandDispatcher,
         trace_builder: ReactTraceBuilder,
         visibility_policy: DemoVisibilityPolicy,
-        progress_indicator: ProgressIndicator,
         trace_writer: DemoTraceWriter,
     ) -> None:
         self.runtime = runtime
@@ -49,7 +48,6 @@ class DemoAgent:
         self.command_dispatcher = command_dispatcher
         self.trace_builder = trace_builder
         self.visibility_policy = visibility_policy
-        self.progress_indicator = progress_indicator
         self.trace_writer = trace_writer
 
     def initialize_document(
@@ -130,28 +128,31 @@ class DemoAgent:
         )
 
     def execute_graph_command(self, user_input: str, *, session: Session):
-        stages = _progress_stages(user_input, session.runtime_options)
+        opts = session.runtime_options
+        if opts.quiet or opts.json_output:
+            sink = NullEventSink()
+        else:
+            import sys
+            sink = ConsoleLiveEventSink(stream=sys.stdout)
 
-        def _invoke():
-            return self.runtime.run_graph_request(
-                user_input,
-                document_id=None,
-                document_query=None,
-                session_id=session.session_id,
-                allow_answer_generation=bool(
-                    self.runtime.runtime_settings.get("generation_enabled", False)
-                ),
-                include_context=False,
-                llm_planning_enabled=session.runtime_options.llm_planning,
-                deep_research_enabled=session.runtime_options.deep_research,
-                llm_research_planning_enabled=session.runtime_options.llm_planning,
-                reflection_enabled=session.runtime_options.reflection,
-                show_reflection=session.runtime_options.reflection,
-                retrieval_strategy_enabled=session.runtime_options.retrieval_strategy,
-                llm_retrieval_strategy_enabled=session.runtime_options.retrieval_strategy,
-            )
-
-        result = self.progress_indicator.run_with_progress(stages, _invoke)
+        result = self.runtime.run_graph_request(
+            user_input,
+            document_id=None,
+            document_query=None,
+            session_id=session.session_id,
+            allow_answer_generation=bool(
+                self.runtime.runtime_settings.get("generation_enabled", False)
+            ),
+            include_context=False,
+            llm_planning_enabled=opts.llm_planning,
+            deep_research_enabled=opts.deep_research,
+            llm_research_planning_enabled=opts.llm_planning,
+            reflection_enabled=opts.reflection,
+            show_reflection=opts.reflection,
+            retrieval_strategy_enabled=opts.retrieval_strategy,
+            llm_retrieval_strategy_enabled=opts.retrieval_strategy,
+            event_sink=sink,
+        )
         react_trace = self.trace_builder.build(
             user_input=user_input,
             result=result,
@@ -223,36 +224,3 @@ class DemoAgent:
         close_agent_runtime(self.runtime)
 
 
-def _progress_stages(user_input: str, options: RuntimeOptions) -> list[str]:
-    if options.quiet or options.json_output:
-        return []
-    normalized = " ".join(user_input.strip().lower().split())
-    if normalized.startswith("open ") or normalized == "list documents":
-        return ["Routing request", "Resolving document command"]
-    if any(token in normalized for token in ("delete", "reingest", "drop", "reset corpus")):
-        return ["Checking safety", "Blocking unsafe request"]
-    if options.deep_research and any(
-        token in normalized for token in ("compare", "report", "analyze", "research")
-    ):
-        stages = [
-            "Creating research plan",
-            "Executing research tasks",
-            "Merging evidence",
-            "Synthesizing report",
-        ]
-        if options.reflection:
-            stages.append("Reviewing answer")
-        return stages
-    stages = [
-        "Routing request",
-    ]
-    if options.retrieval_strategy:
-        stages.append("Selecting retrieval strategy")
-    stages.extend(
-        [
-            "Retrieving evidence",
-            "Generating grounded answer",
-            "Finalizing response",
-        ]
-    )
-    return stages

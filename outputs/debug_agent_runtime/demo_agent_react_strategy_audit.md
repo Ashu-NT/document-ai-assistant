@@ -195,3 +195,192 @@ Current results:
 6. V8.9.0 - Regression & Evaluation
    - Add regression coverage for routing, advisor validation, concept-driven planning, strategy merging, reflection coverage, and presentation.
    - Benchmark deterministic-only versus guarded LLM-assisted routing/strategy planning for robustness, latency, and fallback safety.
+
+## Live ReAct Streaming Fix Plan
+
+### Problem Summary
+
+Four separate bugs make the demo runtime feel broken during live runs:
+
+| # | Bug | Root cause file | Line(s) |
+|---|---|---|---|
+| 1 | "Finalizing response..." repeats for the full graph duration | `thinking_animation.py` | 63-65 |
+| 2 | Full trace only appears after graph completion | `demo_agent.py` + `react_trace_builder.py` | 132-165, 14-109 |
+| 3 | Thought summary is route-generic, ignores actual query | `react_trace_builder.py` | 131-169 |
+| 4 | Reflection FAIL is invisible — stale LLM answer shown instead | `console_presenter.py` | 76 |
+
+A fifth problem applies specifically to simple reference lookup queries:
+
+| # | Bug | Root cause file |
+|---|---|---|
+| 5 | Simple lookup (manufacturer / supplier) gets wrong thought summary | `react_trace_builder.py` |
+
+---
+
+### Bug 1 Fix — Progress Animation Prints Last Stage Once
+
+**File:** `src/application/agent_runtime/progress/thinking_animation.py:63-65`
+
+**Current code:**
+```python
+if index < len(self.stages) - 1:
+    index += 1
+else:
+    index = len(self.stages) - 1  # stays here and reprints every tick
+```
+
+**Fixed code:**
+```python
+if index < len(self.stages) - 1:
+    index += 1
+# else: do not increment — hold silently, no reprint
+```
+
+After this change, each stage name prints exactly once. When the last stage is reached, the
+loop continues sleeping via `self._stop_event.wait(interval_seconds)` but emits no more lines.
+
+---
+
+### Bug 2 Fix — Live Event Streaming Architecture
+
+The graph currently runs via `compiled_graph.invoke()` (blocking). LangGraph also supports
+`compiled_graph.stream()`, which yields `(node_name, state_patch)` after each node completes.
+
+**New package:** `src/application/agent_runtime/streaming/`
+
+```
+__init__.py
+live_agent_event.py      # LiveAgentEvent dataclass + LiveAgentEventType enum
+live_event_sink.py       # LiveEventSink protocol + NullEventSink
+console_event_sink.py    # ConsoleLiveEventSink — prints events live to stdout
+event_stream_adapter.py  # wraps compiled_graph.stream(); maps nodes → events; returns final state
+```
+
+**Integration change in `AgentRuntime.run_graph_request()`:**
+- Accept optional `event_sink: LiveEventSink | None = None`
+- When sink is provided: delegate to `EventStreamAdapter.run_with_streaming(compiled_graph, state)`
+- When sink is absent: keep existing `compiled_graph.invoke(state)` call (backwards compatible)
+
+**Integration change in `DemoAgent.execute_graph_command()`:**
+- Construct `ConsoleLiveEventSink` (or `NullEventSink` for `--quiet` / `--json`)
+- Pass to `runtime.run_graph_request(event_sink=sink)`
+- Remove `ProgressIndicator` / `ThinkingAnimation` from this path (or keep only as fallback when
+  the graph does not support streaming)
+
+**Node → event mapping:**
+
+| Graph node | Event emitted |
+|---|---|
+| `route_request` completed | `UNDERSTAND_REQUEST` (route, intent, thought) |
+| `retrieve_evidence` start | `ACTION_STARTED` (tool, query) |
+| `retrieve_evidence` completed | `ACTION_COMPLETED` (chunk_count) |
+| `create_research_plan` start | `PLAN_STARTED` |
+| `create_research_plan` completed | `PLAN_COMPLETED` (task_count, tasks) |
+| `execute_research` per task | `ACTION_STARTED` → `ACTION_COMPLETED` |
+| `reflect_answer` start | `REFLECTION_STARTED` |
+| `reflect_answer` completed | `REFLECTION_COMPLETED` (decision, reason) |
+| `answer_question` start | `FINAL_STARTED` |
+| `final_response` completed | `FINAL_COMPLETED` → `RUN_COMPLETED` |
+| `blocked_action` | `BLOCKED` (reason) |
+| `error_handler` | `ERROR` (message) |
+
+---
+
+### Bug 3 Fix — Query-Specific Thought Summaries
+
+**File:** `src/application/agent_runtime/react_loop/react_trace_builder.py:131-169`
+
+`build()` already receives `user_input`. Pass it to `_thought_summary()` alongside `data`:
+
+```python
+def _thought_summary(
+    route: str | None,
+    data: dict[str, Any],
+    user_input: str,
+) -> str:
+    intent = (data or {}).get("answer_intent", "")
+    if route == "answer_question":
+        if intent == "identifier_lookup":
+            return "The request asks for specific identifiers; I will retrieve and list exact values from the document."
+        if intent == "maintenance_summary":
+            return "The request is about maintenance information; I will retrieve relevant tasks and intervals."
+        if intent == "procedure_steps":
+            return "The request asks for procedural steps; I will retrieve and present them in order."
+        if intent == "safety_warnings":
+            return "The request is about safety warnings; I will retrieve and present relevant cautions."
+        if intent == "troubleshooting":
+            return "The request asks for troubleshooting guidance; I will retrieve relevant diagnostic steps."
+        return "The request asks for document evidence, so I will retrieve grounded context before answering."
+    if route == "deep_research":
+        return "The request requires synthesis across multiple evidence groups; I will collect and compare task-specific evidence before writing the report."
+    ...  # existing handling for other routes unchanged
+```
+
+Update all call sites of `_thought_summary` to pass `user_input`.
+
+---
+
+### Bug 4 Fix — Reflection FAIL Reaches the User
+
+**File:** `src/application/agent_runtime/presenters/console_presenter.py:76`
+
+**Current:**
+```python
+_console_safe_text((result.data or {}).get("answer") or result.response_text or "")
+```
+
+**Fixed:**
+```python
+_console_safe_text(result.response_text or (result.data or {}).get("answer") or "")
+```
+
+`result.response_text` is the graph's final resolved verdict from `final_response_node`. On PASS,
+it contains the same answer text. On FAIL, it contains the safe failure message. Preferring it
+over `data["answer"]` ensures the verdict is never hidden.
+
+---
+
+### Bug 5 Fix — Reference Lookup Query (No Routing Change Needed)
+
+"manufacturer and supplier page references" routes correctly to `ANSWER_QUESTION` because none
+of the `_DEEP_RESEARCH_ROUTE_MARKERS` fire. The fix is entirely in thought summary (Bug 3):
+once `_thought_summary` uses `answer_intent`, this query will show intent-specific text.
+
+If the `answer_intent_analyzer` scores it below `IDENTIFIER_LOOKUP`, it may fall to `GENERAL`.
+In that case, add "manufacturer" and "supplier" to the `_IDENTIFIER_TERMS` tuple in
+`src/application/services/answer_generation/intent/answer_intent_analyzer.py`.
+
+---
+
+### Implementation Sequence
+
+| Step | File | Description |
+|---|---|---|
+| 1 | `thinking_animation.py:63-65` | Stop reprinting last stage |
+| 2 | `console_presenter.py:76` | Prefer `response_text` over stale `data["answer"]` |
+| 3 | `react_trace_builder.py:131-169` | Intent-specific thought summaries |
+| 4 | `streaming/__init__.py` | Create package |
+| 5 | `streaming/live_agent_event.py` | Event value objects |
+| 6 | `streaming/live_event_sink.py` | Protocol + NullEventSink |
+| 7 | `streaming/console_event_sink.py` | ANSI live output |
+| 8 | `streaming/event_stream_adapter.py` | LangGraph stream bridge |
+| 9 | `demo_agent_runtime.py` | Accept `event_sink`; use adapter |
+| 10 | `demo_agent.py` | Construct sink; pass to runtime |
+| 11 | `demo_agent_cli.py` | Thread `--quiet` / `--json` into sink |
+| 12 | `tests/unit/application/agent_runtime/streaming/` | Unit tests for all streaming components |
+| 13 | `test_live_react_streaming.py` | FAIL visible, PASS shows answer, events in order |
+| 14 | `test_reference_lookup_routing.py` | Identifier-lookup thought for manufacturer query |
+| 15 | `test_demo_agent_cli_live_output.py` | No duplicate stages; FAIL message reaches CLI |
+
+All tests must pass without Ollama. All LLM-dependent paths use existing mock fixtures.
+
+---
+
+### Acceptance Criteria
+
+- [ ] "Finalizing response..." (or any stage name) appears at most once per query
+- [ ] Deep-research stages appear in sequence during graph execution, not only after completion
+- [ ] Manufacturer/supplier lookup produces a thought step referencing identifier lookup, not generic boilerplate
+- [ ] Reflection FAIL message is visible to the user; pre-reflection LLM answer is not shown
+- [ ] All new streaming components have unit tests; no Ollama required
+- [ ] No new facade modules or backwards-compatibility shells introduced
