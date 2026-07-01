@@ -14,13 +14,13 @@ class FakeOllamaClient:
         self.response = response
         self.calls = []
 
-    def generate(self, *, model: str, prompt: str):
-        self.calls.append(
-            {
-                "model": model,
-                "prompt": prompt,
-            }
-        )
+    def generate(self, *, model: str, prompt: str, format=None, options=None):
+        call = {"model": model, "prompt": prompt}
+        if format is not None:
+            call["format"] = format
+        if options is not None:
+            call["options"] = options
+        self.calls.append(call)
         return self.response
 
 
@@ -91,3 +91,45 @@ def test_generate_wraps_underlying_errors() -> None:
 
     with pytest.raises(LLMProviderError):
         provider.generate("Summarize this maintenance section.")
+
+
+def test_generate_omits_format_and_options_by_default() -> None:
+    client = FakeOllamaClient(FakeOllamaResponse("Generated maintenance steps."))
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434",
+        default_model="qwen3:8b",
+        client=client,
+    )
+
+    provider.generate("Summarize this maintenance section.")
+
+    assert client.calls == [
+        {
+            "model": "qwen3:8b",
+            "prompt": "Summarize this maintenance section.",
+        }
+    ]
+
+
+def test_generate_passes_json_mode_and_temperature_to_client() -> None:
+    client = FakeOllamaClient(FakeOllamaResponse("{}"))
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434",
+        default_model="qwen3:8b",
+        client=client,
+    )
+
+    provider.generate(
+        "Extract structured data.",
+        temperature=0.0,
+        json_mode=True,
+    )
+
+    assert client.calls == [
+        {
+            "model": "qwen3:8b",
+            "prompt": "Extract structured data.",
+            "format": "json",
+            "options": {"temperature": 0.0},
+        }
+    ]

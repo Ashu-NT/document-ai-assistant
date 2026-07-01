@@ -37,13 +37,26 @@ class OllamaLLMProvider(LLMProvider):
         self.default_model = default_model or _default_ollama_model()
         self._client = client
 
-    def generate(self, prompt: str, model: str | None = None) -> str:
+    def generate(
+        self,
+        prompt: str,
+        model: str | None = None,
+        *,
+        temperature: float | None = None,
+        json_mode: bool = False,
+    ) -> str:
         model_name = model or self.default_model
+        extra_kwargs: dict[str, Any] = {}
+        if json_mode:
+            extra_kwargs["format"] = "json"
+        if temperature is not None:
+            extra_kwargs["options"] = {"temperature": temperature}
 
         try:
             response = self._get_client().generate(
                 model=model_name,
                 prompt=prompt,
+                **extra_kwargs,
             )
         except Exception as exc:
             raise LLMProviderError(

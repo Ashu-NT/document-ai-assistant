@@ -15,12 +15,12 @@ class ExtractionSettings(AppBaseSettings):
         alias="EXTRACTION_REQUIRE_HUMAN_REVIEW"
     )
     extraction_max_chunks_per_batch: int = Field(
-        default=16,
+        default=8,
         alias="EXTRACTION_MAX_CHUNKS_PER_BATCH",
     )
 
     extraction_max_chars_per_batch: int = Field(
-        default=16000,
+        default=8000,
         alias="EXTRACTION_MAX_CHARS_PER_BATCH",
     )
 

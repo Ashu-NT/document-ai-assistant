@@ -14,18 +14,23 @@ from src.shared.ids import IdGenerator
 class FakeLLMService:
     def __init__(self, responses: list[str]) -> None:
         self.responses = list(responses)
-        self.calls: list[dict[str, str | None]] = []
+        self.calls: list[dict[str, object]] = []
 
     def generate(
         self,
         prompt: str,
         model: str | None = None,
         activity_context=None,
+        *,
+        temperature: float | None = None,
+        json_mode: bool = False,
     ) -> str:
         self.calls.append(
             {
                 "prompt": prompt,
                 "model": model,
+                "temperature": temperature,
+                "json_mode": json_mode,
             }
         )
         return self.responses.pop(0)
@@ -187,6 +192,8 @@ def test_extract_builds_extraction_result_and_saves_it(sample_chunk) -> None:
     assert sample_chunk.content in fake_llm_service.calls[0]["prompt"]
     assert second_chunk.content in fake_llm_service.calls[0]["prompt"]
     assert fake_llm_service.calls[0]["model"] == "qwen3:8b"
+    assert fake_llm_service.calls[0]["temperature"] == 0.0
+    assert fake_llm_service.calls[0]["json_mode"] is True
 
 
 def test_extract_parses_identifiers_from_llm_response(sample_chunk) -> None:
@@ -622,7 +629,7 @@ def test_extraction_small_document_uses_single_batch(sample_chunk) -> None:
     assert workflow.last_batch_diagnostics[0].batch_count == 1
 
 
-def test_extraction_retries_after_schema_failure_and_restarts_batches(sample_chunk) -> None:
+def test_extraction_retries_only_the_failed_batch(sample_chunk) -> None:
     second_chunk = clone_chunk(
         sample_chunk,
         chunk_id="chunk_002",
@@ -638,25 +645,7 @@ def test_extraction_retries_after_schema_failure_and_restarts_batches(sample_chu
   "equipment": [],
   "manufacturers": []
 }""",
-            """{
-  "confidence_score": 0.85,
-  "identifiers": [],
-  "spare_parts": [{
-    "description": "Filter Element",
-    "source_chunk_id": "missing_chunk"
-  }],
-  "maintenance_tasks": [],
-  "equipment": [],
-  "manufacturers": []
-}""",
-            """{
-  "confidence_score": 0.88,
-  "identifiers": [{"value": "QP100A", "identifier_type": "model_number"}],
-  "spare_parts": [],
-  "maintenance_tasks": [],
-  "equipment": [],
-  "manufacturers": []
-}""",
+            "Sorry, here is a summary instead of JSON as requested.",
             """{
   "confidence_score": 0.84,
   "identifiers": [],
@@ -685,20 +674,39 @@ def test_extraction_retries_after_schema_failure_and_restarts_batches(sample_chu
         progress_callback=progress_messages.append,
     )
 
-    assert len(fake_llm_service.calls) == 4
+    assert len(fake_llm_service.calls) == 3
     assert len(result.extracted_identifiers) == 1
     assert result.extracted_identifiers[0].raw_value == "QP100A"
     assert len(result.spare_parts) == 1
     assert result.spare_parts[0].part_number == "FLT-100"
     assert any(
-        "Extraction attempt 1/2 failed:" in message
-        and "Restarting extraction from the first batch" in message
+        "[extraction 2/2] attempt 1/2 failed schema parsing:" in message
+        and "Retrying this batch only" in message
         for message in progress_messages
     )
-    assert any(
-        "Extraction attempt 2/2 started." in message
-        for message in progress_messages
+    assert not any("Restarting extraction from the first batch" in message for message in progress_messages)
+
+
+def test_extraction_gives_up_on_batch_after_exhausting_retries(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            "Not JSON, attempt one.",
+            "Not JSON, attempt two.",
+        ]
     )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        max_attempts=2,
+    )
+
+    with pytest.raises(SchemaValidationError) as exc_info:
+        workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert len(fake_llm_service.calls) == 2
+    assert exc_info.value.details["batch_index"] == 1
+    assert exc_info.value.details["batch_count"] == 1
 
 
 def test_extraction_merges_partial_results_and_deduplicates_identifiers(sample_chunk) -> None:
@@ -819,3 +827,132 @@ def test_extraction_emits_failure_preview_progress_message(sample_chunk) -> None
         "Schema parsing failed:" in message and "Response preview:" in message
         for message in progress_messages
     )
+
+
+def test_extraction_flags_invalid_source_chunk_id_for_human_review_instead_of_failing(
+    sample_chunk,
+) -> None:
+    second_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_002",
+        content="Filter element FLT-100 is used in QP100A.",
+    )
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.9,
+  "maintenance_tasks": [],
+  "spare_parts": [
+    {
+      "part_number": "FLT-100",
+      "description": "Filter Element",
+      "source_chunk_id": "chunk_999_does_not_exist"
+    }
+  ],
+  "equipment": [],
+  "manufacturers": [],
+  "identifiers": [
+    {
+      "raw_value": "QP100A",
+      "identifier_type": "model_number",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    }
+  ]
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+    progress_messages: list[str] = []
+
+    result = workflow.extract(
+        sample_chunk.document_id,
+        [sample_chunk, second_chunk],
+        progress_callback=progress_messages.append,
+    )
+
+    assert len(result.spare_parts) == 1
+    assert result.spare_parts[0].part_number == "FLT-100"
+    assert result.spare_parts[0].source_chunk_id is None
+    assert result.spare_parts[0].requires_human_review is True
+    assert len(result.extracted_identifiers) == 1
+    assert result.extracted_identifiers[0].source_chunk_id == "chunk_001"
+    assert result.extracted_identifiers[0].requires_human_review is False
+    assert any(
+        "item(s) referenced a source_chunk_id outside this batch" in message
+        for message in progress_messages
+    )
+
+
+def test_extraction_skips_persistently_failing_batch_when_partial_batches_allowed(
+    sample_chunk,
+) -> None:
+    second_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_002",
+        content="Filter element FLT-100 is used in QP100A.",
+    )
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.9,
+  "identifiers": [{"value": "QP100A", "identifier_type": "model_number"}],
+  "spare_parts": [],
+  "maintenance_tasks": [],
+  "equipment": [],
+  "manufacturers": []
+}""",
+            "Still not JSON.",
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        max_attempts=1,
+        allow_partial_batches=True,
+        chunk_batcher=ExtractionChunkBatcher(
+            max_chunks_per_batch=1,
+            max_chars_per_batch=10_000,
+        ),
+    )
+    progress_messages: list[str] = []
+
+    result = workflow.extract(
+        sample_chunk.document_id,
+        [sample_chunk, second_chunk],
+        progress_callback=progress_messages.append,
+    )
+
+    assert len(result.extracted_identifiers) == 1
+    assert result.requires_human_review is True
+    assert any(
+        "1 of 2 batch(es) skipped after exhausting retries: [2]" in message
+        for message in progress_messages
+    )
+
+
+def test_extraction_repairs_truncated_json_with_trailing_comma(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.8,
+  "maintenance_tasks": [],
+  "spare_parts": [
+    {"part_number": "FLT-100", "description": "Filter Element"},
+  ],
+  "equipment": [],
+  "manufacturers": [],
+  "identifiers": [
+"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert len(result.spare_parts) == 1
+    assert result.spare_parts[0].part_number == "FLT-100"

@@ -21,6 +21,7 @@ class IdentifierExtractionPromptBuilder:
         chunks: list[DocumentChunk],
     ) -> str:
         chunk_blocks = "\n\n".join(self._format_chunk_block(chunk) for chunk in chunks)
+        allowed_chunk_ids = ", ".join(chunk.chunk_id for chunk in chunks)
 
         return (
             "You extract structured information from technical document chunks.\n"
@@ -96,12 +97,16 @@ class IdentifierExtractionPromptBuilder:
             "Rules:\n"
             "- Use only the provided chunk content.\n"
             "- Use only the provided chunk ids when setting source_chunk_id.\n"
+            "- source_chunk_id MUST be copied EXACTLY, character for character, from the allowed list below.\n"
+            "- Never invent, abbreviate, guess, or reuse a chunk_id that is not in the allowed list below.\n"
+            "- If you are not sure which chunk a value came from, use null for source_chunk_id instead of guessing.\n"
             "- Return empty arrays when nothing is found.\n"
             "- Do not return empty placeholder objects inside arrays. Use [] instead of objects whose fields are null, blank, N/A, or not available.\n"
             "- Always include a top-level confidence_score. If uncertain, use 0.0 instead of null or omitting the field.\n"
             "- Use null for unknown optional values.\n"
             "- For identifiers: only extract values not already captured in spare_parts, equipment, or manufacturers.\n"
             "- Do not invent identifiers — only extract values explicitly present in the text.\n"
+            f"Allowed chunk_id values (use one of these EXACTLY, or null): {allowed_chunk_ids}\n"
             f"Document id: {document_id}\n"
             "Chunks:\n"
             f"{chunk_blocks}"

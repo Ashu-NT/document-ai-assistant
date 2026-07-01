@@ -126,6 +126,16 @@ class ExtractionResponseParser:
             if isinstance(payload, dict):
                 return payload
 
+        repaired = _repair_json_text(candidate)
+        if repaired is not None:
+            try:
+                payload = json.loads(repaired)
+            except (json.JSONDecodeError, ValueError, TypeError):
+                return None
+
+            if isinstance(payload, dict):
+                return payload
+
         return None
 
     @staticmethod
@@ -257,6 +267,24 @@ class ExtractionResponseParser:
             return None
 
         return sum(confidences) / len(confidences)
+
+
+def _repair_json_text(candidate: str) -> str | None:
+    text = candidate.strip()
+    if not text.startswith("{"):
+        return None
+
+    repaired = re.sub(r",\s*([}\]])", r"\1", text)
+
+    open_braces = repaired.count("{") - repaired.count("}")
+    open_brackets = repaired.count("[") - repaired.count("]")
+    if open_braces <= 0 and open_brackets <= 0:
+        return repaired if repaired != text else None
+
+    repaired = repaired.rstrip().rstrip(",")
+    repaired += "]" * max(open_brackets, 0)
+    repaired += "}" * max(open_braces, 0)
+    return repaired
 
 
 def _try_yaml_load(candidate: str) -> Any:
