@@ -214,8 +214,20 @@ class FakeExtractionWorkflow:
         self.extraction_model = "extract-test"
         self.calls = []
 
-    def extract(self, document_id: str, chunks, activity_context=None):
-        self.calls.append({"document_id": document_id, "chunks": list(chunks)})
+    def extract(
+        self,
+        document_id: str,
+        chunks,
+        activity_context=None,
+        progress_callback=None,
+    ):
+        self.calls.append(
+            {
+                "document_id": document_id,
+                "chunks": list(chunks),
+                "progress_callback": progress_callback,
+            }
+        )
         result = copy.deepcopy(self.extraction_result)
         result.document_id = document_id
         return result

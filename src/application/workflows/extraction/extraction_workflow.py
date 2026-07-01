@@ -1,13 +1,15 @@
-import ast
-import json
 import re
 from typing import Any
+from collections.abc import Callable
 
 from src.application.prompts.extraction import IdentifierExtractionPromptBuilder
 from src.application.services.ai import LLMService
 from src.application.services.extraction import ExtractionService
 from src.application.validation.common import ValidationResult
 from src.application.validation.extraction import ExtractionResultValidator
+from src.application.workflows.extraction.extraction_response_parser import (
+    ExtractionResponseParser,
+)
 from src.domain.document import DocumentChunk
 from src.domain.extraction import (
     EquipmentInfo,
@@ -60,6 +62,7 @@ class ExtractionWorkflow:
         extraction_result_validator: ExtractionResultValidator,
         id_generator: IdGenerator,
         prompt_builder: IdentifierExtractionPromptBuilder | None = None,
+        response_parser: ExtractionResponseParser | None = None,
         extraction_model: str | None = None,
         confidence_threshold: float | None = None,
         require_human_review_default: bool | None = None,
@@ -69,6 +72,7 @@ class ExtractionWorkflow:
         self.extraction_result_validator = extraction_result_validator
         self.id_generator = id_generator
         self.prompt_builder = prompt_builder or IdentifierExtractionPromptBuilder()
+        self.response_parser = response_parser or ExtractionResponseParser()
         self.extraction_model = extraction_model or _default_extraction_model()
         self.confidence_threshold = (
             confidence_threshold
@@ -93,18 +97,39 @@ class ExtractionWorkflow:
         document_id: str,
         chunks: DocumentChunk | list[DocumentChunk],
         activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> ExtractionResult:
         chunk_list = self._coerce_chunks(chunks)
+        self._emit_progress(
+            progress_callback,
+            f"Preparing extraction input from {len(chunk_list)} final chunk(s)...",
+        )
         self._validate_input(document_id, chunk_list)
 
+        self._emit_progress(
+            progress_callback,
+            f"Building extraction prompt from {len(chunk_list)} chunk(s)...",
+        )
         prompt = self.prompt_builder.build(
             document_id,
             chunk_list,
+        )
+        self._emit_progress(
+            progress_callback,
+            (
+                "Calling extraction model "
+                f"{self.extraction_model or 'default'} with "
+                f"{len(chunk_list)} chunk(s)..."
+            ),
         )
         response = self.llm_service.generate(
             prompt,
             model=self.extraction_model,
             activity_context=activity_context,
+        )
+        self._emit_progress(
+            progress_callback,
+            "Extraction model response received. Parsing structured payload...",
         )
 
         extraction_result = self._build_extraction_result(
@@ -113,12 +138,31 @@ class ExtractionWorkflow:
             response,
         )
 
+        self._emit_progress(
+            progress_callback,
+            "Validating extraction result...",
+        )
         validation = self.extraction_result_validator.validate(extraction_result)
         validation.raise_if_invalid()
 
+        self._emit_progress(
+            progress_callback,
+            "Saving extraction result...",
+        )
         self.extraction_service.save_extraction_result(
             extraction_result,
             activity_context=activity_context,
+        )
+        self._emit_progress(
+            progress_callback,
+            (
+                "Extraction completed "
+                f"(maintenance_tasks={len(extraction_result.maintenance_tasks)}, "
+                f"spare_parts={len(extraction_result.spare_parts)}, "
+                f"equipment={len(extraction_result.equipment)}, "
+                f"manufacturers={len(extraction_result.manufacturers)}, "
+                f"identifiers={len(extraction_result.extracted_identifiers)})."
+            ),
         )
         return extraction_result
 
@@ -168,7 +212,7 @@ class ExtractionWorkflow:
         chunks: list[DocumentChunk],
         response: str,
     ) -> ExtractionResult:
-        payload = self._parse_response(response)
+        payload = self.response_parser.parse(response)
         chunk_lookup = {chunk.chunk_id: chunk for chunk in chunks}
         default_source_chunk_id = chunks[0].chunk_id if len(chunks) == 1 else None
         overall_confidence = payload["confidence_score"]
@@ -250,143 +294,6 @@ class ExtractionWorkflow:
             confidence_score=overall_confidence,
             requires_human_review=requires_human_review,
         )
-
-    @classmethod
-    def _parse_response(cls, response: str) -> dict[str, Any]:
-        payload = cls._extract_payload(response)
-        validation = ValidationResult()
-
-        confidence_score = cls._parse_confidence(
-            cls._pick(
-                payload,
-                "confidence_score",
-                "confidence",
-                "overall_confidence",
-            )
-        )
-        if confidence_score is None:
-            validation.add_issue(
-                "confidence_score",
-                "Confidence score must be a number between 0 and 1.",
-                "extraction.response.confidence.invalid",
-            )
-
-        validation.raise_if_invalid()
-
-        return {
-            "confidence_score": confidence_score,
-            "requires_human_review": cls._pick(
-                payload,
-                "requires_human_review",
-                "requires_review",
-            ),
-            "maintenance_tasks": cls._coerce_item_list(
-                cls._pick(payload, "maintenance_tasks", "tasks"),
-                field_name="maintenance_tasks",
-            ),
-            "spare_parts": cls._coerce_item_list(
-                cls._pick(payload, "spare_parts", "parts"),
-                field_name="spare_parts",
-            ),
-            "equipment": cls._coerce_item_list(
-                cls._pick(payload, "equipment", "equipment_info"),
-                field_name="equipment",
-            ),
-            "manufacturers": cls._coerce_item_list(
-                cls._pick(payload, "manufacturers", "manufacturer_list"),
-                field_name="manufacturers",
-            ),
-            "identifiers": cls._coerce_item_list(
-                cls._pick(payload, "identifiers", "identifier_list"),
-                field_name="identifiers",
-            ),
-        }
-
-    @classmethod
-    def _extract_payload(cls, response: str) -> dict[str, Any]:
-        text = cls._strip_code_fences(response.strip())
-        candidate = cls._extract_object_candidate(text)
-
-        for raw_candidate in [candidate, text]:
-            if not raw_candidate:
-                continue
-
-            for loader in (json.loads, ast.literal_eval):
-                try:
-                    payload = loader(raw_candidate)
-                except (json.JSONDecodeError, SyntaxError, ValueError):
-                    continue
-
-                if isinstance(payload, dict):
-                    return payload
-
-        raise SchemaValidationError(
-            "Malformed extraction response.",
-            details={"response": response},
-        )
-
-    @staticmethod
-    def _strip_code_fences(text: str) -> str:
-        if text.startswith("```") and text.endswith("```"):
-            lines = text.splitlines()
-
-            if len(lines) >= 3:
-                return "\n".join(lines[1:-1]).strip()
-
-        return text
-
-    @staticmethod
-    def _extract_object_candidate(text: str) -> str:
-        start = text.find("{")
-        end = text.rfind("}")
-
-        if start == -1 or end == -1 or end <= start:
-            return ""
-
-        return text[start : end + 1]
-
-    @classmethod
-    def _coerce_item_list(
-        cls,
-        value: Any,
-        *,
-        field_name: str,
-    ) -> list[dict[str, Any]]:
-        if value is None:
-            return []
-
-        parsed_value = value
-        if isinstance(value, str):
-            stripped = value.strip()
-            if not stripped:
-                return []
-
-            for loader in (json.loads, ast.literal_eval):
-                try:
-                    parsed_value = loader(stripped)
-                    break
-                except (json.JSONDecodeError, SyntaxError, ValueError):
-                    continue
-
-        if isinstance(parsed_value, dict):
-            parsed_value = [parsed_value]
-
-        if not isinstance(parsed_value, list):
-            raise SchemaValidationError(
-                f"{field_name} must be a list.",
-                details={field_name: value},
-            )
-
-        items: list[dict[str, Any]] = []
-        for item in parsed_value:
-            if not isinstance(item, dict):
-                raise SchemaValidationError(
-                    f"{field_name} items must be objects.",
-                    details={field_name: value},
-                )
-            items.append(item)
-
-        return items
 
     def _build_maintenance_task(
         self,
@@ -615,6 +522,14 @@ class ExtractionWorkflow:
                 confidence_score,
             ),
         )
+
+    @staticmethod
+    def _emit_progress(
+        progress_callback: Callable[[str], None] | None,
+        message: str,
+    ) -> None:
+        if progress_callback is not None:
+            progress_callback(message)
 
     @staticmethod
     def _pick(payload: dict[str, Any], *keys: str) -> Any:
