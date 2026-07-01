@@ -4,6 +4,7 @@ from pathlib import Path
 
 from src.application.validation.common import ValidationResult, Validator
 from src.domain.common import DocumentType
+from src.domain.extraction import ExtractionProfile
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -117,5 +118,12 @@ class IngestionRequestValidator(Validator["IngestionRequest"]):
                     f"{field_name} must be a boolean when provided.",
                     f"ingestion.{field_name}.invalid",
                 )
+
+        if not isinstance(value.extraction_profile, ExtractionProfile):
+            result.add_issue(
+                "extraction_profile",
+                "extraction_profile must be a valid ExtractionProfile.",
+                "ingestion.extraction_profile.invalid",
+            )
 
         return result

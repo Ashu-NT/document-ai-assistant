@@ -4,6 +4,7 @@ import re
 from typing import Any
 
 from src.application.validation.common import ValidationResult
+from src.domain.extraction import ExtractionProfile
 from src.shared.exceptions import SchemaValidationError
 
 KEY_PATTERN = re.compile(r"[^a-z0-9]+")
@@ -18,25 +19,39 @@ class ExtractionResponseParser:
     def __init__(self) -> None:
         self.last_null_items_stripped: dict[str, int] = {}
 
-    def parse(self, response: str) -> dict[str, Any]:
+    def parse(
+        self,
+        response: str,
+        *,
+        profile: ExtractionProfile = ExtractionProfile.FULL,
+    ) -> dict[str, Any]:
         self.last_null_items_stripped = {}
         payload = self._extract_payload(response)
-        maintenance_tasks = self._coerce_item_list(
-            self._pick(payload, "maintenance_tasks", "tasks"),
-            field_name="maintenance_tasks",
-        )
-        spare_parts = self._coerce_item_list(
-            self._pick(payload, "spare_parts", "parts"),
-            field_name="spare_parts",
-        )
-        equipment = self._coerce_item_list(
-            self._pick(payload, "equipment", "equipment_info"),
-            field_name="equipment",
-        )
-        manufacturers = self._coerce_item_list(
-            self._pick(payload, "manufacturers", "manufacturer_list"),
-            field_name="manufacturers",
-        )
+
+        if profile is ExtractionProfile.RETRIEVAL_IDENTIFIERS:
+            # Unused families are not part of the requested schema, so their
+            # raw values (even if malformed) are never inspected or validated.
+            maintenance_tasks: list[dict[str, Any]] = []
+            spare_parts: list[dict[str, Any]] = []
+            equipment: list[dict[str, Any]] = []
+            manufacturers: list[dict[str, Any]] = []
+        else:
+            maintenance_tasks = self._coerce_item_list(
+                self._pick(payload, "maintenance_tasks", "tasks"),
+                field_name="maintenance_tasks",
+            )
+            spare_parts = self._coerce_item_list(
+                self._pick(payload, "spare_parts", "parts"),
+                field_name="spare_parts",
+            )
+            equipment = self._coerce_item_list(
+                self._pick(payload, "equipment", "equipment_info"),
+                field_name="equipment",
+            )
+            manufacturers = self._coerce_item_list(
+                self._pick(payload, "manufacturers", "manufacturer_list"),
+                field_name="manufacturers",
+            )
         identifiers = self._coerce_item_list(
             self._pick(payload, "identifiers", "identifier_list"),
             field_name="identifiers",

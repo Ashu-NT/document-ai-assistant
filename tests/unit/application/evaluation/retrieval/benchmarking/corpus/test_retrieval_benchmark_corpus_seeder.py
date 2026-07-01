@@ -40,6 +40,7 @@ from src.domain.document import (
 )
 from src.domain.document.value_objects import DocumentStatistics
 from src.domain.elements import CanonicalElement
+from src.domain.extraction import ExtractionProfile
 from src.shared.exceptions import SchemaValidationError
 from src.shared.execution import ActionResult
 
@@ -524,6 +525,7 @@ def test_seed_corpus_runs_workflows_and_builds_manifest_from_final_chunks(
     assert len(fake_ingestion_workflow.calls) == 2
     assert fake_ingestion_workflow.calls[0].file_path == str(first_file)
     assert fake_ingestion_workflow.calls[0].force is True
+    assert fake_ingestion_workflow.calls[0].extraction_profile == ExtractionProfile.RETRIEVAL_IDENTIFIERS
     assert fake_ingestion_workflow.calls[1].file_path == str(second_file)
     assert operations == []
     assert manifest.document_count == 2

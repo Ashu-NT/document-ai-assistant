@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from src.domain.extraction import ExtractionProfile
+
 
 @dataclass(slots=True, kw_only=True)
 class IngestionRequest:
@@ -14,6 +16,7 @@ class IngestionRequest:
     force: bool = False
     generate_questions: bool | None = None
     run_quality_checks: bool = True
+    extraction_profile: ExtractionProfile = ExtractionProfile.FULL
     trace: bool = False
     requested_by: str | None = None
     correlation_id: str | None = None

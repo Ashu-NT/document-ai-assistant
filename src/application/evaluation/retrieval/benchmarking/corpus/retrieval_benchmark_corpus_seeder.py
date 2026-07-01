@@ -31,6 +31,7 @@ from src.application.workflows.ingestion.ingestion_request import IngestionReque
 from src.application.workflows.parsing import ParsingWorkflow
 from src.domain.classification import DocumentClassification
 from src.domain.document import DocumentGraph
+from src.domain.extraction import ExtractionProfile
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import ApplicationError, SchemaValidationError
 
@@ -268,6 +269,7 @@ class RetrievalBenchmarkCorpusSeeder:
             force=True,
             requested_by="benchmark_seeder",
             run_quality_checks=False,
+            extraction_profile=ExtractionProfile.RETRIEVAL_IDENTIFIERS,
         )
         result = self.ingestion_workflow.run(
             request,
