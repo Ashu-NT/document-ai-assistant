@@ -983,3 +983,100 @@ def test_extraction_repairs_truncated_json_with_trailing_comma(sample_chunk) -> 
 
     assert len(result.spare_parts) == 1
     assert result.spare_parts[0].part_number == "FLT-100"
+
+
+def test_extraction_treats_null_array_items_as_empty(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.9,
+  "requires_human_review": false,
+  "maintenance_tasks": [
+    {
+      "title": "Ensure system modifications are approved",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    }
+  ],
+  "spare_parts": [null],
+  "equipment": [null],
+  "manufacturers": [null],
+  "identifiers": [
+    {
+      "raw_value": "FWC12",
+      "identifier_type": "model_number",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    }
+  ]
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+    progress_messages: list[str] = []
+
+    result = workflow.extract(
+        sample_chunk.document_id,
+        sample_chunk,
+        progress_callback=progress_messages.append,
+    )
+
+    assert result.spare_parts == []
+    assert result.equipment == []
+    assert result.manufacturers == []
+    assert len(result.maintenance_tasks) == 1
+    assert len(result.extracted_identifiers) == 1
+    assert any(
+        "Normalized null placeholder item(s) in model output:" in message
+        and "spare_parts=1" in message
+        and "equipment=1" in message
+        and "manufacturers=1" in message
+        for message in progress_messages
+    )
+
+
+def test_extraction_strips_only_null_items_and_keeps_valid_siblings(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.9,
+  "maintenance_tasks": [],
+  "spare_parts": [null, {"part_number": "FLT-100", "description": "Filter Element"}],
+  "equipment": [],
+  "manufacturers": [],
+  "identifiers": []
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert len(result.spare_parts) == 1
+    assert result.spare_parts[0].part_number == "FLT-100"
+
+
+def test_extraction_still_rejects_non_null_invalid_array_items(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.9,
+  "maintenance_tasks": [],
+  "spare_parts": ["not an object"],
+  "equipment": [],
+  "manufacturers": [],
+  "identifiers": []
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    with pytest.raises(SchemaValidationError) as exc_info:
+        workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert "spare_parts items must be objects" in exc_info.value.details["parse_error"]
