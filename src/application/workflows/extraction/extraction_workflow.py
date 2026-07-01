@@ -181,6 +181,7 @@ class ExtractionWorkflow:
             else _default_extraction_max_attempts(),
         )
         self.last_batch_diagnostics: list[ExtractionBatchDiagnostics] = []
+        self._invalid_source_chunk_id_events: list[dict[str, Any]] = []
 
     @tracked_action(
         action="extraction.generated",
@@ -202,49 +203,7 @@ class ExtractionWorkflow:
             f"Preparing extraction input from {len(chunk_list)} final chunk(s)...",
         )
         self._validate_input(document_id, chunk_list)
-
-        last_error: SchemaValidationError | None = None
-        for attempt_index in range(1, self.max_attempts + 1):
-            self.last_batch_diagnostics = []
-            if self.max_attempts > 1:
-                self._emit_progress(
-                    progress_callback,
-                    f"Extraction attempt {attempt_index}/{self.max_attempts} started.",
-                )
-            try:
-                return self._extract_once(
-                    document_id=document_id,
-                    chunk_list=chunk_list,
-                    activity_context=activity_context,
-                    progress_callback=progress_callback,
-                )
-            except SchemaValidationError as exc:
-                last_error = exc
-                if attempt_index >= self.max_attempts:
-                    raise
-                self._emit_progress(
-                    progress_callback,
-                    (
-                        f"Extraction attempt {attempt_index}/{self.max_attempts} failed: {exc}. "
-                        "Restarting extraction from the first batch..."
-                    ),
-                )
-
-        if last_error is not None:
-            raise last_error
-        raise SchemaValidationError(
-            "Extraction failed before producing a result.",
-            details={"document_id": document_id},
-        )
-
-    def _extract_once(
-        self,
-        *,
-        document_id: str,
-        chunk_list: list[DocumentChunk],
-        activity_context: ActivityContext | None,
-        progress_callback: Callable[[str], None] | None,
-    ) -> ExtractionResult:
+        self.last_batch_diagnostics = []
 
         batches = self.chunk_batcher.build_batches(chunk_list)
         self._emit_progress(
@@ -252,8 +211,9 @@ class ExtractionWorkflow:
             f"Prepared {len(batches)} extraction batch(es).",
         )
         partial_results: list[ExtractionResult] = []
+        unresolved_batches: list[ExtractionBatch] = []
         for batch in batches:
-            partial_result = self._extract_batch(
+            partial_result = self._extract_batch_with_retries(
                 document_id=document_id,
                 batch=batch,
                 activity_context=activity_context,
@@ -261,6 +221,8 @@ class ExtractionWorkflow:
             )
             if partial_result is not None:
                 partial_results.append(partial_result)
+            else:
+                unresolved_batches.append(batch)
 
         if not partial_results:
             raise SchemaValidationError(
@@ -275,6 +237,16 @@ class ExtractionWorkflow:
                 },
             )
 
+        if unresolved_batches:
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"Extraction completed with {len(unresolved_batches)} of "
+                    f"{len(batches)} batch(es) skipped after exhausting retries: "
+                    f"{[batch.batch_index for batch in unresolved_batches]}."
+                ),
+            )
+
         extraction_result = self.result_merger.merge(
             document_id=document_id,
             partial_results=partial_results,
@@ -285,6 +257,7 @@ class ExtractionWorkflow:
                 extraction_result.confidence_score,
             )
             or extraction_result.requires_human_review
+            or bool(unresolved_batches)
             or any(
                 item.requires_human_review
                 for item in [
@@ -326,7 +299,7 @@ class ExtractionWorkflow:
         )
         return extraction_result
 
-    def _extract_batch(
+    def _extract_batch_with_retries(
         self,
         *,
         document_id: str,
@@ -334,6 +307,49 @@ class ExtractionWorkflow:
         activity_context: ActivityContext | None,
         progress_callback: Callable[[str], None] | None,
     ) -> ExtractionResult | None:
+        last_exc: SchemaValidationError | None = None
+        for attempt_index in range(1, self.max_attempts + 1):
+            try:
+                return self._extract_batch_once(
+                    document_id=document_id,
+                    batch=batch,
+                    activity_context=activity_context,
+                    progress_callback=progress_callback,
+                )
+            except SchemaValidationError as exc:
+                last_exc = exc
+                if attempt_index < self.max_attempts:
+                    self._emit_progress(
+                        progress_callback,
+                        (
+                            f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                            f"attempt {attempt_index}/{self.max_attempts} failed "
+                            f"schema parsing: {exc}. Retrying this batch only..."
+                        ),
+                    )
+
+        if self.allow_partial_batches:
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                    f"failed after {self.max_attempts} attempt(s); marking batch "
+                    "extraction_failed and continuing with the remaining batches."
+                ),
+            )
+            return None
+
+        assert last_exc is not None
+        raise last_exc
+
+    def _extract_batch_once(
+        self,
+        *,
+        document_id: str,
+        batch: ExtractionBatch,
+        activity_context: ActivityContext | None,
+        progress_callback: Callable[[str], None] | None,
+    ) -> ExtractionResult:
         self._emit_progress(
             progress_callback,
             (
@@ -354,6 +370,8 @@ class ExtractionWorkflow:
             prompt,
             model=self.extraction_model,
             activity_context=activity_context,
+            temperature=0.0,
+            json_mode=True,
         )
         self._emit_progress(
             progress_callback,
@@ -394,19 +412,22 @@ class ExtractionWorkflow:
                     f"Response preview: {compact_preview}"
                 ),
             )
-            if self.allow_partial_batches:
-                self._emit_progress(
-                    progress_callback,
-                    (
-                        f"[extraction {batch.batch_index}/{batch.batch_count}] "
-                        "Schema parsing failed; continuing because partial batches are enabled."
-                    ),
-                )
-                return None
             raise SchemaValidationError(
                 f"Extraction batch {batch.batch_index}/{batch.batch_count} failed schema parsing.",
                 details=diagnostics.to_dict(),
             ) from exc
+
+        if self._invalid_source_chunk_id_events:
+            event_count = len(self._invalid_source_chunk_id_events)
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                    f"{event_count} item(s) referenced a source_chunk_id outside "
+                    "this batch; flagged for human review and pinned to a "
+                    "fallback chunk instead of failing the batch."
+                ),
+            )
 
         self.last_batch_diagnostics.append(
             ExtractionBatchDiagnostics(
@@ -467,6 +488,7 @@ class ExtractionWorkflow:
         chunks: list[DocumentChunk],
         response: str,
     ) -> ExtractionResult:
+        self._invalid_source_chunk_id_events = []
         payload = self.response_parser.parse(response)
         chunk_lookup = {chunk.chunk_id: chunk for chunk in chunks}
         default_source_chunk_id = chunks[0].chunk_id if len(chunks) == 1 else None
@@ -631,6 +653,13 @@ class ExtractionWorkflow:
         if confidence_score is None:
             confidence_score = default_confidence
 
+        source_chunk_id, chunk_id_invalid = self._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+            item_type="maintenance_tasks",
+        )
+
         return MaintenanceTask(
             task_id=self.id_generator.new_id("task"),
             document_id=document_id,
@@ -639,20 +668,18 @@ class ExtractionWorkflow:
             interval=self._optional_text(payload, "interval", "frequency"),
             component_name=self._optional_text(payload, "component_name", "component"),
             equipment_id=self._optional_text(payload, "equipment_id"),
-            source_chunk_id=self._resolve_source_chunk_id(
-                payload,
-                chunk_lookup=chunk_lookup,
-                default_source_chunk_id=default_source_chunk_id,
-            ),
+            source_chunk_id=source_chunk_id,
             source=self._resolve_source_location(
-                payload,
+                source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
-                default_source_chunk_id=default_source_chunk_id,
             ),
             confidence_score=confidence_score,
-            requires_human_review=self._resolve_requires_human_review(
-                self._pick(payload, "requires_human_review", "requires_review"),
-                confidence_score,
+            requires_human_review=(
+                self._resolve_requires_human_review(
+                    self._pick(payload, "requires_human_review", "requires_review"),
+                    confidence_score,
+                )
+                or chunk_id_invalid
             ),
         )
 
@@ -695,6 +722,13 @@ class ExtractionWorkflow:
         if confidence_score is None:
             confidence_score = default_confidence
 
+        source_chunk_id, chunk_id_invalid = self._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+            item_type="spare_parts",
+        )
+
         return SparePart(
             spare_part_id=self.id_generator.new_id("spare"),
             document_id=document_id,
@@ -703,20 +737,18 @@ class ExtractionWorkflow:
             quantity=quantity,
             component_name=component_name,
             manufacturer_name=manufacturer_name,
-            source_chunk_id=self._resolve_source_chunk_id(
-                payload,
-                chunk_lookup=chunk_lookup,
-                default_source_chunk_id=default_source_chunk_id,
-            ),
+            source_chunk_id=source_chunk_id,
             source=self._resolve_source_location(
-                payload,
+                source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
-                default_source_chunk_id=default_source_chunk_id,
             ),
             confidence_score=confidence_score,
-            requires_human_review=self._resolve_requires_human_review(
-                self._pick(payload, "requires_human_review", "requires_review"),
-                confidence_score,
+            requires_human_review=(
+                self._resolve_requires_human_review(
+                    self._pick(payload, "requires_human_review", "requires_review"),
+                    confidence_score,
+                )
+                or chunk_id_invalid
             ),
         )
 
@@ -757,6 +789,13 @@ class ExtractionWorkflow:
         if confidence_score is None:
             confidence_score = default_confidence
 
+        source_chunk_id, chunk_id_invalid = self._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+            item_type="equipment",
+        )
+
         return EquipmentInfo(
             equipment_id=self.id_generator.new_id("equipment"),
             document_id=document_id,
@@ -764,20 +803,18 @@ class ExtractionWorkflow:
             model_number=model_number,
             serial_number=serial_number,
             manufacturer_name=manufacturer_name,
-            source_chunk_id=self._resolve_source_chunk_id(
-                payload,
-                chunk_lookup=chunk_lookup,
-                default_source_chunk_id=default_source_chunk_id,
-            ),
+            source_chunk_id=source_chunk_id,
             source=self._resolve_source_location(
-                payload,
+                source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
-                default_source_chunk_id=default_source_chunk_id,
             ),
             confidence_score=confidence_score,
-            requires_human_review=self._resolve_requires_human_review(
-                self._pick(payload, "requires_human_review", "requires_review"),
-                confidence_score,
+            requires_human_review=(
+                self._resolve_requires_human_review(
+                    self._pick(payload, "requires_human_review", "requires_review"),
+                    confidence_score,
+                )
+                or chunk_id_invalid
             ),
         )
 
@@ -801,26 +838,31 @@ class ExtractionWorkflow:
         if confidence_score is None:
             confidence_score = default_confidence
 
+        source_chunk_id, chunk_id_invalid = self._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+            item_type="manufacturers",
+        )
+
         return Manufacturer(
             manufacturer_id=self.id_generator.new_id("manufacturer"),
             document_id=document_id,
             name=name,
             website=self._optional_text(payload, "website", "url"),
             country=self._optional_text(payload, "country"),
-            source_chunk_id=self._resolve_source_chunk_id(
-                payload,
-                chunk_lookup=chunk_lookup,
-                default_source_chunk_id=default_source_chunk_id,
-            ),
+            source_chunk_id=source_chunk_id,
             source=self._resolve_source_location(
-                payload,
+                source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
-                default_source_chunk_id=default_source_chunk_id,
             ),
             confidence_score=confidence_score,
-            requires_human_review=self._resolve_requires_human_review(
-                self._pick(payload, "requires_human_review", "requires_review"),
-                confidence_score,
+            requires_human_review=(
+                self._resolve_requires_human_review(
+                    self._pick(payload, "requires_human_review", "requires_review"),
+                    confidence_score,
+                )
+                or chunk_id_invalid
             ),
         )
 
@@ -844,18 +886,24 @@ class ExtractionWorkflow:
         if confidence_score is None:
             confidence_score = default_confidence
 
+        source_chunk_id, chunk_id_invalid = self._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+            item_type="identifiers",
+        )
+
         return ExtractedIdentifier(
             raw_value=raw_value,
             identifier_type=identifier_type,
-            source_chunk_id=self._resolve_source_chunk_id(
-                payload,
-                chunk_lookup=chunk_lookup,
-                default_source_chunk_id=default_source_chunk_id,
-            ),
+            source_chunk_id=source_chunk_id,
             confidence_score=confidence_score,
-            requires_human_review=self._resolve_requires_human_review(
-                self._pick(payload, "requires_human_review", "requires_review"),
-                confidence_score,
+            requires_human_review=(
+                self._resolve_requires_human_review(
+                    self._pick(payload, "requires_human_review", "requires_review"),
+                    confidence_score,
+                )
+                or chunk_id_invalid
             ),
         )
 
@@ -986,46 +1034,41 @@ class ExtractionWorkflow:
 
         return confidence_score < self.confidence_threshold
 
-    @classmethod
     def _resolve_source_chunk_id(
-        cls,
+        self,
         payload: dict[str, Any],
         *,
         chunk_lookup: dict[str, DocumentChunk],
         default_source_chunk_id: str | None,
-    ) -> str | None:
-        source_chunk_id = cls._optional_text(
+        item_type: str,
+    ) -> tuple[str | None, bool]:
+        source_chunk_id = self._optional_text(
             payload,
             "source_chunk_id",
             "chunk_id",
         )
         if source_chunk_id is None:
-            return default_source_chunk_id
+            return default_source_chunk_id, False
 
         if source_chunk_id not in chunk_lookup:
-            raise SchemaValidationError(
-                "source_chunk_id must reference one of the provided chunks.",
-                details={
-                    "source_chunk_id": source_chunk_id,
+            self._invalid_source_chunk_id_events.append(
+                {
+                    "item_type": item_type,
+                    "invalid_source_chunk_id": source_chunk_id,
+                    "fallback_source_chunk_id": default_source_chunk_id,
                     "available_chunk_ids": list(chunk_lookup),
-                },
+                }
             )
+            return default_source_chunk_id, True
 
-        return source_chunk_id
+        return source_chunk_id, False
 
-    @classmethod
+    @staticmethod
     def _resolve_source_location(
-        cls,
-        payload: dict[str, Any],
         *,
+        source_chunk_id: str | None,
         chunk_lookup: dict[str, DocumentChunk],
-        default_source_chunk_id: str | None,
     ) -> SourceLocation:
-        source_chunk_id = cls._resolve_source_chunk_id(
-            payload,
-            chunk_lookup=chunk_lookup,
-            default_source_chunk_id=default_source_chunk_id,
-        )
         if source_chunk_id is None:
             return SourceLocation()
 

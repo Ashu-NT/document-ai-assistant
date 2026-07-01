@@ -1,3 +1,5 @@
+from typing import Any
+
 from src.application.contracts.ai import LLMProvider
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
@@ -18,5 +20,13 @@ class LLMService:
         prompt: str,
         model: str | None = None,
         activity_context: ActivityContext | None = None,
+        *,
+        temperature: float | None = None,
+        json_mode: bool = False,
     ) -> str:
-        return self.llm_provider.generate(prompt, model=model)
+        provider_kwargs: dict[str, Any] = {}
+        if temperature is not None:
+            provider_kwargs["temperature"] = temperature
+        if json_mode:
+            provider_kwargs["json_mode"] = json_mode
+        return self.llm_provider.generate(prompt, model=model, **provider_kwargs)
