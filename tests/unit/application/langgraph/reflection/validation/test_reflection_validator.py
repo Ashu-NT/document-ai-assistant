@@ -167,6 +167,99 @@ def test_validator_accepts_spare_parts_answer_with_real_rows_alongside_quantity(
     assert result.decision == ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS
 
 
+_GROUNDED_SPARE_PARTS_ANSWER = (
+    "Spare parts lists found:\n\n"
+    "1. Spare Parts List\n"
+    "   Pages: 85-87\n"
+    "   Section: 7 Components > Vacuum / Transfer Pump\n\n"
+    "   Available rows:\n"
+    "   - Description: Filter\n"
+    "     Part No.: A00103\n\n"
+    "2. Valve List > Spare Parts\n"
+    "   Pages: 97\n\n"
+    "   Available rows:\n"
+    "   - P&ID Position: V.00.01.01\n"
+    "     Service: Dry Running Protection\n"
+    "     Part No.: A00103\n\n"
+    "Only partial row content was available in the retrieved context.\n"
+)
+
+
+def test_validator_downgrades_incomplete_retrieve_again_for_grounded_spare_parts_answer() -> None:
+    validator = ReflectionValidator()
+
+    result = validator.validate(
+        decision=ReflectionDecision(
+            decision=ReflectionDecisionType.RETRIEVE_AGAIN,
+            confidence=0.75,
+            reason="The answer appears incomplete for the current evidence set.",
+        ),
+        policy=ReflectionPolicy(enabled=True, max_retrieval_retries=1),
+        reflection_attempts=0,
+        retrieval_retry_count=0,
+        selected_document_id="doc_1",
+        context_document_ids=["doc_1"],
+        question="spare parts list",
+        answer_intent="table_summary",
+        answer_text=_GROUNDED_SPARE_PARTS_ANSWER,
+        has_useful_evidence=True,
+        has_relevant_maintenance_evidence=False,
+        has_relevant_spare_parts_evidence=True,
+    )
+
+    assert result.decision == ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS
+
+
+def test_validator_downgrades_fail_for_grounded_spare_parts_answer() -> None:
+    validator = ReflectionValidator()
+
+    result = validator.validate(
+        decision=ReflectionDecision(
+            decision=ReflectionDecisionType.FAIL,
+            confidence=0.9,
+            reason="Reflection retry limit has already been reached.",
+        ),
+        policy=ReflectionPolicy(enabled=True, max_retrieval_retries=1),
+        reflection_attempts=0,
+        retrieval_retry_count=1,
+        selected_document_id="doc_1",
+        context_document_ids=["doc_1"],
+        question="spare parts list",
+        answer_intent="table_summary",
+        answer_text=_GROUNDED_SPARE_PARTS_ANSWER,
+        has_useful_evidence=True,
+        has_relevant_maintenance_evidence=False,
+        has_relevant_spare_parts_evidence=True,
+    )
+
+    assert result.decision == ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS
+
+
+def test_validator_still_retries_when_spare_parts_answer_lacks_grounding() -> None:
+    validator = ReflectionValidator()
+
+    result = validator.validate(
+        decision=ReflectionDecision(
+            decision=ReflectionDecisionType.RETRIEVE_AGAIN,
+            confidence=0.75,
+            reason="The answer appears incomplete for the current evidence set.",
+        ),
+        policy=ReflectionPolicy(enabled=True, max_retrieval_retries=1),
+        reflection_attempts=0,
+        retrieval_retry_count=0,
+        selected_document_id="doc_1",
+        context_document_ids=["doc_1"],
+        question="spare parts list",
+        answer_intent="table_summary",
+        answer_text="Spare parts are covered somewhere in this document.",
+        has_useful_evidence=True,
+        has_relevant_maintenance_evidence=False,
+        has_relevant_spare_parts_evidence=True,
+    )
+
+    assert result.decision == ReflectionDecisionType.RETRIEVE_AGAIN
+
+
 def test_validator_rejects_answer_that_denies_spare_parts_list_when_evidence_exists() -> None:
     validator = ReflectionValidator()
 
