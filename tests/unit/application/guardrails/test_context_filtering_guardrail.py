@@ -139,3 +139,41 @@ def test_safety_procedure_chunk_is_preserved() -> None:
 
     assert safety_chunk.chunk_id in result.approved_chunk_ids
     assert result.allowed is True
+
+
+def test_maintenance_interval_query_filters_off_intent_technical_specification_chunk() -> None:
+    technical_chunk = make_chunk(
+        "spec_1",
+        "Voltage: 400 V. Installed power: 5.5 kW. Tank capacity: 1200 L.",
+        ChunkType.TECHNICAL_SPECIFICATION,
+    )
+    guardrail = ContextFilteringGuardrail()
+    context = GuardrailContext(
+        query_text="What are the maintenance intervals?",
+        retrieved_chunks=[technical_chunk],
+    )
+
+    result = guardrail.check(context)
+
+    assert technical_chunk.chunk_id in result.rejected_chunk_ids
+    assert any(
+        violation.violation_type == ViolationType.IRRELEVANT_CHUNKS
+        for violation in result.violations
+    )
+
+
+def test_explicit_specification_query_keeps_technical_specification_chunk() -> None:
+    technical_chunk = make_chunk(
+        "spec_1",
+        "Voltage: 400 V. Installed power: 5.5 kW. Tank capacity: 1200 L.",
+        ChunkType.TECHNICAL_SPECIFICATION,
+    )
+    guardrail = ContextFilteringGuardrail()
+    context = GuardrailContext(
+        query_text="What are the voltage specifications?",
+        retrieved_chunks=[technical_chunk],
+    )
+
+    result = guardrail.check(context)
+
+    assert technical_chunk.chunk_id in result.approved_chunk_ids

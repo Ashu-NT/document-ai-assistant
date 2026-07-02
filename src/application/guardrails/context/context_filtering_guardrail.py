@@ -8,6 +8,7 @@ from src.application.contracts.guardrails.guardrail_decision import GuardrailDec
 from src.application.contracts.guardrails.guardrail_result import GuardrailResult
 from src.application.contracts.guardrails.guardrail_violation import GuardrailViolation
 from src.application.contracts.guardrails.violation_type import ViolationType
+from src.domain.common import ChunkType
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
 _TOC_MARKERS: frozenset[str] = frozenset(
@@ -32,6 +33,44 @@ _BRANDING_MARKERS: frozenset[str] = frozenset(
 
 _MIN_CONTENT_CHARS = 40
 _TOC_LINE_DENSITY_THRESHOLD = 0.50
+_MAINTENANCE_INTERVAL_QUERY_MARKERS: tuple[str, ...] = (
+    "maintenance interval",
+    "maintenance intervals",
+    "service interval",
+    "inspection interval",
+    "maintenance schedule",
+    "preventive maintenance",
+)
+_EXPLICIT_SPECIFICATION_QUERY_MARKERS: tuple[str, ...] = (
+    "specification",
+    "specifications",
+    "technical data",
+    "technical specification",
+    "voltage",
+    "power",
+    "capacity",
+    "speed",
+    "dimensions",
+    "model",
+    "serial number",
+    "pump type",
+    "tank capacity",
+)
+_MAINTENANCE_CONTENT_MARKERS: tuple[str, ...] = (
+    "maintenance",
+    "interval",
+    "service",
+    "inspection",
+    "operating hours",
+    "daily",
+    "weekly",
+    "monthly",
+    "quarterly",
+    "annual",
+    "annually",
+    "lubrication",
+    "preventive maintenance",
+)
 
 
 def _is_toc_chunk(chunk: RetrievedChunk) -> bool:
@@ -92,7 +131,7 @@ class ContextFilteringGuardrail:
         violations: list[GuardrailViolation] = []
 
         for chunk in chunks:
-            rejection = self._classify_chunk(chunk)
+            rejection = self._classify_chunk(chunk, query_text=context.query_text)
             if rejection is None:
                 approved_ids.append(chunk.chunk_id)
             else:
@@ -117,7 +156,11 @@ class ContextFilteringGuardrail:
         )
 
     @staticmethod
-    def _classify_chunk(chunk: RetrievedChunk) -> GuardrailViolation | None:
+    def _classify_chunk(
+        chunk: RetrievedChunk,
+        *,
+        query_text: str,
+    ) -> GuardrailViolation | None:
         if _is_toc_chunk(chunk):
             return GuardrailViolation(
                 violation_type=ViolationType.TOC_CHUNK,
@@ -136,4 +179,33 @@ class ContextFilteringGuardrail:
                 message="Chunk contains only branding or copyright content.",
                 chunk_id=chunk.chunk_id,
             )
+        if (
+            _is_maintenance_interval_query(query_text)
+            and not _is_explicit_specification_query(query_text)
+            and chunk.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+            and not _has_maintenance_content(chunk.content)
+        ):
+            return GuardrailViolation(
+                violation_type=ViolationType.IRRELEVANT_CHUNKS,
+                message=(
+                    "Technical specification chunk is off-intent for a maintenance "
+                    "interval query."
+                ),
+                chunk_id=chunk.chunk_id,
+            )
         return None
+
+
+def _is_maintenance_interval_query(query_text: str) -> bool:
+    normalized = query_text.lower()
+    return any(marker in normalized for marker in _MAINTENANCE_INTERVAL_QUERY_MARKERS)
+
+
+def _is_explicit_specification_query(query_text: str) -> bool:
+    normalized = query_text.lower()
+    return any(marker in normalized for marker in _EXPLICIT_SPECIFICATION_QUERY_MARKERS)
+
+
+def _has_maintenance_content(content: str) -> bool:
+    normalized = content.lower()
+    return any(marker in normalized for marker in _MAINTENANCE_CONTENT_MARKERS)

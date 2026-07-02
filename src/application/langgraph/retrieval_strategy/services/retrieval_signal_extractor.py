@@ -29,7 +29,10 @@ _IDENTIFIER_TERMS = (
 )
 _SPECIFICATION_TERMS = (
     "specification",
+    "specifications",
     "specs",
+    "technical specification",
+    "technical specifications",
     "technical data",
     "pressure",
     "test pressure",
@@ -45,14 +48,24 @@ _SPECIFICATION_TERMS = (
     "dn",
     "bar",
     "kw",
-    " v",
-    " a",
+    "volt",
+    "volts",
+    "amp",
+    "amps",
+    "ampere",
+    "amperes",
     "mm",
 )
 _MAINTENANCE_TERMS = (
     "maintenance",
+    "maintenance interval",
+    "maintenance intervals",
     "service",
+    "service interval",
+    "service intervals",
     "inspection",
+    "inspection interval",
+    "inspection intervals",
     "interval",
     "operating hours",
     "lubrication",
@@ -82,6 +95,7 @@ _PROCEDURE_TERMS = (
     "configure",
 )
 _TROUBLESHOOTING_TERMS = (
+    "troubleshooting",
     "fault",
     "alarm",
     "error",
@@ -127,6 +141,7 @@ class RetrievalSignalExtractor:
         ).lower()
         signals: list[RetrievalStrategySignal] = []
         self._append_keyword_signals(signals, query_text)
+        self._append_maintenance_interval_table_signal(signals, query_text)
         self._append_identifier_signals(signals, context)
         self._append_chunk_type_signals(signals, context)
         self._append_route_signals(signals, context)
@@ -165,6 +180,38 @@ class RetrievalSignalExtractor:
         self._score_terms(signals, query_text, "figure", _FIGURE_TERMS, 2.5)
         self._score_terms(signals, query_text, "table", _TABLE_TERMS, 2.5)
         self._score_terms(signals, query_text, "section", _SECTION_TERMS, 2.0)
+
+    @staticmethod
+    def _append_maintenance_interval_table_signal(
+        signals: list[RetrievalStrategySignal],
+        query_text: str,
+    ) -> None:
+        has_maintenance_scope = any(
+            term in query_text
+            for term in ("maintenance", "service", "inspection", "preventive maintenance")
+        )
+        has_interval_language = any(
+            term in query_text
+            for term in (
+                "interval",
+                "schedule",
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "annual",
+                "annually",
+            )
+        )
+        if not (has_maintenance_scope and has_interval_language):
+            return
+        signals.append(
+            RetrievalStrategySignal(
+                category="table",
+                value="maintenance_interval_table_bias",
+                score=2.5,
+            )
+        )
 
     def _append_identifier_signals(
         self,
@@ -257,6 +304,7 @@ class RetrievalSignalExtractor:
         if not retry_text:
             return
         self._append_keyword_signals(signals, retry_text)
+        self._append_maintenance_interval_table_signal(signals, retry_text)
 
     @staticmethod
     def _score_terms(
@@ -267,7 +315,7 @@ class RetrievalSignalExtractor:
         score: float,
     ) -> None:
         for term in terms:
-            if term in query_text:
+            if _matches_term(query_text, term):
                 signals.append(
                     RetrievalStrategySignal(
                         category=category,
@@ -300,3 +348,13 @@ _ANSWER_INTENT_TO_CATEGORY: dict[str, str] = {
     "table_summary": "table",
     "document_summary": "document_exploration",
 }
+
+
+def _matches_term(query_text: str, term: str) -> bool:
+    normalized_term = term.strip().lower()
+    if not normalized_term:
+        return False
+    return re.search(
+        rf"(?<!\w){re.escape(normalized_term)}(?!\w)",
+        query_text,
+    ) is not None

@@ -239,3 +239,57 @@ def test_adapter_research_summary_node_is_silent():
     adapter = EventStreamAdapter(sink)
     adapter.run(graph, {})
     assert len(sink.events) == 0
+
+
+def test_adapter_answer_question_emits_retrieve_and_observation_for_maintenance_interval_query():
+    graph = _FakeCompiledGraph([
+        {
+            "answer_question": {
+                "question": "What are the maintenance intervals?",
+                "tool_results": {
+                    "answer_question": {
+                        "success": True,
+                        "data": {
+                            "approved_chunk_ids": ["chunk_58"],
+                            "retrieval_result": {
+                                "context_chunks": [
+                                    {
+                                        "chunk_id": "chunk_58",
+                                        "content": "Weekly maintenance latest after 100 operating hours.",
+                                        "source": {"page_start": 58, "page_end": 58},
+                                    },
+                                    {
+                                        "chunk_id": "chunk_spec",
+                                        "content": "Installed power: 5.5 kW",
+                                        "source": {"page_start": 12, "page_end": 12},
+                                    },
+                                ]
+                            },
+                        },
+                    }
+                },
+            }
+        }
+    ])
+    sink = _CollectingSink()
+    adapter = EventStreamAdapter(sink)
+
+    adapter.run(graph, {})
+
+    action_events = [
+        event
+        for event in sink.events
+        if event.event_type == LiveAgentEventType.ACTION_COMPLETED
+    ]
+    observation_events = [
+        event
+        for event in sink.events
+        if event.event_type == LiveAgentEventType.OBSERVATION
+    ]
+
+    assert action_events[0].payload["description"] == (
+        "Searching maintenance interval evidence in selected document..."
+    )
+    assert observation_events[0].payload["detail"] == (
+        "Found maintenance interval evidence on p.58."
+    )

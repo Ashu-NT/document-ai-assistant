@@ -8,12 +8,7 @@ def resolve_answer_text(
     tool_results: dict[str, Any],
     fallback_response_text: str | None,
 ) -> str | None:
-    format_combined_payload = tool_results.get("format_combined_answer")
-    if (
-        fallback_response_text
-        and isinstance(format_combined_payload, dict)
-        and format_combined_payload.get("success", False)
-    ):
+    if isinstance(fallback_response_text, str) and fallback_response_text.strip():
         return fallback_response_text
 
     answer_question_payload = _tool_payload(tool_results, "answer_question")

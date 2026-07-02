@@ -208,3 +208,33 @@ def test_raw_prompts_and_internal_ids_are_hidden() -> None:
     assert "secret" not in rendered
     assert "doc_secret" not in rendered
     assert "chain-of-thought" not in rendered
+
+
+def test_retrieval_strategy_step_shows_advisor_rejection_reason_without_proposal() -> None:
+    builder = ReactTraceBuilder()
+    result = GraphResult.ok(
+        response_text="Answer",
+        route="answer_question",
+        data={
+            "strategy_advisor_result": {
+                "status": "rejected",
+                "reason": "The advisor proposed a cross-document route for a scoped question.",
+            },
+            "strategy_advisor_trace": {
+                "reason": "validator_rejected_cross_document_route",
+                "events": [{"name": "StrategyRejected"}],
+            },
+            "retrieval_strategy_decision": {"primary_strategy": "MAINTENANCE_LOOKUP"},
+        },
+    )
+
+    trace = builder.build(
+        user_input="What are the maintenance intervals?",
+        result=result,
+        policy=DemoVisibilityPolicy(),
+    )
+
+    retrieval_step = next(step for step in trace.steps if step.title == "Retrieval Strategy")
+    assert "Advisor: rejected" in retrieval_step.body
+    assert "Advisor reason:" in retrieval_step.body
+    assert "cross-document route" in retrieval_step.body

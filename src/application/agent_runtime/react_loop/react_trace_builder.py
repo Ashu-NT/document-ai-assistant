@@ -458,9 +458,20 @@ def _format_strategy_advisor(data: dict[str, Any]) -> list[str]:
         return []
     status = str(advisor_result.get("status") or "").strip()
     proposal = advisor_result.get("proposal")
+    advisor_reason = str(advisor_result.get("reason") or "").strip()
+    trace_payload = data.get("strategy_advisor_trace")
+    trace_reason = (
+        str((trace_payload or {}).get("reason") or "").strip()
+        if isinstance(trace_payload, dict)
+        else ""
+    )
     if status == "skipped":
         return []
     lines = [f"Advisor: {status or '-'}"]
+    if advisor_reason:
+        lines.append(f"Advisor reason: {advisor_reason}")
+    elif trace_reason:
+        lines.append(f"Advisor reason: {trace_reason}")
     if isinstance(proposal, dict):
         concepts = proposal.get("concepts") or []
         recommended = proposal.get("recommended_strategies") or []

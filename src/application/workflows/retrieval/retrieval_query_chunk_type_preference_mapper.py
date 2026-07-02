@@ -67,7 +67,7 @@ class RetrievalQueryChunkTypePreferenceMapper:
                 ChunkType.MAINTENANCE_INTERVAL,
                 ChunkType.MAINTENANCE_PROCEDURE,
                 ChunkType.SPARE_PARTS_TABLE,
-                ChunkType.TECHNICAL_SPECIFICATION,
+                ChunkType.OPERATION_INSTRUCTION,
                 ChunkType.SAFETY_WARNING,
                 ChunkType.GENERAL,
                 ChunkType.OVERVIEW,
@@ -80,7 +80,7 @@ class RetrievalQueryChunkTypePreferenceMapper:
                     ChunkType.MAINTENANCE_INTERVAL,
                     ChunkType.SPARE_PARTS_TABLE,
                     ChunkType.MAINTENANCE_PROCEDURE,
-                    ChunkType.TECHNICAL_SPECIFICATION,
+                    ChunkType.OPERATION_INSTRUCTION,
                     ChunkType.GENERAL,
                     ChunkType.OVERVIEW,
                 ]
@@ -104,9 +104,9 @@ class RetrievalQueryChunkTypePreferenceMapper:
             ):
                 preferences = [
                     ChunkType.MAINTENANCE_INTERVAL,
-                    ChunkType.TECHNICAL_SPECIFICATION,
                     ChunkType.MAINTENANCE_PROCEDURE,
                     ChunkType.OPERATION_INSTRUCTION,
+                    ChunkType.SPARE_PARTS_TABLE,
                     ChunkType.INSTALLATION_INSTRUCTION,
                     ChunkType.TROUBLESHOOTING,
                     ChunkType.GENERAL,

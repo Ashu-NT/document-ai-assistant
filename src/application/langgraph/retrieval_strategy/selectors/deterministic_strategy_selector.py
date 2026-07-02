@@ -94,6 +94,7 @@ class DeterministicStrategySelector:
 
         primary = ranked[0]
         secondary = self._secondary_strategies(
+            context=context,
             ranked=ranked,
             scores=scores,
             primary=primary,
@@ -147,6 +148,7 @@ class DeterministicStrategySelector:
     def _secondary_strategies(
         self,
         *,
+        context: RetrievalContext,
         ranked: list[RetrievalStrategy],
         scores: dict[RetrievalStrategy, float],
         primary: RetrievalStrategy,
@@ -160,6 +162,13 @@ class DeterministicStrategySelector:
             for strategy in ranked[1:]
             if scores.get(strategy, 0.0) >= 4.0
         ]
+        if (
+            primary == RetrievalStrategy.MAINTENANCE_LOOKUP
+            and _looks_like_maintenance_interval_query(context)
+            and RetrievalStrategy.TABLE_LOOKUP in ranked
+            and RetrievalStrategy.TABLE_LOOKUP not in allowed
+        ):
+            allowed = [RetrievalStrategy.TABLE_LOOKUP, *allowed]
         if primary in {
             RetrievalStrategy.MAINTENANCE_LOOKUP,
             RetrievalStrategy.PROCEDURE_LOOKUP,
@@ -286,3 +295,32 @@ _MULTI_PRIMARY_STRATEGIES: set[RetrievalStrategy] = {
     RetrievalStrategy.FIGURE_LOOKUP,
     RetrievalStrategy.SECTION_LOOKUP,
 }
+
+
+def _looks_like_maintenance_interval_query(context: RetrievalContext) -> bool:
+    query_text = (
+        context.analyzed_query.effective_query()
+        if context.analyzed_query is not None
+        else context.query_text
+    )
+    normalized = query_text.lower()
+    return any(
+        marker in normalized
+        for marker in (
+            "maintenance interval",
+            "maintenance intervals",
+            "service interval",
+            "service intervals",
+            "inspection interval",
+            "inspection intervals",
+            "maintenance schedule",
+            "preventive maintenance",
+            "how often",
+            "daily",
+            "weekly",
+            "monthly",
+            "quarterly",
+            "annual",
+            "annually",
+        )
+    )

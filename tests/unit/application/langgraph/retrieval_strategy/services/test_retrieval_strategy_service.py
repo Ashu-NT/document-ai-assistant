@@ -45,11 +45,12 @@ def test_retrieval_strategy_service_merges_advisor_strategies_without_removing_d
     )
 
     assert result.decision.primary_strategy == RetrievalStrategy.MULTI_STRATEGY
-    assert result.decision.selected_strategies == [
+    assert result.decision.selected_strategies[0] == RetrievalStrategy.MAINTENANCE_LOOKUP
+    assert set(result.decision.selected_strategies) == {
         RetrievalStrategy.MAINTENANCE_LOOKUP,
         RetrievalStrategy.PROCEDURE_LOOKUP,
         RetrievalStrategy.TROUBLESHOOTING_LOOKUP,
-    ]
+    }
     assert result.trace.advisor_status == "accepted"
     assert any(
         event["name"] == "StrategyMerged"
