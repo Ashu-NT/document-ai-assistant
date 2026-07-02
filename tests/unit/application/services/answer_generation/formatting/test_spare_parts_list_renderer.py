@@ -168,7 +168,7 @@ def test_render_marks_unparseable_table_content_as_partial() -> None:
 
     assert result is not None
     assert result.startswith("Spare parts lists found:")
-    assert "Only partial table content was available in the retrieved context." in result
+    assert "Only partial row content was available in the retrieved context." in result
     assert "not found" not in result.lower()
 
 
@@ -194,3 +194,95 @@ def test_render_defers_to_llm_when_export_format_requested() -> None:
     )
 
     assert result is None
+
+
+def test_render_skips_bare_quantity_unit_artifact_rows() -> None:
+    renderer = SparePartsListRenderer()
+    content = (
+        "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
+        "|---|---|---|---|\n"
+        "| | Pce | | |\n"
+        "| 1 | 2 | Filter | A00103 |\n"
+    )
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+    )
+
+    assert result is not None
+    assert "Quantity: Pce" not in result
+    assert "Denomination: Filter" in result
+    assert "Spare Part No.: A00103" in result
+    assert "Only partial row content was available in the retrieved context." in result
+
+
+def test_render_extracts_pid_style_valve_rows_with_part_no() -> None:
+    renderer = SparePartsListRenderer()
+    content = (
+        "| P&ID Pos Nr. Service Function Type Part No. |\n"
+        "|---|\n"
+        "| V.00.01.01 Dry Running Protection Solenoid G1/2 2/2-way, 24Vdc A00103 |\n"
+        "| V.00.02.03 Discharge Overboard / Ashore Blank Flange Fitted |\n"
+    )
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[
+            _make_chunk(
+                content=content,
+                section_title="Valve List > Spare Parts",
+                section_path=["7 Components", "Valve List", "Spare Parts"],
+                page_start=97,
+                page_end=97,
+            )
+        ],
+    )
+
+    assert result is not None
+    assert "P&ID Position: V.00.01.01" in result
+    assert "Spare Part No.: A00103" in result
+    assert "Dry Running Protection" in result
+
+
+def test_render_excludes_safety_section_without_real_table_rows() -> None:
+    renderer = SparePartsListRenderer()
+    safety_content = (
+        "Only original spare parts and equipment authorised by FMD are "
+        "suitable and safe for use. Incorrect or faulty spare parts can "
+        "lead to damage, malfunction or complete breakdown of the equipment."
+    )
+    valve_content = (
+        "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
+        "|---|---|---|---|\n"
+        "| 1 | 2 | Filter | A00103 |\n"
+    )
+    safety_chunk = _make_chunk(
+        chunk_id="chunk_safety",
+        content=safety_content,
+        section_title="2.8 Spare Parts",
+        section_path=["2 Safety", "2.8 Spare Parts"],
+        page_start=11,
+        page_end=11,
+    )
+    valve_chunk = _make_chunk(
+        chunk_id="chunk_valve",
+        content=valve_content,
+        section_title="Spare Parts List",
+        page_start=97,
+        page_end=97,
+    )
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[safety_chunk, valve_chunk],
+    )
+
+    assert result is not None
+    assert "2.8 Spare Parts" not in result
+    assert "Pages: 11" not in result
+    assert "Spare Parts List" in result
+    assert "Spare Part No.: A00103" in result
