@@ -7,6 +7,7 @@ from src.application.langgraph.common import serialize_graph_value
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
     build_error,
+    extract_identifiers_from_step_results,
     extend_trace,
     resolve_selected_document,
     serialize_tool_result,
@@ -71,6 +72,7 @@ class AnswerQuestionNode:
         question = state.get("question") or state["user_input"].strip()
         resolved_document_id, _ = resolve_selected_document(state)
         context_override_chunks = None
+        resolved_identifiers = []
         strategy_patch: dict[str, object] = {}
         if (
             state.get("retrieval_strategy_enabled")
@@ -107,6 +109,9 @@ class AnswerQuestionNode:
                 )
                 if execution_result.evidence_chunks:
                     context_override_chunks = execution_result.evidence_chunks
+                resolved_identifiers = extract_identifiers_from_step_results(
+                    execution_result.step_results
+                )
             except Exception as exc:
                 strategy_patch = {
                     "retrieval_strategy_errors": [str(exc)],
@@ -120,6 +125,7 @@ class AnswerQuestionNode:
                 include_context=state["include_context"],
                 require_citations=True,
                 context_override_chunks=context_override_chunks,
+                resolved_identifiers=resolved_identifiers,
             )
         )
         tool_results = dict(state["tool_results"])
@@ -136,6 +142,7 @@ class AnswerQuestionNode:
         patch = {
             "tool_results": tool_results,
             "trace": extend_trace(state["trace"], trace_entry),
+            "resolved_identifiers": serialize_graph_value(resolved_identifiers),
             **strategy_patch,
         }
         if result.success:

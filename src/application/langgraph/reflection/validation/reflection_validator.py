@@ -1,10 +1,38 @@
 from __future__ import annotations
 
+import re
+
 from src.application.langgraph.reflection.models import (
     ReflectionDecision,
     ReflectionDecisionType,
 )
 from src.application.langgraph.reflection.policies import ReflectionPolicy
+
+_IDENTIFIER_LISTING_VERBS = (
+    "list",
+    "show",
+    "display",
+    "enumerate",
+    "provide",
+    "give me",
+    "find all",
+)
+_IDENTIFIER_LISTING_MARKERS = (
+    "serial",
+    "part",
+    "order code",
+    "order number",
+    "model",
+    "drawing",
+    "certificate",
+    "tag",
+    "manufacturer",
+    "supplier",
+)
+_IDENTIFIER_VALUE_PATTERN = re.compile(
+    r"\b([A-Z]{1,5}\d{1,6}[A-Z0-9-]*|\d{3,}[A-Z0-9-]+)\b",
+    re.IGNORECASE,
+)
 
 
 class ReflectionValidator:
@@ -32,6 +60,12 @@ class ReflectionValidator:
             selected_document_id=selected_document_id,
             has_relevant_maintenance_evidence=has_relevant_maintenance_evidence,
         )
+        identifier_inventory_context = _is_selected_document_identifier_inventory_context(
+            question=question,
+            answer_intent=answer_intent,
+            selected_document_id=selected_document_id,
+            has_useful_evidence=has_useful_evidence,
+        )
         has_answer_or_evidence = bool(answer_text.strip()) or has_useful_evidence
 
         if (
@@ -56,7 +90,7 @@ class ReflectionValidator:
                             "maintenance interval evidence already exists in the selected document."
                         ),
                         diagnostics={**diagnostics, "validator": "retry_disabled_downgraded"},
-                    )
+                )
                 return ReflectionDecision(
                     decision=ReflectionDecisionType.FAIL,
                     confidence=normalized_confidence,
@@ -79,6 +113,47 @@ class ReflectionValidator:
                     reason="Reflection retry limit has already been reached.",
                     diagnostics={**diagnostics, "validator": "retry_limit"},
                 )
+
+        if (
+            identifier_inventory_context
+            and decision.decision
+            in {
+                ReflectionDecisionType.ACCEPT,
+                ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS,
+                ReflectionDecisionType.CLARIFY,
+            }
+            and not _answer_contains_identifier_inventory(answer_text)
+        ):
+            if (
+                policy.allow_retrieval_retry
+                and retrieval_retry_count < policy.max_retrieval_retries
+            ):
+                return ReflectionDecision(
+                    decision=ReflectionDecisionType.RETRIEVE_AGAIN,
+                    confidence=normalized_confidence,
+                    reason=(
+                        "The answer did not actually list the requested identifiers "
+                        "even though grounded evidence exists in the selected document."
+                    ),
+                    retry_query="serial number part number identifier list",
+                    missing_information=["explicit identifier values"],
+                    diagnostics={
+                        **diagnostics,
+                        "validator": "identifier_inventory_retry",
+                    },
+                )
+            return ReflectionDecision(
+                decision=ReflectionDecisionType.FAIL,
+                confidence=normalized_confidence,
+                reason=(
+                    "The answer did not actually list the requested identifiers "
+                    "from the grounded document evidence."
+                ),
+                diagnostics={
+                    **diagnostics,
+                    "validator": "identifier_inventory_missing_values",
+                },
+            )
 
         if decision.decision == ReflectionDecisionType.CLARIFY:
             if maintenance_interval_context:
@@ -192,3 +267,58 @@ def _is_selected_document_maintenance_interval_context(
             "schedule",
         )
     )
+
+
+def _is_selected_document_identifier_inventory_context(
+    *,
+    question: str,
+    answer_intent: str | None,
+    selected_document_id: str | None,
+    has_useful_evidence: bool,
+) -> bool:
+    if not selected_document_id or not has_useful_evidence:
+        return False
+    normalized_question = question.lower()
+    normalized_intent = (answer_intent or "").lower()
+    if "identifier" not in normalized_intent and not any(
+        marker in normalized_question for marker in _IDENTIFIER_LISTING_MARKERS
+    ):
+        return False
+    if not any(marker in normalized_question for marker in _IDENTIFIER_LISTING_VERBS):
+        return False
+    return any(marker in normalized_question for marker in _IDENTIFIER_LISTING_MARKERS)
+
+
+def _answer_contains_identifier_inventory(answer_text: str) -> bool:
+    normalized_answer = answer_text.lower()
+    if "requested identifiers" in normalized_answer:
+        return True
+    if any(
+        label in normalized_answer
+        for label in (
+            "serial numbers:",
+            "part numbers:",
+            "model numbers:",
+            "drawing numbers:",
+            "certificate numbers:",
+            "order / component codes:",
+        )
+    ):
+        return True
+    if any(
+        marker in normalized_answer
+        for marker in (
+            "serial number",
+            "serial numbers",
+            "part number",
+            "part numbers",
+            "model number",
+            "model numbers",
+            "order code",
+            "order number",
+            "drawing number",
+            "certificate number",
+        )
+    ):
+        return bool(_IDENTIFIER_VALUE_PATTERN.search(answer_text))
+    return False

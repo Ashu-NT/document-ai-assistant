@@ -86,6 +86,10 @@ class TestTroubleshootingBeforeProcedure:
 # ---------------------------------------------------------------------------
 
 class TestOtherIntentsUnchanged:
+    def test_identifier_inventory_query_with_typo_still_maps_to_identifier(self) -> None:
+        query = _make_query("list all serial and part nmubers")
+        assert inferer.infer(query) == RetrievalQueryIntent.IDENTIFIER
+
     def test_overview_intent_for_system_description_question(self) -> None:
         query = _make_query("What does the FWC system do?")
         assert inferer.infer(query) == RetrievalQueryIntent.OVERVIEW

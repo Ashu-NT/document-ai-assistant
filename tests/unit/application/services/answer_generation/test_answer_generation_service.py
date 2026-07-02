@@ -8,7 +8,8 @@ from src.application.services.answer_generation.answer_generation_request import
 from src.application.services.answer_generation.answer_generation_service import (
     AnswerGenerationService,
 )
-from src.domain.common import ChunkType
+from src.domain.common import ChunkType, IdentifierType
+from src.domain.document.entities.identifier import Identifier
 from src.domain.common.source_location import SourceLocation
 from src.domain.retrieval.citation import Citation
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
@@ -287,3 +288,40 @@ def test_generate_merges_duplicate_maintenance_entries_before_prompt_building() 
     )
     assert result.diagnostics["maintenance_items_found"] == 1
     assert result.diagnostics["maintenance_items_merged"] == 1
+
+
+def test_generate_uses_deterministic_identifier_renderer_and_skips_llm() -> None:
+    llm = FakeLLMService(response="This answer should not be used.")
+    service = AnswerGenerationService(
+        llm_service=llm,
+        answer_generation_model="qwen3:8b",
+    )
+    request = AnswerGenerationRequest(
+        question="list all serial and part nmubers",
+        context_chunks=[_make_chunk()],
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        resolved_identifiers=[
+            Identifier(
+                identifier_id="id_part",
+                document_id="doc_001",
+                raw_value="PN-001",
+                identifier_type=IdentifierType.PART_NUMBER,
+            ),
+            Identifier(
+                identifier_id="id_serial",
+                document_id="doc_001",
+                raw_value="SN-9001",
+                identifier_type=IdentifierType.SERIAL_NUMBER,
+            ),
+        ],
+    )
+
+    result = service.generate(request)
+
+    assert "Requested identifiers" in result.answer_text
+    assert "Part Numbers:" in result.answer_text
+    assert "- PN-001" in result.answer_text
+    assert "Serial Numbers:" in result.answer_text
+    assert "- SN-9001" in result.answer_text
+    assert result.model_name == "deterministic_identifier_renderer"
+    assert llm.calls == []

@@ -52,3 +52,51 @@ def test_validator_retry_limit_with_maintenance_evidence_downgrades_to_accept_wi
     )
 
     assert result.decision == ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS
+
+
+def test_validator_retries_identifier_inventory_answer_without_identifier_values() -> None:
+    validator = ReflectionValidator()
+
+    result = validator.validate(
+        decision=ReflectionDecision(
+            decision=ReflectionDecisionType.ACCEPT,
+            confidence=0.82,
+            reason="Looks acceptable.",
+        ),
+        policy=ReflectionPolicy(enabled=True, max_retrieval_retries=1),
+        reflection_attempts=0,
+        retrieval_retry_count=0,
+        selected_document_id="doc_1",
+        context_document_ids=["doc_1"],
+        question="list all serial and part nmubers",
+        answer_intent="identifier_lookup",
+        answer_text="The document describes pumps, valves, maintenance, and safety tasks.",
+        has_useful_evidence=True,
+        has_relevant_maintenance_evidence=False,
+    )
+
+    assert result.decision == ReflectionDecisionType.RETRIEVE_AGAIN
+
+
+def test_validator_fails_identifier_inventory_answer_without_values_after_retry_limit() -> None:
+    validator = ReflectionValidator()
+
+    result = validator.validate(
+        decision=ReflectionDecision(
+            decision=ReflectionDecisionType.ACCEPT,
+            confidence=0.82,
+            reason="Looks acceptable.",
+        ),
+        policy=ReflectionPolicy(enabled=True, max_retrieval_retries=1),
+        reflection_attempts=0,
+        retrieval_retry_count=1,
+        selected_document_id="doc_1",
+        context_document_ids=["doc_1"],
+        question="list all serial and part nmubers",
+        answer_intent="identifier_lookup",
+        answer_text="The document describes pumps, valves, maintenance, and safety tasks.",
+        has_useful_evidence=True,
+        has_relevant_maintenance_evidence=False,
+    )
+
+    assert result.decision == ReflectionDecisionType.FAIL
