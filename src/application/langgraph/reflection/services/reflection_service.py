@@ -55,6 +55,12 @@ class ReflectionService:
         reflection_attempts: int,
         retrieval_retry_count: int,
     ) -> ReflectionResult:
+        has_relevant_maintenance_evidence = self._has_relevant_maintenance_evidence(
+            question=original_user_question,
+            answer_intent=answer_intent,
+            approved_chunks=approved_chunks,
+            selected_document_id=selected_document_id,
+        )
         answer_quality = self._score_answer(
             question=original_user_question,
             answer=generated_answer,
@@ -79,6 +85,9 @@ class ReflectionService:
             answer=generated_answer,
             answer_intent=answer_intent,
             citations=citations,
+            selected_document_id=selected_document_id,
+            approved_chunks=approved_chunks,
+            retrieval_retry_count=retrieval_retry_count,
         )
         used_llm = False
         raw_llm_decision: ReflectionDecision | None = None
@@ -112,6 +121,11 @@ class ReflectionService:
             retrieval_retry_count=retrieval_retry_count,
             selected_document_id=selected_document_id,
             context_document_ids=context_document_ids,
+            question=original_user_question,
+            answer_intent=answer_intent,
+            answer_text=generated_answer,
+            has_useful_evidence=evidence_quality.has_sufficient_evidence,
+            has_relevant_maintenance_evidence=has_relevant_maintenance_evidence,
         )
         grounding_score = min(
             answer_quality.score,
@@ -135,7 +149,11 @@ class ReflectionService:
             grounding_score=grounding_score,
             document_scope_score=document_scope_score,
             overall_score=overall_score,
-            accepted=effective_decision.decision == ReflectionDecisionType.ACCEPT,
+            accepted=effective_decision.decision
+            in {
+                ReflectionDecisionType.ACCEPT,
+                ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS,
+            },
             requires_retry=effective_decision.decision
             == ReflectionDecisionType.RETRIEVE_AGAIN,
             requires_clarification=effective_decision.decision
@@ -169,6 +187,12 @@ class ReflectionService:
         }
         answer_terms = set(normalized_answer.lower().split())
         contains_requested_information = bool(question_terms.intersection(answer_terms))
+        if (
+            not contains_requested_information
+            and ReflectionService._question_requests_maintenance_intervals(question.lower())
+            and ReflectionService._has_interval_structure(normalized_answer.lower())
+        ):
+            contains_requested_information = True
         complete_enough = answered_question and contains_requested_information
         score = round(
             (
@@ -258,15 +282,38 @@ class ReflectionService:
         answer: str,
         answer_intent: str | None,
         citations: list[dict[str, Any]],
+        selected_document_id: str | None,
+        approved_chunks: list[dict[str, Any]],
+        retrieval_retry_count: int,
     ) -> ReflectionDecision:
         lower_question = question.lower()
         lower_intent = (answer_intent or "").lower()
         normalized_answer = answer.lower()
+        has_relevant_maintenance_evidence = self._has_relevant_maintenance_evidence(
+            question=question,
+            answer_intent=answer_intent,
+            approved_chunks=approved_chunks,
+            selected_document_id=selected_document_id,
+        )
+        maintenance_interval_question = self._is_maintenance_interval_question(
+            question=lower_question,
+            answer_intent=lower_intent,
+        )
         if evidence_quality.has_document_leakage:
             return ReflectionDecision(
                 decision=ReflectionDecisionType.FAIL,
                 confidence=1.0,
                 reason="Evidence leaked outside the selected document scope.",
+            )
+        if maintenance_interval_question and not has_relevant_maintenance_evidence:
+            return ReflectionDecision(
+                decision=ReflectionDecisionType.FAIL,
+                confidence=0.95,
+                reason=(
+                    "No relevant maintenance interval evidence was found in the "
+                    "selected document."
+                ),
+                missing_information=["maintenance interval evidence"],
             )
         if not evidence_quality.has_sufficient_evidence:
             return ReflectionDecision(
@@ -275,11 +322,21 @@ class ReflectionService:
                 reason="The answer did not have enough approved evidence.",
                 missing_information=["additional grounded evidence"],
             )
-        if self._is_maintenance_interval_question(
-            question=lower_question,
-            answer_intent=lower_intent,
-        ):
+        if maintenance_interval_question:
             if self._contains_unrelated_specifications(normalized_answer):
+                if (
+                    has_relevant_maintenance_evidence
+                    and retrieval_retry_count >= self.policy.max_retrieval_retries
+                ):
+                    return ReflectionDecision(
+                        decision=ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS,
+                        confidence=0.72,
+                        reason=(
+                            "Relevant maintenance interval evidence exists, but the "
+                            "current answer still mixes in unrelated specifications."
+                        ),
+                        missing_information=["clean maintenance-only answer"],
+                    )
                 return ReflectionDecision(
                     decision=ReflectionDecisionType.RETRIEVE_AGAIN,
                     confidence=0.9,
@@ -294,6 +351,16 @@ class ReflectionService:
                     missing_information=["maintenance interval evidence only"],
                 )
             if not answer_quality.contains_page_reference or not citations:
+                if has_relevant_maintenance_evidence:
+                    return ReflectionDecision(
+                        decision=ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS,
+                        confidence=0.76,
+                        reason=(
+                            "Relevant maintenance interval evidence exists, but the "
+                            "answer may be incomplete because grounded references are weak."
+                        ),
+                        missing_information=["explicit page references"],
+                    )
                 return ReflectionDecision(
                     decision=ReflectionDecisionType.RETRIEVE_AGAIN,
                     confidence=0.85,
@@ -305,6 +372,16 @@ class ReflectionService:
                     missing_information=["maintenance interval references"],
                 )
             if not self._has_interval_structure(normalized_answer):
+                if has_relevant_maintenance_evidence:
+                    return ReflectionDecision(
+                        decision=ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS,
+                        confidence=0.74,
+                        reason=(
+                            "Relevant maintenance interval evidence exists, but the "
+                            "answer may be incomplete because interval structure is weak."
+                        ),
+                        missing_information=["clear interval or frequency structure"],
+                    )
                 return ReflectionDecision(
                     decision=ReflectionDecisionType.RETRIEVE_AGAIN,
                     confidence=0.82,
@@ -317,6 +394,16 @@ class ReflectionService:
                         "operating hours"
                     ),
                     missing_information=["interval or frequency structure"],
+                )
+            if not answer_quality.complete_enough:
+                return ReflectionDecision(
+                    decision=ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS,
+                    confidence=0.78,
+                    reason=(
+                        "The answer is grounded in maintenance interval evidence, "
+                        "but it may not cover every interval completely."
+                    ),
+                    missing_information=["possibly missing interval details"],
                 )
         if (
             "maintenance" in lower_question
@@ -361,19 +448,28 @@ class ReflectionService:
     ) -> bool:
         if "maintenance_summary" not in answer_intent and "maintenance" not in question:
             return False
+        return ReflectionService._question_requests_maintenance_intervals(question)
+
+    @staticmethod
+    def _question_requests_maintenance_intervals(question: str) -> bool:
         return any(
             marker in question
             for marker in (
                 "maintenance interval",
                 "maintenance intervals",
                 "service interval",
+                "service intervals",
                 "inspection interval",
+                "inspection intervals",
                 "maintenance schedule",
+                "preventive maintenance",
                 "how often",
                 "daily",
                 "weekly",
                 "monthly",
                 "annual",
+                "annually",
+                "schedule",
             )
         )
 
@@ -409,3 +505,53 @@ class ReflectionService:
                 "every ",
             )
         )
+
+    @classmethod
+    def _has_relevant_maintenance_evidence(
+        cls,
+        *,
+        question: str,
+        answer_intent: str | None,
+        approved_chunks: list[dict[str, Any]],
+        selected_document_id: str | None,
+    ) -> bool:
+        if not cls._is_maintenance_interval_question(
+            question=question.lower(),
+            answer_intent=(answer_intent or "").lower(),
+        ):
+            return False
+        for chunk in approved_chunks:
+            if not isinstance(chunk, dict):
+                continue
+            if (
+                selected_document_id
+                and chunk.get("document_id")
+                and str(chunk.get("document_id")) != selected_document_id
+            ):
+                continue
+            chunk_type = str(chunk.get("chunk_type") or "").strip().lower()
+            if chunk_type == "maintenance_interval":
+                return True
+            content = str(chunk.get("content") or "").lower()
+            if not content:
+                continue
+            if (
+                "maintenance" in content
+                and any(
+                    marker in content
+                    for marker in (
+                        "interval",
+                        "operating hours",
+                        "daily",
+                        "weekly",
+                        "monthly",
+                        "quarterly",
+                        "annual",
+                        "annually",
+                        "schedule",
+                        "preventive maintenance",
+                    )
+                )
+            ):
+                return True
+        return False

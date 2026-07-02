@@ -275,6 +275,25 @@ def test_document_agent_graph_uses_selected_document_on_follow_up_question() -> 
     assert result.data["selected_document_id"] == "doc-42"
 
 
+def test_document_agent_graph_identifier_follow_up_keeps_selected_document_scope() -> None:
+    find_tool = FakeFindDocumentTool()
+    answer_tool = FakeAnswerQuestionTool()
+    graph = _memory_backed_graph(
+        registry=ToolRegistry(
+            find_document_tool=find_tool,
+            answer_question_tool=answer_tool,
+        )
+    )
+
+    graph.run("open FWC12", session_id="demo")
+    result = graph.run("list all serial and part nmubers", session_id="demo")
+
+    assert result.success is True
+    assert result.route == "answer_question"
+    assert answer_tool.requests[-1].document_id == "doc-42"
+    assert result.data["selected_document_id"] == "doc-42"
+
+
 def test_document_agent_graph_explore_it_uses_selected_document() -> None:
     find_tool = FakeFindDocumentTool()
     explore_tool = FakeExploreDocumentTool()

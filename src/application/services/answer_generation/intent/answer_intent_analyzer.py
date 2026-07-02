@@ -113,6 +113,27 @@ _DOCUMENT_SUMMARY_TERMS = (
     "what does this document contain",
     "what does the document contain",
 )
+_IDENTIFIER_LISTING_VERBS = (
+    "list",
+    "show",
+    "display",
+    "enumerate",
+    "provide",
+    "give me",
+    "find all",
+)
+_IDENTIFIER_LISTING_MARKERS = (
+    "serial",
+    "part",
+    "order code",
+    "order number",
+    "model",
+    "drawing",
+    "certificate",
+    "tag",
+    "manufacturer",
+    "supplier",
+)
 _MAINTENANCE_SUMMARY_PHRASES = (
     "maintenance task",
     "maintenance tasks",
@@ -351,6 +372,16 @@ class AnswerIntentAnalyzer:
         if "what is in" in question or "what's in" in question:
             scores[AnswerIntent.DOCUMENT_SUMMARY] += 2
             matched[AnswerIntent.DOCUMENT_SUMMARY].append("question:what is in")
+        if self._contains_identifier_reference(question):
+            scores[AnswerIntent.IDENTIFIER_LOOKUP] += 3
+            matched[AnswerIntent.IDENTIFIER_LOOKUP].append(
+                "question:identifier_reference"
+            )
+        if self._looks_like_identifier_listing_question(question):
+            scores[AnswerIntent.IDENTIFIER_LOOKUP] += 8
+            matched[AnswerIntent.IDENTIFIER_LOOKUP].append(
+                "question:identifier_listing_request"
+            )
 
     def _apply_route_signal(
         self,
@@ -525,6 +556,16 @@ class AnswerIntentAnalyzer:
     @staticmethod
     def _looks_like_specification_question(question: str) -> bool:
         return any(term in question for term in _SPECIFICATION_TERMS)
+
+    @staticmethod
+    def _contains_identifier_reference(question: str) -> bool:
+        return any(marker in question for marker in _IDENTIFIER_LISTING_MARKERS)
+
+    @staticmethod
+    def _looks_like_identifier_listing_question(question: str) -> bool:
+        if not any(marker in question for marker in _IDENTIFIER_LISTING_VERBS):
+            return False
+        return AnswerIntentAnalyzer._contains_identifier_reference(question)
 
     @staticmethod
     def _pick_intent(scores: dict[AnswerIntent, int]) -> AnswerIntent:

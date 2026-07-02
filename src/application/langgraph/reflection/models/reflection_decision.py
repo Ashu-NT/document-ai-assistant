@@ -7,6 +7,7 @@ from typing import Any
 
 class ReflectionDecisionType(StrEnum):
     ACCEPT = "ACCEPT"
+    ACCEPT_WITH_LIMITATIONS = "ACCEPT_WITH_LIMITATIONS"
     RETRIEVE_AGAIN = "RETRIEVE_AGAIN"
     CLARIFY = "CLARIFY"
     FAIL = "FAIL"

@@ -3,6 +3,10 @@ from __future__ import annotations
 from typing import Any
 
 from src.application.agent_runtime.commands.command_result import CommandResult
+from src.application.langgraph.common import (
+    is_safe_failure_message,
+    is_usable_reflection_decision,
+)
 from src.application.agent_runtime.policies.demo_visibility_policy import (
     DemoVisibilityPolicy,
 )
@@ -73,7 +77,7 @@ class ConsolePresenter:
             [
                 "Final Answer",
                 "------------",
-                _console_safe_text(result.response_text or (result.data or {}).get("answer") or ""),
+                _console_safe_text(_final_answer_text(result)),
                 "",
             ]
         )
@@ -313,6 +317,22 @@ def _reflection_decision(data: dict[str, Any]) -> str | None:
     if isinstance(decision, str) and decision:
         return decision
     return None
+
+
+def _final_answer_text(result) -> str:
+    data = result.data or {}
+    response_text = result.response_text
+    answer_text = data.get("answer")
+    reflection = data.get("reflection_decision") or _reflection_decision(data)
+    if (
+        is_usable_reflection_decision(reflection)
+        and is_safe_failure_message(response_text)
+        and isinstance(answer_text, str)
+        and answer_text.strip()
+        and not is_safe_failure_message(answer_text)
+    ):
+        return answer_text
+    return response_text or answer_text or ""
 
 
 def _elapsed_seconds(trace_entries: list[dict[str, Any]]) -> float | None:

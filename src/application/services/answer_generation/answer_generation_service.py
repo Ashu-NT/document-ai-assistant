@@ -5,6 +5,9 @@ from src.application.services.ai.llm_service import LLMService
 from src.application.services.answer_generation.formatting.answer_format_policy import (
     AnswerFormatPolicy,
 )
+from src.application.services.answer_generation.formatting.identifier_answer_renderer import (
+    IdentifierAnswerRenderer,
+)
 from src.application.services.answer_generation.intent.answer_intent_analyzer import (
     AnswerIntentAnalyzer,
     AnswerIntentDecision,
@@ -41,6 +44,7 @@ class AnswerGenerationService:
         prompt_builder: AnswerPromptBuilder | None = None,
         answer_intent_analyzer: AnswerIntentAnalyzer | None = None,
         answer_context_organizer: AnswerContextOrganizer | None = None,
+        identifier_answer_renderer: IdentifierAnswerRenderer | None = None,
         answer_generation_model: str | None = None,
     ) -> None:
         self.llm_service = llm_service
@@ -48,6 +52,9 @@ class AnswerGenerationService:
         self.answer_intent_analyzer = answer_intent_analyzer or AnswerIntentAnalyzer()
         self.answer_context_organizer = (
             answer_context_organizer or AnswerContextOrganizer()
+        )
+        self.identifier_answer_renderer = (
+            identifier_answer_renderer or IdentifierAnswerRenderer()
         )
         self.answer_generation_model = (
             answer_generation_model or _default_answer_generation_model()
@@ -66,56 +73,54 @@ class AnswerGenerationService:
         activity_context: ActivityContext | None = None,
     ) -> GeneratedAnswer:
         resolved_request, intent_decision = self._resolve_request(request)
-        prompt = self.prompt_builder.build(resolved_request)
         prompt_version = getattr(
             self.prompt_builder,
             "prompt_version",
             ANSWER_PROMPT_VERSION,
         )
-
-        raw_output = self.llm_service.generate(prompt, model=self.answer_generation_model)
-
         citations, cited_chunk_ids = self._build_citations(resolved_request.context_chunks)
-
-        model_name = self.answer_generation_model or "default"
         structured_context = resolved_request.structured_context
         maintenance_diagnostics = self._maintenance_diagnostics(structured_context)
+        diagnostics = self._build_diagnostics(
+            resolved_request=resolved_request,
+            intent_decision=intent_decision,
+            structured_context=structured_context,
+            maintenance_diagnostics=maintenance_diagnostics,
+        )
+        deterministic_answer = self.identifier_answer_renderer.render(
+            question=resolved_request.question,
+            answer_intent=resolved_request.answer_intent,
+            structured_context=structured_context,
+            resolved_identifiers=resolved_request.resolved_identifiers,
+        )
+        if deterministic_answer is not None:
+            return self._build_generated_answer(
+                answer_text=deterministic_answer,
+                citations=citations,
+                cited_chunk_ids=cited_chunk_ids,
+                prompt_version=prompt_version,
+                model_name="deterministic_identifier_renderer",
+                answer_intent=resolved_request.answer_intent,
+                confidence=intent_decision.confidence,
+                diagnostics={
+                    **diagnostics,
+                    "deterministic_renderer": "identifier_answer_renderer",
+                },
+            )
 
-        return GeneratedAnswer(
+        prompt = self.prompt_builder.build(resolved_request)
+        raw_output = self.llm_service.generate(prompt, model=self.answer_generation_model)
+        model_name = self.answer_generation_model or "default"
+
+        return self._build_generated_answer(
             answer_text=raw_output,
             citations=citations,
             cited_chunk_ids=cited_chunk_ids,
             prompt_version=prompt_version,
             model_name=model_name,
-            raw_model_output=raw_output,
-            metadata=ModelProcessingMetadata(
-                model_name=model_name,
-                model_type="answer_generation",
-                confidence=intent_decision.confidence,
-                prompt_version=prompt_version,
-            ),
             answer_intent=resolved_request.answer_intent,
-            diagnostics={
-                "answer_intent": (
-                    resolved_request.answer_intent.value
-                    if resolved_request.answer_intent is not None
-                    else None
-                ),
-                "answer_intent_confidence": intent_decision.confidence,
-                "answer_intent_reason": intent_decision.reason,
-                "answer_intent_signals": intent_decision.matched_signals,
-                "format_policy": (
-                    resolved_request.format_policy.preferred_format
-                    if resolved_request.format_policy is not None
-                    else None
-                ),
-                "structured_context_source_count": (
-                    structured_context.source_count
-                    if structured_context is not None
-                    else 0
-                ),
-                **maintenance_diagnostics,
-            },
+            confidence=intent_decision.confidence,
+            diagnostics=diagnostics,
         )
 
     @staticmethod
@@ -198,3 +203,61 @@ class AnswerGenerationService:
                 diagnostics.get("maintenance_items_merged", 0)
             ),
         }
+
+    @staticmethod
+    def _build_diagnostics(
+        *,
+        resolved_request: AnswerGenerationRequest,
+        intent_decision: AnswerIntentDecision,
+        structured_context,
+        maintenance_diagnostics: dict[str, int],
+    ) -> dict[str, object]:
+        return {
+            "answer_intent": (
+                resolved_request.answer_intent.value
+                if resolved_request.answer_intent is not None
+                else None
+            ),
+            "answer_intent_confidence": intent_decision.confidence,
+            "answer_intent_reason": intent_decision.reason,
+            "answer_intent_signals": intent_decision.matched_signals,
+            "format_policy": (
+                resolved_request.format_policy.preferred_format
+                if resolved_request.format_policy is not None
+                else None
+            ),
+            "structured_context_source_count": (
+                structured_context.source_count if structured_context is not None else 0
+            ),
+            **maintenance_diagnostics,
+        }
+
+    @staticmethod
+    def _build_generated_answer(
+        *,
+        answer_text: str,
+        citations: list[Citation],
+        cited_chunk_ids: list[str],
+        prompt_version: str,
+        model_name: str,
+        answer_intent,
+        confidence: float,
+        diagnostics: dict[str, object],
+    ) -> GeneratedAnswer:
+        return GeneratedAnswer(
+            answer_text=answer_text,
+            citations=citations,
+            cited_chunk_ids=cited_chunk_ids,
+            prompt_version=prompt_version,
+            model_name=model_name,
+            confidence=confidence,
+            raw_model_output=answer_text,
+            metadata=ModelProcessingMetadata(
+                model_name=model_name,
+                model_type="answer_generation",
+                confidence=confidence,
+                prompt_version=prompt_version,
+            ),
+            answer_intent=answer_intent,
+            diagnostics=diagnostics,
+        )

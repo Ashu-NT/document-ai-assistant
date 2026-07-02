@@ -1,6 +1,7 @@
 import pytest
 
 from src.application.contracts.guardrails.guardrail_decision import GuardrailDecision
+from src.application.guardrails.retrieval.query_scope_guardrail import QueryScopeGuardrail
 from src.application.services.document_exploration.document_exploration_result import (
     DocumentExplorationResult,
 )
@@ -398,6 +399,28 @@ def test_passing_guardrail_allows_retrieval_to_proceed(
 
     assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
     assert fake_retrieval_workflow.called is True
+
+
+def test_query_scope_guardrail_allows_selected_document_follow_up_identifier_query(
+    fake_retrieval_workflow: FakeRetrievalWorkflow,
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    workflow = make_workflow(
+        fake_retrieval_workflow,
+        fake_exploration_service,
+        pre_query_guardrails=[QueryScopeGuardrail()],
+    )
+    request = QuestionAnsweringRequest(
+        question="list all serial and part nmubers",
+        document_id="doc_001",
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert fake_retrieval_workflow.called is True
+    assert fake_retrieval_workflow.last_query is not None
+    assert fake_retrieval_workflow.last_query.document_id == "doc_001"
 
 
 # ---------------------------------------------------------------------------

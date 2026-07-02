@@ -152,16 +152,19 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
     AnswerIntent.IDENTIFIER_LOOKUP: AnswerFormatPolicy(
         intent=AnswerIntent.IDENTIFIER_LOOKUP,
         preferred_format="fact_list",
-        include_table=True,
+        include_table=False,
         include_bullets=True,
         include_steps=False,
         include_sources_inline=False,
-        max_bullets=6,
+        max_bullets=12,
         response_label="Requested identifiers",
         instruction_lines=(
             "The user is asking for identifiers or codes.",
-            "Return only the identifiers that are explicitly present in the provided sources.",
-            "Prefer exact values over interpretation.",
+            "Return only explicit identifier values that are present in the provided sources.",
+            "Do not summarize the system, the procedure, or the document.",
+            "Group identifiers by type such as part number, serial number, model number, or order code when available.",
+            "Prefer exact values over interpretation and do not paraphrase identifier strings.",
+            "If the question asks for a subset such as serial numbers or part numbers, return only that subset.",
         ),
     ),
     AnswerIntent.TABLE_SUMMARY: AnswerFormatPolicy(
