@@ -123,16 +123,32 @@ _IDENTIFIER_LISTING_VERBS = (
     "find all",
 )
 _IDENTIFIER_LISTING_MARKERS = (
-    "serial",
-    "part",
+    "part number",
+    "part no",
+    "serial number",
+    "serial no",
     "order code",
     "order number",
-    "model",
-    "drawing",
+    "model number",
+    "drawing number",
+    "document number",
+    "tag number",
+    "equipment id",
     "certificate",
-    "tag",
     "manufacturer",
     "supplier",
+)
+_SPARE_PARTS_LIST_PHRASES = (
+    "spare part list",
+    "spare parts list",
+    "spare part table",
+    "spare parts table",
+    "table of spare part",
+    "table of spare parts",
+    "spare part no list",
+    "spare parts no list",
+    "list of spare part",
+    "list of spare parts",
 )
 _MAINTENANCE_SUMMARY_PHRASES = (
     "maintenance task",
@@ -382,6 +398,11 @@ class AnswerIntentAnalyzer:
             matched[AnswerIntent.IDENTIFIER_LOOKUP].append(
                 "question:identifier_listing_request"
             )
+        if any(phrase in question for phrase in _SPARE_PARTS_LIST_PHRASES):
+            scores[AnswerIntent.TABLE_SUMMARY] += 10
+            matched[AnswerIntent.TABLE_SUMMARY].append(
+                "question:spare_parts_list_phrase"
+            )
 
     def _apply_route_signal(
         self,
@@ -445,6 +466,9 @@ class AnswerIntentAnalyzer:
         if any(self._looks_like_table(chunk.content) for chunk in chunks):
             scores[AnswerIntent.TABLE_SUMMARY] += 2
             matched[AnswerIntent.TABLE_SUMMARY].append("context:table_like")
+        if any(self._looks_like_spare_parts_content(chunk.content) for chunk in chunks):
+            scores[AnswerIntent.TABLE_SUMMARY] += 3
+            matched[AnswerIntent.TABLE_SUMMARY].append("context:spare_parts_content")
         if any(self._contains_identifier_values(chunk.content) for chunk in chunks):
             scores[AnswerIntent.IDENTIFIER_LOOKUP] += 2
             matched[AnswerIntent.IDENTIFIER_LOOKUP].append("context:identifier_values")
@@ -542,6 +566,11 @@ class AnswerIntentAnalyzer:
     @staticmethod
     def _looks_like_table(content: str) -> bool:
         return sum(1 for line in content.splitlines() if "|" in line) >= 2
+
+    @staticmethod
+    def _looks_like_spare_parts_content(content: str) -> bool:
+        normalized = content.lower()
+        return "spare part" in normalized or "spare parts" in normalized
 
     @staticmethod
     def _looks_like_maintenance_question(question: str) -> bool:

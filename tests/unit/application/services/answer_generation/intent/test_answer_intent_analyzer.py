@@ -189,6 +189,43 @@ def test_maintenance_interval_question_does_not_flip_to_specification_from_techn
     assert decision.intent == AnswerIntent.MAINTENANCE_SUMMARY
 
 
+def test_spare_parts_list_question_maps_to_table_summary_not_identifier_lookup() -> None:
+    decision = AnswerIntentAnalyzer().analyze(question="table of spare part list")
+
+    assert decision.intent == AnswerIntent.TABLE_SUMMARY
+
+
+def test_spare_parts_list_question_with_evidence_maps_to_table_summary() -> None:
+    decision = AnswerIntentAnalyzer().analyze(
+        question="table of spare part list",
+        approved_chunks=[
+            _make_chunk(
+                content=(
+                    "| Position No: | Qty: Denomination: Spare Part No: |\n"
+                    "|---|---|\n"
+                    "| 1 | 2 Filter 12345 |"
+                ),
+                chunk_type=ChunkType.SPARE_PARTS_TABLE,
+            )
+        ],
+        chunk_type_preferences=[ChunkType.SPARE_PARTS_TABLE],
+    )
+
+    assert decision.intent == AnswerIntent.TABLE_SUMMARY
+
+
+def test_list_all_part_numbers_still_maps_to_identifier_lookup() -> None:
+    decision = AnswerIntentAnalyzer().analyze(question="list all part numbers")
+
+    assert decision.intent == AnswerIntent.IDENTIFIER_LOOKUP
+
+
+def test_list_all_serial_numbers_still_maps_to_identifier_lookup() -> None:
+    decision = AnswerIntentAnalyzer().analyze(question="list all serial numbers")
+
+    assert decision.intent == AnswerIntent.IDENTIFIER_LOOKUP
+
+
 def test_explicit_question_overrides_weak_chunk_hint() -> None:
     decision = AnswerIntentAnalyzer().analyze(
         question="specification",

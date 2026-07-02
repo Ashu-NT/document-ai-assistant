@@ -177,9 +177,20 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         max_bullets=8,
         response_label="Table summary",
         instruction_lines=(
-            "The user is asking about table or list content.",
+            "The user is asking about table or list content, such as a spare "
+            "parts list.",
             "Summarize the relevant rows or entries from the provided sources.",
             "Preserve exact values when they are present.",
+            "Do not say that no spare parts list or table was found if the "
+            "provided sources include spare parts table content or a section "
+            "titled 'Spare Parts List' or 'Spare Parts'.",
+            "If a complete table cannot be reconstructed, list the available "
+            "rows or entries instead of denying that a table or list exists.",
+            "For CLI-style output, group rows by section and page and present "
+            "them as a readable list instead of a wide markdown table, unless "
+            "the user explicitly asks for a markdown table or export format.",
+            "If some row fields are missing from the sources, omit the field "
+            "or write '-' rather than inventing a value.",
         ),
     ),
     AnswerIntent.DOCUMENT_SUMMARY: AnswerFormatPolicy(

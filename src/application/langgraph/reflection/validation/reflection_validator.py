@@ -18,20 +18,39 @@ _IDENTIFIER_LISTING_VERBS = (
     "find all",
 )
 _IDENTIFIER_LISTING_MARKERS = (
-    "serial",
-    "part",
+    "part number",
+    "part no",
+    "serial number",
+    "serial no",
     "order code",
     "order number",
-    "model",
-    "drawing",
+    "model number",
+    "drawing number",
+    "document number",
+    "tag number",
+    "equipment id",
     "certificate",
-    "tag",
     "manufacturer",
     "supplier",
 )
 _IDENTIFIER_VALUE_PATTERN = re.compile(
     r"\b([A-Z]{1,5}\d{1,6}[A-Z0-9-]*|\d{3,}[A-Z0-9-]+)\b",
     re.IGNORECASE,
+)
+_SPARE_PARTS_LIST_QUESTION_MARKERS = ("spare part", "spare parts")
+_SPARE_PARTS_DENIAL_PHRASES = (
+    "no spare part list",
+    "no spare parts list",
+    "no spare part table",
+    "no spare parts table",
+    "no specific spare part",
+    "no specific spare parts",
+    "spare part list table was not found",
+    "spare parts list table was not found",
+    "no comprehensive table of spare parts",
+    "no comprehensive spare parts table",
+    "no table or list of spare parts",
+    "not found directly related to the question",
 )
 
 
@@ -50,6 +69,7 @@ class ReflectionValidator:
         answer_text: str = "",
         has_useful_evidence: bool = False,
         has_relevant_maintenance_evidence: bool = False,
+        has_relevant_spare_parts_evidence: bool = False,
     ) -> ReflectionDecision:
         diagnostics = dict(decision.diagnostics)
         normalized_confidence = min(max(float(decision.confidence), 0.0), 1.0)
@@ -65,6 +85,10 @@ class ReflectionValidator:
             answer_intent=answer_intent,
             selected_document_id=selected_document_id,
             has_useful_evidence=has_useful_evidence,
+        )
+        spare_parts_list_context = _is_selected_document_spare_parts_list_context(
+            question=question,
+            has_relevant_spare_parts_evidence=has_relevant_spare_parts_evidence,
         )
         has_answer_or_evidence = bool(answer_text.strip()) or has_useful_evidence
 
@@ -152,6 +176,51 @@ class ReflectionValidator:
                 diagnostics={
                     **diagnostics,
                     "validator": "identifier_inventory_missing_values",
+                },
+            )
+
+        if (
+            spare_parts_list_context
+            and decision.decision
+            in {
+                ReflectionDecisionType.ACCEPT,
+                ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS,
+            }
+            and _answer_denies_spare_parts_list(answer_text)
+        ):
+            if (
+                policy.allow_retrieval_retry
+                and retrieval_retry_count < policy.max_retrieval_retries
+            ):
+                return ReflectionDecision(
+                    decision=ReflectionDecisionType.RETRIEVE_AGAIN,
+                    confidence=normalized_confidence,
+                    reason=(
+                        "The answer denied that a spare parts list or table exists, "
+                        "but grounded spare parts table evidence was already "
+                        "retrieved in the selected document."
+                    ),
+                    retry_query=(
+                        "spare parts list table position quantity denomination "
+                        "part number"
+                    ),
+                    missing_information=["spare parts table rows"],
+                    diagnostics={
+                        **diagnostics,
+                        "validator": "spare_parts_list_denial_retry",
+                    },
+                )
+            return ReflectionDecision(
+                decision=ReflectionDecisionType.FAIL,
+                confidence=normalized_confidence,
+                reason=(
+                    "The answer denied that a spare parts list or table exists "
+                    "even though grounded spare parts table evidence was "
+                    "retrieved in the selected document."
+                ),
+                diagnostics={
+                    **diagnostics,
+                    "validator": "spare_parts_list_denial_missing_values",
                 },
             )
 
@@ -287,6 +356,29 @@ def _is_selected_document_identifier_inventory_context(
     if not any(marker in normalized_question for marker in _IDENTIFIER_LISTING_VERBS):
         return False
     return any(marker in normalized_question for marker in _IDENTIFIER_LISTING_MARKERS)
+
+
+def _is_selected_document_spare_parts_list_context(
+    *,
+    question: str,
+    has_relevant_spare_parts_evidence: bool,
+) -> bool:
+    if not has_relevant_spare_parts_evidence:
+        return False
+    normalized_question = question.lower()
+    return any(
+        marker in normalized_question
+        for marker in _SPARE_PARTS_LIST_QUESTION_MARKERS
+    )
+
+
+def _answer_denies_spare_parts_list(answer_text: str) -> bool:
+    normalized = " ".join(answer_text.lower().split())
+    if any(phrase in normalized for phrase in _SPARE_PARTS_DENIAL_PHRASES):
+        return True
+    return "spare part" in normalized and (
+        "was not found" in normalized or "not found" in normalized
+    )
 
 
 def _answer_contains_identifier_inventory(answer_text: str) -> bool:

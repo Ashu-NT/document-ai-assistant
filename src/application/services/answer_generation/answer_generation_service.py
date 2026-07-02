@@ -8,6 +8,9 @@ from src.application.services.answer_generation.formatting.answer_format_policy 
 from src.application.services.answer_generation.formatting.identifier_answer_renderer import (
     IdentifierAnswerRenderer,
 )
+from src.application.services.answer_generation.formatting.spare_parts_list_renderer import (
+    SparePartsListRenderer,
+)
 from src.application.services.answer_generation.intent.answer_intent_analyzer import (
     AnswerIntentAnalyzer,
     AnswerIntentDecision,
@@ -45,6 +48,7 @@ class AnswerGenerationService:
         answer_intent_analyzer: AnswerIntentAnalyzer | None = None,
         answer_context_organizer: AnswerContextOrganizer | None = None,
         identifier_answer_renderer: IdentifierAnswerRenderer | None = None,
+        spare_parts_list_renderer: SparePartsListRenderer | None = None,
         answer_generation_model: str | None = None,
     ) -> None:
         self.llm_service = llm_service
@@ -55,6 +59,9 @@ class AnswerGenerationService:
         )
         self.identifier_answer_renderer = (
             identifier_answer_renderer or IdentifierAnswerRenderer()
+        )
+        self.spare_parts_list_renderer = (
+            spare_parts_list_renderer or SparePartsListRenderer()
         )
         self.answer_generation_model = (
             answer_generation_model or _default_answer_generation_model()
@@ -93,18 +100,31 @@ class AnswerGenerationService:
             structured_context=structured_context,
             resolved_identifiers=resolved_request.resolved_identifiers,
         )
+        deterministic_renderer_name = "identifier_answer_renderer"
+        if deterministic_answer is None:
+            deterministic_answer = self.spare_parts_list_renderer.render(
+                question=resolved_request.question,
+                answer_intent=resolved_request.answer_intent,
+                chunks=resolved_request.context_chunks,
+            )
+            deterministic_renderer_name = "spare_parts_list_renderer"
         if deterministic_answer is not None:
+            model_name = (
+                "deterministic_identifier_renderer"
+                if deterministic_renderer_name == "identifier_answer_renderer"
+                else "deterministic_spare_parts_renderer"
+            )
             return self._build_generated_answer(
                 answer_text=deterministic_answer,
                 citations=citations,
                 cited_chunk_ids=cited_chunk_ids,
                 prompt_version=prompt_version,
-                model_name="deterministic_identifier_renderer",
+                model_name=model_name,
                 answer_intent=resolved_request.answer_intent,
                 confidence=intent_decision.confidence,
                 diagnostics={
                     **diagnostics,
-                    "deterministic_renderer": "identifier_answer_renderer",
+                    "deterministic_renderer": deterministic_renderer_name,
                 },
             )
 
