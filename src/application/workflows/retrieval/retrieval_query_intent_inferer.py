@@ -70,6 +70,27 @@ _EXPLICIT_IDENTIFIER_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bwhat\s+is\s+type\s+[a-z0-9-]+\b"),
     re.compile(r"\bwhat\s+is\s+position\s+[a-z0-9-]+\b"),
 )
+_IDENTIFIER_LISTING_VERBS: tuple[str, ...] = (
+    "list",
+    "show",
+    "display",
+    "enumerate",
+    "provide",
+    "give me",
+    "find all",
+)
+_IDENTIFIER_LISTING_MARKERS: tuple[str, ...] = (
+    "serial",
+    "part",
+    "order code",
+    "order number",
+    "model",
+    "drawing",
+    "certificate",
+    "tag",
+    "manufacturer",
+    "supplier",
+)
 _OVERVIEW_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bwhat\s+does\s+.+\s+do\b"),
     re.compile(r"\bwhat\s+is\s+.+\s+used\s+for\b"),
@@ -167,6 +188,16 @@ def _is_overview_query(query_text: str) -> bool:
     )
 
 
+def _contains_identifier_reference(query_text: str) -> bool:
+    return any(marker in query_text for marker in _IDENTIFIER_LISTING_MARKERS)
+
+
+def _looks_like_identifier_listing_query(query_text: str) -> bool:
+    if not any(marker in query_text for marker in _IDENTIFIER_LISTING_VERBS):
+        return False
+    return _contains_identifier_reference(query_text)
+
+
 def _is_maintenance_query(query_text: str) -> bool:
     return any(marker in query_text for marker in _MAINTENANCE_MARKERS)
 
@@ -234,6 +265,8 @@ class RetrievalQueryIntentInferer:
         ):
             return RetrievalQueryIntent.TABLE
         if _is_explicit_identifier_lookup(query_text, query):
+            return RetrievalQueryIntent.IDENTIFIER
+        if _looks_like_identifier_listing_query(query_text):
             return RetrievalQueryIntent.IDENTIFIER
         if any(
             marker in query_text

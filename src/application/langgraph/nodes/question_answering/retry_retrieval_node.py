@@ -9,7 +9,13 @@ from src.application.langgraph.common import (
     serialize_graph_value,
 )
 from src.application.langgraph.factories.tool_registry import ToolRegistry
-from src.application.langgraph.nodes.node_utils import build_error, extend_trace
+from src.application.langgraph.nodes.node_utils import (
+    build_error,
+    deduplicate_identifiers,
+    deserialize_identifiers,
+    extend_trace,
+    extract_identifiers_from_step_results,
+)
 from src.application.langgraph.retrieval_strategy import (
     CLI_RETRIEVAL_STRATEGY_ALIASES,
     RetrievalContext,
@@ -113,6 +119,7 @@ class RetryRetrievalNode:
             retry_query = retry_plan.retry_query
         retry_top_k = self._retry_top_k(state.get("top_k"))
         retry_result = None
+        resolved_identifiers = deserialize_identifiers(state.get("resolved_identifiers"))
         strategy_patch: dict[str, object] = {}
         if (
             state.get("retrieval_strategy_enabled")
@@ -155,6 +162,14 @@ class RetryRetrievalNode:
                 strategy_patch = _strategy_patch(
                     strategy_result=strategy_result,
                     execution_result=execution_result,
+                )
+                resolved_identifiers = deduplicate_identifiers(
+                    [
+                        *resolved_identifiers,
+                        *extract_identifiers_from_step_results(
+                            execution_result.step_results
+                        ),
+                    ]
                 )
                 retry_result = _execution_result_to_tool_result(execution_result)
             except Exception as exc:
@@ -202,6 +217,7 @@ class RetryRetrievalNode:
                 require_citations=True,
                 context_override_chunks=merged_chunks,
                 retry_query=retry_query,
+                resolved_identifiers=resolved_identifiers,
             )
         )
         tool_results = dict(state["tool_results"])
@@ -232,6 +248,7 @@ class RetryRetrievalNode:
             "retry_context_chunks": serialize_graph_value(retry_chunks),
             "merged_context_chunks": serialize_graph_value(merged_chunks),
             "merged_chunk_ids": [chunk.chunk_id for chunk in merged_chunks],
+            "resolved_identifiers": serialize_graph_value(resolved_identifiers),
             "trace": extend_trace(state["trace"], trace_entry),
             **strategy_patch,
         }
