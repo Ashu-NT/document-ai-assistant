@@ -52,6 +52,19 @@ _SPARE_PARTS_DENIAL_PHRASES = (
     "no table or list of spare parts",
     "not found directly related to the question",
 )
+_UNIT_ARTIFACT_ROW_PATTERN = re.compile(
+    r"quantity:\s*(pce|pcs|pc|ea|each|unit|units)\b",
+    re.IGNORECASE,
+)
+_IDENTIFYING_ROW_LABELS = (
+    "denomination:",
+    "description:",
+    "type:",
+    "spare part no.:",
+    "p&id position:",
+    "service:",
+    "raw row:",
+)
 
 
 class ReflectionValidator:
@@ -179,50 +192,71 @@ class ReflectionValidator:
                 },
             )
 
-        if (
-            spare_parts_list_context
-            and decision.decision
-            in {
-                ReflectionDecisionType.ACCEPT,
-                ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS,
-            }
-            and _answer_denies_spare_parts_list(answer_text)
-        ):
-            if (
-                policy.allow_retrieval_retry
-                and retrieval_retry_count < policy.max_retrieval_retries
-            ):
+        if spare_parts_list_context and decision.decision in {
+            ReflectionDecisionType.ACCEPT,
+            ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS,
+        }:
+            denies_list = _answer_denies_spare_parts_list(answer_text)
+            artifact_only = _answer_only_has_unit_artifact_rows(answer_text)
+            if denies_list or artifact_only:
+                if denies_list:
+                    retry_reason = (
+                        "The answer denied that a spare parts list or table "
+                        "exists, but grounded spare parts table evidence was "
+                        "already retrieved in the selected document."
+                    )
+                    fail_reason = (
+                        "The answer denied that a spare parts list or table "
+                        "exists even though grounded spare parts table evidence "
+                        "was retrieved in the selected document."
+                    )
+                else:
+                    retry_reason = (
+                        "The answer only contained header or unit artifacts "
+                        "(such as a bare quantity/unit value) instead of real "
+                        "spare parts rows, even though grounded spare parts "
+                        "table evidence was already retrieved."
+                    )
+                    fail_reason = (
+                        "The answer only contained header or unit artifacts "
+                        "instead of real spare parts rows from the grounded "
+                        "spare parts table evidence."
+                    )
+                if (
+                    policy.allow_retrieval_retry
+                    and retrieval_retry_count < policy.max_retrieval_retries
+                ):
+                    return ReflectionDecision(
+                        decision=ReflectionDecisionType.RETRIEVE_AGAIN,
+                        confidence=normalized_confidence,
+                        reason=retry_reason,
+                        retry_query=(
+                            "spare parts list table position quantity "
+                            "denomination part number"
+                        ),
+                        missing_information=["spare parts table rows"],
+                        diagnostics={
+                            **diagnostics,
+                            "validator": (
+                                "spare_parts_list_denial_retry"
+                                if denies_list
+                                else "spare_parts_list_artifact_only_retry"
+                            ),
+                        },
+                    )
                 return ReflectionDecision(
-                    decision=ReflectionDecisionType.RETRIEVE_AGAIN,
+                    decision=ReflectionDecisionType.FAIL,
                     confidence=normalized_confidence,
-                    reason=(
-                        "The answer denied that a spare parts list or table exists, "
-                        "but grounded spare parts table evidence was already "
-                        "retrieved in the selected document."
-                    ),
-                    retry_query=(
-                        "spare parts list table position quantity denomination "
-                        "part number"
-                    ),
-                    missing_information=["spare parts table rows"],
+                    reason=fail_reason,
                     diagnostics={
                         **diagnostics,
-                        "validator": "spare_parts_list_denial_retry",
+                        "validator": (
+                            "spare_parts_list_denial_missing_values"
+                            if denies_list
+                            else "spare_parts_list_artifact_only_missing_values"
+                        ),
                     },
                 )
-            return ReflectionDecision(
-                decision=ReflectionDecisionType.FAIL,
-                confidence=normalized_confidence,
-                reason=(
-                    "The answer denied that a spare parts list or table exists "
-                    "even though grounded spare parts table evidence was "
-                    "retrieved in the selected document."
-                ),
-                diagnostics={
-                    **diagnostics,
-                    "validator": "spare_parts_list_denial_missing_values",
-                },
-            )
 
         if decision.decision == ReflectionDecisionType.CLARIFY:
             if maintenance_interval_context:
@@ -370,6 +404,13 @@ def _is_selected_document_spare_parts_list_context(
         marker in normalized_question
         for marker in _SPARE_PARTS_LIST_QUESTION_MARKERS
     )
+
+
+def _answer_only_has_unit_artifact_rows(answer_text: str) -> bool:
+    normalized = answer_text.lower()
+    if not _UNIT_ARTIFACT_ROW_PATTERN.search(normalized):
+        return False
+    return not any(label in normalized for label in _IDENTIFYING_ROW_LABELS)
 
 
 def _answer_denies_spare_parts_list(answer_text: str) -> bool:
