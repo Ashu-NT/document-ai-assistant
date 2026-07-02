@@ -325,3 +325,39 @@ def test_generate_uses_deterministic_identifier_renderer_and_skips_llm() -> None
     assert "- SN-9001" in result.answer_text
     assert result.model_name == "deterministic_identifier_renderer"
     assert llm.calls == []
+
+
+def test_generate_uses_deterministic_spare_parts_renderer_and_skips_llm() -> None:
+    llm = FakeLLMService(response="No specific spare part list table was found.")
+    service = AnswerGenerationService(
+        llm_service=llm,
+        answer_generation_model="qwen3:8b",
+    )
+    chunk = RetrievedChunk(
+        chunk_id="chunk_spare",
+        document_id="doc_001",
+        content=(
+            "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
+            "|---|---|---|---|\n"
+            "| 1 | 2 | Filter | A00103 |\n"
+        ),
+        score=0.9,
+        retrieval_source="dense",
+        chunk_type=ChunkType.SPARE_PARTS_TABLE,
+        section_path=["7 Components", "Spare Parts"],
+        source=SourceLocation(page_start=45, page_end=46),
+        citation=_make_citation("chunk_spare"),
+    )
+    request = AnswerGenerationRequest(
+        question="table of spare part list",
+        context_chunks=[chunk],
+    )
+
+    result = service.generate(request)
+
+    assert result.answer_intent == AnswerIntent.TABLE_SUMMARY
+    assert "Spare parts lists found:" in result.answer_text
+    assert "no spare part" not in result.answer_text.lower()
+    assert result.model_name == "deterministic_spare_parts_renderer"
+    assert result.diagnostics["deterministic_renderer"] == "spare_parts_list_renderer"
+    assert llm.calls == []

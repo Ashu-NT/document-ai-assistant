@@ -70,8 +70,29 @@ class ReflectionPromptBuilder:
             question=original_user_question,
             answer_intent=answer_intent,
         )
+        spare_parts_list_review = _is_spare_parts_list_review(
+            question=original_user_question,
+        )
 
         extra_rules: list[str] = []
+        if spare_parts_list_review:
+            extra_rules.extend(
+                [
+                    "Spare parts list review rules:",
+                    "- The user is asking for a spare parts list or spare parts table.",
+                    "- Do not choose FAIL, and do not accept a denial answer, if the "
+                    "approved evidence includes spare parts table content or a "
+                    "section titled 'Spare Parts List' or 'Spare Parts'.",
+                    "- ACCEPT_WITH_LIMITATIONS is only appropriate when the answer "
+                    "accurately reports the spare parts rows that are available, "
+                    "even if the table is incomplete.",
+                    "- Reject the answer (choose RETRIEVE_AGAIN if retries remain, "
+                    "otherwise FAIL) if it claims no spare parts list or table was "
+                    "found while spare parts table evidence is present in the "
+                    "approved chunks.",
+                    "",
+                ]
+            )
         if maintenance_interval_review:
             extra_rules.extend(
                 [
@@ -144,6 +165,11 @@ class ReflectionPromptBuilder:
                 citation_text,
             ]
         )
+
+
+def _is_spare_parts_list_review(*, question: str) -> bool:
+    normalized_question = question.lower()
+    return "spare part" in normalized_question or "spare parts" in normalized_question
 
 
 def _is_maintenance_interval_review(

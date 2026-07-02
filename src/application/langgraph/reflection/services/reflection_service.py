@@ -61,6 +61,10 @@ class ReflectionService:
             approved_chunks=approved_chunks,
             selected_document_id=selected_document_id,
         )
+        has_relevant_spare_parts_evidence = self._has_relevant_spare_parts_evidence(
+            approved_chunks=approved_chunks,
+            selected_document_id=selected_document_id,
+        )
         answer_quality = self._score_answer(
             question=original_user_question,
             answer=generated_answer,
@@ -126,6 +130,7 @@ class ReflectionService:
             answer_text=generated_answer,
             has_useful_evidence=evidence_quality.has_sufficient_evidence,
             has_relevant_maintenance_evidence=has_relevant_maintenance_evidence,
+            has_relevant_spare_parts_evidence=has_relevant_spare_parts_evidence,
         )
         grounding_score = min(
             answer_quality.score,
@@ -552,6 +557,33 @@ class ReflectionService:
                         "preventive maintenance",
                     )
                 )
+            ):
+                return True
+        return False
+
+    @staticmethod
+    def _has_relevant_spare_parts_evidence(
+        *,
+        approved_chunks: list[dict[str, Any]],
+        selected_document_id: str | None,
+    ) -> bool:
+        for chunk in approved_chunks:
+            if not isinstance(chunk, dict):
+                continue
+            if (
+                selected_document_id
+                and chunk.get("document_id")
+                and str(chunk.get("document_id")) != selected_document_id
+            ):
+                continue
+            chunk_type = str(chunk.get("chunk_type") or "").strip().lower()
+            if chunk_type == "spare_parts_table":
+                return True
+            content = str(chunk.get("content") or "").lower()
+            if "spare part" in content and (
+                "spare parts list" in content
+                or "spare part no" in content
+                or "spare parts no" in content
             ):
                 return True
         return False
