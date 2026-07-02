@@ -57,10 +57,9 @@ _UNIT_ARTIFACT_ROW_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _IDENTIFYING_ROW_LABELS = (
-    "denomination:",
     "description:",
     "type:",
-    "spare part no.:",
+    "part no.:",
     "p&id position:",
     "service:",
     "raw row:",
@@ -118,6 +117,21 @@ class ReflectionValidator:
             )
 
         if decision.decision == ReflectionDecisionType.RETRIEVE_AGAIN:
+            if spare_parts_list_context and _is_legitimate_partial_spare_parts_answer(
+                answer_text
+            ):
+                return _accept_with_limitations(
+                    confidence=normalized_confidence,
+                    reason=(
+                        "The answer is grounded in the retrieved spare parts "
+                        "table evidence and already lists real sections, "
+                        "pages, or parsed rows; retrying would not add value."
+                    ),
+                    diagnostics={
+                        **diagnostics,
+                        "validator": "spare_parts_list_incomplete_downgraded",
+                    },
+                )
             if not policy.allow_retrieval_retry:
                 if maintenance_interval_context:
                     return _accept_with_limitations(
@@ -295,18 +309,31 @@ class ReflectionValidator:
                     diagnostics={**diagnostics, "validator": "missing_clarification_question"},
                 )
 
-        if (
-            decision.decision == ReflectionDecisionType.FAIL
-            and maintenance_interval_context
-        ):
-            return _accept_with_limitations(
-                confidence=normalized_confidence,
-                reason=(
-                    "Reflection marked the answer as failed, but grounded maintenance "
-                    "interval evidence exists in the selected document."
-                ),
-                diagnostics={**diagnostics, "validator": "fail_downgraded"},
-            )
+        if decision.decision == ReflectionDecisionType.FAIL:
+            if maintenance_interval_context:
+                return _accept_with_limitations(
+                    confidence=normalized_confidence,
+                    reason=(
+                        "Reflection marked the answer as failed, but grounded maintenance "
+                        "interval evidence exists in the selected document."
+                    ),
+                    diagnostics={**diagnostics, "validator": "fail_downgraded"},
+                )
+            if spare_parts_list_context and _is_legitimate_partial_spare_parts_answer(
+                answer_text
+            ):
+                return _accept_with_limitations(
+                    confidence=normalized_confidence,
+                    reason=(
+                        "Reflection marked the answer as failed, but it is "
+                        "grounded in the retrieved spare parts table evidence "
+                        "and already lists real sections, pages, or parsed rows."
+                    ),
+                    diagnostics={
+                        **diagnostics,
+                        "validator": "spare_parts_list_fail_downgraded",
+                    },
+                )
 
         if reflection_attempts > policy.max_reflection_attempts:
             if maintenance_interval_context:
@@ -317,6 +344,21 @@ class ReflectionValidator:
                         "interval evidence is already available."
                     ),
                     diagnostics={**diagnostics, "validator": "reflection_limit_downgraded"},
+                )
+            if spare_parts_list_context and _is_legitimate_partial_spare_parts_answer(
+                answer_text
+            ):
+                return _accept_with_limitations(
+                    confidence=normalized_confidence,
+                    reason=(
+                        "Reflection attempt limit was exceeded, but the answer is "
+                        "grounded in the retrieved spare parts table evidence and "
+                        "already lists real sections, pages, or parsed rows."
+                    ),
+                    diagnostics={
+                        **diagnostics,
+                        "validator": "spare_parts_list_reflection_limit_downgraded",
+                    },
                 )
             return ReflectionDecision(
                 decision=ReflectionDecisionType.FAIL,
@@ -404,6 +446,22 @@ def _is_selected_document_spare_parts_list_context(
         marker in normalized_question
         for marker in _SPARE_PARTS_LIST_QUESTION_MARKERS
     )
+
+
+def _is_legitimate_partial_spare_parts_answer(answer_text: str) -> bool:
+    normalized = " ".join(answer_text.lower().split())
+    if not any(marker in normalized for marker in _SPARE_PARTS_LIST_QUESTION_MARKERS):
+        return False
+    if _answer_denies_spare_parts_list(answer_text):
+        return False
+    if _answer_only_has_unit_artifact_rows(answer_text):
+        return False
+    if not re.search(r"\bpages?\b", normalized):
+        return False
+    has_identifying_row = any(label in normalized for label in _IDENTIFYING_ROW_LABELS)
+    has_raw_row = "raw row:" in normalized
+    has_partial_notice = "partial" in normalized
+    return has_identifying_row or has_raw_row or has_partial_notice
 
 
 def _answer_only_has_unit_artifact_rows(answer_text: str) -> bool:
