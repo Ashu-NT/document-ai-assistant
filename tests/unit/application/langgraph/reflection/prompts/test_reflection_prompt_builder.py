@@ -30,7 +30,10 @@ def test_reflection_prompt_builder_includes_required_review_inputs() -> None:
     assert "What are the maintenance intervals?" in prompt
     assert "You are reviewing a document-grounded answer." in prompt
     assert "Return JSON only." in prompt
-    assert '"decision": "ACCEPT | RETRIEVE_AGAIN | CLARIFY | FAIL"' in prompt
+    assert (
+        '"decision": "ACCEPT | ACCEPT_WITH_LIMITATIONS | RETRIEVE_AGAIN | CLARIFY | FAIL"'
+        in prompt
+    )
 
 
 def test_reflection_prompt_builder_adds_maintenance_interval_rules_and_hides_context_ids() -> None:
@@ -51,6 +54,7 @@ def test_reflection_prompt_builder_adds_maintenance_interval_rules_and_hides_con
     )
 
     assert "Maintenance interval review rules:" in prompt
+    assert "ACCEPT_WITH_LIMITATIONS if the answer is grounded but may be incomplete." in prompt
     assert (
         "Reject the answer if it mainly contains unrelated specifications"
         in prompt

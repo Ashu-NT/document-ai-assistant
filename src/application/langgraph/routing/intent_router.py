@@ -138,6 +138,7 @@ class IntentRouter:
         *,
         document_id: str | None = None,
         document_query: str | None = None,
+        selected_document_id: str | None = None,
         deep_research_enabled: bool = False,
     ) -> RouteDecision:
         normalized_input = _normalize(user_input)
@@ -198,7 +199,8 @@ class IntentRouter:
             GuardrailContext(
                 user_input=user_input,
                 query_text=user_input,
-                selected_document_id=document_id,
+                document_id=document_id,
+                selected_document_id=selected_document_id or document_id,
             )
         )
         if not pre_route_result.allowed:

@@ -126,6 +126,62 @@ def test_presenter_renders_status_footer_and_skips_missing_fields() -> None:
     assert "None" not in output
 
 
+def test_presenter_shows_accept_with_limitations_footer_and_best_answer() -> None:
+    presenter = ConsolePresenter()
+    session = _build_session()
+    result = GraphResult.ok(
+        response_text="Daily, weekly, monthly, and annual maintenance intervals are listed on pp.58-59.",
+        route="answer_question",
+        data={
+            "answer": "Daily, weekly, monthly, and annual maintenance intervals are listed on pp.58-59.",
+            "reflection_decision": "ACCEPT_WITH_LIMITATIONS",
+            "citations": [{"chunk_id": "chunk_58"}],
+        },
+    )
+
+    output = presenter.render_graph_result(
+        user_input="What are the maintenance intervals?",
+        result=result,
+        react_trace=ReactTrace(route="answer_question"),
+        session=session,
+        policy=DemoVisibilityPolicy(),
+        show_react=False,
+    )
+
+    assert "Daily, weekly, monthly, and annual maintenance intervals" in output
+    assert "Reflection : ACCEPT_WITH_LIMITATIONS" in output
+
+
+def test_presenter_shows_generated_answer_for_accept_when_response_text_is_safe_failure() -> None:
+    presenter = ConsolePresenter()
+    session = _build_session()
+    result = GraphResult.ok(
+        response_text=(
+            "I could not verify a grounded answer confidently enough from the current "
+            "document evidence."
+        ),
+        route="answer_question",
+        data={
+            "answer": "The part and serial number details are listed on p.50 and p.72.",
+            "reflection_decision": "ACCEPT",
+            "citations": [{"chunk_id": "chunk_50"}],
+        },
+    )
+
+    output = presenter.render_graph_result(
+        user_input="find part number or serial number",
+        result=result,
+        react_trace=ReactTrace(route="answer_question"),
+        session=session,
+        policy=DemoVisibilityPolicy(),
+        show_react=False,
+    )
+
+    assert "The part and serial number details are listed on p.50 and p.72." in output
+    assert "I could not verify a grounded answer confidently enough" not in output
+    assert "Reflection : ACCEPT" in output
+
+
 def test_presenter_does_not_duplicate_banner_per_turn() -> None:
     presenter = ConsolePresenter()
     session = _build_session()

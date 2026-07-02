@@ -113,3 +113,16 @@ def test_part_number_query_returns_allow() -> None:
 
     assert result.allowed is True
     assert result.decision == GuardrailDecision.ALLOW
+
+
+def test_follow_up_identifier_listing_with_selected_document_returns_allow() -> None:
+    guardrail = QueryScopeGuardrail()
+    context = GuardrailContext(
+        query_text="list all serial and part nmubers",
+        selected_document_id="doc-42",
+    )
+
+    result = guardrail.check(context)
+
+    assert result.allowed is True
+    assert result.decision == GuardrailDecision.ALLOW

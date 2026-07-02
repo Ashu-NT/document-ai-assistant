@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from src.application.guardrails import GuardrailContext
 from src.application.guardrails.services import PostResponseGuardrailService
-from src.application.langgraph.common import resolve_state_response_text
+from src.application.langgraph.common import (
+    generated_answer_text_from_state,
+    is_safe_failure_message,
+    is_usable_reflection_decision,
+    resolve_state_response_text,
+)
 from src.application.langgraph.memory import ConversationMemory
 from src.application.langgraph.state import AgentState
 from src.application.langgraph.tracing import GraphRunRecorder
@@ -43,6 +48,8 @@ class FinalResponseNode:
             or state.get("response_text")
             or "Request completed."
         )
+        reflection_decision = _reflection_decision(state)
+        generated_answer = generated_answer_text_from_state(state)
         answer_payload = _tool_payload(state, "answer_question")
         guardrail_result, safe_response_text = self.post_response_guardrail_service.check(
             GuardrailContext(
@@ -64,13 +71,36 @@ class FinalResponseNode:
                 runtime_mode="demo",
             )
         )
-        trace_entry = self.recorder.finish_node(token, success=state.get("error") is None)
+        final_response_text = safe_response_text
+        final_response_warning = None
+        if (
+            is_usable_reflection_decision(reflection_decision)
+            and is_safe_failure_message(final_response_text)
+            and isinstance(generated_answer, str)
+            and generated_answer.strip()
+            and not is_safe_failure_message(generated_answer)
+        ):
+            final_response_text = generated_answer
+            final_response_warning = (
+                f"Recovered generated answer for {reflection_decision} after a "
+                "safe-failure fallback attempted to replace it."
+            )
+        trace_entry = self.recorder.finish_node(
+            token,
+            success=state.get("error") is None,
+            diagnostics=(
+                {"final_response_warning": final_response_warning}
+                if final_response_warning
+                else {}
+            ),
+        )
         return {
-            "response_text": safe_response_text,
+            "response_text": final_response_text,
             "guardrail_result": guardrail_result.to_dict(),
             "guardrail_decision": guardrail_result.decision.value,
             "guardrail_trace_id": guardrail_result.trace_id,
             "guardrail_trace": guardrail_result.diagnostics.get("guardrail_trace", []),
+            "final_response_warning": final_response_warning,
             "trace": extend_trace(state["trace"], trace_entry),
         }
 
@@ -124,3 +154,15 @@ def _tool_payload(state: AgentState, tool_name: str):
     if not tool_result.get("success", False):
         return None
     return tool_result.get("data")
+
+
+def _reflection_decision(state: AgentState) -> str | None:
+    value = state.get("reflection_decision")
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    reflection_result = state.get("reflection_result")
+    if isinstance(reflection_result, dict):
+        decision = (reflection_result.get("decision") or {}).get("decision")
+        if isinstance(decision, str) and decision.strip():
+            return decision.strip()
+    return None

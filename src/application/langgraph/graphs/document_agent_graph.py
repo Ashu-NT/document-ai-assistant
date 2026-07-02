@@ -5,6 +5,8 @@ from typing import Any
 from src.application.langgraph.common import (
     GraphMetadata,
     GraphResult,
+    is_safe_failure_message,
+    is_usable_reflection_decision,
     resolve_answer_text,
     serialize_graph_value,
 )
@@ -379,7 +381,23 @@ class DocumentAgentGraph:
     def _build_result(self, state: AgentState) -> GraphResult:
         route = state.get("route")
         tool_results = state.get("tool_results", {})
-        answer = _extract_answer(tool_results, state.get("response_text"))
+        reflection_decision = state.get("reflection_decision")
+        answer = _extract_answer(
+            tool_results,
+            state.get("response_text"),
+            reflection_decision=reflection_decision,
+        )
+        if (
+            is_usable_reflection_decision(reflection_decision)
+            and is_safe_failure_message(answer)
+        ):
+            recovered_answer = _extract_answer(
+                tool_results,
+                None,
+                reflection_decision=reflection_decision,
+            )
+            if recovered_answer and not is_safe_failure_message(recovered_answer):
+                answer = recovered_answer
         answer_intent = _extract_answer_intent(tool_results)
         citations = _extract_citations(tool_results)
         context_chunks = _extract_context_chunks(
@@ -420,6 +438,7 @@ class DocumentAgentGraph:
             "clarification_question": state.get("clarification_question"),
             "should_exit": state.get("should_exit", False),
             "answer": answer,
+            "final_response_warning": state.get("final_response_warning"),
             "answer_intent": answer_intent,
             "context_chunks": context_chunks,
             "citations": citations,
@@ -504,6 +523,8 @@ class DocumentAgentGraph:
         if state.get("reflection_decision"):
             diagnostics["reflection_decision"] = state.get("reflection_decision")
             diagnostics["reflection_score"] = state.get("reflection_score")
+        if state.get("final_response_warning"):
+            diagnostics["final_response_warning"] = state.get("final_response_warning")
         retrieval_strategy_decision = state.get("retrieval_strategy_decision")
         if isinstance(retrieval_strategy_decision, dict):
             diagnostics["retrieval_strategy_primary"] = retrieval_strategy_decision.get(
@@ -835,10 +856,13 @@ def _should_run_reflection(state: AgentState) -> bool:
 def _extract_answer(
     tool_results: dict[str, Any],
     response_text: str | None,
+    *,
+    reflection_decision: str | None = None,
 ) -> str | None:
     return resolve_answer_text(
         tool_results=tool_results,
         fallback_response_text=response_text,
+        reflection_decision=reflection_decision,
     )
 
 

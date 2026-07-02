@@ -80,7 +80,12 @@ class QuestionAnsweringWorkflow:
         allow_generation = request.allow_answer_generation
 
         if self._pre_query_guardrails:
-            context = GuardrailContext(query_text=request.question)
+            context = GuardrailContext(
+                user_input=request.question,
+                query_text=request.question,
+                document_id=request.document_id,
+                selected_document_id=request.document_id,
+            )
             blocking = GuardrailRunner(self._pre_query_guardrails).run(context)
             if blocking is not None:
                 route = (

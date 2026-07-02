@@ -14,6 +14,16 @@ def test_intent_router_routes_unknown_question_to_answer_question() -> None:
     assert decision.extracted_question == "What is the maintenance interval?"
 
 
+def test_intent_router_allows_follow_up_identifier_query_with_selected_document() -> None:
+    decision = IntentRouter().route(
+        "list all serial and part nmubers",
+        selected_document_id="doc-42",
+    )
+
+    assert decision.route_type == RouteType.ANSWER_QUESTION
+    assert decision.extracted_question == "list all serial and part nmubers"
+
+
 def test_intent_router_routes_explore_document_command() -> None:
     decision = IntentRouter().route("explore document Pump Manual")
 

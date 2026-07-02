@@ -100,6 +100,48 @@ def test_when_response_text_absent_data_answer_shown():
     assert "Answer from data." in output
 
 
+def test_accept_with_limitations_shows_generated_answer_not_safe_failure():
+    result = _FakeResult(
+        response_text="I could not verify a grounded answer confidently enough from the current document evidence.",
+        data={
+            "answer": "Weekly maintenance latest after 100 operating hours (p.58).",
+            "reflection_decision": "ACCEPT_WITH_LIMITATIONS",
+        },
+    )
+    presenter = ConsolePresenter()
+    output = presenter.render_graph_result(
+        user_input="what are the maintenance intervals?",
+        result=result,
+        react_trace=None,
+        session=_FakeSession(),
+        policy=DemoVisibilityPolicy(),
+        show_react=False,
+    )
+    assert "Weekly maintenance latest after 100 operating hours" in output
+    assert "I could not verify a grounded answer confidently enough" not in output
+
+
+def test_accept_shows_generated_answer_not_safe_failure():
+    result = _FakeResult(
+        response_text="I could not verify a grounded answer confidently enough from the current document evidence.",
+        data={
+            "answer": "The serial number is listed on p.50 and p.72.",
+            "reflection_decision": "ACCEPT",
+        },
+    )
+    presenter = ConsolePresenter()
+    output = presenter.render_graph_result(
+        user_input="find part number or serial number",
+        result=result,
+        react_trace=None,
+        session=_FakeSession(),
+        policy=DemoVisibilityPolicy(),
+        show_react=False,
+    )
+    assert "The serial number is listed on p.50 and p.72." in output
+    assert "I could not verify a grounded answer confidently enough" not in output
+
+
 # --- NullEventSink tests ---
 
 def test_null_sink_emits_nothing_to_stdout(capsys):

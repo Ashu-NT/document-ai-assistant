@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 from src.application.services.document import DocumentLookupService
 from src.application.services.document_exploration import (
@@ -18,8 +19,52 @@ from src.application.tools.retrieval.retrieve_chunks_tool import (
     RetrieveChunksRequest,
     RetrieveChunksTool,
 )
-from src.domain.common import ChunkType
+from src.domain.common import ChunkType, IdentifierType
+from src.domain.document.entities.identifier import Identifier
 from src.shared.exceptions import ApplicationError
+
+_IDENTIFIER_INVENTORY_VERBS = (
+    "list",
+    "show",
+    "display",
+    "enumerate",
+    "provide",
+    "give me",
+    "find all",
+)
+_IDENTIFIER_INVENTORY_MARKERS: dict[IdentifierType, tuple[str, ...]] = {
+    IdentifierType.PART_NUMBER: ("part number", "part numbers", "part"),
+    IdentifierType.SERIAL_NUMBER: ("serial number", "serial numbers", "serial"),
+    IdentifierType.MODEL_NUMBER: ("model number", "model numbers", "model"),
+    IdentifierType.DRAWING_NUMBER: ("drawing number", "drawing numbers", "drawing"),
+    IdentifierType.COMPONENT_CODE: (
+        "order code",
+        "order codes",
+        "order number",
+        "order numbers",
+        "component code",
+        "component codes",
+        "tag",
+        "tags",
+    ),
+    IdentifierType.CERTIFICATE_NUMBER: (
+        "certificate number",
+        "certificate numbers",
+        "certificate",
+        "approval number",
+        "approval numbers",
+    ),
+    IdentifierType.MANUFACTURER_NAME: (
+        "manufacturer",
+        "manufacturers",
+        "supplier",
+        "suppliers",
+    ),
+}
+_IDENTIFIER_VALUE_PATTERN = re.compile(
+    r"\b([A-Z]{1,5}\d{1,6}[A-Z0-9-]*|\d{3,}[A-Z0-9-]+)\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass(slots=True, kw_only=True)
@@ -99,8 +144,26 @@ class RetrieveIdentifiersTool:
                     trace=request.trace,
                 )
             )
-            result.metadata = self.metadata
-            return result
+            inventory_identifiers = self._load_inventory_identifiers(request)
+            if not inventory_identifiers:
+                result.metadata = self.metadata
+                return result
+            chunks: list = []
+            if result.success and isinstance(result.data, dict):
+                chunks = (
+                    result.data.get("context_chunks")
+                    or result.data.get("chunks")
+                    or []
+                )
+            return ToolResult.ok(
+                data={
+                    "chunks": chunks,
+                    "context_chunks": chunks,
+                    "identifiers": inventory_identifiers,
+                },
+                diagnostics={"inventory_identifier_count": len(inventory_identifiers)},
+                metadata=self.metadata,
+            )
 
         if request.document_id:
             try:
@@ -120,3 +183,69 @@ class RetrieveIdentifiersTool:
             "Provide identifier_value, query_text, or document_id.",
             metadata=self.metadata,
         )
+
+    def _load_inventory_identifiers(
+        self,
+        request: RetrieveIdentifiersRequest,
+    ) -> list[Identifier]:
+        if not request.document_id or not self._is_identifier_inventory_query(
+            request.query_text
+        ):
+            return []
+        try:
+            exploration = self.exploration_service.explore(request.document_id)
+        except (ApplicationError, DocumentNotFoundError):
+            return []
+
+        requested_types = self._requested_identifier_types(request.query_text)
+        identifiers: list[Identifier] = []
+        for entry in exploration.identifiers:
+            identifier_type = self._identifier_type_from_value(entry.identifier_type)
+            if identifier_type is None:
+                continue
+            if requested_types and identifier_type not in requested_types:
+                continue
+            identifiers.append(
+                Identifier(
+                    identifier_id=entry.identifier_id,
+                    document_id=exploration.document_id,
+                    raw_value=entry.raw_value,
+                    identifier_type=identifier_type,
+                    normalized_value=entry.normalized_value,
+                )
+            )
+        return identifiers
+
+    @staticmethod
+    def _is_identifier_inventory_query(query_text: str | None) -> bool:
+        normalized = " ".join((query_text or "").strip().lower().split())
+        if not normalized:
+            return False
+        if _IDENTIFIER_VALUE_PATTERN.search(normalized):
+            return False
+        if not any(marker in normalized for marker in _IDENTIFIER_INVENTORY_VERBS):
+            return False
+        return any(
+            marker in normalized
+            for markers in _IDENTIFIER_INVENTORY_MARKERS.values()
+            for marker in markers
+        )
+
+    @staticmethod
+    def _requested_identifier_types(query_text: str | None) -> set[IdentifierType]:
+        normalized = " ".join((query_text or "").strip().lower().split())
+        requested: set[IdentifierType] = set()
+        for identifier_type, markers in _IDENTIFIER_INVENTORY_MARKERS.items():
+            if any(marker in normalized for marker in markers):
+                requested.add(identifier_type)
+        return requested
+
+    @staticmethod
+    def _identifier_type_from_value(value: str | None) -> IdentifierType | None:
+        try:
+            identifier_type = IdentifierType(str(value or IdentifierType.UNKNOWN.value))
+        except ValueError:
+            return None
+        if identifier_type == IdentifierType.UNKNOWN:
+            return None
+        return identifier_type

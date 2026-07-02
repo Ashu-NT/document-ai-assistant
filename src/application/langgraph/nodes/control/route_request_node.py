@@ -141,6 +141,8 @@ class RouteRequestNode:
             "document_query": state.get("document_query"),
         }
         signature = inspect.signature(self.intent_router.route)
+        if "selected_document_id" in signature.parameters:
+            route_kwargs["selected_document_id"] = state.get("selected_document_id")
         if "deep_research_enabled" in signature.parameters:
             route_kwargs["deep_research_enabled"] = bool(
                 state.get("deep_research_enabled", False)

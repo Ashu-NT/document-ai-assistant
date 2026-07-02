@@ -23,3 +23,14 @@ def test_reflection_json_parser_rejects_invalid_json() -> None:
 
     with pytest.raises(SchemaValidationError):
         parser.parse("not valid json")
+
+
+def test_reflection_json_parser_accepts_accept_with_limitations() -> None:
+    parser = ReflectionJsonParser()
+
+    decision = parser.parse(
+        '{"decision":"ACCEPT_WITH_LIMITATIONS","confidence":0.8,"reason":"Grounded but partial.","retry_query":null,"clarification_question":null,"missing_information":["annual interval"]}'
+    )
+
+    assert decision.decision == ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS
+    assert decision.missing_information == ["annual interval"]
