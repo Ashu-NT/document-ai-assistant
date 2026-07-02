@@ -22,86 +22,98 @@ _HEADER_SEPARATOR_PATTERN = re.compile(
     r"^\|?\s*:?-{2,}:?\s*(?:\|\s*:?-{2,}:?\s*)+\|?$"
 )
 
-# Only an exact match against one of these aliases counts as a header cell.
-# Real-world exports frequently squeeze several column labels into a single
-# cell (e.g. "Qty: Denomination: Spare Part No:") -- a fuzzy/startswith match
-# would misread that merged cell as a single clean column and corrupt every
-# row parsed underneath it, so we deliberately do not do fuzzy matching here.
+# This is a *catalog* of column labels seen across several unrelated
+# spare-parts table conventions (generic part/position tables, P&ID/valve
+# lists, exploded-view diagrams). It intentionally does not encode anything
+# about any single document -- new synonyms can be appended without changing
+# the parsing logic below.
 _ROW_FIELD_ALIASES: dict[str, tuple[str, ...]] = {
     "position": (
+        "part pos.",
+        "part pos",
+        "pos.",
+        "pos",
+        "position",
         "position no",
         "position no.",
-        "position",
         "pos nr",
         "pos nr.",
-        "pos no",
         "item",
         "item no",
+        "item no.",
     ),
     "pid_position": (
         "p&id pos nr",
         "p&id pos nr.",
         "p&id position",
         "p&id",
+        "tag",
     ),
     "quantity": ("qty", "quantity"),
-    "denomination": ("denomination",),
-    "description": ("description",),
+    "unit": ("unit",),
+    "service": ("service", "service function", "function"),
     "type": ("type",),
+    "description": ("designation", "description", "denomination"),
     "part_no": (
-        "spare part no",
-        "spare part no.",
         "part no",
         "part no.",
         "part number",
+        "spare part no",
+        "spare part no.",
+        "article no",
+        "article no.",
+        "order no",
+        "order no.",
+        "material no",
+        "material no.",
     ),
     "service_package": (
         "included in service package",
         "service package",
     ),
-    "service": ("service", "function"),
 }
-_CONTENT_FIELDS = (
-    "denomination",
-    "description",
-    "type",
-    "part_no",
-    "pid_position",
-    "service",
-)
+# Fields that make a row worth showing on their own. Position/quantity/unit
+# alone are not "content" -- they are metadata about a row whose subject
+# (what the part actually is) is still unknown.
+_CONTENT_FIELDS = ("description", "service", "type", "part_no", "pid_position")
 _ROW_FIELD_LABELS: dict[str, str] = {
     "position": "Position",
     "pid_position": "P&ID Position",
     "quantity": "Quantity",
+    "unit": "Unit",
     "service": "Service",
     "type": "Type",
-    "denomination": "Denomination",
     "description": "Description",
-    "part_no": "Spare Part No.",
+    "part_no": "Part No.",
     "service_package": "Service package",
 }
 _ROW_FIELD_ORDER = (
     "position",
     "pid_position",
     "quantity",
+    "unit",
     "service",
     "type",
-    "denomination",
     "description",
     "part_no",
     "service_package",
 )
-_UNIT_ONLY_VALUES = {"pce", "pcs", "pc", "ea", "each", "unit", "units", "no", "no."}
 
 _TABLE_EVIDENCE_PHRASE = "spare parts list"
 _TABLE_HEADER_EVIDENCE_MARKERS = (
     "position no",
+    "pos.",
     "qty",
     "denomination",
-    "spare part no",
+    "designation",
     "part no",
+    "spare part no",
+    "article no",
+    "order no",
+    "material no",
     "p&id",
-    "included in service package",
+    "tag",
+    "service function",
     "exploded views",
 )
 _BOILERPLATE_MARKERS = (
@@ -111,11 +123,52 @@ _BOILERPLATE_MARKERS = (
     "nullify liability",
     "authorised by",
 )
+
+# Layout B: "V.00.01.01 <free text ...> <code>" -- a P&ID/tag style position
+# code followed by unstructured descriptive text and an optional trailing
+# part/order code.
 _PID_ROW_PATTERN = re.compile(
     r"^(?P<pid>[A-Za-z]{1,4}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(?P<rest>.+)$"
 )
-_TRAILING_PART_NO_PATTERN = re.compile(
-    r"(?P<part_no>[A-Za-z]{0,3}\d{2,6}(?:[./]\d{1,3})?)\s*$"
+_TRAILING_TOKEN_PATTERN = re.compile(r"(?P<token>[A-Za-z0-9./]{2,12})\s*$")
+_PART_CODE_ALLOWED_PATTERN = re.compile(r"^[A-Za-z0-9]+(?:[./][A-Za-z0-9]+)*$")
+
+# A small, generic vocabulary of common equipment-type nouns used only to
+# split a free-text remainder into a "service" phrase and a "type" phrase --
+# not tied to any particular document or manufacturer.
+_TYPE_KEYWORDS = (
+    "solenoid",
+    "valve",
+    "flange",
+    "gauge",
+    "sensor",
+    "switch",
+    "motor",
+    "pump",
+    "filter",
+    "actuator",
+    "transmitter",
+    "regulator",
+    "strainer",
+    "coupling",
+    "bracket",
+    "gasket",
+    "seal",
+    "bearing",
+    "fitting",
+)
+
+# Layout C: two "position description" pairs squeezed into one row, e.g. an
+# exploded-view diagram rendered as a 2-column table where each cell holds
+# its own position + short description ("14.00 Pump Casing").
+_POSITION_PAIR_PATTERN = re.compile(
+    r"(?P<pos>\d{1,3}\.\d{2})\s+(?P<desc>[A-Za-z][A-Za-z()/,\-]*(?:\s+[A-Za-z()/,\-]+)*)"
+)
+
+# Layout A (free-text variant): "<position> <qty> <unit> <description>" with
+# no table markup at all, e.g. "0010 1 Pce housing".
+_FREE_FORM_POSITION_PATTERN = re.compile(
+    r"^(?P<pos>\d{2,6})\s+(?P<qty>\d{1,4})\s+(?P<unit>[A-Za-z]{2,10})\s+(?P<desc>.+)$"
 )
 
 
@@ -197,6 +250,8 @@ class SparePartsListRenderer:
             partial=partial or len(raw_rows) > _MAX_RAW_ROWS_PER_GROUP,
         )
 
+    # -- top-level row extraction ------------------------------------------------
+
     def _extract_rows(
         self,
         content: str,
@@ -205,81 +260,42 @@ class SparePartsListRenderer:
         rows: list[dict[str, str]] = []
         raw_rows: list[str] = []
         dropped_row_count = 0
+
         for raw_line in content.splitlines():
             line = raw_line.strip()
-            if not line or "|" not in line:
+            if not line:
                 continue
             if _HEADER_SEPARATOR_PATTERN.match(line):
                 continue
-            cells = self._split_cells(line)
+            # Not every spare-parts export renders as a pipe-delimited table --
+            # some are plain lines of text. Treat a line with no "|" as a
+            # single cell so it still flows through the same layout checks.
+            cells = self._split_cells(line) if "|" in line else [line]
+
             if header is None:
-                header_candidate = self._as_header(cells)
+                header_candidate = self._as_structured_header(cells)
                 if header_candidate is not None:
                     header = header_candidate
                     continue
 
             if header is not None and len(cells) >= 2:
-                row = self._row_from_cells(cells, header)
+                row = self._row_from_structured_cells(cells, header)
                 if row is not None:
                     rows.append(row)
                 else:
                     dropped_row_count += 1
                 continue
 
-            # No reliable header established for this chunk yet -- fall back
-            # to inspecting each cell independently instead of inventing a
-            # column layout that does not actually exist in the source.
+            # No confidently detected column layout for this chunk (yet) --
+            # evaluate each cell independently against the known free-form
+            # layout strategies instead of guessing a column mapping.
             for cell in cells:
-                self._handle_free_form_cell(cell, rows, raw_rows)
+                self._parse_free_text_blob(cell, rows, raw_rows)
 
         partial = header is None or dropped_row_count > 0 or bool(raw_rows) or not rows
         return rows, raw_rows, partial
 
-    def _handle_free_form_cell(
-        self,
-        cell: str,
-        rows: list[dict[str, str]],
-        raw_rows: list[str],
-    ) -> None:
-        text = cell.strip()
-        if not text:
-            return
-        pid_match = _PID_ROW_PATTERN.match(text)
-        if pid_match is not None:
-            row = self._row_from_pid_match(pid_match)
-            if row is not None:
-                rows.append(row)
-                return
-        if self._looks_like_content_fragment(text):
-            raw_rows.append(text)
-
-    def _row_from_pid_match(self, match: re.Match[str]) -> dict[str, str] | None:
-        pid = match.group("pid")
-        rest = match.group("rest").strip()
-        row: dict[str, str] = {"pid_position": pid}
-        part_no_match = _TRAILING_PART_NO_PATTERN.search(rest)
-        description = rest
-        if part_no_match is not None:
-            candidate = part_no_match.group("part_no")
-            if candidate and candidate.lower() != pid.lower():
-                description = rest[: part_no_match.start()].strip(" ,;:-")
-                row["part_no"] = candidate
-        if description:
-            row["description"] = description
-        if not self._has_identifying_content(row):
-            return None
-        return row
-
-    @staticmethod
-    def _looks_like_content_fragment(text: str) -> bool:
-        if len(text) > 240:
-            return False
-        lowered = text.lower()
-        if lowered.strip() == _TABLE_EVIDENCE_PHRASE:
-            return False
-        if any(marker in lowered for marker in _BOILERPLATE_MARKERS):
-            return False
-        return bool(re.search(r"\d", text))
+    # -- layout A: structured header table ---------------------------------------
 
     @staticmethod
     def _split_cells(line: str) -> list[str]:
@@ -295,7 +311,12 @@ class SparePartsListRenderer:
         return " ".join(cell.lower().strip(" :").split())
 
     @classmethod
-    def _as_header(cls, cells: Sequence[str]) -> list[str | None] | None:
+    def _as_structured_header(cls, cells: Sequence[str]) -> list[str | None] | None:
+        # Only an exact match against a known column label counts as a
+        # header cell. Real-world exports frequently squeeze several column
+        # labels into a single cell (e.g. "Qty: Denomination: Part No:") --
+        # a fuzzy/substring match would misread that merged cell as one
+        # clean column and corrupt every row parsed underneath it.
         normalized_cells = [cls._normalize_cell(cell) for cell in cells]
         mapped: list[str | None] = []
         seen_fields: set[str] = set()
@@ -321,7 +342,7 @@ class SparePartsListRenderer:
         return None
 
     @classmethod
-    def _row_from_cells(
+    def _row_from_structured_cells(
         cls,
         cells: Sequence[str],
         header: Sequence[str | None],
@@ -334,19 +355,140 @@ class SparePartsListRenderer:
             if not value or value in {"-", "|"}:
                 continue
             row[field_key] = value
-        if not row:
-            return None
-        if not cls._has_identifying_content(row):
+        if not row or not cls._has_identifying_content(row):
             return None
         return row
+
+    # -- free-form layout strategies (B, C, A-variant, D) -------------------------
+
+    def _parse_free_text_blob(
+        self,
+        cell: str,
+        rows: list[dict[str, str]],
+        raw_rows: list[str],
+    ) -> None:
+        text = cell.strip()
+        if not text:
+            return
+
+        pid_match = _PID_ROW_PATTERN.match(text)
+        if pid_match is not None:
+            row = self._row_from_pid_match(pid_match)
+            if row is not None:
+                rows.append(row)
+                return
+
+        pair_rows = self._rows_from_position_pairs(text)
+        if len(pair_rows) >= 2:
+            rows.extend(pair_rows)
+            return
+
+        free_form_row = self._row_from_free_form_position_line(text)
+        if free_form_row is not None:
+            rows.append(free_form_row)
+            return
+
+        if self._looks_like_content_fragment(text):
+            raw_rows.append(text)
+
+    def _row_from_pid_match(self, match: re.Match[str]) -> dict[str, str] | None:
+        pid = match.group("pid")
+        rest = match.group("rest").strip()
+        row: dict[str, str] = {"pid_position": pid}
+
+        remainder = rest
+        token_match = _TRAILING_TOKEN_PATTERN.search(rest)
+        if token_match is not None:
+            candidate = token_match.group("token")
+            if candidate.lower() != pid.lower() and self._looks_like_part_code(candidate):
+                remainder = rest[: token_match.start()].strip(" ,;:-")
+                row["part_no"] = candidate
+
+        leftover = self._split_service_and_type(remainder, row)
+        if leftover:
+            row.setdefault("description", leftover)
+
+        if not self._has_identifying_content(row):
+            return None
+        return row
+
+    @staticmethod
+    def _split_service_and_type(text: str, row: dict[str, str]) -> str | None:
+        if not text:
+            return text
+        lowered = text.lower()
+        for keyword in _TYPE_KEYWORDS:
+            idx = lowered.find(keyword)
+            if idx == -1:
+                continue
+            if idx == 0:
+                row["type"] = text.strip()
+            else:
+                service = text[:idx].strip(" ,;:-")
+                if service:
+                    row["service"] = service
+                row["type"] = text[idx:].strip(" ,;:-")
+            return None
+        return text
+
+    @staticmethod
+    def _looks_like_part_code(token: str) -> bool:
+        cleaned = token.strip().strip(".,;:")
+        if not cleaned or not _PART_CODE_ALLOWED_PATTERN.match(cleaned):
+            return False
+        if not re.search(r"\d", cleaned):
+            return False
+        has_letter = bool(re.search(r"[A-Za-z]", cleaned))
+        digit_count = len(re.findall(r"\d", cleaned))
+        if has_letter:
+            return digit_count >= 2
+        return digit_count >= 4
+
+    def _rows_from_position_pairs(self, text: str) -> list[dict[str, str]]:
+        rows: list[dict[str, str]] = []
+        for match in _POSITION_PAIR_PATTERN.finditer(text):
+            description = match.group("desc").strip(" ,;:-")
+            if not description:
+                continue
+            rows.append({"position": match.group("pos"), "description": description})
+        return rows
+
+    def _row_from_free_form_position_line(self, text: str) -> dict[str, str] | None:
+        match = _FREE_FORM_POSITION_PATTERN.match(text)
+        if match is None:
+            return None
+        row: dict[str, str] = {
+            "position": match.group("pos"),
+            "quantity": match.group("qty"),
+            "unit": match.group("unit"),
+        }
+        description = match.group("desc").strip()
+        if description:
+            row["description"] = description
+        if not self._has_identifying_content(row):
+            return None
+        return row
+
+    @staticmethod
+    def _looks_like_content_fragment(text: str) -> bool:
+        if len(text) > 240:
+            return False
+        lowered = text.lower()
+        if lowered.strip() == _TABLE_EVIDENCE_PHRASE:
+            return False
+        if any(marker in lowered for marker in _BOILERPLATE_MARKERS):
+            return False
+        return bool(re.search(r"\d", text))
 
     @staticmethod
     def _has_identifying_content(row: dict[str, str]) -> bool:
         for field_key in _CONTENT_FIELDS:
             value = row.get(field_key)
-            if value and value.strip().lower() not in _UNIT_ONLY_VALUES:
+            if value and value.strip():
                 return True
         return False
+
+    # -- rendering -----------------------------------------------------------
 
     def _render_groups(self, groups: Sequence[_SparePartsGroup]) -> str:
         lines = ["Spare parts lists found:", ""]
