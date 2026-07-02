@@ -36,22 +36,40 @@ class EventStreamAdapter:
         for chunk in compiled_graph.stream(initial_state):
             for node_name, patch in chunk.items():
                 final_state.update(patch)
-                event = self._build_event(node_name, patch, final_state)
-                if event is not None:
+                for event in self._build_events(node_name, patch, final_state):
                     self._sink.emit(event)
         return final_state
 
-    def _build_event(
+    def _build_events(
         self,
         node_name: str,
         patch: dict[str, Any],
         state: dict[str, Any],
-    ) -> LiveAgentEvent | None:
+    ) -> list[LiveAgentEvent]:
+        events: list[LiveAgentEvent] = []
+        if node_name == "answer_question":
+            retrieve_payload = _build_answer_question_retrieve_payload(state)
+            if retrieve_payload is not None:
+                events.append(
+                    LiveAgentEvent(
+                        event_type=LiveAgentEventType.ACTION_COMPLETED,
+                        payload=retrieve_payload,
+                    )
+                )
+            observation_payload = _build_answer_question_observation_payload(state)
+            if observation_payload is not None:
+                events.append(
+                    LiveAgentEvent(
+                        event_type=LiveAgentEventType.OBSERVATION,
+                        payload=observation_payload,
+                    )
+                )
         event_type = _NODE_EVENT_MAP.get(node_name)
         if event_type is None:
-            return None
+            return events
         payload = self._extract_payload(event_type, node_name, patch, state)
-        return LiveAgentEvent(event_type=event_type, payload=payload)
+        events.append(LiveAgentEvent(event_type=event_type, payload=payload))
+        return events
 
     def _extract_payload(
         self,
@@ -170,3 +188,142 @@ def _build_retrieve_description(chunks: list) -> str:
     if pages:
         return f"Retrieved {count} evidence chunk(s) from p.{', p.'.join(pages)}."
     return f"Retrieved {count} evidence chunk(s)."
+
+
+def _build_answer_question_retrieve_payload(
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    chunks = _extract_answer_question_context_chunks(state)
+    if not chunks:
+        return None
+    question = str(state.get("question") or state.get("user_input") or "").strip()
+    return {
+        "chunk_count": len(chunks),
+        "description": _build_answer_question_retrieve_description(question),
+    }
+
+
+def _build_answer_question_observation_payload(
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    chunks = _extract_answer_question_context_chunks(state)
+    if not chunks:
+        return None
+    question = str(state.get("question") or state.get("user_input") or "").strip()
+    return {
+        "kind": "observation",
+        "detail": _build_answer_question_observation_detail(question, chunks),
+    }
+
+
+def _extract_answer_question_context_chunks(state: dict[str, Any]) -> list[dict[str, Any]]:
+    answer_question = ((state.get("tool_results") or {}).get("answer_question") or {})
+    if not isinstance(answer_question, dict):
+        return []
+    if not answer_question.get("success", False):
+        return []
+    payload = answer_question.get("data")
+    if not isinstance(payload, dict):
+        return []
+    retrieval_result = payload.get("retrieval_result")
+    if not isinstance(retrieval_result, dict):
+        return []
+    context_chunks = retrieval_result.get("context_chunks")
+    if not isinstance(context_chunks, list):
+        return []
+    approved_ids = {
+        str(value)
+        for value in payload.get("approved_chunk_ids", [])
+        if str(value).strip()
+    }
+    if not approved_ids:
+        return [chunk for chunk in context_chunks if isinstance(chunk, dict)]
+    return [
+        chunk
+        for chunk in context_chunks
+        if isinstance(chunk, dict)
+        and str(chunk.get("chunk_id") or "").strip() in approved_ids
+    ]
+
+
+def _build_answer_question_retrieve_description(question: str) -> str:
+    normalized = f" {question.lower()} "
+    if _is_maintenance_interval_query(normalized):
+        return "Searching maintenance interval evidence in selected document..."
+    if "maintenance" in normalized:
+        return "Searching maintenance evidence in selected document..."
+    if _contains_any(normalized, ("procedure", "steps", "how to", "install", "replace")):
+        return "Searching procedure evidence in selected document..."
+    if _contains_any(
+        normalized,
+        ("specification", "technical data", "technical specification", "voltage", "power"),
+    ):
+        return "Searching technical specification evidence in selected document..."
+    return "Searching grounded evidence in selected document..."
+
+
+def _build_answer_question_observation_detail(
+    question: str,
+    chunks: list[dict[str, Any]],
+) -> str:
+    normalized = f" {question.lower()} "
+    label = "grounded evidence"
+    if _is_maintenance_interval_query(normalized):
+        label = "maintenance interval evidence"
+    elif "maintenance" in normalized:
+        label = "maintenance evidence"
+    elif _contains_any(normalized, ("procedure", "steps", "how to", "install", "replace")):
+        label = "procedure evidence"
+    elif _contains_any(
+        normalized,
+        ("specification", "technical data", "technical specification", "voltage", "power"),
+    ):
+        label = "technical specification evidence"
+
+    pages = _collect_page_labels(chunks)
+    if not pages:
+        return f"Found {label}."
+    if len(pages) == 1:
+        return f"Found {label} on {pages[0]}."
+    return f"Found {label} on {', '.join(pages)}."
+
+
+def _collect_page_labels(chunks: list[dict[str, Any]]) -> list[str]:
+    labels: list[str] = []
+    for chunk in chunks:
+        if not isinstance(chunk, dict):
+            continue
+        source = chunk.get("source") or {}
+        if not isinstance(source, dict):
+            continue
+        page_start = source.get("page_start")
+        page_end = source.get("page_end")
+        if page_start is None:
+            continue
+        if page_end is None or page_end == page_start:
+            label = f"p.{page_start}"
+        else:
+            label = f"pp.{page_start}-{page_end}"
+        if label not in labels:
+            labels.append(label)
+        if len(labels) >= 3:
+            break
+    return labels
+
+
+def _is_maintenance_interval_query(question: str) -> bool:
+    return _contains_any(
+        question,
+        (
+            "maintenance interval",
+            "maintenance intervals",
+            "service interval",
+            "inspection interval",
+            "maintenance schedule",
+            "preventive maintenance",
+        ),
+    )
+
+
+def _contains_any(text: str, markers: tuple[str, ...]) -> bool:
+    return any(marker in text for marker in markers)

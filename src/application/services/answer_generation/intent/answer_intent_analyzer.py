@@ -223,7 +223,12 @@ class AnswerIntentAnalyzer:
             scores,
             matched,
         )
-        self._apply_chunk_content_signal(chunks, scores, matched)
+        self._apply_chunk_content_signal(
+            question=normalized_question,
+            chunks=chunks,
+            scores=scores,
+            matched=matched,
+        )
         self._apply_maintenance_procedure_disambiguation(
             normalized_question,
             scores,
@@ -385,6 +390,8 @@ class AnswerIntentAnalyzer:
 
     def _apply_chunk_content_signal(
         self,
+        *,
+        question: str,
         chunks: Sequence[RetrievedChunk],
         scores: dict[AnswerIntent, int],
         matched: dict[AnswerIntent, list[str]],
@@ -393,7 +400,13 @@ class AnswerIntentAnalyzer:
             return
 
         normalized_contents = [self._normalize(chunk.content) for chunk in chunks]
-        if any(self._has_technical_values(chunk.content) for chunk in chunks):
+        allow_specification_boost = self._looks_like_specification_question(question) or not (
+            self._looks_like_maintenance_question(question)
+            and not self._looks_like_explicit_procedure_question(question)
+        )
+        if allow_specification_boost and any(
+            self._has_technical_values(chunk.content) for chunk in chunks
+        ):
             scores[AnswerIntent.SPECIFICATION_SUMMARY] += 3
             matched[AnswerIntent.SPECIFICATION_SUMMARY].append(
                 "context:technical_values"
@@ -508,6 +521,10 @@ class AnswerIntentAnalyzer:
     @staticmethod
     def _looks_like_explicit_procedure_question(question: str) -> bool:
         return any(phrase in question for phrase in _EXPLICIT_PROCEDURE_PHRASES)
+
+    @staticmethod
+    def _looks_like_specification_question(question: str) -> bool:
+        return any(term in question for term in _SPECIFICATION_TERMS)
 
     @staticmethod
     def _pick_intent(scores: dict[AnswerIntent, int]) -> AnswerIntent:

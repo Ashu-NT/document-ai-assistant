@@ -170,6 +170,25 @@ def test_technical_specification_chunk_supports_specification_summary() -> None:
     assert decision.intent == AnswerIntent.SPECIFICATION_SUMMARY
 
 
+def test_maintenance_interval_question_does_not_flip_to_specification_from_technical_values() -> None:
+    decision = AnswerIntentAnalyzer().analyze(
+        question="What are the maintenance intervals?",
+        chunk_type_preferences=[ChunkType.MAINTENANCE_INTERVAL],
+        approved_chunks=[
+            _make_chunk(
+                content="Maintenance interval: inspect the pump weekly.",
+                chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+            ),
+            _make_chunk(
+                content="Voltage: 400 V. Installed power: 5.5 kW.",
+                chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+            ),
+        ],
+    )
+
+    assert decision.intent == AnswerIntent.MAINTENANCE_SUMMARY
+
+
 def test_explicit_question_overrides_weak_chunk_hint() -> None:
     decision = AnswerIntentAnalyzer().analyze(
         question="specification",

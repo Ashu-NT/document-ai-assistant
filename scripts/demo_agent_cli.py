@@ -252,6 +252,10 @@ def _print_handled_result(
     show_react: bool,
     policy,
 ) -> None:
+    render_post_run_trace = show_react and bool(
+        getattr(getattr(session, "runtime_options", None), "debug", False)
+        or getattr(getattr(session, "runtime_options", None), "write_trace", False)
+    )
     if handled.command_result is not None:
         print(
             presenter.render_command_result(
@@ -268,7 +272,7 @@ def _print_handled_result(
                 react_trace=handled.react_trace,
                 session=session,
                 policy=policy,
-                show_react=show_react,
+                show_react=render_post_run_trace,
             )
         )
     if handled.export_paths:

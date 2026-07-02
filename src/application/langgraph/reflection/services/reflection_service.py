@@ -76,7 +76,9 @@ class ReflectionService:
             answer_quality=answer_quality,
             evidence_quality=evidence_quality,
             question=original_user_question,
+            answer=generated_answer,
             answer_intent=answer_intent,
+            citations=citations,
         )
         used_llm = False
         raw_llm_decision: ReflectionDecision | None = None
@@ -253,10 +255,13 @@ class ReflectionService:
         answer_quality: AnswerQuality,
         evidence_quality: EvidenceQuality,
         question: str,
+        answer: str,
         answer_intent: str | None,
+        citations: list[dict[str, Any]],
     ) -> ReflectionDecision:
         lower_question = question.lower()
         lower_intent = (answer_intent or "").lower()
+        normalized_answer = answer.lower()
         if evidence_quality.has_document_leakage:
             return ReflectionDecision(
                 decision=ReflectionDecisionType.FAIL,
@@ -270,6 +275,49 @@ class ReflectionService:
                 reason="The answer did not have enough approved evidence.",
                 missing_information=["additional grounded evidence"],
             )
+        if self._is_maintenance_interval_question(
+            question=lower_question,
+            answer_intent=lower_intent,
+        ):
+            if self._contains_unrelated_specifications(normalized_answer):
+                return ReflectionDecision(
+                    decision=ReflectionDecisionType.RETRIEVE_AGAIN,
+                    confidence=0.9,
+                    reason=(
+                        "The answer mixed maintenance intervals with unrelated "
+                        "technical specifications."
+                    ),
+                    retry_query=(
+                        "maintenance intervals preventive maintenance schedule "
+                        "operating hours only"
+                    ),
+                    missing_information=["maintenance interval evidence only"],
+                )
+            if not answer_quality.contains_page_reference or not citations:
+                return ReflectionDecision(
+                    decision=ReflectionDecisionType.RETRIEVE_AGAIN,
+                    confidence=0.85,
+                    reason="The maintenance interval answer must include grounded references.",
+                    retry_query=(
+                        "maintenance intervals preventive maintenance schedule "
+                        "with page references"
+                    ),
+                    missing_information=["maintenance interval references"],
+                )
+            if not self._has_interval_structure(normalized_answer):
+                return ReflectionDecision(
+                    decision=ReflectionDecisionType.RETRIEVE_AGAIN,
+                    confidence=0.82,
+                    reason=(
+                        "The maintenance interval answer did not clearly organize "
+                        "interval or frequency information."
+                    ),
+                    retry_query=(
+                        "maintenance intervals daily weekly monthly annual "
+                        "operating hours"
+                    ),
+                    missing_information=["interval or frequency structure"],
+                )
         if (
             "maintenance" in lower_question
             and "maintenance" in lower_intent
@@ -303,4 +351,61 @@ class ReflectionService:
             confidence=0.75,
             reason="The answer appears incomplete for the current evidence set.",
             missing_information=["more specific supporting evidence"],
+        )
+
+    @staticmethod
+    def _is_maintenance_interval_question(
+        *,
+        question: str,
+        answer_intent: str,
+    ) -> bool:
+        if "maintenance_summary" not in answer_intent and "maintenance" not in question:
+            return False
+        return any(
+            marker in question
+            for marker in (
+                "maintenance interval",
+                "maintenance intervals",
+                "service interval",
+                "inspection interval",
+                "maintenance schedule",
+                "how often",
+                "daily",
+                "weekly",
+                "monthly",
+                "annual",
+            )
+        )
+
+    @staticmethod
+    def _contains_unrelated_specifications(answer: str) -> bool:
+        return any(
+            marker in answer
+            for marker in (
+                "voltage",
+                "installed power",
+                "pump type",
+                "serial number",
+                "tank capacity",
+                "nominal speed",
+                "rpm",
+            )
+        )
+
+    @staticmethod
+    def _has_interval_structure(answer: str) -> bool:
+        return any(
+            marker in answer
+            for marker in (
+                "interval",
+                "frequency",
+                "operating hours",
+                "daily",
+                "weekly",
+                "monthly",
+                "quarterly",
+                "annual",
+                "annually",
+                "every ",
+            )
         )

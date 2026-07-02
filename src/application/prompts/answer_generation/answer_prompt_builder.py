@@ -158,10 +158,15 @@ class AnswerPromptBuilder:
     def _format_source_block(index: int, chunk: RetrievedChunk) -> str:
         section_path = " > ".join(chunk.section_path) if chunk.section_path else "N/A"
         page_range = AnswerPromptBuilder._format_page_range(chunk)
+        document_name = (
+            chunk.citation.document_name
+            if chunk.citation is not None and chunk.citation.document_name
+            else "Current document"
+        )
 
         return (
             f"SOURCE {index}\n"
-            f"Document: {chunk.document_id}\n"
+            f"Document: {document_name}\n"
             f"Section: {section_path}\n"
             f"Pages: {page_range}\n"
             "---\n"
@@ -175,11 +180,10 @@ class AnswerPromptBuilder:
             source.page_end,
         )
         section_path = source.section_path or "N/A"
-        document_id = source.document_id or "N/A"
-        document_title = source.document_title or document_id
+        document_title = source.document_title or "Current document"
         return (
             f"SOURCE {source.source_number}\n"
-            f"Document: {document_title} ({document_id})\n"
+            f"Document: {document_title}\n"
             f"Section: {section_path}\n"
             f"Pages: {page_range}\n"
             "---\n"

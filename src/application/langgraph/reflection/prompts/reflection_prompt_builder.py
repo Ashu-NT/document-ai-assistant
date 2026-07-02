@@ -23,6 +23,11 @@ def _format_chunk_summaries(
         score = chunk.get("score")
         content = " ".join(str(chunk.get("content") or "").split())
         preview = content[:280] + ("..." if len(content) > 280 else "")
+        score_text = (
+            score
+            if isinstance(score, (int, float)) and not isinstance(score, bool)
+            else "-"
+        )
         lines.append(
             "\n".join(
                 [
@@ -30,7 +35,7 @@ def _format_chunk_summaries(
                     f"  chunk_type: {chunk.get('chunk_type') or '-'}",
                     f"  section_path: {section_label}",
                     f"  page_start: {page_start if page_start is not None else '-'}",
-                    f"  score: {score if isinstance(score, int | float) else '-'}",
+                    f"  score: {score_text}",
                     f"  preview: {preview or '-'}",
                 ]
             )
@@ -61,6 +66,29 @@ class ReflectionPromptBuilder:
             for citation in citations[:8]
             if isinstance(citation, dict)
         ) or "- none"
+        maintenance_interval_review = _is_maintenance_interval_review(
+            question=original_user_question,
+            answer_intent=answer_intent,
+        )
+
+        extra_rules: list[str] = []
+        if maintenance_interval_review:
+            extra_rules.extend(
+                [
+                    "Maintenance interval review rules:",
+                    "- The user is asking for maintenance intervals/frequencies, not general technical specifications.",
+                    "- ACCEPT only if the generated answer clearly states interval or frequency information.",
+                    "- Valid interval evidence includes values such as daily, weekly, monthly, yearly, annually, every X hours, every X months, 500 h, 1000 h, 2000 h, 4000 h, 8000 h, 12000 h, or similar scheduled maintenance frequencies.",
+                    "- Reject the answer if it mainly contains unrelated specifications such as voltage, power, pump type, tank capacity, nominal speed, dimensions, serial number, model number, or installation data.",
+                    "- Reject the answer if it describes maintenance generally but does not state when or how often tasks must be performed.",
+                    "- Reject the answer if it lists tasks without intervals.",
+                    "- Reject the answer if it lacks grounded citations or page references.",
+                    "- If approved chunks contain useful equipment context but no interval/frequency evidence, choose RETRIEVE_AGAIN.",
+                    "- For RETRIEVE_AGAIN, write a focused retry_query using the original question plus terms such as maintenance schedule, service interval, inspection interval, periodic maintenance, preventive maintenance, maintenance table, or intervals.",
+                    "- Do not choose FAIL if another retrieval attempt is still available and the missing information is specific interval evidence.",
+                    "",
+                ]
+            )
 
         return "\n".join(
             [
@@ -69,12 +97,17 @@ class ReflectionPromptBuilder:
                 "You are not answering the user.",
                 "Return JSON only.",
                 "Decide whether the answer should be accepted, retried, clarified, or failed.",
+                "ACCEPT only when the answer is fully grounded in the approved chunks and citations.",
+                "RETRIEVE_AGAIN when the answer is missing specific evidence that may exist elsewhere in the selected document.",
+                "CLARIFY only when the user question is ambiguous and cannot be answered by retrieval.",
+                "FAIL only when the answer cannot be grounded after available retrieval attempts or the evidence clearly does not contain the requested information.",
                 "If retrying, write a retrieval query based only on the original user question and missing evidence.",
                 "Do not invent new tasks.",
                 "Do not include facts not present in evidence.",
                 "Do not discard existing useful evidence.",
                 "If clarification is needed, write one clear clarification question.",
                 "",
+                *extra_rules,
                 "JSON schema:",
                 '{',
                 '  "decision": "ACCEPT | RETRIEVE_AGAIN | CLARIFY | FAIL",',
@@ -86,12 +119,15 @@ class ReflectionPromptBuilder:
                 '}',
                 "",
                 f"Original user question: {original_user_question}",
-                f"Selected document id: {selected_document_id or '-'}",
                 f"Selected document title: {selected_document_title or '-'}",
                 f"Answer intent: {answer_intent or '-'}",
                 f"Reflection attempt count: {reflection_attempt_count}",
                 f"Retry count: {retry_count}",
-                f"Context document ids: {', '.join(context_document_ids) if context_document_ids else '-'}",
+                (
+                    f"Context document ids: {', '.join(context_document_ids)}"
+                    if context_document_ids and not maintenance_interval_review
+                    else "Context document ids: -"
+                ),
                 "",
                 "Generated answer:",
                 generated_answer or "-",
@@ -106,3 +142,25 @@ class ReflectionPromptBuilder:
                 citation_text,
             ]
         )
+
+
+def _is_maintenance_interval_review(
+    *,
+    question: str,
+    answer_intent: str | None,
+) -> bool:
+    normalized_question = question.lower()
+    normalized_intent = (answer_intent or "").lower()
+    if "maintenance_summary" not in normalized_intent and "maintenance" not in normalized_question:
+        return False
+    return any(
+        marker in normalized_question
+        for marker in (
+            "maintenance interval",
+            "maintenance intervals",
+            "service interval",
+            "inspection interval",
+            "maintenance schedule",
+            "how often",
+        )
+    )

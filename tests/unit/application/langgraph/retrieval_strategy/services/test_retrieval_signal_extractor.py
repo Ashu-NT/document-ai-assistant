@@ -77,3 +77,19 @@ def test_retrieval_signal_extractor_supplier_triggers_identifier_signal() -> Non
 
     assert identifier_signals, "Expected identifier signal for supplier query"
     assert any(s.value == "supplier" for s in identifier_signals)
+
+
+def test_retrieval_signal_extractor_biases_maintenance_interval_query_to_table_without_spec_signal() -> None:
+    extractor = RetrievalSignalExtractor()
+    context = RetrievalContext(
+        query_text="What are the maintenance intervals?",
+    )
+
+    signals = extractor.extract(context)
+    categories = {signal.category for signal in signals}
+    values = {signal.value for signal in signals}
+
+    assert "maintenance" in categories
+    assert "table" in categories
+    assert "specification" not in categories
+    assert "maintenance_interval_table_bias" in values

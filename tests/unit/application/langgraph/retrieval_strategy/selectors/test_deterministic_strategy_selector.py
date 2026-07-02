@@ -31,6 +31,16 @@ def test_deterministic_selector_picks_maintenance_with_table_secondary() -> None
     assert "TABLE_LOOKUP" in [item.value for item in decision.secondary_strategies]
 
 
+def test_deterministic_selector_picks_table_secondary_for_plain_maintenance_interval_query() -> None:
+    decision = _select("What are the maintenance intervals?")
+
+    assert decision.primary_strategy.value == "MAINTENANCE_LOOKUP"
+    assert "TABLE_LOOKUP" in [item.value for item in decision.secondary_strategies]
+    assert "TECHNICAL_SPECIFICATION" not in [
+        item.value for item in decision.secondary_strategies
+    ]
+
+
 def test_deterministic_selector_picks_maintenance_for_required_tasks_question() -> None:
     decision = _select("What maintenance tasks are required for this document?")
 

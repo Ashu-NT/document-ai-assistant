@@ -43,6 +43,7 @@ class FinalResponseNode:
             or state.get("response_text")
             or "Request completed."
         )
+        answer_payload = _tool_payload(state, "answer_question")
         guardrail_result, safe_response_text = self.post_response_guardrail_service.check(
             GuardrailContext(
                 user_input=state.get("user_input") or "",
@@ -52,8 +53,14 @@ class FinalResponseNode:
                 selected_document_id=state.get("selected_document_id"),
                 selected_document_title=state.get("selected_document_title"),
                 answer_text=response_text,
-                citations=list((state.get("tool_results", {}).get("answer_question", {}) or {}).get("data", {}).get("citations", []) or []),
-                evidence_chunks=list(state.get("merged_context_chunks", []) or state.get("initial_context_chunks", []) or []),
+                citations=_extract_guardrail_citations(
+                    state=state,
+                    answer_payload=answer_payload,
+                ),
+                evidence_chunks=_extract_guardrail_evidence_chunks(
+                    state=state,
+                    answer_payload=answer_payload,
+                ),
                 runtime_mode="demo",
             )
         )
@@ -66,3 +73,54 @@ class FinalResponseNode:
             "guardrail_trace": guardrail_result.diagnostics.get("guardrail_trace", []),
             "trace": extend_trace(state["trace"], trace_entry),
         }
+
+
+def _extract_guardrail_citations(
+    *,
+    state: AgentState,
+    answer_payload,
+) -> list:
+    if isinstance(answer_payload, dict):
+        citations = answer_payload.get("citations")
+        if isinstance(citations, list):
+            return list(citations)
+    retrieve_payload = _tool_payload(state, "retrieve_evidence")
+    if isinstance(retrieve_payload, dict):
+        citations = retrieve_payload.get("citations")
+        if isinstance(citations, list):
+            return list(citations)
+    return []
+
+
+def _extract_guardrail_evidence_chunks(
+    *,
+    state: AgentState,
+    answer_payload,
+) -> list:
+    for key in ("merged_context_chunks", "retry_context_chunks", "initial_context_chunks"):
+        value = state.get(key)
+        if isinstance(value, list) and value:
+            return list(value)
+
+    if isinstance(answer_payload, dict):
+        retrieval_result = answer_payload.get("retrieval_result")
+        if isinstance(retrieval_result, dict):
+            context_chunks = retrieval_result.get("context_chunks")
+            if isinstance(context_chunks, list):
+                return list(context_chunks)
+
+    retrieve_payload = _tool_payload(state, "retrieve_evidence")
+    if isinstance(retrieve_payload, dict):
+        context_chunks = retrieve_payload.get("context_chunks")
+        if isinstance(context_chunks, list):
+            return list(context_chunks)
+    return []
+
+
+def _tool_payload(state: AgentState, tool_name: str):
+    tool_result = state.get("tool_results", {}).get(tool_name)
+    if not isinstance(tool_result, dict):
+        return None
+    if not tool_result.get("success", False):
+        return None
+    return tool_result.get("data")

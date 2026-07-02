@@ -10,8 +10,9 @@ class ReactPresenter:
     def render(self, trace: ReactTrace, *, policy: DemoVisibilityPolicy) -> str:
         if trace.is_empty():
             return ""
+        title = "Debug Trace" if policy.debug else "Agent Trace"
         lines = [
-            "Agent Trace",
+            title,
             "----------------------------------------------------------------------",
             "",
         ]
