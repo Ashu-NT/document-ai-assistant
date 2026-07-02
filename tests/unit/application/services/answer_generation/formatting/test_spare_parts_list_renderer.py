@@ -113,8 +113,8 @@ def test_render_groups_rows_by_section_and_page() -> None:
     assert "Available rows:" in result
     assert "- Position: 1" in result
     assert "Quantity: 2" in result
-    assert "Denomination: Filter" in result
-    assert "Spare Part No.: A00103" in result
+    assert "Description: Filter" in result
+    assert "Part No.: A00103" in result
 
 
 def test_render_multiple_chunks_produce_multiple_numbered_groups() -> None:
@@ -213,8 +213,8 @@ def test_render_skips_bare_quantity_unit_artifact_rows() -> None:
 
     assert result is not None
     assert "Quantity: Pce" not in result
-    assert "Denomination: Filter" in result
-    assert "Spare Part No.: A00103" in result
+    assert "Description: Filter" in result
+    assert "Part No.: A00103" in result
     assert "Only partial row content was available in the retrieved context." in result
 
 
@@ -243,7 +243,7 @@ def test_render_extracts_pid_style_valve_rows_with_part_no() -> None:
 
     assert result is not None
     assert "P&ID Position: V.00.01.01" in result
-    assert "Spare Part No.: A00103" in result
+    assert "Part No.: A00103" in result
     assert "Dry Running Protection" in result
 
 
@@ -285,4 +285,114 @@ def test_render_excludes_safety_section_without_real_table_rows() -> None:
     assert "2.8 Spare Parts" not in result
     assert "Pages: 11" not in result
     assert "Spare Parts List" in result
-    assert "Spare Part No.: A00103" in result
+    assert "Part No.: A00103" in result
+
+
+# ---------------------------------------------------------------------------
+# Layout strategy coverage. The renderer must not be tied to any one
+# document's table shape -- these exercise each supported layout family in
+# isolation using generic, made-up examples (not tied to a real manual).
+# ---------------------------------------------------------------------------
+
+
+def test_render_layout_a_structured_header_table() -> None:
+    renderer = SparePartsListRenderer()
+    content = (
+        "| Position No: | Qty: | Designation: | Part No: |\n"
+        "|---|---|---|---|\n"
+        "| 1 | 2 | Filter | A00103 |\n"
+    )
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+    )
+
+    assert result is not None
+    assert "Position: 1" in result
+    assert "Quantity: 2" in result
+    assert "Description: Filter" in result
+    assert "Part No.: A00103" in result
+
+
+def test_render_layout_a_free_form_position_quantity_unit_description() -> None:
+    renderer = SparePartsListRenderer()
+    content = "0010 1 Pce housing"
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+    )
+
+    assert result is not None
+    assert "Position: 0010" in result
+    assert "Quantity: 1" in result
+    assert "Unit: Pce" in result
+    assert "Description: housing" in result
+    assert "Part No." not in result
+
+
+def test_render_layout_b_pid_valve_style_row() -> None:
+    renderer = SparePartsListRenderer()
+    content = "V.00.01.01 Dry Running Protection Solenoid G1/2 2/2-way 24Vdc A00103"
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+    )
+
+    assert result is not None
+    assert "P&ID Position: V.00.01.01" in result
+    assert "Service: Dry Running Protection" in result
+    assert "Type: Solenoid G1/2 2/2-way 24Vdc" in result
+    assert "Part No.: A00103" in result
+
+
+def test_render_layout_c_two_column_exploded_view_pairs() -> None:
+    renderer = SparePartsListRenderer()
+    content = "14.00 Pump Casing 70.00 Lantern bracket"
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+    )
+
+    assert result is not None
+    assert "Position: 14.00" in result
+    assert "Description: Pump Casing" in result
+    assert "Position: 70.00" in result
+    assert "Description: Lantern bracket" in result
+
+
+def test_render_layout_d_falls_back_to_raw_row_for_unrecognized_shape() -> None:
+    renderer = SparePartsListRenderer()
+    content = "5 Filter Housing A00103 Yes"
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+    )
+
+    assert result is not None
+    assert "Raw row: 5 Filter Housing A00103 Yes" in result
+    assert "Only partial row content was available in the retrieved context." in result
+
+
+def test_render_does_not_invent_part_no_from_plain_quantity_like_token() -> None:
+    renderer = SparePartsListRenderer()
+    content = "V.00.02.03 Discharge Overboard Ashore Blank Flange Fitted"
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+    )
+
+    assert result is not None
+    assert "Part No." not in result
+    assert "Flange Fitted" in result
