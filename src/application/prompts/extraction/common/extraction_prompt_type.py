@@ -12,3 +12,4 @@ class ExtractionPromptType(StrEnum):
     MAINTENANCE_INTERVAL = "maintenance_interval"
     PROCEDURE = "procedure"
     SAFETY_WARNING = "safety_warning"
+    TROUBLESHOOTING = "troubleshooting"

@@ -40,6 +40,7 @@ from src.domain.extraction import (
     SparePart,
     Specification,
     Supplier,
+    TroubleshootingEntry,
 )
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
@@ -349,6 +350,7 @@ class ExtractionWorkflow:
                 f"specifications={len(extraction_result.specifications)}, "
                 f"safety_warnings={len(extraction_result.safety_warnings)}, "
                 f"maintenance_intervals={len(extraction_result.maintenance_intervals)}, "
+                f"troubleshooting_entries={len(extraction_result.troubleshooting_entries)}, "
                 f"identifiers={len(extraction_result.extracted_identifiers)}, "
                 f"batches={len(batches)})."
             ),
@@ -711,6 +713,16 @@ class ExtractionWorkflow:
                 "task_reference",
             ),
         )
+        troubleshooting_entry_payloads = self._filter_empty_extraction_items(
+            payload["troubleshooting_entries"],
+            content_keys=(
+                "symptom",
+                "cause",
+                "remedy",
+                "component_name",
+                "component",
+            ),
+        )
         identifier_payloads = self._filter_empty_extraction_items(
             payload["identifiers"],
             content_keys=(
@@ -813,6 +825,17 @@ class ExtractionWorkflow:
             )
             for item in maintenance_interval_payloads
         ]
+        troubleshooting_entries = [
+            self._build_troubleshooting_entry(
+                item,
+                document_id=document_id,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+                default_confidence=overall_confidence,
+                equipment=equipment,
+            )
+            for item in troubleshooting_entry_payloads
+        ]
         extracted_identifiers = [
             self._build_extracted_identifier(
                 item,
@@ -839,6 +862,7 @@ class ExtractionWorkflow:
                 *specifications,
                 *safety_warnings,
                 *maintenance_intervals,
+                *troubleshooting_entries,
                 *extracted_identifiers,
             ]
         )
@@ -855,6 +879,7 @@ class ExtractionWorkflow:
             specifications=specifications,
             safety_warnings=safety_warnings,
             maintenance_intervals=maintenance_intervals,
+            troubleshooting_entries=troubleshooting_entries,
             extracted_identifiers=extracted_identifiers,
             source_chunk_ids=list(chunk_lookup),
             confidence_score=overall_confidence,
@@ -1346,6 +1371,62 @@ class ExtractionWorkflow:
             interval=interval,
             component_name=self._optional_text(payload, "component_name", "component"),
             maintenance_task_id=maintenance_task_id,
+            source_chunk_id=source_chunk_id,
+            source=self._resolve_source_location(
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
+            confidence_score=confidence_score,
+            requires_human_review=(
+                self._resolve_requires_human_review(
+                    self._pick(payload, "requires_human_review", "requires_review"),
+                    confidence_score,
+                )
+                or chunk_id_invalid
+            ),
+        )
+
+    def _build_troubleshooting_entry(
+        self,
+        payload: dict[str, Any],
+        *,
+        document_id: str,
+        chunk_lookup: dict[str, DocumentChunk],
+        default_source_chunk_id: str | None,
+        default_confidence: float,
+        equipment: list[EquipmentInfo],
+    ) -> TroubleshootingEntry:
+        symptom = self._required_text(
+            payload,
+            field_name="troubleshooting_entries.symptom",
+            keys=("symptom",),
+        )
+        confidence_score = self._parse_confidence(
+            self._pick(payload, "confidence_score", "confidence")
+        )
+        if confidence_score is None:
+            confidence_score = default_confidence
+
+        source_chunk_id, chunk_id_invalid = self._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+            item_type="troubleshooting_entries",
+        )
+
+        equipment_reference = self._optional_text(
+            payload, "equipment_reference", "equipment_name", "equipment"
+        )
+        equipment_id = self._resolve_equipment_id(equipment_reference, equipment)
+
+        return TroubleshootingEntry(
+            troubleshooting_id=self.id_generator.new_id("troubleshooting"),
+            document_id=document_id,
+            symptom=symptom,
+            cause=self._optional_text(payload, "cause"),
+            remedy=self._optional_text(payload, "remedy"),
+            component_name=self._optional_text(payload, "component_name", "component"),
+            equipment_id=equipment_id,
             source_chunk_id=source_chunk_id,
             source=self._resolve_source_location(
                 source_chunk_id=source_chunk_id,

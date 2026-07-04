@@ -252,6 +252,48 @@ class SpecificationORM(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
 
+class TroubleshootingEntryORM(Base):
+    __tablename__ = "troubleshooting_entries"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+
+    extraction_id: Mapped[str | None] = mapped_column(
+        ForeignKey("extraction_results.id"),
+        nullable=True,
+        index=True,
+    )
+
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("documents.id"),
+        nullable=False,
+        index=True,
+    )
+
+    symptom: Mapped[str] = mapped_column(Text, nullable=False)
+    cause: Mapped[str | None] = mapped_column(Text, nullable=True)
+    remedy: Mapped[str | None] = mapped_column(Text, nullable=True)
+    component_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    equipment_id: Mapped[str | None] = mapped_column(
+        ForeignKey("equipment_info.id"),
+        nullable=True,
+        index=True,
+    )
+
+    source_chunk_id: Mapped[str | None] = mapped_column(
+        ForeignKey("chunks.id"),
+        nullable=True,
+        index=True,
+    )
+
+    page_start: Mapped[int | None] = mapped_column(nullable=True)
+    page_end: Mapped[int | None] = mapped_column(nullable=True)
+
+    confidence_score: Mapped[float | None] = mapped_column(nullable=True)
+    requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
 class SafetyWarningORM(Base):
     __tablename__ = "safety_warnings"
 

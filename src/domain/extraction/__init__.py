@@ -9,6 +9,7 @@ from src.domain.extraction.safety_warning import SafetyWarning
 from src.domain.extraction.spare_part import SparePart
 from src.domain.extraction.specification import Specification
 from src.domain.extraction.supplier import Supplier
+from src.domain.extraction.troubleshooting_entry import TroubleshootingEntry
 
 __all__ = [
     "EquipmentInfo",
@@ -22,4 +23,5 @@ __all__ = [
     "SparePart",
     "Specification",
     "Supplier",
+    "TroubleshootingEntry",
 ]

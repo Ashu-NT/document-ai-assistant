@@ -8,6 +8,7 @@ from src.infrastructure.db.mappers.extraction.safety_warning_mapper import Safet
 from src.infrastructure.db.mappers.extraction.spare_part_mapper import SparePartMapper
 from src.infrastructure.db.mappers.extraction.specification_mapper import SpecificationMapper
 from src.infrastructure.db.mappers.extraction.supplier_mapper import SupplierMapper
+from src.infrastructure.db.mappers.extraction.troubleshooting_entry_mapper import TroubleshootingEntryMapper
 
 __all__ = [
     "EquipmentInfoMapper",
@@ -20,4 +21,5 @@ __all__ = [
     "SparePartMapper",
     "SpecificationMapper",
     "SupplierMapper",
+    "TroubleshootingEntryMapper",
 ]

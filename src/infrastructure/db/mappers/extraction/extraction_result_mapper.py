@@ -26,6 +26,9 @@ from src.infrastructure.db.mappers.extraction.specification_mapper import (
 from src.infrastructure.db.mappers.extraction.supplier_mapper import (
     SupplierMapper,
 )
+from src.infrastructure.db.mappers.extraction.troubleshooting_entry_mapper import (
+    TroubleshootingEntryMapper,
+)
 from src.infrastructure.db.orm_models import (
     EquipmentInfoORM,
     ExtractionResultORM,
@@ -37,6 +40,7 @@ from src.infrastructure.db.orm_models import (
     SparePartORM,
     SpecificationORM,
     SupplierORM,
+    TroubleshootingEntryORM,
 )
 
 
@@ -63,6 +67,7 @@ class ExtractionResultMapper:
         specification_rows: list[SpecificationORM] | None = None,
         safety_warning_rows: list[SafetyWarningORM] | None = None,
         maintenance_interval_rows: list[MaintenanceIntervalORM] | None = None,
+        troubleshooting_entry_rows: list[TroubleshootingEntryORM] | None = None,
     ) -> ExtractionResult:
         return ExtractionResult(
             extraction_id=orm.id,
@@ -102,6 +107,10 @@ class ExtractionResultMapper:
             maintenance_intervals=[
                 MaintenanceIntervalMapper.to_domain(row)
                 for row in maintenance_interval_rows or []
+            ],
+            troubleshooting_entries=[
+                TroubleshootingEntryMapper.to_domain(row)
+                for row in troubleshooting_entry_rows or []
             ],
             confidence_score=orm.confidence_score,
             requires_human_review=orm.requires_human_review,

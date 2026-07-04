@@ -9,6 +9,7 @@ from src.infrastructure.db.mappers import (
     SparePartMapper,
     SpecificationMapper,
     SupplierMapper,
+    TroubleshootingEntryMapper,
 )
 
 
@@ -118,6 +119,20 @@ def test_maintenance_interval_mapper_round_trip(sample_maintenance_interval) -> 
     assert domain.maintenance_task_id == sample_maintenance_interval.maintenance_task_id
 
 
+def test_troubleshooting_entry_mapper_round_trip(sample_troubleshooting_entry) -> None:
+    orm = TroubleshootingEntryMapper.to_orm(
+        sample_troubleshooting_entry,
+        extraction_id="extraction_001",
+    )
+    domain = TroubleshootingEntryMapper.to_domain(orm)
+
+    assert domain.troubleshooting_id == sample_troubleshooting_entry.troubleshooting_id
+    assert domain.symptom == sample_troubleshooting_entry.symptom
+    assert domain.cause == sample_troubleshooting_entry.cause
+    assert domain.remedy == sample_troubleshooting_entry.remedy
+    assert domain.equipment_id == sample_troubleshooting_entry.equipment_id
+
+
 def test_extraction_result_mapper_round_trip(sample_extraction_result) -> None:
     result_orm = ExtractionResultMapper.to_orm(sample_extraction_result)
 
@@ -193,6 +208,14 @@ def test_extraction_result_mapper_round_trip(sample_extraction_result) -> None:
         for maintenance_interval in sample_extraction_result.maintenance_intervals
     ]
 
+    troubleshooting_entry_rows = [
+        TroubleshootingEntryMapper.to_orm(
+            troubleshooting_entry,
+            extraction_id=sample_extraction_result.extraction_id,
+        )
+        for troubleshooting_entry in sample_extraction_result.troubleshooting_entries
+    ]
+
     domain = ExtractionResultMapper.to_domain(
         result_orm,
         task_rows=task_rows,
@@ -204,6 +227,7 @@ def test_extraction_result_mapper_round_trip(sample_extraction_result) -> None:
         specification_rows=specification_rows,
         safety_warning_rows=safety_warning_rows,
         maintenance_interval_rows=maintenance_interval_rows,
+        troubleshooting_entry_rows=troubleshooting_entry_rows,
     )
 
     assert domain.extraction_id == sample_extraction_result.extraction_id
@@ -216,3 +240,8 @@ def test_extraction_result_mapper_round_trip(sample_extraction_result) -> None:
     assert len(domain.specifications) == 1
     assert len(domain.safety_warnings) == 1
     assert len(domain.maintenance_intervals) == 1
+    assert len(domain.troubleshooting_entries) == 1
+    assert (
+        domain.troubleshooting_entries[0].troubleshooting_id
+        == sample_extraction_result.troubleshooting_entries[0].troubleshooting_id
+    )

@@ -30,6 +30,7 @@ from src.domain.extraction import (
     SparePart,
     Specification,
     Supplier,
+    TroubleshootingEntry,
 )
 from src.domain.retrieval import Citation, RetrievalQuery, RetrievalResult, RetrievedChunk
 from src.domain.workflow import IngestionRun
@@ -391,6 +392,25 @@ def sample_maintenance_interval(
 
 
 @pytest.fixture
+def sample_troubleshooting_entry(
+    document_id: str,
+    chunk_id: str,
+    sample_equipment_info: EquipmentInfo,
+) -> TroubleshootingEntry:
+    return TroubleshootingEntry(
+        troubleshooting_id="troubleshooting_001",
+        document_id=document_id,
+        symptom="Pump fails to build pressure",
+        cause="Worn hydraulic filter",
+        remedy="Replace the hydraulic filter",
+        component_name="Hydraulic filter",
+        equipment_id=sample_equipment_info.equipment_id,
+        source_chunk_id=chunk_id,
+        confidence_score=0.9,
+    )
+
+
+@pytest.fixture
 def sample_extraction_result(
     document_id: str,
     sample_maintenance_task: MaintenanceTask,
@@ -402,6 +422,7 @@ def sample_extraction_result(
     sample_specification: Specification,
     sample_safety_warning: SafetyWarning,
     sample_maintenance_interval: MaintenanceInterval,
+    sample_troubleshooting_entry: TroubleshootingEntry,
 ) -> ExtractionResult:
     return ExtractionResult(
         extraction_id="extraction_001",
@@ -415,6 +436,7 @@ def sample_extraction_result(
         specifications=[sample_specification],
         safety_warnings=[sample_safety_warning],
         maintenance_intervals=[sample_maintenance_interval],
+        troubleshooting_entries=[sample_troubleshooting_entry],
         confidence_score=0.88,
     )
 

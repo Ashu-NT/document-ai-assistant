@@ -11,6 +11,7 @@ from src.domain.extraction import (
     SparePart,
     Specification,
     Supplier,
+    TroubleshootingEntry,
 )
 
 
@@ -81,6 +82,12 @@ class ExtractionRepository(Protocol):
     ) -> list[MaintenanceInterval]:
         ...
 
+    def list_troubleshooting_entries(
+        self,
+        document_id: str | None = None,
+    ) -> list[TroubleshootingEntry]:
+        ...
+
     def search_maintenance_tasks(
         self,
         query: str,
@@ -144,6 +151,13 @@ class ExtractionRepository(Protocol):
     ) -> list[MaintenanceInterval]:
         ...
 
+    def search_troubleshooting_entries(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[TroubleshootingEntry]:
+        ...
+
     def list_maintenance_intervals_by_task_id(
         self,
         maintenance_task_id: str,
@@ -154,4 +168,10 @@ class ExtractionRepository(Protocol):
         self,
         equipment_id: str,
     ) -> list[Procedure]:
+        ...
+
+    def list_troubleshooting_entries_by_equipment_id(
+        self,
+        equipment_id: str,
+    ) -> list[TroubleshootingEntry]:
         ...

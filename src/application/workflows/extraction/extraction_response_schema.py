@@ -270,6 +270,32 @@ class MaintenanceIntervalPayload(_ExtractionItemBase):
     )
 
 
+class TroubleshootingEntryPayload(_ExtractionItemBase):
+    symptom: str | None = None
+    cause: str | None = None
+    remedy: str | None = None
+    component_name: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("component_name", "component"),
+    )
+    equipment_reference: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("equipment_reference", "equipment_name", "equipment"),
+    )
+    source_chunk_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("source_chunk_id", "chunk_id"),
+    )
+    confidence_score: float | None = Field(
+        default=None,
+        validation_alias=AliasChoices("confidence_score", "confidence"),
+    )
+    requires_human_review: bool | None = Field(
+        default=None,
+        validation_alias=AliasChoices("requires_human_review", "requires_review"),
+    )
+
+
 class IdentifierPayload(_ExtractionItemBase):
     raw_value: str | None = Field(
         default=None,
@@ -340,6 +366,10 @@ class ExtractionResponsePayload(BaseModel):
         default_factory=list,
         validation_alias=AliasChoices("maintenance_intervals", "maintenance_interval_list"),
     )
+    troubleshooting_entries: list[TroubleshootingEntryPayload] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("troubleshooting_entries", "troubleshooting_list"),
+    )
     identifiers: list[IdentifierPayload] = Field(
         default_factory=list,
         validation_alias=AliasChoices("identifiers", "identifier_list"),
@@ -360,6 +390,7 @@ class ExtractionResponsePayload(BaseModel):
         "specifications",
         "safety_warnings",
         "maintenance_intervals",
+        "troubleshooting_entries",
         "identifiers",
         mode="before",
     )

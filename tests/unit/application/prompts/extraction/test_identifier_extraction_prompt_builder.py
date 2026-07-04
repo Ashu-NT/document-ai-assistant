@@ -54,6 +54,7 @@ def test_identifier_extraction_prompt_builder_includes_source_text_and_instructi
     assert '"specifications": [' in prompt
     assert '"safety_warnings": [' in prompt
     assert '"maintenance_intervals": [' in prompt
+    assert '"troubleshooting_entries": [' in prompt
     assert '"identifiers": [' in prompt
     assert "Return JSON only." in prompt
     assert "Allowed chunk_id values" in prompt

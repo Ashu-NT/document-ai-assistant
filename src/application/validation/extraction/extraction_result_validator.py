@@ -51,4 +51,8 @@ class ExtractionResultValidator(Validator[ExtractionResult]):
             if maintenance_interval.document_id != value.document_id:
                 result.add_issue("maintenance_intervals", "Maintenance interval document_id does not match extraction document_id.", "extraction.maintenance_interval.document_mismatch")
 
+        for troubleshooting_entry in value.troubleshooting_entries:
+            if troubleshooting_entry.document_id != value.document_id:
+                result.add_issue("troubleshooting_entries", "Troubleshooting entry document_id does not match extraction document_id.", "extraction.troubleshooting_entry.document_mismatch")
+
         return result

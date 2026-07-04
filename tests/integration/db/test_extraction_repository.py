@@ -47,6 +47,7 @@ def test_replace_extraction_result_deletes_prior_rows_for_document(
     assert db_uow.extractions.list_specifications(document_id) == []
     assert db_uow.extractions.list_safety_warnings(document_id) == []
     assert db_uow.extractions.list_maintenance_intervals(document_id) == []
+    assert db_uow.extractions.list_troubleshooting_entries(document_id) == []
 
 
 def test_delete_by_document_removes_all_extraction_rows(
@@ -73,6 +74,7 @@ def test_delete_by_document_removes_all_extraction_rows(
     assert db_uow.extractions.list_specifications(document_id) == []
     assert db_uow.extractions.list_safety_warnings(document_id) == []
     assert db_uow.extractions.list_maintenance_intervals(document_id) == []
+    assert db_uow.extractions.list_troubleshooting_entries(document_id) == []
 
 
 def test_save_and_load_extraction_result(
@@ -97,6 +99,7 @@ def test_save_and_load_extraction_result(
     assert len(loaded.specifications) == 1
     assert len(loaded.safety_warnings) == 1
     assert len(loaded.maintenance_intervals) == 1
+    assert len(loaded.troubleshooting_entries) == 1
 
 
 def test_list_maintenance_tasks(db_uow, sample_extraction_result) -> None:
@@ -319,3 +322,48 @@ def test_list_procedures_by_equipment_id(db_uow, sample_extraction_result) -> No
     assert len(procedures) == 1
     assert procedures[0].equipment_id == equipment_id
     assert no_procedures == []
+
+
+def test_list_troubleshooting_entries(db_uow, sample_extraction_result) -> None:
+    db_uow.extractions.save_extraction_result(sample_extraction_result)
+    db_uow.commit()
+
+    troubleshooting_entries = db_uow.extractions.list_troubleshooting_entries(
+        sample_extraction_result.document_id
+    )
+
+    assert len(troubleshooting_entries) == 1
+
+
+def test_search_troubleshooting_entries(db_uow, sample_extraction_result) -> None:
+    db_uow.extractions.save_extraction_result(sample_extraction_result)
+    db_uow.commit()
+
+    matches = db_uow.extractions.search_troubleshooting_entries(
+        "Pump fails to build pressure"
+    )
+    no_matches = db_uow.extractions.search_troubleshooting_entries(
+        "Nonexistent Symptom"
+    )
+
+    assert len(matches) == 1
+    assert no_matches == []
+
+
+def test_list_troubleshooting_entries_by_equipment_id(
+    db_uow, sample_extraction_result
+) -> None:
+    db_uow.extractions.save_extraction_result(sample_extraction_result)
+    db_uow.commit()
+
+    equipment_id = sample_extraction_result.equipment[0].equipment_id
+    entries = db_uow.extractions.list_troubleshooting_entries_by_equipment_id(
+        equipment_id
+    )
+    no_entries = db_uow.extractions.list_troubleshooting_entries_by_equipment_id(
+        "no_such_equipment"
+    )
+
+    assert len(entries) == 1
+    assert entries[0].equipment_id == equipment_id
+    assert no_entries == []

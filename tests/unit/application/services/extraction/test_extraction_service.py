@@ -97,6 +97,14 @@ class FakeExtractionRepository:
             if document_id is None or maintenance_interval.document_id == document_id
         ]
 
+    def list_troubleshooting_entries(self, document_id: str | None = None):
+        return [
+            troubleshooting_entry
+            for result in self.results.values()
+            for troubleshooting_entry in result.troubleshooting_entries
+            if document_id is None or troubleshooting_entry.document_id == document_id
+        ]
+
 
 def make_service(repository: FakeExtractionRepository) -> ExtractionService:
     return ExtractionService(
@@ -119,6 +127,7 @@ def test_save_extraction_result(sample_extraction_result) -> None:
     assert result.payload["specification_count"] == 1
     assert result.payload["safety_warning_count"] == 1
     assert result.payload["maintenance_interval_count"] == 1
+    assert result.payload["troubleshooting_entry_count"] == 1
     assert len(repository.results) == 1
 
 
@@ -232,6 +241,19 @@ def test_list_maintenance_intervals(sample_extraction_result) -> None:
     )
 
     assert len(maintenance_intervals) == 1
+
+
+def test_list_troubleshooting_entries(sample_extraction_result) -> None:
+    repository = FakeExtractionRepository()
+    repository.save_extraction_result(sample_extraction_result)
+
+    service = make_service(repository)
+
+    troubleshooting_entries = service.list_troubleshooting_entries(
+        sample_extraction_result.document_id
+    )
+
+    assert len(troubleshooting_entries) == 1
 
 
 def test_save_extraction_result_rejects_invalid_input(

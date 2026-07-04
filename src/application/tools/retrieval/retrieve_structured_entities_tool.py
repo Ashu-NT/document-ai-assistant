@@ -25,6 +25,7 @@ class StructuredEntityType(StrEnum):
     SPECIFICATION = "specification"
     SAFETY_WARNING = "safety_warning"
     MAINTENANCE_INTERVAL = "maintenance_interval"
+    TROUBLESHOOTING = "troubleshooting"
 
 
 @dataclass(slots=True, kw_only=True)
@@ -48,8 +49,8 @@ class RetrieveStructuredEntitiesTool:
         description=(
             "Look up extracted structured entities (manufacturers, suppliers, "
             "spare parts, equipment, maintenance tasks, procedures, "
-            "specifications, safety warnings, maintenance intervals) by "
-            "document and/or search text."
+            "specifications, safety warnings, maintenance intervals, "
+            "troubleshooting entries) by document and/or search text."
         ),
         mutates_state=False,
         supports_trace=False,
@@ -65,6 +66,7 @@ class RetrieveStructuredEntitiesTool:
         StructuredEntityType.SPECIFICATION: "search_specifications",
         StructuredEntityType.SAFETY_WARNING: "search_safety_warnings",
         StructuredEntityType.MAINTENANCE_INTERVAL: "search_maintenance_intervals",
+        StructuredEntityType.TROUBLESHOOTING: "search_troubleshooting_entries",
     }
     _LIST_METHODS: dict[StructuredEntityType, str] = {
         StructuredEntityType.MANUFACTURER: "list_manufacturers",
@@ -76,6 +78,7 @@ class RetrieveStructuredEntitiesTool:
         StructuredEntityType.SPECIFICATION: "list_specifications",
         StructuredEntityType.SAFETY_WARNING: "list_safety_warnings",
         StructuredEntityType.MAINTENANCE_INTERVAL: "list_maintenance_intervals",
+        StructuredEntityType.TROUBLESHOOTING: "list_troubleshooting_entries",
     }
 
     def __init__(self, extraction_service: ExtractionService) -> None:

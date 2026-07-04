@@ -11,6 +11,7 @@ from src.domain.extraction import (
     SparePart,
     Specification,
     Supplier,
+    TroubleshootingEntry,
 )
 from src.shared.ids import IdGenerator, IdPrefix
 
@@ -34,6 +35,7 @@ class ExtractionResultMerger:
         merged_specifications = self._merge_specifications(partial_results)
         merged_safety_warnings = self._merge_safety_warnings(partial_results)
         merged_maintenance_intervals = self._merge_maintenance_intervals(partial_results)
+        merged_troubleshooting_entries = self._merge_troubleshooting_entries(partial_results)
         merged_identifiers = self._merge_identifiers(partial_results)
         source_chunk_ids = self._unique_in_order(
             chunk_id
@@ -63,6 +65,7 @@ class ExtractionResultMerger:
             specifications=merged_specifications,
             safety_warnings=merged_safety_warnings,
             maintenance_intervals=merged_maintenance_intervals,
+            troubleshooting_entries=merged_troubleshooting_entries,
             extracted_identifiers=merged_identifiers,
             source_chunk_ids=source_chunk_ids,
             confidence_score=confidence_score,
@@ -202,6 +205,23 @@ class ExtractionResultMerger:
                 self._merge_maintenance_interval(merged[key], item)
         return list(merged.values())
 
+    def _merge_troubleshooting_entries(
+        self,
+        partial_results: list[ExtractionResult],
+    ) -> list[TroubleshootingEntry]:
+        merged: dict[tuple[str, ...], TroubleshootingEntry] = {}
+        for result in partial_results:
+            for item in result.troubleshooting_entries:
+                key = (
+                    self._normalize(item.symptom),
+                    self._normalize(item.component_name),
+                )
+                if key not in merged:
+                    merged[key] = item
+                    continue
+                self._merge_troubleshooting_entry(merged[key], item)
+        return list(merged.values())
+
     def _merge_identifiers(
         self,
         partial_results: list[ExtractionResult],
@@ -274,6 +294,17 @@ class ExtractionResultMerger:
         current.maintenance_task_id = (
             current.maintenance_task_id or candidate.maintenance_task_id
         )
+        self._merge_common_fields(current, candidate)
+
+    def _merge_troubleshooting_entry(
+        self,
+        current: TroubleshootingEntry,
+        candidate: TroubleshootingEntry,
+    ) -> None:
+        current.cause = current.cause or candidate.cause
+        current.remedy = current.remedy or candidate.remedy
+        current.component_name = current.component_name or candidate.component_name
+        current.equipment_id = current.equipment_id or candidate.equipment_id
         self._merge_common_fields(current, candidate)
 
     def _merge_identifier(

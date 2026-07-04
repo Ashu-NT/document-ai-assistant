@@ -11,6 +11,7 @@ from src.domain.extraction.safety_warning import SafetyWarning
 from src.domain.extraction.spare_part import SparePart
 from src.domain.extraction.specification import Specification
 from src.domain.extraction.supplier import Supplier
+from src.domain.extraction.troubleshooting_entry import TroubleshootingEntry
 
 
 @dataclass(slots=True)
@@ -27,6 +28,7 @@ class ExtractionResult:
     specifications: list[Specification] = field(default_factory=list)
     safety_warnings: list[SafetyWarning] = field(default_factory=list)
     maintenance_intervals: list[MaintenanceInterval] = field(default_factory=list)
+    troubleshooting_entries: list[TroubleshootingEntry] = field(default_factory=list)
     extracted_identifiers: list[ExtractedIdentifier] = field(default_factory=list)
 
     source_chunk_ids: list[str] = field(default_factory=list)
@@ -48,6 +50,7 @@ class ExtractionResult:
                 self.specifications,
                 self.safety_warnings,
                 self.maintenance_intervals,
+                self.troubleshooting_entries,
                 self.extracted_identifiers,
             ]
         )

@@ -14,6 +14,7 @@ from src.infrastructure.db.mappers import (
     SparePartMapper,
     SpecificationMapper,
     SupplierMapper,
+    TroubleshootingEntryMapper,
 )
 from src.infrastructure.db.orm_models import (
     EquipmentInfoORM,
@@ -26,6 +27,7 @@ from src.infrastructure.db.orm_models import (
     SparePartORM,
     SpecificationORM,
     SupplierORM,
+    TroubleshootingEntryORM,
 )
 from src.shared.exceptions import DatabaseError
 
@@ -155,6 +157,14 @@ class ExtractionWriter:
                 )
             )
 
+        for troubleshooting_entry in result.troubleshooting_entries:
+            self.session.merge(
+                TroubleshootingEntryMapper.to_orm(
+                    troubleshooting_entry,
+                    extraction_id=result.extraction_id,
+                )
+            )
+
     def _delete_extraction_result(self, document_id: str) -> None:
         self.session.execute(
             delete(MaintenanceIntervalORM).where(
@@ -169,6 +179,11 @@ class ExtractionWriter:
         self.session.execute(
             delete(SpecificationORM).where(
                 SpecificationORM.document_id == document_id
+            )
+        )
+        self.session.execute(
+            delete(TroubleshootingEntryORM).where(
+                TroubleshootingEntryORM.document_id == document_id
             )
         )
         self.session.execute(

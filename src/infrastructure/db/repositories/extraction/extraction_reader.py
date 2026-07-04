@@ -15,6 +15,7 @@ from src.infrastructure.db.orm_models import (
     SparePartORM,
     SpecificationORM,
     SupplierORM,
+    TroubleshootingEntryORM,
 )
 from src.shared.exceptions import DatabaseError
 
@@ -87,6 +88,12 @@ class ExtractionReader:
                 )
             ).scalars().all()
 
+            troubleshooting_entry_rows = self.session.execute(
+                select(TroubleshootingEntryORM).where(
+                    TroubleshootingEntryORM.extraction_id == extraction_id
+                )
+            ).scalars().all()
+
             return ExtractionResultMapper.to_domain(
                 result_row,
                 task_rows=task_rows,
@@ -98,6 +105,7 @@ class ExtractionReader:
                 specification_rows=specification_rows,
                 safety_warning_rows=safety_warning_rows,
                 maintenance_interval_rows=maintenance_interval_rows,
+                troubleshooting_entry_rows=troubleshooting_entry_rows,
             )
 
         except SQLAlchemyError as exc:

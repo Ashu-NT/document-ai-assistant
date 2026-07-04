@@ -47,6 +47,7 @@ class ExtractionService:
                 "specification_count": len(result.specifications),
                 "safety_warning_count": len(result.safety_warnings),
                 "maintenance_interval_count": len(result.maintenance_intervals),
+                "troubleshooting_entry_count": len(result.troubleshooting_entries),
                 "confidence_score": result.confidence_score,
                 "requires_human_review": result.requires_human_review,
             },
@@ -85,6 +86,7 @@ class ExtractionService:
                 "specification_count": len(result.specifications),
                 "safety_warning_count": len(result.safety_warnings),
                 "maintenance_interval_count": len(result.maintenance_intervals),
+                "troubleshooting_entry_count": len(result.troubleshooting_entries),
                 "confidence_score": result.confidence_score,
                 "requires_human_review": result.requires_human_review,
             },
@@ -123,6 +125,9 @@ class ExtractionService:
     def list_maintenance_intervals(self, document_id: str | None = None):
         return self.extraction_repository.list_maintenance_intervals(document_id)
 
+    def list_troubleshooting_entries(self, document_id: str | None = None):
+        return self.extraction_repository.list_troubleshooting_entries(document_id)
+
     def list_maintenance_intervals_by_task_id(self, maintenance_task_id: str):
         return self.extraction_repository.list_maintenance_intervals_by_task_id(
             maintenance_task_id
@@ -130,6 +135,11 @@ class ExtractionService:
 
     def list_procedures_by_equipment_id(self, equipment_id: str):
         return self.extraction_repository.list_procedures_by_equipment_id(equipment_id)
+
+    def list_troubleshooting_entries_by_equipment_id(self, equipment_id: str):
+        return self.extraction_repository.list_troubleshooting_entries_by_equipment_id(
+            equipment_id
+        )
 
     def search_maintenance_tasks(self, query: str, document_id: str | None = None):
         return self.extraction_repository.search_maintenance_tasks(query, document_id)
@@ -157,5 +167,10 @@ class ExtractionService:
 
     def search_maintenance_intervals(self, query: str, document_id: str | None = None):
         return self.extraction_repository.search_maintenance_intervals(
+            query, document_id
+        )
+
+    def search_troubleshooting_entries(self, query: str, document_id: str | None = None):
+        return self.extraction_repository.search_troubleshooting_entries(
             query, document_id
         )

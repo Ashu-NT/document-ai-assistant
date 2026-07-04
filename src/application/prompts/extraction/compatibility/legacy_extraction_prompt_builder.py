@@ -23,7 +23,7 @@ class LegacyExtractionPromptBuilder:
         version=IDENTIFIER_EXTRACTION_PROMPT_VERSION,
         task_type="extraction",
         model_type="llm",
-        description="Extract maintenance, spare-part, equipment, manufacturer, supplier, procedure, specification, safety-warning, and maintenance-interval data from chunks.",
+        description="Extract maintenance, spare-part, equipment, manufacturer, supplier, procedure, specification, safety-warning, maintenance-interval, and troubleshooting data from chunks.",
     )
 
     def build(
@@ -142,6 +142,18 @@ class LegacyExtractionPromptBuilder:
             '      "requires_human_review": <true or false>\n'
             "    }\n"
             "  ],\n"
+            '  "troubleshooting_entries": [\n'
+            "    {\n"
+            '      "symptom": "<string>",\n'
+            '      "cause": "<string or null>",\n'
+            '      "remedy": "<string or null>",\n'
+            '      "component_name": "<string or null>",\n'
+            '      "equipment_reference": "<string or null>",\n'
+            '      "source_chunk_id": "<chunk id or null>",\n'
+            '      "confidence_score": <float between 0 and 1 or null>,\n'
+            '      "requires_human_review": <true or false>\n'
+            "    }\n"
+            "  ],\n"
             '  "identifiers": [\n'
             "    {\n"
             '      "raw_value": "<exact string as it appears in text>",\n'
@@ -182,6 +194,12 @@ class LegacyExtractionPromptBuilder:
             "hours\") extracted as first-class entries independent of the maintenance_tasks "
             "array. task_reference is the title text of the related maintenance task if one "
             "is mentioned nearby, or null.\n"
+            "Troubleshooting entries capture symptom/cause/remedy rows (these are frequently "
+            "presented as a table with symptom, probable cause, and remedy columns — extract "
+            "every row). symptom is the fault or problem description; cause is the probable "
+            "cause if stated, else null; remedy is the corrective action if stated, else null. "
+            "equipment_reference is the name or model of the equipment this entry applies to, "
+            "matching an entry in the equipment list if mentioned nearby, or null.\n"
             "Rules:\n"
             "- Use only the provided chunk content.\n"
             "- Use only the provided chunk ids when setting source_chunk_id.\n"

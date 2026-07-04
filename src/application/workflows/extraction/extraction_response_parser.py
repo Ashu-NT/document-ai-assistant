@@ -41,6 +41,7 @@ class ExtractionResponseParser:
             validated.specifications,
             validated.safety_warnings,
             validated.maintenance_intervals,
+            validated.troubleshooting_entries,
             validated.identifiers,
         )
         confidence_score = self._resolve_overall_confidence(validated, item_groups)
@@ -75,6 +76,9 @@ class ExtractionResponseParser:
             ],
             "maintenance_intervals": [
                 item.model_dump() for item in validated.maintenance_intervals
+            ],
+            "troubleshooting_entries": [
+                item.model_dump() for item in validated.troubleshooting_entries
             ],
             "identifiers": [item.model_dump() for item in validated.identifiers],
         }

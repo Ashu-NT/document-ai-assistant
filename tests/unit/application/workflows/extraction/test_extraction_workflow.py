@@ -222,6 +222,18 @@ def test_extract_builds_extraction_result_and_saves_it(sample_chunk) -> None:
       "confidence_score": 0.9,
       "requires_human_review": false
     }
+  ],
+  "troubleshooting_entries": [
+    {
+      "symptom": "Pump fails to build pressure",
+      "cause": "Worn hydraulic filter",
+      "remedy": "Replace the hydraulic filter",
+      "component_name": "Hydraulic filter",
+      "equipment_reference": "Hydraulic Pump",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    }
   ]
 }"""
         ]
@@ -277,6 +289,15 @@ def test_extract_builds_extraction_result_and_saves_it(sample_chunk) -> None:
     assert (
         result.maintenance_intervals[0].maintenance_task_id
         == result.maintenance_tasks[0].task_id
+    )
+    assert len(result.troubleshooting_entries) == 1
+    assert result.troubleshooting_entries[0].troubleshooting_id.startswith(
+        "troubleshooting_"
+    )
+    assert result.troubleshooting_entries[0].symptom == "Pump fails to build pressure"
+    assert result.troubleshooting_entries[0].cause == "Worn hydraulic filter"
+    assert (
+        result.troubleshooting_entries[0].equipment_id == result.equipment[0].equipment_id
     )
     assert result.maintenance_tasks[0].source.page_start == sample_chunk.source.page_start
     assert result.spare_parts[0].source.page_start == second_chunk.source.page_start
@@ -467,7 +488,7 @@ def test_extract_emits_progress_messages(sample_chunk) -> None:
         for message in progress_messages
     )
     assert any(
-        "Extraction completed (maintenance_tasks=0, spare_parts=0, equipment=0, manufacturers=0, suppliers=0, procedures=0, specifications=0, safety_warnings=0, maintenance_intervals=0, identifiers=0, batches=1)." in message
+        "Extraction completed (maintenance_tasks=0, spare_parts=0, equipment=0, manufacturers=0, suppliers=0, procedures=0, specifications=0, safety_warnings=0, maintenance_intervals=0, troubleshooting_entries=0, identifiers=0, batches=1)." in message
         for message in progress_messages
     )
 

@@ -12,6 +12,7 @@ from src.domain.extraction import (
     SparePart,
     Specification,
     Supplier,
+    TroubleshootingEntry,
 )
 from src.infrastructure.db.repositories.extraction.equipment_reader import EquipmentReader
 from src.infrastructure.db.repositories.extraction.extraction_reader import ExtractionReader
@@ -34,6 +35,9 @@ from src.infrastructure.db.repositories.extraction.specification_reader import (
     SpecificationReader,
 )
 from src.infrastructure.db.repositories.extraction.supplier_reader import SupplierReader
+from src.infrastructure.db.repositories.extraction.troubleshooting_entry_reader import (
+    TroubleshootingEntryReader,
+)
 
 
 class SqlAlchemyExtractionRepository(ExtractionRepository):
@@ -49,6 +53,7 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
         self.specification_reader = SpecificationReader(session)
         self.safety_warning_reader = SafetyWarningReader(session)
         self.maintenance_interval_reader = MaintenanceIntervalReader(session)
+        self.troubleshooting_entry_reader = TroubleshootingEntryReader(session)
 
     def save_extraction_result(self, result: ExtractionResult) -> None:
         self.writer.save_extraction_result(result)
@@ -119,6 +124,12 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
     ) -> list[MaintenanceInterval]:
         return self.maintenance_interval_reader.list_maintenance_intervals(document_id)
 
+    def list_troubleshooting_entries(
+        self,
+        document_id: str | None = None,
+    ) -> list[TroubleshootingEntry]:
+        return self.troubleshooting_entry_reader.list_troubleshooting_entries(document_id)
+
     def search_maintenance_tasks(
         self,
         query: str,
@@ -184,6 +195,15 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
             query, document_id
         )
 
+    def search_troubleshooting_entries(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[TroubleshootingEntry]:
+        return self.troubleshooting_entry_reader.search_troubleshooting_entries(
+            query, document_id
+        )
+
     def list_maintenance_intervals_by_task_id(
         self,
         maintenance_task_id: str,
@@ -197,3 +217,9 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
         equipment_id: str,
     ) -> list[Procedure]:
         return self.procedure_reader.list_by_equipment_id(equipment_id)
+
+    def list_troubleshooting_entries_by_equipment_id(
+        self,
+        equipment_id: str,
+    ) -> list[TroubleshootingEntry]:
+        return self.troubleshooting_entry_reader.list_by_equipment_id(equipment_id)

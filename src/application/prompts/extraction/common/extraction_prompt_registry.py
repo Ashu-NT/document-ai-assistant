@@ -35,6 +35,9 @@ from src.application.prompts.extraction.specifications.specification_extraction_
 from src.application.prompts.extraction.suppliers.supplier_extraction_prompt_builder import (
     SupplierExtractionPromptBuilder,
 )
+from src.application.prompts.extraction.troubleshooting.troubleshooting_extraction_prompt_builder import (
+    TroubleshootingExtractionPromptBuilder,
+)
 from src.domain.document import DocumentChunk
 
 
@@ -61,6 +64,7 @@ EXTRACTION_PROMPT_REGISTRY: dict[ExtractionPromptType, ExtractionPromptBuilder] 
     ExtractionPromptType.MAINTENANCE_INTERVAL: MaintenanceIntervalExtractionPromptBuilder(),
     ExtractionPromptType.PROCEDURE: ProcedureExtractionPromptBuilder(),
     ExtractionPromptType.SAFETY_WARNING: SafetyWarningExtractionPromptBuilder(),
+    ExtractionPromptType.TROUBLESHOOTING: TroubleshootingExtractionPromptBuilder(),
 }
 
 
