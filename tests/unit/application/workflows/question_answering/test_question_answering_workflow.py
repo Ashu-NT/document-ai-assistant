@@ -525,6 +525,52 @@ def test_answer_generation_answer_text_returned_in_result(
     assert result.answer_text == "The answer is 1000 hours."
 
 
+def test_progress_callback_receives_stage_messages_for_full_generation_path(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    chunk = _make_chunk()
+    wf_result = _make_retrieval_result_with_chunks([chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+    fake_gen = FakeAnswerGenerationService(answer_text="The answer is 1000 hours.")
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the maintenance interval?",
+        allow_answer_generation=True,
+    )
+    messages: list[str] = []
+
+    result = workflow.run(request, progress_callback=messages.append)
+
+    assert result.answer_text == "The answer is 1000 hours."
+    assert messages == [
+        "Analyzing question...",
+        "Retrieving evidence...",
+        "Retrieved 1 evidence chunk(s).",
+        "Checking context guardrails...",
+        "Generating answer...",
+        "Answer ready.",
+    ]
+
+
+def test_progress_callback_is_optional_and_defaults_to_no_op(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    chunk = _make_chunk()
+    wf_result = _make_retrieval_result_with_chunks([chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+    workflow = make_workflow(fake_retrieval, fake_exploration_service)
+    request = QuestionAnsweringRequest(question="What is the maintenance interval?")
+
+    # Must not raise when no progress_callback is given — the default path.
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+
+
 # ---------------------------------------------------------------------------
 # Test 19 — AnswerGenerationService only receives approved chunks
 # ---------------------------------------------------------------------------

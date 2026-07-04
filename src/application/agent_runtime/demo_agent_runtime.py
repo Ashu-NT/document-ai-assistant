@@ -147,8 +147,6 @@ def build_agent_runtime(
     enable_llm_planning: bool,
     enable_llm_research_planning: bool,
 ) -> AgentRuntime:
-    from qdrant_client import QdrantClient
-
     from src.application.guardrails.answering import (
         AnswerSupportGuardrail,
         CitationGuardrail,
@@ -199,17 +197,11 @@ def build_agent_runtime(
         StrategyRetryPolicy,
     )
     from src.application.langgraph.strategy_advisor.advisor import StrategyAdvisor
+    from src.application.orchestrator.retrieval import build_retrieval_runtime
     from src.application.prompts.reflection import ReflectionPromptBuilder
     from src.application.services.ai import LLMService
     from src.application.services.answer_generation import AnswerGenerationService
-    from src.application.services.document import (
-        DocumentCatalogService,
-        DocumentLookupService,
-    )
-    from src.application.services.document_exploration import (
-        DocumentExplorationService,
-    )
-    from src.application.services.retrieval import HybridRetrievalService
+    from src.application.services.document import DocumentCatalogService
     from src.application.tools.documents import (
         DocumentDetailsTool,
         FindDocumentTool,
@@ -232,68 +224,35 @@ def build_agent_runtime(
         RetrieveIdentifiersTool,
         RetrieveTablesTool,
     )
-    from src.application.validation.retrieval import RetrievalQueryValidator
     from src.application.workflows.ingestion import DeleteDocumentWorkflow
     from src.application.workflows.question_answering import (
         QuestionAnsweringRouter,
         QuestionAnsweringWorkflow,
     )
-    from src.application.workflows.retrieval import (
-        RetrievalContextExpander,
-        RetrievalWorkflow,
-    )
     from src.config.settings import (
-        embedding_settings,
         ingestion_settings,
         langgraph_settings,
         llm_settings,
-        qdrant_settings,
-        retrieval_settings,
     )
-    from src.infrastructure.ai.embeddings import create_embedding_provider
     from src.infrastructure.ai.llm import OllamaLLMProvider
     from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork
-    from src.infrastructure.retrieval.keyword import SqlKeywordIndex
-    from src.infrastructure.retrieval.rerankers import DeterministicHybridReranker
-    from src.infrastructure.retrieval.vector import QdrantVectorStore
-    from src.shared.ids import IdGenerator
 
     uow = SqlAlchemyUnitOfWork(session)
-    query_validator = RetrievalQueryValidator()
-    embedding_provider = create_embedding_provider()
-    qdrant_client = _create_qdrant_client(QdrantClient)
-
-    vector_store = QdrantVectorStore(
-        client=qdrant_client,
-        mapping_repository=uow.vector_mappings,
-        collection_name=qdrant_settings.collection,
-        embedding_model=embedding_settings.model_name,
-        query_embedding_provider=embedding_provider,
-        document_repository=uow.documents,
-        enable_identifier_filter=retrieval_settings.enable_dense_identifier_filter,
-    )
-    document_catalog_service = DocumentCatalogService(uow.documents)
-    document_lookup_service = DocumentLookupService(uow.documents)
-    retrieval_service = HybridRetrievalService(
-        keyword_index=SqlKeywordIndex(uow.keyword_index),
-        id_generator=IdGenerator(),
-        retrieval_query_validator=query_validator,
-        vector_store=vector_store,
-        reranker=DeterministicHybridReranker(),
-    )
-    retrieval_workflow = RetrievalWorkflow(
-        retrieval_service=retrieval_service,
-        query_validator=query_validator,
-        context_expander=RetrievalContextExpander(
-            document_lookup_service=document_lookup_service,
-        ),
+    retrieval_runtime = build_retrieval_runtime(
+        unit_of_work=uow,
         pre_retrieval_guardrails=[QueryScopeGuardrail()],
         post_retrieval_guardrails=[
             DocumentRelevanceGuardrail(),
             RetrievalEvidenceGuardrail(),
         ],
     )
-    exploration_service = DocumentExplorationService(document_lookup_service)
+    embedding_provider = retrieval_runtime.embedding_provider
+    qdrant_client = retrieval_runtime.qdrant_client
+    vector_store = retrieval_runtime.vector_store
+    document_catalog_service = DocumentCatalogService(uow.documents)
+    document_lookup_service = retrieval_runtime.document_lookup_service
+    retrieval_workflow = retrieval_runtime.retrieval_workflow
+    exploration_service = retrieval_runtime.exploration_service
 
     answer_generation_service = None
     planning_llm_service = None
@@ -527,11 +486,3 @@ def _close_quietly(resource: Any) -> None:
             close()
         except Exception:
             return
-
-
-def _create_qdrant_client(qdrant_client_class):
-    from src.config.settings import qdrant_settings
-
-    if qdrant_settings.mode.lower() == "local":
-        return qdrant_client_class(path=str(qdrant_settings.storage_path))
-    return qdrant_client_class(host=qdrant_settings.host, port=qdrant_settings.port)

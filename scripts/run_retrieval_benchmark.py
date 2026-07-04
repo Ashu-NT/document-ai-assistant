@@ -159,23 +159,10 @@ def ensure_manifest_exists(
 
 
 def build_benchmark_runtime() -> BenchmarkRuntime:
-    from qdrant_client import QdrantClient  # noqa: WPS433
-
-    from src.application.services.ai import EmbeddingService  # noqa: WPS433
-    from src.application.services.document import DocumentLookupService  # noqa: WPS433
-    from src.application.services.retrieval import HybridRetrievalService  # noqa: WPS433
-    from src.application.validation.retrieval import RetrievalQueryValidator  # noqa: WPS433
-    from src.application.workflows.retrieval import (  # noqa: WPS433
-        RetrievalContextExpander,
-        RetrievalWorkflow,
+    from src.application.orchestrator.retrieval import (  # noqa: WPS433
+        build_retrieval_runtime,
     )
     from src.bootstrap.startup import bootstrap_application  # noqa: WPS433
-    from src.config.settings import (  # noqa: WPS433
-        embedding_settings,
-        qdrant_settings,
-        retrieval_settings,
-    )
-    from src.infrastructure.ai.embeddings import create_embedding_provider  # noqa: WPS433
     from src.infrastructure.db.base import Base  # noqa: WPS433
     from src.infrastructure.db.schema_management import ensure_database_schema  # noqa: WPS433
     from src.infrastructure.db.orm_models import (  # noqa: WPS433,F401
@@ -183,45 +170,16 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
     )
     from src.infrastructure.db.session import SessionLocal, engine  # noqa: WPS433
     from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork  # noqa: WPS433
-    from src.infrastructure.retrieval.keyword import SqlKeywordIndex  # noqa: WPS433
-    from src.infrastructure.retrieval.rerankers import (  # noqa: WPS433
-        DeterministicHybridReranker,
-    )
-    from src.infrastructure.retrieval.vector import QdrantVectorStore  # noqa: WPS433
-    from src.shared.ids import IdGenerator  # noqa: WPS433
 
     bootstrap_application()
     ensure_database_schema(engine)
 
     session = SessionLocal()
     unit_of_work = SqlAlchemyUnitOfWork(session)
-    query_validator = RetrievalQueryValidator()
-    embedding_provider = create_embedding_provider()
-    qdrant_client = _create_qdrant_client(QdrantClient)
-    vector_store = QdrantVectorStore(
-        client=qdrant_client,
-        mapping_repository=unit_of_work.vector_mappings,
-        collection_name=qdrant_settings.collection,
-        embedding_model=embedding_settings.model_name,
-        query_embedding_provider=embedding_provider,
-        document_repository=unit_of_work.documents,
-        enable_identifier_filter=retrieval_settings.enable_dense_identifier_filter,
-    )
-    document_lookup_service = DocumentLookupService(unit_of_work.documents)
-    retrieval_service = HybridRetrievalService(
-        keyword_index=SqlKeywordIndex(unit_of_work.keyword_index),
-        id_generator=IdGenerator(),
-        retrieval_query_validator=query_validator,
-        vector_store=vector_store,
-        reranker=DeterministicHybridReranker(),
-    )
-    workflow = RetrievalWorkflow(
-        retrieval_service=retrieval_service,
-        query_validator=query_validator,
-        context_expander=RetrievalContextExpander(
-            document_lookup_service=document_lookup_service,
-        ),
-    )
+    # Deliberately no pre/post retrieval guardrails here: the benchmark
+    # scores raw retrieval quality, not guardrail-filtered results.
+    retrieval_runtime = build_retrieval_runtime(unit_of_work=unit_of_work)
+    document_lookup_service = retrieval_runtime.document_lookup_service
     return BenchmarkRuntime(
         truth_set_loader=RetrievalTruthSetLoader(),
         manifest_loader=RetrievalBenchmarkCorpusManifestLoader(),
@@ -230,21 +188,9 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
         ),
         evaluator=RetrievalBenchmarkEvaluator(),
         report_writer=RetrievalBenchmarkReportWriter(),
-        workflow=workflow,
+        workflow=retrieval_runtime.retrieval_workflow,
         session=session,
-        qdrant_client=qdrant_client,
-    )
-
-
-def _create_qdrant_client(qdrant_client_class):
-    from src.config.settings import qdrant_settings  # noqa: WPS433
-
-    if qdrant_settings.mode.lower() == "local":
-        return qdrant_client_class(path=str(qdrant_settings.storage_path))
-
-    return qdrant_client_class(
-        host=qdrant_settings.host,
-        port=qdrant_settings.port,
+        qdrant_client=retrieval_runtime.qdrant_client,
     )
 
 

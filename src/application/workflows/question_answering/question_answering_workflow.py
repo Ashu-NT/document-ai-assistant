@@ -1,3 +1,5 @@
+from typing import Callable
+
 from src.application.contracts.guardrails.guardrail import Guardrail
 from src.application.contracts.guardrails.guardrail_context import GuardrailContext
 from src.application.contracts.guardrails.guardrail_decision import GuardrailDecision
@@ -76,10 +78,16 @@ class QuestionAnsweringWorkflow:
         self._answer_generation_service = answer_generation_service
         self._post_answer_guardrails: list[Guardrail] = post_answer_guardrails or []
 
-    def run(self, request: QuestionAnsweringRequest) -> QuestionAnsweringResult:
+    def run(
+        self,
+        request: QuestionAnsweringRequest,
+        *,
+        progress_callback: Callable[[str], None] | None = None,
+    ) -> QuestionAnsweringResult:
         allow_generation = request.allow_answer_generation
 
         if self._pre_query_guardrails:
+            self._emit_progress(progress_callback, "Checking guardrails...")
             context = GuardrailContext(
                 user_input=request.question,
                 query_text=request.question,
@@ -100,6 +108,7 @@ class QuestionAnsweringWorkflow:
                     guardrail_result=blocking,
                 )
 
+        self._emit_progress(progress_callback, "Analyzing question...")
         route, analyzed_query, analyzed_intent = self._router.decide(
             question=request.question,
             top_k=request.top_k or 5,
@@ -107,7 +116,7 @@ class QuestionAnsweringWorkflow:
         )
 
         if route == QuestionAnsweringRoute.DOCUMENT_EXPLORATION:
-            return self._handle_exploration(request)
+            return self._handle_exploration(request, progress_callback=progress_callback)
 
         if request.context_override_chunks is not None:
             workflow_result = self._build_override_workflow_result(
@@ -120,6 +129,7 @@ class QuestionAnsweringWorkflow:
                 analyzed_intent=analyzed_intent,
                 allow_generation=allow_generation,
                 workflow_result=workflow_result,
+                progress_callback=progress_callback,
             )
 
         return self._handle_retrieval(
@@ -127,10 +137,14 @@ class QuestionAnsweringWorkflow:
             analyzed_query,
             analyzed_intent.value,
             allow_generation,
+            progress_callback=progress_callback,
         )
 
     def _handle_exploration(
-        self, request: QuestionAnsweringRequest
+        self,
+        request: QuestionAnsweringRequest,
+        *,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> QuestionAnsweringResult:
         if not request.document_id:
             return QuestionAnsweringResult(
@@ -139,6 +153,7 @@ class QuestionAnsweringWorkflow:
                 diagnostics={"reason": "missing_document_id"},
             )
 
+        self._emit_progress(progress_callback, "Exploring document...")
         try:
             exploration_result = self._exploration_service.explore(request.document_id)
         except DocumentNotFoundError:
@@ -160,14 +175,22 @@ class QuestionAnsweringWorkflow:
         analyzed_query: RetrievalQuery,
         analyzed_intent: str,
         allow_generation: bool = False,
+        *,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> QuestionAnsweringResult:
+        self._emit_progress(progress_callback, "Retrieving evidence...")
         workflow_result = self._retrieval_workflow.run(analyzed_query)
+        self._emit_progress(
+            progress_callback,
+            f"Retrieved {len(workflow_result.final_chunks)} evidence chunk(s).",
+        )
         return self._answer_from_chunks(
             request=request,
             analyzed_query=analyzed_query,
             analyzed_intent=analyzed_intent,
             allow_generation=allow_generation,
             workflow_result=workflow_result,
+            progress_callback=progress_callback,
         )
 
     def _answer_from_chunks(
@@ -178,9 +201,11 @@ class QuestionAnsweringWorkflow:
         analyzed_intent: str,
         allow_generation: bool,
         workflow_result: RetrievalWorkflowResult,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> QuestionAnsweringResult:
 
         # Phase 4: context guardrails — filter, budget, quality
+        self._emit_progress(progress_callback, "Checking context guardrails...")
         approved_chunks, context_blocking = self._context_guardrail_chain.run(
             retrieved_chunks=workflow_result.final_chunks,
             query_text=request.question,
@@ -278,6 +303,7 @@ class QuestionAnsweringWorkflow:
             )
 
         # LLM only ever sees approved_chunks
+        self._emit_progress(progress_callback, "Generating answer...")
         gen_request = AnswerGenerationRequest(
             question=request.question,
             context_chunks=approved_chunks,
@@ -321,6 +347,7 @@ class QuestionAnsweringWorkflow:
                     diagnostics={"blocked_by": "post_answer_guardrail"},
                 )
 
+        self._emit_progress(progress_callback, "Answer ready.")
         return QuestionAnsweringResult(
             route=QuestionAnsweringRoute.RETRIEVAL_QA,
             answer_text=generated.answer_text,
@@ -395,3 +422,11 @@ class QuestionAnsweringWorkflow:
                 "The selected document scope could not be enforced safely for this answer."
             ),
         )
+
+    @staticmethod
+    def _emit_progress(
+        progress_callback: Callable[[str], None] | None,
+        message: str,
+    ) -> None:
+        if progress_callback is not None:
+            progress_callback(message)

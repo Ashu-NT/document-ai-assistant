@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Callable
 
 from src.application.tools.common import (
     ToolMetadata,
@@ -33,6 +34,7 @@ class AnswerQuestionRequest(ToolRequest):
     context_override_chunks: list[RetrievedChunk] | None = None
     retry_query: str | None = None
     resolved_identifiers: list = field(default_factory=list)
+    progress_callback: Callable[[str], None] | None = None
 
 
 class AnswerQuestionTool:
@@ -95,7 +97,10 @@ class AnswerQuestionTool:
         )
 
         try:
-            result = self.workflow.run(qa_request)
+            result = self.workflow.run(
+                qa_request,
+                progress_callback=request.progress_callback,
+            )
         except ApplicationError as exc:
             return application_error_result(exc, metadata=self.metadata)
 

@@ -238,17 +238,7 @@ def resolve_document_with_tool(
 resolve_document = resolve_document_with_tool
 
 
-def _create_qdrant_client(qdrant_client_class):
-    from src.config.settings import qdrant_settings  # noqa: WPS433
-
-    if qdrant_settings.mode.lower() == "local":
-        return qdrant_client_class(path=str(qdrant_settings.storage_path))
-    return qdrant_client_class(host=qdrant_settings.host, port=qdrant_settings.port)
-
-
 def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
-    from qdrant_client import QdrantClient  # noqa: WPS433
-
     from src.application.guardrails.answering import (  # noqa: WPS433
         AnswerSupportGuardrail,
         CitationGuardrail,
@@ -267,77 +257,33 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
         QueryScopeGuardrail,
         RetrievalEvidenceGuardrail,
     )
+    from src.application.orchestrator.retrieval import (  # noqa: WPS433
+        build_retrieval_runtime,
+    )
     from src.application.services.ai import LLMService  # noqa: WPS433
     from src.application.services.answer_generation import (  # noqa: WPS433
         AnswerGenerationService,
-    )
-    from src.application.services.document import DocumentLookupService  # noqa: WPS433
-    from src.application.services.document_exploration import (  # noqa: WPS433
-        DocumentExplorationService,
-    )
-    from src.application.services.retrieval import HybridRetrievalService  # noqa: WPS433
-    from src.application.validation.retrieval import (  # noqa: WPS433
-        RetrievalQueryValidator,
     )
     from src.application.workflows.question_answering import (  # noqa: WPS433
         QuestionAnsweringRouter,
         QuestionAnsweringWorkflow,
     )
-    from src.application.workflows.retrieval import (  # noqa: WPS433
-        RetrievalContextExpander,
-        RetrievalWorkflow,
-    )
-    from src.config.settings import (  # noqa: WPS433
-        embedding_settings,
-        llm_settings,
-        qdrant_settings,
-        retrieval_settings,
-    )
-    from src.infrastructure.ai.embeddings import create_embedding_provider  # noqa: WPS433
+    from src.config.settings import llm_settings  # noqa: WPS433
     from src.infrastructure.ai.llm import OllamaLLMProvider  # noqa: WPS433
     from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork  # noqa: WPS433
-    from src.infrastructure.retrieval.keyword import SqlKeywordIndex  # noqa: WPS433
-    from src.infrastructure.retrieval.rerankers import (  # noqa: WPS433
-        DeterministicHybridReranker,
-    )
-    from src.infrastructure.retrieval.vector import QdrantVectorStore  # noqa: WPS433
-    from src.shared.ids import IdGenerator  # noqa: WPS433
 
     uow = SqlAlchemyUnitOfWork(session)
-    query_validator = RetrievalQueryValidator()
-    embedding_provider = create_embedding_provider()
-    qdrant_client = _create_qdrant_client(QdrantClient)
-
-    vector_store = QdrantVectorStore(
-        client=qdrant_client,
-        mapping_repository=uow.vector_mappings,
-        collection_name=qdrant_settings.collection,
-        embedding_model=embedding_settings.model_name,
-        query_embedding_provider=embedding_provider,
-        document_repository=uow.documents,
-        enable_identifier_filter=retrieval_settings.enable_dense_identifier_filter,
-    )
-    document_lookup_service = DocumentLookupService(uow.documents)
-    retrieval_service = HybridRetrievalService(
-        keyword_index=SqlKeywordIndex(uow.keyword_index),
-        id_generator=IdGenerator(),
-        retrieval_query_validator=query_validator,
-        vector_store=vector_store,
-        reranker=DeterministicHybridReranker(),
-    )
-    retrieval_workflow = RetrievalWorkflow(
-        retrieval_service=retrieval_service,
-        query_validator=query_validator,
-        context_expander=RetrievalContextExpander(
-            document_lookup_service=document_lookup_service,
-        ),
+    retrieval_runtime = build_retrieval_runtime(
+        unit_of_work=uow,
         pre_retrieval_guardrails=[QueryScopeGuardrail()],
         post_retrieval_guardrails=[
             DocumentRelevanceGuardrail(),
             RetrievalEvidenceGuardrail(),
         ],
     )
-    exploration_service = DocumentExplorationService(document_lookup_service)
+    qdrant_client = retrieval_runtime.qdrant_client
+    retrieval_workflow = retrieval_runtime.retrieval_workflow
+    exploration_service = retrieval_runtime.exploration_service
 
     # Resolve the answer generation model once so we can report it to the user.
     # answer_generation_llm falls back to general_llm when not explicitly set.
@@ -826,6 +772,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             allow_answer_generation=effective_generation,
             require_citations=True,
             trace=args.trace,
+            progress_callback=print_status if not args.json else None,
         )
         tool_result = answer_question_tool.run(request)
         if (
