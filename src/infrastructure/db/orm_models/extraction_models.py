@@ -253,6 +253,7 @@ class SpecificationORM(Base):
 
     page_start: Mapped[int | None] = mapped_column(nullable=True)
     page_end: Mapped[int | None] = mapped_column(nullable=True)
+    source_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     confidence_score: Mapped[float | None] = mapped_column(nullable=True)
     requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
@@ -295,6 +296,7 @@ class TroubleshootingEntryORM(Base):
 
     page_start: Mapped[int | None] = mapped_column(nullable=True)
     page_end: Mapped[int | None] = mapped_column(nullable=True)
+    source_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     confidence_score: Mapped[float | None] = mapped_column(nullable=True)
     requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
@@ -409,6 +411,7 @@ class SupplierORM(Base):
 
     page_start: Mapped[int | None] = mapped_column(nullable=True)
     page_end: Mapped[int | None] = mapped_column(nullable=True)
+    source_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     confidence_score: Mapped[float | None] = mapped_column(nullable=True)
     requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)

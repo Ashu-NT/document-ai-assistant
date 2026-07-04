@@ -1,10 +1,4 @@
 from src.application.prompts.classification import ChunkTypePromptBuilder
-from src.application.workflows.classification.classification_response_parser import (
-    ClassificationResponseParser,
-)
-from src.application.workflows.classification.classification_response_schema import (
-    build_classification_response_json_schema,
-)
 from src.domain.common import ChunkType
 
 
@@ -13,13 +7,20 @@ class ChunkTypeLLMClassifier:
 
     Used by ChunkTypeClassificationWorkflow and kept intentionally small:
     prompt building, structured generation, structured parsing, and enum mapping.
+
+    Imports the classification response parser/schema lazily inside classify()
+    rather than at module level: this module is imported both directly (by
+    tests/callers reaching for ChunkTypeLLMClassifier) and transitively via
+    src.application.workflows.classification's own package __init__ (which
+    pulls in ChunkTypeClassificationWorkflow, which imports this module) —
+    a module-level import back into that package creates a circular import
+    whenever this module is the first one touched.
     """
 
     def __init__(self, llm_service=None, model: str | None = None) -> None:
         self._llm_service = llm_service
         self._model = model
         self._prompt_builder = ChunkTypePromptBuilder()
-        self._response_parser = ClassificationResponseParser()
 
     def is_available(self) -> bool:
         return self._llm_service is not None
@@ -32,6 +33,14 @@ class ChunkTypeLLMClassifier:
     ) -> ChunkType | None:
         if self._llm_service is None or not content or not content.strip():
             return None
+
+        from src.application.workflows.classification.classification_response_parser import (
+            ClassificationResponseParser,
+        )
+        from src.application.workflows.classification.classification_response_schema import (
+            build_classification_response_json_schema,
+        )
+
         prompt = self._prompt_builder.build(
             _WorkflowLocalChunk(
                 content=content,
@@ -43,12 +52,12 @@ class ChunkTypeLLMClassifier:
             model=self._model,
             response_schema=build_classification_response_json_schema(),
         )
-        payload = self._response_parser.parse(response)
+        payload = ClassificationResponseParser().parse(response)
         return self._resolve_chunk_type(payload.label)
 
     @staticmethod
     def _resolve_chunk_type(label: str) -> ChunkType | None:
-        normalized = label.strip().lower()
+        normalized = label.strip().lower().replace(" ", "_").replace("-", "_")
         for chunk_type in ChunkType:
             if normalized in {chunk_type.value, chunk_type.name.lower()}:
                 return (

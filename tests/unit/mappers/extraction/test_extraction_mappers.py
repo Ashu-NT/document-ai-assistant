@@ -9,6 +9,9 @@ from src.domain.extraction import (
     SafetyWarning,
     SemanticSourceMetadata,
     SparePart,
+    Specification,
+    Supplier,
+    TroubleshootingEntry,
 )
 from src.infrastructure.db.mappers import (
     EquipmentInfoMapper,
@@ -104,6 +107,34 @@ _SAMPLE_SOURCE_METADATA = SemanticSourceMetadata(
             ),
             MaintenanceIntervalMapper,
         ),
+        (
+            Specification(
+                specification_id="specification_001",
+                document_id="document_001",
+                parameter="Pressure rating",
+                value="16",
+                source_metadata=_SAMPLE_SOURCE_METADATA,
+            ),
+            SpecificationMapper,
+        ),
+        (
+            Supplier(
+                supplier_id="supplier_001",
+                document_id="document_001",
+                name="Example Supplier",
+                source_metadata=_SAMPLE_SOURCE_METADATA,
+            ),
+            SupplierMapper,
+        ),
+        (
+            TroubleshootingEntry(
+                troubleshooting_id="troubleshooting_001",
+                document_id="document_001",
+                symptom="Pump fails to build pressure",
+                source_metadata=_SAMPLE_SOURCE_METADATA,
+            ),
+            TroubleshootingEntryMapper,
+        ),
     ],
 )
 def test_source_metadata_round_trips_through_json_column(entity, mapper) -> None:
@@ -157,6 +188,31 @@ def test_source_metadata_round_trips_through_json_column(entity, mapper) -> None
                 interval="1000 operating hours",
             ),
             MaintenanceIntervalMapper,
+        ),
+        (
+            Specification(
+                specification_id="specification_001",
+                document_id="document_001",
+                parameter="Pressure rating",
+                value="16",
+            ),
+            SpecificationMapper,
+        ),
+        (
+            Supplier(
+                supplier_id="supplier_001",
+                document_id="document_001",
+                name="Example Supplier",
+            ),
+            SupplierMapper,
+        ),
+        (
+            TroubleshootingEntry(
+                troubleshooting_id="troubleshooting_001",
+                document_id="document_001",
+                symptom="Pump fails to build pressure",
+            ),
+            TroubleshootingEntryMapper,
         ),
     ],
 )

@@ -274,6 +274,7 @@ class ExtractionResultMerger:
     def _merge_supplier(self, current: Supplier, candidate: Supplier) -> None:
         current.website = current.website or candidate.website
         current.country = current.country or candidate.country
+        current.source_metadata = current.source_metadata or candidate.source_metadata
         self._merge_common_fields(current, candidate)
 
     def _merge_procedure(self, current: Procedure, candidate: Procedure) -> None:
@@ -288,6 +289,7 @@ class ExtractionResultMerger:
     def _merge_specification(self, current: Specification, candidate: Specification) -> None:
         current.unit = current.unit or candidate.unit
         current.component_name = current.component_name or candidate.component_name
+        current.source_metadata = current.source_metadata or candidate.source_metadata
         self._merge_common_fields(current, candidate)
 
     def _merge_safety_warning(self, current: SafetyWarning, candidate: SafetyWarning) -> None:
@@ -315,6 +317,7 @@ class ExtractionResultMerger:
         current.remedy = current.remedy or candidate.remedy
         current.component_name = current.component_name or candidate.component_name
         current.equipment_id = current.equipment_id or candidate.equipment_id
+        current.source_metadata = current.source_metadata or candidate.source_metadata
         self._merge_common_fields(current, candidate)
 
     def _merge_identifier(

@@ -1185,6 +1185,11 @@ class ExtractionWorkflow:
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
+            source_metadata=self._build_source_metadata(
+                document_id=document_id,
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
             confidence_score=confidence_score,
             requires_human_review=(
                 self._resolve_requires_human_review(
@@ -1311,6 +1316,11 @@ class ExtractionWorkflow:
             component_name=self._optional_text(payload, "component_name", "component"),
             source_chunk_id=source_chunk_id,
             source=self._resolve_source_location(
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
+            source_metadata=self._build_source_metadata(
+                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1481,6 +1491,11 @@ class ExtractionWorkflow:
             equipment_id=equipment_id,
             source_chunk_id=source_chunk_id,
             source=self._resolve_source_location(
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
+            source_metadata=self._build_source_metadata(
+                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),

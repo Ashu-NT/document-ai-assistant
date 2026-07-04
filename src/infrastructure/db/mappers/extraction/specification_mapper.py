@@ -1,6 +1,8 @@
 from src.domain.extraction import Specification
 from src.infrastructure.db.mappers.common.source_location_mapper import (
     columns_to_source_location,
+    json_to_source_metadata,
+    source_metadata_to_json,
 )
 from src.infrastructure.db.orm_models import SpecificationORM
 
@@ -22,6 +24,7 @@ class SpecificationMapper:
             source_chunk_id=specification.source_chunk_id,
             page_start=specification.source.page_start,
             page_end=specification.source.page_end,
+            source_metadata_json=source_metadata_to_json(specification.source_metadata),
             confidence_score=specification.confidence_score,
             requires_human_review=specification.requires_human_review,
             created_at=specification.audit.created_at,
@@ -41,6 +44,7 @@ class SpecificationMapper:
                 page_start=orm.page_start,
                 page_end=orm.page_end,
             ),
+            source_metadata=json_to_source_metadata(orm.source_metadata_json),
             confidence_score=orm.confidence_score,
             requires_human_review=orm.requires_human_review,
         )
