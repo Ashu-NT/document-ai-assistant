@@ -1,5 +1,5 @@
-from domain.memory import SemanticMemoryReference
-from infrastructure.db.orm_models import SemanticMemoryReferenceORM
+from src.domain.memory import SemanticMemoryReference
+from src.infrastructure.db.orm_models import SemanticMemoryReferenceORM
 
 
 class SemanticMemoryMapper:

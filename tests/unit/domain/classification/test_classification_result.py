@@ -1,4 +1,4 @@
-from domain.classification import ClassificationResult
+from src.domain.classification import ClassificationResult
 
 
 def test_classification_result_is_confident() -> None:
