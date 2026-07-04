@@ -3,7 +3,11 @@ from dataclasses import replace as dataclass_replace
 from typing import Any
 from collections.abc import Callable
 
-from src.application.prompts.extraction import IdentifierExtractionPromptBuilder
+from src.application.prompts.extraction import (
+    ExtractionPromptType,
+    IdentifierExtractionPromptBuilder,
+)
+from src.application.prompts.extraction.narrowed import ExtractionNarrowedPromptBuilder
 from src.application.services.ai import LLMService
 from src.application.services.extraction import ExtractionService
 from src.application.validation.common import ValidationResult
@@ -13,6 +17,10 @@ from src.application.workflows.extraction.batching import (
     ExtractionBatchDiagnostics,
     ExtractionChunkBatcher,
     safe_response_preview,
+)
+from src.application.workflows.extraction.candidates import (
+    ExtractionCandidateLLMRouter,
+    ExtractionCandidateSelector,
 )
 from src.application.workflows.extraction.context import (
     SemanticExtractionContext,
@@ -151,6 +159,15 @@ def _default_extraction_json_mode() -> bool:
         return True
 
 
+def _default_candidate_narrowing_enabled() -> bool:
+    try:
+        from src.config.settings import extraction_settings
+
+        return extraction_settings.extraction_candidate_narrowing_enabled
+    except Exception:
+        return False
+
+
 class ExtractionWorkflow:
     def __init__(
         self,
@@ -171,6 +188,9 @@ class ExtractionWorkflow:
         temperature: float | None = None,
         json_mode: bool | None = None,
         semantic_context_builder: SemanticExtractionContextBuilder | None = None,
+        candidate_selector: ExtractionCandidateSelector | None = None,
+        narrowed_prompt_builder: ExtractionNarrowedPromptBuilder | None = None,
+        enable_candidate_narrowing: bool | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.extraction_service = extraction_service
@@ -180,6 +200,17 @@ class ExtractionWorkflow:
         self.response_parser = response_parser or ExtractionResponseParser()
         self.semantic_context_builder = (
             semantic_context_builder or SemanticExtractionContextBuilder()
+        )
+        self.candidate_selector = candidate_selector or ExtractionCandidateSelector(
+            llm_router=ExtractionCandidateLLMRouter(llm_service=llm_service)
+        )
+        self.narrowed_prompt_builder = (
+            narrowed_prompt_builder or ExtractionNarrowedPromptBuilder()
+        )
+        self.enable_candidate_narrowing = (
+            enable_candidate_narrowing
+            if enable_candidate_narrowing is not None
+            else _default_candidate_narrowing_enabled()
         )
         self.extraction_model = extraction_model or _default_extraction_model()
         self.confidence_threshold = (
@@ -439,11 +470,20 @@ class ExtractionWorkflow:
                 f"({batch.char_count} chars, {batch.word_count} words)..."
             ),
         )
-        prompt = self.prompt_builder.build(
-            document_id,
-            batch.chunks,
+        prompt, requested_types = self._build_prompt(
+            document_id=document_id,
+            batch=batch,
             previous_error=previous_error,
         )
+        if requested_types is not None:
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                    "Narrowed extraction to: "
+                    f"{', '.join(sorted(t.value for t in requested_types))}"
+                ),
+            )
         self._emit_progress(
             progress_callback,
             (
@@ -527,6 +567,56 @@ class ExtractionWorkflow:
             )
         )
         return extraction_result
+
+    def _build_prompt(
+        self,
+        *,
+        document_id: str,
+        batch: ExtractionBatch,
+        previous_error: str | None,
+    ) -> tuple[str, frozenset[ExtractionPromptType] | None]:
+        """Builds the extraction prompt for a batch. Returns the prompt and,
+        when narrowing actually reduced the requested types below the full
+        set, the resolved type set (None otherwise) — used only to report
+        what was narrowed via progress_callback.
+
+        Falls back to the unnarrowed prompt_builder whenever narrowing is
+        disabled or the batch's union of candidate types covers everything
+        anyway, so the common case renders a byte-identical prompt to
+        before this feature existed.
+        """
+        if not self.enable_candidate_narrowing or not batch.chunks:
+            return (
+                self.prompt_builder.build(
+                    document_id, batch.chunks, previous_error=previous_error
+                ),
+                None,
+            )
+
+        requested_types: frozenset[ExtractionPromptType] = frozenset().union(
+            *(
+                self.candidate_selector.select_for_chunk(chunk)
+                for chunk in batch.chunks
+            )
+        )
+
+        if requested_types == ExtractionCandidateSelector.all_types():
+            return (
+                self.prompt_builder.build(
+                    document_id, batch.chunks, previous_error=previous_error
+                ),
+                None,
+            )
+
+        return (
+            self.narrowed_prompt_builder.build(
+                document_id,
+                batch.chunks,
+                requested_types=requested_types,
+                previous_error=previous_error,
+            ),
+            requested_types,
+        )
 
     @staticmethod
     def _coerce_chunks(

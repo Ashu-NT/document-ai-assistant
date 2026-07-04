@@ -63,3 +63,8 @@ class ExtractionSettings(AppBaseSettings):
         default=False,
         alias="EXTRACTION_CANDIDATE_ROUTER_ENABLED",
     )
+
+    extraction_candidate_narrowing_enabled: bool = Field(
+        default=False,
+        alias="EXTRACTION_CANDIDATE_NARROWING_ENABLED",
+    )

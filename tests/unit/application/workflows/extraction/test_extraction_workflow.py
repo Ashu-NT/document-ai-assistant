@@ -5,6 +5,7 @@ from src.application.validation.extraction import ExtractionResultValidator
 from src.application.workflows.extraction import ExtractionWorkflow
 from src.application.workflows.extraction.batching import ExtractionChunkBatcher
 from src.domain.assets import TableAsset
+from src.domain.common import ChunkType
 from src.domain.document import DocumentChunk, DocumentSection
 from src.domain.extraction import ProcedureType
 from src.shared.exceptions import SchemaValidationError
@@ -415,6 +416,136 @@ def test_extract_populates_source_metadata_with_graph_context(sample_chunk) -> N
 
     last_metadata = tasks_by_chunk["chunk_003"].source_metadata
     assert last_metadata.nearby_chunk_ids == ("chunk_002",)
+
+
+def _empty_extraction_response() -> str:
+    return """{
+  "confidence_score": 0.8,
+  "requires_human_review": false,
+  "maintenance_tasks": [],
+  "spare_parts": [],
+  "equipment": [],
+  "manufacturers": []
+}"""
+
+
+def test_extract_uses_full_prompt_when_narrowing_disabled(sample_chunk) -> None:
+    safety_chunk = DocumentChunk(
+        chunk_id="chunk_001",
+        document_id=sample_chunk.document_id,
+        section_id=sample_chunk.section_id,
+        content="Danger: disconnect power before servicing.",
+        chunk_type=ChunkType.SAFETY_WARNING,
+        source=sample_chunk.source,
+    )
+    fake_llm_service = FakeLLMService([_empty_extraction_response()])
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        enable_candidate_narrowing=False,
+    )
+
+    workflow.extract(sample_chunk.document_id, [safety_chunk])
+
+    prompt = fake_llm_service.calls[0]["prompt"]
+    assert '"procedures": [' in prompt
+    assert '"troubleshooting_entries": [' in prompt
+
+
+def test_extract_narrows_prompt_when_candidate_narrowing_enabled(sample_chunk) -> None:
+    safety_chunk = DocumentChunk(
+        chunk_id="chunk_001",
+        document_id=sample_chunk.document_id,
+        section_id=sample_chunk.section_id,
+        content="Danger: disconnect power before servicing.",
+        chunk_type=ChunkType.SAFETY_WARNING,
+        section_path=["Safety"],
+        source=sample_chunk.source,
+    )
+    fake_llm_service = FakeLLMService([_empty_extraction_response()])
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        enable_candidate_narrowing=True,
+    )
+
+    workflow.extract(sample_chunk.document_id, [safety_chunk])
+
+    prompt = fake_llm_service.calls[0]["prompt"]
+    assert '"safety_warnings": [' in prompt
+    assert '"identifiers": [' in prompt
+    assert '"procedures": [' not in prompt
+    assert '"troubleshooting_entries": [' not in prompt
+    assert '"spare_parts": [' not in prompt
+
+
+def test_extract_falls_back_to_full_prompt_when_union_candidates_cover_everything(
+    sample_chunk,
+) -> None:
+    chunk_a = DocumentChunk(
+        chunk_id="chunk_001",
+        document_id=sample_chunk.document_id,
+        section_id=sample_chunk.section_id,
+        content="Danger: disconnect power before servicing.",
+        chunk_type=ChunkType.SAFETY_WARNING,
+        source=sample_chunk.source,
+        chunk_index=1,
+    )
+    chunk_b = DocumentChunk(
+        chunk_id="chunk_002",
+        document_id=sample_chunk.document_id,
+        section_id=sample_chunk.section_id,
+        content="General overview content.",
+        chunk_type=ChunkType.GENERAL,
+        source=sample_chunk.source,
+        chunk_index=2,
+    )
+    fake_llm_service = FakeLLMService([_empty_extraction_response()])
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        enable_candidate_narrowing=True,
+    )
+
+    workflow.extract(sample_chunk.document_id, [chunk_a, chunk_b])
+
+    prompt = fake_llm_service.calls[0]["prompt"]
+    assert '"procedures": [' in prompt
+    assert '"troubleshooting_entries": [' in prompt
+    assert '"spare_parts": [' in prompt
+
+
+def test_extract_emits_narrowed_progress_message_when_narrowing_applied(
+    sample_chunk,
+) -> None:
+    safety_chunk = DocumentChunk(
+        chunk_id="chunk_001",
+        document_id=sample_chunk.document_id,
+        section_id=sample_chunk.section_id,
+        content="Danger: disconnect power before servicing.",
+        chunk_type=ChunkType.SAFETY_WARNING,
+        source=sample_chunk.source,
+    )
+    fake_llm_service = FakeLLMService([_empty_extraction_response()])
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        enable_candidate_narrowing=True,
+    )
+    progress_messages: list[str] = []
+
+    workflow.extract(
+        sample_chunk.document_id,
+        [safety_chunk],
+        progress_callback=progress_messages.append,
+    )
+
+    assert any("Narrowed extraction to:" in message for message in progress_messages)
+    assert any("safety_warning" in message for message in progress_messages)
 
 
 def test_extract_falls_back_to_unknown_procedure_type_for_unrecognized_value(
