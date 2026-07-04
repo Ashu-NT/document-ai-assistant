@@ -27,9 +27,11 @@ class RetrievalPlanner:
         *,
         tool_registry: ToolRegistry,
         policy: RetrievalStrategyPolicy,
+        identifier_value: str | None = None,
     ) -> RetrievalPlan:
         return self.plan_builder.build(
             decision,
             tool_registry=tool_registry,
             policy=policy,
+            identifier_value=identifier_value,
         )

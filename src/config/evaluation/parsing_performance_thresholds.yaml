@@ -2,16 +2,40 @@
 # ParsingPerformanceGate (scripts/run_parsing_performance_gate.py) against a
 # real ParsingWorkflow.parse() run.
 #
-# These are deliberately generous placeholder ceilings, not tuned against a
-# real large-manual/scanned-PDF reference document (none is committed to this
-# repo — see outputs/architecture/current_agent_flow_report.md P2). Recalibrate
-# once a real reference document is available: run the gate against it once
-# to see actual durations, then tighten these to just above that baseline so
-# future regressions are caught early.
+# Calibrated 2026-07-04 against a real large-manual reference document (see
+# outputs/architecture/current_agent_flow_report.md P2 for history — the
+# previous values here were uncalibrated placeholders):
+#
+#   Reference: "09 Operating Manual Maximator Compressed Air Driven Gas
+#   Booster" — 64 pages, 12.5 MB, 691 canonical elements, 154 sections,
+#   170 chunks. Parsed with this deployment's default settings (single-
+#   threaded Docling, DOCLING_ENABLE_OCR=false, table structure detection
+#   on). Measured via:
+#     python scripts/run_parsing_performance_gate.py "<path>.pdf" --json
+#   Result: docling_conversion=349.4s, canonical_normalization=0.88s,
+#   graph_build=0.92s, total=351.2s.
+#
+# Thresholds below apply headroom over that measurement rather than the raw
+# figure, since hardware and per-document variance both matter:
+#   - docling_conversion: ~30% margin (450s) — this stage dominates total
+#     time and scales most directly with page count/table density, so it's
+#     the most regression-sensitive lever and is deliberately not padded
+#     further.
+#   - canonical_normalization / graph_build: ~10x margin (10s each) — both
+#     were sub-second here, but this is a single reference document; a
+#     denser or more deeply nested manual could scale differently, and only
+#     one sample exists to calibrate against.
+#   - total: sum of the above plus a small buffer.
+#
+# Known gap, not yet closed: this reference document is text-based, not
+# scanned/image-heavy. DOCLING_ENABLE_OCR=false is this deployment's default,
+# so OCR-path performance (Docling internal OCR or the PaddleOCR provider
+# fallback) remains uncalibrated — no genuinely scanned PDF was available to
+# test against. Recalibrate the OCR path once one is.
 #
 # Set a threshold to null to disable that stage's check.
 
-docling_conversion_max_seconds: 120.0
-canonical_normalization_max_seconds: 30.0
-graph_build_max_seconds: 20.0
-total_max_seconds: 180.0
+docling_conversion_max_seconds: 450.0
+canonical_normalization_max_seconds: 10.0
+graph_build_max_seconds: 10.0
+total_max_seconds: 480.0

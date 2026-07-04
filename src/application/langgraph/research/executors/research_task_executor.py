@@ -52,6 +52,7 @@ class ResearchTaskExecutor:
             answer_intent=task.answer_intent_hint,
             requested_strategy=requested_strategy,
             use_llm_selector=use_llm_strategy,
+            identifier_value=getattr(task, "diagnostics", {}).get("identifier_value"),
         )
         try:
             strategy_result = self.retrieval_strategy_service.select_and_plan(

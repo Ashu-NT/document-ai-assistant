@@ -30,6 +30,7 @@ class RetrievalContext:
     use_llm_selector: bool = False
     analyzed_query: RetrievalQuery | None = None
     strategy_advisor_proposal: StrategyAdvisorProposal | None = None
+    identifier_value: str | None = None
 
     @property
     def effective_document_id(self) -> str | None:

@@ -118,6 +118,7 @@ class RetrievalStrategyService:
             validated_decision,
             tool_registry=tool_registry,
             policy=self.policy,
+            identifier_value=context.identifier_value,
         )
         validated_plan = self.plan_validator.validate(
             plan,

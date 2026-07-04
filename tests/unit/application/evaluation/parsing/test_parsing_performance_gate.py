@@ -130,3 +130,29 @@ class TestParsingPerformanceThresholds:
     def test_from_yaml_raises_when_file_missing(self, tmp_path):
         with pytest.raises(SchemaValidationError):
             ParsingPerformanceThresholds.from_yaml(tmp_path / "nonexistent.yaml")
+
+    def test_default_yaml_is_calibrated_against_a_real_reference_document(self):
+        """Locks in the 2026-07-04 calibration (see the YAML file's own
+        comments for the reference document and methodology) so a future
+        accidental revert to uncalibrated placeholder values doesn't go
+        unnoticed. A real 64-page manual measured docling_conversion=349.4s
+        and total=351.2s — thresholds must stay above that real baseline
+        (with headroom) rather than drift back toward arbitrary guesses."""
+        thresholds = ParsingPerformanceThresholds.from_yaml()
+
+        assert thresholds.docling_conversion_max_seconds == pytest.approx(450.0)
+        assert thresholds.canonical_normalization_max_seconds == pytest.approx(10.0)
+        assert thresholds.graph_build_max_seconds == pytest.approx(10.0)
+        assert thresholds.total_max_seconds == pytest.approx(480.0)
+
+        gate = ParsingPerformanceGate(thresholds=thresholds)
+        result = gate.check(
+            {
+                "docling_conversion": 349.37561359999745,
+                "canonical_normalization": 0.8835923000006005,
+                "graph_build": 0.9169074999990698,
+                "graph_validation": 0.000816099996882258,
+                "total": 351.1774011999987,
+            }
+        )
+        assert result.passed, result.summary()

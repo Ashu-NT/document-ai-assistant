@@ -20,6 +20,7 @@ class RetrievalPlanBuilder:
         *,
         tool_registry: ToolRegistry,
         policy: RetrievalStrategyPolicy,
+        identifier_value: str | None = None,
     ) -> RetrievalPlan:
         strategies = decision.selected_strategies[: policy.max_strategies_per_query]
         if not strategies:
@@ -31,6 +32,7 @@ class RetrievalPlanBuilder:
                 strategy=strategy,
                 decision=decision,
                 tool_registry=tool_registry,
+                identifier_value=identifier_value,
             )
             for index, strategy in enumerate(strategies, start=1)
         ]
@@ -51,10 +53,23 @@ class RetrievalPlanBuilder:
         strategy: RetrievalStrategy,
         decision: RetrievalStrategyDecision,
         tool_registry: ToolRegistry,
+        identifier_value: str | None = None,
     ) -> RetrievalPlanStep:
         tool_name = self._tool_name_for(strategy, tool_registry)
         query = self._query_for(strategy, decision)
         chunk_types = self._chunk_types_for(strategy)
+        args: dict[str, object] = {
+            "query_text": query,
+            "document_id": decision.document_id,
+            "top_k": decision.top_k,
+            "chunk_types": chunk_types,
+        }
+        if strategy == RetrievalStrategy.IDENTIFIER_LOOKUP and identifier_value:
+            # Enables RetrieveIdentifiersTool's exact-value lookup branch
+            # (a deterministic DocumentLookupService.search_identifiers() call
+            # plus scoped chunk retrieval) instead of its generic query_text
+            # fallback, which never surfaces structured identifier data.
+            args["identifier_value"] = identifier_value
         return RetrievalPlanStep(
             step_id=f"retrieval_step_{index}",
             strategy=strategy,
@@ -62,12 +77,7 @@ class RetrievalPlanBuilder:
             document_id=decision.document_id,
             top_k=decision.top_k,
             tool_name=tool_name,
-            args={
-                "query_text": query,
-                "document_id": decision.document_id,
-                "top_k": decision.top_k,
-                "chunk_types": chunk_types,
-            },
+            args=args,
             output_key=f"retrieval_{index}",
             required=index == 1,
             reason=f"Execute {strategy.value} using {tool_name}.",

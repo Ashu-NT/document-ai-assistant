@@ -425,7 +425,17 @@ class DeterministicResearchPlanner:
             "strategy_hint": strategy.value,
         }
         if strategy == RetrievalStrategy.IDENTIFIER_LOOKUP:
-            identifier_value = self._extract_identifier_value(concept)
+            # `concept` is usually a category label ("part number", "serial
+            # number") rather than the actual value, because that's what
+            # `_keyword_concepts` matches via `_CATEGORY_PATTERNS` — the value
+            # itself lives elsewhere in the raw request. Comparison-goal
+            # concepts (from `_split_compare_concepts`) are the exception:
+            # there, `concept` often already *is* the value. Try `concept`
+            # first so that case still works, then fall back to searching the
+            # full request text.
+            identifier_value = self._extract_identifier_value(
+                concept
+            ) or self._extract_identifier_value(goal.user_input)
             if identifier_value:
                 diagnostics["identifier_value"] = identifier_value
         return self.plan_builder.build_task(

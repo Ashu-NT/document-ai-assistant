@@ -9,7 +9,11 @@ from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
 
 class _FakeStrategyService:
+    def __init__(self) -> None:
+        self.contexts = []
+
     def select_and_plan(self, context, *, tool_registry):
+        self.contexts.append(context)
         return SimpleNamespace(
             plan=SimpleNamespace(to_dict=lambda: {"steps": [{"tool_name": "retrieve_chunks"}]}),
             decision=SimpleNamespace(primary_strategy=RetrievalStrategy.MAINTENANCE_LOOKUP),
@@ -83,6 +87,52 @@ def test_research_task_executor_collects_evidence() -> None:
     assert result.tool_names == ["retrieve_chunks"]
     assert len(result.evidence) == 1
     assert result.evidence[0].chunk_id == "chunk-1"
+
+
+def test_research_task_executor_forwards_identifier_value_from_task_diagnostics() -> None:
+    strategy_service = _FakeStrategyService()
+    executor = ResearchTaskExecutor(
+        retrieval_strategy_service=strategy_service,
+        retrieval_plan_executor=_FakePlanExecutor(),
+    )
+    task = ResearchTask(
+        task_id="task-2",
+        title="Collect evidence for MK311007",
+        question="What evidence in this document describes MK311007?",
+        strategy_hint=RetrievalStrategy.IDENTIFIER_LOOKUP.value,
+        answer_intent_hint="identifier_lookup",
+        document_id="doc-42",
+        diagnostics={"concept": "MK311007", "identifier_value": "MK311007"},
+    )
+
+    executor.execute(
+        task,
+        route="deep_research",
+        document_title="FWC12 Manual",
+        tool_registry=ToolRegistry(retrieve_chunks_tool=object()),
+        use_llm_strategy=False,
+    )
+
+    assert len(strategy_service.contexts) == 1
+    assert strategy_service.contexts[0].identifier_value == "MK311007"
+
+
+def test_research_task_executor_leaves_identifier_value_none_when_not_an_identifier_task() -> None:
+    strategy_service = _FakeStrategyService()
+    executor = ResearchTaskExecutor(
+        retrieval_strategy_service=strategy_service,
+        retrieval_plan_executor=_FakePlanExecutor(),
+    )
+
+    executor.execute(
+        _task(),
+        route="deep_research",
+        document_title="FWC12 Manual",
+        tool_registry=ToolRegistry(retrieve_chunks_tool=object()),
+        use_llm_strategy=False,
+    )
+
+    assert strategy_service.contexts[0].identifier_value is None
 
 
 def test_research_task_executor_returns_safe_failure_when_tool_is_missing() -> None:

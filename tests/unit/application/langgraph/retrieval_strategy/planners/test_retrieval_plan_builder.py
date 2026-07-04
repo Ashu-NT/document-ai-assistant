@@ -30,6 +30,66 @@ def test_retrieval_plan_builder_uses_retrieve_tables_when_available() -> None:
     assert plan.steps[0].tool_name == "retrieve_tables"
 
 
+def test_retrieval_plan_builder_adds_identifier_value_to_identifier_lookup_step() -> None:
+    builder = RetrievalPlanBuilder()
+    decision = RetrievalStrategyDecision(
+        primary_strategy=RetrievalStrategy.IDENTIFIER_LOOKUP,
+        query="what is part MK311007",
+        top_k=5,
+    )
+
+    plan = builder.build(
+        decision,
+        tool_registry=ToolRegistry(
+            retrieve_chunks_tool=object(),
+            retrieve_identifiers_tool=object(),
+        ),
+        policy=RetrievalStrategyPolicy(),
+        identifier_value="MK311007",
+    )
+
+    assert plan.steps[0].tool_name == "retrieve_identifiers"
+    assert plan.steps[0].args["identifier_value"] == "MK311007"
+
+
+def test_retrieval_plan_builder_omits_identifier_value_when_not_given() -> None:
+    builder = RetrievalPlanBuilder()
+    decision = RetrievalStrategyDecision(
+        primary_strategy=RetrievalStrategy.IDENTIFIER_LOOKUP,
+        query="what is part MK311007",
+        top_k=5,
+    )
+
+    plan = builder.build(
+        decision,
+        tool_registry=ToolRegistry(
+            retrieve_chunks_tool=object(),
+            retrieve_identifiers_tool=object(),
+        ),
+        policy=RetrievalStrategyPolicy(),
+    )
+
+    assert "identifier_value" not in plan.steps[0].args
+
+
+def test_retrieval_plan_builder_does_not_add_identifier_value_to_other_strategies() -> None:
+    builder = RetrievalPlanBuilder()
+    decision = RetrievalStrategyDecision(
+        primary_strategy=RetrievalStrategy.MAINTENANCE_LOOKUP,
+        query="maintenance schedule",
+        top_k=5,
+    )
+
+    plan = builder.build(
+        decision,
+        tool_registry=ToolRegistry(retrieve_chunks_tool=object()),
+        policy=RetrievalStrategyPolicy(),
+        identifier_value="MK311007",
+    )
+
+    assert "identifier_value" not in plan.steps[0].args
+
+
 def test_retrieval_plan_validator_falls_back_to_retrieve_chunks_when_table_tool_missing() -> None:
     builder = RetrievalPlanBuilder()
     validator = RetrievalPlanValidator()

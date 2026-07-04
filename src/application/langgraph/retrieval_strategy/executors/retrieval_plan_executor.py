@@ -105,6 +105,7 @@ class RetrievalPlanExecutor:
                 query_text=str(args.get("query_text") or ""),
                 document_id=args.get("document_id"),
                 top_k=int(args.get("top_k") or 5),
+                identifier_value=args.get("identifier_value"),
             )
         if tool_name == "retrieve_figures":
             return RetrieveFiguresRequest(
