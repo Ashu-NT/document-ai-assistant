@@ -36,6 +36,7 @@ from src.domain.extraction import (
     MaintenanceTask,
     Manufacturer,
     Procedure,
+    ProcedureType,
     SafetyWarning,
     SparePart,
     Specification,
@@ -1206,10 +1207,19 @@ class ExtractionWorkflow:
         )
         equipment_id = self._resolve_equipment_id(equipment_reference, equipment)
 
+        try:
+            procedure_type = ProcedureType(
+                self._optional_text(payload, "procedure_type", "type")
+                or ProcedureType.UNKNOWN.value
+            )
+        except ValueError:
+            procedure_type = ProcedureType.UNKNOWN
+
         return Procedure(
             procedure_id=self.id_generator.new_id("procedure"),
             document_id=document_id,
             title=title,
+            procedure_type=procedure_type,
             steps=steps,
             component_name=self._optional_text(payload, "component_name", "component"),
             equipment_id=equipment_id,

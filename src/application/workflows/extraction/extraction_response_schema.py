@@ -4,6 +4,8 @@ from typing import Any
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
+from src.domain.extraction import ProcedureType
+
 
 def coerce_raw_list(value: Any) -> list[Any]:
     if value is None:
@@ -177,7 +179,13 @@ class SupplierPayload(_ExtractionItemBase):
 
 
 class ProcedurePayload(_ExtractionItemBase):
+    model_config = ConfigDict(extra="ignore", use_enum_values=True)
+
     title: str | None = None
+    procedure_type: ProcedureType = Field(
+        default=ProcedureType.UNKNOWN,
+        validation_alias=AliasChoices("procedure_type", "type"),
+    )
     steps: list[str] = Field(default_factory=list)
     component_name: str | None = Field(
         default=None,
@@ -204,6 +212,19 @@ class ProcedurePayload(_ExtractionItemBase):
     @classmethod
     def _normalize_steps(cls, value: Any) -> Any:
         return coerce_raw_list(value)
+
+    @field_validator("procedure_type", mode="before")
+    @classmethod
+    def _normalize_procedure_type(cls, value: Any) -> Any:
+        if value is None:
+            return ProcedureType.UNKNOWN
+        if isinstance(value, ProcedureType):
+            return value
+        normalized = str(value).strip().lower().replace(" ", "_").replace("-", "_")
+        try:
+            return ProcedureType(normalized)
+        except ValueError:
+            return ProcedureType.UNKNOWN
 
 
 class SpecificationPayload(_ExtractionItemBase):

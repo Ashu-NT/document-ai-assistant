@@ -18,7 +18,7 @@ from src.application.prompts.extraction.procedures.procedure_extraction_schema i
 )
 from src.domain.document import DocumentChunk
 
-PROCEDURE_EXTRACTION_PROMPT_VERSION = "v1"
+PROCEDURE_EXTRACTION_PROMPT_VERSION = "v2"
 
 
 class ProcedureExtractionPromptBuilder:

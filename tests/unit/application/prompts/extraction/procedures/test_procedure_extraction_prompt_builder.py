@@ -18,3 +18,5 @@ def test_procedure_builder_is_retrievable_from_the_factory(sample_chunk) -> None
     assert result.prompt_version == PROCEDURE_EXTRACTION_PROMPT_VERSION
     assert '"procedures": [' in result.prompt_text
     assert '"steps"' in result.prompt_text
+    assert '"procedure_type": "<one of:' in result.prompt_text
+    assert "installation" in result.prompt_text

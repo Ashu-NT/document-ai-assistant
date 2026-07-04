@@ -1,6 +1,6 @@
 import json
 
-from src.domain.extraction import Procedure
+from src.domain.extraction import Procedure, ProcedureType
 from src.infrastructure.db.mappers.common.source_location_mapper import (
     columns_to_source_location,
 )
@@ -18,6 +18,7 @@ class ProcedureMapper:
             extraction_id=extraction_id,
             document_id=procedure.document_id,
             title=procedure.title,
+            procedure_type=procedure.procedure_type.value,
             steps_json=json.dumps(procedure.steps),
             component_name=procedure.component_name,
             equipment_id=procedure.equipment_id,
@@ -35,10 +36,15 @@ class ProcedureMapper:
             steps = json.loads(orm.steps_json)
         except (TypeError, ValueError):
             steps = []
+        try:
+            procedure_type = ProcedureType(orm.procedure_type)
+        except ValueError:
+            procedure_type = ProcedureType.UNKNOWN
         return Procedure(
             procedure_id=orm.id,
             document_id=orm.document_id,
             title=orm.title,
+            procedure_type=procedure_type,
             steps=list(steps) if isinstance(steps, list) else [],
             component_name=orm.component_name,
             equipment_id=orm.equipment_id,

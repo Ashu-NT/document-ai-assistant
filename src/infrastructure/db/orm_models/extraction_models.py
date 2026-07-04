@@ -192,6 +192,9 @@ class ProcedureORM(Base):
     )
 
     title: Mapped[str] = mapped_column(String, nullable=False)
+    procedure_type: Mapped[str] = mapped_column(
+        String, nullable=False, server_default="unknown", index=True
+    )
     steps_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
     component_name: Mapped[str | None] = mapped_column(String, nullable=True)
     equipment_id: Mapped[str | None] = mapped_column(

@@ -7,6 +7,7 @@ from src.domain.extraction import (
     MaintenanceTask,
     Manufacturer,
     Procedure,
+    ProcedureType,
     SafetyWarning,
     SparePart,
     Specification,
@@ -275,6 +276,8 @@ class ExtractionResultMerger:
         current.steps = current.steps or candidate.steps
         current.component_name = current.component_name or candidate.component_name
         current.equipment_id = current.equipment_id or candidate.equipment_id
+        if current.procedure_type == ProcedureType.UNKNOWN:
+            current.procedure_type = candidate.procedure_type
         self._merge_common_fields(current, candidate)
 
     def _merge_specification(self, current: Specification, candidate: Specification) -> None:

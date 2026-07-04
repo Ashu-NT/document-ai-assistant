@@ -6,6 +6,7 @@ PROCEDURE_EXTRACTION_EXAMPLE = (
     '  "procedures": [\n'
     "    {\n"
     '      "title": "Install hydraulic filter",\n'
+    '      "procedure_type": "installation",\n'
     '      "steps": [\n'
     '        "Depressurize the hydraulic line.",\n'
     '        "Remove the old filter housing.",\n'

@@ -103,6 +103,10 @@ class LegacyExtractionPromptBuilder:
             '  "procedures": [\n'
             "    {\n"
             '      "title": "<string>",\n'
+            '      "procedure_type": "<one of: maintenance|inspection|replacement|'
+            "repair|installation|commissioning|operation|startup|shutdown|"
+            'calibration|testing|troubleshooting|safety|cleaning_flushing|'
+            'assembly_disassembly|storage_preservation|decommissioning|unknown>",\n'
             '      "steps": ["<string>", "..."],\n'
             '      "component_name": "<string or null>",\n'
             '      "equipment_reference": "<string or null>",\n'
@@ -183,7 +187,11 @@ class LegacyExtractionPromptBuilder:
             "array, in the order they appear. Do not put single-sentence maintenance tasks here. "
             "equipment_reference is the name or model of the equipment this procedure is "
             "performed on, matching an entry in the equipment list if one is mentioned nearby, "
-            "or null.\n"
+            "or null. Classify the procedure's purpose into procedure_type, one of: "
+            "maintenance, inspection, replacement, repair, installation, commissioning, "
+            "operation, startup, shutdown, calibration, testing, troubleshooting, safety, "
+            "cleaning_flushing, assembly_disassembly, storage_preservation, decommissioning. "
+            'Use "unknown" only if none of the other categories fit.\n'
             "Specifications are technical parameter/value pairs (e.g. parameter=\"Pressure "
             "rating\", value=\"16\", unit=\"bar\") — split the numeric value from its unit.\n"
             "Safety warnings are explicit hazards or cautionary notes. warning_type severity: "

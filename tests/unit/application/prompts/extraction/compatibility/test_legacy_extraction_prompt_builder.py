@@ -24,6 +24,7 @@ def test_legacy_builder_still_returns_a_combined_prompt_string(sample_chunk) -> 
     assert '"manufacturers": [' in prompt
     assert '"suppliers": [' in prompt
     assert '"procedures": [' in prompt
+    assert '"procedure_type": "<one of:' in prompt
     assert '"specifications": [' in prompt
     assert '"safety_warnings": [' in prompt
     assert '"maintenance_intervals": [' in prompt

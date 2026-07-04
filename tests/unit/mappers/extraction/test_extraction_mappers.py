@@ -78,6 +78,7 @@ def test_procedure_mapper_round_trip(sample_procedure) -> None:
 
     assert domain.procedure_id == sample_procedure.procedure_id
     assert domain.title == sample_procedure.title
+    assert domain.procedure_type == sample_procedure.procedure_type
     assert domain.steps == sample_procedure.steps
     assert domain.equipment_id == sample_procedure.equipment_id
 
