@@ -4,6 +4,7 @@ from src.infrastructure.db.mappers import (
     MaintenanceTaskMapper,
     ManufacturerMapper,
     SparePartMapper,
+    SupplierMapper,
 )
 
 
@@ -52,6 +53,17 @@ def test_manufacturer_mapper_round_trip(sample_manufacturer) -> None:
     assert domain.name == sample_manufacturer.name
 
 
+def test_supplier_mapper_round_trip(sample_supplier) -> None:
+    orm = SupplierMapper.to_orm(
+        sample_supplier,
+        extraction_id="extraction_001",
+    )
+    domain = SupplierMapper.to_domain(orm)
+
+    assert domain.supplier_id == sample_supplier.supplier_id
+    assert domain.name == sample_supplier.name
+
+
 def test_extraction_result_mapper_round_trip(sample_extraction_result) -> None:
     result_orm = ExtractionResultMapper.to_orm(sample_extraction_result)
 
@@ -87,14 +99,25 @@ def test_extraction_result_mapper_round_trip(sample_extraction_result) -> None:
         for manufacturer in sample_extraction_result.manufacturers
     ]
 
+    supplier_rows = [
+        SupplierMapper.to_orm(
+            supplier,
+            extraction_id=sample_extraction_result.extraction_id,
+        )
+        for supplier in sample_extraction_result.suppliers
+    ]
+
     domain = ExtractionResultMapper.to_domain(
         result_orm,
         task_rows=task_rows,
         spare_part_rows=spare_part_rows,
         equipment_rows=equipment_rows,
         manufacturer_rows=manufacturer_rows,
+        supplier_rows=supplier_rows,
     )
 
     assert domain.extraction_id == sample_extraction_result.extraction_id
     assert domain.task_count() == 1
     assert domain.spare_part_count() == 1
+    assert len(domain.suppliers) == 1
+    assert domain.suppliers[0].supplier_id == sample_extraction_result.suppliers[0].supplier_id

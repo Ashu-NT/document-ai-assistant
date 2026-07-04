@@ -57,6 +57,14 @@ class FakeExtractionRepository:
             if document_id is None or manufacturer.document_id == document_id
         ]
 
+    def list_suppliers(self, document_id: str | None = None):
+        return [
+            supplier
+            for result in self.results.values()
+            for supplier in result.suppliers
+            if document_id is None or supplier.document_id == document_id
+        ]
+
 
 def make_service(repository: FakeExtractionRepository) -> ExtractionService:
     return ExtractionService(
@@ -74,6 +82,7 @@ def test_save_extraction_result(sample_extraction_result) -> None:
     assert result.entity_id == sample_extraction_result.document_id
     assert result.payload["extraction_id"] == sample_extraction_result.extraction_id
     assert result.payload["maintenance_task_count"] == 1
+    assert result.payload["supplier_count"] == 1
     assert len(repository.results) == 1
 
 
@@ -130,6 +139,17 @@ def test_list_manufacturers(sample_extraction_result) -> None:
     manufacturers = service.list_manufacturers(sample_extraction_result.document_id)
 
     assert len(manufacturers) == 1
+
+
+def test_list_suppliers(sample_extraction_result) -> None:
+    repository = FakeExtractionRepository()
+    repository.save_extraction_result(sample_extraction_result)
+
+    service = make_service(repository)
+
+    suppliers = service.list_suppliers(sample_extraction_result.document_id)
+
+    assert len(suppliers) == 1
 
 
 def test_save_extraction_result_rejects_invalid_input(

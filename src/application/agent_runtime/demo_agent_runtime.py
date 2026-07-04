@@ -202,6 +202,7 @@ def build_agent_runtime(
     from src.application.services.ai import LLMService
     from src.application.services.answer_generation import AnswerGenerationService
     from src.application.services.document import DocumentCatalogService
+    from src.application.services.extraction import ExtractionService
     from src.application.tools.documents import (
         DocumentDetailsTool,
         FindDocumentTool,
@@ -222,8 +223,10 @@ def build_agent_runtime(
         RetrieveChunksTool,
         RetrieveFiguresTool,
         RetrieveIdentifiersTool,
+        RetrieveStructuredEntitiesTool,
         RetrieveTablesTool,
     )
+    from src.application.validation.extraction import ExtractionResultValidator
     from src.application.workflows.ingestion import DeleteDocumentWorkflow
     from src.application.workflows.question_answering import (
         QuestionAnsweringRouter,
@@ -250,6 +253,10 @@ def build_agent_runtime(
     qdrant_client = retrieval_runtime.qdrant_client
     vector_store = retrieval_runtime.vector_store
     document_catalog_service = DocumentCatalogService(uow.documents)
+    extraction_service = ExtractionService(
+        extraction_repository=uow.extractions,
+        extraction_result_validator=ExtractionResultValidator(),
+    )
     document_lookup_service = retrieval_runtime.document_lookup_service
     retrieval_workflow = retrieval_runtime.retrieval_workflow
     exploration_service = retrieval_runtime.exploration_service
@@ -331,6 +338,9 @@ def build_agent_runtime(
         exploration_service,
         retrieve_chunks_tool,
     )
+    retrieve_structured_entities_tool = RetrieveStructuredEntitiesTool(
+        extraction_service
+    )
     retrieve_figures_tool = RetrieveFiguresTool(
         retrieve_chunks_tool,
         exploration_service,
@@ -356,6 +366,7 @@ def build_agent_runtime(
         retrieve_chunks_tool=retrieve_chunks_tool,
         retrieve_tables_tool=retrieve_tables_tool,
         retrieve_identifiers_tool=retrieve_identifiers_tool,
+        retrieve_structured_entities_tool=retrieve_structured_entities_tool,
         retrieve_figures_tool=retrieve_figures_tool,
         answer_question_tool=AnswerQuestionTool(
             qa_workflow,

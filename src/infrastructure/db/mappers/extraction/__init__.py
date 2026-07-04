@@ -3,6 +3,7 @@ from src.infrastructure.db.mappers.extraction.extraction_result_mapper import Ex
 from src.infrastructure.db.mappers.extraction.maintenance_task_mapper import MaintenanceTaskMapper
 from src.infrastructure.db.mappers.extraction.manufacturer_mapper import ManufacturerMapper
 from src.infrastructure.db.mappers.extraction.spare_part_mapper import SparePartMapper
+from src.infrastructure.db.mappers.extraction.supplier_mapper import SupplierMapper
 
 __all__ = [
     "EquipmentInfoMapper",
@@ -10,4 +11,5 @@ __all__ = [
     "MaintenanceTaskMapper",
     "ManufacturerMapper",
     "SparePartMapper",
+    "SupplierMapper",
 ]

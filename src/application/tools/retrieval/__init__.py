@@ -10,6 +10,11 @@ from src.application.tools.retrieval.retrieve_identifiers_tool import (
     RetrieveIdentifiersRequest,
     RetrieveIdentifiersTool,
 )
+from src.application.tools.retrieval.retrieve_structured_entities_tool import (
+    RetrieveStructuredEntitiesRequest,
+    RetrieveStructuredEntitiesTool,
+    StructuredEntityType,
+)
 from src.application.tools.retrieval.retrieve_tables_tool import (
     RetrieveTablesRequest,
     RetrieveTablesTool,
@@ -22,6 +27,9 @@ __all__ = [
     "RetrieveFiguresTool",
     "RetrieveIdentifiersRequest",
     "RetrieveIdentifiersTool",
+    "RetrieveStructuredEntitiesRequest",
+    "RetrieveStructuredEntitiesTool",
+    "StructuredEntityType",
     "RetrieveTablesRequest",
     "RetrieveTablesTool",
 ]

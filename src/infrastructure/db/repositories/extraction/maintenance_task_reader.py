@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -32,4 +32,34 @@ class MaintenanceTaskReader:
             raise DatabaseError(
                 "Failed to list maintenance tasks.",
                 details={"document_id": document_id},
+            ) from exc
+
+    def search_maintenance_tasks(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[MaintenanceTask]:
+        try:
+            pattern = f"%{query}%"
+            statement = select(MaintenanceTaskORM).where(
+                or_(
+                    MaintenanceTaskORM.title.ilike(pattern),
+                    MaintenanceTaskORM.component_name.ilike(pattern),
+                    MaintenanceTaskORM.description.ilike(pattern),
+                )
+            )
+
+            if document_id is not None:
+                statement = statement.where(
+                    MaintenanceTaskORM.document_id == document_id
+                )
+
+            rows = self.session.execute(statement).scalars().all()
+
+            return [MaintenanceTaskMapper.to_domain(row) for row in rows]
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to search maintenance tasks.",
+                details={"query": query, "document_id": document_id},
             ) from exc

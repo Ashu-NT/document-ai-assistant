@@ -169,6 +169,16 @@ def test_extract_builds_extraction_result_and_saves_it(sample_chunk) -> None:
       "confidence_score": 0.87,
       "requires_human_review": false
     }
+  ],
+  "suppliers": [
+    {
+      "name": "FMD Rotterdam",
+      "website": "https://fmd-rotterdam.example",
+      "country": "Netherlands",
+      "source_chunk_id": "chunk_002",
+      "confidence_score": 0.86,
+      "requires_human_review": false
+    }
   ]
 }"""
         ]
@@ -199,6 +209,9 @@ def test_extract_builds_extraction_result_and_saves_it(sample_chunk) -> None:
     assert result.equipment[0].equipment_id.startswith("equipment_")
     assert len(result.manufacturers) == 1
     assert result.manufacturers[0].manufacturer_id.startswith("manufacturer_")
+    assert len(result.suppliers) == 1
+    assert result.suppliers[0].supplier_id.startswith("supplier_")
+    assert result.suppliers[0].source_chunk_id == second_chunk.chunk_id
     assert result.maintenance_tasks[0].source.page_start == sample_chunk.source.page_start
     assert result.spare_parts[0].source.page_start == second_chunk.source.page_start
     assert fake_extraction_service.saved_results == [result]
@@ -388,7 +401,7 @@ def test_extract_emits_progress_messages(sample_chunk) -> None:
         for message in progress_messages
     )
     assert any(
-        "Extraction completed (maintenance_tasks=0, spare_parts=0, equipment=0, manufacturers=0, identifiers=0, batches=1)." in message
+        "Extraction completed (maintenance_tasks=0, spare_parts=0, equipment=0, manufacturers=0, suppliers=0, identifiers=0, batches=1)." in message
         for message in progress_messages
     )
 

@@ -49,6 +49,8 @@ def test_identifier_extraction_prompt_builder_includes_source_text_and_instructi
     assert '"spare_parts": [' in prompt
     assert '"equipment": [' in prompt
     assert '"manufacturers": [' in prompt
+    assert '"suppliers": [' in prompt
+    assert '"identifiers": [' in prompt
     assert "Return JSON only." in prompt
     assert "Allowed chunk_id values" in prompt
     assert f"{sample_chunk.chunk_id}, {second_chunk.chunk_id}" in prompt

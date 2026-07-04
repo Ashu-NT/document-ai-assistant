@@ -42,6 +42,7 @@ def test_replace_extraction_result_deletes_prior_rows_for_document(
     assert db_uow.extractions.list_spare_parts(document_id) == []
     assert db_uow.extractions.list_equipment(document_id) == []
     assert db_uow.extractions.list_manufacturers(document_id) == []
+    assert db_uow.extractions.list_suppliers(document_id) == []
 
 
 def test_delete_by_document_removes_all_extraction_rows(
@@ -63,6 +64,7 @@ def test_delete_by_document_removes_all_extraction_rows(
     assert db_uow.extractions.list_spare_parts(document_id) == []
     assert db_uow.extractions.list_equipment(document_id) == []
     assert db_uow.extractions.list_manufacturers(document_id) == []
+    assert db_uow.extractions.list_suppliers(document_id) == []
 
 
 def test_save_and_load_extraction_result(
@@ -82,6 +84,7 @@ def test_save_and_load_extraction_result(
     assert len(loaded.spare_parts) == 1
     assert len(loaded.equipment) == 1
     assert len(loaded.manufacturers) == 1
+    assert len(loaded.suppliers) == 1
 
 
 def test_list_maintenance_tasks(db_uow, sample_extraction_result) -> None:
@@ -126,3 +129,14 @@ def test_list_manufacturers(db_uow, sample_extraction_result) -> None:
     )
 
     assert len(manufacturers) == 1
+
+
+def test_list_suppliers(db_uow, sample_extraction_result) -> None:
+    db_uow.extractions.save_extraction_result(sample_extraction_result)
+    db_uow.commit()
+
+    suppliers = db_uow.extractions.list_suppliers(
+        sample_extraction_result.document_id
+    )
+
+    assert len(suppliers) == 1

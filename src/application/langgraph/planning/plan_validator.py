@@ -12,7 +12,12 @@ from src.application.langgraph.state import AgentState
 
 _SAFE_TOOL_NAME_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 _SCOPED_TOOLS = {"answer_question", "explore_document", "document_details"}
-_RETRIEVAL_TOOLS = {"retrieve_chunks", "retrieve_identifiers", "retrieval_trace"}
+_RETRIEVAL_TOOLS = {
+    "retrieve_chunks",
+    "retrieve_identifiers",
+    "retrieve_structured_entities",
+    "retrieval_trace",
+}
 _MUTATING_TOOL_MARKERS = ("ingest", "delete", "reingest", "remove", "replace")
 _UNSAFE_TOOL_MARKERS = (
     "bash",
@@ -36,6 +41,7 @@ _KNOWN_ARGS: dict[str, set[str]] = {
     "explore_document": {"document_id"},
     "retrieve_chunks": {"document_id", "query_text", "question", "top_k", "chunk_types"},
     "retrieve_identifiers": {"identifier_value", "identifier_type", "document_id", "query"},
+    "retrieve_structured_entities": {"entity_type", "document_id", "query_text", "top_k"},
     "answer_question": {"document_id", "question", "top_k"},
     "run_quality_gate": {"report_path", "thresholds_path"},
     "retrieval_trace": {"document_id", "query_text", "top_k", "write_output"},
@@ -163,6 +169,8 @@ class PlanValidator:
             errors.append("Tool 'answer_question' requires question.")
         elif tool_name == "retrieval_trace" and not args.get("query_text"):
             errors.append("Tool 'retrieval_trace' requires query_text.")
+        elif tool_name == "retrieve_structured_entities" and not args.get("entity_type"):
+            errors.append("Tool 'retrieve_structured_entities' requires entity_type.")
         unknown_args = set(args.keys()) - _KNOWN_ARGS.get(tool_name, set())
         if unknown_args:
             errors.append(

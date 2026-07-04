@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -32,4 +32,34 @@ class EquipmentReader:
             raise DatabaseError(
                 "Failed to list equipment info.",
                 details={"document_id": document_id},
+            ) from exc
+
+    def search_equipment(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[EquipmentInfo]:
+        try:
+            pattern = f"%{query}%"
+            statement = select(EquipmentInfoORM).where(
+                or_(
+                    EquipmentInfoORM.name.ilike(pattern),
+                    EquipmentInfoORM.model_number.ilike(pattern),
+                    EquipmentInfoORM.serial_number.ilike(pattern),
+                )
+            )
+
+            if document_id is not None:
+                statement = statement.where(
+                    EquipmentInfoORM.document_id == document_id
+                )
+
+            rows = self.session.execute(statement).scalars().all()
+
+            return [EquipmentInfoMapper.to_domain(row) for row in rows]
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to search equipment info.",
+                details={"query": query, "document_id": document_id},
             ) from exc

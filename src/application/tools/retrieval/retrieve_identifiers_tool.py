@@ -57,8 +57,14 @@ _IDENTIFIER_INVENTORY_MARKERS: dict[IdentifierType, tuple[str, ...]] = {
     IdentifierType.MANUFACTURER_NAME: (
         "manufacturer",
         "manufacturers",
+    ),
+    IdentifierType.SUPPLIER_NAME: (
         "supplier",
         "suppliers",
+        "vendor",
+        "vendors",
+        "distributor",
+        "distributors",
     ),
 }
 _IDENTIFIER_VALUE_PATTERN = re.compile(

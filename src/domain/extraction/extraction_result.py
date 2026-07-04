@@ -6,6 +6,7 @@ from src.domain.extraction.extracted_identifier import ExtractedIdentifier
 from src.domain.extraction.maintenance_task import MaintenanceTask
 from src.domain.extraction.manufacturer import Manufacturer
 from src.domain.extraction.spare_part import SparePart
+from src.domain.extraction.supplier import Supplier
 
 
 @dataclass(slots=True)
@@ -17,6 +18,7 @@ class ExtractionResult:
     spare_parts: list[SparePart] = field(default_factory=list)
     equipment: list[EquipmentInfo] = field(default_factory=list)
     manufacturers: list[Manufacturer] = field(default_factory=list)
+    suppliers: list[Supplier] = field(default_factory=list)
     extracted_identifiers: list[ExtractedIdentifier] = field(default_factory=list)
 
     source_chunk_ids: list[str] = field(default_factory=list)
@@ -33,6 +35,7 @@ class ExtractionResult:
                 self.spare_parts,
                 self.equipment,
                 self.manufacturers,
+                self.suppliers,
                 self.extracted_identifiers,
             ]
         )

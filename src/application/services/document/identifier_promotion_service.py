@@ -81,6 +81,23 @@ class IdentifierPromotionService:
                 if identifier is not None:
                     identifiers.append(identifier)
 
+        for supplier in extraction_result.suppliers:
+            if supplier.name and supplier.name.strip():
+                chunk = document_graph.chunks.get(supplier.source_chunk_id or "")
+                identifier = self._make(
+                    document_id=document_id,
+                    raw_value=supplier.name,
+                    identifier_type=IdentifierType.SUPPLIER_NAME,
+                    source_chunk_id=supplier.source_chunk_id,
+                    valid_chunk_ids=valid_chunk_ids,
+                    confidence_score=supplier.confidence_score,
+                    id_generator=id_generator,
+                    seen=seen,
+                    chunk=chunk,
+                )
+                if identifier is not None:
+                    identifiers.append(identifier)
+
         for extracted in extraction_result.extracted_identifiers:
             if extracted.raw_value and extracted.raw_value.strip():
                 try:

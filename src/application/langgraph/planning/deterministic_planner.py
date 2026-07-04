@@ -46,6 +46,27 @@ _IDENTIFIER_TERM_RE = re.compile(
     r"manufacturer|supplier|made\s*by|manufactured\s*by)\b",
     re.IGNORECASE,
 )
+_STRUCTURED_DETAIL_TERMS = (
+    "website",
+    "url",
+    "country",
+    "based in",
+    "located",
+    "quantity",
+    "how many",
+    "in stock",
+    "interval",
+    "how often",
+)
+_STRUCTURED_ENTITY_TERMS: tuple[tuple[str, str], ...] = (
+    ("manufacturer", "manufacturer"),
+    ("supplier", "supplier"),
+    ("vendor", "supplier"),
+    ("distributor", "supplier"),
+    ("spare part", "spare_part"),
+    ("equipment", "equipment"),
+    ("maintenance task", "maintenance_task"),
+)
 
 
 class DeterministicPlanner:
@@ -62,6 +83,16 @@ class DeterministicPlanner:
         document_query = state.get("document_query")
         document_id = explicit_document_id or selected_document_id
         document_title = state.get("document_title") or state.get("selected_document_title")
+
+        structured_entity_type = self._extract_structured_entity_type(normalized_input)
+        if structured_entity_type:
+            return self._build_structured_entity_plan(
+                normalized_input=normalized_input,
+                entity_type=structured_entity_type,
+                document_query=document_query,
+                document_id=document_id,
+                document_title=document_title,
+            )
 
         identifier_value = self._extract_identifier_value(normalized_input)
         if identifier_value or self._has_identifier_term(normalized_input):
@@ -121,6 +152,15 @@ class DeterministicPlanner:
     @staticmethod
     def _has_identifier_term(normalized_input: str) -> bool:
         return bool(_IDENTIFIER_TERM_RE.search(normalized_input))
+
+    @staticmethod
+    def _extract_structured_entity_type(normalized_input: str) -> str | None:
+        if not any(term in normalized_input for term in _STRUCTURED_DETAIL_TERMS):
+            return None
+        for term, entity_type in _STRUCTURED_ENTITY_TERMS:
+            if term in normalized_input:
+                return entity_type
+        return None
 
     @staticmethod
     def _identifier_type_from_input(normalized_input: str) -> str | None:
@@ -234,6 +274,55 @@ class DeterministicPlanner:
                 "plan_kind": "identifier_lookup",
                 "identifier_value": identifier_value,
                 "identifier_type": identifier_type,
+            },
+        )
+
+    def _build_structured_entity_plan(
+        self,
+        *,
+        normalized_input: str,
+        entity_type: str,
+        document_query: str | None,
+        document_id: str | None,
+        document_title: str | None,
+    ) -> ExecutionPlan:
+        retrieve_args: dict[str, object] = {
+            "entity_type": entity_type,
+            "query_text": normalized_input,
+        }
+        if document_id:
+            retrieve_args["document_id"] = document_id
+
+        plan_steps = self._document_resolution_steps(document_query=document_query, document_id=document_id)
+        plan_steps.append(
+            self._step(
+                tool_name="retrieve_structured_entities",
+                description=f"Look up extracted {entity_type} rows matching the request.",
+                output_key="structured_entity_hits",
+                args=retrieve_args,
+            )
+        )
+        plan_steps.append(
+            self._step(
+                tool_name="answer_question",
+                description="Answer the question using the retrieved structured entity data.",
+                output_key="answer",
+                input_key="structured_entity_hits",
+                args={"question": normalized_input},
+                depends_on=["structured_entity_hits"],
+            )
+        )
+
+        return self._plan(
+            goal=normalized_input,
+            steps=plan_steps,
+            reason="Detected a structured-entity lookup request requiring extracted row retrieval.",
+            requires_document=bool(document_id or document_query),
+            document_id=document_id,
+            document_title=document_title or document_query,
+            diagnostics={
+                "plan_kind": "structured_entity_lookup",
+                "entity_type": entity_type,
             },
         )
 

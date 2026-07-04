@@ -25,6 +25,7 @@ from src.domain.extraction import (
     MaintenanceTask,
     Manufacturer,
     SparePart,
+    Supplier,
 )
 from src.domain.retrieval import Citation, RetrievalQuery, RetrievalResult, RetrievedChunk
 from src.domain.workflow import IngestionRun
@@ -313,12 +314,24 @@ def sample_manufacturer(document_id: str, chunk_id: str) -> Manufacturer:
 
 
 @pytest.fixture
+def sample_supplier(document_id: str, chunk_id: str) -> Supplier:
+    return Supplier(
+        supplier_id="supplier_001",
+        document_id=document_id,
+        name="Example Supplier",
+        source_chunk_id=chunk_id,
+        confidence_score=0.85,
+    )
+
+
+@pytest.fixture
 def sample_extraction_result(
     document_id: str,
     sample_maintenance_task: MaintenanceTask,
     sample_spare_part: SparePart,
     sample_equipment_info: EquipmentInfo,
     sample_manufacturer: Manufacturer,
+    sample_supplier: Supplier,
 ) -> ExtractionResult:
     return ExtractionResult(
         extraction_id="extraction_001",
@@ -327,6 +340,7 @@ def sample_extraction_result(
         spare_parts=[sample_spare_part],
         equipment=[sample_equipment_info],
         manufacturers=[sample_manufacturer],
+        suppliers=[sample_supplier],
         confidence_score=0.88,
     )
 

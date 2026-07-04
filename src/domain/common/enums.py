@@ -49,6 +49,7 @@ class IdentifierType(StrEnum):
     COMPONENT_CODE = "component_code"
     CERTIFICATE_NUMBER = "certificate_number"
     MANUFACTURER_NAME = "manufacturer_name"
+    SUPPLIER_NAME = "supplier_name"
     UNKNOWN = "unknown"
 
 

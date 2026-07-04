@@ -33,6 +33,7 @@ from src.domain.extraction import (
     MaintenanceTask,
     Manufacturer,
     SparePart,
+    Supplier,
 )
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
@@ -333,6 +334,7 @@ class ExtractionWorkflow:
                 f"spare_parts={len(extraction_result.spare_parts)}, "
                 f"equipment={len(extraction_result.equipment)}, "
                 f"manufacturers={len(extraction_result.manufacturers)}, "
+                f"suppliers={len(extraction_result.suppliers)}, "
                 f"identifiers={len(extraction_result.extracted_identifiers)}, "
                 f"batches={len(batches)})."
             ),
@@ -601,6 +603,16 @@ class ExtractionWorkflow:
                 "country",
             ),
         )
+        supplier_payloads = self._filter_empty_extraction_items(
+            payload["suppliers"],
+            content_keys=(
+                "name",
+                "supplier_name",
+                "website",
+                "url",
+                "country",
+            ),
+        )
         identifier_payloads = self._filter_empty_extraction_items(
             payload["identifiers"],
             content_keys=(
@@ -651,6 +663,16 @@ class ExtractionWorkflow:
             )
             for item in manufacturer_payloads
         ]
+        suppliers = [
+            self._build_supplier(
+                item,
+                document_id=document_id,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+                default_confidence=overall_confidence,
+            )
+            for item in supplier_payloads
+        ]
         extracted_identifiers = [
             self._build_extracted_identifier(
                 item,
@@ -672,6 +694,7 @@ class ExtractionWorkflow:
                 *spare_parts,
                 *equipment,
                 *manufacturers,
+                *suppliers,
                 *extracted_identifiers,
             ]
         )
@@ -683,6 +706,7 @@ class ExtractionWorkflow:
             spare_parts=spare_parts,
             equipment=equipment,
             manufacturers=manufacturers,
+            suppliers=suppliers,
             extracted_identifiers=extracted_identifiers,
             source_chunk_ids=list(chunk_lookup),
             confidence_score=overall_confidence,
@@ -903,6 +927,54 @@ class ExtractionWorkflow:
 
         return Manufacturer(
             manufacturer_id=self.id_generator.new_id("manufacturer"),
+            document_id=document_id,
+            name=name,
+            website=self._optional_text(payload, "website", "url"),
+            country=self._optional_text(payload, "country"),
+            source_chunk_id=source_chunk_id,
+            source=self._resolve_source_location(
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
+            confidence_score=confidence_score,
+            requires_human_review=(
+                self._resolve_requires_human_review(
+                    self._pick(payload, "requires_human_review", "requires_review"),
+                    confidence_score,
+                )
+                or chunk_id_invalid
+            ),
+        )
+
+    def _build_supplier(
+        self,
+        payload: dict[str, Any],
+        *,
+        document_id: str,
+        chunk_lookup: dict[str, DocumentChunk],
+        default_source_chunk_id: str | None,
+        default_confidence: float,
+    ) -> Supplier:
+        name = self._required_text(
+            payload,
+            field_name="suppliers.name",
+            keys=("name", "supplier_name"),
+        )
+        confidence_score = self._parse_confidence(
+            self._pick(payload, "confidence_score", "confidence")
+        )
+        if confidence_score is None:
+            confidence_score = default_confidence
+
+        source_chunk_id, chunk_id_invalid = self._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+            item_type="suppliers",
+        )
+
+        return Supplier(
+            supplier_id=self.id_generator.new_id("supplier"),
             document_id=document_id,
             name=name,
             website=self._optional_text(payload, "website", "url"),

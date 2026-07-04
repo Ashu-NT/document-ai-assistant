@@ -9,6 +9,7 @@ from src.infrastructure.db.mappers import (
     MaintenanceTaskMapper,
     ManufacturerMapper,
     SparePartMapper,
+    SupplierMapper,
 )
 from src.infrastructure.db.orm_models import (
     EquipmentInfoORM,
@@ -16,6 +17,7 @@ from src.infrastructure.db.orm_models import (
     ManufacturerORM,
     MaintenanceTaskORM,
     SparePartORM,
+    SupplierORM,
 )
 from src.shared.exceptions import DatabaseError
 
@@ -105,6 +107,14 @@ class ExtractionWriter:
                 )
             )
 
+        for supplier in result.suppliers:
+            self.session.merge(
+                SupplierMapper.to_orm(
+                    supplier,
+                    extraction_id=result.extraction_id,
+                )
+            )
+
     def _delete_extraction_result(self, document_id: str) -> None:
         self.session.execute(
             delete(MaintenanceTaskORM).where(
@@ -122,6 +132,11 @@ class ExtractionWriter:
         self.session.execute(
             delete(ManufacturerORM).where(
                 ManufacturerORM.document_id == document_id
+            )
+        )
+        self.session.execute(
+            delete(SupplierORM).where(
+                SupplierORM.document_id == document_id
             )
         )
         self.session.execute(

@@ -114,3 +114,19 @@ def test_extraction_result_validator_detects_manufacturer_document_mismatch(
         result.issues[0].code
         == "extraction.manufacturer.document_mismatch"
     )
+
+
+def test_extraction_result_validator_detects_supplier_document_mismatch(
+    sample_extraction_result,
+) -> None:
+    sample_extraction_result.suppliers[0].document_id = "wrong_doc"
+
+    result = ExtractionResultValidator().validate(
+        sample_extraction_result
+    )
+
+    assert not result.is_valid
+    assert (
+        result.issues[0].code
+        == "extraction.supplier.document_mismatch"
+    )

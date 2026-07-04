@@ -18,6 +18,7 @@ from src.infrastructure.db.mappers.extraction import ExtractionResultMapper
 from src.infrastructure.db.mappers.extraction import MaintenanceTaskMapper
 from src.infrastructure.db.mappers.extraction import ManufacturerMapper
 from src.infrastructure.db.mappers.extraction import SparePartMapper
+from src.infrastructure.db.mappers.extraction import SupplierMapper
 from src.infrastructure.db.mappers.memory import ConversationMemoryMapper
 from src.infrastructure.db.mappers.memory import MemoryEntryMapper
 from src.infrastructure.db.mappers.memory import SemanticMemoryMapper
@@ -54,6 +55,7 @@ __all__ = [
     "MaintenanceTaskMapper",
     "ManufacturerMapper",
     "SparePartMapper",
+    "SupplierMapper",
     "ConversationMemoryMapper",
     "MemoryEntryMapper",
     "SemanticMemoryMapper",

@@ -4,6 +4,7 @@ from src.domain.extraction.extraction_result import ExtractionResult
 from src.domain.extraction.maintenance_task import MaintenanceTask
 from src.domain.extraction.manufacturer import Manufacturer
 from src.domain.extraction.spare_part import SparePart
+from src.domain.extraction.supplier import Supplier
 
 __all__ = [
     "EquipmentInfo",
@@ -12,4 +13,5 @@ __all__ = [
     "MaintenanceTask",
     "Manufacturer",
     "SparePart",
+    "Supplier",
 ]

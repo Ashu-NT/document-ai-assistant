@@ -20,7 +20,8 @@ _IDENTIFIER_TYPE_LABELS: dict[IdentifierType, str] = {
     IdentifierType.DRAWING_NUMBER: "Drawing Numbers",
     IdentifierType.COMPONENT_CODE: "Order / Component Codes",
     IdentifierType.CERTIFICATE_NUMBER: "Certificate Numbers",
-    IdentifierType.MANUFACTURER_NAME: "Manufacturers / Suppliers",
+    IdentifierType.MANUFACTURER_NAME: "Manufacturers",
+    IdentifierType.SUPPLIER_NAME: "Suppliers",
 }
 _IDENTIFIER_KEY_TO_TYPE: dict[str, IdentifierType] = {
     "Part Number": IdentifierType.PART_NUMBER,
@@ -62,8 +63,14 @@ _QUESTION_TYPE_MARKERS: dict[IdentifierType, tuple[str, ...]] = {
     IdentifierType.MANUFACTURER_NAME: (
         "manufacturer",
         "manufacturers",
+    ),
+    IdentifierType.SUPPLIER_NAME: (
         "supplier",
         "suppliers",
+        "vendor",
+        "vendors",
+        "distributor",
+        "distributors",
     ),
 }
 _TYPE_ORDER: tuple[IdentifierType, ...] = (
@@ -74,6 +81,7 @@ _TYPE_ORDER: tuple[IdentifierType, ...] = (
     IdentifierType.DRAWING_NUMBER,
     IdentifierType.CERTIFICATE_NUMBER,
     IdentifierType.MANUFACTURER_NAME,
+    IdentifierType.SUPPLIER_NAME,
 )
 
 

@@ -172,3 +172,39 @@ class ManufacturerORM(Base):
     requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class SupplierORM(Base):
+    __tablename__ = "suppliers"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+
+    extraction_id: Mapped[str | None] = mapped_column(
+        ForeignKey("extraction_results.id"),
+        nullable=True,
+        index=True,
+    )
+
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("documents.id"),
+        nullable=False,
+        index=True,
+    )
+
+    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    website: Mapped[str | None] = mapped_column(String, nullable=True)
+    country: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    source_chunk_id: Mapped[str | None] = mapped_column(
+        ForeignKey("chunks.id"),
+        nullable=True,
+        index=True,
+    )
+
+    page_start: Mapped[int | None] = mapped_column(nullable=True)
+    page_end: Mapped[int | None] = mapped_column(nullable=True)
+
+    confidence_score: Mapped[float | None] = mapped_column(nullable=True)
+    requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

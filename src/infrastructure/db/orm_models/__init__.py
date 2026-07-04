@@ -15,6 +15,7 @@ from src.infrastructure.db.orm_models.extraction_models import (
     MaintenanceTaskORM,
     ManufacturerORM,
     SparePartORM,
+    SupplierORM,
 )
 from src.infrastructure.db.orm_models.memory_models import (
     ConversationMemoryORM,
@@ -42,6 +43,7 @@ __all__ = [
     "MaintenanceTaskORM",
     "ManufacturerORM",
     "SparePartORM",
+    "SupplierORM",
     "ConversationMemoryORM",
     "ConversationMessageORM",
     "MemoryEntryORM",

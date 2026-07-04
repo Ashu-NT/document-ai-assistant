@@ -5,14 +5,25 @@ from src.application.prompts.extraction.extraction_prompt_version import (
 from src.domain.document import DocumentChunk
 
 
-class IdentifierExtractionPromptBuilder:
+class LegacyExtractionPromptBuilder:
+    """Preserves the exact pre-modularization combined prompt behavior.
+
+    ExtractionWorkflow's one call site depends on this exact output shape
+    (maintenance_tasks, spare_parts, equipment, manufacturers, suppliers,
+    identifiers in a single call/response). Re-exported as
+    ``IdentifierExtractionPromptBuilder`` from the package root so existing
+    imports and call sites keep working unchanged. New code should use the
+    per-family builders under identifiers/, manufacturers/, suppliers/, etc.
+    via ExtractionPromptFactory instead.
+    """
+
     prompt_version = IDENTIFIER_EXTRACTION_PROMPT_VERSION
     metadata = PromptMetadata(
         name="identifier_extraction",
         version=IDENTIFIER_EXTRACTION_PROMPT_VERSION,
         task_type="extraction",
         model_type="llm",
-        description="Extract maintenance, spare-part, equipment, and manufacturer data from chunks.",
+        description="Extract maintenance, spare-part, equipment, manufacturer, and supplier data from chunks.",
     )
 
     def build(
@@ -79,10 +90,20 @@ class IdentifierExtractionPromptBuilder:
             '      "requires_human_review": <true or false>\n'
             "    }\n"
             "  ],\n"
+            '  "suppliers": [\n'
+            "    {\n"
+            '      "name": "<string>",\n'
+            '      "website": "<string or null>",\n'
+            '      "country": "<string or null>",\n'
+            '      "source_chunk_id": "<chunk id or null>",\n'
+            '      "confidence_score": <float between 0 and 1 or null>,\n'
+            '      "requires_human_review": <true or false>\n'
+            "    }\n"
+            "  ],\n"
             '  "identifiers": [\n'
             "    {\n"
             '      "raw_value": "<exact string as it appears in text>",\n'
-            '      "identifier_type": "part_number|serial_number|model_number|certificate_number|drawing_number|component_code|manufacturer_name|unknown",\n'
+            '      "identifier_type": "part_number|serial_number|model_number|certificate_number|drawing_number|component_code|manufacturer_name|supplier_name|unknown",\n'
             '      "source_chunk_id": "<chunk id or null>",\n'
             '      "confidence_score": <float between 0 and 1 or null>,\n'
             '      "requires_human_review": <true or false>\n'
@@ -96,8 +117,13 @@ class IdentifierExtractionPromptBuilder:
             '- "certificate_number": ISO, IEC, EN, ATEX, CERT numbers (e.g. ISO 9001, ATEX II 2G).\n'
             '- "drawing_number": DRG or DWG references (e.g. DRG-1234, DWG 500).\n'
             '- "component_code": Order codes, component codes, tag numbers (e.g. TAG-42, OC-8800).\n'
-            '- "manufacturer_name": Manufacturer or supplier names not captured in the manufacturers list.\n'
+            '- "manufacturer_name": Manufacturer or OEM names not captured in the manufacturers list.\n'
+            '- "supplier_name": Supplier, vendor, or distributor names not captured in the suppliers list.\n'
             '- "unknown": Any identifier that does not fit the types above.\n'
+            "A manufacturer made the item; a supplier sold, distributed, or provided the item "
+            "but did not necessarily make it. Use the manufacturers list for the former and "
+            "the suppliers list for the latter. If a chunk does not distinguish the two roles, "
+            "prefer manufacturers.\n"
             "Rules:\n"
             "- Use only the provided chunk content.\n"
             "- Use only the provided chunk ids when setting source_chunk_id.\n"
@@ -109,7 +135,7 @@ class IdentifierExtractionPromptBuilder:
             "- An empty array MUST be written as [] exactly. Never write [null] or put null as an item inside an array.\n"
             "- Always include a top-level confidence_score. If uncertain, use 0.0 instead of null or omitting the field.\n"
             "- Use null for unknown optional values.\n"
-            "- For identifiers: only extract values not already captured in spare_parts, equipment, or manufacturers.\n"
+            "- For identifiers: only extract values not already captured in spare_parts, equipment, manufacturers, or suppliers.\n"
             "- Do not invent identifiers — only extract values explicitly present in the text.\n"
             f"Allowed chunk_id values (use one of these EXACTLY, or null): {allowed_chunk_ids}\n"
             f"Document id: {document_id}\n"
@@ -132,7 +158,7 @@ class IdentifierExtractionPromptBuilder:
     @staticmethod
     def _format_chunk_block(chunk: DocumentChunk) -> str:
         section_path = " > ".join(chunk.section_path) if chunk.section_path else "N/A"
-        page_range = IdentifierExtractionPromptBuilder._format_page_range(
+        page_range = LegacyExtractionPromptBuilder._format_page_range(
             chunk.source.page_start,
             chunk.source.page_end,
         )

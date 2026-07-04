@@ -100,8 +100,71 @@ def test_render_groups_multiple_identifier_types_in_fixed_order() -> None:
 
     assert result is not None
     part_index = result.index("Part Numbers:")
-    manufacturer_index = result.index("Manufacturers / Suppliers:")
+    manufacturer_index = result.index("Manufacturers:")
     assert part_index < manufacturer_index
+
+
+def test_render_distinguishes_manufacturers_from_suppliers() -> None:
+    """Manufacturer and supplier are now distinct identifier types with their
+    own labels/groups — they must not be merged into a single "Manufacturers
+    / Suppliers" bucket, and a question mentioning only "supplier" must not
+    also surface manufacturer values."""
+    renderer = IdentifierAnswerRenderer()
+
+    result = renderer.render(
+        question="List the manufacturer and supplier",
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        structured_context=None,
+        resolved_identifiers=[
+            _make_identifier(
+                identifier_id="id_1",
+                raw_value="ACME Corp",
+                identifier_type=IdentifierType.MANUFACTURER_NAME,
+            ),
+            _make_identifier(
+                identifier_id="id_2",
+                raw_value="FMD Rotterdam",
+                identifier_type=IdentifierType.SUPPLIER_NAME,
+            ),
+        ],
+    )
+
+    assert result is not None
+    assert "Manufacturers:" in result
+    assert "Suppliers:" in result
+    assert "ACME Corp" in result
+    assert "FMD Rotterdam" in result
+    manufacturer_index = result.index("Manufacturers:")
+    supplier_index = result.index("Suppliers:")
+    assert manufacturer_index < supplier_index
+
+
+def test_render_supplier_only_question_excludes_manufacturers() -> None:
+    renderer = IdentifierAnswerRenderer()
+
+    result = renderer.render(
+        question="Who is the supplier?",
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        structured_context=None,
+        resolved_identifiers=[
+            _make_identifier(
+                identifier_id="id_1",
+                raw_value="ACME Corp",
+                identifier_type=IdentifierType.MANUFACTURER_NAME,
+            ),
+            _make_identifier(
+                identifier_id="id_2",
+                raw_value="FMD Rotterdam",
+                identifier_type=IdentifierType.SUPPLIER_NAME,
+            ),
+        ],
+    )
+
+    assert result is not None
+    assert "Suppliers:" in result
+    assert "FMD Rotterdam" in result
+    assert "Manufacturers:" not in result
+    assert "ACME Corp" not in result
 
 
 def test_render_filters_to_types_mentioned_in_question() -> None:

@@ -15,6 +15,7 @@ class ToolRegistry:
     retrieve_chunks_tool: Any | None = None
     retrieve_tables_tool: Any | None = None
     retrieve_identifiers_tool: Any | None = None
+    retrieve_structured_entities_tool: Any | None = None
     retrieve_figures_tool: Any | None = None
     answer_question_tool: Any | None = None
     run_quality_gate_tool: Any | None = None
@@ -51,6 +52,7 @@ class ToolRegistry:
             "retrieve_chunks": self.retrieve_chunks_tool,
             "retrieve_tables": self.retrieve_tables_tool,
             "retrieve_identifiers": self.retrieve_identifiers_tool,
+            "retrieve_structured_entities": self.retrieve_structured_entities_tool,
             "retrieve_figures": self.retrieve_figures_tool,
             "answer_question": self.answer_question_tool,
             "run_quality_gate": self.run_quality_gate_tool,

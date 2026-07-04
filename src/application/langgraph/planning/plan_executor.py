@@ -29,6 +29,9 @@ from src.application.tools.exploration import ExploreDocumentRequest
 from src.application.tools.question_answering import AnswerQuestionRequest
 from src.application.tools.retrieval import RetrieveChunksRequest
 from src.application.tools.retrieval.retrieve_identifiers_tool import RetrieveIdentifiersRequest
+from src.application.tools.retrieval.retrieve_structured_entities_tool import (
+    RetrieveStructuredEntitiesRequest,
+)
 from src.domain.common.enums import IdentifierType
 from src.domain.document.entities.identifier import Identifier
 
@@ -248,6 +251,13 @@ class PlanExecutor:
                 query_text=str(args.get("query_text") or state.get("question") or state["user_input"]),
                 document_id=document_id,
                 top_k=state.get("top_k") or 5,
+            )
+        if step.tool_name == "retrieve_structured_entities":
+            return RetrieveStructuredEntitiesRequest(
+                entity_type=str(args.get("entity_type") or ""),
+                query_text=args.get("query_text"),
+                document_id=document_id,
+                top_k=int(args.get("top_k") or 20),
             )
         if step.tool_name == "answer_question":
             return AnswerQuestionRequest(

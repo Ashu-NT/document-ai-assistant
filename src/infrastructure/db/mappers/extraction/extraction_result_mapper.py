@@ -11,12 +11,16 @@ from src.infrastructure.db.mappers.extraction.manufacturer_mapper import (
 from src.infrastructure.db.mappers.extraction.spare_part_mapper import (
     SparePartMapper,
 )
+from src.infrastructure.db.mappers.extraction.supplier_mapper import (
+    SupplierMapper,
+)
 from src.infrastructure.db.orm_models import (
     EquipmentInfoORM,
     ExtractionResultORM,
     MaintenanceTaskORM,
     ManufacturerORM,
     SparePartORM,
+    SupplierORM,
 )
 
 
@@ -38,6 +42,7 @@ class ExtractionResultMapper:
         spare_part_rows: list[SparePartORM] | None = None,
         equipment_rows: list[EquipmentInfoORM] | None = None,
         manufacturer_rows: list[ManufacturerORM] | None = None,
+        supplier_rows: list[SupplierORM] | None = None,
     ) -> ExtractionResult:
         return ExtractionResult(
             extraction_id=orm.id,
@@ -57,6 +62,10 @@ class ExtractionResultMapper:
             manufacturers=[
                 ManufacturerMapper.to_domain(row)
                 for row in manufacturer_rows or []
+            ],
+            suppliers=[
+                SupplierMapper.to_domain(row)
+                for row in supplier_rows or []
             ],
             confidence_score=orm.confidence_score,
             requires_human_review=orm.requires_human_review,

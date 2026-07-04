@@ -152,6 +152,30 @@ class ManufacturerPayload(_ExtractionItemBase):
     )
 
 
+class SupplierPayload(_ExtractionItemBase):
+    name: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("name", "supplier_name"),
+    )
+    website: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("website", "url"),
+    )
+    country: str | None = None
+    source_chunk_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("source_chunk_id", "chunk_id"),
+    )
+    confidence_score: float | None = Field(
+        default=None,
+        validation_alias=AliasChoices("confidence_score", "confidence"),
+    )
+    requires_human_review: bool | None = Field(
+        default=None,
+        validation_alias=AliasChoices("requires_human_review", "requires_review"),
+    )
+
+
 class IdentifierPayload(_ExtractionItemBase):
     raw_value: str | None = Field(
         default=None,
@@ -202,6 +226,10 @@ class ExtractionResponsePayload(BaseModel):
         default_factory=list,
         validation_alias=AliasChoices("manufacturers", "manufacturer_list"),
     )
+    suppliers: list[SupplierPayload] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("suppliers", "supplier_list"),
+    )
     identifiers: list[IdentifierPayload] = Field(
         default_factory=list,
         validation_alias=AliasChoices("identifiers", "identifier_list"),
@@ -217,6 +245,7 @@ class ExtractionResponsePayload(BaseModel):
         "spare_parts",
         "equipment",
         "manufacturers",
+        "suppliers",
         "identifiers",
         mode="before",
     )

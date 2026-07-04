@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -32,4 +32,34 @@ class SparePartReader:
             raise DatabaseError(
                 "Failed to list spare parts.",
                 details={"document_id": document_id},
+            ) from exc
+
+    def search_spare_parts(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[SparePart]:
+        try:
+            pattern = f"%{query}%"
+            statement = select(SparePartORM).where(
+                or_(
+                    SparePartORM.part_number.ilike(pattern),
+                    SparePartORM.description.ilike(pattern),
+                    SparePartORM.component_name.ilike(pattern),
+                )
+            )
+
+            if document_id is not None:
+                statement = statement.where(
+                    SparePartORM.document_id == document_id
+                )
+
+            rows = self.session.execute(statement).scalars().all()
+
+            return [SparePartMapper.to_domain(row) for row in rows]
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to search spare parts.",
+                details={"query": query, "document_id": document_id},
             ) from exc

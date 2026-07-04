@@ -5,6 +5,7 @@ allowed_tools:
   - explore_document
   - retrieve_chunks
   - retrieve_identifiers
+  - retrieve_structured_entities
   - answer_question
   - run_quality_gate
   - retrieval_trace

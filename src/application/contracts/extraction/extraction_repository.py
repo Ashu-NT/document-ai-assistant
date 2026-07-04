@@ -1,6 +1,13 @@
 from typing import Protocol
 
-from src.domain.extraction import ExtractionResult, MaintenanceTask, SparePart, EquipmentInfo
+from src.domain.extraction import (
+    EquipmentInfo,
+    ExtractionResult,
+    MaintenanceTask,
+    Manufacturer,
+    SparePart,
+    Supplier,
+)
 
 
 class ExtractionRepository(Protocol):
@@ -32,4 +39,51 @@ class ExtractionRepository(Protocol):
         self,
         document_id: str | None = None,
     ) -> list[EquipmentInfo]:
+        ...
+
+    def list_manufacturers(
+        self,
+        document_id: str | None = None,
+    ) -> list[Manufacturer]:
+        ...
+
+    def list_suppliers(
+        self,
+        document_id: str | None = None,
+    ) -> list[Supplier]:
+        ...
+
+    def search_maintenance_tasks(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[MaintenanceTask]:
+        ...
+
+    def search_spare_parts(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[SparePart]:
+        ...
+
+    def search_equipment(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[EquipmentInfo]:
+        ...
+
+    def search_manufacturers(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[Manufacturer]:
+        ...
+
+    def search_suppliers(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[Supplier]:
         ...

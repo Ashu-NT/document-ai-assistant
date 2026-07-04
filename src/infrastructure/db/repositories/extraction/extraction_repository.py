@@ -7,6 +7,7 @@ from src.domain.extraction import (
     MaintenanceTask,
     Manufacturer,
     SparePart,
+    Supplier,
 )
 from src.infrastructure.db.repositories.extraction.equipment_reader import EquipmentReader
 from src.infrastructure.db.repositories.extraction.extraction_reader import ExtractionReader
@@ -18,6 +19,7 @@ from src.infrastructure.db.repositories.extraction.manufacturer_reader import (
     ManufacturerReader,
 )
 from src.infrastructure.db.repositories.extraction.spare_part_reader import SparePartReader
+from src.infrastructure.db.repositories.extraction.supplier_reader import SupplierReader
 
 
 class SqlAlchemyExtractionRepository(ExtractionRepository):
@@ -28,6 +30,7 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
         self.spare_part_reader = SparePartReader(session)
         self.equipment_reader = EquipmentReader(session)
         self.manufacturer_reader = ManufacturerReader(session)
+        self.supplier_reader = SupplierReader(session)
 
     def save_extraction_result(self, result: ExtractionResult) -> None:
         self.writer.save_extraction_result(result)
@@ -67,3 +70,44 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
         document_id: str | None = None,
     ) -> list[Manufacturer]:
         return self.manufacturer_reader.list_manufacturers(document_id)
+
+    def list_suppliers(
+        self,
+        document_id: str | None = None,
+    ) -> list[Supplier]:
+        return self.supplier_reader.list_suppliers(document_id)
+
+    def search_maintenance_tasks(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[MaintenanceTask]:
+        return self.task_reader.search_maintenance_tasks(query, document_id)
+
+    def search_spare_parts(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[SparePart]:
+        return self.spare_part_reader.search_spare_parts(query, document_id)
+
+    def search_equipment(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[EquipmentInfo]:
+        return self.equipment_reader.search_equipment(query, document_id)
+
+    def search_manufacturers(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[Manufacturer]:
+        return self.manufacturer_reader.search_manufacturers(query, document_id)
+
+    def search_suppliers(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[Supplier]:
+        return self.supplier_reader.search_suppliers(query, document_id)

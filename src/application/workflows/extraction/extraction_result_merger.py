@@ -6,6 +6,7 @@ from src.domain.extraction import (
     MaintenanceTask,
     Manufacturer,
     SparePart,
+    Supplier,
 )
 from src.shared.ids import IdGenerator, IdPrefix
 
@@ -24,6 +25,7 @@ class ExtractionResultMerger:
         merged_parts = self._merge_spare_parts(partial_results)
         merged_equipment = self._merge_equipment(partial_results)
         merged_manufacturers = self._merge_manufacturers(partial_results)
+        merged_suppliers = self._merge_suppliers(partial_results)
         merged_identifiers = self._merge_identifiers(partial_results)
         source_chunk_ids = self._unique_in_order(
             chunk_id
@@ -48,6 +50,7 @@ class ExtractionResultMerger:
             spare_parts=merged_parts,
             equipment=merged_equipment,
             manufacturers=merged_manufacturers,
+            suppliers=merged_suppliers,
             extracted_identifiers=merged_identifiers,
             source_chunk_ids=source_chunk_ids,
             confidence_score=confidence_score,
@@ -114,6 +117,17 @@ class ExtractionResultMerger:
                 self._merge_manufacturer(merged[key], item)
         return list(merged.values())
 
+    def _merge_suppliers(self, partial_results: list[ExtractionResult]) -> list[Supplier]:
+        merged: dict[str, Supplier] = {}
+        for result in partial_results:
+            for item in result.suppliers:
+                key = self._normalize(item.name)
+                if key not in merged:
+                    merged[key] = item
+                    continue
+                self._merge_supplier(merged[key], item)
+        return list(merged.values())
+
     def _merge_identifiers(
         self,
         partial_results: list[ExtractionResult],
@@ -154,6 +168,11 @@ class ExtractionResultMerger:
         self._merge_common_fields(current, candidate)
 
     def _merge_manufacturer(self, current: Manufacturer, candidate: Manufacturer) -> None:
+        current.website = current.website or candidate.website
+        current.country = current.country or candidate.country
+        self._merge_common_fields(current, candidate)
+
+    def _merge_supplier(self, current: Supplier, candidate: Supplier) -> None:
         current.website = current.website or candidate.website
         current.country = current.country or candidate.country
         self._merge_common_fields(current, candidate)

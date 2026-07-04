@@ -33,3 +33,28 @@ class ManufacturerReader:
                 "Failed to list manufacturers.",
                 details={"document_id": document_id},
             ) from exc
+
+    def search_manufacturers(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[Manufacturer]:
+        try:
+            statement = select(ManufacturerORM).where(
+                ManufacturerORM.name.ilike(f"%{query}%")
+            )
+
+            if document_id is not None:
+                statement = statement.where(
+                    ManufacturerORM.document_id == document_id
+                )
+
+            rows = self.session.execute(statement).scalars().all()
+
+            return [ManufacturerMapper.to_domain(row) for row in rows]
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to search manufacturers.",
+                details={"query": query, "document_id": document_id},
+            ) from exc
