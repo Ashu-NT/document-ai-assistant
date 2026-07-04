@@ -86,6 +86,20 @@ class FakeGuardrail:
         return self._result
 
 
+class FakeDocumentLookupService:
+    def __init__(self, chunks_by_id: dict | None = None) -> None:
+        self._chunks_by_id = chunks_by_id or {}
+        self.requested_ids: list[str] = []
+
+    def get_chunks_by_ids(self, chunk_ids: list[str]) -> list:
+        self.requested_ids.extend(chunk_ids)
+        return [
+            self._chunks_by_id[chunk_id]
+            for chunk_id in chunk_ids
+            if chunk_id in self._chunks_by_id
+        ]
+
+
 class FakeAnswerGenerationService:
     def __init__(
         self,

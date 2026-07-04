@@ -21,6 +21,10 @@ class StructuredEntityType(StrEnum):
     SPARE_PART = "spare_part"
     EQUIPMENT = "equipment"
     MAINTENANCE_TASK = "maintenance_task"
+    PROCEDURE = "procedure"
+    SPECIFICATION = "specification"
+    SAFETY_WARNING = "safety_warning"
+    MAINTENANCE_INTERVAL = "maintenance_interval"
 
 
 @dataclass(slots=True, kw_only=True)
@@ -43,8 +47,9 @@ class RetrieveStructuredEntitiesTool:
         category="retrieval",
         description=(
             "Look up extracted structured entities (manufacturers, suppliers, "
-            "spare parts, equipment, maintenance tasks) by document and/or "
-            "search text."
+            "spare parts, equipment, maintenance tasks, procedures, "
+            "specifications, safety warnings, maintenance intervals) by "
+            "document and/or search text."
         ),
         mutates_state=False,
         supports_trace=False,
@@ -56,6 +61,10 @@ class RetrieveStructuredEntitiesTool:
         StructuredEntityType.SPARE_PART: "search_spare_parts",
         StructuredEntityType.EQUIPMENT: "search_equipment",
         StructuredEntityType.MAINTENANCE_TASK: "search_maintenance_tasks",
+        StructuredEntityType.PROCEDURE: "search_procedures",
+        StructuredEntityType.SPECIFICATION: "search_specifications",
+        StructuredEntityType.SAFETY_WARNING: "search_safety_warnings",
+        StructuredEntityType.MAINTENANCE_INTERVAL: "search_maintenance_intervals",
     }
     _LIST_METHODS: dict[StructuredEntityType, str] = {
         StructuredEntityType.MANUFACTURER: "list_manufacturers",
@@ -63,6 +72,10 @@ class RetrieveStructuredEntitiesTool:
         StructuredEntityType.SPARE_PART: "list_spare_parts",
         StructuredEntityType.EQUIPMENT: "list_equipment",
         StructuredEntityType.MAINTENANCE_TASK: "list_maintenance_tasks",
+        StructuredEntityType.PROCEDURE: "list_procedures",
+        StructuredEntityType.SPECIFICATION: "list_specifications",
+        StructuredEntityType.SAFETY_WARNING: "list_safety_warnings",
+        StructuredEntityType.MAINTENANCE_INTERVAL: "list_maintenance_intervals",
     }
 
     def __init__(self, extraction_service: ExtractionService) -> None:

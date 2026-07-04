@@ -17,3 +17,4 @@ class QuestionAnsweringRequest:
     context_override_chunks: list[RetrievedChunk] | None = None
     retry_query: str | None = None
     resolved_identifiers: list = field(default_factory=list)
+    resolved_structured_entities: list = field(default_factory=list)

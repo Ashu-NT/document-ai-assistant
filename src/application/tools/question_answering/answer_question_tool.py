@@ -34,6 +34,7 @@ class AnswerQuestionRequest(ToolRequest):
     context_override_chunks: list[RetrievedChunk] | None = None
     retry_query: str | None = None
     resolved_identifiers: list = field(default_factory=list)
+    resolved_structured_entities: list = field(default_factory=list)
     progress_callback: Callable[[str], None] | None = None
 
 
@@ -94,6 +95,9 @@ class AnswerQuestionTool:
             context_override_chunks=request.context_override_chunks,
             retry_query=request.retry_query,
             resolved_identifiers=list(getattr(request, "resolved_identifiers", [])),
+            resolved_structured_entities=list(
+                getattr(request, "resolved_structured_entities", [])
+            ),
         )
 
         try:

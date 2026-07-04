@@ -325,6 +325,7 @@ def build_agent_runtime(
             if enable_generation
             else []
         ),
+        document_lookup_service=document_lookup_service,
     )
 
     find_document_tool = FindDocumentTool(document_catalog_service)

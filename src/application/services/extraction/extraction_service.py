@@ -43,6 +43,10 @@ class ExtractionService:
                 "equipment_count": len(result.equipment),
                 "manufacturer_count": len(result.manufacturers),
                 "supplier_count": len(result.suppliers),
+                "procedure_count": len(result.procedures),
+                "specification_count": len(result.specifications),
+                "safety_warning_count": len(result.safety_warnings),
+                "maintenance_interval_count": len(result.maintenance_intervals),
                 "confidence_score": result.confidence_score,
                 "requires_human_review": result.requires_human_review,
             },
@@ -77,6 +81,10 @@ class ExtractionService:
                 "equipment_count": len(result.equipment),
                 "manufacturer_count": len(result.manufacturers),
                 "supplier_count": len(result.suppliers),
+                "procedure_count": len(result.procedures),
+                "specification_count": len(result.specifications),
+                "safety_warning_count": len(result.safety_warnings),
+                "maintenance_interval_count": len(result.maintenance_intervals),
                 "confidence_score": result.confidence_score,
                 "requires_human_review": result.requires_human_review,
             },
@@ -103,6 +111,26 @@ class ExtractionService:
     def list_suppliers(self, document_id: str | None = None):
         return self.extraction_repository.list_suppliers(document_id)
 
+    def list_procedures(self, document_id: str | None = None):
+        return self.extraction_repository.list_procedures(document_id)
+
+    def list_specifications(self, document_id: str | None = None):
+        return self.extraction_repository.list_specifications(document_id)
+
+    def list_safety_warnings(self, document_id: str | None = None):
+        return self.extraction_repository.list_safety_warnings(document_id)
+
+    def list_maintenance_intervals(self, document_id: str | None = None):
+        return self.extraction_repository.list_maintenance_intervals(document_id)
+
+    def list_maintenance_intervals_by_task_id(self, maintenance_task_id: str):
+        return self.extraction_repository.list_maintenance_intervals_by_task_id(
+            maintenance_task_id
+        )
+
+    def list_procedures_by_equipment_id(self, equipment_id: str):
+        return self.extraction_repository.list_procedures_by_equipment_id(equipment_id)
+
     def search_maintenance_tasks(self, query: str, document_id: str | None = None):
         return self.extraction_repository.search_maintenance_tasks(query, document_id)
 
@@ -117,3 +145,17 @@ class ExtractionService:
 
     def search_suppliers(self, query: str, document_id: str | None = None):
         return self.extraction_repository.search_suppliers(query, document_id)
+
+    def search_procedures(self, query: str, document_id: str | None = None):
+        return self.extraction_repository.search_procedures(query, document_id)
+
+    def search_specifications(self, query: str, document_id: str | None = None):
+        return self.extraction_repository.search_specifications(query, document_id)
+
+    def search_safety_warnings(self, query: str, document_id: str | None = None):
+        return self.extraction_repository.search_safety_warnings(query, document_id)
+
+    def search_maintenance_intervals(self, query: str, document_id: str | None = None):
+        return self.extraction_repository.search_maintenance_intervals(
+            query, document_id
+        )

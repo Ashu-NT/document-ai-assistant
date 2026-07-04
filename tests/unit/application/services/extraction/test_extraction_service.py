@@ -65,6 +65,38 @@ class FakeExtractionRepository:
             if document_id is None or supplier.document_id == document_id
         ]
 
+    def list_procedures(self, document_id: str | None = None):
+        return [
+            procedure
+            for result in self.results.values()
+            for procedure in result.procedures
+            if document_id is None or procedure.document_id == document_id
+        ]
+
+    def list_specifications(self, document_id: str | None = None):
+        return [
+            specification
+            for result in self.results.values()
+            for specification in result.specifications
+            if document_id is None or specification.document_id == document_id
+        ]
+
+    def list_safety_warnings(self, document_id: str | None = None):
+        return [
+            safety_warning
+            for result in self.results.values()
+            for safety_warning in result.safety_warnings
+            if document_id is None or safety_warning.document_id == document_id
+        ]
+
+    def list_maintenance_intervals(self, document_id: str | None = None):
+        return [
+            maintenance_interval
+            for result in self.results.values()
+            for maintenance_interval in result.maintenance_intervals
+            if document_id is None or maintenance_interval.document_id == document_id
+        ]
+
 
 def make_service(repository: FakeExtractionRepository) -> ExtractionService:
     return ExtractionService(
@@ -83,6 +115,10 @@ def test_save_extraction_result(sample_extraction_result) -> None:
     assert result.payload["extraction_id"] == sample_extraction_result.extraction_id
     assert result.payload["maintenance_task_count"] == 1
     assert result.payload["supplier_count"] == 1
+    assert result.payload["procedure_count"] == 1
+    assert result.payload["specification_count"] == 1
+    assert result.payload["safety_warning_count"] == 1
+    assert result.payload["maintenance_interval_count"] == 1
     assert len(repository.results) == 1
 
 
@@ -150,6 +186,52 @@ def test_list_suppliers(sample_extraction_result) -> None:
     suppliers = service.list_suppliers(sample_extraction_result.document_id)
 
     assert len(suppliers) == 1
+
+
+def test_list_procedures(sample_extraction_result) -> None:
+    repository = FakeExtractionRepository()
+    repository.save_extraction_result(sample_extraction_result)
+
+    service = make_service(repository)
+
+    procedures = service.list_procedures(sample_extraction_result.document_id)
+
+    assert len(procedures) == 1
+
+
+def test_list_specifications(sample_extraction_result) -> None:
+    repository = FakeExtractionRepository()
+    repository.save_extraction_result(sample_extraction_result)
+
+    service = make_service(repository)
+
+    specifications = service.list_specifications(sample_extraction_result.document_id)
+
+    assert len(specifications) == 1
+
+
+def test_list_safety_warnings(sample_extraction_result) -> None:
+    repository = FakeExtractionRepository()
+    repository.save_extraction_result(sample_extraction_result)
+
+    service = make_service(repository)
+
+    safety_warnings = service.list_safety_warnings(sample_extraction_result.document_id)
+
+    assert len(safety_warnings) == 1
+
+
+def test_list_maintenance_intervals(sample_extraction_result) -> None:
+    repository = FakeExtractionRepository()
+    repository.save_extraction_result(sample_extraction_result)
+
+    service = make_service(repository)
+
+    maintenance_intervals = service.list_maintenance_intervals(
+        sample_extraction_result.document_id
+    )
+
+    assert len(maintenance_intervals) == 1
 
 
 def test_save_extraction_result_rejects_invalid_input(

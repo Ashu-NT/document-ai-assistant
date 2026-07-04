@@ -12,9 +12,22 @@ from src.application.services.answer_generation.answer_generation_request import
 from src.application.services.answer_generation.answer_generation_service import (
     AnswerGenerationService,
 )
+from src.application.services.answer_generation.intent.answer_intent import (
+    AnswerIntent,
+)
+from src.application.services.document import DocumentLookupService
 from src.application.services.document_exploration.document_exploration_service import (
     DocumentExplorationService,
     DocumentNotFoundError,
+)
+from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
+    AnswerContextOrganizer,
+)
+from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+    StructuredAnswerContext,
+)
+from src.application.workflows.question_answering.answer_context.structured_fact_key_value_builder import (
+    StructuredFactKeyValueBuilder,
 )
 from src.application.workflows.question_answering.question_answering_request import (
     QuestionAnsweringRequest,
@@ -36,6 +49,7 @@ from src.domain.common import new_id
 from src.domain.retrieval import RetrievalQuery
 from src.domain.retrieval.citation import Citation
 from src.domain.retrieval.retrieval_result import RetrievalResult
+from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 from src.application.contracts.guardrails import GuardrailResult
 
 _ANSWER_GENERATION_DISABLED_MESSAGE = (
@@ -66,6 +80,9 @@ class QuestionAnsweringWorkflow:
         pre_generation_guardrail_service: PreGenerationGuardrailService | None = None,
         answer_generation_service: AnswerGenerationService | None = None,
         post_answer_guardrails: list[Guardrail] | None = None,
+        document_lookup_service: DocumentLookupService | None = None,
+        answer_context_organizer: AnswerContextOrganizer | None = None,
+        structured_fact_key_value_builder: StructuredFactKeyValueBuilder | None = None,
     ) -> None:
         self._retrieval_workflow = retrieval_workflow
         self._exploration_service = exploration_service
@@ -77,6 +94,11 @@ class QuestionAnsweringWorkflow:
         )
         self._answer_generation_service = answer_generation_service
         self._post_answer_guardrails: list[Guardrail] = post_answer_guardrails or []
+        self._document_lookup_service = document_lookup_service
+        self._answer_context_organizer = answer_context_organizer or AnswerContextOrganizer()
+        self._structured_fact_key_value_builder = (
+            structured_fact_key_value_builder or StructuredFactKeyValueBuilder()
+        )
 
     def run(
         self,
@@ -302,11 +324,15 @@ class QuestionAnsweringWorkflow:
                 diagnostics={"blocked_by": "pre_generation_guardrail"},
             )
 
-        # LLM only ever sees approved_chunks
+        # LLM only ever sees approved_chunks (plus any structured-fact source
+        # chunks joined in below)
         self._emit_progress(progress_callback, "Generating answer...")
+        joined_chunks, structured_context = self._join_structured_facts(
+            request, approved_chunks
+        )
         gen_request = AnswerGenerationRequest(
             question=request.question,
-            context_chunks=approved_chunks,
+            context_chunks=joined_chunks,
             query_intent=analyzed_intent,
             retrieval_intent=analyzed_intent,
             chunk_type_preferences=list(analyzed_query.chunk_types),
@@ -314,6 +340,7 @@ class QuestionAnsweringWorkflow:
             require_citations=request.require_citations,
             route=QuestionAnsweringRoute.RETRIEVAL_QA.value,
             resolved_identifiers=list(request.resolved_identifiers),
+            structured_context=structured_context,
         )
         generated = self._answer_generation_service.generate(gen_request)
 
@@ -365,6 +392,95 @@ class QuestionAnsweringWorkflow:
                 **generated.diagnostics,
                 **workflow_result.diagnostics,
             },
+        )
+
+    def _join_structured_facts(
+        self,
+        request: QuestionAnsweringRequest,
+        approved_chunks: list[RetrievedChunk],
+    ) -> tuple[list[RetrievedChunk], StructuredAnswerContext | None]:
+        """Joins resolved identifiers/structured-entity rows to the same
+        chunk-based context used for generation, fetching their exact source
+        chunk when normal retrieval didn't already surface it, so these
+        facts reach the LLM as real evidence instead of only reaching the
+        user through a deterministic bypass renderer."""
+        if not request.resolved_identifiers and not request.resolved_structured_entities:
+            return approved_chunks, None
+        if self._document_lookup_service is None:
+            return approved_chunks, None
+
+        existing_chunk_ids = {chunk.chunk_id for chunk in approved_chunks}
+        needed_chunk_ids: set[str] = set()
+        for identifier in request.resolved_identifiers:
+            chunk_id = identifier.chunk_id
+            if chunk_id and chunk_id not in existing_chunk_ids:
+                needed_chunk_ids.add(chunk_id)
+        for entity in request.resolved_structured_entities:
+            if not isinstance(entity, dict):
+                continue
+            chunk_id = entity.get("source_chunk_id")
+            if chunk_id and chunk_id not in existing_chunk_ids:
+                needed_chunk_ids.add(chunk_id)
+
+        joined_chunks = list(approved_chunks)
+        if needed_chunk_ids:
+            fetched_chunks = self._document_lookup_service.get_chunks_by_ids(
+                list(needed_chunk_ids)
+            )
+            joined_chunks.extend(
+                self._to_retrieved_chunk(chunk) for chunk in fetched_chunks
+            )
+
+        structured_context = self._answer_context_organizer.organize(
+            answer_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+            chunks=joined_chunks,
+        )
+        source_number_by_chunk_id = {
+            source.chunk_id: source.source_number
+            for source in structured_context.sources
+        }
+
+        extra_key_values = (
+            self._structured_fact_key_value_builder.build_from_identifiers(
+                list(request.resolved_identifiers),
+                source_number_by_chunk_id=source_number_by_chunk_id,
+            )
+        )
+        entities_by_type: dict[str, list[dict]] = {}
+        for entity in request.resolved_structured_entities:
+            if not isinstance(entity, dict):
+                continue
+            entity_type = entity.get("_entity_type")
+            if not entity_type:
+                continue
+            entities_by_type.setdefault(entity_type, []).append(entity)
+        for entity_type, entities in entities_by_type.items():
+            extra_key_values.extend(
+                self._structured_fact_key_value_builder.build_from_structured_entities(
+                    entity_type,
+                    entities,
+                    source_number_by_chunk_id=source_number_by_chunk_id,
+                )
+            )
+
+        if not extra_key_values:
+            return joined_chunks, None
+
+        structured_context.key_values.extend(extra_key_values)
+        return joined_chunks, structured_context
+
+    @staticmethod
+    def _to_retrieved_chunk(chunk) -> RetrievedChunk:
+        return RetrievedChunk(
+            chunk_id=chunk.chunk_id,
+            document_id=chunk.document_id,
+            content=chunk.content,
+            score=1.0,
+            retrieval_source="structured_lookup",
+            chunk_type=chunk.chunk_type,
+            section_id=chunk.section_id,
+            section_path=list(chunk.section_path),
+            source=chunk.source,
         )
 
     @staticmethod

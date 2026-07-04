@@ -179,6 +179,48 @@ def test_extract_builds_extraction_result_and_saves_it(sample_chunk) -> None:
       "confidence_score": 0.86,
       "requires_human_review": false
     }
+  ],
+  "procedures": [
+    {
+      "title": "Install hydraulic filter",
+      "steps": ["Depressurize the line.", "Remove the old filter.", "Install the new filter."],
+      "component_name": "Hydraulic filter",
+      "equipment_reference": "Hydraulic Pump",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.89,
+      "requires_human_review": false
+    }
+  ],
+  "specifications": [
+    {
+      "parameter": "Pressure rating",
+      "value": "16",
+      "unit": "bar",
+      "component_name": "Hydraulic pump",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.91,
+      "requires_human_review": false
+    }
+  ],
+  "safety_warnings": [
+    {
+      "warning_type": "danger",
+      "message": "Depressurize the hydraulic line before removing the filter housing.",
+      "component_name": "Hydraulic filter",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.93,
+      "requires_human_review": false
+    }
+  ],
+  "maintenance_intervals": [
+    {
+      "component_name": "Hydraulic filter",
+      "interval": "1000 operating hours",
+      "task_reference": "Replace hydraulic filter",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    }
   ]
 }"""
         ]
@@ -212,6 +254,29 @@ def test_extract_builds_extraction_result_and_saves_it(sample_chunk) -> None:
     assert len(result.suppliers) == 1
     assert result.suppliers[0].supplier_id.startswith("supplier_")
     assert result.suppliers[0].source_chunk_id == second_chunk.chunk_id
+    assert len(result.procedures) == 1
+    assert result.procedures[0].procedure_id.startswith("procedure_")
+    assert result.procedures[0].steps == [
+        "Depressurize the line.",
+        "Remove the old filter.",
+        "Install the new filter.",
+    ]
+    assert result.procedures[0].equipment_id == result.equipment[0].equipment_id
+    assert len(result.specifications) == 1
+    assert result.specifications[0].specification_id.startswith("specification_")
+    assert result.specifications[0].parameter == "Pressure rating"
+    assert result.specifications[0].unit == "bar"
+    assert len(result.safety_warnings) == 1
+    assert result.safety_warnings[0].safety_warning_id.startswith("safety_warning_")
+    assert result.safety_warnings[0].warning_type == "danger"
+    assert len(result.maintenance_intervals) == 1
+    assert result.maintenance_intervals[0].maintenance_interval_id.startswith(
+        "maintenance_interval_"
+    )
+    assert (
+        result.maintenance_intervals[0].maintenance_task_id
+        == result.maintenance_tasks[0].task_id
+    )
     assert result.maintenance_tasks[0].source.page_start == sample_chunk.source.page_start
     assert result.spare_parts[0].source.page_start == second_chunk.source.page_start
     assert fake_extraction_service.saved_results == [result]
@@ -401,7 +466,7 @@ def test_extract_emits_progress_messages(sample_chunk) -> None:
         for message in progress_messages
     )
     assert any(
-        "Extraction completed (maintenance_tasks=0, spare_parts=0, equipment=0, manufacturers=0, suppliers=0, identifiers=0, batches=1)." in message
+        "Extraction completed (maintenance_tasks=0, spare_parts=0, equipment=0, manufacturers=0, suppliers=0, procedures=0, specifications=0, safety_warnings=0, maintenance_intervals=0, identifiers=0, batches=1)." in message
         for message in progress_messages
     )
 

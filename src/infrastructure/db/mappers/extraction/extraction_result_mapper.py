@@ -2,14 +2,26 @@ from src.domain.extraction import ExtractionResult
 from src.infrastructure.db.mappers.extraction.equipment_info_mapper import (
     EquipmentInfoMapper,
 )
+from src.infrastructure.db.mappers.extraction.maintenance_interval_mapper import (
+    MaintenanceIntervalMapper,
+)
 from src.infrastructure.db.mappers.extraction.maintenance_task_mapper import (
     MaintenanceTaskMapper,
 )
 from src.infrastructure.db.mappers.extraction.manufacturer_mapper import (
     ManufacturerMapper,
 )
+from src.infrastructure.db.mappers.extraction.procedure_mapper import (
+    ProcedureMapper,
+)
+from src.infrastructure.db.mappers.extraction.safety_warning_mapper import (
+    SafetyWarningMapper,
+)
 from src.infrastructure.db.mappers.extraction.spare_part_mapper import (
     SparePartMapper,
+)
+from src.infrastructure.db.mappers.extraction.specification_mapper import (
+    SpecificationMapper,
 )
 from src.infrastructure.db.mappers.extraction.supplier_mapper import (
     SupplierMapper,
@@ -17,9 +29,13 @@ from src.infrastructure.db.mappers.extraction.supplier_mapper import (
 from src.infrastructure.db.orm_models import (
     EquipmentInfoORM,
     ExtractionResultORM,
+    MaintenanceIntervalORM,
     MaintenanceTaskORM,
     ManufacturerORM,
+    ProcedureORM,
+    SafetyWarningORM,
     SparePartORM,
+    SpecificationORM,
     SupplierORM,
 )
 
@@ -43,6 +59,10 @@ class ExtractionResultMapper:
         equipment_rows: list[EquipmentInfoORM] | None = None,
         manufacturer_rows: list[ManufacturerORM] | None = None,
         supplier_rows: list[SupplierORM] | None = None,
+        procedure_rows: list[ProcedureORM] | None = None,
+        specification_rows: list[SpecificationORM] | None = None,
+        safety_warning_rows: list[SafetyWarningORM] | None = None,
+        maintenance_interval_rows: list[MaintenanceIntervalORM] | None = None,
     ) -> ExtractionResult:
         return ExtractionResult(
             extraction_id=orm.id,
@@ -66,6 +86,22 @@ class ExtractionResultMapper:
             suppliers=[
                 SupplierMapper.to_domain(row)
                 for row in supplier_rows or []
+            ],
+            procedures=[
+                ProcedureMapper.to_domain(row)
+                for row in procedure_rows or []
+            ],
+            specifications=[
+                SpecificationMapper.to_domain(row)
+                for row in specification_rows or []
+            ],
+            safety_warnings=[
+                SafetyWarningMapper.to_domain(row)
+                for row in safety_warning_rows or []
+            ],
+            maintenance_intervals=[
+                MaintenanceIntervalMapper.to_domain(row)
+                for row in maintenance_interval_rows or []
             ],
             confidence_score=orm.confidence_score,
             requires_human_review=orm.requires_human_review,

@@ -35,4 +35,20 @@ class ExtractionResultValidator(Validator[ExtractionResult]):
             if supplier.document_id != value.document_id:
                 result.add_issue("suppliers", "Supplier document_id does not match extraction document_id.", "extraction.supplier.document_mismatch")
 
+        for procedure in value.procedures:
+            if procedure.document_id != value.document_id:
+                result.add_issue("procedures", "Procedure document_id does not match extraction document_id.", "extraction.procedure.document_mismatch")
+
+        for specification in value.specifications:
+            if specification.document_id != value.document_id:
+                result.add_issue("specifications", "Specification document_id does not match extraction document_id.", "extraction.specification.document_mismatch")
+
+        for safety_warning in value.safety_warnings:
+            if safety_warning.document_id != value.document_id:
+                result.add_issue("safety_warnings", "Safety warning document_id does not match extraction document_id.", "extraction.safety_warning.document_mismatch")
+
+        for maintenance_interval in value.maintenance_intervals:
+            if maintenance_interval.document_id != value.document_id:
+                result.add_issue("maintenance_intervals", "Maintenance interval document_id does not match extraction document_id.", "extraction.maintenance_interval.document_mismatch")
+
         return result

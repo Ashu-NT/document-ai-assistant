@@ -130,3 +130,67 @@ def test_extraction_result_validator_detects_supplier_document_mismatch(
         result.issues[0].code
         == "extraction.supplier.document_mismatch"
     )
+
+
+def test_extraction_result_validator_detects_procedure_document_mismatch(
+    sample_extraction_result,
+) -> None:
+    sample_extraction_result.procedures[0].document_id = "wrong_doc"
+
+    result = ExtractionResultValidator().validate(
+        sample_extraction_result
+    )
+
+    assert not result.is_valid
+    assert (
+        result.issues[0].code
+        == "extraction.procedure.document_mismatch"
+    )
+
+
+def test_extraction_result_validator_detects_specification_document_mismatch(
+    sample_extraction_result,
+) -> None:
+    sample_extraction_result.specifications[0].document_id = "wrong_doc"
+
+    result = ExtractionResultValidator().validate(
+        sample_extraction_result
+    )
+
+    assert not result.is_valid
+    assert (
+        result.issues[0].code
+        == "extraction.specification.document_mismatch"
+    )
+
+
+def test_extraction_result_validator_detects_safety_warning_document_mismatch(
+    sample_extraction_result,
+) -> None:
+    sample_extraction_result.safety_warnings[0].document_id = "wrong_doc"
+
+    result = ExtractionResultValidator().validate(
+        sample_extraction_result
+    )
+
+    assert not result.is_valid
+    assert (
+        result.issues[0].code
+        == "extraction.safety_warning.document_mismatch"
+    )
+
+
+def test_extraction_result_validator_detects_maintenance_interval_document_mismatch(
+    sample_extraction_result,
+) -> None:
+    sample_extraction_result.maintenance_intervals[0].document_id = "wrong_doc"
+
+    result = ExtractionResultValidator().validate(
+        sample_extraction_result
+    )
+
+    assert not result.is_valid
+    assert (
+        result.issues[0].code
+        == "extraction.maintenance_interval.document_mismatch"
+    )

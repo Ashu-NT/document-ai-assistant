@@ -12,9 +12,13 @@ from src.infrastructure.db.orm_models.classification_models import ChunkClassifi
 from src.infrastructure.db.orm_models.extraction_models import (
     EquipmentInfoORM,
     ExtractionResultORM,
+    MaintenanceIntervalORM,
     MaintenanceTaskORM,
     ManufacturerORM,
+    ProcedureORM,
+    SafetyWarningORM,
     SparePartORM,
+    SpecificationORM,
     SupplierORM,
 )
 from src.infrastructure.db.orm_models.memory_models import (
@@ -40,9 +44,13 @@ __all__ = [
     "DocumentClassificationORM",
     "EquipmentInfoORM",
     "ExtractionResultORM",
+    "MaintenanceIntervalORM",
     "MaintenanceTaskORM",
     "ManufacturerORM",
+    "ProcedureORM",
+    "SafetyWarningORM",
     "SparePartORM",
+    "SpecificationORM",
     "SupplierORM",
     "ConversationMemoryORM",
     "ConversationMessageORM",

@@ -268,6 +268,9 @@ class PlanExecutor:
                 include_context=state["include_context"],
                 require_citations=True,
                 resolved_identifiers=self._extract_resolved_identifiers(step_outputs or {}),
+                resolved_structured_entities=self._extract_resolved_structured_entities(
+                    step_outputs or {}
+                ),
             )
         if step.tool_name == "run_quality_gate":
             return RunQualityGateRequest(
@@ -307,6 +310,21 @@ class PlanExecutor:
                 )
             except (ValueError, KeyError):
                 continue
+        return result
+
+    @staticmethod
+    def _extract_resolved_structured_entities(
+        step_outputs: dict[str, dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        structured_hits = step_outputs.get("structured_entity_hits", {})
+        data = structured_hits.get("data") or {}
+        entity_type = data.get("entity_type")
+        raw_items = data.get("items") or []
+        result: list[dict[str, Any]] = []
+        for item in raw_items:
+            if not isinstance(item, dict):
+                continue
+            result.append({**item, "_entity_type": entity_type})
         return result
 
     @staticmethod

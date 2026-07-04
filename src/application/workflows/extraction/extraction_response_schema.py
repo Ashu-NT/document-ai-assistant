@@ -176,6 +176,100 @@ class SupplierPayload(_ExtractionItemBase):
     )
 
 
+class ProcedurePayload(_ExtractionItemBase):
+    title: str | None = None
+    steps: list[str] = Field(default_factory=list)
+    component_name: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("component_name", "component"),
+    )
+    equipment_reference: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("equipment_reference", "equipment_name", "equipment"),
+    )
+    source_chunk_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("source_chunk_id", "chunk_id"),
+    )
+    confidence_score: float | None = Field(
+        default=None,
+        validation_alias=AliasChoices("confidence_score", "confidence"),
+    )
+    requires_human_review: bool | None = Field(
+        default=None,
+        validation_alias=AliasChoices("requires_human_review", "requires_review"),
+    )
+
+    @field_validator("steps", mode="before")
+    @classmethod
+    def _normalize_steps(cls, value: Any) -> Any:
+        return coerce_raw_list(value)
+
+
+class SpecificationPayload(_ExtractionItemBase):
+    parameter: str | None = None
+    value: str | None = None
+    unit: str | None = None
+    component_name: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("component_name", "component"),
+    )
+    source_chunk_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("source_chunk_id", "chunk_id"),
+    )
+    confidence_score: float | None = Field(
+        default=None,
+        validation_alias=AliasChoices("confidence_score", "confidence"),
+    )
+    requires_human_review: bool | None = Field(
+        default=None,
+        validation_alias=AliasChoices("requires_human_review", "requires_review"),
+    )
+
+
+class SafetyWarningPayload(_ExtractionItemBase):
+    warning_type: str | None = None
+    message: str | None = None
+    component_name: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("component_name", "component"),
+    )
+    source_chunk_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("source_chunk_id", "chunk_id"),
+    )
+    confidence_score: float | None = Field(
+        default=None,
+        validation_alias=AliasChoices("confidence_score", "confidence"),
+    )
+    requires_human_review: bool | None = Field(
+        default=None,
+        validation_alias=AliasChoices("requires_human_review", "requires_review"),
+    )
+
+
+class MaintenanceIntervalPayload(_ExtractionItemBase):
+    interval: str | None = None
+    component_name: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("component_name", "component"),
+    )
+    task_reference: str | None = None
+    source_chunk_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("source_chunk_id", "chunk_id"),
+    )
+    confidence_score: float | None = Field(
+        default=None,
+        validation_alias=AliasChoices("confidence_score", "confidence"),
+    )
+    requires_human_review: bool | None = Field(
+        default=None,
+        validation_alias=AliasChoices("requires_human_review", "requires_review"),
+    )
+
+
 class IdentifierPayload(_ExtractionItemBase):
     raw_value: str | None = Field(
         default=None,
@@ -230,6 +324,22 @@ class ExtractionResponsePayload(BaseModel):
         default_factory=list,
         validation_alias=AliasChoices("suppliers", "supplier_list"),
     )
+    procedures: list[ProcedurePayload] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("procedures", "procedure_list"),
+    )
+    specifications: list[SpecificationPayload] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("specifications", "specification_list"),
+    )
+    safety_warnings: list[SafetyWarningPayload] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("safety_warnings", "safety_warning_list"),
+    )
+    maintenance_intervals: list[MaintenanceIntervalPayload] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("maintenance_intervals", "maintenance_interval_list"),
+    )
     identifiers: list[IdentifierPayload] = Field(
         default_factory=list,
         validation_alias=AliasChoices("identifiers", "identifier_list"),
@@ -246,6 +356,10 @@ class ExtractionResponsePayload(BaseModel):
         "equipment",
         "manufacturers",
         "suppliers",
+        "procedures",
+        "specifications",
+        "safety_warnings",
+        "maintenance_intervals",
         "identifiers",
         mode="before",
     )

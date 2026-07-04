@@ -38,6 +38,7 @@ from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 from tests.unit.application.workflows.question_answering.conftest import (
     FakeAnswerGenerationService,
     FakeDocumentExplorationService,
+    FakeDocumentLookupService,
     FakeGuardrail,
     FakeRetrievalWorkflow,
 )
@@ -55,6 +56,7 @@ def make_workflow(
     context_guardrails=None,
     answer_generation_service=None,
     post_answer_guardrails=None,
+    document_lookup_service=None,
 ) -> QuestionAnsweringWorkflow:
     return QuestionAnsweringWorkflow(
         retrieval_workflow=fake_retrieval,
@@ -63,6 +65,7 @@ def make_workflow(
         context_guardrails=context_guardrails,
         answer_generation_service=answer_generation_service,
         post_answer_guardrails=post_answer_guardrails,
+        document_lookup_service=document_lookup_service,
     )
 
 
@@ -843,6 +846,157 @@ def test_pass_through_context_guardrail_preserves_all_chunks(
 # ---------------------------------------------------------------------------
 # Test 25 — no answer generation service, allow_answer_generation=False
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Structured-fact joining — identifiers and structured entities are fetched
+# and joined into the same chunk-based generation context.
+# ---------------------------------------------------------------------------
+
+
+def test_resolved_structured_entity_joins_missing_source_chunk_into_context(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    from src.domain.document.entities.chunk import DocumentChunk
+
+    retrieved_chunk = _make_chunk("chunk_a")
+    wf_result = _make_retrieval_result_with_chunks([retrieved_chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+
+    manufacturer_source_chunk = DocumentChunk(
+        chunk_id="chunk_manufacturer",
+        document_id="doc_001",
+        section_id=None,
+        content="ACME Corp, https://acme.example, Germany",
+    )
+    lookup_service = FakeDocumentLookupService(
+        chunks_by_id={"chunk_manufacturer": manufacturer_source_chunk}
+    )
+    fake_gen = FakeAnswerGenerationService()
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+        document_lookup_service=lookup_service,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the manufacturer website?",
+        allow_answer_generation=True,
+        resolved_structured_entities=[
+            {
+                "name": "ACME Corp",
+                "website": "https://acme.example",
+                "country": "Germany",
+                "source_chunk_id": "chunk_manufacturer",
+                "confidence_score": 0.9,
+                "_entity_type": "manufacturer",
+            }
+        ],
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert lookup_service.requested_ids == ["chunk_manufacturer"]
+    assert fake_gen.called_with is not None
+    context_chunk_ids = {c.chunk_id for c in fake_gen.called_with.context_chunks}
+    assert "chunk_a" in context_chunk_ids
+    assert "chunk_manufacturer" in context_chunk_ids
+    assert fake_gen.called_with.structured_context is not None
+    key_value_pairs = {
+        (kv.key, kv.value) for kv in fake_gen.called_with.structured_context.key_values
+    }
+    assert ("Manufacturer Website", "https://acme.example") in key_value_pairs
+    assert ("Manufacturer Name", "ACME Corp") in key_value_pairs
+
+
+def test_resolved_identifier_joins_missing_source_chunk_into_context(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    from src.domain.document.entities.chunk import DocumentChunk
+    from src.domain.document.entities.identifier import Identifier
+    from src.domain.common.enums import IdentifierType
+
+    retrieved_chunk = _make_chunk("chunk_a")
+    wf_result = _make_retrieval_result_with_chunks([retrieved_chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+
+    identifier_source_chunk = DocumentChunk(
+        chunk_id="chunk_identifier",
+        document_id="doc_001",
+        section_id=None,
+        content="Part number HP-001",
+    )
+    lookup_service = FakeDocumentLookupService(
+        chunks_by_id={"chunk_identifier": identifier_source_chunk}
+    )
+    fake_gen = FakeAnswerGenerationService()
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+        document_lookup_service=lookup_service,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the part number?",
+        allow_answer_generation=True,
+        resolved_identifiers=[
+            Identifier(
+                identifier_id="identifier_001",
+                document_id="doc_001",
+                raw_value="HP-001",
+                identifier_type=IdentifierType.PART_NUMBER,
+                chunk_id="chunk_identifier",
+                confidence_score=0.9,
+            )
+        ],
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert lookup_service.requested_ids == ["chunk_identifier"]
+    assert fake_gen.called_with is not None
+    context_chunk_ids = {c.chunk_id for c in fake_gen.called_with.context_chunks}
+    assert "chunk_identifier" in context_chunk_ids
+    assert fake_gen.called_with.structured_context is not None
+    key_value_pairs = {
+        (kv.key, kv.value) for kv in fake_gen.called_with.structured_context.key_values
+    }
+    assert ("Part Number", "HP-001") in key_value_pairs
+
+
+def test_resolved_structured_entities_without_lookup_service_do_not_crash(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    retrieved_chunk = _make_chunk("chunk_a")
+    wf_result = _make_retrieval_result_with_chunks([retrieved_chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+    fake_gen = FakeAnswerGenerationService()
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the manufacturer website?",
+        allow_answer_generation=True,
+        resolved_structured_entities=[
+            {
+                "name": "ACME Corp",
+                "website": "https://acme.example",
+                "source_chunk_id": "chunk_manufacturer",
+                "_entity_type": "manufacturer",
+            }
+        ],
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert fake_gen.called_with is not None
+    assert fake_gen.called_with.structured_context is None
+    assert len(fake_gen.called_with.context_chunks) == 1
 
 
 def test_no_generation_service_and_disabled_returns_placeholder(

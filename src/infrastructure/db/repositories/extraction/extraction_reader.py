@@ -7,9 +7,13 @@ from src.infrastructure.db.mappers import ExtractionResultMapper
 from src.infrastructure.db.orm_models import (
     EquipmentInfoORM,
     ExtractionResultORM,
+    MaintenanceIntervalORM,
     MaintenanceTaskORM,
     ManufacturerORM,
+    ProcedureORM,
+    SafetyWarningORM,
     SparePartORM,
+    SpecificationORM,
     SupplierORM,
 )
 from src.shared.exceptions import DatabaseError
@@ -59,6 +63,30 @@ class ExtractionReader:
                 )
             ).scalars().all()
 
+            procedure_rows = self.session.execute(
+                select(ProcedureORM).where(
+                    ProcedureORM.extraction_id == extraction_id
+                )
+            ).scalars().all()
+
+            specification_rows = self.session.execute(
+                select(SpecificationORM).where(
+                    SpecificationORM.extraction_id == extraction_id
+                )
+            ).scalars().all()
+
+            safety_warning_rows = self.session.execute(
+                select(SafetyWarningORM).where(
+                    SafetyWarningORM.extraction_id == extraction_id
+                )
+            ).scalars().all()
+
+            maintenance_interval_rows = self.session.execute(
+                select(MaintenanceIntervalORM).where(
+                    MaintenanceIntervalORM.extraction_id == extraction_id
+                )
+            ).scalars().all()
+
             return ExtractionResultMapper.to_domain(
                 result_row,
                 task_rows=task_rows,
@@ -66,6 +94,10 @@ class ExtractionReader:
                 equipment_rows=equipment_rows,
                 manufacturer_rows=manufacturer_rows,
                 supplier_rows=supplier_rows,
+                procedure_rows=procedure_rows,
+                specification_rows=specification_rows,
+                safety_warning_rows=safety_warning_rows,
+                maintenance_interval_rows=maintenance_interval_rows,
             )
 
         except SQLAlchemyError as exc:

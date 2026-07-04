@@ -15,9 +15,13 @@ from src.infrastructure.db.mappers.classification import ClassificationResultMap
 from src.infrastructure.db.mappers.classification import DocumentClassificationMapper
 from src.infrastructure.db.mappers.extraction import EquipmentInfoMapper
 from src.infrastructure.db.mappers.extraction import ExtractionResultMapper
+from src.infrastructure.db.mappers.extraction import MaintenanceIntervalMapper
 from src.infrastructure.db.mappers.extraction import MaintenanceTaskMapper
 from src.infrastructure.db.mappers.extraction import ManufacturerMapper
+from src.infrastructure.db.mappers.extraction import ProcedureMapper
+from src.infrastructure.db.mappers.extraction import SafetyWarningMapper
 from src.infrastructure.db.mappers.extraction import SparePartMapper
+from src.infrastructure.db.mappers.extraction import SpecificationMapper
 from src.infrastructure.db.mappers.extraction import SupplierMapper
 from src.infrastructure.db.mappers.memory import ConversationMemoryMapper
 from src.infrastructure.db.mappers.memory import MemoryEntryMapper
@@ -52,9 +56,13 @@ __all__ = [
     "DocumentClassificationMapper",
     "EquipmentInfoMapper",
     "ExtractionResultMapper",
+    "MaintenanceIntervalMapper",
     "MaintenanceTaskMapper",
     "ManufacturerMapper",
+    "ProcedureMapper",
+    "SafetyWarningMapper",
     "SparePartMapper",
+    "SpecificationMapper",
     "SupplierMapper",
     "ConversationMemoryMapper",
     "MemoryEntryMapper",

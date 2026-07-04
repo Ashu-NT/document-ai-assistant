@@ -22,9 +22,13 @@ from src.domain.elements import CanonicalElement
 from src.domain.extraction import (
     EquipmentInfo,
     ExtractionResult,
+    MaintenanceInterval,
     MaintenanceTask,
     Manufacturer,
+    Procedure,
+    SafetyWarning,
     SparePart,
+    Specification,
     Supplier,
 )
 from src.domain.retrieval import Citation, RetrievalQuery, RetrievalResult, RetrievedChunk
@@ -325,6 +329,68 @@ def sample_supplier(document_id: str, chunk_id: str) -> Supplier:
 
 
 @pytest.fixture
+def sample_procedure(
+    document_id: str,
+    chunk_id: str,
+    sample_equipment_info: EquipmentInfo,
+) -> Procedure:
+    return Procedure(
+        procedure_id="procedure_001",
+        document_id=document_id,
+        title="Install hydraulic filter",
+        steps=["Depressurize the line.", "Remove the old filter.", "Install the new filter."],
+        component_name="Hydraulic filter",
+        equipment_id=sample_equipment_info.equipment_id,
+        source_chunk_id=chunk_id,
+        confidence_score=0.85,
+    )
+
+
+@pytest.fixture
+def sample_specification(document_id: str, chunk_id: str) -> Specification:
+    return Specification(
+        specification_id="specification_001",
+        document_id=document_id,
+        parameter="Pressure rating",
+        value="16",
+        unit="bar",
+        component_name="Hydraulic pump",
+        source_chunk_id=chunk_id,
+        confidence_score=0.9,
+    )
+
+
+@pytest.fixture
+def sample_safety_warning(document_id: str, chunk_id: str) -> SafetyWarning:
+    return SafetyWarning(
+        safety_warning_id="safety_warning_001",
+        document_id=document_id,
+        warning_type="danger",
+        message="Depressurize the hydraulic line before removing the filter housing.",
+        component_name="Hydraulic filter",
+        source_chunk_id=chunk_id,
+        confidence_score=0.93,
+    )
+
+
+@pytest.fixture
+def sample_maintenance_interval(
+    document_id: str,
+    chunk_id: str,
+    sample_maintenance_task: MaintenanceTask,
+) -> MaintenanceInterval:
+    return MaintenanceInterval(
+        maintenance_interval_id="maintenance_interval_001",
+        document_id=document_id,
+        interval="1000 operating hours",
+        component_name="Hydraulic filter",
+        maintenance_task_id=sample_maintenance_task.task_id,
+        source_chunk_id=chunk_id,
+        confidence_score=0.9,
+    )
+
+
+@pytest.fixture
 def sample_extraction_result(
     document_id: str,
     sample_maintenance_task: MaintenanceTask,
@@ -332,6 +398,10 @@ def sample_extraction_result(
     sample_equipment_info: EquipmentInfo,
     sample_manufacturer: Manufacturer,
     sample_supplier: Supplier,
+    sample_procedure: Procedure,
+    sample_specification: Specification,
+    sample_safety_warning: SafetyWarning,
+    sample_maintenance_interval: MaintenanceInterval,
 ) -> ExtractionResult:
     return ExtractionResult(
         extraction_id="extraction_001",
@@ -341,6 +411,10 @@ def sample_extraction_result(
         equipment=[sample_equipment_info],
         manufacturers=[sample_manufacturer],
         suppliers=[sample_supplier],
+        procedures=[sample_procedure],
+        specifications=[sample_specification],
+        safety_warnings=[sample_safety_warning],
+        maintenance_intervals=[sample_maintenance_interval],
         confidence_score=0.88,
     )
 

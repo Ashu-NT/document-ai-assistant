@@ -3,9 +3,13 @@ from src.domain.extraction import (
     EquipmentInfo,
     ExtractedIdentifier,
     ExtractionResult,
+    MaintenanceInterval,
     MaintenanceTask,
     Manufacturer,
+    Procedure,
+    SafetyWarning,
     SparePart,
+    Specification,
     Supplier,
 )
 from src.shared.ids import IdGenerator, IdPrefix
@@ -26,6 +30,10 @@ class ExtractionResultMerger:
         merged_equipment = self._merge_equipment(partial_results)
         merged_manufacturers = self._merge_manufacturers(partial_results)
         merged_suppliers = self._merge_suppliers(partial_results)
+        merged_procedures = self._merge_procedures(partial_results)
+        merged_specifications = self._merge_specifications(partial_results)
+        merged_safety_warnings = self._merge_safety_warnings(partial_results)
+        merged_maintenance_intervals = self._merge_maintenance_intervals(partial_results)
         merged_identifiers = self._merge_identifiers(partial_results)
         source_chunk_ids = self._unique_in_order(
             chunk_id
@@ -51,6 +59,10 @@ class ExtractionResultMerger:
             equipment=merged_equipment,
             manufacturers=merged_manufacturers,
             suppliers=merged_suppliers,
+            procedures=merged_procedures,
+            specifications=merged_specifications,
+            safety_warnings=merged_safety_warnings,
+            maintenance_intervals=merged_maintenance_intervals,
             extracted_identifiers=merged_identifiers,
             source_chunk_ids=source_chunk_ids,
             confidence_score=confidence_score,
@@ -128,6 +140,68 @@ class ExtractionResultMerger:
                 self._merge_supplier(merged[key], item)
         return list(merged.values())
 
+    def _merge_procedures(self, partial_results: list[ExtractionResult]) -> list[Procedure]:
+        merged: dict[tuple[str, ...], Procedure] = {}
+        for result in partial_results:
+            for item in result.procedures:
+                key = (
+                    self._normalize(item.title),
+                    self._normalize(item.component_name),
+                )
+                if key not in merged:
+                    merged[key] = item
+                    continue
+                self._merge_procedure(merged[key], item)
+        return list(merged.values())
+
+    def _merge_specifications(
+        self,
+        partial_results: list[ExtractionResult],
+    ) -> list[Specification]:
+        merged: dict[tuple[str, ...], Specification] = {}
+        for result in partial_results:
+            for item in result.specifications:
+                key = (
+                    self._normalize(item.parameter),
+                    self._normalize(item.component_name),
+                )
+                if key not in merged:
+                    merged[key] = item
+                    continue
+                self._merge_specification(merged[key], item)
+        return list(merged.values())
+
+    def _merge_safety_warnings(
+        self,
+        partial_results: list[ExtractionResult],
+    ) -> list[SafetyWarning]:
+        merged: dict[str, SafetyWarning] = {}
+        for result in partial_results:
+            for item in result.safety_warnings:
+                key = self._normalize(item.message)
+                if key not in merged:
+                    merged[key] = item
+                    continue
+                self._merge_safety_warning(merged[key], item)
+        return list(merged.values())
+
+    def _merge_maintenance_intervals(
+        self,
+        partial_results: list[ExtractionResult],
+    ) -> list[MaintenanceInterval]:
+        merged: dict[tuple[str, ...], MaintenanceInterval] = {}
+        for result in partial_results:
+            for item in result.maintenance_intervals:
+                key = (
+                    self._normalize(item.interval),
+                    self._normalize(item.component_name),
+                )
+                if key not in merged:
+                    merged[key] = item
+                    continue
+                self._merge_maintenance_interval(merged[key], item)
+        return list(merged.values())
+
     def _merge_identifiers(
         self,
         partial_results: list[ExtractionResult],
@@ -175,6 +249,31 @@ class ExtractionResultMerger:
     def _merge_supplier(self, current: Supplier, candidate: Supplier) -> None:
         current.website = current.website or candidate.website
         current.country = current.country or candidate.country
+        self._merge_common_fields(current, candidate)
+
+    def _merge_procedure(self, current: Procedure, candidate: Procedure) -> None:
+        current.steps = current.steps or candidate.steps
+        current.component_name = current.component_name or candidate.component_name
+        current.equipment_id = current.equipment_id or candidate.equipment_id
+        self._merge_common_fields(current, candidate)
+
+    def _merge_specification(self, current: Specification, candidate: Specification) -> None:
+        current.unit = current.unit or candidate.unit
+        current.component_name = current.component_name or candidate.component_name
+        self._merge_common_fields(current, candidate)
+
+    def _merge_safety_warning(self, current: SafetyWarning, candidate: SafetyWarning) -> None:
+        current.component_name = current.component_name or candidate.component_name
+        self._merge_common_fields(current, candidate)
+
+    def _merge_maintenance_interval(
+        self,
+        current: MaintenanceInterval,
+        candidate: MaintenanceInterval,
+    ) -> None:
+        current.maintenance_task_id = (
+            current.maintenance_task_id or candidate.maintenance_task_id
+        )
         self._merge_common_fields(current, candidate)
 
     def _merge_identifier(

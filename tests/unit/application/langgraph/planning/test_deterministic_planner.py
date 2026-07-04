@@ -153,6 +153,52 @@ def test_planner_simple_question_not_matched_as_identifier() -> None:
     assert plan is None
 
 
+# ---------------------------------------------------------------------------
+# Structured-entity lookup plans
+# ---------------------------------------------------------------------------
+
+
+def test_planner_creates_structured_entity_plan_for_manufacturer_website() -> None:
+    plan = DeterministicPlanner().create_plan(
+        build_agent_state(user_input="what is the manufacturer website")
+    )
+
+    assert plan is not None
+    assert plan.tool_names[0] == "retrieve_structured_entities"
+    assert plan.tool_names[-1] == "answer_question"
+    first_step = plan.steps[0]
+    assert first_step.args.get("entity_type") == "manufacturer"
+
+
+def test_planner_creates_structured_entity_plan_for_supplier_country() -> None:
+    plan = DeterministicPlanner().create_plan(
+        build_agent_state(user_input="what country is the supplier based in")
+    )
+
+    assert plan is not None
+    first_step = plan.steps[0]
+    assert first_step.args.get("entity_type") == "supplier"
+
+
+def test_planner_creates_structured_entity_plan_for_spare_part_quantity() -> None:
+    plan = DeterministicPlanner().create_plan(
+        build_agent_state(user_input="how many spare part HP-001 are in stock")
+    )
+
+    assert plan is not None
+    first_step = plan.steps[0]
+    assert first_step.args.get("entity_type") == "spare_part"
+
+
+def test_planner_manufacturer_mention_without_detail_term_still_uses_identifier_plan() -> None:
+    plan = DeterministicPlanner().create_plan(
+        build_agent_state(user_input="who is the manufacturer of this pump")
+    )
+
+    assert plan is not None
+    assert plan.tool_names[0] == "retrieve_identifiers"
+
+
 def test_planner_creates_explore_and_answer_plan() -> None:
     plan = DeterministicPlanner().create_plan(
         build_agent_state(

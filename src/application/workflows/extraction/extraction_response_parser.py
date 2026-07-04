@@ -37,6 +37,10 @@ class ExtractionResponseParser:
             validated.equipment,
             validated.manufacturers,
             validated.suppliers,
+            validated.procedures,
+            validated.specifications,
+            validated.safety_warnings,
+            validated.maintenance_intervals,
             validated.identifiers,
         )
         confidence_score = self._resolve_overall_confidence(validated, item_groups)
@@ -62,6 +66,16 @@ class ExtractionResponseParser:
                 item.model_dump() for item in validated.manufacturers
             ],
             "suppliers": [item.model_dump() for item in validated.suppliers],
+            "procedures": [item.model_dump() for item in validated.procedures],
+            "specifications": [
+                item.model_dump() for item in validated.specifications
+            ],
+            "safety_warnings": [
+                item.model_dump() for item in validated.safety_warnings
+            ],
+            "maintenance_intervals": [
+                item.model_dump() for item in validated.maintenance_intervals
+            ],
             "identifiers": [item.model_dump() for item in validated.identifiers],
         }
 

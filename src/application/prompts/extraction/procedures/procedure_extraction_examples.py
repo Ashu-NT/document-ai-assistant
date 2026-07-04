@@ -12,6 +12,7 @@ PROCEDURE_EXTRACTION_EXAMPLE = (
     '        "Insert the new filter and hand-tighten the housing."\n'
     "      ],\n"
     '      "component_name": "Hydraulic filter",\n'
+    '      "equipment_reference": "Hydraulic Pump",\n'
     '      "source_chunk_id": "chunk_001",\n'
     '      "confidence_score": 0.89,\n'
     '      "requires_human_review": false\n'

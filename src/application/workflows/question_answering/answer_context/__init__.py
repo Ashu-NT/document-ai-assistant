@@ -19,6 +19,7 @@ __all__ = [
     "AnswerSourceGroup",
     "MaintenanceEntryMerger",
     "StructuredAnswerContext",
+    "StructuredFactKeyValueBuilder",
 ]
 
 
@@ -35,4 +36,10 @@ def __getattr__(name: str):
         )
 
         return MaintenanceEntryMerger
+    if name == "StructuredFactKeyValueBuilder":
+        from src.application.workflows.question_answering.answer_context.structured_fact_key_value_builder import (
+            StructuredFactKeyValueBuilder,
+        )
+
+        return StructuredFactKeyValueBuilder
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

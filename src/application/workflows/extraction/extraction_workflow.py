@@ -30,9 +30,13 @@ from src.domain.extraction import (
     EquipmentInfo,
     ExtractedIdentifier,
     ExtractionResult,
+    MaintenanceInterval,
     MaintenanceTask,
     Manufacturer,
+    Procedure,
+    SafetyWarning,
     SparePart,
+    Specification,
     Supplier,
 )
 from src.shared.activity import ActivityContext
@@ -335,6 +339,10 @@ class ExtractionWorkflow:
                 f"equipment={len(extraction_result.equipment)}, "
                 f"manufacturers={len(extraction_result.manufacturers)}, "
                 f"suppliers={len(extraction_result.suppliers)}, "
+                f"procedures={len(extraction_result.procedures)}, "
+                f"specifications={len(extraction_result.specifications)}, "
+                f"safety_warnings={len(extraction_result.safety_warnings)}, "
+                f"maintenance_intervals={len(extraction_result.maintenance_intervals)}, "
                 f"identifiers={len(extraction_result.extracted_identifiers)}, "
                 f"batches={len(batches)})."
             ),
@@ -613,6 +621,43 @@ class ExtractionWorkflow:
                 "country",
             ),
         )
+        procedure_payloads = self._filter_empty_extraction_items(
+            payload["procedures"],
+            content_keys=(
+                "title",
+                "steps",
+                "component_name",
+                "component",
+            ),
+        )
+        specification_payloads = self._filter_empty_extraction_items(
+            payload["specifications"],
+            content_keys=(
+                "parameter",
+                "value",
+                "unit",
+                "component_name",
+                "component",
+            ),
+        )
+        safety_warning_payloads = self._filter_empty_extraction_items(
+            payload["safety_warnings"],
+            content_keys=(
+                "warning_type",
+                "message",
+                "component_name",
+                "component",
+            ),
+        )
+        maintenance_interval_payloads = self._filter_empty_extraction_items(
+            payload["maintenance_intervals"],
+            content_keys=(
+                "interval",
+                "component_name",
+                "component",
+                "task_reference",
+            ),
+        )
         identifier_payloads = self._filter_empty_extraction_items(
             payload["identifiers"],
             content_keys=(
@@ -673,6 +718,48 @@ class ExtractionWorkflow:
             )
             for item in supplier_payloads
         ]
+        procedures = [
+            self._build_procedure(
+                item,
+                document_id=document_id,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+                default_confidence=overall_confidence,
+                equipment=equipment,
+            )
+            for item in procedure_payloads
+        ]
+        specifications = [
+            self._build_specification(
+                item,
+                document_id=document_id,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+                default_confidence=overall_confidence,
+            )
+            for item in specification_payloads
+        ]
+        safety_warnings = [
+            self._build_safety_warning(
+                item,
+                document_id=document_id,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+                default_confidence=overall_confidence,
+            )
+            for item in safety_warning_payloads
+        ]
+        maintenance_intervals = [
+            self._build_maintenance_interval(
+                item,
+                document_id=document_id,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+                default_confidence=overall_confidence,
+                maintenance_tasks=maintenance_tasks,
+            )
+            for item in maintenance_interval_payloads
+        ]
         extracted_identifiers = [
             self._build_extracted_identifier(
                 item,
@@ -695,6 +782,10 @@ class ExtractionWorkflow:
                 *equipment,
                 *manufacturers,
                 *suppliers,
+                *procedures,
+                *specifications,
+                *safety_warnings,
+                *maintenance_intervals,
                 *extracted_identifiers,
             ]
         )
@@ -707,6 +798,10 @@ class ExtractionWorkflow:
             equipment=equipment,
             manufacturers=manufacturers,
             suppliers=suppliers,
+            procedures=procedures,
+            specifications=specifications,
+            safety_warnings=safety_warnings,
+            maintenance_intervals=maintenance_intervals,
             extracted_identifiers=extracted_identifiers,
             source_chunk_ids=list(chunk_lookup),
             confidence_score=overall_confidence,
@@ -993,6 +1088,271 @@ class ExtractionWorkflow:
                 or chunk_id_invalid
             ),
         )
+
+    def _build_procedure(
+        self,
+        payload: dict[str, Any],
+        *,
+        document_id: str,
+        chunk_lookup: dict[str, DocumentChunk],
+        default_source_chunk_id: str | None,
+        default_confidence: float,
+        equipment: list[EquipmentInfo],
+    ) -> Procedure:
+        title = self._required_text(
+            payload,
+            field_name="procedures.title",
+            keys=("title",),
+        )
+        raw_steps = self._pick(payload, "steps")
+        steps = (
+            [str(step).strip() for step in raw_steps if str(step).strip()]
+            if isinstance(raw_steps, list)
+            else []
+        )
+        confidence_score = self._parse_confidence(
+            self._pick(payload, "confidence_score", "confidence")
+        )
+        if confidence_score is None:
+            confidence_score = default_confidence
+
+        source_chunk_id, chunk_id_invalid = self._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+            item_type="procedures",
+        )
+
+        equipment_reference = self._optional_text(
+            payload, "equipment_reference", "equipment_name", "equipment"
+        )
+        equipment_id = self._resolve_equipment_id(equipment_reference, equipment)
+
+        return Procedure(
+            procedure_id=self.id_generator.new_id("procedure"),
+            document_id=document_id,
+            title=title,
+            steps=steps,
+            component_name=self._optional_text(payload, "component_name", "component"),
+            equipment_id=equipment_id,
+            source_chunk_id=source_chunk_id,
+            source=self._resolve_source_location(
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
+            confidence_score=confidence_score,
+            requires_human_review=(
+                self._resolve_requires_human_review(
+                    self._pick(payload, "requires_human_review", "requires_review"),
+                    confidence_score,
+                )
+                or chunk_id_invalid
+            ),
+        )
+
+    def _build_specification(
+        self,
+        payload: dict[str, Any],
+        *,
+        document_id: str,
+        chunk_lookup: dict[str, DocumentChunk],
+        default_source_chunk_id: str | None,
+        default_confidence: float,
+    ) -> Specification:
+        parameter = self._required_text(
+            payload,
+            field_name="specifications.parameter",
+            keys=("parameter",),
+        )
+        value = self._required_text(
+            payload,
+            field_name="specifications.value",
+            keys=("value",),
+        )
+        confidence_score = self._parse_confidence(
+            self._pick(payload, "confidence_score", "confidence")
+        )
+        if confidence_score is None:
+            confidence_score = default_confidence
+
+        source_chunk_id, chunk_id_invalid = self._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+            item_type="specifications",
+        )
+
+        return Specification(
+            specification_id=self.id_generator.new_id("specification"),
+            document_id=document_id,
+            parameter=parameter,
+            value=value,
+            unit=self._optional_text(payload, "unit"),
+            component_name=self._optional_text(payload, "component_name", "component"),
+            source_chunk_id=source_chunk_id,
+            source=self._resolve_source_location(
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
+            confidence_score=confidence_score,
+            requires_human_review=(
+                self._resolve_requires_human_review(
+                    self._pick(payload, "requires_human_review", "requires_review"),
+                    confidence_score,
+                )
+                or chunk_id_invalid
+            ),
+        )
+
+    def _build_safety_warning(
+        self,
+        payload: dict[str, Any],
+        *,
+        document_id: str,
+        chunk_lookup: dict[str, DocumentChunk],
+        default_source_chunk_id: str | None,
+        default_confidence: float,
+    ) -> SafetyWarning:
+        message = self._required_text(
+            payload,
+            field_name="safety_warnings.message",
+            keys=("message",),
+        )
+        warning_type = self._optional_text(payload, "warning_type") or "warning"
+        confidence_score = self._parse_confidence(
+            self._pick(payload, "confidence_score", "confidence")
+        )
+        if confidence_score is None:
+            confidence_score = default_confidence
+
+        source_chunk_id, chunk_id_invalid = self._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+            item_type="safety_warnings",
+        )
+
+        return SafetyWarning(
+            safety_warning_id=self.id_generator.new_id("safety_warning"),
+            document_id=document_id,
+            warning_type=warning_type,
+            message=message,
+            component_name=self._optional_text(payload, "component_name", "component"),
+            source_chunk_id=source_chunk_id,
+            source=self._resolve_source_location(
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
+            confidence_score=confidence_score,
+            requires_human_review=(
+                self._resolve_requires_human_review(
+                    self._pick(payload, "requires_human_review", "requires_review"),
+                    confidence_score,
+                )
+                or chunk_id_invalid
+            ),
+        )
+
+    def _build_maintenance_interval(
+        self,
+        payload: dict[str, Any],
+        *,
+        document_id: str,
+        chunk_lookup: dict[str, DocumentChunk],
+        default_source_chunk_id: str | None,
+        default_confidence: float,
+        maintenance_tasks: list[MaintenanceTask],
+    ) -> MaintenanceInterval:
+        interval = self._required_text(
+            payload,
+            field_name="maintenance_intervals.interval",
+            keys=("interval",),
+        )
+        confidence_score = self._parse_confidence(
+            self._pick(payload, "confidence_score", "confidence")
+        )
+        if confidence_score is None:
+            confidence_score = default_confidence
+
+        source_chunk_id, chunk_id_invalid = self._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+            item_type="maintenance_intervals",
+        )
+
+        task_reference = self._optional_text(payload, "task_reference")
+        maintenance_task_id = self._resolve_maintenance_task_id(
+            task_reference,
+            maintenance_tasks,
+        )
+
+        return MaintenanceInterval(
+            maintenance_interval_id=self.id_generator.new_id("maintenance_interval"),
+            document_id=document_id,
+            interval=interval,
+            component_name=self._optional_text(payload, "component_name", "component"),
+            maintenance_task_id=maintenance_task_id,
+            source_chunk_id=source_chunk_id,
+            source=self._resolve_source_location(
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
+            confidence_score=confidence_score,
+            requires_human_review=(
+                self._resolve_requires_human_review(
+                    self._pick(payload, "requires_human_review", "requires_review"),
+                    confidence_score,
+                )
+                or chunk_id_invalid
+            ),
+        )
+
+    @staticmethod
+    def _resolve_maintenance_task_id(
+        task_reference: str | None,
+        maintenance_tasks: list[MaintenanceTask],
+    ) -> str | None:
+        if not task_reference:
+            return None
+        normalized_reference = task_reference.strip().lower()
+        for task in maintenance_tasks:
+            if task.title and task.title.strip().lower() == normalized_reference:
+                return task.task_id
+        for task in maintenance_tasks:
+            normalized_title = (task.title or "").strip().lower()
+            if normalized_title and (
+                normalized_reference in normalized_title
+                or normalized_title in normalized_reference
+            ):
+                return task.task_id
+        return None
+
+    @staticmethod
+    def _resolve_equipment_id(
+        equipment_reference: str | None,
+        equipment: list[EquipmentInfo],
+    ) -> str | None:
+        if not equipment_reference:
+            return None
+        normalized_reference = equipment_reference.strip().lower()
+        for item in equipment:
+            candidates = (item.name, item.model_number)
+            if any(
+                candidate and candidate.strip().lower() == normalized_reference
+                for candidate in candidates
+            ):
+                return item.equipment_id
+        for item in equipment:
+            candidates = (item.name, item.model_number)
+            for candidate in candidates:
+                normalized_candidate = (candidate or "").strip().lower()
+                if normalized_candidate and (
+                    normalized_reference in normalized_candidate
+                    or normalized_candidate in normalized_reference
+                ):
+                    return item.equipment_id
+        return None
 
     def _build_extracted_identifier(
         self,

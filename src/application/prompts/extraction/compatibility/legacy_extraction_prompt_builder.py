@@ -23,7 +23,7 @@ class LegacyExtractionPromptBuilder:
         version=IDENTIFIER_EXTRACTION_PROMPT_VERSION,
         task_type="extraction",
         model_type="llm",
-        description="Extract maintenance, spare-part, equipment, manufacturer, and supplier data from chunks.",
+        description="Extract maintenance, spare-part, equipment, manufacturer, supplier, procedure, specification, safety-warning, and maintenance-interval data from chunks.",
     )
 
     def build(
@@ -100,6 +100,48 @@ class LegacyExtractionPromptBuilder:
             '      "requires_human_review": <true or false>\n'
             "    }\n"
             "  ],\n"
+            '  "procedures": [\n'
+            "    {\n"
+            '      "title": "<string>",\n'
+            '      "steps": ["<string>", "..."],\n'
+            '      "component_name": "<string or null>",\n'
+            '      "equipment_reference": "<string or null>",\n'
+            '      "source_chunk_id": "<chunk id or null>",\n'
+            '      "confidence_score": <float between 0 and 1 or null>,\n'
+            '      "requires_human_review": <true or false>\n'
+            "    }\n"
+            "  ],\n"
+            '  "specifications": [\n'
+            "    {\n"
+            '      "parameter": "<string>",\n'
+            '      "value": "<string>",\n'
+            '      "unit": "<string or null>",\n'
+            '      "component_name": "<string or null>",\n'
+            '      "source_chunk_id": "<chunk id or null>",\n'
+            '      "confidence_score": <float between 0 and 1 or null>,\n'
+            '      "requires_human_review": <true or false>\n'
+            "    }\n"
+            "  ],\n"
+            '  "safety_warnings": [\n'
+            "    {\n"
+            '      "warning_type": "danger|warning|caution|note",\n'
+            '      "message": "<string>",\n'
+            '      "component_name": "<string or null>",\n'
+            '      "source_chunk_id": "<chunk id or null>",\n'
+            '      "confidence_score": <float between 0 and 1 or null>,\n'
+            '      "requires_human_review": <true or false>\n'
+            "    }\n"
+            "  ],\n"
+            '  "maintenance_intervals": [\n'
+            "    {\n"
+            '      "component_name": "<string or null>",\n'
+            '      "interval": "<string>",\n'
+            '      "task_reference": "<string or null>",\n'
+            '      "source_chunk_id": "<chunk id or null>",\n'
+            '      "confidence_score": <float between 0 and 1 or null>,\n'
+            '      "requires_human_review": <true or false>\n'
+            "    }\n"
+            "  ],\n"
             '  "identifiers": [\n'
             "    {\n"
             '      "raw_value": "<exact string as it appears in text>",\n'
@@ -124,6 +166,22 @@ class LegacyExtractionPromptBuilder:
             "but did not necessarily make it. Use the manufacturers list for the former and "
             "the suppliers list for the latter. If a chunk does not distinguish the two roles, "
             "prefer manufacturers.\n"
+            "Procedures are ordered, multi-step instructions (installation, operation, "
+            "troubleshooting, disassembly) — put each step as its own string in the steps "
+            "array, in the order they appear. Do not put single-sentence maintenance tasks here. "
+            "equipment_reference is the name or model of the equipment this procedure is "
+            "performed on, matching an entry in the equipment list if one is mentioned nearby, "
+            "or null.\n"
+            "Specifications are technical parameter/value pairs (e.g. parameter=\"Pressure "
+            "rating\", value=\"16\", unit=\"bar\") — split the numeric value from its unit.\n"
+            "Safety warnings are explicit hazards or cautionary notes. warning_type severity: "
+            '"danger" (immediate serious hazard), "warning" (potential serious hazard), '
+            '"caution" (minor/moderate hazard), "note" (non-hazard advisory); default to '
+            '"warning" if severity is not stated. message must be the warning text itself.\n'
+            "Maintenance intervals are recurring schedules (e.g. \"every 1000 operating "
+            "hours\") extracted as first-class entries independent of the maintenance_tasks "
+            "array. task_reference is the title text of the related maintenance task if one "
+            "is mentioned nearby, or null.\n"
             "Rules:\n"
             "- Use only the provided chunk content.\n"
             "- Use only the provided chunk ids when setting source_chunk_id.\n"

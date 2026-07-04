@@ -6,17 +6,25 @@ from src.domain.extraction import ExtractionResult
 from src.infrastructure.db.mappers import (
     EquipmentInfoMapper,
     ExtractionResultMapper,
+    MaintenanceIntervalMapper,
     MaintenanceTaskMapper,
     ManufacturerMapper,
+    ProcedureMapper,
+    SafetyWarningMapper,
     SparePartMapper,
+    SpecificationMapper,
     SupplierMapper,
 )
 from src.infrastructure.db.orm_models import (
     EquipmentInfoORM,
     ExtractionResultORM,
+    MaintenanceIntervalORM,
     ManufacturerORM,
     MaintenanceTaskORM,
+    ProcedureORM,
+    SafetyWarningORM,
     SparePartORM,
+    SpecificationORM,
     SupplierORM,
 )
 from src.shared.exceptions import DatabaseError
@@ -115,7 +123,59 @@ class ExtractionWriter:
                 )
             )
 
+        for procedure in result.procedures:
+            self.session.merge(
+                ProcedureMapper.to_orm(
+                    procedure,
+                    extraction_id=result.extraction_id,
+                )
+            )
+
+        for specification in result.specifications:
+            self.session.merge(
+                SpecificationMapper.to_orm(
+                    specification,
+                    extraction_id=result.extraction_id,
+                )
+            )
+
+        for safety_warning in result.safety_warnings:
+            self.session.merge(
+                SafetyWarningMapper.to_orm(
+                    safety_warning,
+                    extraction_id=result.extraction_id,
+                )
+            )
+
+        for maintenance_interval in result.maintenance_intervals:
+            self.session.merge(
+                MaintenanceIntervalMapper.to_orm(
+                    maintenance_interval,
+                    extraction_id=result.extraction_id,
+                )
+            )
+
     def _delete_extraction_result(self, document_id: str) -> None:
+        self.session.execute(
+            delete(MaintenanceIntervalORM).where(
+                MaintenanceIntervalORM.document_id == document_id
+            )
+        )
+        self.session.execute(
+            delete(SafetyWarningORM).where(
+                SafetyWarningORM.document_id == document_id
+            )
+        )
+        self.session.execute(
+            delete(SpecificationORM).where(
+                SpecificationORM.document_id == document_id
+            )
+        )
+        self.session.execute(
+            delete(ProcedureORM).where(
+                ProcedureORM.document_id == document_id
+            )
+        )
         self.session.execute(
             delete(MaintenanceTaskORM).where(
                 MaintenanceTaskORM.document_id == document_id

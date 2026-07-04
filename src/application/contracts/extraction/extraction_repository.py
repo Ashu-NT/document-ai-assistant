@@ -3,9 +3,13 @@ from typing import Protocol
 from src.domain.extraction import (
     EquipmentInfo,
     ExtractionResult,
+    MaintenanceInterval,
     MaintenanceTask,
     Manufacturer,
+    Procedure,
+    SafetyWarning,
     SparePart,
+    Specification,
     Supplier,
 )
 
@@ -53,6 +57,30 @@ class ExtractionRepository(Protocol):
     ) -> list[Supplier]:
         ...
 
+    def list_procedures(
+        self,
+        document_id: str | None = None,
+    ) -> list[Procedure]:
+        ...
+
+    def list_specifications(
+        self,
+        document_id: str | None = None,
+    ) -> list[Specification]:
+        ...
+
+    def list_safety_warnings(
+        self,
+        document_id: str | None = None,
+    ) -> list[SafetyWarning]:
+        ...
+
+    def list_maintenance_intervals(
+        self,
+        document_id: str | None = None,
+    ) -> list[MaintenanceInterval]:
+        ...
+
     def search_maintenance_tasks(
         self,
         query: str,
@@ -86,4 +114,44 @@ class ExtractionRepository(Protocol):
         query: str,
         document_id: str | None = None,
     ) -> list[Supplier]:
+        ...
+
+    def search_procedures(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[Procedure]:
+        ...
+
+    def search_specifications(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[Specification]:
+        ...
+
+    def search_safety_warnings(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[SafetyWarning]:
+        ...
+
+    def search_maintenance_intervals(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[MaintenanceInterval]:
+        ...
+
+    def list_maintenance_intervals_by_task_id(
+        self,
+        maintenance_task_id: str,
+    ) -> list[MaintenanceInterval]:
+        ...
+
+    def list_procedures_by_equipment_id(
+        self,
+        equipment_id: str,
+    ) -> list[Procedure]:
         ...
