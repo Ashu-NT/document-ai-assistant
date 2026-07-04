@@ -27,7 +27,7 @@ from src.application.workflows.extraction.extraction_response_schema import (
 )
 from src.domain.assets import TableAsset
 from src.domain.common import SourceLocation
-from src.domain.document import DocumentChunk
+from src.domain.document import DocumentChunk, DocumentSection
 from src.domain.extraction import (
     EquipmentInfo,
     ExtractedIdentifier,
@@ -38,6 +38,7 @@ from src.domain.extraction import (
     Procedure,
     ProcedureType,
     SafetyWarning,
+    SemanticSourceMetadata,
     SparePart,
     Specification,
     Supplier,
@@ -224,6 +225,8 @@ class ExtractionWorkflow:
         )
         self.last_batch_diagnostics: list[ExtractionBatchDiagnostics] = []
         self._invalid_source_chunk_id_events: list[dict[str, Any]] = []
+        self._section_lookup: dict[str, DocumentSection] = {}
+        self._chunks_by_section: dict[str, list[DocumentChunk]] = {}
 
     @tracked_action(
         action="extraction.generated",
@@ -240,6 +243,7 @@ class ExtractionWorkflow:
         progress_callback: Callable[[str], None] | None = None,
         replace_existing: bool = False,
         tables: dict[str, TableAsset] | None = None,
+        sections: dict[str, DocumentSection] | None = None,
     ) -> ExtractionResult:
         chunk_list = self._coerce_chunks(chunks)
         self._emit_progress(
@@ -251,6 +255,9 @@ class ExtractionWorkflow:
 
         if tables:
             chunk_list = self._hydrate_table_chunks(chunk_list, tables)
+
+        self._section_lookup = sections or {}
+        self._chunks_by_section = self._group_chunks_by_section(chunk_list)
 
         batches = self.chunk_batcher.build_batches(chunk_list)
         self._emit_progress(
@@ -927,6 +934,11 @@ class ExtractionWorkflow:
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
+            source_metadata=self._build_source_metadata(
+                document_id=document_id,
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
             confidence_score=confidence_score,
             requires_human_review=(
                 self._resolve_requires_human_review(
@@ -996,6 +1008,11 @@ class ExtractionWorkflow:
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
+            source_metadata=self._build_source_metadata(
+                document_id=document_id,
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
             confidence_score=confidence_score,
             requires_human_review=(
                 self._resolve_requires_human_review(
@@ -1062,6 +1079,11 @@ class ExtractionWorkflow:
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
+            source_metadata=self._build_source_metadata(
+                document_id=document_id,
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
             confidence_score=confidence_score,
             requires_human_review=(
                 self._resolve_requires_human_review(
@@ -1107,6 +1129,11 @@ class ExtractionWorkflow:
             country=self._optional_text(payload, "country"),
             source_chunk_id=source_chunk_id,
             source=self._resolve_source_location(
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
+            source_metadata=self._build_source_metadata(
+                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1228,6 +1255,11 @@ class ExtractionWorkflow:
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
+            source_metadata=self._build_source_metadata(
+                document_id=document_id,
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
             confidence_score=confidence_score,
             requires_human_review=(
                 self._resolve_requires_human_review(
@@ -1331,6 +1363,11 @@ class ExtractionWorkflow:
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
+            source_metadata=self._build_source_metadata(
+                document_id=document_id,
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
             confidence_score=confidence_score,
             requires_human_review=(
                 self._resolve_requires_human_review(
@@ -1383,6 +1420,11 @@ class ExtractionWorkflow:
             maintenance_task_id=maintenance_task_id,
             source_chunk_id=source_chunk_id,
             source=self._resolve_source_location(
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
+            source_metadata=self._build_source_metadata(
+                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1712,4 +1754,69 @@ class ExtractionWorkflow:
             page_start=chunk.source.page_start,
             page_end=chunk.source.page_end,
             bbox=chunk.source.bbox,
+        )
+
+    @staticmethod
+    def _group_chunks_by_section(
+        chunks: list[DocumentChunk],
+    ) -> dict[str, list[DocumentChunk]]:
+        grouped: dict[str, list[DocumentChunk]] = {}
+        for chunk in chunks:
+            if not chunk.section_id:
+                continue
+            grouped.setdefault(chunk.section_id, []).append(chunk)
+
+        for section_chunks in grouped.values():
+            section_chunks.sort(key=lambda chunk: chunk.chunk_index)
+
+        return grouped
+
+    def _resolve_nearby_chunk_ids(self, chunk: DocumentChunk) -> tuple[str, ...]:
+        if not chunk.section_id:
+            return ()
+
+        siblings = self._chunks_by_section.get(chunk.section_id, [])
+        index = next(
+            (i for i, sibling in enumerate(siblings) if sibling.chunk_id == chunk.chunk_id),
+            None,
+        )
+        if index is None:
+            return ()
+
+        nearby: list[str] = []
+        if index > 0:
+            nearby.append(siblings[index - 1].chunk_id)
+        if index < len(siblings) - 1:
+            nearby.append(siblings[index + 1].chunk_id)
+        return tuple(nearby)
+
+    def _build_source_metadata(
+        self,
+        *,
+        document_id: str,
+        source_chunk_id: str | None,
+        chunk_lookup: dict[str, DocumentChunk],
+    ) -> SemanticSourceMetadata | None:
+        if source_chunk_id is None:
+            return None
+
+        chunk = chunk_lookup.get(source_chunk_id)
+        if chunk is None:
+            return None
+
+        section = (
+            self._section_lookup.get(chunk.section_id) if chunk.section_id else None
+        )
+
+        return SemanticSourceMetadata(
+            document_id=document_id,
+            chunk_id=chunk.chunk_id,
+            section_id=chunk.section_id,
+            section_path=tuple(chunk.section_path),
+            page_start=chunk.source.page_start,
+            page_end=chunk.source.page_end,
+            parent_section_id=section.parent_section_id if section else None,
+            table_id=chunk.table_ids[0] if chunk.table_ids else None,
+            source_element_ids=tuple(chunk.element_ids),
+            nearby_chunk_ids=self._resolve_nearby_chunk_ids(chunk),
         )

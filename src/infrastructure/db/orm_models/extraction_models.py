@@ -55,6 +55,7 @@ class MaintenanceTaskORM(Base):
 
     page_start: Mapped[int | None] = mapped_column(nullable=True)
     page_end: Mapped[int | None] = mapped_column(nullable=True)
+    source_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     confidence_score: Mapped[float | None] = mapped_column(nullable=True)
     requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
@@ -94,6 +95,7 @@ class SparePartORM(Base):
 
     page_start: Mapped[int | None] = mapped_column(nullable=True)
     page_end: Mapped[int | None] = mapped_column(nullable=True)
+    source_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     confidence_score: Mapped[float | None] = mapped_column(nullable=True)
     requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
@@ -131,6 +133,7 @@ class EquipmentInfoORM(Base):
 
     page_start: Mapped[int | None] = mapped_column(nullable=True)
     page_end: Mapped[int | None] = mapped_column(nullable=True)
+    source_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     confidence_score: Mapped[float | None] = mapped_column(nullable=True)
     requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
@@ -167,6 +170,7 @@ class ManufacturerORM(Base):
 
     page_start: Mapped[int | None] = mapped_column(nullable=True)
     page_end: Mapped[int | None] = mapped_column(nullable=True)
+    source_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     confidence_score: Mapped[float | None] = mapped_column(nullable=True)
     requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
@@ -211,6 +215,7 @@ class ProcedureORM(Base):
 
     page_start: Mapped[int | None] = mapped_column(nullable=True)
     page_end: Mapped[int | None] = mapped_column(nullable=True)
+    source_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     confidence_score: Mapped[float | None] = mapped_column(nullable=True)
     requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
@@ -326,6 +331,7 @@ class SafetyWarningORM(Base):
 
     page_start: Mapped[int | None] = mapped_column(nullable=True)
     page_end: Mapped[int | None] = mapped_column(nullable=True)
+    source_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     confidence_score: Mapped[float | None] = mapped_column(nullable=True)
     requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
@@ -366,6 +372,7 @@ class MaintenanceIntervalORM(Base):
 
     page_start: Mapped[int | None] = mapped_column(nullable=True)
     page_end: Mapped[int | None] = mapped_column(nullable=True)
+    source_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     confidence_score: Mapped[float | None] = mapped_column(nullable=True)
     requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)

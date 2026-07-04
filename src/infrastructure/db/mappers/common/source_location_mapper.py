@@ -1,4 +1,7 @@
+import json
+
 from src.domain.common import BoundingBox, SourceLocation
+from src.domain.extraction.semantic_source_metadata import SemanticSourceMetadata
 
 
 def bbox_to_columns(source: SourceLocation) -> dict[str, float | int | None]:
@@ -38,3 +41,20 @@ def columns_to_source_location(
         page_end=page_end,
         bbox=bbox,
     )
+
+
+def source_metadata_to_json(source_metadata: SemanticSourceMetadata | None) -> str | None:
+    if source_metadata is None:
+        return None
+
+    return json.dumps(source_metadata.to_dict())
+
+
+def json_to_source_metadata(value: str | None) -> SemanticSourceMetadata | None:
+    if not value:
+        return None
+
+    try:
+        return SemanticSourceMetadata.from_dict(json.loads(value))
+    except (TypeError, ValueError, KeyError):
+        return None

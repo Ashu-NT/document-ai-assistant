@@ -465,6 +465,7 @@ class IngestionWorkflow:
                 progress_callback=progress_callback,
                 replace_existing=request.preserve_document_id is not None,
                 tables=final_graph.tables,
+                sections=final_graph.sections,
             )
             self.unit_of_work.commit()
             if self.identifier_promotion_service is not None:

@@ -1,6 +1,8 @@
 from src.domain.extraction import SparePart
 from src.infrastructure.db.mappers.common.source_location_mapper import (
     columns_to_source_location,
+    json_to_source_metadata,
+    source_metadata_to_json,
 )
 from src.infrastructure.db.orm_models import SparePartORM
 
@@ -23,6 +25,7 @@ class SparePartMapper:
             source_chunk_id=part.source_chunk_id,
             page_start=part.source.page_start,
             page_end=part.source.page_end,
+            source_metadata_json=source_metadata_to_json(part.source_metadata),
             confidence_score=part.confidence_score,
             requires_human_review=part.requires_human_review,
             created_at=part.audit.created_at,
@@ -43,6 +46,7 @@ class SparePartMapper:
                 page_start=orm.page_start,
                 page_end=orm.page_end,
             ),
+            source_metadata=json_to_source_metadata(orm.source_metadata_json),
             confidence_score=orm.confidence_score,
             requires_human_review=orm.requires_human_review,
         )

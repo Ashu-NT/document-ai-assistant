@@ -1,6 +1,8 @@
 from src.domain.extraction import Manufacturer
 from src.infrastructure.db.mappers.common.source_location_mapper import (
     columns_to_source_location,
+    json_to_source_metadata,
+    source_metadata_to_json,
 )
 from src.infrastructure.db.orm_models import ManufacturerORM
 
@@ -21,6 +23,7 @@ class ManufacturerMapper:
             source_chunk_id=manufacturer.source_chunk_id,
             page_start=manufacturer.source.page_start,
             page_end=manufacturer.source.page_end,
+            source_metadata_json=source_metadata_to_json(manufacturer.source_metadata),
             confidence_score=manufacturer.confidence_score,
             requires_human_review=manufacturer.requires_human_review,
             created_at=manufacturer.audit.created_at,
@@ -39,6 +42,7 @@ class ManufacturerMapper:
                 page_start=orm.page_start,
                 page_end=orm.page_end,
             ),
+            source_metadata=json_to_source_metadata(orm.source_metadata_json),
             confidence_score=orm.confidence_score,
             requires_human_review=orm.requires_human_review,
         )

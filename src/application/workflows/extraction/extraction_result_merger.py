@@ -245,6 +245,7 @@ class ExtractionResultMerger:
         current.interval = current.interval or candidate.interval
         current.component_name = current.component_name or candidate.component_name
         current.equipment_id = current.equipment_id or candidate.equipment_id
+        current.source_metadata = current.source_metadata or candidate.source_metadata
         self._merge_common_fields(current, candidate)
 
     def _merge_spare_part(self, current: SparePart, candidate: SparePart) -> None:
@@ -253,6 +254,7 @@ class ExtractionResultMerger:
         current.quantity = current.quantity or candidate.quantity
         current.component_name = current.component_name or candidate.component_name
         current.manufacturer_name = current.manufacturer_name or candidate.manufacturer_name
+        current.source_metadata = current.source_metadata or candidate.source_metadata
         self._merge_common_fields(current, candidate)
 
     def _merge_equipment_info(self, current: EquipmentInfo, candidate: EquipmentInfo) -> None:
@@ -260,11 +262,13 @@ class ExtractionResultMerger:
         current.model_number = current.model_number or candidate.model_number
         current.serial_number = current.serial_number or candidate.serial_number
         current.manufacturer_name = current.manufacturer_name or candidate.manufacturer_name
+        current.source_metadata = current.source_metadata or candidate.source_metadata
         self._merge_common_fields(current, candidate)
 
     def _merge_manufacturer(self, current: Manufacturer, candidate: Manufacturer) -> None:
         current.website = current.website or candidate.website
         current.country = current.country or candidate.country
+        current.source_metadata = current.source_metadata or candidate.source_metadata
         self._merge_common_fields(current, candidate)
 
     def _merge_supplier(self, current: Supplier, candidate: Supplier) -> None:
@@ -278,6 +282,7 @@ class ExtractionResultMerger:
         current.equipment_id = current.equipment_id or candidate.equipment_id
         if current.procedure_type == ProcedureType.UNKNOWN:
             current.procedure_type = candidate.procedure_type
+        current.source_metadata = current.source_metadata or candidate.source_metadata
         self._merge_common_fields(current, candidate)
 
     def _merge_specification(self, current: Specification, candidate: Specification) -> None:
@@ -287,6 +292,7 @@ class ExtractionResultMerger:
 
     def _merge_safety_warning(self, current: SafetyWarning, candidate: SafetyWarning) -> None:
         current.component_name = current.component_name or candidate.component_name
+        current.source_metadata = current.source_metadata or candidate.source_metadata
         self._merge_common_fields(current, candidate)
 
     def _merge_maintenance_interval(
@@ -297,6 +303,7 @@ class ExtractionResultMerger:
         current.maintenance_task_id = (
             current.maintenance_task_id or candidate.maintenance_task_id
         )
+        current.source_metadata = current.source_metadata or candidate.source_metadata
         self._merge_common_fields(current, candidate)
 
     def _merge_troubleshooting_entry(

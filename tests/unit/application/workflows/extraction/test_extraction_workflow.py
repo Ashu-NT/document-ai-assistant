@@ -7,6 +7,7 @@ from src.application.workflows.extraction.extraction_chunk_batcher import (
     ExtractionChunkBatcher,
 )
 from src.domain.assets import TableAsset
+from src.domain.document import DocumentChunk, DocumentSection
 from src.domain.extraction import ProcedureType
 from src.shared.exceptions import SchemaValidationError
 from src.shared.execution import ActionResult
@@ -311,6 +312,111 @@ def test_extract_builds_extraction_result_and_saves_it(sample_chunk) -> None:
     assert fake_llm_service.calls[0]["model"] == "qwen3:8b"
     assert fake_llm_service.calls[0]["temperature"] == 0.0
     assert fake_llm_service.calls[0]["json_mode"] is True
+
+
+def test_extract_populates_source_metadata_with_graph_context(sample_chunk) -> None:
+    section_id = sample_chunk.section_id
+    chunk_1 = DocumentChunk(
+        chunk_id="chunk_001",
+        document_id=sample_chunk.document_id,
+        section_id=section_id,
+        content="First chunk about the hydraulic filter.",
+        section_path=sample_chunk.section_path,
+        element_ids=["el_001"],
+        table_ids=["table_001"],
+        source=sample_chunk.source,
+        chunk_index=1,
+    )
+    chunk_2 = DocumentChunk(
+        chunk_id="chunk_002",
+        document_id=sample_chunk.document_id,
+        section_id=section_id,
+        content="Middle chunk about the hydraulic filter.",
+        section_path=sample_chunk.section_path,
+        element_ids=["el_002"],
+        source=sample_chunk.source,
+        chunk_index=2,
+    )
+    chunk_3 = DocumentChunk(
+        chunk_id="chunk_003",
+        document_id=sample_chunk.document_id,
+        section_id=section_id,
+        content="Third chunk about the hydraulic filter.",
+        section_path=sample_chunk.section_path,
+        element_ids=["el_003"],
+        source=sample_chunk.source,
+        chunk_index=3,
+    )
+    section = DocumentSection(
+        section_id=section_id,
+        document_id=sample_chunk.document_id,
+        title="Maintenance Schedule",
+        parent_section_id="section_root",
+    )
+
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.9,
+  "requires_human_review": false,
+  "maintenance_tasks": [
+    {
+      "title": "Replace hydraulic filter",
+      "interval": "1000 operating hours",
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    },
+    {
+      "title": "Inspect hydraulic filter",
+      "interval": "500 operating hours",
+      "source_chunk_id": "chunk_002",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    },
+    {
+      "title": "Clean hydraulic filter housing",
+      "interval": "250 operating hours",
+      "source_chunk_id": "chunk_003",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    }
+  ],
+  "spare_parts": [],
+  "equipment": [],
+  "manufacturers": []
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(
+        sample_chunk.document_id,
+        [chunk_1, chunk_2, chunk_3],
+        sections={section_id: section},
+    )
+
+    tasks_by_chunk = {task.source_chunk_id: task for task in result.maintenance_tasks}
+
+    first_metadata = tasks_by_chunk["chunk_001"].source_metadata
+    assert first_metadata.document_id == sample_chunk.document_id
+    assert first_metadata.chunk_id == "chunk_001"
+    assert first_metadata.section_id == section_id
+    assert first_metadata.section_path == tuple(sample_chunk.section_path)
+    assert first_metadata.page_start == sample_chunk.source.page_start
+    assert first_metadata.page_end == sample_chunk.source.page_end
+    assert first_metadata.parent_section_id == "section_root"
+    assert first_metadata.table_id == "table_001"
+    assert first_metadata.source_element_ids == ("el_001",)
+    assert first_metadata.nearby_chunk_ids == ("chunk_002",)
+
+    middle_metadata = tasks_by_chunk["chunk_002"].source_metadata
+    assert middle_metadata.table_id is None
+    assert middle_metadata.nearby_chunk_ids == ("chunk_001", "chunk_003")
+
+    last_metadata = tasks_by_chunk["chunk_003"].source_metadata
+    assert last_metadata.nearby_chunk_ids == ("chunk_002",)
 
 
 def test_extract_falls_back_to_unknown_procedure_type_for_unrecognized_value(

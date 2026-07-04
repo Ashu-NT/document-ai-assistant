@@ -1,6 +1,8 @@
 from src.domain.extraction import EquipmentInfo
 from src.infrastructure.db.mappers.common.source_location_mapper import (
     columns_to_source_location,
+    json_to_source_metadata,
+    source_metadata_to_json,
 )
 from src.infrastructure.db.orm_models import EquipmentInfoORM
 
@@ -22,6 +24,7 @@ class EquipmentInfoMapper:
             source_chunk_id=equipment.source_chunk_id,
             page_start=equipment.source.page_start,
             page_end=equipment.source.page_end,
+            source_metadata_json=source_metadata_to_json(equipment.source_metadata),
             confidence_score=equipment.confidence_score,
             requires_human_review=equipment.requires_human_review,
             created_at=equipment.audit.created_at,
@@ -41,6 +44,7 @@ class EquipmentInfoMapper:
                 page_start=orm.page_start,
                 page_end=orm.page_end,
             ),
+            source_metadata=json_to_source_metadata(orm.source_metadata_json),
             confidence_score=orm.confidence_score,
             requires_human_review=orm.requires_human_review,
         )

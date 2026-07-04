@@ -1,3 +1,15 @@
+import pytest
+
+from src.domain.extraction import (
+    EquipmentInfo,
+    Manufacturer,
+    MaintenanceInterval,
+    MaintenanceTask,
+    Procedure,
+    SafetyWarning,
+    SemanticSourceMetadata,
+    SparePart,
+)
 from src.infrastructure.db.mappers import (
     EquipmentInfoMapper,
     ExtractionResultMapper,
@@ -11,6 +23,148 @@ from src.infrastructure.db.mappers import (
     SupplierMapper,
     TroubleshootingEntryMapper,
 )
+
+
+_SAMPLE_SOURCE_METADATA = SemanticSourceMetadata(
+    document_id="document_001",
+    chunk_id="chunk_001",
+    section_id="section_001",
+    section_path=("4", "Maintenance"),
+    page_start=4,
+    page_end=5,
+    parent_section_id="section_root",
+    table_id="table_001",
+    source_element_ids=("element_001",),
+    nearby_chunk_ids=("chunk_000", "chunk_002"),
+)
+
+
+@pytest.mark.parametrize(
+    "entity, mapper",
+    [
+        (
+            MaintenanceTask(
+                task_id="task_001",
+                document_id="document_001",
+                title="Replace hydraulic filter",
+                source_metadata=_SAMPLE_SOURCE_METADATA,
+            ),
+            MaintenanceTaskMapper,
+        ),
+        (
+            SparePart(
+                spare_part_id="spare_001",
+                document_id="document_001",
+                source_metadata=_SAMPLE_SOURCE_METADATA,
+            ),
+            SparePartMapper,
+        ),
+        (
+            EquipmentInfo(
+                equipment_id="equipment_001",
+                document_id="document_001",
+                source_metadata=_SAMPLE_SOURCE_METADATA,
+            ),
+            EquipmentInfoMapper,
+        ),
+        (
+            Manufacturer(
+                manufacturer_id="manufacturer_001",
+                document_id="document_001",
+                name="Example Manufacturer",
+                source_metadata=_SAMPLE_SOURCE_METADATA,
+            ),
+            ManufacturerMapper,
+        ),
+        (
+            Procedure(
+                procedure_id="procedure_001",
+                document_id="document_001",
+                title="Install hydraulic filter",
+                source_metadata=_SAMPLE_SOURCE_METADATA,
+            ),
+            ProcedureMapper,
+        ),
+        (
+            SafetyWarning(
+                safety_warning_id="safety_warning_001",
+                document_id="document_001",
+                warning_type="warning",
+                message="Depressurize before servicing.",
+                source_metadata=_SAMPLE_SOURCE_METADATA,
+            ),
+            SafetyWarningMapper,
+        ),
+        (
+            MaintenanceInterval(
+                maintenance_interval_id="maintenance_interval_001",
+                document_id="document_001",
+                interval="1000 operating hours",
+                source_metadata=_SAMPLE_SOURCE_METADATA,
+            ),
+            MaintenanceIntervalMapper,
+        ),
+    ],
+)
+def test_source_metadata_round_trips_through_json_column(entity, mapper) -> None:
+    orm = mapper.to_orm(entity, extraction_id="extraction_001")
+    domain = mapper.to_domain(orm)
+
+    assert domain.source_metadata == _SAMPLE_SOURCE_METADATA
+
+
+@pytest.mark.parametrize(
+    "entity, mapper",
+    [
+        (
+            MaintenanceTask(
+                task_id="task_001", document_id="document_001", title="Task"
+            ),
+            MaintenanceTaskMapper,
+        ),
+        (SparePart(spare_part_id="spare_001", document_id="document_001"), SparePartMapper),
+        (
+            EquipmentInfo(equipment_id="equipment_001", document_id="document_001"),
+            EquipmentInfoMapper,
+        ),
+        (
+            Manufacturer(
+                manufacturer_id="manufacturer_001",
+                document_id="document_001",
+                name="Example Manufacturer",
+            ),
+            ManufacturerMapper,
+        ),
+        (
+            Procedure(
+                procedure_id="procedure_001", document_id="document_001", title="Procedure"
+            ),
+            ProcedureMapper,
+        ),
+        (
+            SafetyWarning(
+                safety_warning_id="safety_warning_001",
+                document_id="document_001",
+                warning_type="warning",
+                message="Warning message.",
+            ),
+            SafetyWarningMapper,
+        ),
+        (
+            MaintenanceInterval(
+                maintenance_interval_id="maintenance_interval_001",
+                document_id="document_001",
+                interval="1000 operating hours",
+            ),
+            MaintenanceIntervalMapper,
+        ),
+    ],
+)
+def test_source_metadata_round_trips_as_none_when_absent(entity, mapper) -> None:
+    orm = mapper.to_orm(entity, extraction_id="extraction_001")
+    domain = mapper.to_domain(orm)
+
+    assert domain.source_metadata is None
 
 
 def test_maintenance_task_mapper_round_trip(sample_maintenance_task) -> None:

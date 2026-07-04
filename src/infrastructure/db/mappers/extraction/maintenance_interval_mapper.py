@@ -1,6 +1,8 @@
 from src.domain.extraction import MaintenanceInterval
 from src.infrastructure.db.mappers.common.source_location_mapper import (
     columns_to_source_location,
+    json_to_source_metadata,
+    source_metadata_to_json,
 )
 from src.infrastructure.db.orm_models import MaintenanceIntervalORM
 
@@ -21,6 +23,9 @@ class MaintenanceIntervalMapper:
             source_chunk_id=maintenance_interval.source_chunk_id,
             page_start=maintenance_interval.source.page_start,
             page_end=maintenance_interval.source.page_end,
+            source_metadata_json=source_metadata_to_json(
+                maintenance_interval.source_metadata
+            ),
             confidence_score=maintenance_interval.confidence_score,
             requires_human_review=maintenance_interval.requires_human_review,
             created_at=maintenance_interval.audit.created_at,
@@ -39,6 +44,7 @@ class MaintenanceIntervalMapper:
                 page_start=orm.page_start,
                 page_end=orm.page_end,
             ),
+            source_metadata=json_to_source_metadata(orm.source_metadata_json),
             confidence_score=orm.confidence_score,
             requires_human_review=orm.requires_human_review,
         )

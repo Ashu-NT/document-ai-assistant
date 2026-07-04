@@ -1,6 +1,8 @@
 from src.domain.extraction import MaintenanceTask
 from src.infrastructure.db.mappers.common.source_location_mapper import (
     columns_to_source_location,
+    json_to_source_metadata,
+    source_metadata_to_json,
 )
 from src.infrastructure.db.orm_models import MaintenanceTaskORM
 
@@ -23,6 +25,7 @@ class MaintenanceTaskMapper:
             source_chunk_id=task.source_chunk_id,
             page_start=task.source.page_start,
             page_end=task.source.page_end,
+            source_metadata_json=source_metadata_to_json(task.source_metadata),
             confidence_score=task.confidence_score,
             requires_human_review=task.requires_human_review,
             created_at=task.audit.created_at,
@@ -43,6 +46,7 @@ class MaintenanceTaskMapper:
                 page_start=orm.page_start,
                 page_end=orm.page_end,
             ),
+            source_metadata=json_to_source_metadata(orm.source_metadata_json),
             confidence_score=orm.confidence_score,
             requires_human_review=orm.requires_human_review,
         )

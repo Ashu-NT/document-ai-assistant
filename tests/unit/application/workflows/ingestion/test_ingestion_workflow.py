@@ -239,6 +239,7 @@ class FakeExtractionWorkflow:
         progress_callback=None,
         replace_existing: bool = False,
         tables=None,
+        sections=None,
     ):
         self.calls.append(
             {
@@ -247,6 +248,7 @@ class FakeExtractionWorkflow:
                 "progress_callback": progress_callback,
                 "replace_existing": replace_existing,
                 "tables": tables,
+                "sections": sections,
             }
         )
         result = copy.deepcopy(self.extraction_result)
@@ -268,6 +270,7 @@ class FailingExtractionWorkflow:
         progress_callback=None,
         replace_existing: bool = False,
         tables=None,
+        sections=None,
     ):
         self.calls.append(
             {
@@ -699,6 +702,7 @@ def test_run_uses_additive_registration_and_save_when_not_reingesting(
     assert len(document_registration_service.calls) == 1
     assert document_registration_service.replace_calls == []
     assert extraction_workflow.calls[0]["replace_existing"] is False
+    assert extraction_workflow.calls[0]["sections"] == sample_document_graph.sections
     assert embedding_workflow.delete_calls == []
 
 
