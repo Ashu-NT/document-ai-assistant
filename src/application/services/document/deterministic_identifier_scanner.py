@@ -34,6 +34,9 @@ class DeterministicIdentifierScanner:
     the generic part number pattern only fires for values not already claimed.
     """
 
+    def __init__(self, *, min_length: int = 1) -> None:
+        self.min_length = min_length
+
     def scan(
         self,
         document_graph: DocumentGraph,
@@ -52,7 +55,7 @@ class DeterministicIdentifierScanner:
                 for match in pattern.finditer(chunk.content):
                     raw = match.group(0).strip()
                     normalized = normalize_identifier(raw)
-                    if not normalized:
+                    if not normalized or len(normalized) < self.min_length:
                         continue
                     claimed_values.add(normalized)
                     key = (normalized, identifier_type.value)
@@ -75,7 +78,11 @@ class DeterministicIdentifierScanner:
                 for match in pattern.finditer(chunk.content):
                     raw = match.group(0).strip()
                     normalized = normalize_identifier(raw)
-                    if not normalized or normalized in claimed_values:
+                    if (
+                        not normalized
+                        or normalized in claimed_values
+                        or len(normalized) < self.min_length
+                    ):
                         continue
                     claimed_values.add(normalized)
                     key = (normalized, identifier_type.value)

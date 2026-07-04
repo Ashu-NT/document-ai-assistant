@@ -19,6 +19,9 @@ class ToolRegistry:
     answer_question_tool: Any | None = None
     run_quality_gate_tool: Any | None = None
     retrieval_trace_tool: Any | None = None
+    ingest_document_tool: Any | None = None
+    reingest_document_tool: Any | None = None
+    delete_document_tool: Any | None = None
 
     def get(self, name: str) -> Any | None:
         return self._tool_map().get(name)
@@ -52,4 +55,7 @@ class ToolRegistry:
             "answer_question": self.answer_question_tool,
             "run_quality_gate": self.run_quality_gate_tool,
             "retrieval_trace": self.retrieval_trace_tool,
+            "ingest_document": self.ingest_document_tool,
+            "reingest_document": self.reingest_document_tool,
+            "delete_document": self.delete_document_tool,
         }

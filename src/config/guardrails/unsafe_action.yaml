@@ -1,0 +1,57 @@
+direct_blocked_phrases:
+  - "delete all documents"
+  - "delete every document"
+  - "remove all documents"
+  - "wipe corpus"
+  - "clear corpus"
+  - "drop corpus"
+  - "delete vectors"
+  - "delete existing vectors"
+  - "clear qdrant"
+  - "wipe qdrant"
+  - "remove all chunks"
+  - "delete all chunks"
+  - "reingest every document"
+  - "reingest all documents"
+  - "rebuild whole corpus"
+  - "delete and reingest"
+  - "drop database"
+  - "wipe database"
+  - "reset database"
+  - "truncate tables"
+
+destructive_verbs:
+  - delete
+  - remove
+  - wipe
+  - clear
+  - drop
+  - reset
+  - truncate
+  - purge
+
+mutating_verbs:
+  - reingest
+  - rebuild
+
+corpus_objects:
+  - "document corpus"
+  - corpus
+  - documents
+  - document
+  - vectors
+  - vector
+  - qdrant
+  - chunks
+  - chunk
+  - database
+  - db
+  - tables
+  - table
+
+mass_modifiers:
+  - all
+  - every
+  - existing
+  - whole
+  - entire

@@ -32,6 +32,26 @@ def test_tool_registry_returns_registered_specialized_retrieval_tools() -> None:
     assert registry.get("retrieve_figures") is figure_tool
 
 
+def test_tool_registry_returns_registered_reingest_and_delete_tools() -> None:
+    reingest_tool = DummyTool()
+    delete_tool = DummyTool()
+    registry = ToolRegistry(
+        reingest_document_tool=reingest_tool,
+        delete_document_tool=delete_tool,
+    )
+
+    assert registry.get("reingest_document") is reingest_tool
+    assert registry.get("delete_document") is delete_tool
+
+
+def test_tool_registry_returns_registered_ingest_tool() -> None:
+    ingest_tool = DummyTool()
+    registry = ToolRegistry(ingest_document_tool=ingest_tool)
+
+    assert registry.get("ingest_document") is ingest_tool
+    assert "ingest_document" in registry.names()
+
+
 def test_tool_registry_fails_clearly_for_missing_tool() -> None:
     registry = ToolRegistry()
 

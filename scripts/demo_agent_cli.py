@@ -65,6 +65,19 @@ def should_start_interactive(args: argparse.Namespace) -> bool:
     return args.interactive or not args.user_input
 
 
+def _build_visibility_policy(args: argparse.Namespace) -> "DemoVisibilityPolicy":
+    # --debug is the one flag enterprise operators reach for to see internal
+    # IDs (document_id/chunk_id) alongside the polished answer; without this,
+    # DemoVisibilityPolicy.show_internal_ids stays permanently False and
+    # --debug only changes the trace title, never actually revealing IDs.
+    from src.application.agent_runtime.policies import DemoVisibilityPolicy
+
+    return DemoVisibilityPolicy(
+        debug=args.debug,
+        show_internal_ids=args.debug,
+    )
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     interactive = should_start_interactive(args)
@@ -75,7 +88,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         from src.application.agent_runtime.commands import CommandDispatcher
         from src.application.agent_runtime.demo_agent import DemoAgent
         from src.application.agent_runtime.demo_agent_runtime import build_agent_runtime
-        from src.application.agent_runtime.policies import DemoVisibilityPolicy
         from src.application.agent_runtime.presenters import (
             ConsolePresenter,
             JsonPresenter,
@@ -135,7 +147,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             session_manager=session_manager,
             command_dispatcher=CommandDispatcher(),
             trace_builder=ReactTraceBuilder(),
-            visibility_policy=DemoVisibilityPolicy(debug=args.debug),
+            visibility_policy=_build_visibility_policy(args),
             trace_writer=trace_writer,
         )
         banner_text = StartupBanner().render(

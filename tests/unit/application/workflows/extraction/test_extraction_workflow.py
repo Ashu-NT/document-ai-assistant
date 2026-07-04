@@ -41,6 +41,7 @@ class FakeLLMService:
 class FakeExtractionService:
     def __init__(self) -> None:
         self.saved_results = []
+        self.replaced_results = []
 
     def save_extraction_result(
         self,
@@ -48,6 +49,17 @@ class FakeExtractionService:
         activity_context=None,
     ) -> ActionResult:
         self.saved_results.append(result)
+        return ActionResult(
+            entity_type="document",
+            entity_id=result.document_id,
+        )
+
+    def replace_extraction_result(
+        self,
+        result,
+        activity_context=None,
+    ) -> ActionResult:
+        self.replaced_results.append(result)
         return ActionResult(
             entity_type="document",
             entity_id=result.document_id,
@@ -1119,6 +1131,34 @@ def test_extraction_strips_only_null_items_and_keeps_valid_siblings(sample_chunk
 
     assert len(result.spare_parts) == 1
     assert result.spare_parts[0].part_number == "FLT-100"
+
+
+def test_extract_replaces_existing_result_when_replace_existing_is_true(
+    sample_chunk,
+) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.8,
+  "maintenance_tasks": [],
+  "spare_parts": [],
+  "equipment": [],
+  "manufacturers": [],
+  "identifiers": []
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(
+        sample_chunk.document_id,
+        sample_chunk,
+        replace_existing=True,
+    )
+
+    assert fake_extraction_service.replaced_results == [result]
+    assert fake_extraction_service.saved_results == []
 
 
 def test_extraction_still_rejects_non_null_invalid_array_items(sample_chunk) -> None:

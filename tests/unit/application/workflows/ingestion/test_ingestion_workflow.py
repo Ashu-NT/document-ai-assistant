@@ -8,6 +8,7 @@ import pytest
 from src.application.validation.ingestion import IngestionRequestValidator
 from src.application.workflows.embedding import EmbeddedChunk
 from src.application.workflows.ingestion import (
+    DocumentNotFoundForReingestionError,
     IngestionRequest,
     IngestionStage,
     IngestionStatus,
@@ -94,6 +95,8 @@ class FakeParsingWorkflow:
         file_path: str,
         file_hash: str,
         content_hash: str | None,
+        document_id: str | None = None,
+        enable_ocr_override: bool | None = None,
         activity_context=None,
         progress_callback=None,
     ) -> ParsingWorkflowResult:
@@ -102,9 +105,13 @@ class FakeParsingWorkflow:
                 "file_path": file_path,
                 "file_hash": file_hash,
                 "content_hash": content_hash,
+                "document_id": document_id,
+                "enable_ocr_override": enable_ocr_override,
             }
         )
         graph = copy.deepcopy(self.graph)
+        if document_id is not None:
+            graph.document.document_id = document_id
         graph.document.statistics = DocumentStatistics(
             page_count=3,
             element_count=len(graph.elements),
@@ -135,6 +142,8 @@ class FailingParsingWorkflow:
         file_path: str,
         file_hash: str,
         content_hash: str | None,
+        document_id: str | None = None,
+        enable_ocr_override: bool | None = None,
         activity_context=None,
         progress_callback=None,
     ):
@@ -144,9 +153,17 @@ class FailingParsingWorkflow:
 class FakeDocumentRegistrationService:
     def __init__(self) -> None:
         self.calls = []
+        self.replace_calls = []
 
     def register_document_graph(self, document_graph, activity_context=None):
         self.calls.append(document_graph)
+        return ActionResult(
+            entity_type="document",
+            entity_id=document_graph.document.document_id,
+        )
+
+    def replace_document_graph(self, document_graph, activity_context=None):
+        self.replace_calls.append(document_graph)
         return ActionResult(
             entity_type="document",
             entity_id=document_graph.document.document_id,
@@ -220,12 +237,14 @@ class FakeExtractionWorkflow:
         chunks,
         activity_context=None,
         progress_callback=None,
+        replace_existing: bool = False,
     ):
         self.calls.append(
             {
                 "document_id": document_id,
                 "chunks": list(chunks),
                 "progress_callback": progress_callback,
+                "replace_existing": replace_existing,
             }
         )
         result = copy.deepcopy(self.extraction_result)
@@ -245,11 +264,13 @@ class FailingExtractionWorkflow:
         chunks,
         activity_context=None,
         progress_callback=None,
+        replace_existing: bool = False,
     ):
         self.calls.append(
             {
                 "document_id": document_id,
                 "chunks": list(chunks),
+                "replace_existing": replace_existing,
             }
         )
         from src.shared.exceptions import SchemaValidationError
@@ -266,6 +287,7 @@ class FakeEmbeddingWorkflow:
         )()
         self.embed_calls = []
         self.store_calls = []
+        self.delete_calls = []
 
     def embed_chunks(self, chunks, activity_context=None, progress_callback=None):
         self.embed_calls.append(list(chunks))
@@ -297,6 +319,19 @@ class FakeEmbeddingWorkflow:
     def store_embedded_chunks(self, embedded_chunks, progress_callback=None):
         self.store_calls.append(list(embedded_chunks))
 
+    def delete_document_vectors(self, document_id: str) -> None:
+        self.delete_calls.append(document_id)
+
+
+class FakeDocumentLookupService:
+    def __init__(self, graph) -> None:
+        self.graph = graph
+        self.calls = []
+
+    def get_document_graph(self, document_id: str, activity_context=None):
+        self.calls.append(document_id)
+        return copy.deepcopy(self.graph) if self.graph is not None else None
+
 
 class FakeEventService:
     def __init__(self) -> None:
@@ -316,13 +351,18 @@ def _build_workflow(
     parsing_workflow=None,
     event_service=None,
     extraction_workflow=None,
+    document_registration_service=None,
+    embedding_workflow=None,
+    document_lookup_service=None,
 ):
     return IngestionWorkflow(
         unit_of_work=FakeUnitOfWork(),
         ingestion_request_validator=IngestionRequestValidator(),
         duplicate_detection_service=duplicate_service or FakeDuplicateDetectionService(),
         parsing_workflow=parsing_workflow or FakeParsingWorkflow(sample_document_graph),
-        document_registration_service=FakeDocumentRegistrationService(),
+        document_registration_service=(
+            document_registration_service or FakeDocumentRegistrationService()
+        ),
         document_classification_workflow=FakeDocumentClassificationWorkflow(
             sample_document_classification
         ),
@@ -333,9 +373,10 @@ def _build_workflow(
             extraction_workflow
             or FakeExtractionWorkflow(sample_extraction_result)
         ),
-        embedding_workflow=FakeEmbeddingWorkflow(),
+        embedding_workflow=embedding_workflow or FakeEmbeddingWorkflow(),
         id_generator=IdGenerator(),
         event_service=event_service,
+        document_lookup_service=document_lookup_service,
     )
 
 
@@ -419,6 +460,59 @@ def test_ingestion_workflow_persists_run_and_emits_stage_events(
     ]
 
 
+def test_ingestion_workflow_forwards_enable_ocr_to_parsing_workflow(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nmanual")
+    parsing_workflow = FakeParsingWorkflow(sample_document_graph)
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        parsing_workflow=parsing_workflow,
+    )
+
+    workflow.run(
+        IngestionRequest(
+            file_path=str(input_file),
+            enable_ocr=True,
+            run_quality_checks=False,
+        )
+    )
+
+    assert parsing_workflow.calls[0]["enable_ocr_override"] is True
+
+
+def test_ingestion_workflow_defaults_enable_ocr_override_to_none(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nmanual")
+    parsing_workflow = FakeParsingWorkflow(sample_document_graph)
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        parsing_workflow=parsing_workflow,
+    )
+
+    workflow.run(
+        IngestionRequest(
+            file_path=str(input_file),
+            run_quality_checks=False,
+        )
+    )
+
+    assert parsing_workflow.calls[0]["enable_ocr_override"] is None
+
+
 def test_ingestion_workflow_skips_duplicate_documents(
     tmp_path,
     sample_document_graph,
@@ -489,7 +583,7 @@ def test_ingestion_workflow_marks_run_failed_and_emits_failed_event(
     assert failed_event.stage == IngestionStage.PARSING.value
 
 
-def test_reingestion_is_not_supported_yet(
+def test_reingestion_raises_when_document_lookup_service_not_wired(
     sample_document_graph,
     sample_document_classification,
     sample_extraction_result,
@@ -502,6 +596,106 @@ def test_reingestion_is_not_supported_yet(
 
     with pytest.raises(ReingestionNotSupportedError):
         workflow.reingest(ReingestionRequest(document_id="doc_001"))
+
+
+def test_reingest_raises_when_document_does_not_exist(
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        document_lookup_service=FakeDocumentLookupService(graph=None),
+    )
+
+    with pytest.raises(DocumentNotFoundForReingestionError):
+        workflow.reingest(ReingestionRequest(document_id="doc_missing"))
+
+
+def test_reingest_replaces_extraction_and_deletes_stale_vectors_for_existing_document(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nmanual")
+    existing_graph = copy.deepcopy(sample_document_graph)
+    existing_graph.document.file_path = str(input_file)
+    document_id = existing_graph.document.document_id
+
+    document_lookup_service = FakeDocumentLookupService(existing_graph)
+    document_registration_service = FakeDocumentRegistrationService()
+    extraction_workflow = FakeExtractionWorkflow(sample_extraction_result)
+    embedding_workflow = FakeEmbeddingWorkflow()
+    parsing_workflow = FakeParsingWorkflow(sample_document_graph)
+
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        parsing_workflow=parsing_workflow,
+        document_registration_service=document_registration_service,
+        extraction_workflow=extraction_workflow,
+        embedding_workflow=embedding_workflow,
+        document_lookup_service=document_lookup_service,
+    )
+
+    result = workflow.reingest(
+        ReingestionRequest(document_id=document_id, run_quality_checks=False)
+    )
+
+    assert result.status == IngestionStatus.COMPLETE
+    assert result.document_id == document_id
+    assert document_lookup_service.calls == [document_id]
+
+    # Parsing must be told to reuse the existing document identity.
+    assert parsing_workflow.calls[0]["document_id"] == document_id
+    assert parsing_workflow.calls[0]["file_path"] == str(input_file)
+
+    # Registration must use the delete-then-merge replace path, not a plain
+    # additive merge, so stale sections/elements/chunks cannot survive.
+    assert document_registration_service.calls == []
+    assert len(document_registration_service.replace_calls) == 1
+
+    # Extraction must replace prior rows atomically instead of appending.
+    assert extraction_workflow.calls[0]["replace_existing"] is True
+
+    # Stale vectors must be deleted before the new ones are stored.
+    assert embedding_workflow.delete_calls == [document_id]
+    assert embedding_workflow.store_calls
+
+
+def test_run_uses_additive_registration_and_save_when_not_reingesting(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nmanual")
+    document_registration_service = FakeDocumentRegistrationService()
+    extraction_workflow = FakeExtractionWorkflow(sample_extraction_result)
+    embedding_workflow = FakeEmbeddingWorkflow()
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        document_registration_service=document_registration_service,
+        extraction_workflow=extraction_workflow,
+        embedding_workflow=embedding_workflow,
+    )
+
+    workflow.run(
+        IngestionRequest(file_path=str(input_file), run_quality_checks=False)
+    )
+
+    assert len(document_registration_service.calls) == 1
+    assert document_registration_service.replace_calls == []
+    assert extraction_workflow.calls[0]["replace_existing"] is False
+    assert embedding_workflow.delete_calls == []
 
 
 def test_ingestion_workflow_persists_extraction_model_before_extraction_failure(

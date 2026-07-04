@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from src.config.paths import PROJECT_ROOT
+from src.config.yaml_config_loader import load_yaml_config
 
 DEFAULT_AGENT_EVAL_THRESHOLDS_PATH = Path(
     "src/config/evaluation/agent_eval_thresholds.yaml"
@@ -16,27 +17,27 @@ _DEFAULT_CONFIG = (
 
 @dataclass(frozen=True)
 class AgentEvalThresholds:
-    route_accuracy: float | None = 0.90
-    deep_research_route_accuracy: float | None = 0.80
-    document_selection_accuracy: float | None = 0.90
-    clarification_accuracy: float | None = 0.90
-    unsafe_block_rate: float | None = 1.00
-    plan_validity_rate: float | None = 0.90
-    document_scope_safety_rate: float | None = 1.00
-    tool_policy_compliance_rate: float | None = 1.00
-    answer_expectation_rate: float | None = 0.80
-    retrieval_strategy_selection_rate: float | None = 0.80
-    retrieval_strategy_validity_rate: float | None = 1.00
-    strategy_fallback_rate: float | None = None
-    multi_strategy_success_rate: float | None = 0.80
-    strategy_document_scope_safety_rate: float | None = 1.00
-    strategy_trace_coverage_rate: float | None = 1.00
-    research_plan_validity_rate: float | None = 0.90
-    research_task_success_rate: float | None = 0.80
-    research_gap_detection_rate: float | None = 0.80
-    research_document_scope_safety_rate: float | None = 1.00
-    research_report_completeness_rate: float | None = 0.80
-    research_citation_coverage_rate: float | None = 0.80
+    route_accuracy: float | None
+    deep_research_route_accuracy: float | None
+    document_selection_accuracy: float | None
+    clarification_accuracy: float | None
+    unsafe_block_rate: float | None
+    plan_validity_rate: float | None
+    document_scope_safety_rate: float | None
+    tool_policy_compliance_rate: float | None
+    answer_expectation_rate: float | None
+    retrieval_strategy_selection_rate: float | None
+    retrieval_strategy_validity_rate: float | None
+    strategy_fallback_rate: float | None
+    multi_strategy_success_rate: float | None
+    strategy_document_scope_safety_rate: float | None
+    strategy_trace_coverage_rate: float | None
+    research_plan_validity_rate: float | None
+    research_task_success_rate: float | None
+    research_gap_detection_rate: float | None
+    research_document_scope_safety_rate: float | None
+    research_report_completeness_rate: float | None
+    research_citation_coverage_rate: float | None
 
     @classmethod
     def from_yaml(
@@ -44,9 +45,10 @@ class AgentEvalThresholds:
         path: Path | str | None = None,
     ) -> AgentEvalThresholds:
         config_path = Path(path) if path else _DEFAULT_CONFIG
-        data = _load_yaml(config_path)
-        if not data:
-            return cls()
+        data = load_yaml_config(
+            config_path,
+            description="Agent evaluation thresholds",
+        )
         return cls(
             route_accuracy=_opt_float(data.get("route_accuracy")),
             deep_research_route_accuracy=_opt_float(
@@ -110,15 +112,3 @@ def _opt_float(value: Any) -> float | None:
     if value is None:
         return None
     return float(value)
-
-
-def _load_yaml(path: Path) -> dict[str, Any]:
-    try:
-        import yaml  # type: ignore[import-untyped]
-    except ImportError:
-        return {}
-    if not path.exists():
-        return {}
-    with path.open("r", encoding="utf-8") as handle:
-        data = yaml.safe_load(handle)
-    return data if isinstance(data, dict) else {}

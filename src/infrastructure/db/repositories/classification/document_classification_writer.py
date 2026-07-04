@@ -29,3 +29,16 @@ class DocumentClassificationWriter:
                 "Failed to save document classification.",
                 details={"document_id": classification.document_id},
             ) from exc
+
+    def delete_by_document(self, document_id: str) -> None:
+        try:
+            self.session.execute(
+                delete(DocumentClassificationORM).where(
+                    DocumentClassificationORM.document_id == document_id
+                )
+            )
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to delete document classification.",
+                details={"document_id": document_id},
+            ) from exc

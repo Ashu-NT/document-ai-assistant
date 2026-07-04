@@ -32,6 +32,12 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
     def save_extraction_result(self, result: ExtractionResult) -> None:
         self.writer.save_extraction_result(result)
 
+    def replace_extraction_result(self, result: ExtractionResult) -> None:
+        self.writer.replace_extraction_result(result)
+
+    def delete_by_document(self, document_id: str) -> None:
+        self.writer.delete_by_document(document_id)
+
     def get_extraction_result(
         self,
         extraction_id: str,

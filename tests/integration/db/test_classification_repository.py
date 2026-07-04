@@ -55,6 +55,28 @@ def test_list_chunk_classifications_by_document(
     assert results[0].document_id == sample_chunk_classification.document_id
 
 
+def test_delete_document_classification_removes_the_row(
+    db_uow,
+    sample_document_classification,
+) -> None:
+    db_uow.classifications.save_document_classification(
+        sample_document_classification
+    )
+    db_uow.commit()
+
+    db_uow.classifications.delete_document_classification(
+        sample_document_classification.document_id
+    )
+    db_uow.commit()
+
+    assert (
+        db_uow.classifications.get_document_classification(
+            sample_document_classification.document_id
+        )
+        is None
+    )
+
+
 def test_document_classification_not_found_returns_none(
     db_uow,
 ) -> None:

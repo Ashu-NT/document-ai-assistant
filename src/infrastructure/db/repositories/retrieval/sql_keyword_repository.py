@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 from src.infrastructure.db.mappers import RetrievedChunkMapper
-from src.infrastructure.db.orm_models import ChunkORM, DocumentORM
+from src.infrastructure.db.orm_models import ChunkORM, DocumentORM, IdentifierORM
 from src.infrastructure.retrieval.keyword.sql_keyword_query_terms import (
     extract_query_terms,
 )
@@ -75,15 +75,24 @@ class SqlKeywordRepository:
                 reverse=True,
             )
 
+            selected_rows = [
+                (row, document_row, score_breakdown)
+                for row, document_row, score_breakdown in scored_rows[:result_limit]
+                if score_breakdown.total_score > 0
+            ]
+            identifier_values_by_chunk_id = self._fetch_identifier_values(
+                [row.id for row, _document_row, _score in selected_rows]
+            )
+
             return [
                 RetrievedChunkMapper.from_chunk_orm(
                     row,
                     score=score_breakdown.total_score,
                     retrieval_source="sql_keyword",
                     extra_metadata=score_breakdown.metadata,
+                    identifier_values=identifier_values_by_chunk_id.get(row.id),
                 )
-                for row, _document_row, score_breakdown in scored_rows[:result_limit]
-                if score_breakdown.total_score > 0
+                for row, _document_row, score_breakdown in selected_rows
             ]
 
         except SQLAlchemyError as exc:
@@ -94,6 +103,28 @@ class SqlKeywordRepository:
                     "limit": limit,
                 },
             ) from exc
+
+    def _fetch_identifier_values(
+        self,
+        chunk_ids: list[str],
+    ) -> dict[str, list[str]]:
+        if not chunk_ids:
+            return {}
+
+        statement = select(
+            IdentifierORM.chunk_id,
+            IdentifierORM.normalized_value,
+        ).where(IdentifierORM.chunk_id.in_(chunk_ids))
+        rows = self.session.execute(statement).all()
+
+        values_by_chunk_id: dict[str, list[str]] = {}
+        for chunk_id, normalized_value in rows:
+            if not chunk_id or not normalized_value:
+                continue
+            values = values_by_chunk_id.setdefault(chunk_id, [])
+            if normalized_value not in values:
+                values.append(normalized_value)
+        return values_by_chunk_id
 
     def _build_statement(
         self,

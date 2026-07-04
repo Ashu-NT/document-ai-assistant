@@ -1,27 +1,32 @@
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 from src.application.langgraph.retrieval_strategy.models.retrieval_strategy import (
     RetrievalStrategy,
 )
+from src.config.paths import PROJECT_ROOT
+from src.config.yaml_config_loader import load_yaml_config
+
+_CONFIG_PATH = (
+    PROJECT_ROOT / "src" / "config" / "retrieval_strategy" / "strategy_priority.yaml"
+)
+
+
+@lru_cache(maxsize=1)
+def _config() -> dict:
+    return load_yaml_config(_CONFIG_PATH, description="Retrieval strategy priority")
+
+
+def _ordered_strategies() -> tuple[RetrievalStrategy, ...]:
+    return tuple(
+        RetrievalStrategy(name) for name in _config()["ordered_strategies"]
+    )
 
 
 @dataclass(slots=True)
 class StrategyPriorityPolicy:
     ordered_strategies: tuple[RetrievalStrategy, ...] = field(
-        default_factory=lambda: (
-            RetrievalStrategy.IDENTIFIER_LOOKUP,
-            RetrievalStrategy.TABLE_LOOKUP,
-            RetrievalStrategy.TECHNICAL_SPECIFICATION,
-            RetrievalStrategy.MAINTENANCE_LOOKUP,
-            RetrievalStrategy.PROCEDURE_LOOKUP,
-            RetrievalStrategy.TROUBLESHOOTING_LOOKUP,
-            RetrievalStrategy.CERTIFICATION_LOOKUP,
-            RetrievalStrategy.DRAWING_LOOKUP,
-            RetrievalStrategy.FIGURE_LOOKUP,
-            RetrievalStrategy.SECTION_LOOKUP,
-            RetrievalStrategy.DOCUMENT_EXPLORATION,
-            RetrievalStrategy.GENERAL_HYBRID,
-        )
+        default_factory=_ordered_strategies
     )
 
     def sort(self, strategies: list[RetrievalStrategy]) -> list[RetrievalStrategy]:

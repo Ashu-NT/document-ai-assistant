@@ -5,12 +5,9 @@ from typing import Any
 
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.planning.plan_policy import PlanPolicy
-from src.application.langgraph.planning.plan_prompt_builder import (
-    PLANNING_PROMPT_VERSION,
-    PlanPromptBuilder,
-)
 from src.application.langgraph.routing import RouteDecision
 from src.application.langgraph.state import AgentState
+from src.application.prompts.planning import PLANNING_PROMPT_VERSION, PlanPromptBuilder
 from src.application.services.ai import LLMService
 
 

@@ -167,12 +167,14 @@ class ParsingWorkflow:
         file_hash: str,
         content_hash: str | None,
         document_id: str | None = None,
+        enable_ocr_override: bool | None = None,
         activity_context: ActivityContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
     ) -> ParsingWorkflowResult:
         resolved_document_id = document_id or self.id_generator.new_id(IdPrefix.DOCUMENT)
         file_name = Path(file_path).name or file_path
         total_started_at = time.perf_counter()
+        stage_durations: dict[str, float] = {}
 
         self._emit_progress(
             progress_callback,
@@ -186,13 +188,18 @@ class ParsingWorkflow:
             ),
             heartbeat_label=f"Docling conversion for {file_name}",
             failure_label=f"Docling conversion for {file_name}",
-            operation=lambda: self.parser.parse(file_path),
+            operation=lambda: self.parser.parse(
+                file_path,
+                enable_ocr_override=enable_ocr_override,
+            ),
             completion_message_builder=lambda result, elapsed_seconds: (
                 "Docling conversion completed in "
                 f"{_format_elapsed_seconds(elapsed_seconds)} "
                 f"(pages={result.page_count or 'unknown'}, "
                 f"parser={result.parser_name})."
             ),
+            stage_name="docling_conversion",
+            stage_durations=stage_durations,
         )
         canonical_elements = self._run_stage(
             progress_callback=progress_callback,
@@ -208,6 +215,8 @@ class ParsingWorkflow:
                 f"{_format_elapsed_seconds(elapsed_seconds)} "
                 f"({len(result)} canonical element(s))."
             ),
+            stage_name="canonical_normalization",
+            stage_durations=stage_durations,
         )
         ocr_trace = None
         if self.canonical_element_ocr_enricher is not None:
@@ -228,6 +237,8 @@ class ParsingWorkflow:
                     f"{_format_elapsed_seconds(elapsed_seconds)} "
                     f"({len(result)} element(s))."
                 ),
+                stage_name="canonical_element_ocr_enrichment",
+                stage_durations=stage_durations,
             )
         if self.page_ocr_fallback_workflow is not None:
             ocr_merge_result = self._run_stage(
@@ -249,6 +260,8 @@ class ParsingWorkflow:
                     f"{_format_elapsed_seconds(elapsed_seconds)} "
                     f"({len(result.canonical_elements)} element(s))."
                 ),
+                stage_name="page_ocr_fallback",
+                stage_durations=stage_durations,
             )
             canonical_elements = ocr_merge_result.canonical_elements
             ocr_trace = ocr_merge_result.ocr_trace
@@ -278,6 +291,8 @@ class ParsingWorkflow:
                 f"elements={len(result.elements)}, "
                 f"chunks={len(result.chunks)})."
             ),
+            stage_name="graph_build",
+            stage_durations=stage_durations,
         )
 
         if self.document_graph_validator is not None:
@@ -291,13 +306,19 @@ class ParsingWorkflow:
                     "Document graph validation completed in "
                     f"{_format_elapsed_seconds(elapsed_seconds)}."
                 ),
+                stage_name="graph_validation",
+                stage_durations=stage_durations,
             )
+
+        total_elapsed_seconds = time.perf_counter() - total_started_at
+        stage_durations["total"] = total_elapsed_seconds
 
         result = self._build_result(
             document_graph=document_graph,
             file_path=file_path,
             page_count=raw_parsed_document.page_count,
             ocr_trace=ocr_trace,
+            stage_durations=stage_durations,
         )
 
         if self.parsing_report_writer is not None:
@@ -307,7 +328,6 @@ class ParsingWorkflow:
         if self.quality_report_writer is not None:
             self.quality_report_writer.write(result)
 
-        total_elapsed_seconds = time.perf_counter() - total_started_at
         self._emit_progress(
             progress_callback,
             "Parsing workflow completed in "
@@ -340,6 +360,8 @@ class ParsingWorkflow:
         failure_label: str,
         operation: Callable[[], T],
         completion_message_builder: Callable[[T, float], str],
+        stage_name: str | None = None,
+        stage_durations: dict[str, float] | None = None,
     ) -> T:
         self._emit_progress(progress_callback, start_message)
         started_at = time.perf_counter()
@@ -362,6 +384,8 @@ class ParsingWorkflow:
             heartbeat.stop()
 
         elapsed_seconds = time.perf_counter() - started_at
+        if stage_name is not None and stage_durations is not None:
+            stage_durations[stage_name] = elapsed_seconds
         self._emit_progress(
             progress_callback,
             completion_message_builder(result, elapsed_seconds),
@@ -375,6 +399,7 @@ class ParsingWorkflow:
         file_path: str,
         page_count: int | None,
         ocr_trace=None,
+        stage_durations: dict[str, float] | None = None,
     ) -> ParsingWorkflowResult:
         elements = list(document_graph.elements.values())
         orphan_count = sum(1 for e in elements if e.parent_section_id is None)
@@ -414,4 +439,5 @@ class ParsingWorkflow:
             elements_without_page_count=no_page_count,
             parse_warnings=warnings,
             ocr_trace=ocr_trace,
+            stage_durations=stage_durations or {},
         )

@@ -3,12 +3,10 @@ from __future__ import annotations
 from src.application.langgraph.research.planners.research_plan_builder import (
     ResearchPlanBuilder,
 )
-from src.application.langgraph.research.prompts import (
-    ResearchPlanningPromptBuilder,
-)
 from src.application.langgraph.research.services.research_json_parser import (
     ResearchJsonParser,
 )
+from src.application.prompts.research import ResearchPlanningPromptBuilder
 
 
 class LLMResearchPlanner:

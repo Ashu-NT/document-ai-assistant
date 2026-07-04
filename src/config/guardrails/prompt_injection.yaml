@@ -1,0 +1,13 @@
+blocked_markers:
+  - "ignore previous instructions"
+  - "ignore your instructions"
+  - "bypass safety"
+  - "bypass guardrails"
+  - "show the system prompt"
+  - "show your system prompt"
+  - "reveal hidden prompt"
+  - "reveal hidden instructions"
+  - "chain of thought"
+  - "chain-of-thought"
+  - "hidden prompt"
+  - "developer message"

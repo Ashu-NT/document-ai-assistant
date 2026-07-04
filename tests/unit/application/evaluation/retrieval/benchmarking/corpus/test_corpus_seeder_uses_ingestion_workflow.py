@@ -47,13 +47,10 @@ class FakeClassificationService:
 
 def _make_seeder(ingestion_workflow, document_graph, classification=None):
     return RetrievalBenchmarkCorpusSeeder(
-        parsing_workflow=None,
-        document_registration_service=None,
         duplicate_detection_service=None,
         document_lookup_service=FakeDocumentLookupService(document_graph),
         classification_service=FakeClassificationService(classification),
         document_classification_workflow=None,
-        post_classification_chunk_finalization_workflow=None,
         ingestion_workflow=ingestion_workflow,
     )
 

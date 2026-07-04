@@ -291,6 +291,7 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
         embedding_settings,
         llm_settings,
         qdrant_settings,
+        retrieval_settings,
     )
     from src.infrastructure.ai.embeddings import create_embedding_provider  # noqa: WPS433
     from src.infrastructure.ai.llm import OllamaLLMProvider  # noqa: WPS433
@@ -314,6 +315,7 @@ def build_qa_runtime(session, *, enable_generation: bool) -> QARuntime:
         embedding_model=embedding_settings.model_name,
         query_embedding_provider=embedding_provider,
         document_repository=uow.documents,
+        enable_identifier_filter=retrieval_settings.enable_dense_identifier_filter,
     )
     document_lookup_service = DocumentLookupService(uow.documents)
     retrieval_service = HybridRetrievalService(
@@ -416,7 +418,7 @@ def _print_context_chunks(result) -> None:
         )
         print(
             f"  chunk: {_trunc(chunk.chunk_id, 44)}"
-            f"  doc: {chunk.document_id}"
+            f"  doc: {_trunc(chunk.document_id, 12)}"
         )
         print(f"  source: {chunk.retrieval_source}")
         if chunk.section_path:

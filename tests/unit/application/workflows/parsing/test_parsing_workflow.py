@@ -18,9 +18,16 @@ class FakeParser:
     def __init__(self, raw_parsed_document: RawParsedDocument) -> None:
         self.raw_parsed_document = raw_parsed_document
         self.calls: list[str] = []
+        self.enable_ocr_overrides: list[bool | None] = []
 
-    def parse(self, file_path: str) -> RawParsedDocument:
+    def parse(
+        self,
+        file_path: str,
+        *,
+        enable_ocr_override: bool | None = None,
+    ) -> RawParsedDocument:
         self.calls.append(file_path)
+        self.enable_ocr_overrides.append(enable_ocr_override)
         return self.raw_parsed_document
 
 
@@ -123,6 +130,56 @@ def test_parse_orchestrates_parsing_normalization_build_and_validation(
     assert result.element_count == len(graph.elements)
     assert result.section_count == len(graph.sections)
     assert result.chunk_count == len(graph.chunks)
+
+
+def test_parse_records_structured_stage_durations(
+    sample_document_graph,
+) -> None:
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/pump_manual.pdf",
+        title="Hydraulic Pump Manual",
+        page_count=3,
+        raw_document=object(),
+        parser_name="docling",
+    )
+    canonical_elements = [
+        ParsedCanonicalElement(
+            element_id="canon_001",
+            document_id="doc_placeholder",
+            element_type=ElementType.TEXT,
+            text="Replacement instructions.",
+            order_index=1,
+        )
+    ]
+    parser = FakeParser(raw_parsed_document)
+    normalizer = FakeNormalizer(canonical_elements)
+    builder = FakeDocumentGraphBuilder(copy.deepcopy(sample_document_graph))
+    validator = SpyDocumentGraphValidator()
+    workflow = ParsingWorkflow(
+        parser=parser,
+        normalizer=normalizer,
+        document_graph_builder=builder,
+        id_generator=IdGenerator(),
+        document_graph_validator=validator,
+    )
+
+    result = workflow.parse(
+        file_path="data/input/pump_manual.pdf",
+        file_hash="file_hash_001",
+        content_hash="content_hash_001",
+    )
+
+    assert set(result.stage_durations) == {
+        "docling_conversion",
+        "canonical_normalization",
+        "graph_build",
+        "graph_validation",
+        "total",
+    }
+    for duration in result.stage_durations.values():
+        assert duration >= 0
+    # total must be at least as large as any individual stage.
+    assert result.stage_durations["total"] >= result.stage_durations["graph_build"]
 
 
 def test_parse_emits_progress_messages_for_major_substages(
@@ -267,3 +324,58 @@ def test_parse_runs_optional_ocr_enricher_before_graph_build(
     assert len(enricher.calls) == 1
     assert enricher.calls[0][0] == canonical_elements
     assert builder.calls[0]["canonical_elements"] == enriched_elements
+
+
+def test_parse_forwards_enable_ocr_override_to_parser(sample_document_graph) -> None:
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/pump_manual.pdf",
+        title="Hydraulic Pump Manual",
+        page_count=3,
+        raw_document=object(),
+        parser_name="docling",
+    )
+    parser = FakeParser(raw_parsed_document)
+    normalizer = FakeNormalizer([])
+    builder = FakeDocumentGraphBuilder(copy.deepcopy(sample_document_graph))
+    workflow = ParsingWorkflow(
+        parser=parser,
+        normalizer=normalizer,
+        document_graph_builder=builder,
+        id_generator=IdGenerator(),
+    )
+
+    workflow.parse(
+        file_path="data/input/pump_manual.pdf",
+        file_hash="file_hash_001",
+        content_hash="content_hash_001",
+        enable_ocr_override=True,
+    )
+
+    assert parser.enable_ocr_overrides == [True]
+
+
+def test_parse_defaults_enable_ocr_override_to_none(sample_document_graph) -> None:
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/pump_manual.pdf",
+        title="Hydraulic Pump Manual",
+        page_count=3,
+        raw_document=object(),
+        parser_name="docling",
+    )
+    parser = FakeParser(raw_parsed_document)
+    normalizer = FakeNormalizer([])
+    builder = FakeDocumentGraphBuilder(copy.deepcopy(sample_document_graph))
+    workflow = ParsingWorkflow(
+        parser=parser,
+        normalizer=normalizer,
+        document_graph_builder=builder,
+        id_generator=IdGenerator(),
+    )
+
+    workflow.parse(
+        file_path="data/input/pump_manual.pdf",
+        file_hash="file_hash_001",
+        content_hash="content_hash_001",
+    )
+
+    assert parser.enable_ocr_overrides == [None]

@@ -4,7 +4,7 @@ from src.config.settings import docling_settings
 from src.shared.exceptions import InfrastructureError
 
 
-def build_docling_converter() -> Any:
+def build_docling_converter(*, enable_ocr_override: bool | None = None) -> Any:
     components = _import_docling_components()
     document_converter_class = components["DocumentConverter"]
     input_format = components["InputFormat"]
@@ -13,10 +13,16 @@ def build_docling_converter() -> Any:
     ocr_auto_options_class = components["OcrAutoOptions"]
     rapid_ocr_options_class = components["RapidOcrOptions"]
 
-    pipeline_options = pdf_pipeline_options_class()
-    _configure_pipeline_options(pipeline_options)
+    effective_enable_ocr = (
+        enable_ocr_override
+        if enable_ocr_override is not None
+        else docling_settings.enable_ocr
+    )
 
-    if docling_settings.enable_ocr:
+    pipeline_options = pdf_pipeline_options_class()
+    _configure_pipeline_options(pipeline_options, enable_ocr=effective_enable_ocr)
+
+    if effective_enable_ocr:
         pipeline_options.ocr_options = _build_ocr_options(
             ocr_auto_options_class=ocr_auto_options_class,
             rapid_ocr_options_class=rapid_ocr_options_class,
@@ -32,12 +38,12 @@ def build_docling_converter() -> Any:
     )
 
 
-def _configure_pipeline_options(pipeline_options: Any) -> None:
+def _configure_pipeline_options(pipeline_options: Any, *, enable_ocr: bool) -> None:
     pipeline_options.accelerator_options.device = _normalize_accelerator_device()
     pipeline_options.accelerator_options.num_threads = docling_settings.num_threads
     pipeline_options.images_scale = docling_settings.images_scale
     pipeline_options.do_table_structure = docling_settings.enable_table_structure
-    pipeline_options.do_ocr = docling_settings.enable_ocr
+    pipeline_options.do_ocr = enable_ocr
     pipeline_options.ocr_batch_size = docling_settings.ocr_batch_size
     pipeline_options.layout_batch_size = docling_settings.layout_batch_size
     pipeline_options.table_batch_size = docling_settings.table_batch_size

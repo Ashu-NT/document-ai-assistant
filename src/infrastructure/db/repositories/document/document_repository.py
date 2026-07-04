@@ -42,6 +42,9 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
     def replace_document_chunk_artifacts(self, document_graph: DocumentGraph) -> None:
         self.writer.replace_document_chunk_artifacts(document_graph)
 
+    def delete_document(self, document_id: str) -> None:
+        self.writer.delete_document(document_id)
+
     def get_document_graph(self, document_id: str) -> DocumentGraph | None:
         return self.reader.get_document_graph(document_id)
 

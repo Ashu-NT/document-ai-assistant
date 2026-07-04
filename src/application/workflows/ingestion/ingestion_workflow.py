@@ -8,6 +8,7 @@ from typing import Callable
 from src.application.contracts import UnitOfWork
 from src.application.services.document import (
     DeterministicIdentifierScanner,
+    DocumentLookupService,
     DocumentRegistrationService,
     DuplicateDetectionService,
     IdentifierPromotionService,
@@ -22,6 +23,7 @@ from src.application.workflows.embedding import EmbeddedChunk, EmbeddingWorkflow
 from src.application.workflows.extraction import ExtractionWorkflow
 from src.application.workflows.ingestion.content_hash import compute_content_hash_from_graph
 from src.application.workflows.ingestion.ingestion_exceptions import (
+    DocumentNotFoundForReingestionError,
     IngestionWorkflowError,
     ReingestionNotSupportedError,
 )
@@ -78,6 +80,7 @@ class IngestionWorkflow:
         quality_gate: DocumentQualityGate | None = None,
         identifier_promotion_service: IdentifierPromotionService | None = None,
         deterministic_identifier_scanner: DeterministicIdentifierScanner | None = None,
+        document_lookup_service: DocumentLookupService | None = None,
         activity_service=None,
         audit_service=None,
         event_service=None,
@@ -97,6 +100,7 @@ class IngestionWorkflow:
         self.quality_gate = quality_gate or DocumentQualityGate()
         self.identifier_promotion_service = identifier_promotion_service
         self.deterministic_identifier_scanner = deterministic_identifier_scanner
+        self.document_lookup_service = document_lookup_service
         self.activity_service = activity_service
         self.audit_service = audit_service
         self.event_service = event_service
@@ -251,6 +255,8 @@ class IngestionWorkflow:
                 file_path=file_path,
                 file_hash=file_hash,
                 content_hash=content_hash,
+                document_id=request.preserve_document_id,
+                enable_ocr_override=request.enable_ocr,
                 activity_context=resolved_activity_context,
                 progress_callback=progress_callback,
             )
@@ -335,10 +341,16 @@ class IngestionWorkflow:
                 file_name=file_name,
                 progress_callback=progress_callback,
             )
-            self.document_registration_service.register_document_graph(
-                parsing_result.document_graph,
-                activity_context=resolved_activity_context,
-            )
+            if request.preserve_document_id is not None:
+                self.document_registration_service.replace_document_graph(
+                    parsing_result.document_graph,
+                    activity_context=resolved_activity_context,
+                )
+            else:
+                self.document_registration_service.register_document_graph(
+                    parsing_result.document_graph,
+                    activity_context=resolved_activity_context,
+                )
             self.unit_of_work.commit()
             self._set_run_status(
                 ingestion_run,
@@ -451,6 +463,7 @@ class IngestionWorkflow:
                 list(final_graph.chunks.values()),
                 activity_context=resolved_activity_context,
                 progress_callback=progress_callback,
+                replace_existing=request.preserve_document_id is not None,
             )
             self.unit_of_work.commit()
             if self.identifier_promotion_service is not None:
@@ -541,6 +554,10 @@ class IngestionWorkflow:
                 file_name=file_name,
                 progress_callback=progress_callback,
             )
+            if request.preserve_document_id is not None:
+                self.embedding_workflow.delete_document_vectors(
+                    final_graph.document.document_id
+                )
             self.embedding_workflow.store_embedded_chunks(
                 embedded_chunks,
                 progress_callback=progress_callback,
@@ -668,10 +685,44 @@ class IngestionWorkflow:
         activity_context: ActivityContext | None = None,
         audit_context: AuditContext | None = None,
     ) -> IngestionResult:
-        raise ReingestionNotSupportedError(
-            "Reingestion is not implemented safely yet because extraction results are not replaced atomically for an existing document.",
-            error_code="reingestion_not_supported",
-            details={"document_id": request.document_id},
+        if self.document_lookup_service is None:
+            raise ReingestionNotSupportedError(
+                "Reingestion requires a document_lookup_service dependency, "
+                "which this IngestionWorkflow instance was not constructed with.",
+                error_code="reingestion_not_supported",
+                details={"document_id": request.document_id},
+            )
+
+        existing_graph = self.document_lookup_service.get_document_graph(
+            request.document_id,
+            activity_context=activity_context,
+        )
+        if existing_graph is None:
+            raise DocumentNotFoundForReingestionError(
+                "Reingestion target document does not exist.",
+                error_code="reingestion.document_not_found",
+                details={"document_id": request.document_id},
+            )
+
+        preserved_document_id = (
+            request.document_id if request.preserve_document_id else None
+        )
+        ingestion_request = IngestionRequest(
+            file_path=existing_graph.document.file_path,
+            document_type=existing_graph.document.document_type.value,
+            title=existing_graph.document.title,
+            source_name=existing_graph.document.source_name,
+            metadata=dict(request.metadata),
+            force=True,
+            run_quality_checks=request.run_quality_checks,
+            requested_by=request.requested_by,
+            correlation_id=request.correlation_id,
+            preserve_document_id=preserved_document_id,
+        )
+        return self.run(
+            ingestion_request,
+            activity_context=activity_context,
+            audit_context=audit_context,
         )
 
     def _check_file_hash_duplicate(

@@ -6,6 +6,58 @@ from typing import Any
 from src.application.langgraph.common import GraphResult
 
 
+class _LazyIngestionWorkflow:
+    """Defers building the full `IngestionWorkflow` until ingest or reingest
+    is actually invoked.
+
+    `IngestDocumentTool`/`ReingestDocumentTool` are guardrail-blocked from
+    ever being called by the planner (see `PlanPolicy`/`ToolExecutionPolicy`
+    blocked tool lists), so eagerly building the parsing/classification/
+    extraction pipeline (Docling parser, extraction LLM service, etc.) for
+    every agent session would be pure startup cost paid on a path that
+    almost never runs. This proxy duck-types the two methods
+    `IngestDocumentTool.run`/`ReingestDocumentTool.run` actually call, and is
+    shared by both tools so the underlying `IngestionWorkflow` is only ever
+    built once regardless of which tool triggers the build.
+    """
+
+    def __init__(
+        self,
+        *,
+        unit_of_work: Any,
+        vector_store: Any,
+        qdrant_client: Any,
+        embedding_provider: Any,
+    ) -> None:
+        self._unit_of_work = unit_of_work
+        self._vector_store = vector_store
+        self._qdrant_client = qdrant_client
+        self._embedding_provider = embedding_provider
+        self._ingestion_workflow: Any = None
+
+    def run(self, request: Any) -> Any:
+        return self._resolve().run(request)
+
+    def reingest(self, request: Any) -> Any:
+        return self._resolve().reingest(request)
+
+    def _resolve(self) -> Any:
+        if self._ingestion_workflow is None:
+            from src.application.orchestrator.ingestion import (
+                build_ingestion_runtime,
+            )
+
+            runtime = build_ingestion_runtime(
+                unit_of_work=self._unit_of_work,
+                vector_store=self._vector_store,
+                qdrant_client=self._qdrant_client,
+                embedding_provider=self._embedding_provider,
+                bootstrap=False,
+            )
+            self._ingestion_workflow = runtime.ingestion_workflow
+        return self._ingestion_workflow
+
+
 @dataclass(slots=True)
 class DemoRuntimeStatus:
     document_count: int = 0
@@ -124,7 +176,6 @@ def build_agent_runtime(
         NodeFactory,
         ReflectionJsonParser,
         ReflectionPolicy,
-        ReflectionPromptBuilder,
         ReflectionService,
         ReflectionValidator,
         ResearchPolicy,
@@ -148,6 +199,7 @@ def build_agent_runtime(
         StrategyRetryPolicy,
     )
     from src.application.langgraph.strategy_advisor.advisor import StrategyAdvisor
+    from src.application.prompts.reflection import ReflectionPromptBuilder
     from src.application.services.ai import LLMService
     from src.application.services.answer_generation import AnswerGenerationService
     from src.application.services.document import (
@@ -168,6 +220,11 @@ def build_agent_runtime(
         RunQualityGateTool,
     )
     from src.application.tools.exploration import ExploreDocumentTool
+    from src.application.tools.ingestion import (
+        DeleteDocumentTool,
+        IngestDocumentTool,
+        ReingestDocumentTool,
+    )
     from src.application.tools.question_answering import AnswerQuestionTool
     from src.application.tools.retrieval import (
         RetrieveChunksTool,
@@ -176,6 +233,7 @@ def build_agent_runtime(
         RetrieveTablesTool,
     )
     from src.application.validation.retrieval import RetrievalQueryValidator
+    from src.application.workflows.ingestion import DeleteDocumentWorkflow
     from src.application.workflows.question_answering import (
         QuestionAnsweringRouter,
         QuestionAnsweringWorkflow,
@@ -190,6 +248,7 @@ def build_agent_runtime(
         langgraph_settings,
         llm_settings,
         qdrant_settings,
+        retrieval_settings,
     )
     from src.infrastructure.ai.embeddings import create_embedding_provider
     from src.infrastructure.ai.llm import OllamaLLMProvider
@@ -211,6 +270,7 @@ def build_agent_runtime(
         embedding_model=embedding_settings.model_name,
         query_embedding_provider=embedding_provider,
         document_repository=uow.documents,
+        enable_identifier_filter=retrieval_settings.enable_dense_identifier_filter,
     )
     document_catalog_service = DocumentCatalogService(uow.documents)
     document_lookup_service = DocumentLookupService(uow.documents)
@@ -316,6 +376,19 @@ def build_agent_runtime(
         retrieve_chunks_tool,
         exploration_service,
     )
+    delete_document_workflow = DeleteDocumentWorkflow(
+        unit_of_work=uow,
+        vector_store=vector_store,
+    )
+    lazy_ingestion_workflow = _LazyIngestionWorkflow(
+        unit_of_work=uow,
+        vector_store=vector_store,
+        qdrant_client=qdrant_client,
+        embedding_provider=embedding_provider,
+    )
+    ingest_document_tool = IngestDocumentTool(lazy_ingestion_workflow)
+    reingest_document_tool = ReingestDocumentTool(lazy_ingestion_workflow)
+    delete_document_tool = DeleteDocumentTool(delete_document_workflow)
     tool_registry = ToolRegistry(
         list_documents_tool=ListDocumentsTool(document_catalog_service),
         find_document_tool=find_document_tool,
@@ -331,6 +404,9 @@ def build_agent_runtime(
         ),
         run_quality_gate_tool=RunQualityGateTool(),
         retrieval_trace_tool=RetrievalTraceTool(retrieval_workflow),
+        ingest_document_tool=ingest_document_tool,
+        reingest_document_tool=reingest_document_tool,
+        delete_document_tool=delete_document_tool,
     )
     retrieval_strategy_policy = RetrievalStrategyPolicy(
         enabled=langgraph_settings.retrieval_strategy_enabled,

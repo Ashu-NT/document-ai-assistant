@@ -13,7 +13,9 @@ class IngestionRequest:
     metadata: dict[str, Any] = field(default_factory=dict)
     force: bool = False
     generate_questions: bool | None = None
+    enable_ocr: bool | None = None
     run_quality_checks: bool = True
     trace: bool = False
     requested_by: str | None = None
     correlation_id: str | None = None
+    preserve_document_id: str | None = None

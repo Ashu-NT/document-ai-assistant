@@ -18,13 +18,19 @@ class FakeExecuteResult:
 
 
 class FakeSession:
-    def __init__(self, rows) -> None:
+    def __init__(self, rows, identifier_rows=None) -> None:
         self.rows = rows
+        self.identifier_rows = identifier_rows or []
         self.statements = []
 
     def execute(self, statement):
         self.statements.append(statement)
-        return FakeExecuteResult(self.rows)
+        # The repository issues the candidate chunk/document query first,
+        # then (only when candidates were selected) a second batch query
+        # for identifier values keyed by chunk_id.
+        if len(self.statements) == 1:
+            return FakeExecuteResult(self.rows)
+        return FakeExecuteResult(self.identifier_rows)
 
 
 def make_document(
@@ -380,6 +386,63 @@ def test_sql_keyword_repository_demotes_spare_parts_noise_for_overview_query() -
     results = repository.search_chunks(query)
 
     assert results[0].chunk_id == "chunk_answer"
+
+
+def test_sql_keyword_repository_populates_identifier_values_from_batch_lookup() -> None:
+    document = make_document(
+        document_id="doc_manual",
+        file_name="manual.pdf",
+        title="Manual",
+        document_type=DocumentType.MANUAL,
+    )
+    chunk = make_chunk(
+        chunk_id="chunk_with_identifiers",
+        document_id="doc_manual",
+        content="Replacement part number MK311007 for the ball valve assembly.",
+    )
+    repository = SqlKeywordRepository(
+        FakeSession(
+            [(chunk, document)],
+            identifier_rows=[
+                ("chunk_with_identifiers", "MK311007"),
+                ("chunk_with_identifiers", "MK311007"),
+                ("chunk_with_identifiers", "SN-000123"),
+            ],
+        )
+    )
+    query = RetrievalQuery(
+        query_id="q_identifiers",
+        query_text="What is replacement part number MK311007?",
+    )
+
+    results = repository.search_chunks(query)
+
+    assert len(results) == 1
+    assert sorted(results[0].identifier_values) == ["MK311007", "SN-000123"]
+
+
+def test_sql_keyword_repository_defaults_identifier_values_to_empty_list() -> None:
+    document = make_document(
+        document_id="doc_manual",
+        file_name="manual.pdf",
+        title="Manual",
+        document_type=DocumentType.MANUAL,
+    )
+    chunk = make_chunk(
+        chunk_id="chunk_no_identifiers",
+        document_id="doc_manual",
+        content="General maintenance information.",
+    )
+    repository = SqlKeywordRepository(FakeSession([(chunk, document)]))
+    query = RetrievalQuery(
+        query_id="q_no_identifiers",
+        query_text="General maintenance information",
+    )
+
+    results = repository.search_chunks(query)
+
+    assert len(results) == 1
+    assert results[0].identifier_values == []
 
 
 def test_sql_keyword_repository_builds_ordered_candidate_statement() -> None:

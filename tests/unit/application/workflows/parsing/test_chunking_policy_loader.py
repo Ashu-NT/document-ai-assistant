@@ -10,6 +10,7 @@ from src.application.workflows.parsing.builders.chunking.policies.chunking_polic
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
 )
+from src.shared.exceptions import SchemaValidationError
 
 
 def _write_yaml(path: Path, content: str) -> None:
@@ -17,9 +18,9 @@ def _write_yaml(path: Path, content: str) -> None:
 
 
 class TestChunkingPolicyLoader:
-    def test_returns_none_when_file_missing(self, tmp_path):
-        policy = load_policy_from_yaml(ChunkingProfile.MANUAL, config_dir=tmp_path)
-        assert policy is None
+    def test_raises_when_file_missing(self, tmp_path):
+        with pytest.raises(SchemaValidationError):
+            load_policy_from_yaml(ChunkingProfile.MANUAL, config_dir=tmp_path)
 
     def test_loads_manual_policy_from_yaml(self, tmp_path):
         _write_yaml(
@@ -34,15 +35,19 @@ class TestChunkingPolicyLoader:
             "include_table_context: true\n",
         )
         policy = load_policy_from_yaml(ChunkingProfile.MANUAL, config_dir=tmp_path)
-        assert policy is not None
         assert policy.max_chunk_tokens == 900
         assert policy.chunk_overlap == 80
         assert policy.profile_name == ChunkingProfile.MANUAL
 
-    def test_returns_none_on_malformed_yaml(self, tmp_path):
+    def test_raises_on_malformed_yaml(self, tmp_path):
         _write_yaml(tmp_path / "manual.yaml", "not: a: valid: policy")
-        policy = load_policy_from_yaml(ChunkingProfile.MANUAL, config_dir=tmp_path)
-        assert policy is None
+        with pytest.raises(SchemaValidationError):
+            load_policy_from_yaml(ChunkingProfile.MANUAL, config_dir=tmp_path)
+
+    def test_raises_when_required_field_missing(self, tmp_path):
+        _write_yaml(tmp_path / "manual.yaml", "max_chunk_tokens: 900\n")
+        with pytest.raises(SchemaValidationError):
+            load_policy_from_yaml(ChunkingProfile.MANUAL, config_dir=tmp_path)
 
     def test_loads_datasheet_policy(self, tmp_path):
         _write_yaml(
@@ -57,15 +62,14 @@ class TestChunkingPolicyLoader:
             "include_table_context: true\n",
         )
         policy = load_policy_from_yaml(ChunkingProfile.DATASHEET, config_dir=tmp_path)
-        assert policy is not None
         assert not policy.include_picture_chunks
 
 
 class TestChunkingPolicyRegistry:
-    def test_fallback_to_none_when_no_yaml(self, tmp_path):
+    def test_raises_when_no_yaml(self, tmp_path):
         registry = ChunkingPolicyRegistry(config_dir=tmp_path)
-        policy = registry.get(ChunkingProfile.MANUAL)
-        assert policy is None
+        with pytest.raises(SchemaValidationError):
+            registry.get(ChunkingProfile.MANUAL)
 
     def test_returns_policy_from_yaml(self, tmp_path):
         _write_yaml(
@@ -79,21 +83,19 @@ class TestChunkingPolicyRegistry:
         )
         registry = ChunkingPolicyRegistry(config_dir=tmp_path)
         policy = registry.get(ChunkingProfile.MANUAL)
-        assert policy is not None
         assert policy.max_chunk_tokens == 800
 
     def test_caches_result(self, tmp_path):
+        _write_yaml(
+            tmp_path / "drawing.yaml",
+            "max_chunk_tokens: 300\n"
+            "chunk_overlap: 35\n"
+            "same_topic_merge_tokens: 60\n"
+            "intro_context_tokens: 80\n"
+            "asset_context_window: 1\n"
+            "asset_context_max_tokens: 48\n",
+        )
         registry = ChunkingPolicyRegistry(config_dir=tmp_path)
         p1 = registry.get(ChunkingProfile.DRAWING)
         p2 = registry.get(ChunkingProfile.DRAWING)
         assert p1 is p2
-
-    def test_resolver_uses_python_defaults_when_no_yaml(self, tmp_path):
-        from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy_resolver import (
-            DocumentChunkingPolicyResolver,
-        )
-
-        registry = ChunkingPolicyRegistry(config_dir=tmp_path)
-        resolver = DocumentChunkingPolicyResolver(policy_registry=registry)
-        policy = resolver._manual_policy()
-        assert policy.max_chunk_tokens == 1000

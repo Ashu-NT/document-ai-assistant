@@ -1,0 +1,24 @@
+allowed_tools:
+  - list_documents
+  - find_document
+  - document_details
+  - explore_document
+  - retrieve_chunks
+  - retrieve_identifiers
+  - answer_question
+  - run_quality_gate
+  - retrieval_trace
+
+blocked_tools:
+  - ingest_document
+  - reingest_document
+  - delete_document
+
+max_steps: 5
+allow_mutating_tools: false
+require_document_scope_for_qa: true
+allow_corpus_wide_retrieval: true
+allow_ingestion: false
+allow_delete: false
+allow_reingestion: false
+max_tool_arg_chars: 2000

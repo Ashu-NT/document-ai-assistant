@@ -260,6 +260,80 @@ def test_build_docling_converter_rejects_unsupported_accelerator_device(
         docling_converter_factory.build_docling_converter()
 
 
+def test_build_docling_converter_enable_ocr_override_forces_ocr_on(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        docling_converter_factory,
+        "_import_docling_components",
+        fake_components,
+    )
+    monkeypatch.setattr(
+        docling_converter_factory,
+        "docling_settings",
+        FakeDoclingSettings(
+            pdf_backend="pypdfium2",
+            accelerator_device="cpu",
+            images_scale=0.75,
+            num_threads=1,
+            enable_table_structure=False,
+            enable_ocr=False,
+            ocr_engine="auto",
+            rapidocr_backend="torch",
+            force_full_page_ocr=False,
+            bitmap_area_threshold=0.05,
+            ocr_batch_size=1,
+            layout_batch_size=2,
+            table_batch_size=1,
+        ),
+    )
+
+    converter = docling_converter_factory.build_docling_converter(
+        enable_ocr_override=True,
+    )
+    pdf_option = converter.kwargs["format_options"][FakeInputFormat.PDF]
+
+    assert pdf_option.pipeline_options.do_ocr is True
+    assert isinstance(pdf_option.pipeline_options.ocr_options, FakeOcrAutoOptions)
+
+
+def test_build_docling_converter_enable_ocr_override_forces_ocr_off(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        docling_converter_factory,
+        "_import_docling_components",
+        fake_components,
+    )
+    monkeypatch.setattr(
+        docling_converter_factory,
+        "docling_settings",
+        FakeDoclingSettings(
+            pdf_backend="pypdfium2",
+            accelerator_device="auto",
+            images_scale=1.0,
+            num_threads=1,
+            enable_table_structure=True,
+            enable_ocr=True,
+            ocr_engine="auto",
+            rapidocr_backend="torch",
+            force_full_page_ocr=False,
+            bitmap_area_threshold=0.05,
+            ocr_batch_size=1,
+            layout_batch_size=2,
+            table_batch_size=1,
+        ),
+    )
+
+    converter = docling_converter_factory.build_docling_converter(
+        enable_ocr_override=False,
+    )
+    pdf_option = converter.kwargs["format_options"][FakeInputFormat.PDF]
+
+    assert pdf_option.pipeline_options.do_ocr is False
+    assert pdf_option.pipeline_options.ocr_options is None
+
+
 def test_build_docling_converter_uses_threaded_docling_parse_backend(
     monkeypatch,
 ) -> None:

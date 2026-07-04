@@ -406,6 +406,50 @@ def test_promote_extracted_identifier_unknown_type_falls_back():
     assert identifiers[0].identifier_type == IdentifierType.UNKNOWN
 
 
+def test_promote_extracted_identifier_unknown_type_logs_warning(caplog):
+    graph = _make_graph()
+    extraction = ExtractionResult(
+        extraction_id="e001",
+        document_id="doc_001",
+        extracted_identifiers=[
+            ExtractedIdentifier(
+                raw_value="XYZ-999",
+                identifier_type="not_a_real_type",
+                source_chunk_id="chunk_001",
+                confidence_score=0.7,
+            )
+        ],
+    )
+    with caplog.at_level("WARNING"):
+        _service().promote(extraction, graph, IdGenerator())
+
+    assert len(caplog.records) == 1
+    message = caplog.records[0].getMessage()
+    assert "not_a_real_type" in message
+    assert "XYZ-999" in message
+    assert "doc_001" in message
+
+
+def test_promote_known_extracted_identifier_type_does_not_log_warning(caplog):
+    graph = _make_graph()
+    extraction = ExtractionResult(
+        extraction_id="e001",
+        document_id="doc_001",
+        extracted_identifiers=[
+            ExtractedIdentifier(
+                raw_value="DRG-5001",
+                identifier_type="drawing_number",
+                source_chunk_id="chunk_001",
+                confidence_score=0.9,
+            )
+        ],
+    )
+    with caplog.at_level("WARNING"):
+        _service().promote(extraction, graph, IdGenerator())
+
+    assert caplog.records == []
+
+
 def test_promote_extracted_identifier_deduped_against_structured():
     graph = _make_graph()
     extraction = ExtractionResult(
@@ -453,3 +497,33 @@ def test_promote_multiple_extracted_identifiers():
     types = {i.identifier_type for i in identifiers}
     assert IdentifierType.DRAWING_NUMBER in types
     assert IdentifierType.CERTIFICATE_NUMBER in types
+
+
+# --- min_length filtering -----------------------------------------------------
+
+def test_default_min_length_allows_short_values():
+    graph = _make_graph()
+    extraction = _make_extraction(spare_parts=[_make_spare_part("A1")])
+    identifiers = IdentifierPromotionService().promote(extraction, graph, IdGenerator())
+
+    assert len(identifiers) == 1
+    assert identifiers[0].raw_value == "A1"
+
+
+def test_min_length_filters_out_short_normalized_values():
+    graph = _make_graph()
+    extraction = _make_extraction(spare_parts=[_make_spare_part("A1")])
+    service = IdentifierPromotionService(min_length=3)
+    identifiers = service.promote(extraction, graph, IdGenerator())
+
+    assert identifiers == []
+
+
+def test_min_length_keeps_values_meeting_the_threshold():
+    graph = _make_graph()
+    extraction = _make_extraction(spare_parts=[_make_spare_part("HP-001")])
+    service = IdentifierPromotionService(min_length=3)
+    identifiers = service.promote(extraction, graph, IdGenerator())
+
+    assert len(identifiers) == 1
+    assert identifiers[0].raw_value == "HP-001"

@@ -52,6 +52,21 @@ def test_demo_agent_cli_parses_interactive_runtime_flags() -> None:
     assert args.debug is True
 
 
+def test_build_visibility_policy_reveals_internal_ids_only_in_debug_mode() -> None:
+    mod = _load_script("demo_agent_cli")
+
+    default_args = mod.parse_args(["question"])
+    debug_args = mod.parse_args(["question", "--debug"])
+
+    default_policy = mod._build_visibility_policy(default_args)
+    debug_policy = mod._build_visibility_policy(debug_args)
+
+    assert default_policy.debug is False
+    assert default_policy.show_internal_ids is False
+    assert debug_policy.debug is True
+    assert debug_policy.show_internal_ids is True
+
+
 def test_demo_agent_cli_suppresses_post_run_trace_in_normal_show_react_mode() -> None:
     mod = _load_script("demo_agent_cli")
 

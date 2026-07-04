@@ -229,6 +229,7 @@ class ExtractionWorkflow:
         chunks: DocumentChunk | list[DocumentChunk],
         activity_context: ActivityContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
+        replace_existing: bool = False,
     ) -> ExtractionResult:
         chunk_list = self._coerce_chunks(chunks)
         self._emit_progress(
@@ -312,12 +313,18 @@ class ExtractionWorkflow:
 
         self._emit_progress(
             progress_callback,
-            "Saving extraction result...",
+            "Replacing extraction result..." if replace_existing else "Saving extraction result...",
         )
-        self.extraction_service.save_extraction_result(
-            extraction_result,
-            activity_context=activity_context,
-        )
+        if replace_existing:
+            self.extraction_service.replace_extraction_result(
+                extraction_result,
+                activity_context=activity_context,
+            )
+        else:
+            self.extraction_service.save_extraction_result(
+                extraction_result,
+                activity_context=activity_context,
+            )
         self._emit_progress(
             progress_callback,
             (

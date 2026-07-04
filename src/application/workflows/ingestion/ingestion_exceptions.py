@@ -21,5 +21,9 @@ class ReingestionNotSupportedError(IngestionWorkflowError):
     """Raised when safe reingestion is not supported by the current repo."""
 
 
-class DeleteDocumentNotSupportedError(IngestionWorkflowError):
-    """Raised when safe document deletion is not supported by the current repo."""
+class DocumentNotFoundForReingestionError(IngestionWorkflowError):
+    """Raised when a reingestion request targets a document that does not exist."""
+
+
+class DocumentNotFoundForDeletionError(IngestionWorkflowError):
+    """Raised when a delete request targets a document that does not exist."""

@@ -15,6 +15,7 @@ from src.infrastructure.db.mappers import (
 from src.infrastructure.db.orm_models import (
     ChunkORM,
     ChunkClassificationORM,
+    DocumentORM,
     GeneratedQuestionORM,
     IdentifierORM,
     ElementORM,
@@ -121,6 +122,26 @@ class DocumentWriter:
                 ChunkORM.document_id == document_id
             )
         )
+
+    def delete_document(self, document_id: str) -> None:
+        """Delete a document and every row that depends on it.
+
+        Covers structure (sections/elements), chunk artifacts (chunks,
+        chunk classifications, generated questions, identifiers), and the
+        document row itself. Extraction-family rows and vector mappings are
+        owned by their own writers and are not touched here.
+        """
+        try:
+            self._delete_document_chunk_artifacts(document_id)
+            self._delete_document_structure(document_id)
+            self.session.execute(
+                delete(DocumentORM).where(DocumentORM.id == document_id)
+            )
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to delete document.",
+                details={"document_id": document_id},
+            ) from exc
 
     def write_identifiers(self, identifiers: list[Identifier]) -> None:
         try:

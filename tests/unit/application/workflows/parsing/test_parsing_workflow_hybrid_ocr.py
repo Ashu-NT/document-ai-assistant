@@ -7,7 +7,12 @@ class FakeParser:
     def __init__(self, raw_parsed_document: RawParsedDocument) -> None:
         self.raw_parsed_document = raw_parsed_document
 
-    def parse(self, file_path: str) -> RawParsedDocument:
+    def parse(
+        self,
+        file_path: str,
+        *,
+        enable_ocr_override: bool | None = None,
+    ) -> RawParsedDocument:
         return self.raw_parsed_document
 
 

@@ -5,24 +5,26 @@ from pathlib import Path
 from typing import Any
 
 from src.config.paths import PROJECT_ROOT
+from src.config.yaml_config_loader import load_yaml_config
 
 _DEFAULT_CONFIG = PROJECT_ROOT / "src" / "config" / "evaluation" / "retrieval_thresholds.yaml"
 
 
 @dataclass(frozen=True)
 class RetrievalQualityThresholds:
-    hit_rate: float | None = 0.70
-    mrr: float | None = 0.55
-    recall_at_5: float | None = 0.65
-    context_hit_rate: float | None = 0.60
-    identifier_top_1_accuracy: float | None = 0.75
+    hit_rate: float | None
+    mrr: float | None
+    recall_at_5: float | None
+    context_hit_rate: float | None
+    identifier_top_1_accuracy: float | None
 
     @classmethod
     def from_yaml(cls, path: Path | str | None = None) -> RetrievalQualityThresholds:
         config_path = Path(path) if path else _DEFAULT_CONFIG
-        data = _load_yaml(config_path)
-        if not data:
-            return cls()
+        data = load_yaml_config(
+            config_path,
+            description="Retrieval quality thresholds",
+        )
         return cls(
             hit_rate=_opt_float(data.get("hit_rate")),
             mrr=_opt_float(data.get("mrr")),
@@ -38,15 +40,3 @@ def _opt_float(value: Any) -> float | None:
     if value is None:
         return None
     return float(value)
-
-
-def _load_yaml(path: Path) -> dict[str, Any]:
-    try:
-        import yaml  # type: ignore[import-untyped]
-    except ImportError:
-        return {}
-    if not path.exists():
-        return {}
-    with path.open("r", encoding="utf-8") as fh:
-        data = yaml.safe_load(fh)
-    return data if isinstance(data, dict) else {}

@@ -22,7 +22,7 @@ class DeleteDocumentTool:
     metadata = ToolMetadata(
         tool_name="delete_document",
         category="ingestion",
-        description="Reserved for safe delete or archive workflow integration.",
+        description="Permanently delete a document and all its associated data (structure, chunks, extraction, vectors).",
         mutates_state=True,
     )
 

@@ -10,7 +10,7 @@ from src.application.tools.ingestion import (
 )
 from src.application.workflows.ingestion import (
     CorpusStatisticsResult,
-    DeleteDocumentNotSupportedError,
+    DocumentNotFoundForDeletionError,
     IngestionResult,
     IngestionStatus,
     ReingestionNotSupportedError,
@@ -44,9 +44,17 @@ class FakeDeleteDocumentWorkflow:
 
     def run(self, document_id: str):
         self.calls.append(document_id)
-        raise DeleteDocumentNotSupportedError(
-            "Document deletion is not implemented safely yet.",
-            error_code="delete_not_supported",
+
+
+class FailingDeleteDocumentWorkflow:
+    def __init__(self) -> None:
+        self.calls = []
+
+    def run(self, document_id: str):
+        self.calls.append(document_id)
+        raise DocumentNotFoundForDeletionError(
+            "Document to delete does not exist.",
+            error_code="delete.document_not_found",
         )
 
 
@@ -86,6 +94,18 @@ def test_ingest_document_tool_delegates_to_workflow():
     assert workflow.run_calls[0].generate_questions is True
 
 
+def test_ingest_document_tool_forwards_enable_ocr_override():
+    workflow = FakeIngestionWorkflow()
+    IngestDocumentTool(workflow).run(
+        IngestDocumentRequest(
+            file_path="manual.pdf",
+            enable_ocr=True,
+        )
+    )
+
+    assert workflow.run_calls[0].enable_ocr is True
+
+
 def test_ingest_document_tool_rejects_missing_file_path():
     workflow = FakeIngestionWorkflow()
     result = IngestDocumentTool(workflow).run(IngestDocumentRequest())
@@ -105,15 +125,35 @@ def test_reingest_document_tool_returns_application_error():
     assert workflow.reingest_calls[0].document_id == "doc_001"
 
 
-def test_delete_document_tool_fails_safely_when_not_supported():
+def test_delete_document_tool_delegates_to_workflow():
     workflow = FakeDeleteDocumentWorkflow()
     result = DeleteDocumentTool(workflow).run(
         DeleteDocumentRequest(document_id="doc-1")
     )
 
-    assert result.success is False
-    assert result.error_code == "delete_not_supported"
+    assert result.success is True
+    assert result.data == {"document_id": "doc-1"}
     assert workflow.calls == ["doc-1"]
+
+
+def test_delete_document_tool_rejects_missing_document_id():
+    workflow = FakeDeleteDocumentWorkflow()
+    result = DeleteDocumentTool(workflow).run(DeleteDocumentRequest())
+
+    assert result.success is False
+    assert result.error_code == "invalid_request"
+    assert workflow.calls == []
+
+
+def test_delete_document_tool_returns_application_error_when_document_missing():
+    workflow = FailingDeleteDocumentWorkflow()
+    result = DeleteDocumentTool(workflow).run(
+        DeleteDocumentRequest(document_id="doc-missing")
+    )
+
+    assert result.success is False
+    assert result.error_code == "delete.document_not_found"
+    assert workflow.calls == ["doc-missing"]
 
 
 def test_corpus_statistics_tool_delegates_to_workflow():

@@ -1,0 +1,17 @@
+# Maximum acceptable duration (in seconds) per parsing stage, checked by
+# ParsingPerformanceGate (scripts/run_parsing_performance_gate.py) against a
+# real ParsingWorkflow.parse() run.
+#
+# These are deliberately generous placeholder ceilings, not tuned against a
+# real large-manual/scanned-PDF reference document (none is committed to this
+# repo — see outputs/architecture/current_agent_flow_report.md P2). Recalibrate
+# once a real reference document is available: run the gate against it once
+# to see actual durations, then tighten these to just above that baseline so
+# future regressions are caught early.
+#
+# Set a threshold to null to disable that stage's check.
+
+docling_conversion_max_seconds: 120.0
+canonical_normalization_max_seconds: 30.0
+graph_build_max_seconds: 20.0
+total_max_seconds: 180.0

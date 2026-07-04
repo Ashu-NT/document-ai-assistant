@@ -16,15 +16,16 @@ from src.application.workflows.parsing.builders.chunking.policies.document_chunk
 class ChunkingPolicyRegistry:
     """Cached, YAML-backed registry of chunking policies.
 
-    Falls back to None when a YAML file is absent or unparseable — callers
-    should then use their hardcoded Python defaults.
+    Every `ChunkingProfile` must have a matching YAML file under
+    `src/config/chunking/`; a missing or invalid file raises
+    `SchemaValidationError` rather than falling back to a hardcoded default.
     """
 
     def __init__(self, config_dir: Path | None = None) -> None:
         self._config_dir = config_dir
-        self._cache: dict[ChunkingProfile, DocumentChunkingPolicy | None] = {}
+        self._cache: dict[ChunkingProfile, DocumentChunkingPolicy] = {}
 
-    def get(self, profile: ChunkingProfile) -> DocumentChunkingPolicy | None:
+    def get(self, profile: ChunkingProfile) -> DocumentChunkingPolicy:
         if profile not in self._cache:
             self._cache[profile] = load_policy_from_yaml(
                 profile, config_dir=self._config_dir

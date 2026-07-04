@@ -8,8 +8,18 @@ from src.shared.exceptions import SchemaValidationError
 class FakeExtractionRepository:
     def __init__(self) -> None:
         self.results = {}
+        self.replace_calls = []
 
     def save_extraction_result(self, result) -> None:
+        self.results[result.extraction_id] = result
+
+    def replace_extraction_result(self, result) -> None:
+        self.replace_calls.append(result)
+        self.results = {
+            extraction_id: existing
+            for extraction_id, existing in self.results.items()
+            if existing.document_id != result.document_id
+        }
         self.results[result.extraction_id] = result
 
     def get_extraction_result(self, extraction_id: str):
@@ -133,3 +143,35 @@ def test_save_extraction_result_rejects_invalid_input(
         service.save_extraction_result(sample_extraction_result)
 
     assert repository.results == {}
+
+
+def test_replace_extraction_result(sample_extraction_result) -> None:
+    repository = FakeExtractionRepository()
+    repository.save_extraction_result(sample_extraction_result)
+    service = make_service(repository)
+
+    replacement = sample_extraction_result.__class__(
+        extraction_id="extraction_002",
+        document_id=sample_extraction_result.document_id,
+        confidence_score=0.7,
+    )
+
+    result = service.replace_extraction_result(replacement)
+
+    assert result.entity_id == replacement.document_id
+    assert result.payload["extraction_id"] == "extraction_002"
+    assert repository.replace_calls == [replacement]
+    assert list(repository.results) == ["extraction_002"]
+
+
+def test_replace_extraction_result_rejects_invalid_input(
+    sample_extraction_result,
+) -> None:
+    repository = FakeExtractionRepository()
+    service = make_service(repository)
+    sample_extraction_result.confidence_score = 1.5
+
+    with pytest.raises(SchemaValidationError):
+        service.replace_extraction_result(sample_extraction_result)
+
+    assert repository.replace_calls == []

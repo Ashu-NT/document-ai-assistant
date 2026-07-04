@@ -23,7 +23,7 @@ class ReingestDocumentTool:
     metadata = ToolMetadata(
         tool_name="reingest_document",
         category="ingestion",
-        description="Reserved for safe reingestion workflow integration.",
+        description="Reprocess an existing document in place (safe atomic replace).",
         mutates_state=True,
     )
 

@@ -68,13 +68,3 @@ class DoclingSettings(AppBaseSettings):
         default=4,
         alias="DOCLING_TABLE_BATCH_SIZE",
     )
-
-    export_markdown: bool = Field(
-        default=True,
-        alias="DOCLING_EXPORT_MARKDOWN",
-    )
-
-    export_json: bool = Field(
-        default=True,
-        alias="DOCLING_EXPORT_JSON",
-    )

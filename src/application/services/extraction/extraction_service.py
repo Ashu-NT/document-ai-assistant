@@ -47,6 +47,39 @@ class ExtractionService:
             },
         )
 
+    @tracked_action(
+        action="extraction.result_replaced",
+        entity_type="document",
+        activity=True,
+        audit=True,
+        event=True,
+    )
+    def replace_extraction_result(
+        self,
+        result: ExtractionResult,
+        activity_context: ActivityContext | None = None,
+    ) -> ActionResult:
+        validation = self.extraction_result_validator.validate(result)
+        validation.raise_if_invalid()
+
+        self.extraction_repository.replace_extraction_result(result)
+
+        return ActionResult(
+            entity_type="document",
+            entity_id=result.document_id,
+            message="Extraction result replaced.",
+            payload={
+                "extraction_id": result.extraction_id,
+                "document_id": result.document_id,
+                "maintenance_task_count": len(result.maintenance_tasks),
+                "spare_part_count": len(result.spare_parts),
+                "equipment_count": len(result.equipment),
+                "manufacturer_count": len(result.manufacturers),
+                "confidence_score": result.confidence_score,
+                "requires_human_review": result.requires_human_review,
+            },
+        )
+
     def get_extraction_result(
         self,
         extraction_id: str,

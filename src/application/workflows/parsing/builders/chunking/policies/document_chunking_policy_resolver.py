@@ -15,6 +15,14 @@ from src.domain.common import DocumentType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 
+_DOCUMENT_TYPE_PROFILES: dict[DocumentType, ChunkingProfile] = {
+    DocumentType.DATASHEET: ChunkingProfile.DATASHEET,
+    DocumentType.DRAWING: ChunkingProfile.DRAWING,
+    DocumentType.REPORT: ChunkingProfile.REPORT,
+    DocumentType.MANUAL: ChunkingProfile.MANUAL,
+    DocumentType.CERTIFICATE: ChunkingProfile.CERTIFICATE,
+}
+
 
 class DocumentChunkingPolicyResolver:
     def __init__(
@@ -36,127 +44,19 @@ class DocumentChunkingPolicyResolver:
         chunking_profile_override: ChunkingProfile | None = None,
     ) -> DocumentChunkingPolicy:
         if chunking_profile_override is not None:
-            return self._policy_for_profile(chunking_profile_override)
+            return self._policy_registry.get(chunking_profile_override)
 
-        if document_type == DocumentType.DATASHEET:
-            return self._datasheet_policy()
-        if document_type == DocumentType.DRAWING:
-            return self._drawing_policy()
-        if document_type == DocumentType.REPORT:
-            return self._report_policy()
-        if document_type == DocumentType.MANUAL:
-            return self._manual_policy()
-        if document_type == DocumentType.CERTIFICATE:
-            return self._certificate_policy()
+        mapped_profile = (
+            _DOCUMENT_TYPE_PROFILES.get(document_type)
+            if document_type is not None
+            else None
+        )
+        if mapped_profile is not None:
+            return self._policy_registry.get(mapped_profile)
 
         profile = self.profile_inferer.infer(
             document_title=document_title,
             sections=sections,
             section_elements_by_id=section_elements_by_id,
         )
-        return self._policy_for_profile(profile)
-
-    def _policy_for_profile(
-        self,
-        profile: ChunkingProfile,
-    ) -> DocumentChunkingPolicy:
-        yaml_policy = self._policy_registry.get(profile)
-        if yaml_policy is not None:
-            return yaml_policy
-
-        if profile == ChunkingProfile.DATASHEET:
-            return self._datasheet_policy()
-        if profile == ChunkingProfile.CERTIFICATE:
-            return self._certificate_policy()
-        if profile == ChunkingProfile.DRAWING:
-            return self._drawing_policy()
-        if profile == ChunkingProfile.REPORT:
-            return self._report_policy()
-        if profile == ChunkingProfile.MANUAL:
-            return self._manual_policy()
-
-        return self._default_policy()
-
-    @staticmethod
-    def _manual_policy() -> DocumentChunkingPolicy:
-        return DocumentChunkingPolicy(
-            profile_name=ChunkingProfile.MANUAL,
-            max_chunk_tokens=1000,
-            chunk_overlap=100,
-            same_topic_merge_tokens=120,
-            intro_context_tokens=160,
-            asset_context_window=2,
-            asset_context_max_tokens=90,
-            include_picture_chunks=True,
-            include_table_context=True,
-        )
-
-    @staticmethod
-    def _datasheet_policy() -> DocumentChunkingPolicy:
-        return DocumentChunkingPolicy(
-            profile_name=ChunkingProfile.DATASHEET,
-            max_chunk_tokens=600,
-            chunk_overlap=75,
-            same_topic_merge_tokens=80,
-            intro_context_tokens=110,
-            asset_context_window=1,
-            asset_context_max_tokens=60,
-            include_picture_chunks=False,
-            include_table_context=True,
-        )
-
-    @staticmethod
-    def _drawing_policy() -> DocumentChunkingPolicy:
-        return DocumentChunkingPolicy(
-            profile_name=ChunkingProfile.DRAWING,
-            max_chunk_tokens=300,
-            chunk_overlap=35,
-            same_topic_merge_tokens=60,
-            intro_context_tokens=80,
-            asset_context_window=1,
-            asset_context_max_tokens=48,
-            include_picture_chunks=True,
-            include_table_context=False,
-        )
-
-    @staticmethod
-    def _certificate_policy() -> DocumentChunkingPolicy:
-        return DocumentChunkingPolicy(
-            profile_name=ChunkingProfile.CERTIFICATE,
-            max_chunk_tokens=500,
-            chunk_overlap=60,
-            same_topic_merge_tokens=80,
-            intro_context_tokens=100,
-            asset_context_window=1,
-            asset_context_max_tokens=60,
-            include_picture_chunks=False,
-            include_table_context=True,
-        )
-
-    @staticmethod
-    def _report_policy() -> DocumentChunkingPolicy:
-        return DocumentChunkingPolicy(
-            profile_name=ChunkingProfile.REPORT,
-            max_chunk_tokens=800,
-            chunk_overlap=100,
-            same_topic_merge_tokens=100,
-            intro_context_tokens=120,
-            asset_context_window=1,
-            asset_context_max_tokens=70,
-            include_picture_chunks=True,
-            include_table_context=True,
-        )
-
-    @staticmethod
-    def _default_policy() -> DocumentChunkingPolicy:
-        return DocumentChunkingPolicy(
-            profile_name=ChunkingProfile.DEFAULT,
-            max_chunk_tokens=200,
-            chunk_overlap=20,
-            same_topic_merge_tokens=90,
-            intro_context_tokens=120,
-            asset_context_window=1,
-            asset_context_max_tokens=72,
-            include_picture_chunks=True,
-            include_table_context=True,
-        )
+        return self._policy_registry.get(profile)

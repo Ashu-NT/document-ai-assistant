@@ -6,12 +6,10 @@ from src.application.langgraph.strategy_advisor.advisor_models import (
     StrategyAdvisorRequest,
     StrategyAdvisorStatus,
 )
-from src.application.langgraph.strategy_advisor.advisor_prompt_builder import (
-    StrategyAdvisorPromptBuilder,
-)
 from src.application.langgraph.strategy_advisor.advisor_validator import (
     StrategyAdvisorValidator,
 )
+from src.application.prompts.strategy_advisor import StrategyAdvisorPromptBuilder
 from src.application.services.ai import LLMService
 from src.shared.exceptions import ApplicationError, SchemaValidationError
 

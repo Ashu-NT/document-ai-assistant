@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from src.application.workflows.retrieval.deduplication.retrieved_chunk_signature import (
     detect_chunk_role,
 )
+from src.config.paths import PROJECT_ROOT
+from src.config.yaml_config_loader import load_yaml_config
 from src.domain.common import ChunkType
 from src.domain.retrieval import RetrievalQuery
 from src.infrastructure.db.orm_models import ChunkORM, DocumentORM
@@ -12,45 +14,18 @@ from src.infrastructure.retrieval.keyword.sql_keyword_query_terms import (
     normalize_query_text,
 )
 
-_STRUCTURED_TYPES = {
-    ChunkType.SPARE_PARTS_TABLE.value,
-    ChunkType.TECHNICAL_SPECIFICATION.value,
-    ChunkType.CERTIFICATION_INFO.value,
-    ChunkType.DRAWING_REFERENCE.value,
-}
-_PROCEDURE_TYPES = {
-    ChunkType.OPERATION_INSTRUCTION.value,
-    ChunkType.MAINTENANCE_PROCEDURE.value,
-    ChunkType.MAINTENANCE_INTERVAL.value,
-    ChunkType.TROUBLESHOOTING.value,
-}
-_NOISE_SECTION_TOKENS = {
-    "environmentally",
-    "responsible solutions",
-    "engineered",
-    "environmentally responsible solutions engineered",
-    "table of contents",
-    "revision / modification table",
-}
-_TABLE_QUERY_MARKERS = ("table", "spare part", "parts list", "part number", "order code")
-_FIGURE_QUERY_MARKERS = ("figure", "diagram", "drawing", "schematic", "image", "label")
-_OVERVIEW_QUERY_MARKERS = (
-    "what does",
-    "used for",
-    "purpose",
-    "function",
-    "objective",
-    "overview",
-    "summary",
+_CONFIG_PATH = (
+    PROJECT_ROOT / "src" / "config" / "retrieval_keyword" / "sql_keyword_scorer.yaml"
 )
-_OVERVIEW_SECTION_MARKERS = (
-    "what it does",
-    "overview",
-    "introduction",
-    "purpose",
-    "function",
-    "objective",
-)
+_config = load_yaml_config(_CONFIG_PATH, description="SQL keyword scorer tables")
+
+_STRUCTURED_TYPES = set(_config["structured_types"])
+_PROCEDURE_TYPES = set(_config["procedure_types"])
+_NOISE_SECTION_TOKENS = set(_config["noise_section_tokens"])
+_TABLE_QUERY_MARKERS = tuple(_config["table_query_markers"])
+_FIGURE_QUERY_MARKERS = tuple(_config["figure_query_markers"])
+_OVERVIEW_QUERY_MARKERS = tuple(_config["overview_query_markers"])
+_OVERVIEW_SECTION_MARKERS = tuple(_config["overview_section_markers"])
 
 _ALNUM_TOKEN_RE = re.compile(r"[a-z0-9]+")
 

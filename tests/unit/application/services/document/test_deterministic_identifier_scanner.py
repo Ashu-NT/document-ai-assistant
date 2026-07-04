@@ -223,3 +223,27 @@ def test_serial_and_drawing_in_same_chunk():
     types = {r.identifier_type for r in results}
     assert IdentifierType.SERIAL_NUMBER in types
     assert IdentifierType.DRAWING_NUMBER in types
+
+
+# --- min_length filtering -----------------------------------------------------
+
+def test_default_min_length_allows_short_generic_matches():
+    graph = _make_graph([_make_chunk(content="Item AB-12 is in stock.")])
+    results = DeterministicIdentifierScanner().scan(graph, IdGenerator())
+    assert len(results) == 1
+    assert results[0].identifier_type == IdentifierType.PART_NUMBER
+
+
+def test_min_length_filters_out_short_generic_matches():
+    graph = _make_graph([_make_chunk(content="Item AB-12 is in stock.")])
+    scanner = DeterministicIdentifierScanner(min_length=6)
+    results = scanner.scan(graph, IdGenerator())
+    assert results == []
+
+
+def test_min_length_keeps_matches_meeting_the_threshold():
+    graph = _make_graph([_make_chunk(content="Replace filter HP-001 before maintenance.")])
+    scanner = DeterministicIdentifierScanner(min_length=6)
+    results = scanner.scan(graph, IdGenerator())
+    assert len(results) == 1
+    assert results[0].identifier_type == IdentifierType.PART_NUMBER

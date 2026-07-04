@@ -15,3 +15,17 @@ def test_retrieved_chunk_mapper_from_chunk_orm(sample_chunk) -> None:
     assert retrieved.score == 0.8
     assert retrieved.retrieval_source == "sql_keyword"
     assert retrieved.section_path == sample_chunk.section_path
+    assert retrieved.identifier_values == []
+
+
+def test_retrieved_chunk_mapper_from_chunk_orm_with_identifier_values(sample_chunk) -> None:
+    chunk_orm = ChunkMapper.to_orm(sample_chunk)
+
+    retrieved = RetrievedChunkMapper.from_chunk_orm(
+        chunk_orm,
+        score=0.8,
+        retrieval_source="sql_keyword",
+        identifier_values=["MK311007", "SN-000123"],
+    )
+
+    assert retrieved.identifier_values == ["MK311007", "SN-000123"]

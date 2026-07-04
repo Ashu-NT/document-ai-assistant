@@ -1,0 +1,56 @@
+# Chunk types treated as "structured" evidence (tables/specs/certs/drawings) —
+# eligible for the structured-fit scoring bonus.
+structured_types:
+  - spare_parts_table
+  - technical_specification
+  - certification_info
+  - drawing_reference
+
+# Chunk types treated as procedural/task evidence.
+procedure_types:
+  - operation_instruction
+  - maintenance_procedure
+  - maintenance_interval
+  - troubleshooting
+
+# Section-path substrings that indicate boilerplate/noise content, penalized
+# unless the chunk also contains an exact identifier match.
+noise_section_tokens:
+  - environmentally
+  - "responsible solutions"
+  - engineered
+  - "environmentally responsible solutions engineered"
+  - "table of contents"
+  - "revision / modification table"
+
+table_query_markers:
+  - table
+  - "spare part"
+  - "parts list"
+  - "part number"
+  - "order code"
+
+figure_query_markers:
+  - figure
+  - diagram
+  - drawing
+  - schematic
+  - image
+  - label
+
+overview_query_markers:
+  - "what does"
+  - "used for"
+  - purpose
+  - function
+  - objective
+  - overview
+  - summary
+
+overview_section_markers:
+  - "what it does"
+  - overview
+  - introduction
+  - purpose
+  - function
+  - objective

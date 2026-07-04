@@ -50,9 +50,19 @@ class DoclingParser:
         self.parser_name = parser_name
         self.parser_version = parser_version or self._resolve_parser_version()
 
-    def parse(self, file_path: str) -> RawParsedDocument:
+    def parse(
+        self,
+        file_path: str,
+        *,
+        enable_ocr_override: bool | None = None,
+    ) -> RawParsedDocument:
         try:
-            conversion_result = self.converter.convert(
+            converter = (
+                self.converter
+                if enable_ocr_override is None
+                else self._build_default_converter(enable_ocr_override=enable_ocr_override)
+            )
+            conversion_result = converter.convert(
                 file_path,
                 raises_on_error=True,
                 max_num_pages=self.max_num_pages,
@@ -87,8 +97,8 @@ class DoclingParser:
             ) from exc
 
     @staticmethod
-    def _build_default_converter() -> Any:
-        return build_docling_converter()
+    def _build_default_converter(*, enable_ocr_override: bool | None = None) -> Any:
+        return build_docling_converter(enable_ocr_override=enable_ocr_override)
 
     @staticmethod
     def _resolve_parser_version() -> str | None:

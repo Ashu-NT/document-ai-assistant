@@ -20,3 +20,4 @@ class ParsingWorkflowResult:
     elements_without_page_count: int = 0
     parse_warnings: list[str] = field(default_factory=list)
     ocr_trace: OCRTrace | None = None
+    stage_durations: dict[str, float] = field(default_factory=dict)

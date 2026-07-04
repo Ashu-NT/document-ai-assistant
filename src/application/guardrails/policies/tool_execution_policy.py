@@ -1,34 +1,42 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import lru_cache
+
+from src.config.paths import PROJECT_ROOT
+from src.config.yaml_config_loader import load_yaml_config
+
+_CONFIG_PATH = PROJECT_ROOT / "src" / "config" / "guardrails" / "tool_execution.yaml"
 
 
-_DEFAULT_ALLOWED_TOOLS = (
-    "list_documents",
-    "find_document",
-    "document_details",
-    "explore_document",
-    "retrieve_chunks",
-    "retrieve_tables",
-    "retrieve_figures",
-    "retrieve_identifiers",
-    "answer_question",
-    "run_quality_gate",
-    "retrieval_trace",
-)
-_DEFAULT_BLOCKED_TOOLS = (
-    "delete_document",
-    "reingest_document",
-    "bulk_delete",
-    "vector_delete",
-    "database_reset",
-    "arbitrary_shell",
-)
+@lru_cache(maxsize=1)
+def _config() -> dict:
+    return load_yaml_config(_CONFIG_PATH, description="Tool execution guardrail policy")
+
+
+def _allowed_tools() -> tuple[str, ...]:
+    return tuple(_config()["allowed_tools"])
+
+
+def _blocked_tools() -> tuple[str, ...]:
+    return tuple(_config()["blocked_tools"])
+
+
+def _block_mutating_tools_in_demo() -> bool:
+    return bool(_config()["block_mutating_tools_in_demo"])
+
+
+def _require_registered_tools() -> bool:
+    return bool(_config()["require_registered_tools"])
 
 
 @dataclass(slots=True, frozen=True)
 class ToolExecutionPolicy:
-    allowed_tools: tuple[str, ...] = field(default_factory=lambda: _DEFAULT_ALLOWED_TOOLS)
-    blocked_tools: tuple[str, ...] = field(default_factory=lambda: _DEFAULT_BLOCKED_TOOLS)
-    block_mutating_tools_in_demo: bool = True
-    require_registered_tools: bool = True
+    allowed_tools: tuple[str, ...] = field(default_factory=_allowed_tools)
+    blocked_tools: tuple[str, ...] = field(default_factory=_blocked_tools)
+    block_mutating_tools_in_demo: bool = field(
+        default_factory=_block_mutating_tools_in_demo
+    )
+    require_registered_tools: bool = field(
+        default_factory=_require_registered_tools
+    )

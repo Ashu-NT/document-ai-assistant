@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from src.domain.workflows import WorkflowResult, WorkflowState
+from src.domain.workflow import WorkflowResult, WorkflowState
 
 
 class WorkflowRunner(Protocol):

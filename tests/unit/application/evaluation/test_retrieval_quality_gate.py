@@ -1,4 +1,6 @@
 import json
+from dataclasses import replace
+
 import pytest
 from pathlib import Path
 
@@ -8,6 +10,7 @@ from src.application.evaluation.retrieval.retrieval_quality_gate import (
 from src.application.evaluation.retrieval.retrieval_quality_thresholds import (
     RetrievalQualityThresholds,
 )
+from src.shared.exceptions import SchemaValidationError
 
 
 def _make_report(**overrides) -> dict:
@@ -37,14 +40,14 @@ class TestRetrievalQualityGate:
         assert result.violations == []
 
     def test_fails_when_hit_rate_below_threshold(self):
-        thresholds = RetrievalQualityThresholds(hit_rate=0.80)
+        thresholds = replace(RetrievalQualityThresholds.from_yaml(), hit_rate=0.80)
         gate = RetrievalQualityGate(thresholds=thresholds)
         result = gate.check(_make_report(hit_rate=0.75))
         assert not result.passed
         assert any(v.metric == "hit_rate" for v in result.violations)
 
     def test_fails_when_mrr_below_threshold(self):
-        thresholds = RetrievalQualityThresholds(mrr=0.80)
+        thresholds = replace(RetrievalQualityThresholds.from_yaml(), mrr=0.80)
         gate = RetrievalQualityGate(thresholds=thresholds)
         result = gate.check(_make_report(mean_reciprocal_rank=0.60))
         assert not result.passed
@@ -62,7 +65,7 @@ class TestRetrievalQualityGate:
         assert result.passed
 
     def test_violation_contains_actual_and_threshold(self):
-        thresholds = RetrievalQualityThresholds(hit_rate=0.90)
+        thresholds = replace(RetrievalQualityThresholds.from_yaml(), hit_rate=0.90)
         gate = RetrievalQualityGate(thresholds=thresholds)
         result = gate.check(_make_report(hit_rate=0.70))
         violation = next(v for v in result.violations if v.metric == "hit_rate")
@@ -70,17 +73,19 @@ class TestRetrievalQualityGate:
         assert violation.threshold == pytest.approx(0.90)
 
     def test_summary_says_pass(self):
-        gate = RetrievalQualityGate(thresholds=RetrievalQualityThresholds(hit_rate=0.5))
+        thresholds = replace(RetrievalQualityThresholds.from_yaml(), hit_rate=0.5)
+        gate = RetrievalQualityGate(thresholds=thresholds)
         result = gate.check(_make_report(hit_rate=0.9))
         assert "PASS" in result.summary()
 
     def test_summary_says_fail(self):
-        gate = RetrievalQualityGate(thresholds=RetrievalQualityThresholds(hit_rate=0.95))
+        thresholds = replace(RetrievalQualityThresholds.from_yaml(), hit_rate=0.95)
+        gate = RetrievalQualityGate(thresholds=thresholds)
         result = gate.check(_make_report(hit_rate=0.5))
         assert "FAIL" in result.summary()
 
     def test_handles_missing_metric_as_failure(self):
-        thresholds = RetrievalQualityThresholds(hit_rate=0.70)
+        thresholds = replace(RetrievalQualityThresholds.from_yaml(), hit_rate=0.70)
         gate = RetrievalQualityGate(thresholds=thresholds)
         result = gate.check({})
         assert not result.passed
@@ -97,7 +102,9 @@ class TestRetrievalQualityThresholds:
         assert t.hit_rate == pytest.approx(0.80)
         assert t.mrr == pytest.approx(0.65)
         assert t.recall_at_5 is None
+        assert t.context_hit_rate is None
+        assert t.identifier_top_1_accuracy is None
 
-    def test_from_yaml_uses_defaults_when_file_missing(self, tmp_path):
-        t = RetrievalQualityThresholds.from_yaml(tmp_path / "nonexistent.yaml")
-        assert t.hit_rate == pytest.approx(0.70)
+    def test_from_yaml_raises_when_file_missing(self, tmp_path):
+        with pytest.raises(SchemaValidationError):
+            RetrievalQualityThresholds.from_yaml(tmp_path / "nonexistent.yaml")

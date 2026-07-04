@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
@@ -10,6 +9,8 @@ from src.application.workflows.parsing.builders.chunking.policies.document_chunk
     DocumentChunkingPolicy,
 )
 from src.config.paths import PROJECT_ROOT
+from src.config.yaml_config_loader import load_yaml_config
+from src.shared.exceptions import SchemaValidationError
 
 _CONFIG_DIR = PROJECT_ROOT / "src" / "config" / "chunking"
 
@@ -23,33 +24,18 @@ _PROFILE_FILES: dict[ChunkingProfile, str] = {
 }
 
 
-def _load_yaml(path: Path) -> dict[str, Any]:
-    try:
-        import yaml  # type: ignore[import-untyped]
-    except ImportError:
-        return {}
-    if not path.exists():
-        return {}
-    try:
-        with path.open("r", encoding="utf-8") as fh:
-            data = yaml.safe_load(fh)
-        return data if isinstance(data, dict) else {}
-    except Exception:
-        return {}
-
-
 def load_policy_from_yaml(
     profile: ChunkingProfile,
     *,
     config_dir: Path | None = None,
-) -> DocumentChunkingPolicy | None:
+) -> DocumentChunkingPolicy:
     base = config_dir or _CONFIG_DIR
-    filename = _PROFILE_FILES.get(profile)
-    if filename is None:
-        return None
-    data = _load_yaml(base / filename)
-    if not data:
-        return None
+    filename = _PROFILE_FILES[profile]
+    path = base / filename
+    data = load_yaml_config(
+        path,
+        description=f"Chunking policy for profile {profile.value!r}",
+    )
     try:
         return DocumentChunkingPolicy(
             profile_name=profile,
@@ -62,5 +48,9 @@ def load_policy_from_yaml(
             include_picture_chunks=bool(data.get("include_picture_chunks", True)),
             include_table_context=bool(data.get("include_table_context", True)),
         )
-    except (KeyError, TypeError, ValueError):
-        return None
+    except (KeyError, TypeError, ValueError) as exc:
+        raise SchemaValidationError(
+            f"Chunking policy YAML for profile {profile.value!r} is missing or "
+            "has invalid field values.",
+            details={"path": str(path)},
+        ) from exc

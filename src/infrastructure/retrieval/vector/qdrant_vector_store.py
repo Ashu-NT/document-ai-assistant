@@ -7,6 +7,7 @@ from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue, P
 from src.application.contracts.ai import EmbeddingProvider
 from src.application.contracts.document import DocumentRepository
 from src.application.contracts.retrieval import VectorStore
+from src.domain.common import normalize_identifier
 from src.domain.document.entities import DocumentChunk
 from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 from src.infrastructure.db.repositories.retrieval import (
@@ -28,6 +29,7 @@ class QdrantVectorStore(VectorStore):
         embedding_model: str,
         query_embedding_provider: EmbeddingProvider | None = None,
         document_repository: DocumentRepository | None = None,
+        enable_identifier_filter: bool = False,
     ) -> None:
         self.client = client
         self.mapping_repository = mapping_repository
@@ -35,6 +37,7 @@ class QdrantVectorStore(VectorStore):
         self.embedding_model = embedding_model
         self.query_embedding_provider = query_embedding_provider
         self.document_repository = document_repository
+        self.enable_identifier_filter = enable_identifier_filter
 
     def save_chunk_vectors(self, chunks: list[DocumentChunk]) -> None:
         points: list[PointStruct] = []
@@ -166,6 +169,27 @@ class QdrantVectorStore(VectorStore):
                     match=MatchValue(value=query.document_id),
                 )
             )
+
+        if self.enable_identifier_filter and query.detected_identifiers:
+            # `identifier_values` payloads are written from `Identifier.normalized_value`
+            # (see `_identifier_values_by_chunk_id` below), which is uppercased and
+            # space-stripped by `normalize_identifier`. `query.detected_identifiers` is
+            # populated by `RetrievalQueryIdentifierExtractor`, which lowercases its
+            # tokens for other consumers (e.g. case-insensitive SQL ILIKE matching).
+            # Qdrant's keyword match is exact and case-sensitive, so without applying
+            # the same normalization here this filter would never match anything.
+            normalized_detected = [
+                normalize_identifier(value)
+                for value in query.detected_identifiers
+                if value
+            ]
+            if normalized_detected:
+                conditions.append(
+                    FieldCondition(
+                        key="identifier_values",
+                        match=MatchAny(any=normalized_detected),
+                    )
+                )
 
         if not conditions:
             return None

@@ -7,9 +7,6 @@ from src.application.langgraph.strategy_advisor.advisor_models import (
     StrategyAdvisorRequest,
     StrategyAdvisorStatus,
 )
-from src.application.langgraph.strategy_advisor.advisor_prompt_builder import (
-    StrategyAdvisorPromptBuilder,
-)
 from src.application.langgraph.strategy_advisor.advisor_validator import (
     StrategyAdvisorValidator,
 )
@@ -26,7 +23,6 @@ __all__ = [
     "StrategyAdvisorIntent",
     "StrategyAdvisorOutcome",
     "StrategyAdvisorProposal",
-    "StrategyAdvisorPromptBuilder",
     "StrategyAdvisorRequest",
     "StrategyAdvisorStatus",
     "StrategyAdvisorValidator",

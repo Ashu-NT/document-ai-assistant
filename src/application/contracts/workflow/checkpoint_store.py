@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from src.domain.workflows import WorkflowState
+from src.domain.workflow import WorkflowState
 
 
 class CheckpointStore(Protocol):

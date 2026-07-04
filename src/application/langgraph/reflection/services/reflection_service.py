@@ -11,14 +11,14 @@ from src.application.langgraph.reflection.models import (
     ReflectionResult,
 )
 from src.application.langgraph.reflection.policies import ReflectionPolicy
-from src.application.langgraph.reflection.prompts import (
-    REFLECTION_PROMPT_VERSION,
-    ReflectionPromptBuilder,
-)
 from src.application.langgraph.reflection.services.reflection_json_parser import (
     ReflectionJsonParser,
 )
 from src.application.langgraph.reflection.validation import ReflectionValidator
+from src.application.prompts.reflection import (
+    REFLECTION_PROMPT_VERSION,
+    ReflectionPromptBuilder,
+)
 from src.application.services.ai import LLMService
 from src.shared.exceptions import ApplicationError
 

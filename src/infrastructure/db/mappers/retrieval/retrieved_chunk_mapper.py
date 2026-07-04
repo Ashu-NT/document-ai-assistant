@@ -13,6 +13,7 @@ class RetrievedChunkMapper:
         score: float = 1.0,
         retrieval_source: str = "sql_keyword",
         extra_metadata: dict[str, str] | None = None,
+        identifier_values: list[str] | None = None,
     ) -> RetrievedChunk:
         metadata = {
             "sequence_number": str(row.sequence_number),
@@ -35,4 +36,5 @@ class RetrievedChunkMapper:
                 page_end=row.page_end,
             ),
             metadata=metadata,
+            identifier_values=list(identifier_values) if identifier_values else [],
         )

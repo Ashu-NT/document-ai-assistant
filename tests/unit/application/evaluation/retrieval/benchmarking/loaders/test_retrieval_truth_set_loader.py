@@ -13,7 +13,22 @@ from src.application.evaluation import (
 )
 from src.shared.exceptions import SchemaValidationError
 
+# `TestDoc/` is intentionally gitignored (it holds real, non-shareable customer
+# documents and the hand-authored truth set matching them), so it is absent on
+# any fresh checkout/CI runner. The tests below assert exact counts against
+# that real corpus and cannot be satisfied by a synthetic substitute without
+# testing fabricated data instead of the real thing, so they skip cleanly when
+# the fixture isn't present locally rather than failing.
+requires_default_truth_set = pytest.mark.skipif(
+    not DEFAULT_RETRIEVAL_TRUTH_SET_PATH.exists(),
+    reason=(
+        f"Default retrieval truth-set fixture not found at "
+        f"{DEFAULT_RETRIEVAL_TRUTH_SET_PATH} (gitignored; must be supplied locally)."
+    ),
+)
 
+
+@requires_default_truth_set
 def test_loader_uses_default_truth_set_path() -> None:
     dataset = RetrievalTruthSetLoader().load()
 
@@ -36,6 +51,7 @@ def test_loader_accepts_custom_path_override() -> None:
         truth_set_path.unlink(missing_ok=True)
 
 
+@requires_default_truth_set
 def test_loader_parses_all_canonical_cases_and_ignores_schema_example() -> None:
     dataset = RetrievalTruthSetLoader().load()
 
@@ -44,6 +60,7 @@ def test_loader_parses_all_canonical_cases_and_ignores_schema_example() -> None:
     assert all(case.case_id for case in dataset.cases)
 
 
+@requires_default_truth_set
 def test_loader_matches_document_family_counts() -> None:
     dataset = RetrievalTruthSetLoader().load()
 
@@ -83,6 +100,7 @@ def test_loader_normalizes_enum_values_from_markdown() -> None:
         truth_set_path.unlink(missing_ok=True)
 
 
+@requires_default_truth_set
 def test_loader_exposes_subset_definitions_and_filtered_case_views() -> None:
     dataset = RetrievalTruthSetLoader().load()
 

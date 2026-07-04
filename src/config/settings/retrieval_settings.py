@@ -23,6 +23,11 @@ class RetrievalSettings(AppBaseSettings):
         alias="ENABLE_SQL_RETRIEVAL"
     )
 
+    enable_dense_identifier_filter: bool = Field(
+        default=False,
+        alias="ENABLE_DENSE_IDENTIFIER_FILTER",
+    )
+
     dense_retrieval_top_k: int = Field(
         alias="DENSE_RETRIEVAL_TOP_K"
     )

@@ -1,5 +1,4 @@
 import hashlib
-from time import perf_counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -19,16 +18,11 @@ from src.application.evaluation.retrieval.benchmarking.loaders import (
 from src.application.services.classification import ClassificationService
 from src.application.services.document import (
     DocumentLookupService,
-    DocumentRegistrationService,
     DuplicateDetectionService,
 )
-from src.application.workflows.classification import (
-    DocumentClassificationWorkflow,
-    PostClassificationChunkFinalizationWorkflow,
-)
+from src.application.workflows.classification import DocumentClassificationWorkflow
 from src.application.workflows.ingestion import IngestionWorkflow
 from src.application.workflows.ingestion.ingestion_request import IngestionRequest
-from src.application.workflows.parsing import ParsingWorkflow
 from src.domain.classification import DocumentClassification
 from src.domain.document import DocumentGraph
 from src.shared.activity import ActivityContext
@@ -47,15 +41,10 @@ class RetrievalBenchmarkCorpusSeeder:
         self,
         *,
         ingestion_workflow: IngestionWorkflow,
-        parsing_workflow: ParsingWorkflow,
-        document_registration_service: DocumentRegistrationService,
         duplicate_detection_service: DuplicateDetectionService,
         document_lookup_service: DocumentLookupService,
         classification_service: ClassificationService,
         document_classification_workflow: DocumentClassificationWorkflow,
-        post_classification_chunk_finalization_workflow: (
-            PostClassificationChunkFinalizationWorkflow
-        ),
         truth_set_loader: RetrievalTruthSetLoader | None = None,
         unit_of_work: UnitOfWork | None = None,
         embedding_model: str | None = None,
@@ -63,15 +52,10 @@ class RetrievalBenchmarkCorpusSeeder:
         hash_computer: Callable[[Path], tuple[str, str | None]] | None = None,
     ) -> None:
         self.ingestion_workflow = ingestion_workflow
-        self.parsing_workflow = parsing_workflow
-        self.document_registration_service = document_registration_service
         self.duplicate_detection_service = duplicate_detection_service
         self.document_lookup_service = document_lookup_service
         self.classification_service = classification_service
         self.document_classification_workflow = document_classification_workflow
-        self.post_classification_chunk_finalization_workflow = (
-            post_classification_chunk_finalization_workflow
-        )
         self.truth_set_loader = truth_set_loader or RetrievalTruthSetLoader()
         self.unit_of_work = unit_of_work
         self.embedding_model = embedding_model
@@ -194,30 +178,30 @@ class RetrievalBenchmarkCorpusSeeder:
                     progress_callback,
                     (
                         f"{prefix} Existing document found for {seed_target.document_alias}: "
-                        f"{existing_document_id}. Force reparse enabled; rebuilding persisted document graph."
+                        f"{existing_document_id}. Force reparse enabled; re-ingesting through "
+                        "the canonical IngestionWorkflow (this produces a new document_id — "
+                        f"{existing_document_id} is left in place, orphaned, since safe "
+                        "reingestion-in-place and delete are not yet supported)."
                     ),
                 )
-                final_graph, classification, seed_status = (
-                    self._reseed_existing_document(
-                        document_id=existing_document_id,
-                        seed_target=seed_target,
-                        file_hash=file_hash,
-                        content_hash=content_hash,
-                        activity_context=activity_context,
-                        progress_callback=progress_callback,
-                        seed_index=seed_index,
-                        total_targets=total_targets,
-                    )
+                final_graph, classification, seed_status = self._seed_new_document(
+                    seed_target=seed_target,
+                    file_hash=file_hash,
+                    activity_context=activity_context,
+                    progress_callback=progress_callback,
+                    seed_index=seed_index,
+                    total_targets=total_targets,
+                    resulting_seed_status="reseeded_new",
                 )
             else:
                 self._emit_progress(
                     progress_callback,
                     (
                         f"{prefix} Existing document found for {seed_target.document_alias}: "
-                        f"{existing_document_id}"
+                        f"{existing_document_id}. Reusing its already-ingested graph as-is."
                     ),
                 )
-                final_graph, classification, seed_status = self._refresh_existing_document(
+                final_graph, classification, seed_status = self._reuse_existing_document(
                     document_id=existing_document_id,
                     activity_context=activity_context,
                     progress_callback=progress_callback,
@@ -257,7 +241,19 @@ class RetrievalBenchmarkCorpusSeeder:
         progress_callback: Callable[[str], None] | None = None,
         seed_index: int | None = None,
         total_targets: int | None = None,
+        resulting_seed_status: str = "seeded_new",
     ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
+        """Ingest `seed_target` through the canonical `IngestionWorkflow`.
+
+        Used both for genuinely new documents and for `--force-reparse` of an
+        already-seeded document. `IngestionRequest` has no way to target an
+        existing `document_id` (and reusing one would require re-running
+        extraction against it, which is not safe today — extraction results
+        are keyed by a fresh `extraction_id` per run with no replace-by-document
+        boundary, the same atomicity gap that blocks `IngestionWorkflow.reingest`).
+        So a forced reseed always produces a new document_id; the caller passes
+        `resulting_seed_status="reseeded_new"` to make that visible in the manifest.
+        """
         prefix = self._progress_prefix(seed_index=seed_index, total_targets=total_targets)
         self._emit_progress(
             progress_callback,
@@ -280,87 +276,9 @@ class RetrievalBenchmarkCorpusSeeder:
                 details={"document_id": result.document_id},
             )
         classification = self.classification_service.get_document_classification(result.document_id)
-        return final_graph, classification, "seeded_new"
+        return final_graph, classification, resulting_seed_status
 
-    def _reseed_existing_document(
-        self,
-        *,
-        document_id: str,
-        seed_target: _CorpusSeedTarget,
-        file_hash: str,
-        content_hash: str | None,
-        activity_context: ActivityContext | None = None,
-        progress_callback: Callable[[str], None] | None = None,
-        seed_index: int | None = None,
-        total_targets: int | None = None,
-    ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
-        prefix = self._progress_prefix(
-            seed_index=seed_index,
-            total_targets=total_targets,
-        )
-        self._emit_progress(
-            progress_callback,
-            f"{prefix} Reparsing document with the existing document ID...",
-        )
-        parsing_progress = self._scoped_progress_callback(
-            progress_callback,
-            prefix,
-        )
-        parsing_started_at = perf_counter()
-        parsing_result = self.parsing_workflow.parse(
-            file_path=str(seed_target.file_path),
-            file_hash=file_hash,
-            content_hash=content_hash,
-            document_id=document_id,
-            activity_context=activity_context,
-            progress_callback=parsing_progress,
-        )
-        parsing_elapsed_seconds = perf_counter() - parsing_started_at
-        self._emit_progress(
-            progress_callback,
-            (
-                f"{prefix} Reparse completed in "
-                f"{self._format_elapsed_seconds(parsing_elapsed_seconds)}. "
-                "Replacing persisted document graph "
-                f"({len(parsing_result.document_graph.chunks)} chunk(s))."
-            ),
-        )
-        self.document_registration_service.replace_document_graph(
-            parsing_result.document_graph,
-            activity_context=activity_context,
-        )
-        self._commit()
-
-        self._emit_progress(
-            progress_callback,
-            f"{prefix} Re-running document classification on rebuilt graph...",
-        )
-        classification = self.document_classification_workflow.classify_document(
-            parsing_result.document_graph,
-            activity_context=activity_context,
-        )
-        self._commit()
-
-        self._emit_progress(
-            progress_callback,
-            (
-                f"{prefix} Finalizing post-classification chunks, questions, "
-                "and embeddings for rebuilt document..."
-            ),
-        )
-        final_graph = self.post_classification_chunk_finalization_workflow.finalize(
-            document_id,
-            activity_context=activity_context,
-            progress_callback=self._scoped_progress_callback(
-                progress_callback,
-                prefix,
-            ),
-        )
-        self._commit()
-
-        return final_graph, classification, "reseeded_existing"
-
-    def _refresh_existing_document(
+    def _reuse_existing_document(
         self,
         *,
         document_id: str,
@@ -369,6 +287,16 @@ class RetrievalBenchmarkCorpusSeeder:
         seed_index: int | None = None,
         total_targets: int | None = None,
     ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
+        """Reuse an already-ingested document as-is, without reparsing or
+        re-finalizing anything.
+
+        This is safe (and correct, not just cheap) precisely because every
+        document that can reach this method was itself created by
+        `IngestionWorkflow.run` — chunks, embeddings, extraction, and
+        identifiers are already complete and consistent. Re-running
+        finalization here would only redo work with the same file content,
+        for no benefit.
+        """
         prefix = self._progress_prefix(
             seed_index=seed_index,
             total_targets=total_targets,
@@ -406,28 +334,7 @@ class RetrievalBenchmarkCorpusSeeder:
                 f"{prefix} Reusing existing document classification.",
             )
 
-        self._emit_progress(
-            progress_callback,
-            (
-                f"{prefix} Re-finalizing chunks, questions, and embeddings for "
-                "existing document..."
-            ),
-        )
-        final_graph = self.post_classification_chunk_finalization_workflow.finalize(
-            document_id,
-            activity_context=activity_context,
-            progress_callback=self._scoped_progress_callback(
-                progress_callback,
-                prefix,
-            ),
-        )
-        self._commit()
-
-        refreshed_classification = (
-            self.classification_service.get_document_classification(document_id)
-            or classification
-        )
-        return final_graph, refreshed_classification, "refinalized_existing"
+        return document_graph, classification, "reused_existing"
 
     def _build_manifest_document(
         self,

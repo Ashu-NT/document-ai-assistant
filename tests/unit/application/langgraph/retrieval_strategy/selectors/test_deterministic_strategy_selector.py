@@ -4,6 +4,10 @@ from src.application.langgraph.retrieval_strategy.selectors import (
     DeterministicStrategySelector,
 )
 from src.application.langgraph.retrieval_strategy.services import RetrievalSignalExtractor
+from src.application.workflows.retrieval.retrieval_query_analyzer import (
+    RetrievalQueryAnalyzer,
+)
+from src.domain.retrieval import RetrievalQuery
 
 
 def _select(question: str):
@@ -12,6 +16,27 @@ def _select(question: str):
     context = RetrievalContext(query_text=question, top_k=5)
     signals = extractor.extract(context)
     return selector.select(
+        context=context,
+        signals=signals,
+        policy=RetrievalStrategyPolicy(),
+    )
+
+
+def _select_with_full_query_analysis(question: str):
+    """Runs the real end-to-end chain: RetrievalQueryAnalyzer (which wires in
+    RetrievalQueryChunkTypePreferenceMapper) -> RetrievalSignalExtractor ->
+    DeterministicStrategySelector.
+
+    `_select()` above passes `analyzed_query=None`, which means
+    `RetrievalSignalExtractor._append_chunk_type_signals` never runs and the
+    chunk-type-preference-mapper's contribution to the final decision is
+    never exercised. This helper closes that blind spot.
+    """
+    query = RetrievalQuery(query_id="q_e2e", query_text=question)
+    analyzed = RetrievalQueryAnalyzer().analyze(query)
+    context = RetrievalContext(query_text=analyzed.query_text, top_k=5, analyzed_query=analyzed)
+    signals = RetrievalSignalExtractor().extract(context)
+    return DeterministicStrategySelector().select(
         context=context,
         signals=signals,
         policy=RetrievalStrategyPolicy(),
@@ -79,3 +104,73 @@ def test_deterministic_selector_falls_back_to_general_hybrid() -> None:
     decision = _select("Tell me something useful")
 
     assert decision.primary_strategy.value == "GENERAL_HYBRID"
+
+
+# --- Full end-to-end chain (P1#5 regression) --------------------------------------
+#
+# outputs/debug_agent_runtime/maintenance_interval_end_to_end_debug_report.md traced
+# a real production bug: "What are the maintenance intervals?" selected
+# TECHNICAL_SPECIFICATION as a secondary strategy, via (a) a low-precision
+# specification lexical trigger (" a"/" v" matching inside "what are") and
+# (b) the MAINTENANCE chunk-type preference list still including
+# ChunkType.TECHNICAL_SPECIFICATION. Verified against current code (2026-07-02,
+# via git history and direct execution) that both root causes are already
+# fixed. These tests exercise the *complete* real chain — including
+# RetrievalQueryAnalyzer / RetrievalQueryChunkTypePreferenceMapper, which the
+# `_select()` tests above never exercise since they pass `analyzed_query=None` —
+# so a regression in either fix would be caught here.
+
+def test_full_chain_plain_maintenance_interval_query_excludes_technical_specification() -> None:
+    decision = _select_with_full_query_analysis("What are the maintenance intervals?")
+
+    assert decision.primary_strategy.value == "MAINTENANCE_LOOKUP"
+    assert "TABLE_LOOKUP" in [item.value for item in decision.secondary_strategies]
+    assert "TECHNICAL_SPECIFICATION" not in [
+        item.value for item in decision.secondary_strategies
+    ]
+
+
+def test_full_chain_maintenance_interval_query_variants_exclude_technical_specification() -> None:
+    variants = [
+        "What are the maintenance intervals?",
+        "How often should the filter be replaced?",
+        "Is there a maintenance schedule for this equipment?",
+        "What maintenance tasks are required for this document?",
+    ]
+
+    for question in variants:
+        decision = _select_with_full_query_analysis(question)
+        secondary_values = [item.value for item in decision.secondary_strategies]
+
+        assert decision.primary_strategy.value == "MAINTENANCE_LOOKUP", question
+        assert "TECHNICAL_SPECIFICATION" not in secondary_values, question
+
+
+def test_full_chain_explicit_specification_query_still_selects_specification() -> None:
+    """A genuinely spec-focused query must still surface the specification
+    strategy - the maintenance-branch fix must not blind the SPECIFICATION
+    branch itself. Under the full chain this query legitimately resolves to
+    MULTI_STRATEGY (the SPECIFICATION chunk-type preferences also list
+    maintenance/procedure-adjacent chunk types as supporting context), so the
+    invariant under test is "specification is present", not "specification is
+    the only strategy chosen"."""
+    decision = _select_with_full_query_analysis(
+        "What is the test pressure and design pressure?"
+    )
+
+    all_strategies = {decision.primary_strategy.value} | {
+        item.value for item in decision.secondary_strategies
+    }
+    assert "TECHNICAL_SPECIFICATION" in all_strategies
+
+
+def test_full_chain_compare_query_still_allows_technical_specification_when_explicitly_asked() -> None:
+    decision = _select_with_full_query_analysis(
+        "Compare maintenance intervals and technical specifications"
+    )
+
+    assert decision.primary_strategy.value == "MULTI_STRATEGY"
+    assert "MAINTENANCE_LOOKUP" in [item.value for item in decision.secondary_strategies]
+    assert "TECHNICAL_SPECIFICATION" in [
+        item.value for item in decision.secondary_strategies
+    ]

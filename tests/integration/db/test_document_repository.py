@@ -223,6 +223,23 @@ def test_document_repository_replaces_document_chunk_artifacts(
     assert list(loaded.identifiers) == ["identifier_002"]
 
 
+def test_document_repository_delete_document_removes_all_dependent_rows(
+    db_uow,
+    sample_document_graph,
+    document_id,
+) -> None:
+    db_uow.documents.save_document_graph(sample_document_graph)
+    db_uow.commit()
+
+    db_uow.documents.delete_document(document_id)
+    db_uow.commit()
+
+    assert db_uow.documents.get_document_graph(document_id) is None
+    assert db_uow.documents.get_document_entry(document_id) is None
+    assert db_uow.documents.list_chunks_by_document(document_id) == []
+    assert db_uow.documents.search_identifiers("HP-001") == []
+
+
 def test_document_repository_replaces_document_graph(
     db_uow,
     sample_document_graph,

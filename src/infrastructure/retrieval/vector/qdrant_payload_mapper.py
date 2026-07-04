@@ -54,6 +54,13 @@ class QdrantPayloadMapper:
         if payload.get("document_type") is not None:
             metadata["document_type"] = str(payload.get("document_type"))
 
+        raw_identifier_values = payload.get("identifier_values") or []
+        identifier_values = (
+            [str(value) for value in raw_identifier_values]
+            if isinstance(raw_identifier_values, list)
+            else []
+        )
+
         return RetrievedChunk(
             chunk_id=str(payload.get("chunk_id") or point.id),
             document_id=str(payload.get("document_id") or ""),
@@ -72,6 +79,7 @@ class QdrantPayloadMapper:
                 page_end=QdrantPayloadMapper._coerce_int(payload.get("page_end")),
             ),
             metadata=metadata,
+            identifier_values=identifier_values,
         )
 
     @staticmethod

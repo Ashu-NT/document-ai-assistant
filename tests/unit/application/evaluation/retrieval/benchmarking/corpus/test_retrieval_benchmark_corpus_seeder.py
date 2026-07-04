@@ -19,9 +19,6 @@ from src.application.evaluation.retrieval.benchmarking.models import (
 )
 from src.application.workflows.ingestion import IngestionResult, IngestionStatus
 from src.application.workflows.ingestion.ingestion_request import IngestionRequest
-from src.application.workflows.parsing.parsing_workflow_result import (
-    ParsingWorkflowResult,
-)
 from src.domain.classification import ClassificationResult, DocumentClassification
 from src.domain.common import (
     ChunkType,
@@ -78,37 +75,6 @@ class FakeDuplicateDetectionService:
         )
 
 
-class FakeDocumentRegistrationService:
-    def __init__(self, operations: list[str]) -> None:
-        self.operations = operations
-        self.calls: list[DocumentGraph] = []
-        self.replace_calls: list[DocumentGraph] = []
-
-    def register_document_graph(
-        self,
-        document_graph: DocumentGraph,
-        activity_context=None,
-    ) -> ActionResult:
-        self.operations.append("register")
-        self.calls.append(document_graph)
-        return ActionResult(
-            entity_type="document",
-            entity_id=document_graph.document.document_id,
-        )
-
-    def replace_document_graph(
-        self,
-        document_graph: DocumentGraph,
-        activity_context=None,
-    ) -> ActionResult:
-        self.operations.append("replace_graph")
-        self.replace_calls.append(document_graph)
-        return ActionResult(
-            entity_type="document",
-            entity_id=document_graph.document.document_id,
-        )
-
-
 class FakeDocumentLookupService:
     def __init__(self, graphs: dict[str, DocumentGraph]) -> None:
         self.graphs = graphs
@@ -155,67 +121,6 @@ class FakeDocumentClassificationWorkflow:
         self.operations.append("classify")
         self.calls.append(document_id)
         return self.classifications_by_document_id[document_id]
-
-
-class FakeParsingWorkflow:
-    def __init__(self, operations: list[str], graphs_by_path: dict[str, DocumentGraph]) -> None:
-        self.operations = operations
-        self.graphs_by_path = graphs_by_path
-        self.calls: list[dict[str, str | None]] = []
-
-    def parse(
-        self,
-        *,
-        file_path: str,
-        file_hash: str,
-        content_hash: str | None,
-        document_id: str | None = None,
-        activity_context=None,
-        progress_callback=None,
-    ) -> ParsingWorkflowResult:
-        self.operations.append("parse")
-        self.calls.append(
-            {
-                "file_path": file_path,
-                "file_hash": file_hash,
-                "content_hash": content_hash,
-            }
-        )
-        if progress_callback is not None:
-            progress_callback("fake parsing progress")
-        graph = self.graphs_by_path[file_path]
-        return ParsingWorkflowResult(
-            document_id=graph.document.document_id,
-            file_path=file_path,
-            page_count=graph.document.statistics.page_count,
-            element_count=len(graph.elements),
-            section_count=len(graph.sections),
-            chunk_count=len(graph.chunks),
-            table_count=0,
-            picture_count=0,
-            document_graph=graph,
-        )
-
-
-class FakePostClassificationChunkFinalizationWorkflow:
-    def __init__(self, operations: list[str], graphs_by_document_id: dict[str, DocumentGraph]) -> None:
-        self.operations = operations
-        self.graphs_by_document_id = graphs_by_document_id
-        self.calls: list[str] = []
-
-    def finalize(
-        self,
-        document_id: str,
-        *,
-        max_questions_per_chunk: int = 5,
-        activity_context=None,
-        progress_callback=None,
-    ) -> DocumentGraph:
-        self.operations.append("finalize")
-        self.calls.append(document_id)
-        if progress_callback is not None:
-            progress_callback(f"fake finalization for {document_id}")
-        return self.graphs_by_document_id[document_id]
 
 
 class FakeIngestionWorkflow:
@@ -381,7 +286,6 @@ def build_seeder(
     *,
     dataset: RetrievalBenchmarkDataset,
     operations: list[str],
-    parsing_graphs_by_path: dict[str, DocumentGraph],
     final_graphs_by_document_id: dict[str, DocumentGraph],
     ingestion_workflow: FakeIngestionWorkflow | None = None,
     duplicate_matches: dict[str, str] | None = None,
@@ -390,11 +294,8 @@ def build_seeder(
 ):
     truth_set_loader = FakeTruthSetLoader(dataset)
     classification_lookup = classifications or {}
-    parsing_workflow = FakeParsingWorkflow(operations, parsing_graphs_by_path)
     seeder = RetrievalBenchmarkCorpusSeeder(
         ingestion_workflow=ingestion_workflow or FakeIngestionWorkflow(),
-        parsing_workflow=parsing_workflow,
-        document_registration_service=FakeDocumentRegistrationService(operations),
         duplicate_detection_service=FakeDuplicateDetectionService(duplicate_matches),
         document_lookup_service=FakeDocumentLookupService(final_graphs_by_document_id),
         classification_service=FakeClassificationService(classification_lookup),
@@ -402,18 +303,12 @@ def build_seeder(
             operations,
             classification_lookup,
         ),
-        post_classification_chunk_finalization_workflow=(
-            FakePostClassificationChunkFinalizationWorkflow(
-                operations,
-                final_graphs_by_document_id,
-            )
-        ),
         truth_set_loader=truth_set_loader,
         unit_of_work=unit_of_work,
         embedding_model="test-embedding-model",
         vector_collection="test_collection",
     )
-    return seeder, truth_set_loader, parsing_workflow
+    return seeder, truth_set_loader
 
 
 def test_seed_corpus_runs_workflows_and_builds_manifest_from_final_chunks(
@@ -442,20 +337,6 @@ def test_seed_corpus_runs_workflows_and_builds_manifest_from_final_chunks(
                 file_name=second_file.name,
             ),
         ],
-    )
-    provisional_manual = build_document_graph(
-        document_id="doc_manual",
-        file_name=first_file.name,
-        file_path=str(first_file),
-        document_type=DocumentType.UNKNOWN,
-        chunk_texts=["provisional manual chunk"],
-    )
-    provisional_report = build_document_graph(
-        document_id="doc_report",
-        file_name=second_file.name,
-        file_path=str(second_file),
-        document_type=DocumentType.UNKNOWN,
-        chunk_texts=["provisional report chunk"],
     )
     final_manual = build_document_graph(
         document_id="doc_manual",
@@ -501,10 +382,9 @@ def test_seed_corpus_runs_workflows_and_builds_manifest_from_final_chunks(
     )
     operations: list[str] = []
     unit_of_work = FakeUnitOfWork()
-    seeder, truth_set_loader, parsing_workflow = build_seeder(
+    seeder, truth_set_loader = build_seeder(
         dataset=dataset,
         operations=operations,
-        parsing_graphs_by_path={},
         final_graphs_by_document_id={
             "doc_manual": final_manual,
             "doc_report": final_report,
@@ -520,7 +400,6 @@ def test_seed_corpus_runs_workflows_and_builds_manifest_from_final_chunks(
     )
 
     assert truth_set_loader.calls == [truth_set_path]
-    assert parsing_workflow.calls == []
     assert len(fake_ingestion_workflow.calls) == 2
     assert fake_ingestion_workflow.calls[0].file_path == str(first_file)
     assert fake_ingestion_workflow.calls[0].force is True
@@ -538,7 +417,7 @@ def test_seed_corpus_runs_workflows_and_builds_manifest_from_final_chunks(
     assert manifest.documents[1].file_path == second_file
 
 
-def test_seed_corpus_refinalizes_existing_duplicate_without_reparsing(
+def test_seed_corpus_reuses_existing_duplicate_without_ingesting_again(
 ) -> None:
     tmp_path = make_workspace_temp_dir()
     truth_set_path = tmp_path / "retrieval_truth_set.md"
@@ -576,11 +455,12 @@ def test_seed_corpus_refinalizes_existing_duplicate_without_reparsing(
     }
     operations: list[str] = []
     unit_of_work = FakeUnitOfWork()
-    seeder, _, parsing_workflow = build_seeder(
+    fake_ingestion_workflow = FakeIngestionWorkflow()
+    seeder, _ = build_seeder(
         dataset=dataset,
         operations=operations,
-        parsing_graphs_by_path={},
         final_graphs_by_document_id={"doc_existing": final_graph},
+        ingestion_workflow=fake_ingestion_workflow,
         duplicate_matches={file_hash: "doc_existing"},
         classifications=classifications,
         unit_of_work=unit_of_work,
@@ -591,11 +471,11 @@ def test_seed_corpus_refinalizes_existing_duplicate_without_reparsing(
         input_directory=input_directory,
     )
 
-    assert parsing_workflow.calls == []
-    assert operations == ["finalize"]
-    assert unit_of_work.commit_calls == 1
+    assert fake_ingestion_workflow.calls == []
+    assert operations == []
+    assert unit_of_work.commit_calls == 0
     assert manifest.documents[0].document_id == "doc_existing"
-    assert manifest.documents[0].seed_status == "refinalized_existing"
+    assert manifest.documents[0].seed_status == "reused_existing"
     assert manifest.documents[0].classification_confidence == 0.88
 
 
@@ -635,10 +515,9 @@ def test_seed_corpus_classifies_existing_duplicate_when_classification_missing(
     )
     operations: list[str] = []
     unit_of_work = FakeUnitOfWork()
-    seeder, _, parsing_workflow = build_seeder(
+    seeder, _ = build_seeder(
         dataset=dataset,
         operations=operations,
-        parsing_graphs_by_path={},
         final_graphs_by_document_id={"doc_existing": final_graph},
         duplicate_matches={file_hash: "doc_existing"},
         classifications={"doc_existing": classification},
@@ -651,13 +530,21 @@ def test_seed_corpus_classifies_existing_duplicate_when_classification_missing(
         input_directory=input_directory,
     )
 
-    assert parsing_workflow.calls == []
-    assert operations == ["classify", "finalize"]
-    assert unit_of_work.commit_calls == 2
+    assert operations == ["classify"]
+    assert unit_of_work.commit_calls == 1
+    assert manifest.documents[0].seed_status == "reused_existing"
     assert manifest.documents[0].classification_confidence == 0.79
 
 
-def test_seed_corpus_force_reparses_existing_duplicate_and_replaces_graph() -> None:
+def test_seed_corpus_force_reparses_existing_duplicate_via_ingestion_workflow() -> None:
+    """--force-reparse routes through the canonical IngestionWorkflow, same as a
+    genuinely new document. IngestionRequest has no way to target an existing
+    document_id (and reusing one would mean re-running extraction against it,
+    which is unsafe today - extraction results are not replaced atomically),
+    so a forced reseed always produces a *new* document_id. The old
+    document_id is left in place, orphaned, since safe delete isn't supported
+    yet either - that's tracked as a known, accepted limitation, not silently
+    swept under the rug."""
     tmp_path = make_workspace_temp_dir()
     truth_set_path = tmp_path / "retrieval_truth_set.md"
     truth_set_path.write_text("truth set", encoding="utf-8")
@@ -676,15 +563,8 @@ def test_seed_corpus_force_reparses_existing_duplicate_and_replaces_graph() -> N
             )
         ],
     )
-    provisional_graph = build_document_graph(
-        document_id="doc_existing",
-        file_name=file_path.name,
-        file_path=str(file_path),
-        document_type=DocumentType.UNKNOWN,
-        chunk_texts=["provisional chunk"],
-    )
     final_graph = build_document_graph(
-        document_id="doc_existing",
+        document_id="doc_new",
         file_name=file_path.name,
         file_path=str(file_path),
         document_type=DocumentType.MANUAL,
@@ -693,19 +573,28 @@ def test_seed_corpus_force_reparses_existing_duplicate_and_replaces_graph() -> N
     )
     file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(file_path)[0]
     classification = build_document_classification(
-        document_id="doc_existing",
+        document_id="doc_new",
         document_type=DocumentType.MANUAL,
         confidence_score=0.92,
     )
     operations: list[str] = []
     unit_of_work = FakeUnitOfWork()
-    seeder, _, parsing_workflow = build_seeder(
+    fake_ingestion_workflow = FakeIngestionWorkflow(
+        results_by_path={
+            str(file_path): IngestionResult(
+                status=IngestionStatus.COMPLETE,
+                document_id="doc_new",
+                file_name=file_path.name,
+            ),
+        }
+    )
+    seeder, _ = build_seeder(
         dataset=dataset,
         operations=operations,
-        parsing_graphs_by_path={str(file_path): provisional_graph},
-        final_graphs_by_document_id={"doc_existing": final_graph},
+        final_graphs_by_document_id={"doc_new": final_graph},
+        ingestion_workflow=fake_ingestion_workflow,
         duplicate_matches={file_hash: "doc_existing"},
-        classifications={"doc_existing": classification},
+        classifications={"doc_new": classification},
         unit_of_work=unit_of_work,
     )
 
@@ -715,12 +604,13 @@ def test_seed_corpus_force_reparses_existing_duplicate_and_replaces_graph() -> N
         force_reparse_existing=True,
     )
 
-    assert len(parsing_workflow.calls) == 1
-    assert parsing_workflow.calls[0]["file_path"] == str(file_path)
-    assert operations == ["parse", "replace_graph", "classify", "finalize"]
-    assert unit_of_work.commit_calls == 3
-    assert manifest.documents[0].document_id == "doc_existing"
-    assert manifest.documents[0].seed_status == "reseeded_existing"
+    assert len(fake_ingestion_workflow.calls) == 1
+    assert fake_ingestion_workflow.calls[0].file_path == str(file_path)
+    assert fake_ingestion_workflow.calls[0].force is True
+    assert operations == []
+    # a genuinely new document_id, distinct from the stale "doc_existing"
+    assert manifest.documents[0].document_id == "doc_new"
+    assert manifest.documents[0].seed_status == "reseeded_new"
 
 
 def test_seed_corpus_rejects_conflicting_alias_mapping() -> None:
@@ -748,10 +638,9 @@ def test_seed_corpus_rejects_conflicting_alias_mapping() -> None:
         ],
     )
     operations: list[str] = []
-    seeder, _, _ = build_seeder(
+    seeder, _ = build_seeder(
         dataset=dataset,
         operations=operations,
-        parsing_graphs_by_path={},
         final_graphs_by_document_id={},
         classifications={},
     )
@@ -781,10 +670,9 @@ def test_seed_corpus_fails_when_expected_file_is_missing() -> None:
         ],
     )
     operations: list[str] = []
-    seeder, _, _ = build_seeder(
+    seeder, _ = build_seeder(
         dataset=dataset,
         operations=operations,
-        parsing_graphs_by_path={},
         final_graphs_by_document_id={},
         classifications={},
     )
@@ -815,13 +703,6 @@ def test_seed_corpus_emits_progress_messages_for_major_stages() -> None:
             )
         ],
     )
-    provisional_graph = build_document_graph(
-        document_id="doc_manual",
-        file_name=file_path.name,
-        file_path=str(file_path),
-        document_type=DocumentType.UNKNOWN,
-        chunk_texts=["provisional manual chunk"],
-    )
     final_graph = build_document_graph(
         document_id="doc_manual",
         file_name=file_path.name,
@@ -848,10 +729,9 @@ def test_seed_corpus_emits_progress_messages_for_major_stages() -> None:
     )
     operations: list[str] = []
     unit_of_work = FakeUnitOfWork()
-    seeder, _, _ = build_seeder(
+    seeder, _ = build_seeder(
         dataset=dataset,
         operations=operations,
-        parsing_graphs_by_path={},
         final_graphs_by_document_id={"doc_manual": final_graph},
         ingestion_workflow=fake_ingestion_workflow,
         classifications=classifications,

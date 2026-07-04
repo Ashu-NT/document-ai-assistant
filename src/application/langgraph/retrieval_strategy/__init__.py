@@ -19,10 +19,6 @@ from src.application.langgraph.retrieval_strategy.policies import (
     StrategyPriorityPolicy,
     StrategyRetryPolicy,
 )
-from src.application.langgraph.retrieval_strategy.prompts import (
-    RETRIEVAL_STRATEGY_PROMPT_VERSION,
-    RetrievalStrategyPromptBuilder,
-)
 from src.application.langgraph.retrieval_strategy.selectors import (
     DeterministicStrategySelector,
     LLMStrategySelector,
@@ -44,7 +40,6 @@ __all__ = [
     "CLI_RETRIEVAL_STRATEGY_ALIASES",
     "DeterministicStrategySelector",
     "LLMStrategySelector",
-    "RETRIEVAL_STRATEGY_PROMPT_VERSION",
     "RetrievalContext",
     "RetrievalEvidenceMerger",
     "RetrievalExecutionResult",
@@ -57,7 +52,6 @@ __all__ = [
     "RetrievalStrategyDecision",
     "RetrievalStrategyJsonParser",
     "RetrievalStrategyPolicy",
-    "RetrievalStrategyPromptBuilder",
     "RetrievalStrategyResult",
     "RetrievalStrategyService",
     "RetrievalStrategySignal",

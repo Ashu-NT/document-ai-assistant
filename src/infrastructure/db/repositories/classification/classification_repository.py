@@ -35,6 +35,9 @@ class SqlAlchemyClassificationRepository(ClassificationRepository):
     ) -> DocumentClassification | None:
         return self.document_reader.get(document_id)
 
+    def delete_document_classification(self, document_id: str) -> None:
+        self.document_writer.delete_by_document(document_id)
+
     def save_chunk_classification(
         self,
         classification: ChunkClassification,

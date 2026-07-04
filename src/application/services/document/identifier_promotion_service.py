@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from src.config.logging import get_logger
 from src.domain.common.enums import IdentifierType
 from src.domain.common.value_objects import normalize_identifier
 from src.domain.document import DocumentGraph
@@ -7,8 +8,13 @@ from src.domain.document.entities.identifier import Identifier
 from src.domain.extraction.extraction_result import ExtractionResult
 from src.shared.ids import IdGenerator, IdPrefix
 
+_logger = get_logger(__name__)
+
 
 class IdentifierPromotionService:
+    def __init__(self, *, min_length: int = 1) -> None:
+        self.min_length = min_length
+
     def promote(
         self,
         extraction_result: ExtractionResult,
@@ -81,6 +87,14 @@ class IdentifierPromotionService:
                     identifier_type = IdentifierType(extracted.identifier_type)
                 except ValueError:
                     identifier_type = IdentifierType.UNKNOWN
+                    _logger.warning(
+                        "Extracted identifier type %r did not match a known "
+                        "IdentifierType; falling back to UNKNOWN (document_id=%s, "
+                        "raw_value=%r).",
+                        extracted.identifier_type,
+                        document_id,
+                        extracted.raw_value,
+                    )
                 chunk = document_graph.chunks.get(extracted.source_chunk_id or "")
                 identifier = self._make(
                     document_id=document_id,
@@ -98,8 +112,8 @@ class IdentifierPromotionService:
 
         return identifiers
 
-    @staticmethod
     def _make(
+        self,
         *,
         document_id: str,
         raw_value: str | None,
@@ -114,7 +128,7 @@ class IdentifierPromotionService:
         if not raw_value or not raw_value.strip():
             return None
         normalized = normalize_identifier(raw_value)
-        if not normalized:
+        if not normalized or len(normalized) < self.min_length:
             return None
         dedup_key = (normalized, identifier_type.value)
         if dedup_key in seen:

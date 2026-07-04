@@ -1,0 +1,15 @@
+# Priority order used to rank/sort candidate retrieval strategies.
+# Earlier entries win ties when multiple strategies apply to the same query.
+ordered_strategies:
+  - IDENTIFIER_LOOKUP
+  - TABLE_LOOKUP
+  - TECHNICAL_SPECIFICATION
+  - MAINTENANCE_LOOKUP
+  - PROCEDURE_LOOKUP
+  - TROUBLESHOOTING_LOOKUP
+  - CERTIFICATION_LOOKUP
+  - DRAWING_LOOKUP
+  - FIGURE_LOOKUP
+  - SECTION_LOOKUP
+  - DOCUMENT_EXPLORATION
+  - GENERAL_HYBRID

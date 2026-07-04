@@ -6,7 +6,8 @@ from src.application.workflows.ingestion.delete_document_workflow import (
     DeleteDocumentWorkflow,
 )
 from src.application.workflows.ingestion.ingestion_exceptions import (
-    DeleteDocumentNotSupportedError,
+    DocumentNotFoundForDeletionError,
+    DocumentNotFoundForReingestionError,
     IngestionDependencyError,
     IngestionIndexingError,
     IngestionStorageError,
@@ -25,8 +26,9 @@ from src.application.workflows.ingestion.reingestion_request import (
 __all__ = [
     "CorpusStatisticsResult",
     "CorpusStatisticsWorkflow",
-    "DeleteDocumentNotSupportedError",
     "DeleteDocumentWorkflow",
+    "DocumentNotFoundForDeletionError",
+    "DocumentNotFoundForReingestionError",
     "IngestionDependencyError",
     "IngestionIndexingError",
     "IngestionRequest",

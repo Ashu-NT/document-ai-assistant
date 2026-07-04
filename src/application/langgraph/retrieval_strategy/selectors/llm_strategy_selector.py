@@ -8,12 +8,10 @@ from src.application.langgraph.retrieval_strategy.models import (
 from src.application.langgraph.retrieval_strategy.policies import (
     RetrievalStrategyPolicy,
 )
-from src.application.langgraph.retrieval_strategy.prompts import (
-    RetrievalStrategyPromptBuilder,
-)
 from src.application.langgraph.retrieval_strategy.services.retrieval_strategy_json_parser import (
     RetrievalStrategyJsonParser,
 )
+from src.application.prompts.retrieval_strategy import RetrievalStrategyPromptBuilder
 from src.application.services.ai import LLMService
 
 

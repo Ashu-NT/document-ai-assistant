@@ -48,3 +48,13 @@ class ExtractionSettings(AppBaseSettings):
         default=True,
         alias="EXTRACTION_JSON_MODE",
     )
+
+    identifier_extraction_enabled: bool = Field(
+        default=True,
+        alias="ENABLE_IDENTIFIER_EXTRACTION",
+    )
+
+    identifier_min_length: int = Field(
+        default=3,
+        alias="IDENTIFIER_MIN_LENGTH",
+    )

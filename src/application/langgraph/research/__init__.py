@@ -50,12 +50,6 @@ from src.application.langgraph.research.presentation import (
     ResearchSectionTitleMapper,
     TableTextSummarizer,
 )
-from src.application.langgraph.research.prompts import (
-    RESEARCH_PLANNING_PROMPT_VERSION,
-    RESEARCH_SYNTHESIS_PROMPT_VERSION,
-    ResearchPlanningPromptBuilder,
-    ResearchSynthesisPromptBuilder,
-)
 from src.application.langgraph.research.services import (
     ResearchContextBuilder,
     ResearchEvidenceMerger,
@@ -91,9 +85,7 @@ __all__ = [
     "EnterpriseResearchReportFormatter",
     "LLMResearchPlanner",
     "MaintenanceReportSynthesizer",
-    "RESEARCH_PLANNING_PROMPT_VERSION",
     "RESEARCH_ROUTE_TRIGGER_TERMS",
-    "RESEARCH_SYNTHESIS_PROMPT_VERSION",
     "ResearchCitationFormatter",
     "ResearchContextBuilder",
     "ResearchEvidence",
@@ -115,7 +107,6 @@ __all__ = [
     "ResearchPlanBuilder",
     "ResearchPlanRepair",
     "ResearchPlanValidator",
-    "ResearchPlanningPromptBuilder",
     "ResearchPolicy",
     "ResearchQualityEvaluator",
     "ResearchReport",
@@ -126,7 +117,6 @@ __all__ = [
     "ResearchService",
     "ResearchSynthesis",
     "ResearchSynthesisPolicy",
-    "ResearchSynthesisPromptBuilder",
     "ResearchTask",
     "ResearchTaskExecutor",
     "ResearchTaskPolicy",

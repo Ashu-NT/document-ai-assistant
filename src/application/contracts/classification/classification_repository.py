@@ -16,6 +16,9 @@ class ClassificationRepository(Protocol):
     ) -> DocumentClassification | None:
         ...
 
+    def delete_document_classification(self, document_id: str) -> None:
+        ...
+
     def save_chunk_classification(
         self,
         classification: ChunkClassification,

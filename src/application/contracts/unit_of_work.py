@@ -5,6 +5,7 @@ from src.application.contracts.classification import ClassificationRepository
 from src.application.contracts.document import DocumentRepository, IngestionRunRepository
 from src.application.contracts.extraction import ExtractionRepository
 from src.application.contracts.memory import MemoryRepository
+from src.application.contracts.retrieval import VectorMappingRepository
 
 
 class UnitOfWork(Protocol):
@@ -13,6 +14,7 @@ class UnitOfWork(Protocol):
     extractions: ExtractionRepository
     memory: MemoryRepository
     ingestion_runs: IngestionRunRepository
+    vector_mappings: VectorMappingRepository
 
     def __enter__(self) -> Self:
         ...

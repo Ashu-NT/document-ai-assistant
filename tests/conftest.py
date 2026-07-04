@@ -27,7 +27,7 @@ from src.domain.extraction import (
     SparePart,
 )
 from src.domain.retrieval import Citation, RetrievalQuery, RetrievalResult, RetrievedChunk
-from src.domain.workflows import IngestionRun
+from src.domain.workflow import IngestionRun
 from src.domain.classification import (
     ChunkClassification,
     ClassificationResult,

@@ -1,0 +1,26 @@
+max_research_tasks: 5
+max_research_iterations: 1
+max_research_evidence_per_task: 8
+max_total_research_evidence: 25
+
+# Terms that trigger routing a query into the deep-research path instead of
+# the standard single-turn QA path.
+route_trigger_terms:
+  - compare
+  - analyze
+  - research
+  - report
+  - checklist
+  - "summarize all"
+  - "find every"
+  - difference
+  - "relationship between"
+  - "identify missing"
+  - cross-check
+  - "across the document"
+  - "all maintenance"
+  - "all inspection"
+  - "all warnings"
+  - "all specifications"
+  - "preventive maintenance"
+  - "evidence supports"

@@ -1,0 +1,24 @@
+allowed_tools:
+  - list_documents
+  - find_document
+  - document_details
+  - explore_document
+  - retrieve_chunks
+  - retrieve_tables
+  - retrieve_figures
+  - retrieve_identifiers
+  - answer_question
+  - run_quality_gate
+  - retrieval_trace
+
+blocked_tools:
+  - delete_document
+  - reingest_document
+  - ingest_document
+  - bulk_delete
+  - vector_delete
+  - database_reset
+  - arbitrary_shell
+
+block_mutating_tools_in_demo: true
+require_registered_tools: true

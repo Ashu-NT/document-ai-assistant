@@ -173,6 +173,7 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
     from src.config.settings import (  # noqa: WPS433
         embedding_settings,
         qdrant_settings,
+        retrieval_settings,
     )
     from src.infrastructure.ai.embeddings import create_embedding_provider  # noqa: WPS433
     from src.infrastructure.db.base import Base  # noqa: WPS433
@@ -204,6 +205,7 @@ def build_benchmark_runtime() -> BenchmarkRuntime:
         embedding_model=embedding_settings.model_name,
         query_embedding_provider=embedding_provider,
         document_repository=unit_of_work.documents,
+        enable_identifier_filter=retrieval_settings.enable_dense_identifier_filter,
     )
     document_lookup_service = DocumentLookupService(unit_of_work.documents)
     retrieval_service = HybridRetrievalService(

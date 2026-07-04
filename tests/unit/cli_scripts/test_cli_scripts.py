@@ -195,7 +195,7 @@ def test_ask_document_page_range_no_page():
     assert mod._page_range(source) == ""
 
 
-def test_ask_document_print_result_shows_full_document_id_and_context_source(
+def test_ask_document_print_result_truncates_document_id_in_context(
     capsys,
 ):
     mod = _load_script("ask_document")
@@ -250,5 +250,6 @@ def test_ask_document_print_result_shows_full_document_id_and_context_source(
 
     output = capsys.readouterr().out
     assert "Selected Document" in output
-    assert "doc: doc_001_full_scope" in output
+    assert f"doc: {mod._trunc(chunk.document_id, 12)}" in output
+    assert "doc_001_full_scope" not in output
     assert "source: dense" in output

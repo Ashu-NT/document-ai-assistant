@@ -22,6 +22,7 @@ class RetrievedChunk:
     citation: Citation | None = None
 
     metadata: dict[str, str] = field(default_factory=dict)
+    identifier_values: list[str] = field(default_factory=list)
 
     def is_relevant(self, threshold: float) -> bool:
         return self.score >= threshold

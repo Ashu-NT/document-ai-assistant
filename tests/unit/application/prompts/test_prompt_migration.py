@@ -3,9 +3,22 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 
+# First-party source only. Walking the whole PROJECT_ROOT would also traverse
+# vendored/generated trees (e.g. a local `myenv/` virtualenv), which are not
+# UTF-8-clean and are irrelevant to a check for legacy first-party imports.
+_FIRST_PARTY_SOURCE_DIRS = ("src", "scripts", "tests", "alembic")
+
 
 def _read(path: str) -> str:
     return (PROJECT_ROOT / path).read_text(encoding="utf-8")
+
+
+def _iter_first_party_python_files():
+    for directory in _FIRST_PARTY_SOURCE_DIRS:
+        for path in (PROJECT_ROOT / directory).rglob("*.py"):
+            if "__pycache__" in path.parts:
+                continue
+            yield path
 
 
 def test_services_no_longer_contain_large_inline_prompt_strings() -> None:
@@ -30,11 +43,14 @@ def test_old_prompt_builder_import_paths_are_gone() -> None:
         "src.application.workflows.classification.prompt_builders",
         "src.application.workflows.extraction.prompt_builders",
         "src.application.services.answer_generation.grounded_prompt_builder",
+        "src.application.langgraph.planning.plan_prompt_builder",
+        "src.application.langgraph.reflection.prompts",
+        "src.application.langgraph.research.prompts",
+        "src.application.langgraph.retrieval_strategy.prompts",
+        "src.application.langgraph.strategy_advisor.advisor_prompt_builder",
     ]
 
-    for path in PROJECT_ROOT.rglob("*.py"):
-        if ".git" in path.parts or "__pycache__" in path.parts:
-            continue
+    for path in _iter_first_party_python_files():
         if path == Path(__file__):
             continue
         contents = path.read_text(encoding="utf-8")

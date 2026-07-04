@@ -24,73 +24,20 @@ for import_root in (PROJECT_ROOT, SRC_ROOT):
         sys.path.insert(0, import_root_text)
 
 from qdrant_client import QdrantClient  # noqa: E402
-from qdrant_client.models import Distance, VectorParams  # noqa: E402
 
 from src.application.evaluation.retrieval import (  # noqa: E402
     DEFAULT_RETRIEVAL_TRUTH_SET_PATH,
     RetrievalBenchmarkCorpusSeeder,
 )
-from src.application.services.ai import (  # noqa: E402
-    EmbeddingService,
-    LLMService,
-)
-from src.application.services.classification import ClassificationService  # noqa: E402
-from src.application.services.document import (  # noqa: E402
-    DocumentLookupService,
-    DocumentRegistrationService,
-    DuplicateDetectionService,
-)
-from src.application.services.question_generation import (  # noqa: E402
-    QuestionGenerationService,
-)
-from src.application.validation.classification import (  # noqa: E402
-    ChunkClassificationValidator,
-    DocumentClassificationValidator,
-)
-from src.application.validation.document import DocumentGraphValidator  # noqa: E402
-from src.application.workflows.classification import (  # noqa: E402
-    ChunkClassificationWorkflow,
-    ChunkTypeClassificationWorkflow,
-    DocumentClassificationWorkflow,
-    PostClassificationChunkFinalizationWorkflow,
-)
-from src.application.services.extraction import ExtractionService  # noqa: E402
-from src.application.validation.extraction import ExtractionResultValidator  # noqa: E402
-from src.application.workflows.embedding import EmbeddingWorkflow  # noqa: E402
-from src.application.workflows.extraction import ExtractionWorkflow  # noqa: E402
-from src.application.workflows.ingestion import IngestionWorkflow  # noqa: E402
-from src.application.validation.ingestion import IngestionRequestValidator  # noqa: E402
-from src.application.workflows.parsing import ParsingWorkflow  # noqa: E402
-from src.application.workflows.parsing.ocr import (  # noqa: E402
-    build_parsing_ocr_runtime,
-)
-from src.application.workflows.parsing.builders import (  # noqa: E402
-    DocumentGraphBuilder,
-    SectionBuilder,
-)
-from src.application.workflows.parsing.normalizers import (  # noqa: E402
-    DoclingDocumentNormalizer,
-)
-from src.bootstrap.startup import bootstrap_application  # noqa: E402
+from src.application.orchestrator.ingestion import build_ingestion_runtime  # noqa: E402
 from src.config.paths import ensure_directory, resolve_project_path  # noqa: E402
 from src.config.settings import (  # noqa: E402
     docling_settings,
-    embedding_settings,
-    llm_settings,
     ocr_settings,
-    qdrant_settings,
     storage_settings,
 )
-from src.infrastructure.ai.embeddings import create_embedding_provider  # noqa: E402
-from src.infrastructure.ai.llm import OllamaLLMProvider  # noqa: E402
-from src.infrastructure.db.base import Base  # noqa: E402
-from src.infrastructure.db.schema_management import ensure_database_schema  # noqa: E402
+from src.infrastructure.db.base import Base  # noqa: E402,F401
 from src.infrastructure.db.orm_models import __all__ as _orm_models_loaded  # noqa: E402,F401
-from src.infrastructure.db.session import SessionLocal, engine  # noqa: E402
-from src.infrastructure.db.unit_of_work import SqlAlchemyUnitOfWork  # noqa: E402
-from src.infrastructure.parsing.docling import DoclingParser  # noqa: E402
-from src.infrastructure.retrieval.vector import QdrantVectorStore  # noqa: E402
-from src.shared.ids import IdGenerator  # noqa: E402
 
 
 @dataclass(slots=True)
@@ -186,177 +133,28 @@ def default_output_path() -> Path:
     ).resolve()
 
 
-def create_qdrant_client() -> QdrantClient:
-    if qdrant_settings.mode.lower() == "local":
-        return QdrantClient(path=str(qdrant_settings.storage_path))
-
-    return QdrantClient(
-        host=qdrant_settings.host,
-        port=qdrant_settings.port,
-    )
-
-
-def ensure_qdrant_collection(client: QdrantClient) -> None:
-    if client.collection_exists(qdrant_settings.collection):
-        return
-
-    client.create_collection(
-        collection_name=qdrant_settings.collection,
-        vectors_config=VectorParams(
-            size=embedding_settings.dimensions,
-            distance=resolve_distance(qdrant_settings.vector_distance),
-        ),
-    )
-
-
-def resolve_distance(value: str) -> Distance:
-    normalized = value.strip().lower()
-    mapping = {
-        "cosine": Distance.COSINE,
-        "dot": Distance.DOT,
-        "euclid": Distance.EUCLID,
-        "manhattan": Distance.MANHATTAN,
-    }
-    return mapping.get(normalized, Distance.COSINE)
-
-
-def build_parsing_workflow(
-    *,
-    id_generator: IdGenerator,
-) -> tuple[ParsingWorkflow, DocumentGraphBuilder]:
-    ocr_runtime = build_parsing_ocr_runtime(id_generator=id_generator)
-    section_builder = SectionBuilder(id_generator)
-    document_graph_builder = DocumentGraphBuilder(
-        id_generator=id_generator,
-        section_builder=section_builder,
-    )
-    workflow = ParsingWorkflow(
-        parser=DoclingParser(),
-        normalizer=DoclingDocumentNormalizer(),
-        document_graph_builder=document_graph_builder,
-        id_generator=id_generator,
-        document_graph_validator=DocumentGraphValidator(),
-        canonical_element_ocr_enricher=ocr_runtime.canonical_element_ocr_enricher,
-        page_ocr_fallback_workflow=ocr_runtime.page_ocr_fallback_workflow,
-    )
-    return workflow, document_graph_builder
-
-
 def build_corpus_seeder() -> CorpusSeederRuntime:
-    bootstrap_application()
-    ensure_database_schema(engine)
+    """Build the corpus seeder on top of the canonical ingestion orchestrator.
 
-    id_generator = IdGenerator()
-    parsing_workflow, document_graph_builder = build_parsing_workflow(
-        id_generator=id_generator,
-    )
-
-    session = SessionLocal()
-    uow = SqlAlchemyUnitOfWork(session)
-    llm_service = LLMService(
-        OllamaLLMProvider(
-            base_url=llm_settings.ollama_base_url,
-            default_model=llm_settings.general_llm,
-        )
-    )
-    embedding_provider = create_embedding_provider()
-    qdrant_client = create_qdrant_client()
-    vector_store = QdrantVectorStore(
-        client=qdrant_client,
-        mapping_repository=uow.vector_mappings,
-        collection_name=qdrant_settings.collection,
-        embedding_model=embedding_settings.model_name,
-        query_embedding_provider=embedding_provider,
-        document_repository=uow.documents,
-    )
-    ensure_qdrant_collection(vector_store.client)
-
-    document_repository = uow.documents
-    classification_repository = uow.classifications
-    document_graph_validator = DocumentGraphValidator()
-    document_validator = DocumentClassificationValidator()
-    chunk_validator = ChunkClassificationValidator()
-    document_lookup_service = DocumentLookupService(document_repository)
-    document_registration_service = DocumentRegistrationService(
-        document_repository=document_repository,
-        document_graph_validator=document_graph_validator,
-    )
-
-    classification_service = ClassificationService(
-        classification_repository=classification_repository,
-        document_classification_validator=document_validator,
-        chunk_classification_validator=chunk_validator,
-    )
-    chunk_classification_workflow = ChunkClassificationWorkflow(
-        llm_service=llm_service,
-        classification_service=classification_service,
-        chunk_classification_validator=chunk_validator,
-        id_generator=id_generator,
-    )
-    document_classification_workflow = DocumentClassificationWorkflow(
-        llm_service=llm_service,
-        classification_service=classification_service,
-        document_classification_validator=document_validator,
-        id_generator=id_generator,
-    )
-    embedding_workflow = EmbeddingWorkflow(
-        embedding_service=EmbeddingService(embedding_provider),
-        vector_store=vector_store,
-    )
-    post_classification_workflow = PostClassificationChunkFinalizationWorkflow(
-        document_lookup_service=document_lookup_service,
-        document_registration_service=document_registration_service,
-        classification_service=classification_service,
-        chunk_classification_workflow=chunk_classification_workflow,
-        chunk_type_classification_workflow=ChunkTypeClassificationWorkflow(
-            llm_service=llm_service,
-        ),
-        question_generation_service=QuestionGenerationService(
-            llm_service=llm_service,
-            id_generator=id_generator,
-        ),
-        embedding_workflow=embedding_workflow,
-        vector_store=vector_store,
-        graph_chunk_builder=document_graph_builder.chunk_builder,
-    )
-    extraction_result_validator = ExtractionResultValidator()
-    extraction_service = ExtractionService(
-        extraction_repository=uow.extractions,
-        extraction_result_validator=extraction_result_validator,
-    )
-    ingestion_workflow = IngestionWorkflow(
-        unit_of_work=uow,
-        ingestion_request_validator=IngestionRequestValidator(),
-        duplicate_detection_service=DuplicateDetectionService(document_repository),
-        parsing_workflow=parsing_workflow,
-        document_registration_service=document_registration_service,
-        document_classification_workflow=document_classification_workflow,
-        post_classification_chunk_finalization_workflow=post_classification_workflow,
-        extraction_workflow=ExtractionWorkflow(
-            llm_service=llm_service,
-            extraction_service=extraction_service,
-            extraction_result_validator=extraction_result_validator,
-            id_generator=id_generator,
-        ),
-        embedding_workflow=embedding_workflow,
-        id_generator=id_generator,
-    )
+    All ingestion dependency wiring (parsing, classification, extraction,
+    identifier promotion/scanning, embedding, vector storage) lives in
+    `src.application.orchestrator.ingestion.build_ingestion_runtime`. This
+    function only adds the benchmark-specific wrapping (`RetrievalBenchmarkCorpusSeeder`).
+    """
+    runtime = build_ingestion_runtime()
 
     return CorpusSeederRuntime(
         seeder=RetrievalBenchmarkCorpusSeeder(
-            ingestion_workflow=ingestion_workflow,
-            parsing_workflow=parsing_workflow,
-            document_registration_service=document_registration_service,
-            duplicate_detection_service=DuplicateDetectionService(document_repository),
-            document_lookup_service=document_lookup_service,
-            classification_service=classification_service,
-            document_classification_workflow=document_classification_workflow,
-            post_classification_chunk_finalization_workflow=post_classification_workflow,
-            unit_of_work=uow,
-            embedding_model=embedding_settings.model_name,
-            vector_collection=qdrant_settings.collection,
+            ingestion_workflow=runtime.ingestion_workflow,
+            duplicate_detection_service=runtime.duplicate_detection_service,
+            document_lookup_service=runtime.document_lookup_service,
+            classification_service=runtime.classification_service,
+            document_classification_workflow=runtime.document_classification_workflow,
+            unit_of_work=runtime.unit_of_work,
+            embedding_model=runtime.embedding_model,
+            vector_collection=runtime.vector_collection,
         ),
-        qdrant_client=qdrant_client,
+        qdrant_client=runtime.qdrant_client,
     )
 
 
