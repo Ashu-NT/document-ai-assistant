@@ -3,6 +3,9 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
+from src.application.langgraph.common.structured_entity_query_detector import (
+    detect_structured_entity_type,
+)
 from src.application.langgraph.planning.execution_plan import ExecutionPlan
 from src.application.langgraph.planning.plan_step import PlanStep
 from src.application.langgraph.state import AgentState
@@ -45,27 +48,6 @@ _IDENTIFIER_TERM_RE = re.compile(
     r"tag\s*(?:number|no\.?)?|certificate\s*(?:number|no\.?)|component\s*code|"
     r"manufacturer|supplier|made\s*by|manufactured\s*by)\b",
     re.IGNORECASE,
-)
-_STRUCTURED_DETAIL_TERMS = (
-    "website",
-    "url",
-    "country",
-    "based in",
-    "located",
-    "quantity",
-    "how many",
-    "in stock",
-    "interval",
-    "how often",
-)
-_STRUCTURED_ENTITY_TERMS: tuple[tuple[str, str], ...] = (
-    ("manufacturer", "manufacturer"),
-    ("supplier", "supplier"),
-    ("vendor", "supplier"),
-    ("distributor", "supplier"),
-    ("spare part", "spare_part"),
-    ("equipment", "equipment"),
-    ("maintenance task", "maintenance_task"),
 )
 
 
@@ -155,12 +137,7 @@ class DeterministicPlanner:
 
     @staticmethod
     def _extract_structured_entity_type(normalized_input: str) -> str | None:
-        if not any(term in normalized_input for term in _STRUCTURED_DETAIL_TERMS):
-            return None
-        for term, entity_type in _STRUCTURED_ENTITY_TERMS:
-            if term in normalized_input:
-                return entity_type
-        return None
+        return detect_structured_entity_type(normalized_input)
 
     @staticmethod
     def _identifier_type_from_input(normalized_input: str) -> str | None:

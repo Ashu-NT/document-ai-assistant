@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.application.langgraph.common import serialize_graph_value
+from src.application.langgraph.common import (
+    detect_structured_entity_type,
+    serialize_graph_value,
+)
 from src.domain.common import IdentifierType
 from src.domain.document.entities.identifier import Identifier
 
@@ -105,6 +108,67 @@ def deduplicate_identifiers(identifiers: list[Identifier]) -> list[Identifier]:
             continue
         seen.add(fingerprint)
         deduplicated.append(identifier)
+    return deduplicated
+
+
+def resolve_structured_entities(
+    tool_registry: Any,
+    *,
+    question: str,
+    document_id: str | None,
+) -> list[dict[str, Any]]:
+    """Directly resolves structured-entity facts (manufacturer/supplier/
+    spare_part/equipment/maintenance_task) for question text, independent
+    of whether a retrieval-strategy plan or execution-plan ran. This is
+    what lets the direct-answer graph routes (AnswerQuestionNode,
+    RetryRetrievalNode) join structured facts the same way the planned
+    route does via PlanExecutor."""
+    entity_type = detect_structured_entity_type(question)
+    if entity_type is None:
+        return []
+
+    tool = tool_registry.get("retrieve_structured_entities")
+    if tool is None:
+        return []
+
+    from src.application.tools.retrieval.retrieve_structured_entities_tool import (
+        RetrieveStructuredEntitiesRequest,
+    )
+
+    result = tool.run(
+        RetrieveStructuredEntitiesRequest(
+            entity_type=entity_type,
+            document_id=document_id,
+            query_text=question,
+        )
+    )
+    if not result.success or not isinstance(result.data, dict):
+        return []
+
+    items = result.data.get("items") or []
+    return [
+        {**item, "_entity_type": entity_type}
+        for item in items
+        if isinstance(item, dict)
+    ]
+
+
+def deduplicate_structured_entities(
+    entities: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    deduplicated: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for entity in entities:
+        if not isinstance(entity, dict):
+            continue
+        fingerprint = (
+            str(entity.get("_entity_type") or ""),
+            str(entity.get("source_chunk_id") or entity),
+        )
+        if fingerprint in seen:
+            continue
+        seen.add(fingerprint)
+        deduplicated.append(entity)
     return deduplicated
 
 

@@ -10,6 +10,7 @@ from src.application.langgraph.nodes.node_utils import (
     extract_identifiers_from_step_results,
     extend_trace,
     resolve_selected_document,
+    resolve_structured_entities,
     serialize_tool_result,
 )
 from src.application.langgraph.retrieval_strategy import (
@@ -116,6 +117,11 @@ class AnswerQuestionNode:
                 strategy_patch = {
                     "retrieval_strategy_errors": [str(exc)],
                 }
+        resolved_structured_entities = resolve_structured_entities(
+            self.tool_registry,
+            question=question,
+            document_id=resolved_document_id,
+        )
         result = tool.run(
             AnswerQuestionRequest(
                 question=question,
@@ -126,6 +132,7 @@ class AnswerQuestionNode:
                 require_citations=True,
                 context_override_chunks=context_override_chunks,
                 resolved_identifiers=resolved_identifiers,
+                resolved_structured_entities=resolved_structured_entities,
             )
         )
         tool_results = dict(state["tool_results"])
@@ -143,6 +150,7 @@ class AnswerQuestionNode:
             "tool_results": tool_results,
             "trace": extend_trace(state["trace"], trace_entry),
             "resolved_identifiers": serialize_graph_value(resolved_identifiers),
+            "resolved_structured_entities": resolved_structured_entities,
             **strategy_patch,
         }
         if result.success:

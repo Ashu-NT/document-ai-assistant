@@ -109,6 +109,28 @@ class FakeRetrieveIdentifiersTool:
         )
 
 
+class FakeRetrieveStructuredEntitiesTool:
+    def __init__(self) -> None:
+        self.requests = []
+
+    def run(self, request):
+        self.requests.append(request)
+        return ToolResult.ok(
+            data={
+                "entity_type": request.entity_type,
+                "items": [
+                    {
+                        "name": "ACME Corp",
+                        "website": "https://acme.example",
+                        "source_chunk_id": "chunk-manufacturer-1",
+                        "confidence_score": 0.9,
+                    }
+                ],
+            },
+            diagnostics={"total_matches": 1, "returned": 1},
+        )
+
+
 class FakeRetryRetrieveChunksTool:
     def __init__(self) -> None:
         self.requests = []
@@ -269,6 +291,99 @@ def test_answer_question_node_passes_strategy_resolved_identifiers_into_qa_reque
     assert len(answer_tool.requests[0].resolved_identifiers) == 1
     assert answer_tool.requests[0].resolved_identifiers[0].raw_value == "PN-001"
     assert patch["resolved_identifiers"][0]["raw_value"] == "PN-001"
+
+
+def test_answer_question_node_resolves_structured_entities_directly() -> None:
+    answer_tool = FakeAnswerQuestionTool()
+    structured_tool = FakeRetrieveStructuredEntitiesTool()
+    node = AnswerQuestionNode(
+        ToolRegistry(
+            answer_question_tool=answer_tool,
+            retrieve_structured_entities_tool=structured_tool,
+        )
+    )
+
+    patch = node(
+        build_agent_state(
+            user_input="what is the manufacturer website",
+            document_id="doc-42",
+        )
+    )
+
+    assert structured_tool.requests
+    assert structured_tool.requests[0].entity_type == "manufacturer"
+    assert len(answer_tool.requests[0].resolved_structured_entities) == 1
+    assert answer_tool.requests[0].resolved_structured_entities[0]["website"] == (
+        "https://acme.example"
+    )
+    assert patch["resolved_structured_entities"][0]["website"] == "https://acme.example"
+
+
+def test_answer_question_node_skips_structured_entity_lookup_for_unrelated_question() -> None:
+    answer_tool = FakeAnswerQuestionTool()
+    structured_tool = FakeRetrieveStructuredEntitiesTool()
+    node = AnswerQuestionNode(
+        ToolRegistry(
+            answer_question_tool=answer_tool,
+            retrieve_structured_entities_tool=structured_tool,
+        )
+    )
+
+    node(
+        build_agent_state(
+            user_input="What is the maintenance interval?",
+            document_id="doc-42",
+        )
+    )
+
+    assert structured_tool.requests == []
+    assert answer_tool.requests[0].resolved_structured_entities == []
+
+
+def test_retry_retrieval_node_resolves_structured_entities_for_retry_query() -> None:
+    answer_tool = FakeAnswerQuestionTool()
+    retry_tool = FakeRetryRetrieveChunksTool()
+    structured_tool = FakeRetrieveStructuredEntitiesTool()
+    node = RetryRetrievalNode(
+        ToolRegistry(
+            answer_question_tool=answer_tool,
+            retrieve_chunks_tool=retry_tool,
+            retrieve_structured_entities_tool=structured_tool,
+        )
+    )
+
+    state = build_agent_state(
+        user_input="what is the manufacturer website",
+        document_id="doc-42",
+        selected_document_id="doc-42",
+        allow_answer_generation=True,
+        include_context=True,
+    )
+    state["question"] = "what is the manufacturer website"
+    state["route"] = "answer_question"
+    state["tool_results"] = {
+        "answer_question": {
+            "success": True,
+            "data": {
+                "route": "retrieval_qa",
+                "answer_text": "Generic answer.",
+            },
+        }
+    }
+    state["reflection_result"] = {
+        "decision": {
+            "decision": "RETRIEVE_AGAIN",
+            "reason": "Need the manufacturer website explicitly.",
+        }
+    }
+    state["retry_query"] = "manufacturer website"
+    state["initial_context_chunks"] = []
+
+    patch = node(state)
+
+    assert structured_tool.requests
+    assert len(answer_tool.requests[0].resolved_structured_entities) == 1
+    assert patch["resolved_structured_entities"][0]["website"] == "https://acme.example"
 
 
 def test_retry_retrieval_node_preserves_resolved_identifiers_for_regeneration() -> None:
