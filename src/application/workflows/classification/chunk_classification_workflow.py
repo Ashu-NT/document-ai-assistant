@@ -11,6 +11,9 @@ from src.application.validation.classification import ChunkClassificationValidat
 from src.application.workflows.classification.classification_response_parser import (
     ClassificationResponseParser,
 )
+from src.application.workflows.classification.classification_response_schema import (
+    build_classification_response_json_schema,
+)
 from src.domain.classification import ChunkClassification, ClassificationResult
 from src.domain.common import ChunkType, ModelProcessingMetadata
 from src.domain.document import DocumentChunk
@@ -54,9 +57,7 @@ class ChunkClassificationWorkflow:
             classification_model
             or _default_chunk_classification_model()
         )
-        self.response_parser = ClassificationResponseParser(
-            label_aliases={"predicted_label", "chunk_type"},
-        )
+        self.response_parser = ClassificationResponseParser()
 
     @tracked_action(
         action="classification.chunk_generated",
@@ -75,6 +76,7 @@ class ChunkClassificationWorkflow:
             prompt,
             model=self.classification_model,
             activity_context=activity_context,
+            response_schema=build_classification_response_json_schema(),
         )
 
         classification = self._build_classification(chunk, response)
@@ -94,20 +96,20 @@ class ChunkClassificationWorkflow:
         response: str,
     ) -> ChunkClassification:
         parsed = self.response_parser.parse(response)
-        chunk_type = self._resolve_chunk_type(parsed["label"])
-        metadata_errors = self._build_metadata_errors(parsed["label"], chunk_type)
+        chunk_type = self._resolve_chunk_type(parsed.label)
+        metadata_errors = self._build_metadata_errors(parsed.label, chunk_type)
 
         result = ClassificationResult(
             classification_id=self.id_generator.new_id(IdPrefix.CLASSIFICATION),
             document_id=chunk.document_id,
             predicted_label=chunk_type.value,
-            confidence_score=parsed["confidence_score"],
-            rationale=parsed["rationale"],
-            evidence=parsed["evidence"],
+            confidence_score=parsed.confidence_score,
+            rationale=parsed.rationale,
+            evidence=parsed.evidence,
             processing_metadata=ModelProcessingMetadata(
                 model_name=self.classification_model or "default",
                 model_type="chunk_classification",
-                confidence=parsed["confidence_score"],
+                confidence=parsed.confidence_score,
                 prompt_version=getattr(
                     self.prompt_builder,
                     "prompt_version",

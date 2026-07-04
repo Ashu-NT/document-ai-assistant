@@ -7,7 +7,13 @@ class _FakeLLMService:
     def __init__(self, response: str) -> None:
         self.response = response
 
-    def generate(self, prompt: str, model: str | None = None) -> str:
+    def generate(
+        self,
+        prompt: str,
+        model: str | None = None,
+        *,
+        response_schema: dict | None = None,
+    ) -> str:
         return self.response
 
 

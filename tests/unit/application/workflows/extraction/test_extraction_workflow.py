@@ -393,7 +393,7 @@ def test_extract_emits_progress_messages(sample_chunk) -> None:
     )
 
 
-def test_extract_parses_yaml_style_response(sample_chunk) -> None:
+def test_extract_rejects_non_json_structured_response(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
             """confidence_score: 0.86
@@ -426,15 +426,8 @@ identifiers:
     fake_extraction_service = FakeExtractionService()
     workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
 
-    result = workflow.extract(sample_chunk.document_id, sample_chunk)
-
-    assert result.confidence_score == pytest.approx(0.86)
-    assert len(result.maintenance_tasks) == 1
-    assert result.maintenance_tasks[0].title == "Inspect terminal wiring"
-    assert len(result.equipment) == 1
-    assert result.equipment[0].model_number == "PT-500"
-    assert len(result.extracted_identifiers) == 1
-    assert result.extracted_identifiers[0].raw_value == "PT-500"
+    with pytest.raises(SchemaValidationError):
+        workflow.extract(sample_chunk.document_id, sample_chunk)
 
 
 def test_extract_derives_overall_confidence_from_item_confidences(sample_chunk) -> None:
@@ -1002,7 +995,7 @@ def test_extraction_allows_overriding_temperature_and_json_mode(sample_chunk) ->
 
     assert fake_llm_service.calls[0]["temperature"] == 0.4
     assert fake_llm_service.calls[0]["json_mode"] is False
-    assert fake_llm_service.calls[0]["response_schema"] is None
+    assert isinstance(fake_llm_service.calls[0]["response_schema"], dict)
 
 
 def test_extraction_passes_json_schema_for_constrained_decoding_when_json_mode_enabled(
@@ -1034,7 +1027,7 @@ def test_extraction_passes_json_schema_for_constrained_decoding_when_json_mode_e
     assert schema["properties"]["identifiers"]["items"]["$ref"] == "#/$defs/IdentifierPayload"
 
 
-def test_extraction_repairs_truncated_json_with_trailing_comma(sample_chunk) -> None:
+def test_extraction_rejects_truncated_json_response(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
             """{
@@ -1052,13 +1045,11 @@ def test_extraction_repairs_truncated_json_with_trailing_comma(sample_chunk) -> 
     fake_extraction_service = FakeExtractionService()
     workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
 
-    result = workflow.extract(sample_chunk.document_id, sample_chunk)
-
-    assert len(result.spare_parts) == 1
-    assert result.spare_parts[0].part_number == "FLT-100"
+    with pytest.raises(SchemaValidationError):
+        workflow.extract(sample_chunk.document_id, sample_chunk)
 
 
-def test_extraction_treats_null_array_items_as_empty(sample_chunk) -> None:
+def test_extraction_rejects_null_array_items(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
             """{
@@ -1089,29 +1080,11 @@ def test_extraction_treats_null_array_items_as_empty(sample_chunk) -> None:
     )
     fake_extraction_service = FakeExtractionService()
     workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
-    progress_messages: list[str] = []
-
-    result = workflow.extract(
-        sample_chunk.document_id,
-        sample_chunk,
-        progress_callback=progress_messages.append,
-    )
-
-    assert result.spare_parts == []
-    assert result.equipment == []
-    assert result.manufacturers == []
-    assert len(result.maintenance_tasks) == 1
-    assert len(result.extracted_identifiers) == 1
-    assert any(
-        "Normalized null placeholder item(s) in model output:" in message
-        and "spare_parts=1" in message
-        and "equipment=1" in message
-        and "manufacturers=1" in message
-        for message in progress_messages
-    )
+    with pytest.raises(SchemaValidationError):
+        workflow.extract(sample_chunk.document_id, sample_chunk)
 
 
-def test_extraction_strips_only_null_items_and_keeps_valid_siblings(sample_chunk) -> None:
+def test_extraction_rejects_mixed_null_and_valid_array_items(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
             """{
@@ -1127,10 +1100,8 @@ def test_extraction_strips_only_null_items_and_keeps_valid_siblings(sample_chunk
     fake_extraction_service = FakeExtractionService()
     workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
 
-    result = workflow.extract(sample_chunk.document_id, sample_chunk)
-
-    assert len(result.spare_parts) == 1
-    assert result.spare_parts[0].part_number == "FLT-100"
+    with pytest.raises(SchemaValidationError):
+        workflow.extract(sample_chunk.document_id, sample_chunk)
 
 
 def test_extract_replaces_existing_result_when_replace_existing_is_true(

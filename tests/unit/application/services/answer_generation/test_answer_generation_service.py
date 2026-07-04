@@ -8,6 +8,7 @@ from src.application.services.answer_generation.answer_generation_request import
 from src.application.services.answer_generation.answer_generation_service import (
     AnswerGenerationService,
 )
+from src.shared.exceptions import SchemaValidationError
 from src.domain.common import ChunkType, IdentifierType
 from src.domain.document.entities.identifier import Identifier
 from src.domain.common.source_location import SourceLocation
@@ -16,12 +17,23 @@ from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
 
 class FakeLLMService:
-    def __init__(self, response: str = "The answer is 1000 hours.") -> None:
+    def __init__(
+        self,
+        response: str = '{"answer_text":"The answer is 1000 hours."}',
+    ) -> None:
         self.response = response
         self.calls: list[dict] = []
 
-    def generate(self, prompt: str, model: str | None = None) -> str:
-        self.calls.append({"prompt": prompt, "model": model})
+    def generate(
+        self,
+        prompt: str,
+        model: str | None = None,
+        *,
+        response_schema: dict | None = None,
+    ) -> str:
+        self.calls.append(
+            {"prompt": prompt, "model": model, "response_schema": response_schema}
+        )
         return self.response
 
 
@@ -91,6 +103,7 @@ def test_generate_returns_llm_output_as_answer_text() -> None:
     result = service.generate(request)
 
     assert result.answer_text == "The answer is 1000 hours."
+    assert result.raw_model_output == '{"answer_text":"The answer is 1000 hours."}'
 
 
 # ---------------------------------------------------------------------------
@@ -221,7 +234,7 @@ def test_generate_builds_structured_context_and_format_policy_before_prompt() ->
 
 
 def test_generate_uses_maintenance_summary_path_and_reports_diagnostics() -> None:
-    llm = FakeLLMService(response="Maintenance Tasks")
+    llm = FakeLLMService(response='{"answer_text":"Maintenance Tasks"}')
     prompt_builder = FakePromptBuilder()
     service = AnswerGenerationService(
         llm_service=llm,
@@ -257,7 +270,7 @@ def test_generate_uses_maintenance_summary_path_and_reports_diagnostics() -> Non
 
 
 def test_generate_merges_duplicate_maintenance_entries_before_prompt_building() -> None:
-    llm = FakeLLMService(response="Maintenance Tasks")
+    llm = FakeLLMService(response='{"answer_text":"Maintenance Tasks"}')
     prompt_builder = FakePromptBuilder()
     service = AnswerGenerationService(
         llm_service=llm,
@@ -361,3 +374,31 @@ def test_generate_uses_deterministic_spare_parts_renderer_and_skips_llm() -> Non
     assert result.model_name == "deterministic_spare_parts_renderer"
     assert result.diagnostics["deterministic_renderer"] == "spare_parts_list_renderer"
     assert llm.calls == []
+
+
+def test_generate_passes_answer_generation_response_schema_to_llm() -> None:
+    service, llm = make_service()
+    request = AnswerGenerationRequest(
+        question="When to replace the filter?",
+        context_chunks=[_make_chunk()],
+    )
+
+    service.generate(request)
+
+    assert llm.calls
+    assert llm.calls[0]["response_schema"] is not None
+    assert "answer_text" in llm.calls[0]["response_schema"].get("properties", {})
+
+
+def test_generate_rejects_malformed_answer_generation_json() -> None:
+    service, _ = make_service(FakeLLMService(response="The answer is 1000 hours."))
+    request = AnswerGenerationRequest(
+        question="When to replace the filter?",
+        context_chunks=[_make_chunk()],
+    )
+
+    with pytest.raises(
+        SchemaValidationError,
+        match="Malformed answer generation response JSON",
+    ):
+        service.generate(request)

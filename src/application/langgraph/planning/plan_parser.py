@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 from typing import Any
 
 from src.application.langgraph.planning.execution_plan import ExecutionPlan
+from src.application.langgraph.planning.plan_response_schema import (
+    PlanResponsePayload,
+)
 from src.application.langgraph.planning.plan_step import PlanStep
 from src.shared.ids import IdGenerator
+from pydantic import ValidationError
 
 
 @dataclass(slots=True, frozen=True)
@@ -26,8 +29,32 @@ class PlanParser:
     def parse(self, raw_text: str) -> PlanParseResult:
         cleaned = self._strip_code_fences(raw_text)
         try:
-            payload = json.loads(cleaned)
-        except json.JSONDecodeError as exc:
+            payload = PlanResponsePayload.model_validate_json(cleaned)
+        except ValidationError as exc:
+            if self._is_json_error(exc):
+                return PlanParseResult(
+                    success=False,
+                    error_code="plan_json_invalid",
+                    message="The LLM planning output was not valid JSON.",
+                    raw_text=raw_text,
+                    diagnostics={"errors": exc.errors()},
+                )
+            if self._is_steps_missing_error(exc):
+                return PlanParseResult(
+                    success=False,
+                    error_code="plan_steps_missing",
+                    message="The LLM plan must contain at least one step.",
+                    raw_text=raw_text,
+                    diagnostics={"errors": exc.errors()},
+                )
+            return PlanParseResult(
+                success=False,
+                error_code="plan_shape_invalid",
+                message="The LLM plan had an invalid structure.",
+                raw_text=raw_text,
+                diagnostics={"errors": exc.errors()},
+            )
+        except ValueError as exc:
             return PlanParseResult(
                 success=False,
                 error_code="plan_json_invalid",
@@ -35,34 +62,7 @@ class PlanParser:
                 raw_text=raw_text,
                 diagnostics={"error": str(exc)},
             )
-
-        if not isinstance(payload, dict):
-            return PlanParseResult(
-                success=False,
-                error_code="plan_shape_invalid",
-                message="The LLM planning output must be a JSON object.",
-                raw_text=raw_text,
-            )
-
-        steps_payload = payload.get("steps")
-        if not isinstance(steps_payload, list) or not steps_payload:
-            return PlanParseResult(
-                success=False,
-                error_code="plan_steps_missing",
-                message="The LLM plan must contain at least one step.",
-                raw_text=raw_text,
-            )
-
-        try:
-            plan = self._build_plan(payload)
-        except (KeyError, TypeError, ValueError) as exc:
-            return PlanParseResult(
-                success=False,
-                error_code="plan_shape_invalid",
-                message="The LLM plan had an invalid structure.",
-                raw_text=raw_text,
-                diagnostics={"error": str(exc)},
-            )
+        plan = self._build_plan(payload)
 
         return PlanParseResult(
             success=True,
@@ -71,38 +71,35 @@ class PlanParser:
             diagnostics={"step_count": plan.step_count},
         )
 
-    def _build_plan(self, payload: dict[str, Any]) -> ExecutionPlan:
-        raw_steps = payload["steps"]
+    def _build_plan(self, payload: PlanResponsePayload) -> ExecutionPlan:
         steps: list[PlanStep] = []
-        for index, raw_step in enumerate(raw_steps, start=1):
-            if not isinstance(raw_step, dict):
-                raise TypeError("Each plan step must be an object.")
-            step_id = str(raw_step.get("step_id") or f"step_{index}")
-            output_key = str(raw_step.get("output_key") or f"step_output_{index}")
+        for index, raw_step in enumerate(payload.steps, start=1):
+            step_id = raw_step.step_id or f"step_{index}"
+            output_key = raw_step.output_key or f"step_output_{index}"
             steps.append(
                 PlanStep(
                     step_id=step_id,
-                    tool_name=str(raw_step["tool_name"]),
-                    description=str(raw_step["description"]),
-                    input_key=raw_step.get("input_key"),
+                    tool_name=raw_step.tool_name,
+                    description=raw_step.description,
+                    input_key=raw_step.input_key,
                     output_key=output_key,
-                    args=dict(raw_step.get("args", {})),
-                    depends_on=[str(item) for item in list(raw_step.get("depends_on", []))],
-                    required=bool(raw_step.get("required", True)),
+                    args=dict(raw_step.args),
+                    depends_on=list(raw_step.depends_on),
+                    required=raw_step.required,
                     source="llm",
                 )
             )
 
         return ExecutionPlan(
-            plan_id=str(payload.get("plan_id") or self.id_generator.new_id("plan")),
-            goal=str(payload["goal"]),
+            plan_id=payload.plan_id or self.id_generator.new_id("plan"),
+            goal=payload.goal,
             steps=steps,
-            reason=str(payload.get("reason") or "LLM-proposed plan."),
+            reason=payload.reason or "LLM-proposed plan.",
             source="llm",
-            requires_document=bool(payload.get("requires_document", False)),
-            document_id=_optional_str(payload.get("document_id")),
-            document_title=_optional_str(payload.get("document_title")),
-            diagnostics=dict(payload.get("diagnostics", {})),
+            requires_document=payload.requires_document,
+            document_id=payload.document_id,
+            document_title=payload.document_title,
+            diagnostics=dict(payload.diagnostics),
         )
 
     @staticmethod
@@ -114,8 +111,10 @@ class PlanParser:
                 return "\n".join(lines[1:-1]).strip()
         return stripped
 
+    @staticmethod
+    def _is_steps_missing_error(exc: ValidationError) -> bool:
+        return any(error.get("loc") == ("steps",) for error in exc.errors())
 
-def _optional_str(value: Any) -> str | None:
-    if isinstance(value, str) and value:
-        return value
-    return None
+    @staticmethod
+    def _is_json_error(exc: ValidationError) -> bool:
+        return any(error.get("type") == "json_invalid" for error in exc.errors())

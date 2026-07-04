@@ -11,6 +11,9 @@ from src.application.validation.classification import DocumentClassificationVali
 from src.application.workflows.classification.classification_response_parser import (
     ClassificationResponseParser,
 )
+from src.application.workflows.classification.classification_response_schema import (
+    build_classification_response_json_schema,
+)
 from src.domain.classification import ClassificationResult, DocumentClassification
 from src.domain.common import DocumentType, ModelProcessingMetadata
 from src.domain.document import Document, DocumentGraph
@@ -53,9 +56,7 @@ class DocumentClassificationWorkflow:
             classification_model
             or _default_document_classification_model()
         )
-        self.response_parser = ClassificationResponseParser(
-            label_aliases={"predicted_label", "document_type"},
-        )
+        self.response_parser = ClassificationResponseParser()
 
     @tracked_action(
         action="classification.document_generated",
@@ -75,6 +76,7 @@ class DocumentClassificationWorkflow:
             prompt,
             model=self.classification_model,
             activity_context=activity_context,
+            response_schema=build_classification_response_json_schema(),
         )
 
         classification = self._build_classification(document, response)
@@ -94,20 +96,20 @@ class DocumentClassificationWorkflow:
         response: str,
     ) -> DocumentClassification:
         parsed = self.response_parser.parse(response)
-        document_type = self._resolve_document_type(parsed["label"])
-        metadata_errors = self._build_metadata_errors(parsed["label"], document_type)
+        document_type = self._resolve_document_type(parsed.label)
+        metadata_errors = self._build_metadata_errors(parsed.label, document_type)
 
         result = ClassificationResult(
             classification_id=self.id_generator.new_id(IdPrefix.CLASSIFICATION),
             document_id=document.document_id,
             predicted_label=document_type.value,
-            confidence_score=parsed["confidence_score"],
-            rationale=parsed["rationale"],
-            evidence=parsed["evidence"],
+            confidence_score=parsed.confidence_score,
+            rationale=parsed.rationale,
+            evidence=parsed.evidence,
             processing_metadata=ModelProcessingMetadata(
                 model_name=self.classification_model or "default",
                 model_type="document_classification",
-                confidence=parsed["confidence_score"],
+                confidence=parsed.confidence_score,
                 prompt_version=getattr(
                     self.prompt_builder,
                     "prompt_version",

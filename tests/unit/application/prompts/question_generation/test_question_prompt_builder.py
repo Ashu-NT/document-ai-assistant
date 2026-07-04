@@ -10,7 +10,8 @@ def test_question_prompt_builder_produces_deterministic_prompt(sample_chunk) -> 
     prompt = builder.build(sample_chunk, max_questions=5)
 
     assert builder.prompt_version == QUESTION_PROMPT_VERSION
-    assert "Return questions only" in prompt
+    assert "Return JSON only" in prompt
+    assert '"questions": ["<question 1>", "<question 2>"]' in prompt
     assert "Maximum questions: 5" in prompt
     assert "Maintenance Schedule" in prompt
     assert sample_chunk.content in prompt

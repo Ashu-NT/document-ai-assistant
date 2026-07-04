@@ -1,35 +1,25 @@
-import re
-
 from src.application.prompts.classification import ChunkTypePromptBuilder
+from src.application.workflows.classification.classification_response_parser import (
+    ClassificationResponseParser,
+)
+from src.application.workflows.classification.classification_response_schema import (
+    build_classification_response_json_schema,
+)
 from src.domain.common import ChunkType
-
-_NORMALIZE = re.compile(r"[^a-z0-9]+")
-
-
-def parse_chunk_type_response(response: str) -> ChunkType:
-    normalized = _NORMALIZE.sub("_", response.strip().lower()).strip("_")
-    for chunk_type in ChunkType:
-        if normalized in {chunk_type.value, chunk_type.name.lower()}:
-            return chunk_type
-    first_word = normalized.split("_")[0] if "_" in normalized else normalized
-    for chunk_type in ChunkType:
-        if chunk_type.value.startswith(first_word) or chunk_type.name.lower().startswith(first_word):
-            return chunk_type
-    return ChunkType.GENERAL
 
 
 class ChunkTypeLLMClassifier:
     """Calls an LLM to determine ChunkType for a single piece of content.
 
-    Used by ChunkTypeClassificationWorkflow — not wired into ChunkTypeResolver.
-    Stateless beyond the injected LLMService so it can be constructed once
-    and called repeatedly without side effects.
+    Used by ChunkTypeClassificationWorkflow and kept intentionally small:
+    prompt building, structured generation, structured parsing, and enum mapping.
     """
 
     def __init__(self, llm_service=None, model: str | None = None) -> None:
         self._llm_service = llm_service
         self._model = model
         self._prompt_builder = ChunkTypePromptBuilder()
+        self._response_parser = ClassificationResponseParser()
 
     def is_available(self) -> bool:
         return self._llm_service is not None
@@ -40,16 +30,47 @@ class ChunkTypeLLMClassifier:
         content: str | None,
         section_path: list[str],
     ) -> ChunkType | None:
-        """Return a ChunkType, or None when unavailable or when LLM returns GENERAL."""
         if self._llm_service is None or not content or not content.strip():
             return None
-        prompt = self._prompt_builder.build_reclassification_prompt(
-            content=content,
-            section_path=section_path,
+        prompt = self._prompt_builder.build(
+            _WorkflowLocalChunk(
+                content=content,
+                section_path=section_path,
+            )
         )
-        try:
-            response = self._llm_service.generate(prompt, model=self._model)
-            result = parse_chunk_type_response(response or "")
-            return result if result != ChunkType.GENERAL else None
-        except Exception:
-            return None
+        response = self._llm_service.generate(
+            prompt,
+            model=self._model,
+            response_schema=build_classification_response_json_schema(),
+        )
+        payload = self._response_parser.parse(response)
+        return self._resolve_chunk_type(payload.label)
+
+    @staticmethod
+    def _resolve_chunk_type(label: str) -> ChunkType | None:
+        normalized = label.strip().lower()
+        for chunk_type in ChunkType:
+            if normalized in {chunk_type.value, chunk_type.name.lower()}:
+                return (
+                    None
+                    if chunk_type in {ChunkType.GENERAL, ChunkType.UNKNOWN}
+                    else chunk_type
+                )
+        return None
+
+
+class _WorkflowLocalChunk:
+    def __init__(self, *, content: str, section_path: list[str]) -> None:
+        self.chunk_id = "llm_reclassification_candidate"
+        self.document_id = "unknown"
+        self.section_id = None
+        self.section_path = section_path
+        self.source = _WorkflowLocalSource()
+        self.chunk_index = 1
+        self.chunk_total = 1
+        self.content = content
+
+
+class _WorkflowLocalSource:
+    page_start = None
+    page_end = None

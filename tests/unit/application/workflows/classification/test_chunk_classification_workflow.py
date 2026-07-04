@@ -9,18 +9,21 @@ from src.shared.ids import IdGenerator
 class FakeLLMService:
     def __init__(self, responses: list[str]) -> None:
         self.responses = list(responses)
-        self.calls: list[dict[str, str | None]] = []
+        self.calls: list[dict[str, object]] = []
 
     def generate(
         self,
         prompt: str,
         model: str | None = None,
         activity_context=None,
+        *,
+        response_schema: dict | None = None,
     ) -> str:
         self.calls.append(
             {
                 "prompt": prompt,
                 "model": model,
+                "response_schema": response_schema,
             }
         )
         return self.responses.pop(0)
@@ -99,16 +102,13 @@ def test_classify_chunk_builds_classification_and_saves_it(sample_chunk) -> None
     assert sample_chunk.content in fake_llm_service.calls[0]["prompt"]
     assert "Maintenance Schedule" in fake_llm_service.calls[0]["prompt"]
     assert fake_llm_service.calls[0]["model"] == "qwen3:8b"
+    assert isinstance(fake_llm_service.calls[0]["response_schema"], dict)
 
 
 def test_classify_chunk_maps_invalid_label_to_unknown(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
-            "label: made-up-classification\n"
-            "confidence_score: 0.35\n"
-            "rationale: The content does not fit a supported label.\n"
-            "evidence:\n"
-            "- Replace hydraulic filter every 1000 operating hours."
+            '{"label":"made-up-classification","confidence_score":0.35,"rationale":"The content does not fit a supported label.","evidence":["Replace hydraulic filter every 1000 operating hours."]}'
         ]
     )
     fake_classification_service = FakeClassificationService()

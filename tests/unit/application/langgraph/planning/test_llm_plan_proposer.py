@@ -7,10 +7,16 @@ from src.application.langgraph.state import build_agent_state
 class FakeLLMService:
     def __init__(self, response: str) -> None:
         self.response = response
-        self.prompts: list[tuple[str, str | None]] = []
+        self.prompts: list[tuple[str, str | None, dict | None]] = []
 
-    def generate(self, prompt: str, model: str | None = None) -> str:
-        self.prompts.append((prompt, model))
+    def generate(
+        self,
+        prompt: str,
+        model: str | None = None,
+        *,
+        response_schema: dict | None = None,
+    ) -> str:
+        self.prompts.append((prompt, model, response_schema))
         return self.response
 
 
@@ -35,6 +41,7 @@ def test_llm_plan_proposer_returns_raw_text_and_tracks_diagnostics() -> None:
     assert raw_text.startswith('{"goal"')
     assert llm_service.prompts
     assert llm_service.prompts[0][1] == "planner-model"
+    assert isinstance(llm_service.prompts[0][2], dict)
     assert proposer.last_diagnostics["model_used"] == "planner-model"
     assert proposer.last_diagnostics["prompt_version"] == "v1"
     assert proposer.last_diagnostics["elapsed_ms"] >= 0
