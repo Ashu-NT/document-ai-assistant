@@ -1,29 +1,32 @@
+from __future__ import annotations
+
 import re
+
 from pydantic import ValidationError
 
-from src.application.workflows.classification.classification_response_schema import (
-    ClassificationResponsePayload,
+from src.application.services.answer_generation.answer_generation_response_schema import (
+    AnswerGenerationResponsePayload,
 )
 from src.shared.exceptions import SchemaValidationError
 
-THINK_BLOCK_PATTERN = re.compile(r"<think>.*?</think>", re.IGNORECASE | re.DOTALL)
+_THINK_BLOCK_PATTERN = re.compile(r"<think>.*?</think>", re.IGNORECASE | re.DOTALL)
 
 
-class ClassificationResponseParser:
-    def parse(self, response: str) -> ClassificationResponsePayload:
+class AnswerGenerationResponseParser:
+    def parse(self, response: str) -> AnswerGenerationResponsePayload:
         normalized = self._strip_code_fences(
-            THINK_BLOCK_PATTERN.sub("", response or "").strip()
+            _THINK_BLOCK_PATTERN.sub("", response or "").strip()
         )
         try:
-            return ClassificationResponsePayload.model_validate_json(normalized)
+            return AnswerGenerationResponsePayload.model_validate_json(normalized)
         except ValidationError as exc:
             if self._is_json_error(exc):
                 raise SchemaValidationError(
-                    "Malformed classification response.",
+                    "Malformed answer generation response JSON.",
                     details={"response": response},
                 ) from exc
             raise SchemaValidationError(
-                "Classification response failed schema validation.",
+                "Answer generation response failed schema validation.",
                 details={"response": response, "errors": exc.errors()},
             ) from exc
 

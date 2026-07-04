@@ -427,7 +427,7 @@ class ExtractionWorkflow:
             activity_context=activity_context,
             temperature=self.temperature,
             json_mode=self.json_mode,
-            response_schema=build_extraction_response_json_schema() if self.json_mode else None,
+            response_schema=build_extraction_response_json_schema(),
         )
         self._emit_progress(
             progress_callback,
@@ -482,20 +482,6 @@ class ExtractionWorkflow:
                     f"{event_count} item(s) referenced a source_chunk_id outside "
                     "this batch; flagged for human review and pinned to a "
                     "fallback chunk instead of failing the batch."
-                ),
-            )
-
-        if self.response_parser.last_null_items_stripped:
-            stripped_summary = ", ".join(
-                f"{field}={count}"
-                for field, count in self.response_parser.last_null_items_stripped.items()
-            )
-            self._emit_progress(
-                progress_callback,
-                (
-                    f"[extraction {batch.batch_index}/{batch.batch_count}] "
-                    f"Normalized null placeholder item(s) in model output: "
-                    f"{stripped_summary}."
                 ),
             )
 

@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-import json
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from src.application.langgraph.strategy_advisor.advisor_models import (
     StrategyAdvisorIntent,
     StrategyAdvisorProposal,
     StrategyAdvisorRequest,
+)
+from src.application.langgraph.strategy_advisor.strategy_advisor_response_parser import (
+    StrategyAdvisorResponseParser,
 )
 from src.application.langgraph.routing import RouteType
 from src.shared.exceptions import SchemaValidationError
@@ -18,16 +20,6 @@ if TYPE_CHECKING:
     )
 
 _NORMALIZE_RE = re.compile(r"[^a-z0-9]+")
-_ALLOWED_KEYS = {
-    "intent",
-    "route",
-    "confidence",
-    "concepts",
-    "recommended_strategies",
-    "comparison",
-    "requires_table",
-    "reason",
-}
 _ALLOWED_ROUTES = {
     RouteType.ANSWER_QUESTION.value,
     RouteType.DEEP_RESEARCH.value,
@@ -38,16 +30,18 @@ _ALLOWED_ROUTES = {
 
 
 class StrategyAdvisorValidator:
+    def __init__(self, *, response_parser: StrategyAdvisorResponseParser | None = None) -> None:
+        self.response_parser = response_parser or StrategyAdvisorResponseParser()
+
     def validate_response(
         self,
         raw_response: str,
         *,
         request: StrategyAdvisorRequest,
     ) -> StrategyAdvisorProposal:
-        payload = self._extract_payload(raw_response)
-        self._validate_keys(payload)
-        intent = StrategyAdvisorIntent(str(payload.get("intent") or "").strip())
-        route = str(payload.get("route") or "").strip()
+        payload = self.response_parser.parse(raw_response)
+        intent = payload.intent
+        route = payload.route
         if route not in _ALLOWED_ROUTES:
             raise SchemaValidationError(
                 "Strategy advisor returned an unsupported route.",
@@ -58,17 +52,17 @@ class StrategyAdvisorValidator:
                 "Strategy advisor returned a route outside the allowed runtime routes.",
                 details={"route": route},
             )
-        confidence = float(payload.get("confidence") or 0.0)
+        confidence = payload.confidence
         if confidence < 0.0 or confidence > 1.0:
             raise SchemaValidationError(
                 "Strategy advisor confidence must be between 0 and 1.",
                 details={"confidence": confidence},
             )
-        concepts = self._validate_concepts(payload.get("concepts"), request.query_text)
-        strategies = self._validate_strategies(payload.get("recommended_strategies"))
-        comparison = bool(payload.get("comparison"))
-        requires_table = bool(payload.get("requires_table"))
-        reason = str(payload.get("reason") or "").strip()
+        concepts = self._validate_concepts(payload.concepts, request.query_text)
+        strategies = self._validate_strategies(payload.recommended_strategies)
+        comparison = payload.comparison
+        requires_table = payload.requires_table
+        reason = payload.reason
         if not reason:
             raise SchemaValidationError(
                 "Strategy advisor reason is required.",
@@ -101,45 +95,8 @@ class StrategyAdvisorValidator:
             diagnostics={"raw_response": raw_response},
         )
 
-    @staticmethod
-    def _extract_payload(raw_response: str) -> dict[str, Any]:
-        candidate = raw_response.strip()
-        if candidate.startswith("```"):
-            candidate = candidate.strip("`")
-            if candidate.lower().startswith("json"):
-                candidate = candidate[4:].strip()
-        start_index = candidate.find("{")
-        end_index = candidate.rfind("}")
-        if start_index < 0 or end_index < 0 or end_index <= start_index:
-            raise SchemaValidationError(
-                "Malformed strategy advisor response JSON.",
-                details={"raw_response": raw_response},
-            )
-        try:
-            payload = json.loads(candidate[start_index : end_index + 1])
-        except json.JSONDecodeError as exc:
-            raise SchemaValidationError(
-                "Malformed strategy advisor response JSON.",
-                details={"raw_response": raw_response},
-            ) from exc
-        if not isinstance(payload, dict):
-            raise SchemaValidationError(
-                "Strategy advisor response must decode to a JSON object.",
-                details={"raw_response": raw_response},
-            )
-        return payload
-
-    @staticmethod
-    def _validate_keys(payload: dict[str, Any]) -> None:
-        unknown_keys = sorted(set(payload.keys()) - _ALLOWED_KEYS)
-        if unknown_keys:
-            raise SchemaValidationError(
-                "Strategy advisor response contained unsupported keys.",
-                details={"unknown_keys": unknown_keys},
-            )
-
-    def _validate_concepts(self, raw_concepts: Any, query_text: str) -> list[str]:
-        if not isinstance(raw_concepts, list) or not raw_concepts:
+    def _validate_concepts(self, raw_concepts: list[str], query_text: str) -> list[str]:
+        if not raw_concepts:
             raise SchemaValidationError(
                 "Strategy advisor concepts must be a non-empty list.",
                 details={"concepts": raw_concepts},
@@ -170,12 +127,12 @@ class StrategyAdvisorValidator:
         return concepts
 
     @staticmethod
-    def _validate_strategies(raw_strategies: Any) -> list[RetrievalStrategy]:
+    def _validate_strategies(raw_strategies: list[str]) -> list[RetrievalStrategy]:
         from src.application.langgraph.retrieval_strategy.models.retrieval_strategy import (
             RetrievalStrategy,
         )
 
-        if not isinstance(raw_strategies, list) or not raw_strategies:
+        if not raw_strategies:
             raise SchemaValidationError(
                 "Strategy advisor recommended_strategies must be a non-empty list.",
                 details={"recommended_strategies": raw_strategies},
@@ -183,7 +140,7 @@ class StrategyAdvisorValidator:
         strategies: list[RetrievalStrategy] = []
         seen: set[RetrievalStrategy] = set()
         for item in raw_strategies:
-            strategy = RetrievalStrategy(str(item or "").strip())
+            strategy = RetrievalStrategy(item)
             if strategy == RetrievalStrategy.MULTI_STRATEGY:
                 raise SchemaValidationError(
                     "Strategy advisor must recommend concrete strategies, not MULTI_STRATEGY.",

@@ -11,6 +11,9 @@ from src.application.langgraph.retrieval_strategy.policies import (
 from src.application.langgraph.retrieval_strategy.services.retrieval_strategy_json_parser import (
     RetrievalStrategyJsonParser,
 )
+from src.application.langgraph.retrieval_strategy.services.retrieval_strategy_response_schema import (
+    build_retrieval_strategy_response_json_schema,
+)
 from src.application.prompts.retrieval_strategy import RetrievalStrategyPromptBuilder
 from src.application.services.ai import LLMService
 
@@ -41,7 +44,11 @@ class LLMStrategySelector:
             signals=signals,
             policy=policy,
         )
-        response = self.llm_service.generate(prompt, model=self.model)
+        response = self.llm_service.generate(
+            prompt,
+            model=self.model,
+            response_schema=build_retrieval_strategy_response_json_schema(),
+        )
         decision = self.json_parser.parse(
             response,
             context=context,

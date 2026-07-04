@@ -14,18 +14,21 @@ from src.shared.ids import IdGenerator
 class FakeLLMService:
     def __init__(self, responses: list[str]) -> None:
         self.responses = list(responses)
-        self.calls: list[dict[str, str | None]] = []
+        self.calls: list[dict[str, object]] = []
 
     def generate(
         self,
         prompt: str,
         model: str | None = None,
         activity_context=None,
+        *,
+        response_schema: dict | None = None,
     ) -> str:
         self.calls.append(
             {
                 "prompt": prompt,
                 "model": model,
+                "response_schema": response_schema,
             }
         )
         return self.responses.pop(0)
@@ -102,16 +105,13 @@ def test_classify_document_builds_classification_and_saves_it(
     assert classification.result.processing_metadata.model_type == "document_classification"
     assert fake_classification_service.saved_document_classifications == [classification]
     assert validator.calls == [classification]
-    assert fake_llm_service.calls == [
-        {
-            "prompt": fake_llm_service.calls[0]["prompt"],
-            "model": "qwen3:8b",
-        }
-    ]
+    assert len(fake_llm_service.calls) == 1
+    assert fake_llm_service.calls[0]["model"] == "qwen3:8b"
     assert sample_document_graph.document.file_name in fake_llm_service.calls[0]["prompt"]
     assert sample_document_graph.document.title in fake_llm_service.calls[0]["prompt"]
     assert "Replace hydraulic filter every 1000 operating hours." in fake_llm_service.calls[0]["prompt"]
     assert "Spare parts table" in fake_llm_service.calls[0]["prompt"]
+    assert isinstance(fake_llm_service.calls[0]["response_schema"], dict)
 
 
 def test_classify_document_raises_when_validator_rejects_response(
@@ -133,7 +133,7 @@ def test_classify_document_raises_when_validator_rejects_response(
     with pytest.raises(SchemaValidationError):
         workflow.classify_document(sample_document_graph)
 
-    assert len(validator.calls) == 1
+    assert validator.calls == []
     assert fake_classification_service.saved_document_classifications == []
 
 

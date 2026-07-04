@@ -5,6 +5,9 @@ from typing import Any
 
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.planning.plan_policy import PlanPolicy
+from src.application.langgraph.planning.plan_response_schema import (
+    build_plan_response_json_schema,
+)
 from src.application.langgraph.routing import RouteDecision
 from src.application.langgraph.state import AgentState
 from src.application.prompts.planning import PLANNING_PROMPT_VERSION, PlanPromptBuilder
@@ -43,7 +46,11 @@ class LLMPlanProposer:
             policy=policy,
         )
         started = perf_counter()
-        raw_text = self.llm_service.generate(prompt, model=self.model)
+        raw_text = self.llm_service.generate(
+            prompt,
+            model=self.model,
+            response_schema=build_plan_response_json_schema(),
+        )
         elapsed_ms = round((perf_counter() - started) * 1000, 3)
         self._last_diagnostics = {
             "model_used": self.model,

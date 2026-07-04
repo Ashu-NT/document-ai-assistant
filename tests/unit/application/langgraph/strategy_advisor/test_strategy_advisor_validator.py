@@ -73,6 +73,10 @@ def test_strategy_advisor_validator_rejects_ungrounded_or_hallucinated_fields() 
             ),
         )
     except SchemaValidationError as exc:
-        assert "unsupported keys" in exc.message.lower()
+        assert "schema validation" in exc.message.lower()
+        assert any(
+            error.get("type") == "extra_forbidden"
+            for error in exc.details["errors"]
+        )
     else:  # pragma: no cover
         raise AssertionError("Expected strategy advisor validation to reject extra keys.")

@@ -41,6 +41,9 @@ class AnswerPromptBuilder:
 
         return (
             f"{ANSWER_GROUNDING_RULES}\n\n"
+            "Return JSON only with this shape:\n"
+            '{\n  "answer_text": "<grounded answer>"\n}\n'
+            "Do not wrap the JSON in markdown fences.\n\n"
             f"{self._intent_block(request)}"
             f"{self._format_policy_block(request)}"
             f"Question: {request.question}\n\n"

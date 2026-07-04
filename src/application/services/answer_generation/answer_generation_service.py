@@ -18,6 +18,12 @@ from src.application.services.answer_generation.intent.answer_intent_analyzer im
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
 )
+from src.application.services.answer_generation.answer_generation_response_parser import (
+    AnswerGenerationResponseParser,
+)
+from src.application.services.answer_generation.answer_generation_response_schema import (
+    build_answer_generation_response_json_schema,
+)
 from src.application.services.answer_generation.answer_generation_result import (
     GeneratedAnswer,
 )
@@ -49,6 +55,7 @@ class AnswerGenerationService:
         answer_context_organizer: AnswerContextOrganizer | None = None,
         identifier_answer_renderer: IdentifierAnswerRenderer | None = None,
         spare_parts_list_renderer: SparePartsListRenderer | None = None,
+        response_parser: AnswerGenerationResponseParser | None = None,
         answer_generation_model: str | None = None,
     ) -> None:
         self.llm_service = llm_service
@@ -63,6 +70,7 @@ class AnswerGenerationService:
         self.spare_parts_list_renderer = (
             spare_parts_list_renderer or SparePartsListRenderer()
         )
+        self.response_parser = response_parser or AnswerGenerationResponseParser()
         self.answer_generation_model = (
             answer_generation_model or _default_answer_generation_model()
         )
@@ -126,14 +134,20 @@ class AnswerGenerationService:
                     **diagnostics,
                     "deterministic_renderer": deterministic_renderer_name,
                 },
+                raw_model_output=deterministic_answer,
             )
 
         prompt = self.prompt_builder.build(resolved_request)
-        raw_output = self.llm_service.generate(prompt, model=self.answer_generation_model)
+        raw_output = self.llm_service.generate(
+            prompt,
+            model=self.answer_generation_model,
+            response_schema=build_answer_generation_response_json_schema(),
+        )
+        parsed_output = self.response_parser.parse(raw_output)
         model_name = self.answer_generation_model or "default"
 
         return self._build_generated_answer(
-            answer_text=raw_output,
+            answer_text=parsed_output.answer_text,
             citations=citations,
             cited_chunk_ids=cited_chunk_ids,
             prompt_version=prompt_version,
@@ -141,6 +155,7 @@ class AnswerGenerationService:
             answer_intent=resolved_request.answer_intent,
             confidence=intent_decision.confidence,
             diagnostics=diagnostics,
+            raw_model_output=raw_output,
         )
 
     @staticmethod
@@ -263,6 +278,7 @@ class AnswerGenerationService:
         answer_intent,
         confidence: float,
         diagnostics: dict[str, object],
+        raw_model_output: str,
     ) -> GeneratedAnswer:
         return GeneratedAnswer(
             answer_text=answer_text,
@@ -271,7 +287,6 @@ class AnswerGenerationService:
             prompt_version=prompt_version,
             model_name=model_name,
             confidence=confidence,
-            raw_model_output=answer_text,
             metadata=ModelProcessingMetadata(
                 model_name=model_name,
                 model_type="answer_generation",
@@ -280,4 +295,5 @@ class AnswerGenerationService:
             ),
             answer_intent=answer_intent,
             diagnostics=diagnostics,
+            raw_model_output=raw_model_output,
         )

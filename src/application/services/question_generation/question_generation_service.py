@@ -1,4 +1,3 @@
-import re
 from typing import Callable
 
 from src.application.prompts.question_generation import (
@@ -6,13 +5,17 @@ from src.application.prompts.question_generation import (
     QuestionPromptBuilder,
 )
 from src.application.services.ai import LLMService
+from src.application.services.question_generation.question_generation_response_parser import (
+    QuestionGenerationResponseParser,
+)
+from src.application.services.question_generation.question_generation_response_schema import (
+    build_question_generation_response_json_schema,
+)
 from src.domain.common import ModelProcessingMetadata
 from src.domain.document import DocumentChunk, GeneratedQuestion
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
 from src.shared.ids import IdGenerator, IdPrefix
-
-QUESTION_PREFIX_PATTERN = re.compile(r"^\s*(?:[-*]+|\d+[\.\)]|[A-Za-z]\))\s*")
 
 
 def _default_question_generation_model() -> str | None:
@@ -42,6 +45,7 @@ class QuestionGenerationService:
             question_generation_model
             or _default_question_generation_model()
         )
+        self.response_parser = QuestionGenerationResponseParser()
 
     @tracked_action(
         action="question_generation.chunk_generated",
@@ -131,12 +135,10 @@ class QuestionGenerationService:
         response = self.llm_service.generate(
             prompt,
             model=self.question_generation_model,
+            response_schema=build_question_generation_response_json_schema(),
         )
 
-        question_texts = self._parse_questions(
-            response,
-            max_questions=max_questions,
-        )
+        question_texts = self.response_parser.parse(response)[:max_questions]
 
         return [
             self._build_question(
@@ -170,31 +172,6 @@ class QuestionGenerationService:
                 prompt_version=prompt_version,
             ),
         )
-
-    @classmethod
-    def _parse_questions(
-        cls,
-        response: str,
-        *,
-        max_questions: int,
-    ) -> list[str]:
-        questions: list[str] = []
-        seen: set[str] = set()
-
-        for raw_line in response.splitlines():
-            question = QUESTION_PREFIX_PATTERN.sub("", raw_line).strip()
-            question = question.strip('"').strip("'").strip()
-
-            if not question or question in seen:
-                continue
-
-            seen.add(question)
-            questions.append(question)
-
-            if len(questions) >= max_questions:
-                break
-
-        return questions
 
     @staticmethod
     def _emit_progress(

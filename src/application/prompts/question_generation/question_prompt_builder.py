@@ -25,7 +25,11 @@ class QuestionPromptBuilder:
 
         return (
             "You generate concise user questions from technical document excerpts.\n"
-            "Return questions only, one per line.\n"
+            "Return JSON only.\n"
+            "Use this schema:\n"
+            "{\n"
+            '  "questions": ["<question 1>", "<question 2>"]\n'
+            "}\n"
             "Do not include numbering, bullets, explanations, or extra text.\n"
             f"Maximum questions: {max_questions}\n"
             f"Section path: {section_path}\n"

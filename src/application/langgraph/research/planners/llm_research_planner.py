@@ -6,6 +6,9 @@ from src.application.langgraph.research.planners.research_plan_builder import (
 from src.application.langgraph.research.services.research_json_parser import (
     ResearchJsonParser,
 )
+from src.application.langgraph.research.services.research_planning_response_schema import (
+    build_research_planning_response_json_schema,
+)
 from src.application.prompts.research import ResearchPlanningPromptBuilder
 
 
@@ -27,33 +30,26 @@ class LLMResearchPlanner:
 
     def plan(self, *, goal, policy):
         prompt = self.prompt_builder.build(goal, policy)
-        raw_payload = self.llm_service.generate(prompt, model=self.model)
-        data = self.json_parser.parse_object(
-            raw_payload,
-            message_prefix="research planning response",
+        raw_payload = self.llm_service.generate(
+            prompt,
+            model=self.model,
+            response_schema=build_research_planning_response_json_schema(),
         )
-        reason = str(data.get("reason") or "").strip() or "LLM research planning."
+        data = self.json_parser.parse_planning_response(raw_payload)
+        reason = data.reason or "LLM research planning."
         tasks = []
-        for raw_task in list(data.get("tasks") or []):
-            if not isinstance(raw_task, dict):
-                continue
+        for raw_task in data.tasks:
             tasks.append(
                 self.plan_builder.build_task(
-                    title=str(raw_task.get("title") or "").strip(),
-                    question=str(raw_task.get("question") or "").strip(),
-                    strategy_hint=_optional_str(raw_task.get("strategy_hint")),
-                    answer_intent_hint=_optional_str(raw_task.get("answer_intent_hint")),
+                    title=raw_task.title,
+                    question=raw_task.question,
+                    strategy_hint=raw_task.strategy_hint,
+                    answer_intent_hint=raw_task.answer_intent_hint,
                     document_id=goal.document_id,
-                    required=bool(raw_task.get("required", True)),
-                    depends_on=[
-                        str(item)
-                        for item in list(raw_task.get("depends_on") or [])
-                        if str(item).strip()
-                    ],
-                    expected_evidence_type=_optional_str(
-                        raw_task.get("expected_evidence_type")
-                    ),
-                    max_results=int(raw_task.get("max_results") or policy.max_evidence_per_task),
+                    required=raw_task.required,
+                    depends_on=list(raw_task.depends_on),
+                    expected_evidence_type=raw_task.expected_evidence_type,
+                    max_results=raw_task.max_results or policy.max_evidence_per_task,
                 )
             )
         plan = self.plan_builder.build_plan(
@@ -64,10 +60,3 @@ class LLMResearchPlanner:
             policy=policy,
         )
         return plan, raw_payload
-
-
-def _optional_str(value: object) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    return text or None

@@ -56,6 +56,8 @@ def test_answer_prompt_builder_produces_grounding_instructions() -> None:
     assert builder.prompt_version == ANSWER_PROMPT_VERSION
     assert "ONLY the provided sources" in prompt
     assert "Do not use outside knowledge" in prompt
+    assert 'Return JSON only with this shape:' in prompt
+    assert '"answer_text": "<grounded answer>"' in prompt
     assert "Question: When should I replace the hydraulic filter?" in prompt
     assert "Answer format policy:" in prompt
     assert "Organized context:" in prompt

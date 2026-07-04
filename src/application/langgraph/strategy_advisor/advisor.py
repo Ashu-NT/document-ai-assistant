@@ -9,6 +9,9 @@ from src.application.langgraph.strategy_advisor.advisor_models import (
 from src.application.langgraph.strategy_advisor.advisor_validator import (
     StrategyAdvisorValidator,
 )
+from src.application.langgraph.strategy_advisor.strategy_advisor_response_schema import (
+    build_strategy_advisor_response_json_schema,
+)
 from src.application.prompts.strategy_advisor import StrategyAdvisorPromptBuilder
 from src.application.services.ai import LLMService
 from src.shared.exceptions import ApplicationError, SchemaValidationError
@@ -52,7 +55,11 @@ class StrategyAdvisor:
         ]
         prompt = self.prompt_builder.build(request)
         try:
-            raw_response = self.llm_service.generate(prompt, model=self.model)
+            raw_response = self.llm_service.generate(
+                prompt,
+                model=self.model,
+                response_schema=build_strategy_advisor_response_json_schema(),
+            )
             proposal = self.validator.validate_response(raw_response, request=request)
         except (ApplicationError, SchemaValidationError, ValueError) as exc:
             events.append(

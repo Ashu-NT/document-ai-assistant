@@ -14,6 +14,9 @@ from src.application.langgraph.reflection.policies import ReflectionPolicy
 from src.application.langgraph.reflection.services.reflection_json_parser import (
     ReflectionJsonParser,
 )
+from src.application.langgraph.reflection.services.reflection_response_schema import (
+    build_reflection_response_json_schema,
+)
 from src.application.langgraph.reflection.validation import ReflectionValidator
 from src.application.prompts.reflection import (
     REFLECTION_PROMPT_VERSION,
@@ -110,7 +113,11 @@ class ReflectionService:
                     reflection_attempt_count=reflection_attempts,
                     retry_count=retrieval_retry_count,
                 )
-                payload = self.llm_service.generate(prompt, model=self.model)
+                payload = self.llm_service.generate(
+                    prompt,
+                    model=self.model,
+                    response_schema=build_reflection_response_json_schema(),
+                )
                 raw_llm_decision = self.json_parser.parse(payload)
                 used_llm = True
             except ApplicationError:

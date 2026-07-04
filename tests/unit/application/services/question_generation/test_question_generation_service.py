@@ -6,13 +6,20 @@ from src.shared.ids import IdGenerator
 class FakeLLMService:
     def __init__(self, responses: list[str]) -> None:
         self.responses = list(responses)
-        self.calls: list[dict[str, str | None]] = []
+        self.calls: list[dict[str, object]] = []
 
-    def generate(self, prompt: str, model: str | None = None) -> str:
+    def generate(
+        self,
+        prompt: str,
+        model: str | None = None,
+        *,
+        response_schema: dict | None = None,
+    ) -> str:
         self.calls.append(
             {
                 "prompt": prompt,
                 "model": model,
+                "response_schema": response_schema,
             }
         )
         return self.responses.pop(0)
@@ -50,8 +57,7 @@ def clone_chunk(sample_chunk, *, chunk_id: str, content: str):
 def test_generate_for_chunk_creates_generated_questions(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
-            "When should the hydraulic filter be replaced?\n"
-            "How often does the maintenance interval occur?"
+            '{"questions":["When should the hydraulic filter be replaced?","How often does the maintenance interval occur?"]}'
         ]
     )
     service = make_service(fake_llm_service)
@@ -69,8 +75,9 @@ def test_generate_for_chunk_creates_generated_questions(sample_chunk) -> None:
     assert fake_llm_service.calls[0]["model"] == "qwen3:8b"
     assert sample_chunk.content in fake_llm_service.calls[0]["prompt"]
     assert "Maintenance Schedule" in fake_llm_service.calls[0]["prompt"]
-    assert "Return questions only" in fake_llm_service.calls[0]["prompt"]
+    assert "Return JSON only" in fake_llm_service.calls[0]["prompt"]
     assert "Maximum questions: 5" in fake_llm_service.calls[0]["prompt"]
+    assert isinstance(fake_llm_service.calls[0]["response_schema"], dict)
 
 
 def test_generate_for_chunks_creates_questions_for_multiple_chunks(
@@ -83,8 +90,8 @@ def test_generate_for_chunks_creates_questions_for_multiple_chunks(
     )
     fake_llm_service = FakeLLMService(
         [
-            "When should the hydraulic filter be replaced?",
-            "How often should the pump housing be inspected?",
+            '{"questions":["When should the hydraulic filter be replaced?"]}',
+            '{"questions":["How often should the pump housing be inspected?"]}',
         ]
     )
     service = make_service(fake_llm_service)
@@ -104,9 +111,7 @@ def test_generate_for_chunks_creates_questions_for_multiple_chunks(
 def test_generate_for_chunk_trims_numbering_and_bullets(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
-            "1. When should the hydraulic filter be replaced?\n"
-            "- How often does the maintenance interval occur?\n"
-            "* Which component is being serviced?"
+            '{"questions":["1. When should the hydraulic filter be replaced?","- How often does the maintenance interval occur?","* Which component is being serviced?"]}'
         ]
     )
     service = make_service(fake_llm_service)
@@ -123,9 +128,7 @@ def test_generate_for_chunk_trims_numbering_and_bullets(sample_chunk) -> None:
 def test_generate_for_chunk_respects_max_questions(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
-            "1. Question one?\n"
-            "2. Question two?\n"
-            "3. Question three?"
+            '{"questions":["1. Question one?","2. Question two?","3. Question three?"]}'
         ]
     )
     service = make_service(fake_llm_service)
@@ -142,7 +145,7 @@ def test_generate_for_chunk_respects_max_questions(sample_chunk) -> None:
 def test_generate_for_chunk_generates_unique_ids(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
-            "Question one?\nQuestion two?"
+            '{"questions":["Question one?","Question two?"]}'
         ]
     )
     service = make_service(fake_llm_service)
@@ -156,7 +159,7 @@ def test_generate_for_chunk_generates_unique_ids(sample_chunk) -> None:
 def test_generate_for_chunk_uses_injected_llm_service_only(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
-            "Question one?"
+            '{"questions":["Question one?"]}'
         ]
     )
     service = make_service(fake_llm_service)
@@ -175,8 +178,8 @@ def test_generate_for_chunks_emits_progress_messages(sample_chunk) -> None:
     )
     fake_llm_service = FakeLLMService(
         [
-            "When should the hydraulic filter be replaced?",
-            "How often should the pump housing be inspected?",
+            '{"questions":["When should the hydraulic filter be replaced?"]}',
+            '{"questions":["How often should the pump housing be inspected?"]}',
         ]
     )
     service = make_service(fake_llm_service)

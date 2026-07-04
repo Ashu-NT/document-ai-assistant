@@ -33,7 +33,13 @@ class FakeLLMService:
         self.response = response
         self.calls = 0
 
-    def generate(self, prompt: str, model: str | None = None) -> str:
+    def generate(
+        self,
+        prompt: str,
+        model: str | None = None,
+        *,
+        response_schema: dict | None = None,
+    ) -> str:
         self.calls += 1
         return self.response
 
