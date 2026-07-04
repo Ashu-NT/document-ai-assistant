@@ -8,21 +8,19 @@ from src.application.services.ai import LLMService
 from src.application.services.extraction import ExtractionService
 from src.application.validation.common import ValidationResult
 from src.application.validation.extraction import ExtractionResultValidator
-from src.application.workflows.extraction.extraction_batch import ExtractionBatch
-from src.application.workflows.extraction.extraction_batch_diagnostics import (
+from src.application.workflows.extraction.batching import (
+    ExtractionBatch,
     ExtractionBatchDiagnostics,
+    ExtractionChunkBatcher,
     safe_response_preview,
 )
-from src.application.workflows.extraction.extraction_chunk_batcher import (
-    ExtractionChunkBatcher,
+from src.application.workflows.extraction.context import (
+    SemanticExtractionContext,
+    SemanticExtractionContextBuilder,
 )
-from src.application.workflows.extraction.extraction_result_merger import (
-    ExtractionResultMerger,
-)
-from src.application.workflows.extraction.extraction_response_parser import (
+from src.application.workflows.extraction.response import (
     ExtractionResponseParser,
-)
-from src.application.workflows.extraction.extraction_response_schema import (
+    ExtractionResultMerger,
     build_extraction_response_json_schema,
 )
 from src.domain.assets import TableAsset
@@ -172,6 +170,7 @@ class ExtractionWorkflow:
         max_attempts: int | None = None,
         temperature: float | None = None,
         json_mode: bool | None = None,
+        semantic_context_builder: SemanticExtractionContextBuilder | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.extraction_service = extraction_service
@@ -179,6 +178,9 @@ class ExtractionWorkflow:
         self.id_generator = id_generator
         self.prompt_builder = prompt_builder or IdentifierExtractionPromptBuilder()
         self.response_parser = response_parser or ExtractionResponseParser()
+        self.semantic_context_builder = (
+            semantic_context_builder or SemanticExtractionContextBuilder()
+        )
         self.extraction_model = extraction_model or _default_extraction_model()
         self.confidence_threshold = (
             confidence_threshold
@@ -225,8 +227,7 @@ class ExtractionWorkflow:
         )
         self.last_batch_diagnostics: list[ExtractionBatchDiagnostics] = []
         self._invalid_source_chunk_id_events: list[dict[str, Any]] = []
-        self._section_lookup: dict[str, DocumentSection] = {}
-        self._chunks_by_section: dict[str, list[DocumentChunk]] = {}
+        self._semantic_contexts: dict[str, SemanticExtractionContext] = {}
 
     @tracked_action(
         action="extraction.generated",
@@ -256,8 +257,11 @@ class ExtractionWorkflow:
         if tables:
             chunk_list = self._hydrate_table_chunks(chunk_list, tables)
 
-        self._section_lookup = sections or {}
-        self._chunks_by_section = self._group_chunks_by_section(chunk_list)
+        self._semantic_contexts = self.semantic_context_builder.build_all(
+            document_id=document_id,
+            chunks=chunk_list,
+            sections=sections,
+        )
 
         batches = self.chunk_batcher.build_batches(chunk_list)
         self._emit_progress(
@@ -935,7 +939,6 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
             ),
             source_metadata=self._build_source_metadata(
-                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1009,7 +1012,6 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
             ),
             source_metadata=self._build_source_metadata(
-                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1080,7 +1082,6 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
             ),
             source_metadata=self._build_source_metadata(
-                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1133,7 +1134,6 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
             ),
             source_metadata=self._build_source_metadata(
-                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1186,7 +1186,6 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
             ),
             source_metadata=self._build_source_metadata(
-                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1261,7 +1260,6 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
             ),
             source_metadata=self._build_source_metadata(
-                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1320,7 +1318,6 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
             ),
             source_metadata=self._build_source_metadata(
-                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1374,7 +1371,6 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
             ),
             source_metadata=self._build_source_metadata(
-                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1434,7 +1430,6 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
             ),
             source_metadata=self._build_source_metadata(
-                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1495,7 +1490,6 @@ class ExtractionWorkflow:
                 chunk_lookup=chunk_lookup,
             ),
             source_metadata=self._build_source_metadata(
-                document_id=document_id,
                 source_chunk_id=source_chunk_id,
                 chunk_lookup=chunk_lookup,
             ),
@@ -1771,67 +1765,20 @@ class ExtractionWorkflow:
             bbox=chunk.source.bbox,
         )
 
-    @staticmethod
-    def _group_chunks_by_section(
-        chunks: list[DocumentChunk],
-    ) -> dict[str, list[DocumentChunk]]:
-        grouped: dict[str, list[DocumentChunk]] = {}
-        for chunk in chunks:
-            if not chunk.section_id:
-                continue
-            grouped.setdefault(chunk.section_id, []).append(chunk)
-
-        for section_chunks in grouped.values():
-            section_chunks.sort(key=lambda chunk: chunk.chunk_index)
-
-        return grouped
-
-    def _resolve_nearby_chunk_ids(self, chunk: DocumentChunk) -> tuple[str, ...]:
-        if not chunk.section_id:
-            return ()
-
-        siblings = self._chunks_by_section.get(chunk.section_id, [])
-        index = next(
-            (i for i, sibling in enumerate(siblings) if sibling.chunk_id == chunk.chunk_id),
-            None,
-        )
-        if index is None:
-            return ()
-
-        nearby: list[str] = []
-        if index > 0:
-            nearby.append(siblings[index - 1].chunk_id)
-        if index < len(siblings) - 1:
-            nearby.append(siblings[index + 1].chunk_id)
-        return tuple(nearby)
-
     def _build_source_metadata(
         self,
         *,
-        document_id: str,
         source_chunk_id: str | None,
         chunk_lookup: dict[str, DocumentChunk],
     ) -> SemanticSourceMetadata | None:
         if source_chunk_id is None:
             return None
 
-        chunk = chunk_lookup.get(source_chunk_id)
-        if chunk is None:
+        if source_chunk_id not in chunk_lookup:
             return None
 
-        section = (
-            self._section_lookup.get(chunk.section_id) if chunk.section_id else None
-        )
+        context = self._semantic_contexts.get(source_chunk_id)
+        if context is None:
+            return None
 
-        return SemanticSourceMetadata(
-            document_id=document_id,
-            chunk_id=chunk.chunk_id,
-            section_id=chunk.section_id,
-            section_path=tuple(chunk.section_path),
-            page_start=chunk.source.page_start,
-            page_end=chunk.source.page_end,
-            parent_section_id=section.parent_section_id if section else None,
-            table_id=chunk.table_ids[0] if chunk.table_ids else None,
-            source_element_ids=tuple(chunk.element_ids),
-            nearby_chunk_ids=self._resolve_nearby_chunk_ids(chunk),
-        )
+        return context.to_source_metadata()

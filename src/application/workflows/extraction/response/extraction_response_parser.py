@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from src.application.validation.common import ValidationResult
-from src.application.workflows.extraction.extraction_response_schema import (
+from src.application.workflows.extraction.response.extraction_response_schema import (
     ExtractionResponsePayload,
 )
 from src.shared.exceptions import SchemaValidationError

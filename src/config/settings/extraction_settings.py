@@ -58,3 +58,8 @@ class ExtractionSettings(AppBaseSettings):
         default=3,
         alias="IDENTIFIER_MIN_LENGTH",
     )
+
+    extraction_candidate_router_enabled: bool = Field(
+        default=False,
+        alias="EXTRACTION_CANDIDATE_ROUTER_ENABLED",
+    )

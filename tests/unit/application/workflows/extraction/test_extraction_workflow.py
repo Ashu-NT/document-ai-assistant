@@ -3,9 +3,7 @@ import pytest
 from src.application.prompts.extraction import IdentifierExtractionPromptBuilder
 from src.application.validation.extraction import ExtractionResultValidator
 from src.application.workflows.extraction import ExtractionWorkflow
-from src.application.workflows.extraction.extraction_chunk_batcher import (
-    ExtractionChunkBatcher,
-)
+from src.application.workflows.extraction.batching import ExtractionChunkBatcher
 from src.domain.assets import TableAsset
 from src.domain.document import DocumentChunk, DocumentSection
 from src.domain.extraction import ProcedureType

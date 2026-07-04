@@ -1,4 +1,6 @@
-from src.application.workflows.extraction.extraction_batch import ExtractionBatch
+from src.application.workflows.extraction.batching.extraction_batch import (
+    ExtractionBatch,
+)
 from src.domain.document import DocumentChunk
 
 
