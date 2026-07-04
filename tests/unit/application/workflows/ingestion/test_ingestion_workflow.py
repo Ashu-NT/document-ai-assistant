@@ -238,6 +238,7 @@ class FakeExtractionWorkflow:
         activity_context=None,
         progress_callback=None,
         replace_existing: bool = False,
+        tables=None,
     ):
         self.calls.append(
             {
@@ -245,6 +246,7 @@ class FakeExtractionWorkflow:
                 "chunks": list(chunks),
                 "progress_callback": progress_callback,
                 "replace_existing": replace_existing,
+                "tables": tables,
             }
         )
         result = copy.deepcopy(self.extraction_result)
@@ -265,12 +267,14 @@ class FailingExtractionWorkflow:
         activity_context=None,
         progress_callback=None,
         replace_existing: bool = False,
+        tables=None,
     ):
         self.calls.append(
             {
                 "document_id": document_id,
                 "chunks": list(chunks),
                 "replace_existing": replace_existing,
+                "tables": tables,
             }
         )
         from src.shared.exceptions import SchemaValidationError
