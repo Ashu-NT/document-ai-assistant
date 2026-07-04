@@ -3,6 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
+pytest.importorskip("qdrant_client")
 from qdrant_client.models import Distance, PayloadSchemaType
 
 from src.application.orchestrator.ingestion import vector_runtime_builder

@@ -1,6 +1,6 @@
-from qdrant_client.http.models import models
-
 import pytest
+pytest.importorskip("qdrant_client")
+from qdrant_client.http.models import models
 
 from src.domain.common import DocumentType
 from src.domain.document import Document, DocumentGraph

@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-
-from qdrant_client import QdrantClient
+from typing import TYPE_CHECKING
 
 from src.application.contracts.ai import EmbeddingProvider
 from src.application.services.document import DocumentLookupService
 from src.application.services.document_exploration import DocumentExplorationService
 from src.application.workflows.retrieval import RetrievalWorkflow
-from src.infrastructure.retrieval.vector import QdrantVectorStore
+
+if TYPE_CHECKING:
+    from qdrant_client import QdrantClient
+    from src.infrastructure.retrieval.vector import QdrantVectorStore
 
 
 @dataclass(slots=True)

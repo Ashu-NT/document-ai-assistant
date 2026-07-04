@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-
-from qdrant_client import QdrantClient
+from typing import TYPE_CHECKING
 
 from src.application.contracts import UnitOfWork
 from src.application.services.classification import ClassificationService
@@ -18,6 +17,9 @@ from src.application.workflows.classification import (
 from src.application.workflows.ingestion import DeleteDocumentWorkflow, IngestionWorkflow
 from src.application.workflows.parsing import ParsingWorkflow
 from src.application.workflows.parsing.builders import DocumentGraphBuilder
+
+if TYPE_CHECKING:
+    from qdrant_client import QdrantClient
 
 
 @dataclass(slots=True)

@@ -1,44 +1,84 @@
 from __future__ import annotations
 
-from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PayloadSchemaType, VectorParams
+from typing import TYPE_CHECKING, Any
 
 from src.application.contracts import UnitOfWork
 from src.application.contracts.ai import EmbeddingProvider
 from src.application.services.ai import EmbeddingService
 from src.application.workflows.embedding import EmbeddingWorkflow
 from src.config.settings import embedding_settings, qdrant_settings, retrieval_settings
-from src.infrastructure.retrieval.vector import QdrantVectorStore
 
 _IDENTIFIER_VALUES_FIELD = "identifier_values"
 
-_DISTANCE_BY_NAME: dict[str, Distance] = {
-    "cosine": Distance.COSINE,
-    "dot": Distance.DOT,
-    "euclid": Distance.EUCLID,
-    "manhattan": Distance.MANHATTAN,
-}
+if TYPE_CHECKING:
+    from qdrant_client import QdrantClient
+    from qdrant_client.models import Distance
+    from src.infrastructure.retrieval.vector import QdrantVectorStore
+
+QdrantClient = None
+QdrantVectorStore = None
+
+
+def _resolve_qdrant_client_class():
+    if QdrantClient is not None:
+        return QdrantClient
+    from qdrant_client import QdrantClient as imported_qdrant_client
+
+    return imported_qdrant_client
+
+
+def _resolve_qdrant_model_types():
+    from qdrant_client.models import (
+        Distance as imported_distance,
+        PayloadSchemaType as imported_payload_schema_type,
+        VectorParams as imported_vector_params,
+    )
+
+    return (
+        imported_distance,
+        imported_payload_schema_type,
+        imported_vector_params,
+    )
+
+
+def _resolve_qdrant_vector_store_class():
+    if QdrantVectorStore is not None:
+        return QdrantVectorStore
+    from src.infrastructure.retrieval.vector import (
+        QdrantVectorStore as imported_qdrant_vector_store,
+    )
+
+    return imported_qdrant_vector_store
 
 
 def resolve_qdrant_distance(value: str) -> Distance:
-    return _DISTANCE_BY_NAME.get(value.strip().lower(), Distance.COSINE)
+    distance_type, _, _ = _resolve_qdrant_model_types()
+    distance_by_name: dict[str, Any] = {
+        "cosine": distance_type.COSINE,
+        "dot": distance_type.DOT,
+        "euclid": distance_type.EUCLID,
+        "manhattan": distance_type.MANHATTAN,
+    }
+    return distance_by_name.get(value.strip().lower(), distance_type.COSINE)
 
 
 def create_qdrant_client() -> QdrantClient:
+    qdrant_client_class = _resolve_qdrant_client_class()
     if qdrant_settings.mode.lower() == "local":
-        return QdrantClient(path=str(qdrant_settings.storage_path))
+        return qdrant_client_class(path=str(qdrant_settings.storage_path))
 
-    return QdrantClient(
+    return qdrant_client_class(
         host=qdrant_settings.host,
         port=qdrant_settings.port,
     )
 
 
 def ensure_qdrant_collection(client: QdrantClient) -> None:
+    _, payload_schema_type, vector_params = _resolve_qdrant_model_types()
     if not client.collection_exists(qdrant_settings.collection):
         client.create_collection(
             collection_name=qdrant_settings.collection,
-            vectors_config=VectorParams(
+            vectors_config=vector_params(
                 size=embedding_settings.dimensions,
                 distance=resolve_qdrant_distance(qdrant_settings.vector_distance),
             ),
@@ -52,7 +92,7 @@ def ensure_qdrant_collection(client: QdrantClient) -> None:
     client.create_payload_index(
         collection_name=qdrant_settings.collection,
         field_name=_IDENTIFIER_VALUES_FIELD,
-        field_schema=PayloadSchemaType.KEYWORD,
+        field_schema=payload_schema_type.KEYWORD,
     )
 
 
@@ -63,7 +103,8 @@ def build_vector_store(
 ) -> tuple[QdrantVectorStore, QdrantClient]:
     """Create the Qdrant-backed vector store, ensuring its collection exists."""
     client = create_qdrant_client()
-    vector_store = QdrantVectorStore(
+    vector_store_class = _resolve_qdrant_vector_store_class()
+    vector_store = vector_store_class(
         client=client,
         mapping_repository=unit_of_work.vector_mappings,
         collection_name=qdrant_settings.collection,
