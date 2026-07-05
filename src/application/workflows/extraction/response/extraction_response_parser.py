@@ -62,7 +62,17 @@ class ExtractionResponseParser:
                 "Confidence score must be a number between 0 and 1.",
                 "extraction.response.confidence.invalid",
             )
-        validation.raise_if_invalid()
+        try:
+            validation.raise_if_invalid()
+        except SchemaValidationError as exc:
+            issues = exc.details.get("issues", [])
+            raise SchemaValidationError(
+                (
+                    "Extraction response failed validation: "
+                    f"{self._format_issue_details(issues)}"
+                ),
+                details={"response": response, "issues": issues},
+            ) from exc
 
         payload = {
             "confidence_score": confidence_score,
@@ -100,6 +110,23 @@ class ExtractionResponseParser:
             for error in exc.errors()
         ]
         return "; ".join(messages)
+
+    @staticmethod
+    def _format_issue_details(issues: Any) -> str:
+        if not isinstance(issues, list) or not issues:
+            return "Validation failed."
+
+        messages: list[str] = []
+        for issue in issues:
+            if not isinstance(issue, dict):
+                continue
+            field = issue.get("field")
+            message = issue.get("message")
+            if isinstance(field, str) and isinstance(message, str):
+                messages.append(f"{field}: {message}")
+            elif isinstance(message, str):
+                messages.append(message)
+        return "; ".join(messages) or "Validation failed."
 
     @staticmethod
     def _resolve_overall_confidence(

@@ -947,6 +947,50 @@ def test_extract_parses_think_block_and_fenced_json(sample_chunk) -> None:
     assert result.maintenance_tasks[0].interval == "Daily"
 
 
+def test_extract_normalizes_numeric_percentage_top_level_confidence(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 96.37,
+  "requires_human_review": false,
+  "identifiers": []
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert result.confidence_score == pytest.approx(0.9637)
+    assert result.requires_human_review is False
+
+
+def test_extract_normalizes_numeric_percentage_item_confidence(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": null,
+  "identifiers": [
+    {
+      "raw_value": "HAM2423501",
+      "identifier_type": "serial_number",
+      "confidence_score": 87.5
+    }
+  ]
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert result.confidence_score == pytest.approx(0.875)
+    assert len(result.extracted_identifiers) == 1
+    assert result.extracted_identifiers[0].confidence_score == pytest.approx(0.875)
+
+
 def test_extract_emits_progress_messages(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
