@@ -39,3 +39,15 @@ def test_identifier_builder_does_not_ask_for_full_spare_part_rows(sample_chunk) 
     assert '"quantity"' not in prompt
     assert '"maintenance_tasks": [' not in prompt
     assert '"manufacturers": [' not in prompt
+
+
+def test_identifier_builder_requires_exact_raw_value_and_blocks_placeholders(
+    sample_chunk,
+) -> None:
+    builder = IdentifierExtractionPromptBuilder()
+
+    prompt = builder.build(sample_chunk.document_id, [sample_chunk])
+
+    assert "Emit an identifier only when raw_value is present exactly in the chunk text." in prompt
+    assert "omit the item instead of returning a partial object" in prompt
+    assert 'Never use placeholder labels such as "Document ID" or "Chunk ID"' in prompt

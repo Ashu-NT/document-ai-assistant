@@ -401,7 +401,11 @@ def test_extract_populates_source_metadata_with_graph_context(sample_chunk) -> N
         ]
     )
     fake_extraction_service = FakeExtractionService()
-    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        enable_candidate_narrowing=False,
+    )
 
     result = workflow.extract(
         sample_chunk.document_id,
@@ -515,7 +519,12 @@ def test_extract_falls_back_to_full_prompt_when_union_candidates_cover_everythin
         source=sample_chunk.source,
         chunk_index=2,
     )
-    fake_llm_service = FakeLLMService([_empty_extraction_response()])
+    fake_llm_service = FakeLLMService(
+        [
+            '{"candidate_types": ["maintenance_task", "spare_part", "equipment", "manufacturer", "supplier", "procedure", "specification", "safety_warning", "maintenance_interval", "troubleshooting", "identifier"]}',
+            _empty_extraction_response(),
+        ]
+    )
     fake_extraction_service = FakeExtractionService()
     workflow, _ = make_workflow(
         fake_llm_service,
@@ -525,7 +534,7 @@ def test_extract_falls_back_to_full_prompt_when_union_candidates_cover_everythin
 
     workflow.extract(sample_chunk.document_id, [chunk_a, chunk_b])
 
-    prompt = fake_llm_service.calls[0]["prompt"]
+    prompt = fake_llm_service.calls[1]["prompt"]
     assert '"procedures": [' in prompt
     assert '"troubleshooting_entries": [' in prompt
     assert '"spare_parts": [' in prompt
@@ -1155,6 +1164,49 @@ def test_extraction_ignores_fully_empty_placeholder_items(sample_chunk) -> None:
     assert result.extracted_identifiers == []
 
 
+def test_extraction_drops_partial_items_missing_required_fields(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.81,
+  "requires_human_review": false,
+  "manufacturers": [
+    {
+      "website": "https://example.com"
+    }
+  ],
+  "specifications": [
+    {
+      "parameter": "Pressure rating",
+      "unit": "bar"
+    },
+    {
+      "value": "16",
+      "unit": "bar"
+    }
+  ],
+  "identifiers": [
+    {
+      "identifier_type": "model_number"
+    }
+  ]
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        enable_candidate_narrowing=False,
+    )
+
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert result.manufacturers == []
+    assert result.specifications == []
+    assert result.extracted_identifiers == []
+
+
 def test_extraction_batches_large_chunk_set_by_char_limit(sample_chunk) -> None:
     second_chunk = clone_chunk(
         sample_chunk,
@@ -1443,9 +1495,7 @@ def test_extraction_emits_failure_preview_progress_message(sample_chunk) -> None
   "spare_parts": [],
   "equipment": [],
   "manufacturers": [
-    {
-      "website": "https://example.com"
-    }
+    null
   ],
   "identifiers": []
 }"""

@@ -29,6 +29,15 @@ def identifier_type_guidance() -> str:
             member, "No guidance registered for this identifier type yet."
         )
         lines.append(f'- "{member.value}": {description}\n')
+    lines.append(
+        "- Emit an identifier only when raw_value is present exactly in the chunk text.\n"
+    )
+    lines.append(
+        "- If the identifier type is known but the exact raw_value is missing, omit the item instead of returning a partial object.\n"
+    )
+    lines.append(
+        '- Never use placeholder labels such as "Document ID" or "Chunk ID" unless that exact text is the real identifier value in the chunk.\n'
+    )
     return "".join(lines)
 
 

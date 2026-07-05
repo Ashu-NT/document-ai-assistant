@@ -221,6 +221,11 @@ class LegacyExtractionPromptBuilder:
             "- Use null for unknown optional values.\n"
             "- For identifiers: only extract values not already captured in spare_parts, equipment, manufacturers, or suppliers.\n"
             "- Do not invent identifiers — only extract values explicitly present in the text.\n"
+            "- Only emit an array item when the required evidence fields for that entity are present.\n"
+            "- If an item is missing its required fields, omit the item entirely instead of returning a partial object.\n"
+            "- For identifiers: if raw_value is missing, omit the item instead of returning only identifier_type.\n"
+            '- Never use placeholder labels such as "Document ID" or "Chunk ID" unless that exact text is the real identifier value in the chunk.\n'
+            "- For specifications: omit any item that does not include both parameter and value.\n"
             f"Allowed chunk_id values (use one of these EXACTLY, or null): {allowed_chunk_ids}\n"
             f"Document id: {document_id}\n"
             "Chunks:\n"

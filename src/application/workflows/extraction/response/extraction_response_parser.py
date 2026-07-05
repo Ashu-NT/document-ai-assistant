@@ -4,6 +4,9 @@ from typing import Any
 from pydantic import ValidationError
 
 from src.application.validation.common import ValidationResult
+from src.application.workflows.extraction.response.extraction_response_sanitizer import (
+    ExtractionResponseSanitizer,
+)
 from src.application.workflows.extraction.response.extraction_response_schema import (
     ExtractionResponsePayload,
 )
@@ -13,6 +16,12 @@ THINK_BLOCK_PATTERN = re.compile(r"<think>.*?</think>", re.IGNORECASE | re.DOTAL
 
 
 class ExtractionResponseParser:
+    def __init__(
+        self,
+        sanitizer: ExtractionResponseSanitizer | None = None,
+    ) -> None:
+        self.sanitizer = sanitizer or ExtractionResponseSanitizer()
+
     def parse(self, response: str) -> dict[str, Any]:
         normalized = self._strip_code_fences(
             THINK_BLOCK_PATTERN.sub("", response or "").strip()
@@ -55,7 +64,7 @@ class ExtractionResponseParser:
             )
         validation.raise_if_invalid()
 
-        return {
+        payload = {
             "confidence_score": confidence_score,
             "requires_human_review": validated.requires_human_review,
             "maintenance_tasks": [
@@ -82,6 +91,7 @@ class ExtractionResponseParser:
             ],
             "identifiers": [item.model_dump() for item in validated.identifiers],
         }
+        return self.sanitizer.sanitize(payload)
 
     @staticmethod
     def _format_validation_error(exc: ValidationError) -> str:

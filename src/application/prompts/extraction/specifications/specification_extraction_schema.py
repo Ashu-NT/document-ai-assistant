@@ -16,5 +16,6 @@ SPECIFICATION_GUIDANCE = (
     "Extract technical specifications as parameter/value pairs (e.g. "
     'parameter="Pressure rating", value="16", unit="bar"). Split the numeric '
     "value from its unit when both are present. Do not extract part numbers, "
-    "maintenance intervals, or safety warnings here.\n"
+    "maintenance intervals, or safety warnings here. Omit any specification "
+    "item that does not include both parameter and value.\n"
 )

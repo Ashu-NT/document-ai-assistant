@@ -31,6 +31,9 @@ from src.application.workflows.extraction.response import (
     ExtractionResultMerger,
     build_extraction_response_json_schema,
 )
+from src.application.workflows.extraction.response.extraction_payload_contracts import (
+    EXTRACTION_PAYLOAD_CONTRACTS,
+)
 from src.domain.assets import TableAsset
 from src.domain.common import SourceLocation
 from src.domain.document import DocumentChunk, DocumentSection
@@ -758,123 +761,49 @@ class ExtractionWorkflow:
         chunk_lookup = {chunk.chunk_id: chunk for chunk in chunks}
         default_source_chunk_id = chunks[0].chunk_id if len(chunks) == 1 else None
         overall_confidence = payload["confidence_score"]
-        maintenance_task_payloads = self._filter_empty_extraction_items(
+        maintenance_task_payloads = self._filter_payload_items(
             payload["maintenance_tasks"],
-            content_keys=(
-                "title",
-                "task",
-                "name",
-                "description",
-                "details",
-                "interval",
-                "frequency",
-                "component_name",
-                "component",
-                "equipment_id",
-            ),
+            payload_name="maintenance_tasks",
         )
-        spare_part_payloads = self._filter_empty_extraction_items(
+        spare_part_payloads = self._filter_payload_items(
             payload["spare_parts"],
-            content_keys=(
-                "part_number",
-                "part",
-                "description",
-                "quantity",
-                "qty",
-                "component_name",
-                "component",
-                "manufacturer_name",
-                "manufacturer",
-            ),
+            payload_name="spare_parts",
         )
-        equipment_payloads = self._filter_empty_extraction_items(
+        equipment_payloads = self._filter_payload_items(
             payload["equipment"],
-            content_keys=(
-                "name",
-                "equipment_name",
-                "model_number",
-                "model",
-                "serial_number",
-                "serial",
-                "manufacturer_name",
-                "manufacturer",
-            ),
+            payload_name="equipment",
         )
-        manufacturer_payloads = self._filter_empty_extraction_items(
+        manufacturer_payloads = self._filter_payload_items(
             payload["manufacturers"],
-            content_keys=(
-                "name",
-                "manufacturer_name",
-                "website",
-                "url",
-                "country",
-            ),
+            payload_name="manufacturers",
         )
-        supplier_payloads = self._filter_empty_extraction_items(
+        supplier_payloads = self._filter_payload_items(
             payload["suppliers"],
-            content_keys=(
-                "name",
-                "supplier_name",
-                "website",
-                "url",
-                "country",
-            ),
+            payload_name="suppliers",
         )
-        procedure_payloads = self._filter_empty_extraction_items(
+        procedure_payloads = self._filter_payload_items(
             payload["procedures"],
-            content_keys=(
-                "title",
-                "steps",
-                "component_name",
-                "component",
-            ),
+            payload_name="procedures",
         )
-        specification_payloads = self._filter_empty_extraction_items(
+        specification_payloads = self._filter_payload_items(
             payload["specifications"],
-            content_keys=(
-                "parameter",
-                "value",
-                "unit",
-                "component_name",
-                "component",
-            ),
+            payload_name="specifications",
         )
-        safety_warning_payloads = self._filter_empty_extraction_items(
+        safety_warning_payloads = self._filter_payload_items(
             payload["safety_warnings"],
-            content_keys=(
-                "warning_type",
-                "message",
-                "component_name",
-                "component",
-            ),
+            payload_name="safety_warnings",
         )
-        maintenance_interval_payloads = self._filter_empty_extraction_items(
+        maintenance_interval_payloads = self._filter_payload_items(
             payload["maintenance_intervals"],
-            content_keys=(
-                "interval",
-                "component_name",
-                "component",
-                "task_reference",
-            ),
+            payload_name="maintenance_intervals",
         )
-        troubleshooting_entry_payloads = self._filter_empty_extraction_items(
+        troubleshooting_entry_payloads = self._filter_payload_items(
             payload["troubleshooting_entries"],
-            content_keys=(
-                "symptom",
-                "cause",
-                "remedy",
-                "component_name",
-                "component",
-            ),
+            payload_name="troubleshooting_entries",
         )
-        identifier_payloads = self._filter_empty_extraction_items(
+        identifier_payloads = self._filter_payload_items(
             payload["identifiers"],
-            content_keys=(
-                "raw_value",
-                "value",
-                "identifier_type",
-                "type",
-            ),
+            payload_name="identifiers",
         )
 
         maintenance_tasks = [
@@ -1774,16 +1703,24 @@ class ExtractionWorkflow:
         return text or None
 
     @classmethod
-    def _filter_empty_extraction_items(
+    def _filter_payload_items(
         cls,
         items: list[dict[str, Any]],
         *,
-        content_keys: tuple[str, ...],
+        payload_name: str,
     ) -> list[dict[str, Any]]:
+        contract = EXTRACTION_PAYLOAD_CONTRACTS[payload_name]
         return [
             item
             for item in items
-            if cls._has_meaningful_item_content(item, content_keys=content_keys)
+            if cls._has_meaningful_item_content(
+                item,
+                content_keys=contract.content_keys,
+            )
+            and cls._has_required_item_fields(
+                item,
+                required_field_groups=contract.required_field_groups,
+            )
         ]
 
     @classmethod
@@ -1794,6 +1731,20 @@ class ExtractionWorkflow:
         content_keys: tuple[str, ...],
     ) -> bool:
         return any(cls._optional_text(payload, key) for key in content_keys)
+
+    @classmethod
+    def _has_required_item_fields(
+        cls,
+        payload: dict[str, Any],
+        *,
+        required_field_groups: tuple[tuple[str, ...], ...],
+    ) -> bool:
+        if not required_field_groups:
+            return True
+        return all(
+            cls._optional_text(payload, *field_group)
+            for field_group in required_field_groups
+        )
 
     def _drop_empty_entities(
         self, extraction_result: ExtractionResult

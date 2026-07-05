@@ -19,3 +19,4 @@ def test_specification_builder_is_retrievable_from_the_factory(sample_chunk) -> 
     assert '"specifications": [' in result.prompt_text
     assert '"parameter"' in result.prompt_text
     assert '"unit"' in result.prompt_text
+    assert "Omit any specification item that does not include both parameter and value." in result.prompt_text

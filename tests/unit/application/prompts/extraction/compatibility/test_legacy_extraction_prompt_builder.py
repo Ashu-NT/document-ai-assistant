@@ -30,3 +30,6 @@ def test_legacy_builder_still_returns_a_combined_prompt_string(sample_chunk) -> 
     assert '"maintenance_intervals": [' in prompt
     assert '"troubleshooting_entries": [' in prompt
     assert '"identifiers": [' in prompt
+    assert "Only emit an array item when the required evidence fields for that entity are present." in prompt
+    assert "For identifiers: if raw_value is missing, omit the item instead of returning only identifier_type." in prompt
+    assert "For specifications: omit any item that does not include both parameter and value." in prompt
