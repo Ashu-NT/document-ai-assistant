@@ -21,9 +21,30 @@ codebase; there are two independent resolve steps:
     the whole corpus would be unbounded.
 
 Usage:
-    python scripts/debug_retrieval_resolution.py "What is the pressure rating?"
-    python scripts/debug_retrieval_resolution.py "leak" --document-id doc_001 --top-k 5
-    python scripts/debug_retrieval_resolution.py "filter" --document-id doc_001 --entity-type spare_part
+    # 1. Find a real, FULL document_id first - the plain table view from
+    #    list_documents.py truncates IDs (e.g. "doc_69a27352abea4..."),
+    #    which is not a valid id and will make every section return 0:
+    #        python scripts/list_documents.py --json
+    #
+    # 2. Run with that full id (verified working example against this
+    #    repo's seeded corpus - swap in your own document_id/question):
+    #        python scripts/debug_retrieval_resolution.py "maintenance interval for the filter" --document-id doc_69a27352abea478c892e066198609957 --top-k 3
+    #
+    # 3. Narrow the semantics section to one entity type:
+    #        python scripts/debug_retrieval_resolution.py "filter" --document-id doc_001 --entity-type spare_part
+    #
+    # 4. No --document-id: falls back to question-text entity detection
+    #    instead of a full per-document semantics dump:
+    #        python scripts/debug_retrieval_resolution.py "What is the pressure rating?"
+    #
+    # If semantics still returns 0 with a correct, full document_id:
+    #   - 0 entities of EVERY type -> that document was never extracted
+    #     (or extraction failed for it) - nothing for linking to work with.
+    #   - entities show up but no "->" relationship lines under any of them
+    #     -> extraction succeeded but SemanticLinkingWorkflow never ran for
+    #     it (SEMANTIC_LINKING_ENABLED was off, or it predates that
+    #     feature). Backfill it directly:
+    #        python scripts/link_existing_documents.py --document-id doc_69a27352abea478c892e066198609957
 """
 
 import argparse
