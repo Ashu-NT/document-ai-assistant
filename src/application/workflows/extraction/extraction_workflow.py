@@ -56,6 +56,36 @@ from src.shared.exceptions import SchemaValidationError
 from src.shared.ids import IdGenerator, IdPrefix
 
 KEY_PATTERN = re.compile(r"[^a-z0-9]+")
+
+# Per-entity "content" fields: the fields that actually carry extracted
+# information, as opposed to bookkeeping (id/document_id/source_chunk_id/
+# source/source_metadata/confidence_score/requires_human_review/audit,
+# which every entity always has populated regardless of whether anything
+# real was extracted) or a classification field that always defaults to a
+# non-null placeholder (SafetyWarning.warning_type defaults to "warning",
+# Procedure.procedure_type defaults to UNKNOWN — neither is evidence the
+# LLM found real information, so neither counts as content here).
+#
+# Used as a final, entity-type-agnostic safety net right before saving: an
+# extracted item can pass its per-field required-text checks during
+# construction (e.g. by getting a non-empty single field) and still be
+# effectively empty overall, or reach this point empty through some other
+# path this per-field checking doesn't cover. Whatever the cause, an item
+# with every content field null/empty apart from document_id/
+# source_chunk_id must never be persisted.
+_ENTITY_CONTENT_FIELDS: dict[type, tuple[str, ...]] = {
+    MaintenanceTask: ("title", "description", "interval", "component_name", "equipment_id"),
+    SparePart: ("part_number", "description", "quantity", "component_name", "manufacturer_name"),
+    EquipmentInfo: ("name", "model_number", "serial_number", "manufacturer_name"),
+    Manufacturer: ("name", "website", "country"),
+    Supplier: ("name", "website", "country"),
+    Procedure: ("title", "steps", "component_name", "equipment_id"),
+    Specification: ("parameter", "value", "unit", "component_name"),
+    SafetyWarning: ("message", "component_name"),
+    MaintenanceInterval: ("interval", "component_name", "maintenance_task_id"),
+    TroubleshootingEntry: ("symptom", "cause", "remedy", "component_name", "equipment_id"),
+}
+
 NULL_LIKE_TEXT_VALUES = {
     "",
     "null",
@@ -340,6 +370,18 @@ class ExtractionWorkflow:
             document_id=document_id,
             partial_results=partial_results,
         )
+        extraction_result, dropped_empty_count = self._drop_empty_entities(
+            extraction_result
+        )
+        if dropped_empty_count:
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"Dropped {dropped_empty_count} extracted item(s) with no "
+                    "real content (all fields null/empty apart from document/"
+                    "chunk linkage) before saving."
+                ),
+            )
         extraction_result.requires_human_review = (
             self._resolve_requires_human_review(
                 None,
@@ -1752,6 +1794,60 @@ class ExtractionWorkflow:
         content_keys: tuple[str, ...],
     ) -> bool:
         return any(cls._optional_text(payload, key) for key in content_keys)
+
+    def _drop_empty_entities(
+        self, extraction_result: ExtractionResult
+    ) -> tuple[ExtractionResult, int]:
+        """Final safety net, run right before validation/save: drops any
+        extracted entity whose content fields are all null/empty, no matter
+        how it reached this point. See _ENTITY_CONTENT_FIELDS for what
+        counts as content per entity type. Returns the result and how many
+        items were dropped, for progress reporting."""
+        field_lists = [
+            ("maintenance_tasks", MaintenanceTask),
+            ("spare_parts", SparePart),
+            ("equipment", EquipmentInfo),
+            ("manufacturers", Manufacturer),
+            ("suppliers", Supplier),
+            ("procedures", Procedure),
+            ("specifications", Specification),
+            ("safety_warnings", SafetyWarning),
+            ("maintenance_intervals", MaintenanceInterval),
+            ("troubleshooting_entries", TroubleshootingEntry),
+        ]
+        dropped_count = 0
+        for attribute_name, entity_type in field_lists:
+            original = getattr(extraction_result, attribute_name)
+            kept = self._keep_non_empty(original, entity_type)
+            dropped_count += len(original) - len(kept)
+            setattr(extraction_result, attribute_name, kept)
+        return extraction_result, dropped_count
+
+    @classmethod
+    def _keep_non_empty(cls, entities: list[Any], entity_type: type) -> list[Any]:
+        content_fields = _ENTITY_CONTENT_FIELDS[entity_type]
+        return [
+            entity
+            for entity in entities
+            if cls._has_meaningful_entity_content(entity, content_fields)
+        ]
+
+    @staticmethod
+    def _has_meaningful_entity_content(
+        entity: Any,
+        content_fields: tuple[str, ...],
+    ) -> bool:
+        for field_name in content_fields:
+            value = getattr(entity, field_name, None)
+            if isinstance(value, str):
+                if value.strip():
+                    return True
+            elif isinstance(value, list):
+                if value:
+                    return True
+            elif value is not None:
+                return True
+        return False
 
     @staticmethod
     def _parse_confidence(value: Any) -> float | None:

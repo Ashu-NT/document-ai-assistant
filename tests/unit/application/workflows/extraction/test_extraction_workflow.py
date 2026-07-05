@@ -7,7 +7,20 @@ from src.application.workflows.extraction.batching import ExtractionChunkBatcher
 from src.domain.assets import TableAsset
 from src.domain.common import ChunkType
 from src.domain.document import DocumentChunk, DocumentSection
-from src.domain.extraction import ProcedureType
+from src.domain.extraction import (
+    EquipmentInfo,
+    ExtractionResult,
+    Manufacturer,
+    MaintenanceInterval,
+    MaintenanceTask,
+    Procedure,
+    ProcedureType,
+    SafetyWarning,
+    SparePart,
+    Specification,
+    Supplier,
+    TroubleshootingEntry,
+)
 from src.shared.exceptions import SchemaValidationError
 from src.shared.execution import ActionResult
 from src.shared.ids import IdGenerator
@@ -546,6 +559,190 @@ def test_extract_emits_narrowed_progress_message_when_narrowing_applied(
 
     assert any("Narrowed extraction to:" in message for message in progress_messages)
     assert any("safety_warning" in message for message in progress_messages)
+
+
+def make_bare_workflow() -> ExtractionWorkflow:
+    workflow, _ = make_workflow(FakeLLMService([]), FakeExtractionService())
+    return workflow
+
+
+def test_has_meaningful_entity_content_false_when_all_content_fields_empty() -> None:
+    workflow = make_bare_workflow()
+    task = MaintenanceTask(
+        task_id="task_001",
+        document_id="document_001",
+        title="",
+        source_chunk_id="chunk_001",
+    )
+
+    assert (
+        workflow._has_meaningful_entity_content(task, ("title", "description", "interval"))
+        is False
+    )
+
+
+def test_has_meaningful_entity_content_true_when_string_field_set() -> None:
+    workflow = make_bare_workflow()
+    task = MaintenanceTask(
+        task_id="task_001",
+        document_id="document_001",
+        title="Replace filter",
+        source_chunk_id="chunk_001",
+    )
+
+    assert (
+        workflow._has_meaningful_entity_content(task, ("title", "description", "interval"))
+        is True
+    )
+
+
+def test_has_meaningful_entity_content_true_for_non_string_field() -> None:
+    workflow = make_bare_workflow()
+    procedure = Procedure(
+        procedure_id="procedure_001",
+        document_id="document_001",
+        title="",
+        equipment_id="equipment_001",
+        source_chunk_id="chunk_001",
+    )
+
+    assert (
+        workflow._has_meaningful_entity_content(
+            procedure, ("title", "steps", "component_name", "equipment_id")
+        )
+        is True
+    )
+
+
+def test_has_meaningful_entity_content_false_for_empty_list_field() -> None:
+    workflow = make_bare_workflow()
+    procedure = Procedure(
+        procedure_id="procedure_001",
+        document_id="document_001",
+        title="",
+        steps=[],
+        source_chunk_id="chunk_001",
+    )
+
+    assert (
+        workflow._has_meaningful_entity_content(
+            procedure, ("title", "steps", "component_name", "equipment_id")
+        )
+        is False
+    )
+
+
+def test_drop_empty_entities_removes_fully_empty_items_across_all_types() -> None:
+    workflow = make_bare_workflow()
+    result = ExtractionResult(
+        extraction_id="extraction_001",
+        document_id="document_001",
+        maintenance_tasks=[
+            MaintenanceTask(
+                task_id="task_real",
+                document_id="document_001",
+                title="Replace filter",
+                source_chunk_id="chunk_001",
+            ),
+            MaintenanceTask(
+                task_id="task_empty",
+                document_id="document_001",
+                title="",
+                source_chunk_id="chunk_002",
+            ),
+        ],
+        spare_parts=[
+            SparePart(
+                spare_part_id="spare_empty",
+                document_id="document_001",
+                source_chunk_id="chunk_003",
+            ),
+        ],
+        safety_warnings=[
+            SafetyWarning(
+                safety_warning_id="safety_real",
+                document_id="document_001",
+                warning_type="warning",
+                message="Depressurize before servicing.",
+                source_chunk_id="chunk_004",
+            ),
+            SafetyWarning(
+                safety_warning_id="safety_empty",
+                document_id="document_001",
+                warning_type="warning",
+                message="",
+                source_chunk_id="chunk_005",
+            ),
+        ],
+    )
+
+    filtered_result, dropped_count = workflow._drop_empty_entities(result)
+
+    assert [task.task_id for task in filtered_result.maintenance_tasks] == ["task_real"]
+    assert filtered_result.spare_parts == []
+    assert [
+        warning.safety_warning_id for warning in filtered_result.safety_warnings
+    ] == ["safety_real"]
+    assert dropped_count == 3
+
+
+def test_drop_empty_entities_keeps_items_with_only_non_content_fields_absent() -> None:
+    # An item with a real component_name but no other fields should survive
+    # — component_name alone is meaningful content.
+    workflow = make_bare_workflow()
+    result = ExtractionResult(
+        extraction_id="extraction_001",
+        document_id="document_001",
+        specifications=[
+            Specification(
+                specification_id="spec_001",
+                document_id="document_001",
+                parameter="",
+                value="",
+                component_name="Hydraulic pump",
+                source_chunk_id="chunk_001",
+            ),
+        ],
+    )
+
+    filtered_result, dropped_count = workflow._drop_empty_entities(result)
+
+    assert len(filtered_result.specifications) == 1
+    assert dropped_count == 0
+
+
+def test_extract_drops_fully_empty_procedure_before_saving(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.8,
+  "requires_human_review": false,
+  "maintenance_tasks": [],
+  "spare_parts": [],
+  "equipment": [],
+  "manufacturers": [],
+  "procedures": [
+    {
+      "title": "Install hydraulic filter",
+      "steps": ["Depressurize the line."],
+      "source_chunk_id": "chunk_001",
+      "confidence_score": 0.9,
+      "requires_human_review": false
+    }
+  ]
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    # Sanity check the real item survives — this test is about the
+    # defensive filter not over-triggering on legitimate items, exercised
+    # end-to-end through the real extract() pipeline.
+    assert len(result.procedures) == 1
+    assert result.procedures[0].title == "Install hydraulic filter"
 
 
 def test_extract_falls_back_to_unknown_procedure_type_for_unrecognized_value(
