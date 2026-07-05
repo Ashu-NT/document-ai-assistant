@@ -83,6 +83,7 @@ def patched(monkeypatch):
         "ExtractionWorkflow",
         "IdentifierPromotionService",
         "DeterministicIdentifierScanner",
+        "SemanticLinkingWorkflow",
         "IngestionRequestValidator",
         "IngestionWorkflow",
         "DeleteDocumentWorkflow",
@@ -178,6 +179,41 @@ def test_identifier_services_are_none_when_disabled(monkeypatch, patched):
     ingestion_workflow = runtime.ingestion_workflow
     assert ingestion_workflow.kwargs["identifier_promotion_service"] is None
     assert ingestion_workflow.kwargs["deterministic_identifier_scanner"] is None
+
+
+def test_semantic_linking_workflow_wired_when_enabled(monkeypatch, patched):
+    monkeypatch.setattr(
+        ingestion_orchestrator.extraction_settings,
+        "semantic_linking_enabled",
+        True,
+        raising=False,
+    )
+
+    runtime = build_ingestion_runtime()
+
+    semantic_linking_workflow = runtime.ingestion_workflow.kwargs[
+        "semantic_linking_workflow"
+    ]
+    assert isinstance(semantic_linking_workflow, _Recorder)
+    assert (
+        semantic_linking_workflow.kwargs["extraction_service"]
+        is runtime.ingestion_workflow.kwargs["extraction_workflow"].kwargs[
+            "extraction_service"
+        ]
+    )
+
+
+def test_semantic_linking_workflow_is_none_when_disabled(monkeypatch, patched):
+    monkeypatch.setattr(
+        ingestion_orchestrator.extraction_settings,
+        "semantic_linking_enabled",
+        False,
+        raising=False,
+    )
+
+    runtime = build_ingestion_runtime()
+
+    assert runtime.ingestion_workflow.kwargs["semantic_linking_workflow"] is None
 
 
 def test_runtime_fields_are_populated(patched):

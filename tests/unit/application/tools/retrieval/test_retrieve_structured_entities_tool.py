@@ -2,7 +2,17 @@ from src.application.tools.retrieval.retrieve_structured_entities_tool import (
     RetrieveStructuredEntitiesRequest,
     RetrieveStructuredEntitiesTool,
 )
-from src.domain.extraction import Manufacturer, Procedure
+from src.domain.extraction import (
+    Manufacturer,
+    MaintenanceTask,
+    Procedure,
+    SafetyWarning,
+    SemanticEntityType,
+    SemanticRelationship,
+    SemanticRelationshipStatus,
+    SemanticRelationshipType,
+    SparePart,
+)
 from src.shared.exceptions import DatabaseError
 
 
@@ -11,6 +21,8 @@ class _FakeExtractionService:
         self.search_calls: list[tuple[str, str, str | None]] = []
         self.list_calls: list[tuple[str, str | None]] = []
         self.raises: Exception | None = None
+        self.semantic_relationships: dict[str, list[SemanticRelationship]] = {}
+        self.list_semantic_relationships_calls: list[str | None] = []
 
     def search_manufacturers(self, query: str, document_id: str | None = None):
         self.search_calls.append(("manufacturer", query, document_id))
@@ -61,6 +73,47 @@ class _FakeExtractionService:
                 source_chunk_id="chunk_001",
             )
         ]
+
+    def list_maintenance_tasks(self, document_id: str | None = None):
+        self.list_calls.append(("maintenance_task", document_id))
+        return [
+            MaintenanceTask(
+                task_id="task_001",
+                document_id=document_id or "doc_001",
+                title="Replace hydraulic filter",
+            )
+        ]
+
+    def list_spare_parts(self, document_id: str | None = None):
+        self.list_calls.append(("spare_part", document_id))
+        return [
+            SparePart(
+                spare_part_id="spare_001",
+                document_id=document_id or "doc_001",
+                part_number="HP-001",
+            )
+        ]
+
+    def list_safety_warnings(self, document_id: str | None = None):
+        self.list_calls.append(("safety_warning", document_id))
+        return [
+            SafetyWarning(
+                safety_warning_id="warning_001",
+                document_id=document_id or "doc_001",
+                warning_type="hazard",
+                message="Depressurize before servicing",
+            )
+        ]
+
+    def list_semantic_relationships(self, document_id: str | None = None):
+        self.list_semantic_relationships_calls.append(document_id)
+        if document_id is None:
+            return [
+                relationship
+                for relationships in self.semantic_relationships.values()
+                for relationship in relationships
+            ]
+        return self.semantic_relationships.get(document_id, [])
 
 
 def test_retrieve_structured_entities_tool_searches_by_query_text() -> None:
@@ -156,6 +209,151 @@ def test_retrieve_structured_entities_tool_truncates_to_top_k() -> None:
     assert result.success is True
     assert result.data["items"] == []
     assert result.diagnostics["total_matches"] == 1
+
+
+def _relationship(**overrides) -> SemanticRelationship:
+    defaults = {
+        "relationship_id": "semantic_relationship_001",
+        "document_id": "doc_001",
+        "relationship_type": SemanticRelationshipType.TASK_USES_PROCEDURE,
+        "source_entity_type": SemanticEntityType.MAINTENANCE_TASK,
+        "source_entity_id": "task_001",
+        "target_entity_type": SemanticEntityType.PROCEDURE,
+        "target_entity_id": "procedure_001",
+        "confidence_score": 0.8,
+        "status": SemanticRelationshipStatus.ACCEPTED,
+        "evidence": "same_chunk",
+    }
+    defaults.update(overrides)
+    return SemanticRelationship(**defaults)
+
+
+def test_retrieve_structured_entities_tool_attaches_outgoing_related_entity() -> None:
+    service = _FakeExtractionService()
+    service.semantic_relationships["doc_001"] = [_relationship()]
+    tool = RetrieveStructuredEntitiesTool(service)
+
+    result = tool.run(
+        RetrieveStructuredEntitiesRequest(
+            entity_type="maintenance_task",
+            document_id="doc_001",
+        )
+    )
+
+    assert result.success is True
+    related = result.data["items"][0]["related_entities"]
+    assert len(related) == 1
+    assert related[0]["relationship_type"] == "task_uses_procedure"
+    assert related[0]["direction"] == "outgoing"
+    assert related[0]["status"] == "accepted"
+    assert related[0]["entity_type"] == "procedure"
+    assert related[0]["entity_id"] == "procedure_001"
+    assert related[0]["entity"]["title"] == "Install hydraulic filter"
+    assert service.list_semantic_relationships_calls == ["doc_001"]
+
+
+def test_retrieve_structured_entities_tool_attaches_incoming_related_entity() -> None:
+    service = _FakeExtractionService()
+    service.semantic_relationships["doc_001"] = [_relationship()]
+    tool = RetrieveStructuredEntitiesTool(service)
+
+    result = tool.run(
+        RetrieveStructuredEntitiesRequest(
+            entity_type="procedure",
+            document_id="doc_001",
+        )
+    )
+
+    assert result.success is True
+    related = result.data["items"][0]["related_entities"]
+    assert len(related) == 1
+    assert related[0]["direction"] == "incoming"
+    assert related[0]["entity_type"] == "maintenance_task"
+    assert related[0]["entity_id"] == "task_001"
+    assert related[0]["entity"]["title"] == "Replace hydraulic filter"
+
+
+def test_retrieve_structured_entities_tool_aggregates_multiple_relationship_types() -> None:
+    service = _FakeExtractionService()
+    service.semantic_relationships["doc_001"] = [
+        _relationship(),
+        _relationship(
+            relationship_id="semantic_relationship_002",
+            relationship_type=SemanticRelationshipType.TASK_REQUIRES_SPARE_PART,
+            target_entity_type=SemanticEntityType.SPARE_PART,
+            target_entity_id="spare_001",
+        ),
+        _relationship(
+            relationship_id="semantic_relationship_003",
+            relationship_type=SemanticRelationshipType.TASK_REQUIRES_SAFETY_WARNING,
+            target_entity_type=SemanticEntityType.SAFETY_WARNING,
+            target_entity_id="warning_001",
+            status=SemanticRelationshipStatus.NEEDS_REVIEW,
+        ),
+    ]
+    tool = RetrieveStructuredEntitiesTool(service)
+
+    result = tool.run(
+        RetrieveStructuredEntitiesRequest(
+            entity_type="maintenance_task",
+            document_id="doc_001",
+        )
+    )
+
+    related = result.data["items"][0]["related_entities"]
+    relationship_types = {entry["relationship_type"] for entry in related}
+    assert relationship_types == {
+        "task_uses_procedure",
+        "task_requires_spare_part",
+        "task_requires_safety_warning",
+    }
+    spare_part_entry = next(
+        entry for entry in related if entry["entity_type"] == "spare_part"
+    )
+    assert spare_part_entry["entity"]["part_number"] == "HP-001"
+    warning_entry = next(
+        entry for entry in related if entry["entity_type"] == "safety_warning"
+    )
+    assert warning_entry["status"] == "needs_review"
+
+
+def test_retrieve_structured_entities_tool_returns_empty_related_entities_by_default() -> (
+    None
+):
+    service = _FakeExtractionService()
+    tool = RetrieveStructuredEntitiesTool(service)
+
+    result = tool.run(
+        RetrieveStructuredEntitiesRequest(
+            entity_type="manufacturer",
+            document_id="doc_001",
+        )
+    )
+
+    assert result.data["items"][0]["related_entities"] == []
+
+
+def test_retrieve_structured_entities_tool_skips_enrichment_when_relationships_lookup_fails() -> (
+    None
+):
+    service = _FakeExtractionService()
+    service.semantic_relationships["doc_001"] = [_relationship()]
+
+    def _raise(document_id):
+        raise DatabaseError("boom")
+
+    service.list_semantic_relationships = _raise
+    tool = RetrieveStructuredEntitiesTool(service)
+
+    result = tool.run(
+        RetrieveStructuredEntitiesRequest(
+            entity_type="maintenance_task",
+            document_id="doc_001",
+        )
+    )
+
+    assert result.success is True
+    assert result.data["items"][0]["related_entities"] == []
 
 
 def test_retrieve_structured_entities_tool_wraps_database_errors() -> None:

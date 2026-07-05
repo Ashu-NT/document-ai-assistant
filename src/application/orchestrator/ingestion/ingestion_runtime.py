@@ -10,6 +10,7 @@ from src.application.services.document import (
     DocumentRegistrationService,
     DuplicateDetectionService,
 )
+from src.application.services.extraction import ExtractionService
 from src.application.workflows.classification import (
     DocumentClassificationWorkflow,
     PostClassificationChunkFinalizationWorkflow,
@@ -42,6 +43,7 @@ class IngestionRuntime:
     duplicate_detection_service: DuplicateDetectionService
     classification_service: ClassificationService
     document_classification_workflow: DocumentClassificationWorkflow
+    extraction_service: ExtractionService
     post_classification_chunk_finalization_workflow: (
         PostClassificationChunkFinalizationWorkflow
     )

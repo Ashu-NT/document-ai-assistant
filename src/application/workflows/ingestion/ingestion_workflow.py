@@ -22,6 +22,7 @@ from src.application.workflows.classification import (
 from src.application.workflows.embedding import EmbeddedChunk, EmbeddingWorkflow
 from src.application.workflows.extraction import ExtractionWorkflow
 from src.application.workflows.ingestion.content_hash import compute_content_hash_from_graph
+from src.application.workflows.linking import SemanticLinkingWorkflow
 from src.application.workflows.ingestion.ingestion_exceptions import (
     DocumentNotFoundForReingestionError,
     IngestionWorkflowError,
@@ -81,6 +82,7 @@ class IngestionWorkflow:
         identifier_promotion_service: IdentifierPromotionService | None = None,
         deterministic_identifier_scanner: DeterministicIdentifierScanner | None = None,
         document_lookup_service: DocumentLookupService | None = None,
+        semantic_linking_workflow: SemanticLinkingWorkflow | None = None,
         activity_service=None,
         audit_service=None,
         event_service=None,
@@ -101,6 +103,7 @@ class IngestionWorkflow:
         self.identifier_promotion_service = identifier_promotion_service
         self.deterministic_identifier_scanner = deterministic_identifier_scanner
         self.document_lookup_service = document_lookup_service
+        self.semantic_linking_workflow = semantic_linking_workflow
         self.activity_service = activity_service
         self.audit_service = audit_service
         self.event_service = event_service
@@ -500,6 +503,14 @@ class IngestionWorkflow:
                         activity_context=resolved_activity_context,
                     )
                     self.unit_of_work.commit()
+
+            semantic_relationships = None
+            if self.semantic_linking_workflow is not None:
+                semantic_relationships = self.semantic_linking_workflow.link(
+                    final_graph.document.document_id
+                )
+                self.unit_of_work.commit()
+
             self._publish_stage_completed(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.EXTRACTION,
@@ -511,6 +522,11 @@ class IngestionWorkflow:
                     "extraction_id": extraction_result.extraction_id,
                     "maintenance_task_count": len(extraction_result.maintenance_tasks),
                     "spare_part_count": len(extraction_result.spare_parts),
+                    "semantic_relationship_count": (
+                        len(semantic_relationships)
+                        if semantic_relationships is not None
+                        else None
+                    ),
                 },
             )
             self._set_run_status(

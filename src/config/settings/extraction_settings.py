@@ -68,3 +68,8 @@ class ExtractionSettings(AppBaseSettings):
         default=False,
         alias="EXTRACTION_CANDIDATE_NARROWING_ENABLED",
     )
+
+    semantic_linking_enabled: bool = Field(
+        default=False,
+        alias="SEMANTIC_LINKING_ENABLED",
+    )
