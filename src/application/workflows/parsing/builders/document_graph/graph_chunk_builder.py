@@ -33,6 +33,7 @@ class GraphChunkBuilder:
         sections: list[DocumentSection],
         document_type_override: DocumentType | None = None,
         chunking_profile_override: ChunkingProfile | None = None,
+        page_sizes: dict[int, tuple[float, float]] | None = None,
     ) -> list[DocumentChunk]:
         with self.profiler.measure(
             name="graph_chunk_builder.order_sections",
@@ -66,6 +67,7 @@ class GraphChunkBuilder:
                 chunking_profile_override=chunking_profile_override,
                 sections=ordered_sections,
                 section_elements_by_id=section_elements_by_id,
+                page_sizes=page_sizes,
             )
             stage.output_counts["chunk_payloads"] = len(chunk_payloads)
         chunk_totals_by_section: dict[str, int] = {}

@@ -89,6 +89,7 @@ class SectionChunkBuilder:
         elements: list[CanonicalElement],
         document_type: DocumentType | None = None,
         chunking_profile_override: ChunkingProfile | None = None,
+        page_sizes: dict[int, tuple[float, float]] | None = None,
     ) -> list[ChunkPayload]:
         if not elements:
             return []
@@ -103,6 +104,7 @@ class SectionChunkBuilder:
                 chunking_profile_override=chunking_profile_override,
                 sections=[section],
                 section_elements_by_id={section.section_id: elements},
+                page_sizes=page_sizes,
             )
             stage.output_counts["sections"] = 1
 
@@ -140,6 +142,7 @@ class SectionChunkBuilder:
         section_elements_by_id: dict[str, list[CanonicalElement]],
         document_type: DocumentType | None = None,
         chunking_profile_override: ChunkingProfile | None = None,
+        page_sizes: dict[int, tuple[float, float]] | None = None,
     ) -> list[ChunkPayload]:
         with self.profiler.measure(
             name="section_chunk_builder.create_runtime",
@@ -151,6 +154,7 @@ class SectionChunkBuilder:
                 chunking_profile_override=chunking_profile_override,
                 sections=sections,
                 section_elements_by_id=section_elements_by_id,
+                page_sizes=page_sizes,
             )
             stage.output_counts["sections"] = len(sections)
         with self.profiler.measure(

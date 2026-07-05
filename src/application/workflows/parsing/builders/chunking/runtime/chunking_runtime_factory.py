@@ -57,6 +57,7 @@ class ChunkingRuntimeFactory:
         sections: list[DocumentSection],
         section_elements_by_id: dict[str, list[CanonicalElement]],
         chunking_profile_override: ChunkingProfile | None = None,
+        page_sizes: dict[int, tuple[float, float]] | None = None,
     ) -> ChunkingRuntime:
         chunk_type_resolver = ChunkTypeResolver()
         policy = self.policy_resolver.resolve(
@@ -91,6 +92,7 @@ class ChunkingRuntimeFactory:
                 include_table_context=policy.include_table_context,
                 asset_context_window=policy.asset_context_window,
                 asset_context_max_tokens=policy.asset_context_max_tokens,
+                page_sizes=page_sizes,
             ),
             section_skipper=SectionChunkSkipper(
                 text_splitter=text_splitter,

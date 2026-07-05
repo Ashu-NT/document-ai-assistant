@@ -228,6 +228,8 @@ class DocumentGraphBuilder:
             self.asset_nearby_text_enricher.enrich(graph)
             self._sync_asset_metadata_to_elements(graph)
 
+            page_sizes = self._extract_page_sizes(raw_parsed_document)
+
             with self.profiler.measure(
                 name="graph_chunk_builder.build_chunks",
                 input_counts={
@@ -235,7 +237,9 @@ class DocumentGraphBuilder:
                     "elements": len(graph.elements),
                 },
             ) as stage:
-                for chunk in self.chunk_builder.build_chunks(graph=graph, sections=sections):
+                for chunk in self.chunk_builder.build_chunks(
+                    graph=graph, sections=sections, page_sizes=page_sizes
+                ):
                     graph.add_chunk(chunk)
                 stage.output_counts["graph_chunks"] = len(graph.chunks)
 
@@ -306,6 +310,27 @@ class DocumentGraphBuilder:
         if source.page_end is not None:
             if section.source.page_end is None or source.page_end > section.source.page_end:
                 section.source.page_end = source.page_end
+
+    @staticmethod
+    def _extract_page_sizes(
+        raw_parsed_document: RawParsedDocument,
+    ) -> dict[int, tuple[float, float]]:
+        pages = getattr(raw_parsed_document.raw_document, "pages", None)
+        if not pages:
+            return {}
+
+        page_sizes: dict[int, tuple[float, float]] = {}
+        for page_no, page in pages.items():
+            size = getattr(page, "size", None)
+            width = getattr(size, "width", None)
+            height = getattr(size, "height", None)
+            if width is None or height is None:
+                continue
+            try:
+                page_sizes[int(page_no)] = (float(width), float(height))
+            except (TypeError, ValueError):
+                continue
+        return page_sizes
 
     @staticmethod
     def _extract_language(raw_parsed_document: RawParsedDocument) -> str | None:

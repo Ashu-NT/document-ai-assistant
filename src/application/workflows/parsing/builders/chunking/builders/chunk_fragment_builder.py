@@ -17,6 +17,16 @@ from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 
 
+# A picture whose bounding box covers at least this fraction of its page's
+# area is treated as a full-page scan (e.g. a scanned certificate/datasheet
+# represented by Docling as one big picture element) rather than a small
+# decorative image (logo, letterhead icon). Full-page pictures are kept even
+# when include_picture_chunks is False for the document's chunking profile,
+# so a scanned document doesn't lose all of its content just because its
+# profile suppresses decorative-image noise.
+_LARGE_PICTURE_AREA_RATIO = 0.5
+
+
 class ChunkFragmentBuilder:
     def __init__(
         self,
@@ -27,12 +37,14 @@ class ChunkFragmentBuilder:
         include_table_context: bool = True,
         asset_context_window: int = 1,
         asset_context_max_tokens: int = 72,
+        page_sizes: dict[int, tuple[float, float]] | None = None,
     ) -> None:
         self.text_splitter = text_splitter
         self.include_picture_chunks = include_picture_chunks
         self.include_table_context = include_table_context
         self.asset_context_window = max(0, asset_context_window)
         self.asset_context_max_tokens = max(12, asset_context_max_tokens)
+        self.page_sizes = page_sizes or {}
         self.structured_fragment_builder = (
             structured_fragment_builder
             or StructuredSectionFragmentBuilder(
@@ -91,7 +103,7 @@ class ChunkFragmentBuilder:
             chunk_type = self._table_chunk_type(element, text)
             standalone = True
         elif element.picture_id is not None or element.element_type == ElementType.PICTURE:
-            if not self.include_picture_chunks:
+            if not self.include_picture_chunks and not self._is_large_picture(element):
                 return None
             text = self._picture_fragment_text(
                 elements=elements,
@@ -179,6 +191,27 @@ class ChunkFragmentBuilder:
             return None
 
         return "\n\n".join(parts).strip()
+
+    def _is_large_picture(self, element: CanonicalElement) -> bool:
+        bbox = element.source.bbox
+        if bbox is None:
+            return False
+
+        page_no = element.source.page_start
+        if page_no is None:
+            return False
+
+        page_size = self.page_sizes.get(page_no)
+        if page_size is None:
+            return False
+
+        width, height = page_size
+        page_area = width * height
+        if page_area <= 0:
+            return False
+
+        bbox_area = abs(bbox.x2 - bbox.x1) * abs(bbox.y2 - bbox.y1)
+        return (bbox_area / page_area) >= _LARGE_PICTURE_AREA_RATIO
 
     def _picture_fragment_text(
         self,
