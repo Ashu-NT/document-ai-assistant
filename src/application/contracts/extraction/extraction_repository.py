@@ -29,6 +29,9 @@ class ExtractionRepository(Protocol):
     def get_extraction_result(self, extraction_id: str) -> ExtractionResult | None:
         ...
 
+    def has_extraction_result(self, document_id: str) -> bool:
+        ...
+
     def list_maintenance_tasks(
         self,
         document_id: str | None = None,

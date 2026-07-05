@@ -718,6 +718,88 @@ def test_run_uses_additive_registration_and_save_when_not_reingesting(
     assert embedding_workflow.delete_calls == []
 
 
+def test_retry_extraction_raises_when_document_lookup_service_not_wired(
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+    )
+
+    with pytest.raises(ReingestionNotSupportedError):
+        workflow.retry_extraction("doc_001")
+
+
+def test_retry_extraction_raises_when_document_does_not_exist(
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        document_lookup_service=FakeDocumentLookupService(graph=None),
+    )
+
+    with pytest.raises(DocumentNotFoundForReingestionError):
+        workflow.retry_extraction("doc_missing")
+
+
+def test_retry_extraction_reextracts_in_place_without_reparsing(
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    document_id = sample_document_graph.document.document_id
+    extraction_workflow = FakeExtractionWorkflow(sample_extraction_result)
+    document_registration_service = FakeDocumentRegistrationService()
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        extraction_workflow=extraction_workflow,
+        document_registration_service=document_registration_service,
+        document_lookup_service=FakeDocumentLookupService(sample_document_graph),
+    )
+
+    result = workflow.retry_extraction(document_id)
+
+    assert result.status == IngestionStatus.EXTRACTED
+    assert result.document_id == document_id
+    assert len(extraction_workflow.calls) == 1
+    assert extraction_workflow.calls[0]["document_id"] == document_id
+    assert extraction_workflow.calls[0]["replace_existing"] is True
+    # Retrying extraction must never re-parse or re-register the document.
+    assert document_registration_service.calls == []
+    assert document_registration_service.replace_calls == []
+    assert workflow.unit_of_work.commit_count >= 1
+
+
+def test_retry_extraction_invokes_semantic_linking_workflow(
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    document_id = sample_document_graph.document.document_id
+    semantic_linking_workflow = FakeSemanticLinkingWorkflow(relationships=["r1", "r2"])
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        document_lookup_service=FakeDocumentLookupService(sample_document_graph),
+        semantic_linking_workflow=semantic_linking_workflow,
+    )
+
+    result = workflow.retry_extraction(document_id)
+
+    assert semantic_linking_workflow.calls == [document_id]
+    assert result.diagnostics["semantic_relationship_count"] == 2
+
+
 def test_ingestion_workflow_skips_semantic_linking_when_not_configured(
     tmp_path,
     sample_document_graph,

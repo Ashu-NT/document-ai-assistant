@@ -196,6 +196,30 @@ class RetrievalBenchmarkCorpusSeeder:
                     total_targets=total_targets,
                     resulting_seed_status="reseeded_new",
                 )
+            elif (
+                self.extraction_service is not None
+                and not self.extraction_service.has_extraction_result(
+                    existing_document_id
+                )
+            ):
+                self._emit_progress(
+                    progress_callback,
+                    (
+                        f"{prefix} Existing document found for {seed_target.document_alias}: "
+                        f"{existing_document_id}. It has no extraction result - likely a prior "
+                        "run failed mid-batch-extraction. Retrying extraction in place "
+                        "(no re-parse, same document_id)..."
+                    ),
+                )
+                final_graph, classification, seed_status = (
+                    self._retry_extraction_for_existing_document(
+                        document_id=existing_document_id,
+                        activity_context=activity_context,
+                        progress_callback=progress_callback,
+                        seed_index=seed_index,
+                        total_targets=total_targets,
+                    )
+                )
             else:
                 self._emit_progress(
                     progress_callback,
@@ -293,12 +317,14 @@ class RetrievalBenchmarkCorpusSeeder:
         """Reuse an already-ingested document as-is, without reparsing or
         re-finalizing anything.
 
-        This is safe (and correct, not just cheap) precisely because every
-        document that can reach this method was itself created by
-        `IngestionWorkflow.run` — chunks, embeddings, extraction, and
-        identifiers are already complete and consistent. Re-running
-        finalization here would only redo work with the same file content,
-        for no benefit.
+        This is safe (and correct, not just cheap) because the caller
+        (`_seed_target`) only reaches this method after confirming the
+        document has a completed extraction result — a document whose
+        extraction never finished (e.g. a prior run failed mid-batch) is
+        routed to `_retry_extraction_for_existing_document` instead. So
+        chunks, embeddings, extraction, and identifiers are already
+        complete and consistent here; re-running finalization would only
+        redo work with the same file content, for no benefit.
         """
         prefix = self._progress_prefix(
             seed_index=seed_index,
@@ -338,6 +364,50 @@ class RetrievalBenchmarkCorpusSeeder:
             )
 
         return document_graph, classification, "reused_existing"
+
+    def _retry_extraction_for_existing_document(
+        self,
+        *,
+        document_id: str,
+        activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
+        seed_index: int | None = None,
+        total_targets: int | None = None,
+    ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
+        """Repair a document whose extraction never completed (its
+        `documents`/`chunks`/`sections` rows were already committed by a
+        prior run before that run's extraction step raised), by retrying
+        only extraction — and, if enabled, semantic linking — through
+        `IngestionWorkflow.retry_extraction`. Does not re-parse the source
+        file or mint a new document_id.
+        """
+        prefix = self._progress_prefix(
+            seed_index=seed_index,
+            total_targets=total_targets,
+        )
+        self._emit_progress(
+            progress_callback,
+            f"{prefix} Retrying extraction for {document_id}...",
+        )
+        self.ingestion_workflow.retry_extraction(
+            document_id,
+            activity_context=activity_context,
+        )
+
+        document_graph = self.document_lookup_service.get_document_graph(
+            document_id,
+            activity_context=activity_context,
+        )
+        if document_graph is None:
+            raise ApplicationError(
+                "Document could not be reloaded after retrying extraction.",
+                details={"document_id": document_id},
+            )
+
+        classification = self.classification_service.get_document_classification(
+            document_id
+        )
+        return document_graph, classification, "extraction_retried"
 
     def _build_manifest_document(
         self,

@@ -98,6 +98,9 @@ class ExtractionService:
     ) -> ExtractionResult | None:
         return self.extraction_repository.get_extraction_result(extraction_id)
 
+    def has_extraction_result(self, document_id: str) -> bool:
+        return self.extraction_repository.has_extraction_result(document_id)
+
     def list_maintenance_tasks(self, document_id: str | None = None):
         return self.extraction_repository.list_maintenance_tasks(document_id)
 

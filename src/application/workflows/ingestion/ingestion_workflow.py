@@ -743,6 +743,116 @@ class IngestionWorkflow:
             audit_context=audit_context,
         )
 
+    def retry_extraction(
+        self,
+        document_id: str,
+        *,
+        activity_context: ActivityContext | None = None,
+    ) -> IngestionResult:
+        """Retry only the extraction (+ identifier + semantic-linking) stage
+        for a document whose chunks/classification already succeeded but
+        whose extraction never completed - e.g. a prior ingestion run
+        raised mid-batch-extraction, leaving the document committed (its
+        `documents`/`chunks`/`sections` rows survive the stage commits that
+        happen before extraction starts) with no `extraction_results` row.
+
+        Unlike `reingest`, this does not re-parse the source file, replace
+        the document graph, or re-embed chunks - all of that already
+        succeeded and is left untouched. It exists so a partial-extraction
+        failure can be repaired in place, without the cost of a full
+        reingest and without minting a new document_id.
+        """
+        if self.document_lookup_service is None:
+            raise ReingestionNotSupportedError(
+                "Retrying extraction requires a document_lookup_service "
+                "dependency, which this IngestionWorkflow instance was not "
+                "constructed with.",
+                error_code="reingestion_not_supported",
+                details={"document_id": document_id},
+            )
+
+        final_graph = self.document_lookup_service.get_document_graph(
+            document_id,
+            activity_context=activity_context,
+        )
+        if final_graph is None:
+            raise DocumentNotFoundForReingestionError(
+                "Document to retry extraction for does not exist.",
+                error_code="reingestion.document_not_found",
+                details={"document_id": document_id},
+            )
+
+        if not final_graph.chunks:
+            raise IngestionWorkflowError(
+                "Document has no chunks to extract from.",
+                error_code="ingestion.final_graph.no_chunks",
+                details={"document_id": document_id},
+            )
+
+        extraction_result = self.extraction_workflow.extract(
+            document_id,
+            list(final_graph.chunks.values()),
+            activity_context=activity_context,
+            replace_existing=True,
+            tables=final_graph.tables,
+            sections=final_graph.sections,
+        )
+        self.unit_of_work.commit()
+
+        if self.identifier_promotion_service is not None:
+            promoted_identifiers = self.identifier_promotion_service.promote(
+                extraction_result=extraction_result,
+                document_graph=final_graph,
+                id_generator=self.id_generator,
+            )
+            if promoted_identifiers:
+                for identifier in promoted_identifiers:
+                    final_graph.identifiers[identifier.identifier_id] = identifier
+                self.document_registration_service.register_document_identifiers(
+                    promoted_identifiers,
+                    activity_context=activity_context,
+                )
+                self.unit_of_work.commit()
+        if self.deterministic_identifier_scanner is not None:
+            existing_normalized = {
+                (i.normalized_value or "", i.identifier_type.value)
+                for i in final_graph.identifiers.values()
+            }
+            scanned_identifiers = self.deterministic_identifier_scanner.scan(
+                final_graph,
+                self.id_generator,
+                existing_normalized=existing_normalized,
+            )
+            if scanned_identifiers:
+                for identifier in scanned_identifiers:
+                    final_graph.identifiers[identifier.identifier_id] = identifier
+                self.document_registration_service.register_document_identifiers(
+                    scanned_identifiers,
+                    activity_context=activity_context,
+                )
+                self.unit_of_work.commit()
+
+        semantic_relationship_count = None
+        if self.semantic_linking_workflow is not None:
+            semantic_relationships = self.semantic_linking_workflow.link(document_id)
+            semantic_relationship_count = len(semantic_relationships)
+            self.unit_of_work.commit()
+
+        return IngestionResult(
+            status=IngestionStatus.EXTRACTED,
+            document_id=document_id,
+            file_name=final_graph.document.file_name,
+            document_type=final_graph.document.document_type.value,
+            chunk_count=len(final_graph.chunks),
+            current_stage=IngestionStage.EXTRACTION,
+            diagnostics={
+                "extraction_id": extraction_result.extraction_id,
+                "maintenance_task_count": len(extraction_result.maintenance_tasks),
+                "spare_part_count": len(extraction_result.spare_parts),
+                "semantic_relationship_count": semantic_relationship_count,
+            },
+        )
+
     def _check_file_hash_duplicate(
         self,
         *,

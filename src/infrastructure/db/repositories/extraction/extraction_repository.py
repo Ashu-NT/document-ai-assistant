@@ -75,6 +75,9 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
     ) -> ExtractionResult | None:
         return self.reader.get_extraction_result(extraction_id)
 
+    def has_extraction_result(self, document_id: str) -> bool:
+        return self.reader.has_extraction_result(document_id)
+
     def list_maintenance_tasks(
         self,
         document_id: str | None = None,

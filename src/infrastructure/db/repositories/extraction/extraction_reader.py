@@ -24,6 +24,22 @@ class ExtractionReader:
     def __init__(self, session: Session) -> None:
         self.session = session
 
+    def has_extraction_result(self, document_id: str) -> bool:
+        try:
+            extraction_id = self.session.execute(
+                select(ExtractionResultORM.id)
+                .where(ExtractionResultORM.document_id == document_id)
+                .limit(1)
+            ).scalar()
+
+            return extraction_id is not None
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to check for an existing extraction result.",
+                details={"document_id": document_id},
+            ) from exc
+
     def get_extraction_result(
         self,
         extraction_id: str,
