@@ -29,7 +29,13 @@ from src.application.evaluation.retrieval import (  # noqa: E402
     DEFAULT_RETRIEVAL_TRUTH_SET_PATH,
     RetrievalBenchmarkCorpusSeeder,
 )
+from src.application.evaluation.retrieval.benchmarking.corpus.models.retrieval_benchmark_corpus_manifest import (  # noqa: E402
+    RetrievalBenchmarkCorpusManifest,
+)
 from src.application.orchestrator.ingestion import build_ingestion_runtime  # noqa: E402
+from src.application.workflows.extraction.candidates import (  # noqa: E402
+    ExtractionCandidateSelector,
+)
 from src.config.paths import ensure_directory, resolve_project_path  # noqa: E402
 from src.config.settings import (  # noqa: E402
     docling_settings,
@@ -119,6 +125,66 @@ def print_runtime_ocr_configuration() -> None:
     )
 
 
+def print_chunk_classification_report(
+    seeder: RetrievalBenchmarkCorpusSeeder,
+    manifest: RetrievalBenchmarkCorpusManifest,
+) -> None:
+    """Per-chunk report: ChunkType + whether it was resolved by the
+    deterministic scorer or the LLM fallback (chunk_type_source), plus
+    what ExtractionCandidateSelector would narrow extraction to for that
+    chunk (chunk_type/cross-signal candidates; candidate narrowing itself
+    is not wired into ExtractionWorkflow by default, this is a preview of
+    what it would select)."""
+    selector = ExtractionCandidateSelector()
+
+    for document in manifest.documents:
+        chunks = seeder.document_lookup_service.list_chunks_by_document(
+            document.document_id
+        )
+        chunks = sorted(chunks, key=lambda chunk: chunk.sequence_number)
+
+        print_status(
+            f"--- Chunk classification report: {document.file_name} "
+            f"({document.document_id}, {len(chunks)} chunk(s)) ---"
+        )
+
+        source_counts: dict[str, int] = {}
+        type_counts: dict[str, int] = {}
+        candidate_counts: dict[str, int] = {}
+
+        for chunk in chunks:
+            candidates = sorted(
+                entity_type.value
+                for entity_type in selector.select_for_chunk(chunk)
+            )
+            is_narrowed = candidates != sorted(
+                entity_type.value for entity_type in ExtractionCandidateSelector.all_types()
+            )
+            candidate_summary = ", ".join(candidates) if is_narrowed else "ALL (unnarrowed)"
+
+            print_status(
+                f"  chunk={chunk.chunk_id} "
+                f"type={chunk.chunk_type.value} ({chunk.chunk_type_source}) "
+                f"candidates=[{candidate_summary}]"
+            )
+
+            source_counts[chunk.chunk_type_source] = (
+                source_counts.get(chunk.chunk_type_source, 0) + 1
+            )
+            type_counts[chunk.chunk_type.value] = (
+                type_counts.get(chunk.chunk_type.value, 0) + 1
+            )
+            if is_narrowed:
+                candidate_counts["narrowed"] = candidate_counts.get("narrowed", 0) + 1
+            else:
+                candidate_counts["unnarrowed"] = candidate_counts.get("unnarrowed", 0) + 1
+
+        print_status(
+            f"  Summary: chunk_type_source={source_counts}, "
+            f"chunk_type={type_counts}, candidate_narrowing={candidate_counts}"
+        )
+
+
 def resolve_path(value: str | None) -> Path | None:
     if value is None:
         return None
@@ -195,6 +261,7 @@ def main() -> int:
             force_reparse_existing=args.force_reparse,
             progress_callback=print_status,
         )
+        print_chunk_classification_report(seeder, manifest)
         print_status(
             f"Writing manifest for {manifest.document_count} document(s)..."
         )
