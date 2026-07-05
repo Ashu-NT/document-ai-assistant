@@ -185,6 +185,70 @@ def print_chunk_classification_report(
         )
 
 
+def print_semantic_linking_report(
+    seeder: RetrievalBenchmarkCorpusSeeder,
+    manifest: RetrievalBenchmarkCorpusManifest,
+) -> None:
+    """Per-document report of the `SemanticRelationship` rows produced by
+    `SemanticLinkingWorkflow` (gated by `SEMANTIC_LINKING_ENABLED`, run
+    automatically by `IngestionWorkflow` right after extraction is saved).
+
+    Prints nothing meaningful when the flag is off: `extraction_service`
+    is still queried, but `list_semantic_relationships` simply returns an
+    empty list since the workflow never ran.
+    """
+    if seeder.extraction_service is None:
+        print_status(
+            "Semantic linking report skipped: seeder has no extraction_service wired."
+        )
+        return
+
+    for document in manifest.documents:
+        relationships = seeder.extraction_service.list_semantic_relationships(
+            document.document_id
+        )
+
+        print_status(
+            f"--- Semantic linking report: {document.file_name} "
+            f"({document.document_id}, {len(relationships)} relationship(s)) ---"
+        )
+
+        if not relationships:
+            continue
+
+        type_counts: dict[str, int] = {}
+        status_counts: dict[str, int] = {}
+        evidence_counts: dict[str, int] = {}
+
+        for relationship in sorted(
+            relationships, key=lambda r: r.relationship_type.value
+        ):
+            print_status(
+                f"  {relationship.relationship_type.value}: "
+                f"{relationship.source_entity_type.value}:{relationship.source_entity_id} "
+                f"-> {relationship.target_entity_type.value}:{relationship.target_entity_id} "
+                f"(status={relationship.status.value}, "
+                f"confidence={relationship.confidence_score:.2f}, "
+                f"evidence={relationship.evidence})"
+            )
+
+            type_counts[relationship.relationship_type.value] = (
+                type_counts.get(relationship.relationship_type.value, 0) + 1
+            )
+            status_counts[relationship.status.value] = (
+                status_counts.get(relationship.status.value, 0) + 1
+            )
+            if relationship.evidence:
+                evidence_counts[relationship.evidence] = (
+                    evidence_counts.get(relationship.evidence, 0) + 1
+                )
+
+        print_status(
+            f"  Summary: relationship_type={type_counts}, status={status_counts}, "
+            f"evidence={evidence_counts}"
+        )
+
+
 def resolve_path(value: str | None) -> Path | None:
     if value is None:
         return None
@@ -219,6 +283,7 @@ def build_corpus_seeder() -> CorpusSeederRuntime:
             unit_of_work=runtime.unit_of_work,
             embedding_model=runtime.embedding_model,
             vector_collection=runtime.vector_collection,
+            extraction_service=runtime.extraction_service,
         ),
         qdrant_client=runtime.qdrant_client,
     )
@@ -262,6 +327,7 @@ def main() -> int:
             progress_callback=print_status,
         )
         print_chunk_classification_report(seeder, manifest)
+        print_semantic_linking_report(seeder, manifest)
         print_status(
             f"Writing manifest for {manifest.document_count} document(s)..."
         )

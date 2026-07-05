@@ -17,6 +17,7 @@ def _make_runtime(*, unit_of_work, qdrant_client=None) -> IngestionRuntime:
         duplicate_detection_service=placeholder,
         classification_service=placeholder,
         document_classification_workflow=placeholder,
+        extraction_service=placeholder,
         post_classification_chunk_finalization_workflow=placeholder,
         unit_of_work=unit_of_work,
         embedding_model="bge-small",

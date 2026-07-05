@@ -35,6 +35,7 @@ from src.application.workflows.classification import (
 )
 from src.application.workflows.extraction import ExtractionWorkflow
 from src.application.workflows.ingestion import DeleteDocumentWorkflow, IngestionWorkflow
+from src.application.workflows.linking import SemanticLinkingWorkflow
 from src.bootstrap.startup import bootstrap_application
 from src.config.settings import (
     embedding_settings,
@@ -174,6 +175,13 @@ def build_ingestion_runtime(
             min_length=extraction_settings.identifier_min_length,
         )
 
+    semantic_linking_workflow = None
+    if extraction_settings.semantic_linking_enabled:
+        semantic_linking_workflow = SemanticLinkingWorkflow(
+            extraction_service=extraction_service,
+            id_generator=resolved_id_generator,
+        )
+
     ingestion_workflow = IngestionWorkflow(
         unit_of_work=uow,
         ingestion_request_validator=IngestionRequestValidator(),
@@ -190,6 +198,7 @@ def build_ingestion_runtime(
         identifier_promotion_service=identifier_promotion_service,
         deterministic_identifier_scanner=deterministic_identifier_scanner,
         document_lookup_service=document_lookup_service,
+        semantic_linking_workflow=semantic_linking_workflow,
     )
 
     delete_document_workflow = DeleteDocumentWorkflow(
@@ -207,6 +216,7 @@ def build_ingestion_runtime(
         duplicate_detection_service=duplicate_detection_service,
         classification_service=classification_service,
         document_classification_workflow=document_classification_workflow,
+        extraction_service=extraction_service,
         post_classification_chunk_finalization_workflow=(
             post_classification_chunk_finalization_workflow
         ),

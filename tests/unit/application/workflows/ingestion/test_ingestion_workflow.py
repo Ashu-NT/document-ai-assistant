@@ -330,6 +330,16 @@ class FakeEmbeddingWorkflow:
         self.delete_calls.append(document_id)
 
 
+class FakeSemanticLinkingWorkflow:
+    def __init__(self, relationships=None) -> None:
+        self.relationships = relationships if relationships is not None else []
+        self.calls = []
+
+    def link(self, document_id: str):
+        self.calls.append(document_id)
+        return list(self.relationships)
+
+
 class FakeDocumentLookupService:
     def __init__(self, graph) -> None:
         self.graph = graph
@@ -361,6 +371,7 @@ def _build_workflow(
     document_registration_service=None,
     embedding_workflow=None,
     document_lookup_service=None,
+    semantic_linking_workflow=None,
 ):
     return IngestionWorkflow(
         unit_of_work=FakeUnitOfWork(),
@@ -384,6 +395,7 @@ def _build_workflow(
         id_generator=IdGenerator(),
         event_service=event_service,
         document_lookup_service=document_lookup_service,
+        semantic_linking_workflow=semantic_linking_workflow,
     )
 
 
@@ -704,6 +716,95 @@ def test_run_uses_additive_registration_and_save_when_not_reingesting(
     assert extraction_workflow.calls[0]["replace_existing"] is False
     assert extraction_workflow.calls[0]["sections"] == sample_document_graph.sections
     assert embedding_workflow.delete_calls == []
+
+
+def test_ingestion_workflow_skips_semantic_linking_when_not_configured(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nmanual")
+    event_service = FakeEventService()
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        event_service=event_service,
+    )
+
+    result = workflow.run(
+        IngestionRequest(file_path=str(input_file), run_quality_checks=False)
+    )
+
+    assert result.status == IngestionStatus.COMPLETE
+    extraction_completed = next(
+        event
+        for event in event_service.events
+        if event.event_type == "ingestion.stage.completed"
+        and event.stage == IngestionStage.EXTRACTION.value
+    )
+    assert extraction_completed.payload["semantic_relationship_count"] is None
+
+
+def test_ingestion_workflow_invokes_semantic_linking_after_extraction_is_saved(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nmanual")
+    extraction_workflow = FakeExtractionWorkflow(sample_extraction_result)
+    semantic_linking_workflow = FakeSemanticLinkingWorkflow(relationships=["r1", "r2"])
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        extraction_workflow=extraction_workflow,
+        semantic_linking_workflow=semantic_linking_workflow,
+    )
+
+    result = workflow.run(
+        IngestionRequest(file_path=str(input_file), run_quality_checks=False)
+    )
+
+    # Linking must reload by document_id after extraction has been saved,
+    # not run against the in-memory extraction result.
+    assert semantic_linking_workflow.calls == [result.document_id]
+    assert extraction_workflow.calls[0]["document_id"] == result.document_id
+
+
+def test_ingestion_workflow_reports_semantic_relationship_count_on_extraction_stage(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nmanual")
+    event_service = FakeEventService()
+    semantic_linking_workflow = FakeSemanticLinkingWorkflow(relationships=["r1", "r2", "r3"])
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        event_service=event_service,
+        semantic_linking_workflow=semantic_linking_workflow,
+    )
+
+    workflow.run(
+        IngestionRequest(file_path=str(input_file), run_quality_checks=False)
+    )
+
+    extraction_completed = next(
+        event
+        for event in event_service.events
+        if event.event_type == "ingestion.stage.completed"
+        and event.stage == IngestionStage.EXTRACTION.value
+    )
+    assert extraction_completed.payload["semantic_relationship_count"] == 3
 
 
 def test_ingestion_workflow_persists_extraction_model_before_extraction_failure(

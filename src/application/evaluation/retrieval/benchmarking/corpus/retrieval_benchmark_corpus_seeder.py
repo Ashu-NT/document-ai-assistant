@@ -20,6 +20,7 @@ from src.application.services.document import (
     DocumentLookupService,
     DuplicateDetectionService,
 )
+from src.application.services.extraction import ExtractionService
 from src.application.workflows.classification import DocumentClassificationWorkflow
 from src.application.workflows.ingestion import IngestionWorkflow
 from src.application.workflows.ingestion.ingestion_request import IngestionRequest
@@ -49,6 +50,7 @@ class RetrievalBenchmarkCorpusSeeder:
         unit_of_work: UnitOfWork | None = None,
         embedding_model: str | None = None,
         vector_collection: str | None = None,
+        extraction_service: ExtractionService | None = None,
         hash_computer: Callable[[Path], tuple[str, str | None]] | None = None,
     ) -> None:
         self.ingestion_workflow = ingestion_workflow
@@ -56,6 +58,7 @@ class RetrievalBenchmarkCorpusSeeder:
         self.document_lookup_service = document_lookup_service
         self.classification_service = classification_service
         self.document_classification_workflow = document_classification_workflow
+        self.extraction_service = extraction_service
         self.truth_set_loader = truth_set_loader or RetrievalTruthSetLoader()
         self.unit_of_work = unit_of_work
         self.embedding_model = embedding_model
