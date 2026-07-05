@@ -2,7 +2,7 @@ from sqlalchemy import delete
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from src.domain.extraction import ExtractionResult
+from src.domain.extraction import ExtractionResult, SemanticRelationship
 from src.infrastructure.db.mappers import (
     EquipmentInfoMapper,
     ExtractionResultMapper,
@@ -11,6 +11,7 @@ from src.infrastructure.db.mappers import (
     ManufacturerMapper,
     ProcedureMapper,
     SafetyWarningMapper,
+    SemanticRelationshipMapper,
     SparePartMapper,
     SpecificationMapper,
     SupplierMapper,
@@ -24,6 +25,7 @@ from src.infrastructure.db.orm_models import (
     MaintenanceTaskORM,
     ProcedureORM,
     SafetyWarningORM,
+    SemanticRelationshipORM,
     SparePartORM,
     SpecificationORM,
     SupplierORM,
@@ -80,6 +82,35 @@ class ExtractionWriter:
             raise DatabaseError(
                 "Failed to delete extraction result.",
                 details={"document_id": document_id},
+            ) from exc
+
+    def replace_semantic_relationships(
+        self,
+        document_id: str,
+        relationships: list[SemanticRelationship],
+    ) -> None:
+        """Replace all semantic relationships for a document.
+
+        Relationships are derived post-hoc from already-persisted extraction
+        entities (by `SemanticLinkingWorkflow`), not part of the LLM
+        extraction cascade itself, so they are keyed by `document_id` alone
+        and can be recomputed/re-run independently of extraction.
+        """
+        try:
+            self.session.execute(
+                delete(SemanticRelationshipORM).where(
+                    SemanticRelationshipORM.document_id == document_id
+                )
+            )
+            for relationship in relationships:
+                self.session.merge(SemanticRelationshipMapper.to_orm(relationship))
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to replace semantic relationships.",
+                details={
+                    "document_id": document_id,
+                    "relationship_count": len(relationships),
+                },
             ) from exc
 
     def _insert_extraction_result(self, result: ExtractionResult) -> None:

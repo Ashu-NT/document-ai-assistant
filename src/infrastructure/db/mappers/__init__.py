@@ -20,6 +20,7 @@ from src.infrastructure.db.mappers.extraction import MaintenanceTaskMapper
 from src.infrastructure.db.mappers.extraction import ManufacturerMapper
 from src.infrastructure.db.mappers.extraction import ProcedureMapper
 from src.infrastructure.db.mappers.extraction import SafetyWarningMapper
+from src.infrastructure.db.mappers.extraction import SemanticRelationshipMapper
 from src.infrastructure.db.mappers.extraction import SparePartMapper
 from src.infrastructure.db.mappers.extraction import SpecificationMapper
 from src.infrastructure.db.mappers.extraction import SupplierMapper
@@ -62,6 +63,7 @@ __all__ = [
     "ManufacturerMapper",
     "ProcedureMapper",
     "SafetyWarningMapper",
+    "SemanticRelationshipMapper",
     "SparePartMapper",
     "SpecificationMapper",
     "SupplierMapper",

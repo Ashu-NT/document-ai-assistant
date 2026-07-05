@@ -6,6 +6,12 @@ from src.domain.extraction.maintenance_task import MaintenanceTask
 from src.domain.extraction.manufacturer import Manufacturer
 from src.domain.extraction.procedure import Procedure, ProcedureType
 from src.domain.extraction.safety_warning import SafetyWarning
+from src.domain.extraction.semantic_relationship import (
+    SemanticEntityType,
+    SemanticRelationship,
+    SemanticRelationshipStatus,
+    SemanticRelationshipType,
+)
 from src.domain.extraction.semantic_source_metadata import SemanticSourceMetadata
 from src.domain.extraction.spare_part import SparePart
 from src.domain.extraction.specification import Specification
@@ -22,6 +28,10 @@ __all__ = [
     "Procedure",
     "ProcedureType",
     "SafetyWarning",
+    "SemanticEntityType",
+    "SemanticRelationship",
+    "SemanticRelationshipStatus",
+    "SemanticRelationshipType",
     "SemanticSourceMetadata",
     "SparePart",
     "Specification",

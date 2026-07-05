@@ -1,6 +1,6 @@
 from src.application.contracts.extraction import ExtractionRepository
 from src.application.validation.extraction import ExtractionResultValidator
-from src.domain.extraction import ExtractionResult
+from src.domain.extraction import ExtractionResult, SemanticRelationship
 from src.shared.activity import ActivityContext
 from src.shared.execution import ActionResult, tracked_action
 
@@ -139,6 +139,36 @@ class ExtractionService:
     def list_troubleshooting_entries_by_equipment_id(self, equipment_id: str):
         return self.extraction_repository.list_troubleshooting_entries_by_equipment_id(
             equipment_id
+        )
+
+    def list_semantic_relationships(self, document_id: str | None = None):
+        return self.extraction_repository.list_semantic_relationships(document_id)
+
+    @tracked_action(
+        action="extraction.semantic_relationships_replaced",
+        entity_type="document",
+        activity=True,
+        audit=True,
+        event=True,
+    )
+    def replace_semantic_relationships(
+        self,
+        document_id: str,
+        relationships: list[SemanticRelationship],
+        activity_context: ActivityContext | None = None,
+    ) -> ActionResult:
+        self.extraction_repository.replace_semantic_relationships(
+            document_id, relationships
+        )
+
+        return ActionResult(
+            entity_type="document",
+            entity_id=document_id,
+            message="Semantic relationships replaced.",
+            payload={
+                "document_id": document_id,
+                "relationship_count": len(relationships),
+            },
         )
 
     def search_maintenance_tasks(self, query: str, document_id: str | None = None):

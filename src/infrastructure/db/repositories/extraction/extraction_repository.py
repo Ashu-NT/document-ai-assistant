@@ -9,6 +9,7 @@ from src.domain.extraction import (
     Manufacturer,
     Procedure,
     SafetyWarning,
+    SemanticRelationship,
     SparePart,
     Specification,
     Supplier,
@@ -34,6 +35,9 @@ from src.infrastructure.db.repositories.extraction.spare_part_reader import Spar
 from src.infrastructure.db.repositories.extraction.specification_reader import (
     SpecificationReader,
 )
+from src.infrastructure.db.repositories.extraction.semantic_relationship_reader import (
+    SemanticRelationshipReader,
+)
 from src.infrastructure.db.repositories.extraction.supplier_reader import SupplierReader
 from src.infrastructure.db.repositories.extraction.troubleshooting_entry_reader import (
     TroubleshootingEntryReader,
@@ -54,6 +58,7 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
         self.safety_warning_reader = SafetyWarningReader(session)
         self.maintenance_interval_reader = MaintenanceIntervalReader(session)
         self.troubleshooting_entry_reader = TroubleshootingEntryReader(session)
+        self.semantic_relationship_reader = SemanticRelationshipReader(session)
 
     def save_extraction_result(self, result: ExtractionResult) -> None:
         self.writer.save_extraction_result(result)
@@ -223,3 +228,16 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
         equipment_id: str,
     ) -> list[TroubleshootingEntry]:
         return self.troubleshooting_entry_reader.list_by_equipment_id(equipment_id)
+
+    def list_semantic_relationships(
+        self,
+        document_id: str | None = None,
+    ) -> list[SemanticRelationship]:
+        return self.semantic_relationship_reader.list_semantic_relationships(document_id)
+
+    def replace_semantic_relationships(
+        self,
+        document_id: str,
+        relationships: list[SemanticRelationship],
+    ) -> None:
+        self.writer.replace_semantic_relationships(document_id, relationships)

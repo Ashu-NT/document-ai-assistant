@@ -9,6 +9,8 @@ class FakeExtractionRepository:
     def __init__(self) -> None:
         self.results = {}
         self.replace_calls = []
+        self.semantic_relationships: dict[str, list] = {}
+        self.replace_semantic_relationships_calls = []
 
     def save_extraction_result(self, result) -> None:
         self.results[result.extraction_id] = result
@@ -104,6 +106,19 @@ class FakeExtractionRepository:
             for troubleshooting_entry in result.troubleshooting_entries
             if document_id is None or troubleshooting_entry.document_id == document_id
         ]
+
+    def list_semantic_relationships(self, document_id: str | None = None):
+        if document_id is None:
+            return [
+                relationship
+                for relationships in self.semantic_relationships.values()
+                for relationship in relationships
+            ]
+        return self.semantic_relationships.get(document_id, [])
+
+    def replace_semantic_relationships(self, document_id: str, relationships: list) -> None:
+        self.replace_semantic_relationships_calls.append((document_id, relationships))
+        self.semantic_relationships[document_id] = relationships
 
 
 def make_service(repository: FakeExtractionRepository) -> ExtractionService:
@@ -299,3 +314,64 @@ def test_replace_extraction_result_rejects_invalid_input(
         service.replace_extraction_result(sample_extraction_result)
 
     assert repository.replace_calls == []
+
+
+def test_list_semantic_relationships(sample_extraction_result) -> None:
+    from src.domain.extraction import (
+        SemanticEntityType,
+        SemanticRelationship,
+        SemanticRelationshipType,
+    )
+
+    repository = FakeExtractionRepository()
+    relationship = SemanticRelationship(
+        relationship_id="semantic_relationship_001",
+        document_id=sample_extraction_result.document_id,
+        relationship_type=SemanticRelationshipType.TASK_USES_PROCEDURE,
+        source_entity_type=SemanticEntityType.MAINTENANCE_TASK,
+        source_entity_id="task_001",
+        target_entity_type=SemanticEntityType.PROCEDURE,
+        target_entity_id="procedure_001",
+        confidence_score=0.8,
+    )
+    repository.semantic_relationships[sample_extraction_result.document_id] = [
+        relationship
+    ]
+    service = make_service(repository)
+
+    relationships = service.list_semantic_relationships(
+        sample_extraction_result.document_id
+    )
+
+    assert relationships == [relationship]
+
+
+def test_replace_semantic_relationships(sample_extraction_result) -> None:
+    from src.domain.extraction import (
+        SemanticEntityType,
+        SemanticRelationship,
+        SemanticRelationshipType,
+    )
+
+    repository = FakeExtractionRepository()
+    service = make_service(repository)
+    relationship = SemanticRelationship(
+        relationship_id="semantic_relationship_001",
+        document_id=sample_extraction_result.document_id,
+        relationship_type=SemanticRelationshipType.TASK_USES_PROCEDURE,
+        source_entity_type=SemanticEntityType.MAINTENANCE_TASK,
+        source_entity_id="task_001",
+        target_entity_type=SemanticEntityType.PROCEDURE,
+        target_entity_id="procedure_001",
+        confidence_score=0.8,
+    )
+
+    result = service.replace_semantic_relationships(
+        sample_extraction_result.document_id, [relationship]
+    )
+
+    assert result.entity_id == sample_extraction_result.document_id
+    assert result.payload["relationship_count"] == 1
+    assert repository.replace_semantic_relationships_calls == [
+        (sample_extraction_result.document_id, [relationship])
+    ]
