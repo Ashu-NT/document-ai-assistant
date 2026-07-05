@@ -16,6 +16,15 @@ def coerce_raw_list(value: Any) -> list[Any]:
 
 
 def _coerce_confidence(value: Any) -> Any:
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, int | float):
+        numeric = float(value)
+        if 1 < numeric <= 100:
+            return numeric / 100
+        return numeric
+
     if isinstance(value, str):
         stripped = value.strip().strip('"').strip("'").strip()
         if stripped.endswith("%"):
@@ -23,6 +32,13 @@ def _coerce_confidence(value: Any) -> Any:
                 return float(stripped[:-1].strip()) / 100
             except ValueError:
                 return value
+        try:
+            numeric = float(stripped)
+        except ValueError:
+            return value
+        if 1 < numeric <= 100:
+            return numeric / 100
+        return numeric
     return value
 
 
