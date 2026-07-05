@@ -143,7 +143,7 @@ _ENTITY_SUMMARY_FIELDS: dict[str, tuple[str, tuple[str, ...]]] = {
     "spare_part": ("spare_part_id", ("part_number", "description", "quantity")),
     "equipment": ("equipment_id", ("name", "model_number", "manufacturer_name")),
     "maintenance_task": ("task_id", ("title", "interval", "component_name")),
-    "procedure": ("procedure_id", ("title", "procedure_type")),
+    "procedure": ("procedure_id", ("title", "procedure_type", "steps")),
     "specification": ("specification_id", ("parameter", "value", "unit")),
     "safety_warning": ("safety_warning_id", ("warning_type", "message")),
     "maintenance_interval": (
@@ -154,14 +154,21 @@ _ENTITY_SUMMARY_FIELDS: dict[str, tuple[str, tuple[str, ...]]] = {
 }
 
 
+def _format_field_value(value: Any) -> str:
+    if isinstance(value, (list, tuple)):
+        numbered = "; ".join(f"{i}. {step}" for i, step in enumerate(value, start=1))
+        return f"[{numbered}]"
+    return repr(value)
+
+
 def _summarize_entity(entity: dict[str, Any]) -> str:
     entity_type = entity.get("_entity_type") or entity.get("entity_type") or "?"
     id_field, label_fields = _ENTITY_SUMMARY_FIELDS.get(entity_type, (None, ()))
     entity_id = entity.get(id_field, "?") if id_field else "?"
     labels = ", ".join(
-        f"{field}={entity[field]!r}"
+        f"{field}={_format_field_value(entity[field])}"
         for field in label_fields
-        if entity.get(field) not in (None, "")
+        if entity.get(field) not in (None, "", [])
     )
     confidence = entity.get("confidence_score")
     review = entity.get("requires_human_review")
