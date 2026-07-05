@@ -128,9 +128,11 @@ class FakeIngestionWorkflow:
         self,
         results_by_path: dict[str, IngestionResult] | None = None,
         retry_extraction_results: dict[str, IngestionResult] | None = None,
+        retry_extraction_errors: dict[str, Exception] | None = None,
     ) -> None:
         self.results_by_path = results_by_path or {}
         self.retry_extraction_results = retry_extraction_results or {}
+        self.retry_extraction_errors = retry_extraction_errors or {}
         self.calls: list[IngestionRequest] = []
         self.retry_extraction_calls: list[str] = []
 
@@ -153,6 +155,9 @@ class FakeIngestionWorkflow:
 
     def retry_extraction(self, document_id: str, *, activity_context=None) -> IngestionResult:
         self.retry_extraction_calls.append(document_id)
+        error = self.retry_extraction_errors.get(document_id)
+        if error is not None:
+            raise error
         result = self.retry_extraction_results.get(document_id)
         if result is None:
             raise KeyError(
@@ -641,6 +646,169 @@ def test_seed_corpus_retries_extraction_for_existing_duplicate_missing_extractio
     assert fake_ingestion_workflow.calls == []
     assert manifest.documents[0].document_id == "doc_existing"
     assert manifest.documents[0].seed_status == "extraction_retried"
+
+
+def test_seed_corpus_marks_zero_chunk_document_as_needing_reparse(
+) -> None:
+    """A document with no extraction result AND zero chunks failed during
+    parsing/finalization, not extraction — there is nothing for extraction
+    to run against. The seeder must not call `retry_extraction` for it (it
+    would just raise); instead it is included in the manifest as-is, with
+    `chunk_count=0` and a distinguishing `seed_status`, so it stays visible
+    and actionable (needs `--force-reparse`) instead of vanishing or
+    crashing the batch."""
+    tmp_path = make_workspace_temp_dir()
+    truth_set_path = tmp_path / "retrieval_truth_set.md"
+    truth_set_path.write_text("truth set", encoding="utf-8")
+    input_directory = tmp_path / "docs"
+    input_directory.mkdir()
+    file_path = input_directory / "manual.pdf"
+    file_path.write_text("duplicate", encoding="utf-8")
+
+    dataset = build_dataset(
+        truth_set_path,
+        [
+            build_case(
+                case_id="D-006",
+                document_alias="manual_alias",
+                file_name=file_path.name,
+            )
+        ],
+    )
+    zero_chunk_graph = build_document_graph(
+        document_id="doc_existing",
+        file_name=file_path.name,
+        file_path=str(file_path),
+        document_type=DocumentType.MANUAL,
+        chunk_texts=[],
+    )
+    file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(file_path)[0]
+    classifications = {
+        "doc_existing": build_document_classification(
+            document_id="doc_existing",
+            document_type=DocumentType.MANUAL,
+            confidence_score=0.88,
+        )
+    }
+    operations: list[str] = []
+    fake_ingestion_workflow = FakeIngestionWorkflow()
+    extraction_service = FakeExtractionService(
+        documents_missing_extraction={"doc_existing"}
+    )
+    seeder, _ = build_seeder(
+        dataset=dataset,
+        operations=operations,
+        final_graphs_by_document_id={"doc_existing": zero_chunk_graph},
+        ingestion_workflow=fake_ingestion_workflow,
+        duplicate_matches={file_hash: "doc_existing"},
+        classifications=classifications,
+        extraction_service=extraction_service,
+    )
+    messages: list[str] = []
+
+    manifest = seeder.seed_corpus(
+        truth_set_path=truth_set_path,
+        input_directory=input_directory,
+        progress_callback=messages.append,
+    )
+
+    assert fake_ingestion_workflow.retry_extraction_calls == []
+    assert manifest.document_count == 1
+    assert manifest.documents[0].document_id == "doc_existing"
+    assert manifest.documents[0].chunk_count == 0
+    assert manifest.documents[0].seed_status == "no_chunks_needs_reparse"
+    assert any(
+        "0 chunks" in message and "manual_alias" in message for message in messages
+    )
+
+
+def test_seed_corpus_skips_unrecoverable_document_and_continues_with_the_rest(
+) -> None:
+    """A document that a prior run committed (it shows up as a duplicate by
+    file hash) but whose graph can no longer be loaded at all must not abort
+    the whole corpus seed run. It is skipped, reported, and left out of the
+    manifest, and every other document still gets seeded."""
+    tmp_path = make_workspace_temp_dir()
+    truth_set_path = tmp_path / "retrieval_truth_set.md"
+    truth_set_path.write_text("truth set", encoding="utf-8")
+    input_directory = tmp_path / "docs"
+    input_directory.mkdir()
+    good_file = input_directory / "good.pdf"
+    good_file.write_text("good", encoding="utf-8")
+    bad_file = input_directory / "bad.pdf"
+    bad_file.write_text("bad", encoding="utf-8")
+
+    dataset = build_dataset(
+        truth_set_path,
+        [
+            build_case(
+                case_id="S-001",
+                document_alias="bad_alias",
+                file_name=bad_file.name,
+            ),
+            build_case(
+                case_id="S-002",
+                document_alias="good_alias",
+                file_name=good_file.name,
+            ),
+        ],
+    )
+    good_graph = build_document_graph(
+        document_id="doc_good",
+        file_name=good_file.name,
+        file_path=str(good_file),
+        document_type=DocumentType.MANUAL,
+        chunk_texts=["final chunk"],
+        question_count=1,
+    )
+    bad_file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(bad_file)[0]
+    classifications = {
+        "doc_good": build_document_classification(
+            document_id="doc_good",
+            document_type=DocumentType.MANUAL,
+            confidence_score=0.9,
+        ),
+    }
+    operations: list[str] = []
+    fake_ingestion_workflow = FakeIngestionWorkflow(
+        results_by_path={
+            str(good_file): IngestionResult(
+                status=IngestionStatus.COMPLETE,
+                document_id="doc_good",
+                file_name=good_file.name,
+            ),
+        },
+    )
+    # "doc_bad" is intentionally absent from `final_graphs_by_document_id`,
+    # so `document_lookup_service.get_document_graph` returns None for it -
+    # simulating a document whose graph can no longer be loaded at all.
+    extraction_service = FakeExtractionService(
+        documents_missing_extraction={"doc_bad"}
+    )
+    seeder, _ = build_seeder(
+        dataset=dataset,
+        operations=operations,
+        final_graphs_by_document_id={"doc_good": good_graph},
+        ingestion_workflow=fake_ingestion_workflow,
+        duplicate_matches={bad_file_hash: "doc_bad"},
+        classifications=classifications,
+        extraction_service=extraction_service,
+    )
+    messages: list[str] = []
+
+    manifest = seeder.seed_corpus(
+        truth_set_path=truth_set_path,
+        input_directory=input_directory,
+        progress_callback=messages.append,
+    )
+
+    assert fake_ingestion_workflow.retry_extraction_calls == []
+    assert manifest.document_count == 1
+    assert manifest.documents[0].document_id == "doc_good"
+    assert any("SKIPPED bad_alias" in message for message in messages)
+    assert any(
+        "1 of 2 document(s) skipped: bad_alias" in message for message in messages
+    )
 
 
 def test_seed_corpus_classifies_existing_duplicate_when_classification_missing(

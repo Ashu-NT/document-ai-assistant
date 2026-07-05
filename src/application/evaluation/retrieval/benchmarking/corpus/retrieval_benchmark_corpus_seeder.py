@@ -102,6 +102,7 @@ class RetrievalBenchmarkCorpusSeeder:
         )
 
         documents: list[RetrievalBenchmarkCorpusDocument] = []
+        skipped_targets: list[_CorpusSeedTarget] = []
         for index, seed_target in enumerate(seed_targets, start=1):
             self._emit_progress(
                 progress_callback,
@@ -110,14 +111,30 @@ class RetrievalBenchmarkCorpusSeeder:
                     f"{seed_target.document_alias} ({seed_target.file_name})"
                 ),
             )
-            document = self._seed_target(
-                seed_target,
-                force_reparse_existing=force_reparse_existing,
-                activity_context=activity_context,
-                progress_callback=progress_callback,
-                seed_index=index,
-                total_targets=total_targets,
-            )
+            try:
+                document = self._seed_target(
+                    seed_target,
+                    force_reparse_existing=force_reparse_existing,
+                    activity_context=activity_context,
+                    progress_callback=progress_callback,
+                    seed_index=index,
+                    total_targets=total_targets,
+                )
+            except ApplicationError as exc:
+                self._rollback()
+                skipped_targets.append(seed_target)
+                self._emit_progress(
+                    progress_callback,
+                    (
+                        f"[{index}/{total_targets}] SKIPPED {seed_target.document_alias} "
+                        f"({seed_target.file_name}): {exc}. This document was left out of "
+                        "the manifest and needs manual intervention (e.g. --force-reparse) "
+                        "since the rest of the corpus should not fail because of one "
+                        "unrecoverable document."
+                    ),
+                )
+                continue
+
             documents.append(document)
             self._emit_progress(
                 progress_callback,
@@ -126,6 +143,15 @@ class RetrievalBenchmarkCorpusSeeder:
                     f"-> {document.document_id} "
                     f"(status={document.seed_status}, chunks={document.chunk_count}, "
                     f"questions={document.question_count})"
+                ),
+            )
+
+        if skipped_targets:
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"{len(skipped_targets)} of {total_targets} document(s) skipped: "
+                    + ", ".join(target.document_alias for target in skipped_targets)
                 ),
             )
 
@@ -202,24 +228,53 @@ class RetrievalBenchmarkCorpusSeeder:
                     existing_document_id
                 )
             ):
-                self._emit_progress(
-                    progress_callback,
-                    (
-                        f"{prefix} Existing document found for {seed_target.document_alias}: "
-                        f"{existing_document_id}. It has no extraction result - likely a prior "
-                        "run failed mid-batch-extraction. Retrying extraction in place "
-                        "(no re-parse, same document_id)..."
-                    ),
+                document_graph = self.document_lookup_service.get_document_graph(
+                    existing_document_id,
+                    activity_context=activity_context,
                 )
-                final_graph, classification, seed_status = (
-                    self._retry_extraction_for_existing_document(
-                        document_id=existing_document_id,
-                        activity_context=activity_context,
-                        progress_callback=progress_callback,
-                        seed_index=seed_index,
-                        total_targets=total_targets,
+                if document_graph is None:
+                    raise ApplicationError(
+                        "Existing document could not be loaded to check its chunk count.",
+                        details={"document_id": existing_document_id},
                     )
-                )
+
+                if not document_graph.chunks:
+                    self._emit_progress(
+                        progress_callback,
+                        (
+                            f"{prefix} Existing document found for {seed_target.document_alias}: "
+                            f"{existing_document_id}. It has 0 chunks, so extraction cannot be "
+                            "retried (this is a parsing/finalization failure, not an "
+                            "extraction failure). Marking it as needing a full "
+                            "--force-reparse instead of attempting extraction."
+                        ),
+                    )
+                    final_graph, classification, seed_status = (
+                        self._mark_document_needs_reparse(
+                            document_id=existing_document_id,
+                            document_graph=document_graph,
+                            activity_context=activity_context,
+                        )
+                    )
+                else:
+                    self._emit_progress(
+                        progress_callback,
+                        (
+                            f"{prefix} Existing document found for {seed_target.document_alias}: "
+                            f"{existing_document_id}. It has no extraction result - likely a prior "
+                            "run failed mid-batch-extraction. Retrying extraction in place "
+                            "(no re-parse, same document_id)..."
+                        ),
+                    )
+                    final_graph, classification, seed_status = (
+                        self._retry_extraction_for_existing_document(
+                            document_id=existing_document_id,
+                            activity_context=activity_context,
+                            progress_callback=progress_callback,
+                            seed_index=seed_index,
+                            total_targets=total_targets,
+                        )
+                    )
             else:
                 self._emit_progress(
                     progress_callback,
@@ -409,6 +464,26 @@ class RetrievalBenchmarkCorpusSeeder:
         )
         return document_graph, classification, "extraction_retried"
 
+    def _mark_document_needs_reparse(
+        self,
+        *,
+        document_id: str,
+        document_graph: DocumentGraph,
+        activity_context: ActivityContext | None = None,
+    ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
+        """A document with zero chunks has nothing for extraction to run
+        against — it failed during parsing/finalization, not extraction, so
+        `IngestionWorkflow.retry_extraction` cannot fix it (only a full
+        `--force-reparse` can). Rather than raising and dropping the
+        document out of the manifest entirely, it is included as-is
+        (`chunk_count=0`) with a distinguishing `seed_status` so it stays
+        visible and actionable instead of silently disappearing.
+        """
+        classification = self.classification_service.get_document_classification(
+            document_id
+        )
+        return document_graph, classification, "no_chunks_needs_reparse"
+
     def _build_manifest_document(
         self,
         *,
@@ -572,6 +647,13 @@ class RetrievalBenchmarkCorpusSeeder:
         if self.unit_of_work is None:
             return
         self.unit_of_work.commit()
+
+    def _rollback(self) -> None:
+        if self.unit_of_work is None:
+            return
+        rollback = getattr(self.unit_of_work, "rollback", None)
+        if callable(rollback):
+            rollback()
 
     @staticmethod
     def _emit_progress(
