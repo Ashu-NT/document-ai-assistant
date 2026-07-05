@@ -134,6 +134,9 @@ class ChunkORM(Base):
 
     content: Mapped[str] = mapped_column(Text, nullable=False)
     embedding_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    element_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    table_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    picture_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     chunk_type: Mapped[str] = mapped_column(
         String,

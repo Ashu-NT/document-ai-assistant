@@ -73,7 +73,7 @@ def _make_chunk(chunk_id: str = "chunk_001", citation: Citation | None = None) -
     return RetrievedChunk(
         chunk_id=chunk_id,
         document_id="doc_001",
-        content="Technical content.",
+        content=f"Technical content for {chunk_id}.",
         score=0.9,
         retrieval_source="dense",
         chunk_type=ChunkType.GENERAL,
@@ -959,6 +959,155 @@ def test_resolved_identifier_joins_missing_source_chunk_into_context(
     assert fake_gen.called_with is not None
     context_chunk_ids = {c.chunk_id for c in fake_gen.called_with.context_chunks}
     assert "chunk_identifier" in context_chunk_ids
+    assert fake_gen.called_with.structured_context is not None
+    key_value_pairs = {
+        (kv.key, kv.value) for kv in fake_gen.called_with.structured_context.key_values
+    }
+    assert ("Part Number", "HP-001") in key_value_pairs
+
+
+def test_answer_generation_hydrates_full_table_evidence_before_generation(
+    fake_exploration_service: FakeDocumentExplorationService,
+    sample_document_graph,
+) -> None:
+    from src.domain.document.entities.chunk import DocumentChunk
+
+    table_chunk = next(iter(sample_document_graph.chunks.values()))
+    table_chunk.content = "| HP-001 | Filter |"
+    table_chunk.chunk_type = ChunkType.SPARE_PARTS_TABLE
+    table_chunk.section_path = ["Spare Parts List"]
+    table_chunk.table_ids = ["table_001"]
+    sample_document_graph.tables["table_001"].markdown = (
+        "| Part Number | Description |\n|---|---|\n| HP-001 | Filter |\n| HP-002 | Valve |"
+    )
+
+    sibling_fragment = DocumentChunk(
+        chunk_id="chunk_table_002",
+        document_id=table_chunk.document_id,
+        section_id=table_chunk.section_id,
+        content="| HP-002 | Valve |",
+        chunk_type=ChunkType.SPARE_PARTS_TABLE,
+        section_path=list(table_chunk.section_path),
+        table_ids=["table_001"],
+        source=table_chunk.source,
+        sequence_number=table_chunk.sequence_number + 1,
+    )
+    sample_document_graph.add_chunk(sibling_fragment)
+
+    retrieved_primary = RetrievedChunk(
+        chunk_id=table_chunk.chunk_id,
+        document_id=table_chunk.document_id,
+        content=table_chunk.content,
+        score=0.95,
+        retrieval_source="sql",
+        chunk_type=ChunkType.SPARE_PARTS_TABLE,
+        section_id=table_chunk.section_id,
+        section_path=list(table_chunk.section_path),
+        source=table_chunk.source,
+    )
+    retrieved_sibling = RetrievedChunk(
+        chunk_id=sibling_fragment.chunk_id,
+        document_id=sibling_fragment.document_id,
+        content=sibling_fragment.content,
+        score=0.90,
+        retrieval_source="sql",
+        chunk_type=ChunkType.SPARE_PARTS_TABLE,
+        section_id=sibling_fragment.section_id,
+        section_path=list(sibling_fragment.section_path),
+        source=sibling_fragment.source,
+    )
+    wf_result = _make_retrieval_result_with_chunks([retrieved_primary, retrieved_sibling])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+    lookup_service = FakeDocumentLookupService(
+        graphs_by_document_id={"doc_001": sample_document_graph}
+    )
+    fake_gen = FakeAnswerGenerationService()
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+        document_lookup_service=lookup_service,
+    )
+    request = QuestionAnsweringRequest(
+        question="Show the spare parts table.",
+        allow_answer_generation=True,
+    )
+
+    workflow.run(request)
+
+    assert lookup_service.requested_document_ids == ["doc_001"]
+    assert fake_gen.called_with is not None
+    assert len(fake_gen.called_with.context_chunks) == 1
+    assert (
+        fake_gen.called_with.context_chunks[0].content
+        == sample_document_graph.tables["table_001"].to_embedding_text()
+    )
+
+
+def test_final_evidence_preparation_deduplicates_joined_structured_source_chunks(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    from src.domain.common.enums import IdentifierType
+    from src.domain.document.entities.chunk import DocumentChunk
+    from src.domain.document.entities.identifier import Identifier
+
+    anchor_chunk = RetrievedChunk(
+        chunk_id="chunk_anchor",
+        document_id="doc_001",
+        content="Part Number HP-001",
+        score=0.95,
+        retrieval_source="sql",
+        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+        section_id="sec_001",
+        section_path=["Technical Data"],
+        source=SourceLocation(page_start=1, page_end=1),
+    )
+    wf_result = _make_retrieval_result_with_chunks([anchor_chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+
+    identifier_source_chunk = DocumentChunk(
+        chunk_id="chunk_identifier",
+        document_id="doc_001",
+        section_id="sec_001",
+        content="Context: Part Number HP-001",
+        chunk_type=ChunkType.GENERAL,
+        section_path=["Technical Data"],
+        source=SourceLocation(page_start=1, page_end=1),
+        sequence_number=2,
+    )
+    lookup_service = FakeDocumentLookupService(
+        chunks_by_id={"chunk_identifier": identifier_source_chunk}
+    )
+    fake_gen = FakeAnswerGenerationService()
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+        document_lookup_service=lookup_service,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the part number?",
+        allow_answer_generation=True,
+        resolved_identifiers=[
+            Identifier(
+                identifier_id="identifier_001",
+                document_id="doc_001",
+                raw_value="HP-001",
+                identifier_type=IdentifierType.PART_NUMBER,
+                chunk_id="chunk_identifier",
+                confidence_score=0.9,
+            )
+        ],
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert lookup_service.requested_ids == ["chunk_identifier"]
+    assert fake_gen.called_with is not None
+    assert [chunk.chunk_id for chunk in fake_gen.called_with.context_chunks] == [
+        "chunk_anchor"
+    ]
     assert fake_gen.called_with.structured_context is not None
     key_value_pairs = {
         (kv.key, kv.value) for kv in fake_gen.called_with.structured_context.key_values

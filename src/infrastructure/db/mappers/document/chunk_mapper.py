@@ -18,6 +18,9 @@ class ChunkMapper:
             section_id=chunk.section_id,
             content=chunk.content,
             embedding_text=chunk.embedding_text,
+            element_ids_json=ChunkMapper._dump_string_list(chunk.element_ids),
+            table_ids_json=ChunkMapper._dump_string_list(chunk.table_ids),
+            picture_ids_json=ChunkMapper._dump_string_list(chunk.picture_ids),
             chunk_type=chunk.chunk_type.value,
             chunk_type_source=chunk.chunk_type_source,
             section_path=json.dumps(chunk.section_path),
@@ -48,10 +51,22 @@ class ChunkMapper:
             embedding_text=orm.embedding_text,
             chunk_type=ChunkType(orm.chunk_type),
             chunk_type_source=orm.chunk_type_source or "deterministic",
-            section_path=json.loads(orm.section_path or "[]"),
-            element_ids=element_ids or [],
-            table_ids=table_ids or [],
-            picture_ids=picture_ids or [],
+            section_path=ChunkMapper._load_string_list(orm.section_path),
+            element_ids=(
+                list(element_ids)
+                if element_ids is not None
+                else ChunkMapper._load_string_list(orm.element_ids_json)
+            ),
+            table_ids=(
+                list(table_ids)
+                if table_ids is not None
+                else ChunkMapper._load_string_list(orm.table_ids_json)
+            ),
+            picture_ids=(
+                list(picture_ids)
+                if picture_ids is not None
+                else ChunkMapper._load_string_list(orm.picture_ids_json)
+            ),
             source=columns_to_source_location(
                 page_start=orm.page_start,
                 page_end=orm.page_end,
@@ -64,3 +79,22 @@ class ChunkMapper:
                 token_count_estimate=orm.token_count_estimate,
             ),
         )
+
+    @staticmethod
+    def _dump_string_list(values: list[str]) -> str:
+        return json.dumps(list(values))
+
+    @staticmethod
+    def _load_string_list(raw_value: str | None) -> list[str]:
+        if not raw_value:
+            return []
+
+        try:
+            loaded = json.loads(raw_value)
+        except json.JSONDecodeError:
+            return []
+
+        if not isinstance(loaded, list):
+            return []
+
+        return [str(value) for value in loaded if str(value)]

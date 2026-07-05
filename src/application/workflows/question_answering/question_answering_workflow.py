@@ -29,6 +29,9 @@ from src.application.workflows.question_answering.answer_context.structured_answ
 from src.application.workflows.question_answering.answer_context.structured_fact_key_value_builder import (
     StructuredFactKeyValueBuilder,
 )
+from src.application.workflows.question_answering.evidence import (
+    FinalEvidencePreparer,
+)
 from src.application.workflows.question_answering.question_answering_request import (
     QuestionAnsweringRequest,
 )
@@ -83,6 +86,7 @@ class QuestionAnsweringWorkflow:
         document_lookup_service: DocumentLookupService | None = None,
         answer_context_organizer: AnswerContextOrganizer | None = None,
         structured_fact_key_value_builder: StructuredFactKeyValueBuilder | None = None,
+        final_evidence_preparer: FinalEvidencePreparer | None = None,
     ) -> None:
         self._retrieval_workflow = retrieval_workflow
         self._exploration_service = exploration_service
@@ -98,6 +102,9 @@ class QuestionAnsweringWorkflow:
         self._answer_context_organizer = answer_context_organizer or AnswerContextOrganizer()
         self._structured_fact_key_value_builder = (
             structured_fact_key_value_builder or StructuredFactKeyValueBuilder()
+        )
+        self._final_evidence_preparer = final_evidence_preparer or FinalEvidencePreparer(
+            document_lookup_service=document_lookup_service
         )
 
     def run(
@@ -328,7 +335,9 @@ class QuestionAnsweringWorkflow:
         # chunks joined in below)
         self._emit_progress(progress_callback, "Generating answer...")
         joined_chunks, structured_context = self._join_structured_facts(
-            request, approved_chunks
+            request,
+            approved_chunks,
+            analyzed_query,
         )
         gen_request = AnswerGenerationRequest(
             question=request.question,
@@ -398,17 +407,13 @@ class QuestionAnsweringWorkflow:
         self,
         request: QuestionAnsweringRequest,
         approved_chunks: list[RetrievedChunk],
+        analyzed_query: RetrievalQuery,
     ) -> tuple[list[RetrievedChunk], StructuredAnswerContext | None]:
         """Joins resolved identifiers/structured-entity rows to the same
         chunk-based context used for generation, fetching their exact source
         chunk when normal retrieval didn't already surface it, so these
         facts reach the LLM as real evidence instead of only reaching the
         user through a deterministic bypass renderer."""
-        if not request.resolved_identifiers and not request.resolved_structured_entities:
-            return approved_chunks, None
-        if self._document_lookup_service is None:
-            return approved_chunks, None
-
         existing_chunk_ids = {chunk.chunk_id for chunk in approved_chunks}
         needed_chunk_ids: set[str] = set()
         for identifier in request.resolved_identifiers:
@@ -423,7 +428,7 @@ class QuestionAnsweringWorkflow:
                 needed_chunk_ids.add(chunk_id)
 
         joined_chunks = list(approved_chunks)
-        if needed_chunk_ids:
+        if needed_chunk_ids and self._document_lookup_service is not None:
             fetched_chunks = self._document_lookup_service.get_chunks_by_ids(
                 list(needed_chunk_ids)
             )
@@ -431,14 +436,22 @@ class QuestionAnsweringWorkflow:
                 self._to_retrieved_chunk(chunk) for chunk in fetched_chunks
             )
 
-        structured_context = self._answer_context_organizer.organize(
-            answer_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        prepared_chunks = self._final_evidence_preparer.prepare(
+            query=analyzed_query,
             chunks=joined_chunks,
         )
-        source_number_by_chunk_id = {
-            source.chunk_id: source.source_number
-            for source in structured_context.sources
-        }
+
+        if not request.resolved_identifiers and not request.resolved_structured_entities:
+            return prepared_chunks, None
+
+        structured_context = self._answer_context_organizer.organize(
+            answer_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+            chunks=prepared_chunks,
+        )
+        source_number_by_chunk_id = self._source_number_by_chunk_id(
+            chunks=prepared_chunks,
+            structured_context=structured_context,
+        )
 
         extra_key_values = (
             self._structured_fact_key_value_builder.build_from_identifiers(
@@ -464,10 +477,10 @@ class QuestionAnsweringWorkflow:
             )
 
         if not extra_key_values:
-            return joined_chunks, None
+            return prepared_chunks, None
 
         structured_context.key_values.extend(extra_key_values)
-        return joined_chunks, structured_context
+        return prepared_chunks, structured_context
 
     @staticmethod
     def _to_retrieved_chunk(chunk) -> RetrievedChunk:
@@ -481,7 +494,31 @@ class QuestionAnsweringWorkflow:
             section_id=chunk.section_id,
             section_path=list(chunk.section_path),
             source=chunk.source,
+            metadata={"sequence_number": str(chunk.sequence_number)},
         )
+
+    @staticmethod
+    def _source_number_by_chunk_id(
+        *,
+        chunks: list[RetrievedChunk],
+        structured_context: StructuredAnswerContext,
+    ) -> dict[str, int]:
+        chunk_by_id = {chunk.chunk_id: chunk for chunk in chunks}
+        source_numbers: dict[str, int] = {}
+
+        for source in structured_context.sources:
+            source_numbers[source.chunk_id] = source.source_number
+            chunk = chunk_by_id.get(source.chunk_id)
+            if chunk is None:
+                continue
+
+            collapsed_chunk_ids = chunk.metadata.get("dedup_collapsed_chunk_ids", "")
+            for collapsed_chunk_id in collapsed_chunk_ids.split(","):
+                normalized_chunk_id = collapsed_chunk_id.strip()
+                if normalized_chunk_id:
+                    source_numbers[normalized_chunk_id] = source.source_number
+
+        return source_numbers
 
     @staticmethod
     def _build_override_workflow_result(

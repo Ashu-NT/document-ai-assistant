@@ -87,9 +87,15 @@ class FakeGuardrail:
 
 
 class FakeDocumentLookupService:
-    def __init__(self, chunks_by_id: dict | None = None) -> None:
+    def __init__(
+        self,
+        chunks_by_id: dict | None = None,
+        graphs_by_document_id: dict | None = None,
+    ) -> None:
         self._chunks_by_id = chunks_by_id or {}
+        self._graphs_by_document_id = graphs_by_document_id or {}
         self.requested_ids: list[str] = []
+        self.requested_document_ids: list[str] = []
 
     def get_chunks_by_ids(self, chunk_ids: list[str]) -> list:
         self.requested_ids.extend(chunk_ids)
@@ -98,6 +104,10 @@ class FakeDocumentLookupService:
             for chunk_id in chunk_ids
             if chunk_id in self._chunks_by_id
         ]
+
+    def get_document_graph(self, document_id: str):
+        self.requested_document_ids.append(document_id)
+        return self._graphs_by_document_id.get(document_id)
 
 
 class FakeAnswerGenerationService:

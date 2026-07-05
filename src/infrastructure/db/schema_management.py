@@ -15,6 +15,24 @@ def ensure_database_schema(engine: Engine) -> None:
         column_name="parser_extra_json",
         column_ddl="TEXT",
     )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="element_ids_json",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="table_ids_json",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="picture_ids_json",
+        column_ddl="TEXT",
+    )
 
 
 def _ensure_sqlite_column(

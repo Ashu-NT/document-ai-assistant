@@ -135,6 +135,32 @@ def test_document_repository_lists_chunks_by_document(
     assert chunks[0].document_id == document_id
 
 
+def test_document_repository_preserves_chunk_linkage_arrays(
+    db_uow,
+    sample_document_graph,
+    document_id,
+) -> None:
+    chunk = next(iter(sample_document_graph.chunks.values()))
+    chunk.element_ids = ["el_001", "el_002"]
+    chunk.table_ids = ["table_001"]
+    chunk.picture_ids = ["pic_001"]
+
+    db_uow.documents.save_document_graph(sample_document_graph)
+    db_uow.commit()
+
+    loaded_graph = db_uow.documents.get_document_graph(document_id)
+    listed_chunks = db_uow.documents.list_chunks_by_document(document_id)
+
+    assert loaded_graph is not None
+    loaded_chunk = next(iter(loaded_graph.chunks.values()))
+    assert loaded_chunk.element_ids == ["el_001", "el_002"]
+    assert loaded_chunk.table_ids == ["table_001"]
+    assert loaded_chunk.picture_ids == ["pic_001"]
+    assert listed_chunks[0].element_ids == ["el_001", "el_002"]
+    assert listed_chunks[0].table_ids == ["table_001"]
+    assert listed_chunks[0].picture_ids == ["pic_001"]
+
+
 def test_document_repository_gets_chunks_by_ids(
     db_uow,
     sample_document_graph,
