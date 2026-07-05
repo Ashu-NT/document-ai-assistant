@@ -367,3 +367,88 @@ def test_list_troubleshooting_entries_by_equipment_id(
     assert len(entries) == 1
     assert entries[0].equipment_id == equipment_id
     assert no_entries == []
+
+
+def test_replace_semantic_relationships_saves_and_lists_by_document(
+    db_uow, document_id
+) -> None:
+    from src.domain.extraction import (
+        SemanticEntityType,
+        SemanticRelationship,
+        SemanticRelationshipStatus,
+        SemanticRelationshipType,
+    )
+
+    relationship = SemanticRelationship(
+        relationship_id="semantic_relationship_001",
+        document_id=document_id,
+        relationship_type=SemanticRelationshipType.TASK_USES_PROCEDURE,
+        source_entity_type=SemanticEntityType.MAINTENANCE_TASK,
+        source_entity_id="task_001",
+        target_entity_type=SemanticEntityType.PROCEDURE,
+        target_entity_id="procedure_001",
+        confidence_score=0.8,
+        status=SemanticRelationshipStatus.ACCEPTED,
+        evidence="same_chunk",
+    )
+
+    db_uow.extractions.replace_semantic_relationships(document_id, [relationship])
+    db_uow.commit()
+
+    loaded = db_uow.extractions.list_semantic_relationships(document_id)
+
+    assert len(loaded) == 1
+    assert loaded[0].relationship_id == "semantic_relationship_001"
+    assert loaded[0].relationship_type == SemanticRelationshipType.TASK_USES_PROCEDURE
+    assert loaded[0].source_entity_type == SemanticEntityType.MAINTENANCE_TASK
+    assert loaded[0].status == SemanticRelationshipStatus.ACCEPTED
+    assert loaded[0].confidence_score == 0.8
+    assert loaded[0].evidence == "same_chunk"
+
+    assert db_uow.extractions.list_semantic_relationships("no_such_document") == []
+
+
+def test_replace_semantic_relationships_is_idempotent_for_document(
+    db_uow, document_id
+) -> None:
+    from src.domain.extraction import (
+        SemanticEntityType,
+        SemanticRelationship,
+        SemanticRelationshipStatus,
+        SemanticRelationshipType,
+    )
+
+    first_run = SemanticRelationship(
+        relationship_id="semantic_relationship_001",
+        document_id=document_id,
+        relationship_type=SemanticRelationshipType.TASK_HAS_INTERVAL,
+        source_entity_type=SemanticEntityType.MAINTENANCE_TASK,
+        source_entity_id="task_001",
+        target_entity_type=SemanticEntityType.MAINTENANCE_INTERVAL,
+        target_entity_id="interval_001",
+        confidence_score=1.0,
+        status=SemanticRelationshipStatus.ACCEPTED,
+        evidence="existing_fk",
+    )
+    db_uow.extractions.replace_semantic_relationships(document_id, [first_run])
+    db_uow.commit()
+
+    second_run = SemanticRelationship(
+        relationship_id="semantic_relationship_002",
+        document_id=document_id,
+        relationship_type=SemanticRelationshipType.TASK_USES_PROCEDURE,
+        source_entity_type=SemanticEntityType.MAINTENANCE_TASK,
+        source_entity_id="task_001",
+        target_entity_type=SemanticEntityType.PROCEDURE,
+        target_entity_id="procedure_001",
+        confidence_score=0.8,
+        status=SemanticRelationshipStatus.ACCEPTED,
+        evidence="same_chunk",
+    )
+    db_uow.extractions.replace_semantic_relationships(document_id, [second_run])
+    db_uow.commit()
+
+    loaded = db_uow.extractions.list_semantic_relationships(document_id)
+
+    assert len(loaded) == 1
+    assert loaded[0].relationship_id == "semantic_relationship_002"

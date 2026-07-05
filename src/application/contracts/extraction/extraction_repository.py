@@ -8,6 +8,7 @@ from src.domain.extraction import (
     Manufacturer,
     Procedure,
     SafetyWarning,
+    SemanticRelationship,
     SparePart,
     Specification,
     Supplier,
@@ -174,4 +175,17 @@ class ExtractionRepository(Protocol):
         self,
         equipment_id: str,
     ) -> list[TroubleshootingEntry]:
+        ...
+
+    def list_semantic_relationships(
+        self,
+        document_id: str | None = None,
+    ) -> list[SemanticRelationship]:
+        ...
+
+    def replace_semantic_relationships(
+        self,
+        document_id: str,
+        relationships: list[SemanticRelationship],
+    ) -> None:
         ...
