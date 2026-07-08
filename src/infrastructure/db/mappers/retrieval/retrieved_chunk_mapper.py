@@ -1,6 +1,7 @@
 import json
 
 from src.domain.common import ChunkType, SourceLocation
+from src.domain.document.value_objects import ChunkStatistics
 from src.domain.retrieval import RetrievedChunk
 from src.infrastructure.db.orm_models import ChunkORM
 
@@ -35,6 +36,12 @@ class RetrievedChunkMapper:
                 page_start=row.page_start,
                 page_end=row.page_end,
             ),
+            statistics=ChunkStatistics(
+                char_count=row.char_count or len(row.content or ""),
+                token_count_estimate=row.token_count_estimate,
+            )
+            if row.char_count is not None or row.token_count_estimate is not None
+            else None,
             metadata=metadata,
             identifier_values=list(identifier_values) if identifier_values else [],
         )

@@ -4,6 +4,7 @@ from qdrant_client.http.models import models
 
 from src.domain.common import DocumentType
 from src.domain.document import Document, DocumentGraph
+from src.domain.document.value_objects import ChunkStatistics
 from src.domain.document.value_objects import DocumentHashes
 from src.application.workflows.embedding.embedding_workflow import EmbeddedChunk
 from src.infrastructure.retrieval.vector import QdrantVectorStore
@@ -34,6 +35,8 @@ class FakeQdrantClient:
             "chunk_total": 1,
             "page_start": 10,
             "page_end": 10,
+            "char_count": 53,
+            "token_count_estimate": 7,
         }
         if self.identifier_values_payload is not None:
             payload["identifier_values"] = self.identifier_values_payload
@@ -119,6 +122,9 @@ def test_qdrant_vector_store_search_embeds_query_and_maps_results(
     assert results[0].chunk_id == "chunk_001"
     assert results[0].section_path == ["Maintenance Schedule"]
     assert results[0].retrieval_source == "dense"
+    assert results[0].statistics is not None
+    assert results[0].statistics.char_count == 53
+    assert results[0].statistics.token_count_estimate == 7
 
 
 def test_qdrant_vector_store_search_requires_query_embedding_provider(
@@ -157,6 +163,7 @@ def test_qdrant_vector_store_saves_chunk_payload_and_mapping(sample_chunk) -> No
         element_ids=list(sample_chunk.element_ids),
         source=sample_chunk.source,
         embedding_text=sample_chunk.embedding_text,
+        statistics=ChunkStatistics(char_count=123, token_count_estimate=17),
         embedding=[0.1, 0.2, 0.3],
     )
 
@@ -165,6 +172,8 @@ def test_qdrant_vector_store_saves_chunk_payload_and_mapping(sample_chunk) -> No
     assert len(client.upsert_calls) == 1
     assert client.upsert_calls[0]["points"][0].payload["content"] == sample_chunk.content
     assert client.upsert_calls[0]["points"][0].payload["document_type"] == "manual"
+    assert client.upsert_calls[0]["points"][0].payload["char_count"] == 123
+    assert client.upsert_calls[0]["points"][0].payload["token_count_estimate"] == 17
     assert len(mapping_repository.save_calls) == 1
     assert mapping_repository.save_calls[0]["chunk_id"] == sample_chunk.chunk_id
 

@@ -2,6 +2,7 @@ from qdrant_client.http.models import models
 
 from src.domain.common import ChunkType, SourceLocation
 from src.domain.document.entities import DocumentChunk
+from src.domain.document.value_objects import ChunkStatistics
 from src.domain.retrieval import RetrievedChunk
 
 
@@ -26,6 +27,12 @@ class QdrantPayloadMapper:
             "page_start": chunk.source.page_start,
             "page_end": chunk.source.page_end,
         }
+        if chunk.statistics is not None:
+            payload["char_count"] = chunk.statistics.char_count
+            if chunk.statistics.token_count_estimate is not None:
+                payload["token_count_estimate"] = (
+                    chunk.statistics.token_count_estimate
+                )
         if document_type is not None:
             payload["document_type"] = document_type
         if identifier_values:
@@ -78,6 +85,7 @@ class QdrantPayloadMapper:
                 page_start=QdrantPayloadMapper._coerce_int(payload.get("page_start")),
                 page_end=QdrantPayloadMapper._coerce_int(payload.get("page_end")),
             ),
+            statistics=QdrantPayloadMapper._statistics_from_payload(payload),
             metadata=metadata,
             identifier_values=identifier_values,
         )
@@ -91,3 +99,16 @@ class QdrantPayloadMapper:
             return int(value)
         except (TypeError, ValueError):
             return None
+
+    @staticmethod
+    def _statistics_from_payload(payload: dict) -> ChunkStatistics | None:
+        char_count = QdrantPayloadMapper._coerce_int(payload.get("char_count"))
+        token_count_estimate = QdrantPayloadMapper._coerce_int(
+            payload.get("token_count_estimate")
+        )
+        if char_count is None and token_count_estimate is None:
+            return None
+        return ChunkStatistics(
+            char_count=char_count or len(str(payload.get("content") or "")),
+            token_count_estimate=token_count_estimate,
+        )

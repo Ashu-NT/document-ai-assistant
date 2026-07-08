@@ -2,6 +2,7 @@ import pytest
 
 from src.application.services.retrieval import HybridRetrievalService
 from src.application.validation.retrieval import RetrievalQueryValidator
+from src.domain.document.value_objects import ChunkStatistics
 from src.domain.retrieval import RetrievalResult
 from src.shared.exceptions import SchemaValidationError
 from src.shared.ids import IdGenerator
@@ -216,6 +217,25 @@ def test_hybrid_retrieval_tracks_combined_sources_for_duplicate_hits(
     assert result.chunks[0].metadata["retrieval_sources"] == "dense,sql_keyword"
 
 
+def test_hybrid_retrieval_preserves_chunk_statistics_during_fusion(
+    sample_retrieval_query,
+    sample_retrieved_chunk,
+) -> None:
+    sample_retrieved_chunk.statistics = ChunkStatistics(
+        char_count=91,
+        token_count_estimate=13,
+    )
+    service = make_service(
+        keyword_index=FakeKeywordIndex([sample_retrieved_chunk]),
+    )
+
+    result = service.retrieve(sample_retrieval_query)
+
+    assert result.chunks[0].statistics is not None
+    assert result.chunks[0].statistics.char_count == 91
+    assert result.chunks[0].statistics.token_count_estimate == 13
+
+
 def test_hybrid_retrieval_passes_document_scope_to_sources_and_discards_leaks(
     sample_retrieval_query,
     sample_retrieved_chunk,
@@ -231,6 +251,8 @@ def test_hybrid_retrieval_passes_document_scope_to_sources_and_discards_leaks(
         section_id=sample_retrieved_chunk.section_id,
         section_path=sample_retrieved_chunk.section_path,
         source=sample_retrieved_chunk.source,
+        statistics=sample_retrieved_chunk.statistics,
+        identifier_values=list(sample_retrieved_chunk.identifier_values),
     )
     leaked_dense_chunk = sample_retrieved_chunk.__class__(
         chunk_id="chunk_dense_other_doc",

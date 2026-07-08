@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.builders.document_graph.asset_nearby_text_enricher import (
     AssetNearbyTextEnricher,
 )
+from src.application.workflows.parsing.builders.document_graph.chunk_statistics_builder import (
+    ChunkStatisticsBuilder,
+)
 from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (
     GraphChunkBuilder,
 )
@@ -13,6 +16,7 @@ from src.application.workflows.parsing.builders.document_graph.parsed_element_fa
 
 __all__ = [
     "AssetNearbyTextEnricher",
+    "ChunkStatisticsBuilder",
     "GraphChunkBuilder",
     "ParsedAssetFactory",
     "ParsedElementFactory",

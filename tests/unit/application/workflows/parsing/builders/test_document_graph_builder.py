@@ -2,6 +2,9 @@ from src.application.workflows.parsing import (
     CanonicalElement as ParsedCanonicalElement,
     RawParsedDocument,
 )
+from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter_factory import (
+    ChunkTokenCounterFactory,
+)
 from src.application.workflows.parsing.builders import (
     DocumentGraphBuilder,
     SectionBuilder,
@@ -1626,6 +1629,52 @@ def test_document_graph_builder_populates_chunk_type_counts_in_statistics() -> N
     assert len(counts) > 0
     total_from_counts = sum(counts.values())
     assert total_from_counts == len(graph.chunks)
+
+
+def test_document_graph_builder_persists_tokenizer_aware_chunk_statistics(
+    monkeypatch,
+) -> None:
+    class _FakeTokenCounter:
+        def count_tokens(self, text: str | None) -> int:
+            safe_text = text or ""
+            return len(safe_text.replace(" ", ""))
+
+    monkeypatch.setattr(
+        ChunkTokenCounterFactory,
+        "create",
+        lambda self: _FakeTokenCounter(),
+    )
+    builder = make_builder()
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(file_hash="h1", content_hash="h2"),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="Maintenance",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=2,
+                text="alpha beta gamma",
+                page_start=1,
+            ),
+        ],
+        raw_parsed_document=make_raw_parsed_document(),
+    )
+
+    chunk = find_non_overview_chunks(graph)[0]
+
+    assert chunk.statistics is not None
+    assert chunk.statistics.char_count == len(chunk.content)
+    assert chunk.statistics.token_count_estimate == len("alphabetagamma")
+    assert chunk.statistics.token_count_estimate != len(chunk.content.split())
 
 
 def test_document_graph_builder_populates_section_chunk_type_signals() -> None:

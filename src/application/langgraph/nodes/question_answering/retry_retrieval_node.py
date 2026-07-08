@@ -40,6 +40,7 @@ from src.application.langgraph.tracing import GraphRunRecorder
 from src.application.tools.question_answering import AnswerQuestionRequest
 from src.application.tools.retrieval import RetrieveChunksRequest
 from src.domain.common import ChunkType, SourceLocation
+from src.domain.document.value_objects import ChunkStatistics
 from src.domain.retrieval.citation import Citation
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
@@ -443,12 +444,20 @@ def _dict_to_chunk(payload: dict[str, Any]) -> RetrievedChunk:
         ],
         source=_dict_to_source(payload.get("source")),
         citation=citation,
+        statistics=_dict_to_statistics(payload.get("statistics")),
         metadata={
             str(key): str(value)
             for key, value in (payload.get("metadata") or {}).items()
         }
         if isinstance(payload.get("metadata"), dict)
         else {},
+        identifier_values=[
+            str(value)
+            for value in (payload.get("identifier_values") or [])
+            if str(value)
+        ]
+        if isinstance(payload.get("identifier_values"), list)
+        else [],
     )
 
 
@@ -473,6 +482,34 @@ def _dict_to_citation(payload: dict[str, Any]) -> Citation:
         document_name=str(payload.get("document_name") or "") or None,
         section_title=str(payload.get("section_title") or "") or None,
         source=source,
+    )
+
+
+def _dict_to_statistics(payload: Any) -> ChunkStatistics | None:
+    if not isinstance(payload, dict):
+        return None
+
+    char_count = payload.get("char_count")
+    token_count_estimate = payload.get("token_count_estimate")
+    try:
+        normalized_char_count = (
+            int(char_count) if char_count is not None else None
+        )
+    except (TypeError, ValueError):
+        normalized_char_count = None
+    try:
+        normalized_token_count = (
+            int(token_count_estimate) if token_count_estimate is not None else None
+        )
+    except (TypeError, ValueError):
+        normalized_token_count = None
+
+    if normalized_char_count is None and normalized_token_count is None:
+        return None
+
+    return ChunkStatistics(
+        char_count=normalized_char_count or len(str(payload.get("content") or "")),
+        token_count_estimate=normalized_token_count,
     )
 
 

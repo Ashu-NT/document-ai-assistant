@@ -451,5 +451,6 @@ class RetrievalContextExpander:
             section_id=document_chunk.section_id,
             section_path=list(document_chunk.section_path),
             source=document_chunk.source,
+            statistics=document_chunk.statistics,
             metadata=metadata,
         )

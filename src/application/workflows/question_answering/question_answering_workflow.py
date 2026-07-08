@@ -496,6 +496,7 @@ class QuestionAnsweringWorkflow:
             section_id=chunk.section_id,
             section_path=list(chunk.section_path),
             source=chunk.source,
+            statistics=chunk.statistics,
             metadata={"sequence_number": str(chunk.sequence_number)},
         )
 

@@ -1,3 +1,6 @@
+from src.application.workflows.parsing.builders.document_graph.chunk_statistics_builder import (
+    ChunkStatisticsBuilder,
+)
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
 )
@@ -15,10 +18,15 @@ class GraphChunkBuilder:
         *,
         id_generator: IdGenerator,
         section_chunk_builder: SectionChunkBuilder,
+        chunk_statistics_builder: ChunkStatisticsBuilder | None = None,
         profiler: GraphBuildProfiler | None = None,
     ) -> None:
         self.id_generator = id_generator
         self.section_chunk_builder = section_chunk_builder
+        self.chunk_statistics_builder = (
+            chunk_statistics_builder
+            or self._build_default_chunk_statistics_builder(section_chunk_builder)
+        )
         self.profiler = profiler or GraphBuildProfiler.disabled()
 
     def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
@@ -108,8 +116,24 @@ class GraphChunkBuilder:
                         chunk_index=chunk_indexes_by_section[section_key],
                         chunk_total=chunk_totals_by_section[section_key],
                         embedding_text=chunk_payload.embedding_text,
+                        statistics=self.chunk_statistics_builder.build(
+                            chunk_payload.content
+                        ),
                     )
                 )
             stage.output_counts["chunks"] = len(chunks)
 
         return chunks
+
+    @staticmethod
+    def _build_default_chunk_statistics_builder(
+        section_chunk_builder: SectionChunkBuilder,
+    ) -> ChunkStatisticsBuilder:
+        runtime_factory = getattr(section_chunk_builder, "runtime_factory", None)
+        if runtime_factory is None:
+            return ChunkStatisticsBuilder()
+
+        return ChunkStatisticsBuilder(
+            token_counter=getattr(runtime_factory, "token_counter", None),
+            token_counter_factory=getattr(runtime_factory, "token_counter_factory", None),
+        )

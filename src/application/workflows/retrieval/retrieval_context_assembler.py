@@ -163,6 +163,8 @@ class RetrievalContextAssembler:
 
     @staticmethod
     def _estimate_retrieved_chunk_tokens(chunk: RetrievedChunk) -> int:
+        if chunk.statistics is not None and chunk.statistics.token_count_estimate:
+            return max(1, chunk.statistics.token_count_estimate)
         return max(1, len(chunk.content.split()))
 
     @staticmethod

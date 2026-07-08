@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from src.domain.common import ChunkType, SourceLocation
+from src.domain.document.value_objects import ChunkStatistics
 from src.domain.retrieval.citation import Citation
 
 
@@ -21,6 +22,7 @@ class RetrievedChunk:
     source: SourceLocation = field(default_factory=SourceLocation)
     citation: Citation | None = None
 
+    statistics: ChunkStatistics | None = None
     metadata: dict[str, str] = field(default_factory=dict)
     identifier_values: list[str] = field(default_factory=list)
 

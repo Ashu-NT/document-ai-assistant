@@ -349,7 +349,9 @@ class RetrievedChunkDeduplicator:
             section_path=list(chunk.section_path),
             source=chunk.source,
             citation=chunk.citation,
+            statistics=chunk.statistics,
             metadata=metadata,
+            identifier_values=list(chunk.identifier_values),
         )
 
     @staticmethod

@@ -376,3 +376,46 @@ def test_retrieval_context_expander_respects_token_budget() -> None:
         "chunk_002",
         "chunk_003",
     ]
+
+
+def test_retrieval_context_expander_uses_anchor_retrieved_chunk_statistics() -> None:
+    anchor_chunk = RetrievedChunk(
+        chunk_id="chunk_anchor",
+        document_id="doc_001",
+        content="short anchor text",
+        score=0.82,
+        retrieval_source="dense",
+        chunk_type=ChunkType.GENERAL,
+        section_id="sec_anchor",
+        section_path=["Procedure"],
+        source=SourceLocation(page_start=2, page_end=2),
+        statistics=ChunkStatistics(char_count=18, token_count_estimate=10),
+    )
+    document_anchor = make_document_chunk(
+        chunk_id="chunk_anchor",
+        sequence_number=2,
+        section_id="sec_anchor",
+        chunk_total=1,
+    )
+    document_anchor.statistics = ChunkStatistics(char_count=18, token_count_estimate=10)
+    neighbor_chunk = make_document_chunk(
+        chunk_id="chunk_neighbor",
+        sequence_number=3,
+        section_id="sec_other",
+        section_path=["Procedure", "Neighbor"],
+        chunk_total=1,
+    )
+    neighbor_chunk.statistics = ChunkStatistics(char_count=14, token_count_estimate=2)
+    lookup_service = FakeDocumentLookupService(
+        {"doc_001": [document_anchor, neighbor_chunk]}
+    )
+    expander = RetrievalContextExpander(
+        document_lookup_service=lookup_service,
+        neighbor_window=1,
+        max_context_chunks=3,
+        context_assembler=RetrievalContextAssembler(token_budget=11),
+    )
+
+    expanded = expander.expand([anchor_chunk])
+
+    assert [chunk.chunk_id for chunk in expanded] == ["chunk_anchor"]
