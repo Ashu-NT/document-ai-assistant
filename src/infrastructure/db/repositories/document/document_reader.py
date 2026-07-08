@@ -196,6 +196,9 @@ class DocumentReader:
                     document_id=element.document_id,
                     parent_section_id=element.parent_section_id,
                     markdown=str(parser_extra.get("markdown") or element.text or ""),
+                    rows=parser_extra.get("table_rows") or [],
+                    row_count=parser_extra.get("row_count"),
+                    column_count=parser_extra.get("column_count"),
                     metadata=AssetMetadata(
                         source=element.source,
                         caption=(

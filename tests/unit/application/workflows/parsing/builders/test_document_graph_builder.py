@@ -169,6 +169,9 @@ def test_document_graph_builder_creates_table_assets_and_picture_assets() -> Non
                 metadata={
                     "markdown": "| Part | Description |\n|---|---|\n| HP-001 | Filter |",
                     "caption": "Spare parts list",
+                    "table_rows": [["Part", "Description"], ["HP-001", "Filter"]],
+                    "row_count": 2,
+                    "column_count": 2,
                 },
             ),
             make_parsed_element(
@@ -197,6 +200,10 @@ def test_document_graph_builder_creates_table_assets_and_picture_assets() -> Non
     picture = next(iter(graph.pictures.values()))
 
     assert table.metadata.caption == "Spare parts list"
+    assert table.rows == [["Part", "Description"], ["HP-001", "Filter"]]
+    assert table.row_count == 2
+    assert table.column_count == 2
+    assert table.has_structured_rows() is True
     assert picture.metadata.caption == "Figure 1. Exploded view."
     assert picture.image_path == "outputs/images/pic_001.png"
     assert (

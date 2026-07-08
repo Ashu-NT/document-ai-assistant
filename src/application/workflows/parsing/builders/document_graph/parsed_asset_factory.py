@@ -31,6 +31,9 @@ class ParsedAssetFactory:
                     or ""
                 ),
                 parent_section_id=parent_section_id,
+                rows=parsed_element.metadata.get("table_rows") or [],
+                row_count=parsed_element.metadata.get("row_count"),
+                column_count=parsed_element.metadata.get("column_count"),
                 metadata=AssetMetadata(
                     source=SourceLocationFactory.from_parsed(parsed_element),
                     caption=parsed_element.metadata.get("caption"),

@@ -13,11 +13,18 @@ class TableAsset:
 
     parent_section_id: str | None = None
 
+    rows: list[list[str]] = field(default_factory=list)
+    row_count: int | None = None
+    column_count: int | None = None
+
     metadata: AssetMetadata = field(default_factory=AssetMetadata)
     audit: AuditMetadata = field(default_factory=AuditMetadata)
 
     def has_content(self) -> bool:
         return bool(self.markdown and self.markdown.strip())
+
+    def has_structured_rows(self) -> bool:
+        return bool(self.rows)
 
     def to_embedding_text(self) -> str:
         parts = []
