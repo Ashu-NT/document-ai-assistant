@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections import Counter
 from typing import Sequence
 
@@ -126,4 +127,16 @@ class AnswerContextOrganizer:
             page_end=chunk.source.page_end,
             score=chunk.score,
             content=chunk.content,
+            table_rows=AnswerContextOrganizer._decode_table_rows(chunk.metadata),
         )
+
+    @staticmethod
+    def _decode_table_rows(metadata: dict[str, str]) -> list[list[str]] | None:
+        raw = metadata.get("table_rows_json")
+        if not raw:
+            return None
+        try:
+            decoded = json.loads(raw)
+        except ValueError:
+            return None
+        return decoded if isinstance(decoded, list) else None

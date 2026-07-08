@@ -201,6 +201,14 @@ def _default_candidate_narrowing_enabled() -> bool:
         return False
 
 
+def _table_text_with_structured_rows(table: TableAsset) -> str:
+    parts = [table.to_embedding_text()]
+    structured_rows = table.to_structured_row_text()
+    if structured_rows:
+        parts.append(structured_rows)
+    return "\n\n".join(parts)
+
+
 class ExtractionWorkflow:
     def __init__(
         self,
@@ -706,7 +714,7 @@ class ExtractionWorkflow:
             seen_table_ids.update(unseen_table_ids)
 
             table_texts = [
-                tables[table_id].to_embedding_text()
+                _table_text_with_structured_rows(tables[table_id])
                 for table_id in unseen_table_ids
                 if table_id in tables and tables[table_id].has_content()
             ]

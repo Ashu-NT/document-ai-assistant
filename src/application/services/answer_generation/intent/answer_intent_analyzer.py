@@ -463,7 +463,10 @@ class AnswerIntentAnalyzer:
             matched[AnswerIntent.SPECIFICATION_SUMMARY].append(
                 "context:technical_values"
             )
-        if any(self._looks_like_table(chunk.content) for chunk in chunks):
+        if any(
+            self._looks_like_table(chunk.content) or self._has_table_evidence(chunk)
+            for chunk in chunks
+        ):
             scores[AnswerIntent.TABLE_SUMMARY] += 2
             matched[AnswerIntent.TABLE_SUMMARY].append("context:table_like")
         if any(self._looks_like_spare_parts_content(chunk.content) for chunk in chunks):
@@ -566,6 +569,13 @@ class AnswerIntentAnalyzer:
     @staticmethod
     def _looks_like_table(content: str) -> bool:
         return sum(1 for line in content.splitlines() if "|" in line) >= 2
+
+    @staticmethod
+    def _has_table_evidence(chunk: RetrievedChunk) -> bool:
+        return (
+            chunk.metadata.get("table_evidence_hydrated") == "true"
+            or bool(chunk.metadata.get("table_rows_json"))
+        )
 
     @staticmethod
     def _looks_like_spare_parts_content(content: str) -> bool:

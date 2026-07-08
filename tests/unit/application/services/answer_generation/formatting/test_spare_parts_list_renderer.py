@@ -19,6 +19,7 @@ def _make_chunk(
     page_start: int | None = 45,
     page_end: int | None = 46,
     chunk_type: ChunkType = ChunkType.SPARE_PARTS_TABLE,
+    metadata: dict[str, str] | None = None,
 ) -> RetrievedChunk:
     citation = (
         Citation(citation_id=f"cit_{chunk_id}", document_id="doc_1", section_title=section_title)
@@ -35,6 +36,7 @@ def _make_chunk(
         section_path=section_path or ["7 Components", "Spare Parts"],
         source=SourceLocation(page_start=page_start, page_end=page_end),
         citation=citation,
+        metadata=metadata or {},
     )
 
 
@@ -495,3 +497,101 @@ def test_render_skips_structured_entities_missing_part_number_and_description() 
     )
 
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# chunk.metadata["table_rows_json"] source: third-tier preference, ahead of
+# regex-parsing chunk.content but behind resolved_structured_entities.
+# ---------------------------------------------------------------------------
+
+
+def test_render_prefers_table_rows_json_over_chunk_text_regex_parsing() -> None:
+    renderer = SparePartsListRenderer()
+    chunk_content = (
+        "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
+        "|---|---|---|---|\n"
+        "| 1 | 2 | Filter (from chunk text) | Z99999 |\n"
+    )
+    import json
+
+    metadata = {
+        "table_rows_json": json.dumps(
+            [
+                ["Position No", "Qty", "Denomination", "Spare Part No"],
+                ["1", "2", "Filter (from rows)", "A00103"],
+            ]
+        )
+    }
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[
+            _make_chunk(
+                content=chunk_content,
+                section_title="Spare Parts List",
+                metadata=metadata,
+            )
+        ],
+    )
+
+    assert result is not None
+    assert "Filter (from rows)" in result
+    assert "Part No.: A00103" in result
+    assert "Z99999" not in result
+    assert "from chunk text" not in result
+
+
+def test_render_falls_back_to_chunk_parsing_when_table_rows_json_has_no_header() -> None:
+    renderer = SparePartsListRenderer()
+    chunk_content = (
+        "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
+        "|---|---|---|---|\n"
+        "| 1 | 2 | Filter | A00103 |\n"
+    )
+    import json
+
+    metadata = {
+        "table_rows_json": json.dumps(
+            [["Unrecognized", "Columns"], ["foo", "bar"]]
+        )
+    }
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[
+            _make_chunk(
+                content=chunk_content,
+                section_title="Spare Parts List",
+                metadata=metadata,
+            )
+        ],
+    )
+
+    assert result is not None
+    assert "Part No.: A00103" in result
+
+
+def test_render_falls_back_to_chunk_parsing_when_table_rows_json_malformed() -> None:
+    renderer = SparePartsListRenderer()
+    chunk_content = (
+        "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
+        "|---|---|---|---|\n"
+        "| 1 | 2 | Filter | A00103 |\n"
+    )
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[
+            _make_chunk(
+                content=chunk_content,
+                section_title="Spare Parts List",
+                metadata={"table_rows_json": "not valid json"},
+            )
+        ],
+    )
+
+    assert result is not None
+    assert "Part No.: A00103" in result

@@ -39,8 +39,13 @@ class TableTextSummarizer:
         "isolation",
     )
 
-    def extract_pairs(self, text: str) -> list[tuple[str, str]]:
-        rows = self._parse_table_rows(text)
+    def extract_pairs(
+        self,
+        text: str,
+        *,
+        table_rows: list[list[str]] | None = None,
+    ) -> list[tuple[str, str]]:
+        rows = table_rows if table_rows else self._parse_table_rows(text)
         if not rows:
             return []
         pairs = self._rows_to_pairs(rows)
@@ -67,8 +72,9 @@ class TableTextSummarizer:
         *,
         topic_hint: str | None = None,
         max_pairs: int = 6,
+        table_rows: list[list[str]] | None = None,
     ) -> list[str]:
-        pairs = self.extract_pairs(text)
+        pairs = self.extract_pairs(text, table_rows=table_rows)
         if not pairs:
             return []
         ranked = self._rank_pairs(pairs, topic_hint=topic_hint)

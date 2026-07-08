@@ -96,12 +96,14 @@ class ChunkFragmentBuilder:
         if self._is_document_index_element(element):
             return None
 
+        table_rows: list[list[str]] | None = None
         if element.table_id is not None or element.element_type == ElementType.TABLE:
             if not self._should_chunk_table_element(element):
                 return None
             text = self._table_fragment_text(elements=elements, index=index, element=element)
             chunk_type = self._table_chunk_type(element, text)
             standalone = True
+            table_rows = self._parser_extra(element).get("table_rows") or None
         elif element.picture_id is not None or element.element_type == ElementType.PICTURE:
             if not self.include_picture_chunks and not self._is_large_picture(element):
                 return None
@@ -140,6 +142,7 @@ class ChunkFragmentBuilder:
             page_start=element.source.page_start,
             page_end=element.source.page_end,
             token_count=self.text_splitter.count_tokens(text),
+            table_rows=table_rows,
         )
 
     @staticmethod
@@ -285,7 +288,23 @@ class ChunkFragmentBuilder:
         if any(marker in haystack for marker in spare_part_markers):
             return ChunkType.SPARE_PARTS_TABLE
 
+        if self._has_spare_part_header_row(parser_extra):
+            return ChunkType.SPARE_PARTS_TABLE
+
         return ChunkType.GENERAL
+
+    @staticmethod
+    def _has_spare_part_header_row(parser_extra: dict) -> bool:
+        table_rows = parser_extra.get("table_rows")
+        if not table_rows:
+            return False
+
+        header_row = table_rows[0]
+        spare_part_header_markers = ("part", "spare part", "part number")
+        return any(
+            any(marker in cell.strip().lower() for marker in spare_part_header_markers)
+            for cell in header_row
+        )
 
     @staticmethod
     def _picture_chunk_type(text: str | None) -> ChunkType:

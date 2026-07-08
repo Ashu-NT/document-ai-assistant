@@ -11,6 +11,7 @@ def _make_chunk(
     *,
     content: str,
     chunk_type: ChunkType = ChunkType.GENERAL,
+    metadata: dict[str, str] | None = None,
 ) -> RetrievedChunk:
     return RetrievedChunk(
         chunk_id="chunk_001",
@@ -21,6 +22,7 @@ def _make_chunk(
         chunk_type=chunk_type,
         section_path=["Section"],
         source=SourceLocation(page_start=1, page_end=1),
+        metadata=metadata or {},
     )
 
 
@@ -193,6 +195,31 @@ def test_spare_parts_list_question_maps_to_table_summary_not_identifier_lookup()
     decision = AnswerIntentAnalyzer().analyze(question="table of spare part list")
 
     assert decision.intent == AnswerIntent.TABLE_SUMMARY
+
+
+def test_table_evidence_hydrated_metadata_triggers_table_like_signal_without_pipes() -> None:
+    decision = AnswerIntentAnalyzer().analyze(
+        question="give me details",
+        approved_chunks=[
+            _make_chunk(
+                content="Just some plain descriptive text with no pipe characters.",
+                metadata={"table_evidence_hydrated": "true"},
+            )
+        ],
+    )
+
+    assert "context:table_like" in decision.matched_signals
+
+
+def test_no_table_like_signal_without_pipes_or_hydration_metadata() -> None:
+    decision = AnswerIntentAnalyzer().analyze(
+        question="give me details",
+        approved_chunks=[
+            _make_chunk(content="Just some plain descriptive text with no pipe characters.")
+        ],
+    )
+
+    assert "context:table_like" not in decision.matched_signals
 
 
 def test_spare_parts_list_question_with_evidence_maps_to_table_summary() -> None:

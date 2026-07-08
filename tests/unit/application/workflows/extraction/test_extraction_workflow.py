@@ -1910,6 +1910,50 @@ def test_hydrate_table_chunks_leaves_non_table_chunks_unchanged(sample_chunk) ->
     assert hydrated == [sample_chunk]
 
 
+def test_hydrate_table_chunks_appends_structured_row_echo_when_rows_present(
+    sample_chunk,
+) -> None:
+    table = TableAsset(
+        table_id="table_001",
+        document_id=sample_chunk.document_id,
+        markdown="| Part | Qty |\n|---|---|\n| HP-001 | 1 |\n| HP-002 | 2 |",
+        rows=[["Part", "Qty"], ["HP-001", "1"], ["HP-002", "2"]],
+    )
+    partial_chunk = _make_table_chunk(
+        sample_chunk,
+        chunk_id="chunk_table_1",
+        content="| Part | Qty |\n|---|---|\n| HP-001 | 1 |",
+        table_ids=["table_001"],
+    )
+
+    hydrated = ExtractionWorkflow._hydrate_table_chunks([partial_chunk], {"table_001": table})
+
+    assert "Row 1: Part=HP-001 | Qty=1" in hydrated[0].content
+    assert "Row 2: Part=HP-002 | Qty=2" in hydrated[0].content
+    # The original markdown text is still present alongside the echo.
+    assert "| HP-001 | 1 |" in hydrated[0].content
+
+
+def test_hydrate_table_chunks_omits_structured_row_echo_when_rows_absent(
+    sample_chunk,
+) -> None:
+    table = TableAsset(
+        table_id="table_001",
+        document_id=sample_chunk.document_id,
+        markdown="| Part | Qty |\n|---|---|\n| HP-001 | 1 |",
+    )
+    partial_chunk = _make_table_chunk(
+        sample_chunk,
+        chunk_id="chunk_table_1",
+        content="| Part | Qty |\n|---|---|\n| HP-001 | 1 |",
+        table_ids=["table_001"],
+    )
+
+    hydrated = ExtractionWorkflow._hydrate_table_chunks([partial_chunk], {"table_001": table})
+
+    assert "Row 1:" not in hydrated[0].content
+
+
 def test_hydrate_table_chunks_includes_table_caption(sample_chunk) -> None:
     table = TableAsset(
         table_id="table_001",

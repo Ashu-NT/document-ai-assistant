@@ -35,3 +35,31 @@ class TableAsset:
         parts.append(self.markdown)
 
         return "\n".join(parts)
+
+    def to_structured_row_text(self) -> str | None:
+        """Renders each body row as an explicit `header=value` line, using the
+        first row as column labels. Meant to be appended alongside
+        `to_embedding_text()` -- not a replacement -- so a consumer (LLM
+        extraction, QA evidence) has an unambiguous, row-by-row echo of the
+        table to cross-check against the markdown, rather than having to
+        visually re-parse pipe-delimited text itself."""
+        if len(self.rows) < 2:
+            return None
+
+        headers = self.rows[0]
+        lines = []
+        for row_index, row in enumerate(self.rows[1:], start=1):
+            cells = [
+                f"{headers[column_index].strip()}={cell.strip()}"
+                for column_index, cell in enumerate(row)
+                if column_index < len(headers)
+                and headers[column_index].strip()
+                and cell.strip()
+            ]
+            if cells:
+                lines.append(f"Row {row_index}: " + " | ".join(cells))
+
+        if not lines:
+            return None
+
+        return "\n".join(lines)

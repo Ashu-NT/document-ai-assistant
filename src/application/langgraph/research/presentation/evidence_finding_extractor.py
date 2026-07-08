@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from typing import Any
 
@@ -33,6 +34,7 @@ class EvidenceFindingExtractor:
             text,
             topic_hint=topic_hint,
             max_pairs=6,
+            table_rows=self._decode_table_rows(evidence),
         )
         if table_pairs:
             finding = self._table_finding(
@@ -52,6 +54,23 @@ class EvidenceFindingExtractor:
             if len(findings) >= max_findings:
                 break
         return findings
+
+    @staticmethod
+    def _decode_table_rows(evidence: ResearchEvidence) -> list[list[str]] | None:
+        """Structured rows reach here for free: TableEvidenceHydrator stashes
+        table_rows_json on the chunk's metadata dict, and ResearchEvidence.
+        diagnostics is populated as a wholesale copy of that same dict
+        (see research_task_executor.py). Falls back to None (regex parsing
+        of content_excerpt) when absent -- e.g. pre-existing documents, or
+        chunks that were never routed through TableEvidenceHydrator."""
+        raw = evidence.diagnostics.get("table_rows_json")
+        if not raw:
+            return None
+        try:
+            decoded = json.loads(raw)
+        except (ValueError, TypeError):
+            return None
+        return decoded if isinstance(decoded, list) else None
 
     def _table_finding(
         self,

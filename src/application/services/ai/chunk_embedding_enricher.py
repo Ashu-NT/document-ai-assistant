@@ -1,9 +1,12 @@
+from dataclasses import replace as dataclass_replace
+
 from src.application.services.ai.chunk_enrichment import (
     ENRICHED_CHUNK_TYPES,
     build_chunk_related_terms,
     build_maintenance_spec_terms,
     chunk_type_label,
     extract_markdown_table_metadata,
+    extract_table_metadata_from_rows,
 )
 from src.domain.common import ChunkType
 
@@ -19,8 +22,20 @@ def enrich_embedding_text(
     chunk_type: ChunkType,
     section_path: list[str],
     content: str,
+    table_rows: list[list[str]] | None = None,
 ) -> str:
     table_metadata = extract_markdown_table_metadata(content)
+    rows_metadata = extract_table_metadata_from_rows(table_rows) if table_rows else None
+    if rows_metadata is not None:
+        # Rows are the structural source of truth for headers/row_labels/
+        # units; caption/context still come from the surrounding prose the
+        # markdown scan already found, since rows alone carry no such text.
+        table_metadata = dataclass_replace(
+            table_metadata if table_metadata is not None else rows_metadata,
+            headers=rows_metadata.headers,
+            row_labels=rows_metadata.row_labels,
+            units=rows_metadata.units,
+        )
     if chunk_type not in ENRICHED_CHUNK_TYPES and table_metadata is None:
         return base_text
 

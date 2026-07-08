@@ -1,0 +1,88 @@
+import json
+
+from src.application.workflows.question_answering.evidence.table_evidence_hydrator import (
+    TableEvidenceHydrator,
+)
+from src.domain.assets import TableAsset
+from src.domain.common import ChunkType, SourceLocation
+from src.domain.document import Document, DocumentChunk, DocumentGraph, DocumentHashes
+from src.domain.retrieval import RetrievedChunk
+
+
+def _make_document() -> Document:
+    return Document(
+        document_id="doc_001",
+        file_name="pump_manual.pdf",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(file_hash="file_hash_001", content_hash="content_hash_001"),
+    )
+
+
+def _make_graph(*, table: TableAsset, source_chunk_content: str) -> DocumentGraph:
+    graph = DocumentGraph(document=_make_document())
+    graph.tables[table.table_id] = table
+    graph.add_chunk(
+        DocumentChunk(
+            chunk_id="chunk_001",
+            document_id="doc_001",
+            section_id=None,
+            content=source_chunk_content,
+            table_ids=[table.table_id],
+        )
+    )
+    return graph
+
+
+def _make_retrieved_chunk(*, content: str) -> RetrievedChunk:
+    return RetrievedChunk(
+        chunk_id="chunk_001",
+        document_id="doc_001",
+        content=content,
+        score=0.9,
+        retrieval_source="dense",
+        chunk_type=ChunkType.SPARE_PARTS_TABLE,
+        source=SourceLocation(),
+    )
+
+
+def test_hydrate_stashes_structured_rows_json_when_table_has_rows() -> None:
+    table = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="| Part | Qty |\n|---|---|\n| HP-001 | 1 |",
+        rows=[["Part", "Qty"], ["HP-001", "1"]],
+    )
+    graph = _make_graph(table=table, source_chunk_content="| Part | Qty |\n|---|---|\n| HP-001 | 1 |")
+    chunk = _make_retrieved_chunk(content="| Part | Qty |\n|---|---|\n| HP-001 | 1 |")
+
+    hydrated = TableEvidenceHydrator().hydrate(
+        chunks=[chunk],
+        graphs_by_document_id={"doc_001": graph},
+    )
+
+    assert len(hydrated) == 1
+    assert hydrated[0].metadata["table_evidence_hydrated"] == "true"
+    assert json.loads(hydrated[0].metadata["table_rows_json"]) == [
+        ["Part", "Qty"],
+        ["HP-001", "1"],
+    ]
+    assert "Row 1: Part=HP-001 | Qty=1" in hydrated[0].content
+
+
+def test_hydrate_omits_table_rows_json_when_table_has_no_structured_rows() -> None:
+    table = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="| Part | Qty |\n|---|---|\n| HP-001 | 1 |",
+    )
+    graph = _make_graph(table=table, source_chunk_content="| Part | Qty |\n|---|---|\n| HP-001 | 1 |")
+    chunk = _make_retrieved_chunk(content="| Part | Qty |\n|---|---|\n| HP-001 | 1 |")
+
+    hydrated = TableEvidenceHydrator().hydrate(
+        chunks=[chunk],
+        graphs_by_document_id={"doc_001": graph},
+    )
+
+    assert len(hydrated) == 1
+    assert hydrated[0].metadata["table_evidence_hydrated"] == "true"
+    assert "table_rows_json" not in hydrated[0].metadata

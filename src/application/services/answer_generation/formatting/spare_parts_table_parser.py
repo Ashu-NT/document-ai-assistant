@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 from typing import Sequence
@@ -180,7 +181,11 @@ class SparePartsTableParser:
 
     def build_group(self, chunk: RetrievedChunk) -> SparePartsGroup:
         section_path = chunk.section_path_text() if chunk.section_path else None
-        rows, raw_rows, partial = self._extract_rows(chunk.content)
+        structured_result = self._rows_from_structured_grid(chunk.metadata)
+        if structured_result is not None:
+            rows, raw_rows, partial = structured_result
+        else:
+            rows, raw_rows, partial = self._extract_rows(chunk.content)
         return SparePartsGroup(
             section_title=self.section_title(chunk),
             section_path=section_path,
@@ -190,6 +195,52 @@ class SparePartsTableParser:
             raw_rows=raw_rows[:_MAX_RAW_ROWS_PER_GROUP],
             partial=partial or len(raw_rows) > _MAX_RAW_ROWS_PER_GROUP,
         )
+
+    # -- structured-row source (preferred over regex chunk-text parsing) ---------
+
+    def _rows_from_structured_grid(
+        self,
+        metadata: dict,
+    ) -> tuple[list[dict[str, str]], list[str], bool] | None:
+        """Builds rows directly from a chunk's structured table_rows_json
+        metadata (stashed by TableEvidenceHydrator), reusing the same
+        header-matching/cell-mapping logic as the markdown path below --
+        just fed already-split cells instead of markdown-split ones. Returns
+        None when there's no usable structured grid (absent, malformed, or
+        no recognizable header row), signalling the caller to fall back to
+        regex-parsing chunk.content instead."""
+        grid = self._decode_table_rows(metadata)
+        if not grid or len(grid) < 2:
+            return None
+
+        header = self._as_structured_header(grid[0])
+        if header is None:
+            return None
+
+        rows: list[dict[str, str]] = []
+        dropped_row_count = 0
+        for cells in grid[1:]:
+            row = self._row_from_structured_cells(cells, header)
+            if row is not None:
+                rows.append(row)
+            else:
+                dropped_row_count += 1
+
+        if not rows:
+            return None
+
+        return rows, [], dropped_row_count > 0
+
+    @staticmethod
+    def _decode_table_rows(metadata: dict) -> list[list[str]] | None:
+        raw = metadata.get("table_rows_json")
+        if not raw:
+            return None
+        try:
+            decoded = json.loads(raw)
+        except ValueError:
+            return None
+        return decoded if isinstance(decoded, list) else None
 
     # -- top-level row extraction ------------------------------------------------
 

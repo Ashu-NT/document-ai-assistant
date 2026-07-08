@@ -47,6 +47,35 @@ def extract_markdown_table_metadata(content: str) -> MarkdownTableMetadata | Non
     )
 
 
+def extract_table_metadata_from_rows(
+    rows: list[list[str]],
+) -> MarkdownTableMetadata | None:
+    """Builds the same MarkdownTableMetadata shape as
+    extract_markdown_table_metadata(), but directly from a structured row
+    grid instead of re-parsing flattened markdown text. Caption/context
+    aren't derivable from rows alone (no surrounding prose is available
+    here) and are left unset -- callers that need them should fall back to
+    extract_markdown_table_metadata() for that part."""
+    if len(rows) < 2:
+        return None
+
+    headers = tuple(cell for cell in rows[0] if cell)
+    body_rows = rows[1:]
+
+    row_labels = _unique_preserve_order(
+        row[0]
+        for row in body_rows
+        if row and row[0] and (not headers or row[0].lower() != headers[0].lower())
+    )
+    units = _extract_units(headers, body_rows)
+
+    return MarkdownTableMetadata(
+        headers=headers,
+        row_labels=tuple(row_labels),
+        units=tuple(units),
+    )
+
+
 def _longest_table_block(lines: list[str]) -> tuple[int, int] | None:
     best: tuple[int, int] | None = None
     start: int | None = None

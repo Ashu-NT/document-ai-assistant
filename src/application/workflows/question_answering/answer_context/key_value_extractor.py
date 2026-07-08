@@ -141,7 +141,12 @@ class KeyValueExtractor:
         key_values: list[AnswerKeyValue] = []
         seen: set[tuple[int, str, str]] = set()
         for source in sources:
-            for raw_key, raw_value in self._candidate_pairs(source.content):
+            candidate_pairs = list(self._candidate_pairs(source.content))
+            if source.table_rows:
+                candidate_pairs.extend(
+                    self._candidate_pairs_from_rows(source.table_rows)
+                )
+            for raw_key, raw_value in candidate_pairs:
                 key = self._normalize_key(raw_key)
                 if key is None:
                     continue
@@ -175,7 +180,12 @@ class KeyValueExtractor:
         entries: list[AnswerMaintenanceEntry] = []
         seen: set[tuple[int, str, str, str]] = set()
         for source in sources:
-            for candidate in self._maintenance_candidates(source.content):
+            candidates = list(self._maintenance_candidates(source.content))
+            if source.table_rows:
+                candidates.extend(
+                    self._maintenance_candidates_from_rows(source.table_rows)
+                )
+            for candidate in candidates:
                 fingerprint = (
                     source.source_number,
                     candidate.task.lower(),
@@ -239,6 +249,18 @@ class KeyValueExtractor:
                 pairs.append((inline_match.group("key"), inline_match.group("value")))
         return pairs
 
+    @staticmethod
+    def _candidate_pairs_from_rows(rows: list[list[str]]) -> list[tuple[str, str]]:
+        """Additive counterpart to _candidate_pairs(): same 2-column
+        key/value shape (a spec-style table like "Design Pressure | 10
+        bar"), read directly from the structured row grid instead of
+        re-splitting markdown text on "|"."""
+        pairs: list[tuple[str, str]] = []
+        for row in rows:
+            if len(row) >= 2 and row[0].strip() and row[1].strip():
+                pairs.append((row[0], row[1]))
+        return pairs
+
     def _maintenance_candidates(
         self,
         content: str,
@@ -270,6 +292,34 @@ class KeyValueExtractor:
             line_candidate = self._maintenance_candidate_from_line(stripped)
             if line_candidate is not None:
                 candidates.append(line_candidate)
+        return candidates
+
+    def _maintenance_candidates_from_rows(
+        self,
+        rows: list[list[str]],
+    ) -> list[_MaintenanceCandidate]:
+        """Additive counterpart to _maintenance_candidates()'s table-row
+        branch, reading cells directly from the structured row grid instead
+        of markdown-splitting each line. A single TableAsset.rows grid is
+        one contiguous table (unlike free-form chunk text, which can mix
+        multiple tables/prose), so the header check only needs to run once
+        against the first row."""
+        if not rows:
+            return []
+
+        table_header = self._table_header(rows[0])
+        body_rows = rows[1:] if table_header is not None else rows
+
+        candidates: list[_MaintenanceCandidate] = []
+        for cells in body_rows:
+            if len(cells) < 2:
+                continue
+            table_candidate = self._maintenance_candidate_from_table_row(
+                cells,
+                table_header=table_header,
+            )
+            if table_candidate is not None:
+                candidates.append(table_candidate)
         return candidates
 
     @staticmethod

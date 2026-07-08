@@ -4,8 +4,37 @@ from src.application.workflows.parsing.builders.chunking.builders.chunk_fragment
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
-from src.domain.common import BoundingBox, ElementType, ParserMetadata, SourceLocation
+from src.domain.common import (
+    BoundingBox,
+    ChunkType,
+    ElementType,
+    ParserMetadata,
+    SourceLocation,
+)
 from src.domain.elements import CanonicalElement
+
+
+def make_table_element(
+    *,
+    text: str,
+    markdown: str,
+    table_rows: list[list[str]] | None = None,
+) -> CanonicalElement:
+    return CanonicalElement(
+        element_id="tbl_1",
+        document_id="doc_001",
+        element_type=ElementType.TABLE,
+        text=text,
+        table_id="table_001",
+        source=SourceLocation(page_start=1, page_end=1),
+        parser_metadata=ParserMetadata(
+            parser_name="docling",
+            extra={
+                "markdown": markdown,
+                **({"table_rows": table_rows} if table_rows is not None else {}),
+            },
+        ),
+    )
 
 
 def make_picture_element(
@@ -143,3 +172,33 @@ def _make_section():
         document_id="doc_001",
         title="Overview",
     )
+
+
+def test_table_chunk_type_detects_spare_parts_via_header_row_when_text_markers_miss() -> None:
+    builder = make_builder(include_picture_chunks=False)
+    # No spaces around pipes -- misses the "| part |" text marker -- and no
+    # "part number"/"spare part" phrase anywhere in the text either.
+    text = "|Part|Description|\n|---|---|\n|HP-001|Filter|"
+    element = make_table_element(
+        text=text,
+        markdown=text,
+        table_rows=[["Part", "Description"], ["HP-001", "Filter"]],
+    )
+
+    chunk_type = builder._table_chunk_type(element, text)
+
+    assert chunk_type == ChunkType.SPARE_PARTS_TABLE
+
+
+def test_table_chunk_type_stays_general_without_part_header_or_text_marker() -> None:
+    builder = make_builder(include_picture_chunks=False)
+    text = "|Position|Description|\n|---|---|\n|1|Filter housing|"
+    element = make_table_element(
+        text=text,
+        markdown=text,
+        table_rows=[["Position", "Description"], ["1", "Filter housing"]],
+    )
+
+    chunk_type = builder._table_chunk_type(element, text)
+
+    assert chunk_type == ChunkType.GENERAL

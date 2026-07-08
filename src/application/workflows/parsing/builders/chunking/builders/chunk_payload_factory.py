@@ -76,8 +76,16 @@ class ChunkPayloadFactory:
                 section_path=section_path,
                 content=cleaned_content,
                 chunk_type=chunk_type,
+                table_rows=self._first_table_rows(fragments),
             ),
         )
+
+    @staticmethod
+    def _first_table_rows(fragments: list[ChunkFragment]) -> list[list[str]] | None:
+        for fragment in fragments:
+            if fragment.table_rows:
+                return fragment.table_rows
+        return None
 
     def _assemble_chunk_content(
         self,
@@ -141,6 +149,7 @@ class ChunkPayloadFactory:
         section_path: list[str],
         content: str,
         chunk_type: ChunkType | None = None,
+        table_rows: list[list[str]] | None = None,
     ) -> str:
         parts: list[str] = []
         if document_title:
@@ -156,6 +165,7 @@ class ChunkPayloadFactory:
             chunk_type=chunk_type or ChunkType.UNKNOWN,
             section_path=section_path,
             content=content,
+            table_rows=table_rows,
         )
 
     @staticmethod

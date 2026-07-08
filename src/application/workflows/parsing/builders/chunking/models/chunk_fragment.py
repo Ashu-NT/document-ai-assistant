@@ -20,3 +20,4 @@ class ChunkFragment:
     page_start: int | None = None
     page_end: int | None = None
     token_count: int = 0
+    table_rows: list[list[str]] | None = None

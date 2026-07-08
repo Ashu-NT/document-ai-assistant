@@ -7,6 +7,7 @@ from src.application.services.ai.chunk_enrichment.markdown_table_metadata import
 )
 from src.application.services.ai.chunk_enrichment.markdown_table_metadata_extractor import (
     extract_markdown_table_metadata,
+    extract_table_metadata_from_rows,
 )
 from src.application.services.ai.chunk_enrichment.semantic_chunk_types import (
     ENRICHED_CHUNK_TYPES,
@@ -20,4 +21,5 @@ __all__ = [
     "build_maintenance_spec_terms",
     "chunk_type_label",
     "extract_markdown_table_metadata",
+    "extract_table_metadata_from_rows",
 ]

@@ -21,6 +21,7 @@ class AnswerSource:
     page_end: int | None = None
     score: float | None = None
     content: str = ""
+    table_rows: list[list[str]] | None = None
 
 
 @dataclass(slots=True)
