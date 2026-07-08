@@ -247,6 +247,15 @@ def _infer_from_chunk_types(query: RetrievalQuery) -> RetrievalQueryIntent | Non
 
 class RetrievalQueryIntentInferer:
     def infer(self, query: RetrievalQuery | None) -> RetrievalQueryIntent:
+        intent = self._infer(query)
+        _logger.info(
+            "retrieval_intent_resolved intent=%s query_id=%s",
+            intent.value,
+            query.query_id if query is not None else None,
+        )
+        return intent
+
+    def _infer(self, query: RetrievalQuery | None) -> RetrievalQueryIntent:
         if query is None:
             _logger.info("retrieval_intent_fallback_general reason=query_is_none")
             return RetrievalQueryIntent.GENERAL
