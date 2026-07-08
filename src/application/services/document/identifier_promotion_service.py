@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from src.config.logging import get_logger
+from src.application.services.document.identifier_type_normalizer import (
+    IdentifierTypeNormalizer,
+)
 from src.domain.common.enums import IdentifierType
 from src.domain.common.value_objects import normalize_identifier
 from src.domain.document import DocumentGraph
@@ -14,6 +17,7 @@ _logger = get_logger(__name__)
 class IdentifierPromotionService:
     def __init__(self, *, min_length: int = 1) -> None:
         self.min_length = min_length
+        self.identifier_type_normalizer = IdentifierTypeNormalizer()
 
     def promote(
         self,
@@ -100,9 +104,10 @@ class IdentifierPromotionService:
 
         for extracted in extraction_result.extracted_identifiers:
             if extracted.raw_value and extracted.raw_value.strip():
-                try:
-                    identifier_type = IdentifierType(extracted.identifier_type)
-                except ValueError:
+                identifier_type = self.identifier_type_normalizer.normalize(
+                    extracted.identifier_type
+                )
+                if identifier_type is None:
                     identifier_type = IdentifierType.UNKNOWN
                     _logger.warning(
                         "Extracted identifier type %r did not match a known "

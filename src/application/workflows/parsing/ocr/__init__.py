@@ -21,6 +21,9 @@ from src.application.workflows.parsing.ocr.ocr_target import OCRTarget
 from src.application.workflows.parsing.ocr.ocr_target_execution_result import (
     OCRTargetExecutionResult,
 )
+from src.application.workflows.parsing.ocr.ocr_temporary_artifact_cleaner import (
+    OCRTemporaryArtifactCleaner,
+)
 from src.application.workflows.parsing.ocr.ocr_target_selector import OCRTargetSelector
 from src.application.workflows.parsing.ocr.ocr_target_type import OCRTargetType
 from src.application.workflows.parsing.ocr.ocr_trace import OCRTrace
@@ -40,6 +43,7 @@ __all__ = [
     "OCRSelectionResult",
     "OCRTarget",
     "OCRTargetExecutionResult",
+    "OCRTemporaryArtifactCleaner",
     "OCRTargetSelector",
     "OCRTargetType",
     "OCRTrace",

@@ -447,6 +447,7 @@ class RetrievalBenchmarkCorpusSeeder:
         self.ingestion_workflow.retry_extraction(
             document_id,
             activity_context=activity_context,
+            progress_callback=self._scoped_progress_callback(progress_callback, prefix),
         )
 
         document_graph = self.document_lookup_service.get_document_graph(

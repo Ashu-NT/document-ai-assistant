@@ -153,8 +153,16 @@ class FakeIngestionWorkflow:
             raise KeyError(f"FakeIngestionWorkflow: no result configured for {request.file_path}")
         return result
 
-    def retry_extraction(self, document_id: str, *, activity_context=None) -> IngestionResult:
+    def retry_extraction(
+        self,
+        document_id: str,
+        *,
+        activity_context=None,
+        progress_callback=None,
+    ) -> IngestionResult:
         self.retry_extraction_calls.append(document_id)
+        if progress_callback:
+            progress_callback(f"fake retry extraction for {document_id}")
         error = self.retry_extraction_errors.get(document_id)
         if error is not None:
             raise error
@@ -636,9 +644,12 @@ def test_seed_corpus_retries_extraction_for_existing_duplicate_missing_extractio
         extraction_service=extraction_service,
     )
 
+    messages: list[str] = []
+
     manifest = seeder.seed_corpus(
         truth_set_path=truth_set_path,
         input_directory=input_directory,
+        progress_callback=messages.append,
     )
 
     assert extraction_service.has_extraction_result_calls == ["doc_existing"]
@@ -646,6 +657,11 @@ def test_seed_corpus_retries_extraction_for_existing_duplicate_missing_extractio
     assert fake_ingestion_workflow.calls == []
     assert manifest.documents[0].document_id == "doc_existing"
     assert manifest.documents[0].seed_status == "extraction_retried"
+    assert any("Retrying extraction for doc_existing" in message for message in messages)
+    assert any(
+        "[1/1] fake retry extraction for doc_existing" in message
+        for message in messages
+    )
 
 
 def test_seed_corpus_marks_zero_chunk_document_as_needing_reparse(

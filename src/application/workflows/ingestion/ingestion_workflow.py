@@ -748,6 +748,7 @@ class IngestionWorkflow:
         document_id: str,
         *,
         activity_context: ActivityContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> IngestionResult:
         """Retry only the extraction (+ identifier + semantic-linking) stage
         for a document whose chunks/classification already succeeded but
@@ -789,10 +790,12 @@ class IngestionWorkflow:
                 details={"document_id": document_id},
             )
 
+        self._emit_progress(progress_callback, "Extraction started.")
         extraction_result = self.extraction_workflow.extract(
             document_id,
             list(final_graph.chunks.values()),
             activity_context=activity_context,
+            progress_callback=progress_callback,
             replace_existing=True,
             tables=final_graph.tables,
             sections=final_graph.sections,
@@ -838,6 +841,7 @@ class IngestionWorkflow:
             semantic_relationship_count = len(semantic_relationships)
             self.unit_of_work.commit()
 
+        self._emit_progress(progress_callback, "Extraction completed.")
         return IngestionResult(
             status=IngestionStatus.EXTRACTED,
             document_id=document_id,

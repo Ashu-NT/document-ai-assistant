@@ -8,6 +8,9 @@ from src.application.workflows.parsing.ocr.canonical_ocr_merger import (
     CanonicalOCRMerger,
 )
 from src.application.workflows.parsing.ocr.ocr_merge_result import OCRMergeResult
+from src.application.workflows.parsing.ocr.ocr_temporary_artifact_cleaner import (
+    OCRTemporaryArtifactCleaner,
+)
 from src.application.workflows.parsing.ocr.ocr_target_execution_result import (
     OCRTargetExecutionResult,
 )
@@ -29,6 +32,7 @@ class PageOCRFallbackWorkflow:
         page_renderer: PDFPageRenderer,
         region_cropper: PDFRegionCropper | None,
         output_dir: Path,
+        temporary_artifact_cleaner: OCRTemporaryArtifactCleaner | None = None,
         trace_enabled: bool = False,
         fail_fast: bool = False,
     ) -> None:
@@ -38,6 +42,9 @@ class PageOCRFallbackWorkflow:
         self.page_renderer = page_renderer
         self.region_cropper = region_cropper
         self.output_dir = output_dir
+        self.temporary_artifact_cleaner = (
+            temporary_artifact_cleaner or OCRTemporaryArtifactCleaner(output_dir)
+        )
         self.trace_enabled = trace_enabled
         self.fail_fast = fail_fast
 
@@ -61,42 +68,56 @@ class PageOCRFallbackWorkflow:
             page_count=page_count,
         )
         execution_results: list[OCRTargetExecutionResult] = []
+        temporary_artifact_paths: set[Path] = set()
 
-        for target in selection_result.targets:
-            try:
-                source_image_path = self._resolve_target_image_path(target, file_path)
-                ocr_result = self.ocr_service.extract_result_from_image(
-                    source_image_path,
-                    activity_context=activity_context,
-                )
-                execution_results.append(
-                    OCRTargetExecutionResult(
-                        target=target,
-                        source_image_path=source_image_path,
-                        ocr_result=ocr_result,
+        try:
+            for target in selection_result.targets:
+                try:
+                    source_image_path = self._resolve_target_image_path(
+                        target,
+                        file_path,
+                        temporary_artifact_paths,
                     )
-                )
-            except (InfrastructureError, OCRProviderError) as exc:
-                if self.fail_fast:
-                    raise
-                execution_results.append(
-                    OCRTargetExecutionResult(
-                        target=target,
-                        error=exc.message,
+                    ocr_result = self.ocr_service.extract_result_from_image(
+                        source_image_path,
+                        activity_context=activity_context,
                     )
-                )
+                    execution_results.append(
+                        OCRTargetExecutionResult(
+                            target=target,
+                            source_image_path=source_image_path,
+                            ocr_result=ocr_result,
+                        )
+                    )
+                except (InfrastructureError, OCRProviderError) as exc:
+                    if self.fail_fast:
+                        raise
+                    execution_results.append(
+                        OCRTargetExecutionResult(
+                            target=target,
+                            error=exc.message,
+                        )
+                    )
 
-        return self.canonical_ocr_merger.merge(
-            document_path=file_path,
-            page_count=page_count or 0,
-            canonical_elements=canonical_elements,
-            selection_result=selection_result,
-            execution_results=execution_results,
-            persist_trace=self.trace_enabled,
-            trace_output_dir=self.output_dir,
-        )
+            return self.canonical_ocr_merger.merge(
+                document_path=file_path,
+                page_count=page_count or 0,
+                canonical_elements=canonical_elements,
+                selection_result=selection_result,
+                execution_results=execution_results,
+                persist_trace=self.trace_enabled,
+                trace_output_dir=self.output_dir,
+            )
+        finally:
+            if not self.trace_enabled:
+                self.temporary_artifact_cleaner.cleanup(temporary_artifact_paths)
 
-    def _resolve_target_image_path(self, target, file_path: str) -> str:
+    def _resolve_target_image_path(
+        self,
+        target,
+        file_path: str,
+        temporary_artifact_paths: set[Path],
+    ) -> str:
         if target.target_type == OCRTargetType.ASSET:
             if not target.image_path:
                 raise InfrastructureError(
@@ -111,6 +132,7 @@ class PageOCRFallbackWorkflow:
             dpi=self.target_selector.policy.page_render_dpi,
             output_dir=self.output_dir / "pages",
         )
+        temporary_artifact_paths.add(Path(rendered_page.image_path))
         if target.target_type == OCRTargetType.PAGE:
             return rendered_page.image_path
 
@@ -120,14 +142,15 @@ class PageOCRFallbackWorkflow:
                     "Region OCR target cannot be cropped without a cropper and bbox.",
                     details={"target_id": target.target_id},
                 )
-            return self.region_cropper.crop(
+            cropped_region = self.region_cropper.crop(
                 image_path=rendered_page.image_path,
                 bbox=target.bbox,
                 output_dir=self.output_dir / "regions",
-            ).image_path
+            )
+            temporary_artifact_paths.add(Path(cropped_region.image_path))
+            return cropped_region.image_path
 
         raise InfrastructureError(
             "Unsupported OCR target type encountered.",
             details={"target_type": target.target_type.value},
         )
-

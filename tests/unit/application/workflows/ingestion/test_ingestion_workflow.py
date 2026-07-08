@@ -781,6 +781,31 @@ def test_retry_extraction_reextracts_in_place_without_reparsing(
     assert workflow.unit_of_work.commit_count >= 1
 
 
+def test_retry_extraction_forwards_progress_callback_and_emits_stage_messages(
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    document_id = sample_document_graph.document.document_id
+    extraction_workflow = FakeExtractionWorkflow(sample_extraction_result)
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        extraction_workflow=extraction_workflow,
+        document_lookup_service=FakeDocumentLookupService(sample_document_graph),
+    )
+    messages: list[str] = []
+
+    workflow.retry_extraction(document_id, progress_callback=messages.append)
+
+    assert extraction_workflow.calls[0]["progress_callback"] is not None
+    assert messages == [
+        "Extraction started.",
+        "Extraction completed.",
+    ]
+
+
 def test_retry_extraction_invokes_semantic_linking_workflow(
     sample_document_graph,
     sample_document_classification,
