@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
 
 from src.application.services.ai import LLMService
@@ -9,6 +10,7 @@ from src.domain.document import DocumentChunk
 
 _UNRESOLVED_TYPES = {ChunkType.GENERAL, ChunkType.UNKNOWN}
 _CHUNK_TYPE_CLASSIFICATION_SOURCE = "llm"
+_MAX_CONCURRENT_CHUNK_TYPE_CLASSIFICATIONS = 8
 
 
 def _default_chunk_type_classification_enabled() -> bool:
@@ -91,12 +93,20 @@ class ChunkTypeClassificationWorkflow:
             progress_callback,
             f"Reclassifying {len(candidates)} GENERAL/UNKNOWN chunk(s) via LLM...",
         )
-        reclassified = 0
-        for chunk in candidates:
-            result = self.llm_classifier.classify(
-                content=chunk.content,
-                section_path=chunk.section_path,
+        max_workers = min(len(candidates), _MAX_CONCURRENT_CHUNK_TYPE_CLASSIFICATIONS)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            results = list(
+                executor.map(
+                    lambda chunk: self.llm_classifier.classify(
+                        content=chunk.content,
+                        section_path=chunk.section_path,
+                    ),
+                    candidates,
+                )
             )
+
+        reclassified = 0
+        for chunk, result in zip(candidates, results):
             if result is not None:
                 chunk.chunk_type = result
                 chunk.chunk_type_source = _CHUNK_TYPE_CLASSIFICATION_SOURCE

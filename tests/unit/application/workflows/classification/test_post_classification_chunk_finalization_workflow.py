@@ -1,4 +1,5 @@
 import copy
+import threading
 
 import pytest
 
@@ -47,10 +48,14 @@ class FakeClassificationService:
     def __init__(self, classification) -> None:
         self.classification = classification
         self.calls: list[str] = []
+        self.saved_chunk_classifications: list = []
 
     def get_document_classification(self, document_id: str):
         self.calls.append(document_id)
         return self.classification
+
+    def save_chunk_classification(self, classification, activity_context=None):
+        self.saved_chunk_classifications.append(classification)
 
 
 class FakeQuestionGenerationService:
@@ -83,9 +88,11 @@ class FakeQuestionGenerationService:
 class FakeChunkClassificationWorkflow:
     def __init__(self) -> None:
         self.calls: list[str] = []
+        self._lock = threading.Lock()
 
-    def classify_chunk(self, chunk: DocumentChunk, activity_context=None):
-        self.calls.append(chunk.chunk_id)
+    def classify_chunk_without_saving(self, chunk: DocumentChunk, activity_context=None):
+        with self._lock:
+            self.calls.append(chunk.chunk_id)
         return None
 
 
@@ -736,7 +743,7 @@ def test_post_classification_finalization_classifies_chunks_when_enabled(
     )
 
     assert returned_chunk_workflow is chunk_workflow
-    assert chunk_workflow.calls == ["chunk_a", "chunk_b"]
+    assert sorted(chunk_workflow.calls) == ["chunk_a", "chunk_b"]
     assert any("Classifying 2 final chunk(s)..." in message for message in messages)
     assert any("Classified 2 final chunk(s)." in message for message in messages)
 

@@ -1,4 +1,5 @@
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
 
 from src.application.contracts.retrieval import VectorStore
@@ -30,6 +31,7 @@ from src.application.workflows.parsing.builders.chunking.policies.document_chunk
 from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (
     GraphChunkBuilder,
 )
+from src.domain.classification import ChunkClassification
 from src.domain.common import ChunkType
 from src.domain.document import DocumentChunk, DocumentGraph, DocumentSection
 from src.domain.document.value_objects import DocumentStatistics
@@ -54,6 +56,9 @@ def _default_enable_question_generation() -> bool:
         return ingestion_settings.enable_question_generation
     except Exception:
         return False
+
+
+_MAX_CONCURRENT_CHUNK_CLASSIFICATIONS = 8
 
 
 class PostClassificationChunkFinalizationWorkflow:
@@ -440,7 +445,8 @@ class PostClassificationChunkFinalizationWorkflow:
             )
             return
 
-        if self.chunk_classification_workflow is None:
+        chunk_classification_workflow = self.chunk_classification_workflow
+        if chunk_classification_workflow is None:
             raise ApplicationError(
                 "Chunk classification is enabled but no chunk classification workflow is configured.",
             )
@@ -450,7 +456,26 @@ class PostClassificationChunkFinalizationWorkflow:
             progress_callback,
             f"Classifying {total_chunks} final chunk(s)...",
         )
-        for index, chunk in enumerate(chunks, start=1):
+
+        # The LLM call + validation (classify_chunk_without_saving) has no
+        # shared state and is safe to run concurrently; the DB write
+        # (save_chunk_classification) is not safe across threads, so it
+        # stays in a sequential pass afterward.
+        max_workers = min(total_chunks, _MAX_CONCURRENT_CHUNK_CLASSIFICATIONS)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            classifications: list[ChunkClassification] = list(
+                executor.map(
+                    lambda chunk: chunk_classification_workflow.classify_chunk_without_saving(
+                        chunk,
+                        activity_context=activity_context,
+                    ),
+                    chunks,
+                )
+            )
+
+        for index, (chunk, classification) in enumerate(
+            zip(chunks, classifications), start=1
+        ):
             self._emit_progress(
                 progress_callback,
                 (
@@ -458,8 +483,8 @@ class PostClassificationChunkFinalizationWorkflow:
                     f"Classifying chunk {chunk.chunk_id}..."
                 ),
             )
-            self.chunk_classification_workflow.classify_chunk(
-                chunk,
+            self.classification_service.save_chunk_classification(
+                classification,
                 activity_context=activity_context,
             )
         self._emit_progress(

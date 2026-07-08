@@ -1,5 +1,3 @@
-from typing import Any
-
 from src.application.prompts.classification import (
     CHUNK_TYPE_PROMPT_VERSION,
     ChunkTypePromptBuilder,
@@ -72,6 +70,30 @@ class ChunkClassificationWorkflow:
         chunk: DocumentChunk,
         activity_context: ActivityContext | None = None,
     ) -> ChunkClassification:
+        classification = self.classify_chunk_without_saving(
+            chunk,
+            activity_context=activity_context,
+        )
+        self.classification_service.save_chunk_classification(
+            classification,
+            activity_context=activity_context,
+        )
+        return classification
+
+    def classify_chunk_without_saving(
+        self,
+        chunk: DocumentChunk,
+        activity_context: ActivityContext | None = None,
+    ) -> ChunkClassification:
+        """Runs the LLM call + validation but skips persistence.
+
+        Split out so callers classifying many chunks (e.g.
+        PostClassificationChunkFinalizationWorkflow) can run this
+        thread-safe, side-effect-free part concurrently and save the
+        results sequentially afterward, since the DB session backing
+        save_chunk_classification is not safe to write to from multiple
+        threads at once.
+        """
         prompt = self.prompt_builder.build(chunk)
         response = self.llm_service.generate(
             prompt,
@@ -85,10 +107,6 @@ class ChunkClassificationWorkflow:
         validation = self.chunk_classification_validator.validate(classification)
         validation.raise_if_invalid()
 
-        self.classification_service.save_chunk_classification(
-            classification,
-            activity_context=activity_context,
-        )
         return classification
 
     def _build_classification(

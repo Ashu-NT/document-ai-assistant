@@ -1,3 +1,5 @@
+import threading
+
 from src.application.services.question_generation import QuestionGenerationService
 from src.domain.document import GeneratedQuestion
 from src.shared.ids import IdGenerator
@@ -7,6 +9,7 @@ class FakeLLMService:
     def __init__(self, responses: list[str]) -> None:
         self.responses = list(responses)
         self.calls: list[dict[str, object]] = []
+        self._lock = threading.Lock()
 
     def generate(
         self,
@@ -15,14 +18,15 @@ class FakeLLMService:
         *,
         response_schema: dict | None = None,
     ) -> str:
-        self.calls.append(
-            {
-                "prompt": prompt,
-                "model": model,
-                "response_schema": response_schema,
-            }
-        )
-        return self.responses.pop(0)
+        with self._lock:
+            self.calls.append(
+                {
+                    "prompt": prompt,
+                    "model": model,
+                    "response_schema": response_schema,
+                }
+            )
+            return self.responses.pop(0)
 
 
 def make_service(
@@ -102,8 +106,9 @@ def test_generate_for_chunks_creates_questions_for_multiple_chunks(
     )
 
     assert len(questions) == 2
-    assert fake_llm_service.calls[0]["prompt"].endswith(sample_chunk.content)
-    assert fake_llm_service.calls[1]["prompt"].endswith(second_chunk.content)
+    prompts = [call["prompt"] for call in fake_llm_service.calls]
+    assert any(prompt.endswith(sample_chunk.content) for prompt in prompts)
+    assert any(prompt.endswith(second_chunk.content) for prompt in prompts)
     assert questions[0].chunk_id == sample_chunk.chunk_id
     assert questions[1].chunk_id == second_chunk.chunk_id
 
@@ -191,9 +196,8 @@ def test_generate_for_chunks_emits_progress_messages(sample_chunk) -> None:
         progress_callback=messages.append,
     )
 
-    assert messages == [
-        f"[questions 1/2] Generating questions for chunk {sample_chunk.chunk_id}...",
+    assert messages[0] == "Generating questions for 2 chunk(s)..."
+    assert messages[1:] == [
         f"[questions 1/2] Generated 1 question(s) for chunk {sample_chunk.chunk_id}.",
-        "[questions 2/2] Generating questions for chunk chunk_002...",
         "[questions 2/2] Generated 1 question(s) for chunk chunk_002.",
     ]

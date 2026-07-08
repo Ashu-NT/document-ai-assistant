@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
 
 from src.application.prompts.question_generation import (
@@ -16,6 +17,9 @@ from src.domain.document import DocumentChunk, GeneratedQuestion
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
 from src.shared.ids import IdGenerator, IdPrefix
+
+
+_MAX_CONCURRENT_QUESTION_GENERATIONS = 8
 
 
 def _default_question_generation_model() -> str | None:
@@ -92,21 +96,31 @@ class QuestionGenerationService:
         if max_questions_per_chunk <= 0:
             return []
 
-        questions: list[GeneratedQuestion] = []
         total_chunks = len(chunks)
+        self._emit_progress(
+            progress_callback,
+            f"Generating questions for {total_chunks} chunk(s)...",
+        )
 
-        for index, chunk in enumerate(chunks, start=1):
-            self._emit_progress(
-                progress_callback,
-                (
-                    f"[questions {index}/{total_chunks}] Generating questions "
-                    f"for chunk {chunk.chunk_id}..."
-                ),
+        # Each chunk's LLM call + parsing is independent and side-effect
+        # free, so they can run concurrently; executor.map preserves
+        # input order in its results regardless of completion order.
+        max_workers = min(total_chunks, _MAX_CONCURRENT_QUESTION_GENERATIONS)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            results = list(
+                executor.map(
+                    lambda chunk: self._generate_questions_for_chunk(
+                        chunk,
+                        max_questions=max_questions_per_chunk,
+                    ),
+                    chunks,
+                )
             )
-            chunk_questions = self._generate_questions_for_chunk(
-                chunk,
-                max_questions=max_questions_per_chunk,
-            )
+
+        questions: list[GeneratedQuestion] = []
+        for index, (chunk, chunk_questions) in enumerate(
+            zip(chunks, results), start=1
+        ):
             questions.extend(chunk_questions)
             self._emit_progress(
                 progress_callback,
