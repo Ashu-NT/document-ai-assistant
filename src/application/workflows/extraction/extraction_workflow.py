@@ -31,9 +31,6 @@ from src.application.workflows.extraction.response import (
     ExtractionResultMerger,
     build_extraction_response_json_schema,
 )
-from src.application.workflows.extraction.response.extraction_payload_contracts import (
-    EXTRACTION_PAYLOAD_CONTRACTS,
-)
 from src.domain.assets import TableAsset
 from src.domain.common import SourceLocation
 from src.domain.document import DocumentChunk, DocumentSection
@@ -769,50 +766,19 @@ class ExtractionWorkflow:
         chunk_lookup = {chunk.chunk_id: chunk for chunk in chunks}
         default_source_chunk_id = chunks[0].chunk_id if len(chunks) == 1 else None
         overall_confidence = payload["confidence_score"]
-        maintenance_task_payloads = self._filter_payload_items(
-            payload["maintenance_tasks"],
-            payload_name="maintenance_tasks",
-        )
-        spare_part_payloads = self._filter_payload_items(
-            payload["spare_parts"],
-            payload_name="spare_parts",
-        )
-        equipment_payloads = self._filter_payload_items(
-            payload["equipment"],
-            payload_name="equipment",
-        )
-        manufacturer_payloads = self._filter_payload_items(
-            payload["manufacturers"],
-            payload_name="manufacturers",
-        )
-        supplier_payloads = self._filter_payload_items(
-            payload["suppliers"],
-            payload_name="suppliers",
-        )
-        procedure_payloads = self._filter_payload_items(
-            payload["procedures"],
-            payload_name="procedures",
-        )
-        specification_payloads = self._filter_payload_items(
-            payload["specifications"],
-            payload_name="specifications",
-        )
-        safety_warning_payloads = self._filter_payload_items(
-            payload["safety_warnings"],
-            payload_name="safety_warnings",
-        )
-        maintenance_interval_payloads = self._filter_payload_items(
-            payload["maintenance_intervals"],
-            payload_name="maintenance_intervals",
-        )
-        troubleshooting_entry_payloads = self._filter_payload_items(
-            payload["troubleshooting_entries"],
-            payload_name="troubleshooting_entries",
-        )
-        identifier_payloads = self._filter_payload_items(
-            payload["identifiers"],
-            payload_name="identifiers",
-        )
+        # payload was already filtered by ExtractionResponseSanitizer.sanitize()
+        # inside self.response_parser.parse() above -- no need to re-filter here.
+        maintenance_task_payloads = payload["maintenance_tasks"]
+        spare_part_payloads = payload["spare_parts"]
+        equipment_payloads = payload["equipment"]
+        manufacturer_payloads = payload["manufacturers"]
+        supplier_payloads = payload["suppliers"]
+        procedure_payloads = payload["procedures"]
+        specification_payloads = payload["specifications"]
+        safety_warning_payloads = payload["safety_warnings"]
+        maintenance_interval_payloads = payload["maintenance_intervals"]
+        troubleshooting_entry_payloads = payload["troubleshooting_entries"]
+        identifier_payloads = payload["identifiers"]
 
         maintenance_tasks = [
             self._build_maintenance_task(
@@ -1709,50 +1675,6 @@ class ExtractionWorkflow:
         if text.lower() in NULL_LIKE_TEXT_VALUES:
             return None
         return text or None
-
-    @classmethod
-    def _filter_payload_items(
-        cls,
-        items: list[dict[str, Any]],
-        *,
-        payload_name: str,
-    ) -> list[dict[str, Any]]:
-        contract = EXTRACTION_PAYLOAD_CONTRACTS[payload_name]
-        return [
-            item
-            for item in items
-            if cls._has_meaningful_item_content(
-                item,
-                content_keys=contract.content_keys,
-            )
-            and cls._has_required_item_fields(
-                item,
-                required_field_groups=contract.required_field_groups,
-            )
-        ]
-
-    @classmethod
-    def _has_meaningful_item_content(
-        cls,
-        payload: dict[str, Any],
-        *,
-        content_keys: tuple[str, ...],
-    ) -> bool:
-        return any(cls._optional_text(payload, key) for key in content_keys)
-
-    @classmethod
-    def _has_required_item_fields(
-        cls,
-        payload: dict[str, Any],
-        *,
-        required_field_groups: tuple[tuple[str, ...], ...],
-    ) -> bool:
-        if not required_field_groups:
-            return True
-        return all(
-            cls._optional_text(payload, *field_group)
-            for field_group in required_field_groups
-        )
 
     def _drop_empty_entities(
         self, extraction_result: ExtractionResult

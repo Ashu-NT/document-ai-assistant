@@ -21,6 +21,9 @@ from src.application.workflows.retrieval.retrieval_context_expander import (
 from src.application.workflows.retrieval.retrieval_query_analyzer import (
     RetrievalQueryAnalyzer,
 )
+from src.application.workflows.retrieval.retrieval_query_intent import (
+    RetrievalQueryIntent,
+)
 from src.domain.common import new_id
 from src.domain.retrieval import RetrievalQuery, RetrievalResult
 from src.shared.activity import ActivityContext
@@ -110,16 +113,19 @@ class RetrievalWorkflow:
         activity_context: ActivityContext | None = None,
         trace_recorder: RetrievalTraceRecorder | None = None,
     ) -> RetrievalWorkflowResult:
-        working_query = self.query_analyzer.analyze(query)
+        working_query = (
+            query if query.analyzed else self.query_analyzer.analyze(query)
+        )
         validation = self.query_validator.validate(working_query)
         validation.raise_if_invalid()
         diagnostics: dict[str, object] = {}
+        intent = self.query_analyzer.intent_inferer.infer(working_query)
 
         if trace_recorder is not None:
-            trace_recorder.record_query_analysis(working_query)
+            trace_recorder.record_query_analysis(working_query, intent=intent)
 
         if self.pre_retrieval_guardrails:
-            pre_context = self._build_guardrail_context(working_query)
+            pre_context = self._build_guardrail_context(working_query, intent=intent)
             pre_result = self._run_guardrail_chain(
                 self.pre_retrieval_guardrails, pre_context
             )
@@ -198,6 +204,7 @@ class RetrievalWorkflow:
         if self.post_retrieval_guardrails:
             post_context = self._build_guardrail_context(
                 working_query,
+                intent=intent,
                 retrieved_chunks=retrieval_result.chunks,
             )
             post_guardrail_result = self._run_guardrail_chain(
@@ -260,9 +267,10 @@ class RetrievalWorkflow:
     def _build_guardrail_context(
         self,
         working_query: RetrievalQuery,
+        *,
+        intent: RetrievalQueryIntent,
         retrieved_chunks: list | None = None,
     ) -> GuardrailContext:
-        intent = self.query_analyzer.intent_inferer.infer(working_query)
         return GuardrailContext(
             query_text=working_query.query_text,
             document_id=working_query.document_id,

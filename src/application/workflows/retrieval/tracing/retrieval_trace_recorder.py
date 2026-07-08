@@ -13,6 +13,9 @@ from src.domain.common import new_id
 
 if TYPE_CHECKING:
     from src.application.contracts.guardrails.guardrail_result import GuardrailResult
+    from src.application.workflows.retrieval.retrieval_query_intent import (
+        RetrievalQueryIntent,
+    )
     from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 
 
@@ -50,12 +53,12 @@ class RetrievalTraceRecorder:
         self._dedup_removed_count: int = 0
         self._context_chunk_ids: list[str] = []
 
-    def record_query_analysis(self, working_query: RetrievalQuery) -> None:
-        from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
-            RetrievalQueryIntentInferer,
-        )
-
-        intent = RetrievalQueryIntentInferer().infer(working_query)
+    def record_query_analysis(
+        self,
+        working_query: RetrievalQuery,
+        *,
+        intent: RetrievalQueryIntent,
+    ) -> None:
         self._query_analysis = TracedQueryAnalysis(
             raw_query=working_query.query_text,
             rewritten_query=getattr(working_query, "rewritten_query", None),

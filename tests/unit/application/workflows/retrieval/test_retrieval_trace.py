@@ -14,6 +14,9 @@ from src.application.workflows.retrieval.tracing.retrieval_trace_recorder import
 from src.application.workflows.retrieval.tracing.retrieval_trace_writer import (
     RetrievalTraceWriter,
 )
+from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+    RetrievalQueryIntentInferer,
+)
 
 
 def _make_query(text="How do I change the oil?"):
@@ -54,7 +57,9 @@ class TestRetrievalTraceRecorder:
         recorder = RetrievalTraceRecorder()
         query = _make_query()
 
-        recorder.record_query_analysis(query)
+        recorder.record_query_analysis(
+            query, intent=RetrievalQueryIntentInferer().infer(query)
+        )
         recorder.record_candidates([_make_retrieved_chunk("c1"), _make_retrieved_chunk("c2")])
         recorder.record_dedup(
             before_count=2,
@@ -76,7 +81,9 @@ class TestRetrievalTraceRecorder:
     def test_query_analysis_captures_intent(self):
         recorder = RetrievalTraceRecorder()
         query = _make_query("What is the oil change interval?")
-        recorder.record_query_analysis(query)
+        recorder.record_query_analysis(
+            query, intent=RetrievalQueryIntentInferer().infer(query)
+        )
         trace = recorder.build(query_id=query.query_id, timestamp_iso="2026-01-01T00:00:00")
         assert trace.query_analysis.raw_query == "What is the oil change interval?"
         assert trace.query_analysis.detected_intent != ""

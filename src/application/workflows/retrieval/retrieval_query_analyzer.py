@@ -58,6 +58,7 @@ class RetrievalQueryAnalyzer:
             existing=query.chunk_types,
             preferred=preferred_chunk_types,
         )
+        query.analyzed = True
         return query
 
     @staticmethod

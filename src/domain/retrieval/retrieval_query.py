@@ -22,6 +22,8 @@ class RetrievalQuery:
 
     rewritten_query: str | None = None
 
+    analyzed: bool = False
+
     def effective_query(self) -> str:
         return self.rewritten_query or self.query_text
 
