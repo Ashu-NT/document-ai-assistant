@@ -6,6 +6,7 @@ from src.application.agent_runtime.commands.command_result import CommandResult
 from src.application.langgraph.common import (
     is_safe_failure_message,
     is_usable_reflection_decision,
+    reflection_decision_from_state,
 )
 from src.application.agent_runtime.policies.demo_visibility_policy import (
     DemoVisibilityPolicy,
@@ -253,7 +254,7 @@ def _render_status_footer(result, *, session) -> str:
     strategy = _strategy_label(data)
     if strategy:
         fields.append(("Strategy", strategy))
-    reflection = data.get("reflection_decision") or _reflection_decision(data)
+    reflection = data.get("reflection_decision") or reflection_decision_from_state(data)
     if reflection:
         fields.append(("Reflection", reflection))
     source_count = len(data.get("citations", []) or [])
@@ -309,21 +310,11 @@ def _strategy_label(data: dict[str, Any]) -> str | None:
     return None
 
 
-def _reflection_decision(data: dict[str, Any]) -> str | None:
-    reflection_result = data.get("reflection_result")
-    if not isinstance(reflection_result, dict):
-        return None
-    decision = (reflection_result.get("decision") or {}).get("decision")
-    if isinstance(decision, str) and decision:
-        return decision
-    return None
-
-
 def _final_answer_text(result) -> str:
     data = result.data or {}
     response_text = result.response_text
     answer_text = data.get("answer")
-    reflection = data.get("reflection_decision") or _reflection_decision(data)
+    reflection = data.get("reflection_decision") or reflection_decision_from_state(data)
     if (
         is_usable_reflection_decision(reflection)
         and is_safe_failure_message(response_text)

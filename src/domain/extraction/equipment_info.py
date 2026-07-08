@@ -22,6 +22,3 @@ class EquipmentInfo:
     requires_human_review: bool = True
 
     audit: AuditMetadata = field(default_factory=AuditMetadata)
-
-    def has_identity(self) -> bool:
-        return bool(self.name or self.model_number or self.serial_number)

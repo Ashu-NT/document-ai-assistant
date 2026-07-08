@@ -29,6 +29,3 @@ class CanonicalElement:
 
     def has_text(self) -> bool:
         return bool(self.text and self.text.strip())
-
-    def belongs_to_section(self) -> bool:
-        return self.parent_section_id is not None

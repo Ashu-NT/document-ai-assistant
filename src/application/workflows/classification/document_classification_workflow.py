@@ -1,4 +1,3 @@
-import re
 from typing import Any
 
 from src.application.prompts.classification import (
@@ -14,14 +13,16 @@ from src.application.workflows.classification.classification_response_parser imp
 from src.application.workflows.classification.classification_response_schema import (
     build_classification_response_json_schema,
 )
+from src.application.workflows.classification.classification_shared import (
+    build_unknown_label_errors,
+    resolve_enum_label,
+)
 from src.domain.classification import ClassificationResult, DocumentClassification
 from src.domain.common import DocumentType, ModelProcessingMetadata
 from src.domain.document import Document, DocumentGraph
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
 from src.shared.ids import IdGenerator, IdPrefix
-
-KEY_PATTERN = re.compile(r"[^a-z0-9]+")
 
 
 def _default_document_classification_model() -> str | None:
@@ -96,8 +97,8 @@ class DocumentClassificationWorkflow:
         response: str,
     ) -> DocumentClassification:
         parsed = self.response_parser.parse(response)
-        document_type = self._resolve_document_type(parsed.label)
-        metadata_errors = self._build_metadata_errors(parsed.label, document_type)
+        document_type = resolve_enum_label(parsed.label, DocumentType)
+        metadata_errors = build_unknown_label_errors(parsed.label, document_type)
 
         result = ClassificationResult(
             classification_id=self.id_generator.new_id(IdPrefix.CLASSIFICATION),
@@ -124,31 +125,6 @@ class DocumentClassificationWorkflow:
             document_type=document_type,
             result=result,
         )
-
-    @staticmethod
-    def _resolve_document_type(label: str) -> DocumentType:
-        normalized = KEY_PATTERN.sub("_", label.lower()).strip("_")
-
-        for document_type in DocumentType:
-            if normalized in {
-                document_type.value,
-                document_type.name.lower(),
-            }:
-                return document_type
-
-        return DocumentType.UNKNOWN
-
-    @staticmethod
-    def _build_metadata_errors(
-        raw_label: str,
-        document_type: DocumentType,
-    ) -> list[str]:
-        normalized = KEY_PATTERN.sub("_", raw_label.lower()).strip("_")
-
-        if document_type == DocumentType.UNKNOWN and normalized != DocumentType.UNKNOWN.value:
-            return [f"Unknown label returned by model: {raw_label}"]
-
-        return []
 
     @staticmethod
     def _resolve_document(document_graph: DocumentGraph | Document) -> Document:

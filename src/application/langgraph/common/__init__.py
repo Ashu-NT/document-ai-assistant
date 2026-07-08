@@ -12,6 +12,7 @@ from src.application.langgraph.common.response_text_resolver import (
     generated_answer_text_from_state,
     is_safe_failure_message,
     is_usable_reflection_decision,
+    reflection_decision_from_state,
     resolve_answer_text,
     resolve_state_response_text,
 )
@@ -29,6 +30,7 @@ __all__ = [
     "generated_answer_text_from_state",
     "is_safe_failure_message",
     "is_usable_reflection_decision",
+    "reflection_decision_from_state",
     "resolve_answer_text",
     "resolve_state_response_text",
     "serialize_graph_value",

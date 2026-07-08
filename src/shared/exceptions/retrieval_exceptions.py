@@ -7,7 +7,3 @@ class RetrievalError(ApplicationError):
 
 class NoEvidenceFoundError(RetrievalError):
     """Raised when retrieval finds no usable evidence."""
-
-
-class CitationError(RetrievalError):
-    """Raised when citation validation fails."""

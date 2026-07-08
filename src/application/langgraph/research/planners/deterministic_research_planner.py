@@ -11,6 +11,7 @@ from src.application.langgraph.research.planners.research_plan_builder import (
     ResearchPlanBuilder,
 )
 from src.application.langgraph.research.policies import ResearchPolicy
+from src.application.langgraph.research.research_text_utils import normalize_theme
 from src.application.langgraph.retrieval_strategy.models.retrieval_strategy import (
     RetrievalStrategy,
 )
@@ -444,7 +445,7 @@ class DeterministicResearchPlanner:
             strategy_hint=strategy.value,
             answer_intent_hint=answer_intent,
             document_id=goal.document_id,
-            expected_evidence_type=self._normalize_theme(concept),
+            expected_evidence_type=normalize_theme(concept),
             max_results=max_results,
             diagnostics=diagnostics,
         )
@@ -516,17 +517,12 @@ class DeterministicResearchPlanner:
         ordered: list[str] = []
         seen: set[str] = set()
         for concept in concepts:
-            normalized = DeterministicResearchPlanner._normalize_theme(concept)
+            normalized = normalize_theme(concept)
             if not normalized or normalized in seen:
                 continue
             seen.add(normalized)
             ordered.append(concept)
         return ordered
-
-    @staticmethod
-    def _normalize_theme(value: str) -> str:
-        normalized = re.sub(r"[^a-z0-9]+", " ", value.strip().lower())
-        return " ".join(normalized.split())
 
     @staticmethod
     def _strategy_for_concept(concept: str) -> RetrievalStrategy:

@@ -7,7 +7,3 @@ class ValidationError(ApplicationError):
 
 class SchemaValidationError(ValidationError):
     """Raised when structured data fails schema validation."""
-
-
-class GuardrailViolationError(ValidationError):
-    """Raised when a guardrail blocks an operation."""

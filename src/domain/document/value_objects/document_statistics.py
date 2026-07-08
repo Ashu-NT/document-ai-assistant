@@ -11,6 +11,3 @@ class DocumentStatistics:
     picture_count: int = 0
     identifier_count: int = 0
     chunk_type_counts: dict[str, int] = field(default_factory=dict)
-
-    def has_pages(self) -> bool:
-        return self.page_count is not None and self.page_count > 0

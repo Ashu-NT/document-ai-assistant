@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import re
-
 from src.application.langgraph.research.models import ResearchGoalType
 from src.application.langgraph.research.policies import ResearchPolicy, ResearchTaskPolicy
+from src.application.langgraph.research.research_text_utils import normalize_theme
 from src.application.langgraph.research.validation.research_task_validator import (
     ResearchTaskValidator,
 )
@@ -130,12 +129,7 @@ class ResearchPlanValidator(Validator):
         ):
             if not isinstance(candidate, str):
                 continue
-            normalized = self._normalize_theme(candidate)
+            normalized = normalize_theme(candidate)
             if normalized:
                 return normalized
         return None
-
-    @staticmethod
-    def _normalize_theme(value: str) -> str:
-        normalized = re.sub(r"[^a-z0-9]+", " ", value.strip().lower())
-        return " ".join(normalized.split())

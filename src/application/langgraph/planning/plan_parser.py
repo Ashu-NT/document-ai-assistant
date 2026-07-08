@@ -9,6 +9,10 @@ from src.application.langgraph.planning.plan_response_schema import (
 )
 from src.application.langgraph.planning.plan_step import PlanStep
 from src.shared.ids import IdGenerator
+from src.shared.llm.json_response import (
+    is_json_validation_error,
+    strip_code_fences_if_wrapped,
+)
 from pydantic import ValidationError
 
 
@@ -27,11 +31,11 @@ class PlanParser:
         self.id_generator = id_generator or IdGenerator()
 
     def parse(self, raw_text: str) -> PlanParseResult:
-        cleaned = self._strip_code_fences(raw_text)
+        cleaned = strip_code_fences_if_wrapped(raw_text)
         try:
             payload = PlanResponsePayload.model_validate_json(cleaned)
         except ValidationError as exc:
-            if self._is_json_error(exc):
+            if is_json_validation_error(exc):
                 return PlanParseResult(
                     success=False,
                     error_code="plan_json_invalid",
@@ -103,18 +107,5 @@ class PlanParser:
         )
 
     @staticmethod
-    def _strip_code_fences(raw_text: str) -> str:
-        stripped = raw_text.strip()
-        if stripped.startswith("```") and stripped.endswith("```"):
-            lines = stripped.splitlines()
-            if len(lines) >= 2:
-                return "\n".join(lines[1:-1]).strip()
-        return stripped
-
-    @staticmethod
     def _is_steps_missing_error(exc: ValidationError) -> bool:
         return any(error.get("loc") == ("steps",) for error in exc.errors())
-
-    @staticmethod
-    def _is_json_error(exc: ValidationError) -> bool:
-        return any(error.get("type") == "json_invalid" for error in exc.errors())

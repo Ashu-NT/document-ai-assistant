@@ -1,8 +1,9 @@
 import json
 
-from src.domain.common import ChunkType, SourceLocation
+from src.domain.common import ChunkType
 from src.domain.document.value_objects import ChunkStatistics
 from src.domain.retrieval import RetrievedChunk
+from src.infrastructure.db.mappers.common import columns_to_source_location
 from src.infrastructure.db.orm_models import ChunkORM
 
 
@@ -32,7 +33,7 @@ class RetrievedChunkMapper:
             chunk_type=ChunkType(row.chunk_type),
             section_id=row.section_id,
             section_path=json.loads(row.section_path or "[]"),
-            source=SourceLocation(
+            source=columns_to_source_location(
                 page_start=row.page_start,
                 page_end=row.page_end,
             ),

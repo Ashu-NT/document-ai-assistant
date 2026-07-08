@@ -8,15 +8,19 @@ from src.application.langgraph.reflection.services.reflection_response_schema im
 )
 from pydantic import ValidationError
 from src.shared.exceptions import SchemaValidationError
+from src.shared.llm.json_response import (
+    is_json_validation_error,
+    strip_code_fences_if_opened,
+)
 
 
 class ReflectionJsonParser:
     def parse(self, payload: str) -> ReflectionDecision:
-        normalized = self._strip_code_fences(payload)
+        normalized = strip_code_fences_if_opened(payload)
         try:
             data = ReflectionResponsePayload.model_validate_json(normalized)
         except ValidationError as exc:
-            if self._is_json_error(exc):
+            if is_json_validation_error(exc):
                 raise SchemaValidationError(
                     "Malformed reflection response JSON.",
                     details={"payload": payload},
@@ -33,16 +37,3 @@ class ReflectionJsonParser:
             clarification_question=data.clarification_question,
             missing_information=list(data.missing_information),
         )
-
-    @staticmethod
-    def _strip_code_fences(payload: str) -> str:
-        stripped = (payload or "").strip()
-        if stripped.startswith("```"):
-            lines = stripped.splitlines()
-            if len(lines) >= 2:
-                stripped = "\n".join(lines[1:-1]).strip()
-        return stripped
-
-    @staticmethod
-    def _is_json_error(exc: ValidationError) -> bool:
-        return any(error.get("type") == "json_invalid" for error in exc.errors())

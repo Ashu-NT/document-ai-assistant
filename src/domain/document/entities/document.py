@@ -19,6 +19,3 @@ class Document:
 
     statistics: DocumentStatistics = field(default_factory=DocumentStatistics)
     audit: AuditMetadata = field(default_factory=AuditMetadata)
-
-    def is_classified(self) -> bool:
-        return self.document_type != DocumentType.UNKNOWN

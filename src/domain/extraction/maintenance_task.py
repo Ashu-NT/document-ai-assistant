@@ -24,6 +24,3 @@ class MaintenanceTask:
     confidence_score: float | None = None
 
     audit: AuditMetadata = field(default_factory=AuditMetadata)
-
-    def is_complete(self) -> bool:
-        return bool(self.title and self.interval)

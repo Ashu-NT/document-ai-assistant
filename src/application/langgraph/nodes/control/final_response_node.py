@@ -6,6 +6,7 @@ from src.application.langgraph.common import (
     generated_answer_text_from_state,
     is_safe_failure_message,
     is_usable_reflection_decision,
+    reflection_decision_from_state,
     resolve_state_response_text,
 )
 from src.application.langgraph.memory import ConversationMemory
@@ -48,7 +49,7 @@ class FinalResponseNode:
             or state.get("response_text")
             or "Request completed."
         )
-        reflection_decision = _reflection_decision(state)
+        reflection_decision = reflection_decision_from_state(state)
         generated_answer = generated_answer_text_from_state(state)
         answer_payload = _tool_payload(state, "answer_question")
         guardrail_result, safe_response_text = self.post_response_guardrail_service.check(
@@ -154,15 +155,3 @@ def _tool_payload(state: AgentState, tool_name: str):
     if not tool_result.get("success", False):
         return None
     return tool_result.get("data")
-
-
-def _reflection_decision(state: AgentState) -> str | None:
-    value = state.get("reflection_decision")
-    if isinstance(value, str) and value.strip():
-        return value.strip()
-    reflection_result = state.get("reflection_result")
-    if isinstance(reflection_result, dict):
-        decision = (reflection_result.get("decision") or {}).get("decision")
-        if isinstance(decision, str) and decision.strip():
-            return decision.strip()
-    return None

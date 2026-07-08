@@ -12,6 +12,10 @@ from src.application.langgraph.retrieval_strategy.services.retrieval_strategy_re
 )
 from pydantic import ValidationError
 from src.shared.exceptions import SchemaValidationError
+from src.shared.llm.json_response import (
+    is_json_validation_error,
+    strip_code_fences_if_wrapped,
+)
 
 
 class RetrievalStrategyJsonParser:
@@ -40,15 +44,11 @@ class RetrievalStrategyJsonParser:
 
     @staticmethod
     def _parse_payload(raw_response: str) -> RetrievalStrategyResponsePayload:
-        candidate = raw_response.strip()
-        if candidate.startswith("```") and candidate.endswith("```"):
-            lines = candidate.splitlines()
-            if len(lines) >= 2:
-                candidate = "\n".join(lines[1:-1]).strip()
+        candidate = strip_code_fences_if_wrapped(raw_response)
         try:
             return RetrievalStrategyResponsePayload.model_validate_json(candidate)
         except ValidationError as exc:
-            if RetrievalStrategyJsonParser._is_json_error(exc):
+            if is_json_validation_error(exc):
                 raise SchemaValidationError(
                     "Malformed retrieval strategy response JSON.",
                     details={"raw_response": raw_response},
@@ -57,7 +57,3 @@ class RetrievalStrategyJsonParser:
                 "Retrieval strategy response failed schema validation.",
                 details={"raw_response": raw_response, "errors": exc.errors()},
             ) from exc
-
-    @staticmethod
-    def _is_json_error(exc: ValidationError) -> bool:
-        return any(error.get("type") == "json_invalid" for error in exc.errors())

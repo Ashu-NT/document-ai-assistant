@@ -1,4 +1,3 @@
-import re
 from typing import Any
 
 from src.application.prompts.classification import (
@@ -14,14 +13,16 @@ from src.application.workflows.classification.classification_response_parser imp
 from src.application.workflows.classification.classification_response_schema import (
     build_classification_response_json_schema,
 )
+from src.application.workflows.classification.classification_shared import (
+    build_unknown_label_errors,
+    resolve_enum_label,
+)
 from src.domain.classification import ChunkClassification, ClassificationResult
 from src.domain.common import ChunkType, ModelProcessingMetadata
 from src.domain.document import DocumentChunk
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
 from src.shared.ids import IdGenerator, IdPrefix
-
-KEY_PATTERN = re.compile(r"[^a-z0-9]+")
 
 
 def _default_chunk_classification_model() -> str | None:
@@ -96,8 +97,8 @@ class ChunkClassificationWorkflow:
         response: str,
     ) -> ChunkClassification:
         parsed = self.response_parser.parse(response)
-        chunk_type = self._resolve_chunk_type(parsed.label)
-        metadata_errors = self._build_metadata_errors(parsed.label, chunk_type)
+        chunk_type = resolve_enum_label(parsed.label, ChunkType)
+        metadata_errors = build_unknown_label_errors(parsed.label, chunk_type)
 
         result = ClassificationResult(
             classification_id=self.id_generator.new_id(IdPrefix.CLASSIFICATION),
@@ -125,28 +126,3 @@ class ChunkClassificationWorkflow:
             chunk_type=chunk_type,
             result=result,
         )
-
-    @staticmethod
-    def _resolve_chunk_type(label: str) -> ChunkType:
-        normalized = KEY_PATTERN.sub("_", label.lower()).strip("_")
-
-        for chunk_type in ChunkType:
-            if normalized in {
-                chunk_type.value,
-                chunk_type.name.lower(),
-            }:
-                return chunk_type
-
-        return ChunkType.UNKNOWN
-
-    @staticmethod
-    def _build_metadata_errors(
-        raw_label: str,
-        chunk_type: ChunkType,
-    ) -> list[str]:
-        normalized = KEY_PATTERN.sub("_", raw_label.lower()).strip("_")
-
-        if chunk_type == ChunkType.UNKNOWN and normalized != ChunkType.UNKNOWN.value:
-            return [f"Unknown label returned by model: {raw_label}"]
-
-        return []

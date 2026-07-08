@@ -9,10 +9,6 @@ class FileHashError(IngestionError):
     """Raised when file hashing fails."""
 
 
-class DuplicateDocumentError(IngestionError):
-    """Raised when a duplicate document is detected."""
-
-
 class DocumentParsingError(IngestionError):
     """Raised when PDF parsing fails."""
 

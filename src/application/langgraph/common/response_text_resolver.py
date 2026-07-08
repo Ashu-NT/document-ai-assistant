@@ -73,6 +73,10 @@ def is_usable_reflection_decision(value: str | None) -> bool:
     return _is_usable_reflection_decision(value)
 
 
+def reflection_decision_from_state(state: dict[str, Any]) -> str | None:
+    return _reflection_decision_from_state(state)
+
+
 def _tool_payload(
     tool_results: dict[str, Any],
     tool_name: str,
