@@ -1,4 +1,5 @@
 from src.application.contracts.document import DocumentRepository
+from src.application.validation.common import ValidationResult
 from src.application.validation.document import DocumentGraphValidator
 from src.domain.document import DocumentGraph
 from src.domain.document.entities.identifier import Identifier
@@ -93,8 +94,7 @@ class DocumentRegistrationService:
         document_graph: DocumentGraph,
         activity_context: ActivityContext | None = None,
     ) -> ActionResult:
-        validation = self.document_graph_validator.validate(document_graph)
-        validation.raise_if_invalid()
+        self._validate_chunk_artifacts(document_graph)
 
         self.document_repository.replace_document_chunk_artifacts(document_graph)
 
@@ -118,3 +118,20 @@ class DocumentRegistrationService:
         activity_context: ActivityContext | None = None,
     ) -> None:
         self.document_repository.write_document_identifiers(identifiers)
+
+    def _validate_chunk_artifacts(self, document_graph: DocumentGraph) -> None:
+        validation = self.document_graph_validator.validate(document_graph)
+        if not document_graph.chunks:
+            validation = self._with_missing_chunk_issue(validation)
+        validation.raise_if_invalid()
+
+    @staticmethod
+    def _with_missing_chunk_issue(validation: ValidationResult) -> ValidationResult:
+        validation.add_issue(
+            field="chunks",
+            message=(
+                "Final document chunk artifacts must contain at least one chunk."
+            ),
+            code="document_graph.chunk_artifacts.required",
+        )
+        return validation

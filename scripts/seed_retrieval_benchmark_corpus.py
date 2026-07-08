@@ -33,6 +33,9 @@ from src.application.evaluation.retrieval.benchmarking.corpus.models.retrieval_b
     RetrievalBenchmarkCorpusManifest,
 )
 from src.application.orchestrator.ingestion import build_ingestion_runtime  # noqa: E402
+from src.application.workflows.parsing.ocr import (  # noqa: E402
+    resolve_parsing_ocr_policy,
+)
 from src.application.workflows.extraction.candidates import (  # noqa: E402
     ExtractionCandidateSelector,
 )
@@ -95,6 +98,7 @@ def print_status(message: str) -> None:
 
 
 def print_runtime_ocr_configuration() -> None:
+    ocr_policy = resolve_parsing_ocr_policy()
     print_status(
         "Docling pipeline: "
         f"pdf_backend={docling_settings.pdf_backend}, "
@@ -107,20 +111,21 @@ def print_runtime_ocr_configuration() -> None:
     )
     print_status(
         "Docling OCR: "
-        f"enabled={docling_settings.enable_ocr}, "
+        f"enabled={ocr_policy.docling_ocr_enabled}, "
         f"engine={docling_settings.ocr_engine}, "
         f"batch_size={docling_settings.ocr_batch_size}"
     )
     print_status(
-        "Provider OCR: "
-        f"enabled={ocr_settings.enabled}, "
-        f"provider={ocr_settings.provider}"
+        "Provider OCR runtime: "
+        f"requested={ocr_policy.provider_requested}, "
+        f"enabled={ocr_policy.provider_runtime_enabled}, "
+        f"provider={ocr_policy.provider_name}"
     )
     print_status(
-        "OCR fallback: "
-        f"asset={ocr_settings.asset_enabled}, "
-        f"page_fallback={ocr_settings.page_fallback_enabled}, "
-        f"region_fallback={ocr_settings.region_fallback_enabled}, "
+        "Provider OCR stages: "
+        f"asset={ocr_policy.asset_ocr_enabled}, "
+        f"page_fallback={ocr_policy.page_fallback_enabled}, "
+        f"region_fallback={ocr_policy.region_fallback_enabled}, "
         f"trace={ocr_settings.trace_enabled}"
     )
 

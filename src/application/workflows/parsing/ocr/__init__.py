@@ -7,6 +7,10 @@ from src.application.workflows.parsing.ocr.ocr_runtime_factory import (
     ParsingOCRRuntime,
     build_parsing_ocr_runtime,
 )
+from src.application.workflows.parsing.ocr.parsing_ocr_policy import (
+    ParsingOCRPolicy,
+    resolve_parsing_ocr_policy,
+)
 from src.application.workflows.parsing.ocr.ocr_selection_policy import (
     OCRSelectionPolicy,
 )
@@ -42,6 +46,8 @@ __all__ = [
     "PageOCRFallbackWorkflow",
     "PageTextQuality",
     "PageTextQualityAnalyzer",
+    "ParsingOCRPolicy",
     "ParsingOCRRuntime",
     "build_parsing_ocr_runtime",
+    "resolve_parsing_ocr_policy",
 ]

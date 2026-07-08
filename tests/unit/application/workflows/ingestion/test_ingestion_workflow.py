@@ -372,6 +372,7 @@ def _build_workflow(
     embedding_workflow=None,
     document_lookup_service=None,
     semantic_linking_workflow=None,
+    post_classification_chunk_finalization_workflow=None,
 ):
     return IngestionWorkflow(
         unit_of_work=FakeUnitOfWork(),
@@ -385,7 +386,8 @@ def _build_workflow(
             sample_document_classification
         ),
         post_classification_chunk_finalization_workflow=(
-            FakePostClassificationChunkFinalizationWorkflow(sample_document_graph)
+            post_classification_chunk_finalization_workflow
+            or FakePostClassificationChunkFinalizationWorkflow(sample_document_graph)
         ),
         extraction_workflow=(
             extraction_workflow
@@ -917,3 +919,40 @@ def test_ingestion_workflow_persists_extraction_model_before_extraction_failure(
         for run in workflow.unit_of_work.ingestion_runs.updated
     )
     assert workflow.unit_of_work.ingestion_runs.updated[-1].status == IngestionStatus.FAILED
+
+
+def test_ingestion_workflow_rejects_zero_final_chunks_before_extraction_and_embedding(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nmanual")
+    empty_final_graph = copy.deepcopy(sample_document_graph)
+    empty_final_graph.replace_chunks([])
+    extraction_workflow = FakeExtractionWorkflow(sample_extraction_result)
+    embedding_workflow = FakeEmbeddingWorkflow()
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        extraction_workflow=extraction_workflow,
+        embedding_workflow=embedding_workflow,
+        post_classification_chunk_finalization_workflow=(
+            FakePostClassificationChunkFinalizationWorkflow(empty_final_graph)
+        ),
+    )
+
+    with pytest.raises(Exception) as exc_info:
+        workflow.run(
+            IngestionRequest(
+                file_path=str(input_file),
+                run_quality_checks=False,
+            )
+        )
+
+    assert "contains no chunks" in str(exc_info.value)
+    assert extraction_workflow.calls == []
+    assert embedding_workflow.embed_calls == []
+    assert embedding_workflow.store_calls == []

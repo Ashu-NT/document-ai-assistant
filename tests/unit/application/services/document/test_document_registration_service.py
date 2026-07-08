@@ -66,6 +66,19 @@ def test_replace_document_chunk_artifacts(sample_document_graph, document_id) ->
     assert result.payload["question_count"] == 1
 
 
+def test_replace_document_chunk_artifacts_rejects_empty_chunk_set(
+    sample_document_graph,
+) -> None:
+    repository = FakeDocumentRepository()
+    service = make_service(repository)
+    sample_document_graph.replace_chunks([])
+
+    with pytest.raises(SchemaValidationError):
+        service.replace_document_chunk_artifacts(sample_document_graph)
+
+    assert repository.replaced_graphs == []
+
+
 def test_replace_document_graph(sample_document_graph, document_id) -> None:
     repository = FakeDocumentRepository()
     service = make_service(repository)
