@@ -398,10 +398,7 @@ class ChunkFragmentBuilder:
         return self._truncate_to_token_limit(text, self.asset_context_max_tokens)
 
     def _truncate_to_token_limit(self, text: str, max_tokens: int) -> str:
-        tokens = text.split()
-        if len(tokens) <= max_tokens:
-            return text
-        return " ".join(tokens[:max_tokens]).strip()
+        return self.text_splitter.token_counter.truncate_to_tokens(text, max_tokens)
 
     def _element_contributes_to_asset_context(
         self,

@@ -150,10 +150,10 @@ class SectionOverviewChunkBuilder:
         return self._truncate_to_token_limit("\n\n".join(texts))
 
     def _truncate_to_token_limit(self, text: str) -> str:
-        tokens = text.split()
-        if len(tokens) <= self.max_overview_tokens:
-            return text
-        return " ".join(tokens[: self.max_overview_tokens]).strip()
+        return self.text_splitter.token_counter.truncate_to_tokens(
+            text,
+            self.max_overview_tokens,
+        )
 
     @staticmethod
     def _should_skip_child_title(title: str | None) -> bool:

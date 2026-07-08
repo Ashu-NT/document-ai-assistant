@@ -9,6 +9,7 @@ from src.config.settings.ocr_settings import OCRSettings
 from src.config.settings.qdrant_settings import QdrantSettings
 from src.config.settings.retrieval_settings import RetrievalSettings
 from src.config.settings.classification_settings import ClassificationSettings
+from src.config.settings.chunking_settings import ChunkingSettings
 from src.config.settings.logging_settings import LoggingSettings
 from src.config.settings.agent_settings import AgentSettings
 from src.config.settings.langgraph_setting import LangGraphSettings
@@ -28,6 +29,7 @@ docling_settings = DoclingSettings()
 retrieval_settings = RetrievalSettings()
 guardrail_settings = GuardrailSettings()
 classification_settings = ClassificationSettings()
+chunking_settings = ChunkingSettings()
 logging_settings = LoggingSettings()
 agent_settings = AgentSettings()
 langgraph_settings = LangGraphSettings()

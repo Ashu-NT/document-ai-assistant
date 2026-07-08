@@ -13,6 +13,12 @@ from src.application.workflows.parsing.builders.chunking.builders.chunk_payload_
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
+from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter import (
+    ChunkTokenCounter,
+)
+from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter_factory import (
+    ChunkTokenCounterFactory,
+)
 from src.application.workflows.parsing.builders.chunking.runtime.chunking_runtime import (
     ChunkingRuntime,
 )
@@ -42,12 +48,16 @@ class ChunkingRuntimeFactory:
         max_chunk_tokens_override: int | None = None,
         chunk_overlap_override: int | None = None,
         min_section_text_length_override: int | None = None,
+        token_counter: ChunkTokenCounter | None = None,
+        token_counter_factory: ChunkTokenCounterFactory | None = None,
     ) -> None:
         self.policy_resolver = policy_resolver or DocumentChunkingPolicyResolver()
         self.structured_fragment_builder = structured_fragment_builder
         self.max_chunk_tokens_override = max_chunk_tokens_override
         self.chunk_overlap_override = chunk_overlap_override
         self.min_section_text_length_override = min_section_text_length_override
+        self.token_counter = token_counter
+        self.token_counter_factory = token_counter_factory or ChunkTokenCounterFactory()
 
     def create(
         self,
@@ -78,9 +88,11 @@ class ChunkingRuntimeFactory:
             if self.min_section_text_length_override is not None
             else max(12, policy.same_topic_merge_tokens // 6)
         )
+        token_counter = self.token_counter or self.token_counter_factory.create()
         text_splitter = ChunkTextSplitter(
             max_chunk_tokens=max_chunk_tokens,
             chunk_overlap=chunk_overlap,
+            token_counter=token_counter,
         )
         return ChunkingRuntime(
             policy=policy,

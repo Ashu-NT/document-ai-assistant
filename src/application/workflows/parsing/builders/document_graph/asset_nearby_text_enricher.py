@@ -1,6 +1,12 @@
 from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     clean_chunk_text,
 )
+from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter import (
+    ChunkTokenCounter,
+)
+from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter_factory import (
+    ChunkTokenCounterFactory,
+)
 from src.application.workflows.parsing.profiling import GraphBuildProfiler
 from src.domain.common import ElementType
 from src.domain.document import DocumentGraph
@@ -13,14 +19,24 @@ class AssetNearbyTextEnricher:
         *,
         context_window: int = 2,
         max_context_tokens: int = 72,
+        token_counter: ChunkTokenCounter | None = None,
+        token_counter_factory: ChunkTokenCounterFactory | None = None,
         profiler: GraphBuildProfiler | None = None,
     ) -> None:
         self.context_window = max(0, context_window)
         self.max_context_tokens = max(12, max_context_tokens)
+        self._token_counter = token_counter
+        self._token_counter_factory = token_counter_factory or ChunkTokenCounterFactory()
         self.profiler = profiler or GraphBuildProfiler.disabled()
 
     def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
         self.profiler = profiler or GraphBuildProfiler.disabled()
+
+    @property
+    def token_counter(self) -> ChunkTokenCounter:
+        if self._token_counter is None:
+            self._token_counter = self._token_counter_factory.create()
+        return self._token_counter
 
     def enrich(self, graph: DocumentGraph) -> None:
         if self.context_window <= 0:
@@ -98,7 +114,7 @@ class AssetNearbyTextEnricher:
                 continue
 
             selected_parts.append(text)
-            token_total += len(text.split())
+            token_total += self.token_counter.count_tokens(text)
 
         if not selected_parts:
             return None
@@ -165,9 +181,5 @@ class AssetNearbyTextEnricher:
             return True
         return abs(candidate_page - asset_page) <= 1
 
-    @staticmethod
-    def _truncate_to_token_limit(text: str, max_tokens: int) -> str:
-        tokens = text.split()
-        if len(tokens) <= max_tokens:
-            return text
-        return " ".join(tokens[:max_tokens]).strip()
+    def _truncate_to_token_limit(self, text: str, max_tokens: int) -> str:
+        return self.token_counter.truncate_to_tokens(text, max_tokens)

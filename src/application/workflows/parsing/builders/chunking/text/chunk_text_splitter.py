@@ -1,9 +1,13 @@
 import re
 
+from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter import (
+    ChunkTokenCounter,
+)
+from src.application.workflows.parsing.builders.chunking.text.tokenization.whitespace_chunk_token_counter import (
+    WhitespaceChunkTokenCounter,
+)
 from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     clean_chunk_text,
-    count_tokens,
-    tail_words,
 )
 
 
@@ -13,9 +17,11 @@ class ChunkTextSplitter:
         *,
         max_chunk_tokens: int = 200,
         chunk_overlap: int = 20,
+        token_counter: ChunkTokenCounter | None = None,
     ) -> None:
         self.max_chunk_tokens = max_chunk_tokens
         self.chunk_overlap = chunk_overlap
+        self.token_counter = token_counter or WhitespaceChunkTokenCounter()
 
     def split(self, text: str) -> list[str]:
         cleaned = clean_chunk_text(text)
@@ -39,7 +45,7 @@ class ChunkTextSplitter:
                 previous_source_window = source_window
                 continue
 
-            overlap_prefix = tail_words(
+            overlap_prefix = self.token_counter.tail_text(
                 previous_source_window,
                 self.chunk_overlap,
             )
@@ -52,7 +58,7 @@ class ChunkTextSplitter:
         return overlapped_windows
 
     def count_tokens(self, text: str | None) -> int:
-        return count_tokens(text)
+        return self.token_counter.count_tokens(text)
 
     def _split_recursively(
         self,
@@ -73,7 +79,7 @@ class ChunkTextSplitter:
         ]
 
         if level >= len(splitters):
-            return self._split_words(cleaned)
+            return self._split_token_windows(cleaned)
 
         splitter, joiner = splitters[level]
         parts = splitter(cleaned)
@@ -129,17 +135,5 @@ class ChunkTextSplitter:
             if part.strip()
         ]
 
-    def _split_words(self, text: str) -> list[str]:
-        tokens = text.split()
-        if not tokens:
-            return []
-
-        windows: list[str] = []
-        step = max(1, self.max_chunk_tokens)
-
-        for start in range(0, len(tokens), step):
-            window = tokens[start : start + self.max_chunk_tokens]
-            if window:
-                windows.append(" ".join(window))
-
-        return windows
+    def _split_token_windows(self, text: str) -> list[str]:
+        return self.token_counter.split_token_windows(text, self.max_chunk_tokens)

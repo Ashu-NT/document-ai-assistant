@@ -1,6 +1,12 @@
 import re
 from collections.abc import Iterable
 
+from src.application.workflows.parsing.builders.chunking.text.tokenization.whitespace_chunk_token_counter import (
+    WhitespaceChunkTokenCounter,
+)
+
+_WHITESPACE_TOKEN_COUNTER = WhitespaceChunkTokenCounter()
+
 
 def clean_chunk_text(text: str | None) -> str | None:
     if text is None:
@@ -11,21 +17,11 @@ def clean_chunk_text(text: str | None) -> str | None:
 
 
 def count_tokens(text: str | None) -> int:
-    if not text:
-        return 0
-
-    return len(text.split())
+    return _WHITESPACE_TOKEN_COUNTER.count_tokens(text)
 
 
 def tail_words(text: str, count: int) -> str:
-    if count <= 0:
-        return ""
-
-    tokens = text.split()
-    if not tokens:
-        return ""
-
-    return " ".join(tokens[-count:])
+    return _WHITESPACE_TOKEN_COUNTER.tail_text(text, count)
 
 
 def unique_preserve_order(values: Iterable[str]) -> list[str]:

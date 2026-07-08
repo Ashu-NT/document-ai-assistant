@@ -12,9 +12,19 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
     tail_words,
     unique_preserve_order,
 )
+from src.application.workflows.parsing.builders.chunking.text.tokenization import (
+    ChunkTokenCounter,
+    ChunkTokenCounterFactory,
+    TransformerChunkTokenCounter,
+    WhitespaceChunkTokenCounter,
+)
 
 __all__ = [
     "ChunkTextSplitter",
+    "ChunkTokenCounter",
+    "ChunkTokenCounterFactory",
+    "TransformerChunkTokenCounter",
+    "WhitespaceChunkTokenCounter",
     "clean_chunk_text",
     "common_path_prefix",
     "count_tokens",

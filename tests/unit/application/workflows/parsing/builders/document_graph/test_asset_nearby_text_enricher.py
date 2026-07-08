@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.builders.document_graph.asset_nearby_text_enricher import (
     AssetNearbyTextEnricher,
 )
+from src.application.workflows.parsing.builders.chunking.text.tokenization import (
+    WhitespaceChunkTokenCounter,
+)
 from src.domain.assets import TableAsset
 from src.domain.common import ElementType, SourceLocation
 from src.domain.document import Document, DocumentGraph, DocumentHashes, DocumentSection
@@ -121,3 +124,49 @@ def test_enrich_does_nothing_when_context_window_is_zero() -> None:
     AssetNearbyTextEnricher(context_window=0).enrich(graph)
 
     assert graph.tables["table_1"].metadata.nearby_text is None
+
+
+def test_enrich_truncates_nearby_text_with_token_counter_budget() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.add_section(
+        DocumentSection(section_id="sec_1", document_id="doc_001", title="Section")
+    )
+    intro_text = CanonicalElement(
+        element_id="el_intro",
+        document_id="doc_001",
+        element_type=ElementType.TEXT,
+        text=(
+            "alpha beta gamma delta epsilon zeta eta theta "
+            "iota kappa lambda mu nu"
+        ),
+        parent_section_id="sec_1",
+        source=SourceLocation(page_start=1, page_end=1),
+    )
+    table_element = CanonicalElement(
+        element_id="el_table",
+        document_id="doc_001",
+        element_type=ElementType.TABLE,
+        table_id="table_1",
+        parent_section_id="sec_1",
+        source=SourceLocation(page_start=1, page_end=1),
+    )
+
+    for element in (intro_text, table_element):
+        graph.add_element(element)
+    graph.sections["sec_1"].element_ids = ["el_intro", "el_table"]
+    graph.tables["table_1"] = TableAsset(
+        table_id="table_1",
+        document_id="doc_001",
+        markdown="| Part | Qty |",
+    )
+
+    AssetNearbyTextEnricher(
+        context_window=1,
+        max_context_tokens=2,
+        token_counter=WhitespaceChunkTokenCounter(),
+    ).enrich(graph)
+
+    assert graph.tables["table_1"].metadata.nearby_text == (
+        "alpha beta gamma delta epsilon zeta eta theta "
+        "iota kappa lambda mu"
+    )

@@ -2,6 +2,12 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from src.application.workflows.parsing.builders.chunking import SectionChunkBuilder
+from src.application.workflows.parsing.builders.chunking.runtime.chunking_runtime_factory import (
+    ChunkingRuntimeFactory,
+)
+from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter_factory import (
+    ChunkTokenCounterFactory,
+)
 from src.application.workflows.parsing.builders.document_graph import (
     AssetNearbyTextEnricher,
     GraphChunkBuilder,
@@ -68,10 +74,29 @@ class DocumentGraphBuilder:
         self.id_generator = id_generator
         self.section_builder = section_builder
         self.profiler = profiler or GraphBuildProfiler.disabled()
+        token_counter_factory = ChunkTokenCounterFactory()
         if section_chunk_builder is not None:
             self.section_chunk_builder = section_chunk_builder
         else:
             self.section_chunk_builder = SectionChunkBuilder(
+                runtime_factory=ChunkingRuntimeFactory(
+                    token_counter_factory=token_counter_factory,
+                    max_chunk_tokens_override=(
+                        max_chunk_tokens
+                        if max_chunk_tokens is not None
+                        else _default_max_chunk_tokens()
+                    ),
+                    chunk_overlap_override=(
+                        chunk_overlap
+                        if chunk_overlap is not None
+                        else _default_chunk_overlap()
+                    ),
+                    min_section_text_length_override=(
+                        min_section_text_length
+                        if min_section_text_length is not None
+                        else _default_min_section_text_length()
+                    ),
+                ),
                 max_chunk_tokens=(
                     max_chunk_tokens
                     if max_chunk_tokens is not None
@@ -91,6 +116,7 @@ class DocumentGraphBuilder:
             )
         self.asset_factory = ParsedAssetFactory(id_generator)
         self.asset_nearby_text_enricher = AssetNearbyTextEnricher(
+            token_counter_factory=token_counter_factory,
             profiler=self.profiler
         )
         self.chunk_builder = GraphChunkBuilder(

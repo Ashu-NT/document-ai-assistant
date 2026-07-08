@@ -67,6 +67,11 @@ class SectionChunkBuilder:
                 else chunk_overlap
             ),
             min_section_text_length_override=min_section_text_length,
+            token_counter=(
+                text_splitter.token_counter
+                if text_splitter is not None
+                else None
+            ),
         )
         self.payload_deduplicator = (
             payload_deduplicator or ChunkPayloadDeduplicator()
