@@ -3,8 +3,11 @@ import re
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )
+from src.config.logging import get_logger
 from src.domain.common import ChunkType
 from src.domain.retrieval import RetrievalQuery
+
+_logger = get_logger(__name__)
 
 # Patterns that signal the user is asking about what a document contains or how
 # it is structured, rather than asking for a specific fact inside the document.
@@ -245,6 +248,7 @@ def _infer_from_chunk_types(query: RetrievalQuery) -> RetrievalQueryIntent | Non
 class RetrievalQueryIntentInferer:
     def infer(self, query: RetrievalQuery | None) -> RetrievalQueryIntent:
         if query is None:
+            _logger.info("retrieval_intent_fallback_general reason=query_is_none")
             return RetrievalQueryIntent.GENERAL
 
         query_text = query.effective_query().strip().lower()
@@ -252,7 +256,15 @@ class RetrievalQueryIntentInferer:
             return RetrievalQueryIntent.DOCUMENT_EXPLORATION
 
         if not query_text:
-            return _infer_from_chunk_types(query) or RetrievalQueryIntent.GENERAL
+            intent = _infer_from_chunk_types(query)
+            if intent is None:
+                _logger.info(
+                    "retrieval_intent_fallback_general reason=empty_query_text "
+                    "query_id=%s",
+                    query.query_id,
+                )
+                return RetrievalQueryIntent.GENERAL
+            return intent
 
         if any(
             marker in query_text
@@ -355,4 +367,10 @@ class RetrievalQueryIntentInferer:
         if query.has_identifiers():
             return RetrievalQueryIntent.IDENTIFIER
 
+        _logger.info(
+            "retrieval_intent_fallback_general reason=no_pattern_matched "
+            "query_id=%s query_text=%r",
+            query.query_id,
+            query_text,
+        )
         return RetrievalQueryIntent.GENERAL
