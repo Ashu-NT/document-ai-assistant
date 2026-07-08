@@ -31,6 +31,7 @@ from src.infrastructure.db.orm_models import (
     SupplierORM,
     TroubleshootingEntryORM,
 )
+from src.infrastructure.db.repositories.common import bulk_merge
 from src.shared.exceptions import DatabaseError
 
 
@@ -102,8 +103,14 @@ class ExtractionWriter:
                     SemanticRelationshipORM.document_id == document_id
                 )
             )
-            for relationship in relationships:
-                self.session.merge(SemanticRelationshipMapper.to_orm(relationship))
+            bulk_merge(
+                self.session,
+                SemanticRelationshipORM,
+                [
+                    SemanticRelationshipMapper.to_orm(relationship)
+                    for relationship in relationships
+                ],
+            )
         except SQLAlchemyError as exc:
             raise DatabaseError(
                 "Failed to replace semantic relationships.",
@@ -116,85 +123,90 @@ class ExtractionWriter:
     def _insert_extraction_result(self, result: ExtractionResult) -> None:
         self.session.merge(ExtractionResultMapper.to_orm(result))
 
-        for task in result.maintenance_tasks:
-            self.session.merge(
-                MaintenanceTaskMapper.to_orm(
-                    task,
-                    extraction_id=result.extraction_id,
-                )
-            )
-
-        for spare_part in result.spare_parts:
-            self.session.merge(
-                SparePartMapper.to_orm(
-                    spare_part,
-                    extraction_id=result.extraction_id,
-                )
-            )
-
-        for equipment in result.equipment:
-            self.session.merge(
-                EquipmentInfoMapper.to_orm(
-                    equipment,
-                    extraction_id=result.extraction_id,
-                )
-            )
-
-        for manufacturer in result.manufacturers:
-            self.session.merge(
-                ManufacturerMapper.to_orm(
-                    manufacturer,
-                    extraction_id=result.extraction_id,
-                )
-            )
-
-        for supplier in result.suppliers:
-            self.session.merge(
-                SupplierMapper.to_orm(
-                    supplier,
-                    extraction_id=result.extraction_id,
-                )
-            )
-
-        for procedure in result.procedures:
-            self.session.merge(
-                ProcedureMapper.to_orm(
-                    procedure,
-                    extraction_id=result.extraction_id,
-                )
-            )
-
-        for specification in result.specifications:
-            self.session.merge(
-                SpecificationMapper.to_orm(
-                    specification,
-                    extraction_id=result.extraction_id,
-                )
-            )
-
-        for safety_warning in result.safety_warnings:
-            self.session.merge(
-                SafetyWarningMapper.to_orm(
-                    safety_warning,
-                    extraction_id=result.extraction_id,
-                )
-            )
-
-        for maintenance_interval in result.maintenance_intervals:
-            self.session.merge(
+        bulk_merge(
+            self.session,
+            MaintenanceTaskORM,
+            [
+                MaintenanceTaskMapper.to_orm(task, extraction_id=result.extraction_id)
+                for task in result.maintenance_tasks
+            ],
+        )
+        bulk_merge(
+            self.session,
+            SparePartORM,
+            [
+                SparePartMapper.to_orm(spare_part, extraction_id=result.extraction_id)
+                for spare_part in result.spare_parts
+            ],
+        )
+        bulk_merge(
+            self.session,
+            EquipmentInfoORM,
+            [
+                EquipmentInfoMapper.to_orm(equipment, extraction_id=result.extraction_id)
+                for equipment in result.equipment
+            ],
+        )
+        bulk_merge(
+            self.session,
+            ManufacturerORM,
+            [
+                ManufacturerMapper.to_orm(manufacturer, extraction_id=result.extraction_id)
+                for manufacturer in result.manufacturers
+            ],
+        )
+        bulk_merge(
+            self.session,
+            SupplierORM,
+            [
+                SupplierMapper.to_orm(supplier, extraction_id=result.extraction_id)
+                for supplier in result.suppliers
+            ],
+        )
+        bulk_merge(
+            self.session,
+            ProcedureORM,
+            [
+                ProcedureMapper.to_orm(procedure, extraction_id=result.extraction_id)
+                for procedure in result.procedures
+            ],
+        )
+        bulk_merge(
+            self.session,
+            SpecificationORM,
+            [
+                SpecificationMapper.to_orm(specification, extraction_id=result.extraction_id)
+                for specification in result.specifications
+            ],
+        )
+        bulk_merge(
+            self.session,
+            SafetyWarningORM,
+            [
+                SafetyWarningMapper.to_orm(safety_warning, extraction_id=result.extraction_id)
+                for safety_warning in result.safety_warnings
+            ],
+        )
+        bulk_merge(
+            self.session,
+            MaintenanceIntervalORM,
+            [
                 MaintenanceIntervalMapper.to_orm(
-                    maintenance_interval,
-                    extraction_id=result.extraction_id,
+                    maintenance_interval, extraction_id=result.extraction_id
                 )
-            )
-
-        for troubleshooting_entry in result.troubleshooting_entries:
-            self.session.merge(
+                for maintenance_interval in result.maintenance_intervals
+            ],
+        )
+        bulk_merge(
+            self.session,
+            TroubleshootingEntryORM,
+            [
                 TroubleshootingEntryMapper.to_orm(
-                    troubleshooting_entry,
-                    extraction_id=result.extraction_id,
+                    troubleshooting_entry, extraction_id=result.extraction_id
                 )
-            )
+                for troubleshooting_entry in result.troubleshooting_entries
+            ],
+        )
 
     def _delete_extraction_result(self, document_id: str) -> None:
         self.session.execute(

@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from collections import OrderedDict
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 from src.application.workflows.question_answering.answer_context.structured_answer_context import (
     AnswerMaintenanceEntry,
@@ -19,53 +20,93 @@ _ARTICLES = {"the", "a", "an"}
 _NOT_SPECIFIED = "Not specified"
 
 
+@dataclass(slots=True)
+class _EntryProfile:
+    """Caches the four normalized fields _are_mergeable() needs, computed
+    once per entry (and once per merge result) instead of being re-derived
+    via fresh regex scans on both sides of every pairwise comparison."""
+
+    entry: AnswerMaintenanceEntry
+    normalized_interval: str
+    leading_action: str
+    normalized_task: str
+    normalized_component: str
+
+
 class MaintenanceEntryMerger:
     def merge(
         self,
         entries: Sequence[AnswerMaintenanceEntry],
     ) -> list[AnswerMaintenanceEntry]:
-        merged_entries: list[AnswerMaintenanceEntry] = []
-        for entry in entries:
+        # Two entries can only ever merge if their normalized interval AND
+        # leading action both match exactly (the first two gates in
+        # _are_mergeable) -- so bucketing by that pair up front is
+        # behavior-identical to comparing every entry against every other
+        # entry, just without the guaranteed-false cross-bucket comparisons.
+        buckets: dict[tuple[str, str], list[dict]] = {}
+
+        for index, entry in enumerate(entries):
+            profile = self._build_profile(entry)
+            key = (profile.normalized_interval, profile.leading_action)
+            bucket = buckets.setdefault(key, [])
+
             merged = False
-            for index, candidate in enumerate(merged_entries):
-                if self._are_mergeable(candidate, entry):
-                    merged_entries[index] = self._merge_pair(candidate, entry)
+            for slot in bucket:
+                if self._profiles_mergeable(slot["profile"], profile):
+                    merged_entry = self._merge_pair(slot["profile"].entry, entry)
+                    slot["profile"] = self._build_profile(merged_entry)
                     merged = True
                     break
+
             if not merged:
-                merged_entries.append(self._normalized_copy(entry))
-        return merged_entries
+                bucket.append(
+                    {
+                        "profile": self._build_profile(
+                            self._normalized_copy(entry)
+                        ),
+                        "first_seen_index": index,
+                    }
+                )
 
-    def _are_mergeable(
+        all_slots = [slot for bucket in buckets.values() for slot in bucket]
+        all_slots.sort(key=lambda slot: slot["first_seen_index"])
+        return [slot["profile"].entry for slot in all_slots]
+
+    def _build_profile(self, entry: AnswerMaintenanceEntry) -> _EntryProfile:
+        return _EntryProfile(
+            entry=entry,
+            normalized_interval=self._normalize_interval(entry.interval),
+            leading_action=self._leading_action(entry.task),
+            normalized_task=self._normalize_text(entry.task),
+            normalized_component=self._normalize_component(entry.component),
+        )
+
+    def _profiles_mergeable(
         self,
-        left: AnswerMaintenanceEntry,
-        right: AnswerMaintenanceEntry,
+        left: _EntryProfile,
+        right: _EntryProfile,
     ) -> bool:
-        if self._normalize_interval(left.interval) != self._normalize_interval(
-            right.interval
+        """Task/component half of _are_mergeable(), operating on precomputed
+        fields. Interval/action equality is already guaranteed by both
+        profiles sharing the same bucket key in merge()."""
+        if left.normalized_task == right.normalized_task:
+            return True
+        if left.normalized_task in right.normalized_task or right.normalized_task in left.normalized_task:
+            return True
+
+        if not left.normalized_component or not right.normalized_component:
+            return False
+        if left.normalized_component == right.normalized_component:
+            return True
+        if (
+            left.normalized_component in right.normalized_component
+            or right.normalized_component in left.normalized_component
         ):
-            return False
-        left_action = self._leading_action(left.task)
-        right_action = self._leading_action(right.task)
-        if left_action != right_action:
-            return False
-
-        left_task = self._normalize_text(left.task)
-        right_task = self._normalize_text(right.task)
-        if left_task == right_task:
             return True
-        if left_task in right_task or right_task in left_task:
-            return True
-
-        left_component = self._normalize_component(left.component)
-        right_component = self._normalize_component(right.component)
-        if not left_component or not right_component:
-            return False
-        if left_component == right_component:
-            return True
-        if left_component in right_component or right_component in left_component:
-            return True
-        return self._token_overlap(left_component, right_component) >= 0.75
+        return (
+            self._token_overlap(left.normalized_component, right.normalized_component)
+            >= 0.75
+        )
 
     def _merge_pair(
         self,

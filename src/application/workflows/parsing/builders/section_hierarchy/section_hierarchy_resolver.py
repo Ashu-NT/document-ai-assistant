@@ -153,6 +153,9 @@ class SectionHierarchyResolver:
         resolution: SectionHierarchyResolution,
     ) -> None:
         ordered_headers = sorted(headers, key=lambda header: header.order_index)
+        header_index_by_id: dict[str, int] = {
+            header.element_id: index for index, header in enumerate(ordered_headers)
+        }
         number_to_header_id: dict[str, str] = {}
         for header in ordered_headers:
             number = resolution.header_numberings.get(header.element_id)
@@ -190,6 +193,7 @@ class SectionHierarchyResolver:
                 ordered_headers,
                 resolution,
                 number_to_header_id,
+                header_index_by_id,
             )
             if parent_header_id is None:
                 continue
@@ -274,8 +278,9 @@ class SectionHierarchyResolver:
         ordered_headers: list[CanonicalElement],
         resolution: SectionHierarchyResolution,
         number_to_header_id: dict[str, str],
+        header_index_by_id: dict[str, int],
     ) -> str | None:
-        header_index = ordered_headers.index(header)
+        header_index = header_index_by_id[header.element_id]
         header_page = header.page_start or header.page_end
 
         for next_header in ordered_headers[header_index + 1 :]:

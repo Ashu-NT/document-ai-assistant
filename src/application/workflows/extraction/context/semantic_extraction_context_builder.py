@@ -20,7 +20,7 @@ class SemanticExtractionContextBuilder:
         sections: dict[str, DocumentSection] | None = None,
     ) -> dict[str, SemanticExtractionContext]:
         section_lookup = sections or {}
-        chunks_by_section = self._group_by_section(chunks)
+        chunks_by_section, index_by_chunk_id = self._group_by_section(chunks)
 
         contexts: dict[str, SemanticExtractionContext] = {}
         for chunk in chunks:
@@ -32,7 +32,7 @@ class SemanticExtractionContextBuilder:
                 chunk=chunk,
                 section=section,
                 nearby_chunk_ids=self._resolve_nearby_chunk_ids(
-                    chunk, chunks_by_section
+                    chunk, chunks_by_section, index_by_chunk_id
                 ),
             )
         return contexts
@@ -40,35 +40,36 @@ class SemanticExtractionContextBuilder:
     @staticmethod
     def _group_by_section(
         chunks: list[DocumentChunk],
-    ) -> dict[str, list[DocumentChunk]]:
+    ) -> tuple[dict[str, list[DocumentChunk]], dict[str, int]]:
         grouped: dict[str, list[DocumentChunk]] = {}
         for chunk in chunks:
             if not chunk.section_id:
                 continue
             grouped.setdefault(chunk.section_id, []).append(chunk)
 
+        # Each chunk's position within its (now-sorted) section list is
+        # recorded here as it's computed, so _resolve_nearby_chunk_ids can
+        # look it up in O(1) instead of re-scanning the section's chunk
+        # list to find "where am I" for every chunk.
+        index_by_chunk_id: dict[str, int] = {}
         for section_chunks in grouped.values():
             section_chunks.sort(key=lambda chunk: chunk.chunk_index)
+            for index, chunk in enumerate(section_chunks):
+                index_by_chunk_id[chunk.chunk_id] = index
 
-        return grouped
+        return grouped, index_by_chunk_id
 
     @staticmethod
     def _resolve_nearby_chunk_ids(
         chunk: DocumentChunk,
         chunks_by_section: dict[str, list[DocumentChunk]],
+        index_by_chunk_id: dict[str, int],
     ) -> tuple[str, ...]:
         if not chunk.section_id:
             return ()
 
         siblings = chunks_by_section.get(chunk.section_id, [])
-        index = next(
-            (
-                i
-                for i, sibling in enumerate(siblings)
-                if sibling.chunk_id == chunk.chunk_id
-            ),
-            None,
-        )
+        index = index_by_chunk_id.get(chunk.chunk_id)
         if index is None:
             return ()
 

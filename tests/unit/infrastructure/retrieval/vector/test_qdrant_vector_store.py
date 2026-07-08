@@ -82,7 +82,11 @@ class FakeEmbeddingProvider:
 
 
 class FakeDocumentRepository:
+    def __init__(self) -> None:
+        self.get_document_graph_calls: list[str] = []
+
     def get_document_graph(self, document_id: str):
+        self.get_document_graph_calls.append(document_id)
         return DocumentGraph(
             document=Document(
                 document_id=document_id,
@@ -163,6 +167,39 @@ def test_qdrant_vector_store_saves_chunk_payload_and_mapping(sample_chunk) -> No
     assert client.upsert_calls[0]["points"][0].payload["document_type"] == "manual"
     assert len(mapping_repository.save_calls) == 1
     assert mapping_repository.save_calls[0]["chunk_id"] == sample_chunk.chunk_id
+
+
+def test_qdrant_vector_store_saves_load_each_document_graph_only_once(
+    sample_chunk,
+) -> None:
+    """document_type and identifier_values both need per-document graph
+    data, but the graph should only be fetched once per unique document,
+    not once per lookup."""
+    document_repository = FakeDocumentRepository()
+    store = QdrantVectorStore(
+        client=FakeQdrantClient(),
+        mapping_repository=FakeVectorMappingRepository(),
+        collection_name="document_chunks",
+        embedding_model="BAAI/bge-small-en-v1.5",
+        query_embedding_provider=FakeEmbeddingProvider(),
+        document_repository=document_repository,
+    )
+    embedded_chunk = EmbeddedChunk(
+        chunk_id=sample_chunk.chunk_id,
+        document_id=sample_chunk.document_id,
+        section_id=sample_chunk.section_id,
+        content=sample_chunk.content,
+        chunk_type=sample_chunk.chunk_type,
+        section_path=list(sample_chunk.section_path),
+        element_ids=list(sample_chunk.element_ids),
+        source=sample_chunk.source,
+        embedding_text=sample_chunk.embedding_text,
+        embedding=[0.1, 0.2, 0.3],
+    )
+
+    store.save_chunk_vectors([embedded_chunk])
+
+    assert document_repository.get_document_graph_calls == [sample_chunk.document_id]
 
 
 def test_qdrant_vector_store_search_builds_document_type_filter(

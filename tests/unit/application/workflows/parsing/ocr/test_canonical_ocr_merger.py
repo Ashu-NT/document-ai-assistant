@@ -124,3 +124,63 @@ def test_attaches_asset_ocr_metadata_without_creating_duplicate_page_text() -> N
     assert result.added_synthetic_elements == 0
     assert result.canonical_elements[0].metadata["ocr_text"] == "FILTER HOUSING"
 
+
+def test_inserts_synthetic_text_element_right_after_its_source_element() -> None:
+    """Exercises the source_element_id lookup path (now a dict lookup
+    instead of a full-list scan) for a text-fallback target, across
+    multiple pre-existing elements, and confirms insertion position."""
+    merger = CanonicalOCRMerger(
+        id_generator=IdGenerator(),
+        merge_policy=OCRMergePolicy(),
+    )
+    elements = [
+        make_element(
+            element_id="hdr_1", element_type=ElementType.SECTION_HEADER,
+            text="Chapter 1", page_number=1,
+        ),
+        make_element(
+            element_id="txt_1", element_type=ElementType.TEXT,
+            text="Some existing text.", page_number=1,
+        ),
+        make_element(
+            element_id="hdr_2", element_type=ElementType.SECTION_HEADER,
+            text="Chapter 2", page_number=2,
+        ),
+    ]
+    target = OCRTarget(
+        target_id="region:txt_1",
+        target_type=OCRTargetType.PAGE,
+        document_path="manual.pdf",
+        page_number=1,
+        source_element_id="txt_1",
+        reason="low_text_density",
+    )
+    execution = OCRTargetExecutionResult(
+        target=target,
+        source_image_path="page_1.png",
+        ocr_result=OCRResult(
+            text="Torque setting 35 Nm for the flange bolts.",
+            provider_name="FakeOCR",
+            confidence=0.9,
+        ),
+    )
+
+    result = merger.merge(
+        document_path="manual.pdf",
+        page_count=2,
+        canonical_elements=elements,
+        selection_result=OCRSelectionResult(targets=[target]),
+        execution_results=[execution],
+    )
+
+    assert result.added_synthetic_elements == 1
+    ids_in_order = [element.element_id for element in result.canonical_elements]
+    # The synthetic element must land immediately after its source element.
+    assert ids_in_order.index("txt_1") + 1 == ids_in_order.index(
+        next(
+            element.element_id
+            for element in result.canonical_elements
+            if element.metadata.get("ocr_target_id") == "region:txt_1"
+        )
+    )
+

@@ -38,13 +38,16 @@ class CanonicalOCRMerger:
         document_id: str | None = None,
     ) -> OCRMergeResult:
         merged_elements = list(canonical_elements)
+        elements_by_id = {element.element_id: element for element in merged_elements}
         warnings = list(selection_result.warnings)
         added_synthetic_elements = 0
         updated_asset_elements = 0
 
         for execution in execution_results:
+            source_element = self._find_source_element(elements_by_id, execution)
+
             if execution.target.target_type == OCRTargetType.ASSET:
-                if self._merge_asset_target(merged_elements, execution):
+                if self._merge_asset_target(source_element, execution):
                     updated_asset_elements += 1
                 if execution.error:
                     warnings.append(
@@ -69,13 +72,16 @@ class CanonicalOCRMerger:
 
             synthetic_element = self._build_synthetic_element(
                 merged_elements=merged_elements,
+                source_element=source_element,
                 execution=execution,
             )
             insertion_index = self._resolve_insertion_index(
                 merged_elements,
-                execution,
+                source_element=source_element,
+                execution=execution,
             )
             merged_elements.insert(insertion_index, synthetic_element)
+            elements_by_id[synthetic_element.element_id] = synthetic_element
             added_synthetic_elements += 1
 
         self._renumber_order_indexes(merged_elements)
@@ -103,10 +109,9 @@ class CanonicalOCRMerger:
 
     def _merge_asset_target(
         self,
-        merged_elements: list[CanonicalElement],
+        element: CanonicalElement | None,
         execution: OCRTargetExecutionResult,
     ) -> bool:
-        element = self._find_source_element(merged_elements, execution)
         if element is None:
             return False
 
@@ -128,9 +133,9 @@ class CanonicalOCRMerger:
         self,
         *,
         merged_elements: list[CanonicalElement],
+        source_element: CanonicalElement | None,
         execution: OCRTargetExecutionResult,
     ) -> CanonicalElement:
-        source_element = self._find_source_element(merged_elements, execution)
         document_id = (
             source_element.document_id
             if source_element is not None
@@ -162,9 +167,10 @@ class CanonicalOCRMerger:
     def _resolve_insertion_index(
         self,
         merged_elements: list[CanonicalElement],
+        *,
+        source_element: CanonicalElement | None,
         execution: OCRTargetExecutionResult,
     ) -> int:
-        source_element = self._find_source_element(merged_elements, execution)
         if source_element is not None:
             for index, element in enumerate(merged_elements):
                 if element.element_id == source_element.element_id:
@@ -269,14 +275,11 @@ class CanonicalOCRMerger:
 
     @staticmethod
     def _find_source_element(
-        merged_elements: list[CanonicalElement],
+        elements_by_id: dict[str, CanonicalElement],
         execution: OCRTargetExecutionResult,
     ) -> CanonicalElement | None:
         source_element_id = execution.target.source_element_id
         if source_element_id is None:
             return None
-        for element in merged_elements:
-            if element.element_id == source_element_id:
-                return element
-        return None
+        return elements_by_id.get(source_element_id)
 

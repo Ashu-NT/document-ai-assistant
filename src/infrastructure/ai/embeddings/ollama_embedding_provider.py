@@ -42,4 +42,18 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             ) from exc
 
     def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        return [self.embed_text(t) for t in texts]
+        try:
+            import ollama  # type: ignore[import-untyped]
+        except ImportError as exc:
+            raise InfrastructureError(
+                "ollama package is required for OllamaEmbeddingProvider.",
+                details={"model_name": self.model_name},
+            ) from exc
+        try:
+            response = ollama.embed(model=self.model_name, input=texts)
+            return [list(embedding) for embedding in response["embeddings"]]
+        except Exception as exc:
+            raise InfrastructureError(
+                "Failed to generate batch embeddings via Ollama.",
+                details={"model_name": self.model_name, "base_url": self.base_url},
+            ) from exc

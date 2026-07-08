@@ -33,17 +33,16 @@ class AssetNearbyTextEnricher:
                 "pictures": len(graph.pictures),
             },
         ) as stage:
+            elements_by_table_id, elements_by_picture_id = self._index_asset_elements(
+                graph
+            )
             enriched_assets = 0
-            for asset_collection, asset_kind in (
-                (graph.tables, "table"),
-                (graph.pictures, "picture"),
+            for asset_collection, elements_by_asset_id in (
+                (graph.tables, elements_by_table_id),
+                (graph.pictures, elements_by_picture_id),
             ):
                 for asset_id, asset in asset_collection.items():
-                    asset_element = self._find_asset_element(
-                        graph=graph,
-                        asset_id=asset_id,
-                        asset_kind=asset_kind,
-                    )
+                    asset_element = elements_by_asset_id.get(asset_id)
                     if asset_element is None or asset_element.parent_section_id is None:
                         continue
 
@@ -107,18 +106,20 @@ class AssetNearbyTextEnricher:
         return clean_chunk_text("\n\n".join(selected_parts))
 
     @staticmethod
-    def _find_asset_element(
-        *,
+    def _index_asset_elements(
         graph: DocumentGraph,
-        asset_id: str,
-        asset_kind: str,
-    ) -> CanonicalElement | None:
+    ) -> tuple[dict[str, CanonicalElement], dict[str, CanonicalElement]]:
+        """Builds table_id/picture_id -> owning element lookups in one pass
+        over the document's elements, instead of scanning every element
+        again for every table/picture asset."""
+        elements_by_table_id: dict[str, CanonicalElement] = {}
+        elements_by_picture_id: dict[str, CanonicalElement] = {}
         for element in graph.elements.values():
-            if asset_kind == "table" and element.table_id == asset_id:
-                return element
-            if asset_kind == "picture" and element.picture_id == asset_id:
-                return element
-        return None
+            if element.table_id is not None:
+                elements_by_table_id.setdefault(element.table_id, element)
+            if element.picture_id is not None:
+                elements_by_picture_id.setdefault(element.picture_id, element)
+        return elements_by_table_id, elements_by_picture_id
 
     @staticmethod
     def _find_element_index(

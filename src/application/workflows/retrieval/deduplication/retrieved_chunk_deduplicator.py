@@ -32,9 +32,66 @@ class RetrievedChunkDeduplicator:
         chunks: list[RetrievedChunk],
     ) -> RetrievalDeduplicationResult:
         query_identifiers = self._query_identifiers(query)
+
+        # duplicate_reason() always returns None for a cross-document pair
+        # (see RetrievalDeduplicationPolicy.duplicate_reason's first check),
+        # so bucketing by document_id before the pairwise comparison below
+        # is behavior-identical -- it only skips comparisons that were
+        # already guaranteed to find no match. Cuts the O(n^2) comparison
+        # volume down to the sum of per-document group sizes squared,
+        # instead of the full candidate pool squared.
+        chunks_by_document: dict[str, list[tuple[int, RetrievedChunk]]] = {}
+        for index, chunk in enumerate(chunks):
+            chunks_by_document.setdefault(chunk.document_id, []).append(
+                (index, chunk)
+            )
+
+        groups: list[dict[str, object]] = []
+        for indexed_chunks in chunks_by_document.values():
+            groups.extend(
+                self._group_document_chunks(
+                    indexed_chunks,
+                    query_identifiers=query_identifiers,
+                )
+            )
+
+        # Restore the original chunk order for the returned groups -- each
+        # group's position should reflect where its first chunk appeared in
+        # the input, not the document-bucketing order used internally.
+        groups.sort(key=lambda group: group["first_seen_index"])
+
+        duplicate_groups = [
+            self._to_duplicate_group(group)
+            for group in groups
+        ]
+        representatives = sorted(
+            (
+                group.representative
+                for group in duplicate_groups
+            ),
+            key=lambda chunk: (
+                -chunk.score,
+                self._coerce_int(chunk.metadata.get("sequence_number")) or 10**6,
+                chunk.source.page_start or chunk.source.page_end or 10**6,
+            ),
+        )
+        return RetrievalDeduplicationResult(
+            chunks=representatives,
+            groups=duplicate_groups,
+        )
+
+    def _group_document_chunks(
+        self,
+        indexed_chunks: list[tuple[int, RetrievedChunk]],
+        *,
+        query_identifiers: set[str],
+    ) -> list[dict[str, object]]:
+        """Runs the pairwise duplicate-matching loop over chunks already
+        known to belong to the same document. Extracted so deduplicate()
+        can call it once per document bucket instead of once globally."""
         groups: list[dict[str, object]] = []
 
-        for chunk in chunks:
+        for index, chunk in indexed_chunks:
             signature = RetrievedChunkSignature.from_chunk(chunk)
             matched_group: dict[str, object] | None = None
             matched_reason: str | None = None
@@ -60,6 +117,7 @@ class RetrievedChunkDeduplicator:
                         "collapsed": [],
                         "reason": None,
                         "selection_reason": "unique_candidate",
+                        "first_seen_index": index,
                     }
                 )
                 continue
@@ -99,25 +157,7 @@ class RetrievedChunkDeduplicator:
 
             matched_group["reason"] = matched_reason
 
-        duplicate_groups = [
-            self._to_duplicate_group(group)
-            for group in groups
-        ]
-        representatives = sorted(
-            (
-                group.representative
-                for group in duplicate_groups
-            ),
-            key=lambda chunk: (
-                -chunk.score,
-                self._coerce_int(chunk.metadata.get("sequence_number")) or 10**6,
-                chunk.source.page_start or chunk.source.page_end or 10**6,
-            ),
-        )
-        return RetrievalDeduplicationResult(
-            chunks=representatives,
-            groups=duplicate_groups,
-        )
+        return groups
 
     def _is_better_representative(
         self,

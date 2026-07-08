@@ -12,6 +12,7 @@ from src.infrastructure.db.mappers import (
     IdentifierMapper,
     SectionMapper,
 )
+from src.infrastructure.db.repositories.common import bulk_merge
 from src.infrastructure.db.orm_models import (
     ChunkORM,
     ChunkClassificationORM,
@@ -85,21 +86,39 @@ class DocumentWriter:
     def _merge_document_structure(self, document_graph: DocumentGraph) -> None:
         self.session.merge(DocumentMapper.to_orm(document_graph.document))
 
-        for section in document_graph.sections.values():
-            self.session.merge(SectionMapper.to_orm(section))
-
-        for element in document_graph.elements.values():
-            self.session.merge(ElementMapper.to_orm(element))
+        bulk_merge(
+            self.session,
+            SectionORM,
+            [SectionMapper.to_orm(section) for section in document_graph.sections.values()],
+        )
+        bulk_merge(
+            self.session,
+            ElementORM,
+            [ElementMapper.to_orm(element) for element in document_graph.elements.values()],
+        )
 
     def _merge_chunk_artifacts(self, document_graph: DocumentGraph) -> None:
-        for chunk in document_graph.chunks.values():
-            self.session.merge(ChunkMapper.to_orm(chunk))
-
-        for question in document_graph.questions.values():
-            self.session.merge(GeneratedQuestionMapper.to_orm(question))
-
-        for identifier in document_graph.identifiers.values():
-            self.session.merge(IdentifierMapper.to_orm(identifier))
+        bulk_merge(
+            self.session,
+            ChunkORM,
+            [ChunkMapper.to_orm(chunk) for chunk in document_graph.chunks.values()],
+        )
+        bulk_merge(
+            self.session,
+            GeneratedQuestionORM,
+            [
+                GeneratedQuestionMapper.to_orm(question)
+                for question in document_graph.questions.values()
+            ],
+        )
+        bulk_merge(
+            self.session,
+            IdentifierORM,
+            [
+                IdentifierMapper.to_orm(identifier)
+                for identifier in document_graph.identifiers.values()
+            ],
+        )
 
     def _delete_document_chunk_artifacts(self, document_id: str) -> None:
         self.session.execute(
@@ -145,8 +164,11 @@ class DocumentWriter:
 
     def write_identifiers(self, identifiers: list[Identifier]) -> None:
         try:
-            for identifier in identifiers:
-                self.session.merge(IdentifierMapper.to_orm(identifier))
+            bulk_merge(
+                self.session,
+                IdentifierORM,
+                [IdentifierMapper.to_orm(identifier) for identifier in identifiers],
+            )
         except SQLAlchemyError as exc:
             raise DatabaseError(
                 "Failed to write identifiers.",

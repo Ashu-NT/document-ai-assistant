@@ -29,6 +29,123 @@ def _default_max_context_chunks() -> int:
         return 8
 
 
+class _DocumentChunkIndex:
+    """Pre-indexes one document's chunk list once so a per-anchor lookup
+    only touches chunks that could plausibly match one of
+    RetrievalContextExpander's relation types, instead of scanning every
+    chunk in the document for every anchor. Each index is a superset lookup
+    (it may occasionally include a chunk that _context_relation ultimately
+    rejects), never a subset -- the unchanged relation-checking logic is
+    still the final word on whether a candidate actually qualifies."""
+
+    def __init__(
+        self,
+        *,
+        by_chunk_id: dict[str, object],
+        by_section_id: dict[str, list],
+        by_table_id: dict[str, list],
+        by_picture_id: dict[str, list],
+        overview_by_section_path: dict[tuple, list],
+        by_section_path_prefix: dict[tuple, list],
+        by_parent_path: dict[tuple, list],
+        by_sequence_number: dict[int, list],
+    ) -> None:
+        self.by_chunk_id = by_chunk_id
+        self.by_section_id = by_section_id
+        self.by_table_id = by_table_id
+        self.by_picture_id = by_picture_id
+        self.overview_by_section_path = overview_by_section_path
+        self.by_section_path_prefix = by_section_path_prefix
+        self.by_parent_path = by_parent_path
+        self.by_sequence_number = by_sequence_number
+
+    @classmethod
+    def build(cls, document_chunks: list) -> "_DocumentChunkIndex":
+        by_chunk_id: dict[str, object] = {}
+        by_section_id: dict[str, list] = {}
+        by_table_id: dict[str, list] = {}
+        by_picture_id: dict[str, list] = {}
+        overview_by_section_path: dict[tuple, list] = {}
+        by_section_path_prefix: dict[tuple, list] = {}
+        by_parent_path: dict[tuple, list] = {}
+        by_sequence_number: dict[int, list] = {}
+
+        for chunk in document_chunks:
+            by_chunk_id[chunk.chunk_id] = chunk
+
+            if chunk.section_id is not None:
+                by_section_id.setdefault(chunk.section_id, []).append(chunk)
+
+            for table_id in chunk.table_ids:
+                by_table_id.setdefault(table_id, []).append(chunk)
+            for picture_id in chunk.picture_ids:
+                by_picture_id.setdefault(picture_id, []).append(chunk)
+
+            path = tuple(chunk.section_path)
+            if chunk.chunk_type == ChunkType.OVERVIEW:
+                overview_by_section_path.setdefault(path, []).append(chunk)
+
+            # Every proper prefix of this chunk's own path is a bucket it
+            # belongs to, for _is_descendant_detail: "chunks whose path
+            # starts with the anchor's path" is answered by looking up the
+            # anchor's own (exact) path in this index.
+            for prefix_length in range(len(path)):
+                by_section_path_prefix.setdefault(path[:prefix_length], []).append(chunk)
+
+            if len(path) >= 1:
+                by_parent_path.setdefault(path[:-1], []).append(chunk)
+
+            by_sequence_number.setdefault(chunk.sequence_number, []).append(chunk)
+
+        return cls(
+            by_chunk_id=by_chunk_id,
+            by_section_id=by_section_id,
+            by_table_id=by_table_id,
+            by_picture_id=by_picture_id,
+            overview_by_section_path=overview_by_section_path,
+            by_section_path_prefix=by_section_path_prefix,
+            by_parent_path=by_parent_path,
+            by_sequence_number=by_sequence_number,
+        )
+
+    def plausible_candidates(
+        self,
+        anchor_document_chunk,
+        *,
+        neighbor_window: int,
+    ) -> list:
+        candidates: dict[str, object] = {}
+
+        def _add_all(chunks: list) -> None:
+            for chunk in chunks:
+                candidates[chunk.chunk_id] = chunk
+
+        if anchor_document_chunk.section_id is not None:
+            _add_all(self.by_section_id.get(anchor_document_chunk.section_id, []))
+
+        anchor_path = tuple(anchor_document_chunk.section_path)
+        for prefix_length in range(len(anchor_path)):
+            _add_all(self.overview_by_section_path.get(anchor_path[:prefix_length], []))
+
+        for table_id in anchor_document_chunk.table_ids:
+            _add_all(self.by_table_id.get(table_id, []))
+        for picture_id in anchor_document_chunk.picture_ids:
+            _add_all(self.by_picture_id.get(picture_id, []))
+
+        _add_all(self.by_section_path_prefix.get(anchor_path, []))
+
+        if len(anchor_path) > 1:
+            _add_all(self.by_parent_path.get(anchor_path[:-1], []))
+
+        sequence_number = anchor_document_chunk.sequence_number
+        for offset in range(-neighbor_window, neighbor_window + 1):
+            if offset == 0:
+                continue
+            _add_all(self.by_sequence_number.get(sequence_number + offset, []))
+
+        return list(candidates.values())
+
+
 class RetrievalContextExpander:
     def __init__(
         self,
@@ -63,6 +180,7 @@ class RetrievalContextExpander:
 
         query_intent = self.query_intent_inferer.infer(query)
         chunk_cache: dict[str, list] = {}
+        index_cache: dict[str, "_DocumentChunkIndex"] = {}
         candidates_by_anchor_id: dict[str, list[RetrievalContextCandidate]] = {}
 
         for anchor_chunk in chunks:
@@ -72,19 +190,19 @@ class RetrievalContextExpander:
                     anchor_chunk.document_id
                 )
                 chunk_cache[anchor_chunk.document_id] = document_chunks
+                index_cache[anchor_chunk.document_id] = _DocumentChunkIndex.build(
+                    document_chunks
+                )
 
-            chunk_by_id = {
-                document_chunk.chunk_id: document_chunk
-                for document_chunk in document_chunks
-            }
-            anchor_document_chunk = chunk_by_id.get(anchor_chunk.chunk_id)
+            chunk_index = index_cache[anchor_chunk.document_id]
+            anchor_document_chunk = chunk_index.by_chunk_id.get(anchor_chunk.chunk_id)
             if anchor_document_chunk is None:
                 continue
 
             candidates_by_anchor_id[anchor_chunk.chunk_id] = (
                 self._select_context_chunks(
                     anchor_chunk=anchor_chunk,
-                    document_chunks=document_chunks,
+                    chunk_index=chunk_index,
                     anchor_document_chunk=anchor_document_chunk,
                     query_intent=query_intent,
                 )
@@ -108,13 +226,16 @@ class RetrievalContextExpander:
         self,
         *,
         anchor_chunk: RetrievedChunk,
-        document_chunks: list,
+        chunk_index: "_DocumentChunkIndex",
         anchor_document_chunk,
         query_intent: RetrievalQueryIntent,
     ) -> list[RetrievalContextCandidate]:
         candidates_by_chunk_id: dict[str, RetrievalContextCandidate] = {}
 
-        for document_chunk in document_chunks:
+        for document_chunk in chunk_index.plausible_candidates(
+            anchor_document_chunk,
+            neighbor_window=self.neighbor_window,
+        ):
             if document_chunk.chunk_id == anchor_document_chunk.chunk_id:
                 continue
 

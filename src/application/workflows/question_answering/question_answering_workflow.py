@@ -269,8 +269,9 @@ class QuestionAnsweringWorkflow:
 
         all_chunk_ids = {c.chunk_id for c in workflow_result.final_chunks}
         approved_ids = [c.chunk_id for c in approved_chunks]
+        approved_id_set = set(approved_ids)
         rejected_chunk_ids = [
-            cid for cid in all_chunk_ids if cid not in set(approved_ids)
+            cid for cid in all_chunk_ids if cid not in approved_id_set
         ]
 
         best_score = workflow_result.retrieval_result.best_score()

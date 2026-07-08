@@ -291,3 +291,26 @@ def test_diagnostics_include_collapsed_chunk_ids_and_reason() -> None:
     assert representative.metadata["dedup_collapsed_chunk_ids"] == "chunk_context"
     assert representative.metadata["dedup_reason"] == "context_companion_duplicate"
     assert representative.metadata["dedup_group_size"] == "2"
+
+
+def test_group_order_matches_original_chunk_order_across_interleaved_documents() -> None:
+    """Chunks are bucketed by document_id internally for comparison, but the
+    returned groups must still reflect the order chunks first appeared in
+    the input -- not the internal per-document bucketing order."""
+    deduplicator = RetrievedChunkDeduplicator()
+    query = make_query()
+    chunks = [
+        make_chunk(chunk_id="doc_a_1", content="Unique content A1.", document_id="doc_a"),
+        make_chunk(chunk_id="doc_b_1", content="Unique content B1.", document_id="doc_b"),
+        make_chunk(chunk_id="doc_a_2", content="Unique content A2.", document_id="doc_a"),
+        make_chunk(chunk_id="doc_b_2", content="Unique content B2.", document_id="doc_b"),
+    ]
+
+    result = deduplicator.deduplicate(query=query, chunks=chunks)
+
+    assert [group.representative.chunk_id for group in result.groups] == [
+        "doc_a_1",
+        "doc_b_1",
+        "doc_a_2",
+        "doc_b_2",
+    ]

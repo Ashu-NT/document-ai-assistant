@@ -248,6 +248,92 @@ def test_retrieval_context_expander_prioritizes_same_family_split_chunks() -> No
     assert expanded[1].metadata["context_relation"] == "same_section_part"
 
 
+def test_retrieval_context_expander_adds_descendant_detail_for_overview_chunk() -> None:
+    document_chunks = [
+        make_document_chunk(
+            chunk_id="chunk_overview",
+            sequence_number=1,
+            section_id="sec_root",
+            section_path=["Procedure"],
+            chunk_type=ChunkType.OVERVIEW,
+        ),
+        make_document_chunk(
+            chunk_id="chunk_detail",
+            sequence_number=5,
+            section_id="sec_child",
+            section_path=["Procedure", "Execution"],
+            chunk_type=ChunkType.GENERAL,
+        ),
+    ]
+    lookup_service = FakeDocumentLookupService({"doc_001": document_chunks})
+    expander = RetrievalContextExpander(
+        document_lookup_service=lookup_service,
+        neighbor_window=0,
+        max_context_chunks=3,
+    )
+    anchor = RetrievedChunk(
+        chunk_id="chunk_overview",
+        document_id="doc_001",
+        content="Overview chunk",
+        score=0.82,
+        retrieval_source="dense",
+        chunk_type=ChunkType.OVERVIEW,
+        section_id="sec_root",
+        section_path=["Procedure"],
+        source=SourceLocation(page_start=1, page_end=1),
+    )
+
+    expanded = expander.expand([anchor])
+
+    assert [chunk.chunk_id for chunk in expanded] == [
+        "chunk_overview",
+        "chunk_detail",
+    ]
+    assert expanded[1].metadata["context_relation"] == "descendant_detail"
+
+
+def test_retrieval_context_expander_adds_sibling_section_chunk() -> None:
+    document_chunks = [
+        make_document_chunk(
+            chunk_id="chunk_sibling_a",
+            sequence_number=1,
+            section_id="sec_a",
+            section_path=["Procedure", "StepA"],
+        ),
+        make_document_chunk(
+            chunk_id="chunk_sibling_b",
+            sequence_number=10,
+            section_id="sec_b",
+            section_path=["Procedure", "StepB"],
+        ),
+    ]
+    lookup_service = FakeDocumentLookupService({"doc_001": document_chunks})
+    expander = RetrievalContextExpander(
+        document_lookup_service=lookup_service,
+        neighbor_window=0,
+        max_context_chunks=3,
+    )
+    anchor = RetrievedChunk(
+        chunk_id="chunk_sibling_a",
+        document_id="doc_001",
+        content="Step A content",
+        score=0.82,
+        retrieval_source="dense",
+        chunk_type=ChunkType.GENERAL,
+        section_id="sec_a",
+        section_path=["Procedure", "StepA"],
+        source=SourceLocation(page_start=1, page_end=1),
+    )
+
+    expanded = expander.expand([anchor])
+
+    assert [chunk.chunk_id for chunk in expanded] == [
+        "chunk_sibling_a",
+        "chunk_sibling_b",
+    ]
+    assert expanded[1].metadata["context_relation"] == "sibling_section"
+
+
 def test_retrieval_context_expander_respects_token_budget() -> None:
     long_chunk = make_document_chunk(chunk_id="chunk_001", sequence_number=1)
     long_chunk.content = " ".join(["long"] * 30)

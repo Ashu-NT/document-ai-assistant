@@ -41,8 +41,9 @@ class QdrantVectorStore(VectorStore):
 
     def save_chunk_vectors(self, chunks: list[DocumentChunk]) -> None:
         points: list[PointStruct] = []
-        document_types_by_id = self._document_types_by_id(chunks)
-        identifier_values_by_chunk_id = self._identifier_values_by_chunk_id(chunks)
+        document_types_by_id, identifier_values_by_chunk_id = (
+            self._load_document_metadata(chunks)
+        )
 
         for chunk in chunks:
             embedding = getattr(chunk, "embedding", None)
@@ -196,38 +197,33 @@ class QdrantVectorStore(VectorStore):
 
         return Filter(must=conditions)
 
-    def _identifier_values_by_chunk_id(
+    def _load_document_metadata(
         self,
         chunks: list[DocumentChunk],
-    ) -> dict[str, list[str]]:
+    ) -> tuple[dict[str, str], dict[str, list[str]]]:
+        """Loads each unique document's graph exactly once and derives both
+        the document-type lookup and the identifier-values lookup from that
+        same graph, instead of two separate methods each independently
+        calling get_document_graph() (5 queries + full asset rehydration)
+        for the same set of document ids."""
+        document_types_by_id: dict[str, str] = {}
+        identifier_values_by_chunk_id: dict[str, list[str]] = {}
         if self.document_repository is None:
-            return {}
-        result: dict[str, list[str]] = {}
+            return document_types_by_id, identifier_values_by_chunk_id
+
         for document_id in {chunk.document_id for chunk in chunks}:
             graph = self.document_repository.get_document_graph(document_id)
             if graph is None:
                 continue
+
+            document_types_by_id[document_id] = graph.document.document_type.value
             for identifier in graph.identifiers.values():
                 if identifier.chunk_id and identifier.normalized_value:
-                    result.setdefault(identifier.chunk_id, []).append(
-                        identifier.normalized_value
-                    )
-        return result
+                    identifier_values_by_chunk_id.setdefault(
+                        identifier.chunk_id, []
+                    ).append(identifier.normalized_value)
 
-    def _document_types_by_id(
-        self,
-        chunks: list[DocumentChunk],
-    ) -> dict[str, str]:
-        if self.document_repository is None:
-            return {}
-
-        document_types_by_id: dict[str, str] = {}
-        for document_id in {chunk.document_id for chunk in chunks}:
-            document_graph = self.document_repository.get_document_graph(document_id)
-            if document_graph is None:
-                continue
-            document_types_by_id[document_id] = document_graph.document.document_type.value
-        return document_types_by_id
+        return document_types_by_id, identifier_values_by_chunk_id
 
     @staticmethod
     def _embedding_text_hash(chunk: DocumentChunk) -> str:

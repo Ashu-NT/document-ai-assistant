@@ -42,7 +42,9 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
             if numbered_level is not None:
                 levels[header.element_id] = numbered_level
 
-        text_between_cache = self._build_text_between_cache(elements)
+        prefix_text_lengths, header_position_by_id = self._build_text_position_index(
+            elements
+        )
         top_level_anchor_ids = self._build_top_level_anchor_ids(sorted_headers, levels)
 
         for index, header in enumerate(sorted_headers):
@@ -64,7 +66,12 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
                 if candidate_level >= current_level and candidate.element_id != current_root_id:
                     pass
 
-                if not self._should_nest_under(candidate, header, text_between_cache):
+                if not self._should_nest_under(
+                    candidate,
+                    header,
+                    prefix_text_lengths=prefix_text_lengths,
+                    header_position_by_id=header_position_by_id,
+                ):
                     continue
 
                 levels[header.element_id] = min(candidate_level + 1, 6)
@@ -98,7 +105,9 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
         self,
         candidate: CanonicalElement,
         current: CanonicalElement,
-        text_between_cache: dict[tuple[str, str], int],
+        *,
+        prefix_text_lengths: list[int],
+        header_position_by_id: dict[str, int],
     ) -> bool:
         if candidate.element_id == current.element_id:
             return False
@@ -119,7 +128,12 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
 
         candidate_words = candidate_title.split()
         current_words = current_title.split()
-        text_between = text_between_cache.get((candidate.element_id, current.element_id), 0)
+        text_between = self._text_between(
+            candidate.element_id,
+            current.element_id,
+            prefix_text_lengths=prefix_text_lengths,
+            header_position_by_id=header_position_by_id,
+        )
 
         if (
             candidate_words
@@ -133,18 +147,22 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
         return False
 
     @staticmethod
-    def _build_text_between_cache(
+    def _build_text_position_index(
         elements: list[CanonicalElement],
-    ) -> dict[tuple[str, str], int]:
+    ) -> tuple[list[int], dict[str, int]]:
+        """Builds the shared state _text_between() needs to compute the
+        text-length between any two headers in O(1): a prefix-sum array of
+        text-like content length up to each position in reading order, plus
+        each header's position in that ordering. Replaces an earlier
+        approach that precomputed the text-length for every pair of headers
+        up front (O(H^2) time and space) -- the same value is now derived
+        on demand from these two O(H_total) structures instead."""
         ordered = sorted(elements, key=lambda element: element.order_index)
-        cache: dict[tuple[str, str], int] = {}
-        headers: list[tuple[CanonicalElement, int]] = [
-            (element, index)
+        header_position_by_id: dict[str, int] = {
+            element.element_id: index
             for index, element in enumerate(ordered)
             if element.element_type == ElementType.SECTION_HEADER
-        ]
-        if len(headers) < 2:
-            return cache
+        }
 
         prefix_text_lengths = [0]
         running_total = 0
@@ -158,16 +176,23 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
                 running_total += len(element.text or "")
             prefix_text_lengths.append(running_total)
 
-        for index, (header, header_position) in enumerate(headers):
-            start_prefix_index = header_position + 1
-            for next_header, next_header_position in headers[index + 1 :]:
-                text_length = (
-                    prefix_text_lengths[next_header_position]
-                    - prefix_text_lengths[start_prefix_index]
-                )
-                cache[(header.element_id, next_header.element_id)] = text_length
+        return prefix_text_lengths, header_position_by_id
 
-        return cache
+    @staticmethod
+    def _text_between(
+        candidate_id: str,
+        current_id: str,
+        *,
+        prefix_text_lengths: list[int],
+        header_position_by_id: dict[str, int],
+    ) -> int:
+        candidate_position = header_position_by_id.get(candidate_id)
+        current_position = header_position_by_id.get(current_id)
+        if candidate_position is None or current_position is None:
+            return 0
+
+        start_prefix_index = candidate_position + 1
+        return prefix_text_lengths[current_position] - prefix_text_lengths[start_prefix_index]
 
     @staticmethod
     def _build_top_level_anchor_ids(
