@@ -114,6 +114,7 @@ class AnswerGenerationService:
                 question=resolved_request.question,
                 answer_intent=resolved_request.answer_intent,
                 chunks=resolved_request.context_chunks,
+                resolved_structured_entities=resolved_request.resolved_structured_entities,
             )
             deterministic_renderer_name = "spare_parts_list_renderer"
         if deterministic_answer is not None:

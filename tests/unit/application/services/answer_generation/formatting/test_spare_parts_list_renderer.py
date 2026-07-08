@@ -396,3 +396,102 @@ def test_render_does_not_invent_part_no_from_plain_quantity_like_token() -> None
     assert result is not None
     assert "Part No." not in result
     assert "Flange Fitted" in result
+
+
+# ---------------------------------------------------------------------------
+# Structured-entity source: prefer already-extracted DB rows over regex
+# parsing of raw chunk text when both are available.
+# ---------------------------------------------------------------------------
+
+
+def test_render_prefers_structured_entities_over_chunk_parsing() -> None:
+    renderer = SparePartsListRenderer()
+    chunk_content = (
+        "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
+        "|---|---|---|---|\n"
+        "| 1 | 2 | Filter (from chunk text) | Z99999 |\n"
+    )
+    entities = [
+        {
+            "_entity_type": "spare_part",
+            "part_number": "A00103",
+            "description": "Filter (from extracted data)",
+            "quantity": "2",
+            "component_name": "Pump",
+            "manufacturer_name": "Acme",
+        }
+    ]
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=chunk_content, section_title="Spare Parts List")],
+        resolved_structured_entities=entities,
+    )
+
+    assert result is not None
+    assert "Filter (from extracted data)" in result
+    assert "Part No.: A00103" in result
+    assert "Component: Pump" in result
+    assert "Manufacturer: Acme" in result
+    # The regex-parsed chunk content must not appear -- structured data wins.
+    assert "Z99999" not in result
+    assert "from chunk text" not in result
+
+
+def test_render_falls_back_to_chunk_parsing_when_no_structured_entities() -> None:
+    renderer = SparePartsListRenderer()
+    content = (
+        "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
+        "|---|---|---|---|\n"
+        "| 1 | 2 | Filter | A00103 |\n"
+    )
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        resolved_structured_entities=[],
+    )
+
+    assert result is not None
+    assert "Part No.: A00103" in result
+
+
+def test_render_ignores_structured_entities_of_other_types() -> None:
+    renderer = SparePartsListRenderer()
+    content = (
+        "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
+        "|---|---|---|---|\n"
+        "| 1 | 2 | Filter | A00103 |\n"
+    )
+    entities = [
+        {"_entity_type": "manufacturer", "manufacturer_name": "Acme"},
+    ]
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        resolved_structured_entities=entities,
+    )
+
+    # Non-spare-part entities are ignored, so it falls back to chunk parsing.
+    assert result is not None
+    assert "Part No.: A00103" in result
+
+
+def test_render_skips_structured_entities_missing_part_number_and_description() -> None:
+    renderer = SparePartsListRenderer()
+    entities = [
+        {"_entity_type": "spare_part", "quantity": "2", "component_name": "Pump"},
+    ]
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content="no table evidence here")],
+        resolved_structured_entities=entities,
+    )
+
+    assert result is None

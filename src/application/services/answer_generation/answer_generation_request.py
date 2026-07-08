@@ -29,3 +29,4 @@ class AnswerGenerationRequest:
     require_citations: bool = True
     max_context_chunks: int | None = None
     resolved_identifiers: list[Identifier] = field(default_factory=list)
+    resolved_structured_entities: list = field(default_factory=list)

@@ -349,6 +349,7 @@ class QuestionAnsweringWorkflow:
             require_citations=request.require_citations,
             route=QuestionAnsweringRoute.RETRIEVAL_QA.value,
             resolved_identifiers=list(request.resolved_identifiers),
+            resolved_structured_entities=list(request.resolved_structured_entities),
             structured_context=structured_context,
         )
         generated = self._answer_generation_service.generate(gen_request)
