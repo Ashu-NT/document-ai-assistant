@@ -23,6 +23,9 @@ from src.application.prompts.reflection import (
     ReflectionPromptBuilder,
 )
 from src.application.services.ai import LLMService
+from src.application.workflows.shared.maintenance_signal_detection import (
+    mentions_maintenance_interval,
+)
 from src.shared.exceptions import ApplicationError
 
 
@@ -464,26 +467,7 @@ class ReflectionService:
 
     @staticmethod
     def _question_requests_maintenance_intervals(question: str) -> bool:
-        return any(
-            marker in question
-            for marker in (
-                "maintenance interval",
-                "maintenance intervals",
-                "service interval",
-                "service intervals",
-                "inspection interval",
-                "inspection intervals",
-                "maintenance schedule",
-                "preventive maintenance",
-                "how often",
-                "daily",
-                "weekly",
-                "monthly",
-                "annual",
-                "annually",
-                "schedule",
-            )
-        )
+        return mentions_maintenance_interval(question)
 
     @staticmethod
     def _contains_unrelated_specifications(answer: str) -> bool:
