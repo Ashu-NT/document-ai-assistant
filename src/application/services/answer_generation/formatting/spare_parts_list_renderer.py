@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from src.application.services.answer_generation.formatting.spare_parts_table_parser import (
+    SPARE_PARTS_TABLE_PARSER_RULES_VERSION,
     SparePartsGroup,
     SparePartsTableParser,
 )
@@ -63,6 +64,7 @@ class SparePartsListRenderer:
 
     def __init__(self, *, table_parser: SparePartsTableParser | None = None) -> None:
         self._table_parser = table_parser or SparePartsTableParser()
+        self._last_dropped_row_count = 0
 
     def render(
         self,
@@ -72,6 +74,7 @@ class SparePartsListRenderer:
         chunks: Sequence[RetrievedChunk],
         resolved_structured_entities: Sequence[dict] = (),
     ) -> str | None:
+        self._last_dropped_row_count = 0
         if answer_intent not in _SUPPORTED_INTENTS:
             return None
         if not self._looks_like_spare_parts_request(question):
@@ -95,7 +98,22 @@ class SparePartsListRenderer:
         if not groups:
             return None
 
+        self._last_dropped_row_count = sum(group.dropped_row_count for group in groups)
         return self._render_groups(groups)
+
+    def last_diagnostics(self) -> dict[str, object]:
+        """Diagnostics from the most recent render() call, so a caller can
+        measure whether SparePartsTableParser's row-parsing quality
+        improves, regresses, or only changes shape across future phases,
+        instead of that signal only ever reaching the user as the one-line
+        `_PARTIAL_CONTENT_NOTICE` inside the rendered text. Only meaningful
+        after a render() call that took the chunk-parsing path -- the
+        structured-entity path and every early-return path leave this at 0,
+        since SparePartsTableParser was not exercised in those cases."""
+        return {
+            "spare_parts_table_parser_rules_version": SPARE_PARTS_TABLE_PARSER_RULES_VERSION,
+            "spare_parts_dropped_row_count": self._last_dropped_row_count,
+        }
 
     @staticmethod
     def _looks_like_spare_parts_request(question: str) -> bool:

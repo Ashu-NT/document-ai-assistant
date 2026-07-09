@@ -377,7 +377,28 @@ def test_generate_uses_deterministic_spare_parts_renderer_and_skips_llm() -> Non
     assert "no spare part" not in result.answer_text.lower()
     assert result.model_name == "deterministic_spare_parts_renderer"
     assert result.diagnostics["deterministic_renderer"] == "spare_parts_list_renderer"
+    assert result.diagnostics["spare_parts_dropped_row_count"] == 0
+    assert "spare_parts_table_parser_rules_version" in result.diagnostics
     assert llm.calls == []
+
+
+def test_generate_diagnostics_include_formatting_layer_rules_versions() -> None:
+    """Plan section 9.10/4.14 baseline instrumentation: every generate()
+    call -- deterministic or LLM path -- should report which rules-pack
+    version of the formatting layer produced the answer, so a future
+    quality regression can be correlated against a specific version rather
+    than an untracked code change."""
+    service, _ = make_service()
+    request = AnswerGenerationRequest(
+        question="When to replace the filter?",
+        context_chunks=[_make_chunk()],
+    )
+
+    result = service.generate(request)
+
+    assert "format_policy_rules_version" in result.diagnostics
+    assert "key_value_extractor_rules_version" in result.diagnostics
+    assert "maintenance_entry_merger_rules_version" in result.diagnostics
 
 
 def test_generate_passes_answer_generation_response_schema_to_llm() -> None:

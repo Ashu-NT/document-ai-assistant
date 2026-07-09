@@ -1,6 +1,9 @@
 from src.application.services.answer_generation.formatting.spare_parts_list_renderer import (
     SparePartsListRenderer,
 )
+from src.application.services.answer_generation.formatting.spare_parts_table_parser import (
+    SPARE_PARTS_TABLE_PARSER_RULES_VERSION,
+)
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
@@ -172,6 +175,79 @@ def test_render_marks_unparseable_table_content_as_partial() -> None:
     assert result.startswith("Spare parts lists found:")
     assert "Only partial row content was available in the retrieved context." in result
     assert "not found" not in result.lower()
+
+
+def test_last_diagnostics_reports_dropped_row_count_after_partial_parse() -> None:
+    """Plan section 9.10/4.14: SparePartsTableParser's dropped_row_count was
+    previously only ever surfaced as a one-line notice in the rendered
+    text, with no queryable diagnostic. The second row here has a matched
+    header (position/quantity) but no content field (designation/part_no),
+    so it gets dropped by _row_from_structured_cells while the first row is
+    kept -- last_diagnostics() must report that dropped count."""
+    renderer = SparePartsListRenderer()
+    content = (
+        "| Position No: | Qty: | Designation: | Part No: |\n"
+        "|---|---|---|---|\n"
+        "| 1 | 2 | Filter | A00103 |\n"
+        "| 2 | 1 | | |\n"
+    )
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+    )
+
+    assert result is not None
+    diagnostics = renderer.last_diagnostics()
+    assert diagnostics["spare_parts_dropped_row_count"] == 1
+    assert (
+        diagnostics["spare_parts_table_parser_rules_version"]
+        == SPARE_PARTS_TABLE_PARSER_RULES_VERSION
+    )
+
+
+def test_last_diagnostics_reports_zero_when_no_rows_are_dropped() -> None:
+    renderer = SparePartsListRenderer()
+    content = (
+        "| Position No: | Qty: | Designation: | Part No: |\n"
+        "|---|---|---|---|\n"
+        "| 1 | 2 | Filter | A00103 |\n"
+    )
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+    )
+
+    assert result is not None
+    assert renderer.last_diagnostics()["spare_parts_dropped_row_count"] == 0
+
+
+def test_last_diagnostics_resets_to_zero_for_unsupported_intent() -> None:
+    renderer = SparePartsListRenderer()
+    content = (
+        "| Position No: | Qty: | Designation: | Part No: |\n"
+        "|---|---|---|---|\n"
+        "| 1 | 2 | Filter | A00103 |\n"
+        "| 2 | 1 | | |\n"
+    )
+    renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+    )
+    assert renderer.last_diagnostics()["spare_parts_dropped_row_count"] == 1
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+    )
+
+    assert result is None
+    assert renderer.last_diagnostics()["spare_parts_dropped_row_count"] == 0
 
 
 def test_render_returns_none_when_question_does_not_mention_spare_parts() -> None:

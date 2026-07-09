@@ -737,20 +737,18 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | 4.14 no rules-version / observability parity | Phase 1, Phase 6 | 9.10, reviewer 0.1 #3 |
 | 4.15 no `AnswerIntent` exhaustiveness guard | Phase 1 | 9.8 |
 
-## Phase 1 - Baseline protection
+## Phase 1 - Baseline protection [IMPLEMENTED]
 
-- add an audit snapshot test plan for current behavior
-- add coverage around current `StructuredAnswerContext` construction
-- add regression tests around structured-entity joining and structured-context retention
-- add/keep regression coverage for pre-resolved `answer_intent_decision` reuse
-- add the `AnswerIntent` exhaustiveness guard tests called out in 9.8
-- make an explicit keep/remove/design decision for `AnswerGenerationRequest.max_context_chunks` before the refactor starts
-- add baseline rules-version constants and diagnostics parity on the current formatting path before structural refactors begin:
-  - `AnswerFormatPolicy`
-  - `KeyValueExtractor`
-  - `MaintenanceEntryMerger`
-  - `SparePartsTableParser`
-- surface table-parser partial/drop counts as structured diagnostics on the current path so later phases can measure whether behavior improved, regressed, or only changed shape
+- add an audit snapshot test plan for current behavior — satisfied by the existing suite listed in section 2 ("Tests currently covering this area"); no material gap found
+- add coverage around current `StructuredAnswerContext` construction — already covered by `test_answer_context_organizer.py`; no material gap found
+- add regression tests around structured-entity joining and structured-context retention — already covered by the structured-fact-joining tests in `test_question_answering_workflow.py` (including `test_resolved_structured_entities_without_lookup_service_do_not_crash`, which characterizes the current context-drop behavior from 4.3/9.7 as a baseline for Phase 4 to change)
+- ✅ add/keep regression coverage for pre-resolved `answer_intent_decision` reuse — `test_generate_skips_recomputing_intent_when_decision_is_already_resolved`, `test_generate_still_computes_intent_when_no_decision_is_provided` (`test_answer_generation_service.py`), `test_answer_intent_is_resolved_exactly_once_when_structured_facts_are_joined` (`test_question_answering_workflow.py`)
+- ✅ add the `AnswerIntent` exhaustiveness guard tests called out in 9.8 — `test_every_answer_intent_has_a_dedicated_format_policy_entry` (`test_answer_format_policy.py`)
+- ✅ **decision made:** `AnswerGenerationRequest.max_context_chunks` is **removed**, not kept-and-redesigned. Rationale: zero production callers, already flagged as dead code (4.12/5.1.E), and its only real effect was being the seam behind the now-fixed double-intent-computation bug. Removing it is strictly simpler than designing a canonical truncation point for a feature nothing uses; if per-request context capping is genuinely needed later, it can be reintroduced with a real design at that point. Removed the field from `AnswerGenerationRequest` and the truncation branch from `AnswerGenerationService._resolve_request()`. This also simplifies Phase 3 below (its conditional bullet is removed) and closes out 4.12/5.1.E.
+- ✅ add baseline rules-version constants and diagnostics parity on the current formatting path before structural refactors begin — added `ANSWER_FORMAT_POLICY_RULES_VERSION`, `KEY_VALUE_EXTRACTOR_RULES_VERSION`, `MAINTENANCE_ENTRY_MERGER_RULES_VERSION`, `SPARE_PARTS_TABLE_PARSER_RULES_VERSION`; all four surfaced in `GeneratedAnswer.diagnostics` via `AnswerGenerationService._build_diagnostics()` (the first three) and `SparePartsListRenderer.last_diagnostics()` (the fourth, only when that renderer is used). Covered by `test_generate_diagnostics_include_formatting_layer_rules_versions`.
+- ✅ surface table-parser partial/drop counts as structured diagnostics on the current path — `SparePartsGroup` gained a `dropped_row_count: int` field, threaded through both `SparePartsTableParser._extract_rows()` and `_rows_from_structured_grid()`; `SparePartsListRenderer.last_diagnostics()` aggregates it across groups and `AnswerGenerationService` merges it into `GeneratedAnswer.diagnostics` as `spare_parts_dropped_row_count` whenever the spare-parts renderer produces the answer. Covered by `test_last_diagnostics_reports_dropped_row_count_after_partial_parse`, `test_last_diagnostics_reports_zero_when_no_rows_are_dropped`, `test_last_diagnostics_resets_to_zero_for_unsupported_intent`.
+
+Full regression: 236 tests green across `tests/unit/application/services/answer_generation/`, `tests/unit/application/workflows/question_answering/`, `tests/unit/application/guardrails/`.
 
 ## Phase 2 - Model refactor
 
@@ -763,7 +761,6 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 ## Phase 3 - Source enrichment
 
 - enrich `AnswerSource` projection with missing retrieval/chunk metadata
-- if `max_context_chunks` is kept, enforce its canonical truncation point here so organizer/builders/renderers all see the same chunk slice
 - update organizer tests
 - ensure no consumer breaks
 

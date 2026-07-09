@@ -7,6 +7,11 @@ from typing import Sequence
 
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
+# Bumped whenever a table-layout strategy (structured header, PID/tag row,
+# position-pair, free-form) is added, removed, or changed materially --
+# mirrors ANSWER_INTENT_RULES_VERSION's convention.
+SPARE_PARTS_TABLE_PARSER_RULES_VERSION = "v1"
+
 _MAX_RAW_ROWS_PER_GROUP = 25
 
 _HEADER_SEPARATOR_PATTERN = re.compile(
@@ -150,6 +155,7 @@ class SparePartsGroup:
     rows: list[dict[str, str]]
     raw_rows: list[str]
     partial: bool
+    dropped_row_count: int = 0
 
 
 class SparePartsTableParser:
@@ -183,9 +189,9 @@ class SparePartsTableParser:
         section_path = chunk.section_path_text() if chunk.section_path else None
         structured_result = self._rows_from_structured_grid(chunk.metadata)
         if structured_result is not None:
-            rows, raw_rows, partial = structured_result
+            rows, raw_rows, partial, dropped_row_count = structured_result
         else:
-            rows, raw_rows, partial = self._extract_rows(chunk.content)
+            rows, raw_rows, partial, dropped_row_count = self._extract_rows(chunk.content)
         return SparePartsGroup(
             section_title=self.section_title(chunk),
             section_path=section_path,
@@ -194,6 +200,7 @@ class SparePartsTableParser:
             rows=rows,
             raw_rows=raw_rows[:_MAX_RAW_ROWS_PER_GROUP],
             partial=partial or len(raw_rows) > _MAX_RAW_ROWS_PER_GROUP,
+            dropped_row_count=dropped_row_count,
         )
 
     # -- structured-row source (preferred over regex chunk-text parsing) ---------
@@ -201,7 +208,7 @@ class SparePartsTableParser:
     def _rows_from_structured_grid(
         self,
         metadata: dict,
-    ) -> tuple[list[dict[str, str]], list[str], bool] | None:
+    ) -> tuple[list[dict[str, str]], list[str], bool, int] | None:
         """Builds rows directly from a chunk's structured table_rows_json
         metadata (stashed by TableEvidenceHydrator), reusing the same
         header-matching/cell-mapping logic as the markdown path below --
@@ -229,7 +236,7 @@ class SparePartsTableParser:
         if not rows:
             return None
 
-        return rows, [], dropped_row_count > 0
+        return rows, [], dropped_row_count > 0, dropped_row_count
 
     @staticmethod
     def _decode_table_rows(metadata: dict) -> list[list[str]] | None:
@@ -247,7 +254,7 @@ class SparePartsTableParser:
     def _extract_rows(
         self,
         content: str,
-    ) -> tuple[list[dict[str, str]], list[str], bool]:
+    ) -> tuple[list[dict[str, str]], list[str], bool, int]:
         header: list[str | None] | None = None
         rows: list[dict[str, str]] = []
         raw_rows: list[str] = []
@@ -285,7 +292,7 @@ class SparePartsTableParser:
                 self._parse_free_text_blob(cell, rows, raw_rows)
 
         partial = header is None or dropped_row_count > 0 or bool(raw_rows) or not rows
-        return rows, raw_rows, partial
+        return rows, raw_rows, partial, dropped_row_count
 
     # -- layout A: structured header table ---------------------------------------
 

@@ -30,17 +30,16 @@ class AnswerGenerationRequest:
     # AnswerGenerationService doesn't repeat the exact same analyze() call
     # with a second AnswerIntentAnalyzer instance -- see
     # AnswerGenerationService._resolve_intent_decision(). Recomputing was
-    # previously not just wasted work: if the two call sites ever received
-    # different chunk sets (e.g. via max_context_chunks below), the second
-    # computation could silently disagree with the intent that
-    # structured_context's key_values/maintenance_entries were already
-    # extracted for.
+    # previously not just wasted work: the two call sites could in
+    # principle have disagreed on the intent that structured_context's
+    # key_values/maintenance_entries were already extracted for (this used
+    # to be reachable via a since-removed max_context_chunks field that let
+    # this service truncate context_chunks before its own recompute).
     answer_intent_decision: AnswerIntentDecision | None = None
     structured_context: StructuredAnswerContext | None = None
     format_policy: AnswerFormatPolicy | None = None
     route: str | None = None
     document_id: str | None = None
     require_citations: bool = True
-    max_context_chunks: int | None = None
     resolved_identifiers: list[Identifier] = field(default_factory=list)
     resolved_structured_entities: list = field(default_factory=list)

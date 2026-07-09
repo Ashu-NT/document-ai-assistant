@@ -10,6 +10,10 @@ from src.application.workflows.question_answering.answer_context.structured_answ
     AnswerMaintenanceReference,
 )
 
+# Bumped whenever the merge-eligibility rules or normalization logic below
+# change materially -- mirrors ANSWER_INTENT_RULES_VERSION's convention.
+MAINTENANCE_ENTRY_MERGER_RULES_VERSION = "v1"
+
 _WORD_PATTERN = re.compile(r"[a-z0-9]+")
 _LEADING_VERB_PATTERN = re.compile(
     r"^(inspect|check|replace|lubricate|clean|test|drain|tighten|calibrate|"

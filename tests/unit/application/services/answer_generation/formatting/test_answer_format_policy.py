@@ -70,3 +70,21 @@ def test_procedure_policy_uses_numbered_steps() -> None:
     assert policy.include_steps is True
     assert policy.include_bullets is False
     assert policy.preferred_format == "numbered_steps"
+
+
+def test_every_answer_intent_has_a_dedicated_format_policy_entry() -> None:
+    """Exhaustiveness guard (plan section 9.8 / 4.15): AnswerFormatPolicy.for_intent()
+    silently falls back to GENERAL's policy for any AnswerIntent missing from
+    _POLICIES, via `_POLICIES.get(intent, _POLICIES[AnswerIntent.GENERAL])`. A
+    new AnswerIntent member added later without a matching _POLICIES entry
+    would pass every existing test (since GENERAL's policy is a valid
+    AnswerFormatPolicy) while silently misformatting every answer for that
+    intent. Checking `policy.intent == intent` distinguishes a real entry
+    from a fallback -- a fallback carries GENERAL's own `intent` field, not
+    the one that was requested."""
+    for intent in AnswerIntent:
+        policy = AnswerFormatPolicy.for_intent(intent)
+        assert policy.intent == intent, (
+            f"{intent} has no dedicated AnswerFormatPolicy entry and "
+            "silently falls back to GENERAL's policy"
+        )

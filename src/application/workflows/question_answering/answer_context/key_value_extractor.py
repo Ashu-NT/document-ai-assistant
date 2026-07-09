@@ -14,6 +14,12 @@ from src.application.workflows.question_answering.answer_context.structured_answ
     AnswerSource,
 )
 
+# Bumped whenever the extraction patterns/aliases below change materially --
+# mirrors ANSWER_INTENT_RULES_VERSION's convention, so a future extraction
+# quality regression can be correlated against a specific rule-pack version
+# rather than an untracked code change.
+KEY_VALUE_EXTRACTOR_RULES_VERSION = "v1"
+
 _KEY_ALIASES: dict[str, tuple[str, ...]] = {
     "Design Temperature": ("design temperature",),
     "Test pressure": ("test pressure",),

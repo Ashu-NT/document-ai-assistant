@@ -12,6 +12,12 @@ if TYPE_CHECKING:
         StructuredAnswerContext,
     )
 
+# Bumped whenever _POLICIES' entries change materially (new/changed
+# instruction_lines, preferred_format, or intent coverage) -- mirrors
+# ANSWER_INTENT_RULES_VERSION's convention, so a future answer-quality
+# regression can be correlated against a specific policy-pack version.
+ANSWER_FORMAT_POLICY_RULES_VERSION = "v1"
+
 
 @dataclass(slots=True, frozen=True)
 class AnswerFormatPolicy:

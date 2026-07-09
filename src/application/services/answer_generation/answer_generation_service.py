@@ -3,6 +3,7 @@ from dataclasses import replace
 from src.application.prompts.answer_generation import ANSWER_PROMPT_VERSION, AnswerPromptBuilder
 from src.application.services.ai.llm_service import LLMService
 from src.application.services.answer_generation.formatting.answer_format_policy import (
+    ANSWER_FORMAT_POLICY_RULES_VERSION,
     AnswerFormatPolicy,
 )
 from src.application.services.answer_generation.formatting.identifier_answer_renderer import (
@@ -29,6 +30,12 @@ from src.application.services.answer_generation.answer_generation_result import 
 )
 from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
     AnswerContextOrganizer,
+)
+from src.application.workflows.question_answering.answer_context.key_value_extractor import (
+    KEY_VALUE_EXTRACTOR_RULES_VERSION,
+)
+from src.application.workflows.question_answering.answer_context.maintenance_entry_merger import (
+    MAINTENANCE_ENTRY_MERGER_RULES_VERSION,
 )
 from src.domain.common.processing_metadata import ModelProcessingMetadata
 from src.domain.retrieval.citation import Citation
@@ -123,6 +130,11 @@ class AnswerGenerationService:
                 if deterministic_renderer_name == "identifier_answer_renderer"
                 else "deterministic_spare_parts_renderer"
             )
+            deterministic_diagnostics = {"deterministic_renderer": deterministic_renderer_name}
+            if deterministic_renderer_name == "spare_parts_list_renderer":
+                deterministic_diagnostics.update(
+                    self.spare_parts_list_renderer.last_diagnostics()
+                )
             return self._build_generated_answer(
                 answer_text=deterministic_answer,
                 citations=citations,
@@ -133,7 +145,7 @@ class AnswerGenerationService:
                 confidence=intent_decision.confidence,
                 diagnostics={
                     **diagnostics,
-                    "deterministic_renderer": deterministic_renderer_name,
+                    **deterministic_diagnostics,
                 },
                 raw_model_output=deterministic_answer,
             )
@@ -176,8 +188,6 @@ class AnswerGenerationService:
         request: AnswerGenerationRequest,
     ) -> tuple[AnswerGenerationRequest, AnswerIntentDecision]:
         context_chunks = request.context_chunks
-        if request.max_context_chunks is not None:
-            context_chunks = context_chunks[: request.max_context_chunks]
 
         intent_decision = self._resolve_intent_decision(
             request=request,
@@ -283,6 +293,9 @@ class AnswerGenerationService:
                 if resolved_request.format_policy is not None
                 else None
             ),
+            "format_policy_rules_version": ANSWER_FORMAT_POLICY_RULES_VERSION,
+            "key_value_extractor_rules_version": KEY_VALUE_EXTRACTOR_RULES_VERSION,
+            "maintenance_entry_merger_rules_version": MAINTENANCE_ENTRY_MERGER_RULES_VERSION,
             "structured_context_source_count": (
                 structured_context.source_count if structured_context is not None else 0
             ),
