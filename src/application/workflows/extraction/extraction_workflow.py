@@ -4,8 +4,8 @@ from typing import Any
 from collections.abc import Callable
 
 from src.application.prompts.extraction import (
+    CombinedExtractionPromptBuilder,
     ExtractionPromptType,
-    IdentifierExtractionPromptBuilder,
 )
 from src.application.prompts.extraction.narrowed import ExtractionNarrowedPromptBuilder
 from src.application.services.ai import LLMService
@@ -214,7 +214,7 @@ class ExtractionWorkflow:
         extraction_service: ExtractionService,
         extraction_result_validator: ExtractionResultValidator,
         id_generator: IdGenerator,
-        prompt_builder: IdentifierExtractionPromptBuilder | None = None,
+        prompt_builder: CombinedExtractionPromptBuilder | None = None,
         response_parser: ExtractionResponseParser | None = None,
         extraction_model: str | None = None,
         confidence_threshold: float | None = None,
@@ -235,7 +235,7 @@ class ExtractionWorkflow:
         self.extraction_service = extraction_service
         self.extraction_result_validator = extraction_result_validator
         self.id_generator = id_generator
-        self.prompt_builder = prompt_builder or IdentifierExtractionPromptBuilder()
+        self.prompt_builder = prompt_builder or CombinedExtractionPromptBuilder()
         self.response_parser = response_parser or ExtractionResponseParser()
         self.semantic_context_builder = (
             semantic_context_builder or SemanticExtractionContextBuilder()

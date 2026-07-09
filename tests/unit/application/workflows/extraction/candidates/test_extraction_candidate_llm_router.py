@@ -13,8 +13,14 @@ class FakeLLMService:
         self.response = response
         self.calls: list[dict] = []
 
-    def generate(self, prompt, model=None, json_mode=False):
-        self.calls.append({"prompt": prompt, "model": model, "json_mode": json_mode})
+    def generate(self, prompt, model=None, response_schema=None):
+        self.calls.append(
+            {
+                "prompt": prompt,
+                "model": model,
+                "response_schema": response_schema,
+            }
+        )
         return self.response
 
 
@@ -66,6 +72,7 @@ def test_route_resolves_candidate_types() -> None:
     assert result == frozenset(
         {ExtractionPromptType.SAFETY_WARNING, ExtractionPromptType.SPARE_PART}
     )
+    assert isinstance(router._llm_service.calls[0]["response_schema"], dict)
 
 
 def test_route_normalizes_casing_and_separators() -> None:
@@ -112,6 +119,23 @@ def test_route_returns_none_for_malformed_response() -> None:
     )
 
     assert router.route(make_chunk()) is None
+
+
+def test_route_passes_response_schema_to_llm() -> None:
+    llm_service = FakeLLMService(json.dumps({"candidate_types": ["identifier"]}))
+    router = ExtractionCandidateLLMRouter(
+        llm_service=llm_service,
+        enabled=True,
+    )
+
+    router.route(make_chunk())
+
+    assert llm_service.calls
+    assert isinstance(llm_service.calls[0]["response_schema"], dict)
+    assert "candidate_types" in llm_service.calls[0]["response_schema"].get(
+        "properties",
+        {},
+    )
 
 
 def test_is_available_requires_both_enabled_and_llm_service() -> None:

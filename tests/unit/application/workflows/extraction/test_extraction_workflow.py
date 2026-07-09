@@ -743,7 +743,11 @@ def test_extract_drops_fully_empty_procedure_before_saving(sample_chunk) -> None
         ]
     )
     fake_extraction_service = FakeExtractionService()
-    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        allow_partial_batches=False,
+    )
 
     result = workflow.extract(sample_chunk.document_id, sample_chunk)
 
@@ -780,7 +784,11 @@ def test_extract_falls_back_to_unknown_procedure_type_for_unrecognized_value(
         ]
     )
     fake_extraction_service = FakeExtractionService()
-    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        allow_partial_batches=False,
+    )
 
     result = workflow.extract(sample_chunk.document_id, sample_chunk)
 
@@ -2145,7 +2153,11 @@ def test_extraction_still_rejects_non_null_invalid_array_items(sample_chunk) -> 
         ]
     )
     fake_extraction_service = FakeExtractionService()
-    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        allow_partial_batches=False,
+    )
 
     with pytest.raises(SchemaValidationError) as exc_info:
         workflow.extract(sample_chunk.document_id, sample_chunk)

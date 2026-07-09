@@ -10,8 +10,16 @@ class FakeLLMService:
     def __init__(self, label: str, confidence: float = 0.9) -> None:
         self.label = label
         self.confidence = confidence
+        self.calls: list[dict[str, object]] = []
 
     def generate(self, prompt, model=None, response_schema=None):
+        self.calls.append(
+            {
+                "prompt": prompt,
+                "model": model,
+                "response_schema": response_schema,
+            }
+        )
         return json.dumps(
             {
                 "label": self.label,
@@ -99,3 +107,17 @@ def test_classify_returns_none_for_empty_content() -> None:
 def test_is_available_reflects_llm_service_presence() -> None:
     assert make_classifier("maintenance_interval").is_available() is True
     assert ChunkTypeLLMClassifier(llm_service=None).is_available() is False
+
+
+def test_classify_passes_response_schema_to_llm() -> None:
+    llm_service = FakeLLMService("maintenance_interval")
+    classifier = ChunkTypeLLMClassifier(llm_service=llm_service, model="chunk-model")
+
+    classifier.classify(
+        content="Replace filter every 1000 hours.",
+        section_path=["Maintenance"],
+    )
+
+    assert llm_service.calls
+    assert llm_service.calls[0]["model"] == "chunk-model"
+    assert isinstance(llm_service.calls[0]["response_schema"], dict)

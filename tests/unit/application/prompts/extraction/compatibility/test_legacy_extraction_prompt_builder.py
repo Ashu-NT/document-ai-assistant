@@ -1,4 +1,5 @@
 from src.application.prompts.extraction import (
+    CombinedExtractionPromptBuilder,
     IDENTIFIER_EXTRACTION_PROMPT_VERSION,
     IdentifierExtractionPromptBuilder,
 )
@@ -33,3 +34,13 @@ def test_legacy_builder_still_returns_a_combined_prompt_string(sample_chunk) -> 
     assert "Only emit an array item when the required evidence fields for that entity are present." in prompt
     assert "For identifiers: if raw_value is missing, omit the item instead of returning only identifier_type." in prompt
     assert "For specifications: omit any item that does not include both parameter and value." in prompt
+
+
+def test_combined_builder_preserves_legacy_prompt_output(sample_chunk) -> None:
+    combined = CombinedExtractionPromptBuilder()
+    legacy = LegacyExtractionPromptBuilder()
+
+    assert combined.build(sample_chunk.document_id, [sample_chunk]) == legacy.build(
+        sample_chunk.document_id,
+        [sample_chunk],
+    )

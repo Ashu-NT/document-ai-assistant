@@ -6,6 +6,7 @@ from src.application.langgraph.reflection.services import ReflectionService
 class _FakeLLMService:
     def __init__(self, response: str) -> None:
         self.response = response
+        self.calls: list[dict[str, object]] = []
 
     def generate(
         self,
@@ -14,6 +15,13 @@ class _FakeLLMService:
         *,
         response_schema: dict | None = None,
     ) -> str:
+        self.calls.append(
+            {
+                "prompt": prompt,
+                "model": model,
+                "response_schema": response_schema,
+            }
+        )
         return self.response
 
 
@@ -132,10 +140,11 @@ def test_reflection_service_rejects_maintenance_interval_answer_without_referenc
 
 
 def test_reflection_service_downgrades_clarify_without_question_to_accept_with_limitations() -> None:
-    service = ReflectionService(
-        llm_service=_FakeLLMService(
+    llm_service = _FakeLLMService(
             '{"decision":"CLARIFY","confidence":0.61,"reason":"Need clarification.","retry_query":null,"clarification_question":null,"missing_information":["annual interval"]}'
-        ),
+        )
+    service = ReflectionService(
+        llm_service=llm_service,
         policy=ReflectionPolicy(enabled=True),
     )
 
@@ -163,6 +172,7 @@ def test_reflection_service_downgrades_clarify_without_question_to_accept_with_l
     assert result.decision.decision == ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS
     assert result.requires_clarification is False
     assert result.failed is False
+    assert isinstance(llm_service.calls[0]["response_schema"], dict)
 
 
 def test_reflection_service_retry_limit_with_evidence_returns_accept_with_limitations() -> None:

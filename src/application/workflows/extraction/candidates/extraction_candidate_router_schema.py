@@ -32,3 +32,12 @@ class ExtractionCandidateRouterPayload(BaseModel):
             except ValueError:
                 continue
         return frozenset(resolved)
+
+
+_EXTRACTION_CANDIDATE_ROUTER_JSON_SCHEMA = (
+    ExtractionCandidateRouterPayload.model_json_schema()
+)
+
+
+def build_extraction_candidate_router_json_schema() -> dict[str, Any]:
+    return _EXTRACTION_CANDIDATE_ROUTER_JSON_SCHEMA

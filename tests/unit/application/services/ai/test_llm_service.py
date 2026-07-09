@@ -34,6 +34,7 @@ class FakeLLMProviderWithOptions:
         *,
         temperature: float | None = None,
         json_mode: bool = False,
+        response_schema: dict | None = None,
     ) -> str:
         self.calls.append(
             {
@@ -41,6 +42,7 @@ class FakeLLMProviderWithOptions:
                 "model": model,
                 "temperature": temperature,
                 "json_mode": json_mode,
+                "response_schema": response_schema,
             }
         )
         return "Generated maintenance steps."
@@ -115,5 +117,28 @@ def test_generate_forwards_temperature_and_json_mode_when_requested() -> None:
             "model": "qwen3:8b",
             "temperature": 0.0,
             "json_mode": True,
+            "response_schema": None,
+        }
+    ]
+
+
+def test_generate_forwards_response_schema_when_requested() -> None:
+    provider = FakeLLMProviderWithOptions()
+    service = LLMService(provider)
+    schema = {"type": "object", "properties": {"answer_text": {"type": "string"}}}
+
+    service.generate(
+        "Summarize this maintenance section.",
+        model="qwen3:8b",
+        response_schema=schema,
+    )
+
+    assert provider.calls == [
+        {
+            "prompt": "Summarize this maintenance section.",
+            "model": "qwen3:8b",
+            "temperature": None,
+            "json_mode": False,
+            "response_schema": schema,
         }
     ]

@@ -14,6 +14,7 @@ from src.application.prompts.common import (
     PromptMetadata,
 )
 from src.application.prompts.extraction import (
+    CombinedExtractionPromptBuilder,
     IDENTIFIER_EXTRACTION_PROMPT_VERSION,
     IdentifierExtractionPromptBuilder,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "AnswerPromptBuilder",
     "CHUNK_TYPE_PROMPT_VERSION",
     "ChunkTypePromptBuilder",
+    "CombinedExtractionPromptBuilder",
     "DOCUMENT_CLASSIFICATION_PROMPT_VERSION",
     "DocumentClassificationPromptBuilder",
     "DocumentClassificationSummaryBuilder",

@@ -1,3 +1,4 @@
+from src.application.prompts.extraction.combined import CombinedExtractionPromptBuilder
 from src.application.prompts.extraction.common.extraction_prompt_context import (
     ExtractionPromptContext,
 )
@@ -16,6 +17,7 @@ from src.application.prompts.extraction.extraction_prompt_version import (
 
 __all__ = [
     "IDENTIFIER_EXTRACTION_PROMPT_VERSION",
+    "CombinedExtractionPromptBuilder",
     "IdentifierExtractionPromptBuilder",
     "ExtractionPromptContext",
     "ExtractionPromptFactory",
