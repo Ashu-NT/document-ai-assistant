@@ -1,6 +1,8 @@
 from src.application.services.answer_generation import AnswerIntent
 from src.application.workflows.question_answering.answer_context import (
     AnswerContextOrganizer,
+    AnswerKeyValue,
+    AnswerSource,
 )
 from src.domain.common import ChunkType
 from src.domain.common.source_location import SourceLocation
@@ -34,6 +36,115 @@ def _make_chunk(
         identifier_values=identifier_values or [],
         metadata=metadata or {},
     )
+
+
+class _StubStructuredSourceBuilder:
+    def __init__(self, sources: list[AnswerSource]) -> None:
+        self.sources = sources
+        self.calls: list[list[RetrievedChunk]] = []
+
+    def build_sources(self, chunks) -> list[AnswerSource]:
+        self.calls.append(list(chunks))
+        return self.sources
+
+
+class _StubSourceGroupBuilder:
+    def __init__(self, result) -> None:
+        self.result = result
+        self.calls: list[list[AnswerSource]] = []
+
+    def build(self, sources):
+        self.calls.append(list(sources))
+        return self.result
+
+
+class _StubSectionGroupBuilder:
+    def __init__(self, result) -> None:
+        self.result = result
+        self.calls: list[list[AnswerSource]] = []
+
+    def build(self, sources):
+        self.calls.append(list(sources))
+        return self.result
+
+
+class _StubKeyValueExtractor:
+    def __init__(self, key_values, maintenance_entries) -> None:
+        self.key_values = key_values
+        self.maintenance_entries = maintenance_entries
+        self.extract_calls: list[tuple[list[AnswerSource], AnswerIntent]] = []
+        self.extract_maintenance_calls: list[tuple[list[AnswerSource], AnswerIntent]] = []
+
+    def extract(self, sources, *, answer_intent):
+        self.extract_calls.append((list(sources), answer_intent))
+        return self.key_values
+
+    def extract_maintenance_entries(self, sources, *, answer_intent):
+        self.extract_maintenance_calls.append((list(sources), answer_intent))
+        return self.maintenance_entries
+
+
+class _StubMaintenanceEntryMerger:
+    def __init__(self, merged_entries) -> None:
+        self.merged_entries = merged_entries
+        self.calls = []
+
+    def merge(self, entries):
+        self.calls.append(list(entries))
+        return self.merged_entries
+
+
+def test_context_organizer_uses_injected_structured_source_builder_as_the_source_seam() -> None:
+    sources = [
+        AnswerSource(
+            source_number=1,
+            chunk_id="source_a",
+            chunk_type="technical_specification",
+            document_id="doc_001",
+            section_path="Certificate > Particulars",
+            content="Test pressure: 700 bar",
+        )
+    ]
+    key_values = [
+        AnswerKeyValue(
+            key="Test pressure",
+            value="700 bar",
+            unit=None,
+            source_number=1,
+        )
+    ]
+    source_builder = _StubStructuredSourceBuilder(sources)
+    source_group_builder = _StubSourceGroupBuilder([])
+    section_group_builder = _StubSectionGroupBuilder([])
+    key_value_extractor = _StubKeyValueExtractor(key_values, [])
+    merger = _StubMaintenanceEntryMerger([])
+    organizer = AnswerContextOrganizer(
+        structured_source_builder=source_builder,
+        source_group_builder=source_group_builder,
+        section_group_builder=section_group_builder,
+        key_value_extractor=key_value_extractor,
+        maintenance_entry_merger=merger,
+    )
+    chunks = [_make_chunk(chunk_id="chunk_001", content="ignored by stub source builder")]
+
+    context = organizer.organize(
+        answer_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        chunks=chunks,
+    )
+
+    assert source_builder.calls == [chunks]
+    assert source_group_builder.calls == [sources]
+    assert section_group_builder.calls == [sources]
+    assert key_value_extractor.extract_calls == [
+        (sources, AnswerIntent.SPECIFICATION_SUMMARY)
+    ]
+    assert key_value_extractor.extract_maintenance_calls == [
+        (sources, AnswerIntent.SPECIFICATION_SUMMARY)
+    ]
+    assert merger.calls == [[]]
+    assert context.sources == sources
+    assert context.key_values == key_values
+    assert context.source_count == 1
 
 
 def test_context_organizer_extracts_spec_key_values_and_preserves_metadata() -> None:

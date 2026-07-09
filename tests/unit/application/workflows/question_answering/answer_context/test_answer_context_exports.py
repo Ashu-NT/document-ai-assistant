@@ -13,6 +13,7 @@ from src.application.workflows.question_answering.answer_context import (
     StructuredAnswerContext,
     StructuredEvidenceViewBuilder,
     StructuredFactKeyValueBuilder,
+    StructuredSourceBuilder,
 )
 from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
     AnswerContextOrganizer as OrganizerImpl,
@@ -53,6 +54,9 @@ from src.application.workflows.question_answering.answer_context.structured_evid
 from src.application.workflows.question_answering.answer_context.structured_fact_key_value_builder import (
     StructuredFactKeyValueBuilder as KeyValueBuilderImpl,
 )
+from src.application.workflows.question_answering.answer_context.structured_source_builder import (
+    StructuredSourceBuilder as StructuredSourceBuilderImpl,
+)
 
 
 def test_package_root_re_exports_answer_context_types_stably() -> None:
@@ -72,7 +76,9 @@ def test_package_root_lazy_re_exports_support_service_classes() -> None:
     assert package_root.MaintenanceEntryMerger is MergerImpl
     assert package_root.StructuredEvidenceViewBuilder is StructuredEvidenceViewBuilderImpl
     assert package_root.StructuredFactKeyValueBuilder is KeyValueBuilderImpl
+    assert package_root.StructuredSourceBuilder is StructuredSourceBuilderImpl
     assert AnswerContextOrganizer is OrganizerImpl
     assert MaintenanceEntryMerger is MergerImpl
     assert StructuredEvidenceViewBuilder is StructuredEvidenceViewBuilderImpl
     assert StructuredFactKeyValueBuilder is KeyValueBuilderImpl
+    assert StructuredSourceBuilder is StructuredSourceBuilderImpl
