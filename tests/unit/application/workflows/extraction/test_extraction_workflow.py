@@ -536,12 +536,13 @@ def test_extract_falls_back_to_full_prompt_when_union_candidates_cover_everythin
         source=sample_chunk.source,
         chunk_index=2,
     )
-    fake_llm_service = FakeLLMService(
-        [
-            '{"candidate_types": ["maintenance_task", "spare_part", "equipment", "manufacturer", "supplier", "contact_point", "procedure", "specification", "safety_warning", "maintenance_interval", "troubleshooting", "identifier"]}',
-            _empty_extraction_response(),
-        ]
-    )
+    # No LLM candidate-router is wired into make_workflow(), so a GENERAL
+    # chunk (chunk_b) already resolves deterministically to "every entity
+    # type" (ExtractionCandidateSelector.select_for_chunk() fails open to
+    # _ALL_CANDIDATES with no router configured) -- the union covering
+    # everything, and the resulting full-prompt fallback, both happen without
+    # any narrowing LLM call. Only the actual extraction call happens.
+    fake_llm_service = FakeLLMService([_empty_extraction_response()])
     fake_extraction_service = FakeExtractionService()
     workflow, _ = make_workflow(
         fake_llm_service,
@@ -551,7 +552,8 @@ def test_extract_falls_back_to_full_prompt_when_union_candidates_cover_everythin
 
     workflow.extract(sample_chunk.document_id, [chunk_a, chunk_b])
 
-    prompt = fake_llm_service.calls[1]["prompt"]
+    assert len(fake_llm_service.calls) == 1
+    prompt = fake_llm_service.calls[0]["prompt"]
     assert '"procedures": [' in prompt
     assert '"troubleshooting_entries": [' in prompt
     assert '"spare_parts": [' in prompt

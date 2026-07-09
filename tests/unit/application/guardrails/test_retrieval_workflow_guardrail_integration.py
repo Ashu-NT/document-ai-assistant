@@ -24,6 +24,14 @@ class FakeHybridRetrievalService:
         self.calls: list = []
 
     def retrieve(self, query) -> RetrievalResult:
+        return self.retrieve_with_additional_candidates(query)
+
+    def retrieve_with_additional_candidates(
+        self,
+        query,
+        *,
+        additional_candidates=None,
+    ) -> RetrievalResult:
         self.calls.append(query)
         return self.result
 
