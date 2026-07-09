@@ -22,12 +22,22 @@ _IDENTIFIER_TYPE_LABELS: dict[IdentifierType, str] = {
     IdentifierType.CERTIFICATE_NUMBER: "Certificate Numbers",
     IdentifierType.MANUFACTURER_NAME: "Manufacturers",
     IdentifierType.SUPPLIER_NAME: "Suppliers",
+    IdentifierType.PHONE_NUMBER: "Phone Numbers",
+    IdentifierType.FAX_NUMBER: "Fax Numbers",
+    IdentifierType.EMAIL_ADDRESS: "Email Addresses",
+    IdentifierType.URL: "Web Addresses",
 }
 _IDENTIFIER_KEY_TO_TYPE: dict[str, IdentifierType] = {
     "Part Number": IdentifierType.PART_NUMBER,
     "Serial Number": IdentifierType.SERIAL_NUMBER,
     "Model": IdentifierType.MODEL_NUMBER,
     "Order code": IdentifierType.COMPONENT_CODE,
+    "Phone Number": IdentifierType.PHONE_NUMBER,
+    "Fax Number": IdentifierType.FAX_NUMBER,
+    "Email": IdentifierType.EMAIL_ADDRESS,
+    "Email Address": IdentifierType.EMAIL_ADDRESS,
+    "URL": IdentifierType.URL,
+    "Website": IdentifierType.URL,
 }
 _QUESTION_TYPE_MARKERS: dict[IdentifierType, tuple[str, ...]] = {
     IdentifierType.PART_NUMBER: ("part number", "part numbers", "part no", "part"),
@@ -72,6 +82,34 @@ _QUESTION_TYPE_MARKERS: dict[IdentifierType, tuple[str, ...]] = {
         "distributor",
         "distributors",
     ),
+    IdentifierType.PHONE_NUMBER: (
+        "phone number",
+        "phone numbers",
+        "telephone number",
+        "telephone numbers",
+        "phone",
+        "telephone",
+        "tel",
+    ),
+    IdentifierType.FAX_NUMBER: (
+        "fax number",
+        "fax numbers",
+        "fax",
+    ),
+    IdentifierType.EMAIL_ADDRESS: (
+        "email address",
+        "email addresses",
+        "email",
+        "emails",
+    ),
+    IdentifierType.URL: (
+        "url",
+        "urls",
+        "website",
+        "websites",
+        "web address",
+        "web addresses",
+    ),
 }
 _TYPE_ORDER: tuple[IdentifierType, ...] = (
     IdentifierType.PART_NUMBER,
@@ -82,6 +120,10 @@ _TYPE_ORDER: tuple[IdentifierType, ...] = (
     IdentifierType.CERTIFICATE_NUMBER,
     IdentifierType.MANUFACTURER_NAME,
     IdentifierType.SUPPLIER_NAME,
+    IdentifierType.PHONE_NUMBER,
+    IdentifierType.FAX_NUMBER,
+    IdentifierType.EMAIL_ADDRESS,
+    IdentifierType.URL,
 )
 
 

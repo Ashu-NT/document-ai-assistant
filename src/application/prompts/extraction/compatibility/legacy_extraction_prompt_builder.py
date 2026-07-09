@@ -225,6 +225,7 @@ class LegacyExtractionPromptBuilder:
             "- If an item is missing its required fields, omit the item entirely instead of returning a partial object.\n"
             "- For identifiers: if raw_value is missing, omit the item instead of returning only identifier_type.\n"
             '- Never use placeholder labels such as "Document ID" or "Chunk ID" unless that exact text is the real identifier value in the chunk.\n'
+            "- For identifiers: do not emit menu names, chapter numbers, parameter labels, display-message text, or internal system ids such as chunk_* or doc_*; omit them instead.\n"
             "- For specifications: omit any item that does not include both parameter and value.\n"
             f"Allowed chunk_id values (use one of these EXACTLY, or null): {allowed_chunk_ids}\n"
             f"Document id: {document_id}\n"

@@ -66,6 +66,34 @@ _IDENTIFIER_INVENTORY_MARKERS: dict[IdentifierType, tuple[str, ...]] = {
         "distributor",
         "distributors",
     ),
+    IdentifierType.PHONE_NUMBER: (
+        "phone number",
+        "phone numbers",
+        "telephone number",
+        "telephone numbers",
+        "phone",
+        "telephone",
+        "tel",
+    ),
+    IdentifierType.FAX_NUMBER: (
+        "fax number",
+        "fax numbers",
+        "fax",
+    ),
+    IdentifierType.EMAIL_ADDRESS: (
+        "email address",
+        "email addresses",
+        "email",
+        "emails",
+    ),
+    IdentifierType.URL: (
+        "url",
+        "urls",
+        "website",
+        "websites",
+        "web address",
+        "web addresses",
+    ),
 }
 _IDENTIFIER_VALUE_PATTERN = re.compile(
     r"\b([A-Z]{1,5}\d{1,6}[A-Z0-9-]*|\d{3,}[A-Z0-9-]+)\b",

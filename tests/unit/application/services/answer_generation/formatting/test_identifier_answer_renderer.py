@@ -288,6 +288,34 @@ def test_render_ignores_key_value_with_unrecognized_key() -> None:
     assert result is None
 
 
+def test_render_supports_email_and_phone_identifier_groups() -> None:
+    renderer = IdentifierAnswerRenderer()
+
+    result = renderer.render(
+        question="List the phone number and email address",
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        structured_context=None,
+        resolved_identifiers=[
+            _make_identifier(
+                identifier_id="id_phone",
+                raw_value="+33 493 742929",
+                identifier_type=IdentifierType.PHONE_NUMBER,
+            ),
+            _make_identifier(
+                identifier_id="id_email",
+                raw_value="info@hemwater.com",
+                identifier_type=IdentifierType.EMAIL_ADDRESS,
+            ),
+        ],
+    )
+
+    assert result is not None
+    assert "Phone Numbers:" in result
+    assert "Email Addresses:" in result
+    assert "+33 493 742929" in result
+    assert "info@hemwater.com" in result
+
+
 def test_render_cleans_whitespace_in_values() -> None:
     renderer = IdentifierAnswerRenderer()
 

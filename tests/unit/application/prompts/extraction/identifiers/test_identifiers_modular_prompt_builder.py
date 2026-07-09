@@ -51,3 +51,4 @@ def test_identifier_builder_requires_exact_raw_value_and_blocks_placeholders(
     assert "Emit an identifier only when raw_value is present exactly in the chunk text." in prompt
     assert "omit the item instead of returning a partial object" in prompt
     assert 'Never use placeholder labels such as "Document ID" or "Chunk ID"' in prompt
+    assert "Do not emit menu names, chapter numbers, parameter labels" in prompt

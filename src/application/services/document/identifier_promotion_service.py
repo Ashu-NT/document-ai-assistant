@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from src.config.logging import get_logger
 from src.application.services.document.identifier_type_normalizer import (
     IdentifierTypeNormalizer,
@@ -12,6 +14,11 @@ from src.domain.extraction.extraction_result import ExtractionResult
 from src.shared.ids import IdGenerator, IdPrefix
 
 _logger = get_logger(__name__)
+
+_INTERNAL_EXTRACTED_IDENTIFIER_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"^chunk_[0-9a-f]{8,}$", re.IGNORECASE),
+    re.compile(r"^doc_[0-9a-f]{8,}$", re.IGNORECASE),
+)
 
 
 class IdentifierPromotionService:
@@ -104,6 +111,8 @@ class IdentifierPromotionService:
 
         for extracted in extraction_result.extracted_identifiers:
             if extracted.raw_value and extracted.raw_value.strip():
+                if self._should_ignore_extracted_identifier(extracted):
+                    continue
                 identifier_type = self.identifier_type_normalizer.normalize(
                     extracted.identifier_type
                 )
@@ -133,6 +142,19 @@ class IdentifierPromotionService:
                     identifiers.append(identifier)
 
         return identifiers
+
+    def _should_ignore_extracted_identifier(self, extracted) -> bool:
+        if self.identifier_type_normalizer.should_ignore(extracted.identifier_type):
+            return True
+
+        raw_value = extracted.raw_value.strip()
+        if extracted.source_chunk_id and raw_value == extracted.source_chunk_id:
+            return True
+
+        return any(
+            pattern.fullmatch(raw_value)
+            for pattern in _INTERNAL_EXTRACTED_IDENTIFIER_PATTERNS
+        )
 
     def _make(
         self,

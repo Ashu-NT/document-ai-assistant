@@ -50,6 +50,10 @@ class IdentifierType(StrEnum):
     CERTIFICATE_NUMBER = "certificate_number"
     MANUFACTURER_NAME = "manufacturer_name"
     SUPPLIER_NAME = "supplier_name"
+    PHONE_NUMBER = "phone_number"
+    FAX_NUMBER = "fax_number"
+    EMAIL_ADDRESS = "email_address"
+    URL = "url"
     UNKNOWN = "unknown"
 
 

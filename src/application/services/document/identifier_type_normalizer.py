@@ -52,8 +52,36 @@ _NORMALIZED_TYPE_ALIASES: dict[str, IdentifierType] = {
     "supplier": IdentifierType.SUPPLIER_NAME,
     "vendor": IdentifierType.SUPPLIER_NAME,
     "distributor": IdentifierType.SUPPLIER_NAME,
+    "phonenumber": IdentifierType.PHONE_NUMBER,
+    "phone": IdentifierType.PHONE_NUMBER,
+    "telephone": IdentifierType.PHONE_NUMBER,
+    "telephonenumber": IdentifierType.PHONE_NUMBER,
+    "tel": IdentifierType.PHONE_NUMBER,
+    "faxnumber": IdentifierType.FAX_NUMBER,
+    "fax": IdentifierType.FAX_NUMBER,
+    "emailaddress": IdentifierType.EMAIL_ADDRESS,
+    "email": IdentifierType.EMAIL_ADDRESS,
+    "url": IdentifierType.URL,
+    "website": IdentifierType.URL,
+    "webaddress": IdentifierType.URL,
     "unknown": IdentifierType.UNKNOWN,
 }
+
+_IGNORED_NORMALIZED_TYPE_LABELS: frozenset[str] = frozenset(
+    {
+        "chunkid",
+        "sourcechunkid",
+        "documentid",
+        "docid",
+        "parametervalue",
+        "menuname",
+        "menu",
+        "chapter",
+        "chapternumber",
+        "displaymessage",
+        "messagedisplayedinformationmenu",
+    }
+)
 
 
 class IdentifierTypeNormalizer:
@@ -70,6 +98,16 @@ class IdentifierTypeNormalizer:
         except ValueError:
             normalized = self._normalize_label(stripped)
             return _NORMALIZED_TYPE_ALIASES.get(normalized)
+
+    def should_ignore(self, value: str | None) -> bool:
+        if value is None:
+            return False
+
+        stripped = value.strip()
+        if not stripped:
+            return False
+
+        return self._normalize_label(stripped) in _IGNORED_NORMALIZED_TYPE_LABELS
 
     @staticmethod
     def _normalize_label(value: str) -> str:
