@@ -854,6 +854,69 @@ These were open review questions in the original audit. None were contested, so 
 - **Blast radius:** contained to the question-answering and structured-retrieval answer-generation path (`answer_context/`, `answer_generation/`, `prompts/answer_generation/`, and the structured query-analysis files added to scope in 2.1). Ingestion, extraction, and other LangGraph nodes outside answer generation are not touched by this plan.
 - **Test gate per phase:** each phase's exit criteria (where stated inline) and the traceability matrix (10.0) together define "done" for that phase — a phase is not complete until its mapped issue's `### Impact` bullets in section 4 no longer apply and its existing test suite (section 8.3) is green.
 
+## 13.1 Reviewer Comments On This Latest Team Update
+
+This version is much stronger than the earlier one. The added:
+
+- traceability matrix
+- adopted decisions section
+- rollback / sequencing section
+
+make it close to implementation-ready.
+
+### Comment 1 - clarify the compatibility wording
+
+There is still one wording conflict to resolve before implementation:
+
+- Section 7 / Phase 2 assume stable package re-exports through `__init__.py`
+- Section 13 says "no compatibility shims or re-export bridges"
+
+These are compatible only if Section 13 means:
+
+- no temporary duplicate old/new module paths
+- no parallel file trees kept alive during migration
+- but package-level `__init__.py` exports remain allowed as the stable import surface
+
+That should be made explicit so the refactor does not stall on interpretation.
+
+### Comment 2 - 4.3 remains the highest-urgency live correctness bug
+
+The plan now maps the structured-context drop bug (4.3 / 9.7) to Phase 4, which is coherent from a design standpoint.
+
+But from a production-risk standpoint, it is still the clearest live bug in this path:
+
+- `structured_context` is successfully organized
+- then discarded when no extra key-values are produced
+
+So this should be treated as either:
+
+- the first change inside Phase 4
+- or an early micro-fix before the wider refactor if the team wants immediate risk reduction
+
+### Comment 3 - Phase 2 must stay behavior-preserving in practice
+
+Collapsing duplicated maintenance-reference representations in Phase 2 is sensible, but it must be executed as a behavior-preserving refactor:
+
+- update formatter / merger / organizer consumers in the same change
+- keep maintenance answer rendering identical at this stage
+- defer answer-shape improvements to later phases
+
+### Comment 4 - the observability move earlier is the right call
+
+Moving diagnostics / rules-version parity earlier is a strong improvement.
+
+That will make it much easier to tell whether later Phase 4 / 6 / 7 work:
+
+- improves answer quality
+- regresses extraction quality
+- or changes formatting without improving grounding
+
+### Comment 5 - the tree snippet should be normalized to ASCII
+
+The package-structure proposal is good, but the tree block currently contains mojibake box-drawing characters (`â”œ`, `â”‚`, `â”€`, etc.).
+
+That is only a documentation readability issue, not an architecture issue, but it should be cleaned before implementation starts so the structure can be copied safely.
+
 ## 14. Final Recommendation
 
 The right upgrade path is not to patch the prompt builder again.
