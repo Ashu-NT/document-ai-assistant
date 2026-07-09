@@ -1833,7 +1833,7 @@ def test_extraction_passes_json_schema_for_constrained_decoding_when_json_mode_e
     assert schema["properties"]["identifiers"]["items"]["$ref"] == "#/$defs/IdentifierPayload"
 
 
-def test_extraction_rejects_truncated_json_response(sample_chunk) -> None:
+def test_extraction_repairs_truncated_json_response(sample_chunk) -> None:
     fake_llm_service = FakeLLMService(
         [
             """{
@@ -1855,8 +1855,58 @@ def test_extraction_rejects_truncated_json_response(sample_chunk) -> None:
         allow_partial_batches=False,
     )
 
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert result.confidence_score == pytest.approx(0.8)
+    assert len(result.spare_parts) == 1
+    assert result.spare_parts[0].part_number == "FLT-100"
+    assert result.extracted_identifiers == []
+
+
+def test_extraction_rejects_truncated_json_response_when_cut_mid_string(
+    sample_chunk,
+) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.8,
+  "maintenance_tasks": [],
+  "spare_parts": [
+    {"part_number": "FLT-100", "description": "Filter"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(
+        fake_llm_service,
+        fake_extraction_service,
+        allow_partial_batches=False,
+    )
+
     with pytest.raises(SchemaValidationError):
         workflow.extract(sample_chunk.document_id, sample_chunk)
+
+
+def test_extraction_drops_json_artifact_placeholder_values(sample_chunk) -> None:
+    fake_llm_service = FakeLLMService(
+        [
+            """{
+  "confidence_score": 0.84,
+  "maintenance_intervals": [
+    {"interval": ":[{"},
+    {"interval": "]"},
+    {"interval": "Every 500 hours", "source_chunk_id": "chunk_001"}
+  ],
+  "identifiers": []
+}"""
+        ]
+    )
+    fake_extraction_service = FakeExtractionService()
+    workflow, _ = make_workflow(fake_llm_service, fake_extraction_service)
+
+    result = workflow.extract(sample_chunk.document_id, sample_chunk)
+
+    assert len(result.maintenance_intervals) == 1
+    assert result.maintenance_intervals[0].interval == "Every 500 hours"
 
 
 def test_extraction_rejects_null_array_items(sample_chunk) -> None:

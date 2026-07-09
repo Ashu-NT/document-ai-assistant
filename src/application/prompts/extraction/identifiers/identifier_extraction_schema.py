@@ -6,6 +6,7 @@ _IDENTIFIER_TYPE_DESCRIPTIONS: dict[IdentifierType, str] = {
     IdentifierType.PART_NUMBER: "P/N codes, part numbers, order numbers (e.g. HP-001, 4321-A).",
     IdentifierType.SERIAL_NUMBER: "S/N codes, unit serial numbers (e.g. SN-1234, SER-2024-001).",
     IdentifierType.MODEL_NUMBER: "Model designations for equipment (e.g. FWC-12, Model 500).",
+    IdentifierType.PRODUCT_NAME: "Named products, systems, or equipment titles explicitly printed in the document (e.g. B-Control II control system).",
     IdentifierType.DRAWING_NUMBER: "DRG or DWG references (e.g. DRG-1234, DWG 500).",
     IdentifierType.COMPONENT_CODE: "Order codes, component codes, tag numbers (e.g. TAG-42, OC-8800).",
     IdentifierType.CERTIFICATE_NUMBER: "ISO, IEC, EN, ATEX, CERT numbers (e.g. ISO 9001, ATEX II 2G).",

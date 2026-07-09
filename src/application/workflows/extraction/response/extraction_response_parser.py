@@ -7,6 +7,9 @@ from src.application.validation.common import ValidationResult
 from src.application.workflows.extraction.response.extraction_response_sanitizer import (
     ExtractionResponseSanitizer,
 )
+from src.application.workflows.extraction.response.extraction_response_repairer import (
+    ExtractionResponseRepairer,
+)
 from src.application.workflows.extraction.response.extraction_response_schema import (
     ExtractionResponsePayload,
 )
@@ -23,8 +26,10 @@ class ExtractionResponseParser:
     def __init__(
         self,
         sanitizer: ExtractionResponseSanitizer | None = None,
+        repairer: ExtractionResponseRepairer | None = None,
     ) -> None:
         self.sanitizer = sanitizer or ExtractionResponseSanitizer()
+        self.repairer = repairer or ExtractionResponseRepairer()
 
     def parse(self, response: str) -> dict[str, Any]:
         normalized = strip_code_fences_if_wrapped(
@@ -32,7 +37,7 @@ class ExtractionResponseParser:
         )
 
         try:
-            validated = ExtractionResponsePayload.model_validate_json(normalized)
+            validated = self._validate_json_payload(normalized)
         except ValidationError as exc:
             if is_json_validation_error(exc):
                 raise SchemaValidationError(
@@ -108,6 +113,19 @@ class ExtractionResponseParser:
             "identifiers": [item.model_dump() for item in validated.identifiers],
         }
         return self.sanitizer.sanitize(payload)
+
+    def _validate_json_payload(self, normalized: str) -> ExtractionResponsePayload:
+        try:
+            return ExtractionResponsePayload.model_validate_json(normalized)
+        except ValidationError as exc:
+            if not is_json_validation_error(exc):
+                raise
+
+            repaired = self.repairer.repair(normalized)
+            if repaired is None or repaired == normalized:
+                raise
+
+            return ExtractionResponsePayload.model_validate_json(repaired)
 
     @staticmethod
     def _format_validation_error(exc: ValidationError) -> str:

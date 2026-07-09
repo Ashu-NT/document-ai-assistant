@@ -36,6 +36,14 @@ _IDENTIFIER_INVENTORY_MARKERS: dict[IdentifierType, tuple[str, ...]] = {
     IdentifierType.PART_NUMBER: ("part number", "part numbers", "part"),
     IdentifierType.SERIAL_NUMBER: ("serial number", "serial numbers", "serial"),
     IdentifierType.MODEL_NUMBER: ("model number", "model numbers", "model"),
+    IdentifierType.PRODUCT_NAME: (
+        "product name",
+        "product names",
+        "equipment name",
+        "equipment names",
+        "system name",
+        "system names",
+    ),
     IdentifierType.DRAWING_NUMBER: ("drawing number", "drawing numbers", "drawing"),
     IdentifierType.COMPONENT_CODE: (
         "order code",

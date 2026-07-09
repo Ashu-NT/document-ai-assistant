@@ -530,6 +530,8 @@ def test_promote_known_extracted_identifier_type_does_not_log_warning(caplog):
         ("part_no", IdentifierType.PART_NUMBER),
         ("serial_no", IdentifierType.SERIAL_NUMBER),
         ("model_no", IdentifierType.MODEL_NUMBER),
+        ("product_name", IdentifierType.PRODUCT_NAME),
+        ("equipment_name", IdentifierType.PRODUCT_NAME),
         ("dwg_no", IdentifierType.DRAWING_NUMBER),
         ("cert_no", IdentifierType.CERTIFICATE_NUMBER),
         ("vendor", IdentifierType.SUPPLIER_NAME),
@@ -579,6 +581,30 @@ def test_promote_extracted_identifier_alias_type_does_not_log_warning(caplog):
 
     assert len(identifiers) == 1
     assert identifiers[0].identifier_type == IdentifierType.COMPONENT_CODE
+    assert caplog.records == []
+
+
+def test_promote_product_name_identifier_does_not_log_warning(caplog):
+    graph = _make_graph()
+    extraction = ExtractionResult(
+        extraction_id="e001",
+        document_id="doc_001",
+        extracted_identifiers=[
+            ExtractedIdentifier(
+                raw_value="B-Control II control system",
+                identifier_type="product_name",
+                source_chunk_id="chunk_001",
+                confidence_score=0.9,
+            )
+        ],
+    )
+
+    with caplog.at_level("WARNING"):
+        identifiers = _service().promote(extraction, graph, IdGenerator())
+
+    assert len(identifiers) == 1
+    assert identifiers[0].identifier_type == IdentifierType.PRODUCT_NAME
+    assert identifiers[0].raw_value == "B-Control II control system"
     assert caplog.records == []
 
 

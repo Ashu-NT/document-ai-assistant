@@ -9,6 +9,9 @@ from src.application.prompts.extraction import (
     ExtractionPromptType,
 )
 from src.application.prompts.extraction.narrowed import ExtractionNarrowedPromptBuilder
+from src.application.workflows.extraction.extraction_text_value_normalizer import (
+    normalize_extraction_text,
+)
 from src.application.services.ai import LLMService
 from src.application.services.extraction import ExtractionService
 from src.application.validation.common import ValidationResult
@@ -92,19 +95,6 @@ _ENTITY_CONTENT_FIELDS: dict[type, tuple[str, ...]] = {
     MaintenanceInterval: ("interval", "component_name", "maintenance_task_id"),
     TroubleshootingEntry: ("symptom", "cause", "remedy", "component_name", "equipment_id"),
 }
-
-NULL_LIKE_TEXT_VALUES = {
-    "",
-    "null",
-    "none",
-    "n/a",
-    "na",
-    "not available",
-    "not applicable",
-    "-",
-    "--",
-}
-
 
 def _default_extraction_model() -> str | None:
     try:
@@ -1908,14 +1898,7 @@ class ExtractionWorkflow:
     @classmethod
     def _optional_text(cls, payload: dict[str, Any], *keys: str) -> str | None:
         value = cls._pick(payload, *keys)
-        if value is None:
-            return None
-
-        text = " ".join(str(value).strip().strip('"').strip("'").split())
-        text = text.rstrip(" .;:")
-        if text.lower() in NULL_LIKE_TEXT_VALUES:
-            return None
-        return text or None
+        return normalize_extraction_text(value)
 
     def _drop_empty_entities(
         self, extraction_result: ExtractionResult

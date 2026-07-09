@@ -194,6 +194,27 @@ def test_render_filters_to_types_mentioned_in_question() -> None:
     assert "SN-9999" in result
 
 
+def test_render_supports_product_name_identifier_group() -> None:
+    renderer = IdentifierAnswerRenderer()
+
+    result = renderer.render(
+        question="What is the product name?",
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        structured_context=None,
+        resolved_identifiers=[
+            _make_identifier(
+                identifier_id="id_product",
+                raw_value="B-Control II control system",
+                identifier_type=IdentifierType.PRODUCT_NAME,
+            )
+        ],
+    )
+
+    assert result is not None
+    assert "Product Names:" in result
+    assert "B-Control II control system" in result
+
+
 def test_render_returns_none_when_question_filter_excludes_all_identifiers() -> None:
     renderer = IdentifierAnswerRenderer()
 

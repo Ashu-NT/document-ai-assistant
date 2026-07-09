@@ -3,23 +3,15 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from src.application.workflows.extraction.extraction_text_value_normalizer import (
+    normalize_extraction_text,
+)
 from src.application.workflows.extraction.response.extraction_payload_contracts import (
     EXTRACTION_PAYLOAD_CONTRACTS,
     ExtractionPayloadContract,
 )
 
 KEY_PATTERN = re.compile(r"[^a-z0-9]+")
-NULL_LIKE_TEXT_VALUES = {
-    "",
-    "null",
-    "none",
-    "n/a",
-    "na",
-    "not available",
-    "not applicable",
-    "-",
-    "--",
-}
 
 
 class ExtractionResponseSanitizer:
@@ -81,14 +73,4 @@ class ExtractionResponseSanitizer:
     @classmethod
     def _optional_text(cls, payload: dict[str, Any], *keys: str) -> str | None:
         value = cls._pick(payload, *keys)
-        if value is None:
-            return None
-
-        if isinstance(value, list):
-            return " ".join(str(item).strip() for item in value if str(item).strip()) or None
-
-        text = " ".join(str(value).strip().strip('"').strip("'").split())
-        text = text.rstrip(" .;:")
-        if text.lower() in NULL_LIKE_TEXT_VALUES:
-            return None
-        return text or None
+        return normalize_extraction_text(value)

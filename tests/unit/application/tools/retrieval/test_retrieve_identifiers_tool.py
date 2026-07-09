@@ -55,6 +55,12 @@ class _FakeDocumentExplorationService:
                     normalized_value="model77",
                 ),
                 _FakeExplorationIdentifier(
+                    identifier_id="id_product",
+                    identifier_type=IdentifierType.PRODUCT_NAME.value,
+                    raw_value="B-Control II control system",
+                    normalized_value="bcontroliicontrolsystem",
+                ),
+                _FakeExplorationIdentifier(
                     identifier_id="id_phone",
                     identifier_type=IdentifierType.PHONE_NUMBER.value,
                     raw_value="+33 493 742929",
@@ -118,3 +124,28 @@ def test_retrieve_identifiers_tool_supports_phone_inventory_queries() -> None:
     assert exploration_service.calls == ["doc-42"]
     identifiers = result.data["identifiers"]
     assert [identifier.raw_value for identifier in identifiers] == ["+33 493 742929"]
+
+
+def test_retrieve_identifiers_tool_supports_product_name_inventory_queries() -> None:
+    retrieve_chunks_tool = _FakeRetrieveChunksTool()
+    exploration_service = _FakeDocumentExplorationService()
+    tool = RetrieveIdentifiersTool(
+        document_lookup_service=_FakeDocumentLookupService(),
+        exploration_service=exploration_service,
+        retrieve_chunks_tool=retrieve_chunks_tool,
+    )
+
+    result = tool.run(
+        RetrieveIdentifiersRequest(
+            document_id="doc-42",
+            query_text="list all product names",
+            top_k=5,
+        )
+    )
+
+    assert result.success is True
+    assert exploration_service.calls == ["doc-42"]
+    identifiers = result.data["identifiers"]
+    assert [identifier.raw_value for identifier in identifiers] == [
+        "B-Control II control system"
+    ]

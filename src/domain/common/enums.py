@@ -45,6 +45,7 @@ class IdentifierType(StrEnum):
     PART_NUMBER = "part_number"
     SERIAL_NUMBER = "serial_number"
     MODEL_NUMBER = "model_number"
+    PRODUCT_NAME = "product_name"
     DRAWING_NUMBER = "drawing_number"
     COMPONENT_CODE = "component_code"
     CERTIFICATE_NUMBER = "certificate_number"
