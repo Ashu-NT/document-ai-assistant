@@ -25,6 +25,12 @@ class ClassificationRepository(Protocol):
     ) -> None:
         ...
 
+    def save_chunk_classifications(
+        self,
+        classifications: list[ChunkClassification],
+    ) -> None:
+        ...
+
     def get_chunk_classification(
         self,
         chunk_id: str,

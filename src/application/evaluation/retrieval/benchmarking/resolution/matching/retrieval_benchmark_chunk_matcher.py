@@ -28,8 +28,22 @@ class RetrievalBenchmarkChunkMatcher:
         benchmark_case: RetrievalBenchmarkCase,
         chunks: list[DocumentChunk],
     ) -> list[RetrievalBenchmarkResolutionCandidate]:
+        # expected_relevant_passage is invariant across every chunk in this
+        # call, so tokenize/normalize it once instead of redoing it (via
+        # _passage_overlap/_exact_passage_match) for every chunk.
+        expected_tokens = frozenset(
+            tokenize_text(benchmark_case.expected_relevant_passage)
+        )
+        normalized_expected = normalize_free_text(
+            benchmark_case.expected_relevant_passage
+        )
         candidates = [
-            self._build_candidate(benchmark_case, chunk)
+            self._build_candidate(
+                benchmark_case,
+                chunk,
+                expected_tokens=expected_tokens,
+                normalized_expected=normalized_expected,
+            )
             for chunk in chunks
         ]
         return sorted(
@@ -49,13 +63,13 @@ class RetrievalBenchmarkChunkMatcher:
         self,
         benchmark_case: RetrievalBenchmarkCase,
         chunk: DocumentChunk,
+        *,
+        expected_tokens: frozenset[str],
+        normalized_expected: str,
     ) -> RetrievalBenchmarkResolutionCandidate:
-        passage_overlap = self._passage_overlap(
-            benchmark_case.expected_relevant_passage,
-            chunk.content,
-        )
+        passage_overlap = self._passage_overlap(expected_tokens, chunk.content)
         exact_passage_match = self._exact_passage_match(
-            benchmark_case.expected_relevant_passage,
+            normalized_expected,
             chunk.content,
         )
         section_match_score, exact_section_path_match = self._section_match_score(
@@ -92,8 +106,7 @@ class RetrievalBenchmarkChunkMatcher:
         )
 
     @staticmethod
-    def _passage_overlap(expected_passage: str | None, content: str) -> float:
-        expected_tokens = set(tokenize_text(expected_passage))
+    def _passage_overlap(expected_tokens: frozenset[str], content: str) -> float:
         if not expected_tokens:
             return 0.0
 
@@ -105,8 +118,7 @@ class RetrievalBenchmarkChunkMatcher:
         return len(shared_tokens) / len(expected_tokens)
 
     @staticmethod
-    def _exact_passage_match(expected_passage: str | None, content: str) -> bool:
-        normalized_expected = normalize_free_text(expected_passage)
+    def _exact_passage_match(normalized_expected: str, content: str) -> bool:
         normalized_content = normalize_free_text(content)
 
         if not normalized_expected or not normalized_content:

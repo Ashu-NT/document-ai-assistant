@@ -26,8 +26,9 @@ class FakeOCRService:
 
 
 class FakeTargetSelector:
-    def __init__(self, target: OCRTarget) -> None:
-        self.target = target
+    def __init__(self, targets: OCRTarget | list[OCRTarget]) -> None:
+        self.targets = targets if isinstance(targets, list) else [targets]
+        self.target = self.targets[0]
         self.calls: list[tuple[str, int | None]] = []
         self.policy = type("Policy", (), {"page_render_dpi": 150})()
 
@@ -38,28 +39,48 @@ class FakeTargetSelector:
             (),
             {
                 "page_analyses": [],
-                "targets": [self.target],
+                "targets": list(self.targets),
                 "warnings": [],
             },
         )()
 
 
-class FakePageRenderer:
-    def __init__(self) -> None:
-        self.calls: list[tuple[str, int, int, Path]] = []
+class FakeOpenedPDFDocument:
+    def __init__(self, pdf_path: str, calls: list) -> None:
+        self.pdf_path = pdf_path
+        self.calls = calls
+        self.closed = False
 
-    def render_page(self, pdf_path: str, page_number: int, dpi: int, output_dir: Path):
-        self.calls.append((pdf_path, page_number, dpi, output_dir))
+    def render_page(self, page_number: int, dpi: int, output_dir: Path):
+        self.calls.append((self.pdf_path, page_number, dpi, output_dir))
         output_dir.mkdir(parents=True, exist_ok=True)
         image_path = output_dir / "page_1.png"
         image_path.write_bytes(b"fake-page")
         return type("RenderedPage", (), {"image_path": str(image_path)})()
 
+    def close(self) -> None:
+        self.closed = True
+
+
+class FakePageRenderer:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, int, int, Path]] = []
+        self.opened_documents: list[FakeOpenedPDFDocument] = []
+
+    def open(self, pdf_path: str) -> FakeOpenedPDFDocument:
+        opened = FakeOpenedPDFDocument(pdf_path, self.calls)
+        self.opened_documents.append(opened)
+        return opened
+
 
 class FakeRegionCropper:
+    def __init__(self) -> None:
+        self.crop_calls = 0
+
     def crop(self, image_path: str, bbox, output_dir: Path):
+        self.crop_calls += 1
         output_dir.mkdir(parents=True, exist_ok=True)
-        cropped_path = output_dir / "page_1_crop.png"
+        cropped_path = output_dir / f"page_1_crop_{self.crop_calls}.png"
         cropped_path.write_bytes(b"fake-region")
         return type("CroppedRegion", (), {"image_path": str(cropped_path)})()
 
@@ -206,6 +227,54 @@ def test_workflow_cleans_up_generated_region_artifacts_when_trace_disabled(
     )
 
     assert not (tmp_path / "pages" / "page_1.png").exists()
-    assert not (tmp_path / "regions" / "page_1_crop.png").exists()
-    assert not (tmp_path / "pages").exists()
     assert not (tmp_path / "regions").exists()
+    assert not (tmp_path / "pages").exists()
+
+
+def test_workflow_renders_shared_page_only_once_for_multiple_region_targets(
+    tmp_path,
+) -> None:
+    bbox = type("BBox", (), {"x1": 0.1, "y1": 0.1, "x2": 0.9, "y2": 0.9})()
+    targets = [
+        OCRTarget(
+            target_id="region:1",
+            target_type=OCRTargetType.REGION,
+            document_path="manual.pdf",
+            page_number=1,
+            reason="text_poor_region",
+            bbox=bbox,
+        ),
+        OCRTarget(
+            target_id="region:2",
+            target_type=OCRTargetType.REGION,
+            document_path="manual.pdf",
+            page_number=1,
+            reason="text_poor_region",
+            bbox=bbox,
+        ),
+    ]
+    service = FakeOCRService()
+    selector = FakeTargetSelector(targets)
+    renderer = FakePageRenderer()
+    region_cropper = FakeRegionCropper()
+    workflow = PageOCRFallbackWorkflow(
+        ocr_service=service,
+        target_selector=selector,
+        canonical_ocr_merger=FakeMerger(),
+        page_renderer=renderer,
+        region_cropper=region_cropper,
+        output_dir=tmp_path,
+        trace_enabled=True,
+    )
+
+    workflow.run(
+        file_path="manual.pdf",
+        canonical_elements=[],
+        page_count=1,
+    )
+
+    assert len(renderer.opened_documents) == 1
+    assert len(renderer.calls) == 1
+    assert region_cropper.crop_calls == 2
+    assert len(service.calls) == 2
+    assert renderer.opened_documents[0].closed is True

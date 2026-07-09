@@ -88,16 +88,25 @@ class ChunkTextSplitter:
 
         windows: list[str] = []
         current_parts: list[str] = []
+        # Tracks count_tokens(joiner.join(current_parts)) incrementally
+        # instead of rejoining and retokenizing the whole accumulated text
+        # on every part (which turned adding k parts into O(k^2) tokenizer
+        # calls). Safe because parts are whitespace-boundary units (a full
+        # paragraph/line/sentence) joined only by whitespace separators, so
+        # token counts add up across the join for both the whitespace and
+        # transformer counters.
+        current_token_count = 0
 
         for part in parts:
             part = clean_chunk_text(part)
             if not part:
                 continue
 
-            candidate_parts = [*current_parts, part]
-            candidate_text = joiner.join(candidate_parts)
-            if self.count_tokens(candidate_text) <= self.max_chunk_tokens:
-                current_parts = candidate_parts
+            part_token_count = self.count_tokens(part)
+            candidate_token_count = current_token_count + part_token_count
+            if candidate_token_count <= self.max_chunk_tokens:
+                current_parts.append(part)
+                current_token_count = candidate_token_count
                 continue
 
             if current_parts:
@@ -105,9 +114,11 @@ class ChunkTextSplitter:
                 if chunk_text:
                     windows.append(chunk_text)
                 current_parts = []
+                current_token_count = 0
 
-            if self.count_tokens(part) <= self.max_chunk_tokens:
+            if part_token_count <= self.max_chunk_tokens:
                 current_parts = [part]
+                current_token_count = part_token_count
                 continue
 
             windows.extend(self._split_recursively(part, level + 1))

@@ -59,8 +59,8 @@ class FakeVectorMappingRepository:
     def __init__(self) -> None:
         self.save_calls = []
 
-    def save_mapping(self, **kwargs) -> None:
-        self.save_calls.append(kwargs)
+    def save_mappings(self, mappings: list[dict]) -> None:
+        self.save_calls.extend(mappings)
 
     def list_chunk_ids_by_document(self, document_id: str) -> list[str]:
         return ["chunk_001"]

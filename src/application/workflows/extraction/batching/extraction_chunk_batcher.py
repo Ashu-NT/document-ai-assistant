@@ -18,7 +18,10 @@ class ExtractionChunkBatcher:
         if not chunks:
             return []
 
-        raw_batches: list[list[DocumentChunk]] = []
+        # Tracks each batch's total char count as chunks are packed in, so
+        # the ExtractionBatch below can reuse it instead of re-summing
+        # _estimate_chunk_chars() over every chunk a second time.
+        raw_batches: list[tuple[list[DocumentChunk], int]] = []
         current_batch: list[DocumentChunk] = []
         current_chars = 0
 
@@ -30,7 +33,7 @@ class ExtractionChunkBatcher:
                 and current_chars + estimated_chars > self.max_chars_per_batch
             )
             if would_exceed_chunk_count or would_exceed_char_limit:
-                raw_batches.append(current_batch)
+                raw_batches.append((current_batch, current_chars))
                 current_batch = []
                 current_chars = 0
 
@@ -38,7 +41,7 @@ class ExtractionChunkBatcher:
             current_chars += estimated_chars
 
         if current_batch:
-            raw_batches.append(current_batch)
+            raw_batches.append((current_batch, current_chars))
 
         batch_count = len(raw_batches)
         return [
@@ -46,10 +49,10 @@ class ExtractionChunkBatcher:
                 batch_index=index,
                 batch_count=batch_count,
                 chunks=list(batch_chunks),
-                char_count=sum(self._estimate_chunk_chars(chunk) for chunk in batch_chunks),
+                char_count=char_count,
                 word_count=sum(self._estimate_chunk_words(chunk) for chunk in batch_chunks),
             )
-            for index, batch_chunks in enumerate(raw_batches, start=1)
+            for index, (batch_chunks, char_count) in enumerate(raw_batches, start=1)
         ]
 
     def build_single_chunk_batches(self, batch: ExtractionBatch) -> list[ExtractionBatch]:

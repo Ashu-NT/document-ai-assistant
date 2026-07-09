@@ -13,6 +13,9 @@ from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 from src.infrastructure.db.repositories.retrieval import (
     SqlAlchemyVectorMappingRepository,
 )
+from src.infrastructure.db.repositories.retrieval.vector_mapping_repository import (
+    VectorMappingSpec,
+)
 from src.infrastructure.retrieval.vector.qdrant_payload_mapper import (
     QdrantPayloadMapper,
 )
@@ -41,6 +44,7 @@ class QdrantVectorStore(VectorStore):
 
     def save_chunk_vectors(self, chunks: list[DocumentChunk]) -> None:
         points: list[PointStruct] = []
+        mappings: list[VectorMappingSpec] = []
         document_types_by_id, identifier_values_by_chunk_id = (
             self._load_document_metadata(chunks)
         )
@@ -65,15 +69,19 @@ class QdrantVectorStore(VectorStore):
                     ),
                 )
             )
-            self.mapping_repository.save_mapping(
-                vector_id=f"vector_{uuid4().hex}",
-                document_id=chunk.document_id,
-                chunk_id=chunk.chunk_id,
-                qdrant_collection=self.collection_name,
-                qdrant_point_id=point_id,
-                embedding_model=self.embedding_model,
-                embedding_text_hash=self._embedding_text_hash(chunk),
+            mappings.append(
+                {
+                    "vector_id": f"vector_{uuid4().hex}",
+                    "document_id": chunk.document_id,
+                    "chunk_id": chunk.chunk_id,
+                    "qdrant_collection": self.collection_name,
+                    "qdrant_point_id": point_id,
+                    "embedding_model": self.embedding_model,
+                    "embedding_text_hash": self._embedding_text_hash(chunk),
+                }
             )
+
+        self.mapping_repository.save_mappings(mappings)
 
         try:
             self.client.upsert(
@@ -123,10 +131,6 @@ class QdrantVectorStore(VectorStore):
         ]
 
     def delete_document_vectors(self, document_id: str) -> None:
-        chunk_ids = self.mapping_repository.list_chunk_ids_by_document(document_id)
-        if not chunk_ids:
-            return
-
         point_ids = self.mapping_repository.list_qdrant_point_ids_by_document(document_id)
         if not point_ids:
             return

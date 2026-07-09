@@ -57,6 +57,9 @@ class FakeClassificationService:
     def save_chunk_classification(self, classification, activity_context=None):
         self.saved_chunk_classifications.append(classification)
 
+    def save_chunk_classifications(self, classifications, activity_context=None):
+        self.saved_chunk_classifications.extend(classifications)
+
 
 class FakeQuestionGenerationService:
     def __init__(self) -> None:

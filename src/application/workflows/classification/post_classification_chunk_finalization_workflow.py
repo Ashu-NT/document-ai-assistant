@@ -473,20 +473,10 @@ class PostClassificationChunkFinalizationWorkflow:
                 )
             )
 
-        for index, (chunk, classification) in enumerate(
-            zip(chunks, classifications), start=1
-        ):
-            self._emit_progress(
-                progress_callback,
-                (
-                    f"[chunk-classification {index}/{total_chunks}] "
-                    f"Classifying chunk {chunk.chunk_id}..."
-                ),
-            )
-            self.classification_service.save_chunk_classification(
-                classification,
-                activity_context=activity_context,
-            )
+        self.classification_service.save_chunk_classifications(
+            classifications,
+            activity_context=activity_context,
+        )
         self._emit_progress(
             progress_callback,
             f"Classified {total_chunks} final chunk(s).",

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from src.domain.memory import ConversationMemory
 from src.infrastructure.db.mappers import ConversationMemoryMapper
 from src.infrastructure.db.orm_models import ConversationMemoryORM, ConversationMessageORM
+from src.infrastructure.db.repositories.common import bulk_merge
 from src.shared.exceptions import DatabaseError
 
 
@@ -16,13 +17,14 @@ class ConversationMemoryRepository:
         try:
             self.session.merge(ConversationMemoryMapper.memory_to_orm(memory))
 
-            for message in memory.messages:
-                self.session.merge(
-                    ConversationMemoryMapper.message_to_orm(
-                        message,
-                        conversation_id=memory.conversation_id,
-                    )
+            message_orm_objects = [
+                ConversationMemoryMapper.message_to_orm(
+                    message,
+                    conversation_id=memory.conversation_id,
                 )
+                for message in memory.messages
+            ]
+            bulk_merge(self.session, ConversationMessageORM, message_orm_objects)
 
         except SQLAlchemyError as exc:
             raise DatabaseError(

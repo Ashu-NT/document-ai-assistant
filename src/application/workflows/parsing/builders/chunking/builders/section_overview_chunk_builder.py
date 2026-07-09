@@ -58,13 +58,14 @@ class SectionOverviewChunkBuilder:
             if not child_sections:
                 continue
 
-            overview_text = self._build_overview_text(
+            overview_result = self._build_overview_text(
                 section=section,
                 child_sections=child_sections,
                 elements=section_elements_by_id.get(section.section_id, []),
             )
-            if not overview_text:
+            if overview_result is None:
                 continue
+            overview_text, overview_token_count = overview_result
 
             section.overview_text = overview_text
 
@@ -89,7 +90,7 @@ class SectionOverviewChunkBuilder:
                             ],
                             page_start=section.source.page_start,
                             page_end=section.source.page_end,
-                            token_count=self.text_splitter.count_tokens(overview_text),
+                            token_count=overview_token_count,
                         )
                     ],
                 )
@@ -103,7 +104,7 @@ class SectionOverviewChunkBuilder:
         section: DocumentSection,
         child_sections: list[DocumentSection],
         elements: list[CanonicalElement],
-    ) -> str | None:
+    ) -> tuple[str, int] | None:
         child_titles = [
             clean_chunk_text(child_section.title)
             for child_section in child_sections
@@ -147,10 +148,11 @@ class SectionOverviewChunkBuilder:
         if not texts:
             return None
 
-        return self._truncate_to_token_limit("\n\n".join(texts))
+        text, _ = self._truncate_to_token_limit("\n\n".join(texts))
+        return text
 
-    def _truncate_to_token_limit(self, text: str) -> str:
-        return self.text_splitter.token_counter.truncate_to_tokens(
+    def _truncate_to_token_limit(self, text: str) -> tuple[str, int]:
+        return self.text_splitter.token_counter.truncate_to_tokens_with_count(
             text,
             self.max_overview_tokens,
         )

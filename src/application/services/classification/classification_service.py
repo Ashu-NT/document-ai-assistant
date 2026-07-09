@@ -86,6 +86,44 @@ class ClassificationService:
             },
         )
 
+    @tracked_action(
+        action="classification.chunks_saved",
+        entity_type="chunk",
+        activity=True,
+        audit=False,
+        event=True,
+    )
+    def save_chunk_classifications(
+        self,
+        classifications: list[ChunkClassification],
+        activity_context: ActivityContext | None = None,
+    ) -> list[ActionResult]:
+        for classification in classifications:
+            validation = self.chunk_classification_validator.validate(classification)
+            validation.raise_if_invalid()
+
+        self.classification_repository.save_chunk_classifications(classifications)
+
+        return [
+            ActionResult(
+                entity_type="chunk",
+                entity_id=classification.chunk_id,
+                message="Chunk classification saved.",
+                payload={
+                    "chunk_id": classification.chunk_id,
+                    "document_id": classification.document_id,
+                    "chunk_type": classification.chunk_type.value,
+                    "classification_id": classification.result.classification_id
+                    if classification.result
+                    else None,
+                    "confidence_score": classification.result.confidence_score
+                    if classification.result
+                    else None,
+                },
+            )
+            for classification in classifications
+        ]
+
     def get_document_classification(
         self,
         document_id: str,

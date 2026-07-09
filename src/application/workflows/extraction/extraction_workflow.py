@@ -1,4 +1,5 @@
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace as dataclass_replace
 from typing import Any
 from collections.abc import Callable
@@ -57,6 +58,7 @@ from src.shared.exceptions import SchemaValidationError
 from src.shared.ids import IdGenerator, IdPrefix
 
 KEY_PATTERN = re.compile(r"[^a-z0-9]+")
+_MAX_CONCURRENT_CANDIDATE_SELECTIONS = 8
 
 # Per-entity "content" fields: the fields that actually carry extracted
 # information, as opposed to bookkeeping (id/document_id/source_chunk_id/
@@ -734,11 +736,17 @@ class ExtractionWorkflow:
                 None,
             )
 
-        requested_types: frozenset[ExtractionPromptType] = frozenset().union(
-            *(
-                self.candidate_selector.select_for_chunk(chunk)
-                for chunk in batch.chunks
+        # select_for_chunk() may call the (optional, off-by-default) LLM
+        # candidate router per GENERAL/UNKNOWN chunk -- each call is an
+        # independent, side-effect-free LLM request, so run them
+        # concurrently instead of one at a time across the batch.
+        max_workers = min(len(batch.chunks), _MAX_CONCURRENT_CANDIDATE_SELECTIONS)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            selected_types = list(
+                executor.map(self.candidate_selector.select_for_chunk, batch.chunks)
             )
+        requested_types: frozenset[ExtractionPromptType] = frozenset().union(
+            *selected_types
         )
 
         if requested_types == ExtractionCandidateSelector.all_types():

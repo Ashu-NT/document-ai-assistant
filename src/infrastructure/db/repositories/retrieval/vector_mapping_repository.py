@@ -1,3 +1,5 @@
+from typing import TypedDict
+
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -6,6 +8,16 @@ from sqlalchemy import delete
 from src.infrastructure.db.mappers import ChunkVectorMapper
 from src.infrastructure.db.orm_models import ChunkVectorORM
 from src.shared.exceptions import DatabaseError
+
+
+class VectorMappingSpec(TypedDict):
+    vector_id: str
+    document_id: str
+    chunk_id: str
+    qdrant_collection: str
+    qdrant_point_id: str
+    embedding_model: str
+    embedding_text_hash: str | None
 
 
 class SqlAlchemyVectorMappingRepository:
@@ -44,6 +56,30 @@ class SqlAlchemyVectorMappingRepository:
                     "chunk_id": chunk_id,
                     "qdrant_point_id": qdrant_point_id,
                 },
+            ) from exc
+
+    def save_mappings(self, mappings: list[VectorMappingSpec]) -> None:
+        """Bulk-inserts many mappings in a single batch via session.add_all().
+
+        Each mapping's vector_id (the ORM primary key) is always a freshly
+        generated UUID minted by the caller, so there is never an existing
+        row to reconcile -- unlike a merge-per-item loop, this skips the
+        per-item existence-check SELECT entirely and goes straight to
+        add_all() for the whole batch.
+        """
+        if not mappings:
+            return
+
+        try:
+            orm_objects = [
+                ChunkVectorMapper.to_orm(**mapping) for mapping in mappings
+            ]
+            self.session.add_all(orm_objects)
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to save vector mappings.",
+                details={"count": len(mappings)},
             ) from exc
 
     def get_qdrant_point_id(self, chunk_id: str) -> str | None:

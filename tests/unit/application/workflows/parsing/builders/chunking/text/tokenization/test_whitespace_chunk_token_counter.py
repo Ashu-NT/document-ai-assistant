@@ -25,6 +25,20 @@ def test_whitespace_chunk_token_counter_truncates_to_tokens() -> None:
     assert counter.truncate_to_tokens("alpha beta", 5) == "alpha beta"
 
 
+def test_whitespace_chunk_token_counter_truncates_with_count() -> None:
+    counter = WhitespaceChunkTokenCounter()
+
+    assert counter.truncate_to_tokens_with_count("alpha beta gamma", 2) == (
+        "alpha beta",
+        2,
+    )
+    assert counter.truncate_to_tokens_with_count("alpha beta", 5) == (
+        "alpha beta",
+        2,
+    )
+    assert counter.truncate_to_tokens_with_count("alpha beta", 0) == ("", 0)
+
+
 def test_whitespace_chunk_token_counter_splits_windows() -> None:
     counter = WhitespaceChunkTokenCounter()
 

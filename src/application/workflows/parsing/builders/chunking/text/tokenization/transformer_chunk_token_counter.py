@@ -92,6 +92,22 @@ class TransformerChunkTokenCounter(ChunkTokenCounter):
         end_char = offsets[max_tokens - 1][1]
         return text[:end_char].strip()
 
+    def truncate_to_tokens_with_count(
+        self, text: str, max_tokens: int
+    ) -> tuple[str, int]:
+        if max_tokens <= 0:
+            return "", 0
+
+        offsets = self._token_offsets(text)
+        if not offsets:
+            return self._fallback.truncate_to_tokens_with_count(text, max_tokens)
+
+        if len(offsets) <= max_tokens:
+            return text, len(offsets)
+
+        end_char = offsets[max_tokens - 1][1]
+        return text[:end_char].strip(), max_tokens
+
     def split_token_windows(self, text: str, max_tokens: int) -> list[str]:
         if not text:
             return []

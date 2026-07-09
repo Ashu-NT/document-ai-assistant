@@ -69,13 +69,20 @@ class PageOCRFallbackWorkflow:
         )
         execution_results: list[OCRTargetExecutionResult] = []
         temporary_artifact_paths: set[Path] = set()
+        rendered_page_cache: dict[tuple[int, int], object] = {}
+        needs_pdf = any(
+            target.target_type != OCRTargetType.ASSET
+            for target in selection_result.targets
+        )
+        opened_pdf = self.page_renderer.open(file_path) if needs_pdf else None
 
         try:
             for target in selection_result.targets:
                 try:
                     source_image_path = self._resolve_target_image_path(
                         target,
-                        file_path,
+                        opened_pdf,
+                        rendered_page_cache,
                         temporary_artifact_paths,
                     )
                     ocr_result = self.ocr_service.extract_result_from_image(
@@ -109,13 +116,16 @@ class PageOCRFallbackWorkflow:
                 trace_output_dir=self.output_dir,
             )
         finally:
+            if opened_pdf is not None:
+                opened_pdf.close()
             if not self.trace_enabled:
                 self.temporary_artifact_cleaner.cleanup(temporary_artifact_paths)
 
     def _resolve_target_image_path(
         self,
         target,
-        file_path: str,
+        opened_pdf,
+        rendered_page_cache: dict[tuple[int, int], object],
         temporary_artifact_paths: set[Path],
     ) -> str:
         if target.target_type == OCRTargetType.ASSET:
@@ -126,13 +136,18 @@ class PageOCRFallbackWorkflow:
                 )
             return target.image_path
 
-        rendered_page = self.page_renderer.render_page(
-            pdf_path=file_path,
-            page_number=target.page_number or 1,
-            dpi=self.target_selector.policy.page_render_dpi,
-            output_dir=self.output_dir / "pages",
-        )
-        temporary_artifact_paths.add(Path(rendered_page.image_path))
+        page_number = target.page_number or 1
+        dpi = self.target_selector.policy.page_render_dpi
+        cache_key = (page_number, dpi)
+        rendered_page = rendered_page_cache.get(cache_key)
+        if rendered_page is None:
+            rendered_page = opened_pdf.render_page(
+                page_number=page_number,
+                dpi=dpi,
+                output_dir=self.output_dir / "pages",
+            )
+            rendered_page_cache[cache_key] = rendered_page
+            temporary_artifact_paths.add(Path(rendered_page.image_path))
         if target.target_type == OCRTargetType.PAGE:
             return rendered_page.image_path
 

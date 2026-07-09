@@ -8,6 +8,10 @@ from src.application.prompts.common import PromptMetadata
 from src.domain.common import DocumentType
 from src.domain.document import Document, DocumentGraph
 
+_DOCUMENT_TYPES_LABEL_LIST = ", ".join(
+    document_type.value for document_type in DocumentType
+)
+
 
 class DocumentClassificationPromptBuilder:
     prompt_version = DOCUMENT_CLASSIFICATION_PROMPT_VERSION
@@ -28,7 +32,6 @@ class DocumentClassificationPromptBuilder:
 
     def build(self, document_or_graph: DocumentGraph | Document) -> str:
         document = self._resolve_document(document_or_graph)
-        document_types = ", ".join(document_type.value for document_type in DocumentType)
         title = document.title or "N/A"
         language = document.language or "N/A"
         stats = self._resolve_statistics(document_or_graph)
@@ -45,7 +48,7 @@ class DocumentClassificationPromptBuilder:
             '  "rationale": "<short explanation>",\n'
             '  "evidence": ["<evidence 1>", "<evidence 2>"]\n'
             "}\n"
-            f"Allowed labels: {document_types}\n"
+            f"Allowed labels: {_DOCUMENT_TYPES_LABEL_LIST}\n"
             "Decision guidance:\n"
             "- Prioritize graph-derived section, chunk, table, and picture evidence over file path naming.\n"
             "- Use document statistics as supporting evidence, not the sole basis.\n"
