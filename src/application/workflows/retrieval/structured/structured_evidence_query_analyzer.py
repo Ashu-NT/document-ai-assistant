@@ -1,5 +1,21 @@
 from __future__ import annotations
 
+# Keyword-taxonomy-sprawl note (deliberate, not an oversight): this module's
+# _MANUFACTURER_TERMS/_SPECIFICATION_TERMS/_MAINTENANCE_TERMS/etc. are yet
+# another independent marker-list taxonomy, joining RetrievalQueryIntent's,
+# AnswerIntent's, the strategy-advisor's, the guardrail's, the reflection
+# validator's, and the deterministic planner's -- each catalogued separately
+# during this codebase's intent-hardening pass. It is intentionally NOT
+# merged into any of those: each taxonomy answers a different question
+# (retrieval routing vs. answer formatting vs. structured-entity-type
+# selection) over a different value space (RetrievalQueryIntent enum members
+# vs. StructuredEntityType enum members here), so a shared vocabulary would
+# need a lossy translation layer between enums that don't correspond 1:1
+# rather than removing real duplication. Precedent from that pass: only
+# consolidate when two lists drift on the SAME narrow concept (e.g. the
+# identifier-inventory regex/marker duplication fixed alongside this note,
+# see identifier_value_pattern.py) -- not force unrelated taxonomies
+# together because they're superficially similar in shape.
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )

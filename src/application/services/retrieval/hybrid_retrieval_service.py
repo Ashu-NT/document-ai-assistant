@@ -138,6 +138,25 @@ class HybridRetrievalService(RetrievalBackend):
                 existing.metadata["retrieval_sources"] = ",".join(
                     sorted(existing_sources)
                 )
+                if source_name == "structured":
+                    # Structured is always collected last (see
+                    # _collect_source_results), so a chunk also found by
+                    # dense/sql already has its own clone here -- without
+                    # this, the structured resolver's match metadata
+                    # (structured_match_count etc.) would be silently
+                    # dropped for every chunk that ISN'T structured-only,
+                    # which the reranker relies on to weight structured
+                    # evidence.
+                    for structured_key in (
+                        "structured_match_reasons",
+                        "structured_match_count",
+                        "structured_identifier_types",
+                        "structured_entity_types",
+                    ):
+                        if structured_key in chunk.metadata:
+                            existing.metadata[structured_key] = chunk.metadata[
+                                structured_key
+                            ]
                 existing.retrieval_source = (
                     "hybrid"
                     if len(existing_sources) > 1

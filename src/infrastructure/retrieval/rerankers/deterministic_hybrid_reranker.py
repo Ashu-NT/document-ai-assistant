@@ -73,6 +73,7 @@ class DeterministicHybridReranker(Reranker):
         sql_score = self._metadata_float(chunk, "sql_keyword_source_score")
         dense_score = self._metadata_float(chunk, "dense_source_score")
         best_score = self._metadata_float(chunk, "best_source_score", default=chunk.score)
+        structured_match_count = self._metadata_int(chunk, "structured_match_count")
         identifier_matches = max(
             self._metadata_int(chunk, "sql_exact_identifier_matches"),
             self._identifier_match_count(chunk, query_identifiers),
@@ -84,6 +85,17 @@ class DeterministicHybridReranker(Reranker):
         score += best_score * 4.0
         score += sql_score * 3.0
         score += dense_score * 1.25
+        # Structured evidence's own raw score (0.75-3ish, additive per
+        # identifier/entity/related-entity hit) is on a different scale than
+        # sql_keyword's (frequently 10-70+, several bonuses stacked) or
+        # dense's (0-1 cosine similarity) -- best_score alone would leave a
+        # structured-only chunk's signal negligible next to even a weak sql
+        # hit. structured_match_count is a small integer (how many
+        # identifier/entity/related-entity signals hit this chunk), weighted
+        # here to be comparable to the other per-signal bonuses below
+        # (role/chunk-type-fit/section-hit), not to compete with sql's
+        # literal-match bonuses.
+        score += float(structured_match_count) * 10.0
         score += identifier_matches * 35.0
         score += self._role_score(role)
         score += self._intent_chunk_type_score(

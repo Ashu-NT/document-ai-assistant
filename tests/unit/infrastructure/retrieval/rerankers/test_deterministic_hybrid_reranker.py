@@ -153,3 +153,35 @@ def test_deterministic_hybrid_reranker_prefers_installation_like_objective_chunk
     reranked = reranker.rerank(query, [noisy_parts_chunk, objective_chunk])
 
     assert reranked[0].chunk_id == "chunk_objective"
+
+
+def test_deterministic_hybrid_reranker_weighs_structured_match_count() -> None:
+    """A chunk carrying structured_match_count metadata (set by
+    StructuredEvidenceResolver -- an identifier/entity/related-entity hit)
+    should meaningfully outrank an otherwise-identical chunk with no
+    structured signal at all, not just get lost in best_source_score's raw
+    scale (which is tuned around sql_keyword's much larger magnitude)."""
+    reranker = DeterministicHybridReranker()
+    query = RetrievalQuery(
+        query_id="query_005",
+        query_text="Who is the manufacturer of the spare part?",
+    )
+    plain_chunk = make_chunk(
+        chunk_id="chunk_plain",
+        content="General notes about spare parts and manufacturers.",
+        chunk_type=ChunkType.GENERAL,
+        score=0.80,
+        section_path=["General Notes"],
+    )
+    structured_chunk = make_chunk(
+        chunk_id="chunk_structured",
+        content="Manufacturer: Acme Valves Ltd. Country: Germany.",
+        chunk_type=ChunkType.GENERAL,
+        score=0.80,
+        section_path=["General Notes"],
+        metadata={"structured_match_count": "2"},
+    )
+
+    reranked = reranker.rerank(query, [plain_chunk, structured_chunk])
+
+    assert reranked[0].chunk_id == "chunk_structured"

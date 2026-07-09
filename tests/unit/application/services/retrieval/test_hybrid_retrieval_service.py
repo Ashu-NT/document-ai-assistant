@@ -280,3 +280,56 @@ def test_hybrid_retrieval_passes_document_scope_to_sources_and_discards_leaks(
         chunk.document_id == sample_retrieval_query.document_id
         for chunk in result.chunks
     )
+
+
+def test_retrieve_with_additional_candidates_adds_a_structured_source(
+    sample_retrieval_query,
+    sample_retrieved_chunk,
+) -> None:
+    structured_chunk = clone_chunk(
+        sample_retrieved_chunk,
+        chunk_id="chunk_structured_only",
+        score=1.0,
+    )
+    structured_chunk.metadata["structured_match_count"] = "1"
+    service = make_service(keyword_index=FakeKeywordIndex([]))
+
+    result = service.retrieve_with_additional_candidates(
+        sample_retrieval_query,
+        additional_candidates=[structured_chunk],
+    )
+
+    assert len(result.chunks) == 1
+    assert result.chunks[0].retrieval_source == "structured"
+    assert result.chunks[0].metadata["structured_match_count"] == "1"
+
+
+def test_structured_match_metadata_survives_fusion_when_also_found_by_keyword(
+    sample_retrieval_query,
+    sample_retrieved_chunk,
+) -> None:
+    """Structured is always collected last (see _collect_source_results), so
+    a chunk also found by sql_keyword/dense gets cloned from THAT source
+    first -- without explicit propagation in the merge branch, the
+    structured resolver's match metadata would be silently dropped for any
+    chunk that isn't structured-only."""
+    structured_duplicate = clone_chunk(
+        sample_retrieved_chunk,
+        chunk_id=sample_retrieved_chunk.chunk_id,
+        score=1.95,
+    )
+    structured_duplicate.metadata["structured_match_count"] = "2"
+    structured_duplicate.metadata["structured_match_reasons"] = "identifier:part_number"
+    service = make_service(keyword_index=FakeKeywordIndex([sample_retrieved_chunk]))
+
+    result = service.retrieve_with_additional_candidates(
+        sample_retrieval_query,
+        additional_candidates=[structured_duplicate],
+    )
+
+    assert result.chunks[0].retrieval_source == "hybrid"
+    assert result.chunks[0].metadata["structured_match_count"] == "2"
+    assert (
+        result.chunks[0].metadata["structured_match_reasons"]
+        == "identifier:part_number"
+    )
