@@ -402,6 +402,30 @@ def test_generate_diagnostics_include_formatting_layer_rules_versions() -> None:
     assert "maintenance_entry_merger_rules_version" in result.diagnostics
 
 
+def test_generate_diagnostics_surface_format_policy_context_signals() -> None:
+    """Plan section 9.4/9.9/9.10: AnswerFormatPolicy.resolve() derives
+    context signals (evidence density, low-confidence evidence, rich
+    structured evidence, multi-document evidence) from the organized
+    structured_context. Those signals must reach diagnostics, not stay an
+    internal-only adjustment baked silently into the prompt."""
+    service, _ = make_service()
+    request = AnswerGenerationRequest(
+        question="When to replace the filter?",
+        context_chunks=[_make_chunk()],
+    )
+
+    result = service.generate(request)
+
+    assert "format_policy_context_signals" in result.diagnostics
+    signals = result.diagnostics["format_policy_context_signals"]
+    assert set(signals) == {
+        "is_sparse_evidence",
+        "has_low_confidence_evidence",
+        "has_rich_structured_evidence",
+        "is_multi_document",
+    }
+
+
 def test_generate_passes_answer_generation_response_schema_to_llm() -> None:
     service, llm = make_service()
     request = AnswerGenerationRequest(

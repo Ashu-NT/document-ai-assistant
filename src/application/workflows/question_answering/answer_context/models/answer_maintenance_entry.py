@@ -30,7 +30,6 @@ class AnswerMaintenanceEntry:
     source_number: int
     description: str | None = None
     references: list[AnswerMaintenanceReference] = field(default_factory=list)
-    confidence: float | None = None
 
     def __post_init__(self) -> None:
         if not self.references:
