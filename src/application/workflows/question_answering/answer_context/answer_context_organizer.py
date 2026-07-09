@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from collections import Counter
 from typing import Sequence
 
@@ -19,8 +18,10 @@ from src.application.workflows.question_answering.answer_context.section_group_b
 from src.application.workflows.question_answering.answer_context.source_group_builder import (
     SourceGroupBuilder,
 )
+from src.application.workflows.question_answering.answer_context.structured_source_builder import (
+    StructuredSourceBuilder,
+)
 from src.application.workflows.question_answering.answer_context.models import (
-    AnswerSource,
     StructuredAnswerContext,
 )
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
@@ -34,6 +35,7 @@ class AnswerContextOrganizer:
         maintenance_entry_merger: MaintenanceEntryMerger | None = None,
         source_group_builder: SourceGroupBuilder | None = None,
         section_group_builder: SectionGroupBuilder | None = None,
+        structured_source_builder: StructuredSourceBuilder | None = None,
     ) -> None:
         self.key_value_extractor = key_value_extractor or KeyValueExtractor()
         self.maintenance_entry_merger = (
@@ -41,6 +43,9 @@ class AnswerContextOrganizer:
         )
         self.source_group_builder = source_group_builder or SourceGroupBuilder()
         self.section_group_builder = section_group_builder or SectionGroupBuilder()
+        self.structured_source_builder = (
+            structured_source_builder or StructuredSourceBuilder()
+        )
 
     def organize(
         self,
@@ -48,10 +53,7 @@ class AnswerContextOrganizer:
         answer_intent: AnswerIntent,
         chunks: Sequence[RetrievedChunk],
     ) -> StructuredAnswerContext:
-        sources = [
-            self._to_source(index + 1, chunk)
-            for index, chunk in enumerate(chunks)
-        ]
+        sources = self.structured_source_builder.build_sources(chunks)
         source_groups = self.source_group_builder.build(sources)
         section_groups = self.section_group_builder.build(sources)
         key_values = self.key_value_extractor.extract(
@@ -100,60 +102,3 @@ class AnswerContextOrganizer:
             source_count=len(sources),
             diagnostics=diagnostics,
         )
-
-    @staticmethod
-    def _to_source(source_number: int, chunk: RetrievedChunk) -> AnswerSource:
-        citation = chunk.citation
-        section_path = " > ".join(chunk.section_path) if chunk.section_path else None
-        chunk_name = (
-            (citation.section_title if citation is not None else None)
-            or (chunk.section_path[-1] if chunk.section_path else None)
-            or chunk.chunk_type.value
-        )
-        document_title = None
-        if citation is not None and citation.document_name:
-            document_title = citation.document_name
-        elif chunk.metadata.get("document_title"):
-            document_title = chunk.metadata["document_title"]
-        return AnswerSource(
-            source_number=source_number,
-            chunk_id=chunk.chunk_id,
-            chunk_name=chunk_name,
-            chunk_type=chunk.chunk_type.value,
-            document_id=chunk.document_id,
-            document_title=document_title,
-            section_path=section_path,
-            page_start=chunk.source.page_start,
-            page_end=chunk.source.page_end,
-            score=chunk.score,
-            content=chunk.content,
-            table_rows=AnswerContextOrganizer._decode_table_rows(chunk.metadata),
-            retrieval_source=chunk.retrieval_source,
-            section_id=chunk.section_id,
-            statistics=chunk.statistics,
-            identifier_values=list(chunk.identifier_values),
-            metadata=dict(chunk.metadata),
-            collapsed_chunk_ids=AnswerContextOrganizer._decode_collapsed_chunk_ids(
-                chunk.metadata
-            ),
-        )
-
-    @staticmethod
-    def _decode_collapsed_chunk_ids(metadata: dict[str, str]) -> list[str]:
-        raw = metadata.get("dedup_collapsed_chunk_ids", "")
-        return [
-            chunk_id.strip()
-            for chunk_id in raw.split(",")
-            if chunk_id.strip()
-        ]
-
-    @staticmethod
-    def _decode_table_rows(metadata: dict[str, str]) -> list[list[str]] | None:
-        raw = metadata.get("table_rows_json")
-        if not raw:
-            return None
-        try:
-            decoded = json.loads(raw)
-        except ValueError:
-            return None
-        return decoded if isinstance(decoded, list) else None

@@ -24,6 +24,7 @@ __all__ = [
     "StructuredAnswerContext",
     "StructuredEvidenceViewBuilder",
     "StructuredFactKeyValueBuilder",
+    "StructuredSourceBuilder",
 ]
 
 
@@ -52,4 +53,10 @@ def __getattr__(name: str):
         )
 
         return StructuredFactKeyValueBuilder
+    if name == "StructuredSourceBuilder":
+        from src.application.workflows.question_answering.answer_context.structured_source_builder import (
+            StructuredSourceBuilder,
+        )
+
+        return StructuredSourceBuilder
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

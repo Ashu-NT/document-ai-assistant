@@ -755,7 +755,7 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | 4.6 LLM schema too weak | Phase 8 | 9.6 |
 | 4.7 deterministic renderers fragmented | Phase 7 | 9.5 |
 | 4.8 table evidence partially modeled | Phase 4 — **still open**, `table_evidence`/`asset_evidence` deferred (no additional data source identified, see Phase 4's design note) | 9.2 (`table_evidence`) |
-| 4.9 groups are prompt-facing only | Phase 5, Phase 7 | 9.5 |
+| 4.9 groups are prompt-facing only | Phase 7 (corrected — Phase 5 was orchestration-only cleanup, does not touch grouping consumption; see Phase 5's traceability-correction note) | 9.5 |
 | 4.10 tests lock in the limited model | Phase 1, Phase 10 | section 11 |
 | 4.11 / 5.1.D dead `confidence` fields | Phase 9 | 9.9, reviewer 0.1 #4 |
 | 4.12 / 5.1.E dead `max_context_chunks` | Phase 1 — **done** (removed) | reviewer 0.1 #1 |
@@ -806,11 +806,17 @@ Full regression: 2222 tests green across the entire `tests/unit` suite.
 
 Full regression: 2235 tests green across the entire `tests/unit` suite. New tests: `test_structured_evidence_view_builder.py` (5 tests, including a direct regression test for 4.16's procedure-steps preservation), `test_resolved_maintenance_task_surfaces_linked_procedure_steps_end_to_end` (workflow-level end-to-end 4.16 coverage), and the corrected `test_resolved_structured_entities_without_lookup_service_do_not_crash` (now asserts `structured_context is not None`, closing the 4.3/9.7 baseline gap that test was tracking).
 
-## Phase 5 - Organizer redesign
+## Phase 5 - Organizer redesign [IMPLEMENTED]
 
-- keep `AnswerContextOrganizer` as orchestration only
-- move extraction logic into focused builders/extractors
-- ensure maintenance extraction remains intact
+- ✅ keep `AnswerContextOrganizer` as orchestration only — audited `organize()` after Phase 4 and found exactly one piece of real extraction/mapping logic still embedded directly in it: `_to_source()` plus its two static helpers (`_decode_collapsed_chunk_ids()`, `_decode_table_rows()`), mapping a `RetrievedChunk` into an `AnswerSource`. Everything else `organize()` does was already delegation to `KeyValueExtractor`, `MaintenanceEntryMerger`, `SourceGroupBuilder`, `SectionGroupBuilder`.
+- ✅ move extraction logic into focused builders/extractors — moved `_to_source()`/`_decode_collapsed_chunk_ids()`/`_decode_table_rows()` verbatim (no behavior change) into a new `StructuredSourceBuilder` class (`answer_context/structured_source_builder.py`, matching the file name section 7's proposed tree already used for this exact responsibility). `AnswerContextOrganizer` now takes a `structured_source_builder: StructuredSourceBuilder | None = None` constructor param (defaulting to `StructuredSourceBuilder()`) and its `organize()` first line is `sources = self.structured_source_builder.build_sources(chunks)`. Wired into the package's lazy `__getattr__` export pattern in `answer_context/__init__.py` alongside the other builders.
+- ✅ ensure maintenance extraction remains intact — `MaintenanceEntryMerger`/`KeyValueExtractor` wiring in `organize()` is untouched; `test_answer_context_organizer.py`'s existing maintenance-extraction tests pass unchanged, confirming the refactor is behavior-preserving.
+
+**Design note on scope, found during implementation:** section 7's proposed tree also splits the *rest* of the package's existing files into `builders/`/`extractors/`/`mergers/`/`adapters/` physical subfolders (e.g. `answer_context_organizer.py` and `source_group_builder.py` moving under `builders/`, `key_value_extractor.py` under `extractors/`, `maintenance_entry_merger.py` under `mergers/`). That reorganization was deliberately not done in this phase — every file already involved is independently correct and independently tested; nesting them into subfolders is pure folder-churn with no functional driver and no violation it fixes, the same scoping discipline already applied in Phase 2 (which likewise deferred the full folder split in favor of moving only the data models that had a real reason to move). If a future phase needs the subfolder split (e.g. because the package grows past a size where flat files stop being navigable), it should be its own dedicated step, not bundled into "organizer redesign."
+
+**Traceability correction:** the matrix row for 4.9 (`groups are prompt-facing only`) listed `Phase 5, Phase 7`. Re-checked 4.9's actual complaint: `AnswerSourceGroup`/`AnswerSectionGroup` are under-leveraged by renderers/CLI/research synthesis, not orchestration-only-ness of the organizer — that's a rendering-consumption concern (9.5, "unify deterministic rendering on top of the same typed context"), which is Phase 7's job. Phase 5 as scoped here does not touch grouping consumption at all, so the matrix below has been corrected to `Phase 7` only.
+
+Verification: `ast.parse` on all three touched/created files, a runtime import check (`from ...answer_context import StructuredSourceBuilder, AnswerContextOrganizer`), the full existing `test_answer_context_organizer.py` suite (8 tests, all green, confirming behavior-preservation), a new `test_structured_source_builder.py` (6 tests covering sequential numbering, retrieval/chunk metadata mapping, collapsed-chunk-id defaulting, table-rows JSON decoding success/failure, and the chunk-type-name fallback), and a full `pytest tests/unit` run: **2243 passed, 0 failed, 0 errors.**
 
 ## Phase 6 - Format-Policy Upgrade and Diagnostic Consumption
 
