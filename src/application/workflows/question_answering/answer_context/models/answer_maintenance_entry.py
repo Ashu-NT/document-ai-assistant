@@ -37,6 +37,12 @@ class AnswerMaintenanceEntry:
             self.references = [
                 AnswerMaintenanceReference(source_number=self.source_number)
             ]
+            return
+        # `references` owns provenance. If a caller passes explicit
+        # references, keep the scalar "primary source" field aligned to the
+        # first reference instead of letting two parallel representations
+        # drift out of sync again.
+        self.source_number = self.references[0].source_number
 
     @property
     def source_numbers(self) -> list[int]:
