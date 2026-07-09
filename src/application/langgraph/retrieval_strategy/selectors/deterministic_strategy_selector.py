@@ -10,6 +10,9 @@ from src.application.langgraph.retrieval_strategy.policies import (
     RetrievalStrategyPolicy,
     StrategyPriorityPolicy,
 )
+from src.application.workflows.shared.maintenance_signal_detection import (
+    mentions_maintenance_interval,
+)
 
 
 class DeterministicStrategySelector:
@@ -304,23 +307,4 @@ def _looks_like_maintenance_interval_query(context: RetrievalContext) -> bool:
         else context.query_text
     )
     normalized = query_text.lower()
-    return any(
-        marker in normalized
-        for marker in (
-            "maintenance interval",
-            "maintenance intervals",
-            "service interval",
-            "service intervals",
-            "inspection interval",
-            "inspection intervals",
-            "maintenance schedule",
-            "preventive maintenance",
-            "how often",
-            "daily",
-            "weekly",
-            "monthly",
-            "quarterly",
-            "annual",
-            "annually",
-        )
-    )
+    return mentions_maintenance_interval(normalized)

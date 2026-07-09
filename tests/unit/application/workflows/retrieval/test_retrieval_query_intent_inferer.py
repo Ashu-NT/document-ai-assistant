@@ -132,3 +132,181 @@ class TestOtherIntentsUnchanged:
 
     def test_none_query_returns_general(self) -> None:
         assert inferer.infer(None) == RetrievalQueryIntent.GENERAL
+
+    def test_procedure_intent_for_replace(self) -> None:
+        """'replace' is a PROCEDURE marker in the original inline check but
+        was NOT in the shared _EXPLICIT_PROCEDURE_MARKERS list used only for
+        the old maintenance veto -- regression guard against porting the
+        wrong marker list when this was scored."""
+        query = _make_query("How do I replace the drive belt?")
+        assert inferer.infer(query) == RetrievalQueryIntent.PROCEDURE
+
+    def test_lubricate_maps_to_maintenance_not_procedure(self) -> None:
+        """'lubricate' is a PROCEDURE marker, but 'lubricat' (substring
+        match) is ALSO a MAINTENANCE marker, and the original code's
+        maintenance veto only checked a narrower marker list that excludes
+        'lubricate' -- so this was MAINTENANCE in the original too, since
+        MAINTENANCE is checked before PROCEDURE. Both intents score equally
+        here (one marker hit each); the priority-rank tie-break (MAINTENANCE
+        before PROCEDURE, matching the original scan order) reproduces it."""
+        query = _make_query("How do I lubricate the bearing?")
+        assert inferer.infer(query) == RetrievalQueryIntent.MAINTENANCE
+
+
+# ---------------------------------------------------------------------------
+# classify() scoring/gating internals: deliberate behavior changes and the
+# tightest existing margin, verified via scores rather than just the winner.
+# ---------------------------------------------------------------------------
+
+class TestScoredClassification:
+    def test_maintenance_signal_overwhelms_incidental_procedure_marker(self) -> None:
+        """Deliberate behavior change from the original if/elif inferer:
+        the original hard-vetoed MAINTENANCE entirely whenever ANY explicit
+        procedure marker was present, regardless of how strong the
+        maintenance signal was. The scored classifier instead requires
+        MAINTENANCE to beat a competing PROCEDURE score by a larger gap
+        (4, not the default 2) -- so an overwhelming maintenance signal
+        with only one incidental procedure word still wins as MAINTENANCE
+        rather than being forced to PROCEDURE."""
+        query = _make_query(
+            "What is the preventive maintenance schedule and maintenance "
+            "interval for the belt, and what is the procedure?"
+        )
+        classification = inferer.classify(query)
+        assert classification.intent == RetrievalQueryIntent.MAINTENANCE
+        assert classification.runner_up_intent == RetrievalQueryIntent.PROCEDURE
+        assert classification.gap >= 4
+
+    def test_table_vs_identifier_listing_combo_is_the_tightest_existing_margin(
+        self,
+    ) -> None:
+        """'Show me the spare parts table.' scores TABLE=8 (two distinct
+        marker hits: 'table' + 'spare part') against IDENTIFIER=6 (the
+        verb+marker 'listing' combo: 'show' + 'part') -- a gap of exactly 2,
+        the minimum required. This is the tightest margin found across the
+        whole existing test suite; any future edit to the TABLE or
+        IDENTIFIER marker lists should re-check this case since it could
+        silently flip GENERAL or IDENTIFIER without changing this test."""
+        query = _make_query("Show me the spare parts table.")
+        classification = inferer.classify(query)
+        assert classification.intent == RetrievalQueryIntent.TABLE
+        assert classification.score == 8
+        assert classification.runner_up_intent == RetrievalQueryIntent.IDENTIFIER
+        assert classification.runner_up_score == 6
+        assert classification.gap == 2
+
+    def test_classify_exposes_runner_up_for_close_scores(self) -> None:
+        query = _make_query(
+            "What are likely causes if the pump runs continuously?"
+        )
+        classification = inferer.classify(query)
+        assert classification.intent == RetrievalQueryIntent.TROUBLESHOOTING
+        assert classification.runner_up_intent == RetrievalQueryIntent.PROCEDURE
+        assert classification.gap == 0
+
+    def test_classify_reports_high_confidence_for_unambiguous_query(self) -> None:
+        query = _make_query(
+            "What are the likely causes and remedies for pump problems?"
+        )
+        classification = inferer.classify(query)
+        assert classification.resolution_tier == "scored"
+        assert classification.score == 8
+        assert classification.runner_up_intent is None
+        assert classification.confidence == 1.0
+
+    def test_classify_reports_lower_confidence_for_single_weak_signal(self) -> None:
+        query = _make_query("How do I troubleshoot the pump?")
+        classification = inferer.classify(query)
+        assert classification.score == 4
+        assert classification.runner_up_intent is None
+        assert classification.confidence == 0.75
+
+    def test_classify_none_query_has_general_fallback_tier(self) -> None:
+        classification = inferer.classify(None)
+        assert classification.intent == RetrievalQueryIntent.GENERAL
+        assert classification.resolution_tier == "general"
+        assert classification.fallback_reason == "query_is_none"
+
+    def test_infer_still_returns_bare_intent_for_backward_compatibility(self) -> None:
+        query = _make_query("How do I troubleshoot the pump?")
+        assert inferer.infer(query) == RetrievalQueryIntent.TROUBLESHOOTING
+
+
+# ---------------------------------------------------------------------------
+# Negation awareness: a marker preceded by a negation cue within a short
+# lookback window no longer contributes to its intent's score.
+# ---------------------------------------------------------------------------
+
+class TestNegationAwareness:
+    def test_negated_marker_does_not_trigger_its_intent(self) -> None:
+        query = _make_query("Not a safety concern here.")
+        classification = inferer.classify(query)
+        assert classification.intent == RetrievalQueryIntent.GENERAL
+        assert RetrievalQueryIntent.SAFETY not in classification.scores
+
+    def test_unnegated_marker_still_triggers_its_intent(self) -> None:
+        query = _make_query("This is a safety concern.")
+        assert inferer.infer(query) == RetrievalQueryIntent.SAFETY
+
+    def test_multi_word_negation_cue_suppresses_marker(self) -> None:
+        query = _make_query("Please describe topics unrelated to safety compliance.")
+        classification = inferer.classify(query)
+        assert RetrievalQueryIntent.SAFETY not in classification.scores
+
+    def test_negation_cue_outside_lookback_window_does_not_suppress_marker(
+        self,
+    ) -> None:
+        """'not' is more than 4 tokens before 'safety' here, so it's outside
+        the negation lookback window and should not suppress the marker."""
+        query = _make_query(
+            "The pump was not running well, but there is a safety issue too."
+        )
+        classification = inferer.classify(query)
+        assert RetrievalQueryIntent.SAFETY in classification.scores
+
+    def test_negation_falls_back_to_a_second_valid_occurrence(self) -> None:
+        """'danger' appears twice: the first occurrence is negated, the
+        second is not -- the marker should still register since at least
+        one non-negated occurrence exists."""
+        query = _make_query(
+            "This message is not about danger, but the yellow tag indicates "
+            "danger to operators."
+        )
+        classification = inferer.classify(query)
+        assert RetrievalQueryIntent.SAFETY in classification.scores
+
+
+# ---------------------------------------------------------------------------
+# Comparative-query signal: exposed as a flag on the classification result,
+# not a new RetrievalQueryIntent enum member (the parallel taxonomies don't
+# have a clean comparative slot either).
+# ---------------------------------------------------------------------------
+
+class TestComparativeSignal:
+    def test_difference_between_phrase_is_flagged_comparative(self) -> None:
+        query = _make_query("What is the difference between valve A and valve B?")
+        assert inferer.classify(query).is_comparative is True
+
+    def test_compare_keyword_is_flagged_comparative(self) -> None:
+        query = _make_query("Compare the pressure ratings of pump A and pump B.")
+        assert inferer.classify(query).is_comparative is True
+
+    def test_vs_marker_is_flagged_comparative(self) -> None:
+        query = _make_query("Pump A vs Pump B specifications")
+        assert inferer.classify(query).is_comparative is True
+
+    def test_non_comparative_query_is_not_flagged(self) -> None:
+        query = _make_query("What is the operating pressure?")
+        assert inferer.classify(query).is_comparative is False
+
+    def test_comparative_flag_does_not_change_the_winning_intent(self) -> None:
+        """The comparative flag is additive signal, not a routing decision --
+        a comparative SPECIFICATION query should still resolve to
+        SPECIFICATION, just with is_comparative=True alongside it."""
+        query = _make_query(
+            "What is the difference between the operating pressure of pump A "
+            "and pump B?"
+        )
+        classification = inferer.classify(query)
+        assert classification.intent == RetrievalQueryIntent.SPECIFICATION
+        assert classification.is_comparative is True
