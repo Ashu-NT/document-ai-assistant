@@ -126,7 +126,6 @@ class MaintenanceEntryMerger:
             notes=self._prefer_notes(left.notes, right.notes),
             source_number=references[0].source_number,
             references=references,
-            confidence=max(left.confidence or 0.0, right.confidence or 0.0) or None,
         )
 
     def _normalized_copy(
@@ -142,7 +141,6 @@ class MaintenanceEntryMerger:
             notes=self._prefer_notes(entry.notes, None),
             source_number=entry.source_number,
             references=references,
-            confidence=entry.confidence,
         )
 
     def _normalized_description(self, entry: AnswerMaintenanceEntry) -> str:

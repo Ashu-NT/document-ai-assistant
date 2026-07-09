@@ -1,6 +1,15 @@
 from src.application.services.answer_generation import AnswerFormatPolicy, AnswerIntent
+from src.application.services.answer_generation.formatting.answer_format_policy import (
+    _LOW_CONFIDENCE_EVIDENCE_INSTRUCTION,
+    _MULTI_DOCUMENT_EVIDENCE_INSTRUCTION,
+    _RICH_STRUCTURED_EVIDENCE_INSTRUCTION,
+    _SPARSE_EVIDENCE_INSTRUCTION,
+)
 from src.application.workflows.question_answering.answer_context import (
+    AnswerKeyValue,
     AnswerMaintenanceEntry,
+    AnswerSource,
+    AnswerStructuredEntity,
     StructuredAnswerContext,
 )
 
@@ -70,6 +79,203 @@ def test_procedure_policy_uses_numbered_steps() -> None:
     assert policy.include_steps is True
     assert policy.include_bullets is False
     assert policy.preferred_format == "numbered_steps"
+
+
+def test_resolve_without_structured_context_returns_static_policy_unchanged() -> None:
+    resolved = AnswerFormatPolicy.resolve(intent=AnswerIntent.GENERAL)
+    static = AnswerFormatPolicy.for_intent(AnswerIntent.GENERAL)
+
+    assert resolved == static
+    assert resolved.context_signals == {}
+
+
+def test_resolve_flags_sparse_evidence_when_at_most_one_source() -> None:
+    context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.GENERAL,
+        source_count=1,
+    )
+
+    policy = AnswerFormatPolicy.resolve(
+        intent=AnswerIntent.GENERAL,
+        structured_context=context,
+    )
+
+    assert policy.context_signals["is_sparse_evidence"] is True
+    assert _SPARSE_EVIDENCE_INSTRUCTION in policy.instruction_lines
+
+
+def test_resolve_does_not_flag_sparse_evidence_with_multiple_sources() -> None:
+    context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.GENERAL,
+        source_count=3,
+    )
+
+    policy = AnswerFormatPolicy.resolve(
+        intent=AnswerIntent.GENERAL,
+        structured_context=context,
+    )
+
+    assert policy.context_signals["is_sparse_evidence"] is False
+    assert _SPARSE_EVIDENCE_INSTRUCTION not in policy.instruction_lines
+
+
+def test_resolve_flags_low_confidence_evidence_below_threshold() -> None:
+    context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.GENERAL,
+        source_count=2,
+        key_values=[
+            AnswerKeyValue(
+                key="Serial Number",
+                value="ABC-123",
+                unit=None,
+                source_number=1,
+                confidence=0.4,
+            )
+        ],
+    )
+
+    policy = AnswerFormatPolicy.resolve(
+        intent=AnswerIntent.GENERAL,
+        structured_context=context,
+    )
+
+    assert policy.context_signals["has_low_confidence_evidence"] is True
+    assert _LOW_CONFIDENCE_EVIDENCE_INSTRUCTION in policy.instruction_lines
+
+
+def test_resolve_does_not_flag_low_confidence_evidence_at_deterministic_baseline() -> None:
+    context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.GENERAL,
+        source_count=2,
+        key_values=[
+            AnswerKeyValue(
+                key="Pressure",
+                value="700 bar",
+                unit="bar",
+                source_number=1,
+                confidence=0.9,
+            )
+        ],
+    )
+
+    policy = AnswerFormatPolicy.resolve(
+        intent=AnswerIntent.GENERAL,
+        structured_context=context,
+    )
+
+    assert policy.context_signals["has_low_confidence_evidence"] is False
+    assert _LOW_CONFIDENCE_EVIDENCE_INSTRUCTION not in policy.instruction_lines
+
+
+def test_resolve_flags_rich_structured_evidence_from_structured_entities() -> None:
+    context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.GENERAL,
+        source_count=2,
+        structured_entities=[
+            AnswerStructuredEntity(entity_type="manufacturer", entity_id="manu-1")
+        ],
+    )
+
+    policy = AnswerFormatPolicy.resolve(
+        intent=AnswerIntent.GENERAL,
+        structured_context=context,
+    )
+
+    assert policy.context_signals["has_rich_structured_evidence"] is True
+    assert _RICH_STRUCTURED_EVIDENCE_INSTRUCTION in policy.instruction_lines
+
+
+def test_resolve_flags_rich_structured_evidence_from_table_rows() -> None:
+    context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.GENERAL,
+        source_count=2,
+        sources=[
+            AnswerSource(
+                source_number=1,
+                chunk_id="chunk-1",
+                table_rows=[["Part", "Qty"], ["A-1", "2"]],
+            )
+        ],
+    )
+
+    policy = AnswerFormatPolicy.resolve(
+        intent=AnswerIntent.GENERAL,
+        structured_context=context,
+    )
+
+    assert policy.context_signals["has_rich_structured_evidence"] is True
+    assert _RICH_STRUCTURED_EVIDENCE_INSTRUCTION in policy.instruction_lines
+
+
+def test_resolve_flags_multi_document_evidence() -> None:
+    context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.GENERAL,
+        source_count=2,
+        diagnostics={"document_ids": ["doc-1", "doc-2"]},
+    )
+
+    policy = AnswerFormatPolicy.resolve(
+        intent=AnswerIntent.GENERAL,
+        structured_context=context,
+    )
+
+    assert policy.context_signals["is_multi_document"] is True
+    assert _MULTI_DOCUMENT_EVIDENCE_INSTRUCTION in policy.instruction_lines
+
+
+def test_resolve_does_not_flag_multi_document_evidence_for_single_document() -> None:
+    context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.GENERAL,
+        source_count=2,
+        diagnostics={"document_ids": ["doc-1"]},
+    )
+
+    policy = AnswerFormatPolicy.resolve(
+        intent=AnswerIntent.GENERAL,
+        structured_context=context,
+    )
+
+    assert policy.context_signals["is_multi_document"] is False
+    assert _MULTI_DOCUMENT_EVIDENCE_INSTRUCTION not in policy.instruction_lines
+
+
+def test_resolve_combines_multiple_signals_without_losing_base_instructions() -> None:
+    context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        source_count=1,
+        diagnostics={"document_ids": ["doc-1", "doc-2"]},
+    )
+
+    policy = AnswerFormatPolicy.resolve(
+        intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        structured_context=context,
+    )
+
+    base = AnswerFormatPolicy.for_intent(AnswerIntent.SPECIFICATION_SUMMARY)
+    assert all(line in policy.instruction_lines for line in base.instruction_lines)
+    assert _SPARSE_EVIDENCE_INSTRUCTION in policy.instruction_lines
+    assert _MULTI_DOCUMENT_EVIDENCE_INSTRUCTION in policy.instruction_lines
+    assert policy.preferred_format == base.preferred_format
+    assert policy.include_table == base.include_table
+
+
+def test_resolve_logs_context_adjustment_with_rules_version(caplog) -> None:
+    import logging
+
+    from src.application.services.answer_generation.formatting.answer_format_policy import (
+        ANSWER_FORMAT_POLICY_RULES_VERSION,
+    )
+
+    context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.GENERAL,
+        source_count=1,
+    )
+
+    with caplog.at_level(logging.INFO):
+        AnswerFormatPolicy.resolve(intent=AnswerIntent.GENERAL, structured_context=context)
+
+    assert "answer_format_policy_context_adjusted" in caplog.text
+    assert f"rules_version={ANSWER_FORMAT_POLICY_RULES_VERSION}" in caplog.text
 
 
 def test_every_answer_intent_has_a_dedicated_format_policy_entry() -> None:

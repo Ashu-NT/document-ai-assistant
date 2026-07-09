@@ -451,6 +451,17 @@ Separately, the raw-text extraction path has no steps concept at all: `KeyValueE
 
 **Resolved:** sub-fix (a) is done — `steps` now survives via `AnswerRelationship.target_entity_fields["steps"]` (see `test_build_preserves_related_procedure_steps_through_relationship` and the workflow-level `test_resolved_maintenance_task_surfaces_linked_procedure_steps_end_to_end`). Sub-fix (b) (whether `AnswerMaintenanceEntry`'s raw-text path should ever gain step-grouping) is deliberately left open — not resolved as a side effect of this fix, per this finding's own framing.
 
+## 4.17 A third write-only field, same shape as 4.11 (found during Phase 6, missed in original audit)
+
+`AnswerFormatPolicy.include_sources_inline` is declared on every one of the 10 `_POLICIES` entries (`src/application/services/answer_generation/formatting/answer_format_policy.py`), always hardcoded to `False`, and never read by `AnswerPromptBuilder._format_policy_block()` (`src/application/prompts/answer_generation/answer_prompt_builder.py:83-100`) — unlike `preferred_format`, `response_label`, `include_bullets`, `include_steps`, `include_table`, `max_bullets`, and `instruction_lines`, which are all rendered into the prompt. Found while implementing Phase 6's context-aware `resolve()`, when checking whether this field was a safe delivery mechanism for the new `is_multi_document` signal — it is not, since writing to a field nothing reads would just be a second instance of exactly what 4.11/9.9 already flagged for the confidence fields.
+
+### Impact
+
+- identical shape to 4.11: a field is threaded through every policy construction for a purpose (presumably: render source citations inline within the answer body rather than only as trailing citations) that was never implemented downstream
+- low risk today (defaults to `False` everywhere, so it's inert rather than actively wrong), but the same "whoever wires this up next needs to decide if it means anything" caution from 4.11 applies
+
+**Not resolved in Phase 6** — deliberately flagged rather than fixed here. Wiring it up for real means changing how `AnswerPromptBuilder`/deterministic renderers render citations, which is Phase 7's job ("Renderer unification"), not a format-policy-resolution change. Tracked in the traceability matrix below.
+
 ## 5. Dead Code / Low-Value Path Review
 
 ## 5.1 Confirmed low-value or dead-path behavior
@@ -477,10 +488,11 @@ Reference:
 
 - `AnswerSourceGroup` and `AnswerSectionGroup` are not dead, but currently underused and likely need redesign or stronger consumers.
 
-### D. `AnswerKeyValue.confidence` / `AnswerMaintenanceEntry.confidence` (missed in original audit)
+### D. `AnswerKeyValue.confidence` / `AnswerMaintenanceEntry.confidence` (missed in original audit) [RESOLVED in Phase 6]
 
 - Written on every construction, never read anywhere in `src/`.
 - See section 4.11.
+- ✅ `AnswerMaintenanceEntry.confidence` removed (confirmed zero possible variance — always exactly `0.88`). `AnswerKeyValue.confidence` kept and wired into `AnswerFormatPolicy`'s `has_low_confidence_evidence` signal (confirmed a real variable value from `StructuredFactKeyValueBuilder`'s domain-derived producer, unlike the maintenance-entry field).
 
 Reference:
 
@@ -683,7 +695,7 @@ Add answer-context types that preserve:
 
 This will let the answer layer generate cleaner manufacturer/contact, equipment/specification, and procedure/warning answers. Confirmed working for the procedure/task case (4.16); manufacturer/contact and equipment/specification use the exact same mechanism since `StructuredEntityResolver` attaches all relationship types identically, but no dedicated test covers those specific pairs yet — only 4.16's task/procedure case was directly exercised in this phase.
 
-## 9.4 Make format-policy resolution real
+## 9.4 Make format-policy resolution real [IMPLEMENTED in Phase 6]
 
 `AnswerFormatPolicy.resolve()` should use:
 
@@ -695,6 +707,8 @@ This will let the answer layer generate cleaner manufacturer/contact, equipment/
 - whether evidence is single-document vs mixed
 
 This turns policy from static lookup into real answer orchestration.
+
+✅ Done — implemented as four signals (`is_sparse_evidence`, `has_low_confidence_evidence`, `has_rich_structured_evidence`, `is_multi_document`), with "presence of tables"/"presence of typed entries"/"presence of structured relationships" combined into the single `has_rich_structured_evidence` check rather than three separate ones. See Phase 6's status note for the full design reasoning and the combined-check justification.
 
 ## 9.5 Unify deterministic rendering on top of the same typed context
 
@@ -731,13 +745,17 @@ That is a correctness upgrade, not just a cleanup. ✅ Done — the dead-path ea
 
 Add a parametrized test iterating every `AnswerIntent` member and asserting it has an entry in `AnswerFormatPolicy._POLICIES`, and treat `_CHUNK_TYPE_TO_INTENT`/`_RETRIEVAL_INTENT_TO_ANSWER_INTENT` as intentionally partial mappings (not every intent needs a chunk-type or retrieval-intent trigger) — but document that distinction explicitly rather than leaving it implicit. See 4.15.
 
-## 9.9 Retire or recalibrate the decorative confidence fields (added in this amendment)
+## 9.9 Retire or recalibrate the decorative confidence fields (added in this amendment) [IMPLEMENTED in Phase 6]
 
 Before section 9.2/9.3 add new typed evidence views, decide whether `AnswerKeyValue.confidence`/`AnswerMaintenanceEntry.confidence` are worth keeping. Either wire them into something that reads them (a low-confidence-evidence warning in the format policy, for instance - which would also give 9.4's context-aware policy work a concrete first signal to consume) or remove them rather than propagating an uncalibrated number into whatever the new typed views become. See 4.11.
 
-## 9.10 Add rules-version constants and diagnostic counts to the formatting layer (added in this amendment)
+✅ Done, decided each field independently rather than treating them as one decision — `AnswerMaintenanceEntry.confidence` removed (traced to a single producer that always assigns exactly `0.88`, zero variance ever possible, purely decorative); `AnswerKeyValue.confidence` kept and wired into `AnswerFormatPolicy`'s new `has_low_confidence_evidence` signal exactly as this section's own example suggested, since it carries a real variable domain-derived value via `StructuredFactKeyValueBuilder`. See Phase 6's status note.
+
+## 9.10 Add rules-version constants and diagnostic counts to the formatting layer (added in this amendment) [IMPLEMENTED in Phase 1 + Phase 6]
 
 Mirror the `*_RULES_VERSION` + structured-logging pattern already used by `AnswerIntentAnalyzer`/`RetrievalQueryIntentInferer` on `AnswerFormatPolicy`, `KeyValueExtractor`, and `MaintenanceEntryMerger`. Surface `SparePartsTableParser`'s existing `dropped_row_count`/`partial` tracking as a queryable diagnostic (matching how every other stage in this pipeline reports through a `diagnostics` dict) instead of only a one-line notice in the rendered answer text. This should land first as baseline instrumentation in Phase 1, then be consumed and extended by the richer format-policy work in Phase 6. See 4.14.
+
+✅ Baseline (`*_RULES_VERSION` constants, `spare_parts_dropped_row_count`/`spare_parts_partial` diagnostics) done in Phase 1. Consumption/extension done in Phase 6: `AnswerFormatPolicy.resolve()` now logs `answer_format_policy_context_adjusted` (mirroring `AnswerIntentAnalyzer`'s `answer_intent_resolved` line shape) whenever a context signal fires, and `ANSWER_FORMAT_POLICY_RULES_VERSION` was bumped `v1 -> v2` to reflect `resolve()`'s materially new behavior.
 
 ## 10. Execution Plan For Review
 
@@ -750,19 +768,20 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | 4.1 `AnswerSource` too thin | Phase 3 — **done** (5 of 9 proposed fields; 4 not reachable, see 9.1) | 9.1 |
 | 4.2 structured semantics flattened too early | Phase 4 — **done** | 9.2, 9.3 |
 | 4.3 / 5.1.B structured context sometimes dropped | Phase 4 — **done** | 9.7 |
-| 4.4 / 5.1.A `AnswerFormatPolicy.resolve()` ignores context | Phase 6 | 9.4 |
+| 4.4 / 5.1.A `AnswerFormatPolicy.resolve()` ignores context | Phase 6 — **done** | 9.4 |
 | 4.5 prompt depends on flattened lists | Phase 8 | 9.6 |
 | 4.6 LLM schema too weak | Phase 8 | 9.6 |
 | 4.7 deterministic renderers fragmented | Phase 7 | 9.5 |
 | 4.8 table evidence partially modeled | Phase 4 — **still open**, `table_evidence`/`asset_evidence` deferred (no additional data source identified, see Phase 4's design note) | 9.2 (`table_evidence`) |
 | 4.9 groups are prompt-facing only | Phase 7 (corrected — Phase 5 was orchestration-only cleanup, does not touch grouping consumption; see Phase 5's traceability-correction note) | 9.5 |
 | 4.10 tests lock in the limited model | Phase 1, Phase 10 | section 11 |
-| 4.11 / 5.1.D dead `confidence` fields | Phase 9 | 9.9, reviewer 0.1 #4 |
+| 4.11 / 5.1.D dead `confidence` fields | Phase 6 — **done** (`AnswerMaintenanceEntry.confidence` removed — zero variance ever possible; `AnswerKeyValue.confidence` kept and wired into `has_low_confidence_evidence`, since it carries a real domain-derived signal via `StructuredFactKeyValueBuilder`) | 9.9, reviewer 0.1 #4 |
 | 4.12 / 5.1.E dead `max_context_chunks` | Phase 1 — **done** (removed) | reviewer 0.1 #1 |
 | 4.13 redundant maintenance-entry data model | Phase 2 — **done** | reviewer 0.1 #2 |
-| 4.14 no rules-version / observability parity | Phase 1 — **done**, Phase 6 (consumption) | 9.10, reviewer 0.1 #3 |
+| 4.14 no rules-version / observability parity | Phase 1 — **done**, Phase 6 — **done** (consumption: `format_policy_context_signals` diagnostic, `ANSWER_FORMAT_POLICY_RULES_VERSION` bumped to v2) | 9.10, reviewer 0.1 #3 |
 | 4.15 no `AnswerIntent` exhaustiveness guard | Phase 1 — **done** | 9.8 |
 | 4.16 `task_uses_procedure` steps silently dropped | Phase 4 — **done** | 9.2, 9.3 |
+| 4.17 dead `include_sources_inline` field (found in Phase 6) | Phase 7 (flagged, not yet fixed — see Phase 6's "Flagged, not touched" note) | 9.5 |
 
 ## Phase 1 - Baseline protection [IMPLEMENTED]
 
@@ -818,13 +837,26 @@ Full regression: 2235 tests green across the entire `tests/unit` suite. New test
 
 Verification: `ast.parse` on all three touched/created files, a runtime import check (`from ...answer_context import StructuredSourceBuilder, AnswerContextOrganizer`), the full existing `test_answer_context_organizer.py` suite (8 tests, all green, confirming behavior-preservation), a new `test_structured_source_builder.py` (6 tests covering sequential numbering, retrieval/chunk metadata mapping, collapsed-chunk-id defaulting, table-rows JSON decoding success/failure, and the chunk-type-name fallback), and a full `pytest tests/unit` run: **2243 passed, 0 failed, 0 errors.**
 
-## Phase 6 - Format-Policy Upgrade and Diagnostic Consumption
+## Phase 6 - Format-Policy Upgrade and Diagnostic Consumption [IMPLEMENTED]
 
-- consume the Phase 1 diagnostics baseline inside richer answer-format decisions
-- extend diagnostics only where the Phase 4/5 typed-view work introduces genuinely new signals
-- make `AnswerFormatPolicy.resolve()` context-aware
-- remove the current fake resolve path
-- add intent-plus-context policy tests
+- ✅ remove the current fake resolve path — `resolve()`'s `_ = structured_context; return cls.for_intent(intent)` body was replaced with a real implementation that derives four context signals from `structured_context` and conditionally appends instruction lines driven by them.
+- ✅ make `AnswerFormatPolicy.resolve()` context-aware (closes 9.4) — added `AnswerFormatPolicy._context_signals(structured_context)`, computing:
+  - `is_sparse_evidence` (`source_count <= 1`) — 9.4's "evidence density" bullet.
+  - `has_low_confidence_evidence` (any `AnswerKeyValue.confidence < 0.8`) — the concrete "low-confidence-evidence warning" 9.9 named as the example wiring target.
+  - `has_rich_structured_evidence` (`structured_entities` non-empty, or any source has `table_rows`) — a single combined check standing in for 9.4's three separate "presence of typed entries / structured relationships / tables" bullets (see design note below).
+  - `is_multi_document` (`len(diagnostics["document_ids"]) > 1`) — 9.4's "single-document vs mixed" bullet.
+  Each signal, when true, appends one fixed instruction line to `instruction_lines` (which `AnswerPromptBuilder._format_policy_block()` already renders verbatim into the prompt — confirmed a live consumption path, not a second dead field). `AnswerFormatPolicy` gained an additive `context_signals: dict[str, bool] = field(default_factory=dict)` field so which signals fired is observable, not just baked silently into prompt text.
+- ✅ consume the Phase 1 diagnostics baseline inside richer answer-format decisions — `is_multi_document` reads `structured_context.diagnostics["document_ids"]`, the exact diagnostic Phase 1/4 already populate on `AnswerContextOrganizer.organize()`.
+- ✅ extend diagnostics only where the Phase 4/5 typed-view work introduces genuinely new signals — `has_rich_structured_evidence` is the only signal that reads a Phase 4/5 addition (`structured_entities`); the other three read pre-existing `StructuredAnswerContext` fields (`source_count`, `key_values`, `diagnostics`). `AnswerGenerationService._build_diagnostics()` now also surfaces `format_policy_context_signals` (the resolved policy's `context_signals` dict) alongside the existing `format_policy_rules_version`. `ANSWER_FORMAT_POLICY_RULES_VERSION` bumped `v1 -> v2` since `resolve()`'s behavior changed materially, matching the version's own stated purpose (correlate a future answer-quality regression against a specific policy-pack version) — its doc comment was updated to say so explicitly, since the original comment only mentioned `_POLICIES` table edits.
+- ✅ add intent-plus-context policy tests — 13 new tests in `test_answer_format_policy.py` (one per signal firing/not-firing, a combined-signals test, a static-vs-resolved-with-no-context equivalence test, and a `caplog`-based structured-logging test mirroring `AnswerIntentAnalyzer`'s), plus one new diagnostics-wiring test in `test_answer_generation_service.py`.
+- ✅ resolves 9.9's confidence-fields decision for `AnswerMaintenanceEntry.confidence`: traced its only producer (`KeyValueExtractor.extract_maintenance_entries`, hardcoded `confidence=0.88` on every single entry, with `MaintenanceEntryMerger`'s `max(left.confidence or 0.0, right.confidence or 0.0)` merge of two always-identical constants) and confirmed it has **zero possible variance** — every `AnswerMaintenanceEntry` ever constructed in this codebase carries exactly `0.88`, unlike `AnswerKeyValue.confidence` (see below). Removed the field entirely (`models/answer_maintenance_entry.py`, the `confidence=0.88` assignment, and both `confidence=...` merge-time lines in `maintenance_entry_merger.py`) rather than wiring a constant into the new low-confidence signal, which would have been decorative theater — a value that can never differ can never usefully warn about anything.
+- ✅ resolves 9.9's confidence-fields decision for `AnswerKeyValue.confidence` the other way — traced its producers and found it is **not** uniformly decorative like the maintenance-entry field: `KeyValueExtractor` (chunk-text-derived key-values) hardcodes `0.9`, but `StructuredFactKeyValueBuilder` (resolved-entity/identifier-derived key-values, added in the Phase 4 era) propagates a real, variable `entity.get("confidence_score")` / `identifier.confidence_score` from the domain layer. Since a genuinely variable signal exists, kept the field and wired it into `has_low_confidence_evidence` above instead of removing it — the `0.8` threshold sits below both hardcoded deterministic-extraction baselines (`0.9`/former `0.88`) specifically so the signal only fires for real below-baseline domain confidence, not the constant baseline every chunk-text-derived key-value already carries.
+
+**Design note on scope, found during implementation:** 9.4 lists "presence of tables", "presence of typed entries", and "presence of structured relationships" as three separate signals `resolve()` "should use". Implemented as one combined `has_rich_structured_evidence` check instead of three near-duplicate instruction lines, because all three point to the same underlying orchestration decision from the model's point of view ("richer evidence beyond flattened key-values exists — use its exact values instead of paraphrasing") — three separately-worded instructions saying essentially the same thing would bloat the prompt and dilute rather than sharpen the guidance, with no real behavioral difference between "an entity is present" and "a relationship on that entity is present" from the instruction's own wording. If a future need arises to react to *tables* specifically differently from *typed entities* specifically (e.g. a table-specific rendering hint), split the check apart then, driven by that concrete need rather than pre-emptively.
+
+**Flagged, not touched:** while implementing this phase, found that `AnswerFormatPolicy.include_sources_inline` is itself a write-only field — every one of the 10 `_POLICIES` entries hardcodes it to `False`, and `AnswerPromptBuilder._format_policy_block()` never reads it (unlike `include_table`/`include_bullets`/`include_steps`/`max_bullets`/`preferred_format`/`response_label`/`instruction_lines`, which are all rendered into the prompt). This is the same shape of issue as 4.11, just not caught by the original audit since it isn't a "confidence" field. Deliberately not used as the delivery mechanism for the `is_multi_document` signal above (that would have been a second write-only use of an already-dead field, repeating the exact mistake 9.9 warns against) — the multi-document signal is expressed purely through `instruction_lines`, a confirmed-live path, instead. Wiring `include_sources_inline` up for real (having `AnswerPromptBuilder` actually change its citation rendering based on it) is a renderer-behavior change, not a format-policy-resolution change — that belongs in Phase 7 ("Renderer unification"), not here. Flagging for that phase rather than silently fixing or silently leaving inconsistent.
+
+Full regression: 2256 tests green across the entire `tests/unit` suite (2243 before this phase + 13 new). New/changed tests: 13 new tests in `test_answer_format_policy.py`, 1 new test in `test_answer_generation_service.py` (`test_generate_diagnostics_surface_format_policy_context_signals`); no existing test assertions needed updating (the two pre-existing `resolve()` tests only assert `preferred_format`/`include_table`/`include_bullets`, none of which this phase's changes touch).
 
 ## Phase 7 - Renderer unification
 

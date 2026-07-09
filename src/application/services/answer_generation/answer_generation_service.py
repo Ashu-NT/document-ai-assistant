@@ -293,6 +293,11 @@ class AnswerGenerationService:
                 if resolved_request.format_policy is not None
                 else None
             ),
+            "format_policy_context_signals": (
+                resolved_request.format_policy.context_signals
+                if resolved_request.format_policy is not None
+                else {}
+            ),
             "format_policy_rules_version": ANSWER_FORMAT_POLICY_RULES_VERSION,
             "key_value_extractor_rules_version": KEY_VALUE_EXTRACTOR_RULES_VERSION,
             "maintenance_entry_merger_rules_version": MAINTENANCE_ENTRY_MERGER_RULES_VERSION,

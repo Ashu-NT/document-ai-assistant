@@ -217,7 +217,6 @@ class KeyValueExtractor:
                                 section_path=source.section_path,
                             )
                         ],
-                        confidence=0.88,
                     )
                 )
         return entries
