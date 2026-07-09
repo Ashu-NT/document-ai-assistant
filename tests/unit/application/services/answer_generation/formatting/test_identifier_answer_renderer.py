@@ -351,6 +351,46 @@ def test_render_cleans_whitespace_in_values() -> None:
     assert "- HP-001 Rev A" in result
 
 
+def test_render_prefers_structured_context_value_order_over_raw_identifiers() -> None:
+    """Plan section 4.7/9.5: structured_context.key_values is now the
+    primary source (processed first), with resolved_identifiers only
+    filling gaps -- the reverse of the pre-Phase-7 order. When both sources
+    contribute distinct values for the same identifier type, the
+    structured-context value must appear first in the rendered list."""
+    renderer = IdentifierAnswerRenderer()
+
+    result = renderer.render(
+        question="What is the part number?",
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        structured_context=StructuredAnswerContext(
+            answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+            key_values=[_make_key_value(key="Part Number", value="HP-STRUCTURED")],
+        ),
+        resolved_identifiers=[_make_identifier(raw_value="HP-RAW")],
+    )
+
+    assert result is not None
+    assert result.index("HP-STRUCTURED") < result.index("HP-RAW")
+
+
+def test_render_falls_back_to_raw_identifiers_when_structured_context_is_none() -> None:
+    """The degraded-mode case (no document_lookup_service, mirroring the
+    Phase 4 structured_entities precedent): when structured_context never
+    got built, resolved_identifiers is the only source and must still
+    surface identifiers on its own."""
+    renderer = IdentifierAnswerRenderer()
+
+    result = renderer.render(
+        question="What is the part number?",
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        structured_context=None,
+        resolved_identifiers=[_make_identifier(raw_value="HP-001")],
+    )
+
+    assert result is not None
+    assert "HP-001" in result
+
+
 def test_render_skips_blank_identifier_value() -> None:
     renderer = IdentifierAnswerRenderer()
 

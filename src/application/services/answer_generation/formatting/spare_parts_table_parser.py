@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import dataclass
 from typing import Sequence
 
-from src.domain.retrieval.retrieved_chunk import RetrievedChunk
+from src.application.workflows.question_answering.answer_context.models import (
+    AnswerSource,
+)
 
 # Bumped whenever a table-layout strategy (structured header, PID/tag row,
 # position-pair, free-form) is added, removed, or changed materially --
@@ -168,35 +169,30 @@ class SparePartsTableParser:
     line rather than dropping it silently.
     """
 
-    def has_table_evidence(self, chunk: RetrievedChunk) -> bool:
-        section_title = self.section_title(chunk).lower()
+    def has_table_evidence(self, source: AnswerSource) -> bool:
+        section_title = self.section_title(source).lower()
         if _TABLE_EVIDENCE_PHRASE in section_title:
             return True
-        content_lower = chunk.content.lower()
+        content_lower = source.content.lower()
         if _TABLE_EVIDENCE_PHRASE in content_lower:
             return True
         return any(marker in content_lower for marker in _TABLE_HEADER_EVIDENCE_MARKERS)
 
     @staticmethod
-    def section_title(chunk: RetrievedChunk) -> str:
-        return (
-            (chunk.citation.section_title if chunk.citation is not None else None)
-            or (chunk.section_path[-1] if chunk.section_path else None)
-            or "Spare Parts List"
-        )
+    def section_title(source: AnswerSource) -> str:
+        return source.chunk_name or "Spare Parts List"
 
-    def build_group(self, chunk: RetrievedChunk) -> SparePartsGroup:
-        section_path = chunk.section_path_text() if chunk.section_path else None
-        structured_result = self._rows_from_structured_grid(chunk.metadata)
+    def build_group(self, source: AnswerSource) -> SparePartsGroup:
+        structured_result = self._rows_from_structured_grid(source.table_rows)
         if structured_result is not None:
             rows, raw_rows, partial, dropped_row_count = structured_result
         else:
-            rows, raw_rows, partial, dropped_row_count = self._extract_rows(chunk.content)
+            rows, raw_rows, partial, dropped_row_count = self._extract_rows(source.content)
         return SparePartsGroup(
-            section_title=self.section_title(chunk),
-            section_path=section_path,
-            page_start=chunk.source.page_start,
-            page_end=chunk.source.page_end,
+            section_title=self.section_title(source),
+            section_path=source.section_path,
+            page_start=source.page_start,
+            page_end=source.page_end,
             rows=rows,
             raw_rows=raw_rows[:_MAX_RAW_ROWS_PER_GROUP],
             partial=partial or len(raw_rows) > _MAX_RAW_ROWS_PER_GROUP,
@@ -207,16 +203,16 @@ class SparePartsTableParser:
 
     def _rows_from_structured_grid(
         self,
-        metadata: dict,
+        grid: list[list[str]] | None,
     ) -> tuple[list[dict[str, str]], list[str], bool, int] | None:
-        """Builds rows directly from a chunk's structured table_rows_json
-        metadata (stashed by TableEvidenceHydrator), reusing the same
-        header-matching/cell-mapping logic as the markdown path below --
-        just fed already-split cells instead of markdown-split ones. Returns
-        None when there's no usable structured grid (absent, malformed, or
-        no recognizable header row), signalling the caller to fall back to
-        regex-parsing chunk.content instead."""
-        grid = self._decode_table_rows(metadata)
+        """Builds rows directly from a source's already-decoded table_rows
+        grid (AnswerSource.table_rows, decoded from table_rows_json metadata
+        by StructuredSourceBuilder), reusing the same header-matching/
+        cell-mapping logic as the markdown path below -- just fed
+        already-split cells instead of markdown-split ones. Returns None
+        when there's no usable structured grid (absent or no recognizable
+        header row), signalling the caller to fall back to regex-parsing
+        source.content instead."""
         if not grid or len(grid) < 2:
             return None
 
@@ -237,17 +233,6 @@ class SparePartsTableParser:
             return None
 
         return rows, [], dropped_row_count > 0, dropped_row_count
-
-    @staticmethod
-    def _decode_table_rows(metadata: dict) -> list[list[str]] | None:
-        raw = metadata.get("table_rows_json")
-        if not raw:
-            return None
-        try:
-            decoded = json.loads(raw)
-        except ValueError:
-            return None
-        return decoded if isinstance(decoded, list) else None
 
     # -- top-level row extraction ------------------------------------------------
 

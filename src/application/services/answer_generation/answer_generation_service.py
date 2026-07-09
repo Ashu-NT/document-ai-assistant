@@ -120,7 +120,7 @@ class AnswerGenerationService:
             deterministic_answer = self.spare_parts_list_renderer.render(
                 question=resolved_request.question,
                 answer_intent=resolved_request.answer_intent,
-                chunks=resolved_request.context_chunks,
+                sources=structured_context.sources if structured_context is not None else (),
                 resolved_structured_entities=resolved_request.resolved_structured_entities,
             )
             deterministic_renderer_name = "spare_parts_list_renderer"

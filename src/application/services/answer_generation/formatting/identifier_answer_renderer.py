@@ -62,6 +62,22 @@ _TYPE_ORDER: tuple[IdentifierType, ...] = (
 
 
 class IdentifierAnswerRenderer:
+    """Prefers the typed `StructuredAnswerContext.key_values` (populated via
+    `StructuredFactKeyValueBuilder.build_from_identifiers()`, the same
+    typed-context model the rest of this pipeline is built on) as the
+    primary source. Only falls back to the raw `resolved_identifiers`
+    domain objects for identifiers not already covered by
+    `structured_context` -- this is the same "prefer the richer typed
+    model, fall back only for resilience" shape `SparePartsListRenderer`
+    already uses (plan section 4.7/9.5). The fallback still matters: when
+    no `document_lookup_service` is configured, an identifier's source
+    chunk is never fetched, so it never reaches `key_values` at all (the
+    same degraded-mode gap Phase 4 already accepted for
+    `structured_entities`) -- without this fallback, that identifier would
+    silently disappear from the deterministic answer instead of only
+    losing its typed representation.
+    """
+
     def render(
         self,
         *,
@@ -76,21 +92,6 @@ class IdentifierAnswerRenderer:
         requested_types = self._requested_identifier_types(question)
         grouped_values: dict[IdentifierType, list[str]] = defaultdict(list)
         seen: set[tuple[IdentifierType, str]] = set()
-
-        for identifier in resolved_identifiers:
-            identifier_type = self._normalized_identifier_type(identifier.identifier_type)
-            if identifier_type is None:
-                continue
-            if requested_types and identifier_type not in requested_types:
-                continue
-            value = self._clean_value(identifier.raw_value)
-            if value is None:
-                continue
-            fingerprint = (identifier_type, value.lower())
-            if fingerprint in seen:
-                continue
-            seen.add(fingerprint)
-            grouped_values[identifier_type].append(value)
 
         if structured_context is not None:
             for key_value in structured_context.key_values:
@@ -107,6 +108,21 @@ class IdentifierAnswerRenderer:
                     continue
                 seen.add(fingerprint)
                 grouped_values[identifier_type].append(value)
+
+        for identifier in resolved_identifiers:
+            identifier_type = self._normalized_identifier_type(identifier.identifier_type)
+            if identifier_type is None:
+                continue
+            if requested_types and identifier_type not in requested_types:
+                continue
+            value = self._clean_value(identifier.raw_value)
+            if value is None:
+                continue
+            fingerprint = (identifier_type, value.lower())
+            if fingerprint in seen:
+                continue
+            seen.add(fingerprint)
+            grouped_values[identifier_type].append(value)
 
         if not grouped_values:
             return None

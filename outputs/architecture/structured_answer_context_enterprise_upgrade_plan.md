@@ -298,7 +298,7 @@ Current parser:
 - no enforced normalized references or evidence claims
 - final answer quality relies too much on prompt wording
 
-## 4.7 Deterministic renderers are useful but fragmented
+## 4.7 Deterministic renderers are useful but fragmented [IMPLEMENTED in Phase 7]
 
 Current deterministic renderers:
 
@@ -710,7 +710,7 @@ This turns policy from static lookup into real answer orchestration.
 
 ✅ Done — implemented as four signals (`is_sparse_evidence`, `has_low_confidence_evidence`, `has_rich_structured_evidence`, `is_multi_document`), with "presence of tables"/"presence of typed entries"/"presence of structured relationships" combined into the single `has_rich_structured_evidence` check rather than three separate ones. See Phase 6's status note for the full design reasoning and the combined-check justification.
 
-## 9.5 Unify deterministic rendering on top of the same typed context
+## 9.5 Unify deterministic rendering on top of the same typed context [PARTIALLY IMPLEMENTED in Phase 7]
 
 Do not remove deterministic renderers.
 
@@ -719,6 +719,8 @@ Instead:
 - keep deterministic rendering for high-confidence, structured answer types
 - make them consume the same enriched `StructuredAnswerContext`
 - avoid custom parsing branches where the answer context already knows the facts
+
+✅ Done for `AnswerSource`-level consumption: both renderers now consume `StructuredAnswerContext` (via `sources`/`key_values`) instead of raw `RetrievedChunk`/duplicated parsing. Not done for group-level consumption (`AnswerSourceGroup`/`AnswerSectionGroup`, 4.9) or `include_sources_inline` (4.17) — both investigated and left open with reasoning in Phase 7's status note, since forcing either would have been cosmetic churn or a new feature rather than a real unification.
 
 ## 9.6 Strengthen the answer-generation schema
 
@@ -771,9 +773,9 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | 4.4 / 5.1.A `AnswerFormatPolicy.resolve()` ignores context | Phase 6 — **done** | 9.4 |
 | 4.5 prompt depends on flattened lists | Phase 8 | 9.6 |
 | 4.6 LLM schema too weak | Phase 8 | 9.6 |
-| 4.7 deterministic renderers fragmented | Phase 7 | 9.5 |
+| 4.7 deterministic renderers fragmented | Phase 7 — **done** | 9.5 |
 | 4.8 table evidence partially modeled | Phase 4 — **still open**, `table_evidence`/`asset_evidence` deferred (no additional data source identified, see Phase 4's design note) | 9.2 (`table_evidence`) |
-| 4.9 groups are prompt-facing only | Phase 7 (corrected — Phase 5 was orchestration-only cleanup, does not touch grouping consumption; see Phase 5's traceability-correction note) | 9.5 |
+| 4.9 groups are prompt-facing only | Phase 7 — investigated, **still open** (no renderer with a real grouping need found; see Phase 7's "Not addressed" note) | 9.5 |
 | 4.10 tests lock in the limited model | Phase 1, Phase 10 | section 11 |
 | 4.11 / 5.1.D dead `confidence` fields | Phase 6 — **done** (`AnswerMaintenanceEntry.confidence` removed — zero variance ever possible; `AnswerKeyValue.confidence` kept and wired into `has_low_confidence_evidence`, since it carries a real domain-derived signal via `StructuredFactKeyValueBuilder`) | 9.9, reviewer 0.1 #4 |
 | 4.12 / 5.1.E dead `max_context_chunks` | Phase 1 — **done** (removed) | reviewer 0.1 #1 |
@@ -781,7 +783,7 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | 4.14 no rules-version / observability parity | Phase 1 — **done**, Phase 6 — **done** (consumption: `format_policy_context_signals` diagnostic, `ANSWER_FORMAT_POLICY_RULES_VERSION` bumped to v2) | 9.10, reviewer 0.1 #3 |
 | 4.15 no `AnswerIntent` exhaustiveness guard | Phase 1 — **done** | 9.8 |
 | 4.16 `task_uses_procedure` steps silently dropped | Phase 4 — **done** | 9.2, 9.3 |
-| 4.17 dead `include_sources_inline` field (found in Phase 6) | Phase 7 (flagged, not yet fixed — see Phase 6's "Flagged, not touched" note) | 9.5 |
+| 4.17 dead `include_sources_inline` field (found in Phase 6) | Phase 7 — investigated, **still open** (wiring it up is a new rendering capability, not a unification; see Phase 7's "Not addressed" note) | 9.5 |
 
 ## Phase 1 - Baseline protection [IMPLEMENTED]
 
@@ -858,10 +860,19 @@ Verification: `ast.parse` on all three touched/created files, a runtime import c
 
 Full regression: 2256 tests green across the entire `tests/unit` suite (2243 before this phase + 13 new). New/changed tests: 13 new tests in `test_answer_format_policy.py`, 1 new test in `test_answer_generation_service.py` (`test_generate_diagnostics_surface_format_policy_context_signals`); no existing test assertions needed updating (the two pre-existing `resolve()` tests only assert `preferred_format`/`include_table`/`include_bullets`, none of which this phase's changes touch).
 
-## Phase 7 - Renderer unification
+## Phase 7 - Renderer unification [IMPLEMENTED]
 
-- refactor deterministic renderers to consume richer typed context
-- remove duplicate ad-hoc parsing where context already provides the same information
+- ✅ refactor deterministic renderers to consume richer typed context (closes 4.7):
+  - `SparePartsListRenderer.render()` now takes `sources: Sequence[AnswerSource]` (from `structured_context.sources`) instead of `chunks: Sequence[RetrievedChunk]`. `SparePartsTableParser.has_table_evidence()`/`section_title()`/`build_group()` now take `AnswerSource` too.
+  - `IdentifierAnswerRenderer.render()` keeps the same signature, but the two loops inside it were reordered: `structured_context.key_values` (the typed model) is now processed *first* as the primary source, with the raw `resolved_identifiers: Sequence[Identifier]` processed *second*, only filling gaps not already covered (deduplicated via the existing `seen` fingerprint set). Previously it was the other way around — raw identifiers were primary and `structured_context` only filled gaps, which is backwards from "prefer the richer typed model" and is exactly what 4.7 flagged ("they operate on different input abstractions").
+- ✅ remove duplicate ad-hoc parsing where context already provides the same information (closes part of 9.5) — `SparePartsTableParser._decode_table_rows(metadata)` was a second, independent JSON-decode of the exact same `table_rows_json` chunk metadata that `StructuredSourceBuilder._decode_table_rows()` (Phase 5) already decodes once into `AnswerSource.table_rows`. `_rows_from_structured_grid()` now takes the pre-decoded `grid: list[list[str]] | None` directly; the parser's own `_decode_table_rows()` and its `import json` were deleted entirely.
+
+**Design note on scope, found during implementation:** traced whether `IdentifierAnswerRenderer`'s raw `resolved_identifiers` path could be removed outright now that `structured_context.key_values` is primary (which would have been a cleaner, fuller unification). Found it can't: `QuestionAnsweringWorkflow._join_structured_facts()` only converts an identifier into an `AnswerKeyValue` if its source chunk's `source_number` is resolvable, which requires `_document_lookup_service` to be configured to fetch chunks not already in the retrieval set. When no lookup service is configured, an identifier never reaches `key_values` at all — the exact same degraded-mode gap Phase 4 already accepted as intentional for `structured_entities` (see `test_resolved_structured_entities_without_lookup_service_do_not_crash`). Keeping the raw fallback preserves that resilience; removing it would silently drop identifiers in the degraded case instead of just losing their typed representation. Documented and tested (`test_render_falls_back_to_raw_identifiers_when_structured_context_is_none`) rather than silently kept as an unexplained duplicate path.
+
+**Not addressed, left open with reasoning:** 4.9 (`AnswerSourceGroup`/`AnswerSectionGroup` under-leveraged by deterministic renderers) is mapped to this phase in the traceability matrix. Investigated whether `SparePartsListRenderer` should pull from `structured_context.source_groups` (grouped by `chunk_type`, which already exactly matches its own `chunk_type == "spare_parts_table"` filter) instead of filtering `sources` directly. Decided against it: both are the identical single O(n) filter/lookup over the same underlying list — routing through `AnswerSourceGroup` instead of a direct filter is not a real simplification or duplicate-parsing removal, just a cosmetic reshuffle for the sake of "using the model," which would have meant re-churning the same test file's fixtures a second time in one phase for no functional gain. 4.9 remains open; it needs a renderer or presentation layer that genuinely benefits from per-section/per-chunk-type grouping (e.g. a future CLI or research-style structured presentation, per 4.9's own "not yet reusable by... CLI presentation, or research-style structured synthesis" framing) to be a real fix rather than busy-work.
+- 4.17 (`AnswerFormatPolicy.include_sources_inline`, flagged in Phase 6) also remains open for the same reason: wiring it up means building a wholly new "inline citation" rendering capability that doesn't exist anywhere today, not consolidating an existing dual-representation — out of scope for a renderer-*unification* phase.
+
+Full regression: run alongside Phase 6's changes; see Phase 6 and this phase's own test additions (`test_spare_parts_list_renderer.py` fixture rebuilt on `AnswerSource` via the real `StructuredSourceBuilder` — no manual mapping duplicated in the test — all 27 pre-existing tests pass unchanged; `test_identifier_answer_renderer.py` gained 2 new tests locking in the new preference order and the degraded-mode fallback, all 19 tests green).
 
 ## Phase 8 - Prompt/schema hardening
 

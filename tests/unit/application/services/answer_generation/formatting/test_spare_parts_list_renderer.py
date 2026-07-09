@@ -7,13 +7,19 @@ from src.application.services.answer_generation.formatting.spare_parts_table_par
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
+from src.application.workflows.question_answering.answer_context.models import (
+    AnswerSource,
+)
+from src.application.workflows.question_answering.answer_context.structured_source_builder import (
+    StructuredSourceBuilder,
+)
 from src.domain.common import ChunkType
 from src.domain.common.source_location import SourceLocation
 from src.domain.retrieval.citation import Citation
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
 
-def _make_chunk(
+def _make_source(
     *,
     content: str,
     chunk_id: str = "chunk_001",
@@ -23,13 +29,18 @@ def _make_chunk(
     page_end: int | None = 46,
     chunk_type: ChunkType = ChunkType.SPARE_PARTS_TABLE,
     metadata: dict[str, str] | None = None,
-) -> RetrievedChunk:
+) -> AnswerSource:
+    """Builds a RetrievedChunk with the same shape the old chunk-based tests
+    used, then runs it through the real StructuredSourceBuilder -- so these
+    tests exercise a production-faithful AnswerSource (pre-decoded
+    table_rows, computed chunk_name/section_path) instead of hand-rolling a
+    second, potentially-diverging mapping in the test fixture."""
     citation = (
         Citation(citation_id=f"cit_{chunk_id}", document_id="doc_1", section_title=section_title)
         if section_title
         else None
     )
-    return RetrievedChunk(
+    chunk = RetrievedChunk(
         chunk_id=chunk_id,
         document_id="doc_1",
         content=content,
@@ -41,6 +52,7 @@ def _make_chunk(
         citation=citation,
         metadata=metadata or {},
     )
+    return StructuredSourceBuilder().build_sources([chunk])[0]
 
 
 def test_render_returns_none_for_unsupported_intent() -> None:
@@ -49,7 +61,7 @@ def test_render_returns_none_for_unsupported_intent() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
-        chunks=[_make_chunk(content="| Position | Qty |\n| 1 | 2 |")],
+        sources=[_make_source(content="| Position | Qty |\n| 1 | 2 |")],
     )
 
     assert result is None
@@ -61,7 +73,7 @@ def test_render_returns_none_when_no_spare_parts_chunks_present() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content="no rows", chunk_type=ChunkType.GENERAL)],
+        sources=[_make_source(content="no rows", chunk_type=ChunkType.GENERAL)],
     )
 
     assert result is None
@@ -79,7 +91,7 @@ def test_render_never_denies_spare_parts_list_when_evidence_exists() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
 
     assert result is not None
@@ -99,8 +111,8 @@ def test_render_groups_rows_by_section_and_page() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[
-            _make_chunk(
+        sources=[
+            _make_source(
                 content=content,
                 section_title="Spare Parts List",
                 section_path=["7 Components", "Spare Parts"],
@@ -124,7 +136,7 @@ def test_render_groups_rows_by_section_and_page() -> None:
 
 def test_render_multiple_chunks_produce_multiple_numbered_groups() -> None:
     renderer = SparePartsListRenderer()
-    chunk_a = _make_chunk(
+    chunk_a = _make_source(
         chunk_id="chunk_a",
         content=(
             "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
@@ -135,7 +147,7 @@ def test_render_multiple_chunks_produce_multiple_numbered_groups() -> None:
         page_start=45,
         page_end=46,
     )
-    chunk_b = _make_chunk(
+    chunk_b = _make_source(
         chunk_id="chunk_b",
         content=(
             "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
@@ -150,7 +162,7 @@ def test_render_multiple_chunks_produce_multiple_numbered_groups() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[chunk_a, chunk_b],
+        sources=[chunk_a, chunk_b],
     )
 
     assert result is not None
@@ -168,7 +180,7 @@ def test_render_marks_unparseable_table_content_as_partial() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
 
     assert result is not None
@@ -195,7 +207,7 @@ def test_last_diagnostics_reports_dropped_row_count_after_partial_parse() -> Non
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
 
     assert result is not None
@@ -219,7 +231,7 @@ def test_last_diagnostics_reports_zero_when_no_rows_are_dropped() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
 
     assert result is not None
@@ -238,7 +250,7 @@ def test_last_diagnostics_resets_to_zero_for_unsupported_intent() -> None:
     renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
     assert renderer.last_diagnostics()["spare_parts_dropped_row_count"] == 1
     assert renderer.last_diagnostics()["spare_parts_partial"] is True
@@ -246,7 +258,7 @@ def test_last_diagnostics_resets_to_zero_for_unsupported_intent() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
 
     assert result is None
@@ -260,7 +272,7 @@ def test_render_returns_none_when_question_does_not_mention_spare_parts() -> Non
     result = renderer.render(
         question="what is the design pressure?",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content="| Position | Qty |\n| 1 | 2 |")],
+        sources=[_make_source(content="| Position | Qty |\n| 1 | 2 |")],
     )
 
     assert result is None
@@ -272,7 +284,7 @@ def test_render_defers_to_llm_when_export_format_requested() -> None:
     result = renderer.render(
         question="export the spare parts list as csv",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content="| Position | Qty |\n| 1 | 2 |")],
+        sources=[_make_source(content="| Position | Qty |\n| 1 | 2 |")],
     )
 
     assert result is None
@@ -290,7 +302,7 @@ def test_render_skips_bare_quantity_unit_artifact_rows() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
 
     assert result is not None
@@ -312,8 +324,8 @@ def test_render_extracts_pid_style_valve_rows_with_part_no() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[
-            _make_chunk(
+        sources=[
+            _make_source(
                 content=content,
                 section_title="Valve List > Spare Parts",
                 section_path=["7 Components", "Valve List", "Spare Parts"],
@@ -341,7 +353,7 @@ def test_render_excludes_safety_section_without_real_table_rows() -> None:
         "|---|---|---|---|\n"
         "| 1 | 2 | Filter | A00103 |\n"
     )
-    safety_chunk = _make_chunk(
+    safety_chunk = _make_source(
         chunk_id="chunk_safety",
         content=safety_content,
         section_title="2.8 Spare Parts",
@@ -349,7 +361,7 @@ def test_render_excludes_safety_section_without_real_table_rows() -> None:
         page_start=11,
         page_end=11,
     )
-    valve_chunk = _make_chunk(
+    valve_chunk = _make_source(
         chunk_id="chunk_valve",
         content=valve_content,
         section_title="Spare Parts List",
@@ -360,7 +372,7 @@ def test_render_excludes_safety_section_without_real_table_rows() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[safety_chunk, valve_chunk],
+        sources=[safety_chunk, valve_chunk],
     )
 
     assert result is not None
@@ -388,7 +400,7 @@ def test_render_layout_a_structured_header_table() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
 
     assert result is not None
@@ -405,7 +417,7 @@ def test_render_layout_a_free_form_position_quantity_unit_description() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
 
     assert result is not None
@@ -423,7 +435,7 @@ def test_render_layout_b_pid_valve_style_row() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
 
     assert result is not None
@@ -440,7 +452,7 @@ def test_render_layout_c_two_column_exploded_view_pairs() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
 
     assert result is not None
@@ -457,7 +469,7 @@ def test_render_layout_d_falls_back_to_raw_row_for_unrecognized_shape() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
 
     assert result is not None
@@ -472,7 +484,7 @@ def test_render_does_not_invent_part_no_from_plain_quantity_like_token() -> None
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
     )
 
     assert result is not None
@@ -507,7 +519,7 @@ def test_render_prefers_structured_entities_over_chunk_parsing() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=chunk_content, section_title="Spare Parts List")],
+        sources=[_make_source(content=chunk_content, section_title="Spare Parts List")],
         resolved_structured_entities=entities,
     )
 
@@ -532,7 +544,7 @@ def test_render_falls_back_to_chunk_parsing_when_no_structured_entities() -> Non
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
         resolved_structured_entities=[],
     )
 
@@ -554,7 +566,7 @@ def test_render_ignores_structured_entities_of_other_types() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
+        sources=[_make_source(content=content, section_title="Spare Parts List")],
         resolved_structured_entities=entities,
     )
 
@@ -572,7 +584,7 @@ def test_render_skips_structured_entities_missing_part_number_and_description() 
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[_make_chunk(content="no table evidence here")],
+        sources=[_make_source(content="no table evidence here")],
         resolved_structured_entities=entities,
     )
 
@@ -606,8 +618,8 @@ def test_render_prefers_table_rows_json_over_chunk_text_regex_parsing() -> None:
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[
-            _make_chunk(
+        sources=[
+            _make_source(
                 content=chunk_content,
                 section_title="Spare Parts List",
                 metadata=metadata,
@@ -640,8 +652,8 @@ def test_render_falls_back_to_chunk_parsing_when_table_rows_json_has_no_header()
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[
-            _make_chunk(
+        sources=[
+            _make_source(
                 content=chunk_content,
                 section_title="Spare Parts List",
                 metadata=metadata,
@@ -664,8 +676,8 @@ def test_render_falls_back_to_chunk_parsing_when_table_rows_json_malformed() -> 
     result = renderer.render(
         question="table of spare part list",
         answer_intent=AnswerIntent.TABLE_SUMMARY,
-        chunks=[
-            _make_chunk(
+        sources=[
+            _make_source(
                 content=chunk_content,
                 section_title="Spare Parts List",
                 metadata={"table_rows_json": "not valid json"},

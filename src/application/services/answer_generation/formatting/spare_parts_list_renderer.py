@@ -10,8 +10,10 @@ from src.application.services.answer_generation.formatting.spare_parts_table_par
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
+from src.application.workflows.question_answering.answer_context.models import (
+    AnswerSource,
+)
 from src.domain.common import ChunkType
-from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
 _SUPPORTED_INTENTS = {AnswerIntent.TABLE_SUMMARY, AnswerIntent.IDENTIFIER_LOOKUP}
 _PARTIAL_CONTENT_NOTICE = (
@@ -56,10 +58,16 @@ class SparePartsListRenderer:
 
     Prefers spare-part rows already extracted into structured DB tables
     during ingestion (`resolved_structured_entities`) as the single source
-    of truth. Only falls back to regex-parsing raw chunk text (via
+    of truth. Only falls back to regex-parsing raw source text (via
     `SparePartsTableParser`) when no structured extraction is available for
     this document/query -- avoiding both the redundant parsing work and the
     risk of the two sources disagreeing on the same document.
+
+    Consumes `AnswerSource` (from `StructuredAnswerContext.sources`) rather
+    than raw `RetrievedChunk`s -- `AnswerSource.table_rows` is already
+    decoded once by `StructuredSourceBuilder`, so `SparePartsTableParser`
+    doesn't need its own second `table_rows_json` decode of the same chunk
+    metadata (plan section 4.7/9.5).
     """
 
     def __init__(self, *, table_parser: SparePartsTableParser | None = None) -> None:
@@ -72,7 +80,7 @@ class SparePartsListRenderer:
         *,
         question: str,
         answer_intent: AnswerIntent | None,
-        chunks: Sequence[RetrievedChunk],
+        sources: Sequence[AnswerSource],
         resolved_structured_entities: Sequence[dict] = (),
     ) -> str | None:
         self._last_dropped_row_count = 0
@@ -91,12 +99,12 @@ class SparePartsListRenderer:
             return self._render_groups([structured_group])
 
         groups: list[SparePartsGroup] = []
-        for chunk in chunks:
-            if chunk.chunk_type != ChunkType.SPARE_PARTS_TABLE:
+        for source in sources:
+            if source.chunk_type != ChunkType.SPARE_PARTS_TABLE.value:
                 continue
-            if not self._table_parser.has_table_evidence(chunk):
+            if not self._table_parser.has_table_evidence(source):
                 continue
-            groups.append(self._table_parser.build_group(chunk))
+            groups.append(self._table_parser.build_group(source))
         if not groups:
             return None
 
