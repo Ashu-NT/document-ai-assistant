@@ -10,7 +10,7 @@ ANSWER_GROUNDING_RULES = (
     "evidence.\n"
     "- Use the provided sources only as grounding evidence.\n"
     "- Do NOT reference SOURCE labels, source numbers, chunk IDs, section IDs, "
-    "or internal metadata in the answer.\n"
+    "entity IDs, relationship types, or internal metadata in the answer.\n"
     "- Do NOT mention internal concepts such as chunk types, retrieval scores, "
     "technical_specification, spare_parts_table, troubleshooting, overview, or "
     "other system classifications.\n"

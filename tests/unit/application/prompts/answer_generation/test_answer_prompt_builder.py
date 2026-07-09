@@ -230,6 +230,35 @@ def test_answer_prompt_builder_includes_provided_sources() -> None:
     assert "Section: Maintenance Schedule" in prompt
 
 
+def test_answer_prompt_builder_instructs_against_leaking_entity_ids() -> None:
+    """Plan section 9.6/Phase 10 validation: Phase 8 added a "Structured
+    entities:" block that serializes entity_id/target_entity_id values
+    (raw domain identifiers, e.g. "task_001") into the prompt as grounding
+    context for the LLM. ANSWER_GROUNDING_RULES's existing "internal
+    metadata" catch-all didn't explicitly name this new category the way
+    it already explicitly names chunk/section IDs -- extended it so the
+    model is told just as explicitly not to repeat entity/relationship ids
+    back to the user."""
+    builder = AnswerPromptBuilder()
+    chunk = _make_chunk()
+    structured_context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.GENERAL,
+        chunks=[chunk],
+    )
+    request = AnswerGenerationRequest(
+        question="Test?",
+        context_chunks=[chunk],
+        answer_intent=AnswerIntent.GENERAL,
+        structured_context=structured_context,
+        format_policy=AnswerFormatPolicy.for_intent(AnswerIntent.GENERAL),
+    )
+
+    prompt = builder.build(request)
+
+    assert "entity IDs" in prompt
+    assert "relationship types" in prompt
+
+
 def test_answer_prompt_builder_serializes_structured_entities_and_relationships() -> None:
     """Plan section 4.5/9.6: structured_entities (Phase 4's typed evidence
     view) previously never reached the LLM prompt at all -- only the

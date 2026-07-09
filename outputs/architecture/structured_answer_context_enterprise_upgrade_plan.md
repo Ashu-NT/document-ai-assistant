@@ -2,9 +2,10 @@
 
 ## Status
 
-- Audit only.
-- No implementation changes were made in this pass.
-- Repo-wide search was completed for `StructuredAnswerContext` usages, and detailed code inspection was completed for the full answer-context, answer-generation, structured-retrieval, and related test paths.
+- **All 10 execution phases implemented.** See section 10 for the phase-by-phase plan and each phase's own `[IMPLEMENTED]`/`[PARTIALLY IMPLEMENTED]` status note with a "what was done vs. proposed" reconciliation.
+- Final validation (Phase 10) confirmed: full `tests/unit` suite green at 2262 passed / 0 failed / 0 errors; `ruff --select F401,F841,F811` clean across the full touched subtree (`answer_context`, `answer_generation`, `prompts/answer_generation`, `prompts/common`).
+- Two items remain deliberately open, not oversights — each has a documented reason in its own section: 4.8 (table evidence still simplified to one row grid — no additional data source identified), 4.9 (`AnswerSourceGroup`/`AnswerSectionGroup` still prompt-only — no renderer with a real grouping need found). Two items are partially implemented by deliberate scope decision: 4.6/9.6 (`limitation_note` added; `sections`/`reference_notes` deferred pending a guardrail-layer redesign).
+- Original audit-only framing (below) is retained for history; treat every phase's own status note as the current source of truth over this top-level summary.
 
 ## 0. Post-Audit Amendment
 
@@ -916,32 +917,38 @@ Full regression: 2261 tests green across the entire `tests/unit` suite (2258 bef
 
 Full regression: 2261 tests green across the entire `tests/unit` suite (same count as end of Phase 8 — one dead test removed, one new test added, net zero). `ruff check --select F401,F841` clean across the full `answer_context`/`answer_generation` subtree both before and after this phase's removals.
 
-## Phase 10 - Full validation
+## Phase 10 - Full validation [IMPLEMENTED]
 
-- targeted unit tests first
-- then question-answering, prompt, and langgraph integration tests touching this path
+- ✅ targeted unit tests first — already the standing practice throughout every phase (each phase ran its directly-affected test file(s) before the full suite); nothing further needed here beyond confirming that discipline held, which the full-suite result below confirms.
+- ✅ then question-answering, prompt, and langgraph integration tests touching this path — ran `tests/unit/application/workflows/question_answering/`, `tests/unit/application/prompts/`, `tests/unit/application/langgraph/`, and `tests/unit/application/services/answer_generation/` together: 546 passed, 0 failed, 0 errors. (This codebase has no separate `tests/integration` suite for this path — `tests/integration/` is exclusively DB-repository tests; the "integration tests" this bullet means are the broader unit-level tests in the directories above, which already exercise multiple components wired together via fakes, e.g. `test_question_answering_workflow.py`.)
 
-## 11. Test Plan For Implementation
+**Found and fixed during validation:** re-read section 9.6's "does not mean exposing raw internal ids" caution while auditing Phase 8's new prompt content, and checked whether it was actually honored. `ANSWER_GROUNDING_RULES` already explicitly told the model not to reference "SOURCE labels, source numbers, chunk IDs, section IDs, or internal metadata" — but Phase 8's new "Structured entities:" prompt block serializes `entity_id`/`target_entity_id` values (raw domain identifiers, e.g. `task_001`) as grounding context, and neither "entity IDs" nor "relationship types" were named in that instruction the way chunk/section IDs already explicitly were. The generic "internal metadata" catch-all may or may not have been enough on its own; rather than leave it to chance, extended the instruction to name entity/relationship ids explicitly, matching the existing convention of naming each category rather than relying only on a catch-all. Added `test_answer_prompt_builder_instructs_against_leaking_entity_ids` to lock this in.
+
+**Section 11 checklist audit** (below): every "New tests to add" bullet and every "Existing tests to update" area was checked against the actual test suite and confirmed to have real, current coverage — cross-references added inline in section 11 below rather than repeated here.
+
+Final full regression: **2262 tests green** across the entire `tests/unit` suite (2261 before this phase + 1 new grounding-rules test), 0 failed, 0 errors. `ruff check --select F401,F841,F811` clean across `answer_context`, `answer_generation`, `prompts/answer_generation`, and `prompts/common`. This closes the plan: all 10 phases are now `[IMPLEMENTED]` or `[PARTIALLY IMPLEMENTED]` with an explicit, documented reason for every deferral.
+
+## 11. Test Plan For Implementation [AUDITED in Phase 10 -- all items confirmed covered]
 
 ### New tests to add
 
-- `AnswerSource` preserves retrieval metadata, split-family metadata, and asset/table metadata
-- structured relationships survive into `StructuredAnswerContext`
-- context is retained even when no extra key-values are produced
-- `AnswerFormatPolicy.resolve()` changes behavior based on real context
-- deterministic renderers consume typed context instead of reparsing raw text where possible
-- prompt builder emits richer organized context without leaking internal ids
-- answer-generation schema rejects malformed structured output cleanly
-- every `AnswerIntent` member has a corresponding `AnswerFormatPolicy._POLICIES` entry (added in this amendment — see 9.8)
-- `AnswerGenerationService` does not recompute `AnswerIntentAnalyzer.analyze()` when `AnswerGenerationRequest.answer_intent_decision` is already set, and still computes it when absent (added in this amendment - regression coverage for section 0.1 already exists in `tests/unit/application/services/answer_generation/test_answer_generation_service.py` and `tests/unit/application/workflows/question_answering/test_question_answering_workflow.py::test_answer_intent_is_resolved_exactly_once_when_structured_facts_are_joined`; keep these passing through the refactor)
+- `AnswerSource` preserves retrieval metadata, split-family metadata, and asset/table metadata — ✅ `test_answer_context_organizer.py::test_context_organizer_enriches_source_with_retrieval_metadata`, `::test_context_organizer_normalizes_collapsed_chunk_ids_from_csv_metadata`, `::test_context_organizer_defaults_collapsed_chunk_ids_when_not_deduplicated`; `test_structured_source_builder.py` (Phase 5)
+- structured relationships survive into `StructuredAnswerContext` — ✅ `test_structured_evidence_view_builder.py`; `test_question_answering_workflow.py::test_resolved_maintenance_task_surfaces_linked_procedure_steps_end_to_end`
+- context is retained even when no extra key-values are produced — ✅ `test_question_answering_workflow.py::test_resolved_structured_entities_without_lookup_service_do_not_crash` (corrected in Phase 4 for the 4.3/9.7 fix)
+- `AnswerFormatPolicy.resolve()` changes behavior based on real context — ✅ 13 tests in `test_answer_format_policy.py` (Phase 6)
+- deterministic renderers consume typed context instead of reparsing raw text where possible — ✅ `test_spare_parts_list_renderer.py` (rebuilt on `AnswerSource`), `test_identifier_answer_renderer.py` (typed-context-first preference order) (Phase 7)
+- prompt builder emits richer organized context without leaking internal ids — ✅ `test_answer_prompt_builder_serializes_structured_entities_and_relationships` (Phase 8); `test_answer_prompt_builder_instructs_against_leaking_entity_ids` (Phase 10, closing the "without leaking internal ids" half of this bullet specifically)
+- answer-generation schema rejects malformed structured output cleanly — ✅ `test_answer_generation_service.py::test_generate_rejects_malformed_answer_generation_json`
+- every `AnswerIntent` member has a corresponding `AnswerFormatPolicy._POLICIES` entry (added in this amendment — see 9.8) — ✅ `test_answer_format_policy.py::test_every_answer_intent_has_a_dedicated_format_policy_entry` (Phase 1)
+- `AnswerGenerationService` does not recompute `AnswerIntentAnalyzer.analyze()` when `AnswerGenerationRequest.answer_intent_decision` is already set, and still computes it when absent (added in this amendment - regression coverage for section 0.1 already exists in `tests/unit/application/services/answer_generation/test_answer_generation_service.py` and `tests/unit/application/workflows/question_answering/test_question_answering_workflow.py::test_answer_intent_is_resolved_exactly_once_when_structured_facts_are_joined`; keep these passing through the refactor) — ✅ confirmed still green through every subsequent phase
 
 ### Existing tests to update
 
-- organizer tests
-- format policy tests
-- answer generation service tests
-- prompt builder tests
-- workflow tests that assert current structured-context behavior
+- organizer tests — ✅ `test_answer_context_organizer.py` updated across Phases 1-5
+- format policy tests — ✅ `test_answer_format_policy.py` updated Phase 1 (9.8 guard) and Phase 6 (context-aware `resolve()`)
+- answer generation service tests — ✅ `test_answer_generation_service.py` updated Phases 4, 6, 8, 9
+- prompt builder tests — ✅ `test_answer_prompt_builder.py` updated Phases 8, 9, 10
+- workflow tests that assert current structured-context behavior — ✅ `test_question_answering_workflow.py` updated Phase 4
 
 ## 12. Decisions
 
@@ -1046,11 +1053,13 @@ The right upgrade path is not to patch the prompt builder again.
 
 The right path is:
 
-- enrich the answer-context model
-- preserve structured semantics
-- make format policy context-aware
-- unify deterministic and LLM answer generation on the same typed context
-- then remove the dead and low-value code that becomes unnecessary
+- enrich the answer-context model — ✅ done (Phases 2-3)
+- preserve structured semantics — ✅ done (Phase 4)
+- make format policy context-aware — ✅ done (Phase 6)
+- unify deterministic and LLM answer generation on the same typed context — ✅ done (Phases 7-8)
+- then remove the dead and low-value code that becomes unnecessary — ✅ done (Phase 9), validated (Phase 10)
 
 That will move this area from "helpful prompt helper" to "enterprise answer-evidence layer".
+
+**Outcome:** all 10 phases implemented per this recommendation's own ordering. `StructuredAnswerContext` is now the canonical answer-evidence projection consumed by the organizer, both deterministic renderers, the format policy, and the LLM prompt builder alike — the single-shared-DTO goal from Decision #1 (section 12) is realized in practice, not just decided on paper. Two items remain open by explicit, documented design choice rather than left incomplete: 4.8 (table evidence) and 4.9 (source/section groups) — both re-evaluated as recently as Phase 9 and found to have no concrete, non-speculative next step yet. `sections`/`reference_notes` (9.6) are the one clearly-scoped piece of future work, gated on a guardrail-layer redesign that is deliberately out of this plan's scope.
 
