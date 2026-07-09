@@ -6,6 +6,9 @@ from src.application.evaluation.retrieval.benchmarking.enums import (
     RetrievalBenchmarkQueryType,
     RetrievalBenchmarkRankTarget,
 )
+from src.application.workflows.retrieval.retrieval_query_intent import (
+    RetrievalQueryIntent,
+)
 from src.domain.retrieval import RetrievalQuery
 
 _CASE_ID_PATTERN = re.compile(r"[^a-z0-9]+")
@@ -23,6 +26,7 @@ class RetrievalBenchmarkCase:
     expected_relevant_passage: str | None = None
     priority: RetrievalBenchmarkPriority | None = None
     expected_rank_target: RetrievalBenchmarkRankTarget | None = None
+    expected_intent: RetrievalQueryIntent | None = None
     notes: str | None = None
     query: RetrievalQuery | None = None
     expected_chunk_ids: list[str] = field(default_factory=list)

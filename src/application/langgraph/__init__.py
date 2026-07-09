@@ -30,7 +30,6 @@ from src.application.langgraph.planning import (
 )
 from src.application.langgraph.retrieval_strategy import (
     DeterministicStrategySelector,
-    LLMStrategySelector,
     RetrievalPlan,
     RetrievalPlanExecutor,
     RetrievalPlanStep,
@@ -99,7 +98,6 @@ __all__ = [
     "GraphResult",
     "GraphRunRecorder",
     "IntentRouter",
-    "LLMStrategySelector",
     "LangGraphTrace",
     "NodeFactory",
     "PlanExecutor",

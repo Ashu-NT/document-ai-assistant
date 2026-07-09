@@ -16,7 +16,6 @@ from src.application.langgraph.retrieval_strategy.policies import (
 )
 from src.application.langgraph.retrieval_strategy.selectors import (
     DeterministicStrategySelector,
-    LLMStrategySelector,
 )
 from src.application.langgraph.retrieval_strategy.planners import RetrievalPlanner
 from src.application.langgraph.retrieval_strategy.services.retrieval_signal_extractor import (
@@ -46,7 +45,6 @@ class RetrievalStrategyService:
         query_analyzer: RetrievalQueryAnalyzer | None = None,
         signal_extractor: RetrievalSignalExtractor | None = None,
         deterministic_selector: DeterministicStrategySelector | None = None,
-        llm_selector: LLMStrategySelector | None = None,
         strategy_advisor: StrategyAdvisor | None = None,
         strategy_validator: RetrievalStrategyValidator | None = None,
         planner: RetrievalPlanner | None = None,
@@ -59,7 +57,6 @@ class RetrievalStrategyService:
         self.deterministic_selector = (
             deterministic_selector or DeterministicStrategySelector()
         )
-        self.llm_selector = llm_selector
         self.strategy_advisor = strategy_advisor
         self.strategy_validator = strategy_validator or RetrievalStrategyValidator()
         self.planner = planner or RetrievalPlanner()

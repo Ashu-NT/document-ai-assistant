@@ -10,6 +10,9 @@ from src.application.evaluation.retrieval.benchmarking import (
 from src.application.evaluation.retrieval.evaluators.benchmarking.workflow_result_adapter import (
     WorkflowResultAdapter,
 )
+from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+    RetrievalQueryIntentInferer,
+)
 from src.shared.exceptions import SchemaValidationError
 
 
@@ -18,8 +21,10 @@ class RetrievalBenchmarkEvaluator:
         self,
         *,
         workflow_result_adapter: WorkflowResultAdapter | None = None,
+        intent_inferer: RetrievalQueryIntentInferer | None = None,
     ) -> None:
         self.workflow_result_adapter = workflow_result_adapter or WorkflowResultAdapter()
+        self.intent_inferer = intent_inferer or RetrievalQueryIntentInferer()
 
     def evaluate(
         self,
@@ -111,6 +116,7 @@ class RetrievalBenchmarkEvaluator:
                         context_section_path_hits=context_section_path_hits,
                     ),
                     used_context_expansion=workflow_output.used_context_expansion,
+                    actual_intent=self.intent_inferer.infer(benchmark_case.query),
                 )
             )
             self._emit_progress(

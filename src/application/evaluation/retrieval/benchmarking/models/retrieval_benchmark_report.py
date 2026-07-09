@@ -130,6 +130,34 @@ class RetrievalBenchmarkReport:
             if result.meets_expected_rank_target
         ) / len(self.case_results)
 
+    @property
+    def intent_classification_accuracy(self) -> float:
+        intent_results = [
+            result
+            for result in self.case_results
+            if result.case.expected_intent is not None
+        ]
+        if not intent_results:
+            return 0.0
+        return sum(1 for result in intent_results if result.intent_match) / len(
+            intent_results
+        )
+
+    @property
+    def intent_confusion_matrix(self) -> dict[tuple[str, str], int]:
+        matrix: dict[tuple[str, str], int] = {}
+        for result in self.case_results:
+            if result.case.expected_intent is None:
+                continue
+            actual_label = (
+                result.actual_intent.value
+                if result.actual_intent is not None
+                else "none"
+            )
+            key = (result.case.expected_intent.value, actual_label)
+            matrix[key] = matrix.get(key, 0) + 1
+        return matrix
+
     def _recall_at(self, limit: int) -> float:
         if not self.case_results:
             return 0.0

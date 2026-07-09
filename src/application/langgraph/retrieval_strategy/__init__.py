@@ -21,7 +21,6 @@ from src.application.langgraph.retrieval_strategy.policies import (
 )
 from src.application.langgraph.retrieval_strategy.selectors import (
     DeterministicStrategySelector,
-    LLMStrategySelector,
     StrategySelector,
 )
 from src.application.langgraph.retrieval_strategy.services import (
@@ -39,7 +38,6 @@ from src.application.langgraph.retrieval_strategy.validation import (
 __all__ = [
     "CLI_RETRIEVAL_STRATEGY_ALIASES",
     "DeterministicStrategySelector",
-    "LLMStrategySelector",
     "RetrievalContext",
     "RetrievalEvidenceMerger",
     "RetrievalExecutionResult",

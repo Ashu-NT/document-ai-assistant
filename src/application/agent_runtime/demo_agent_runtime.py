@@ -190,7 +190,6 @@ def build_agent_runtime(
         PlanValidator,
     )
     from src.application.langgraph.retrieval_strategy import (
-        LLMStrategySelector,
         RetrievalPlanExecutor,
         RetrievalStrategyPolicy,
         RetrievalStrategyService,
@@ -409,10 +408,6 @@ def build_agent_runtime(
         clarification_builder=ClarificationBuilder(),
         retrieval_retry_policy=RetrievalRetryPolicy(),
         retrieval_strategy_service=RetrievalStrategyService(
-            llm_selector=LLMStrategySelector(
-                retrieval_strategy_llm_service,
-                model=retrieval_strategy_model,
-            ),
             strategy_advisor=strategy_advisor,
             policy=retrieval_strategy_policy,
         ),

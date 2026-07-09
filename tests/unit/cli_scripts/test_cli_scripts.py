@@ -253,3 +253,60 @@ def test_ask_document_print_result_truncates_document_id_in_context(
     assert f"doc: {mod._trunc(chunk.document_id, 12)}" in output
     assert "doc_001_full_scope" not in output
     assert "source: dense" in output
+
+
+# ---------------------------------------------------------------------------
+# replay_retrieval_intent_log.py
+# ---------------------------------------------------------------------------
+
+
+def test_replay_retrieval_intent_log_module_importable():
+    mod = _load_script("replay_retrieval_intent_log")
+    assert hasattr(mod, "replay")
+    assert hasattr(mod, "main")
+
+
+def test_replay_falls_back_to_synthetic_query_set_when_truth_set_missing(tmp_path):
+    mod = _load_script("replay_retrieval_intent_log")
+    query_texts = mod._load_query_texts(tmp_path / "does_not_exist.md")
+    assert query_texts == list(mod._SYNTHETIC_QUERY_SET)
+
+
+def test_replay_writes_resolved_and_fallback_lines_in_the_report_scripts_format(tmp_path):
+    mod = _load_script("replay_retrieval_intent_log")
+    output_path = tmp_path / "replay.log"
+
+    count = mod.replay(
+        ["This is a safety concern.", "pump"],
+        output_path=output_path,
+    )
+
+    assert count == 2
+    lines = output_path.read_text(encoding="utf-8").splitlines()
+    assert "retrieval_intent_resolved intent=safety query_id=replay_1 rules_version=v1" in lines
+    assert (
+        "retrieval_intent_fallback_general reason=no_pattern_matched "
+        "query_id=replay_2 query_text='pump'"
+        in lines
+    )
+    assert "retrieval_intent_resolved intent=general query_id=replay_2 rules_version=v1" in lines
+
+
+def test_replay_output_is_parseable_by_the_fallback_rate_report_script(tmp_path):
+    replay_mod = _load_script("replay_retrieval_intent_log")
+    report_mod = _load_script("report_retrieval_intent_fallback_rate")
+    output_path = tmp_path / "replay.log"
+
+    replay_mod.replay(
+        ["This is a safety concern.", "pump", "How do I replace the drive belt?"],
+        output_path=output_path,
+    )
+
+    stats = report_mod.analyze(
+        output_path.read_text(encoding="utf-8").splitlines()
+    )
+    assert stats["total"] == 3
+    assert stats["general"] == 1
+    assert stats["intent_counts"]["safety"] == 1
+    assert stats["intent_counts"]["procedure"] == 1
+    assert stats["fallback_reason_counts"]["no_pattern_matched"] == 1

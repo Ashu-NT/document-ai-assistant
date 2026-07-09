@@ -11,6 +11,7 @@ from src.application.evaluation import (
     RetrievalBenchmarkRankTarget,
     RetrievalTruthSetLoader,
 )
+from src.application.workflows.retrieval.retrieval_query_intent import RetrievalQueryIntent
 from src.shared.exceptions import SchemaValidationError
 
 # `TestDoc/` is intentionally gitignored (it holds real, non-shareable customer
@@ -110,6 +111,46 @@ def test_loader_exposes_subset_definitions_and_filtered_case_views() -> None:
     assert dataset.semantic_procedure_subset_definition.row_count == 10
     assert any(case.case_id == "C-001" for case in dataset.identifier_focused_cases)
     assert any(case.case_id == "M-008" for case in dataset.semantic_procedure_cases)
+
+
+def test_loader_parses_optional_expected_intent_field() -> None:
+    truth_set_path = _write_workspace_temp_file(
+        "expected_intent_truth_set",
+        _truth_set_with_raw_case_block(
+            "\n".join(
+                [
+                    "id: X-001",
+                    'query: "What is the safety warning?"',
+                    "query_type: safety_lookup",
+                    "expected_document_id: sample_doc",
+                    "expected_file: sample.pdf",
+                    "expected_section_path: Cover",
+                    "expected_page: 1",
+                    'expected_relevant_passage: "Sample passage."',
+                    "priority: high",
+                    "expected_rank: top_1",
+                    "expected_intent: safety",
+                ]
+            )
+        ),
+    )
+
+    try:
+        dataset = RetrievalTruthSetLoader().load(truth_set_path)
+        assert dataset.cases[0].expected_intent == RetrievalQueryIntent.SAFETY
+    finally:
+        truth_set_path.unlink(missing_ok=True)
+
+
+def test_loader_leaves_expected_intent_none_when_field_absent() -> None:
+    truth_set_path = _write_workspace_temp_file(
+        "no_intent_truth_set", _truth_set_with_single_case()
+    )
+    try:
+        dataset = RetrievalTruthSetLoader().load(truth_set_path)
+        assert dataset.cases[0].expected_intent is None
+    finally:
+        truth_set_path.unlink(missing_ok=True)
 
 
 def test_loader_raises_for_malformed_yaml_block() -> None:

@@ -36,3 +36,6 @@ def test_summary_builder_groups_results_by_document_family_and_query_type() -> N
     assert query_rows["identifier_lookup"]["rank_target_satisfaction_rate"] == 1.0
     assert query_rows["procedure_lookup"]["hit_rate"] == 1.0
     assert query_rows["safety_lookup"]["context_hit_rate"] == 1.0
+
+    assert overview["intent_classification_accuracy"] == 0.0
+    assert summary_builder.build_intent_confusion_matrix(report) == []

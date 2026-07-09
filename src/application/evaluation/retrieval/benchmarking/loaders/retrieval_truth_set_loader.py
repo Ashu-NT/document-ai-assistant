@@ -14,6 +14,9 @@ from src.application.evaluation.retrieval.benchmarking.enums import (
 from src.application.evaluation.retrieval.benchmarking.models import (
     RetrievalBenchmarkCase,
 )
+from src.application.workflows.retrieval.retrieval_query_intent import (
+    RetrievalQueryIntent,
+)
 from src.shared.exceptions import SchemaValidationError
 
 DEFAULT_RETRIEVAL_TRUTH_SET_PATH = Path("TestDoc/retrieval_truth_set.md")
@@ -177,6 +180,11 @@ class RetrievalTruthSetLoader:
                 ),
                 expected_rank_target=RetrievalBenchmarkRankTarget.from_value(
                     payload["expected_rank"]
+                ),
+                expected_intent=(
+                    RetrievalQueryIntent(payload["expected_intent"])
+                    if payload.get("expected_intent")
+                    else None
                 ),
                 notes=payload.get("notes"),
             )

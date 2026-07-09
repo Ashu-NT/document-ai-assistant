@@ -51,6 +51,7 @@ class RetrievalBenchmarkReportMarkdownRenderer:
                 rows=self.summary_builder.build_query_type_breakdown(report),
             )
         )
+        lines.extend(self._intent_classification_lines(report))
         lines.extend(self._failure_lines(report))
         return "\n".join(lines).strip() + "\n"
 
@@ -91,6 +92,39 @@ class RetrievalBenchmarkReportMarkdownRenderer:
                 f"{row['hit_rate']:.3f} | {row['context_hit_rate']:.3f} | "
                 f"{row['recall_at_3']:.3f} | {row['mean_reciprocal_rank']:.3f} | "
                 f"{row['rank_target_satisfaction_rate']:.3f} |"
+            )
+        lines.append("")
+        return lines
+
+    def _intent_classification_lines(
+        self,
+        report: RetrievalBenchmarkReport,
+    ) -> list[str]:
+        confusion_rows = self.summary_builder.build_intent_confusion_matrix(report)
+        lines = ["## Intent Classification", ""]
+        if not confusion_rows:
+            lines.extend(
+                [
+                    "- no benchmark cases set `expected_intent`",
+                    "",
+                ]
+            )
+            return lines
+
+        summary = self.summary_builder.build_overview(report)
+        lines.append(
+            f"- accuracy: `{summary['intent_classification_accuracy']:.3f}`"
+        )
+        lines.extend(
+            [
+                "",
+                "| Expected Intent | Actual Intent | Count |",
+                "|---|---|---:|",
+            ]
+        )
+        for row in confusion_rows:
+            lines.append(
+                f"| {row['expected_intent']} | {row['actual_intent']} | {row['count']} |"
             )
         lines.append("")
         return lines

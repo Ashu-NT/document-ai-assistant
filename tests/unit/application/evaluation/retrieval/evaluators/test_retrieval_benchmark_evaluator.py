@@ -8,6 +8,7 @@ from src.application.evaluation.retrieval.benchmarking.enums import (
     RetrievalBenchmarkRankTarget,
 )
 from src.application.workflows.retrieval import RetrievalWorkflowResult
+from src.application.workflows.retrieval.retrieval_query_intent import RetrievalQueryIntent
 from src.domain.common import ChunkType, SourceLocation
 from src.domain.retrieval import RetrievalQuery, RetrievalResult, RetrievedChunk
 
@@ -50,6 +51,7 @@ def make_case(
     expected_chunk_ids: list[str] | None = None,
     expected_section_paths: list[list[str]] | None = None,
     expected_relevant_passage: str | None = None,
+    expected_intent: RetrievalQueryIntent | None = None,
 ) -> RetrievalBenchmarkCase:
     return RetrievalBenchmarkCase(
         case_id=query.query_id,
@@ -60,6 +62,7 @@ def make_case(
         expected_chunk_ids=expected_chunk_ids or [],
         expected_section_paths=expected_section_paths or [],
         expected_relevant_passage=expected_relevant_passage,
+        expected_intent=expected_intent,
     )
 
 
@@ -348,3 +351,45 @@ def test_evidence_completeness_zero_when_neither_passage_nor_section_found() -> 
         ],
     )
     assert report.case_results[0].evidence_completeness == 0.0
+
+
+def test_evaluator_populates_actual_intent_and_flags_correct_and_incorrect_matches() -> None:
+    """actual_intent is computed independently of retrieval hit/miss -- it's
+    the deterministic RetrievalQueryIntentInferer classifying the case's own
+    query text, so it's populated even when expected_intent is unset."""
+    safety_query = RetrievalQuery(query_id="q_safety", query_text="What is the safety warning?")
+    mismatched_query = RetrievalQuery(
+        query_id="q_mismatched", query_text="How do I lubricate the bearing?"
+    )
+    workflow = FakeWorkflow(
+        {
+            "q_safety": make_workflow_result(query=safety_query, anchor_chunks=[]),
+            "q_mismatched": make_workflow_result(query=mismatched_query, anchor_chunks=[]),
+        }
+    )
+    evaluator = RetrievalBenchmarkEvaluator()
+
+    report = evaluator.evaluate(
+        workflow,
+        [
+            make_case(
+                query=safety_query,
+                query_type=RetrievalBenchmarkQueryType.SAFETY_LOOKUP,
+                rank_target=RetrievalBenchmarkRankTarget.TOP_3,
+                expected_intent=RetrievalQueryIntent.SAFETY,
+            ),
+            make_case(
+                query=mismatched_query,
+                query_type=RetrievalBenchmarkQueryType.PROCEDURE_LOOKUP,
+                rank_target=RetrievalBenchmarkRankTarget.TOP_3,
+                expected_intent=RetrievalQueryIntent.PROCEDURE,
+            ),
+        ],
+    )
+
+    safety_result, mismatched_result = report.case_results
+    assert safety_result.actual_intent == RetrievalQueryIntent.SAFETY
+    assert safety_result.intent_match is True
+    assert mismatched_result.actual_intent == RetrievalQueryIntent.MAINTENANCE
+    assert mismatched_result.intent_match is False
+    assert report.intent_classification_accuracy == 0.5

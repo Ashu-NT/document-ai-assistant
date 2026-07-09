@@ -30,7 +30,25 @@ class RetrievalBenchmarkReportSummaryBuilder:
             "rank_target_satisfaction_rate": (
                 report.rank_target_satisfaction_rate
             ),
+            "intent_classification_accuracy": (
+                report.intent_classification_accuracy
+            ),
         }
+
+    def build_intent_confusion_matrix(
+        self,
+        report: RetrievalBenchmarkReport,
+    ) -> list[dict[str, int | str]]:
+        return [
+            {
+                "expected_intent": expected_intent,
+                "actual_intent": actual_intent,
+                "count": count,
+            }
+            for (expected_intent, actual_intent), count in sorted(
+                report.intent_confusion_matrix.items()
+            )
+        ]
 
     def build_document_family_breakdown(
         self,

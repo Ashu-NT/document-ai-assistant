@@ -17,6 +17,7 @@ def test_json_serializer_emits_stable_shape_with_failure_diagnostics() -> None:
         "summary",
         "document_family_breakdown",
         "query_type_breakdown",
+        "intent_confusion_matrix",
         "case_results",
     }
     assert payload["summary"]["case_count"] == 3

@@ -6,6 +6,9 @@ from src.application.evaluation.retrieval.benchmarking.models.retrieval_benchmar
 from src.application.evaluation.retrieval.benchmarking.models.retrieval_benchmark_chunk_snapshot import (
     RetrievalBenchmarkChunkSnapshot,
 )
+from src.application.workflows.retrieval.retrieval_query_intent import (
+    RetrievalQueryIntent,
+)
 
 
 @dataclass(slots=True)
@@ -33,6 +36,7 @@ class RetrievalBenchmarkCaseResult:
     context_exact_section_path_hit: bool = False
     evidence_completeness: float = 0.0
     used_context_expansion: bool = False
+    actual_intent: RetrievalQueryIntent | None = None
 
     def recall_at(self, limit: int) -> bool:
         return self.matched_rank is not None and self.matched_rank <= limit
@@ -57,3 +61,9 @@ class RetrievalBenchmarkCaseResult:
         if query_type is None or not query_type.is_identifier_focused():
             return False
         return self.matched_rank == 1
+
+    @property
+    def intent_match(self) -> bool | None:
+        if self.case.expected_intent is None:
+            return None
+        return self.actual_intent == self.case.expected_intent

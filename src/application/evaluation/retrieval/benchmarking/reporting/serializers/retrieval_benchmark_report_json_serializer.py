@@ -41,6 +41,9 @@ class RetrievalBenchmarkReportJsonSerializer:
             "query_type_breakdown": (
                 self.summary_builder.build_query_type_breakdown(report)
             ),
+            "intent_confusion_matrix": (
+                self.summary_builder.build_intent_confusion_matrix(report)
+            ),
             "case_results": [
                 self._serialize_case_result(case_result)
                 for case_result in report.case_results
@@ -81,6 +84,17 @@ class RetrievalBenchmarkReportJsonSerializer:
             "expected_page": case.expected_page,
             "expected_relevant_passage": case.expected_relevant_passage,
             "expected_chunk_ids": list(case.expected_chunk_ids),
+            "expected_intent": (
+                case.expected_intent.value
+                if case.expected_intent is not None
+                else None
+            ),
+            "actual_intent": (
+                case_result.actual_intent.value
+                if case_result.actual_intent is not None
+                else None
+            ),
+            "intent_match": case_result.intent_match,
             "notes": case.notes,
             "anchor": {
                 "hit": case_result.hit,
