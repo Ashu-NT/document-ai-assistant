@@ -44,6 +44,12 @@ class SqlAlchemyClassificationRepository(ClassificationRepository):
     ) -> None:
         self.chunk_writer.save(classification)
 
+    def save_chunk_classifications(
+        self,
+        classifications: list[ChunkClassification],
+    ) -> None:
+        self.chunk_writer.save_many(classifications)
+
     def get_chunk_classification(
         self,
         chunk_id: str,

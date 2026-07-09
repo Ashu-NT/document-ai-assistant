@@ -28,10 +28,13 @@ class IdentifierEvidenceGuardrail:
                 reason="No identifiers detected in query.",
             )
 
+        lowered_chunk_contents = [
+            chunk.content.lower() for chunk in context.retrieved_chunks
+        ]
         missing = [
             identifier
             for identifier in context.detected_identifiers
-            if not self._any_chunk_mentions(identifier, context)
+            if not self._any_chunk_mentions(identifier, lowered_chunk_contents)
         ]
 
         if missing:
@@ -62,9 +65,6 @@ class IdentifierEvidenceGuardrail:
         )
 
     @staticmethod
-    def _any_chunk_mentions(identifier: str, context: GuardrailContext) -> bool:
+    def _any_chunk_mentions(identifier: str, lowered_chunk_contents: list[str]) -> bool:
         normalized = identifier.strip().lower()
-        return any(
-            normalized in chunk.content.lower()
-            for chunk in context.retrieved_chunks
-        )
+        return any(normalized in lowered for lowered in lowered_chunk_contents)

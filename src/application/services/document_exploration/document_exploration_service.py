@@ -36,11 +36,12 @@ class DocumentExplorationService:
         return self._build_result(graph)
 
     def _build_result(self, graph: DocumentGraph) -> DocumentExplorationResult:
+        section_titles = {s.section_id: s.title for s in graph.sections.values()}
         overview = self._build_overview(graph)
         sections = self._build_sections(graph)
         identifiers = self._build_identifiers(graph)
-        tables = self._build_tables(graph)
-        assets = self._build_assets(graph)
+        tables = self._build_tables(graph, section_titles=section_titles)
+        assets = self._build_assets(graph, section_titles=section_titles)
         coverage = self._build_coverage(graph)
         return DocumentExplorationResult(
             document_id=graph.document.document_id,
@@ -105,10 +106,9 @@ class DocumentExplorationService:
         ]
 
     @staticmethod
-    def _build_tables(graph: DocumentGraph) -> list[TableEntry]:
-        section_titles: dict[str, str] = {
-            s.section_id: s.title for s in graph.sections.values()
-        }
+    def _build_tables(
+        graph: DocumentGraph, *, section_titles: dict[str, str]
+    ) -> list[TableEntry]:
         return [
             TableEntry(
                 table_id=t.table_id,
@@ -122,10 +122,9 @@ class DocumentExplorationService:
         ]
 
     @staticmethod
-    def _build_assets(graph: DocumentGraph) -> list[AssetEntry]:
-        section_titles: dict[str, str] = {
-            s.section_id: s.title for s in graph.sections.values()
-        }
+    def _build_assets(
+        graph: DocumentGraph, *, section_titles: dict[str, str]
+    ) -> list[AssetEntry]:
         return [
             AssetEntry(
                 picture_id=p.picture_id,

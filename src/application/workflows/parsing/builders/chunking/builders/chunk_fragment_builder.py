@@ -227,10 +227,10 @@ class ChunkFragmentBuilder:
         caption = clean_chunk_text(parser_extra.get("caption") or element.text)
         nearby_text = self._nearby_text(elements=elements, index=index)
         ocr_text = clean_chunk_text(parser_extra.get("ocr_text"))
-        ocr_text = self._truncate_to_asset_context(ocr_text)
+        ocr_text, ocr_token_count = self._truncate_to_asset_context(ocr_text)
 
         if not caption and not nearby_text:
-            if ocr_text is None or self.text_splitter.count_tokens(ocr_text) < 6:
+            if ocr_text is None or ocr_token_count < 6:
                 return None
 
         parts: list[str] = []
@@ -369,12 +369,12 @@ class ChunkFragmentBuilder:
             if remaining_tokens <= 0:
                 break
 
-            text = self._truncate_to_token_limit(text, remaining_tokens)
+            text, text_token_count = self._truncate_to_token_limit(text, remaining_tokens)
             if not text:
                 continue
 
             selected_parts.append(text)
-            token_total += self.text_splitter.count_tokens(text)
+            token_total += text_token_count
 
         if not selected_parts:
             return None
@@ -392,13 +392,15 @@ class ChunkFragmentBuilder:
             return True
         return abs(candidate_page - current_page) <= 1
 
-    def _truncate_to_asset_context(self, text: str | None) -> str | None:
+    def _truncate_to_asset_context(self, text: str | None) -> tuple[str | None, int]:
         if not text:
-            return None
+            return None, 0
         return self._truncate_to_token_limit(text, self.asset_context_max_tokens)
 
-    def _truncate_to_token_limit(self, text: str, max_tokens: int) -> str:
-        return self.text_splitter.token_counter.truncate_to_tokens(text, max_tokens)
+    def _truncate_to_token_limit(self, text: str, max_tokens: int) -> tuple[str, int]:
+        return self.text_splitter.token_counter.truncate_to_tokens_with_count(
+            text, max_tokens
+        )
 
     def _element_contributes_to_asset_context(
         self,

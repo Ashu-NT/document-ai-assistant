@@ -131,10 +131,6 @@ class QdrantVectorStore(VectorStore):
         ]
 
     def delete_document_vectors(self, document_id: str) -> None:
-        chunk_ids = self.mapping_repository.list_chunk_ids_by_document(document_id)
-        if not chunk_ids:
-            return
-
         point_ids = self.mapping_repository.list_qdrant_point_ids_by_document(document_id)
         if not point_ids:
             return

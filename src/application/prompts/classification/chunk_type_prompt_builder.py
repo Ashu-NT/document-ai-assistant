@@ -44,6 +44,7 @@ _CHUNK_TYPES_DOC = "\n".join(
         (ChunkType.UNKNOWN, "Content that cannot be classified confidently"),
     ]
 )
+_CHUNK_TYPES_LABEL_LIST = ", ".join(chunk_type.value for chunk_type in ChunkType)
 
 
 class ChunkTypePromptBuilder:
@@ -57,7 +58,6 @@ class ChunkTypePromptBuilder:
     )
 
     def build(self, chunk: DocumentChunk) -> str:
-        chunk_types = ", ".join(chunk_type.value for chunk_type in ChunkType)
         section_path = " > ".join(chunk.section_path) if chunk.section_path else "N/A"
         page_range = self._format_page_range(
             chunk.source.page_start,
@@ -74,7 +74,7 @@ class ChunkTypePromptBuilder:
             '  "rationale": "<short explanation>",\n'
             '  "evidence": ["<evidence 1>", "<evidence 2>"]\n'
             "}\n"
-            f"Allowed labels: {chunk_types}\n"
+            f"Allowed labels: {_CHUNK_TYPES_LABEL_LIST}\n"
             "If the chunk does not match a supported label, use the label 'unknown'.\n"
             f"Chunk id: {chunk.chunk_id}\n"
             f"Document id: {chunk.document_id}\n"

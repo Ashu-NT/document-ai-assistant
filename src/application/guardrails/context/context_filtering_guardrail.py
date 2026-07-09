@@ -73,10 +73,7 @@ _MAINTENANCE_CONTENT_MARKERS: tuple[str, ...] = (
 )
 
 
-def _is_toc_chunk(chunk: RetrievedChunk) -> bool:
-    text = chunk.content.strip()
-    lower = text.lower()
-
+def _is_toc_chunk(text: str, lower: str) -> bool:
     if any(marker in lower for marker in _TOC_MARKERS):
         return True
 
@@ -91,18 +88,11 @@ def _is_toc_chunk(chunk: RetrievedChunk) -> bool:
     return False
 
 
-def _is_branding_chunk(chunk: RetrievedChunk) -> bool:
-    text = chunk.content.strip()
-    lower = text.lower()
-
-    if any(marker in lower for marker in _BRANDING_MARKERS):
-        return True
-
-    return False
+def _is_branding_chunk(lower: str) -> bool:
+    return any(marker in lower for marker in _BRANDING_MARKERS)
 
 
-def _is_noise_chunk(chunk: RetrievedChunk) -> bool:
-    text = chunk.content.strip()
+def _is_noise_chunk(text: str) -> bool:
     if not text:
         return True
 
@@ -161,19 +151,22 @@ class ContextFilteringGuardrail:
         *,
         query_text: str,
     ) -> GuardrailViolation | None:
-        if _is_toc_chunk(chunk):
+        text = chunk.content.strip()
+        lower = text.lower()
+
+        if _is_toc_chunk(text, lower):
             return GuardrailViolation(
                 violation_type=ViolationType.TOC_CHUNK,
                 message="Chunk is a table of contents entry.",
                 chunk_id=chunk.chunk_id,
             )
-        if _is_noise_chunk(chunk):
+        if _is_noise_chunk(text):
             return GuardrailViolation(
                 violation_type=ViolationType.NOISE_CHUNK,
                 message="Chunk is too short or contains only noise.",
                 chunk_id=chunk.chunk_id,
             )
-        if _is_branding_chunk(chunk):
+        if _is_branding_chunk(lower):
             return GuardrailViolation(
                 violation_type=ViolationType.BRANDING_CHUNK,
                 message="Chunk contains only branding or copyright content.",
@@ -183,7 +176,7 @@ class ContextFilteringGuardrail:
             _is_maintenance_interval_query(query_text)
             and not _is_explicit_specification_query(query_text)
             and chunk.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
-            and not _has_maintenance_content(chunk.content)
+            and not _has_maintenance_content(lower)
         ):
             return GuardrailViolation(
                 violation_type=ViolationType.IRRELEVANT_CHUNKS,
@@ -206,6 +199,5 @@ def _is_explicit_specification_query(query_text: str) -> bool:
     return any(marker in normalized for marker in _EXPLICIT_SPECIFICATION_QUERY_MARKERS)
 
 
-def _has_maintenance_content(content: str) -> bool:
-    normalized = content.lower()
-    return any(marker in normalized for marker in _MAINTENANCE_CONTENT_MARKERS)
+def _has_maintenance_content(lower: str) -> bool:
+    return any(marker in lower for marker in _MAINTENANCE_CONTENT_MARKERS)
