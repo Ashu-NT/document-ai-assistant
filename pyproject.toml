@@ -65,6 +65,10 @@ pythonpath = ["."]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+norecursedirs = [
+    "tmp_pytest_*",
+    ".pytest_cache",
+]
 addopts = [
     "-q",
     "--strict-markers",

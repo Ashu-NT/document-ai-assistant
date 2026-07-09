@@ -4,6 +4,9 @@ from src.application.prompts.extraction import IdentifierExtractionPromptBuilder
 from src.application.validation.extraction import ExtractionResultValidator
 from src.application.workflows.extraction import ExtractionWorkflow
 from src.application.workflows.extraction.batching import ExtractionChunkBatcher
+from src.application.workflows.extraction.candidates import (
+    ExtractionCandidateSelector,
+)
 from src.domain.assets import TableAsset
 from src.domain.common import ChunkType
 from src.domain.document import DocumentChunk, DocumentSection
@@ -118,6 +121,10 @@ def make_workflow(
 ) -> tuple[ExtractionWorkflow, SpyExtractionResultValidator]:
     spy_validator = validator or SpyExtractionResultValidator()
     workflow_kwargs = {"max_attempts": 1, **kwargs}
+    workflow_kwargs.setdefault(
+        "candidate_selector",
+        ExtractionCandidateSelector(llm_router=None),
+    )
     workflow = ExtractionWorkflow(
         llm_service=fake_llm_service,
         extraction_service=fake_extraction_service,
