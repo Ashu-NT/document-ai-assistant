@@ -14,9 +14,7 @@ from src.application.services.answer_generation.answer_generation_service import
 )
 from src.application.services.answer_generation.intent.answer_intent_analyzer import (
     AnswerIntentAnalyzer,
-)
-from src.application.services.answer_generation.intent.answer_intent import (
-    AnswerIntent,
+    AnswerIntentDecision,
 )
 from src.application.services.document import DocumentLookupService
 from src.application.services.document_exploration.document_exploration_service import (
@@ -359,7 +357,7 @@ class QuestionAnsweringWorkflow:
         # LLM only ever sees approved_chunks (plus any structured-fact source
         # chunks joined in below)
         self._emit_progress(progress_callback, "Generating answer...")
-        joined_chunks, structured_context = self._join_structured_facts(
+        joined_chunks, structured_context, intent_decision = self._join_structured_facts(
             approved_chunks=approved_chunks,
             analyzed_query=analyzed_query,
             question=request.question,
@@ -378,6 +376,7 @@ class QuestionAnsweringWorkflow:
             resolved_identifiers=resolved_identifiers,
             resolved_structured_entities=resolved_structured_entities,
             structured_context=structured_context,
+            answer_intent_decision=intent_decision,
         )
         generated = self._answer_generation_service.generate(gen_request)
 
@@ -443,7 +442,11 @@ class QuestionAnsweringWorkflow:
         question: str,
         resolved_identifiers: list,
         resolved_structured_entities: list,
-    ) -> tuple[list[RetrievedChunk], StructuredAnswerContext | None]:
+    ) -> tuple[
+        list[RetrievedChunk],
+        StructuredAnswerContext | None,
+        AnswerIntentDecision | None,
+    ]:
         """Joins resolved identifiers/structured-entity rows to the same
         chunk-based context used for generation, fetching their exact source
         chunk when normal retrieval didn't already surface it, so these
@@ -486,14 +489,15 @@ class QuestionAnsweringWorkflow:
         )
 
         if not resolved_identifiers and not resolved_structured_entities:
-            return prepared_chunks, None
+            return prepared_chunks, None, None
 
+        intent_decision = self._resolve_structured_answer_intent_decision(
+            question=question,
+            analyzed_query=analyzed_query,
+            prepared_chunks=prepared_chunks,
+        )
         structured_context = self._answer_context_organizer.organize(
-            answer_intent=self._resolve_structured_answer_intent(
-                question=question,
-                analyzed_query=analyzed_query,
-                prepared_chunks=prepared_chunks,
-            ),
+            answer_intent=intent_decision.intent,
             chunks=prepared_chunks,
         )
         source_number_by_chunk_id = self._source_number_by_chunk_id(
@@ -525,10 +529,10 @@ class QuestionAnsweringWorkflow:
             )
 
         if not extra_key_values:
-            return prepared_chunks, None
+            return prepared_chunks, None, intent_decision
 
         structured_context.key_values.extend(extra_key_values)
-        return prepared_chunks, structured_context
+        return prepared_chunks, structured_context, intent_decision
 
     def _resolve_structured_evidence(
         self,
@@ -565,14 +569,14 @@ class QuestionAnsweringWorkflow:
             diagnostics=dict(workflow_bundle.diagnostics),
         )
 
-    def _resolve_structured_answer_intent(
+    def _resolve_structured_answer_intent_decision(
         self,
         *,
         question: str,
         analyzed_query: RetrievalQuery,
         prepared_chunks: list[RetrievedChunk],
-    ) -> AnswerIntent:
-        decision = self._answer_intent_analyzer.analyze(
+    ) -> AnswerIntentDecision:
+        return self._answer_intent_analyzer.analyze(
             question=question,
             retrieval_intent=analyzed_query.detected_intent,
             chunk_type_preferences=analyzed_query.chunk_types,
@@ -580,7 +584,6 @@ class QuestionAnsweringWorkflow:
             legacy_query_intent=analyzed_query.detected_intent,
             route=QuestionAnsweringRoute.RETRIEVAL_QA.value,
         )
-        return decision.intent
 
     @staticmethod
     def _deduplicate_identifiers(identifiers: list) -> list:

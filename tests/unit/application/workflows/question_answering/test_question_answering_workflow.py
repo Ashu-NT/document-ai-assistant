@@ -17,8 +17,14 @@ from src.application.workflows.question_answering.question_answering_route impor
 from src.application.workflows.question_answering.question_answering_workflow import (
     QuestionAnsweringWorkflow,
 )
+from src.application.services.answer_generation.answer_generation_service import (
+    AnswerGenerationService,
+)
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
+)
+from src.application.services.answer_generation.intent.answer_intent_analyzer import (
+    AnswerIntentAnalyzer,
 )
 from src.application.workflows.retrieval.retrieval_query_chunk_type_preference_mapper import (
     RetrievalQueryChunkTypePreferenceMapper,
@@ -1312,6 +1318,86 @@ def test_context_override_falls_back_to_structured_evidence_resolver(
     assert len(result.resolved_structured_entities) == 1
     assert fake_gen.called_with is not None
     assert len(fake_gen.called_with.resolved_structured_entities) == 1
+
+
+class _CountingAnswerIntentAnalyzer(AnswerIntentAnalyzer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.call_count = 0
+
+    def analyze(self, **kwargs):
+        self.call_count += 1
+        return super().analyze(**kwargs)
+
+
+class _StubLLMService:
+    def __init__(self, response: str) -> None:
+        self._response = response
+
+    def generate(self, prompt, model=None, *, response_schema=None) -> str:
+        return self._response
+
+
+def test_answer_intent_is_resolved_exactly_once_when_structured_facts_are_joined(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    """Regression test: AnswerIntentAnalyzer.analyze() used to run twice per
+    QA turn whenever structured facts were resolved -- once in
+    QuestionAnsweringWorkflow._join_structured_facts (to decide what
+    AnswerContextOrganizer extracts into structured_context), and again
+    inside AnswerGenerationService._resolve_request, because the workflow
+    never passed its already-computed decision through. Uses a REAL
+    AnswerGenerationService (not FakeAnswerGenerationService) so the fix in
+    AnswerGenerationService._resolve_intent_decision is actually exercised,
+    sharing one spy AnswerIntentAnalyzer instance between the workflow and
+    the service to count calls across both call sites."""
+    from src.domain.document.entities.chunk import DocumentChunk
+
+    retrieved_chunk = _make_chunk("chunk_a")
+    wf_result = _make_retrieval_result_with_chunks([retrieved_chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+
+    manufacturer_source_chunk = DocumentChunk(
+        chunk_id="chunk_manufacturer",
+        document_id="doc_001",
+        section_id=None,
+        content="ACME Corp, Germany",
+    )
+    lookup_service = FakeDocumentLookupService(
+        chunks_by_id={"chunk_manufacturer": manufacturer_source_chunk}
+    )
+    spy_analyzer = _CountingAnswerIntentAnalyzer()
+    real_gen_service = AnswerGenerationService(
+        llm_service=_StubLLMService(
+            '{"answer_text": "ACME Corp is the manufacturer."}'
+        ),
+        answer_intent_analyzer=spy_analyzer,
+        answer_generation_model="qwen3:8b",
+    )
+    workflow = QuestionAnsweringWorkflow(
+        retrieval_workflow=fake_retrieval,
+        exploration_service=fake_exploration_service,
+        answer_generation_service=real_gen_service,
+        document_lookup_service=lookup_service,
+        answer_intent_analyzer=spy_analyzer,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the manufacturer?",
+        allow_answer_generation=True,
+        resolved_structured_entities=[
+            {
+                "name": "ACME Corp",
+                "source_chunk_id": "chunk_manufacturer",
+                "_entity_type": "manufacturer",
+            }
+        ],
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert result.answer_text == "ACME Corp is the manufacturer."
+    assert spy_analyzer.call_count == 1
 
 
 def test_no_generation_service_and_disabled_returns_placeholder(

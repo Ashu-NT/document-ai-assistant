@@ -10,6 +10,9 @@ from src.application.workflows.question_answering.answer_context.structured_answ
     AnswerKeyValue,
     StructuredAnswerContext,
 )
+from src.application.workflows.shared.identifier_type_markers import (
+    IDENTIFIER_TYPE_MARKERS,
+)
 from src.domain.common import IdentifierType
 from src.domain.document.entities.identifier import Identifier
 
@@ -40,86 +43,6 @@ _IDENTIFIER_KEY_TO_TYPE: dict[str, IdentifierType] = {
     "Email Address": IdentifierType.EMAIL_ADDRESS,
     "URL": IdentifierType.URL,
     "Website": IdentifierType.URL,
-}
-_QUESTION_TYPE_MARKERS: dict[IdentifierType, tuple[str, ...]] = {
-    IdentifierType.PART_NUMBER: ("part number", "part numbers", "part no", "part"),
-    IdentifierType.SERIAL_NUMBER: (
-        "serial number",
-        "serial numbers",
-        "serial no",
-        "serial",
-    ),
-    IdentifierType.MODEL_NUMBER: ("model number", "model numbers", "model"),
-    IdentifierType.PRODUCT_NAME: (
-        "product name",
-        "product names",
-        "equipment name",
-        "equipment names",
-        "system name",
-        "system names",
-    ),
-    IdentifierType.DRAWING_NUMBER: (
-        "drawing number",
-        "drawing numbers",
-        "drawing",
-    ),
-    IdentifierType.COMPONENT_CODE: (
-        "order code",
-        "order codes",
-        "order number",
-        "order numbers",
-        "component code",
-        "component codes",
-        "tag",
-        "tags",
-    ),
-    IdentifierType.CERTIFICATE_NUMBER: (
-        "certificate number",
-        "certificate numbers",
-        "certificate",
-        "approval number",
-        "approval numbers",
-    ),
-    IdentifierType.MANUFACTURER_NAME: (
-        "manufacturer",
-        "manufacturers",
-    ),
-    IdentifierType.SUPPLIER_NAME: (
-        "supplier",
-        "suppliers",
-        "vendor",
-        "vendors",
-        "distributor",
-        "distributors",
-    ),
-    IdentifierType.PHONE_NUMBER: (
-        "phone number",
-        "phone numbers",
-        "telephone number",
-        "telephone numbers",
-        "phone",
-        "telephone",
-        "tel",
-    ),
-    IdentifierType.FAX_NUMBER: (
-        "fax number",
-        "fax numbers",
-        "fax",
-    ),
-    IdentifierType.EMAIL_ADDRESS: (
-        "email address",
-        "email addresses",
-        "email",
-        "emails",
-    ),
-    IdentifierType.URL: (
-        "url",
-        "urls",
-        "website",
-        "websites",
-        "web address",
-        "web addresses",
-    ),
 }
 _TYPE_ORDER: tuple[IdentifierType, ...] = (
     IdentifierType.PART_NUMBER,
@@ -228,7 +151,7 @@ class IdentifierAnswerRenderer:
     def _requested_identifier_types(question: str) -> set[IdentifierType]:
         normalized_question = " ".join((question or "").strip().lower().split())
         requested: set[IdentifierType] = set()
-        for identifier_type, markers in _QUESTION_TYPE_MARKERS.items():
+        for identifier_type, markers in IDENTIFIER_TYPE_MARKERS.items():
             if any(marker in normalized_question for marker in markers):
                 requested.add(identifier_type)
         return requested

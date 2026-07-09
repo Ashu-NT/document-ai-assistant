@@ -179,13 +179,9 @@ class AnswerGenerationService:
         if request.max_context_chunks is not None:
             context_chunks = context_chunks[: request.max_context_chunks]
 
-        intent_decision = self.answer_intent_analyzer.analyze(
-            question=request.question,
-            retrieval_intent=request.retrieval_intent,
-            chunk_type_preferences=request.chunk_type_preferences,
-            approved_chunks=context_chunks,
-            legacy_query_intent=request.query_intent,
-            route=request.route,
+        intent_decision = self._resolve_intent_decision(
+            request=request,
+            context_chunks=context_chunks,
         )
         answer_intent = request.answer_intent or intent_decision.intent
         structured_context = request.structured_context
@@ -212,6 +208,31 @@ class AnswerGenerationService:
             format_policy=format_policy,
         )
         return resolved_request, intent_decision
+
+    def _resolve_intent_decision(
+        self,
+        *,
+        request: AnswerGenerationRequest,
+        context_chunks: list[RetrievedChunk],
+    ) -> AnswerIntentDecision:
+        # An upstream caller (QuestionAnsweringWorkflow) that already built
+        # structured_context has necessarily already run analyze() once to
+        # decide what to extract into it. Reusing that decision instead of
+        # calling analyze() again here removes a second, redundant
+        # AnswerIntentAnalyzer computation (previously via a second
+        # AnswerIntentAnalyzer instance) per answer, and closes off the
+        # possibility of the two computations disagreeing (they always used
+        # the same inputs today, but nothing enforced that).
+        if request.answer_intent_decision is not None:
+            return request.answer_intent_decision
+        return self.answer_intent_analyzer.analyze(
+            question=request.question,
+            retrieval_intent=request.retrieval_intent,
+            chunk_type_preferences=request.chunk_type_preferences,
+            approved_chunks=context_chunks,
+            legacy_query_intent=request.query_intent,
+            route=request.route,
+        )
 
     @staticmethod
     def _maintenance_diagnostics(

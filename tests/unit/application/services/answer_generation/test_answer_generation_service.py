@@ -8,6 +8,10 @@ from src.application.services.answer_generation.answer_generation_request import
 from src.application.services.answer_generation.answer_generation_service import (
     AnswerGenerationService,
 )
+from src.application.services.answer_generation.intent.answer_intent_analyzer import (
+    AnswerIntentAnalyzer,
+    AnswerIntentDecision,
+)
 from src.shared.exceptions import SchemaValidationError
 from src.domain.common import ChunkType, IdentifierType
 from src.domain.document.entities.identifier import Identifier
@@ -388,6 +392,69 @@ def test_generate_passes_answer_generation_response_schema_to_llm() -> None:
     assert llm.calls
     assert llm.calls[0]["response_schema"] is not None
     assert "answer_text" in llm.calls[0]["response_schema"].get("properties", {})
+
+
+class _CountingAnswerIntentAnalyzer(AnswerIntentAnalyzer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.call_count = 0
+
+    def analyze(self, **kwargs):
+        self.call_count += 1
+        return super().analyze(**kwargs)
+
+
+def test_generate_skips_recomputing_intent_when_decision_is_already_resolved() -> None:
+    """Regression test: AnswerGenerationService used to call
+    AnswerIntentAnalyzer.analyze() unconditionally, even when an upstream
+    caller (QuestionAnsweringWorkflow) already resolved the intent to build
+    structured_context -- a redundant second computation using a second
+    AnswerIntentAnalyzer instance, which could in principle disagree with
+    the first if the two call sites ever saw different chunk sets. Passing
+    answer_intent_decision through the request should make the service
+    reuse it instead of recomputing."""
+    spy = _CountingAnswerIntentAnalyzer()
+    llm = FakeLLMService()
+    service = AnswerGenerationService(
+        llm_service=llm,
+        answer_intent_analyzer=spy,
+        answer_generation_model="qwen3:8b",
+    )
+    decision = AnswerIntentDecision(
+        intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        confidence=0.9,
+        reason="pre-resolved by workflow",
+        matched_signals=["question:pressure"],
+    )
+    request = AnswerGenerationRequest(
+        question="What is the pressure specification?",
+        context_chunks=[_make_chunk(content="Test pressure: 700 bar")],
+        answer_intent_decision=decision,
+    )
+
+    result = service.generate(request)
+
+    assert spy.call_count == 0
+    assert result.answer_intent == AnswerIntent.SPECIFICATION_SUMMARY
+    assert result.confidence == 0.9
+
+
+def test_generate_still_computes_intent_when_no_decision_is_provided() -> None:
+    spy = _CountingAnswerIntentAnalyzer()
+    llm = FakeLLMService()
+    service = AnswerGenerationService(
+        llm_service=llm,
+        answer_intent_analyzer=spy,
+        answer_generation_model="qwen3:8b",
+    )
+    request = AnswerGenerationRequest(
+        question="What is the pressure specification?",
+        context_chunks=[_make_chunk(content="Test pressure: 700 bar")],
+    )
+
+    service.generate(request)
+
+    assert spy.call_count == 1
 
 
 def test_generate_rejects_malformed_answer_generation_json() -> None:
