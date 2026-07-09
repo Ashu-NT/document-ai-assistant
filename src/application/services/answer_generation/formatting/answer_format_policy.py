@@ -59,7 +59,6 @@ class AnswerFormatPolicy:
     include_table: bool
     include_bullets: bool
     include_steps: bool
-    include_sources_inline: bool
     max_bullets: int | None
     response_label: str
     instruction_lines: tuple[str, ...]
@@ -138,7 +137,6 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         include_table=True,
         include_bullets=True,
         include_steps=False,
-        include_sources_inline=False,
         max_bullets=8,
         response_label="Available specifications",
         instruction_lines=(
@@ -155,7 +153,6 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         include_table=False,
         include_bullets=False,
         include_steps=False,
-        include_sources_inline=False,
         max_bullets=None,
         response_label="Maintenance Tasks",
         instruction_lines=(
@@ -185,7 +182,6 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         include_table=False,
         include_bullets=False,
         include_steps=True,
-        include_sources_inline=False,
         max_bullets=None,
         response_label="Procedure",
         instruction_lines=(
@@ -201,7 +197,6 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         include_table=False,
         include_bullets=True,
         include_steps=False,
-        include_sources_inline=False,
         max_bullets=8,
         response_label="Safety warnings",
         instruction_lines=(
@@ -216,7 +211,6 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         include_table=False,
         include_bullets=True,
         include_steps=False,
-        include_sources_inline=False,
         max_bullets=8,
         response_label="Troubleshooting information",
         instruction_lines=(
@@ -231,7 +225,6 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         include_table=True,
         include_bullets=True,
         include_steps=False,
-        include_sources_inline=False,
         max_bullets=8,
         response_label="Certification facts",
         instruction_lines=(
@@ -246,7 +239,6 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         include_table=False,
         include_bullets=True,
         include_steps=False,
-        include_sources_inline=False,
         max_bullets=12,
         response_label="Requested identifiers",
         instruction_lines=(
@@ -264,7 +256,6 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         include_table=True,
         include_bullets=True,
         include_steps=False,
-        include_sources_inline=False,
         max_bullets=8,
         response_label="Table summary",
         instruction_lines=(
@@ -290,7 +281,6 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         include_table=False,
         include_bullets=True,
         include_steps=False,
-        include_sources_inline=False,
         max_bullets=6,
         response_label="Document summary",
         instruction_lines=(
@@ -305,7 +295,6 @@ _POLICIES: dict[AnswerIntent, AnswerFormatPolicy] = {
         include_table=False,
         include_bullets=False,
         include_steps=False,
-        include_sources_inline=False,
         max_bullets=None,
         response_label="Grounded answer",
         instruction_lines=(

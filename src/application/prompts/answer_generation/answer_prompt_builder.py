@@ -10,7 +10,6 @@ from src.application.prompts.common import (
     ANSWER_GROUNDING_RULES,
     PromptMetadata,
 )
-from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
 if TYPE_CHECKING:
     from src.application.services.answer_generation.answer_generation_request import (
@@ -174,34 +173,11 @@ class AnswerPromptBuilder:
 
     def _raw_source_block(self, request: "AnswerGenerationRequest") -> str:
         structured_context = request.structured_context
-        if structured_context is not None and structured_context.sources:
-            return "\n\n".join(
-                self._format_answer_source_block(source)
-                for source in structured_context.sources
-            )
-
+        if structured_context is None or not structured_context.sources:
+            return ""
         return "\n\n".join(
-            self._format_source_block(index + 1, chunk)
-            for index, chunk in enumerate(request.context_chunks)
-        )
-
-    @staticmethod
-    def _format_source_block(index: int, chunk: RetrievedChunk) -> str:
-        section_path = " > ".join(chunk.section_path) if chunk.section_path else "N/A"
-        page_range = AnswerPromptBuilder._format_page_range(chunk)
-        document_name = (
-            chunk.citation.document_name
-            if chunk.citation is not None and chunk.citation.document_name
-            else "Current document"
-        )
-
-        return (
-            f"SOURCE {index}\n"
-            f"Document: {document_name}\n"
-            f"Section: {section_path}\n"
-            f"Pages: {page_range}\n"
-            "---\n"
-            f"{chunk.content}"
+            self._format_answer_source_block(source)
+            for source in structured_context.sources
         )
 
     @staticmethod
@@ -219,13 +195,6 @@ class AnswerPromptBuilder:
             f"Pages: {page_range}\n"
             "---\n"
             f"{source.content}"
-        )
-
-    @staticmethod
-    def _format_page_range(chunk: RetrievedChunk) -> str:
-        return AnswerPromptBuilder._format_page_bounds(
-            chunk.source.page_start,
-            chunk.source.page_end,
         )
 
     @staticmethod

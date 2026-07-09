@@ -451,7 +451,7 @@ Separately, the raw-text extraction path has no steps concept at all: `KeyValueE
 
 **Resolved:** sub-fix (a) is done — `steps` now survives via `AnswerRelationship.target_entity_fields["steps"]` (see `test_build_preserves_related_procedure_steps_through_relationship` and the workflow-level `test_resolved_maintenance_task_surfaces_linked_procedure_steps_end_to_end`). Sub-fix (b) (whether `AnswerMaintenanceEntry`'s raw-text path should ever gain step-grouping) is deliberately left open — not resolved as a side effect of this fix, per this finding's own framing.
 
-## 4.17 A third write-only field, same shape as 4.11 (found during Phase 6, missed in original audit)
+## 4.17 A third write-only field, same shape as 4.11 (found during Phase 6, missed in original audit) [RESOLVED in Phase 9]
 
 `AnswerFormatPolicy.include_sources_inline` is declared on every one of the 10 `_POLICIES` entries (`src/application/services/answer_generation/formatting/answer_format_policy.py`), always hardcoded to `False`, and never read by `AnswerPromptBuilder._format_policy_block()` (`src/application/prompts/answer_generation/answer_prompt_builder.py:83-100`) — unlike `preferred_format`, `response_label`, `include_bullets`, `include_steps`, `include_table`, `max_bullets`, and `instruction_lines`, which are all rendered into the prompt. Found while implementing Phase 6's context-aware `resolve()`, when checking whether this field was a safe delivery mechanism for the new `is_multi_document` signal — it is not, since writing to a field nothing reads would just be a second instance of exactly what 4.11/9.9 already flagged for the confidence fields.
 
@@ -460,16 +460,31 @@ Separately, the raw-text extraction path has no steps concept at all: `KeyValueE
 - identical shape to 4.11: a field is threaded through every policy construction for a purpose (presumably: render source citations inline within the answer body rather than only as trailing citations) that was never implemented downstream
 - low risk today (defaults to `False` everywhere, so it's inert rather than actively wrong), but the same "whoever wires this up next needs to decide if it means anything" caution from 4.11 applies
 
-**Not resolved in Phase 6** — deliberately flagged rather than fixed here. Wiring it up for real means changing how `AnswerPromptBuilder`/deterministic renderers render citations, which is Phase 7's job ("Renderer unification"), not a format-policy-resolution change. Tracked in the traceability matrix below.
+**Not resolved in Phase 6, not resolved in Phase 7** — Phase 6 deliberately flagged rather than fixed it; Phase 7 investigated and confirmed wiring it up for real (building an actual inline-citation renderer capability) was new feature work, not a unification of an existing dual-representation, so out of scope there too. **Resolved in Phase 9**: since no phase in this plan intends to build that feature, and the field is confirmed to have zero readers, removed the field entirely (`include_sources_inline` deleted from `AnswerFormatPolicy` and all 10 `_POLICIES` entries) rather than leaving a permanently-dead field in place. If inline citation rendering is wanted later, it should be designed and added with its actual consumer in the same change, not resurrected as an empty field first.
+
+## 4.18 Two more write-only fields on `AnswerGenerationRequest` (found during Phase 9, missed in original audit)
+
+`AnswerGenerationRequest.document_id` and `.require_citations` were both set at the request's one production construction site (`QuestionAnsweringWorkflow._resolve_and_generate` — passed as `document_id=request.document_id, require_citations=request.require_citations`) but never read anywhere in `AnswerGenerationService`, `AnswerPromptBuilder`, or either deterministic renderer. Found while sweeping the `answer_generation` subtree for dead code per Phase 9's charter.
+
+- `require_citations` in particular reads as though it should gate citation enforcement, but the actual citation-enforcement guardrail (`citation_guardrail.py`/`answer_guardrail_policy.py`) has its own, completely separate `require_citations` config sourced from `guardrail_settings` — the two never connect. `AnswerGenerationRequest.require_citations` was a dead duplicate of a concept implemented elsewhere.
+- `document_id` is likewise redundant with real, used fields: `AnswerSource.document_id`/`.document_title` (Phase 3) already carry per-source document identity into the typed context.
+
+### Impact
+
+- same shape as 4.11/4.17: fields threaded through construction for an apparent purpose that was never wired to a real consumer
+- zero test coverage depended on either field's downstream behavior (confirmed before removal)
+
+**Resolved in Phase 9**: both fields removed from `AnswerGenerationRequest`, and their assignment removed from the one construction call site in `question_answering_workflow.py`. Pure subtraction — no production caller or test relied on either field being read.
 
 ## 5. Dead Code / Low-Value Path Review
 
 ## 5.1 Confirmed low-value or dead-path behavior
 
-### A. `AnswerFormatPolicy.resolve(..., structured_context=...)`
+### A. `AnswerFormatPolicy.resolve(..., structured_context=...)` [RESOLVED in Phase 6]
 
 - Parameter is accepted but ignored.
 - This should either become a real resolver or be removed/replaced.
+- ✅ Resolved in Phase 6 — see 4.4/9.4. `resolve()` now derives real context signals and is no longer a no-op.
 
 Reference:
 
@@ -508,13 +523,15 @@ Reference:
 
 - `src/application/services/answer_generation/answer_generation_request.py`
 
-## 5.2 Removal candidates after replacement exists
+## 5.2 Removal candidates after replacement exists [EVALUATED in Phase 9 -- none applicable]
 
 These should not be deleted immediately. They should be removed only after the new typed answer-context path is in place:
 
-- prompt-only string grouping blocks if replaced by typed answer views
-- ad-hoc field-label flattening that becomes redundant once typed answer sections exist
-- duplicated spare-parts / identifier formatting branches if moved behind a unified rendering policy layer
+- prompt-only string grouping blocks if replaced by typed answer views — **not applicable**: `source_groups`/`section_groups` were never replaced by a typed view that supersedes them (4.9 remains open per Phase 7's decision), so there is nothing to remove here yet.
+- ad-hoc field-label flattening that becomes redundant once typed answer sections exist — **not applicable**: Phase 8 added typed `structured_entities` serialization to the prompt, but per 4.2's explicit, repeatedly-reaffirmed design decision, `AnswerKeyValue` flattening runs *in parallel*, not as something the typed view replaces. The flattening was never intended to become redundant.
+- duplicated spare-parts / identifier formatting branches if moved behind a unified rendering policy layer — **not applicable**: Phase 7 unified both renderers onto the same typed input model (`AnswerSource`/`key_values`) without needing a shared rendering-policy abstraction. The two renderers format structurally different content (tabular rows vs. grouped identifier lists); forcing them behind one shared branch would be an arbitrary abstraction with no real duplication to remove.
+
+All three candidates were evaluated during Phase 9 and found inapplicable — their preconditions never materialized, by design, not by oversight.
 
 ## 6. Enterprise Target State
 
@@ -785,7 +802,8 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | 4.14 no rules-version / observability parity | Phase 1 — **done**, Phase 6 — **done** (consumption: `format_policy_context_signals` diagnostic, `ANSWER_FORMAT_POLICY_RULES_VERSION` bumped to v2) | 9.10, reviewer 0.1 #3 |
 | 4.15 no `AnswerIntent` exhaustiveness guard | Phase 1 — **done** | 9.8 |
 | 4.16 `task_uses_procedure` steps silently dropped | Phase 4 — **done** | 9.2, 9.3 |
-| 4.17 dead `include_sources_inline` field (found in Phase 6) | Phase 7 — investigated, **still open** (wiring it up is a new rendering capability, not a unification; see Phase 7's "Not addressed" note) | 9.5 |
+| 4.17 dead `include_sources_inline` field (found in Phase 6) | Phase 9 — **done** (removed; no phase intends to build the inline-citation feature it was reserved for) | 9.5 |
+| 4.18 dead `document_id`/`require_citations` fields on `AnswerGenerationRequest` (found in Phase 9) | Phase 9 — **done** (removed, pure subtraction) | — |
 
 ## Phase 1 - Baseline protection [IMPLEMENTED]
 
@@ -886,13 +904,17 @@ Full regression: run alongside Phase 6's changes; see Phase 6 and this phase's o
 
 Full regression: 2261 tests green across the entire `tests/unit` suite (2258 before this phase + 3 new). New tests: `test_answer_prompt_builder_serializes_structured_entities_and_relationships`, `test_answer_prompt_builder_omits_structured_entities_block_when_absent` (`test_answer_prompt_builder.py`), `test_generate_surfaces_limitation_note_from_llm_response` (`test_answer_generation_service.py`); `test_generate_returns_llm_output_as_answer_text` extended to assert `limitation_note is None` for a response that omits it.
 
-## Phase 9 - Cleanup / dead code removal
+## Phase 9 - Cleanup / dead code removal [IMPLEMENTED]
 
-- remove replaced prompt-only helpers
-- remove obsolete flattening logic
-- remove write-only confidence fields unless a calibrated consumer has been deliberately introduced
-- remove no-longer-used projections
-- update `__init__.py` exports
+- ✅ remove replaced prompt-only helpers — audited `AnswerPromptBuilder` and found `_raw_source_block()`'s `RetrievedChunk`-based fallback branch (plus its two sole helpers, `_format_source_block()` and `_format_page_range()`) was dead in production: the one real caller (`AnswerGenerationService.generate()`) always calls `build()` with a `resolved_request` from `_resolve_request()`, which unconditionally organizes `structured_context` before `build()` ever runs — so the `AnswerSource`-based path is always taken, and the `RetrievedChunk` fallback (added originally for a caller that predates `structured_context` always being populated) was unreachable with real data. Removed both helpers, the now-unused `RetrievedChunk` import, and simplified `_raw_source_block()` to return `""` when `structured_context` is `None`/empty instead of re-deriving a source block from raw chunks. Removed the one test (`test_answer_prompt_builder_formats_page_ranges`) that only existed to exercise the now-deleted `_format_page_range()`, replaced with a test locking in the new explicit empty-block behavior.
+- ✅ remove write-only confidence fields unless a calibrated consumer has been deliberately introduced — already fully resolved in Phase 6 (4.11/9.9); nothing further found this phase.
+- ✅ remove obsolete flattening logic / remove no-longer-used projections — swept `answer_generation`/`answer_context` with `ruff --select F401,F841` (zero findings — no unused imports/locals anywhere in scope) plus manual review, which surfaced two further dead-field findings beyond what Phases 6–7 had already caught:
+  - closed 4.17 (`AnswerFormatPolicy.include_sources_inline`, flagged in Phase 6, deferred in Phase 7 as feature work) — since no phase in this plan intends to build the "inline citations" feature it was reserved for, removed the field outright rather than leaving it dead indefinitely. Deleted from the dataclass and all 10 `_POLICIES` entries.
+  - found and closed 4.18 (new): `AnswerGenerationRequest.document_id` and `.require_citations` were set at their one production construction site and never read anywhere downstream. `require_citations` in particular was a dead duplicate of a concept the citation guardrail already implements via its own, unrelated config. Removed both fields and their assignment at the single call site in `question_answering_workflow.py`.
+  - evaluated all three items in 5.2 ("removal candidates after replacement exists") — none had actually materialized (see 5.2's own updated status); nothing to remove there.
+- ✅ update `__init__.py` exports — audited `answer_context/__init__.py` and `services/answer_generation/__init__.py`; both already complete and consistent (every public class from Phases 2–8 already exported via the lazy `__getattr__` pattern), no changes needed.
+
+Full regression: 2261 tests green across the entire `tests/unit` suite (same count as end of Phase 8 — one dead test removed, one new test added, net zero). `ruff check --select F401,F841` clean across the full `answer_context`/`answer_generation` subtree both before and after this phase's removals.
 
 ## Phase 10 - Full validation
 

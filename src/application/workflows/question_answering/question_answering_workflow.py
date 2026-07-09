@@ -377,8 +377,6 @@ class QuestionAnsweringWorkflow:
             query_intent=analyzed_intent,
             retrieval_intent=analyzed_intent,
             chunk_type_preferences=list(analyzed_query.chunk_types),
-            document_id=request.document_id,
-            require_citations=request.require_citations,
             route=QuestionAnsweringRoute.RETRIEVAL_QA.value,
             resolved_identifiers=resolved_identifiers,
             resolved_structured_entities=resolved_structured_entities,

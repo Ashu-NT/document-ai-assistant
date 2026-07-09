@@ -39,7 +39,5 @@ class AnswerGenerationRequest:
     structured_context: StructuredAnswerContext | None = None
     format_policy: AnswerFormatPolicy | None = None
     route: str | None = None
-    document_id: str | None = None
-    require_citations: bool = True
     resolved_identifiers: list[Identifier] = field(default_factory=list)
     resolved_structured_entities: list = field(default_factory=list)

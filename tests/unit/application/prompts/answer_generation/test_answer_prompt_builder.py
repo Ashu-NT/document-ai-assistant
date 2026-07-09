@@ -180,6 +180,28 @@ def test_maintenance_prompt_merges_duplicate_tasks_and_shows_multiple_references
     assert "SOURCE 1, SOURCE 2" in prompt
 
 
+def test_answer_prompt_builder_renders_empty_raw_source_block_without_structured_context() -> None:
+    """Plan section 9 (Phase 9 cleanup): the RetrievedChunk-based raw-source
+    fallback (_format_source_block/_format_page_range) was dead code -- the
+    one production caller (AnswerGenerationService) always organizes
+    structured_context before calling build(), so the fallback was never
+    reachable with real data. Removed in favor of this explicit, simpler
+    contract: no structured_context means no raw source block, instead of
+    silently re-deriving one from context_chunks."""
+    builder = AnswerPromptBuilder()
+    request = AnswerGenerationRequest(
+        question="Test?",
+        context_chunks=[_make_chunk()],
+        answer_intent=AnswerIntent.GENERAL,
+        structured_context=None,
+        format_policy=AnswerFormatPolicy.for_intent(AnswerIntent.GENERAL),
+    )
+
+    prompt = builder.build(request)
+
+    assert prompt.endswith("Raw sources:\n")
+
+
 def test_answer_prompt_builder_includes_provided_sources() -> None:
     builder = AnswerPromptBuilder()
     chunks = [
@@ -282,16 +304,6 @@ def test_answer_prompt_builder_omits_structured_entities_block_when_absent() -> 
     prompt = builder.build(request)
 
     assert "Structured entities:" not in prompt
-
-
-def test_answer_prompt_builder_formats_page_ranges() -> None:
-    same_page_chunk = _make_chunk(page_start=7, page_end=7)
-    page_span_chunk = _make_chunk(page_start=3, page_end=6)
-    unknown_page_chunk = _make_chunk(page_start=None, page_end=None)
-
-    assert AnswerPromptBuilder._format_page_range(same_page_chunk) == "7"
-    assert AnswerPromptBuilder._format_page_range(page_span_chunk) == "3-6"
-    assert AnswerPromptBuilder._format_page_range(unknown_page_chunk) == "N/A"
 
 
 def test_specification_prompt_includes_anti_refusal_instruction_and_key_values() -> None:
