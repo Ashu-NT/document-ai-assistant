@@ -707,11 +707,11 @@ Add a parametrized test iterating every `AnswerIntent` member and asserting it h
 
 ## 9.9 Retire or recalibrate the decorative confidence fields (added in this amendment)
 
-Before section 9.2/9.3 add new typed evidence views, decide whether `AnswerKeyValue.confidence`/`AnswerMaintenanceEntry.confidence` are worth keeping. Either wire them into something that reads them (a low-confidence-evidence warning in the format policy, for instance — which would also give 9.4's context-aware policy work a concrete first signal to consume) or remove them rather than propagating an uncalibrated number into whatever the new typed views become. See 4.11.
+Before section 9.2/9.3 add new typed evidence views, decide whether `AnswerKeyValue.confidence`/`AnswerMaintenanceEntry.confidence` are worth keeping. Either wire them into something that reads them (a low-confidence-evidence warning in the format policy, for instance - which would also give 9.4's context-aware policy work a concrete first signal to consume) or remove them rather than propagating an uncalibrated number into whatever the new typed views become. See 4.11.
 
 ## 9.10 Add rules-version constants and diagnostic counts to the formatting layer (added in this amendment)
 
-Mirror the `*_RULES_VERSION` + structured-logging pattern already used by `AnswerIntentAnalyzer`/`RetrievalQueryIntentInferer` on `AnswerFormatPolicy`, `KeyValueExtractor`, and `MaintenanceEntryMerger`. Surface `SparePartsTableParser`'s existing `dropped_row_count`/`partial` tracking as a queryable diagnostic (matching how every other stage in this pipeline reports through a `diagnostics` dict) instead of only a one-line notice in the rendered answer text. See 4.14.
+Mirror the `*_RULES_VERSION` + structured-logging pattern already used by `AnswerIntentAnalyzer`/`RetrievalQueryIntentInferer` on `AnswerFormatPolicy`, `KeyValueExtractor`, and `MaintenanceEntryMerger`. Surface `SparePartsTableParser`'s existing `dropped_row_count`/`partial` tracking as a queryable diagnostic (matching how every other stage in this pipeline reports through a `diagnostics` dict) instead of only a one-line notice in the rendered answer text. This should land first as baseline instrumentation in Phase 1, then be consumed and extended by the richer format-policy work in Phase 6. See 4.14.
 
 ## 10. Execution Plan For Review
 
@@ -734,7 +734,7 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | 4.11 / 5.1.D dead `confidence` fields | Phase 9 | 9.9, reviewer 0.1 #4 |
 | 4.12 / 5.1.E dead `max_context_chunks` | Phase 1 (decision), Phase 3 (enforcement) | reviewer 0.1 #1 |
 | 4.13 redundant maintenance-entry data model | Phase 2 | reviewer 0.1 #2 |
-| 4.14 no rules-version / observability parity | Phase 6 | 9.10, reviewer 0.1 #3 |
+| 4.14 no rules-version / observability parity | Phase 1, Phase 6 | 9.10, reviewer 0.1 #3 |
 | 4.15 no `AnswerIntent` exhaustiveness guard | Phase 1 | 9.8 |
 
 ## Phase 1 - Baseline protection
@@ -745,6 +745,12 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 - add/keep regression coverage for pre-resolved `answer_intent_decision` reuse
 - add the `AnswerIntent` exhaustiveness guard tests called out in 9.8
 - make an explicit keep/remove/design decision for `AnswerGenerationRequest.max_context_chunks` before the refactor starts
+- add baseline rules-version constants and diagnostics parity on the current formatting path before structural refactors begin:
+  - `AnswerFormatPolicy`
+  - `KeyValueExtractor`
+  - `MaintenanceEntryMerger`
+  - `SparePartsTableParser`
+- surface table-parser partial/drop counts as structured diagnostics on the current path so later phases can measure whether behavior improved, regressed, or only changed shape
 
 ## Phase 2 - Model refactor
 
@@ -752,7 +758,7 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 - keep `src.` imports and stable re-exports
 - collapse `AnswerMaintenanceEntry`'s duplicated reference representations while models are being split
 - do not change answer behavior yet beyond structural cleanup and removal of duplicated internal representations
-- **must be executed as behavior-preserving:** the reference-representation collapse touches three consumers (`MaintenanceEntryMerger`, `MaintenancePromptContextFormatter`, `AnswerContextOrganizer`) — update all three in this same phase, not a subset, and keep rendered maintenance-answer output byte-for-byte identical at this stage (verify via `tests/unit/application/workflows/question_answering/answer_context/test_maintenance_entry_merger.py` and the maintenance-path assertions in `test_answer_generation_service.py`, both green with no assertion changes). Any answer-shape improvement that collapsing enables is deferred to Phase 4+, not bundled in here.
+- **must be executed as behavior-preserving:** the reference-representation collapse touches three consumers (`MaintenanceEntryMerger`, `MaintenancePromptContextFormatter`, `AnswerContextOrganizer`) - update all three in this same phase, not a subset, and keep rendered maintenance-answer output byte-for-byte identical at this stage (verify via `tests/unit/application/workflows/question_answering/answer_context/test_maintenance_entry_merger.py` and the maintenance-path assertions in `test_answer_generation_service.py`, both green with no assertion changes). Any answer-shape improvement that collapsing enables is deferred to Phase 4+, not bundled in here.
 
 ## Phase 3 - Source enrichment
 
@@ -763,7 +769,7 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 
 ## Phase 4 - Typed structured-evidence views
 
-- **First change in this phase, ahead of the typed-view work below:** make `QuestionAnsweringWorkflow._join_structured_facts()` retain the built `structured_context` whenever it was successfully organized, not only when extra `AnswerKeyValue` rows were produced (closes 4.3/9.7). This is the clearest live production correctness bug in this path — `structured_context` is fully organized and then discarded — so it lands first and is not gated on the rest of Phase 4. If the team wants risk reduction sooner than Phase 4's start, this single change can be pulled forward and shipped as its own micro-fix ahead of Phase 2/3 without waiting on the model refactor; it needs no new types, only removing the dead-path check.
+- **First change in this phase, ahead of the typed-view work below:** make `QuestionAnsweringWorkflow._join_structured_facts()` retain the built `structured_context` whenever it was successfully organized, not only when extra `AnswerKeyValue` rows were produced (closes 4.3/9.7). This is the clearest live production correctness bug in this path - `structured_context` is fully organized and then discarded - so it lands first and is not gated on the rest of Phase 4. If the team wants risk reduction sooner than Phase 4's start, this single change can be pulled forward and shipped as its own micro-fix ahead of Phase 2/3 without waiting on the model refactor; it needs no new types, only removing the dead-path check.
 - add first-class answer models for structured entities, relationships, tables, and assets
 - keep `AnswerKeyValue` as a convenience projection, not the only structured view
 
@@ -773,14 +779,10 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 - move extraction logic into focused builders/extractors
 - ensure maintenance extraction remains intact
 
-## Phase 6 - Observability and Format-Policy Upgrade
+## Phase 6 - Format-Policy Upgrade and Diagnostic Consumption
 
-- add rules-version constants and diagnostics parity for:
-  - `AnswerFormatPolicy`
-  - `KeyValueExtractor`
-  - `MaintenanceEntryMerger`
-  - `SparePartsTableParser`
-- surface table-parser partial/drop counts as structured diagnostics, not only rendered prose
+- consume the Phase 1 diagnostics baseline inside richer answer-format decisions
+- extend diagnostics only where the Phase 4/5 typed-view work introduces genuinely new signals
 - make `AnswerFormatPolicy.resolve()` context-aware
 - remove the current fake resolve path
 - add intent-plus-context policy tests
@@ -821,7 +823,7 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 - prompt builder emits richer organized context without leaking internal ids
 - answer-generation schema rejects malformed structured output cleanly
 - every `AnswerIntent` member has a corresponding `AnswerFormatPolicy._POLICIES` entry (added in this amendment — see 9.8)
-- `AnswerGenerationService` does not recompute `AnswerIntentAnalyzer.analyze()` when `AnswerGenerationRequest.answer_intent_decision` is already set, and still computes it when absent (added in this amendment — regression coverage for section 0.1 already exists in `tests/unit/application/services/answer_generation/test_answer_generation_service.py` and `tests/unit/application/workflows/question_answering/test_question_answering_workflow.py::test_answer_intent_is_resolved_exactly_once_when_structured_facts_are_joined`; keep these passing through the refactor)
+- `AnswerGenerationService` does not recompute `AnswerIntentAnalyzer.analyze()` when `AnswerGenerationRequest.answer_intent_decision` is already set, and still computes it when absent (added in this amendment - regression coverage for section 0.1 already exists in `tests/unit/application/services/answer_generation/test_answer_generation_service.py` and `tests/unit/application/workflows/question_answering/test_question_answering_workflow.py::test_answer_intent_is_resolved_exactly_once_when_structured_facts_are_joined`; keep these passing through the refactor)
 
 ### Existing tests to update
 
@@ -836,7 +838,7 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 These were open review questions in the original audit. None were contested, so each is adopted here using this document's own stated recommendation, and the numbered phases above are written against these answers. Revisit before starting the phase noted if the team's priorities change.
 
 1. Should `StructuredAnswerContext` remain the single canonical answer-context DTO for both deterministic renderers and LLM prompting?
-   - **Decision: Yes.** Phases 4, 5, and 7 are written on this basis — renderer unification (Phase 7) only makes sense if there is one shared DTO to unify on.
+   - **Decision: Yes.** Phases 4, 5, and 7 are written on this basis - renderer unification (Phase 7) only makes sense if there is one shared DTO to unify on.
 
 2. Should we keep `AnswerKeyValue` as a secondary convenience view rather than the main structured-evidence view?
    - **Decision: Yes.** Phase 4 explicitly keeps it as a convenience projection alongside the new typed views, not a replacement for them.
@@ -849,11 +851,11 @@ These were open review questions in the original audit. None were contested, so 
 
 ## 13. Risk, Rollback, and Compatibility Strategy
 
-- **Backward compatibility:** no *temporary* compatibility shims — no duplicate old/new module paths, no parallel file trees kept alive during migration, no re-export bridges added solely to avoid updating call sites. Every import site of a moved/renamed symbol is updated in the same change as the move, matching this codebase's established direct-cutover convention. This does **not** forbid the package's own stable `__init__.py` export surface (section 7's proposed structure keeps `answer_context/__init__.py` as the one import path consumers use) — that is the package's permanent public interface, not a migration-era compatibility shim, and Phase 2 is expected to preserve it.
-- **Rollback unit:** each phase is scoped to be independently revertible — Phase 2's file split lands before Phase 3-8 add new behavior on top of it, so a problem discovered in, say, Phase 6 can be reverted without unwinding Phases 2-5. Do not squash multiple phases into one change; that is what makes the phase boundaries in section 10 meaningful.
+- **Backward compatibility:** no *temporary* compatibility shims - no duplicate old/new module paths, no parallel file trees kept alive during migration, no re-export bridges added solely to avoid updating call sites. Every import site of a moved/renamed symbol is updated in the same change as the move, matching this codebase's established direct-cutover convention. This does **not** forbid the package's own stable `__init__.py` export surface (section 7's proposed structure keeps `answer_context/__init__.py` as the one import path consumers use) - that is the package's permanent public interface, not a migration-era compatibility shim, and Phase 2 is expected to preserve it.
+- **Rollback unit:** each phase is scoped to be independently revertible - Phase 2's file split lands before Phase 3-8 add new behavior on top of it, so a problem discovered in, say, Phase 6 can be reverted without unwinding Phases 2-5. Do not squash multiple phases into one change; that is what makes the phase boundaries in section 10 meaningful.
 - **Sequencing constraint:** Phases 3 through 8 assume Phase 2's model split has already landed (they add fields/types to files that Phase 2 relocates). Do not start Phase 4 before Phase 2 merges.
 - **Blast radius:** contained to the question-answering and structured-retrieval answer-generation path (`answer_context/`, `answer_generation/`, `prompts/answer_generation/`, and the structured query-analysis files added to scope in 2.1). Ingestion, extraction, and other LangGraph nodes outside answer generation are not touched by this plan.
-- **Test gate per phase:** each phase's exit criteria (where stated inline) and the traceability matrix (10.0) together define "done" for that phase — a phase is not complete until its mapped issue's `### Impact` bullets in section 4 no longer apply and its existing test suite (section 8.3) is green.
+- **Test gate per phase:** each phase's exit criteria (where stated inline) and the traceability matrix (10.0) together define "done" for that phase - a phase is not complete until its mapped issue's `### Impact` bullets in section 4 no longer apply and its existing test suite (section 8.3) is green.
 
 ## 13.1 Reviewer Comments On This Latest Team Update
 
@@ -914,7 +916,7 @@ That will make it much easier to tell whether later Phase 4 / 6 / 7 work:
 
 ### Comment 5 - the tree snippet should be normalized to ASCII
 
-The package-structure proposal is good, but the tree block currently contains mojibake box-drawing characters (`â”œ`, `â”‚`, `â”€`, etc.).
+The package-structure proposal is good, but the earlier tree block contained mojibake box-drawing characters (`|--` rendered incorrectly in some viewers, along with other box-drawing glyphs).
 
 That is only a documentation readability issue, not an architecture issue, but it should be cleaned before implementation starts so the structure can be copied safely.
 
@@ -923,10 +925,10 @@ That is only a documentation readability issue, not an architecture issue, but i
 All five comments above are addressed as of this pass:
 
 1. **Compatibility wording clarified.** Section 13's backward-compatibility bullet now explicitly distinguishes "no temporary migration-era shims/parallel trees" from "the package's own stable `__init__.py` export surface, which Phase 2 is expected to preserve." No conflict with section 7/Phase 2 remains.
-2. **4.3/9.7 urgency elevated.** Phase 4 now states it is the first change in that phase, ahead of the typed-view work, and explicitly calls out that it can be pulled forward as a standalone micro-fix before Phase 2/3 if the team wants risk reduction sooner — it needs no new types, only removing the dead-path check. The traceability matrix (10.0) still shows it mapped to Phase 4 since that is where it will land by default; treat the micro-fix option as team discretion, not a doc inconsistency.
+2. **4.3/9.7 urgency elevated.** Phase 4 now states it is the first change in that phase, ahead of the typed-view work, and explicitly calls out that it can be pulled forward as a standalone micro-fix before Phase 2/3 if the team wants risk reduction sooner - it needs no new types, only removing the dead-path check. The traceability matrix (10.0) still shows it mapped to Phase 4 since that is where it will land by default; treat the micro-fix option as team discretion, not a doc inconsistency.
 3. **Phase 2 behavior-preservation made explicit.** Added the three consumers that must move together (`MaintenanceEntryMerger`, `MaintenancePromptContextFormatter`, `AnswerContextOrganizer`), named the existing tests that must stay green with no assertion changes (`test_maintenance_entry_merger.py`, the maintenance-path tests in `test_answer_generation_service.py`), and explicitly deferred any answer-shape improvement to Phase 4+.
-4. **Observability-ordering — no doc change needed;** this comment confirms the ordering already reflected in Phase 6 (verified: still correct, restated for confirmation).
-5. **Tree snippet normalized to ASCII** (`|--`, `` `-- ``, `|` instead of Unicode box-drawing). Note for the record: the file's on-disk bytes were checked and were valid UTF-8 box-drawing characters, not actually corrupted — the mojibake was a rendering artifact in whatever viewer displayed it garbled. Normalizing to ASCII removes that fragility regardless of cause, since it renders identically in any editor/terminal/encoding.
+4. **Observability-ordering corrected in the plan.** Baseline rules-version and diagnostics work now lands in Phase 1 so the refactor is measurable from the start; Phase 6 now consumes and extends that baseline instead of introducing it late.
+5. **Tree snippet normalized to ASCII** (`|--`, `` `-- ``, `|` instead of Unicode box-drawing). Note for the record: the file's on-disk bytes were checked and were valid UTF-8 box-drawing characters, not actually corrupted - the mojibake was a rendering artifact in whatever viewer displayed it garbled. Normalizing to ASCII removes that fragility regardless of cause, since it renders identically in any editor/terminal/encoding.
 
 ## 14. Final Recommendation
 
@@ -941,3 +943,4 @@ The right path is:
 - then remove the dead and low-value code that becomes unnecessary
 
 That will move this area from "helpful prompt helper" to "enterprise answer-evidence layer".
+
