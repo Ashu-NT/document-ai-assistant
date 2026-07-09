@@ -534,36 +534,36 @@ Refactor internally into grouped subfolders while preserving stable exports thro
 
 ```text
 src/application/workflows/question_answering/answer_context/
-├── __init__.py
-├── models/
-│   ├── __init__.py
-│   ├── answer_source.py
-│   ├── answer_groups.py
-│   ├── structured_answer_context.py
-│   ├── answer_key_value.py
-│   ├── answer_maintenance_entry.py
-│   ├── answer_table_evidence.py
-│   ├── answer_asset_evidence.py
-│   ├── answer_structured_entity.py
-│   └── answer_relationship.py
-├── builders/
-│   ├── __init__.py
-│   ├── answer_context_organizer.py
-│   ├── source_group_builder.py
-│   ├── section_group_builder.py
-│   ├── structured_source_builder.py
-│   └── structured_evidence_view_builder.py
-├── extractors/
-│   ├── __init__.py
-│   ├── key_value_extractor.py
-│   ├── maintenance_entry_extractor.py
-│   └── table_evidence_extractor.py
-├── mergers/
-│   ├── __init__.py
-│   └── maintenance_entry_merger.py
-└── adapters/
-    ├── __init__.py
-    └── structured_fact_key_value_builder.py
+|-- __init__.py
+|-- models/
+|   |-- __init__.py
+|   |-- answer_source.py
+|   |-- answer_groups.py
+|   |-- structured_answer_context.py
+|   |-- answer_key_value.py
+|   |-- answer_maintenance_entry.py
+|   |-- answer_table_evidence.py
+|   |-- answer_asset_evidence.py
+|   |-- answer_structured_entity.py
+|   `-- answer_relationship.py
+|-- builders/
+|   |-- __init__.py
+|   |-- answer_context_organizer.py
+|   |-- source_group_builder.py
+|   |-- section_group_builder.py
+|   |-- structured_source_builder.py
+|   `-- structured_evidence_view_builder.py
+|-- extractors/
+|   |-- __init__.py
+|   |-- key_value_extractor.py
+|   |-- maintenance_entry_extractor.py
+|   `-- table_evidence_extractor.py
+|-- mergers/
+|   |-- __init__.py
+|   `-- maintenance_entry_merger.py
+`-- adapters/
+    |-- __init__.py
+    `-- structured_fact_key_value_builder.py
 ```
 
 This keeps one file per responsibility and avoids turning `StructuredAnswerContext` into a dump file.
@@ -752,6 +752,7 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 - keep `src.` imports and stable re-exports
 - collapse `AnswerMaintenanceEntry`'s duplicated reference representations while models are being split
 - do not change answer behavior yet beyond structural cleanup and removal of duplicated internal representations
+- **must be executed as behavior-preserving:** the reference-representation collapse touches three consumers (`MaintenanceEntryMerger`, `MaintenancePromptContextFormatter`, `AnswerContextOrganizer`) — update all three in this same phase, not a subset, and keep rendered maintenance-answer output byte-for-byte identical at this stage (verify via `tests/unit/application/workflows/question_answering/answer_context/test_maintenance_entry_merger.py` and the maintenance-path assertions in `test_answer_generation_service.py`, both green with no assertion changes). Any answer-shape improvement that collapsing enables is deferred to Phase 4+, not bundled in here.
 
 ## Phase 3 - Source enrichment
 
@@ -762,9 +763,9 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 
 ## Phase 4 - Typed structured-evidence views
 
+- **First change in this phase, ahead of the typed-view work below:** make `QuestionAnsweringWorkflow._join_structured_facts()` retain the built `structured_context` whenever it was successfully organized, not only when extra `AnswerKeyValue` rows were produced (closes 4.3/9.7). This is the clearest live production correctness bug in this path — `structured_context` is fully organized and then discarded — so it lands first and is not gated on the rest of Phase 4. If the team wants risk reduction sooner than Phase 4's start, this single change can be pulled forward and shipped as its own micro-fix ahead of Phase 2/3 without waiting on the model refactor; it needs no new types, only removing the dead-path check.
 - add first-class answer models for structured entities, relationships, tables, and assets
 - keep `AnswerKeyValue` as a convenience projection, not the only structured view
-- make `QuestionAnsweringWorkflow._join_structured_facts()` retain the built `structured_context` whenever it was successfully organized, not only when extra `AnswerKeyValue` rows were produced (closes 4.3/9.7 — this is a correctness fix, not cleanup, and was not covered by any phase before this pass)
 
 ## Phase 5 - Organizer redesign
 
@@ -848,7 +849,7 @@ These were open review questions in the original audit. None were contested, so 
 
 ## 13. Risk, Rollback, and Compatibility Strategy
 
-- **Backward compatibility:** no compatibility shims or re-export bridges. This matches the established convention already used elsewhere in this codebase (direct cutover: every import site of a moved/renamed symbol is updated in the same change as the move, not batched into a later cleanup pass).
+- **Backward compatibility:** no *temporary* compatibility shims — no duplicate old/new module paths, no parallel file trees kept alive during migration, no re-export bridges added solely to avoid updating call sites. Every import site of a moved/renamed symbol is updated in the same change as the move, matching this codebase's established direct-cutover convention. This does **not** forbid the package's own stable `__init__.py` export surface (section 7's proposed structure keeps `answer_context/__init__.py` as the one import path consumers use) — that is the package's permanent public interface, not a migration-era compatibility shim, and Phase 2 is expected to preserve it.
 - **Rollback unit:** each phase is scoped to be independently revertible — Phase 2's file split lands before Phase 3-8 add new behavior on top of it, so a problem discovered in, say, Phase 6 can be reverted without unwinding Phases 2-5. Do not squash multiple phases into one change; that is what makes the phase boundaries in section 10 meaningful.
 - **Sequencing constraint:** Phases 3 through 8 assume Phase 2's model split has already landed (they add fields/types to files that Phase 2 relocates). Do not start Phase 4 before Phase 2 merges.
 - **Blast radius:** contained to the question-answering and structured-retrieval answer-generation path (`answer_context/`, `answer_generation/`, `prompts/answer_generation/`, and the structured query-analysis files added to scope in 2.1). Ingestion, extraction, and other LangGraph nodes outside answer generation are not touched by this plan.
@@ -916,6 +917,16 @@ That will make it much easier to tell whether later Phase 4 / 6 / 7 work:
 The package-structure proposal is good, but the tree block currently contains mojibake box-drawing characters (`â”œ`, `â”‚`, `â”€`, etc.).
 
 That is only a documentation readability issue, not an architecture issue, but it should be cleaned before implementation starts so the structure can be copied safely.
+
+## 13.2 Resolution Of Reviewer Comments
+
+All five comments above are addressed as of this pass:
+
+1. **Compatibility wording clarified.** Section 13's backward-compatibility bullet now explicitly distinguishes "no temporary migration-era shims/parallel trees" from "the package's own stable `__init__.py` export surface, which Phase 2 is expected to preserve." No conflict with section 7/Phase 2 remains.
+2. **4.3/9.7 urgency elevated.** Phase 4 now states it is the first change in that phase, ahead of the typed-view work, and explicitly calls out that it can be pulled forward as a standalone micro-fix before Phase 2/3 if the team wants risk reduction sooner — it needs no new types, only removing the dead-path check. The traceability matrix (10.0) still shows it mapped to Phase 4 since that is where it will land by default; treat the micro-fix option as team discretion, not a doc inconsistency.
+3. **Phase 2 behavior-preservation made explicit.** Added the three consumers that must move together (`MaintenanceEntryMerger`, `MaintenancePromptContextFormatter`, `AnswerContextOrganizer`), named the existing tests that must stay green with no assertion changes (`test_maintenance_entry_merger.py`, the maintenance-path tests in `test_answer_generation_service.py`), and explicitly deferred any answer-shape improvement to Phase 4+.
+4. **Observability-ordering — no doc change needed;** this comment confirms the ordering already reflected in Phase 6 (verified: still correct, restated for confirmation).
+5. **Tree snippet normalized to ASCII** (`|--`, `` `-- ``, `|` instead of Unicode box-drawing). Note for the record: the file's on-disk bytes were checked and were valid UTF-8 box-drawing characters, not actually corrupted — the mojibake was a rendering artifact in whatever viewer displayed it garbled. Normalizing to ASCII removes that fragility regardless of cause, since it renders identically in any editor/terminal/encoding.
 
 ## 14. Final Recommendation
 
