@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from src.application.workflows.retrieval.retrieval_query_intent import (
+    RetrievalQueryIntent,
+)
 from src.application.workflows.retrieval.structured.structured_entity_type import (
     StructuredEntityType,
 )
@@ -170,7 +173,17 @@ class StructuredEvidenceQueryAnalyzer:
         if any(term in normalized for term in _SAFETY_TERMS):
             entity_types.append(StructuredEntityType.SAFETY_WARNING)
 
-        if intent == "maintenance":
+        # Compared against RetrievalQueryIntent's own enum values (not bare
+        # string literals) so a rename/typo fails loudly instead of silently
+        # becoming an unreachable branch -- caught one exactly that shape:
+        # an `elif intent == "certification":` branch here that could never
+        # match, since RetrievalQueryIntent has no CERTIFICATION member (that
+        # name only exists on the unrelated AnswerIntent enum). Removed
+        # rather than "fixed" -- there's no keyword-driven certification
+        # signal elsewhere in this analyzer to hang a real implementation
+        # off of; certification-relevant entities are already reachable via
+        # the _SPECIFICATION_TERMS keyword bucket above.
+        if intent == RetrievalQueryIntent.MAINTENANCE.value:
             entity_types.extend(
                 [
                     StructuredEntityType.MAINTENANCE_TASK,
@@ -178,19 +191,17 @@ class StructuredEvidenceQueryAnalyzer:
                     StructuredEntityType.PROCEDURE,
                 ]
             )
-        elif intent == "procedure":
+        elif intent == RetrievalQueryIntent.PROCEDURE.value:
             entity_types.append(StructuredEntityType.PROCEDURE)
-        elif intent == "troubleshooting":
+        elif intent == RetrievalQueryIntent.TROUBLESHOOTING.value:
             entity_types.append(StructuredEntityType.TROUBLESHOOTING)
-        elif intent == "specification":
+        elif intent == RetrievalQueryIntent.SPECIFICATION.value:
             entity_types.extend(
                 [
                     StructuredEntityType.SPECIFICATION,
                     StructuredEntityType.EQUIPMENT,
                 ]
             )
-        elif intent == "certification":
-            entity_types.append(StructuredEntityType.SPECIFICATION)
 
         if detected_identifiers:
             entity_types.extend(

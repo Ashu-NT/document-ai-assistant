@@ -7,6 +7,9 @@ from src.application.langgraph.reflection.models import (
     ReflectionDecisionType,
 )
 from src.application.langgraph.reflection.policies import ReflectionPolicy
+from src.application.workflows.shared.identifier_value_pattern import (
+    contains_identifier_value,
+)
 
 _IDENTIFIER_LISTING_VERBS = (
     "list",
@@ -32,10 +35,6 @@ _IDENTIFIER_LISTING_MARKERS = (
     "certificate",
     "manufacturer",
     "supplier",
-)
-_IDENTIFIER_VALUE_PATTERN = re.compile(
-    r"\b([A-Z]{1,5}\d{1,6}[A-Z0-9-]*|\d{3,}[A-Z0-9-]+)\b",
-    re.IGNORECASE,
 )
 _SPARE_PARTS_LIST_QUESTION_MARKERS = ("spare part", "spare parts")
 _SPARE_PARTS_DENIAL_PHRASES = (
@@ -511,5 +510,5 @@ def _answer_contains_identifier_inventory(answer_text: str) -> bool:
             "certificate number",
         )
     ):
-        return bool(_IDENTIFIER_VALUE_PATTERN.search(answer_text))
+        return contains_identifier_value(answer_text)
     return False

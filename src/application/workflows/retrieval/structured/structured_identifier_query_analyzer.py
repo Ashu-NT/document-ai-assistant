@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import re
-
+from src.application.workflows.shared.identifier_value_pattern import (
+    contains_identifier_value,
+)
 from src.domain.common import IdentifierType
 
 _IDENTIFIER_INVENTORY_VERBS = (
@@ -77,10 +78,6 @@ _IDENTIFIER_INVENTORY_MARKERS: dict[IdentifierType, tuple[str, ...]] = {
         "web addresses",
     ),
 }
-_IDENTIFIER_VALUE_PATTERN = re.compile(
-    r"\b([A-Z]{1,5}\d{1,6}[A-Z0-9-]*|\d{3,}[A-Z0-9-]+)\b",
-    re.IGNORECASE,
-)
 
 
 class StructuredIdentifierQueryAnalyzer:
@@ -88,7 +85,7 @@ class StructuredIdentifierQueryAnalyzer:
         normalized = self._normalized(query_text)
         if not normalized:
             return False
-        if _IDENTIFIER_VALUE_PATTERN.search(normalized):
+        if contains_identifier_value(normalized):
             return False
         if not any(marker in normalized for marker in _IDENTIFIER_INVENTORY_VERBS):
             return False
@@ -111,7 +108,7 @@ class StructuredIdentifierQueryAnalyzer:
 
     @staticmethod
     def contains_identifier_value(query_text: str | None) -> bool:
-        return bool(_IDENTIFIER_VALUE_PATTERN.search(query_text or ""))
+        return contains_identifier_value(query_text)
 
     @staticmethod
     def _normalized(query_text: str | None) -> str:

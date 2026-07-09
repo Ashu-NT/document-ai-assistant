@@ -7,6 +7,9 @@ from typing import Iterable, Sequence
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
+from src.application.workflows.shared.identifier_value_pattern import (
+    contains_identifier_value,
+)
 from src.application.workflows.shared.negation_detection import (
     has_non_negated_occurrence,
 )
@@ -208,9 +211,6 @@ _TECHNICAL_VALUE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _STEP_PATTERN = re.compile(r"^\s*(\d+[\).\s]|[-*]\s+)", re.MULTILINE)
-_IDENTIFIER_VALUE_PATTERN = re.compile(
-    r"\b([A-Z]{1,5}\d{1,6}[A-Z0-9-]*|\d{3,}[A-Z0-9-]+)\b"
-)
 _CHUNK_TYPE_TO_INTENT: dict[ChunkType, AnswerIntent] = {
     ChunkType.TECHNICAL_SPECIFICATION: AnswerIntent.SPECIFICATION_SUMMARY,
     ChunkType.CERTIFICATION_INFO: AnswerIntent.CERTIFICATION_SUMMARY,
@@ -613,7 +613,7 @@ class AnswerIntentAnalyzer:
             )
         ):
             return True
-        return bool(_IDENTIFIER_VALUE_PATTERN.search(content))
+        return contains_identifier_value(content)
 
     @staticmethod
     def _looks_like_table(content: str) -> bool:
