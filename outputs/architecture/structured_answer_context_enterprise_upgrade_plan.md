@@ -6,6 +6,17 @@
 - No implementation changes were made in this pass.
 - Repo-wide search was completed for `StructuredAnswerContext` usages, and detailed code inspection was completed for the full answer-context, answer-generation, structured-retrieval, and related test paths.
 
+## 0. Post-Audit Amendment
+
+Two fixes landed in this codebase after this audit was written (same day, different session, merged via `git merge`). Neither is a false alarm against anything below, but both change file/line references in a handful of the "Must-change" files and neither was caught by this audit's scanned scope, so they're recorded here rather than silently absorbed into the line numbers below.
+
+1. **A second, redundant `AnswerIntentAnalyzer.analyze()` call per QA turn was eliminated.** `QuestionAnsweringWorkflow` and `AnswerGenerationService` each held their own independently-constructed `AnswerIntentAnalyzer` instance, and both called `analyze()` with equivalent inputs whenever structured facts were resolved — one to build `structured_context`, one inside `AnswerGenerationService._resolve_request()`. Not just wasted work: nothing enforced the two computations saw identical chunk sets, so a future caller of `AnswerGenerationRequest.max_context_chunks` (see 4.11 below — still unused) could have made them disagree, leaving `structured_context`'s already-extracted data shaped for an intent the format policy no longer agreed with. Fixed by adding `AnswerGenerationRequest.answer_intent_decision: AnswerIntentDecision | None`, threading the workflow's already-computed decision through it, and having `AnswerGenerationService._resolve_intent_decision()` reuse it instead of recomputing. This is **not** the same issue as 4.3/9.7 below (structured_context being dropped) — that issue is still open.
+2. **A 4th independently-drifted copy of the identifier-marker taxonomy was deduplicated.** `IdentifierAnswerRenderer._QUESTION_TYPE_MARKERS` was a near-verbatim, silently-drifted copy of `StructuredIdentifierQueryAnalyzer._IDENTIFIER_INVENTORY_MARKERS` (missing "part no"/"serial no" short-form aliases the renderer's copy had — so a question like "what's the part no?" was identifier-scoped by the final renderer but not by the earlier structured-evidence resolver). Both now import a shared `IDENTIFIER_TYPE_MARKERS` dict from `src/application/workflows/shared/identifier_type_markers.py` (new file). This file was outside this audit's "Scanned Scope" (section 2) entirely — see 2.1 below.
+
+References for both fixes: `src/application/services/answer_generation/answer_generation_request.py`, `src/application/services/answer_generation/answer_generation_service.py` (`_resolve_intent_decision`), `src/application/workflows/question_answering/question_answering_workflow.py` (`_resolve_structured_answer_intent_decision`), `src/application/workflows/shared/identifier_type_markers.py`, `src/application/services/answer_generation/formatting/identifier_answer_renderer.py`, `src/application/workflows/retrieval/structured/structured_identifier_query_analyzer.py`.
+
+All line references elsewhere in this document have been re-verified against the current codebase and corrected where these two fixes shifted them (`question_answering_workflow.py`, `identifier_answer_renderer.py`). Every other reference in this document (structured_answer_context.py, retrieved_chunk.py, chunk.py, structured_entity_resolver.py, structured_fact_key_value_builder.py, answer_format_policy.py, answer_prompt_builder.py, answer_generation_response_schema.py, answer_generation_response_parser.py, spare_parts_list_renderer.py, table_evidence_hydrator.py, and the cited test files) was re-checked and is still accurate — those files were untouched by the two fixes above.
+
 ## 1. Goal
 
 Upgrade the current `StructuredAnswerContext` path into an enterprise-grade answer-context system that:
@@ -38,6 +49,15 @@ Upgrade the current `StructuredAnswerContext` path into an enterprise-grade answ
 - `src/domain/retrieval/retrieved_chunk.py`
 - `src/domain/document/entities/chunk.py`
 
+### 2.1 Gap in original scope (added in this amendment)
+
+The original scan stopped at the resolver/bundle/entity-resolver layer and did not cover the layer that decides *what* structured evidence gets resolved in the first place. That layer directly shapes what `StructuredAnswerContext` ever sees, so it belongs in scope for any enterprise upgrade of this path:
+
+- `src/application/workflows/retrieval/structured/structured_evidence_query_analyzer.py` — keyword-driven `entity_types`/`identifier_types` selection that feeds `StructuredEvidenceResolver.resolve()`
+- `src/application/workflows/retrieval/structured/structured_identifier_query_analyzer.py` — inventory-query detection and requested-identifier-type extraction
+- `src/application/workflows/retrieval/structured/structured_evidence_query_analysis.py` — the DTO both above produce
+- `src/application/workflows/shared/identifier_type_markers.py` (new) — the shared marker dict introduced by the fix in section 0.2
+
 ### Downstream generation / formatting
 
 - `src/application/services/answer_generation/answer_generation_service.py`
@@ -65,7 +85,7 @@ Upgrade the current `StructuredAnswerContext` path into an enterprise-grade answ
 
 1. Retrieval returns `RetrievedChunk` objects plus optional structured evidence.
 2. `QuestionAnsweringWorkflow` joins approved chunks with structured-evidence source chunks in `_join_structured_facts()`:
-   - `src/application/workflows/question_answering/question_answering_workflow.py:438-531`
+   - `src/application/workflows/question_answering/question_answering_workflow.py:437-535` (line numbers corrected in this amendment — see section 0)
 3. `FinalEvidencePreparer` hydrates table chunks before answer generation.
 4. `AnswerContextOrganizer` converts `RetrievedChunk` into `AnswerSource` and derives:
    - source groups
@@ -73,7 +93,7 @@ Upgrade the current `StructuredAnswerContext` path into an enterprise-grade answ
    - key-values
    - maintenance entries
 5. `StructuredFactKeyValueBuilder` converts structured identifiers/entities into extra `AnswerKeyValue` rows:
-   - `src/application/workflows/question_answering/question_answering_workflow.py:504-530`
+   - `src/application/workflows/question_answering/question_answering_workflow.py:508-529` (line numbers corrected in this amendment — see section 0)
 6. `AnswerGenerationService` either:
    - uses deterministic renderers for some intents, or
    - builds an LLM prompt using `AnswerPromptBuilder`
@@ -161,7 +181,7 @@ References:
 But in the answer path, most of that rich structure is reduced into `AnswerKeyValue` rows:
 
 - `src/application/workflows/question_answering/answer_context/structured_fact_key_value_builder.py:42-104`
-- `src/application/workflows/question_answering/question_answering_workflow.py:504-530`
+- `src/application/workflows/question_answering/question_answering_workflow.py:508-529` (line numbers corrected in this amendment — see section 0)
 
 ### Impact
 
@@ -173,13 +193,15 @@ But in the answer path, most of that rich structure is reduced into `AnswerKeyVa
 
 If structured entities/identifiers exist but do not produce extra key-values, `_join_structured_facts()` returns `None` for `structured_context`:
 
-- `src/application/workflows/question_answering/question_answering_workflow.py:527-531`
+- `src/application/workflows/question_answering/question_answering_workflow.py:531-532` (line numbers corrected in this amendment — see section 0)
 
 ### Impact
 
 - some answer-context work becomes dead-on-arrival
 - typed maintenance entries, groups, and diagnostics can be lost even though prepared chunks existed
 - this is not just a style issue; it is a behavior gap
+
+Still open as of this amendment. Note that `_join_structured_facts()` now also computes an `AnswerIntentDecision` on this path (see section 0.1) — that specific piece of work is no longer wasted (it is threaded through to `AnswerGenerationRequest.answer_intent_decision` either way), but `structured_context` itself — the organized sources, groups, key-values, and maintenance entries — is still thrown away on this branch exactly as described above. The intent-recompute fix and this dead-context-drop issue are separate problems; only the former is fixed.
 
 ## 4.4 `AnswerFormatPolicy.resolve()` is not really resolving anything yet
 
@@ -246,7 +268,7 @@ Current deterministic renderers:
 
 References:
 
-- `src/application/services/answer_generation/formatting/identifier_answer_renderer.py:141-204`
+- `src/application/services/answer_generation/formatting/identifier_answer_renderer.py:64-157` (line numbers corrected in this amendment — a ~74-line duplicated marker dict was removed from above the class as part of the fix in section 0.2, shifting everything below it)
 - `src/application/services/answer_generation/formatting/spare_parts_list_renderer.py:52-176`
 
 ### Issues
@@ -298,6 +320,78 @@ References:
 - current tests are good for regression control
 - they do not yet protect a richer enterprise answer-context model
 
+## 4.11 Two write-only "confidence" fields (missed in original audit)
+
+`AnswerKeyValue.confidence` and `AnswerMaintenanceEntry.confidence` are populated with hardcoded values (`0.9`, `0.88`, or `max(left, right) or None` on merge) but nothing in `src/` ever reads them back — not the prompt builder, not a guardrail, not diagnostics.
+
+References:
+
+- `src/application/workflows/question_answering/answer_context/structured_answer_context.py:44-49` (`AnswerKeyValue.confidence`), `:53-67` (`AnswerMaintenanceEntry.confidence`)
+- `src/application/workflows/question_answering/answer_context/key_value_extractor.py:166`, `:219` (hardcoded assignment)
+- `src/application/workflows/question_answering/answer_context/maintenance_entry_merger.py:138` (`max(left.confidence or 0.0, right.confidence or 0.0) or None`)
+
+### Impact
+
+- a fabricated, uncalibrated number is computed and carried on every `AnswerKeyValue`/`AnswerMaintenanceEntry` for no consumer
+- if a real confidence-weighted answer strategy is added later (section 9.2/9.3), whoever wires it up needs to first decide whether these existing numbers mean anything or need to be recalibrated from scratch — right now they are decorative
+
+## 4.12 A dead configuration knob with a live divergence risk if ever wired up
+
+`AnswerGenerationRequest.max_context_chunks` is declared and checked, but no production caller ever sets it.
+
+References:
+
+- `src/application/services/answer_generation/answer_generation_request.py` (field declaration)
+- `src/application/services/answer_generation/answer_generation_service.py` (`_resolve_request`: `if request.max_context_chunks is not None: context_chunks = context_chunks[: request.max_context_chunks]`)
+
+### Impact
+
+- this is the exact seam that made the pre-amendment double-intent-computation bug (section 0.1) a live risk rather than a theoretical one: if a future caller sets `max_context_chunks` to cap prompt size, the truncated `context_chunks` would only affect `AnswerGenerationService`'s own fallback `analyze()` path (when no `answer_intent_decision` was passed) — a caller that both sets `max_context_chunks` *and* relies on the fallback recompute could still get a different intent than whatever built `structured_context` upstream
+- whoever wires this up next should be aware of that interaction, not just the truncation itself
+
+## 4.13 Redundant parallel data modeling in `AnswerMaintenanceEntry`
+
+`AnswerMaintenanceEntry` carries both a `references: list[AnswerMaintenanceReference]` (each with its own `source_number`/`page_start`/`page_end`/`section_path`) *and* flat parallel lists (`source_numbers`, `section_paths`) plus scalar fields (`page_start`, `page_end`) covering the same four facts.
+
+References:
+
+- `src/application/workflows/question_answering/answer_context/structured_answer_context.py:52-74`
+- `src/application/prompts/answer_generation/maintenance_prompt_context_formatter.py:52-77` (`_reference_lines` reads `entry.references`, falling back to constructing one from the flat fields; `_page_lines`/`_section_lines` separately read `entry.source_numbers`/`entry.section_paths`, falling back to deriving them from `references`)
+- `src/application/workflows/question_answering/answer_context/maintenance_entry_merger.py` (`_merge_pair`/`_normalized_copy` manually keep both representations in sync on every merge)
+
+### Impact
+
+- two representations of the same underlying facts must be kept in sync by hand; nothing enforces `len(references) == len(source_numbers) == len(section_paths)`
+- a future edit to one representation without the other would silently desync page/section references in the rendered maintenance answer
+- section 9.2's "typed structured evidence views" work is a natural place to collapse this to one representation instead of adding a fifth alongside it
+
+## 4.14 No versioning or observability parity on the formatting layer
+
+`AnswerIntentAnalyzer` and `RetrievalQueryIntentInferer` both carry a `*_RULES_VERSION` constant plus structured `_logger.info(...)` lines on every resolution/fallback, so a future answer-quality regression can be correlated against a specific rule-pack version. The pieces that decide what the user actually *sees* have none of this:
+
+- `AnswerFormatPolicy` (static `_POLICIES` lookup)
+- `KeyValueExtractor` / `MaintenanceEntryMerger` (regex/heuristic extraction and fuzzy merge)
+- `src/application/services/answer_generation/formatting/spare_parts_table_parser.py` (4 distinct table-layout strategies)
+
+`SparePartsTableParser` already tracks `dropped_row_count`/`partial` internally, but that signal only ever reaches the user as a single "Only partial row content was available in the retrieved context." sentence in the rendered answer — it is not surfaced as a queryable diagnostic the way `RetrievalWorkflowResult.diagnostics`/`GeneratedAnswer.diagnostics` surface everything else in this pipeline.
+
+### Impact
+
+- if a new vendor manual's table layout silently drops rows at scale, or a `KeyValueExtractor`/`MaintenanceEntryMerger` rule change regresses extraction quality, there is currently no version marker and no diagnostic count to detect it with — only the final rendered text
+
+## 4.15 No exhaustiveness guard across the `AnswerIntent` enum
+
+Three independent lookup tables must all stay in sync with `AnswerIntent`'s members, and nothing enforces that:
+
+- `AnswerFormatPolicy._POLICIES` (`src/application/services/answer_generation/formatting/answer_format_policy.py`)
+- `AnswerIntentAnalyzer._CHUNK_TYPE_TO_INTENT` (`src/application/services/answer_generation/intent/answer_intent_analyzer.py`)
+- `AnswerIntentAnalyzer._RETRIEVAL_INTENT_TO_ANSWER_INTENT` (same file)
+
+### Impact
+
+- this is the exact shape of bug that was found and fixed elsewhere in this codebase on a sibling enum (`RetrievalQueryIntent`/`AnswerIntent` cross-taxonomy confusion produced a dead `elif intent == "certification":` branch in `StructuredEvidenceQueryAnalyzer.analyze()`, fixed in an earlier session)
+- a new `AnswerIntent` member added later could silently fall through to `GENERAL` formatting in one of these three maps and not the others, with no test catching the gap — a parametrized test iterating `AnswerIntent` against all three maps would close this cheaply and should be added alongside any section 9 work that touches these maps
+
 ## 5. Dead Code / Low-Value Path Review
 
 ## 5.1 Confirmed low-value or dead-path behavior
@@ -314,14 +408,33 @@ Reference:
 ### B. Structured context creation can be discarded when no extra key-values are produced
 
 - This is a dead-path behavior, not a dead file.
+- Still open as of this amendment (see 4.3).
 
 Reference:
 
-- `src/application/workflows/question_answering/question_answering_workflow.py:527-531`
+- `src/application/workflows/question_answering/question_answering_workflow.py:531-532` (line numbers corrected in this amendment — see section 0)
 
 ### C. Prompt-only grouping models
 
 - `AnswerSourceGroup` and `AnswerSectionGroup` are not dead, but currently underused and likely need redesign or stronger consumers.
+
+### D. `AnswerKeyValue.confidence` / `AnswerMaintenanceEntry.confidence` (missed in original audit)
+
+- Written on every construction, never read anywhere in `src/`.
+- See section 4.11.
+
+Reference:
+
+- `src/application/workflows/question_answering/answer_context/structured_answer_context.py:49`, `:66`
+
+### E. `AnswerGenerationRequest.max_context_chunks` (missed in original audit)
+
+- Declared and checked, never set by the one production caller (`QuestionAnsweringWorkflow`).
+- See section 4.12 for why this is not just inert — it is the seam that made the pre-amendment double-intent-computation bug reachable.
+
+Reference:
+
+- `src/application/services/answer_generation/answer_generation_request.py`
 
 ## 5.2 Removal candidates after replacement exists
 
@@ -433,6 +546,7 @@ This keeps one file per responsibility and avoids turning `StructuredAnswerConte
 - `src/application/services/answer_generation/formatting/answer_format_policy.py`
 - `src/application/prompts/answer_generation/answer_prompt_builder.py`
 - `src/application/services/answer_generation/answer_generation_service.py`
+- `src/application/services/answer_generation/answer_generation_request.py` (added in this amendment — missing from the original list despite being the DTO section 9's typed-context work would need to expand; already carries one new field, `answer_intent_decision`, from the fix in section 0.1)
 - `src/application/services/answer_generation/answer_generation_response_schema.py`
 - `src/application/services/answer_generation/answer_generation_response_parser.py`
 
@@ -441,8 +555,12 @@ This keeps one file per responsibility and avoids turning `StructuredAnswerConte
 - `src/application/workflows/question_answering/evidence/table_evidence_hydrator.py`
 - `src/application/workflows/retrieval/structured/structured_evidence_bundle.py`
 - `src/application/workflows/retrieval/structured/structured_evidence_resolver.py`
+- `src/application/workflows/retrieval/structured/structured_evidence_query_analyzer.py` (added in this amendment — see 2.1)
+- `src/application/workflows/retrieval/structured/structured_identifier_query_analyzer.py` (added in this amendment — see 2.1)
 - `src/application/services/answer_generation/formatting/identifier_answer_renderer.py`
 - `src/application/services/answer_generation/formatting/spare_parts_list_renderer.py`
+- `src/application/services/answer_generation/formatting/spare_parts_table_parser.py` (added in this amendment — see 4.14)
+- `src/application/services/answer_generation/intent/answer_intent_analyzer.py` (added in this amendment — see 4.15)
 
 ## 8.3 Test files that will need updates
 
@@ -546,6 +664,18 @@ This does not mean exposing raw internal ids. It means enforcing answer structur
 
 That is a correctness upgrade, not just a cleanup.
 
+## 9.8 Close the enum-exhaustiveness gap (added in this amendment)
+
+Add a parametrized test iterating every `AnswerIntent` member and asserting it has an entry in `AnswerFormatPolicy._POLICIES`, and treat `_CHUNK_TYPE_TO_INTENT`/`_RETRIEVAL_INTENT_TO_ANSWER_INTENT` as intentionally partial mappings (not every intent needs a chunk-type or retrieval-intent trigger) — but document that distinction explicitly rather than leaving it implicit. See 4.15.
+
+## 9.9 Retire or recalibrate the decorative confidence fields (added in this amendment)
+
+Before section 9.2/9.3 add new typed evidence views, decide whether `AnswerKeyValue.confidence`/`AnswerMaintenanceEntry.confidence` are worth keeping. Either wire them into something that reads them (a low-confidence-evidence warning in the format policy, for instance — which would also give 9.4's context-aware policy work a concrete first signal to consume) or remove them rather than propagating an uncalibrated number into whatever the new typed views become. See 4.11.
+
+## 9.10 Add rules-version constants and diagnostic counts to the formatting layer (added in this amendment)
+
+Mirror the `*_RULES_VERSION` + structured-logging pattern already used by `AnswerIntentAnalyzer`/`RetrievalQueryIntentInferer` on `AnswerFormatPolicy`, `KeyValueExtractor`, and `MaintenanceEntryMerger`. Surface `SparePartsTableParser`'s existing `dropped_row_count`/`partial` tracking as a queryable diagnostic (matching how every other stage in this pipeline reports through a `diagnostics` dict) instead of only a one-line notice in the rendered answer text. See 4.14.
+
 ## 10. Execution Plan For Review
 
 ## Phase 1 - Baseline protection
@@ -617,6 +747,8 @@ That is a correctness upgrade, not just a cleanup.
 - deterministic renderers consume typed context instead of reparsing raw text where possible
 - prompt builder emits richer organized context without leaking internal ids
 - answer-generation schema rejects malformed structured output cleanly
+- every `AnswerIntent` member has a corresponding `AnswerFormatPolicy._POLICIES` entry (added in this amendment — see 9.8)
+- `AnswerGenerationService` does not recompute `AnswerIntentAnalyzer.analyze()` when `AnswerGenerationRequest.answer_intent_decision` is already set, and still computes it when absent (added in this amendment — regression coverage for section 0.1 already exists in `tests/unit/application/services/answer_generation/test_answer_generation_service.py` and `tests/unit/application/workflows/question_answering/test_question_answering_workflow.py::test_answer_intent_is_resolved_exactly_once_when_structured_facts_are_joined`; keep these passing through the refactor)
 
 ### Existing tests to update
 
