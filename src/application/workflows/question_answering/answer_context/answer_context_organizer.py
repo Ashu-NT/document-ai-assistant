@@ -128,7 +128,20 @@ class AnswerContextOrganizer:
             score=chunk.score,
             content=chunk.content,
             table_rows=AnswerContextOrganizer._decode_table_rows(chunk.metadata),
+            retrieval_source=chunk.retrieval_source,
+            section_id=chunk.section_id,
+            statistics=chunk.statistics,
+            identifier_values=list(chunk.identifier_values),
+            metadata=dict(chunk.metadata),
+            collapsed_chunk_ids=AnswerContextOrganizer._decode_collapsed_chunk_ids(
+                chunk.metadata
+            ),
         )
+
+    @staticmethod
+    def _decode_collapsed_chunk_ids(metadata: dict[str, str]) -> list[str]:
+        raw = metadata.get("dedup_collapsed_chunk_ids", "")
+        return [chunk_id for chunk_id in raw.split(",") if chunk_id]
 
     @staticmethod
     def _decode_table_rows(metadata: dict[str, str]) -> list[list[str]] | None:

@@ -629,22 +629,23 @@ This keeps one file per responsibility and avoids turning `StructuredAnswerConte
 
 ## 9. Proposed Solution Set
 
-## 9.1 Expand the answer source model instead of re-deriving metadata later
+## 9.1 Expand the answer source model instead of re-deriving metadata later [IMPLEMENTED in Phase 3]
 
 Add answer-facing fields for:
 
-- `retrieval_source`
-- `section_id`
-- `statistics`
-- `identifier_values`
-- `metadata`
-- `table_ids`
-- `picture_ids`
-- `chunk_index`
-- `chunk_total`
-- `family_key` or equivalent split-family reference
+- ✅ `retrieval_source`
+- ✅ `section_id`
+- ✅ `statistics`
+- ✅ `identifier_values`
+- ✅ `metadata`
+- `table_ids` — **not implemented; not currently reachable.** `AnswerSource`'s only input is `RetrievedChunk`, which has no `table_ids` field and nothing threads one into its `metadata` dict consistently (only a `hydrated_table_ids` metadata key exists, and only for chunks that went through `TableEvidenceHydrator`). Surfacing this for real would mean enriching `RetrievedChunk` itself first — a retrieval-layer change, out of scope for this answer-context plan. The general `metadata` passthrough above already gives ad-hoc access to `hydrated_table_ids` where it exists.
+- `picture_ids` — **not implemented; not currently reachable at all.** Nothing in the codebase produces this value anywhere on `RetrievedChunk` or its metadata. A field with no data source would always read empty — not added.
+- `chunk_index` / `chunk_total` — **not implemented; not currently reachable.** These are `DocumentChunk` (ingestion-layer) fields, not `RetrievedChunk` (retrieval-layer, `AnswerSource`'s actual input) fields, and nothing threads them across during retrieval.
+- ✅ `family_key` or equivalent split-family reference — implemented as `collapsed_chunk_ids: list[str]`, decoded from `metadata["dedup_collapsed_chunk_ids"]` (already set by `RetrievedChunkDeduplicator` and already consumed elsewhere in `question_answering_workflow.py`) rather than inventing a new mechanism.
 
 This should be a direct, clean answer-facing projection, not a copy of the whole chunk model.
+
+**Correction to this list found during implementation:** four of the nine originally-proposed fields (`table_ids`, `picture_ids`, `chunk_index`, `chunk_total`) were written against `DocumentChunk`'s field list without checking that `AnswerSource` is actually built from `RetrievedChunk` — a narrower, retrieval-layer dataclass that doesn't carry them. Implementing them as real fields would have meant either fabricating always-empty fields or first enriching `RetrievedChunk` itself (a different, bigger initiative). `family_key` was resolved by finding the codebase's own existing equivalent (`dedup_collapsed_chunk_ids`) rather than designing a new one.
 
 ## 9.2 Introduce first-class structured evidence views
 
@@ -740,7 +741,7 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 
 | Issue | Phase(s) | Solution ref |
 |---|---|---|
-| 4.1 `AnswerSource` too thin | Phase 3 | 9.1 |
+| 4.1 `AnswerSource` too thin | Phase 3 — **done** (5 of 9 proposed fields; 4 not reachable, see 9.1) | 9.1 |
 | 4.2 structured semantics flattened too early | Phase 4 | 9.2, 9.3 |
 | 4.3 / 5.1.B structured context sometimes dropped | Phase 4 | 9.7 |
 | 4.4 / 5.1.A `AnswerFormatPolicy.resolve()` ignores context | Phase 6 | 9.4 |
@@ -780,11 +781,13 @@ Full regression: 236 tests green across `tests/unit/application/services/answer_
 
 Full regression: 2220 tests green across the entire `tests/unit` suite (not just the affected area — full-suite run, since this phase touches import paths reachable from many packages).
 
-## Phase 3 - Source enrichment
+## Phase 3 - Source enrichment [IMPLEMENTED]
 
-- enrich `AnswerSource` projection with missing retrieval/chunk metadata
-- update organizer tests
-- ensure no consumer breaks
+- ✅ enrich `AnswerSource` projection with missing retrieval/chunk metadata — added `retrieval_source`, `section_id`, `statistics`, `identifier_values`, `metadata` (direct passthrough from `RetrievedChunk`) and `collapsed_chunk_ids` (decoded from the existing `dedup_collapsed_chunk_ids` metadata convention). See 9.1 for the 4 originally-proposed fields found not to be reachable from `RetrievedChunk` and why.
+- ✅ update organizer tests — `test_context_organizer_enriches_source_with_retrieval_metadata`, `test_context_organizer_defaults_collapsed_chunk_ids_when_not_deduplicated` added to `test_answer_context_organizer.py`
+- ✅ ensure no consumer breaks — full suite green (2222/2222); no consumer of `AnswerSource` reads the new fields yet, so this phase is purely additive
+
+Full regression: 2222 tests green across the entire `tests/unit` suite.
 
 ## Phase 4 - Typed structured-evidence views
 

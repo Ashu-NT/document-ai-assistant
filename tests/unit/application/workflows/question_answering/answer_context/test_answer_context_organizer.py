@@ -4,6 +4,7 @@ from src.application.workflows.question_answering.answer_context import (
 )
 from src.domain.common import ChunkType
 from src.domain.common.source_location import SourceLocation
+from src.domain.document.value_objects import ChunkStatistics
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
 
@@ -13,16 +14,25 @@ def _make_chunk(
     content: str,
     chunk_type: ChunkType = ChunkType.TECHNICAL_SPECIFICATION,
     section_path: list[str] | None = None,
+    retrieval_source: str = "dense",
+    section_id: str | None = None,
+    statistics: ChunkStatistics | None = None,
+    identifier_values: list[str] | None = None,
+    metadata: dict[str, str] | None = None,
 ) -> RetrievedChunk:
     return RetrievedChunk(
         chunk_id=chunk_id,
         document_id="doc_001",
         content=content,
         score=0.9,
-        retrieval_source="dense",
+        retrieval_source=retrieval_source,
         chunk_type=chunk_type,
+        section_id=section_id,
         section_path=section_path or ["Certificate", "Particulars"],
         source=SourceLocation(page_start=2, page_end=2),
+        statistics=statistics,
+        identifier_values=identifier_values or [],
+        metadata=metadata or {},
     )
 
 
@@ -50,6 +60,49 @@ def test_context_organizer_extracts_spec_key_values_and_preserves_metadata() -> 
     assert ("Design pressure", "350 bar") in {
         (item.key, item.value) for item in context.key_values
     }
+
+
+def test_context_organizer_enriches_source_with_retrieval_metadata() -> None:
+    """Plan section 9.1/4.1: AnswerSource should carry the retrieval/chunk
+    metadata that already existed on RetrievedChunk instead of formatting
+    code having to re-derive it later."""
+    organizer = AnswerContextOrganizer()
+    statistics = ChunkStatistics(char_count=42, token_count_estimate=8)
+    context = organizer.organize(
+        answer_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        chunks=[
+            _make_chunk(
+                chunk_id="chunk_001",
+                content="Test pressure: 700 bar",
+                retrieval_source="sql_keyword",
+                section_id="sec_042",
+                statistics=statistics,
+                identifier_values=["HP-001"],
+                metadata={
+                    "dedup_collapsed_chunk_ids": "chunk_a,chunk_b",
+                    "sql_keyword_source_score": "12.0",
+                },
+            )
+        ],
+    )
+
+    source = context.sources[0]
+    assert source.retrieval_source == "sql_keyword"
+    assert source.section_id == "sec_042"
+    assert source.statistics is statistics
+    assert source.identifier_values == ["HP-001"]
+    assert source.metadata["sql_keyword_source_score"] == "12.0"
+    assert source.collapsed_chunk_ids == ["chunk_a", "chunk_b"]
+
+
+def test_context_organizer_defaults_collapsed_chunk_ids_when_not_deduplicated() -> None:
+    organizer = AnswerContextOrganizer()
+    context = organizer.organize(
+        answer_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        chunks=[_make_chunk(chunk_id="chunk_001", content="Test pressure: 700 bar")],
+    )
+
+    assert context.sources[0].collapsed_chunk_ids == []
 
 
 def test_context_organizer_groups_sources_by_chunk_type_and_section() -> None:
