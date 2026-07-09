@@ -19,6 +19,9 @@ from src.application.workflows.question_answering.answer_context.models.answer_m
 from src.application.workflows.question_answering.answer_context.models.answer_source import (
     AnswerSource,
 )
+from src.application.workflows.question_answering.answer_context.models.answer_structured_entity import (
+    AnswerStructuredEntity,
+)
 
 
 @dataclass(slots=True)
@@ -29,5 +32,13 @@ class StructuredAnswerContext:
     section_groups: list[AnswerSectionGroup] = field(default_factory=list)
     key_values: list[AnswerKeyValue] = field(default_factory=list)
     maintenance_entries: list[AnswerMaintenanceEntry] = field(default_factory=list)
+    structured_entities: list[AnswerStructuredEntity] = field(default_factory=list)
     source_count: int = 0
     diagnostics: dict[str, Any] = field(default_factory=dict)
+
+    def entities_of_type(self, entity_type: str) -> list[AnswerStructuredEntity]:
+        return [
+            entity
+            for entity in self.structured_entities
+            if entity.entity_type == entity_type
+        ]

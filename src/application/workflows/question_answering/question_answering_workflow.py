@@ -27,6 +27,9 @@ from src.application.workflows.question_answering.answer_context.answer_context_
 from src.application.workflows.question_answering.answer_context import (
     StructuredAnswerContext,
 )
+from src.application.workflows.question_answering.answer_context.structured_evidence_view_builder import (
+    StructuredEvidenceViewBuilder,
+)
 from src.application.workflows.question_answering.answer_context.structured_fact_key_value_builder import (
     StructuredFactKeyValueBuilder,
 )
@@ -91,6 +94,7 @@ class QuestionAnsweringWorkflow:
         document_lookup_service: DocumentLookupService | None = None,
         answer_context_organizer: AnswerContextOrganizer | None = None,
         structured_fact_key_value_builder: StructuredFactKeyValueBuilder | None = None,
+        structured_evidence_view_builder: StructuredEvidenceViewBuilder | None = None,
         final_evidence_preparer: FinalEvidencePreparer | None = None,
         structured_evidence_resolver: StructuredEvidenceResolver | None = None,
         answer_intent_analyzer: AnswerIntentAnalyzer | None = None,
@@ -109,6 +113,9 @@ class QuestionAnsweringWorkflow:
         self._answer_context_organizer = answer_context_organizer or AnswerContextOrganizer()
         self._structured_fact_key_value_builder = (
             structured_fact_key_value_builder or StructuredFactKeyValueBuilder()
+        )
+        self._structured_evidence_view_builder = (
+            structured_evidence_view_builder or StructuredEvidenceViewBuilder()
         )
         self._final_evidence_preparer = final_evidence_preparer or FinalEvidencePreparer(
             document_lookup_service=document_lookup_service
@@ -528,10 +535,17 @@ class QuestionAnsweringWorkflow:
                 )
             )
 
-        if not extra_key_values:
-            return prepared_chunks, None, intent_decision
-
+        # Always keep structured_context once it was successfully organized
+        # -- previously this returned None whenever extra_key_values was
+        # empty (e.g. a resolved entity's source chunk couldn't be fetched),
+        # silently discarding the organized sources/groups/maintenance
+        # entries even though prepared_chunks existed (closes 4.3/9.7).
         structured_context.key_values.extend(extra_key_values)
+        structured_context.structured_entities.extend(
+            self._structured_evidence_view_builder.build(
+                list(resolved_structured_entities)
+            )
+        )
         return prepared_chunks, structured_context, intent_decision
 
     def _resolve_structured_evidence(

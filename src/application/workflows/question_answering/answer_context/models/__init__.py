@@ -9,8 +9,14 @@ from src.application.workflows.question_answering.answer_context.models.answer_m
     AnswerMaintenanceEntry,
     AnswerMaintenanceReference,
 )
+from src.application.workflows.question_answering.answer_context.models.answer_relationship import (
+    AnswerRelationship,
+)
 from src.application.workflows.question_answering.answer_context.models.answer_source import (
     AnswerSource,
+)
+from src.application.workflows.question_answering.answer_context.models.answer_structured_entity import (
+    AnswerStructuredEntity,
 )
 from src.application.workflows.question_answering.answer_context.models.structured_answer_context import (
     StructuredAnswerContext,
@@ -20,8 +26,10 @@ __all__ = [
     "AnswerKeyValue",
     "AnswerMaintenanceEntry",
     "AnswerMaintenanceReference",
+    "AnswerRelationship",
     "AnswerSectionGroup",
     "AnswerSource",
     "AnswerSourceGroup",
+    "AnswerStructuredEntity",
     "StructuredAnswerContext",
 ]

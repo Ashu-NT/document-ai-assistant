@@ -2,9 +2,11 @@ from src.application.workflows.question_answering.answer_context.models import (
     AnswerKeyValue,
     AnswerMaintenanceEntry,
     AnswerMaintenanceReference,
+    AnswerRelationship,
     AnswerSectionGroup,
     AnswerSource,
     AnswerSourceGroup,
+    AnswerStructuredEntity,
     StructuredAnswerContext,
 )
 
@@ -13,11 +15,14 @@ __all__ = [
     "AnswerKeyValue",
     "AnswerMaintenanceEntry",
     "AnswerMaintenanceReference",
+    "AnswerRelationship",
     "AnswerSectionGroup",
     "AnswerSource",
     "AnswerSourceGroup",
+    "AnswerStructuredEntity",
     "MaintenanceEntryMerger",
     "StructuredAnswerContext",
+    "StructuredEvidenceViewBuilder",
     "StructuredFactKeyValueBuilder",
 ]
 
@@ -35,6 +40,12 @@ def __getattr__(name: str):
         )
 
         return MaintenanceEntryMerger
+    if name == "StructuredEvidenceViewBuilder":
+        from src.application.workflows.question_answering.answer_context.structured_evidence_view_builder import (
+            StructuredEvidenceViewBuilder,
+        )
+
+        return StructuredEvidenceViewBuilder
     if name == "StructuredFactKeyValueBuilder":
         from src.application.workflows.question_answering.answer_context.structured_fact_key_value_builder import (
             StructuredFactKeyValueBuilder,

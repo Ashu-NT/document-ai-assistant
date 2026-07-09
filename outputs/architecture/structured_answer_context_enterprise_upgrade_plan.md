@@ -226,6 +226,8 @@ But in the answer path, most of that rich structure is reduced into `AnswerKeyVa
 - the LLM sees labels and values, but not the graph semantics
 - deterministic formatters cannot reliably produce enterprise-quality grouped answers from relationships
 
+**Resolved in Phase 4:** `AnswerStructuredEntity`/`AnswerRelationship` now preserve relationships as typed objects (source/target entity type, relationship type, confidence, direction, and the target's own fields) instead of flattening them into `AnswerKeyValue` immediately. `AnswerKeyValue` extraction still runs in parallel unchanged, per Decision #2 — this is additive, not a replacement.
+
 ## 4.3 Structured context is sometimes built and then dropped
 
 If structured entities/identifiers exist but do not produce extra key-values, `_join_structured_facts()` returns `None` for `structured_context`:
@@ -238,7 +240,7 @@ If structured entities/identifiers exist but do not produce extra key-values, `_
 - typed maintenance entries, groups, and diagnostics can be lost even though prepared chunks existed
 - this is not just a style issue; it is a behavior gap
 
-Still open as of this amendment. Note that `_join_structured_facts()` now also computes an `AnswerIntentDecision` on this path (see section 0.1) — that specific piece of work is no longer wasted (it is threaded through to `AnswerGenerationRequest.answer_intent_decision` either way), but `structured_context` itself — the organized sources, groups, key-values, and maintenance entries — is still thrown away on this branch exactly as described above. The intent-recompute fix and this dead-context-drop issue are separate problems; only the former is fixed.
+**Resolved in Phase 4.** The dead-path early return was removed; `structured_context` is now always returned once it was successfully organized, regardless of whether `extra_key_values` ended up empty. The baseline test that characterized the old behavior (`test_resolved_structured_entities_without_lookup_service_do_not_crash`) was updated to assert the corrected behavior instead.
 
 ## 4.4 `AnswerFormatPolicy.resolve()` is not really resolving anything yet
 
@@ -431,7 +433,7 @@ Three independent lookup tables must all stay in sync with `AnswerIntent`'s memb
 - this is the exact shape of bug that was found and fixed elsewhere in this codebase on a sibling enum (`RetrievalQueryIntent`/`AnswerIntent` cross-taxonomy confusion produced a dead `elif intent == "certification":` branch in `StructuredEvidenceQueryAnalyzer.analyze()`, fixed in an earlier session)
 - a new `AnswerIntent` member added later could silently fall through to `GENERAL` formatting in one of these three maps and not the others, with no test catching the gap — a parametrized test iterating `AnswerIntent` against all three maps would close this cheaply and should be added alongside any section 9 work that touches these maps
 
-## 4.16 A resolved `MaintenanceTask -> Procedure` relationship's `steps` are silently dropped before reaching the answer (found during Phase 2, missed in original audit)
+## 4.16 A resolved `MaintenanceTask -> Procedure` relationship's `steps` are silently dropped before reaching the answer (found during Phase 2, missed in original audit) [RESOLVED in Phase 4]
 
 `MaintenanceTask` (`src/domain/extraction/maintenance_task.py:8-26`) has no `steps` field of its own — only `title`, `description`, `interval`, `component_name`, `equipment_id`. `Procedure` (`src/domain/extraction/procedure.py:36`) does: `steps: list[str]`. The two are linked by `SemanticRelationshipType.TASK_USES_PROCEDURE` (`src/domain/extraction/semantic_relationship.py:31`), populated by proximity-based candidate generation (`src/application/workflows/linking/semantic_relationship_candidate_generator.py:26-29`).
 
@@ -447,6 +449,8 @@ Separately, the raw-text extraction path has no steps concept at all: `KeyValueE
 - two independent gaps, not one: (a) the structured-resolution path drops already-linked steps at a single missing map entry (small, mechanical fix), and (b) the raw-text path has no step-list concept in `AnswerMaintenanceEntry` at all (a real modeling question — `AnswerKeyValue.value` is a single string, so "steps" doesn't fit that shape without a list-valued view, which is exactly what Phase 4's typed structured-evidence views are for)
 - natural fix location is Phase 4 (`procedure_entries`/`relationship_views`, section 9.2/9.3), not a Phase 2/3 patch — this is the same *shape* of bug as 4.3 (resolved data silently discarded before reaching the answer), just at the field level instead of the whole-context level, and it is exactly the kind of relationship section 9.3 already describes preserving
 
+**Resolved:** sub-fix (a) is done — `steps` now survives via `AnswerRelationship.target_entity_fields["steps"]` (see `test_build_preserves_related_procedure_steps_through_relationship` and the workflow-level `test_resolved_maintenance_task_surfaces_linked_procedure_steps_end_to_end`). Sub-fix (b) (whether `AnswerMaintenanceEntry`'s raw-text path should ever gain step-grouping) is deliberately left open — not resolved as a side effect of this fix, per this finding's own framing.
+
 ## 5. Dead Code / Low-Value Path Review
 
 ## 5.1 Confirmed low-value or dead-path behavior
@@ -460,10 +464,10 @@ Reference:
 
 - `src/application/services/answer_generation/formatting/answer_format_policy.py:33-40`
 
-### B. Structured context creation can be discarded when no extra key-values are produced
+### B. Structured context creation can be discarded when no extra key-values are produced [RESOLVED in Phase 4]
 
 - This is a dead-path behavior, not a dead file.
-- Still open as of this amendment (see 4.3).
+- Resolved in Phase 4 (see 4.3) — the dead-path return was removed.
 
 Reference:
 
@@ -647,7 +651,7 @@ This should be a direct, clean answer-facing projection, not a copy of the whole
 
 **Correction to this list found during implementation:** four of the nine originally-proposed fields (`table_ids`, `picture_ids`, `chunk_index`, `chunk_total`) were written against `DocumentChunk`'s field list without checking that `AnswerSource` is actually built from `RetrievedChunk` — a narrower, retrieval-layer dataclass that doesn't carry them. Implementing them as real fields would have meant either fabricating always-empty fields or first enriching `RetrievedChunk` itself (a different, bigger initiative). `family_key` was resolved by finding the codebase's own existing equivalent (`dedup_collapsed_chunk_ids`) rather than designing a new one.
 
-## 9.2 Introduce first-class structured evidence views
+## 9.2 Introduce first-class structured evidence views [IMPLEMENTED in Phase 4, redesigned]
 
 Instead of flattening everything into `AnswerKeyValue`, add typed answer-context collections such as:
 
@@ -664,18 +668,20 @@ Instead of flattening everything into `AnswerKeyValue`, add typed answer-context
 
 Maintenance already has a strong typed path. The rest should reach the same level.
 
-## 9.3 Preserve structured relationships
+**Implemented as one generic `AnswerStructuredEntity` type (with a string `entity_type` field) inside `StructuredAnswerContext.structured_entities`, plus `entities_of_type(entity_type)` for filtering — not as 10 separately-named fields.** `certification_entries` has no data source anywhere in this codebase (no `CERTIFICATION` member on `StructuredEntityType`) and would have been a permanently-empty field; `table_evidence`/`asset_evidence` have no identified data source beyond what Phase 3's `AnswerSource.table_rows` already exposes per-source, so both are deferred rather than added speculatively (see 4.8, still open). The other 7 categories are all reachable today via `entities_of_type("procedure")`, `entities_of_type("specification")`, etc.
+
+## 9.3 Preserve structured relationships [IMPLEMENTED in Phase 4]
 
 Add answer-context types that preserve:
 
-- source entity type
-- target entity type
-- relationship type
-- confidence
-- direction
-- source chunk references
+- ✅ source entity type — the owning `AnswerStructuredEntity.entity_type`
+- ✅ target entity type — `AnswerRelationship.target_entity_type`
+- ✅ relationship type — `AnswerRelationship.relationship_type`
+- ✅ confidence — `AnswerRelationship.confidence_score`
+- ✅ direction — `AnswerRelationship.direction`
+- ✅ source chunk references — `AnswerStructuredEntity.source_chunk_id`, plus the target's own source chunk id inside `target_entity_fields`
 
-This will let the answer layer generate cleaner manufacturer/contact, equipment/specification, and procedure/warning answers.
+This will let the answer layer generate cleaner manufacturer/contact, equipment/specification, and procedure/warning answers. Confirmed working for the procedure/task case (4.16); manufacturer/contact and equipment/specification use the exact same mechanism since `StructuredEntityResolver` attaches all relationship types identically, but no dedicated test covers those specific pairs yet — only 4.16's task/procedure case was directly exercised in this phase.
 
 ## 9.4 Make format-policy resolution real
 
@@ -715,11 +721,11 @@ to something closer to:
 
 This does not mean exposing raw internal ids. It means enforcing answer structure instead of leaving everything to prose.
 
-## 9.7 Stop dropping structured context
+## 9.7 Stop dropping structured context [IMPLEMENTED in Phase 4]
 
 `QuestionAnsweringWorkflow._join_structured_facts()` should keep the structured context whenever it was successfully built, not only when extra key-values exist.
 
-That is a correctness upgrade, not just a cleanup.
+That is a correctness upgrade, not just a cleanup. ✅ Done — the dead-path early return was removed; `structured_context` is now always returned once organized.
 
 ## 9.8 Close the enum-exhaustiveness gap (added in this amendment)
 
@@ -742,13 +748,13 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | Issue | Phase(s) | Solution ref |
 |---|---|---|
 | 4.1 `AnswerSource` too thin | Phase 3 — **done** (5 of 9 proposed fields; 4 not reachable, see 9.1) | 9.1 |
-| 4.2 structured semantics flattened too early | Phase 4 | 9.2, 9.3 |
-| 4.3 / 5.1.B structured context sometimes dropped | Phase 4 | 9.7 |
+| 4.2 structured semantics flattened too early | Phase 4 — **done** | 9.2, 9.3 |
+| 4.3 / 5.1.B structured context sometimes dropped | Phase 4 — **done** | 9.7 |
 | 4.4 / 5.1.A `AnswerFormatPolicy.resolve()` ignores context | Phase 6 | 9.4 |
 | 4.5 prompt depends on flattened lists | Phase 8 | 9.6 |
 | 4.6 LLM schema too weak | Phase 8 | 9.6 |
 | 4.7 deterministic renderers fragmented | Phase 7 | 9.5 |
-| 4.8 table evidence partially modeled | Phase 4 | 9.2 (`table_evidence`) |
+| 4.8 table evidence partially modeled | Phase 4 — **still open**, `table_evidence`/`asset_evidence` deferred (no additional data source identified, see Phase 4's design note) | 9.2 (`table_evidence`) |
 | 4.9 groups are prompt-facing only | Phase 5, Phase 7 | 9.5 |
 | 4.10 tests lock in the limited model | Phase 1, Phase 10 | section 11 |
 | 4.11 / 5.1.D dead `confidence` fields | Phase 9 | 9.9, reviewer 0.1 #4 |
@@ -756,7 +762,7 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | 4.13 redundant maintenance-entry data model | Phase 2 — **done** | reviewer 0.1 #2 |
 | 4.14 no rules-version / observability parity | Phase 1 — **done**, Phase 6 (consumption) | 9.10, reviewer 0.1 #3 |
 | 4.15 no `AnswerIntent` exhaustiveness guard | Phase 1 — **done** | 9.8 |
-| 4.16 `task_uses_procedure` steps silently dropped | Phase 4 | 9.2, 9.3 |
+| 4.16 `task_uses_procedure` steps silently dropped | Phase 4 — **done** | 9.2, 9.3 |
 
 ## Phase 1 - Baseline protection [IMPLEMENTED]
 
@@ -789,12 +795,16 @@ Full regression: 2220 tests green across the entire `tests/unit` suite (not just
 
 Full regression: 2222 tests green across the entire `tests/unit` suite.
 
-## Phase 4 - Typed structured-evidence views
+## Phase 4 - Typed structured-evidence views [IMPLEMENTED]
 
-- **First change in this phase, ahead of the typed-view work below:** make `QuestionAnsweringWorkflow._join_structured_facts()` retain the built `structured_context` whenever it was successfully organized, not only when extra `AnswerKeyValue` rows were produced (closes 4.3/9.7). This is the clearest live production correctness bug in this path - `structured_context` is fully organized and then discarded - so it lands first and is not gated on the rest of Phase 4. If the team wants risk reduction sooner than Phase 4's start, this single change can be pulled forward and shipped as its own micro-fix ahead of Phase 2/3 without waiting on the model refactor; it needs no new types, only removing the dead-path check.
-- add first-class answer models for structured entities, relationships, tables, and assets
-- keep `AnswerKeyValue` as a convenience projection, not the only structured view
-- when adding `relationship_views`/`procedure_entries` (9.2/9.3), make a resolved `task_uses_procedure` relationship surface its `Procedure.steps` as a real, list-valued view rather than an `AnswerKeyValue` (which can't hold a list cleanly) — closes 4.16. Two independent sub-fixes, both in scope here: (a) `StructuredFactKeyValueBuilder`/its typed-view successor stops silently dropping the related Procedure payload for `entity_type="procedure"`, and (b) decide whether `AnswerMaintenanceEntry`'s raw-text extraction path (`KeyValueExtractor`) should gain any step-grouping capability at all, or whether steps remain reachable only via the structured-resolution path — this is a real modeling decision, not just a missing map entry, and should not be resolved as a side effect of other Phase 4 work.
+- ✅ **First change in this phase:** `QuestionAnsweringWorkflow._join_structured_facts()` now retains the built `structured_context` unconditionally once it was successfully organized (closes 4.3/9.7 and 5.1.B). The dead-path early return (`if not extra_key_values: return prepared_chunks, None, intent_decision`) was removed entirely.
+- ✅ add first-class answer models for structured entities, relationships, tables, and assets — added `AnswerStructuredEntity` and `AnswerRelationship` (`answer_context/models/answer_structured_entity.py`, `answer_relationship.py`) and a new `StructuredEvidenceViewBuilder` (`answer_context/structured_evidence_view_builder.py`) that converts the raw resolved-entity dicts into these typed views. `StructuredAnswerContext` gained `structured_entities: list[AnswerStructuredEntity]` plus an `entities_of_type(entity_type)` filter method.
+- ✅ keep `AnswerKeyValue` as a convenience projection, not the only structured view — `StructuredFactKeyValueBuilder` is untouched and still runs in parallel on the same `resolved_structured_entities` input; `AnswerKeyValue` output is unchanged.
+- ✅ closes 4.16 — a resolved `task_uses_procedure` relationship's target entity (the linked `Procedure`, including its `steps` list) now survives as `AnswerRelationship.target_entity_fields["steps"]` on the owning `AnswerStructuredEntity`, instead of being dropped by `StructuredFactKeyValueBuilder`'s missing `"procedure"` label-map entry. Sub-fix (b) (whether `AnswerMaintenanceEntry`'s raw-text path should gain step-grouping) remains an open, deliberately-deferred modeling question — not resolved here, since steps are now reachable via the structured-resolution path, which is the primary path for this data.
+
+**Design note on scope, found during implementation:** section 9.2 proposed 10 separately-named typed collections (`specification_entries`, `procedure_entries`, `troubleshooting_entries`, `safety_entries`, `contact_entries`, `equipment_entries`, `certification_entries`, `table_evidence`, `asset_evidence`, `relationship_views`). Implemented instead as one generic `structured_entities: list[AnswerStructuredEntity]` list (typed by a string `entity_type` field) plus `entities_of_type()` for filtering, rather than 10 separately-populated fields. Reasons: (1) no separate storage to drift out of sync — a consumer wanting "procedure entries" calls `entities_of_type("procedure")` against the one real list; (2) `certification_entries` has no data source at all in this codebase (`StructuredEntityType` has no `CERTIFICATION` member — there is no structured-extraction path for certifications), so a dedicated field would be permanently empty, repeating the exact "dead field" mistake already found and corrected in 4.11/4.12/9.1; (3) `table_evidence`/`asset_evidence` have no clearly-identified *additional* data source beyond what `AnswerSource.table_rows` (Phase 3) already exposes per-source — deferred rather than added speculatively. `relationship_views` is implemented as `AnswerStructuredEntity.relationships: list[AnswerRelationship]` (attached per-entity, matching how `StructuredEntityResolver` itself attaches them) rather than a separate flat list.
+
+Full regression: 2235 tests green across the entire `tests/unit` suite. New tests: `test_structured_evidence_view_builder.py` (5 tests, including a direct regression test for 4.16's procedure-steps preservation), `test_resolved_maintenance_task_surfaces_linked_procedure_steps_end_to_end` (workflow-level end-to-end 4.16 coverage), and the corrected `test_resolved_structured_entities_without_lookup_service_do_not_crash` (now asserts `structured_context is not None`, closing the 4.3/9.7 baseline gap that test was tracking).
 
 ## Phase 5 - Organizer redesign
 
