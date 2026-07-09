@@ -17,6 +17,43 @@ References for both fixes: `src/application/services/answer_generation/answer_ge
 
 All line references elsewhere in this document have been re-verified against the current codebase and corrected where these two fixes shifted them (`question_answering_workflow.py`, `identifier_answer_renderer.py`). Every other reference in this document (structured_answer_context.py, retrieved_chunk.py, chunk.py, structured_entity_resolver.py, structured_fact_key_value_builder.py, answer_format_policy.py, answer_prompt_builder.py, answer_generation_response_schema.py, answer_generation_response_parser.py, spare_parts_list_renderer.py, table_evidence_hydrator.py, and the cited test files) was re-checked and is still accurate — those files were untouched by the two fixes above.
 
+## 0.1 Reviewer Follow-Up On The Amendment
+
+The amendment is directionally correct and improves the original audit in meaningful ways.
+
+### Confirmed strong additions
+
+1. The duplicate `AnswerIntentAnalyzer.analyze()` finding was real, the fix landed cleanly, and the new request seam is now explicit:
+   - `src/application/services/answer_generation/answer_generation_request.py:27-39`
+   - `src/application/services/answer_generation/answer_generation_service.py:174-235`
+   - `src/application/workflows/question_answering/question_answering_workflow.py:360-380`, `:437-535`
+2. The shared identifier-marker extraction is a real architectural improvement, not just cleanup:
+   - `src/application/workflows/shared/identifier_type_markers.py`
+   - `src/application/workflows/retrieval/structured/structured_identifier_query_analyzer.py:3-46`
+   - `src/application/services/answer_generation/formatting/identifier_answer_renderer.py:13-157`
+   - tests exist:
+     - `tests/unit/application/workflows/shared/test_identifier_type_markers.py`
+3. Expanding scope to include the structured query-analysis layer was the right correction. That layer decides what structured evidence can ever reach `StructuredAnswerContext`, so it belongs in this upgrade.
+
+### Reviewer adjustments to the plan
+
+1. `AnswerGenerationRequest.max_context_chunks` should not remain a passive field during this refactor. It now has less risk than before because `answer_intent_decision` can be threaded through, but it is still an unresolved behavior seam if any future caller passes:
+   - `structured_context` built on one chunk set
+   - `max_context_chunks` that truncates a different chunk set
+   - no explicit plan for whether truncation happens before or after context organization
+
+   This should become an explicit Phase 1 design decision:
+   - either remove it now
+   - or define one canonical truncation point upstream of both `AnswerContextOrganizer` and `AnswerGenerationService`
+
+2. `AnswerMaintenanceEntry`'s duplicated reference modeling should be collapsed during the model-refactor phase, not deferred. If the answer-context models are being split anyway, keeping both `references` and parallel flat reference fields through that rewrite would carry forward avoidable sync risk:
+   - `src/application/workflows/question_answering/answer_context/structured_answer_context.py:52-74`
+   - `src/application/prompts/answer_generation/maintenance_prompt_context_formatter.py:52-109`
+
+3. The new observability/versioning point is good and should move earlier in the execution order. Adding diagnostics and rules-version markers after the large refactor would make it harder to measure the refactor itself. It is better treated as an early hardening layer around the current extractors/parsers before or alongside the format-policy rewrite.
+
+4. The write-only confidence fields should not automatically be promoted into the new enterprise model. Unless a calibrated consumer is designed, the safer default is removal during cleanup rather than wider propagation.
+
 ## 1. Goal
 
 Upgrade the current `StructuredAnswerContext` path into an enterprise-grade answer-context system that:
@@ -683,16 +720,21 @@ Mirror the `*_RULES_VERSION` + structured-logging pattern already used by `Answe
 - add an audit snapshot test plan for current behavior
 - add coverage around current `StructuredAnswerContext` construction
 - add regression tests around structured-entity joining and structured-context retention
+- add/keep regression coverage for pre-resolved `answer_intent_decision` reuse
+- add the `AnswerIntent` exhaustiveness guard tests called out in 9.8
+- make an explicit keep/remove/design decision for `AnswerGenerationRequest.max_context_chunks` before the refactor starts
 
 ## Phase 2 - Model refactor
 
 - split `structured_answer_context.py` into smaller answer-context model files
 - keep `src.` imports and stable re-exports
-- do not change behavior yet beyond file moves
+- collapse `AnswerMaintenanceEntry`'s duplicated reference representations while models are being split
+- do not change answer behavior yet beyond structural cleanup and removal of duplicated internal representations
 
 ## Phase 3 - Source enrichment
 
 - enrich `AnswerSource` projection with missing retrieval/chunk metadata
+- if `max_context_chunks` is kept, enforce its canonical truncation point here so organizer/builders/renderers all see the same chunk slice
 - update organizer tests
 - ensure no consumer breaks
 
@@ -707,8 +749,14 @@ Mirror the `*_RULES_VERSION` + structured-logging pattern already used by `Answe
 - move extraction logic into focused builders/extractors
 - ensure maintenance extraction remains intact
 
-## Phase 6 - Format-policy upgrade
+## Phase 6 - Observability and Format-Policy Upgrade
 
+- add rules-version constants and diagnostics parity for:
+  - `AnswerFormatPolicy`
+  - `KeyValueExtractor`
+  - `MaintenanceEntryMerger`
+  - `SparePartsTableParser`
+- surface table-parser partial/drop counts as structured diagnostics, not only rendered prose
 - make `AnswerFormatPolicy.resolve()` context-aware
 - remove the current fake resolve path
 - add intent-plus-context policy tests
@@ -728,6 +776,7 @@ Mirror the `*_RULES_VERSION` + structured-logging pattern already used by `Answe
 
 - remove replaced prompt-only helpers
 - remove obsolete flattening logic
+- remove write-only confidence fields unless a calibrated consumer has been deliberately introduced
 - remove no-longer-used projections
 - update `__init__.py` exports
 
