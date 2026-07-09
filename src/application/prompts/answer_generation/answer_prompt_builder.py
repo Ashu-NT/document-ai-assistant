@@ -42,7 +42,10 @@ class AnswerPromptBuilder:
         return (
             f"{ANSWER_GROUNDING_RULES}\n\n"
             "Return JSON only with this shape:\n"
-            '{\n  "answer_text": "<grounded answer>"\n}\n'
+            '{\n  "answer_text": "<grounded answer>",\n'
+            '  "limitation_note": "<optional: state explicitly what the '
+            'provided sources do not cover, omit this field entirely if '
+            'there is no limitation to report>"\n}\n'
             "Do not wrap the JSON in markdown fences.\n\n"
             f"{self._intent_block(request)}"
             f"{self._format_policy_block(request)}"
@@ -122,6 +125,20 @@ class AnswerPromptBuilder:
                 lines.append(
                     f"- [SOURCE {item.source_number}] {item.key}: {value}"
                 )
+        if context.structured_entities:
+            lines.append("Structured entities:")
+            for entity in context.structured_entities:
+                lines.append(
+                    f"- {entity.entity_type} [{entity.entity_id}]: "
+                    f"{self._format_entity_fields(entity.fields)}"
+                )
+                for relationship in entity.relationships:
+                    lines.append(
+                        f"  - {relationship.relationship_type} -> "
+                        f"{relationship.target_entity_type} "
+                        f"[{relationship.target_entity_id}]: "
+                        f"{self._format_entity_fields(relationship.target_entity_fields)}"
+                    )
         if context.source_groups:
             lines.append("Source groups:")
             for group in context.source_groups:
@@ -143,6 +160,17 @@ class AnswerPromptBuilder:
                     f"- {group.group_name} | Pages: {page_range} | Sources: {source_refs}"
                 )
         return "\n".join(lines) + "\n\n"
+
+    @staticmethod
+    def _format_entity_fields(fields: dict) -> str:
+        if not fields:
+            return "(no additional fields)"
+        parts = []
+        for key, value in fields.items():
+            if isinstance(value, list):
+                value = "; ".join(str(item) for item in value)
+            parts.append(f"{key}: {value}")
+        return ", ".join(parts)
 
     def _raw_source_block(self, request: "AnswerGenerationRequest") -> str:
         structured_context = request.structured_context

@@ -20,4 +20,5 @@ class GeneratedAnswer:
     raw_model_output: str | None = None
     metadata: ModelProcessingMetadata | None = None
     answer_intent: AnswerIntent | None = None
+    limitation_note: str | None = None
     diagnostics: dict[str, Any] = field(default_factory=dict)

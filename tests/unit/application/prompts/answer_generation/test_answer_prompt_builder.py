@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from src.application.prompts.answer_generation import (
     ANSWER_PROMPT_VERSION,
     AnswerPromptBuilder,
@@ -8,6 +10,8 @@ from src.application.services.answer_generation.answer_generation_request import
 )
 from src.application.workflows.question_answering.answer_context import (
     AnswerContextOrganizer,
+    AnswerRelationship,
+    AnswerStructuredEntity,
 )
 from src.domain.common import ChunkType
 from src.domain.common.source_location import SourceLocation
@@ -202,6 +206,82 @@ def test_answer_prompt_builder_includes_provided_sources() -> None:
     assert "Content B" in prompt
     assert "Raw sources:" in prompt
     assert "Section: Maintenance Schedule" in prompt
+
+
+def test_answer_prompt_builder_serializes_structured_entities_and_relationships() -> None:
+    """Plan section 4.5/9.6: structured_entities (Phase 4's typed evidence
+    view) previously never reached the LLM prompt at all -- only the
+    flattened key_values did. A linked relationship's target_entity_fields
+    (e.g. 4.16's task_uses_procedure "steps") only ever reached deterministic
+    renderers, never the LLM-generation path, for the exact same reason.
+    This locks in that the prompt now serializes both."""
+    builder = AnswerPromptBuilder()
+    chunk = _make_chunk()
+    base_context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.PROCEDURE_STEPS,
+        chunks=[chunk],
+    )
+    structured_context = replace(
+        base_context,
+        structured_entities=[
+            AnswerStructuredEntity(
+                entity_type="maintenance_task",
+                entity_id="task_001",
+                fields={"title": "Replace hydraulic filter", "interval": "Every 500 hours"},
+                relationships=[
+                    AnswerRelationship(
+                        relationship_type="task_uses_procedure",
+                        direction="outgoing",
+                        status="accepted",
+                        target_entity_type="procedure",
+                        target_entity_id="procedure_001",
+                        target_entity_fields={
+                            "title": "Replace hydraulic filter",
+                            "steps": [
+                                "Depressurize the line.",
+                                "Remove the old filter.",
+                            ],
+                        },
+                    )
+                ],
+            )
+        ],
+    )
+    request = AnswerGenerationRequest(
+        question="How do I replace the hydraulic filter?",
+        context_chunks=[chunk],
+        answer_intent=AnswerIntent.PROCEDURE_STEPS,
+        structured_context=structured_context,
+        format_policy=AnswerFormatPolicy.for_intent(AnswerIntent.PROCEDURE_STEPS),
+    )
+
+    prompt = builder.build(request)
+
+    assert "Structured entities:" in prompt
+    assert "maintenance_task [task_001]" in prompt
+    assert "title: Replace hydraulic filter" in prompt
+    assert "task_uses_procedure -> procedure [procedure_001]" in prompt
+    assert "Depressurize the line.; Remove the old filter." in prompt
+
+
+def test_answer_prompt_builder_omits_structured_entities_block_when_absent() -> None:
+    builder = AnswerPromptBuilder()
+    chunk = _make_chunk()
+    structured_context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.GENERAL,
+        chunks=[chunk],
+    )
+    request = AnswerGenerationRequest(
+        question="Test?",
+        context_chunks=[chunk],
+        answer_intent=AnswerIntent.GENERAL,
+        structured_context=structured_context,
+        format_policy=AnswerFormatPolicy.for_intent(AnswerIntent.GENERAL),
+    )
+
+    prompt = builder.build(request)
+
+    assert "Structured entities:" not in prompt
 
 
 def test_answer_prompt_builder_formats_page_ranges() -> None:

@@ -259,7 +259,7 @@ It accepts `structured_context`, then ignores it:
 
 This is a confirmed low-value path and a strong dead-code candidate for cleanup/replacement.
 
-## 4.5 Prompt construction still depends on flattened lists instead of typed context views
+## 4.5 Prompt construction still depends on flattened lists instead of typed context views [IMPLEMENTED in Phase 8]
 
 `AnswerPromptBuilder` currently serializes:
 
@@ -279,7 +279,7 @@ Reference:
 - prompt builder becomes the place where formatting logic leaks
 - future output types will push even more special cases into prompt text
 
-## 4.6 LLM schema is too weak for enterprise answer generation
+## 4.6 LLM schema is too weak for enterprise answer generation [PARTIALLY IMPLEMENTED in Phase 8]
 
 Current response schema:
 
@@ -722,7 +722,7 @@ Instead:
 
 ✅ Done for `AnswerSource`-level consumption: both renderers now consume `StructuredAnswerContext` (via `sources`/`key_values`) instead of raw `RetrievedChunk`/duplicated parsing. Not done for group-level consumption (`AnswerSourceGroup`/`AnswerSectionGroup`, 4.9) or `include_sources_inline` (4.17) — both investigated and left open with reasoning in Phase 7's status note, since forcing either would have been cosmetic churn or a new feature rather than a real unification.
 
-## 9.6 Strengthen the answer-generation schema
+## 9.6 Strengthen the answer-generation schema [PARTIALLY IMPLEMENTED in Phase 8]
 
 The LLM response schema should evolve from:
 
@@ -736,6 +736,8 @@ to something closer to:
 - `reference_notes`
 
 This does not mean exposing raw internal ids. It means enforcing answer structure instead of leaving everything to prose.
+
+✅ `limitation_note` added (optional, `GeneratedAnswer.limitation_note`). `sections`/`reference_notes` deferred — every current consumer of `GeneratedAnswer.answer_text` (5 guardrails, the answer-question tool, the QA workflow) is built around one flat answer string; adding either field now would be unconsumed until those consumers are redesigned to work over structured sections instead of prose, which is separate, larger follow-up work. See Phase 8's design note.
 
 ## 9.7 Stop dropping structured context [IMPLEMENTED in Phase 4]
 
@@ -771,8 +773,8 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | 4.2 structured semantics flattened too early | Phase 4 — **done** | 9.2, 9.3 |
 | 4.3 / 5.1.B structured context sometimes dropped | Phase 4 — **done** | 9.7 |
 | 4.4 / 5.1.A `AnswerFormatPolicy.resolve()` ignores context | Phase 6 — **done** | 9.4 |
-| 4.5 prompt depends on flattened lists | Phase 8 | 9.6 |
-| 4.6 LLM schema too weak | Phase 8 | 9.6 |
+| 4.5 prompt depends on flattened lists | Phase 8 — **done** (`structured_entities`/relationships now serialized) | 9.6 |
+| 4.6 LLM schema too weak | Phase 8 — **partially done** (`limitation_note` added; `sections`/`reference_notes` deferred, see Phase 8's design note) | 9.6 |
 | 4.7 deterministic renderers fragmented | Phase 7 — **done** | 9.5 |
 | 4.8 table evidence partially modeled | Phase 4 — **still open**, `table_evidence`/`asset_evidence` deferred (no additional data source identified, see Phase 4's design note) | 9.2 (`table_evidence`) |
 | 4.9 groups are prompt-facing only | Phase 7 — investigated, **still open** (no renderer with a real grouping need found; see Phase 7's "Not addressed" note) | 9.5 |
@@ -874,11 +876,15 @@ Full regression: 2256 tests green across the entire `tests/unit` suite (2243 bef
 
 Full regression: run alongside Phase 6's changes; see Phase 6 and this phase's own test additions (`test_spare_parts_list_renderer.py` fixture rebuilt on `AnswerSource` via the real `StructuredSourceBuilder` — no manual mapping duplicated in the test — all 27 pre-existing tests pass unchanged; `test_identifier_answer_renderer.py` gained 2 new tests locking in the new preference order and the degraded-mode fallback, all 19 tests green).
 
-## Phase 8 - Prompt/schema hardening
+## Phase 8 - Prompt/schema hardening [IMPLEMENTED]
 
-- upgrade prompt builder to serialize the richer context cleanly
-- strengthen the pydantic response schema for answer generation
-- keep parser strict
+- ✅ upgrade prompt builder to serialize the richer context cleanly (closes 4.5's `structured_entities` gap) — found, while auditing `AnswerPromptBuilder._organized_context_block()`, that `StructuredAnswerContext.structured_entities` (Phase 4's typed evidence view, with `.relationships[*].target_entity_fields`) was **never serialized into the LLM prompt at all** — only the flattened `key_values` were. This meant the 4.16 fix (a resolved `task_uses_procedure` relationship's `steps` surviving onto `AnswerRelationship.target_entity_fields["steps"]`) only ever reached the two deterministic renderers, never the LLM-generation path itself — the exact same "resolved data silently never reaches the answer" shape as 4.3/4.16, one hop further down, specific to the LLM path. Added a "Structured entities:" block to `_organized_context_block()` that renders each entity's `entity_type`/`entity_id`/`fields`, plus each of its `relationships` (`relationship_type -> target_entity_type [target_entity_id]: target_entity_fields`), with list-valued fields (e.g. `steps`) joined with `"; "`. Some overlap with the existing `key_values` block is expected and accepted, matching 4.2's own established precedent ("AnswerKeyValue extraction still runs in parallel unchanged... this is additive, not a replacement") — the new block's real value is the fields `StructuredFactKeyValueBuilder` has no label-map entry for (steps being the concrete case), not deduplication against `key_values`.
+- ✅ strengthen the pydantic response schema for answer generation (partial implementation of 9.6, see design note) — added an optional `limitation_note: str | None` field to `AnswerGenerationResponsePayload`, threaded through unchanged (`extra="forbid"` still enforced) to a new `GeneratedAnswer.limitation_note` field, so a caller can check "did the model flag an explicit limitation" as a real typed field instead of string-parsing `answer_text`. `AnswerPromptBuilder.build()`'s JSON-shape instructions updated to describe the new optional field to the model.
+- ✅ keep parser strict — no change needed to `AnswerGenerationResponseParser`; pydantic validation (and `extra="forbid"`) already rejects anything not declared on the schema, and adding a new *declared* optional field doesn't loosen that.
+
+**Design note on scope, found during implementation:** 9.6 proposes evolving the schema toward `answer_text` + `limitation_note` + `sections` + `reference_notes`. Implemented `limitation_note` only, not `sections`/`reference_notes`. Reason: traced every consumer of `GeneratedAnswer.answer_text` (`answer_support_guardrail.py`, `citation_guardrail.py`, `safety_answer_guardrail.py`, `unsupported_claim_guardrail.py`, `unsupported_suggestion_guardrail.py`, `answer_question_tool.py`, `question_answering_workflow.py`) and found every single one of them is built around one flat answer string. Adding `sections`/`reference_notes` today would either (a) sit as unconsumed fields — repeating the exact 4.11/4.17 "decorative field with no reader" mistake this plan has now caught three times — or (b) require redesigning how every guardrail scans an answer for claims/citations to work over structured sections instead of prose, which is a genuinely different, much larger piece of work than "hardening" the existing schema. `limitation_note` was implemented because it has a real, immediate, non-decorative consumer (`GeneratedAnswer.limitation_note` itself, a first-class typed field any caller can branch on today) without needing that redesign. `sections`/`reference_notes` are left as explicit future work, gated on a guardrail-layer redesign that is out of this phase's scope.
+
+Full regression: 2261 tests green across the entire `tests/unit` suite (2258 before this phase + 3 new). New tests: `test_answer_prompt_builder_serializes_structured_entities_and_relationships`, `test_answer_prompt_builder_omits_structured_entities_block_when_absent` (`test_answer_prompt_builder.py`), `test_generate_surfaces_limitation_note_from_llm_response` (`test_answer_generation_service.py`); `test_generate_returns_llm_output_as_answer_text` extended to assert `limitation_note is None` for a response that omits it.
 
 ## Phase 9 - Cleanup / dead code removal
 

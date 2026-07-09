@@ -169,6 +169,7 @@ class AnswerGenerationService:
             confidence=intent_decision.confidence,
             diagnostics=diagnostics,
             raw_model_output=raw_output,
+            limitation_note=parsed_output.limitation_note,
         )
 
     @staticmethod
@@ -319,6 +320,7 @@ class AnswerGenerationService:
         confidence: float,
         diagnostics: dict[str, object],
         raw_model_output: str,
+        limitation_note: str | None = None,
     ) -> GeneratedAnswer:
         return GeneratedAnswer(
             answer_text=answer_text,
@@ -336,4 +338,5 @@ class AnswerGenerationService:
             answer_intent=answer_intent,
             diagnostics=diagnostics,
             raw_model_output=raw_model_output,
+            limitation_note=limitation_note,
         )

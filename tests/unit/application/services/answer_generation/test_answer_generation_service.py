@@ -108,6 +108,36 @@ def test_generate_returns_llm_output_as_answer_text() -> None:
 
     assert result.answer_text == "The answer is 1000 hours."
     assert result.raw_model_output == '{"answer_text":"The answer is 1000 hours."}'
+    assert result.limitation_note is None
+
+
+def test_generate_surfaces_limitation_note_from_llm_response() -> None:
+    """Plan section 4.6/9.6: limitation_note is an enforced-structure
+    alternative to folding a caveat into answer_text's prose -- it must
+    reach GeneratedAnswer as its own field, not just get silently dropped
+    by the parser/schema (extra="forbid" would reject it if the schema
+    didn't declare it)."""
+    service, _ = make_service(
+        FakeLLMService(
+            response=(
+                '{"answer_text":"The filter is replaced every 1000 hours.",'
+                '"limitation_note":"Only the primary filter interval was found; '
+                'no secondary filter schedule was present in the sources."}'
+            )
+        )
+    )
+    request = AnswerGenerationRequest(
+        question="When to replace the filter?",
+        context_chunks=[_make_chunk()],
+    )
+
+    result = service.generate(request)
+
+    assert result.answer_text == "The filter is replaced every 1000 hours."
+    assert result.limitation_note == (
+        "Only the primary filter interval was found; no secondary filter "
+        "schedule was present in the sources."
+    )
 
 
 # ---------------------------------------------------------------------------
