@@ -56,11 +56,16 @@ from src.application.workflows.parsing.ocr import (  # noqa: E402
 from src.application.workflows.parsing.parsing_workflow_result import (  # noqa: E402
     ParsingWorkflowResult,
 )
-from src.application.workflows.parsing.reports import (  # noqa: E402
+from src.application.reporting.document_parsing.chunking import (  # noqa: E402
     ChunkingReportWriter,
+)
+from src.application.reporting.document_parsing.parsing import (  # noqa: E402
     ParsingReportWriter,
+)
+from src.application.reporting.document_parsing.quality import (  # noqa: E402
     QualityReportWriter,
 )
+from src.application.validation.document_quality import DocumentQualityGate  # noqa: E402
 from src.config.paths import ensure_directory, resolve_project_path  # noqa: E402
 from src.config.settings import docling_settings, ocr_settings  # noqa: E402
 from src.domain.document import DocumentHashes  # noqa: E402
@@ -1333,7 +1338,23 @@ def _write_json_debug_reports(
 
     parse_path = ParsingReportWriter().write(result)
     chunk_path = ChunkingReportWriter().write(result)
-    quality_path = QualityReportWriter().write(result)
+
+    quality_gate = DocumentQualityGate()
+    parse_quality_result = quality_gate.check_parsing(
+        document_id,
+        sections=list(document_graph.sections.values()),
+        elements=list(document_graph.elements.values()),
+        ocr_trace=ocr_trace,
+    )
+    chunk_quality_result = quality_gate.check_chunking(
+        document_id,
+        chunks=list(document_graph.chunks.values()),
+    )
+    quality_path = QualityReportWriter().write(
+        document_id,
+        parse_result=parse_quality_result,
+        chunk_result=chunk_quality_result,
+    )
     print_status(f"JSON reports: {parse_path.name}, {chunk_path.name}, {quality_path.name}")
 
 

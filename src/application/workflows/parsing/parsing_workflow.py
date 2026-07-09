@@ -4,7 +4,17 @@ from pathlib import Path
 from threading import Event, Thread
 from typing import TypeVar
 
+from src.application.reporting.document_parsing.chunking import (
+    ChunkingReportWriter,
+)
+from src.application.reporting.document_parsing.parsing import (
+    ParsingReportWriter,
+)
+from src.application.reporting.document_parsing.quality import (
+    QualityReportWriter,
+)
 from src.application.validation.document import DocumentGraphValidator
+from src.application.validation.document_quality import DocumentQualityGate
 from src.application.workflows.parsing.canonical_element_ocr_enricher import (
     CanonicalElementOCREnricher,
 )
@@ -17,11 +27,6 @@ from src.application.workflows.parsing.normalizers.docling_document_normalizer i
 )
 from src.application.workflows.parsing.parsing_workflow_result import (
     ParsingWorkflowResult,
-)
-from src.application.workflows.parsing.reports import (
-    ChunkingReportWriter,
-    ParsingReportWriter,
-    QualityReportWriter,
 )
 from src.domain.document import DocumentGraph, DocumentHashes
 from src.infrastructure.parsing.docling.docling_parser import DoclingParser
@@ -141,6 +146,7 @@ class ParsingWorkflow:
         parsing_report_writer: ParsingReportWriter | None = None,
         chunking_report_writer: ChunkingReportWriter | None = None,
         quality_report_writer: QualityReportWriter | None = None,
+        quality_gate: DocumentQualityGate | None = None,
     ) -> None:
         self.parser = parser
         self.normalizer = normalizer
@@ -152,6 +158,7 @@ class ParsingWorkflow:
         self.parsing_report_writer = parsing_report_writer
         self.chunking_report_writer = chunking_report_writer
         self.quality_report_writer = quality_report_writer
+        self.quality_gate = quality_gate or DocumentQualityGate()
 
     @tracked_action(
         action="parsing.workflow_completed",
@@ -326,7 +333,21 @@ class ParsingWorkflow:
         if self.chunking_report_writer is not None:
             self.chunking_report_writer.write(result)
         if self.quality_report_writer is not None:
-            self.quality_report_writer.write(result)
+            parse_quality_result = self.quality_gate.check_parsing(
+                result.document_id,
+                sections=list(document_graph.sections.values()),
+                elements=list(document_graph.elements.values()),
+                ocr_trace=ocr_trace,
+            )
+            chunk_quality_result = self.quality_gate.check_chunking(
+                result.document_id,
+                chunks=list(document_graph.chunks.values()),
+            )
+            self.quality_report_writer.write(
+                result.document_id,
+                parse_result=parse_quality_result,
+                chunk_result=chunk_quality_result,
+            )
 
         self._emit_progress(
             progress_callback,

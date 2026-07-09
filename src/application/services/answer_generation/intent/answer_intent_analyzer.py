@@ -7,8 +7,21 @@ from typing import Iterable, Sequence
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
+from src.application.workflows.shared.negation_detection import (
+    has_non_negated_occurrence,
+)
+from src.config.logging import get_logger
 from src.domain.common import ChunkType
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
+
+_logger = get_logger(__name__)
+
+# Bumped whenever the scoring buckets, weights, or term lists below change
+# materially -- mirrors RETRIEVAL_INTENT_RULES_VERSION's convention (and the
+# `*_PROMPT_VERSION` pattern every LLM-prompt classifier already uses), so a
+# future fallback-rate report for answer-intent can correlate a shift against
+# a specific rule-pack version rather than an untracked code change.
+ANSWER_INTENT_RULES_VERSION = "v1"
 
 _SPECIFICATION_TERMS = (
     "specification",
@@ -241,6 +254,8 @@ class AnswerIntentDecision:
     confidence: float
     reason: str
     matched_signals: list[str]
+    runner_up_intent: AnswerIntent | None = None
+    runner_up_score: int = 0
 
 
 class AnswerIntentAnalyzer:
@@ -285,6 +300,11 @@ class AnswerIntentAnalyzer:
 
         best_intent = self._pick_intent(scores)
         if scores[best_intent] <= 0:
+            _logger.info(
+                "answer_intent_fallback_general reason=no_strong_signal "
+                "rules_version=%s",
+                ANSWER_INTENT_RULES_VERSION,
+            )
             return AnswerIntentDecision(
                 intent=AnswerIntent.GENERAL,
                 confidence=0.55,
@@ -292,11 +312,21 @@ class AnswerIntentAnalyzer:
                 matched_signals=[],
             )
 
-        confidence = self._confidence(scores, best_intent)
+        runner_up_intent, runner_up_score = self._runner_up(scores, best_intent)
+        confidence = self._confidence(
+            best_score=scores[best_intent],
+            runner_up_score=runner_up_score,
+        )
         matched_signals = matched[best_intent]
         signal_origin = "question" if any(
             signal.startswith("question:") for signal in matched_signals
         ) else "retrieval/context"
+        _logger.info(
+            "answer_intent_resolved intent=%s confidence=%s rules_version=%s",
+            best_intent.value,
+            confidence,
+            ANSWER_INTENT_RULES_VERSION,
+        )
         return AnswerIntentDecision(
             intent=best_intent,
             confidence=confidence,
@@ -304,6 +334,8 @@ class AnswerIntentAnalyzer:
                 f"Resolved from {signal_origin} signals with supporting retrieval evidence."
             ),
             matched_signals=matched_signals,
+            runner_up_intent=runner_up_intent,
+            runner_up_score=runner_up_score,
         )
 
     @staticmethod
@@ -543,8 +575,14 @@ class AnswerIntentAnalyzer:
         scores: dict[AnswerIntent, int],
         matched: dict[AnswerIntent, list[str]],
     ) -> None:
+        # Negation-aware: a term preceded by a negation cue ("not", "without",
+        # "unrelated to", ...) within a short lookback window doesn't
+        # contribute to its intent's score -- e.g. "this is not a maintenance
+        # question" no longer scores MAINTENANCE_SUMMARY. Shares the exact
+        # cue vocabulary/lookback logic RetrievalQueryIntentInferer uses via
+        # negation_detection.has_non_negated_occurrence.
         for term in terms:
-            if term in text:
+            if has_non_negated_occurrence(text, term):
                 scores[intent] += weight
                 matched[intent].append(f"question:{term}")
 
@@ -626,26 +664,38 @@ class AnswerIntentAnalyzer:
         return candidates[0] if candidates else AnswerIntent.GENERAL
 
     @staticmethod
-    def _confidence(
+    def _runner_up(
         scores: dict[AnswerIntent, int],
         best_intent: AnswerIntent,
-    ) -> float:
-        best = scores[best_intent]
-        runner_up = max(
-            (
-                score
-                for intent, score in scores.items()
-                if intent != best_intent
-            ),
-            default=0,
-        )
-        margin = best - runner_up
-        if best >= 10 and margin >= 3:
+    ) -> tuple[AnswerIntent | None, int]:
+        """Highest-scoring intent other than best_intent, tie-broken by the
+        same _INTENT_PRIORITY order _pick_intent uses. None/0 when no other
+        intent scored at all -- exposed on AnswerIntentDecision so callers
+        get the same runner-up visibility RetrievalQueryIntentClassification
+        already provides on the retrieval side, instead of _confidence()
+        computing and discarding it internally."""
+        runner_up_intent: AnswerIntent | None = None
+        runner_up_score = 0
+        for intent in _INTENT_PRIORITY:
+            if intent == best_intent:
+                continue
+            score = scores.get(intent, 0)
+            if score > runner_up_score:
+                runner_up_score = score
+                runner_up_intent = intent
+        if runner_up_score <= 0:
+            return None, 0
+        return runner_up_intent, runner_up_score
+
+    @staticmethod
+    def _confidence(*, best_score: int, runner_up_score: int) -> float:
+        margin = best_score - runner_up_score
+        if best_score >= 10 and margin >= 3:
             return 0.95
-        if best >= 8 and margin >= 2:
+        if best_score >= 8 and margin >= 2:
             return 0.9
-        if best >= 6:
+        if best_score >= 6:
             return 0.82
-        if best >= 4:
+        if best_score >= 4:
             return 0.72
         return 0.62

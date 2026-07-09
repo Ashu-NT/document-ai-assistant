@@ -30,12 +30,12 @@ import agent_cli  # noqa: E402
 
 from src.application.langgraph.evaluation import (  # noqa: E402
     AgentEvalLoader,
-    AgentEvalReportWriter,
     AgentEvalRunner,
     AgentQualityGate,
     DEFAULT_AGENT_EVAL_CASES_PATH,
     DEFAULT_AGENT_EVAL_THRESHOLDS_PATH,
 )
+from src.application.reporting.agent_eval import AgentEvalReportWriter  # noqa: E402
 from src.config.paths import resolve_project_path  # noqa: E402
 from src.shared.exceptions import ApplicationError, SchemaValidationError  # noqa: E402
 
@@ -518,7 +518,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.json:
             print(
                 json.dumps(
-                    runtime.report_writer.serialize(
+                    runtime.report_writer.json_serializer.serialize(
                         report,
                         quality_gate_result=gate_result,
                     ),

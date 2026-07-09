@@ -25,9 +25,11 @@ from src.application.workflows.parsing.builders.section_builder import SectionBu
 from src.application.workflows.parsing.normalizers.docling_document_normalizer import (
     DoclingDocumentNormalizer,
 )
+from src.application.reporting.document_parsing.graph_build_profiling import (
+    GraphBuildReportWriter,
+)
 from src.application.workflows.parsing.profiling import (
     GraphBuildProfiler,
-    GraphBuildReportWriter,
     build_graph_stage_catalog,
 )
 from src.domain.document import DocumentHashes

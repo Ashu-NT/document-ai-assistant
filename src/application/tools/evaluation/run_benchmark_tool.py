@@ -7,6 +7,8 @@ from pathlib import Path
 from src.application.evaluation import (
     DEFAULT_RETRIEVAL_TRUTH_SET_PATH,
     RetrievalBenchmarkDataset,
+)
+from src.application.reporting.retrieval_benchmark import (
     RetrievalBenchmarkResolutionFailureWriter,
 )
 from src.application.tools.common import (

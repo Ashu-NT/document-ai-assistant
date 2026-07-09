@@ -33,8 +33,10 @@ from src.application.evaluation import (  # noqa: E402
     RetrievalBenchmarkDatasetResolver,
     RetrievalBenchmarkEvaluator,
     RetrievalBenchmarkReport,
-    RetrievalBenchmarkReportWriter,
     RetrievalTruthSetLoader,
+)
+from src.application.reporting.retrieval_benchmark import (  # noqa: E402
+    RetrievalBenchmarkReportWriter,
 )
 from src.config.paths import resolve_project_path  # noqa: E402
 from src.shared.exceptions import ApplicationError, SchemaValidationError  # noqa: E402
@@ -436,7 +438,7 @@ def write_resolution_failure_reports(
     output_directory: Path,
     subset: str,
 ) -> tuple[Path, Path]:
-    from src.application.evaluation import (  # noqa: WPS433
+    from src.application.reporting.retrieval_benchmark import (  # noqa: WPS433
         RetrievalBenchmarkResolutionFailureWriter,
     )
 

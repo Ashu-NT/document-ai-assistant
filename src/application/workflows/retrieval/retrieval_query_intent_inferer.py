@@ -7,6 +7,10 @@ from src.application.workflows.retrieval.retrieval_query_intent import (
 from src.application.workflows.retrieval.retrieval_query_intent_classification import (
     RetrievalQueryIntentClassification,
 )
+from src.application.workflows.shared.negation_detection import (
+    has_non_negated_occurrence as _has_non_negated_occurrence,
+    is_negated as _is_negated,
+)
 from src.config.logging import get_logger
 from src.domain.common import ChunkType
 from src.domain.retrieval import RetrievalQuery
@@ -274,37 +278,11 @@ _REQUIRED_GAP_OVERRIDES: dict[tuple[RetrievalQueryIntent, RetrievalQueryIntent],
     ),
 }
 
-# Deterministic, lightweight negation handling: a keyword marker match is
-# ignored if a negation cue appears shortly before it (e.g. "not related to
-# safety" no longer contributes a SAFETY hit). Scoped to the plain keyword
-# tier only -- the explicit regex/combo tier's matches are more structured
-# and a uniform "negation nearby" rule doesn't apply as cleanly there.
-_NEGATION_CUES: tuple[str, ...] = (
-    "not",
-    "excluding",
-    "without",
-    "unrelated to",
-    "aside from",
-    "except",
-)
-_NEGATION_LOOKBACK_TOKENS = 4
-
-
-def _is_negated(query_text: str, marker_start: int) -> bool:
-    preceding_tokens = query_text[:marker_start].split()[-_NEGATION_LOOKBACK_TOKENS:]
-    preceding_text = " ".join(preceding_tokens)
-    return any(cue in preceding_text for cue in _NEGATION_CUES)
-
-
-def _has_non_negated_occurrence(query_text: str, marker: str) -> bool:
-    search_from = 0
-    while True:
-        index = query_text.find(marker, search_from)
-        if index == -1:
-            return False
-        if not _is_negated(query_text, index):
-            return True
-        search_from = index + 1
+# Negation handling (negation cue lookback-window check) lives in the shared
+# negation_detection module -- scoped to the plain keyword tier only, since
+# the explicit regex/combo tier's matches are more structured and a uniform
+# "negation nearby" rule doesn't apply as cleanly there. Shared with
+# AnswerIntentAnalyzer's own keyword scoring rather than reimplemented.
 
 
 def _add_keyword_score(

@@ -1,6 +1,11 @@
+import logging
+
 from src.application.services.answer_generation.intent import (
     AnswerIntent,
     AnswerIntentAnalyzer,
+)
+from src.application.services.answer_generation.intent.answer_intent_analyzer import (
+    ANSWER_INTENT_RULES_VERSION,
 )
 from src.domain.common import ChunkType
 from src.domain.common.source_location import SourceLocation
@@ -266,3 +271,95 @@ def test_explicit_question_overrides_weak_chunk_hint() -> None:
     )
 
     assert decision.intent == AnswerIntent.SPECIFICATION_SUMMARY
+
+
+# ---------------------------------------------------------------------------
+# Negation awareness: a term preceded by a negation cue within the lookback
+# window no longer contributes to its intent's score (shares the exact
+# cue/lookback logic RetrievalQueryIntentInferer uses, via the extracted
+# negation_detection module).
+# ---------------------------------------------------------------------------
+
+
+def test_negated_terms_do_not_trigger_their_intent() -> None:
+    decision = AnswerIntentAnalyzer().analyze(question="This is not a safety warning.")
+
+    assert decision.intent == AnswerIntent.GENERAL
+    assert decision.matched_signals == []
+
+
+def test_unnegated_terms_still_trigger_their_intent() -> None:
+    decision = AnswerIntentAnalyzer().analyze(question="This is a safety warning.")
+
+    assert decision.intent == AnswerIntent.SAFETY_WARNINGS
+    assert "question:safety" in decision.matched_signals
+
+
+# ---------------------------------------------------------------------------
+# Runner-up exposure: AnswerIntentDecision now surfaces the second-best
+# intent/score instead of _confidence() computing and discarding it.
+# ---------------------------------------------------------------------------
+
+
+def test_exact_tie_exposes_the_runner_up_intent_and_score() -> None:
+    """'specification'/'spec' (SPECIFICATION_SUMMARY, 2 hits x weight 6 = 12)
+    and 'procedure'/'install' (PROCEDURE_STEPS, 2 hits x weight 6 = 12) tie
+    exactly -- SPECIFICATION_SUMMARY wins via _INTENT_PRIORITY order, but the
+    tie must now be visible on the decision rather than silently dropped."""
+    decision = AnswerIntentAnalyzer().analyze(
+        question="What is the specification and what is the procedure to install it?"
+    )
+
+    assert decision.intent == AnswerIntent.SPECIFICATION_SUMMARY
+    assert decision.runner_up_intent == AnswerIntent.PROCEDURE_STEPS
+    assert decision.runner_up_score == 12
+
+
+def test_unambiguous_question_has_no_runner_up() -> None:
+    decision = AnswerIntentAnalyzer().analyze(question="This is a safety warning.")
+
+    assert decision.runner_up_intent is None
+    assert decision.runner_up_score == 0
+
+
+# ---------------------------------------------------------------------------
+# GENERAL fallback for genuinely ambiguous/empty input.
+# ---------------------------------------------------------------------------
+
+
+def test_empty_question_falls_back_to_general_with_no_runner_up() -> None:
+    decision = AnswerIntentAnalyzer().analyze(question="")
+
+    assert decision.intent == AnswerIntent.GENERAL
+    assert decision.confidence == 0.55
+    assert decision.runner_up_intent is None
+    assert decision.runner_up_score == 0
+
+
+def test_question_with_no_recognizable_terms_falls_back_to_general() -> None:
+    decision = AnswerIntentAnalyzer().analyze(question="asdkjaslkdj")
+
+    assert decision.intent == AnswerIntent.GENERAL
+    assert decision.confidence == 0.55
+
+
+# ---------------------------------------------------------------------------
+# Structured logging, mirroring RetrievalQueryIntentInferer's log line shape.
+# ---------------------------------------------------------------------------
+
+
+def test_resolved_intent_is_logged_with_rules_version(caplog) -> None:
+    with caplog.at_level(logging.INFO):
+        AnswerIntentAnalyzer().analyze(question="This is a safety warning.")
+
+    assert "answer_intent_resolved" in caplog.text
+    assert "intent=safety_warnings" in caplog.text
+    assert f"rules_version={ANSWER_INTENT_RULES_VERSION}" in caplog.text
+
+
+def test_general_fallback_is_logged_with_reason(caplog) -> None:
+    with caplog.at_level(logging.INFO):
+        AnswerIntentAnalyzer().analyze(question="")
+
+    assert "answer_intent_fallback_general" in caplog.text
+    assert "reason=no_strong_signal" in caplog.text
