@@ -53,6 +53,8 @@ class AssetNearbyTextEnricher:
                 graph
             )
             enriched_assets = 0
+            section_elements_cache: dict[str, list[CanonicalElement]] = {}
+            section_index_cache: dict[str, dict[str, int]] = {}
             for asset_collection, elements_by_asset_id in (
                 (graph.tables, elements_by_table_id),
                 (graph.pictures, elements_by_picture_id),
@@ -62,10 +64,17 @@ class AssetNearbyTextEnricher:
                     if asset_element is None or asset_element.parent_section_id is None:
                         continue
 
-                    section_elements = graph.get_section_elements(asset_element.parent_section_id)
-                    asset_index = self._find_element_index(
-                        section_elements=section_elements,
-                        asset_element=asset_element,
+                    section_id = asset_element.parent_section_id
+                    if section_id not in section_elements_cache:
+                        elements = graph.get_section_elements(section_id)
+                        section_elements_cache[section_id] = elements
+                        section_index_cache[section_id] = {
+                            element.element_id: index
+                            for index, element in enumerate(elements)
+                        }
+                    section_elements = section_elements_cache[section_id]
+                    asset_index = section_index_cache[section_id].get(
+                        asset_element.element_id
                     )
                     if asset_index is None:
                         continue
@@ -109,12 +118,14 @@ class AssetNearbyTextEnricher:
             if remaining_tokens <= 0:
                 break
 
-            text = self._truncate_to_token_limit(text, remaining_tokens)
+            text, text_token_count = self.token_counter.truncate_to_tokens_with_count(
+                text, remaining_tokens
+            )
             if not text:
                 continue
 
             selected_parts.append(text)
-            token_total += self.token_counter.count_tokens(text)
+            token_total += text_token_count
 
         if not selected_parts:
             return None
@@ -136,17 +147,6 @@ class AssetNearbyTextEnricher:
             if element.picture_id is not None:
                 elements_by_picture_id.setdefault(element.picture_id, element)
         return elements_by_table_id, elements_by_picture_id
-
-    @staticmethod
-    def _find_element_index(
-        *,
-        section_elements: list[CanonicalElement],
-        asset_element: CanonicalElement,
-    ) -> int | None:
-        for index, candidate in enumerate(section_elements):
-            if candidate.element_id == asset_element.element_id:
-                return index
-        return None
 
     @staticmethod
     def _contributes_to_nearby_text(element: CanonicalElement) -> bool:
@@ -180,6 +180,3 @@ class AssetNearbyTextEnricher:
         if asset_page is None or candidate_page is None:
             return True
         return abs(candidate_page - asset_page) <= 1
-
-    def _truncate_to_token_limit(self, text: str, max_tokens: int) -> str:
-        return self.token_counter.truncate_to_tokens(text, max_tokens)

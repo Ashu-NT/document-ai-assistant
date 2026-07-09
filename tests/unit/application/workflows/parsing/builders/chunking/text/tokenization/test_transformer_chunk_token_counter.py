@@ -76,3 +76,25 @@ def test_transformer_chunk_token_counter_falls_back_when_offsets_missing() -> No
 
     assert counter.count_tokens("alpha beta gamma") == 3
     assert counter.truncate_to_tokens("alpha beta gamma", 2) == "alpha beta"
+
+
+def test_transformer_chunk_token_counter_truncates_with_count_from_offsets() -> None:
+    counter = TransformerChunkTokenCounter(tokenizer=FakeFastTokenizer())
+
+    assert counter.truncate_to_tokens_with_count("alpha, beta gamma", 2) == (
+        "alpha,",
+        2,
+    )
+    assert counter.truncate_to_tokens_with_count("alpha, beta gamma", 10) == (
+        "alpha, beta gamma",
+        4,
+    )
+
+
+def test_transformer_chunk_token_counter_truncate_with_count_falls_back_when_offsets_missing() -> None:
+    counter = TransformerChunkTokenCounter(tokenizer=FakeTokenizerWithoutOffsets())
+
+    assert counter.truncate_to_tokens_with_count("alpha beta gamma", 2) == (
+        "alpha beta",
+        2,
+    )
