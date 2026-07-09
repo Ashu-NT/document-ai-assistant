@@ -48,11 +48,7 @@ class StructuredEvidenceViewBuilder:
                 AnswerStructuredEntity(
                     entity_type=str(entity_type),
                     entity_id=self._entity_id(entity),
-                    fields={
-                        key: value
-                        for key, value in entity.items()
-                        if key not in _BOOKKEEPING_KEYS
-                    },
+                    fields=self._entity_fields(str(entity_type), entity),
                     source_chunk_id=(
                         str(entity["source_chunk_id"])
                         if entity.get("source_chunk_id")
@@ -72,21 +68,79 @@ class StructuredEvidenceViewBuilder:
         source_chunk_id = entity.get("source_chunk_id")
         return str(source_chunk_id) if source_chunk_id else ""
 
+    @classmethod
+    def _entity_fields(
+        cls,
+        entity_type: str,
+        entity: dict,
+    ) -> dict[str, object]:
+        excluded = set(_BOOKKEEPING_KEYS)
+        excluded.add("source_chunk_id")
+        entity_id_field = cls._entity_id_field(entity_type)
+        if entity_id_field is not None:
+            excluded.add(entity_id_field)
+        return {
+            key: value
+            for key, value in entity.items()
+            if key not in excluded
+        }
+
     @staticmethod
     def _relationships(entity: dict) -> list[AnswerRelationship]:
         relationships: list[AnswerRelationship] = []
         for related in entity.get("related_entities", []):
             if not isinstance(related, dict):
                 continue
+            related_type = str(related.get("entity_type") or "")
+            related_entity = (
+                related.get("entity")
+                if isinstance(related.get("entity"), dict)
+                else {}
+            )
             relationships.append(
                 AnswerRelationship(
                     relationship_type=str(related.get("relationship_type") or ""),
                     direction=str(related.get("direction") or ""),
                     status=str(related.get("status") or ""),
                     confidence_score=related.get("confidence_score"),
-                    target_entity_type=str(related.get("entity_type") or ""),
-                    target_entity_id=str(related.get("entity_id") or ""),
-                    target_entity_fields=dict(related.get("entity") or {}),
+                    target_entity_type=related_type,
+                    target_entity_id=StructuredEvidenceViewBuilder._related_entity_id(
+                        related,
+                        related_entity,
+                    ),
+                    target_entity_fields=StructuredEvidenceViewBuilder._related_entity_fields(
+                        related_type,
+                        related_entity,
+                    ),
                 )
             )
         return relationships
+
+    @classmethod
+    def _related_entity_id(
+        cls,
+        related: dict,
+        related_entity: dict,
+    ) -> str:
+        explicit_id = related.get("entity_id")
+        if explicit_id:
+            return str(explicit_id)
+        return cls._entity_id(related_entity)
+
+    @classmethod
+    def _related_entity_fields(
+        cls,
+        related_type: str,
+        related_entity: dict,
+    ) -> dict[str, object]:
+        entity_id_field = cls._entity_id_field(related_type)
+        return {
+            key: value
+            for key, value in related_entity.items()
+            if key != entity_id_field
+        }
+
+    @staticmethod
+    def _entity_id_field(entity_type: str) -> str | None:
+        field_name = f"{entity_type}_id"
+        return field_name if field_name in _ENTITY_ID_FIELDS else None

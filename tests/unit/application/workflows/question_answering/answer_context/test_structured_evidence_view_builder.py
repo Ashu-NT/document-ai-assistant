@@ -25,6 +25,8 @@ def test_build_converts_entity_dict_into_typed_entity() -> None:
     assert entity.source_chunk_id == "chunk_a"
     assert entity.fields["name"] == "ACME Corp"
     assert entity.fields["website"] == "https://acme.example"
+    assert "manufacturer_id" not in entity.fields
+    assert "source_chunk_id" not in entity.fields
     assert "_entity_type" not in entity.fields
     assert "related_entities" not in entity.fields
     assert entity.relationships == []
@@ -105,6 +107,8 @@ def test_build_preserves_related_procedure_steps_through_relationship() -> None:
     assert relationship.target_entity_type == "procedure"
     assert relationship.target_entity_id == "procedure_001"
     assert relationship.confidence_score == 0.9
+    assert "procedure_id" not in relationship.target_entity_fields
+    assert relationship.target_entity_fields["source_chunk_id"] == "chunk_procedure"
     assert relationship.target_entity_fields["steps"] == [
         "Depressurize the line.",
         "Remove the old filter.",
@@ -127,4 +131,68 @@ def test_build_ignores_malformed_related_entities() -> None:
 
     assert len(entities[0].relationships) == 1
     assert entities[0].relationships[0].target_entity_type == "procedure"
+    assert entities[0].relationships[0].target_entity_fields == {}
+
+
+def test_build_falls_back_to_related_entity_id_and_preserves_contact_fields() -> None:
+    builder = StructuredEvidenceViewBuilder()
+
+    entities = builder.build(
+        [
+            {
+                "manufacturer_id": "manufacturer_001",
+                "name": "ACME Corp",
+                "source_chunk_id": "chunk_manufacturer",
+                "_entity_type": "manufacturer",
+                "related_entities": [
+                    {
+                        "relationship_type": "manufacturer_has_contact",
+                        "direction": "outgoing",
+                        "status": "accepted",
+                        "entity_type": "contact_point",
+                        "entity": {
+                            "contact_point_id": "contact_001",
+                            "contact_type": "email_address",
+                            "value": "service@acme.example",
+                            "source_chunk_id": "chunk_contact",
+                        },
+                    }
+                ],
+            }
+        ]
+    )
+
+    relationship = entities[0].relationships[0]
+    assert relationship.target_entity_type == "contact_point"
+    assert relationship.target_entity_id == "contact_001"
+    assert relationship.target_entity_fields["value"] == "service@acme.example"
+    assert relationship.target_entity_fields["source_chunk_id"] == "chunk_contact"
+    assert "contact_point_id" not in relationship.target_entity_fields
+
+
+def test_build_tolerates_non_mapping_related_entity_payload() -> None:
+    builder = StructuredEvidenceViewBuilder()
+
+    entities = builder.build(
+        [
+            {
+                "task_id": "task_001",
+                "_entity_type": "maintenance_task",
+                "related_entities": [
+                    {
+                        "relationship_type": "task_uses_procedure",
+                        "direction": "outgoing",
+                        "status": "accepted",
+                        "entity_type": "procedure",
+                        "entity": "not a dict",
+                    }
+                ],
+            }
+        ]
+    )
+
+    assert len(entities) == 1
+    assert len(entities[0].relationships) == 1
+    assert entities[0].relationships[0].target_entity_type == "procedure"
+    assert entities[0].relationships[0].target_entity_id == ""
     assert entities[0].relationships[0].target_entity_fields == {}
