@@ -372,7 +372,7 @@ References:
 - a fabricated, uncalibrated number is computed and carried on every `AnswerKeyValue`/`AnswerMaintenanceEntry` for no consumer
 - if a real confidence-weighted answer strategy is added later (section 9.2/9.3), whoever wires it up needs to first decide whether these existing numbers mean anything or need to be recalibrated from scratch — right now they are decorative
 
-## 4.12 A dead configuration knob with a live divergence risk if ever wired up
+## 4.12 A dead configuration knob with a live divergence risk if ever wired up [RESOLVED in Phase 1]
 
 `AnswerGenerationRequest.max_context_chunks` is declared and checked, but no production caller ever sets it.
 
@@ -385,6 +385,8 @@ References:
 
 - this is the exact seam that made the pre-amendment double-intent-computation bug (section 0.1) a live risk rather than a theoretical one: if a future caller sets `max_context_chunks` to cap prompt size, the truncated `context_chunks` would only affect `AnswerGenerationService`'s own fallback `analyze()` path (when no `answer_intent_decision` was passed) — a caller that both sets `max_context_chunks` *and* relies on the fallback recompute could still get a different intent than whatever built `structured_context` upstream
 - whoever wires this up next should be aware of that interaction, not just the truncation itself
+
+**Resolved:** removed in Phase 1 rather than kept-and-redesigned (both field and truncation branch deleted; zero production callers existed, so this was a pure subtraction with no behavior change for any real caller). See Phase 1's status note for the full rationale.
 
 ## 4.13 Redundant parallel data modeling in `AnswerMaintenanceEntry`
 
@@ -464,10 +466,11 @@ Reference:
 
 - `src/application/workflows/question_answering/answer_context/structured_answer_context.py:49`, `:66`
 
-### E. `AnswerGenerationRequest.max_context_chunks` (missed in original audit)
+### E. `AnswerGenerationRequest.max_context_chunks` (missed in original audit) [RESOLVED in Phase 1: removed]
 
 - Declared and checked, never set by the one production caller (`QuestionAnsweringWorkflow`).
 - See section 4.12 for why this is not just inert — it is the seam that made the pre-amendment double-intent-computation bug reachable.
+- Removed rather than kept: zero production callers, so deleting it was a pure subtraction.
 
 Reference:
 
@@ -732,10 +735,10 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | 4.9 groups are prompt-facing only | Phase 5, Phase 7 | 9.5 |
 | 4.10 tests lock in the limited model | Phase 1, Phase 10 | section 11 |
 | 4.11 / 5.1.D dead `confidence` fields | Phase 9 | 9.9, reviewer 0.1 #4 |
-| 4.12 / 5.1.E dead `max_context_chunks` | Phase 1 (decision), Phase 3 (enforcement) | reviewer 0.1 #1 |
+| 4.12 / 5.1.E dead `max_context_chunks` | Phase 1 — **done** (removed) | reviewer 0.1 #1 |
 | 4.13 redundant maintenance-entry data model | Phase 2 | reviewer 0.1 #2 |
-| 4.14 no rules-version / observability parity | Phase 1, Phase 6 | 9.10, reviewer 0.1 #3 |
-| 4.15 no `AnswerIntent` exhaustiveness guard | Phase 1 | 9.8 |
+| 4.14 no rules-version / observability parity | Phase 1 — **done**, Phase 6 (consumption) | 9.10, reviewer 0.1 #3 |
+| 4.15 no `AnswerIntent` exhaustiveness guard | Phase 1 — **done** | 9.8 |
 
 ## Phase 1 - Baseline protection [IMPLEMENTED]
 
