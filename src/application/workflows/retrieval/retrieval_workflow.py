@@ -119,7 +119,7 @@ class RetrievalWorkflow:
         validation = self.query_validator.validate(working_query)
         validation.raise_if_invalid()
         diagnostics: dict[str, object] = {}
-        intent = self.query_analyzer.intent_inferer.infer(working_query)
+        intent = self.query_analyzer.intent_inferer.resolve(working_query)
 
         if trace_recorder is not None:
             trace_recorder.record_query_analysis(working_query, intent=intent)

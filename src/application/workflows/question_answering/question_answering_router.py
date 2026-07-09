@@ -43,7 +43,7 @@ class QuestionAnsweringRouter:
             document_id=document_id,
         )
         analyzed = self._query_analyzer.analyze(raw_query)
-        intent = self._query_analyzer.intent_inferer.infer(analyzed)
+        intent = self._query_analyzer.intent_inferer.resolve(analyzed)
 
         if intent == RetrievalQueryIntent.DOCUMENT_EXPLORATION:
             return QuestionAnsweringRoute.DOCUMENT_EXPLORATION, analyzed, intent

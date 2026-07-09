@@ -11,6 +11,8 @@ ResolutionTier = Literal[
     "scored",
     "chunk_type_fallback",
     "identifier_fallback",
+    "comparative_fallback",
+    "fuzzy_fallback",
     "general",
 ]
 
@@ -46,11 +48,18 @@ class RetrievalQueryIntentClassification:
         separation from the runner-up. Sketch only: the eventual
         LLM-clarification trigger owns the final formula/threshold; this
         exists so that consumer can be built without changing this type."""
-        if self.resolution_tier != "scored":
-            return 0.5
-        strength = min(self.score / 8.0, 1.0)
-        separation = 1.0 if self.runner_up_intent is None else min(self.gap / 4.0, 1.0)
-        return round(0.5 * strength + 0.5 * separation, 3)
+        if self.resolution_tier == "scored":
+            strength = min(self.score / 8.0, 1.0)
+            separation = (
+                1.0 if self.runner_up_intent is None else min(self.gap / 4.0, 1.0)
+            )
+            return round(0.5 * strength + 0.5 * separation, 3)
+        if self.resolution_tier in ("comparative_fallback", "fuzzy_fallback"):
+            # Weaker signal than chunk_type_fallback/identifier_fallback: no
+            # topic marker matched at all, only a shape heuristic (comparison
+            # phrasing) or a near-miss on a marker's exact spelling.
+            return 0.3
+        return 0.5
 
     def top_intents_within(self, margin: int) -> tuple[RetrievalQueryIntent, ...]:
         """Every candidate intent whose score is within `margin` of the

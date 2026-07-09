@@ -50,6 +50,7 @@ class RetrievalQueryAnalyzer:
             query.rewritten_query = rewritten_query
 
         intent = self.intent_inferer.infer(query)
+        query.detected_intent = intent.value
         preferred_chunk_types = self.chunk_type_preference_mapper.map(
             query=query,
             intent=intent,

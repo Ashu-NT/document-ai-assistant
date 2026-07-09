@@ -1,12 +1,11 @@
 """Regression tests for query-understanding coverage gaps identified during
-the Phase 4 enterprise-hardening review: one-word queries, typos in the
-trigger markers themselves, multi-intent/near-tie queries beyond the existing
+the Phase 4 enterprise-hardening review: one-word queries, typo tolerance via
+the fuzzy fallback tier, multi-intent/near-tie queries beyond the existing
 characterization tests, non-English text, and the rewriter-then-intent
-interaction. Several of these document a KNOWN, ACCEPTED gap (no typo
-tolerance, no non-English support) rather than a bug -- the deterministic
-layer is intentionally literal; low-confidence/GENERAL results on these
-inputs are exactly the signal the future LLM-clarification layer (Phase 5)
-is meant to catch."""
+interaction. Non-English text still documents a KNOWN, ACCEPTED gap (no
+translation/language detection) rather than a bug -- low-confidence/GENERAL
+results on that input are exactly the signal the future LLM-clarification
+layer (Phase 5) is meant to catch."""
 
 from src.application.workflows.retrieval.retrieval_query_analyzer import (
     RetrievalQueryAnalyzer,
@@ -44,40 +43,96 @@ class TestOneWordQueries:
 
 
 # ---------------------------------------------------------------------------
-# Typos in the trigger markers themselves -- the deterministic layer does
-# plain substring matching with no fuzzy/typo tolerance. A typo inside the
-# ONLY marker word present causes a complete miss, not a degraded match.
-# This is a known, accepted gap: it's exactly the low-confidence signal the
-# future LLM clarification layer should act on, not something the
-# deterministic layer should silently paper over with fuzzy matching.
+# Typos in the trigger markers themselves. The exact/keyword scoring pass has
+# no fuzzy tolerance -- but when it finds nothing at all, a typo-tolerant
+# fuzzy fallback (single-word markers only, difflib ratio >= 0.82, tuned
+# against real typo examples) gets a second look before giving up to GENERAL.
 # ---------------------------------------------------------------------------
 
-class TestTyposInTriggerMarkersAreNotTolerated:
-    def test_typo_in_the_only_troubleshooting_marker_misses_entirely(self) -> None:
+class TestTypoTolerantFuzzyFallback:
+    def test_typo_in_the_only_troubleshooting_marker_still_resolves_via_fuzzy_match(
+        self,
+    ) -> None:
         classification = inferer.classify(
             _make_query("How do I troublshoot the pump?")
         )
-        assert classification.intent == RetrievalQueryIntent.GENERAL
-        assert RetrievalQueryIntent.TROUBLESHOOTING not in classification.scores
+        assert classification.intent == RetrievalQueryIntent.TROUBLESHOOTING
+        assert classification.resolution_tier == "fuzzy_fallback"
+        assert classification.confidence == 0.3
+        # scores reflects the fuzzy pass's own hits here (the exact pass
+        # found nothing, which is exactly why the fuzzy pass ran at all).
+        assert classification.scores == {RetrievalQueryIntent.TROUBLESHOOTING: 4}
 
-    def test_typo_in_the_only_specification_marker_misses_entirely(self) -> None:
-        classification = inferer.classify(_make_query("What is the presure range?"))
-        assert classification.intent == RetrievalQueryIntent.GENERAL
-        assert RetrievalQueryIntent.SPECIFICATION not in classification.scores
-
-    def test_typo_in_troubleshooting_marker_still_recovers_via_a_second_intact_marker(
+    def test_typo_in_the_only_specification_marker_still_resolves_via_fuzzy_match(
         self,
     ) -> None:
-        """'cuases' is a typo, but 'vibration' isn't a marker either -- this
-        query only has ONE candidate marker and it's misspelled, so unlike
-        the existing test_identifier_inventory_query_with_typo_still_maps_to_
-        identifier case (where the typo is in an incidental word, not the
-        marker itself), there's no fallback signal left and it lands on
-        GENERAL. Documented here as the contrasting case."""
+        classification = inferer.classify(_make_query("What is the presure range?"))
+        assert classification.intent == RetrievalQueryIntent.SPECIFICATION
+        assert classification.resolution_tier == "fuzzy_fallback"
+
+    def test_typo_recovers_even_when_the_only_other_word_is_also_not_a_marker(
+        self,
+    ) -> None:
+        """'cuases' is a typo of 'causes' and 'vibration' isn't a marker
+        either -- this query has exactly one fuzzy-recoverable signal and
+        nothing else, yet still resolves instead of falling to GENERAL."""
         classification = inferer.classify(
             _make_query("What are the likely cuases of pump vibration?")
         )
+        assert classification.intent == RetrievalQueryIntent.TROUBLESHOOTING
+        assert classification.resolution_tier == "fuzzy_fallback"
+
+    def test_fuzzy_pass_still_respects_negation(self) -> None:
+        """A near-miss fuzzy match of a token against a marker it's
+        VERBATIM (ratio 1.0 -- e.g. a negated 'safety') must not resurrect a
+        negated exact hit. A separate, non-negated typo elsewhere in the
+        same query still resolves normally."""
+        classification = inferer.classify(
+            _make_query("Not a safety concern here, but there is a saftey issue too.")
+        )
+        assert classification.intent == RetrievalQueryIntent.SAFETY
+        assert classification.resolution_tier == "fuzzy_fallback"
+
+    def test_exact_marker_match_is_preferred_over_fuzzy_when_both_are_present(
+        self,
+    ) -> None:
+        """Fuzzy fallback only runs when the exact pass finds NOTHING -- a
+        query with one correctly-spelled marker must resolve via the normal
+        scored path even if another word elsewhere looks like a typo."""
+        classification = inferer.classify(
+            _make_query("What are the causes of a hazrd on this pump?")
+        )
+        assert classification.intent == RetrievalQueryIntent.TROUBLESHOOTING
+        assert classification.resolution_tier == "scored"
+
+    def test_fuzzy_matching_only_targets_single_word_markers_not_multi_word_phrases(
+        self,
+    ) -> None:
+        """Multi-word markers (e.g. 'service interval') are excluded from the
+        fuzzy pool entirely -- fuzzy matching can't reconstruct a two-word
+        phrase from one mistyped token. Here 'servide' (typo of 'service')
+        has no standalone single-word marker to match, but 'intervl' (typo of
+        'interval', which IS also its own standalone MAINTENANCE marker)
+        still resolves -- via that single-word marker, not the phrase."""
+        classification = inferer.classify(
+            _make_query("What is the servide intervl for this pump?")
+        )
+        assert classification.intent == RetrievalQueryIntent.MAINTENANCE
+        assert classification.resolution_tier == "fuzzy_fallback"
+
+    def test_short_words_are_excluded_from_fuzzy_matching_to_avoid_false_positives(
+        self,
+    ) -> None:
+        """Markers/tokens under 5 characters are excluded entirely (e.g.
+        'step'/'run') since short-word edit-distance ratios are unreliable
+        (compare 'step' vs 'stop') -- a typo of a short marker still misses."""
+        classification = inferer.classify(_make_query("What are the setp for this?"))
         assert classification.intent == RetrievalQueryIntent.GENERAL
+
+    def test_a_genuinely_unrelated_word_has_no_fuzzy_near_miss_either(self) -> None:
+        classification = inferer.classify(_make_query("pump"))
+        assert classification.intent == RetrievalQueryIntent.GENERAL
+        assert classification.resolution_tier == "general"
 
 
 # ---------------------------------------------------------------------------

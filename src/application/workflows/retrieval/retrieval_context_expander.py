@@ -178,7 +178,7 @@ class RetrievalContextExpander:
         if not chunks:
             return list(chunks)
 
-        query_intent = self.query_intent_inferer.infer(query)
+        query_intent = self.query_intent_inferer.resolve(query)
         chunk_cache: dict[str, list] = {}
         index_cache: dict[str, "_DocumentChunkIndex"] = {}
         candidates_by_anchor_id: dict[str, list[RetrievalContextCandidate]] = {}

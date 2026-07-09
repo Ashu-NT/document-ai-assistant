@@ -116,7 +116,7 @@ class RetrievalBenchmarkEvaluator:
                         context_section_path_hits=context_section_path_hits,
                     ),
                     used_context_expansion=workflow_output.used_context_expansion,
-                    actual_intent=self.intent_inferer.infer(benchmark_case.query),
+                    actual_intent=self.intent_inferer.resolve(benchmark_case.query),
                 )
             )
             self._emit_progress(

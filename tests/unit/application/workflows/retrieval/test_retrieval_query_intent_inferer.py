@@ -233,6 +233,53 @@ class TestScoredClassification:
 
 
 # ---------------------------------------------------------------------------
+# resolve(): reads RetrievalQuery.detected_intent when the query was already
+# analyzed, instead of re-running the classifier -- the mechanism that lets
+# RetrievalWorkflow/QuestionAnsweringRouter/RetrievalContextExpander/
+# DeterministicHybridReranker avoid redundant infer() calls on the same
+# already-analyzed query object within one request.
+# ---------------------------------------------------------------------------
+
+class TestResolveAvoidsRedundantComputation:
+    def test_resolve_computes_fresh_when_query_not_yet_analyzed(self) -> None:
+        query = _make_query("This is a safety concern.")
+        assert query.analyzed is False
+        assert inferer.resolve(query) == RetrievalQueryIntent.SAFETY
+
+    def test_resolve_reads_cached_value_instead_of_recomputing(self) -> None:
+        query = _make_query("This is a safety concern.")
+        query.analyzed = True
+        query.detected_intent = "procedure"  # deliberately wrong vs. the text
+
+        assert inferer.resolve(query) == RetrievalQueryIntent.PROCEDURE
+
+    def test_resolve_falls_back_to_infer_when_analyzed_but_no_cached_value(
+        self,
+    ) -> None:
+        query = _make_query("This is a safety concern.")
+        query.analyzed = True
+        assert query.detected_intent is None
+
+        assert inferer.resolve(query) == RetrievalQueryIntent.SAFETY
+
+    def test_resolve_matches_infer_after_a_real_analyze_call(self) -> None:
+        from src.application.workflows.retrieval.retrieval_query_analyzer import (
+            RetrievalQueryAnalyzer,
+        )
+
+        analyzer = RetrievalQueryAnalyzer()
+        query = RetrievalQuery(query_id="q_test", query_text="This is a safety concern.")
+
+        analyzed = analyzer.analyze(query)
+
+        assert analyzed.detected_intent == RetrievalQueryIntent.SAFETY.value
+        assert inferer.resolve(analyzed) == RetrievalQueryIntent.SAFETY
+
+    def test_resolve_returns_general_for_none_query(self) -> None:
+        assert inferer.resolve(None) == RetrievalQueryIntent.GENERAL
+
+
+# ---------------------------------------------------------------------------
 # Negation awareness: a marker preceded by a negation cue within a short
 # lookback window no longer contributes to its intent's score.
 # ---------------------------------------------------------------------------
@@ -298,6 +345,50 @@ class TestComparativeSignal:
     def test_non_comparative_query_is_not_flagged(self) -> None:
         query = _make_query("What is the operating pressure?")
         assert inferer.classify(query).is_comparative is False
+
+    def test_pure_comparative_query_with_no_topic_marker_resolves_to_overview_not_general(
+        self,
+    ) -> None:
+        """'difference between valve A and valve B' has no FIGURE/TABLE/
+        IDENTIFIER/SPECIFICATION/etc. marker at all -- before the comparative
+        fallback tier existed this fell all the way to GENERAL (no chunk-type
+        preference whatsoever). OVERVIEW's broad preference list is a
+        materially better default for a comparison question with an unknown
+        topic."""
+        query = _make_query("What is the difference between valve A and valve B?")
+        classification = inferer.classify(query)
+        assert classification.intent == RetrievalQueryIntent.OVERVIEW
+        assert classification.resolution_tier == "comparative_fallback"
+        assert classification.is_comparative is True
+        assert classification.confidence == 0.3
+
+    def test_comparative_fallback_does_not_preempt_a_real_topic_marker(self) -> None:
+        """A comparative query that DOES have a topic marker must still be
+        resolved by the normal scored path -- the fallback only applies when
+        scoring finds nothing at all."""
+        query = _make_query(
+            "What is the difference between the operating pressure of pump A "
+            "and pump B?"
+        )
+        classification = inferer.classify(query)
+        assert classification.intent == RetrievalQueryIntent.SPECIFICATION
+        assert classification.resolution_tier == "scored"
+
+    def test_comparative_fallback_does_not_preempt_the_identifier_fallback(
+        self,
+    ) -> None:
+        """A comparative query with a detected identifier and no topic
+        marker should still prefer the identifier_fallback tier over the
+        comparative one -- a concrete identifier is a stronger signal than a
+        comparison shape."""
+        query = RetrievalQuery(
+            query_id="q_comparative_identifier",
+            query_text="What is the difference between FWC12 and FWC13?",
+            detected_identifiers=["fwc12", "fwc13"],
+        )
+        classification = inferer.classify(query)
+        assert classification.intent == RetrievalQueryIntent.IDENTIFIER
+        assert classification.resolution_tier == "identifier_fallback"
 
     def test_comparative_flag_does_not_change_the_winning_intent(self) -> None:
         """The comparative flag is additive signal, not a routing decision --

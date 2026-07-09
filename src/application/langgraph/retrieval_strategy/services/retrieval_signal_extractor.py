@@ -56,6 +56,19 @@ _SPECIFICATION_TERMS = (
     "amperes",
     "mm",
 )
+# NOTE on cross-module duplication (investigated, not merged): see the
+# matching note above RetrievalQueryIntentInferer._MAINTENANCE_MARKERS in
+# src/application/workflows/retrieval/retrieval_query_intent_inferer.py. This
+# list also conflates general-maintenance-topic terms ("maintenance",
+# "service", "inspection") with interval/frequency-specific terms ("daily",
+# "weekly", "monthly", "quarterly", "annually", "schedule") in one bucket --
+# a separate internal design difference from this module's own float-weighted
+# signal scoring, not something fixed as part of the maintenance-signal
+# cross-module investigation. Left separate from the other two lists,
+# deliberately, for the same reason: this feeds LangGraph strategy-signal
+# weighting, a different downstream decision with a different
+# false-positive tolerance than either retrieval targeting or answer
+# formatting.
 _MAINTENANCE_TERMS = (
     "maintenance",
     "maintenance interval",

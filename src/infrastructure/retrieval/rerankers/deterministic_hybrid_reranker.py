@@ -39,7 +39,7 @@ class DeterministicHybridReranker(Reranker):
         query: RetrievalQuery,
         chunks: list[RetrievedChunk],
     ) -> list[RetrievedChunk]:
-        intent = self.intent_inferer.infer(query)
+        intent = self.intent_inferer.resolve(query)
         query_terms = extract_query_terms(query.effective_query())
         query_identifiers = {
             identifier.lower()

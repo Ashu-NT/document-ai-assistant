@@ -28,6 +28,17 @@ _SPECIFICATION_TERMS = (
     "power",
     "dn ",
 )
+# NOTE on cross-module duplication (investigated, not merged): see the
+# matching note above RetrievalQueryIntentInferer._MAINTENANCE_MARKERS in
+# src/application/workflows/retrieval/retrieval_query_intent_inferer.py.
+# This list is intentionally broader (bare "service"/"inspection",
+# "overhaul", "routine maintenance") than the retrieval inferer's -- answer
+# FORMATTING tolerates more false positives than retrieval TARGETING does,
+# since misjudging the answer's shape is a lower-cost mistake than fetching
+# the wrong chunk types. A third, also-drifted list exists in
+# RetrievalSignalExtractor._MAINTENANCE_TERMS for LangGraph strategy
+# signals. Not unified -- three different downstream decisions with
+# different false-positive tolerances.
 _MAINTENANCE_TERMS = (
     "maintenance",
     "maintenance task",

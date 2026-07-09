@@ -24,6 +24,15 @@ class RetrievalQuery:
 
     analyzed: bool = False
 
+    # Plain string, not the RetrievalQueryIntent enum -- that enum is
+    # application-layer, and this domain module must not import from
+    # src.application (mirrors the RetrievedChunk.retrieval_source
+    # precedent: an application-owned vocabulary stored as a bare string on
+    # the domain object). Set by RetrievalQueryAnalyzer.analyze() so callers
+    # that already have an analyzed query can skip re-running intent
+    # inference; see RetrievalQueryIntentInferer.resolve().
+    detected_intent: str | None = None
+
     def effective_query(self) -> str:
         return self.rewritten_query or self.query_text
 

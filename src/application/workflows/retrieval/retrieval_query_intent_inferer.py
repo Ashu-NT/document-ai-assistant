@@ -1,3 +1,4 @@
+import difflib
 import re
 
 from src.application.workflows.retrieval.retrieval_query_intent import (
@@ -130,6 +131,24 @@ _PROCEDURE_MARKERS: tuple[str, ...] = (
     "commissioning",
     "lubricate",
 )
+# NOTE on cross-module duplication (investigated, not merged): "general
+# maintenance topic" detection is independently reimplemented in at least
+# three places -- here, AnswerIntentAnalyzer._MAINTENANCE_TERMS (answer
+# formatting), and RetrievalSignalExtractor._MAINTENANCE_TERMS (LangGraph
+# strategy signals) -- and their vocabularies have drifted by more than a
+# marker or two (e.g. this list deliberately excludes bare "service" and
+# "inspection", which the other two include, since those bare words are
+# broad enough to misfire on retrieval chunk-type targeting specifically --
+# "inspection" alone already overlaps AnswerIntentAnalyzer's OWN
+# CERTIFICATION_TERMS). This is unlike the MAINTENANCE_INTERVAL_MARKERS
+# consolidation in maintenance_signal_detection.py, where the two lists
+# solved the identical narrow sub-problem for two consumers and differed by
+# exactly one marker each way -- a safe, mechanical merge. Here the three
+# lists serve three different downstream decisions (what to retrieve vs. how
+# to format an answer vs. which strategy signal to weight) with different
+# false-positive tolerances, so forcing a shared vocabulary would either
+# broaden retrieval's targeting (risking wrong chunk types) or narrow answer
+# formatting's tuning. Left separate, deliberately, rather than merged.
 _MAINTENANCE_MARKERS: tuple[str, ...] = (
     "maintenance",
     "service interval",
@@ -447,6 +466,64 @@ def _is_comparative_query(query_text: str) -> bool:
     return any(marker in query_text for marker in _COMPARATIVE_MARKERS)
 
 
+# --- Typo-tolerant fuzzy fallback ---------------------------------------
+#
+# Only ever consulted when the exact/keyword scoring pass above matched
+# NOTHING at all (a single exact hit already clears _MIN_SCORE and wins, so
+# "no winner" implies "zero markers matched") -- a misspelled marker like
+# "troublshoot" or "presure" would otherwise fall straight to GENERAL. Single
+# words only (multi-word markers like "service interval" aren't meaningful
+# fuzzy-match targets for one query token) and a floor on marker/token length,
+# since short words produce unreliable edit-distance ratios (e.g. "step" vs
+# "stop"). Cutoff tuned empirically against real typo examples (0.833-0.957)
+# with a safety margin above realistic negative-control words (<=0.8).
+_FUZZY_MATCH_CUTOFF = 0.82
+_FUZZY_MIN_WORD_LENGTH = 5
+
+_FUZZY_MARKER_LOOKUP: dict[str, RetrievalQueryIntent] = {
+    marker: intent
+    for intent, markers in (
+        (RetrievalQueryIntent.FIGURE, _FIGURE_MARKERS),
+        (RetrievalQueryIntent.TABLE, _TABLE_MARKERS),
+        (RetrievalQueryIntent.SPECIFICATION, _SPECIFICATION_MARKERS),
+        (RetrievalQueryIntent.TROUBLESHOOTING, _TROUBLESHOOTING_MARKERS),
+        (RetrievalQueryIntent.SAFETY, _SAFETY_MARKERS),
+        (RetrievalQueryIntent.MAINTENANCE, _MAINTENANCE_MARKERS),
+        (RetrievalQueryIntent.PROCEDURE, _PROCEDURE_MARKERS),
+        (RetrievalQueryIntent.OVERVIEW, _OVERVIEW_KEYWORD_MARKERS),
+    )
+    for marker in markers
+    if " " not in marker and len(marker) >= _FUZZY_MIN_WORD_LENGTH
+}
+_FUZZY_MARKER_POOL: tuple[str, ...] = tuple(_FUZZY_MARKER_LOOKUP.keys())
+
+
+def _fuzzy_score_candidates(query_text: str) -> dict[RetrievalQueryIntent, int]:
+    # Position-aware (not a deduped token set) so a negated occurrence of a
+    # word that also happens to BE a marker verbatim -- e.g. "safety" in
+    # "not a safety concern" -- doesn't get resurrected here after the exact
+    # keyword pass above correctly suppressed it. A fuzzy "match" of a token
+    # against itself is a ratio of 1.0, so without this check negation would
+    # be silently bypassed for any word that is itself an exact marker.
+    hit_counts: dict[RetrievalQueryIntent, int] = {}
+    for match in re.finditer(r"[a-z]+", query_text):
+        token = match.group()
+        if len(token) < _FUZZY_MIN_WORD_LENGTH:
+            continue
+        close_matches = difflib.get_close_matches(
+            token, _FUZZY_MARKER_POOL, n=1, cutoff=_FUZZY_MATCH_CUTOFF
+        )
+        if not close_matches or _is_negated(query_text, match.start()):
+            continue
+        intent = _FUZZY_MARKER_LOOKUP[close_matches[0]]
+        hit_counts[intent] = hit_counts.get(intent, 0) + 1
+
+    return {
+        intent: _WEIGHT_KEYWORD * min(count, _KEYWORD_HIT_CAP)
+        for intent, count in hit_counts.items()
+    }
+
+
 def _infer_from_chunk_types(query: RetrievalQuery) -> RetrievalQueryIntent | None:
     if ChunkType.SPARE_PARTS_TABLE in query.chunk_types:
         return RetrievalQueryIntent.TABLE
@@ -484,6 +561,22 @@ def _infer_from_chunk_types(query: RetrievalQuery) -> RetrievalQueryIntent | Non
 
 
 class RetrievalQueryIntentInferer:
+    def resolve(self, query: RetrievalQuery | None) -> RetrievalQueryIntent:
+        """Like infer(), but reads RetrievalQuery.detected_intent instead of
+        recomputing when the query was already analyzed -- RetrievalQueryAnalyzer
+        .analyze() stashes the result there. Callers downstream of analyze()
+        within the same request (RetrievalWorkflow, QuestionAnsweringRouter,
+        RetrievalContextExpander, DeterministicHybridReranker) should call
+        this instead of infer() to avoid re-running the classifier on a query
+        whose text hasn't changed since it was analyzed."""
+        if (
+            query is not None
+            and query.analyzed
+            and query.detected_intent is not None
+        ):
+            return RetrievalQueryIntent(query.detected_intent)
+        return self.infer(query)
+
     def infer(self, query: RetrievalQuery | None) -> RetrievalQueryIntent:
         classification = self.classify(query)
         _logger.info(
@@ -578,6 +671,50 @@ class RetrievalQueryIntentInferer:
                 scores=scores,
                 resolution_tier="identifier_fallback",
                 is_comparative=is_comparative,
+            )
+
+        fuzzy_scores = _fuzzy_score_candidates(query_text)
+        fuzzy_winner, fuzzy_score, fuzzy_runner_up, fuzzy_runner_up_score = (
+            _resolve_scores(fuzzy_scores)
+        )
+        if fuzzy_winner is not None:
+            _logger.info(
+                "retrieval_intent_fallback_fuzzy intent=%s query_id=%s query_text=%r",
+                fuzzy_winner.value,
+                query.query_id,
+                query_text,
+            )
+            return RetrievalQueryIntentClassification(
+                intent=fuzzy_winner,
+                score=fuzzy_score,
+                runner_up_intent=fuzzy_runner_up,
+                runner_up_score=fuzzy_runner_up_score,
+                scores=fuzzy_scores,
+                resolution_tier="fuzzy_fallback",
+                is_comparative=is_comparative,
+            )
+
+        if is_comparative:
+            # A comparison shape ("difference between X and Y", "X vs Y")
+            # with no topic marker at all still isn't a fully unclassified
+            # query -- OVERVIEW's broad, graceful chunk-type preference list
+            # (OVERVIEW -> GENERAL -> OPERATION_INSTRUCTION ->
+            # INSTALLATION_INSTRUCTION -> TECHNICAL_SPECIFICATION, see
+            # RetrievalQueryChunkTypePreferenceMapper) is a materially better
+            # default than GENERAL's "no preference at all" fallthrough.
+            _logger.info(
+                "retrieval_intent_fallback_comparative query_id=%s query_text=%r",
+                query.query_id,
+                query_text,
+            )
+            return RetrievalQueryIntentClassification(
+                intent=RetrievalQueryIntent.OVERVIEW,
+                score=0,
+                runner_up_intent=None,
+                runner_up_score=0,
+                scores=scores,
+                resolution_tier="comparative_fallback",
+                is_comparative=True,
             )
 
         _logger.info(
