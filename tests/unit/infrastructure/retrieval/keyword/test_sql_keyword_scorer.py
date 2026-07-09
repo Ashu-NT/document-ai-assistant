@@ -1,6 +1,6 @@
 """Unit tests for SqlKeywordScorer source-weighted and normalised scoring."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -32,7 +32,7 @@ def _make_document(
         document_type=document_type.value,
         language="en",
         page_count=1,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
 
 
@@ -60,7 +60,7 @@ def _make_chunk(
         chunk_total=1,
         char_count=len(content),
         token_count_estimate=len(content.split()),
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
 
 

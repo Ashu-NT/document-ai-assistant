@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from src.domain.common import ChunkType, DocumentType
 from src.domain.retrieval import RetrievalQuery
@@ -50,7 +50,7 @@ def make_document(
         document_type=document_type.value,
         language="en",
         page_count=1,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
 
 
@@ -77,7 +77,7 @@ def make_chunk(
         chunk_total=1,
         char_count=len(content),
         token_count_estimate=len(content.split()),
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
 
 
