@@ -201,6 +201,7 @@ def test_last_diagnostics_reports_dropped_row_count_after_partial_parse() -> Non
     assert result is not None
     diagnostics = renderer.last_diagnostics()
     assert diagnostics["spare_parts_dropped_row_count"] == 1
+    assert diagnostics["spare_parts_partial"] is True
     assert (
         diagnostics["spare_parts_table_parser_rules_version"]
         == SPARE_PARTS_TABLE_PARSER_RULES_VERSION
@@ -223,6 +224,7 @@ def test_last_diagnostics_reports_zero_when_no_rows_are_dropped() -> None:
 
     assert result is not None
     assert renderer.last_diagnostics()["spare_parts_dropped_row_count"] == 0
+    assert renderer.last_diagnostics()["spare_parts_partial"] is False
 
 
 def test_last_diagnostics_resets_to_zero_for_unsupported_intent() -> None:
@@ -239,6 +241,7 @@ def test_last_diagnostics_resets_to_zero_for_unsupported_intent() -> None:
         chunks=[_make_chunk(content=content, section_title="Spare Parts List")],
     )
     assert renderer.last_diagnostics()["spare_parts_dropped_row_count"] == 1
+    assert renderer.last_diagnostics()["spare_parts_partial"] is True
 
     result = renderer.render(
         question="table of spare part list",
@@ -248,6 +251,7 @@ def test_last_diagnostics_resets_to_zero_for_unsupported_intent() -> None:
 
     assert result is None
     assert renderer.last_diagnostics()["spare_parts_dropped_row_count"] == 0
+    assert renderer.last_diagnostics()["spare_parts_partial"] is False
 
 
 def test_render_returns_none_when_question_does_not_mention_spare_parts() -> None:

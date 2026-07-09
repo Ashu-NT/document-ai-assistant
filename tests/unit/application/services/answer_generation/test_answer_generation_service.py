@@ -378,6 +378,7 @@ def test_generate_uses_deterministic_spare_parts_renderer_and_skips_llm() -> Non
     assert result.model_name == "deterministic_spare_parts_renderer"
     assert result.diagnostics["deterministic_renderer"] == "spare_parts_list_renderer"
     assert result.diagnostics["spare_parts_dropped_row_count"] == 0
+    assert result.diagnostics["spare_parts_partial"] is False
     assert "spare_parts_table_parser_rules_version" in result.diagnostics
     assert llm.calls == []
 

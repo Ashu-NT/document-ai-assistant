@@ -65,6 +65,7 @@ class SparePartsListRenderer:
     def __init__(self, *, table_parser: SparePartsTableParser | None = None) -> None:
         self._table_parser = table_parser or SparePartsTableParser()
         self._last_dropped_row_count = 0
+        self._last_partial = False
 
     def render(
         self,
@@ -75,6 +76,7 @@ class SparePartsListRenderer:
         resolved_structured_entities: Sequence[dict] = (),
     ) -> str | None:
         self._last_dropped_row_count = 0
+        self._last_partial = False
         if answer_intent not in _SUPPORTED_INTENTS:
             return None
         if not self._looks_like_spare_parts_request(question):
@@ -99,6 +101,7 @@ class SparePartsListRenderer:
             return None
 
         self._last_dropped_row_count = sum(group.dropped_row_count for group in groups)
+        self._last_partial = any(group.partial for group in groups)
         return self._render_groups(groups)
 
     def last_diagnostics(self) -> dict[str, object]:
@@ -108,11 +111,13 @@ class SparePartsListRenderer:
         instead of that signal only ever reaching the user as the one-line
         `_PARTIAL_CONTENT_NOTICE` inside the rendered text. Only meaningful
         after a render() call that took the chunk-parsing path -- the
-        structured-entity path and every early-return path leave this at 0,
-        since SparePartsTableParser was not exercised in those cases."""
+        structured-entity path and every early-return path leave the drop
+        count at 0 and partial at False, since SparePartsTableParser was
+        not exercised in those cases."""
         return {
             "spare_parts_table_parser_rules_version": SPARE_PARTS_TABLE_PARSER_RULES_VERSION,
             "spare_parts_dropped_row_count": self._last_dropped_row_count,
+            "spare_parts_partial": self._last_partial,
         }
 
     @staticmethod
