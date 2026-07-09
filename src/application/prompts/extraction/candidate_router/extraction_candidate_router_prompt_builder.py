@@ -12,6 +12,10 @@ _CATEGORY_DESCRIPTIONS: dict[ExtractionPromptType, str] = {
     ),
     ExtractionPromptType.MANUFACTURER: "who made an item",
     ExtractionPromptType.SUPPLIER: "who sold or distributed an item",
+    ExtractionPromptType.CONTACT_POINT: (
+        "contact details such as phone numbers, fax numbers, email addresses, "
+        "or websites"
+    ),
     ExtractionPromptType.EQUIPMENT: (
         "named pieces of equipment (name, model, serial)"
     ),

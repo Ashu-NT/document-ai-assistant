@@ -70,6 +70,17 @@ EXTRACTION_PAYLOAD_CONTRACTS: dict[str, ExtractionPayloadContract] = {
         ),
         required_field_groups=(("name", "supplier_name"),),
     ),
+    "contact_points": ExtractionPayloadContract(
+        content_keys=(
+            "contact_type",
+            "type",
+            "value",
+            "label",
+            "owner_name",
+            "owner_entity_type",
+        ),
+        required_field_groups=(("value",),),
+    ),
     "procedures": ExtractionPayloadContract(
         content_keys=(
             "title",

@@ -21,6 +21,20 @@ def test_detects_spare_part_for_quantity_question() -> None:
     )
 
 
+def test_detects_manufacturer_for_email_question() -> None:
+    assert (
+        detect_structured_entity_type("what is the manufacturer email")
+        == "manufacturer"
+    )
+
+
+def test_detects_supplier_for_phone_question() -> None:
+    assert (
+        detect_structured_entity_type("what is the supplier phone number")
+        == "supplier"
+    )
+
+
 def test_returns_none_without_a_detail_term() -> None:
     assert detect_structured_entity_type("who is the manufacturer of this pump") is None
 

@@ -20,6 +20,7 @@ class SemanticEntityType(StrEnum):
     EQUIPMENT = "equipment"
     MANUFACTURER = "manufacturer"
     SUPPLIER = "supplier"
+    CONTACT_POINT = "contact_point"
     SPECIFICATION = "specification"
     SAFETY_WARNING = "safety_warning"
     TROUBLESHOOTING_ENTRY = "troubleshooting_entry"
@@ -34,6 +35,8 @@ class SemanticRelationshipType(StrEnum):
     EQUIPMENT_HAS_SPARE_PART = "equipment_has_spare_part"
     EQUIPMENT_HAS_SPECIFICATION = "equipment_has_specification"
     EQUIPMENT_HAS_TROUBLESHOOTING_ENTRY = "equipment_has_troubleshooting_entry"
+    MANUFACTURER_HAS_CONTACT_POINT = "manufacturer_has_contact_point"
+    SUPPLIER_HAS_CONTACT_POINT = "supplier_has_contact_point"
 
 
 class SemanticRelationshipStatus(StrEnum):

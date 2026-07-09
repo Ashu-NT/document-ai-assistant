@@ -1,6 +1,12 @@
 _STRUCTURED_DETAIL_TERMS = (
     "website",
     "url",
+    "email",
+    "e-mail",
+    "phone",
+    "telephone",
+    "fax",
+    "contact",
     "country",
     "based in",
     "located",

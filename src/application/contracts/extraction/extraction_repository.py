@@ -1,6 +1,7 @@
 from typing import Protocol
 
 from src.domain.extraction import (
+    ContactPoint,
     EquipmentInfo,
     ExtractionResult,
     MaintenanceInterval,
@@ -68,6 +69,12 @@ class ExtractionRepository(Protocol):
     ) -> list[Supplier]:
         ...
 
+    def list_contact_points(
+        self,
+        document_id: str | None = None,
+    ) -> list[ContactPoint]:
+        ...
+
     def list_procedures(
         self,
         document_id: str | None = None,
@@ -131,6 +138,13 @@ class ExtractionRepository(Protocol):
         query: str,
         document_id: str | None = None,
     ) -> list[Supplier]:
+        ...
+
+    def search_contact_points(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[ContactPoint]:
         ...
 
     def search_procedures(

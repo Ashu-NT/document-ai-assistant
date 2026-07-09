@@ -85,6 +85,7 @@ def test_narrowed_prompt_with_all_types_matches_legacy_family_set(sample_chunk) 
         "equipment",
         "manufacturers",
         "suppliers",
+        "contact_points",
         "procedures",
         "specifications",
         "safety_warnings",

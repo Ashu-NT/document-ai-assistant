@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.domain.extraction import ExtractionResult, SemanticRelationship
 from src.infrastructure.db.mappers import (
+    ContactPointMapper,
     EquipmentInfoMapper,
     ExtractionResultMapper,
     MaintenanceIntervalMapper,
@@ -18,6 +19,7 @@ from src.infrastructure.db.mappers import (
     TroubleshootingEntryMapper,
 )
 from src.infrastructure.db.orm_models import (
+    ContactPointORM,
     EquipmentInfoORM,
     ExtractionResultORM,
     MaintenanceIntervalORM,
@@ -165,6 +167,16 @@ class ExtractionWriter:
         )
         bulk_merge(
             self.session,
+            ContactPointORM,
+            [
+                ContactPointMapper.to_orm(
+                    contact_point, extraction_id=result.extraction_id
+                )
+                for contact_point in result.contact_points
+            ],
+        )
+        bulk_merge(
+            self.session,
             ProcedureORM,
             [
                 ProcedureMapper.to_orm(procedure, extraction_id=result.extraction_id)
@@ -255,6 +267,11 @@ class ExtractionWriter:
         self.session.execute(
             delete(SupplierORM).where(
                 SupplierORM.document_id == document_id
+            )
+        )
+        self.session.execute(
+            delete(ContactPointORM).where(
+                ContactPointORM.document_id == document_id
             )
         )
         self.session.execute(

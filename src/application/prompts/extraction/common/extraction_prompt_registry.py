@@ -5,6 +5,9 @@ from typing import Protocol
 from src.application.prompts.extraction.common.extraction_prompt_type import (
     ExtractionPromptType,
 )
+from src.application.prompts.extraction.contact_points.contact_point_extraction_prompt_builder import (
+    ContactPointExtractionPromptBuilder,
+)
 from src.application.prompts.extraction.equipment.equipment_extraction_prompt_builder import (
     EquipmentExtractionPromptBuilder,
 )
@@ -57,6 +60,7 @@ EXTRACTION_PROMPT_REGISTRY: dict[ExtractionPromptType, ExtractionPromptBuilder] 
     ExtractionPromptType.IDENTIFIER: IdentifierExtractionPromptBuilder(),
     ExtractionPromptType.MANUFACTURER: ManufacturerExtractionPromptBuilder(),
     ExtractionPromptType.SUPPLIER: SupplierExtractionPromptBuilder(),
+    ExtractionPromptType.CONTACT_POINT: ContactPointExtractionPromptBuilder(),
     ExtractionPromptType.EQUIPMENT: EquipmentExtractionPromptBuilder(),
     ExtractionPromptType.SPARE_PART: SparePartExtractionPromptBuilder(),
     ExtractionPromptType.SPECIFICATION: SpecificationExtractionPromptBuilder(),

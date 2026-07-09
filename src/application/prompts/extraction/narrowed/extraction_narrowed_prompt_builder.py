@@ -10,6 +10,13 @@ from src.application.prompts.extraction.common.prompt_text_utils import (
 from src.application.prompts.extraction.common.shared_extraction_rules import (
     SHARED_EXTRACTION_RULES,
 )
+from src.application.prompts.extraction.contact_points.contact_point_extraction_examples import (
+    CONTACT_POINT_EXTRACTION_EXAMPLE,
+)
+from src.application.prompts.extraction.contact_points.contact_point_extraction_schema import (
+    CONTACT_POINT_GUIDANCE,
+    CONTACT_POINT_SCHEMA_TEXT,
+)
 from src.application.prompts.extraction.equipment.equipment_extraction_examples import (
     EQUIPMENT_EXTRACTION_EXAMPLE,
 )
@@ -97,6 +104,7 @@ _ORDERED_TYPES: tuple[ExtractionPromptType, ...] = (
     ExtractionPromptType.EQUIPMENT,
     ExtractionPromptType.MANUFACTURER,
     ExtractionPromptType.SUPPLIER,
+    ExtractionPromptType.CONTACT_POINT,
     ExtractionPromptType.PROCEDURE,
     ExtractionPromptType.SPECIFICATION,
     ExtractionPromptType.SAFETY_WARNING,
@@ -122,6 +130,7 @@ _FAMILY_SCHEMA: dict[ExtractionPromptType, str] = {
     ExtractionPromptType.IDENTIFIER: identifier_schema_text(),
     ExtractionPromptType.MANUFACTURER: MANUFACTURER_SCHEMA_TEXT,
     ExtractionPromptType.SUPPLIER: SUPPLIER_SCHEMA_TEXT,
+    ExtractionPromptType.CONTACT_POINT: CONTACT_POINT_SCHEMA_TEXT,
     ExtractionPromptType.EQUIPMENT: EQUIPMENT_SCHEMA_TEXT,
     ExtractionPromptType.SPARE_PART: SPARE_PART_SCHEMA_TEXT,
     ExtractionPromptType.SPECIFICATION: SPECIFICATION_SCHEMA_TEXT,
@@ -138,6 +147,7 @@ _FAMILY_GUIDANCE: dict[ExtractionPromptType, str] = {
     ExtractionPromptType.IDENTIFIER: _identifier_guidance(),
     ExtractionPromptType.MANUFACTURER: MANUFACTURER_GUIDANCE,
     ExtractionPromptType.SUPPLIER: SUPPLIER_GUIDANCE,
+    ExtractionPromptType.CONTACT_POINT: CONTACT_POINT_GUIDANCE,
     ExtractionPromptType.EQUIPMENT: EQUIPMENT_GUIDANCE,
     ExtractionPromptType.SPECIFICATION: SPECIFICATION_GUIDANCE,
     ExtractionPromptType.MAINTENANCE_INTERVAL: MAINTENANCE_INTERVAL_GUIDANCE,
@@ -150,6 +160,7 @@ _FAMILY_EXAMPLE: dict[ExtractionPromptType, str] = {
     ExtractionPromptType.IDENTIFIER: IDENTIFIER_EXTRACTION_EXAMPLE,
     ExtractionPromptType.MANUFACTURER: MANUFACTURER_EXTRACTION_EXAMPLE,
     ExtractionPromptType.SUPPLIER: SUPPLIER_EXTRACTION_EXAMPLE,
+    ExtractionPromptType.CONTACT_POINT: CONTACT_POINT_EXTRACTION_EXAMPLE,
     ExtractionPromptType.EQUIPMENT: EQUIPMENT_EXTRACTION_EXAMPLE,
     ExtractionPromptType.SPARE_PART: SPARE_PART_EXTRACTION_EXAMPLE,
     ExtractionPromptType.SPECIFICATION: SPECIFICATION_EXTRACTION_EXAMPLE,

@@ -2,6 +2,9 @@ from src.domain.extraction import ExtractionResult
 from src.infrastructure.db.mappers.extraction.extraction_chunk_coverage_mapper import (
     ExtractionChunkCoverageMapper,
 )
+from src.infrastructure.db.mappers.extraction.contact_point_mapper import (
+    ContactPointMapper,
+)
 from src.infrastructure.db.mappers.extraction.equipment_info_mapper import (
     EquipmentInfoMapper,
 )
@@ -33,6 +36,7 @@ from src.infrastructure.db.mappers.extraction.troubleshooting_entry_mapper impor
     TroubleshootingEntryMapper,
 )
 from src.infrastructure.db.orm_models import (
+    ContactPointORM,
     EquipmentInfoORM,
     ExtractionResultORM,
     MaintenanceIntervalORM,
@@ -75,6 +79,7 @@ class ExtractionResultMapper:
         equipment_rows: list[EquipmentInfoORM] | None = None,
         manufacturer_rows: list[ManufacturerORM] | None = None,
         supplier_rows: list[SupplierORM] | None = None,
+        contact_point_rows: list[ContactPointORM] | None = None,
         procedure_rows: list[ProcedureORM] | None = None,
         specification_rows: list[SpecificationORM] | None = None,
         safety_warning_rows: list[SafetyWarningORM] | None = None,
@@ -103,6 +108,10 @@ class ExtractionResultMapper:
             suppliers=[
                 SupplierMapper.to_domain(row)
                 for row in supplier_rows or []
+            ],
+            contact_points=[
+                ContactPointMapper.to_domain(row)
+                for row in contact_point_rows or []
             ],
             procedures=[
                 ProcedureMapper.to_domain(row)

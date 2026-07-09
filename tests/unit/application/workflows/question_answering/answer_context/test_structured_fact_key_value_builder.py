@@ -84,3 +84,36 @@ def test_build_from_structured_entities_ignores_unknown_entity_type() -> None:
     )
 
     assert key_values == []
+
+
+def test_build_from_structured_entities_includes_related_contact_points() -> None:
+    builder = StructuredFactKeyValueBuilder()
+    entity = {
+        "name": "ACME Corp",
+        "source_chunk_id": "chunk_manufacturer",
+        "related_entities": [
+            {
+                "entity_type": "contact_point",
+                "entity": {
+                    "contact_type": "email_address",
+                    "value": "service@acme.example",
+                    "owner_name": "ACME Corp",
+                    "owner_entity_type": "manufacturer",
+                    "source_chunk_id": "chunk_contact",
+                },
+            }
+        ],
+    }
+
+    key_values = builder.build_from_structured_entities(
+        "manufacturer",
+        [entity],
+        source_number_by_chunk_id={
+            "chunk_manufacturer": 1,
+            "chunk_contact": 2,
+        },
+    )
+
+    pairs = {(kv.key, kv.value, kv.source_number) for kv in key_values}
+    assert ("Manufacturer Name", "ACME Corp", 1) in pairs
+    assert ("Manufacturer Email Address", "service@acme.example", 2) in pairs

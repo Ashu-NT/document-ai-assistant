@@ -19,6 +19,7 @@ from src.shared.exceptions import ApplicationError
 class StructuredEntityType(StrEnum):
     MANUFACTURER = "manufacturer"
     SUPPLIER = "supplier"
+    CONTACT_POINT = "contact_point"
     SPARE_PART = "spare_part"
     EQUIPMENT = "equipment"
     MAINTENANCE_TASK = "maintenance_task"
@@ -49,7 +50,7 @@ class RetrieveStructuredEntitiesTool:
         category="retrieval",
         description=(
             "Look up extracted structured entities (manufacturers, suppliers, "
-            "spare parts, equipment, maintenance tasks, procedures, "
+            "contact points, spare parts, equipment, maintenance tasks, procedures, "
             "specifications, safety warnings, maintenance intervals, "
             "troubleshooting entries) by document and/or search text."
         ),
@@ -60,6 +61,7 @@ class RetrieveStructuredEntitiesTool:
     _SEARCH_METHODS: dict[StructuredEntityType, str] = {
         StructuredEntityType.MANUFACTURER: "search_manufacturers",
         StructuredEntityType.SUPPLIER: "search_suppliers",
+        StructuredEntityType.CONTACT_POINT: "search_contact_points",
         StructuredEntityType.SPARE_PART: "search_spare_parts",
         StructuredEntityType.EQUIPMENT: "search_equipment",
         StructuredEntityType.MAINTENANCE_TASK: "search_maintenance_tasks",
@@ -72,6 +74,7 @@ class RetrieveStructuredEntitiesTool:
     _LIST_METHODS: dict[StructuredEntityType, str] = {
         StructuredEntityType.MANUFACTURER: "list_manufacturers",
         StructuredEntityType.SUPPLIER: "list_suppliers",
+        StructuredEntityType.CONTACT_POINT: "list_contact_points",
         StructuredEntityType.SPARE_PART: "list_spare_parts",
         StructuredEntityType.EQUIPMENT: "list_equipment",
         StructuredEntityType.MAINTENANCE_TASK: "list_maintenance_tasks",
@@ -89,6 +92,7 @@ class RetrieveStructuredEntitiesTool:
     _SEMANTIC_ENTITY_TYPES: dict[StructuredEntityType, SemanticEntityType] = {
         StructuredEntityType.MANUFACTURER: SemanticEntityType.MANUFACTURER,
         StructuredEntityType.SUPPLIER: SemanticEntityType.SUPPLIER,
+        StructuredEntityType.CONTACT_POINT: SemanticEntityType.CONTACT_POINT,
         StructuredEntityType.SPARE_PART: SemanticEntityType.SPARE_PART,
         StructuredEntityType.EQUIPMENT: SemanticEntityType.EQUIPMENT,
         StructuredEntityType.MAINTENANCE_TASK: SemanticEntityType.MAINTENANCE_TASK,
@@ -105,6 +109,7 @@ class RetrieveStructuredEntitiesTool:
     _ID_FIELDS: dict[StructuredEntityType, str] = {
         StructuredEntityType.MANUFACTURER: "manufacturer_id",
         StructuredEntityType.SUPPLIER: "supplier_id",
+        StructuredEntityType.CONTACT_POINT: "contact_point_id",
         StructuredEntityType.SPARE_PART: "spare_part_id",
         StructuredEntityType.EQUIPMENT: "equipment_id",
         StructuredEntityType.MAINTENANCE_TASK: "task_id",

@@ -53,6 +53,22 @@ def test_supplier_keyword_detected() -> None:
     assert ExtractionPromptType.SUPPLIER in detected
 
 
+def test_contact_point_email_detected() -> None:
+    chunk = make_chunk(content="For service support email info@example.com.")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.CONTACT_POINT in detected
+
+
+def test_contact_point_labeled_phone_detected() -> None:
+    chunk = make_chunk(content="Tel: +49 40 1234 5678")
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.CONTACT_POINT in detected
+
+
 def test_part_number_regex_detected() -> None:
     chunk = make_chunk(content="Order replacement filter HP-001 from stock.")
 
@@ -104,6 +120,17 @@ def test_header_marker_detected_from_section_path() -> None:
     detected = ExtractionCrossSignalDetector().detect(chunk)
 
     assert ExtractionPromptType.MANUFACTURER in detected
+
+
+def test_contact_header_marker_detected_from_section_path() -> None:
+    chunk = make_chunk(
+        content="See manufacturer details below.",
+        section_path=["8", "Contact Information"],
+    )
+
+    detected = ExtractionCrossSignalDetector().detect(chunk)
+
+    assert ExtractionPromptType.CONTACT_POINT in detected
 
 
 def test_table_presence_bumps_spare_part_and_specification() -> None:

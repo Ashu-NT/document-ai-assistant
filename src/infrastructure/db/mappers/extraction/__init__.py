@@ -1,3 +1,4 @@
+from src.infrastructure.db.mappers.extraction.contact_point_mapper import ContactPointMapper
 from src.infrastructure.db.mappers.extraction.equipment_info_mapper import EquipmentInfoMapper
 from src.infrastructure.db.mappers.extraction.extraction_result_mapper import ExtractionResultMapper
 from src.infrastructure.db.mappers.extraction.maintenance_interval_mapper import MaintenanceIntervalMapper
@@ -14,6 +15,7 @@ from src.infrastructure.db.mappers.extraction.supplier_mapper import SupplierMap
 from src.infrastructure.db.mappers.extraction.troubleshooting_entry_mapper import TroubleshootingEntryMapper
 
 __all__ = [
+    "ContactPointMapper",
     "EquipmentInfoMapper",
     "ExtractionResultMapper",
     "MaintenanceIntervalMapper",

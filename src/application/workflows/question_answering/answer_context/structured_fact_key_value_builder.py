@@ -32,6 +32,10 @@ _ENTITY_FIELD_LABELS: dict[str, tuple[tuple[str, str], ...]] = {
         ("interval", "Maintenance Interval"),
         ("component_name", "Maintenance Component"),
     ),
+    "contact_point": (
+        ("owner_name", "Contact Owner"),
+        ("label", "Contact Label"),
+    ),
 }
 
 
@@ -70,18 +74,24 @@ class StructuredFactKeyValueBuilder:
         *,
         source_number_by_chunk_id: dict[str, int],
     ) -> list[AnswerKeyValue]:
-        field_labels = _ENTITY_FIELD_LABELS.get(entity_type, ())
         key_values: list[AnswerKeyValue] = []
-        for entity in entities:
+        seen: set[tuple[str, str, int]] = set()
+        for candidate_type, entity in self._iter_entities_with_related(
+            entity_type, entities
+        ):
             source_number = source_number_by_chunk_id.get(
                 entity.get("source_chunk_id") or ""
             )
             if source_number is None:
                 continue
-            for field_name, label in field_labels:
+            for field_name, label in self._field_labels_for_entity(candidate_type, entity):
                 value = entity.get(field_name)
                 if value is None or not str(value).strip():
                     continue
+                dedup_key = (label, str(value).strip(), source_number)
+                if dedup_key in seen:
+                    continue
+                seen.add(dedup_key)
                 key_values.append(
                     AnswerKeyValue(
                         key=label,
@@ -92,6 +102,56 @@ class StructuredFactKeyValueBuilder:
                     )
                 )
         return key_values
+
+    @classmethod
+    def _iter_entities_with_related(
+        cls,
+        entity_type: str,
+        entities: list[dict],
+    ):
+        for entity in entities:
+            if not isinstance(entity, dict):
+                continue
+            yield entity_type, entity
+            for related in entity.get("related_entities", []):
+                if not isinstance(related, dict):
+                    continue
+                related_type = related.get("entity_type")
+                related_entity = related.get("entity")
+                if not related_type or not isinstance(related_entity, dict):
+                    continue
+                yield str(related_type), related_entity
+
+    @classmethod
+    def _field_labels_for_entity(
+        cls,
+        entity_type: str,
+        entity: dict,
+    ) -> tuple[tuple[str, str], ...]:
+        if entity_type != "contact_point":
+            return _ENTITY_FIELD_LABELS.get(entity_type, ())
+
+        contact_label = cls._contact_value_label(entity)
+        return (
+            ("value", contact_label),
+            *_ENTITY_FIELD_LABELS["contact_point"],
+        )
+
+    @staticmethod
+    def _contact_value_label(entity: dict) -> str:
+        owner_entity_type = str(entity.get("owner_entity_type") or "").strip().lower()
+        owner_prefix = {
+            "manufacturer": "Manufacturer",
+            "supplier": "Supplier",
+        }.get(owner_entity_type, "Contact")
+        contact_type = str(entity.get("contact_type") or "").strip().lower()
+        contact_suffix = {
+            "phone_number": "Phone Number",
+            "fax_number": "Fax Number",
+            "email_address": "Email Address",
+            "url": "Website",
+        }.get(contact_type, "Value")
+        return f"{owner_prefix} {contact_suffix}"
 
     @staticmethod
     def _identifier_label(identifier_type: object) -> str:

@@ -1,6 +1,8 @@
 import pytest
 
 from src.domain.extraction import (
+    ContactPoint,
+    ContactPointType,
     EquipmentInfo,
     Manufacturer,
     MaintenanceInterval,
@@ -11,9 +13,11 @@ from src.domain.extraction import (
     SparePart,
     Specification,
     Supplier,
+    SemanticEntityType,
     TroubleshootingEntry,
 )
 from src.infrastructure.db.mappers import (
+    ContactPointMapper,
     EquipmentInfoMapper,
     ExtractionResultMapper,
     MaintenanceIntervalMapper,
@@ -61,6 +65,18 @@ _SAMPLE_SOURCE_METADATA = SemanticSourceMetadata(
                 source_metadata=_SAMPLE_SOURCE_METADATA,
             ),
             SparePartMapper,
+        ),
+        (
+            ContactPoint(
+                contact_point_id="contact_point_001",
+                document_id="document_001",
+                contact_type=ContactPointType.EMAIL_ADDRESS,
+                value="service@example.com",
+                owner_name="Example Manufacturer",
+                owner_entity_type=SemanticEntityType.MANUFACTURER,
+                source_metadata=_SAMPLE_SOURCE_METADATA,
+            ),
+            ContactPointMapper,
         ),
         (
             EquipmentInfo(
@@ -279,6 +295,19 @@ def test_supplier_mapper_round_trip(sample_supplier) -> None:
     assert domain.name == sample_supplier.name
 
 
+def test_contact_point_mapper_round_trip(sample_contact_point) -> None:
+    orm = ContactPointMapper.to_orm(
+        sample_contact_point,
+        extraction_id="extraction_001",
+    )
+    domain = ContactPointMapper.to_domain(orm)
+
+    assert domain.contact_point_id == sample_contact_point.contact_point_id
+    assert domain.value == sample_contact_point.value
+    assert domain.owner_name == sample_contact_point.owner_name
+    assert domain.owner_entity_type == sample_contact_point.owner_entity_type
+
+
 def test_procedure_mapper_round_trip(sample_procedure) -> None:
     orm = ProcedureMapper.to_orm(
         sample_procedure,
@@ -344,7 +373,11 @@ def test_troubleshooting_entry_mapper_round_trip(sample_troubleshooting_entry) -
     assert domain.equipment_id == sample_troubleshooting_entry.equipment_id
 
 
-def test_extraction_result_mapper_round_trip(sample_extraction_result) -> None:
+def test_extraction_result_mapper_round_trip(
+    sample_extraction_result,
+    sample_contact_point,
+) -> None:
+    sample_extraction_result.contact_points = [sample_contact_point]
     result_orm = ExtractionResultMapper.to_orm(sample_extraction_result)
 
     task_rows = [
@@ -385,6 +418,14 @@ def test_extraction_result_mapper_round_trip(sample_extraction_result) -> None:
             extraction_id=sample_extraction_result.extraction_id,
         )
         for supplier in sample_extraction_result.suppliers
+    ]
+
+    contact_point_rows = [
+        ContactPointMapper.to_orm(
+            contact_point,
+            extraction_id=sample_extraction_result.extraction_id,
+        )
+        for contact_point in sample_extraction_result.contact_points
     ]
 
     procedure_rows = [
@@ -434,6 +475,7 @@ def test_extraction_result_mapper_round_trip(sample_extraction_result) -> None:
         equipment_rows=equipment_rows,
         manufacturer_rows=manufacturer_rows,
         supplier_rows=supplier_rows,
+        contact_point_rows=contact_point_rows,
         procedure_rows=procedure_rows,
         specification_rows=specification_rows,
         safety_warning_rows=safety_warning_rows,
@@ -446,6 +488,11 @@ def test_extraction_result_mapper_round_trip(sample_extraction_result) -> None:
     assert domain.spare_part_count() == 1
     assert len(domain.suppliers) == 1
     assert domain.suppliers[0].supplier_id == sample_extraction_result.suppliers[0].supplier_id
+    assert len(domain.contact_points) == 1
+    assert (
+        domain.contact_points[0].contact_point_id
+        == sample_extraction_result.contact_points[0].contact_point_id
+    )
     assert len(domain.procedures) == 1
     assert domain.procedures[0].procedure_id == sample_extraction_result.procedures[0].procedure_id
     assert len(domain.specifications) == 1

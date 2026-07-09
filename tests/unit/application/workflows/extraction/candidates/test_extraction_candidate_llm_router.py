@@ -78,7 +78,9 @@ def test_route_resolves_candidate_types() -> None:
 def test_route_normalizes_casing_and_separators() -> None:
     router = ExtractionCandidateLLMRouter(
         llm_service=FakeLLMService(
-            json.dumps({"candidate_types": ["Safety Warning", "Spare-Part"]})
+            json.dumps(
+                {"candidate_types": ["Safety Warning", "Spare-Part", "Contact Point"]}
+            )
         ),
         enabled=True,
     )
@@ -86,7 +88,11 @@ def test_route_normalizes_casing_and_separators() -> None:
     result = router.route(make_chunk())
 
     assert result == frozenset(
-        {ExtractionPromptType.SAFETY_WARNING, ExtractionPromptType.SPARE_PART}
+        {
+            ExtractionPromptType.SAFETY_WARNING,
+            ExtractionPromptType.SPARE_PART,
+            ExtractionPromptType.CONTACT_POINT,
+        }
     )
 
 

@@ -109,6 +109,25 @@ class IdentifierPromotionService:
                 if identifier is not None:
                     identifiers.append(identifier)
 
+        for contact_point in extraction_result.contact_points:
+            identifier_type = self._identifier_type_for_contact_point(contact_point)
+            if identifier_type is None:
+                continue
+            chunk = document_graph.chunks.get(contact_point.source_chunk_id or "")
+            identifier = self._make(
+                document_id=document_id,
+                raw_value=contact_point.value,
+                identifier_type=identifier_type,
+                source_chunk_id=contact_point.source_chunk_id,
+                valid_chunk_ids=valid_chunk_ids,
+                confidence_score=contact_point.confidence_score,
+                id_generator=id_generator,
+                seen=seen,
+                chunk=chunk,
+            )
+            if identifier is not None:
+                identifiers.append(identifier)
+
         for extracted in extraction_result.extracted_identifiers:
             if extracted.raw_value and extracted.raw_value.strip():
                 if self._should_ignore_extracted_identifier(extracted):
@@ -142,6 +161,12 @@ class IdentifierPromotionService:
                     identifiers.append(identifier)
 
         return identifiers
+
+    def _identifier_type_for_contact_point(self, contact_point) -> IdentifierType | None:
+        normalized = self.identifier_type_normalizer.normalize(contact_point.contact_type)
+        if normalized is not None:
+            return normalized
+        return None
 
     def _should_ignore_extracted_identifier(self, extracted) -> bool:
         if self.identifier_type_normalizer.should_ignore(extracted.identifier_type):

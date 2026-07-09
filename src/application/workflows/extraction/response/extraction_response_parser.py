@@ -50,6 +50,7 @@ class ExtractionResponseParser:
             validated.equipment,
             validated.manufacturers,
             validated.suppliers,
+            validated.contact_points,
             validated.procedures,
             validated.specifications,
             validated.safety_warnings,
@@ -90,6 +91,7 @@ class ExtractionResponseParser:
                 item.model_dump() for item in validated.manufacturers
             ],
             "suppliers": [item.model_dump() for item in validated.suppliers],
+            "contact_points": [item.model_dump() for item in validated.contact_points],
             "procedures": [item.model_dump() for item in validated.procedures],
             "specifications": [
                 item.model_dump() for item in validated.specifications

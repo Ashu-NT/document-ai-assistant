@@ -14,6 +14,7 @@ def test_build_includes_content_and_all_categories() -> None:
     assert "- identifier:" in prompt
     assert "- manufacturer:" in prompt
     assert "- supplier:" in prompt
+    assert "- contact_point:" in prompt
     assert "- equipment:" in prompt
     assert "- spare_part:" in prompt
     assert "- specification:" in prompt

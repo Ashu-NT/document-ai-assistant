@@ -10,6 +10,7 @@ from src.infrastructure.db.orm_models.vector_models import ChunkVectorORM
 from src.infrastructure.db.orm_models.workflow_models import IngestionRunORM
 from src.infrastructure.db.orm_models.classification_models import ChunkClassificationORM, DocumentClassificationORM
 from src.infrastructure.db.orm_models.extraction_models import (
+    ContactPointORM,
     EquipmentInfoORM,
     ExtractionResultORM,
     MaintenanceIntervalORM,
@@ -44,6 +45,7 @@ __all__ = [
     "SectionORM",
     "ChunkClassificationORM", 
     "DocumentClassificationORM",
+    "ContactPointORM",
     "EquipmentInfoORM",
     "ExtractionResultORM",
     "MaintenanceIntervalORM",

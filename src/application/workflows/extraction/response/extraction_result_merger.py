@@ -1,6 +1,8 @@
 from src.domain.common import SourceLocation
 from src.domain.extraction import (
+    ContactPoint,
     EquipmentInfo,
+    ContactPointType,
     ExtractedIdentifier,
     ExtractionResult,
     MaintenanceInterval,
@@ -32,6 +34,7 @@ class ExtractionResultMerger:
         merged_equipment = self._merge_equipment(partial_results)
         merged_manufacturers = self._merge_manufacturers(partial_results)
         merged_suppliers = self._merge_suppliers(partial_results)
+        merged_contact_points = self._merge_contact_points(partial_results)
         merged_procedures = self._merge_procedures(partial_results)
         merged_specifications = self._merge_specifications(partial_results)
         merged_safety_warnings = self._merge_safety_warnings(partial_results)
@@ -62,6 +65,7 @@ class ExtractionResultMerger:
             equipment=merged_equipment,
             manufacturers=merged_manufacturers,
             suppliers=merged_suppliers,
+            contact_points=merged_contact_points,
             procedures=merged_procedures,
             specifications=merged_specifications,
             safety_warnings=merged_safety_warnings,
@@ -142,6 +146,29 @@ class ExtractionResultMerger:
                     merged[key] = item
                     continue
                 self._merge_supplier(merged[key], item)
+        return list(merged.values())
+
+    def _merge_contact_points(
+        self,
+        partial_results: list[ExtractionResult],
+    ) -> list[ContactPoint]:
+        merged: dict[tuple[str, ...], ContactPoint] = {}
+        for result in partial_results:
+            for item in result.contact_points:
+                key = (
+                    self._normalize(item.value),
+                    self._normalize(item.owner_name),
+                    self._normalize(
+                        item.owner_entity_type.value
+                        if item.owner_entity_type is not None
+                        else None
+                    ),
+                    self._normalize(item.contact_type.value),
+                )
+                if key not in merged:
+                    merged[key] = item
+                    continue
+                self._merge_contact_point(merged[key], item)
         return list(merged.values())
 
     def _merge_procedures(self, partial_results: list[ExtractionResult]) -> list[Procedure]:
@@ -274,6 +301,15 @@ class ExtractionResultMerger:
     def _merge_supplier(self, current: Supplier, candidate: Supplier) -> None:
         current.website = current.website or candidate.website
         current.country = current.country or candidate.country
+        current.source_metadata = current.source_metadata or candidate.source_metadata
+        self._merge_common_fields(current, candidate)
+
+    def _merge_contact_point(self, current: ContactPoint, candidate: ContactPoint) -> None:
+        if current.contact_type == ContactPointType.UNKNOWN:
+            current.contact_type = candidate.contact_type
+        current.label = current.label or candidate.label
+        current.owner_name = current.owner_name or candidate.owner_name
+        current.owner_entity_type = current.owner_entity_type or candidate.owner_entity_type
         current.source_metadata = current.source_metadata or candidate.source_metadata
         self._merge_common_fields(current, candidate)
 

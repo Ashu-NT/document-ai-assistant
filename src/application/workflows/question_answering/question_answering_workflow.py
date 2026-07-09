@@ -428,6 +428,15 @@ class QuestionAnsweringWorkflow:
             chunk_id = entity.get("source_chunk_id")
             if chunk_id and chunk_id not in existing_chunk_ids:
                 needed_chunk_ids.add(chunk_id)
+            for related in entity.get("related_entities", []):
+                if not isinstance(related, dict):
+                    continue
+                related_entity = related.get("entity")
+                if not isinstance(related_entity, dict):
+                    continue
+                related_chunk_id = related_entity.get("source_chunk_id")
+                if related_chunk_id and related_chunk_id not in existing_chunk_ids:
+                    needed_chunk_ids.add(related_chunk_id)
 
         joined_chunks = list(approved_chunks)
         if needed_chunk_ids and self._document_lookup_service is not None:

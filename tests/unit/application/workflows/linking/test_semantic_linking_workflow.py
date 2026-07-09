@@ -1,6 +1,9 @@
 from src.application.workflows.linking import SemanticLinkingWorkflow
 from src.domain.extraction import (
+    ContactPoint,
+    ContactPointType,
     EquipmentInfo,
+    Manufacturer,
     MaintenanceInterval,
     MaintenanceTask,
     Procedure,
@@ -11,6 +14,7 @@ from src.domain.extraction import (
     SemanticSourceMetadata,
     SparePart,
     Specification,
+    Supplier,
     TroubleshootingEntry,
 )
 from src.shared.ids import IdGenerator
@@ -26,6 +30,9 @@ class FakeExtractionService:
             "spare_parts": [],
             "safety_warnings": [],
             "equipment": [],
+            "manufacturers": [],
+            "suppliers": [],
+            "contact_points": [],
             "specifications": [],
             "troubleshooting_entries": [],
         }
@@ -49,6 +56,15 @@ class FakeExtractionService:
 
     def list_equipment(self, document_id):
         return self._entities["equipment"]
+
+    def list_manufacturers(self, document_id):
+        return self._entities["manufacturers"]
+
+    def list_suppliers(self, document_id):
+        return self._entities["suppliers"]
+
+    def list_contact_points(self, document_id):
+        return self._entities["contact_points"]
 
     def list_specifications(self, document_id):
         return self._entities["specifications"]
@@ -240,3 +256,42 @@ def test_link_covers_equipment_spare_part_and_specification_pairs() -> None:
     for relationship in relationships:
         assert relationship.source_entity_type == SemanticEntityType.EQUIPMENT
         assert relationship.source_entity_id == "equipment_001"
+
+
+def test_link_attaches_contact_points_to_manufacturer_by_owner_reference() -> None:
+    manufacturer = Manufacturer(
+        manufacturer_id="manufacturer_001",
+        document_id="document_001",
+        name="ACME Corp",
+    )
+    contact_point = ContactPoint(
+        contact_point_id="contact_point_001",
+        document_id="document_001",
+        contact_type=ContactPointType.EMAIL_ADDRESS,
+        value="service@acme.example",
+        owner_name="ACME Corp",
+        owner_entity_type=SemanticEntityType.MANUFACTURER,
+    )
+    service = FakeExtractionService(
+        document_id="document_001",
+        manufacturers=[manufacturer],
+        contact_points=[contact_point],
+    )
+    workflow = SemanticLinkingWorkflow(
+        extraction_service=service, id_generator=IdGenerator()
+    )
+
+    relationships = workflow.link("document_001")
+
+    assert len(relationships) == 1
+    relationship = relationships[0]
+    assert (
+        relationship.relationship_type
+        == SemanticRelationshipType.MANUFACTURER_HAS_CONTACT_POINT
+    )
+    assert relationship.source_entity_type == SemanticEntityType.MANUFACTURER
+    assert relationship.source_entity_id == "manufacturer_001"
+    assert relationship.target_entity_type == SemanticEntityType.CONTACT_POINT
+    assert relationship.target_entity_id == "contact_point_001"
+    assert relationship.status == SemanticRelationshipStatus.ACCEPTED
+    assert relationship.evidence == "owner_reference_exact"

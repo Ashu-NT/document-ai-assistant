@@ -35,6 +35,10 @@ class ExtractionResultValidator(Validator[ExtractionResult]):
             if supplier.document_id != value.document_id:
                 result.add_issue("suppliers", "Supplier document_id does not match extraction document_id.", "extraction.supplier.document_mismatch")
 
+        for contact_point in value.contact_points:
+            if contact_point.document_id != value.document_id:
+                result.add_issue("contact_points", "Contact point document_id does not match extraction document_id.", "extraction.contact_point.document_mismatch")
+
         for procedure in value.procedures:
             if procedure.document_id != value.document_id:
                 result.add_issue("procedures", "Procedure document_id does not match extraction document_id.", "extraction.procedure.document_mismatch")

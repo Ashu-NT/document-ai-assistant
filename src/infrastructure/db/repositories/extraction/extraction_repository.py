@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from src.application.contracts.extraction import ExtractionRepository
 from src.domain.extraction import (
+    ContactPoint,
     EquipmentInfo,
     ExtractionResult,
     MaintenanceInterval,
@@ -14,6 +15,9 @@ from src.domain.extraction import (
     Specification,
     Supplier,
     TroubleshootingEntry,
+)
+from src.infrastructure.db.repositories.extraction.contact_point_reader import (
+    ContactPointReader,
 )
 from src.infrastructure.db.repositories.extraction.equipment_reader import EquipmentReader
 from src.infrastructure.db.repositories.extraction.extraction_reader import ExtractionReader
@@ -53,6 +57,7 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
         self.equipment_reader = EquipmentReader(session)
         self.manufacturer_reader = ManufacturerReader(session)
         self.supplier_reader = SupplierReader(session)
+        self.contact_point_reader = ContactPointReader(session)
         self.procedure_reader = ProcedureReader(session)
         self.specification_reader = SpecificationReader(session)
         self.safety_warning_reader = SafetyWarningReader(session)
@@ -113,6 +118,12 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
         document_id: str | None = None,
     ) -> list[Supplier]:
         return self.supplier_reader.list_suppliers(document_id)
+
+    def list_contact_points(
+        self,
+        document_id: str | None = None,
+    ) -> list[ContactPoint]:
+        return self.contact_point_reader.list_contact_points(document_id)
 
     def list_procedures(
         self,
@@ -178,6 +189,13 @@ class SqlAlchemyExtractionRepository(ExtractionRepository):
         document_id: str | None = None,
     ) -> list[Supplier]:
         return self.supplier_reader.search_suppliers(query, document_id)
+
+    def search_contact_points(
+        self,
+        query: str,
+        document_id: str | None = None,
+    ) -> list[ContactPoint]:
+        return self.contact_point_reader.search_contact_points(query, document_id)
 
     def search_procedures(
         self,

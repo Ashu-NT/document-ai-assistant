@@ -1,4 +1,7 @@
 from src.application.services.extraction import ExtractionService
+from src.application.workflows.linking.contact_point_relationship_candidate_builder import (
+    ContactPointRelationshipCandidateBuilder,
+)
 from src.application.workflows.linking.semantic_entity_index import (
     IndexedEntity,
     SemanticEntityIndex,
@@ -41,6 +44,9 @@ class SemanticLinkingWorkflow:
         self.extraction_service = extraction_service
         self.id_generator = id_generator
         self.candidate_generator = SemanticRelationshipCandidateGenerator()
+        self.contact_point_candidate_builder = (
+            ContactPointRelationshipCandidateBuilder()
+        )
 
     def link(self, document_id: str) -> list[SemanticRelationship]:
         maintenance_tasks = self.extraction_service.list_maintenance_tasks(document_id)
@@ -51,6 +57,9 @@ class SemanticLinkingWorkflow:
         spare_parts = self.extraction_service.list_spare_parts(document_id)
         safety_warnings = self.extraction_service.list_safety_warnings(document_id)
         equipment = self.extraction_service.list_equipment(document_id)
+        manufacturers = self.extraction_service.list_manufacturers(document_id)
+        suppliers = self.extraction_service.list_suppliers(document_id)
+        contact_points = self.extraction_service.list_contact_points(document_id)
         specifications = self.extraction_service.list_specifications(document_id)
         troubleshooting_entries = self.extraction_service.list_troubleshooting_entries(
             document_id
@@ -75,9 +84,15 @@ class SemanticLinkingWorkflow:
         proximity_candidates = self.candidate_generator.generate(
             SemanticEntityIndex(indexed_entities)
         )
+        ownership_candidates = self.contact_point_candidate_builder.build(
+            contact_points=contact_points,
+            manufacturers=manufacturers,
+            suppliers=suppliers,
+        )
 
         relationships = self._resolve_relationships(
-            document_id, fk_candidates + proximity_candidates
+            document_id,
+            fk_candidates + proximity_candidates + ownership_candidates,
         )
 
         self.extraction_service.replace_semantic_relationships(

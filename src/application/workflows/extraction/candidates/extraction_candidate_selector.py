@@ -34,6 +34,7 @@ _CHUNK_TYPE_CANDIDATES: dict[ChunkType, frozenset[ExtractionPromptType]] = {
             ExtractionPromptType.EQUIPMENT,
             ExtractionPromptType.MANUFACTURER,
             ExtractionPromptType.SUPPLIER,
+            ExtractionPromptType.CONTACT_POINT,
         }
     ),
     ChunkType.MAINTENANCE_PROCEDURE: frozenset(

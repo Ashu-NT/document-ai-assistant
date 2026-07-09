@@ -29,6 +29,17 @@ _CONTENT_MARKERS: dict[ExtractionPromptType, tuple[str, ...]] = {
         "distributor",
         "distributed by",
     ),
+    ExtractionPromptType.CONTACT_POINT: (
+        "contact",
+        "contact details",
+        "email",
+        "e mail",
+        "telephone",
+        "phone",
+        "fax",
+        "website",
+        "web site",
+    ),
     ExtractionPromptType.EQUIPMENT: (
         "model number",
         "nameplate",
@@ -88,6 +99,11 @@ _CONTENT_MARKERS: dict[ExtractionPromptType, tuple[str, ...]] = {
 _HEADER_MARKERS: dict[ExtractionPromptType, tuple[str, ...]] = {
     ExtractionPromptType.MANUFACTURER: ("manufacturer",),
     ExtractionPromptType.SUPPLIER: ("supplier", "vendor"),
+    ExtractionPromptType.CONTACT_POINT: (
+        "contact",
+        "contact details",
+        "contact information",
+    ),
     ExtractionPromptType.EQUIPMENT: ("equipment", "nameplate", "overview"),
     ExtractionPromptType.SPARE_PART: ("spare parts", "parts list"),
     ExtractionPromptType.SPECIFICATION: (
@@ -114,6 +130,12 @@ _MANUFACTURER_SUFFIX_PATTERN = re.compile(
 _PART_NUMBER_PATTERN = re.compile(r"\b[A-Z]{2,}-\d{2,}\b")
 _SPEC_VALUE_PATTERN = re.compile(
     r"\b\d+(?:[.,]\d+)?\s?(?:v|kv|a|ma|hz|khz|w|kw|mm|cm|bar|psi|rpm|db|%)\b",
+    re.IGNORECASE,
+)
+_EMAIL_PATTERN = re.compile(r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b", re.IGNORECASE)
+_URL_PATTERN = re.compile(r"\b(?:https?://|www\.)[^\s<>()]+\b", re.IGNORECASE)
+_LABELED_PHONE_PATTERN = re.compile(
+    r"\b(?:tel(?:ephone)?|phone|fax)\b\s*[:#]?\s*\+?\d[\d\s()./-]{5,}\d",
     re.IGNORECASE,
 )
 _INTERVAL_PATTERN = re.compile(
@@ -161,6 +183,13 @@ class ExtractionCrossSignalDetector:
 
         if _SPEC_VALUE_PATTERN.search(raw_content):
             detected.add(ExtractionPromptType.SPECIFICATION)
+
+        if (
+            _EMAIL_PATTERN.search(raw_content)
+            or _URL_PATTERN.search(raw_content)
+            or _LABELED_PHONE_PATTERN.search(raw_content)
+        ):
+            detected.add(ExtractionPromptType.CONTACT_POINT)
 
         if _INTERVAL_PATTERN.search(raw_content):
             detected.add(ExtractionPromptType.MAINTENANCE_INTERVAL)

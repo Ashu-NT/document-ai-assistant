@@ -100,6 +100,18 @@ class LegacyExtractionPromptBuilder:
             '      "requires_human_review": <true or false>\n'
             "    }\n"
             "  ],\n"
+            '  "contact_points": [\n'
+            "    {\n"
+            '      "contact_type": "phone_number|fax_number|email_address|url|unknown",\n'
+            '      "value": "<string>",\n'
+            '      "label": "<string or null>",\n'
+            '      "owner_name": "<string or null>",\n'
+            '      "owner_entity_type": "manufacturer|supplier|null",\n'
+            '      "source_chunk_id": "<chunk id or null>",\n'
+            '      "confidence_score": <float between 0 and 1 or null>,\n'
+            '      "requires_human_review": <true or false>\n'
+            "    }\n"
+            "  ],\n"
             '  "procedures": [\n'
             "    {\n"
             '      "title": "<string>",\n'
@@ -182,6 +194,10 @@ class LegacyExtractionPromptBuilder:
             "but did not necessarily make it. Use the manufacturers list for the former and "
             "the suppliers list for the latter. If a chunk does not distinguish the two roles, "
             "prefer manufacturers.\n"
+            "Contact points are organization contact channels such as phone numbers, fax numbers, "
+            "email addresses, and websites. When a chunk clearly ties a contact value to a "
+            'manufacturer or supplier, set owner_name and owner_entity_type ("manufacturer" or '
+            '"supplier"). If the owner is unclear, use null instead of guessing.\n'
             "Procedures are ordered, multi-step instructions (installation, operation, "
             "troubleshooting, disassembly) — put each step as its own string in the steps "
             "array, in the order they appear. Do not put single-sentence maintenance tasks here. "

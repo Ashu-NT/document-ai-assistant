@@ -44,6 +44,8 @@ def test_relationship_type_values_match_requested_taxonomy() -> None:
         "equipment_has_spare_part",
         "equipment_has_specification",
         "equipment_has_troubleshooting_entry",
+        "manufacturer_has_contact_point",
+        "supplier_has_contact_point",
     }
 
     actual = {member.value for member in SemanticRelationshipType}

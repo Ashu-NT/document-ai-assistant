@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from src.domain.extraction import ExtractionResult
 from src.infrastructure.db.mappers import ExtractionResultMapper
 from src.infrastructure.db.orm_models import (
+    ContactPointORM,
     EquipmentInfoORM,
     ExtractionResultORM,
     MaintenanceIntervalORM,
@@ -80,6 +81,12 @@ class ExtractionReader:
                 )
             ).scalars().all()
 
+            contact_point_rows = self.session.execute(
+                select(ContactPointORM).where(
+                    ContactPointORM.extraction_id == extraction_id
+                )
+            ).scalars().all()
+
             procedure_rows = self.session.execute(
                 select(ProcedureORM).where(
                     ProcedureORM.extraction_id == extraction_id
@@ -117,6 +124,7 @@ class ExtractionReader:
                 equipment_rows=equipment_rows,
                 manufacturer_rows=manufacturer_rows,
                 supplier_rows=supplier_rows,
+                contact_point_rows=contact_point_rows,
                 procedure_rows=procedure_rows,
                 specification_rows=specification_rows,
                 safety_warning_rows=safety_warning_rows,

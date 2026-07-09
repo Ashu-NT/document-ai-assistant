@@ -43,6 +43,7 @@ class ExtractionService:
                 "equipment_count": len(result.equipment),
                 "manufacturer_count": len(result.manufacturers),
                 "supplier_count": len(result.suppliers),
+                "contact_point_count": len(result.contact_points),
                 "procedure_count": len(result.procedures),
                 "specification_count": len(result.specifications),
                 "safety_warning_count": len(result.safety_warnings),
@@ -82,6 +83,7 @@ class ExtractionService:
                 "equipment_count": len(result.equipment),
                 "manufacturer_count": len(result.manufacturers),
                 "supplier_count": len(result.suppliers),
+                "contact_point_count": len(result.contact_points),
                 "procedure_count": len(result.procedures),
                 "specification_count": len(result.specifications),
                 "safety_warning_count": len(result.safety_warnings),
@@ -121,6 +123,9 @@ class ExtractionService:
 
     def list_suppliers(self, document_id: str | None = None):
         return self.extraction_repository.list_suppliers(document_id)
+
+    def list_contact_points(self, document_id: str | None = None):
+        return self.extraction_repository.list_contact_points(document_id)
 
     def list_procedures(self, document_id: str | None = None):
         return self.extraction_repository.list_procedures(document_id)
@@ -194,6 +199,9 @@ class ExtractionService:
 
     def search_suppliers(self, query: str, document_id: str | None = None):
         return self.extraction_repository.search_suppliers(query, document_id)
+
+    def search_contact_points(self, query: str, document_id: str | None = None):
+        return self.extraction_repository.search_contact_points(query, document_id)
 
     def search_procedures(self, query: str, document_id: str | None = None):
         return self.extraction_repository.search_procedures(query, document_id)

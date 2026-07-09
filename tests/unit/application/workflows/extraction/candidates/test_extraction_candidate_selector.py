@@ -81,6 +81,22 @@ def test_spare_parts_table_includes_manufacturer_and_supplier() -> None:
     )
 
 
+def test_overview_includes_contact_point_candidates() -> None:
+    selector = ExtractionCandidateSelector()
+
+    result = selector.select(ChunkType.OVERVIEW)
+
+    assert result == frozenset(
+        {
+            ExtractionPromptType.EQUIPMENT,
+            ExtractionPromptType.MANUFACTURER,
+            ExtractionPromptType.SUPPLIER,
+            ExtractionPromptType.CONTACT_POINT,
+            ExtractionPromptType.IDENTIFIER,
+        }
+    )
+
+
 def test_certification_info_narrows_to_identifier_only() -> None:
     selector = ExtractionCandidateSelector()
 

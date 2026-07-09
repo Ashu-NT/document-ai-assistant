@@ -966,6 +966,77 @@ def test_resolved_identifier_joins_missing_source_chunk_into_context(
     assert ("Part Number", "HP-001") in key_value_pairs
 
 
+def test_resolved_structured_entity_fetches_related_contact_point_chunks(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    from src.domain.document.entities.chunk import DocumentChunk
+
+    retrieved_chunk = _make_chunk("chunk_a")
+    wf_result = _make_retrieval_result_with_chunks([retrieved_chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+
+    manufacturer_source_chunk = DocumentChunk(
+        chunk_id="chunk_manufacturer",
+        document_id="doc_001",
+        section_id=None,
+        content="ACME Corp",
+    )
+    contact_source_chunk = DocumentChunk(
+        chunk_id="chunk_contact",
+        document_id="doc_001",
+        section_id=None,
+        content="Contact: service@acme.example",
+    )
+    lookup_service = FakeDocumentLookupService(
+        chunks_by_id={
+            "chunk_manufacturer": manufacturer_source_chunk,
+            "chunk_contact": contact_source_chunk,
+        }
+    )
+    fake_gen = FakeAnswerGenerationService()
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+        document_lookup_service=lookup_service,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the manufacturer email?",
+        allow_answer_generation=True,
+        resolved_structured_entities=[
+            {
+                "name": "ACME Corp",
+                "source_chunk_id": "chunk_manufacturer",
+                "_entity_type": "manufacturer",
+                "related_entities": [
+                    {
+                        "entity_type": "contact_point",
+                        "entity": {
+                            "contact_type": "email_address",
+                            "value": "service@acme.example",
+                            "owner_name": "ACME Corp",
+                            "owner_entity_type": "manufacturer",
+                            "source_chunk_id": "chunk_contact",
+                        },
+                    }
+                ],
+            }
+        ],
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert set(lookup_service.requested_ids) == {"chunk_manufacturer", "chunk_contact"}
+    assert fake_gen.called_with is not None
+    context_chunk_ids = {c.chunk_id for c in fake_gen.called_with.context_chunks}
+    assert "chunk_contact" in context_chunk_ids
+    key_value_pairs = {
+        (kv.key, kv.value) for kv in fake_gen.called_with.structured_context.key_values
+    }
+    assert ("Manufacturer Email Address", "service@acme.example") in key_value_pairs
+
+
 def test_answer_generation_hydrates_full_table_evidence_before_generation(
     fake_exploration_service: FakeDocumentExplorationService,
     sample_document_graph,

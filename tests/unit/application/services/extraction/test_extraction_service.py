@@ -73,6 +73,14 @@ class FakeExtractionRepository:
             if document_id is None or supplier.document_id == document_id
         ]
 
+    def list_contact_points(self, document_id: str | None = None):
+        return [
+            contact_point
+            for result in self.results.values()
+            for contact_point in result.contact_points
+            if document_id is None or contact_point.document_id == document_id
+        ]
+
     def list_procedures(self, document_id: str | None = None):
         return [
             procedure
@@ -227,6 +235,19 @@ def test_list_suppliers(sample_extraction_result) -> None:
     suppliers = service.list_suppliers(sample_extraction_result.document_id)
 
     assert len(suppliers) == 1
+
+
+def test_list_contact_points(sample_extraction_result, sample_contact_point) -> None:
+    repository = FakeExtractionRepository()
+    sample_extraction_result.contact_points = [sample_contact_point]
+    repository.save_extraction_result(sample_extraction_result)
+
+    service = make_service(repository)
+
+    contact_points = service.list_contact_points(sample_extraction_result.document_id)
+
+    assert len(contact_points) == 1
+    assert contact_points[0].value == "service@example.com"
 
 
 def test_list_procedures(sample_extraction_result) -> None:

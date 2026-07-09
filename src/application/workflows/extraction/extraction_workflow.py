@@ -37,6 +37,8 @@ from src.domain.assets import TableAsset
 from src.domain.common import SourceLocation
 from src.domain.document import DocumentChunk, DocumentSection
 from src.domain.extraction import (
+    ContactPoint,
+    ContactPointType,
     EquipmentInfo,
     ExtractedIdentifier,
     ExtractionResult,
@@ -47,6 +49,7 @@ from src.domain.extraction import (
     ProcedureType,
     SafetyWarning,
     SemanticSourceMetadata,
+    SemanticEntityType,
     SparePart,
     Specification,
     Supplier,
@@ -82,6 +85,7 @@ _ENTITY_CONTENT_FIELDS: dict[type, tuple[str, ...]] = {
     EquipmentInfo: ("name", "model_number", "serial_number", "manufacturer_name"),
     Manufacturer: ("name", "website", "country"),
     Supplier: ("name", "website", "country"),
+    ContactPoint: ("value", "label", "owner_name"),
     Procedure: ("title", "steps", "component_name", "equipment_id"),
     Specification: ("parameter", "value", "unit", "component_name"),
     SafetyWarning: ("message", "component_name"),
@@ -478,6 +482,7 @@ class ExtractionWorkflow:
                 f"equipment={len(extraction_result.equipment)}, "
                 f"manufacturers={len(extraction_result.manufacturers)}, "
                 f"suppliers={len(extraction_result.suppliers)}, "
+                f"contact_points={len(extraction_result.contact_points)}, "
                 f"procedures={len(extraction_result.procedures)}, "
                 f"specifications={len(extraction_result.specifications)}, "
                 f"safety_warnings={len(extraction_result.safety_warnings)}, "
@@ -872,6 +877,7 @@ class ExtractionWorkflow:
         equipment_payloads = payload["equipment"]
         manufacturer_payloads = payload["manufacturers"]
         supplier_payloads = payload["suppliers"]
+        contact_point_payloads = payload["contact_points"]
         procedure_payloads = payload["procedures"]
         specification_payloads = payload["specifications"]
         safety_warning_payloads = payload["safety_warnings"]
@@ -928,6 +934,16 @@ class ExtractionWorkflow:
                 default_confidence=overall_confidence,
             )
             for item in supplier_payloads
+        ]
+        contact_points = [
+            self._build_contact_point(
+                item,
+                document_id=document_id,
+                chunk_lookup=chunk_lookup,
+                default_source_chunk_id=default_source_chunk_id,
+                default_confidence=overall_confidence,
+            )
+            for item in contact_point_payloads
         ]
         procedures = [
             self._build_procedure(
@@ -1004,6 +1020,7 @@ class ExtractionWorkflow:
                 *equipment,
                 *manufacturers,
                 *suppliers,
+                *contact_points,
                 *procedures,
                 *specifications,
                 *safety_warnings,
@@ -1021,6 +1038,7 @@ class ExtractionWorkflow:
             equipment=equipment,
             manufacturers=manufacturers,
             suppliers=suppliers,
+            contact_points=contact_points,
             procedures=procedures,
             specifications=specifications,
             safety_warnings=safety_warnings,
@@ -1314,6 +1332,66 @@ class ExtractionWorkflow:
             name=name,
             website=self._optional_text(payload, "website", "url"),
             country=self._optional_text(payload, "country"),
+            source_chunk_id=source_chunk_id,
+            source=self._resolve_source_location(
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
+            source_metadata=self._build_source_metadata(
+                source_chunk_id=source_chunk_id,
+                chunk_lookup=chunk_lookup,
+            ),
+            confidence_score=confidence_score,
+            requires_human_review=(
+                self._resolve_requires_human_review(
+                    self._pick(payload, "requires_human_review", "requires_review"),
+                    confidence_score,
+                )
+                or chunk_id_invalid
+            ),
+        )
+
+    def _build_contact_point(
+        self,
+        payload: dict[str, Any],
+        *,
+        document_id: str,
+        chunk_lookup: dict[str, DocumentChunk],
+        default_source_chunk_id: str | None,
+        default_confidence: float,
+    ) -> ContactPoint:
+        value = self._required_text(
+            payload,
+            field_name="contact_points.value",
+            keys=("value",),
+        )
+        confidence_score = self._parse_confidence(
+            self._pick(payload, "confidence_score", "confidence")
+        )
+        if confidence_score is None:
+            confidence_score = default_confidence
+
+        source_chunk_id, chunk_id_invalid = self._resolve_source_chunk_id(
+            payload,
+            chunk_lookup=chunk_lookup,
+            default_source_chunk_id=default_source_chunk_id,
+            item_type="contact_points",
+        )
+        contact_type = self._resolve_contact_point_type(
+            self._pick(payload, "contact_type", "type")
+        )
+        owner_entity_type = self._resolve_contact_owner_type(
+            self._pick(payload, "owner_entity_type")
+        )
+
+        return ContactPoint(
+            contact_point_id=self.id_generator.new_id("contact_point"),
+            document_id=document_id,
+            contact_type=contact_type,
+            value=value,
+            label=self._optional_text(payload, "label"),
+            owner_name=self._optional_text(payload, "owner_name"),
+            owner_entity_type=owner_entity_type,
             source_chunk_id=source_chunk_id,
             source=self._resolve_source_location(
                 source_chunk_id=source_chunk_id,
@@ -1725,6 +1803,59 @@ class ExtractionWorkflow:
         )
 
     @staticmethod
+    def _resolve_contact_point_type(value: Any) -> ContactPointType:
+        if isinstance(value, ContactPointType):
+            return value
+        if value is None:
+            return ContactPointType.UNKNOWN
+
+        normalized = str(value).strip().lower().replace(" ", "_").replace("-", "_")
+        aliases = {
+            "phone": ContactPointType.PHONE_NUMBER,
+            "telephone": ContactPointType.PHONE_NUMBER,
+            "telephone_number": ContactPointType.PHONE_NUMBER,
+            "tel": ContactPointType.PHONE_NUMBER,
+            "fax": ContactPointType.FAX_NUMBER,
+            "fax_number": ContactPointType.FAX_NUMBER,
+            "email": ContactPointType.EMAIL_ADDRESS,
+            "email_address": ContactPointType.EMAIL_ADDRESS,
+            "e_mail": ContactPointType.EMAIL_ADDRESS,
+            "website": ContactPointType.URL,
+            "web": ContactPointType.URL,
+            "web_address": ContactPointType.URL,
+        }
+        if normalized in aliases:
+            return aliases[normalized]
+        try:
+            return ContactPointType(normalized)
+        except ValueError:
+            return ContactPointType.UNKNOWN
+
+    @staticmethod
+    def _resolve_contact_owner_type(value: Any) -> SemanticEntityType | None:
+        if isinstance(value, SemanticEntityType):
+            if value in {
+                SemanticEntityType.MANUFACTURER,
+                SemanticEntityType.SUPPLIER,
+            }:
+                return value
+            return None
+        if value is None:
+            return None
+
+        normalized = str(value).strip().lower().replace(" ", "_").replace("-", "_")
+        try:
+            owner_type = SemanticEntityType(normalized)
+        except ValueError:
+            return None
+        if owner_type in {
+            SemanticEntityType.MANUFACTURER,
+            SemanticEntityType.SUPPLIER,
+        }:
+            return owner_type
+        return None
+
+    @staticmethod
     def _emit_progress(
         progress_callback: Callable[[str], None] | None,
         message: str,
@@ -1800,6 +1931,7 @@ class ExtractionWorkflow:
             ("equipment", EquipmentInfo),
             ("manufacturers", Manufacturer),
             ("suppliers", Supplier),
+            ("contact_points", ContactPoint),
             ("procedures", Procedure),
             ("specifications", Specification),
             ("safety_warnings", SafetyWarning),

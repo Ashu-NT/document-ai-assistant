@@ -1,3 +1,4 @@
+from src.domain.extraction.contact_point import ContactPoint, ContactPointType
 from src.domain.extraction.equipment_info import EquipmentInfo
 from src.domain.extraction.extracted_identifier import ExtractedIdentifier
 from src.domain.extraction.extraction_result import ExtractionResult
@@ -22,6 +23,8 @@ __all__ = [
     "EquipmentInfo",
     "ExtractedIdentifier",
     "ExtractionResult",
+    "ContactPoint",
+    "ContactPointType",
     "MaintenanceInterval",
     "MaintenanceTask",
     "Manufacturer",

@@ -5,6 +5,7 @@ class ExtractionPromptType(StrEnum):
     IDENTIFIER = "identifier"
     MANUFACTURER = "manufacturer"
     SUPPLIER = "supplier"
+    CONTACT_POINT = "contact_point"
     EQUIPMENT = "equipment"
     SPARE_PART = "spare_part"
     SPECIFICATION = "specification"

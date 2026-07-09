@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from src.domain.common import AuditMetadata
+from src.domain.extraction.contact_point import ContactPoint
 from src.domain.extraction.equipment_info import EquipmentInfo
 from src.domain.extraction.extracted_identifier import ExtractedIdentifier
 from src.domain.extraction.maintenance_interval import MaintenanceInterval
@@ -24,6 +25,7 @@ class ExtractionResult:
     equipment: list[EquipmentInfo] = field(default_factory=list)
     manufacturers: list[Manufacturer] = field(default_factory=list)
     suppliers: list[Supplier] = field(default_factory=list)
+    contact_points: list[ContactPoint] = field(default_factory=list)
     procedures: list[Procedure] = field(default_factory=list)
     specifications: list[Specification] = field(default_factory=list)
     safety_warnings: list[SafetyWarning] = field(default_factory=list)
@@ -48,6 +50,7 @@ class ExtractionResult:
                 self.equipment,
                 self.manufacturers,
                 self.suppliers,
+                self.contact_points,
                 self.procedures,
                 self.specifications,
                 self.safety_warnings,

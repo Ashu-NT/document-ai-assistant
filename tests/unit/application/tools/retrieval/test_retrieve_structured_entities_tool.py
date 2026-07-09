@@ -3,6 +3,8 @@ from src.application.tools.retrieval.retrieve_structured_entities_tool import (
     RetrieveStructuredEntitiesTool,
 )
 from src.domain.extraction import (
+    ContactPoint,
+    ContactPointType,
     Manufacturer,
     MaintenanceTask,
     Procedure,
@@ -46,6 +48,34 @@ class _FakeExtractionService:
                 document_id=document_id or "doc_001",
                 name="ACME Corp",
                 source_chunk_id="chunk_001",
+            )
+        ]
+
+    def search_contact_points(self, query: str, document_id: str | None = None):
+        self.search_calls.append(("contact_point", query, document_id))
+        return [
+            ContactPoint(
+                contact_point_id="contact_point_001",
+                document_id=document_id or "doc_001",
+                contact_type=ContactPointType.EMAIL_ADDRESS,
+                value="service@acme.example",
+                owner_name="ACME Corp",
+                owner_entity_type=SemanticEntityType.MANUFACTURER,
+                source_chunk_id="chunk_contact_001",
+            )
+        ]
+
+    def list_contact_points(self, document_id: str | None = None):
+        self.list_calls.append(("contact_point", document_id))
+        return [
+            ContactPoint(
+                contact_point_id="contact_point_001",
+                document_id=document_id or "doc_001",
+                contact_type=ContactPointType.EMAIL_ADDRESS,
+                value="service@acme.example",
+                owner_name="ACME Corp",
+                owner_entity_type=SemanticEntityType.MANUFACTURER,
+                source_chunk_id="chunk_contact_001",
             )
         ]
 
@@ -167,6 +197,24 @@ def test_retrieve_structured_entities_tool_supports_new_entity_families() -> Non
     assert result.data["entity_type"] == "procedure"
     assert result.data["items"][0]["title"] == "Install hydraulic filter"
     assert result.data["items"][0]["equipment_id"] == "equipment_001"
+
+
+def test_retrieve_structured_entities_tool_supports_contact_points() -> None:
+    service = _FakeExtractionService()
+    tool = RetrieveStructuredEntitiesTool(service)
+
+    result = tool.run(
+        RetrieveStructuredEntitiesRequest(
+            entity_type="contact_point",
+            document_id="doc_001",
+            query_text="service@acme.example",
+        )
+    )
+
+    assert result.success is True
+    assert service.search_calls == [("contact_point", "service@acme.example", "doc_001")]
+    assert result.data["items"][0]["value"] == "service@acme.example"
+    assert result.data["items"][0]["owner_name"] == "ACME Corp"
 
 
 def test_retrieve_structured_entities_tool_rejects_unknown_entity_type() -> None:
@@ -331,6 +379,33 @@ def test_retrieve_structured_entities_tool_returns_empty_related_entities_by_def
     )
 
     assert result.data["items"][0]["related_entities"] == []
+
+
+def test_retrieve_structured_entities_tool_attaches_contact_point_related_entity() -> None:
+    service = _FakeExtractionService()
+    service.semantic_relationships["doc_001"] = [
+        _relationship(
+            relationship_type=SemanticRelationshipType.MANUFACTURER_HAS_CONTACT_POINT,
+            source_entity_type=SemanticEntityType.MANUFACTURER,
+            source_entity_id="manufacturer_001",
+            target_entity_type=SemanticEntityType.CONTACT_POINT,
+            target_entity_id="contact_point_001",
+        )
+    ]
+    tool = RetrieveStructuredEntitiesTool(service)
+
+    result = tool.run(
+        RetrieveStructuredEntitiesRequest(
+            entity_type="manufacturer",
+            document_id="doc_001",
+        )
+    )
+
+    assert result.success is True
+    related = result.data["items"][0]["related_entities"]
+    assert len(related) == 1
+    assert related[0]["entity_type"] == "contact_point"
+    assert related[0]["entity"]["value"] == "service@acme.example"
 
 
 def test_retrieve_structured_entities_tool_skips_enrichment_when_relationships_lookup_fails() -> (

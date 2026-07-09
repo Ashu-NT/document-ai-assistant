@@ -13,6 +13,7 @@ from src.infrastructure.db.mappers.document import (
 from src.infrastructure.db.mappers.classification import ChunkClassificationMapper
 from src.infrastructure.db.mappers.classification import ClassificationResultMapper
 from src.infrastructure.db.mappers.classification import DocumentClassificationMapper
+from src.infrastructure.db.mappers.extraction import ContactPointMapper
 from src.infrastructure.db.mappers.extraction import EquipmentInfoMapper
 from src.infrastructure.db.mappers.extraction import ExtractionResultMapper
 from src.infrastructure.db.mappers.extraction import MaintenanceIntervalMapper
@@ -56,6 +57,7 @@ __all__ = [
     "ChunkClassificationMapper",
     "ClassificationResultMapper",
     "DocumentClassificationMapper",
+    "ContactPointMapper",
     "EquipmentInfoMapper",
     "ExtractionResultMapper",
     "MaintenanceIntervalMapper",

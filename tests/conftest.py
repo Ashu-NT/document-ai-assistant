@@ -20,6 +20,8 @@ from src.domain.document import (
 )
 from src.domain.elements import CanonicalElement
 from src.domain.extraction import (
+    ContactPoint,
+    ContactPointType,
     EquipmentInfo,
     ExtractionResult,
     MaintenanceInterval,
@@ -31,6 +33,7 @@ from src.domain.extraction import (
     SparePart,
     Specification,
     Supplier,
+    SemanticEntityType,
     TroubleshootingEntry,
 )
 from src.domain.retrieval import Citation, RetrievalQuery, RetrievalResult, RetrievedChunk
@@ -325,6 +328,21 @@ def sample_supplier(document_id: str, chunk_id: str) -> Supplier:
         supplier_id="supplier_001",
         document_id=document_id,
         name="Example Supplier",
+        source_chunk_id=chunk_id,
+        confidence_score=0.85,
+    )
+
+
+@pytest.fixture
+def sample_contact_point(document_id: str, chunk_id: str) -> ContactPoint:
+    return ContactPoint(
+        contact_point_id="contact_point_001",
+        document_id=document_id,
+        contact_type=ContactPointType.EMAIL_ADDRESS,
+        value="service@example.com",
+        label="service",
+        owner_name="Example Manufacturer",
+        owner_entity_type=SemanticEntityType.MANUFACTURER,
         source_chunk_id=chunk_id,
         confidence_score=0.85,
     )

@@ -43,6 +43,7 @@ def test_replace_extraction_result_deletes_prior_rows_for_document(
     assert db_uow.extractions.list_equipment(document_id) == []
     assert db_uow.extractions.list_manufacturers(document_id) == []
     assert db_uow.extractions.list_suppliers(document_id) == []
+    assert db_uow.extractions.list_contact_points(document_id) == []
     assert db_uow.extractions.list_procedures(document_id) == []
     assert db_uow.extractions.list_specifications(document_id) == []
     assert db_uow.extractions.list_safety_warnings(document_id) == []
@@ -70,6 +71,7 @@ def test_delete_by_document_removes_all_extraction_rows(
     assert db_uow.extractions.list_equipment(document_id) == []
     assert db_uow.extractions.list_manufacturers(document_id) == []
     assert db_uow.extractions.list_suppliers(document_id) == []
+    assert db_uow.extractions.list_contact_points(document_id) == []
     assert db_uow.extractions.list_procedures(document_id) == []
     assert db_uow.extractions.list_specifications(document_id) == []
     assert db_uow.extractions.list_safety_warnings(document_id) == []
@@ -95,6 +97,7 @@ def test_save_and_load_extraction_result(
     assert len(loaded.equipment) == 1
     assert len(loaded.manufacturers) == 1
     assert len(loaded.suppliers) == 1
+    assert len(loaded.contact_points) == 0
     assert len(loaded.procedures) == 1
     assert len(loaded.specifications) == 1
     assert len(loaded.safety_warnings) == 1
@@ -181,12 +184,45 @@ def test_list_suppliers(db_uow, sample_extraction_result) -> None:
     assert len(suppliers) == 1
 
 
+def test_list_contact_points(
+    db_uow,
+    sample_extraction_result,
+    sample_contact_point,
+) -> None:
+    sample_extraction_result.contact_points = [sample_contact_point]
+    db_uow.extractions.save_extraction_result(sample_extraction_result)
+    db_uow.commit()
+
+    contact_points = db_uow.extractions.list_contact_points(
+        sample_extraction_result.document_id
+    )
+
+    assert len(contact_points) == 1
+    assert contact_points[0].value == "service@example.com"
+
+
 def test_search_manufacturers(db_uow, sample_extraction_result) -> None:
     db_uow.extractions.save_extraction_result(sample_extraction_result)
     db_uow.commit()
 
     matches = db_uow.extractions.search_manufacturers("Example Manufacturer")
     no_matches = db_uow.extractions.search_manufacturers("Nonexistent Corp")
+
+    assert len(matches) == 1
+    assert no_matches == []
+
+
+def test_search_contact_points(
+    db_uow,
+    sample_extraction_result,
+    sample_contact_point,
+) -> None:
+    sample_extraction_result.contact_points = [sample_contact_point]
+    db_uow.extractions.save_extraction_result(sample_extraction_result)
+    db_uow.commit()
+
+    matches = db_uow.extractions.search_contact_points("service@example.com")
+    no_matches = db_uow.extractions.search_contact_points("does-not-exist@example.com")
 
     assert len(matches) == 1
     assert no_matches == []

@@ -181,6 +181,45 @@ class ManufacturerORM(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
 
+class ContactPointORM(Base):
+    __tablename__ = "contact_points"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+
+    extraction_id: Mapped[str | None] = mapped_column(
+        ForeignKey("extraction_results.id"),
+        nullable=True,
+        index=True,
+    )
+
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("documents.id"),
+        nullable=False,
+        index=True,
+    )
+
+    contact_type: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    value: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    label: Mapped[str | None] = mapped_column(String, nullable=True)
+    owner_name: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    owner_entity_type: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+
+    source_chunk_id: Mapped[str | None] = mapped_column(
+        ForeignKey("chunks.id"),
+        nullable=True,
+        index=True,
+    )
+
+    page_start: Mapped[int | None] = mapped_column(nullable=True)
+    page_end: Mapped[int | None] = mapped_column(nullable=True)
+    source_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    confidence_score: Mapped[float | None] = mapped_column(nullable=True)
+    requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
 class ProcedureORM(Base):
     __tablename__ = "procedures"
 

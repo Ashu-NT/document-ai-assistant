@@ -195,6 +195,18 @@ def test_extract_builds_extraction_result_and_saves_it(sample_chunk) -> None:
       "requires_human_review": false
     }
   ],
+  "contact_points": [
+    {
+      "contact_type": "email_address",
+      "value": "service@example.com",
+      "label": "service",
+      "owner_name": "Example Manufacturer",
+      "owner_entity_type": "manufacturer",
+      "source_chunk_id": "chunk_002",
+      "confidence_score": 0.89,
+      "requires_human_review": false
+    }
+  ],
   "procedures": [
     {
       "title": "Install hydraulic filter",
@@ -282,6 +294,11 @@ def test_extract_builds_extraction_result_and_saves_it(sample_chunk) -> None:
     assert len(result.suppliers) == 1
     assert result.suppliers[0].supplier_id.startswith("supplier_")
     assert result.suppliers[0].source_chunk_id == second_chunk.chunk_id
+    assert len(result.contact_points) == 1
+    assert result.contact_points[0].contact_point_id.startswith("contact_point_")
+    assert result.contact_points[0].value == "service@example.com"
+    assert result.contact_points[0].owner_name == "Example Manufacturer"
+    assert result.contact_points[0].source_chunk_id == second_chunk.chunk_id
     assert len(result.procedures) == 1
     assert result.procedures[0].procedure_id.startswith("procedure_")
     assert result.procedures[0].procedure_type == ProcedureType.INSTALLATION
@@ -521,7 +538,7 @@ def test_extract_falls_back_to_full_prompt_when_union_candidates_cover_everythin
     )
     fake_llm_service = FakeLLMService(
         [
-            '{"candidate_types": ["maintenance_task", "spare_part", "equipment", "manufacturer", "supplier", "procedure", "specification", "safety_warning", "maintenance_interval", "troubleshooting", "identifier"]}',
+            '{"candidate_types": ["maintenance_task", "spare_part", "equipment", "manufacturer", "supplier", "contact_point", "procedure", "specification", "safety_warning", "maintenance_interval", "troubleshooting", "identifier"]}',
             _empty_extraction_response(),
         ]
     )
@@ -1052,7 +1069,7 @@ def test_extract_emits_progress_messages(sample_chunk) -> None:
         for message in progress_messages
     )
     assert any(
-        "Extraction completed (maintenance_tasks=0, spare_parts=0, equipment=0, manufacturers=0, suppliers=0, procedures=0, specifications=0, safety_warnings=0, maintenance_intervals=0, troubleshooting_entries=0, identifiers=0, batches=1)." in message
+        "Extraction completed (maintenance_tasks=0, spare_parts=0, equipment=0, manufacturers=0, suppliers=0, contact_points=0, procedures=0, specifications=0, safety_warnings=0, maintenance_intervals=0, troubleshooting_entries=0, identifiers=0, batches=1)." in message
         for message in progress_messages
     )
 
