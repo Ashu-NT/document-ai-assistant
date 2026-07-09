@@ -2,7 +2,7 @@ from src.application.services.answer_generation.intent.answer_intent import Answ
 from src.application.workflows.question_answering.answer_context.key_value_extractor import (
     KeyValueExtractor,
 )
-from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+from src.application.workflows.question_answering.answer_context import (
     AnswerSource,
 )
 

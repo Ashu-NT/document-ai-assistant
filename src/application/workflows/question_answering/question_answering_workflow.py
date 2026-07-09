@@ -24,7 +24,7 @@ from src.application.services.document_exploration.document_exploration_service 
 from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
     AnswerContextOrganizer,
 )
-from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+from src.application.workflows.question_answering.answer_context import (
     StructuredAnswerContext,
 )
 from src.application.workflows.question_answering.answer_context.structured_fact_key_value_builder import (

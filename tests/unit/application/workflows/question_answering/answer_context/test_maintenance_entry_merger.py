@@ -1,7 +1,7 @@
 from src.application.workflows.question_answering.answer_context.maintenance_entry_merger import (
     MaintenanceEntryMerger,
 )
-from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+from src.application.workflows.question_answering.answer_context import (
     AnswerMaintenanceEntry,
 )
 

@@ -7,7 +7,7 @@ from typing import Sequence
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
-from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+from src.application.workflows.question_answering.answer_context.models import (
     AnswerKeyValue,
     AnswerMaintenanceEntry,
     AnswerMaintenanceReference,
@@ -209,11 +209,6 @@ class KeyValueExtractor:
                         component=candidate.component,
                         notes=candidate.notes,
                         source_number=source.source_number,
-                        source_numbers=[source.source_number],
-                        page_start=source.page_start,
-                        page_end=source.page_end,
-                        section_path=source.section_path,
-                        section_paths=[source.section_path] if source.section_path else [],
                         references=[
                             AnswerMaintenanceReference(
                                 source_number=source.source_number,

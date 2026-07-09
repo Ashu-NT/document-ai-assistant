@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from typing import Sequence
 
-from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+from src.application.workflows.question_answering.answer_context.models import (
     AnswerSource,
     AnswerSourceGroup,
 )

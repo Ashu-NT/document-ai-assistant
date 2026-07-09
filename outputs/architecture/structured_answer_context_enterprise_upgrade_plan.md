@@ -431,6 +431,22 @@ Three independent lookup tables must all stay in sync with `AnswerIntent`'s memb
 - this is the exact shape of bug that was found and fixed elsewhere in this codebase on a sibling enum (`RetrievalQueryIntent`/`AnswerIntent` cross-taxonomy confusion produced a dead `elif intent == "certification":` branch in `StructuredEvidenceQueryAnalyzer.analyze()`, fixed in an earlier session)
 - a new `AnswerIntent` member added later could silently fall through to `GENERAL` formatting in one of these three maps and not the others, with no test catching the gap — a parametrized test iterating `AnswerIntent` against all three maps would close this cheaply and should be added alongside any section 9 work that touches these maps
 
+## 4.16 A resolved `MaintenanceTask -> Procedure` relationship's `steps` are silently dropped before reaching the answer (found during Phase 2, missed in original audit)
+
+`MaintenanceTask` (`src/domain/extraction/maintenance_task.py:8-26`) has no `steps` field of its own — only `title`, `description`, `interval`, `component_name`, `equipment_id`. `Procedure` (`src/domain/extraction/procedure.py:36`) does: `steps: list[str]`. The two are linked by `SemanticRelationshipType.TASK_USES_PROCEDURE` (`src/domain/extraction/semantic_relationship.py:31`), populated by proximity-based candidate generation (`src/application/workflows/linking/semantic_relationship_candidate_generator.py:26-29`).
+
+That relationship is resolved correctly: `StructuredEntityResolver._attach_related_entities()` (`src/application/workflows/retrieval/structured/structured_entity_resolver.py:118-204`) does stitch the full related `Procedure` dict — including its populated `steps` — onto a resolved `MaintenanceTask`'s `related_entities` list. The data genuinely reaches the structured-evidence layer.
+
+It is then dropped one hop later. `StructuredFactKeyValueBuilder._ENTITY_FIELD_LABELS` (`src/application/workflows/question_answering/answer_context/structured_fact_key_value_builder.py:8-39`) has entries for `manufacturer`, `supplier`, `spare_part`, `equipment`, `maintenance_task`, and `contact_point` — but no `"procedure"` key. `_iter_entities_with_related()` generically walks every related entity (so the linked Procedure does flow through), but `_field_labels_for_entity()` only special-cases `contact_point`; for `entity_type="procedure"` it falls through to `_ENTITY_FIELD_LABELS.get("procedure", ())`, an empty tuple. The steps are structurally present in the payload and never mapped to any label/value, so they never become an `AnswerKeyValue`.
+
+Separately, the raw-text extraction path has no steps concept at all: `KeyValueExtractor.extract_maintenance_entries()` (`_maintenance_candidate_from_line`, `_maintenance_candidate_from_table_row`) always produces exactly one atomic task per line/row — it never groups a multi-line numbered sequence under one task as a step list. Confirmed at the prompt level too: `maintenance_task_extraction_schema.py` has no `steps` key; `procedure_extraction_schema.py` explicitly requires one. Steps are a Procedure-only concept everywhere in this codebase except the one relationship that connects them to a task.
+
+### Impact
+
+- a user asking "how do I do `<maintenance task X>`?" gets no step-by-step answer even when the document's extraction pipeline successfully identified and linked the exact procedure that answers the question — the link exists, resolves, and is thrown away one layer before the answer
+- two independent gaps, not one: (a) the structured-resolution path drops already-linked steps at a single missing map entry (small, mechanical fix), and (b) the raw-text path has no step-list concept in `AnswerMaintenanceEntry` at all (a real modeling question — `AnswerKeyValue.value` is a single string, so "steps" doesn't fit that shape without a list-valued view, which is exactly what Phase 4's typed structured-evidence views are for)
+- natural fix location is Phase 4 (`procedure_entries`/`relationship_views`, section 9.2/9.3), not a Phase 2/3 patch — this is the same *shape* of bug as 4.3 (resolved data silently discarded before reaching the answer), just at the field level instead of the whole-context level, and it is exactly the kind of relationship section 9.3 already describes preserving
+
 ## 5. Dead Code / Low-Value Path Review
 
 ## 5.1 Confirmed low-value or dead-path behavior
@@ -736,9 +752,10 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | 4.10 tests lock in the limited model | Phase 1, Phase 10 | section 11 |
 | 4.11 / 5.1.D dead `confidence` fields | Phase 9 | 9.9, reviewer 0.1 #4 |
 | 4.12 / 5.1.E dead `max_context_chunks` | Phase 1 — **done** (removed) | reviewer 0.1 #1 |
-| 4.13 redundant maintenance-entry data model | Phase 2 | reviewer 0.1 #2 |
+| 4.13 redundant maintenance-entry data model | Phase 2 — **done** | reviewer 0.1 #2 |
 | 4.14 no rules-version / observability parity | Phase 1 — **done**, Phase 6 (consumption) | 9.10, reviewer 0.1 #3 |
 | 4.15 no `AnswerIntent` exhaustiveness guard | Phase 1 — **done** | 9.8 |
+| 4.16 `task_uses_procedure` steps silently dropped | Phase 4 | 9.2, 9.3 |
 
 ## Phase 1 - Baseline protection [IMPLEMENTED]
 
@@ -753,13 +770,15 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 
 Full regression: 236 tests green across `tests/unit/application/services/answer_generation/`, `tests/unit/application/workflows/question_answering/`, `tests/unit/application/guardrails/`.
 
-## Phase 2 - Model refactor
+## Phase 2 - Model refactor [IMPLEMENTED]
 
-- split `structured_answer_context.py` into smaller answer-context model files
-- keep `src.` imports and stable re-exports
-- collapse `AnswerMaintenanceEntry`'s duplicated reference representations while models are being split
-- do not change answer behavior yet beyond structural cleanup and removal of duplicated internal representations
-- **must be executed as behavior-preserving:** the reference-representation collapse touches three consumers (`MaintenanceEntryMerger`, `MaintenancePromptContextFormatter`, `AnswerContextOrganizer`) - update all three in this same phase, not a subset, and keep rendered maintenance-answer output byte-for-byte identical at this stage (verify via `tests/unit/application/workflows/question_answering/answer_context/test_maintenance_entry_merger.py` and the maintenance-path assertions in `test_answer_generation_service.py`, both green with no assertion changes). Any answer-shape improvement that collapsing enables is deferred to Phase 4+, not bundled in here.
+- ✅ split `structured_answer_context.py` into smaller answer-context model files — new `answer_context/models/` subpackage: `answer_source.py` (`AnswerSource`), `answer_groups.py` (`AnswerSourceGroup`, `AnswerSectionGroup`), `answer_key_value.py` (`AnswerKeyValue`), `answer_maintenance_entry.py` (`AnswerMaintenanceEntry`, `AnswerMaintenanceReference`), `structured_answer_context.py` (`StructuredAnswerContext`). Old monolithic `answer_context/structured_answer_context.py` deleted (no shim), matching section 13's direct-cutover convention.
+- ✅ keep `src.` imports and stable re-exports — `answer_context/__init__.py` still re-exports every model name unchanged; only its own internal import source moved from the deleted file to `.models`. External consumers now import from the package root (`...answer_context import X`) instead of the specific deleted submodule; internal package files (`key_value_extractor.py`, `maintenance_entry_merger.py`, `structured_fact_key_value_builder.py`, `answer_context_organizer.py`, `source_group_builder.py`, `section_group_builder.py`) import directly from the sibling `.models` package. All 15 import sites found via repo-wide search were updated in this same change.
+- ✅ collapse `AnswerMaintenanceEntry`'s duplicated reference representations — `page_start`, `page_end`, `section_path`, `source_numbers`, `section_paths` are no longer separate stored fields; they are now `@property` accessors derived from `references` (the single source of truth). Only `source_number` remains a real field (the primary/first source, matching `AnswerKeyValue.source_number`'s own convention), auto-populated into a single-item `references` list via `__post_init__` when a caller doesn't pass `references` explicitly — this is what kept every existing single-reference construction call site (including the test helper in `test_maintenance_entry_merger.py`) working unchanged.
+- do not change answer behavior yet beyond structural cleanup and removal of duplicated internal representations — confirmed: full suite green, zero assertion changes in `test_maintenance_entry_merger.py` or the maintenance-path tests in `test_answer_generation_service.py`.
+- **Correction to this phase's original consumer list:** the plan named `AnswerContextOrganizer` as one of three consumers needing changes. On inspection, `AnswerContextOrganizer.organize()` only ever reads `entry.interval` (for a diagnostics count) — it never touches `references`/`source_numbers`/`page_start`/`section_path`, so it needed zero changes. The actual third consumer (alongside `MaintenanceEntryMerger` and `MaintenancePromptContextFormatter`) is `KeyValueExtractor.extract_maintenance_entries()`, which is where entries are originally constructed. Also found and removed during the collapse: `MaintenanceEntryMerger._merge_ordered_ints()`, `_merge_ordered_strings()`, `_min_page()`, `_max_page()` — four private helpers that existed solely to maintain the now-removed duplicate fields, dead the moment those fields were removed.
+
+Full regression: 2220 tests green across the entire `tests/unit` suite (not just the affected area — full-suite run, since this phase touches import paths reachable from many packages).
 
 ## Phase 3 - Source enrichment
 
@@ -772,6 +791,7 @@ Full regression: 236 tests green across `tests/unit/application/services/answer_
 - **First change in this phase, ahead of the typed-view work below:** make `QuestionAnsweringWorkflow._join_structured_facts()` retain the built `structured_context` whenever it was successfully organized, not only when extra `AnswerKeyValue` rows were produced (closes 4.3/9.7). This is the clearest live production correctness bug in this path - `structured_context` is fully organized and then discarded - so it lands first and is not gated on the rest of Phase 4. If the team wants risk reduction sooner than Phase 4's start, this single change can be pulled forward and shipped as its own micro-fix ahead of Phase 2/3 without waiting on the model refactor; it needs no new types, only removing the dead-path check.
 - add first-class answer models for structured entities, relationships, tables, and assets
 - keep `AnswerKeyValue` as a convenience projection, not the only structured view
+- when adding `relationship_views`/`procedure_entries` (9.2/9.3), make a resolved `task_uses_procedure` relationship surface its `Procedure.steps` as a real, list-valued view rather than an `AnswerKeyValue` (which can't hold a list cleanly) — closes 4.16. Two independent sub-fixes, both in scope here: (a) `StructuredFactKeyValueBuilder`/its typed-view successor stops silently dropping the related Procedure payload for `entity_type="procedure"`, and (b) decide whether `AnswerMaintenanceEntry`'s raw-text extraction path (`KeyValueExtractor`) should gain any step-grouping capability at all, or whether steps remain reachable only via the structured-resolution path — this is a real modeling decision, not just a missing map entry, and should not be resolved as a side effect of other Phase 4 work.
 
 ## Phase 5 - Organizer redesign
 

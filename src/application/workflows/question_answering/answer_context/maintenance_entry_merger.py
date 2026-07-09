@@ -5,7 +5,7 @@ from collections import OrderedDict
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+from src.application.workflows.question_answering.answer_context.models import (
     AnswerMaintenanceEntry,
     AnswerMaintenanceReference,
 )
@@ -118,26 +118,13 @@ class MaintenanceEntryMerger:
         right: AnswerMaintenanceEntry,
     ) -> AnswerMaintenanceEntry:
         references = self._merge_references(left.references, right.references)
-        source_numbers = self._merge_ordered_ints(
-            left.source_numbers or [left.source_number],
-            right.source_numbers or [right.source_number],
-        )
-        section_paths = self._merge_ordered_strings(
-            left.section_paths or ([left.section_path] if left.section_path else []),
-            right.section_paths or ([right.section_path] if right.section_path else []),
-        )
         return AnswerMaintenanceEntry(
             task=self._prefer_more_descriptive_text(left.task, right.task),
             description=self._prefer_description(left, right),
             interval=self._merge_interval(left.interval, right.interval),
             component=self._prefer_component(left.component, right.component),
             notes=self._prefer_notes(left.notes, right.notes),
-            source_number=source_numbers[0],
-            source_numbers=source_numbers,
-            page_start=self._min_page(left.page_start, right.page_start),
-            page_end=self._max_page(left.page_end, right.page_end),
-            section_path=section_paths[0] if section_paths else None,
-            section_paths=section_paths,
+            source_number=references[0].source_number,
             references=references,
             confidence=max(left.confidence or 0.0, right.confidence or 0.0) or None,
         )
@@ -146,32 +133,15 @@ class MaintenanceEntryMerger:
         self,
         entry: AnswerMaintenanceEntry,
     ) -> AnswerMaintenanceEntry:
-        references = entry.references or [
-            AnswerMaintenanceReference(
-                source_number=entry.source_number,
-                page_start=entry.page_start,
-                page_end=entry.page_end,
-                section_path=entry.section_path,
-            )
-        ]
-        source_numbers = entry.source_numbers or [entry.source_number]
-        section_paths = entry.section_paths or (
-            [entry.section_path] if entry.section_path else []
-        )
-        description = self._normalized_description(entry)
+        references = self._merge_references(entry.references, [])
         return AnswerMaintenanceEntry(
             task=entry.task,
-            description=description,
+            description=self._normalized_description(entry),
             interval=self._merge_interval(entry.interval, entry.interval),
             component=self._prefer_component(entry.component, None),
             notes=self._prefer_notes(entry.notes, None),
-            source_number=source_numbers[0],
-            source_numbers=source_numbers,
-            page_start=entry.page_start,
-            page_end=entry.page_end,
-            section_path=section_paths[0] if section_paths else None,
-            section_paths=section_paths,
-            references=self._merge_references(references, []),
+            source_number=entry.source_number,
+            references=references,
             confidence=entry.confidence,
         )
 
@@ -297,34 +267,3 @@ class MaintenanceEntryMerger:
             )
             ordered.setdefault(key, reference)
         return list(ordered.values())
-
-    @staticmethod
-    def _merge_ordered_ints(
-        left: Sequence[int],
-        right: Sequence[int],
-    ) -> list[int]:
-        ordered: OrderedDict[int, None] = OrderedDict()
-        for value in [*left, *right]:
-            ordered.setdefault(value, None)
-        return list(ordered.keys())
-
-    @staticmethod
-    def _merge_ordered_strings(
-        left: Sequence[str],
-        right: Sequence[str],
-    ) -> list[str]:
-        ordered: OrderedDict[str, None] = OrderedDict()
-        for value in [*left, *right]:
-            if value:
-                ordered.setdefault(value, None)
-        return list(ordered.keys())
-
-    @staticmethod
-    def _min_page(left: int | None, right: int | None) -> int | None:
-        values = [value for value in (left, right) if value is not None]
-        return min(values) if values else None
-
-    @staticmethod
-    def _max_page(left: int | None, right: int | None) -> int | None:
-        values = [value for value in (left, right) if value is not None]
-        return max(values) if values else None

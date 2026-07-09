@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+from src.application.workflows.question_answering.answer_context.models import (
     AnswerKeyValue,
 )
 from src.domain.document.entities.identifier import Identifier

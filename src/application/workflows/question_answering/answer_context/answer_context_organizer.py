@@ -19,7 +19,7 @@ from src.application.workflows.question_answering.answer_context.section_group_b
 from src.application.workflows.question_answering.answer_context.source_group_builder import (
     SourceGroupBuilder,
 )
-from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+from src.application.workflows.question_answering.answer_context.models import (
     AnswerSource,
     StructuredAnswerContext,
 )

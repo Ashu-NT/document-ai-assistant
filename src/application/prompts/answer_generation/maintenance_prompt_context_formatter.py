@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from collections.abc import Sequence
 
-from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+from src.application.workflows.question_answering.answer_context import (
     AnswerMaintenanceEntry,
     AnswerMaintenanceReference,
 )
@@ -50,17 +50,9 @@ class MaintenancePromptContextFormatter:
         return entry.description or entry.notes or entry.task
 
     def _reference_lines(self, entry: AnswerMaintenanceEntry) -> list[str]:
-        references = entry.references or [
-            AnswerMaintenanceReference(
-                source_number=entry.source_number,
-                page_start=entry.page_start,
-                page_end=entry.page_end,
-                section_path=entry.section_path,
-            )
-        ]
-        page_lines = self._page_lines(references)
-        section_lines = self._section_lines(entry, references)
-        source_numbers = entry.source_numbers or [reference.source_number for reference in references]
+        page_lines = self._page_lines(entry.references)
+        section_lines = self._section_lines(entry)
+        source_numbers = entry.source_numbers
 
         lines: list[str] = []
         if page_lines:
@@ -91,13 +83,9 @@ class MaintenancePromptContextFormatter:
     def _section_lines(
         self,
         entry: AnswerMaintenanceEntry,
-        references: Sequence[AnswerMaintenanceReference],
     ) -> list[str]:
-        section_paths = entry.section_paths or [
-            reference.section_path for reference in references if reference.section_path
-        ]
         ordered_sections: OrderedDict[str, None] = OrderedDict()
-        for section_path in section_paths:
+        for section_path in entry.section_paths:
             if section_path:
                 ordered_sections.setdefault(section_path, None)
         rendered_sections = list(ordered_sections.keys())

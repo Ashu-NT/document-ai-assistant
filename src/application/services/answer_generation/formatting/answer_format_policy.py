@@ -8,7 +8,7 @@ from src.application.services.answer_generation.intent.answer_intent import (
 )
 
 if TYPE_CHECKING:
-    from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+    from src.application.workflows.question_answering.answer_context import (
         StructuredAnswerContext,
     )
 

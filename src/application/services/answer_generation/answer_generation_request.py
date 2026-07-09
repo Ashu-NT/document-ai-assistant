@@ -9,7 +9,7 @@ from src.application.services.answer_generation.intent.answer_intent import (
 from src.application.services.answer_generation.intent.answer_intent_analyzer import (
     AnswerIntentDecision,
 )
-from src.application.workflows.question_answering.answer_context.structured_answer_context import (
+from src.application.workflows.question_answering.answer_context import (
     StructuredAnswerContext,
 )
 from src.domain.common import ChunkType
