@@ -19,6 +19,9 @@ class ExtractionResultORM(Base):
 
     confidence_score: Mapped[float | None] = mapped_column(nullable=True)
     requires_human_review: Mapped[bool] = mapped_column(nullable=False, default=True)
+    source_chunk_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    attempted_chunk_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    unresolved_chunk_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 

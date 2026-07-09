@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 
@@ -17,7 +18,7 @@ from src.application.workflows.ingestion import (
     ReingestionNotSupportedError,
 )
 from src.application.workflows.parsing import ParsingWorkflowResult
-from src.domain.common import DocumentType
+from src.domain.common import ChunkType, DocumentType
 from src.domain.document.value_objects import DocumentStatistics
 from src.shared.exceptions import DocumentParsingError
 from src.shared.execution import ActionResult
@@ -226,9 +227,10 @@ class FakePostClassificationChunkFinalizationWorkflow:
 
 
 class FakeExtractionWorkflow:
-    def __init__(self, extraction_result) -> None:
+    def __init__(self, extraction_result, extraction_service=None) -> None:
         self.extraction_result = extraction_result
         self.extraction_model = "extract-test"
+        self.extraction_service = extraction_service
         self.calls = []
 
     def extract(
@@ -240,6 +242,7 @@ class FakeExtractionWorkflow:
         replace_existing: bool = False,
         tables=None,
         sections=None,
+        base_result=None,
     ):
         self.calls.append(
             {
@@ -249,6 +252,7 @@ class FakeExtractionWorkflow:
                 "replace_existing": replace_existing,
                 "tables": tables,
                 "sections": sections,
+                "base_result": base_result,
             }
         )
         result = copy.deepcopy(self.extraction_result)
@@ -259,6 +263,7 @@ class FakeExtractionWorkflow:
 class FailingExtractionWorkflow:
     def __init__(self, message: str = "Malformed extraction response.") -> None:
         self.extraction_model = "extract-test"
+        self.extraction_service = None
         self.message = message
         self.calls = []
 
@@ -271,6 +276,7 @@ class FailingExtractionWorkflow:
         replace_existing: bool = False,
         tables=None,
         sections=None,
+        base_result=None,
     ):
         self.calls.append(
             {
@@ -278,6 +284,7 @@ class FailingExtractionWorkflow:
                 "chunks": list(chunks),
                 "replace_existing": replace_existing,
                 "tables": tables,
+                "base_result": base_result,
             }
         )
         from src.shared.exceptions import SchemaValidationError
@@ -825,6 +832,117 @@ def test_retry_extraction_invokes_semantic_linking_workflow(
 
     assert semantic_linking_workflow.calls == [document_id]
     assert result.diagnostics["semantic_relationship_count"] == 2
+
+
+def test_retry_extraction_recovers_missing_chunks_by_rerunning_finalization(
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+    sample_chunk,
+) -> None:
+    chunkless_graph = copy.deepcopy(sample_document_graph)
+    chunkless_graph.replace_chunks([])
+    recovered_graph = copy.deepcopy(sample_document_graph)
+    recovered_chunk = sample_chunk.__class__(
+        chunk_id="chunk_recovered",
+        document_id=sample_chunk.document_id,
+        section_id=sample_chunk.section_id,
+        content="Recovered chunk content.",
+        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+        section_path=list(sample_chunk.section_path),
+        element_ids=list(sample_chunk.element_ids),
+        table_ids=list(sample_chunk.table_ids),
+        picture_ids=list(sample_chunk.picture_ids),
+        source=sample_chunk.source,
+        sequence_number=sample_chunk.sequence_number,
+        chunk_index=sample_chunk.chunk_index,
+        chunk_total=sample_chunk.chunk_total,
+        embedding_text=sample_chunk.embedding_text,
+    )
+    recovered_graph.replace_chunks([recovered_chunk])
+    extraction_workflow = FakeExtractionWorkflow(sample_extraction_result)
+    finalization_workflow = FakePostClassificationChunkFinalizationWorkflow(
+        recovered_graph
+    )
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        extraction_workflow=extraction_workflow,
+        document_lookup_service=FakeDocumentLookupService(chunkless_graph),
+        post_classification_chunk_finalization_workflow=finalization_workflow,
+    )
+    messages: list[str] = []
+
+    result = workflow.retry_extraction(
+        chunkless_graph.document.document_id,
+        progress_callback=messages.append,
+    )
+
+    assert result.status == IngestionStatus.EXTRACTED
+    assert finalization_workflow.calls == [
+        {
+            "document_id": chunkless_graph.document.document_id,
+            "embed_final_chunks": False,
+            "enable_question_generation": None,
+        }
+    ]
+    assert extraction_workflow.calls[0]["chunks"] == [recovered_chunk]
+    assert any(
+        "Rebuilding final chunk set in place before retrying extraction"
+        in message
+        for message in messages
+    )
+
+
+def test_retry_extraction_retries_only_saved_unresolved_chunks(
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+    sample_chunk,
+) -> None:
+    second_chunk = sample_chunk.__class__(
+        chunk_id="chunk_002",
+        document_id=sample_chunk.document_id,
+        section_id=sample_chunk.section_id,
+        content="Previously unresolved chunk content.",
+        chunk_type=sample_chunk.chunk_type,
+        section_path=list(sample_chunk.section_path),
+        element_ids=list(sample_chunk.element_ids),
+        table_ids=list(sample_chunk.table_ids),
+        picture_ids=list(sample_chunk.picture_ids),
+        source=sample_chunk.source,
+        sequence_number=sample_chunk.sequence_number,
+        chunk_index=sample_chunk.chunk_index,
+        chunk_total=sample_chunk.chunk_total,
+        embedding_text=sample_chunk.embedding_text,
+    )
+    graph_with_two_chunks = copy.deepcopy(sample_document_graph)
+    graph_with_two_chunks.replace_chunks([sample_chunk, second_chunk])
+    prior_result = copy.deepcopy(sample_extraction_result)
+    prior_result.unresolved_chunk_ids = ["chunk_002"]
+    prior_result.attempted_chunk_ids = ["chunk_001", "chunk_002"]
+    prior_result.source_chunk_ids = ["chunk_001"]
+    extraction_service = SimpleNamespace(
+        get_document_extraction_result=lambda document_id: prior_result
+    )
+    extraction_workflow = FakeExtractionWorkflow(
+        sample_extraction_result,
+        extraction_service=extraction_service,
+    )
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        extraction_workflow=extraction_workflow,
+        document_lookup_service=FakeDocumentLookupService(graph_with_two_chunks),
+    )
+
+    result = workflow.retry_extraction(graph_with_two_chunks.document.document_id)
+
+    assert result.status == IngestionStatus.EXTRACTED
+    assert extraction_workflow.calls[0]["chunks"] == [second_chunk]
+    assert extraction_workflow.calls[0]["base_result"] == prior_result
 
 
 def test_ingestion_workflow_skips_semantic_linking_when_not_configured(

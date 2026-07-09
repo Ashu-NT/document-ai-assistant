@@ -236,26 +236,46 @@ class RetrievalBenchmarkCorpusSeeder:
                     raise ApplicationError(
                         "Existing document could not be loaded to check its chunk count.",
                         details={"document_id": existing_document_id},
-                    )
+                )
 
                 if not document_graph.chunks:
-                    self._emit_progress(
-                        progress_callback,
-                        (
-                            f"{prefix} Existing document found for {seed_target.document_alias}: "
-                            f"{existing_document_id}. It has 0 chunks, so extraction cannot be "
-                            "retried (this is a parsing/finalization failure, not an "
-                            "extraction failure). Marking it as needing a full "
-                            "--force-reparse instead of attempting extraction."
-                        ),
-                    )
-                    final_graph, classification, seed_status = (
-                        self._mark_document_needs_reparse(
-                            document_id=existing_document_id,
-                            document_graph=document_graph,
-                            activity_context=activity_context,
+                    if not document_graph.elements:
+                        self._emit_progress(
+                            progress_callback,
+                            (
+                                f"{prefix} Existing document found for {seed_target.document_alias}: "
+                                f"{existing_document_id}. It has 0 chunks and no persisted elements, "
+                                "so in-place recovery is not possible. Marking it as needing a full "
+                                "--force-reparse instead of attempting extraction."
+                            ),
                         )
-                    )
+                        final_graph, classification, seed_status = (
+                            self._mark_document_needs_reparse(
+                                document_id=existing_document_id,
+                                document_graph=document_graph,
+                                activity_context=activity_context,
+                            )
+                        )
+                    else:
+                        self._emit_progress(
+                            progress_callback,
+                            (
+                                f"{prefix} Existing document found for {seed_target.document_alias}: "
+                                f"{existing_document_id}. It has 0 chunks but "
+                                f"{len(document_graph.elements)} persisted element(s). Attempting "
+                                "in-place chunk recovery and extraction retry (no re-parse, same "
+                                "document_id)..."
+                            ),
+                        )
+                        final_graph, classification, seed_status = (
+                            self._retry_extraction_for_existing_document(
+                                document_id=existing_document_id,
+                                activity_context=activity_context,
+                                progress_callback=progress_callback,
+                                seed_index=seed_index,
+                                total_targets=total_targets,
+                            )
+                        )
                 else:
                     self._emit_progress(
                         progress_callback,
@@ -274,6 +294,50 @@ class RetrievalBenchmarkCorpusSeeder:
                             seed_index=seed_index,
                             total_targets=total_targets,
                         )
+                    )
+            elif self.extraction_service is not None:
+                existing_extraction_result = (
+                    self.extraction_service.get_document_extraction_result(
+                        existing_document_id
+                    )
+                )
+                if (
+                    existing_extraction_result is not None
+                    and existing_extraction_result.unresolved_chunk_ids
+                ):
+                    self._emit_progress(
+                        progress_callback,
+                        (
+                            f"{prefix} Existing document found for {seed_target.document_alias}: "
+                            f"{existing_document_id}. Its saved extraction result still has "
+                            f"{len(existing_extraction_result.unresolved_chunk_ids)} unresolved "
+                            "chunk(s). Retrying only that unresolved subset in place "
+                            "(no re-parse, same document_id)..."
+                        ),
+                    )
+                    final_graph, classification, seed_status = (
+                        self._retry_extraction_for_existing_document(
+                            document_id=existing_document_id,
+                            activity_context=activity_context,
+                            progress_callback=progress_callback,
+                            seed_index=seed_index,
+                            total_targets=total_targets,
+                        )
+                    )
+                else:
+                    self._emit_progress(
+                        progress_callback,
+                        (
+                            f"{prefix} Existing document found for {seed_target.document_alias}: "
+                            f"{existing_document_id}. Reusing its already-ingested graph as-is."
+                        ),
+                    )
+                    final_graph, classification, seed_status = self._reuse_existing_document(
+                        document_id=existing_document_id,
+                        activity_context=activity_context,
+                        progress_callback=progress_callback,
+                        seed_index=seed_index,
+                        total_targets=total_targets,
                     )
             else:
                 self._emit_progress(
@@ -473,9 +537,9 @@ class RetrievalBenchmarkCorpusSeeder:
         activity_context: ActivityContext | None = None,
     ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
         """A document with zero chunks has nothing for extraction to run
-        against — it failed during parsing/finalization, not extraction, so
-        `IngestionWorkflow.retry_extraction` cannot fix it (only a full
-        `--force-reparse` can). Rather than raising and dropping the
+        against *and* no persisted elements to rebuild from — it failed before
+        a usable graph was committed, so only a full `--force-reparse` can fix
+        it. Rather than raising and dropping the
         document out of the manifest entirely, it is included as-is
         (`chunk_count=0`) with a distinguishing `seed_status` so it stays
         visible and actionable instead of silently disappearing.

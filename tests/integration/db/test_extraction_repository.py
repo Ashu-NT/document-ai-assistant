@@ -102,6 +102,30 @@ def test_save_and_load_extraction_result(
     assert len(loaded.troubleshooting_entries) == 1
 
 
+def test_save_and_load_extraction_result_preserves_chunk_coverage_state(
+    db_uow,
+    sample_extraction_result,
+) -> None:
+    sample_extraction_result.source_chunk_ids = ["chunk_001", "chunk_003"]
+    sample_extraction_result.attempted_chunk_ids = [
+        "chunk_001",
+        "chunk_002",
+        "chunk_003",
+    ]
+    sample_extraction_result.unresolved_chunk_ids = ["chunk_002"]
+    db_uow.extractions.save_extraction_result(sample_extraction_result)
+    db_uow.commit()
+
+    loaded = db_uow.extractions.get_document_extraction_result(
+        sample_extraction_result.document_id
+    )
+
+    assert loaded is not None
+    assert loaded.source_chunk_ids == ["chunk_001", "chunk_003"]
+    assert loaded.attempted_chunk_ids == ["chunk_001", "chunk_002", "chunk_003"]
+    assert loaded.unresolved_chunk_ids == ["chunk_002"]
+
+
 def test_list_maintenance_tasks(db_uow, sample_extraction_result) -> None:
     db_uow.extractions.save_extraction_result(sample_extraction_result)
     db_uow.commit()

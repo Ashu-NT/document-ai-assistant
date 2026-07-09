@@ -32,6 +32,8 @@ class ExtractionResult:
     extracted_identifiers: list[ExtractedIdentifier] = field(default_factory=list)
 
     source_chunk_ids: list[str] = field(default_factory=list)
+    attempted_chunk_ids: list[str] = field(default_factory=list)
+    unresolved_chunk_ids: list[str] = field(default_factory=list)
 
     confidence_score: float | None = None
     requires_human_review: bool = True

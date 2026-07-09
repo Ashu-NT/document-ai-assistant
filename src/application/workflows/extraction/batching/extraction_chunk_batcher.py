@@ -52,6 +52,19 @@ class ExtractionChunkBatcher:
             for index, batch_chunks in enumerate(raw_batches, start=1)
         ]
 
+    def build_single_chunk_batches(self, batch: ExtractionBatch) -> list[ExtractionBatch]:
+        chunk_count = len(batch.chunks)
+        return [
+            ExtractionBatch(
+                batch_index=batch.batch_index,
+                batch_count=batch.batch_count,
+                chunks=[chunk],
+                char_count=self._estimate_chunk_chars(chunk),
+                word_count=self._estimate_chunk_words(chunk),
+            )
+            for chunk in batch.chunks[:chunk_count]
+        ]
+
     @staticmethod
     def _estimate_chunk_chars(chunk: DocumentChunk) -> int:
         section_path_text = " > ".join(chunk.section_path)

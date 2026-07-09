@@ -1,4 +1,7 @@
 from src.domain.extraction import ExtractionResult
+from src.infrastructure.db.mappers.extraction.extraction_chunk_coverage_mapper import (
+    ExtractionChunkCoverageMapper,
+)
 from src.infrastructure.db.mappers.extraction.equipment_info_mapper import (
     EquipmentInfoMapper,
 )
@@ -52,6 +55,15 @@ class ExtractionResultMapper:
             document_id=result.document_id,
             confidence_score=result.confidence_score,
             requires_human_review=result.requires_human_review,
+            source_chunk_ids_json=ExtractionChunkCoverageMapper.dump_chunk_ids(
+                result.source_chunk_ids
+            ),
+            attempted_chunk_ids_json=ExtractionChunkCoverageMapper.dump_chunk_ids(
+                result.attempted_chunk_ids
+            ),
+            unresolved_chunk_ids_json=ExtractionChunkCoverageMapper.dump_chunk_ids(
+                result.unresolved_chunk_ids
+            ),
             created_at=result.audit.created_at,
         )
 
@@ -112,6 +124,15 @@ class ExtractionResultMapper:
                 TroubleshootingEntryMapper.to_domain(row)
                 for row in troubleshooting_entry_rows or []
             ],
+            source_chunk_ids=ExtractionChunkCoverageMapper.load_chunk_ids(
+                orm.source_chunk_ids_json
+            ),
+            attempted_chunk_ids=ExtractionChunkCoverageMapper.load_chunk_ids(
+                orm.attempted_chunk_ids_json
+            ),
+            unresolved_chunk_ids=ExtractionChunkCoverageMapper.load_chunk_ids(
+                orm.unresolved_chunk_ids_json
+            ),
             confidence_score=orm.confidence_score,
             requires_human_review=orm.requires_human_review,
         )

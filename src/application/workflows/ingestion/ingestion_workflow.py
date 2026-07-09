@@ -522,6 +522,9 @@ class IngestionWorkflow:
                     "extraction_id": extraction_result.extraction_id,
                     "maintenance_task_count": len(extraction_result.maintenance_tasks),
                     "spare_part_count": len(extraction_result.spare_parts),
+                    "unresolved_chunk_count": len(
+                        extraction_result.unresolved_chunk_ids
+                    ),
                     "semantic_relationship_count": (
                         len(semantic_relationships)
                         if semantic_relationships is not None
@@ -632,7 +635,7 @@ class IngestionWorkflow:
                 warnings=warnings,
                 correlation_id=correlation_id,
                 quality_diagnostics=quality_diagnostics,
-                extraction_result=extraction_result.extraction_id if extraction_result else None,
+                extraction_result=extraction_result,
             )
             self._publish_event(
                 IngestionEvent.completed(
@@ -762,6 +765,13 @@ class IngestionWorkflow:
         succeeded and is left untouched. It exists so a partial-extraction
         failure can be repaired in place, without the cost of a full
         reingest and without minting a new document_id.
+
+        If the stored document graph contains sections/elements but no final
+        chunks, the workflow first re-runs post-classification chunk
+        finalization in place (without embedding) and then continues with the
+        extraction retry. If a saved extraction result already exists with
+        unresolved chunk IDs, only that unresolved subset is retried and then
+        merged back into the persisted result.
         """
         if self.document_lookup_service is None:
             raise ReingestionNotSupportedError(
@@ -784,21 +794,84 @@ class IngestionWorkflow:
             )
 
         if not final_graph.chunks:
-            raise IngestionWorkflowError(
-                "Document has no chunks to extract from.",
-                error_code="ingestion.final_graph.no_chunks",
-                details={"document_id": document_id},
+            if not final_graph.elements:
+                raise IngestionWorkflowError(
+                    "Document has no persisted elements or chunks to repair in place.",
+                    error_code="ingestion.final_graph.empty",
+                    details={"document_id": document_id},
+                )
+            self._emit_progress(
+                progress_callback,
+                (
+                    "Document has persisted elements but no final chunks. "
+                    "Rebuilding final chunk set in place before retrying extraction..."
+                ),
             )
+            final_graph = self.post_classification_chunk_finalization_workflow.finalize(
+                document_id,
+                embed_final_chunks=False,
+                activity_context=activity_context,
+                progress_callback=progress_callback,
+            )
+            if not final_graph.chunks:
+                raise IngestionWorkflowError(
+                    "Recovered finalization still produced no chunks for extraction.",
+                    error_code="ingestion.final_graph.no_chunks",
+                    details={
+                        "document_id": document_id,
+                        "element_count": len(final_graph.elements),
+                        "section_count": len(final_graph.sections),
+                    },
+                )
+
+        extraction_service = getattr(self.extraction_workflow, "extraction_service", None)
+        existing_extraction_result = (
+            extraction_service.get_document_extraction_result(document_id)
+            if extraction_service is not None
+            else None
+        )
+        retry_chunks = list(final_graph.chunks.values())
+        if (
+            existing_extraction_result is not None
+            and existing_extraction_result.unresolved_chunk_ids
+        ):
+            unresolved_chunk_ids = set(existing_extraction_result.unresolved_chunk_ids)
+            retry_chunks = [
+                chunk
+                for chunk in final_graph.chunks.values()
+                if chunk.chunk_id in unresolved_chunk_ids
+            ]
+            if not retry_chunks:
+                raise IngestionWorkflowError(
+                    "Saved unresolved extraction chunk IDs no longer exist in the final document graph.",
+                    error_code="ingestion.extraction.unresolved_chunks_missing",
+                    details={
+                        "document_id": document_id,
+                        "unresolved_chunk_ids": list(
+                            existing_extraction_result.unresolved_chunk_ids
+                        ),
+                    },
+                )
+            self._emit_progress(
+                progress_callback,
+                (
+                    "Retrying only unresolved extraction chunks: "
+                    f"{len(retry_chunks)} chunk(s)."
+                ),
+            )
+        else:
+            existing_extraction_result = None
 
         self._emit_progress(progress_callback, "Extraction started.")
         extraction_result = self.extraction_workflow.extract(
             document_id,
-            list(final_graph.chunks.values()),
+            retry_chunks,
             activity_context=activity_context,
             progress_callback=progress_callback,
             replace_existing=True,
             tables=final_graph.tables,
             sections=final_graph.sections,
+            base_result=existing_extraction_result,
         )
         self.unit_of_work.commit()
 
@@ -853,6 +926,7 @@ class IngestionWorkflow:
                 "extraction_id": extraction_result.extraction_id,
                 "maintenance_task_count": len(extraction_result.maintenance_tasks),
                 "spare_part_count": len(extraction_result.spare_parts),
+                "unresolved_chunk_count": len(extraction_result.unresolved_chunk_ids),
                 "semantic_relationship_count": semantic_relationship_count,
             },
         )
@@ -935,7 +1009,7 @@ class IngestionWorkflow:
         warnings: list[str],
         correlation_id: str,
         quality_diagnostics: dict[str, object],
-        extraction_result: str | None,
+        extraction_result,
     ) -> IngestionResult:
         statistics = final_graph.document.statistics
         diagnostics = {
@@ -951,7 +1025,10 @@ class IngestionWorkflow:
         if request.source_name:
             diagnostics["source_name"] = request.source_name
         if extraction_result is not None:
-            diagnostics["extraction_id"] = extraction_result
+            diagnostics["extraction_id"] = extraction_result.extraction_id
+            diagnostics["extraction_unresolved_chunk_count"] = len(
+                extraction_result.unresolved_chunk_ids
+            )
 
         return IngestionResult(
             status=IngestionStatus.COMPLETE,

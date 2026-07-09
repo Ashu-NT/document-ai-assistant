@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -128,4 +128,24 @@ class ExtractionReader:
             raise DatabaseError(
                 "Failed to load extraction result.",
                 details={"extraction_id": extraction_id},
+            ) from exc
+
+    def get_document_extraction_result(
+        self,
+        document_id: str,
+    ) -> ExtractionResult | None:
+        try:
+            extraction_id = self.session.execute(
+                select(ExtractionResultORM.id)
+                .where(ExtractionResultORM.document_id == document_id)
+                .order_by(desc(ExtractionResultORM.created_at))
+                .limit(1)
+            ).scalar()
+            if extraction_id is None:
+                return None
+            return self.get_extraction_result(extraction_id)
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to load extraction result for document.",
+                details={"document_id": document_id},
             ) from exc

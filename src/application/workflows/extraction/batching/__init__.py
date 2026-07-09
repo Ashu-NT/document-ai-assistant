@@ -5,6 +5,9 @@ from src.application.workflows.extraction.batching.extraction_batch_diagnostics 
     ExtractionBatchDiagnostics,
     safe_response_preview,
 )
+from src.application.workflows.extraction.batching.extraction_batch_outcome import (
+    ExtractionBatchOutcome,
+)
 from src.application.workflows.extraction.batching.extraction_chunk_batcher import (
     ExtractionChunkBatcher,
 )
@@ -12,6 +15,7 @@ from src.application.workflows.extraction.batching.extraction_chunk_batcher impo
 __all__ = [
     "ExtractionBatch",
     "ExtractionBatchDiagnostics",
+    "ExtractionBatchOutcome",
     "safe_response_preview",
     "ExtractionChunkBatcher",
 ]

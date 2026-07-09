@@ -25,7 +25,7 @@ class ExtractionSettings(AppBaseSettings):
     )
 
     extraction_allow_partial_batches: bool = Field(
-        default=False,
+        default=True,
         alias="EXTRACTION_ALLOW_PARTIAL_BATCHES",
     )
 

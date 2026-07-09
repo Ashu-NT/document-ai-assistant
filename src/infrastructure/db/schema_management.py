@@ -33,6 +33,24 @@ def ensure_database_schema(engine: Engine) -> None:
         column_name="picture_ids_json",
         column_ddl="TEXT",
     )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="extraction_results",
+        column_name="source_chunk_ids_json",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="extraction_results",
+        column_name="attempted_chunk_ids_json",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="extraction_results",
+        column_name="unresolved_chunk_ids_json",
+        column_ddl="TEXT",
+    )
 
 
 def _ensure_sqlite_column(

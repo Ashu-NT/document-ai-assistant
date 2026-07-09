@@ -15,6 +15,7 @@ from src.application.validation.extraction import ExtractionResultValidator
 from src.application.workflows.extraction.batching import (
     ExtractionBatch,
     ExtractionBatchDiagnostics,
+    ExtractionBatchOutcome,
     ExtractionChunkBatcher,
     safe_response_preview,
 )
@@ -314,6 +315,7 @@ class ExtractionWorkflow:
         replace_existing: bool = False,
         tables: dict[str, TableAsset] | None = None,
         sections: dict[str, DocumentSection] | None = None,
+        base_result: ExtractionResult | None = None,
     ) -> ExtractionResult:
         chunk_list = self._coerce_chunks(chunks)
         self._emit_progress(
@@ -337,19 +339,21 @@ class ExtractionWorkflow:
             progress_callback,
             f"Prepared {len(batches)} extraction batch(es).",
         )
-        partial_results: list[ExtractionResult] = []
-        unresolved_batches: list[ExtractionBatch] = []
+        partial_results: list[ExtractionResult] = (
+            [dataclass_replace(base_result)] if base_result is not None else []
+        )
+        attempted_chunk_ids: list[str] = []
+        unresolved_chunk_ids: list[str] = []
         for batch in batches:
-            partial_result = self._extract_batch_with_retries(
+            outcome = self._extract_batch_with_retries(
                 document_id=document_id,
                 batch=batch,
                 activity_context=activity_context,
                 progress_callback=progress_callback,
             )
-            if partial_result is not None:
-                partial_results.append(partial_result)
-            else:
-                unresolved_batches.append(batch)
+            partial_results.extend(outcome.partial_results)
+            attempted_chunk_ids.extend(outcome.attempted_chunk_ids)
+            unresolved_chunk_ids.extend(outcome.unresolved_chunk_ids)
 
         if not partial_results:
             raise SchemaValidationError(
@@ -364,13 +368,25 @@ class ExtractionWorkflow:
                 },
             )
 
-        if unresolved_batches:
+        carried_unresolved_chunk_ids = (
+            [
+                chunk_id
+                for chunk_id in base_result.unresolved_chunk_ids
+                if chunk_id not in {chunk.chunk_id for chunk in chunk_list}
+            ]
+            if base_result is not None
+            else []
+        )
+        final_unresolved_chunk_ids = self._unique_chunk_ids(
+            [*carried_unresolved_chunk_ids, *unresolved_chunk_ids]
+        )
+
+        if final_unresolved_chunk_ids:
             self._emit_progress(
                 progress_callback,
                 (
-                    f"Extraction completed with {len(unresolved_batches)} of "
-                    f"{len(batches)} batch(es) skipped after exhausting retries: "
-                    f"{[batch.batch_index for batch in unresolved_batches]}."
+                    "Extraction completed with unresolved chunk(s) pending retry: "
+                    f"{final_unresolved_chunk_ids}."
                 ),
             )
 
@@ -378,6 +394,27 @@ class ExtractionWorkflow:
             document_id=document_id,
             partial_results=partial_results,
         )
+        extraction_result.source_chunk_ids = self._unique_chunk_ids(
+            [
+                *(
+                    base_result.source_chunk_ids
+                    if base_result is not None
+                    else []
+                ),
+                *extraction_result.source_chunk_ids,
+            ]
+        )
+        extraction_result.attempted_chunk_ids = self._unique_chunk_ids(
+            [
+                *(
+                    base_result.attempted_chunk_ids
+                    if base_result is not None
+                    else []
+                ),
+                *attempted_chunk_ids,
+            ]
+        )
+        extraction_result.unresolved_chunk_ids = final_unresolved_chunk_ids
         extraction_result, dropped_empty_count = self._drop_empty_entities(
             extraction_result
         )
@@ -396,7 +433,7 @@ class ExtractionWorkflow:
                 extraction_result.confidence_score,
             )
             or extraction_result.requires_human_review
-            or bool(unresolved_batches)
+            or bool(final_unresolved_chunk_ids)
             or any(
                 item.requires_human_review
                 for item in [
@@ -457,20 +494,25 @@ class ExtractionWorkflow:
         batch: ExtractionBatch,
         activity_context: ActivityContext | None,
         progress_callback: Callable[[str], None] | None,
-    ) -> ExtractionResult | None:
+    ) -> ExtractionBatchOutcome:
         last_exc: SchemaValidationError | None = None
         for attempt_index in range(1, self.max_attempts + 1):
             try:
-                return self._extract_batch_once(
-                    document_id=document_id,
-                    batch=batch,
-                    activity_context=activity_context,
-                    progress_callback=progress_callback,
-                    previous_error=(
-                        self._describe_error_for_feedback(last_exc)
-                        if last_exc is not None
-                        else None
-                    ),
+                return ExtractionBatchOutcome(
+                    partial_results=[
+                        self._extract_batch_once(
+                            document_id=document_id,
+                            batch=batch,
+                            activity_context=activity_context,
+                            progress_callback=progress_callback,
+                            previous_error=(
+                                self._describe_error_for_feedback(last_exc)
+                                if last_exc is not None
+                                else None
+                            ),
+                        )
+                    ],
+                    attempted_chunk_ids=list(batch.chunk_ids),
                 )
             except SchemaValidationError as exc:
                 last_exc = exc
@@ -484,19 +526,68 @@ class ExtractionWorkflow:
                         ),
                     )
 
+        assert last_exc is not None
+        if self.allow_partial_batches and len(batch.chunks) > 1:
+            return self._isolate_persistently_failing_batch(
+                document_id=document_id,
+                batch=batch,
+                activity_context=activity_context,
+                progress_callback=progress_callback,
+            )
+
         if self.allow_partial_batches:
             self._emit_progress(
                 progress_callback,
                 (
                     f"[extraction {batch.batch_index}/{batch.batch_count}] "
-                    f"failed after {self.max_attempts} attempt(s); marking batch "
-                    "extraction_failed and continuing with the remaining batches."
+                    f"failed after {self.max_attempts} attempt(s); marking chunk(s) "
+                    f"{batch.chunk_ids} as unresolved and continuing with the "
+                    "remaining batches."
                 ),
             )
-            return None
+            return ExtractionBatchOutcome(
+                attempted_chunk_ids=list(batch.chunk_ids),
+                unresolved_chunk_ids=list(batch.chunk_ids),
+            )
 
-        assert last_exc is not None
         raise last_exc
+
+    def _isolate_persistently_failing_batch(
+        self,
+        *,
+        document_id: str,
+        batch: ExtractionBatch,
+        activity_context: ActivityContext | None,
+        progress_callback: Callable[[str], None] | None,
+    ) -> ExtractionBatchOutcome:
+        single_chunk_batches = self.chunk_batcher.build_single_chunk_batches(batch)
+        self._emit_progress(
+            progress_callback,
+            (
+                f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                f"Persistently failing batch contains {len(batch.chunks)} chunk(s). "
+                "Retrying each chunk individually to isolate only the failing ones..."
+            ),
+        )
+        outcome = ExtractionBatchOutcome()
+        for chunk_index, single_chunk_batch in enumerate(single_chunk_batches, start=1):
+            self._emit_progress(
+                progress_callback,
+                (
+                    f"[extraction {batch.batch_index}/{batch.batch_count}] "
+                    f"Isolating chunk {chunk_index}/{len(single_chunk_batches)}: "
+                    f"{single_chunk_batch.chunk_ids[0]}"
+                ),
+            )
+            outcome.extend(
+                self._extract_batch_with_retries(
+                    document_id=document_id,
+                    batch=single_chunk_batch,
+                    activity_context=activity_context,
+                    progress_callback=progress_callback,
+                )
+            )
+        return outcome
 
     @staticmethod
     def _describe_error_for_feedback(exc: SchemaValidationError) -> str:
@@ -1632,6 +1723,17 @@ class ExtractionWorkflow:
     ) -> None:
         if progress_callback is not None:
             progress_callback(message)
+
+    @staticmethod
+    def _unique_chunk_ids(chunk_ids: list[str]) -> list[str]:
+        seen: set[str] = set()
+        ordered: list[str] = []
+        for chunk_id in chunk_ids:
+            if not chunk_id or chunk_id in seen:
+                continue
+            seen.add(chunk_id)
+            ordered.append(chunk_id)
+        return ordered
 
     @staticmethod
     def _pick(payload: dict[str, Any], *keys: str) -> Any:

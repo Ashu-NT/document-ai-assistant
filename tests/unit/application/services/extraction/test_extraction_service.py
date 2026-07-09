@@ -27,6 +27,12 @@ class FakeExtractionRepository:
     def get_extraction_result(self, extraction_id: str):
         return self.results.get(extraction_id)
 
+    def get_document_extraction_result(self, document_id: str):
+        for result in reversed(list(self.results.values())):
+            if result.document_id == document_id:
+                return result
+        return None
+
     def list_maintenance_tasks(self, document_id: str | None = None):
         return [
             task
@@ -153,6 +159,17 @@ def test_get_extraction_result(sample_extraction_result) -> None:
     service = make_service(repository)
 
     loaded = service.get_extraction_result(sample_extraction_result.extraction_id)
+
+    assert loaded == sample_extraction_result
+
+
+def test_get_document_extraction_result(sample_extraction_result) -> None:
+    repository = FakeExtractionRepository()
+    repository.save_extraction_result(sample_extraction_result)
+
+    service = make_service(repository)
+
+    loaded = service.get_document_extraction_result(sample_extraction_result.document_id)
 
     assert loaded == sample_extraction_result
 

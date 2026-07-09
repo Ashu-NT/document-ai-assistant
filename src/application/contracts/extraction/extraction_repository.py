@@ -29,6 +29,12 @@ class ExtractionRepository(Protocol):
     def get_extraction_result(self, extraction_id: str) -> ExtractionResult | None:
         ...
 
+    def get_document_extraction_result(
+        self,
+        document_id: str,
+    ) -> ExtractionResult | None:
+        ...
+
     def has_extraction_result(self, document_id: str) -> bool:
         ...
 
