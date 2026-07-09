@@ -24,6 +24,7 @@ from src.application.services.document_exploration.document_exploration_service 
 from src.application.workflows.retrieval.retrieval_workflow_result import (
     RetrievalWorkflowResult,
 )
+from src.application.workflows.retrieval.structured import StructuredEvidenceBundle
 from src.domain.retrieval import RetrievalQuery, RetrievalResult
 from src.domain.retrieval.citation import Citation
 
@@ -141,6 +142,16 @@ class FakeAnswerGenerationService:
                 else {}
             ),
         )
+
+
+class FakeStructuredEvidenceResolver:
+    def __init__(self, bundle: StructuredEvidenceBundle) -> None:
+        self.bundle = bundle
+        self.calls: list[RetrievalQuery] = []
+
+    def resolve(self, query: RetrievalQuery) -> StructuredEvidenceBundle:
+        self.calls.append(query)
+        return self.bundle
 
 
 # ---------------------------------------------------------------------------

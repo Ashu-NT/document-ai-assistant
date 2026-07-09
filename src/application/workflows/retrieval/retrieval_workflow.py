@@ -24,6 +24,10 @@ from src.application.workflows.retrieval.retrieval_query_analyzer import (
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )
+from src.application.workflows.retrieval.structured import (
+    StructuredEvidenceBundle,
+    StructuredEvidenceResolver,
+)
 from src.domain.common import new_id
 from src.domain.retrieval import RetrievalQuery, RetrievalResult
 from src.shared.activity import ActivityContext
@@ -81,6 +85,7 @@ class RetrievalWorkflow:
         retrieved_chunk_deduplicator: RetrievedChunkDeduplicator | None = None,
         candidate_pool_top_k: int | None = None,
         query_analyzer: RetrievalQueryAnalyzer | None = None,
+        structured_evidence_resolver: StructuredEvidenceResolver | None = None,
         pre_retrieval_guardrails: list[Guardrail] | None = None,
         post_retrieval_guardrails: list[Guardrail] | None = None,
     ) -> None:
@@ -97,6 +102,7 @@ class RetrievalWorkflow:
         )
         self.candidate_pool_top_k = candidate_pool_top_k
         self.query_analyzer = query_analyzer or RetrievalQueryAnalyzer()
+        self.structured_evidence_resolver = structured_evidence_resolver
         self.pre_retrieval_guardrails = pre_retrieval_guardrails or []
         self.post_retrieval_guardrails = post_retrieval_guardrails or []
 
@@ -147,8 +153,15 @@ class RetrievalWorkflow:
                     diagnostics=diagnostics,
                 )
 
+        structured_evidence = self._resolve_structured_evidence(working_query)
+        if structured_evidence is not None:
+            diagnostics.update(structured_evidence.diagnostics)
+
         candidate_query = self._candidate_query(working_query)
-        retrieval_result = self.retrieval_service.retrieve(candidate_query)
+        retrieval_result = self._retrieve_candidates(
+            candidate_query,
+            structured_evidence=structured_evidence,
+        )
 
         if trace_recorder is not None:
             trace_recorder.record_candidates(retrieval_result.chunks)
@@ -261,6 +274,7 @@ class RetrievalWorkflow:
             min_evidence_chunks=self.min_evidence_chunks,
             context_chunks=context_chunks,
             guardrail_result=post_guardrail_result,
+            structured_evidence=structured_evidence,
             diagnostics=diagnostics,
         )
 
@@ -303,6 +317,30 @@ class RetrievalWorkflow:
         if candidate_pool_top_k == query.top_k:
             return query
         return replace(query, top_k=candidate_pool_top_k)
+
+    def _resolve_structured_evidence(
+        self,
+        query: RetrievalQuery,
+    ) -> StructuredEvidenceBundle | None:
+        if self.structured_evidence_resolver is None:
+            return None
+        return self.structured_evidence_resolver.resolve(query)
+
+    def _retrieve_candidates(
+        self,
+        query: RetrievalQuery,
+        *,
+        structured_evidence: StructuredEvidenceBundle | None,
+    ) -> RetrievalResult:
+        additional_candidates = (
+            list(structured_evidence.chunks)
+            if structured_evidence is not None
+            else None
+        )
+        return self.retrieval_service.retrieve_with_additional_candidates(
+            query,
+            additional_candidates=additional_candidates,
+        )
 
     @staticmethod
     def _enforce_document_scope(

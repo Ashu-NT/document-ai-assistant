@@ -28,10 +28,21 @@ class HybridRetrievalService(RetrievalBackend):
         self.rrf_constant = rrf_constant
 
     def retrieve(self, query: RetrievalQuery) -> RetrievalResult:
+        return self.retrieve_with_additional_candidates(query)
+
+    def retrieve_with_additional_candidates(
+        self,
+        query: RetrievalQuery,
+        *,
+        additional_candidates: list[RetrievedChunk] | None = None,
+    ) -> RetrievalResult:
         validation = self.retrieval_query_validator.validate(query)
         validation.raise_if_invalid()
 
-        source_results = self._collect_source_results(query)
+        source_results = self._collect_source_results(
+            query,
+            additional_candidates=additional_candidates,
+        )
         fused_candidates = self._fuse_results(source_results)
         ranked = (
             self.reranker.rerank(
@@ -56,6 +67,8 @@ class HybridRetrievalService(RetrievalBackend):
     def _collect_source_results(
         self,
         query: RetrievalQuery,
+        *,
+        additional_candidates: list[RetrievedChunk] | None = None,
     ) -> list[tuple[str, list[RetrievedChunk]]]:
         source_results: list[tuple[str, list[RetrievedChunk]]] = []
 
@@ -78,6 +91,14 @@ class HybridRetrievalService(RetrievalBackend):
                         query,
                         self.vector_store.search(query),
                     ),
+                )
+            )
+
+        if additional_candidates:
+            source_results.append(
+                (
+                    "structured",
+                    self._filter_scoped_chunks(query, additional_candidates),
                 )
             )
 

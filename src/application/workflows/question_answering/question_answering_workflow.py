@@ -12,6 +12,9 @@ from src.application.services.answer_generation.answer_generation_request import
 from src.application.services.answer_generation.answer_generation_service import (
     AnswerGenerationService,
 )
+from src.application.services.answer_generation.intent.answer_intent_analyzer import (
+    AnswerIntentAnalyzer,
+)
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
@@ -47,6 +50,10 @@ from src.application.workflows.question_answering.question_answering_router impo
 from src.application.workflows.retrieval.retrieval_workflow import RetrievalWorkflow
 from src.application.workflows.retrieval.retrieval_workflow_result import (
     RetrievalWorkflowResult,
+)
+from src.application.workflows.retrieval.structured import (
+    StructuredEvidenceBundle,
+    StructuredEvidenceResolver,
 )
 from src.domain.common import new_id
 from src.domain.retrieval import RetrievalQuery
@@ -87,6 +94,8 @@ class QuestionAnsweringWorkflow:
         answer_context_organizer: AnswerContextOrganizer | None = None,
         structured_fact_key_value_builder: StructuredFactKeyValueBuilder | None = None,
         final_evidence_preparer: FinalEvidencePreparer | None = None,
+        structured_evidence_resolver: StructuredEvidenceResolver | None = None,
+        answer_intent_analyzer: AnswerIntentAnalyzer | None = None,
     ) -> None:
         self._retrieval_workflow = retrieval_workflow
         self._exploration_service = exploration_service
@@ -106,6 +115,8 @@ class QuestionAnsweringWorkflow:
         self._final_evidence_preparer = final_evidence_preparer or FinalEvidencePreparer(
             document_lookup_service=document_lookup_service
         )
+        self._structured_evidence_resolver = structured_evidence_resolver
+        self._answer_intent_analyzer = answer_intent_analyzer or AnswerIntentAnalyzer()
 
     def run(
         self,
@@ -276,6 +287,13 @@ class QuestionAnsweringWorkflow:
 
         best_score = workflow_result.retrieval_result.best_score()
         confidence = str(round(best_score, 4)) if best_score is not None else None
+        structured_evidence = self._resolve_structured_evidence(
+            request=request,
+            analyzed_query=analyzed_query,
+            workflow_result=workflow_result,
+        )
+        resolved_identifiers = list(structured_evidence.identifiers)
+        resolved_structured_entities = list(structured_evidence.structured_entities)
 
         # Phase 5: answer generation
         if not allow_generation:
@@ -285,6 +303,8 @@ class QuestionAnsweringWorkflow:
                 retrieval_result=workflow_result,
                 approved_chunk_ids=approved_ids,
                 rejected_chunk_ids=rejected_chunk_ids,
+                resolved_identifiers=resolved_identifiers,
+                resolved_structured_entities=resolved_structured_entities,
                 confidence=confidence,
                 diagnostics={
                     "enough_evidence": workflow_result.enough_evidence,
@@ -299,6 +319,8 @@ class QuestionAnsweringWorkflow:
                 retrieval_result=workflow_result,
                 approved_chunk_ids=approved_ids,
                 rejected_chunk_ids=rejected_chunk_ids,
+                resolved_identifiers=resolved_identifiers,
+                resolved_structured_entities=resolved_structured_entities,
                 confidence=confidence,
                 diagnostics={
                     "enough_evidence": workflow_result.enough_evidence,
@@ -329,6 +351,8 @@ class QuestionAnsweringWorkflow:
                 retrieval_result=workflow_result,
                 approved_chunk_ids=approved_ids,
                 rejected_chunk_ids=rejected_chunk_ids,
+                resolved_identifiers=resolved_identifiers,
+                resolved_structured_entities=resolved_structured_entities,
                 diagnostics={"blocked_by": "pre_generation_guardrail"},
             )
 
@@ -336,9 +360,11 @@ class QuestionAnsweringWorkflow:
         # chunks joined in below)
         self._emit_progress(progress_callback, "Generating answer...")
         joined_chunks, structured_context = self._join_structured_facts(
-            request,
-            approved_chunks,
-            analyzed_query,
+            approved_chunks=approved_chunks,
+            analyzed_query=analyzed_query,
+            question=request.question,
+            resolved_identifiers=resolved_identifiers,
+            resolved_structured_entities=resolved_structured_entities,
         )
         gen_request = AnswerGenerationRequest(
             question=request.question,
@@ -349,8 +375,8 @@ class QuestionAnsweringWorkflow:
             document_id=request.document_id,
             require_citations=request.require_citations,
             route=QuestionAnsweringRoute.RETRIEVAL_QA.value,
-            resolved_identifiers=list(request.resolved_identifiers),
-            resolved_structured_entities=list(request.resolved_structured_entities),
+            resolved_identifiers=resolved_identifiers,
+            resolved_structured_entities=resolved_structured_entities,
             structured_context=structured_context,
         )
         generated = self._answer_generation_service.generate(gen_request)
@@ -382,6 +408,8 @@ class QuestionAnsweringWorkflow:
                     retrieval_result=workflow_result,
                     approved_chunk_ids=approved_ids,
                     rejected_chunk_ids=rejected_chunk_ids,
+                    resolved_identifiers=resolved_identifiers,
+                    resolved_structured_entities=resolved_structured_entities,
                     diagnostics={"blocked_by": "post_answer_guardrail"},
                 )
 
@@ -393,6 +421,8 @@ class QuestionAnsweringWorkflow:
             retrieval_result=workflow_result,
             approved_chunk_ids=approved_ids,
             rejected_chunk_ids=rejected_chunk_ids,
+            resolved_identifiers=resolved_identifiers,
+            resolved_structured_entities=resolved_structured_entities,
             confidence=confidence,
             answer_intent=generated.answer_intent,
             diagnostics={
@@ -407,9 +437,12 @@ class QuestionAnsweringWorkflow:
 
     def _join_structured_facts(
         self,
-        request: QuestionAnsweringRequest,
+        *,
         approved_chunks: list[RetrievedChunk],
         analyzed_query: RetrievalQuery,
+        question: str,
+        resolved_identifiers: list,
+        resolved_structured_entities: list,
     ) -> tuple[list[RetrievedChunk], StructuredAnswerContext | None]:
         """Joins resolved identifiers/structured-entity rows to the same
         chunk-based context used for generation, fetching their exact source
@@ -418,11 +451,11 @@ class QuestionAnsweringWorkflow:
         user through a deterministic bypass renderer."""
         existing_chunk_ids = {chunk.chunk_id for chunk in approved_chunks}
         needed_chunk_ids: set[str] = set()
-        for identifier in request.resolved_identifiers:
+        for identifier in resolved_identifiers:
             chunk_id = identifier.chunk_id
             if chunk_id and chunk_id not in existing_chunk_ids:
                 needed_chunk_ids.add(chunk_id)
-        for entity in request.resolved_structured_entities:
+        for entity in resolved_structured_entities:
             if not isinstance(entity, dict):
                 continue
             chunk_id = entity.get("source_chunk_id")
@@ -452,11 +485,15 @@ class QuestionAnsweringWorkflow:
             chunks=joined_chunks,
         )
 
-        if not request.resolved_identifiers and not request.resolved_structured_entities:
+        if not resolved_identifiers and not resolved_structured_entities:
             return prepared_chunks, None
 
         structured_context = self._answer_context_organizer.organize(
-            answer_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+            answer_intent=self._resolve_structured_answer_intent(
+                question=question,
+                analyzed_query=analyzed_query,
+                prepared_chunks=prepared_chunks,
+            ),
             chunks=prepared_chunks,
         )
         source_number_by_chunk_id = self._source_number_by_chunk_id(
@@ -466,12 +503,12 @@ class QuestionAnsweringWorkflow:
 
         extra_key_values = (
             self._structured_fact_key_value_builder.build_from_identifiers(
-                list(request.resolved_identifiers),
+                list(resolved_identifiers),
                 source_number_by_chunk_id=source_number_by_chunk_id,
             )
         )
         entities_by_type: dict[str, list[dict]] = {}
-        for entity in request.resolved_structured_entities:
+        for entity in resolved_structured_entities:
             if not isinstance(entity, dict):
                 continue
             entity_type = entity.get("_entity_type")
@@ -492,6 +529,111 @@ class QuestionAnsweringWorkflow:
 
         structured_context.key_values.extend(extra_key_values)
         return prepared_chunks, structured_context
+
+    def _resolve_structured_evidence(
+        self,
+        *,
+        request: QuestionAnsweringRequest,
+        analyzed_query: RetrievalQuery,
+        workflow_result: RetrievalWorkflowResult,
+    ) -> StructuredEvidenceBundle:
+        resolved_identifiers = self._deduplicate_identifiers(
+            list(request.resolved_identifiers)
+        )
+        resolved_structured_entities = self._deduplicate_structured_entities(
+            list(request.resolved_structured_entities)
+        )
+        workflow_bundle = workflow_result.structured_evidence
+
+        if workflow_bundle is None and self._structured_evidence_resolver is not None:
+            workflow_bundle = self._structured_evidence_resolver.resolve(analyzed_query)
+
+        if workflow_bundle is None:
+            return StructuredEvidenceBundle(
+                identifiers=resolved_identifiers,
+                structured_entities=resolved_structured_entities,
+            )
+
+        return StructuredEvidenceBundle(
+            identifiers=self._deduplicate_identifiers(
+                [*resolved_identifiers, *workflow_bundle.identifiers]
+            ),
+            structured_entities=self._deduplicate_structured_entities(
+                [*resolved_structured_entities, *workflow_bundle.structured_entities]
+            ),
+            chunks=list(workflow_bundle.chunks),
+            diagnostics=dict(workflow_bundle.diagnostics),
+        )
+
+    def _resolve_structured_answer_intent(
+        self,
+        *,
+        question: str,
+        analyzed_query: RetrievalQuery,
+        prepared_chunks: list[RetrievedChunk],
+    ) -> AnswerIntent:
+        decision = self._answer_intent_analyzer.analyze(
+            question=question,
+            retrieval_intent=analyzed_query.detected_intent,
+            chunk_type_preferences=analyzed_query.chunk_types,
+            approved_chunks=prepared_chunks,
+            legacy_query_intent=analyzed_query.detected_intent,
+            route=QuestionAnsweringRoute.RETRIEVAL_QA.value,
+        )
+        return decision.intent
+
+    @staticmethod
+    def _deduplicate_identifiers(identifiers: list) -> list:
+        deduplicated: list = []
+        seen: set[tuple[str, str, str]] = set()
+        for identifier in identifiers:
+            identifier_type = getattr(identifier, "identifier_type", None)
+            fingerprint = (
+                str(getattr(identifier, "document_id", "")),
+                str(getattr(identifier_type, "value", identifier_type or "")),
+                str(
+                    getattr(identifier, "normalized_value", None)
+                    or getattr(identifier, "raw_value", "")
+                )
+                .strip()
+                .lower(),
+            )
+            if fingerprint in seen:
+                continue
+            seen.add(fingerprint)
+            deduplicated.append(identifier)
+        return deduplicated
+
+    @staticmethod
+    def _deduplicate_structured_entities(entities: list) -> list[dict]:
+        deduplicated: list[dict] = []
+        seen: set[tuple[str, str]] = set()
+        for entity in entities:
+            if not isinstance(entity, dict):
+                continue
+            fingerprint = (
+                str(entity.get("_entity_type") or ""),
+                str(
+                    entity.get("source_chunk_id")
+                    or entity.get("manufacturer_id")
+                    or entity.get("supplier_id")
+                    or entity.get("contact_point_id")
+                    or entity.get("spare_part_id")
+                    or entity.get("equipment_id")
+                    or entity.get("task_id")
+                    or entity.get("procedure_id")
+                    or entity.get("specification_id")
+                    or entity.get("safety_warning_id")
+                    or entity.get("maintenance_interval_id")
+                    or entity.get("troubleshooting_id")
+                    or entity
+                ),
+            )
+            if fingerprint in seen:
+                continue
+            seen.add(fingerprint)
+            deduplicated.append(entity)
+        return deduplicated
 
     @staticmethod
     def _to_retrieved_chunk(chunk) -> RetrievedChunk:

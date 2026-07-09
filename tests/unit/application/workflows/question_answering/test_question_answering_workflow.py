@@ -41,6 +41,7 @@ from tests.unit.application.workflows.question_answering.conftest import (
     FakeDocumentLookupService,
     FakeGuardrail,
     FakeRetrievalWorkflow,
+    FakeStructuredEvidenceResolver,
 )
 
 
@@ -57,6 +58,7 @@ def make_workflow(
     answer_generation_service=None,
     post_answer_guardrails=None,
     document_lookup_service=None,
+    structured_evidence_resolver=None,
 ) -> QuestionAnsweringWorkflow:
     return QuestionAnsweringWorkflow(
         retrieval_workflow=fake_retrieval,
@@ -66,6 +68,7 @@ def make_workflow(
         answer_generation_service=answer_generation_service,
         post_answer_guardrails=post_answer_guardrails,
         document_lookup_service=document_lookup_service,
+        structured_evidence_resolver=structured_evidence_resolver,
     )
 
 
@@ -910,6 +913,56 @@ def test_resolved_structured_entity_joins_missing_source_chunk_into_context(
     assert ("Manufacturer Name", "ACME Corp") in key_value_pairs
 
 
+def test_retrieval_workflow_structured_evidence_is_forwarded_into_generation_context(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    from src.application.workflows.retrieval.structured import StructuredEvidenceBundle
+    from src.domain.document.entities.identifier import Identifier
+    from src.domain.common.enums import IdentifierType
+
+    retrieved_chunk = _make_chunk("chunk_a")
+    identifier = Identifier(
+        identifier_id="identifier_001",
+        document_id="doc_001",
+        raw_value="HP-001",
+        identifier_type=IdentifierType.PART_NUMBER,
+        chunk_id="chunk_a",
+        confidence_score=0.9,
+    )
+    wf_result = _make_retrieval_result_with_chunks([retrieved_chunk])
+    wf_result.structured_evidence = StructuredEvidenceBundle(
+        identifiers=[identifier],
+        structured_entities=[
+            {
+                "name": "ACME Corp",
+                "website": "https://acme.example",
+                "source_chunk_id": "chunk_a",
+                "_entity_type": "manufacturer",
+            }
+        ],
+    )
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+    fake_gen = FakeAnswerGenerationService()
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the manufacturer website and part number?",
+        allow_answer_generation=True,
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert len(result.resolved_identifiers) == 1
+    assert len(result.resolved_structured_entities) == 1
+    assert fake_gen.called_with is not None
+    assert len(fake_gen.called_with.resolved_identifiers) == 1
+    assert len(fake_gen.called_with.resolved_structured_entities) == 1
+
+
 def test_resolved_identifier_joins_missing_source_chunk_into_context(
     fake_exploration_service: FakeDocumentExplorationService,
 ) -> None:
@@ -1217,6 +1270,48 @@ def test_resolved_structured_entities_without_lookup_service_do_not_crash(
     assert fake_gen.called_with is not None
     assert fake_gen.called_with.structured_context is None
     assert len(fake_gen.called_with.context_chunks) == 1
+
+
+def test_context_override_falls_back_to_structured_evidence_resolver(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    from src.application.workflows.retrieval.structured import StructuredEvidenceBundle
+
+    override_chunk = _make_chunk("chunk_override")
+    bundle = StructuredEvidenceBundle(
+        structured_entities=[
+            {
+                "name": "ACME Corp",
+                "website": "https://acme.example",
+                "source_chunk_id": "chunk_override",
+                "_entity_type": "manufacturer",
+            }
+        ]
+    )
+    resolver = FakeStructuredEvidenceResolver(bundle)
+    fake_retrieval = FakeRetrievalWorkflow(
+        result=_make_retrieval_result_with_chunks([override_chunk])
+    )
+    fake_gen = FakeAnswerGenerationService()
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+        structured_evidence_resolver=resolver,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the manufacturer website?",
+        allow_answer_generation=True,
+        context_override_chunks=[override_chunk],
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert resolver.calls
+    assert len(result.resolved_structured_entities) == 1
+    assert fake_gen.called_with is not None
+    assert len(fake_gen.called_with.resolved_structured_entities) == 1
 
 
 def test_no_generation_service_and_disabled_returns_placeholder(

@@ -12,11 +12,9 @@ from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
     build_error,
     deduplicate_identifiers,
-    deduplicate_structured_entities,
     deserialize_identifiers,
     extend_trace,
     extract_identifiers_from_step_results,
-    resolve_structured_entities,
 )
 from src.application.langgraph.retrieval_strategy import (
     CLI_RETRIEVAL_STRATEGY_ALIASES,
@@ -214,16 +212,6 @@ class RetryRetrievalNode:
             policy=self.retry_policy,
             document_id=state.get("selected_document_id") or state.get("document_id"),
         )
-        resolved_structured_entities = deduplicate_structured_entities(
-            [
-                *resolved_structured_entities,
-                *resolve_structured_entities(
-                    self.tool_registry,
-                    question=retry_query,
-                    document_id=state.get("selected_document_id") or state.get("document_id"),
-                ),
-            ]
-        )
         regenerated = answer_tool.run(
             AnswerQuestionRequest(
                 question=state.get("question") or state["user_input"],
@@ -267,16 +255,32 @@ class RetryRetrievalNode:
             "merged_context_chunks": serialize_graph_value(merged_chunks),
             "merged_chunk_ids": [chunk.chunk_id for chunk in merged_chunks],
             "resolved_identifiers": serialize_graph_value(resolved_identifiers),
-            "resolved_structured_entities": resolved_structured_entities,
+            "resolved_structured_entities": serialize_graph_value(
+                resolved_structured_entities
+            ),
             "trace": extend_trace(state["trace"], trace_entry),
             **strategy_patch,
         }
         if regenerated.success:
             qa_result = regenerated.data
+            qa_identifiers = getattr(
+                qa_result,
+                "resolved_identifiers",
+                resolved_identifiers,
+            )
+            qa_structured_entities = getattr(
+                qa_result,
+                "resolved_structured_entities",
+                resolved_structured_entities,
+            )
             patch["response_text"] = getattr(qa_result, "answer_text", None) or getattr(
                 qa_result,
                 "safe_user_message",
                 None,
+            )
+            patch["resolved_identifiers"] = serialize_graph_value(qa_identifiers)
+            patch["resolved_structured_entities"] = serialize_graph_value(
+                qa_structured_entities
             )
             patch["reflection_decision"] = None
             patch["reflection_result"] = None

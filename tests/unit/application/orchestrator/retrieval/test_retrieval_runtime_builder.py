@@ -20,6 +20,7 @@ def _uow() -> SimpleNamespace:
     return SimpleNamespace(
         documents="documents_repo",
         keyword_index="keyword_index_repo",
+        extractions="extractions_repo",
         vector_mappings="vector_mappings_repo",
     )
 
@@ -42,6 +43,7 @@ def test_build_retrieval_runtime_wires_the_retrieval_stack(monkeypatch) -> None:
     assert runtime.retrieval_workflow.context_expander.document_lookup_service is (
         runtime.document_lookup_service
     )
+    assert runtime.retrieval_workflow.structured_evidence_resolver is not None
     assert runtime.exploration_service.document_lookup_service is runtime.document_lookup_service
 
 

@@ -7,10 +7,11 @@ from src.application.langgraph.common import serialize_graph_value
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
     build_error,
+    deduplicate_identifiers,
+    deserialize_identifiers,
     extract_identifiers_from_step_results,
     extend_trace,
     resolve_selected_document,
-    resolve_structured_entities,
     serialize_tool_result,
 )
 from src.application.langgraph.retrieval_strategy import (
@@ -73,7 +74,15 @@ class AnswerQuestionNode:
         question = state.get("question") or state["user_input"].strip()
         resolved_document_id, _ = resolve_selected_document(state)
         context_override_chunks = None
-        resolved_identifiers = []
+        resolved_identifiers = deserialize_identifiers(
+            state.get("resolved_identifiers")
+        )
+        existing_structured_entities = state.get("resolved_structured_entities")
+        resolved_structured_entities = (
+            list(existing_structured_entities)
+            if isinstance(existing_structured_entities, list)
+            else []
+        )
         strategy_patch: dict[str, object] = {}
         if (
             state.get("retrieval_strategy_enabled")
@@ -110,18 +119,18 @@ class AnswerQuestionNode:
                 )
                 if execution_result.evidence_chunks:
                     context_override_chunks = execution_result.evidence_chunks
-                resolved_identifiers = extract_identifiers_from_step_results(
-                    execution_result.step_results
+                resolved_identifiers = deduplicate_identifiers(
+                    [
+                        *resolved_identifiers,
+                        *extract_identifiers_from_step_results(
+                            execution_result.step_results
+                        ),
+                    ]
                 )
             except Exception as exc:
                 strategy_patch = {
                     "retrieval_strategy_errors": [str(exc)],
                 }
-        resolved_structured_entities = resolve_structured_entities(
-            self.tool_registry,
-            question=question,
-            document_id=resolved_document_id,
-        )
         result = tool.run(
             AnswerQuestionRequest(
                 question=question,
@@ -150,15 +159,31 @@ class AnswerQuestionNode:
             "tool_results": tool_results,
             "trace": extend_trace(state["trace"], trace_entry),
             "resolved_identifiers": serialize_graph_value(resolved_identifiers),
-            "resolved_structured_entities": resolved_structured_entities,
+            "resolved_structured_entities": serialize_graph_value(
+                resolved_structured_entities
+            ),
             **strategy_patch,
         }
         if result.success:
             qa_result = result.data
+            qa_identifiers = getattr(
+                qa_result,
+                "resolved_identifiers",
+                resolved_identifiers,
+            )
+            qa_structured_entities = getattr(
+                qa_result,
+                "resolved_structured_entities",
+                resolved_structured_entities,
+            )
             patch["response_text"] = getattr(qa_result, "answer_text", None) or getattr(
                 qa_result,
                 "safe_user_message",
                 None,
+            )
+            patch["resolved_identifiers"] = serialize_graph_value(qa_identifiers)
+            patch["resolved_structured_entities"] = serialize_graph_value(
+                qa_structured_entities
             )
             retrieval_result = getattr(qa_result, "retrieval_result", None)
             context_chunks = (

@@ -1,30 +1,8 @@
-_STRUCTURED_DETAIL_TERMS = (
-    "website",
-    "url",
-    "email",
-    "e-mail",
-    "phone",
-    "telephone",
-    "fax",
-    "contact",
-    "country",
-    "based in",
-    "located",
-    "quantity",
-    "how many",
-    "in stock",
-    "interval",
-    "how often",
+from src.application.workflows.retrieval.structured import (
+    StructuredEvidenceQueryAnalyzer,
 )
-_STRUCTURED_ENTITY_TERMS: tuple[tuple[str, str], ...] = (
-    ("manufacturer", "manufacturer"),
-    ("supplier", "supplier"),
-    ("vendor", "supplier"),
-    ("distributor", "supplier"),
-    ("spare part", "spare_part"),
-    ("equipment", "equipment"),
-    ("maintenance task", "maintenance_task"),
-)
+
+_QUERY_ANALYZER = StructuredEvidenceQueryAnalyzer()
 
 
 def detect_structured_entity_type(normalized_input: str) -> str | None:
@@ -33,10 +11,7 @@ def detect_structured_entity_type(normalized_input: str) -> str | None:
     than just the bare identifying value. Shared between DeterministicPlanner
     and the direct-answer graph nodes so both routes use identical
     detection logic."""
-    normalized = normalized_input.lower()
-    if not any(term in normalized for term in _STRUCTURED_DETAIL_TERMS):
+    analysis = _QUERY_ANALYZER.analyze(query_text=normalized_input)
+    if analysis.detail_entity_type is None:
         return None
-    for term, entity_type in _STRUCTURED_ENTITY_TERMS:
-        if term in normalized:
-            return entity_type
-    return None
+    return analysis.detail_entity_type.value

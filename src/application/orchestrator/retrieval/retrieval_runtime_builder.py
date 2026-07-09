@@ -9,11 +9,17 @@ from src.application.orchestrator.ingestion.vector_runtime_builder import (
 from src.application.orchestrator.retrieval.retrieval_runtime import RetrievalRuntime
 from src.application.services.document import DocumentLookupService
 from src.application.services.document_exploration import DocumentExplorationService
+from src.application.services.extraction import ExtractionService
 from src.application.services.retrieval import HybridRetrievalService
+from src.application.validation.extraction import ExtractionResultValidator
 from src.application.validation.retrieval import RetrievalQueryValidator
 from src.application.workflows.retrieval import (
     RetrievalContextExpander,
     RetrievalWorkflow,
+)
+from src.application.workflows.retrieval.structured import (
+    StructuredEntityResolver,
+    StructuredEvidenceResolver,
 )
 from src.infrastructure.ai.embeddings import create_embedding_provider
 from src.infrastructure.retrieval.keyword import SqlKeywordIndex
@@ -52,6 +58,15 @@ def build_retrieval_runtime(
     )
     query_validator = RetrievalQueryValidator()
     document_lookup_service = DocumentLookupService(unit_of_work.documents)
+    extraction_service = ExtractionService(
+        extraction_repository=unit_of_work.extractions,
+        extraction_result_validator=ExtractionResultValidator(),
+    )
+    structured_entity_resolver = StructuredEntityResolver(extraction_service)
+    structured_evidence_resolver = StructuredEvidenceResolver(
+        document_lookup_service=document_lookup_service,
+        entity_resolver=structured_entity_resolver,
+    )
     retrieval_service = HybridRetrievalService(
         keyword_index=SqlKeywordIndex(unit_of_work.keyword_index),
         id_generator=IdGenerator(),
@@ -65,6 +80,7 @@ def build_retrieval_runtime(
         context_expander=RetrievalContextExpander(
             document_lookup_service=document_lookup_service,
         ),
+        structured_evidence_resolver=structured_evidence_resolver,
         pre_retrieval_guardrails=list(pre_retrieval_guardrails or []),
         post_retrieval_guardrails=list(post_retrieval_guardrails or []),
     )

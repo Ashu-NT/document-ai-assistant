@@ -1,0 +1,241 @@
+from __future__ import annotations
+
+from src.application.workflows.retrieval.structured.structured_entity_type import (
+    StructuredEntityType,
+)
+from src.application.workflows.retrieval.structured.structured_evidence_query_analysis import (
+    StructuredEvidenceQueryAnalysis,
+)
+from src.application.workflows.retrieval.structured.structured_identifier_query_analyzer import (
+    StructuredIdentifierQueryAnalyzer,
+)
+
+_DETAIL_TERMS = (
+    "website",
+    "url",
+    "email",
+    "e-mail",
+    "phone",
+    "telephone",
+    "fax",
+    "contact",
+    "country",
+    "based in",
+    "located",
+    "quantity",
+    "how many",
+    "in stock",
+    "interval",
+    "how often",
+)
+_CONTACT_DETAIL_TERMS = ("email", "e-mail", "phone", "telephone", "fax", "contact")
+_WEBSITE_TERMS = ("website", "url", "web address")
+_COUNTRY_TERMS = ("country", "based in", "located")
+_MANUFACTURER_TERMS = ("manufacturer", "made by", "manufactured by")
+_SUPPLIER_TERMS = ("supplier", "vendor", "distributor")
+_SPARE_PART_TERMS = ("spare part", "spare parts")
+_EQUIPMENT_TERMS = ("equipment", "system", "pump", "press", "collector", "device")
+_SPECIFICATION_TERMS = (
+    "specification",
+    "specifications",
+    "spec",
+    "specs",
+    "technical data",
+    "technical specification",
+    "pressure",
+    "temperature",
+    "voltage",
+    "power",
+    "capacity",
+    "rating",
+    "dimension",
+    "material",
+    "serial number",
+    "model number",
+)
+_MAINTENANCE_TERMS = (
+    "maintenance",
+    "maintenance task",
+    "maintenance tasks",
+    "service interval",
+    "service schedule",
+    "preventive maintenance",
+    "lubrication",
+    "inspection",
+)
+_MAINTENANCE_INTERVAL_TERMS = (
+    "maintenance interval",
+    "maintenance intervals",
+    "service interval",
+    "service intervals",
+    "schedule",
+    "how often",
+    "daily",
+    "weekly",
+    "monthly",
+    "quarterly",
+    "annual",
+    "annually",
+)
+_PROCEDURE_TERMS = (
+    "procedure",
+    "procedures",
+    "how to",
+    "steps",
+    "install",
+    "replace",
+    "remove",
+    "start",
+    "stop",
+    "commission",
+    "operate",
+)
+_TROUBLESHOOTING_TERMS = (
+    "troubleshooting",
+    "troubleshoot",
+    "fault",
+    "error",
+    "problem",
+    "cause",
+    "remedy",
+)
+_SAFETY_TERMS = ("safety", "warning", "warnings", "hazard", "caution")
+
+
+class StructuredEvidenceQueryAnalyzer:
+    def __init__(
+        self,
+        *,
+        identifier_query_analyzer: StructuredIdentifierQueryAnalyzer | None = None,
+    ) -> None:
+        self.identifier_query_analyzer = (
+            identifier_query_analyzer or StructuredIdentifierQueryAnalyzer()
+        )
+
+    def analyze(
+        self,
+        *,
+        query_text: str,
+        intent: str | None = None,
+        detected_identifiers: list[str] | None = None,
+    ) -> StructuredEvidenceQueryAnalysis:
+        normalized = " ".join((query_text or "").strip().lower().split())
+        detail_entity_type = self._detail_entity_type(normalized)
+        entity_types: list[StructuredEntityType] = []
+
+        if detail_entity_type is not None:
+            entity_types.append(detail_entity_type)
+            if (
+                detail_entity_type in {
+                    StructuredEntityType.MANUFACTURER,
+                    StructuredEntityType.SUPPLIER,
+                }
+                and any(term in normalized for term in _CONTACT_DETAIL_TERMS)
+            ):
+                entity_types.append(StructuredEntityType.CONTACT_POINT)
+
+        if any(term in normalized for term in _MANUFACTURER_TERMS):
+            entity_types.append(StructuredEntityType.MANUFACTURER)
+        if any(term in normalized for term in _SUPPLIER_TERMS):
+            entity_types.append(StructuredEntityType.SUPPLIER)
+        if any(term in normalized for term in _SPARE_PART_TERMS):
+            entity_types.append(StructuredEntityType.SPARE_PART)
+        if any(term in normalized for term in _EQUIPMENT_TERMS):
+            entity_types.append(StructuredEntityType.EQUIPMENT)
+        if any(term in normalized for term in _SPECIFICATION_TERMS):
+            entity_types.extend(
+                [
+                    StructuredEntityType.SPECIFICATION,
+                    StructuredEntityType.EQUIPMENT,
+                ]
+            )
+        if any(term in normalized for term in _MAINTENANCE_INTERVAL_TERMS):
+            entity_types.extend(
+                [
+                    StructuredEntityType.MAINTENANCE_INTERVAL,
+                    StructuredEntityType.MAINTENANCE_TASK,
+                ]
+            )
+        elif any(term in normalized for term in _MAINTENANCE_TERMS):
+            entity_types.extend(
+                [
+                    StructuredEntityType.MAINTENANCE_TASK,
+                    StructuredEntityType.PROCEDURE,
+                ]
+            )
+        if any(term in normalized for term in _PROCEDURE_TERMS):
+            entity_types.append(StructuredEntityType.PROCEDURE)
+        if any(term in normalized for term in _TROUBLESHOOTING_TERMS):
+            entity_types.append(StructuredEntityType.TROUBLESHOOTING)
+        if any(term in normalized for term in _SAFETY_TERMS):
+            entity_types.append(StructuredEntityType.SAFETY_WARNING)
+
+        if intent == "maintenance":
+            entity_types.extend(
+                [
+                    StructuredEntityType.MAINTENANCE_TASK,
+                    StructuredEntityType.MAINTENANCE_INTERVAL,
+                    StructuredEntityType.PROCEDURE,
+                ]
+            )
+        elif intent == "procedure":
+            entity_types.append(StructuredEntityType.PROCEDURE)
+        elif intent == "troubleshooting":
+            entity_types.append(StructuredEntityType.TROUBLESHOOTING)
+        elif intent == "specification":
+            entity_types.extend(
+                [
+                    StructuredEntityType.SPECIFICATION,
+                    StructuredEntityType.EQUIPMENT,
+                ]
+            )
+        elif intent == "certification":
+            entity_types.append(StructuredEntityType.SPECIFICATION)
+
+        if detected_identifiers:
+            entity_types.extend(
+                [
+                    StructuredEntityType.SPARE_PART,
+                    StructuredEntityType.EQUIPMENT,
+                    StructuredEntityType.SPECIFICATION,
+                ]
+            )
+
+        return StructuredEvidenceQueryAnalysis(
+            entity_types=self._ordered_unique(entity_types),
+            identifier_types=self.identifier_query_analyzer.requested_identifier_types(
+                normalized
+            ),
+            detail_entity_type=detail_entity_type,
+            wants_identifier_inventory=(
+                self.identifier_query_analyzer.looks_like_inventory_query(normalized)
+            ),
+        )
+
+    @staticmethod
+    def _detail_entity_type(normalized: str) -> StructuredEntityType | None:
+        if not any(term in normalized for term in _DETAIL_TERMS):
+            return None
+        if any(term in normalized for term in _MANUFACTURER_TERMS):
+            return StructuredEntityType.MANUFACTURER
+        if any(term in normalized for term in _SUPPLIER_TERMS):
+            return StructuredEntityType.SUPPLIER
+        if any(term in normalized for term in _SPARE_PART_TERMS):
+            return StructuredEntityType.SPARE_PART
+        if any(term in normalized for term in _EQUIPMENT_TERMS):
+            return StructuredEntityType.EQUIPMENT
+        if "maintenance task" in normalized:
+            return StructuredEntityType.MAINTENANCE_TASK
+        if any(term in normalized for term in _WEBSITE_TERMS + _COUNTRY_TERMS):
+            return StructuredEntityType.MANUFACTURER
+        return None
+
+    @staticmethod
+    def _ordered_unique(
+        values: list[StructuredEntityType],
+    ) -> list[StructuredEntityType]:
+        ordered: list[StructuredEntityType] = []
+        for value in values:
+            if value not in ordered:
+                ordered.append(value)
+        return ordered

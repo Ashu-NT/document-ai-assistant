@@ -36,6 +36,8 @@ class QuestionAnsweringResult:
     approved_chunk_ids: list[str] = field(default_factory=list)
     rejected_chunk_ids: list[str] = field(default_factory=list)
     citations: list[Citation] = field(default_factory=list)
+    resolved_identifiers: list = field(default_factory=list)
+    resolved_structured_entities: list = field(default_factory=list)
 
     confidence: str | None = None
     answer_intent: AnswerIntent | None = None

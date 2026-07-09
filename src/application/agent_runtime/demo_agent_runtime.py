@@ -325,6 +325,7 @@ def build_agent_runtime(
             else []
         ),
         document_lookup_service=document_lookup_service,
+        structured_evidence_resolver=retrieval_workflow.structured_evidence_resolver,
     )
 
     find_document_tool = FindDocumentTool(document_catalog_service)
@@ -339,7 +340,12 @@ def build_agent_runtime(
         retrieve_chunks_tool,
     )
     retrieve_structured_entities_tool = RetrieveStructuredEntitiesTool(
-        extraction_service
+        extraction_service,
+        entity_resolver=(
+            retrieval_workflow.structured_evidence_resolver.entity_resolver
+            if retrieval_workflow.structured_evidence_resolver is not None
+            else None
+        ),
     )
     retrieve_figures_tool = RetrieveFiguresTool(
         retrieve_chunks_tool,

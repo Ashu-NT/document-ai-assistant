@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from src.application.contracts.guardrails.guardrail_result import GuardrailResult
+from src.application.workflows.retrieval.structured import StructuredEvidenceBundle
 from src.domain.retrieval import RetrievalQuery, RetrievalResult, RetrievedChunk
 
 
@@ -11,6 +12,7 @@ class RetrievalWorkflowResult:
     min_evidence_chunks: int = 1
     context_chunks: list[RetrievedChunk] | None = None
     guardrail_result: GuardrailResult | None = None
+    structured_evidence: StructuredEvidenceBundle | None = None
     diagnostics: dict[str, object] = field(default_factory=dict)
 
     @property
