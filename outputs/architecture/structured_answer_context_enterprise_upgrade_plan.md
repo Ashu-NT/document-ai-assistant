@@ -715,6 +715,28 @@ Mirror the `*_RULES_VERSION` + structured-logging pattern already used by `Answe
 
 ## 10. Execution Plan For Review
 
+### 10.0 Traceability Matrix
+
+Every issue in sections 4 and 5, and every solution in section 9 (including the reviewer's four adjustments in section 0.1), maps to exactly one phase below. Nothing found in this audit is left without an assigned remediation phase.
+
+| Issue | Phase(s) | Solution ref |
+|---|---|---|
+| 4.1 `AnswerSource` too thin | Phase 3 | 9.1 |
+| 4.2 structured semantics flattened too early | Phase 4 | 9.2, 9.3 |
+| 4.3 / 5.1.B structured context sometimes dropped | Phase 4 | 9.7 |
+| 4.4 / 5.1.A `AnswerFormatPolicy.resolve()` ignores context | Phase 6 | 9.4 |
+| 4.5 prompt depends on flattened lists | Phase 8 | 9.6 |
+| 4.6 LLM schema too weak | Phase 8 | 9.6 |
+| 4.7 deterministic renderers fragmented | Phase 7 | 9.5 |
+| 4.8 table evidence partially modeled | Phase 4 | 9.2 (`table_evidence`) |
+| 4.9 groups are prompt-facing only | Phase 5, Phase 7 | 9.5 |
+| 4.10 tests lock in the limited model | Phase 1, Phase 10 | section 11 |
+| 4.11 / 5.1.D dead `confidence` fields | Phase 9 | 9.9, reviewer 0.1 #4 |
+| 4.12 / 5.1.E dead `max_context_chunks` | Phase 1 (decision), Phase 3 (enforcement) | reviewer 0.1 #1 |
+| 4.13 redundant maintenance-entry data model | Phase 2 | reviewer 0.1 #2 |
+| 4.14 no rules-version / observability parity | Phase 6 | 9.10, reviewer 0.1 #3 |
+| 4.15 no `AnswerIntent` exhaustiveness guard | Phase 1 | 9.8 |
+
 ## Phase 1 - Baseline protection
 
 - add an audit snapshot test plan for current behavior
@@ -742,6 +764,7 @@ Mirror the `*_RULES_VERSION` + structured-logging pattern already used by `Answe
 
 - add first-class answer models for structured entities, relationships, tables, and assets
 - keep `AnswerKeyValue` as a convenience projection, not the only structured view
+- make `QuestionAnsweringWorkflow._join_structured_facts()` retain the built `structured_context` whenever it was successfully organized, not only when extra `AnswerKeyValue` rows were produced (closes 4.3/9.7 — this is a correctness fix, not cleanup, and was not covered by any phase before this pass)
 
 ## Phase 5 - Organizer redesign
 
@@ -807,23 +830,31 @@ Mirror the `*_RULES_VERSION` + structured-logging pattern already used by `Answe
 - prompt builder tests
 - workflow tests that assert current structured-context behavior
 
-## 12. Recommended Review Decisions Before Implementation
+## 12. Decisions
 
-Please review and decide these before the code pass:
+These were open review questions in the original audit. None were contested, so each is adopted here using this document's own stated recommendation, and the numbered phases above are written against these answers. Revisit before starting the phase noted if the team's priorities change.
 
 1. Should `StructuredAnswerContext` remain the single canonical answer-context DTO for both deterministic renderers and LLM prompting?
-   - Recommended: yes.
+   - **Decision: Yes.** Phases 4, 5, and 7 are written on this basis — renderer unification (Phase 7) only makes sense if there is one shared DTO to unify on.
 
 2. Should we keep `AnswerKeyValue` as a secondary convenience view rather than the main structured-evidence view?
-   - Recommended: yes.
+   - **Decision: Yes.** Phase 4 explicitly keeps it as a convenience projection alongside the new typed views, not a replacement for them.
 
 3. Should deterministic answer rendering expand beyond identifiers and spare parts once typed structured views exist?
-   - Recommended: yes, but phase it after the context refactor.
+   - **Decision: Yes, phased after the context refactor.** This is why Phase 7 (renderer unification) is sequenced after Phase 4 (typed views), not before.
 
 4. Should prompt/output schema strengthening happen in the same implementation wave or after context refactor stabilization?
-   - Recommended: same wave, after context refactor and before cleanup.
+   - **Decision: Same wave, after context refactor and before cleanup.** This is why Phase 8 (prompt/schema hardening) is sequenced after Phases 4-7 and before Phase 9 (cleanup).
 
-## 13. Final Recommendation
+## 13. Risk, Rollback, and Compatibility Strategy
+
+- **Backward compatibility:** no compatibility shims or re-export bridges. This matches the established convention already used elsewhere in this codebase (direct cutover: every import site of a moved/renamed symbol is updated in the same change as the move, not batched into a later cleanup pass).
+- **Rollback unit:** each phase is scoped to be independently revertible — Phase 2's file split lands before Phase 3-8 add new behavior on top of it, so a problem discovered in, say, Phase 6 can be reverted without unwinding Phases 2-5. Do not squash multiple phases into one change; that is what makes the phase boundaries in section 10 meaningful.
+- **Sequencing constraint:** Phases 3 through 8 assume Phase 2's model split has already landed (they add fields/types to files that Phase 2 relocates). Do not start Phase 4 before Phase 2 merges.
+- **Blast radius:** contained to the question-answering and structured-retrieval answer-generation path (`answer_context/`, `answer_generation/`, `prompts/answer_generation/`, and the structured query-analysis files added to scope in 2.1). Ingestion, extraction, and other LangGraph nodes outside answer generation are not touched by this plan.
+- **Test gate per phase:** each phase's exit criteria (where stated inline) and the traceability matrix (10.0) together define "done" for that phase — a phase is not complete until its mapped issue's `### Impact` bullets in section 4 no longer apply and its existing test suite (section 8.3) is green.
+
+## 14. Final Recommendation
 
 The right upgrade path is not to patch the prompt builder again.
 
