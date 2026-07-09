@@ -105,6 +105,28 @@ def test_context_organizer_defaults_collapsed_chunk_ids_when_not_deduplicated() 
     assert context.sources[0].collapsed_chunk_ids == []
 
 
+def test_context_organizer_normalizes_collapsed_chunk_ids_from_csv_metadata() -> None:
+    organizer = AnswerContextOrganizer()
+    context = organizer.organize(
+        answer_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        chunks=[
+            _make_chunk(
+                chunk_id="chunk_001",
+                content="Test pressure: 700 bar",
+                metadata={
+                    "dedup_collapsed_chunk_ids": " chunk_a,chunk_b ,  , chunk_c ",
+                },
+            )
+        ],
+    )
+
+    assert context.sources[0].collapsed_chunk_ids == [
+        "chunk_a",
+        "chunk_b",
+        "chunk_c",
+    ]
+
+
 def test_context_organizer_groups_sources_by_chunk_type_and_section() -> None:
     organizer = AnswerContextOrganizer()
     context = organizer.organize(

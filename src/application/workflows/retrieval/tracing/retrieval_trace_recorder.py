@@ -28,17 +28,25 @@ def _chunk_to_traced(chunk: RetrievedChunk) -> TracedChunk:
         score=chunk.score,
         fused_score=meta.get("fused_score"),
         best_source_score=meta.get("best_source_score"),
-        retrieval_sources=list(meta.get("retrieval_sources", [])),
+        retrieval_sources=_metadata_list(meta.get("retrieval_sources")),
         section_path=list(chunk.section_path or []),
         page_start=getattr(chunk.source, "page_start", None),
         page_end=getattr(chunk.source, "page_end", None),
         dedup_reason=meta.get("dedup_reason"),
-        dedup_collapsed_ids=list(meta.get("dedup_collapsed_chunk_ids", [])),
+        dedup_collapsed_ids=_metadata_list(meta.get("dedup_collapsed_chunk_ids")),
         dedup_group_size=meta.get("dedup_group_size"),
         dedup_representative_selection_reason=meta.get(
             "dedup_representative_selection_reason"
         ),
     )
+
+
+def _metadata_list(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",") if item.strip()]
+    return []
 
 
 class RetrievalTraceRecorder:

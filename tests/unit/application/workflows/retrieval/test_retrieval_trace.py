@@ -78,6 +78,38 @@ class TestRetrievalTraceRecorder:
         assert trace.context_chunk_ids == ["c1"]
         assert trace.duration_ms >= 0
 
+    def test_build_normalizes_csv_trace_metadata_fields(self):
+        recorder = RetrievalTraceRecorder()
+        query = _make_query()
+        chunk = _make_retrieved_chunk("c1")
+        chunk.metadata = {
+            "fused_score": 0.9,
+            "best_source_score": 0.88,
+            "retrieval_sources": "dense, keyword , structured",
+            "dedup_reason": "duplicate_text",
+            "dedup_collapsed_chunk_ids": "chunk_a, chunk_b , ,chunk_c",
+            "dedup_group_size": "4",
+            "dedup_representative_selection_reason": "keyword_score",
+        }
+
+        recorder.record_query_analysis(
+            query, intent=RetrievalQueryIntentInferer().infer(query)
+        )
+        recorder.record_dedup(before_count=3, after_chunks=[chunk])
+
+        trace = recorder.build(query_id=query.query_id, timestamp_iso="2026-01-01T00:00:00")
+
+        assert trace.retrieved_chunks[0].retrieval_sources == [
+            "dense",
+            "keyword",
+            "structured",
+        ]
+        assert trace.retrieved_chunks[0].dedup_collapsed_ids == [
+            "chunk_a",
+            "chunk_b",
+            "chunk_c",
+        ]
+
     def test_query_analysis_captures_intent(self):
         recorder = RetrievalTraceRecorder()
         query = _make_query("What is the oil change interval?")

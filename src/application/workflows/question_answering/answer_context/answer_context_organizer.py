@@ -141,7 +141,11 @@ class AnswerContextOrganizer:
     @staticmethod
     def _decode_collapsed_chunk_ids(metadata: dict[str, str]) -> list[str]:
         raw = metadata.get("dedup_collapsed_chunk_ids", "")
-        return [chunk_id for chunk_id in raw.split(",") if chunk_id]
+        return [
+            chunk_id.strip()
+            for chunk_id in raw.split(",")
+            if chunk_id.strip()
+        ]
 
     @staticmethod
     def _decode_table_rows(metadata: dict[str, str]) -> list[list[str]] | None:
