@@ -28,6 +28,9 @@ from src.application.workflows.retrieval.structured import (
     StructuredEvidenceBundle,
     StructuredEvidenceResolver,
 )
+from src.application.workflows.shared.document_scope_filter import (
+    partition_chunks_by_document_scope,
+)
 from src.domain.common import new_id
 from src.domain.retrieval import RetrievalQuery, RetrievalResult
 from src.shared.activity import ActivityContext
@@ -188,7 +191,7 @@ class RetrievalWorkflow:
             used_sql=retrieval_result.used_sql,
             total_candidates=len(deduplication_result.chunks),
         )
-        scoped_retrieval_chunks, discarded_retrieval_chunks = self._enforce_document_scope(
+        scoped_retrieval_chunks, discarded_retrieval_chunks = partition_chunks_by_document_scope(
             chunks=retrieval_result.chunks,
             document_id=working_query.document_id,
         )
@@ -253,7 +256,7 @@ class RetrievalWorkflow:
             if self.context_expander is not None
             else list(retrieval_result.chunks)
         )
-        context_chunks, discarded_context_chunks = self._enforce_document_scope(
+        context_chunks, discarded_context_chunks = partition_chunks_by_document_scope(
             chunks=context_chunks,
             document_id=working_query.document_id,
         )
@@ -341,16 +344,3 @@ class RetrievalWorkflow:
             query,
             additional_candidates=additional_candidates,
         )
-
-    @staticmethod
-    def _enforce_document_scope(
-        *,
-        chunks: list,
-        document_id: str | None,
-    ) -> tuple[list, list]:
-        if document_id is None:
-            return list(chunks), []
-
-        approved = [chunk for chunk in chunks if chunk.document_id == document_id]
-        rejected = [chunk for chunk in chunks if chunk.document_id != document_id]
-        return approved, rejected

@@ -9,6 +9,7 @@ from src.application.workflows.retrieval.retrieval_query_intent import (
 from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
+from src.application.workflows.shared.section_path_utils import is_path_prefix
 from src.domain.common import ChunkType
 from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 
@@ -326,7 +327,7 @@ class RetrievalContextExpander:
     def _is_ancestor_overview(anchor_document_chunk, document_chunk) -> bool:
         return (
             document_chunk.chunk_type == ChunkType.OVERVIEW
-            and RetrievalContextExpander._is_path_prefix(
+            and is_path_prefix(
                 document_chunk.section_path,
                 anchor_document_chunk.section_path,
             )
@@ -338,7 +339,7 @@ class RetrievalContextExpander:
         return (
             anchor_document_chunk.chunk_type == ChunkType.OVERVIEW
             and document_chunk.chunk_type != ChunkType.OVERVIEW
-            and RetrievalContextExpander._is_path_prefix(
+            and is_path_prefix(
                 anchor_document_chunk.section_path,
                 document_chunk.section_path,
             )
@@ -356,20 +357,6 @@ class RetrievalContextExpander:
             == document_chunk.section_path[:-1]
             and anchor_document_chunk.section_path[-1]
             != document_chunk.section_path[-1]
-        )
-
-    @staticmethod
-    def _is_path_prefix(
-        candidate_ancestor_path: list[str],
-        candidate_descendant_path: list[str],
-    ) -> bool:
-        if not candidate_ancestor_path:
-            return False
-        if len(candidate_ancestor_path) > len(candidate_descendant_path):
-            return False
-        return (
-            candidate_descendant_path[: len(candidate_ancestor_path)]
-            == candidate_ancestor_path
         )
 
     @staticmethod

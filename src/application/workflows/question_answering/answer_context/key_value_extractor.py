@@ -13,6 +13,13 @@ from src.application.workflows.question_answering.answer_context.models import (
     AnswerMaintenanceReference,
     AnswerSource,
 )
+from src.application.workflows.shared.maintenance_action_verbs import (
+    MAINTENANCE_ACTION_VERBS,
+)
+from src.application.workflows.shared.maintenance_text_cleaning import (
+    clean_interval,
+    clean_optional_text,
+)
 
 # Bumped whenever the extraction patterns/aliases below change materially --
 # mirrors ANSWER_INTENT_RULES_VERSION's convention, so a future extraction
@@ -70,10 +77,7 @@ _MAINTENANCE_INTERVAL_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _MAINTENANCE_ACTION_PATTERN = re.compile(
-    r"\b("
-    r"inspect|check|replace|lubricate|clean|test|drain|tighten|calibrate|"
-    r"change|grease|service|flush|verify|examine|adjust|renew"
-    r")\b",
+    r"\b(" + "|".join(MAINTENANCE_ACTION_VERBS) + r")\b",
     re.IGNORECASE,
 )
 _MAINTENANCE_LINE_HINTS = (
@@ -90,8 +94,7 @@ _MAINTENANCE_LINE_HINTS = (
     "maintenance checklist",
 )
 _MAINTENANCE_COMPONENT_PATTERN = re.compile(
-    r"^(?:inspect|check|replace|lubricate|clean|test|drain|tighten|calibrate|"
-    r"change|grease|service|flush|verify|examine|adjust|renew)\s+"
+    r"^(?:" + "|".join(MAINTENANCE_ACTION_VERBS) + r")\s+"
     r"(?:(?:the|a|an)\s+)?(?P<component>[^,.;:]+)",
     re.IGNORECASE,
 )
@@ -115,8 +118,6 @@ _TABLE_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "component": ("component", "equipment", "part", "item", "location"),
     "notes": ("notes", "remark", "remarks", "comment", "comments", "details"),
 }
-_NOT_SPECIFIED = "Not specified"
-_PLACEHOLDER_VALUES = {"x", "-", "n/a", "na", "unknown"}
 _SUPPORTED_INTENTS = {
     AnswerIntent.SPECIFICATION_SUMMARY,
     AnswerIntent.CERTIFICATION_SUMMARY,
@@ -479,22 +480,11 @@ class KeyValueExtractor:
 
     @staticmethod
     def _clean_interval(interval: str | None) -> str:
-        cleaned = KeyValueExtractor._clean_optional_text(interval)
-        if cleaned is None:
-            return _NOT_SPECIFIED
-        return cleaned or _NOT_SPECIFIED
+        return clean_interval(interval)
 
     @staticmethod
     def _clean_optional_text(value: str | None) -> str | None:
-        if value is None:
-            return None
-        cleaned = " ".join(value.strip().split())
-        cleaned = cleaned.rstrip(" .;:")
-        if not cleaned:
-            return None
-        if cleaned.lower() in _PLACEHOLDER_VALUES:
-            return None
-        return cleaned
+        return clean_optional_text(value)
 
     @staticmethod
     def _extract_component(task: str) -> str | None:

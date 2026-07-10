@@ -7,6 +7,7 @@ from src.application.langgraph.common import (
     GraphResult,
     is_safe_failure_message,
     is_usable_reflection_decision,
+    resolve_answer_intent,
     resolve_answer_text,
     serialize_graph_value,
 )
@@ -398,7 +399,7 @@ class DocumentAgentGraph:
             )
             if recovered_answer and not is_safe_failure_message(recovered_answer):
                 answer = recovered_answer
-        answer_intent = _extract_answer_intent(tool_results)
+        answer_intent = resolve_answer_intent(_tool_payload(tool_results, "answer_question"))
         citations = _extract_citations(tool_results)
         limitation_note = _extract_limitation_note(tool_results)
         sections = _extract_sections(tool_results)
@@ -912,22 +913,6 @@ def _extract_reference_notes(tool_results: dict[str, Any]) -> list[dict[str, Any
         if isinstance(reference_notes, list):
             return serialize_graph_value(reference_notes)
     return []
-
-
-def _extract_answer_intent(tool_results: dict[str, Any]) -> str | None:
-    answer_question_payload = _tool_payload(tool_results, "answer_question")
-    if not isinstance(answer_question_payload, dict):
-        return None
-    answer_intent = answer_question_payload.get("answer_intent")
-    if isinstance(answer_intent, str) and answer_intent:
-        return answer_intent
-
-    diagnostics = answer_question_payload.get("diagnostics")
-    if isinstance(diagnostics, dict):
-        value = diagnostics.get("answer_intent")
-        if isinstance(value, str) and value:
-            return value
-    return None
 
 
 def _extract_context_chunks(

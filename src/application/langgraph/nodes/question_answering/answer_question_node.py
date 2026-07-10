@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import asdict
-
 from src.application.langgraph.common import GraphError
 from src.application.langgraph.common import serialize_graph_value
+from src.application.langgraph.common.answer_intent_resolver import (
+    resolve_answer_intent,
+)
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
     build_error,
@@ -15,16 +16,15 @@ from src.application.langgraph.nodes.node_utils import (
     serialize_tool_result,
 )
 from src.application.langgraph.retrieval_strategy import (
-    CLI_RETRIEVAL_STRATEGY_ALIASES,
     RetrievalContext,
     RetrievalPlanExecutor,
     RetrievalStrategyPolicy,
     RetrievalStrategyService,
+    advisor_proposal_from_state,
+    requested_strategy_from_state,
+    strategy_patch as build_strategy_patch,
 )
 from src.application.langgraph.state import AgentState
-from src.application.langgraph.strategy_advisor.advisor_models import (
-    StrategyAdvisorProposal,
-)
 from src.application.langgraph.tracing import GraphRunRecorder
 from src.application.tools.question_answering import AnswerQuestionRequest
 
@@ -98,10 +98,12 @@ class AnswerQuestionNode:
                 document_title=state.get("document_title"),
                 selected_document_title=state.get("selected_document_title"),
                 top_k=state.get("top_k") or self.retrieval_strategy_policy.default_top_k,
-                answer_intent=_extract_existing_answer_intent(state),
-                requested_strategy=_requested_strategy_from_state(state),
+                answer_intent=resolve_answer_intent(
+                    (state.get("tool_results", {}).get("answer_question") or {}).get("data")
+                ),
+                requested_strategy=requested_strategy_from_state(state),
                 use_llm_selector=bool(state.get("llm_retrieval_strategy_enabled")),
-                strategy_advisor_proposal=_advisor_proposal_from_state(state),
+                strategy_advisor_proposal=advisor_proposal_from_state(state),
             )
             try:
                 strategy_result = self.retrieval_strategy_service.select_and_plan(
@@ -113,7 +115,7 @@ class AnswerQuestionNode:
                     tool_registry=self.tool_registry,
                     max_chunks=self.retrieval_strategy_policy.max_merged_chunks,
                 )
-                strategy_patch = _strategy_patch(
+                strategy_patch = build_strategy_patch(
                     strategy_result=strategy_result,
                     execution_result=execution_result,
                 )
@@ -207,55 +209,3 @@ class AnswerQuestionNode:
             diagnostics=result.diagnostics,
         )
         return patch
-
-
-def _requested_strategy_from_state(state: AgentState):
-    raw_value = state.get("requested_retrieval_strategy")
-    if not isinstance(raw_value, str) or not raw_value:
-        return None
-    return CLI_RETRIEVAL_STRATEGY_ALIASES.get(raw_value.strip().lower())
-
-
-def _advisor_proposal_from_state(state: AgentState) -> StrategyAdvisorProposal | None:
-    payload = state.get("strategy_advisor_result")
-    if not isinstance(payload, dict):
-        return None
-    proposal = payload.get("proposal")
-    if not isinstance(proposal, dict):
-        return None
-    return StrategyAdvisorProposal.from_dict(proposal)
-
-
-def _extract_existing_answer_intent(state: AgentState) -> str | None:
-    payload = (state.get("tool_results", {}).get("answer_question") or {}).get("data")
-    if not isinstance(payload, dict):
-        return None
-    answer_intent = payload.get("answer_intent")
-    if isinstance(answer_intent, str) and answer_intent:
-        return answer_intent
-    diagnostics = payload.get("diagnostics")
-    if isinstance(diagnostics, dict):
-        value = diagnostics.get("answer_intent")
-        if isinstance(value, str) and value:
-            return value
-    return None
-
-
-def _strategy_patch(
-    *,
-    strategy_result,
-    execution_result,
-) -> dict[str, object]:
-    decision = strategy_result.decision
-    return {
-        "retrieval_strategy_decision": serialize_graph_value(asdict(decision)),
-        "retrieval_plan": serialize_graph_value(strategy_result.plan.to_dict()),
-        "retrieval_execution_result": serialize_graph_value(
-            execution_result.to_dict()
-        ),
-        "retrieval_strategy_trace": serialize_graph_value(asdict(strategy_result.trace)),
-        "selected_retrieval_strategies": [
-            strategy.value for strategy in decision.selected_strategies
-        ],
-        "retrieval_strategy_errors": list(execution_result.errors),
-    }

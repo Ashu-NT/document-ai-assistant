@@ -1,3 +1,5 @@
+from src.shared.text import normalize_alnum_text, tokenize_alnum
+
 _STOP_WORDS = {
     "a",
     "an",
@@ -26,20 +28,15 @@ _STOP_WORDS = {
     "which",
     "with",
 }
-import re
-
-_NORMALIZED_TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 
 
 def extract_query_terms(query_text: str) -> list[str]:
     return [
         term
-        for term in _NORMALIZED_TOKEN_PATTERN.findall((query_text or "").lower())
+        for term in tokenize_alnum(query_text)
         if len(term) > 1 and term not in _STOP_WORDS
     ]
 
 
 def normalize_query_text(value: str | None) -> str:
-    if not value:
-        return ""
-    return " ".join(_NORMALIZED_TOKEN_PATTERN.findall(value.lower()))
+    return normalize_alnum_text(value)

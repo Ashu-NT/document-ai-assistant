@@ -13,6 +13,9 @@ from src.application.workflows.parsing.normalizers.docling_table_extractor impor
     DoclingTableExtractor,
 )
 from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsing_value_coercion import (
+    coerce_positive_int,
+)
 from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
 from src.domain.common import ElementType
 from src.shared.exceptions import DocumentNormalizationError
@@ -200,7 +203,7 @@ class DoclingDocumentNormalizer:
         if parent_ref:
             metadata["parent_ref"] = parent_ref
 
-        heading_level = self._coerce_positive_int(self._get_value(item, "level"))
+        heading_level = coerce_positive_int(self._get_value(item, "level"))
         if heading_level is not None:
             metadata["heading_level"] = heading_level
 
@@ -238,18 +241,6 @@ class DoclingDocumentNormalizer:
 
         text = str(value).strip()
         return text or None
-
-    @staticmethod
-    def _coerce_positive_int(value: Any) -> int | None:
-        if value is None:
-            return None
-
-        try:
-            number = int(value)
-        except (TypeError, ValueError):
-            return None
-
-        return number if number > 0 else None
 
     @staticmethod
     def _get_value(value: Any, name: str) -> Any:

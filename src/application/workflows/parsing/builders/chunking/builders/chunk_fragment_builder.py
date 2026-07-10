@@ -9,7 +9,12 @@ from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitte
 )
 from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     clean_chunk_text,
+    is_furniture_or_embedded_picture,
     is_low_value_fragment,
+    resolve_parser_extra,
+)
+from src.application.workflows.parsing.parsing_value_coercion import (
+    coerce_positive_int,
 )
 from src.domain.common import ChunkType, ElementType
 from src.domain.common import DocumentType
@@ -155,17 +160,7 @@ class ChunkFragmentBuilder:
         }:
             return False
 
-        parser_extra = (
-            element.parser_metadata.extra
-            if element.parser_metadata is not None
-            and element.parser_metadata.extra is not None
-            else {}
-        )
-        parent_ref = parser_extra.get("parent_ref")
-        if isinstance(parent_ref, str) and parent_ref.startswith("#/pictures/"):
-            return False
-
-        return parser_extra.get("content_layer") != "furniture"
+        return not is_furniture_or_embedded_picture(element)
 
     def _is_document_index_element(self, element: CanonicalElement) -> bool:
         parser_extra = self._parser_extra(element)
@@ -245,8 +240,8 @@ class ChunkFragmentBuilder:
 
     def _should_chunk_table_element(self, element: CanonicalElement) -> bool:
         parser_extra = self._parser_extra(element)
-        column_count = self._coerce_positive_int(parser_extra.get("column_count"))
-        row_count = self._coerce_positive_int(parser_extra.get("row_count"))
+        column_count = coerce_positive_int(parser_extra.get("column_count"))
+        row_count = coerce_positive_int(parser_extra.get("row_count"))
         markdown = clean_chunk_text(parser_extra.get("markdown") or element.text) or ""
 
         if column_count is not None and column_count <= 1:
@@ -418,19 +413,4 @@ class ChunkFragmentBuilder:
 
     @staticmethod
     def _parser_extra(element: CanonicalElement) -> dict:
-        if element.parser_metadata is None or element.parser_metadata.extra is None:
-            return {}
-
-        return element.parser_metadata.extra
-
-    @staticmethod
-    def _coerce_positive_int(value: object) -> int | None:
-        if value is None:
-            return None
-
-        try:
-            number = int(value)
-        except (TypeError, ValueError):
-            return None
-
-        return number if number > 0 else None
+        return resolve_parser_extra(element)

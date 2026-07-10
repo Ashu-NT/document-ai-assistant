@@ -177,7 +177,7 @@ def test_agent_cli_console_safe_text_replaces_unencodable_chars(monkeypatch) -> 
 
     monkeypatch.setattr(mod.sys, "stdout", _Stdout())
 
-    assert mod._console_safe_text("\uf0b7 item") == "? item"
+    assert mod.console_safe_text("\uf0b7 item") == "? item"
 
 
 def test_agent_cli_show_reflection_prints_reflection_details(capsys) -> None:

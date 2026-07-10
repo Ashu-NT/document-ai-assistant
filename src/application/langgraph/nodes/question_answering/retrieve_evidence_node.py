@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict
-
 from src.application.langgraph.common import GraphError
-from src.application.langgraph.common import serialize_graph_value
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
     build_error,
@@ -12,19 +9,18 @@ from src.application.langgraph.nodes.node_utils import (
     serialize_tool_result,
 )
 from src.application.langgraph.retrieval_strategy import (
-    CLI_RETRIEVAL_STRATEGY_ALIASES,
     RetrievalContext,
     RetrievalPlanExecutor,
     RetrievalStrategyPolicy,
     RetrievalStrategyService,
+    advisor_proposal_from_state,
+    execution_result_to_tool_result,
+    requested_strategy_from_state,
+    strategy_patch as build_strategy_patch,
 )
 from src.application.langgraph.state import AgentState
-from src.application.langgraph.strategy_advisor.advisor_models import (
-    StrategyAdvisorProposal,
-)
 from src.application.langgraph.tracing import GraphRunRecorder
 from src.application.tools.retrieval import RetrieveChunksRequest
-from src.domain.retrieval.citation import Citation
 
 
 class RetrieveEvidenceNode:
@@ -87,9 +83,9 @@ class RetrieveEvidenceNode:
                 document_title=state.get("document_title"),
                 selected_document_title=state.get("selected_document_title"),
                 top_k=state.get("top_k") or self.retrieval_strategy_policy.default_top_k,
-                requested_strategy=_requested_strategy_from_state(state),
+                requested_strategy=requested_strategy_from_state(state),
                 use_llm_selector=bool(state.get("llm_retrieval_strategy_enabled")),
-                strategy_advisor_proposal=_advisor_proposal_from_state(state),
+                strategy_advisor_proposal=advisor_proposal_from_state(state),
             )
             try:
                 strategy_result = self.retrieval_strategy_service.select_and_plan(
@@ -101,11 +97,18 @@ class RetrieveEvidenceNode:
                     tool_registry=self.tool_registry,
                     max_chunks=self.retrieval_strategy_policy.max_merged_chunks,
                 )
-                strategy_patch = _strategy_patch(
+                strategy_patch = build_strategy_patch(
                     strategy_result=strategy_result,
                     execution_result=execution_result,
                 )
-                result = _execution_result_to_tool_result(execution_result)
+                result = execution_result_to_tool_result(
+                    execution_result,
+                    tool_name="retrieve_evidence",
+                    description="LangGraph retrieval-strategy execution result.",
+                    success_message="Evidence retrieved successfully.",
+                    failure_message="Retrieval strategy execution failed.",
+                    include_execution_diagnostics=True,
+                )
             except Exception as exc:
                 strategy_patch = {
                     "retrieval_strategy_errors": [str(exc)],
@@ -151,85 +154,3 @@ class RetrieveEvidenceNode:
             diagnostics=result.diagnostics,
         )
         return patch
-
-
-def _requested_strategy_from_state(state: AgentState):
-    raw_value = state.get("requested_retrieval_strategy")
-    if not isinstance(raw_value, str) or not raw_value:
-        return None
-    return CLI_RETRIEVAL_STRATEGY_ALIASES.get(raw_value.strip().lower())
-
-
-def _advisor_proposal_from_state(state: AgentState) -> StrategyAdvisorProposal | None:
-    payload = state.get("strategy_advisor_result")
-    if not isinstance(payload, dict):
-        return None
-    proposal = payload.get("proposal")
-    if not isinstance(proposal, dict):
-        return None
-    return StrategyAdvisorProposal.from_dict(proposal)
-
-
-def _strategy_patch(
-    *,
-    strategy_result,
-    execution_result,
-) -> dict[str, object]:
-    decision = strategy_result.decision
-    return {
-        "retrieval_strategy_decision": serialize_graph_value(asdict(decision)),
-        "retrieval_plan": serialize_graph_value(strategy_result.plan.to_dict()),
-        "retrieval_execution_result": serialize_graph_value(
-            execution_result.to_dict()
-        ),
-        "retrieval_strategy_trace": serialize_graph_value(asdict(strategy_result.trace)),
-        "selected_retrieval_strategies": [
-            strategy.value for strategy in decision.selected_strategies
-        ],
-        "retrieval_strategy_errors": list(execution_result.errors),
-    }
-
-
-def _execution_result_to_tool_result(execution_result):
-    from src.application.tools.common import ToolMetadata, ToolResult
-
-    citations = [
-        chunk.citation
-        for chunk in execution_result.evidence_chunks
-        if isinstance(chunk.citation, Citation)
-    ]
-    diagnostics = {
-        **dict(execution_result.diagnostics),
-        "tool_names": list(execution_result.tool_names),
-        "strategy_count": len(execution_result.plan.steps),
-    }
-    metadata = ToolMetadata(
-        tool_name="retrieve_evidence",
-        category="retrieval",
-        description="LangGraph retrieval-strategy execution result.",
-        mutates_state=False,
-        supports_trace=True,
-    )
-    return ToolResult(
-        success=execution_result.success,
-        message=(
-            "Evidence retrieved successfully."
-            if execution_result.success
-            else "Retrieval strategy execution failed."
-        ),
-        data={
-            "chunks": execution_result.evidence_chunks,
-            "context_chunks": execution_result.evidence_chunks,
-            "citations": citations,
-            "retrieval_execution_result": execution_result,
-        },
-        error_code=(
-            None
-            if execution_result.success
-            else execution_result.errors[0]
-            if execution_result.errors
-            else "retrieval_strategy_failed"
-        ),
-        diagnostics=diagnostics,
-        metadata=metadata,
-    )

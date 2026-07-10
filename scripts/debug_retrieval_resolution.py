@@ -61,6 +61,8 @@ for _import_root in (PROJECT_ROOT, SRC_ROOT):
     if _import_root_str not in sys.path:
         sys.path.insert(0, _import_root_str)
 
+from src.shared.text import console_safe_text
+
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -99,24 +101,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(list(argv) if argv is not None else None)
 
 
-def _console_safe_text(value: str) -> str:
-    encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
-    try:
-        return value.encode(encoding, errors="replace").decode(encoding, errors="replace")
-    except LookupError:
-        return value.encode("utf-8", errors="replace").decode("utf-8", errors="replace")
-
-
 def print_status(message: str) -> None:
-    print(_console_safe_text(f"[debug-retrieval] {message}"), flush=True)
+    print(console_safe_text(f"[debug-retrieval] {message}"), flush=True)
 
 
 def print_section(title: str) -> None:
     banner = "=" * 70
     print()
-    print(_console_safe_text(banner))
-    print(_console_safe_text(f"  {title}"))
-    print(_console_safe_text(banner))
+    print(console_safe_text(banner))
+    print(console_safe_text(f"  {title}"))
+    print(console_safe_text(banner))
 
 
 def print_chunks(label: str, chunks: list) -> None:
@@ -126,14 +120,14 @@ def print_chunks(label: str, chunks: list) -> None:
         if len(preview) > 160:
             preview = preview[:157] + "..."
         print(
-            _console_safe_text(
+            console_safe_text(
                 f"  [{index}] chunk_id={chunk.chunk_id} document_id={chunk.document_id} "
                 f"score={chunk.score:.4f} source={chunk.retrieval_source} "
                 f"chunk_type={chunk.chunk_type.value} "
                 f"section={'/'.join(chunk.section_path) or '-'}"
             )
         )
-        print(_console_safe_text(f"      {preview}"))
+        print(console_safe_text(f"      {preview}"))
 
 
 # entity_type -> (id_field, fields worth showing inline to identify the row)
@@ -183,7 +177,7 @@ def print_entities(label: str, entities: list[dict[str, Any]]) -> None:
     noun = "entity" if len(entities) == 1 else "entities"
     print_status(f"{label} ({len(entities)} {noun})")
     for index, entity in enumerate(entities, start=1):
-        print(_console_safe_text(f"  [{index}] {_summarize_entity(entity)}"))
+        print(console_safe_text(f"  [{index}] {_summarize_entity(entity)}"))
         for link in entity.get("related_entities") or []:
             related_entity = link.get("entity")
             related_summary = (
@@ -192,7 +186,7 @@ def print_entities(label: str, entities: list[dict[str, Any]]) -> None:
                 else "(not found)"
             )
             print(
-                _console_safe_text(
+                console_safe_text(
                     f"      -> {link['relationship_type']} ({link['direction']}, "
                     f"status={link['status']}, "
                     f"confidence={link['confidence_score']:.2f}): {related_summary}"

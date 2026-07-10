@@ -14,6 +14,8 @@ from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
 from src.shared.exceptions import SchemaValidationError
+from src.shared.progress import emit_progress
+from src.shared.text import preview_text
 
 
 class RetrievalBenchmarkEvaluator:
@@ -43,7 +45,7 @@ class RetrievalBenchmarkEvaluator:
                     details={"case_id": benchmark_case.case_id},
                 )
 
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"[{index}/{total_cases}] Running benchmark case "
@@ -119,7 +121,7 @@ class RetrievalBenchmarkEvaluator:
                     actual_intent=self.intent_inferer.resolve(benchmark_case.query),
                 )
             )
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"[{index}/{total_cases}] Completed {benchmark_case.case_id} "
@@ -240,7 +242,7 @@ class RetrievalBenchmarkEvaluator:
                 section_path=list(getattr(chunk, "section_path", [])),
                 page_start=getattr(getattr(chunk, "source", None), "page_start", None),
                 page_end=getattr(getattr(chunk, "source", None), "page_end", None),
-                content_preview=self._content_preview(getattr(chunk, "content", "")),
+                content_preview=preview_text(getattr(chunk, "content", ""), rstrip=True),
             )
             for chunk in chunks
         ]
@@ -249,20 +251,3 @@ class RetrievalBenchmarkEvaluator:
     def _chunk_type_value(chunk_type) -> str:
         return getattr(chunk_type, "value", str(chunk_type) or "unknown")
 
-    @staticmethod
-    def _content_preview(
-        content: str,
-        max_length: int = 180,
-    ) -> str:
-        normalized = " ".join((content or "").split())
-        if len(normalized) <= max_length:
-            return normalized
-        return normalized[: max_length - 3].rstrip() + "..."
-
-    @staticmethod
-    def _emit_progress(
-        progress_callback: Callable[[str], None] | None,
-        message: str,
-    ) -> None:
-        if progress_callback is not None:
-            progress_callback(message)

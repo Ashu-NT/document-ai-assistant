@@ -5,11 +5,9 @@ from typing import Any
 from src.application.langgraph.nodes.node_utils import build_error, extend_trace, resolve_selected_document
 from src.application.langgraph.research import ResearchService, ResearchTrace
 from src.application.langgraph.research.services import ResearchStateMapper
+from src.application.langgraph.retrieval_strategy import advisor_proposal_from_state
 from src.application.langgraph.routing import RouteType
 from src.application.langgraph.state import AgentState
-from src.application.langgraph.strategy_advisor.advisor_models import (
-    StrategyAdvisorProposal,
-)
 from src.application.langgraph.tracing import GraphRunRecorder
 from src.shared.exceptions import SchemaValidationError
 
@@ -54,7 +52,7 @@ class CreateResearchPlanNode:
                 user_input=state.get("question") or state["user_input"],
                 document_id=document_id,
                 document_title=document_title,
-                advisor_proposal=_advisor_proposal_from_state(state),
+                advisor_proposal=advisor_proposal_from_state(state),
                 use_llm_planner=bool(
                     state.get("llm_research_planning_enabled", False)
                 ),
@@ -120,13 +118,3 @@ class CreateResearchPlanNode:
             "research_errors": [],
             "trace": extend_trace(state["trace"], trace_entry),
         }
-
-
-def _advisor_proposal_from_state(state: AgentState) -> StrategyAdvisorProposal | None:
-    payload = state.get("strategy_advisor_result")
-    if not isinstance(payload, dict):
-        return None
-    proposal = payload.get("proposal")
-    if not isinstance(proposal, dict):
-        return None
-    return StrategyAdvisorProposal.from_dict(proposal)

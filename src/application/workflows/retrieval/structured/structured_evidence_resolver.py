@@ -16,7 +16,10 @@ from src.application.workflows.retrieval.structured.structured_evidence_bundle i
 from src.application.workflows.retrieval.structured.structured_evidence_query_analyzer import (
     StructuredEvidenceQueryAnalyzer,
 )
-from src.domain.common import ChunkType, IdentifierType
+from src.application.workflows.shared.structured_evidence_deduplication import (
+    deduplicate_identifiers,
+)
+from src.domain.common import IdentifierType
 from src.domain.document.entities.identifier import Identifier
 from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 
@@ -93,7 +96,7 @@ class StructuredEvidenceResolver:
             identifiers.extend(self._filter_identifiers(matches, document_id=query.document_id))
 
         if query.document_id is None or not requested_types:
-            return self._deduplicate_identifiers(identifiers)
+            return deduplicate_identifiers(identifiers, strict=True)
 
         for identifier_type in requested_types:
             identifiers.extend(
@@ -102,7 +105,7 @@ class StructuredEvidenceResolver:
                     query.document_id,
                 )
             )
-        return self._deduplicate_identifiers(identifiers)
+        return deduplicate_identifiers(identifiers, strict=True)
 
     def _resolve_entities(
         self,
@@ -260,21 +263,3 @@ class StructuredEvidenceResolver:
             for identifier in identifiers
             if identifier.document_id == document_id
         ]
-
-    @staticmethod
-    def _deduplicate_identifiers(
-        identifiers: list[Identifier],
-    ) -> list[Identifier]:
-        deduplicated: list[Identifier] = []
-        seen: set[tuple[str, str, str]] = set()
-        for identifier in identifiers:
-            fingerprint = (
-                identifier.document_id,
-                identifier.identifier_type.value,
-                (identifier.normalized_value or identifier.raw_value).strip().lower(),
-            )
-            if fingerprint in seen:
-                continue
-            seen.add(fingerprint)
-            deduplicated.append(identifier)
-        return deduplicated

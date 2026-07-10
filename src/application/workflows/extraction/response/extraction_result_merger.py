@@ -16,6 +16,7 @@ from src.domain.extraction import (
     Supplier,
     TroubleshootingEntry,
 )
+from src.shared.collections import unique_in_order
 from src.shared.ids import IdGenerator, IdPrefix
 
 
@@ -41,7 +42,7 @@ class ExtractionResultMerger:
         merged_maintenance_intervals = self._merge_maintenance_intervals(partial_results)
         merged_troubleshooting_entries = self._merge_troubleshooting_entries(partial_results)
         merged_identifiers = self._merge_identifiers(partial_results)
-        source_chunk_ids = self._unique_in_order(
+        source_chunk_ids = unique_in_order(
             chunk_id
             for result in partial_results
             for chunk_id in result.source_chunk_ids
@@ -414,13 +415,3 @@ class ExtractionResultMerger:
         )
         return normalized
 
-    @staticmethod
-    def _unique_in_order(values) -> list[str]:
-        seen: set[str] = set()
-        ordered: list[str] = []
-        for value in values:
-            if not value or value in seen:
-                continue
-            seen.add(value)
-            ordered.append(value)
-        return ordered

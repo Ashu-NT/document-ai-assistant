@@ -13,6 +13,7 @@ from src.application.evaluation.retrieval.benchmarking.resolution.models import 
     RetrievalBenchmarkResolutionCandidate,
 )
 from src.domain.document import DocumentChunk
+from src.shared.text import preview_text
 
 
 class RetrievalBenchmarkChunkMatcher:
@@ -102,7 +103,7 @@ class RetrievalBenchmarkChunkMatcher:
             viable=viable,
             role=detect_candidate_role(chunk.content),
             content_text=chunk.content,
-            content_preview=self._content_preview(chunk.content),
+            content_preview=preview_text(chunk.content, rstrip=True),
         )
 
     @staticmethod
@@ -248,10 +249,3 @@ class RetrievalBenchmarkChunkMatcher:
             return 0.5, False
 
         return 0.0, False
-
-    @staticmethod
-    def _content_preview(content: str, limit: int = 180) -> str:
-        preview = " ".join(content.split())
-        if len(preview) <= limit:
-            return preview
-        return f"{preview[: max(0, limit - 3)].rstrip()}..."

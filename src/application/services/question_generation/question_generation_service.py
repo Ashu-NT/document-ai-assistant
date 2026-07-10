@@ -17,6 +17,7 @@ from src.domain.document import DocumentChunk, GeneratedQuestion
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
 from src.shared.ids import IdGenerator, IdPrefix
+from src.shared.progress import emit_progress
 
 
 _MAX_CONCURRENT_QUESTION_GENERATIONS = 8
@@ -65,7 +66,7 @@ class QuestionGenerationService:
         activity_context: ActivityContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
     ) -> list[GeneratedQuestion]:
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Generating questions for chunk {chunk.chunk_id}...",
         )
@@ -73,7 +74,7 @@ class QuestionGenerationService:
             chunk,
             max_questions=max_questions,
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Generated {len(questions)} question(s) for chunk {chunk.chunk_id}.",
         )
@@ -97,7 +98,7 @@ class QuestionGenerationService:
             return []
 
         total_chunks = len(chunks)
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Generating questions for {total_chunks} chunk(s)...",
         )
@@ -122,7 +123,7 @@ class QuestionGenerationService:
             zip(chunks, results), start=1
         ):
             questions.extend(chunk_questions)
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"[questions {index}/{total_chunks}] Generated "
@@ -187,10 +188,3 @@ class QuestionGenerationService:
             ),
         )
 
-    @staticmethod
-    def _emit_progress(
-        progress_callback: Callable[[str], None] | None,
-        message: str,
-    ) -> None:
-        if progress_callback is not None:
-            progress_callback(message)

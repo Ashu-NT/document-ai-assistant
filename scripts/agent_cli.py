@@ -29,6 +29,8 @@ for _import_root in (PROJECT_ROOT, SRC_ROOT):
     if _import_root_str not in sys.path:
         sys.path.insert(0, _import_root_str)
 
+from src.shared.text import console_safe_text, preview_text
+
 
 @dataclass(slots=True)
 class AgentRuntime:
@@ -280,22 +282,7 @@ def _short_id(value: str | None, limit: int = 12) -> str:
 
 
 def _preview_text(value: str | None, limit: int = 400) -> str:
-    if not value:
-        return "-"
-    normalized = " ".join(value.split())
-    if len(normalized) <= limit:
-        return normalized
-    return normalized[: limit - 3] + "..."
-
-
-def _console_safe_text(value: str | None) -> str:
-    if value is None:
-        return ""
-    encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
-    try:
-        return value.encode(encoding, errors="replace").decode(encoding, errors="replace")
-    except LookupError:
-        return value.encode("utf-8", errors="replace").decode("utf-8", errors="replace")
+    return preview_text(value, limit, empty_fallback="-")
 
 
 def _page_range_label(chunk: dict[str, Any]) -> str:
@@ -343,12 +330,12 @@ def print_context_chunks(
         )
         score = chunk.get("score")
         score_text = f"{float(score):.4f}" if isinstance(score, int | float) else "-"
-        print(_console_safe_text(f"[{index}] {_chunk_label(chunk)} | {chunk_type}"))
-        print(_console_safe_text(f"  document: {document_title} ({document_id})"))
-        print(_console_safe_text(f"  section:  {section_path_text}"))
+        print(console_safe_text(f"[{index}] {_chunk_label(chunk)} | {chunk_type}"))
+        print(console_safe_text(f"  document: {document_title} ({document_id})"))
+        print(console_safe_text(f"  section:  {section_path_text}"))
         print(f"  pages:    {_page_range_label(chunk)}")
         print(f"  score:    {score_text}")
-        print(_console_safe_text(f"  content:  {_preview_text(chunk.get('content'))}"))
+        print(console_safe_text(f"  content:  {_preview_text(chunk.get('content'))}"))
         print()
 
 
@@ -601,7 +588,7 @@ def print_graph_result(
     if answer_text:
         if show_debug:
             print()
-        print(_console_safe_text(answer_text))
+        print(console_safe_text(answer_text))
     answer_intent = (result.data or {}).get("answer_intent")
     if answer_intent and show_debug:
         print(f"\nAnswer intent: {answer_intent}")

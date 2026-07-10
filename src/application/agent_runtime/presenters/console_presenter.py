@@ -13,6 +13,7 @@ from src.application.agent_runtime.policies.demo_visibility_policy import (
 )
 from src.application.agent_runtime.react_loop.react_presenter import ReactPresenter
 from src.application.agent_runtime.react_loop.react_trace import ReactTrace
+from src.shared.text import console_safe_text, preview_text
 
 
 class ConsolePresenter:
@@ -67,7 +68,7 @@ class ConsolePresenter:
         lines = [
             "User Request",
             "------------",
-            _console_safe_text(user_input),
+            console_safe_text(user_input),
             "",
         ]
         if show_react and react_trace is not None:
@@ -78,16 +79,16 @@ class ConsolePresenter:
             [
                 "Final Answer",
                 "------------",
-                _console_safe_text(_final_answer_text(result)),
+                console_safe_text(_final_answer_text(result)),
                 "",
             ]
         )
         sections_block = _render_sections_block(result)
         if sections_block:
-            lines.extend([_console_safe_text(sections_block), ""])
+            lines.extend([console_safe_text(sections_block), ""])
         reference_notes_block = _render_reference_notes_block(result)
         if reference_notes_block:
-            lines.extend([_console_safe_text(reference_notes_block), ""])
+            lines.extend([console_safe_text(reference_notes_block), ""])
         footer = _render_status_footer(result, session=session)
         if footer:
             lines.append(footer)
@@ -184,7 +185,7 @@ def _render_history(turns: list[Any]) -> str:
     for index, turn in enumerate(turns, start=1):
         role = getattr(turn, "role", "unknown")
         content = getattr(turn, "content", "")
-        lines.append(f"{index}. {str(role).title()}: {_preview_text(content, 140)}")
+        lines.append(f"{index}. {str(role).title()}: {preview_text(content, 140)}")
     return "\n".join(lines).rstrip()
 
 
@@ -241,7 +242,7 @@ def _render_context_chunks(
         if score_text != "-":
             lines.append(f"  score:    {score_text}")
         lines.append(
-            f"  content:  {_preview_text(chunk.get('content'), policy.max_observation_chars)}"
+            f"  content:  {preview_text(chunk.get('content'), policy.max_observation_chars)}"
         )
         if policy.show_internal_ids and chunk.get("document_id"):
             lines.append(f"  document_id: {chunk.get('document_id')}")
@@ -414,15 +415,3 @@ def _page_range_label(chunk: dict[str, Any]) -> str:
     if page_end is None or page_start == page_end:
         return f"p.{page_start}"
     return f"pp.{page_start}-{page_end}"
-
-
-def _preview_text(value: Any, limit: int) -> str:
-    text = str(value or "").strip()
-    normalized = " ".join(text.split())
-    if len(normalized) <= limit:
-        return normalized
-    return normalized[: limit - 3] + "..."
-
-
-def _console_safe_text(value: str) -> str:
-    return value.encode("utf-8", errors="replace").decode("utf-8", errors="replace")

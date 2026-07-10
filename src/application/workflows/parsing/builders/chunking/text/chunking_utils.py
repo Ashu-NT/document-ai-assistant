@@ -1,11 +1,28 @@
 import re
 from collections.abc import Iterable
+from typing import Any
 
 from src.application.workflows.parsing.builders.chunking.text.tokenization.whitespace_chunk_token_counter import (
     WhitespaceChunkTokenCounter,
 )
 
 _WHITESPACE_TOKEN_COUNTER = WhitespaceChunkTokenCounter()
+
+
+def resolve_parser_extra(element: Any) -> dict:
+    if element.parser_metadata is None or element.parser_metadata.extra is None:
+        return {}
+
+    return element.parser_metadata.extra
+
+
+def is_furniture_or_embedded_picture(element: Any) -> bool:
+    extra = resolve_parser_extra(element)
+    parent_ref = extra.get("parent_ref")
+    if isinstance(parent_ref, str) and parent_ref.startswith("#/pictures/"):
+        return True
+
+    return extra.get("content_layer") == "furniture"
 
 
 def clean_chunk_text(text: str | None) -> str | None:

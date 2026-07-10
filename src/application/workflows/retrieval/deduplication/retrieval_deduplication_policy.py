@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from src.application.workflows.retrieval.deduplication.retrieved_chunk_signature import (
     RetrievedChunkSignature,
 )
+from src.application.workflows.shared.section_path_utils import is_path_prefix
 from src.domain.retrieval import RetrievedChunk
 
 
@@ -196,10 +197,10 @@ class RetrievalDeduplicationPolicy:
             return True
         if left_chunk.section_path == right_chunk.section_path:
             return True
-        if RetrievalDeduplicationPolicy._is_path_prefix(
+        if is_path_prefix(
             left_chunk.section_path,
             right_chunk.section_path,
-        ) or RetrievalDeduplicationPolicy._is_path_prefix(
+        ) or is_path_prefix(
             right_chunk.section_path,
             left_chunk.section_path,
         ):
@@ -209,20 +210,6 @@ class RetrievalDeduplicationPolicy:
             left_chunk.source.page_end,
             right_chunk.source.page_start,
             right_chunk.source.page_end,
-        )
-
-    @staticmethod
-    def _is_path_prefix(
-        candidate_ancestor_path: list[str],
-        candidate_descendant_path: list[str],
-    ) -> bool:
-        if not candidate_ancestor_path:
-            return False
-        if len(candidate_ancestor_path) > len(candidate_descendant_path):
-            return False
-        return (
-            candidate_descendant_path[: len(candidate_ancestor_path)]
-            == candidate_ancestor_path
         )
 
     @staticmethod

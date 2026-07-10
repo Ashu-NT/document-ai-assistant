@@ -9,6 +9,14 @@ from src.application.workflows.question_answering.answer_context.models import (
     AnswerMaintenanceEntry,
     AnswerMaintenanceReference,
 )
+from src.application.workflows.shared.maintenance_action_verbs import (
+    MAINTENANCE_ACTION_VERBS,
+)
+from src.application.workflows.shared.maintenance_text_cleaning import (
+    NOT_SPECIFIED,
+    clean_interval,
+    clean_optional_text,
+)
 
 # Bumped whenever the merge-eligibility rules or normalization logic below
 # change materially -- mirrors ANSWER_INTENT_RULES_VERSION's convention.
@@ -16,12 +24,10 @@ MAINTENANCE_ENTRY_MERGER_RULES_VERSION = "v1"
 
 _WORD_PATTERN = re.compile(r"[a-z0-9]+")
 _LEADING_VERB_PATTERN = re.compile(
-    r"^(inspect|check|replace|lubricate|clean|test|drain|tighten|calibrate|"
-    r"change|grease|service|flush|verify|examine|adjust|renew)\b",
+    r"^(" + "|".join(MAINTENANCE_ACTION_VERBS) + r")\b",
     re.IGNORECASE,
 )
 _ARTICLES = {"the", "a", "an"}
-_NOT_SPECIFIED = "Not specified"
 
 
 @dataclass(slots=True)
@@ -189,9 +195,9 @@ class MaintenanceEntryMerger:
     def _merge_interval(left: str, right: str) -> str:
         left_clean = MaintenanceEntryMerger._clean_interval(left)
         right_clean = MaintenanceEntryMerger._clean_interval(right)
-        if left_clean == _NOT_SPECIFIED:
+        if left_clean == NOT_SPECIFIED:
             return right_clean
-        if right_clean == _NOT_SPECIFIED:
+        if right_clean == NOT_SPECIFIED:
             return left_clean
         if len(right_clean) > len(left_clean):
             return right_clean
@@ -199,19 +205,11 @@ class MaintenanceEntryMerger:
 
     @staticmethod
     def _clean_interval(value: str | None) -> str:
-        cleaned = MaintenanceEntryMerger._clean_optional_text(value)
-        return cleaned or _NOT_SPECIFIED
+        return clean_interval(value)
 
     @staticmethod
     def _clean_optional_text(value: str | None) -> str | None:
-        if value is None:
-            return None
-        cleaned = " ".join(value.strip().split()).rstrip(" .;:")
-        if not cleaned:
-            return None
-        if cleaned.lower() in {"x", "-", "n/a", "na", "unknown"}:
-            return None
-        return cleaned
+        return clean_optional_text(value)
 
     @staticmethod
     def _leading_action(task: str) -> str:

@@ -19,6 +19,9 @@ from src.application.langgraph.strategy_advisor.advisor_models import (
     StrategyAdvisorIntent,
     StrategyAdvisorProposal,
 )
+from src.application.workflows.shared.identifier_value_pattern import (
+    extract_identifier_value,
+)
 
 _COMPARE_PREFIX_RE = re.compile(
     r"^(?:compare|contrast|difference between|differences between|relationship between|how does)\s+",
@@ -434,9 +437,9 @@ class DeterministicResearchPlanner:
             # there, `concept` often already *is* the value. Try `concept`
             # first so that case still works, then fall back to searching the
             # full request text.
-            identifier_value = self._extract_identifier_value(
+            identifier_value = extract_identifier_value(
                 concept
-            ) or self._extract_identifier_value(goal.user_input)
+            ) or extract_identifier_value(goal.user_input)
             if identifier_value:
                 diagnostics["identifier_value"] = identifier_value
         return self.plan_builder.build_task(
@@ -449,14 +452,6 @@ class DeterministicResearchPlanner:
             max_results=max_results,
             diagnostics=diagnostics,
         )
-
-    @staticmethod
-    def _extract_identifier_value(concept: str) -> str | None:
-        match = re.search(
-            r"\b([A-Z]{1,5}\d{1,6}[A-Z0-9-]*|\d{3,}[A-Z0-9-]+|DN\s*\d+)\b",
-            concept.upper(),
-        )
-        return match.group(0).replace(" ", "") if match else None
 
     def _resolve_concepts(
         self,

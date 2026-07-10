@@ -56,12 +56,20 @@ from src.application.workflows.retrieval.structured import (
     StructuredEvidenceBundle,
     StructuredEvidenceResolver,
 )
+from src.application.workflows.shared.document_scope_filter import (
+    partition_chunks_by_document_scope,
+)
+from src.application.workflows.shared.structured_evidence_deduplication import (
+    deduplicate_identifiers,
+    deduplicate_structured_entities,
+)
 from src.domain.common import new_id
 from src.domain.retrieval import RetrievalQuery
 from src.domain.retrieval.citation import Citation
 from src.domain.retrieval.retrieval_result import RetrievalResult
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 from src.application.contracts.guardrails import GuardrailResult
+from src.shared.progress import emit_progress
 
 _ANSWER_GENERATION_DISABLED_MESSAGE = (
     "I found relevant document evidence, but answer generation is not enabled yet."
@@ -132,7 +140,7 @@ class QuestionAnsweringWorkflow:
         allow_generation = request.allow_answer_generation
 
         if self._pre_query_guardrails:
-            self._emit_progress(progress_callback, "Checking guardrails...")
+            emit_progress(progress_callback, "Checking guardrails...")
             context = GuardrailContext(
                 user_input=request.question,
                 query_text=request.question,
@@ -153,7 +161,7 @@ class QuestionAnsweringWorkflow:
                     guardrail_result=blocking,
                 )
 
-        self._emit_progress(progress_callback, "Analyzing question...")
+        emit_progress(progress_callback, "Analyzing question...")
         route, analyzed_query, analyzed_intent = self._router.decide(
             question=request.question,
             top_k=request.top_k or 5,
@@ -198,7 +206,7 @@ class QuestionAnsweringWorkflow:
                 diagnostics={"reason": "missing_document_id"},
             )
 
-        self._emit_progress(progress_callback, "Exploring document...")
+        emit_progress(progress_callback, "Exploring document...")
         try:
             exploration_result = self._exploration_service.explore(request.document_id)
         except DocumentNotFoundError:
@@ -223,9 +231,9 @@ class QuestionAnsweringWorkflow:
         *,
         progress_callback: Callable[[str], None] | None = None,
     ) -> QuestionAnsweringResult:
-        self._emit_progress(progress_callback, "Retrieving evidence...")
+        emit_progress(progress_callback, "Retrieving evidence...")
         workflow_result = self._retrieval_workflow.run(analyzed_query)
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Retrieved {len(workflow_result.final_chunks)} evidence chunk(s).",
         )
@@ -250,7 +258,7 @@ class QuestionAnsweringWorkflow:
     ) -> QuestionAnsweringResult:
 
         # Phase 4: context guardrails — filter, budget, quality
-        self._emit_progress(progress_callback, "Checking context guardrails...")
+        emit_progress(progress_callback, "Checking context guardrails...")
         approved_chunks, context_blocking = self._context_guardrail_chain.run(
             retrieved_chunks=workflow_result.final_chunks,
             query_text=request.question,
@@ -363,7 +371,7 @@ class QuestionAnsweringWorkflow:
 
         # LLM only ever sees approved_chunks (plus any structured-fact source
         # chunks joined in below)
-        self._emit_progress(progress_callback, "Generating answer...")
+        emit_progress(progress_callback, "Generating answer...")
         joined_chunks, structured_context, intent_decision = self._join_structured_facts(
             approved_chunks=approved_chunks,
             analyzed_query=analyzed_query,
@@ -454,7 +462,7 @@ class QuestionAnsweringWorkflow:
                 if result.violations
             ]
 
-        self._emit_progress(progress_callback, "Answer ready.")
+        emit_progress(progress_callback, "Answer ready.")
         return QuestionAnsweringResult(
             route=QuestionAnsweringRoute.RETRIEVAL_QA,
             answer_text=generated.answer_text,
@@ -598,10 +606,10 @@ class QuestionAnsweringWorkflow:
         analyzed_query: RetrievalQuery,
         workflow_result: RetrievalWorkflowResult,
     ) -> StructuredEvidenceBundle:
-        resolved_identifiers = self._deduplicate_identifiers(
+        resolved_identifiers = deduplicate_identifiers(
             list(request.resolved_identifiers)
         )
-        resolved_structured_entities = self._deduplicate_structured_entities(
+        resolved_structured_entities = deduplicate_structured_entities(
             list(request.resolved_structured_entities)
         )
         workflow_bundle = workflow_result.structured_evidence
@@ -616,10 +624,10 @@ class QuestionAnsweringWorkflow:
             )
 
         return StructuredEvidenceBundle(
-            identifiers=self._deduplicate_identifiers(
+            identifiers=deduplicate_identifiers(
                 [*resolved_identifiers, *workflow_bundle.identifiers]
             ),
-            structured_entities=self._deduplicate_structured_entities(
+            structured_entities=deduplicate_structured_entities(
                 [*resolved_structured_entities, *workflow_bundle.structured_entities]
             ),
             chunks=list(workflow_bundle.chunks),
@@ -641,59 +649,6 @@ class QuestionAnsweringWorkflow:
             legacy_query_intent=analyzed_query.detected_intent,
             route=QuestionAnsweringRoute.RETRIEVAL_QA.value,
         )
-
-    @staticmethod
-    def _deduplicate_identifiers(identifiers: list) -> list:
-        deduplicated: list = []
-        seen: set[tuple[str, str, str]] = set()
-        for identifier in identifiers:
-            identifier_type = getattr(identifier, "identifier_type", None)
-            fingerprint = (
-                str(getattr(identifier, "document_id", "")),
-                str(getattr(identifier_type, "value", identifier_type or "")),
-                str(
-                    getattr(identifier, "normalized_value", None)
-                    or getattr(identifier, "raw_value", "")
-                )
-                .strip()
-                .lower(),
-            )
-            if fingerprint in seen:
-                continue
-            seen.add(fingerprint)
-            deduplicated.append(identifier)
-        return deduplicated
-
-    @staticmethod
-    def _deduplicate_structured_entities(entities: list) -> list[dict]:
-        deduplicated: list[dict] = []
-        seen: set[tuple[str, str]] = set()
-        for entity in entities:
-            if not isinstance(entity, dict):
-                continue
-            fingerprint = (
-                str(entity.get("_entity_type") or ""),
-                str(
-                    entity.get("source_chunk_id")
-                    or entity.get("manufacturer_id")
-                    or entity.get("supplier_id")
-                    or entity.get("contact_point_id")
-                    or entity.get("spare_part_id")
-                    or entity.get("equipment_id")
-                    or entity.get("task_id")
-                    or entity.get("procedure_id")
-                    or entity.get("specification_id")
-                    or entity.get("safety_warning_id")
-                    or entity.get("maintenance_interval_id")
-                    or entity.get("troubleshooting_id")
-                    or entity
-                ),
-            )
-            if fingerprint in seen:
-                continue
-            seen.add(fingerprint)
-            deduplicated.append(entity)
-        return deduplicated
 
     @staticmethod
     def _to_retrieved_chunk(chunk) -> RetrievedChunk:
@@ -775,9 +730,9 @@ class QuestionAnsweringWorkflow:
         if document_id is None:
             return None
 
-        leaking_chunks = [
-            chunk for chunk in approved_chunks if chunk.document_id != document_id
-        ]
+        _, leaking_chunks = partition_chunks_by_document_scope(
+            approved_chunks, document_id
+        )
         if not leaking_chunks:
             return None
 
@@ -790,10 +745,3 @@ class QuestionAnsweringWorkflow:
             ),
         )
 
-    @staticmethod
-    def _emit_progress(
-        progress_callback: Callable[[str], None] | None,
-        message: str,
-    ) -> None:
-        if progress_callback is not None:
-            progress_callback(message)

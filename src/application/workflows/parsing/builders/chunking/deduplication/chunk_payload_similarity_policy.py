@@ -6,6 +6,7 @@ from src.application.workflows.parsing.builders.chunking.deduplication.chunk_pay
 from src.application.workflows.parsing.builders.chunking.models.chunk_payload import (
     ChunkPayload,
 )
+from src.application.workflows.shared.section_path_utils import is_path_prefix
 
 
 @dataclass(slots=True, frozen=True)
@@ -215,10 +216,10 @@ class ChunkPayloadSimilarityPolicy:
             return True
         if left_payload.section_path == right_payload.section_path:
             return True
-        if ChunkPayloadSimilarityPolicy._is_path_prefix(
+        if is_path_prefix(
             left_payload.section_path,
             right_payload.section_path,
-        ) or ChunkPayloadSimilarityPolicy._is_path_prefix(
+        ) or is_path_prefix(
             right_payload.section_path,
             left_payload.section_path,
         ):
@@ -228,20 +229,6 @@ class ChunkPayloadSimilarityPolicy:
             left_payload.page_end,
             right_payload.page_start,
             right_payload.page_end,
-        )
-
-    @staticmethod
-    def _is_path_prefix(
-        candidate_ancestor_path: list[str],
-        candidate_descendant_path: list[str],
-    ) -> bool:
-        if not candidate_ancestor_path:
-            return False
-        if len(candidate_ancestor_path) > len(candidate_descendant_path):
-            return False
-        return (
-            candidate_descendant_path[: len(candidate_ancestor_path)]
-            == candidate_ancestor_path
         )
 
     @staticmethod

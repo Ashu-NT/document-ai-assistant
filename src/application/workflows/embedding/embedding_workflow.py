@@ -8,6 +8,7 @@ from src.domain.document.value_objects import ChunkStatistics
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import InfrastructureError
 from src.shared.execution import tracked_action
+from src.shared.progress import emit_progress
 
 
 @dataclass(slots=True)
@@ -38,7 +39,7 @@ class EmbeddingWorkflow:
         progress_callback: Callable[[str], None] | None = None,
     ) -> list[EmbeddedChunk]:
         if not chunks:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 "No chunks to embed; skipping vector storage.",
             )
@@ -62,13 +63,13 @@ class EmbeddingWorkflow:
         progress_callback: Callable[[str], None] | None = None,
     ) -> list[EmbeddedChunk]:
         if not chunks:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 "No chunks to embed; skipping vector storage.",
             )
             return []
 
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Generating embeddings for {len(chunks)} chunk(s)...",
         )
@@ -102,12 +103,12 @@ class EmbeddingWorkflow:
     ) -> None:
         if not embedded_chunks:
             return
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Saving {len(embedded_chunks)} embedded chunk vector(s)...",
         )
         self.vector_store.save_chunk_vectors(embedded_chunks)
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             "Embedding and vector storage completed.",
         )
@@ -149,10 +150,3 @@ class EmbeddingWorkflow:
             token_count_estimate=statistics.token_count_estimate,
         )
 
-    @staticmethod
-    def _emit_progress(
-        progress_callback: Callable[[str], None] | None,
-        message: str,
-    ) -> None:
-        if progress_callback is not None:
-            progress_callback(message)

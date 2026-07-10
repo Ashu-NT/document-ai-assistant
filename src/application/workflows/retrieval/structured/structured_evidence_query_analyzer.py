@@ -22,6 +22,9 @@ from src.application.workflows.retrieval.retrieval_query_intent import (
 from src.application.workflows.retrieval.structured.structured_entity_type import (
     StructuredEntityType,
 )
+from src.application.workflows.shared.maintenance_signal_detection import (
+    mentions_maintenance_interval,
+)
 from src.application.workflows.retrieval.structured.structured_evidence_query_analysis import (
     StructuredEvidenceQueryAnalysis,
 )
@@ -81,20 +84,6 @@ _MAINTENANCE_TERMS = (
     "preventive maintenance",
     "lubrication",
     "inspection",
-)
-_MAINTENANCE_INTERVAL_TERMS = (
-    "maintenance interval",
-    "maintenance intervals",
-    "service interval",
-    "service intervals",
-    "schedule",
-    "how often",
-    "daily",
-    "weekly",
-    "monthly",
-    "quarterly",
-    "annual",
-    "annually",
 )
 _PROCEDURE_TERMS = (
     "procedure",
@@ -168,7 +157,7 @@ class StructuredEvidenceQueryAnalyzer:
                     StructuredEntityType.EQUIPMENT,
                 ]
             )
-        if any(term in normalized for term in _MAINTENANCE_INTERVAL_TERMS):
+        if mentions_maintenance_interval(normalized):
             entity_types.extend(
                 [
                     StructuredEntityType.MAINTENANCE_INTERVAL,

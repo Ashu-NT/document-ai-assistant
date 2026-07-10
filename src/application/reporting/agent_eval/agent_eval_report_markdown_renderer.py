@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from src.shared.text import preview_text
+
 if TYPE_CHECKING:
     from src.application.langgraph.evaluation.agent_eval_result import (
         AgentCaseResult,
@@ -302,9 +304,4 @@ class AgentEvalReportMarkdownRenderer:
 
 
 def _preview(value: str | None, limit: int = 180) -> str:
-    if not value:
-        return "-"
-    normalized = " ".join(value.split())
-    if len(normalized) <= limit:
-        return normalized
-    return normalized[: limit - 3] + "..."
+    return preview_text(value, limit, empty_fallback="-")

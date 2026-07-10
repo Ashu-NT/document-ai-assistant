@@ -38,6 +38,7 @@ from src.domain.document.value_objects import DocumentStatistics
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import ApplicationError
 from src.shared.execution import tracked_action
+from src.shared.progress import emit_progress
 
 
 def _default_enable_chunk_classification() -> bool:
@@ -126,7 +127,7 @@ class PostClassificationChunkFinalizationWorkflow:
         activity_context: ActivityContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
     ) -> DocumentGraph:
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Loading persisted document graph for {document_id}...",
         )
@@ -140,7 +141,7 @@ class PostClassificationChunkFinalizationWorkflow:
                 details={"document_id": document_id},
             )
 
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             "Loading saved document classification...",
         )
@@ -153,7 +154,7 @@ class PostClassificationChunkFinalizationWorkflow:
                 details={"document_id": document_id},
             )
 
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             "Resolving final document type and chunking policy...",
         )
@@ -179,7 +180,7 @@ class PostClassificationChunkFinalizationWorkflow:
             classification=classification,
             provisional_chunking_profile=provisional_policy.profile_name,
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             (
                 "Chunking decision resolved: "
@@ -203,11 +204,11 @@ class PostClassificationChunkFinalizationWorkflow:
             effective_include_picture_chunks=effective_policy.include_picture_chunks,
             progress_callback=progress_callback,
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             self._final_chunk_progress_message(final_chunk_mode),
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Final chunk set contains {len(final_chunks)} chunk(s).",
         )
@@ -240,12 +241,12 @@ class PostClassificationChunkFinalizationWorkflow:
         )
 
         if embed_final_chunks:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 "Deleting existing vectors for this document...",
             )
             self.vector_store.delete_document_vectors(document_id)
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             "Persisting final chunk artifacts to the document repository...",
         )
@@ -254,7 +255,7 @@ class PostClassificationChunkFinalizationWorkflow:
             activity_context=activity_context,
         )
         if embed_final_chunks:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 f"Embedding and storing {len(final_chunks)} final chunk(s)...",
             )
@@ -264,11 +265,11 @@ class PostClassificationChunkFinalizationWorkflow:
                 progress_callback=progress_callback,
             )
         else:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 "Skipping final embedding because the caller will embed and index later.",
             )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             "Post-classification chunk finalization completed.",
         )
@@ -316,7 +317,7 @@ class PostClassificationChunkFinalizationWorkflow:
             return fallback_chunks, "asset_fallback"
 
         if stored_chunks:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"Rebuilding produced zero chunks under the "
@@ -347,7 +348,7 @@ class PostClassificationChunkFinalizationWorkflow:
         if not self._has_meaningful_asset_evidence(graph):
             return []
 
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             "No final chunks were produced. Retrying with an asset-aware fallback chunking policy...",
         )
@@ -358,7 +359,7 @@ class PostClassificationChunkFinalizationWorkflow:
             chunking_profile_override=ChunkingProfile.DEFAULT,
         )
         if fallback_chunks:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 f"Asset-aware fallback recovered {len(fallback_chunks)} chunk(s).",
             )
@@ -439,7 +440,7 @@ class PostClassificationChunkFinalizationWorkflow:
         progress_callback: Callable[[str], None] | None = None,
     ) -> None:
         if not self.enable_chunk_classification:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 "Chunk classification disabled; skipping final chunk classification.",
             )
@@ -452,7 +453,7 @@ class PostClassificationChunkFinalizationWorkflow:
             )
 
         total_chunks = len(chunks)
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Classifying {total_chunks} final chunk(s)...",
         )
@@ -477,7 +478,7 @@ class PostClassificationChunkFinalizationWorkflow:
             classifications,
             activity_context=activity_context,
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Classified {total_chunks} final chunk(s).",
         )
@@ -497,7 +498,7 @@ class PostClassificationChunkFinalizationWorkflow:
             else enable_question_generation
         )
         if not resolved_enable_question_generation:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 "Question generation disabled; skipping final chunk questions.",
             )
@@ -509,7 +510,7 @@ class PostClassificationChunkFinalizationWorkflow:
             for chunk in graph.chunks.values()
             if chunk.chunk_type != ChunkType.OVERVIEW
         ]
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Generating questions for {len(questionable_chunks)} chunk(s)...",
         )
@@ -521,7 +522,7 @@ class PostClassificationChunkFinalizationWorkflow:
                 progress_callback=progress_callback,
             )
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Generated {len(graph.questions)} question(s) for final chunk set.",
         )
@@ -582,10 +583,3 @@ class PostClassificationChunkFinalizationWorkflow:
             return "Keeping previously stored final chunk set after rebuild produced none..."
         return "Reusing stored final chunk set..."
 
-    @staticmethod
-    def _emit_progress(
-        progress_callback: Callable[[str], None] | None,
-        message: str,
-    ) -> None:
-        if progress_callback is not None:
-            progress_callback(message)

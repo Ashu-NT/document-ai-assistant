@@ -3,7 +3,11 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
-from src.application.langgraph.common import GraphError, serialize_graph_value
+from src.application.langgraph.common import (
+    GraphError,
+    resolve_answer_intent,
+    serialize_graph_value,
+)
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import build_error, extend_trace
 from src.application.langgraph.reflection import ClarificationBuilder, ReflectionService
@@ -89,7 +93,7 @@ class ReflectAnswerNode:
                 or state.get("document_id"),
                 selected_document_title=state.get("selected_document_title")
                 or state.get("document_title"),
-                answer_intent=_extract_answer_intent(answer_payload),
+                answer_intent=resolve_answer_intent(answer_payload),
                 approved_chunks=approved_chunks,
                 rejected_chunks=rejected_chunks,
                 citations=answer_payload.get("citations", []),
@@ -200,15 +204,3 @@ def _tool_payload(state: AgentState, tool_name: str) -> Any | None:
     if not tool_result.get("success", False):
         return None
     return tool_result.get("data")
-
-
-def _extract_answer_intent(answer_payload: dict[str, Any]) -> str | None:
-    answer_intent = answer_payload.get("answer_intent")
-    if isinstance(answer_intent, str) and answer_intent:
-        return answer_intent
-    diagnostics = answer_payload.get("diagnostics")
-    if isinstance(diagnostics, dict):
-        value = diagnostics.get("answer_intent")
-        if isinstance(value, str) and value:
-            return value
-    return None

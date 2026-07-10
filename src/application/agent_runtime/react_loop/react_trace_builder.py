@@ -8,6 +8,7 @@ from src.application.agent_runtime.policies.demo_visibility_policy import (
 from src.application.agent_runtime.react_loop.react_event import ReactEvent
 from src.application.agent_runtime.react_loop.react_step import ReactStep
 from src.application.agent_runtime.react_loop.react_trace import ReactTrace
+from src.shared.text import preview_text as _truncate
 
 
 class ReactTraceBuilder:
@@ -443,13 +444,6 @@ def _page_label(source: Any) -> str:
     if page_end is None or page_start == page_end:
         return f"p.{page_start}"
     return f"pp.{page_start}-{page_end}"
-
-
-def _truncate(value: str, limit: int) -> str:
-    normalized = " ".join(value.split())
-    if len(normalized) <= limit:
-        return normalized
-    return normalized[: limit - 3] + "..."
 
 
 def _format_strategy_advisor(data: dict[str, Any]) -> list[str]:

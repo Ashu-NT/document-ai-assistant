@@ -6,12 +6,11 @@ from src.application.langgraph.retrieval_strategy.models import (
     RetrievalContext,
     RetrievalStrategySignal,
 )
+from src.application.workflows.shared.identifier_value_pattern import (
+    IDENTIFIER_VALUE_PATTERN,
+)
 from src.domain.common import ChunkType
 
-_IDENTIFIER_PATTERN = re.compile(
-    r"\b([A-Z]{1,5}\d{1,6}[A-Z0-9-]*|\d{3,}[A-Z0-9-]+|DN\s*\d+)\b",
-    re.IGNORECASE,
-)
 _IDENTIFIER_TERMS = (
     "part no",
     "part number",
@@ -232,7 +231,7 @@ class RetrievalSignalExtractor:
         context: RetrievalContext,
     ) -> None:
         query_text = context.query_text
-        for match in _IDENTIFIER_PATTERN.findall(query_text):
+        for match in IDENTIFIER_VALUE_PATTERN.findall(query_text):
             value = match[0] if isinstance(match, tuple) else match
             signals.append(
                 RetrievalStrategySignal(

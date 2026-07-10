@@ -9,6 +9,7 @@ from src.application.langgraph.research.models import (
 from src.application.langgraph.retrieval_strategy import RetrievalContext
 from src.application.langgraph.retrieval_strategy.models import RetrievalStrategy
 from src.shared.ids import IdGenerator
+from src.shared.text import preview_text
 
 
 class ResearchTaskExecutor:
@@ -83,7 +84,7 @@ class ResearchTaskExecutor:
                 page_end=chunk.source.page_end,
                 chunk_type=chunk.chunk_type.value if chunk.chunk_type is not None else None,
                 score=chunk.score,
-                content_excerpt=_preview_text(chunk.content),
+                content_excerpt=preview_text(chunk.content, limit=400, rstrip=True),
                 source_tool=chunk.retrieval_source,
                 diagnostics=dict(chunk.metadata),
             )
@@ -104,10 +105,3 @@ class ResearchTaskExecutor:
                 "execution_result": execution_result.to_dict(),
             },
         )
-
-
-def _preview_text(value: str, *, limit: int = 400) -> str:
-    text = " ".join((value or "").split())
-    if len(text) <= limit:
-        return text
-    return text[: limit - 3].rstrip() + "..."

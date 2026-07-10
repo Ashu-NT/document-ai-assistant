@@ -28,6 +28,11 @@ from src.domain.classification import DocumentClassification
 from src.domain.document import DocumentGraph
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import ApplicationError, SchemaValidationError
+from src.shared.progress.progress_emitter import (
+    emit_progress,
+    progress_prefix,
+    scoped_progress_callback,
+)
 
 
 @dataclass(slots=True)
@@ -74,7 +79,7 @@ class RetrievalBenchmarkCorpusSeeder:
         activity_context: ActivityContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
     ) -> RetrievalBenchmarkCorpusManifest:
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             "Loading retrieval benchmark truth set...",
         )
@@ -83,11 +88,11 @@ class RetrievalBenchmarkCorpusSeeder:
             input_directory=input_directory,
             dataset=dataset,
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Using input directory: {resolved_input_directory}",
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             "Collecting benchmark corpus seed targets...",
         )
@@ -96,7 +101,7 @@ class RetrievalBenchmarkCorpusSeeder:
             input_directory=resolved_input_directory,
         )
         total_targets = len(seed_targets)
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Collected {total_targets} document seed target(s).",
         )
@@ -104,7 +109,7 @@ class RetrievalBenchmarkCorpusSeeder:
         documents: list[RetrievalBenchmarkCorpusDocument] = []
         skipped_targets: list[_CorpusSeedTarget] = []
         for index, seed_target in enumerate(seed_targets, start=1):
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"[{index}/{total_targets}] Starting corpus seed for "
@@ -123,7 +128,7 @@ class RetrievalBenchmarkCorpusSeeder:
             except ApplicationError as exc:
                 self._rollback()
                 skipped_targets.append(seed_target)
-                self._emit_progress(
+                emit_progress(
                     progress_callback,
                     (
                         f"[{index}/{total_targets}] SKIPPED {seed_target.document_alias} "
@@ -136,7 +141,7 @@ class RetrievalBenchmarkCorpusSeeder:
                 continue
 
             documents.append(document)
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"[{index}/{total_targets}] Completed {seed_target.document_alias} "
@@ -147,7 +152,7 @@ class RetrievalBenchmarkCorpusSeeder:
             )
 
         if skipped_targets:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"{len(skipped_targets)} of {total_targets} document(s) skipped: "
@@ -161,7 +166,7 @@ class RetrievalBenchmarkCorpusSeeder:
             generated_at=datetime.now(UTC).isoformat(),
             documents=documents,
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Corpus seeding completed for {manifest.document_count} document(s).",
         )
@@ -177,21 +182,21 @@ class RetrievalBenchmarkCorpusSeeder:
         seed_index: int | None = None,
         total_targets: int | None = None,
     ) -> RetrievalBenchmarkCorpusDocument:
-        prefix = self._progress_prefix(
-            seed_index=seed_index,
-            total_targets=total_targets,
+        prefix = progress_prefix(
+            index=seed_index,
+            total=total_targets,
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"{prefix} Computing hashes for {seed_target.file_name}...",
         )
         file_size_bytes = seed_target.file_path.stat().st_size
         file_hash, content_hash = self.hash_computer(seed_target.file_path)
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"{prefix} File size: {self._format_file_size(file_size_bytes)}",
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"{prefix} Checking duplicate status...",
         )
@@ -203,7 +208,7 @@ class RetrievalBenchmarkCorpusSeeder:
 
         if existing_document_id:
             if force_reparse_existing:
-                self._emit_progress(
+                emit_progress(
                     progress_callback,
                     (
                         f"{prefix} Existing document found for {seed_target.document_alias}: "
@@ -240,7 +245,7 @@ class RetrievalBenchmarkCorpusSeeder:
 
                 if not document_graph.chunks:
                     if not document_graph.elements:
-                        self._emit_progress(
+                        emit_progress(
                             progress_callback,
                             (
                                 f"{prefix} Existing document found for {seed_target.document_alias}: "
@@ -257,7 +262,7 @@ class RetrievalBenchmarkCorpusSeeder:
                             )
                         )
                     else:
-                        self._emit_progress(
+                        emit_progress(
                             progress_callback,
                             (
                                 f"{prefix} Existing document found for {seed_target.document_alias}: "
@@ -277,7 +282,7 @@ class RetrievalBenchmarkCorpusSeeder:
                             )
                         )
                 else:
-                    self._emit_progress(
+                    emit_progress(
                         progress_callback,
                         (
                             f"{prefix} Existing document found for {seed_target.document_alias}: "
@@ -305,7 +310,7 @@ class RetrievalBenchmarkCorpusSeeder:
                     existing_extraction_result is not None
                     and existing_extraction_result.unresolved_chunk_ids
                 ):
-                    self._emit_progress(
+                    emit_progress(
                         progress_callback,
                         (
                             f"{prefix} Existing document found for {seed_target.document_alias}: "
@@ -325,7 +330,7 @@ class RetrievalBenchmarkCorpusSeeder:
                         )
                     )
                 else:
-                    self._emit_progress(
+                    emit_progress(
                         progress_callback,
                         (
                             f"{prefix} Existing document found for {seed_target.document_alias}: "
@@ -340,7 +345,7 @@ class RetrievalBenchmarkCorpusSeeder:
                         total_targets=total_targets,
                     )
             else:
-                self._emit_progress(
+                emit_progress(
                     progress_callback,
                     (
                         f"{prefix} Existing document found for {seed_target.document_alias}: "
@@ -355,7 +360,7 @@ class RetrievalBenchmarkCorpusSeeder:
                     total_targets=total_targets,
                 )
         else:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 f"{prefix} No duplicate found. Running full seed workflow...",
             )
@@ -400,8 +405,8 @@ class RetrievalBenchmarkCorpusSeeder:
         So a forced reseed always produces a new document_id; the caller passes
         `resulting_seed_status="reseeded_new"` to make that visible in the manifest.
         """
-        prefix = self._progress_prefix(seed_index=seed_index, total_targets=total_targets)
-        self._emit_progress(
+        prefix = progress_prefix(index=seed_index, total=total_targets)
+        emit_progress(
             progress_callback,
             f"{prefix} Delegating to canonical IngestionWorkflow...",
         )
@@ -413,7 +418,7 @@ class RetrievalBenchmarkCorpusSeeder:
         )
         result = self.ingestion_workflow.run(
             request,
-            progress_callback=self._scoped_progress_callback(progress_callback, prefix),
+            progress_callback=scoped_progress_callback(progress_callback, prefix),
         )
         final_graph = self.document_lookup_service.get_document_graph(result.document_id)
         if final_graph is None:
@@ -445,11 +450,11 @@ class RetrievalBenchmarkCorpusSeeder:
         complete and consistent here; re-running finalization would only
         redo work with the same file content, for no benefit.
         """
-        prefix = self._progress_prefix(
-            seed_index=seed_index,
-            total_targets=total_targets,
+        prefix = progress_prefix(
+            index=seed_index,
+            total=total_targets,
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"{prefix} Loading existing persisted document graph...",
         )
@@ -467,7 +472,7 @@ class RetrievalBenchmarkCorpusSeeder:
             document_id
         )
         if classification is None:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 f"{prefix} Existing classification missing. Reclassifying document...",
             )
@@ -477,7 +482,7 @@ class RetrievalBenchmarkCorpusSeeder:
             )
             self._commit()
         else:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 f"{prefix} Reusing existing document classification.",
             )
@@ -500,18 +505,18 @@ class RetrievalBenchmarkCorpusSeeder:
         `IngestionWorkflow.retry_extraction`. Does not re-parse the source
         file or mint a new document_id.
         """
-        prefix = self._progress_prefix(
-            seed_index=seed_index,
-            total_targets=total_targets,
+        prefix = progress_prefix(
+            index=seed_index,
+            total=total_targets,
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"{prefix} Retrying extraction for {document_id}...",
         )
         self.ingestion_workflow.retry_extraction(
             document_id,
             activity_context=activity_context,
-            progress_callback=self._scoped_progress_callback(progress_callback, prefix),
+            progress_callback=scoped_progress_callback(progress_callback, prefix),
         )
 
         document_graph = self.document_lookup_service.get_document_graph(
@@ -694,20 +699,6 @@ class RetrievalBenchmarkCorpusSeeder:
         precision = 0 if size >= 100 else 1
         return f"{size:.{precision}f} {suffixes[max(suffix_index, 0)]}"
 
-    @staticmethod
-    def _format_elapsed_seconds(elapsed_seconds: float) -> str:
-        if elapsed_seconds < 1:
-            return f"{elapsed_seconds:.2f}s"
-        if elapsed_seconds < 60:
-            return f"{elapsed_seconds:.1f}s"
-
-        minutes, seconds = divmod(elapsed_seconds, 60.0)
-        if minutes < 60:
-            return f"{int(minutes)}m {seconds:.1f}s"
-
-        hours, minutes = divmod(minutes, 60.0)
-        return f"{int(hours)}h {int(minutes)}m {seconds:.1f}s"
-
     def _commit(self) -> None:
         if self.unit_of_work is None:
             return
@@ -720,34 +711,3 @@ class RetrievalBenchmarkCorpusSeeder:
         if callable(rollback):
             rollback()
 
-    @staticmethod
-    def _emit_progress(
-        progress_callback: Callable[[str], None] | None,
-        message: str,
-    ) -> None:
-        if progress_callback is not None:
-            progress_callback(message)
-
-    @staticmethod
-    def _progress_prefix(
-        *,
-        seed_index: int | None,
-        total_targets: int | None,
-    ) -> str:
-        if seed_index is None or total_targets is None:
-            return "[seed]"
-        return f"[{seed_index}/{total_targets}]"
-
-    @classmethod
-    def _scoped_progress_callback(
-        cls,
-        progress_callback: Callable[[str], None] | None,
-        prefix: str,
-    ) -> Callable[[str], None] | None:
-        if progress_callback is None:
-            return None
-
-        def scoped_callback(message: str) -> None:
-            cls._emit_progress(progress_callback, f"{prefix} {message}")
-
-        return scoped_callback

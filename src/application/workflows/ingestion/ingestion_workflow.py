@@ -45,6 +45,7 @@ from src.shared.audit import AuditContext
 from src.shared.events import EventContext
 from src.shared.exceptions import ApplicationError
 from src.shared.execution import tracked_action
+from src.shared.progress import emit_progress
 from src.shared.ids import IdGenerator, IdPrefix
 
 
@@ -169,7 +170,7 @@ class IngestionWorkflow:
 
         warnings: list[str] = []
 
-        self._emit_progress(progress_callback, f"Starting ingestion for {file_name}...")
+        emit_progress(progress_callback, f"Starting ingestion for {file_name}...")
         self._publish_stage_started(
             ingestion_run=ingestion_run,
             stage=IngestionStage.DUPLICATE_CHECK,
@@ -652,7 +653,7 @@ class IngestionWorkflow:
                 ),
                 event_context=resolved_event_context,
             )
-            self._emit_progress(progress_callback, f"Ingestion completed for {file_name}.")
+            emit_progress(progress_callback, f"Ingestion completed for {file_name}.")
             return result
 
         except Exception as exc:
@@ -676,7 +677,7 @@ class IngestionWorkflow:
                 ),
                 event_context=resolved_event_context,
             )
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 f"Ingestion failed for {file_name}: {exc}",
             )
@@ -800,7 +801,7 @@ class IngestionWorkflow:
                     error_code="ingestion.final_graph.empty",
                     details={"document_id": document_id},
                 )
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     "Document has persisted elements but no final chunks. "
@@ -852,7 +853,7 @@ class IngestionWorkflow:
                         ),
                     },
                 )
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     "Retrying only unresolved extraction chunks: "
@@ -862,7 +863,7 @@ class IngestionWorkflow:
         else:
             existing_extraction_result = None
 
-        self._emit_progress(progress_callback, "Extraction started.")
+        emit_progress(progress_callback, "Extraction started.")
         extraction_result = self.extraction_workflow.extract(
             document_id,
             retry_chunks,
@@ -914,7 +915,7 @@ class IngestionWorkflow:
             semantic_relationship_count = len(semantic_relationships)
             self.unit_of_work.commit()
 
-        self._emit_progress(progress_callback, "Extraction completed.")
+        emit_progress(progress_callback, "Extraction completed.")
         return IngestionResult(
             status=IngestionStatus.EXTRACTED,
             document_id=document_id,
@@ -1077,7 +1078,7 @@ class IngestionWorkflow:
         progress_callback: Callable[[str], None] | None = None,
         document_id: str | None = None,
     ) -> None:
-        self._emit_progress(progress_callback, f"{stage.value.replace('_', ' ').title()} started.")
+        emit_progress(progress_callback, f"{stage.value.replace('_', ' ').title()} started.")
         self._publish_event(
             IngestionEvent.stage_started(
                 event_id=self.id_generator.new_event_id(),
@@ -1126,13 +1127,6 @@ class IngestionWorkflow:
         self.event_service.publish(event, context=event_context)
         self.unit_of_work.commit()
 
-    @staticmethod
-    def _emit_progress(
-        progress_callback: Callable[[str], None] | None,
-        message: str,
-    ) -> None:
-        if progress_callback is not None:
-            progress_callback(message)
 
     @staticmethod
     def _compute_file_hash(file_path: Path) -> str:

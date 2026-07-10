@@ -1,3 +1,6 @@
+from src.application.langgraph.common.answer_intent_resolver import (
+    resolve_answer_intent,
+)
 from src.application.langgraph.common.graph_constants import (
     DEFAULT_AGENT_GRAPH_NAME,
     DEFAULT_AGENT_GRAPH_VERSION,
@@ -31,6 +34,7 @@ __all__ = [
     "is_safe_failure_message",
     "is_usable_reflection_decision",
     "reflection_decision_from_state",
+    "resolve_answer_intent",
     "resolve_answer_text",
     "resolve_state_response_text",
     "serialize_graph_value",

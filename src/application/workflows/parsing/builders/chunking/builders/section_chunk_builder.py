@@ -30,6 +30,7 @@ from src.application.workflows.parsing.builders.chunking.policies.chunking_profi
 from src.application.workflows.parsing.builders.chunking.deduplication.chunk_payload_deduplicator import (
     ChunkPayloadDeduplicator,
 )
+from src.application.workflows.shared.section_path_utils import is_path_prefix
 
 
 class SectionChunkBuilder:
@@ -472,7 +473,7 @@ class SectionChunkBuilder:
                     for overview_payload in overview_payloads
                     if overview_payload.section_id
                     and overview_payload.section_id not in inserted_sections
-                    and SectionChunkBuilder._is_path_prefix(
+                    and is_path_prefix(
                         overview_payload.section_path,
                         payload.section_path,
                     )
@@ -490,15 +491,6 @@ class SectionChunkBuilder:
             ordered_payloads.append(payload)
 
         return ordered_payloads
-
-    @staticmethod
-    def _is_path_prefix(
-        ancestor_path: list[str],
-        descendant_path: list[str],
-    ) -> bool:
-        if not ancestor_path or len(ancestor_path) > len(descendant_path):
-            return False
-        return descendant_path[: len(ancestor_path)] == ancestor_path
 
     @staticmethod
     def _fragments_token_count(fragments: list[ChunkFragment]) -> int:

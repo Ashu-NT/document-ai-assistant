@@ -1,6 +1,7 @@
 from collections import Counter
 
 from src.domain.document import DocumentGraph
+from src.shared.text import preview_text
 
 
 class DocumentClassificationSummaryBuilder:
@@ -205,10 +206,7 @@ class DocumentClassificationSummaryBuilder:
         return [values[index] for index in sorted(indexes)]
 
     def _preview_text(self, value: str) -> str:
-        normalized = " ".join(value.split()).strip()
-        if len(normalized) <= self.preview_length:
-            return normalized
-        return normalized[: self.preview_length - 3].rstrip() + "..."
+        return preview_text(value, self.preview_length, rstrip=True)
 
     @staticmethod
     def _format_page_range(page_start: int | None, page_end: int | None) -> str:

@@ -19,6 +19,9 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc_page_range
     TocPageRangeStrategy,
 )
 from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsing_value_coercion import (
+    coerce_positive_int,
+)
 from src.domain.common import ElementType
 
 
@@ -61,7 +64,7 @@ class SectionHierarchyResolver:
         )
         resolution = SectionHierarchyResolution(
             raw_levels={
-                header.element_id: self._coerce_positive_int(
+                header.element_id: coerce_positive_int(
                     header.metadata.get("heading_level")
                 )
                 for header in headers
@@ -356,14 +359,3 @@ class SectionHierarchyResolver:
         normalized[first_header_id] = 1
         return normalized
 
-    @staticmethod
-    def _coerce_positive_int(value: object) -> int | None:
-        if value is None:
-            return None
-
-        try:
-            number = int(value)
-        except (TypeError, ValueError):
-            return None
-
-        return number if number > 0 else None

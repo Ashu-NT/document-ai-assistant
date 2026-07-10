@@ -1,5 +1,4 @@
 import json
-import re
 from dataclasses import dataclass
 
 from src.application.workflows.retrieval.deduplication.retrieved_chunk_signature import (
@@ -13,6 +12,7 @@ from src.infrastructure.db.orm_models import ChunkORM, DocumentORM
 from src.infrastructure.retrieval.keyword.sql_keyword_query_terms import (
     normalize_query_text,
 )
+from src.shared.text import compact_alnum, tokenize_alnum
 
 _CONFIG_PATH = (
     PROJECT_ROOT / "src" / "config" / "retrieval_keyword" / "sql_keyword_scorer.yaml"
@@ -26,8 +26,6 @@ _TABLE_QUERY_MARKERS = tuple(_config["table_query_markers"])
 _FIGURE_QUERY_MARKERS = tuple(_config["figure_query_markers"])
 _OVERVIEW_QUERY_MARKERS = tuple(_config["overview_query_markers"])
 _OVERVIEW_SECTION_MARKERS = tuple(_config["overview_section_markers"])
-
-_ALNUM_TOKEN_RE = re.compile(r"[a-z0-9]+")
 
 # Morphological variant families for section-path matching only.
 # Each family groups inflected forms that should be treated as equivalent when
@@ -84,10 +82,6 @@ def expand_query_terms_with_morph_variants(terms: list[str]) -> list[str]:
     return terms + extra
 
 
-def _compact_alnum(s: str) -> str:
-    return "".join(_ALNUM_TOKEN_RE.findall(s.lower()))
-
-
 def _contains_compact_id(compact_id: str, text: str) -> bool:
     """True if text contains compact_id after collapsing separators (hyphen/space/punctuation).
 
@@ -97,7 +91,7 @@ def _contains_compact_id(compact_id: str, text: str) -> bool:
     """
     if not compact_id or not text:
         return False
-    tokens = _ALNUM_TOKEN_RE.findall(text.lower())
+    tokens = tokenize_alnum(text)
     for window in (1, 2, 3):
         for i in range(len(tokens) - window + 1):
             if "".join(tokens[i : i + window]) == compact_id:
@@ -133,7 +127,7 @@ class SqlKeywordScorer:
     ) -> SqlKeywordScoreBreakdown:
         # Compact identifiers so hyphenation/punctuation differences are ignored.
         query_identifiers_compact = {
-            _compact_alnum(idf)
+            compact_alnum(idf)
             for idf in (retrieval_query.detected_identifiers if retrieval_query else [])
             if idf and idf.strip()
         } - {""}  # drop empty strings produced by all-separator identifiers

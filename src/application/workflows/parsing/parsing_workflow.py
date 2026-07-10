@@ -32,7 +32,9 @@ from src.domain.document import DocumentGraph, DocumentHashes
 from src.infrastructure.parsing.docling.docling_parser import DoclingParser
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
+from src.shared.formatting import format_elapsed_seconds
 from src.shared.ids import IdGenerator, IdPrefix
+from src.shared.progress import emit_progress
 
 _STAGE_HEARTBEAT_INTERVAL_SECONDS = 30.0
 T = TypeVar("T")
@@ -75,20 +77,6 @@ def _collect_parse_warnings(
     return warnings
 
 
-def _format_elapsed_seconds(elapsed_seconds: float) -> str:
-    if elapsed_seconds < 1:
-        return f"{elapsed_seconds:.2f}s"
-    if elapsed_seconds < 60:
-        return f"{elapsed_seconds:.1f}s"
-
-    minutes, seconds = divmod(elapsed_seconds, 60.0)
-    if minutes < 60:
-        return f"{int(minutes)}m {seconds:.1f}s"
-
-    hours, minutes = divmod(minutes, 60.0)
-    return f"{int(hours)}h {int(minutes)}m {seconds:.1f}s"
-
-
 class _StageHeartbeat:
     def __init__(
         self,
@@ -129,7 +117,7 @@ class _StageHeartbeat:
             elapsed_seconds = time.perf_counter() - self._started_at
             self.progress_callback(
                 f"{self.label} still running... "
-                f"({_format_elapsed_seconds(elapsed_seconds)} elapsed)"
+                f"({format_elapsed_seconds(elapsed_seconds)} elapsed)"
             )
 
 
@@ -183,7 +171,7 @@ class ParsingWorkflow:
         total_started_at = time.perf_counter()
         stage_durations: dict[str, float] = {}
 
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Parsing workflow started for {file_name}.",
         )
@@ -201,7 +189,7 @@ class ParsingWorkflow:
             ),
             completion_message_builder=lambda result, elapsed_seconds: (
                 "Docling conversion completed in "
-                f"{_format_elapsed_seconds(elapsed_seconds)} "
+                f"{format_elapsed_seconds(elapsed_seconds)} "
                 f"(pages={result.page_count or 'unknown'}, "
                 f"parser={result.parser_name})."
             ),
@@ -219,7 +207,7 @@ class ParsingWorkflow:
             ),
             completion_message_builder=lambda result, elapsed_seconds: (
                 "Canonical normalization completed in "
-                f"{_format_elapsed_seconds(elapsed_seconds)} "
+                f"{format_elapsed_seconds(elapsed_seconds)} "
                 f"({len(result)} canonical element(s))."
             ),
             stage_name="canonical_normalization",
@@ -241,7 +229,7 @@ class ParsingWorkflow:
                 ),
                 completion_message_builder=lambda result, elapsed_seconds: (
                     "Canonical element OCR enrichment completed in "
-                    f"{_format_elapsed_seconds(elapsed_seconds)} "
+                    f"{format_elapsed_seconds(elapsed_seconds)} "
                     f"({len(result)} element(s))."
                 ),
                 stage_name="canonical_element_ocr_enrichment",
@@ -264,7 +252,7 @@ class ParsingWorkflow:
                 ),
                 completion_message_builder=lambda result, elapsed_seconds: (
                     "Page OCR fallback completed in "
-                    f"{_format_elapsed_seconds(elapsed_seconds)} "
+                    f"{format_elapsed_seconds(elapsed_seconds)} "
                     f"({len(result.canonical_elements)} element(s))."
                 ),
                 stage_name="page_ocr_fallback",
@@ -293,7 +281,7 @@ class ParsingWorkflow:
             ),
             completion_message_builder=lambda result, elapsed_seconds: (
                 "Document graph build completed in "
-                f"{_format_elapsed_seconds(elapsed_seconds)} "
+                f"{format_elapsed_seconds(elapsed_seconds)} "
                 f"(sections={len(result.sections)}, "
                 f"elements={len(result.elements)}, "
                 f"chunks={len(result.chunks)})."
@@ -311,7 +299,7 @@ class ParsingWorkflow:
                 operation=lambda: self._validate_document_graph(document_graph),
                 completion_message_builder=lambda _result, elapsed_seconds: (
                     "Document graph validation completed in "
-                    f"{_format_elapsed_seconds(elapsed_seconds)}."
+                    f"{format_elapsed_seconds(elapsed_seconds)}."
                 ),
                 stage_name="graph_validation",
                 stage_durations=stage_durations,
@@ -349,10 +337,10 @@ class ParsingWorkflow:
                 chunk_result=chunk_quality_result,
             )
 
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             "Parsing workflow completed in "
-            f"{_format_elapsed_seconds(total_elapsed_seconds)} "
+            f"{format_elapsed_seconds(total_elapsed_seconds)} "
             f"(pages={raw_parsed_document.page_count or 'unknown'}, "
             f"canonical_elements={len(canonical_elements)}, "
             f"sections={len(document_graph.sections)}, "
@@ -364,13 +352,6 @@ class ParsingWorkflow:
         validation = self.document_graph_validator.validate(document_graph)
         validation.raise_if_invalid()
 
-    @staticmethod
-    def _emit_progress(
-        progress_callback: Callable[[str], None] | None,
-        message: str,
-    ) -> None:
-        if progress_callback is not None:
-            progress_callback(message)
 
     def _run_stage(
         self,
@@ -384,7 +365,7 @@ class ParsingWorkflow:
         stage_name: str | None = None,
         stage_durations: dict[str, float] | None = None,
     ) -> T:
-        self._emit_progress(progress_callback, start_message)
+        emit_progress(progress_callback, start_message)
         started_at = time.perf_counter()
         heartbeat = _StageHeartbeat(
             label=heartbeat_label,
@@ -395,10 +376,10 @@ class ParsingWorkflow:
             result = operation()
         except Exception:
             elapsed_seconds = time.perf_counter() - started_at
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 f"{failure_label} failed after "
-                f"{_format_elapsed_seconds(elapsed_seconds)}.",
+                f"{format_elapsed_seconds(elapsed_seconds)}.",
             )
             raise
         finally:
@@ -407,7 +388,7 @@ class ParsingWorkflow:
         elapsed_seconds = time.perf_counter() - started_at
         if stage_name is not None and stage_durations is not None:
             stage_durations[stage_name] = elapsed_seconds
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             completion_message_builder(result, elapsed_seconds),
         )

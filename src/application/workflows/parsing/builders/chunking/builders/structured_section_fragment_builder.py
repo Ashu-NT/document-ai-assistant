@@ -14,7 +14,7 @@ from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitte
     ChunkTextSplitter,
 )
 from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
-    clean_chunk_text,
+    is_furniture_or_embedded_picture,
 )
 from src.domain.common import ChunkType, DocumentType, ElementType
 from src.domain.document import DocumentSection
@@ -217,16 +217,7 @@ class StructuredSectionFragmentBuilder:
             ElementType.PICTURE,
         }:
             return False
-        parser_extra = (
-            element.parser_metadata.extra
-            if element.parser_metadata is not None
-            and element.parser_metadata.extra is not None
-            else {}
-        )
-        parent_ref = parser_extra.get("parent_ref")
-        if isinstance(parent_ref, str) and parent_ref.startswith("#/pictures/"):
-            return False
-        if parser_extra.get("content_layer") == "furniture":
+        if is_furniture_or_embedded_picture(element):
             return False
         return bool(StructuredElementTextResolver.resolve(element))
 

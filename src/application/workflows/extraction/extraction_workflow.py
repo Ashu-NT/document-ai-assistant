@@ -59,9 +59,11 @@ from src.domain.extraction import (
     TroubleshootingEntry,
 )
 from src.shared.activity import ActivityContext
+from src.shared.collections import unique_in_order
 from src.shared.execution import tracked_action
 from src.shared.exceptions import SchemaValidationError
 from src.shared.ids import IdGenerator, IdPrefix
+from src.shared.progress import emit_progress
 
 KEY_PATTERN = re.compile(r"[^a-z0-9]+")
 _MAX_CONCURRENT_CANDIDATE_SELECTIONS = 8
@@ -314,7 +316,7 @@ class ExtractionWorkflow:
         base_result: ExtractionResult | None = None,
     ) -> ExtractionResult:
         chunk_list = self._coerce_chunks(chunks)
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Preparing extraction input from {len(chunk_list)} final chunk(s)...",
         )
@@ -331,7 +333,7 @@ class ExtractionWorkflow:
         )
 
         batches = self.chunk_batcher.build_batches(chunk_list)
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             f"Prepared {len(batches)} extraction batch(es).",
         )
@@ -373,12 +375,12 @@ class ExtractionWorkflow:
             if base_result is not None
             else []
         )
-        final_unresolved_chunk_ids = self._unique_chunk_ids(
+        final_unresolved_chunk_ids = unique_in_order(
             [*carried_unresolved_chunk_ids, *unresolved_chunk_ids]
         )
 
         if final_unresolved_chunk_ids:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     "Extraction completed with unresolved chunk(s) pending retry: "
@@ -390,7 +392,7 @@ class ExtractionWorkflow:
             document_id=document_id,
             partial_results=partial_results,
         )
-        extraction_result.source_chunk_ids = self._unique_chunk_ids(
+        extraction_result.source_chunk_ids = unique_in_order(
             [
                 *(
                     base_result.source_chunk_ids
@@ -400,7 +402,7 @@ class ExtractionWorkflow:
                 *extraction_result.source_chunk_ids,
             ]
         )
-        extraction_result.attempted_chunk_ids = self._unique_chunk_ids(
+        extraction_result.attempted_chunk_ids = unique_in_order(
             [
                 *(
                     base_result.attempted_chunk_ids
@@ -415,7 +417,7 @@ class ExtractionWorkflow:
             extraction_result
         )
         if dropped_empty_count:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"Dropped {dropped_empty_count} extracted item(s) with no "
@@ -442,14 +444,14 @@ class ExtractionWorkflow:
             )
         )
 
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             "Validating extraction result...",
         )
         validation = self.extraction_result_validator.validate(extraction_result)
         validation.raise_if_invalid()
 
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             "Replacing extraction result..." if replace_existing else "Saving extraction result...",
         )
@@ -463,7 +465,7 @@ class ExtractionWorkflow:
                 extraction_result,
                 activity_context=activity_context,
             )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             (
                 "Extraction completed "
@@ -514,7 +516,7 @@ class ExtractionWorkflow:
             except SchemaValidationError as exc:
                 last_exc = exc
                 if attempt_index < self.max_attempts:
-                    self._emit_progress(
+                    emit_progress(
                         progress_callback,
                         (
                             f"[extraction {batch.batch_index}/{batch.batch_count}] "
@@ -533,7 +535,7 @@ class ExtractionWorkflow:
             )
 
         if self.allow_partial_batches:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"[extraction {batch.batch_index}/{batch.batch_count}] "
@@ -558,7 +560,7 @@ class ExtractionWorkflow:
         progress_callback: Callable[[str], None] | None,
     ) -> ExtractionBatchOutcome:
         single_chunk_batches = self.chunk_batcher.build_single_chunk_batches(batch)
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             (
                 f"[extraction {batch.batch_index}/{batch.batch_count}] "
@@ -568,7 +570,7 @@ class ExtractionWorkflow:
         )
         outcome = ExtractionBatchOutcome()
         for chunk_index, single_chunk_batch in enumerate(single_chunk_batches, start=1):
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"[extraction {batch.batch_index}/{batch.batch_count}] "
@@ -600,7 +602,7 @@ class ExtractionWorkflow:
         progress_callback: Callable[[str], None] | None,
         previous_error: str | None = None,
     ) -> ExtractionResult:
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             (
                 f"[extraction {batch.batch_index}/{batch.batch_count}] "
@@ -614,7 +616,7 @@ class ExtractionWorkflow:
             previous_error=previous_error,
         )
         if requested_types is not None:
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"[extraction {batch.batch_index}/{batch.batch_count}] "
@@ -622,7 +624,7 @@ class ExtractionWorkflow:
                     f"{', '.join(sorted(t.value for t in requested_types))}"
                 ),
             )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             (
                 f"[extraction {batch.batch_index}/{batch.batch_count}] "
@@ -637,7 +639,7 @@ class ExtractionWorkflow:
             json_mode=self.json_mode,
             response_schema=build_extraction_response_json_schema(),
         )
-        self._emit_progress(
+        emit_progress(
             progress_callback,
             (
                 f"[extraction {batch.batch_index}/{batch.batch_count}] "
@@ -668,7 +670,7 @@ class ExtractionWorkflow:
             )
             self.last_batch_diagnostics.append(diagnostics)
             compact_preview = " ".join(preview.split())
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"[extraction {batch.batch_index}/{batch.batch_count}] "
@@ -683,7 +685,7 @@ class ExtractionWorkflow:
 
         if self._invalid_source_chunk_id_events:
             event_count = len(self._invalid_source_chunk_id_events)
-            self._emit_progress(
+            emit_progress(
                 progress_callback,
                 (
                     f"[extraction {batch.batch_index}/{batch.batch_count}] "
@@ -1844,25 +1846,6 @@ class ExtractionWorkflow:
         }:
             return owner_type
         return None
-
-    @staticmethod
-    def _emit_progress(
-        progress_callback: Callable[[str], None] | None,
-        message: str,
-    ) -> None:
-        if progress_callback is not None:
-            progress_callback(message)
-
-    @staticmethod
-    def _unique_chunk_ids(chunk_ids: list[str]) -> list[str]:
-        seen: set[str] = set()
-        ordered: list[str] = []
-        for chunk_id in chunk_ids:
-            if not chunk_id or chunk_id in seen:
-                continue
-            seen.add(chunk_id)
-            ordered.append(chunk_id)
-        return ordered
 
     @staticmethod
     def _pick(payload: dict[str, Any], *keys: str) -> Any:
