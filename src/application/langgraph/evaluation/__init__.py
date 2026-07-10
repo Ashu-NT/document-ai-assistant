@@ -2,6 +2,12 @@ from src.application.langgraph.evaluation.agent_eval_loader import (
     AgentEvalLoader,
     DEFAULT_AGENT_EVAL_CASES_PATH,
 )
+from src.application.langgraph.evaluation.agent_eval_metric_registry import (
+    AGENT_EVAL_METRIC_DEFINITIONS,
+    AGENT_EVAL_METRIC_NAMES,
+    AGENT_EVAL_THRESHOLD_METRIC_NAMES,
+    AgentEvalMetricDefinition,
+)
 from src.application.langgraph.evaluation.agent_eval_result import (
     AgentCaseResult,
     AgentEvalReport,
@@ -25,8 +31,12 @@ from src.application.langgraph.evaluation.agent_test_case import (
 )
 
 __all__ = [
+    "AGENT_EVAL_METRIC_DEFINITIONS",
+    "AGENT_EVAL_METRIC_NAMES",
+    "AGENT_EVAL_THRESHOLD_METRIC_NAMES",
     "AgentCaseResult",
     "AgentEvalLoader",
+    "AgentEvalMetricDefinition",
     "AgentEvalReport",
     "AgentEvalRunner",
     "AgentEvalSummary",

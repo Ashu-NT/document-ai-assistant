@@ -4,6 +4,10 @@ import json
 from pathlib import Path
 from typing import Any
 
+from src.application.langgraph.common import bool_value as _shared_bool_value
+from src.application.langgraph.common import optional_bool as _shared_optional_bool
+from src.application.langgraph.common import optional_float as _shared_optional_float
+from src.application.langgraph.common import optional_str as _shared_optional_str
 from src.application.langgraph.evaluation.agent_test_case import (
     AgentExpectedBehavior,
     AgentTestCase,
@@ -362,12 +366,7 @@ class AgentEvalLoader:
 
     @staticmethod
     def _optional_string(value: Any) -> str | None:
-        if value is None:
-            return None
-        if not isinstance(value, str):
-            raise ValueError("Expected string value.")
-        normalized = value.strip()
-        return normalized or None
+        return _shared_optional_str(value, strict=True, strip=True)
 
     @classmethod
     def _string_list(cls, value: Any) -> list[str]:
@@ -393,24 +392,12 @@ class AgentEvalLoader:
 
     @staticmethod
     def _bool_value(value: Any, *, default: bool) -> bool:
-        if value is None:
-            return default
-        if isinstance(value, bool):
-            return value
-        raise ValueError("Expected boolean value.")
+        return _shared_bool_value(value, default=default)
 
     @staticmethod
     def _optional_bool(value: Any) -> bool | None:
-        if value is None:
-            return None
-        if isinstance(value, bool):
-            return value
-        raise ValueError("Expected boolean or null value.")
+        return _shared_optional_bool(value)
 
     @staticmethod
     def _optional_float(value: Any) -> float | None:
-        if value is None:
-            return None
-        if isinstance(value, int | float):
-            return float(value)
-        raise ValueError("Expected numeric or null value.")
+        return _shared_optional_float(value)

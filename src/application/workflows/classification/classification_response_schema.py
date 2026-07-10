@@ -5,18 +5,9 @@ from typing import Any
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
+from src.application.workflows.common import coerce_confidence_score
+
 _LIST_ITEM_PATTERN = re.compile(r"^\s*(?:[-*]+|\d+[\.\)]|[A-Za-z]\))\s*")
-
-
-def _coerce_confidence(value: Any) -> Any:
-    if isinstance(value, str):
-        stripped = value.strip().strip('"').strip("'").strip()
-        if stripped.endswith("%"):
-            try:
-                return float(stripped[:-1].strip()) / 100
-            except ValueError:
-                return value
-    return value
 
 
 def _coerce_text(value: Any) -> str | None:
@@ -78,7 +69,12 @@ class ClassificationResponsePayload(BaseModel):
     @field_validator("confidence_score", mode="before")
     @classmethod
     def _validate_confidence_score(cls, value: Any) -> Any:
-        return _coerce_confidence(value)
+        return coerce_confidence_score(
+            value,
+            coerce_numeric_input=False,
+            parse_unmarked_numeric_strings=False,
+            on_invalid="original",
+        )
 
     @field_validator("evidence", mode="before")
     @classmethod

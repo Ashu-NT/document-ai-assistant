@@ -6,25 +6,12 @@ from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.planning.execution_plan import ExecutionPlan
 from src.application.langgraph.planning.plan_policy import PlanPolicy
 from src.application.langgraph.planning.plan_step import PlanStep
+from src.application.langgraph.planning.specs.plan_tool_spec import (
+    KNOWN_TOOL_ARGS,
+    REPAIR_UNSAFE_REQUIRED_STEP_MARKERS,
+    TOOL_NAME_RENAMES,
+)
 from src.application.langgraph.state import AgentState
-
-_TOOL_NAME_RENAMES = {
-    "retrieve_evidence": "retrieve_chunks",
-    "ask_question": "answer_question",
-    "lookup_document": "find_document",
-}
-_ALLOWED_ARGS: dict[str, set[str]] = {
-    "list_documents": set(),
-    "find_document": {"document_id", "query_text", "query"},
-    "document_details": {"document_id"},
-    "explore_document": {"document_id"},
-    "retrieve_chunks": {"document_id", "query_text", "question", "top_k", "chunk_types"},
-    "retrieve_identifiers": {"identifier_value", "identifier_type", "document_id", "query"},
-    "retrieve_structured_entities": {"entity_type", "document_id", "query_text", "top_k"},
-    "answer_question": {"document_id", "question", "top_k"},
-    "run_quality_gate": {"report_path", "thresholds_path"},
-    "retrieval_trace": {"document_id", "query_text", "top_k", "write_output"},
-}
 
 
 @dataclass(slots=True, frozen=True)
@@ -49,7 +36,7 @@ class PlanRepair:
 
         if any(
             blocked in step.tool_name and step.required
-            for blocked in ("delete", "ingest", "reingest")
+            for blocked in REPAIR_UNSAFE_REQUIRED_STEP_MARKERS
             for step in plan.steps
         ):
             return PlanRepairResult(
@@ -60,7 +47,7 @@ class PlanRepair:
             )
 
         for step in plan.steps:
-            tool_name = _TOOL_NAME_RENAMES.get(step.tool_name, step.tool_name)
+            tool_name = TOOL_NAME_RENAMES.get(step.tool_name, step.tool_name)
             if tool_name != step.tool_name:
                 changes.append(f"Renamed tool '{step.tool_name}' to '{tool_name}'.")
 
@@ -80,7 +67,7 @@ class PlanRepair:
                     args["query_text"] = query_value
                     changes.append("Normalized find_document arg 'query' to 'query_text'.")
 
-            allowed_args = _ALLOWED_ARGS.get(tool_name)
+            allowed_args = KNOWN_TOOL_ARGS.get(tool_name)
             if allowed_args is not None:
                 removed = sorted(set(args.keys()) - allowed_args)
                 for key in removed:

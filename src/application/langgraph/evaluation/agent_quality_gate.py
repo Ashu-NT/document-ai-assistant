@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from src.application.langgraph.evaluation.agent_eval_metric_registry import (
+    AGENT_EVAL_THRESHOLD_METRIC_NAMES,
+)
 from src.application.langgraph.evaluation.agent_eval_result import AgentEvalReport
 from src.application.langgraph.evaluation.agent_eval_thresholds import (
     AgentEvalThresholds,
@@ -72,107 +75,8 @@ class AgentQualityGate:
         summary = report.summary
         thresholds = self._thresholds
         checks = [
-            ("route_accuracy", summary.route_accuracy, thresholds.route_accuracy),
-            (
-                "deep_research_route_accuracy",
-                summary.deep_research_route_accuracy,
-                thresholds.deep_research_route_accuracy,
-            ),
-            (
-                "document_selection_accuracy",
-                summary.document_selection_accuracy,
-                thresholds.document_selection_accuracy,
-            ),
-            (
-                "clarification_accuracy",
-                summary.clarification_accuracy,
-                thresholds.clarification_accuracy,
-            ),
-            (
-                "unsafe_block_rate",
-                summary.unsafe_block_rate,
-                thresholds.unsafe_block_rate,
-            ),
-            (
-                "plan_validity_rate",
-                summary.plan_validity_rate,
-                thresholds.plan_validity_rate,
-            ),
-            (
-                "document_scope_safety_rate",
-                summary.document_scope_safety_rate,
-                thresholds.document_scope_safety_rate,
-            ),
-            (
-                "tool_policy_compliance_rate",
-                summary.tool_policy_compliance_rate,
-                thresholds.tool_policy_compliance_rate,
-            ),
-            (
-                "answer_expectation_rate",
-                summary.answer_expectation_rate,
-                thresholds.answer_expectation_rate,
-            ),
-            (
-                "retrieval_strategy_selection_rate",
-                summary.retrieval_strategy_selection_rate,
-                thresholds.retrieval_strategy_selection_rate,
-            ),
-            (
-                "retrieval_strategy_validity_rate",
-                summary.retrieval_strategy_validity_rate,
-                thresholds.retrieval_strategy_validity_rate,
-            ),
-            (
-                "strategy_fallback_rate",
-                summary.strategy_fallback_rate,
-                thresholds.strategy_fallback_rate,
-            ),
-            (
-                "multi_strategy_success_rate",
-                summary.multi_strategy_success_rate,
-                thresholds.multi_strategy_success_rate,
-            ),
-            (
-                "strategy_document_scope_safety_rate",
-                summary.strategy_document_scope_safety_rate,
-                thresholds.strategy_document_scope_safety_rate,
-            ),
-            (
-                "strategy_trace_coverage_rate",
-                summary.strategy_trace_coverage_rate,
-                thresholds.strategy_trace_coverage_rate,
-            ),
-            (
-                "research_plan_validity_rate",
-                summary.research_plan_validity_rate,
-                thresholds.research_plan_validity_rate,
-            ),
-            (
-                "research_task_success_rate",
-                summary.research_task_success_rate,
-                thresholds.research_task_success_rate,
-            ),
-            (
-                "research_gap_detection_rate",
-                summary.research_gap_detection_rate,
-                thresholds.research_gap_detection_rate,
-            ),
-            (
-                "research_document_scope_safety_rate",
-                summary.research_document_scope_safety_rate,
-                thresholds.research_document_scope_safety_rate,
-            ),
-            (
-                "research_report_completeness_rate",
-                summary.research_report_completeness_rate,
-                thresholds.research_report_completeness_rate,
-            ),
-            (
-                "research_citation_coverage_rate",
-                summary.research_citation_coverage_rate,
-                thresholds.research_citation_coverage_rate,
-            ),
+            (metric_name, getattr(summary, metric_name), getattr(thresholds, metric_name))
+            for metric_name in AGENT_EVAL_THRESHOLD_METRIC_NAMES
         ]
 
         checked_metrics: dict[str, float | None] = {}

@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
+from src.application.workflows.common import coerce_confidence_score
 from src.domain.extraction import ProcedureType
 from src.domain.extraction.contact_point import ContactPointType
 from src.domain.extraction.semantic_relationship import SemanticEntityType
@@ -17,40 +18,17 @@ def coerce_raw_list(value: Any) -> list[Any]:
     return value
 
 
-def _coerce_confidence(value: Any) -> Any:
-    if isinstance(value, bool):
-        return value
-
-    if isinstance(value, int | float):
-        numeric = float(value)
-        if 1 < numeric <= 100:
-            return numeric / 100
-        return numeric
-
-    if isinstance(value, str):
-        stripped = value.strip().strip('"').strip("'").strip()
-        if stripped.endswith("%"):
-            try:
-                return float(stripped[:-1].strip()) / 100
-            except ValueError:
-                return value
-        try:
-            numeric = float(stripped)
-        except ValueError:
-            return value
-        if 1 < numeric <= 100:
-            return numeric / 100
-        return numeric
-    return value
-
-
 class _ExtractionItemBase(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     @field_validator("confidence_score", mode="before", check_fields=False)
     @classmethod
     def _validate_confidence_score(cls, value: Any) -> Any:
-        return _coerce_confidence(value)
+        return coerce_confidence_score(
+            value,
+            normalize_percent_range=True,
+            on_invalid="original",
+        )
 
 
 class MaintenanceTaskPayload(_ExtractionItemBase):
@@ -491,7 +469,11 @@ class ExtractionResponsePayload(BaseModel):
     @field_validator("confidence_score", mode="before")
     @classmethod
     def _validate_confidence_score(cls, value: Any) -> Any:
-        return _coerce_confidence(value)
+        return coerce_confidence_score(
+            value,
+            normalize_percent_range=True,
+            on_invalid="original",
+        )
 
     @field_validator(
         "maintenance_tasks",

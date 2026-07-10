@@ -1,6 +1,7 @@
 from src.application.workflows.classification.document_type_decision import (
     DocumentTypeDecision,
 )
+from src.application.workflows.common import resolve_setting
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
 )
@@ -12,27 +13,30 @@ from src.domain.common import DocumentType
 
 
 def _default_strong_model_threshold() -> float:
-    try:
+    def _load() -> float:
         from src.config.settings import classification_settings
+
         return classification_settings.strong_model_threshold
-    except Exception:
-        return 0.80
+
+    return resolve_setting(_load, 0.80)
 
 
 def _default_strong_structural_threshold() -> float:
-    try:
+    def _load() -> float:
         from src.config.settings import classification_settings
+
         return classification_settings.strong_structural_threshold
-    except Exception:
-        return 0.75
+
+    return resolve_setting(_load, 0.75)
 
 
 def _default_weak_signal_threshold() -> float:
-    try:
+    def _load() -> float:
         from src.config.settings import classification_settings
+
         return classification_settings.weak_signal_threshold
-    except Exception:
-        return 0.55
+
+    return resolve_setting(_load, 0.55)
 
 
 class HybridDocumentTypeResolver:

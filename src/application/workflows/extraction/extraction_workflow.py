@@ -1,5 +1,3 @@
-import re
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace as dataclass_replace
 from typing import Any
 from collections.abc import Callable
@@ -9,13 +7,16 @@ from src.application.prompts.extraction import (
     ExtractionPromptType,
 )
 from src.application.prompts.extraction.narrowed import ExtractionNarrowedPromptBuilder
-from src.application.workflows.extraction.extraction_text_value_normalizer import (
-    normalize_extraction_text,
-)
 from src.application.services.ai import LLMService
 from src.application.services.extraction import ExtractionService
 from src.application.validation.common import ValidationResult
 from src.application.validation.extraction import ExtractionResultValidator
+from src.application.workflows.common import (
+    coerce_confidence_score,
+    resolve_enum_value,
+    resolve_setting,
+    run_bounded_concurrent_map,
+)
 from src.application.workflows.extraction.batching import (
     ExtractionBatch,
     ExtractionBatchDiagnostics,
@@ -35,6 +36,10 @@ from src.application.workflows.extraction.response import (
     ExtractionResponseParser,
     ExtractionResultMerger,
     build_extraction_response_json_schema,
+)
+from src.application.workflows.extraction.response.extraction_payload_field_picker import (
+    optional_payload_text,
+    pick_payload_value,
 )
 from src.domain.assets import TableAsset
 from src.domain.common import SourceLocation
@@ -65,7 +70,6 @@ from src.shared.exceptions import SchemaValidationError
 from src.shared.ids import IdGenerator, IdPrefix
 from src.shared.progress import emit_progress
 
-KEY_PATTERN = re.compile(r"[^a-z0-9]+")
 _MAX_CONCURRENT_CANDIDATE_SELECTIONS = 8
 
 # Per-entity "content" fields: the fields that actually carry extracted
@@ -99,102 +103,102 @@ _ENTITY_CONTENT_FIELDS: dict[type, tuple[str, ...]] = {
 }
 
 def _default_extraction_model() -> str | None:
-    try:
+    def _load() -> str | None:
         from src.config.settings import llm_settings
 
         return llm_settings.extraction_llm or llm_settings.general_llm
-    except Exception:
-        return None
+
+    return resolve_setting(_load, None)
 
 
 def _default_extraction_confidence_threshold() -> float:
-    try:
+    def _load() -> float:
         from src.config.settings import extraction_settings
 
         return extraction_settings.extraction_confidence_threshold
-    except Exception:
-        return 1.0
+
+    return resolve_setting(_load, 1.0)
 
 
 def _default_extraction_require_human_review() -> bool:
-    try:
+    def _load() -> bool:
         from src.config.settings import extraction_settings
 
         return extraction_settings.extraction_require_human_review
-    except Exception:
-        return True
+
+    return resolve_setting(_load, True)
 
 
 def _default_max_chunks_per_batch() -> int:
-    try:
+    def _load() -> int:
         from src.config.settings import extraction_settings
 
         return extraction_settings.extraction_max_chunks_per_batch
-    except Exception:
-        return 16
+
+    return resolve_setting(_load, 16)
 
 
 def _default_max_chars_per_batch() -> int:
-    try:
+    def _load() -> int:
         from src.config.settings import extraction_settings
 
         return extraction_settings.extraction_max_chars_per_batch
-    except Exception:
-        return 16_000
+
+    return resolve_setting(_load, 16_000)
 
 
 def _default_allow_partial_batches() -> bool:
-    try:
+    def _load() -> bool:
         from src.config.settings import extraction_settings
 
         return extraction_settings.extraction_allow_partial_batches
-    except Exception:
-        return False
+
+    return resolve_setting(_load, False)
 
 
 def _default_failure_preview_chars() -> int:
-    try:
+    def _load() -> int:
         from src.config.settings import extraction_settings
 
         return extraction_settings.extraction_failure_preview_chars
-    except Exception:
-        return 1_200
+
+    return resolve_setting(_load, 1_200)
 
 
 def _default_extraction_max_attempts() -> int:
-    try:
+    def _load() -> int:
         from src.config.settings import extraction_settings
 
         return extraction_settings.extraction_max_attempts
-    except Exception:
-        return 2
+
+    return resolve_setting(_load, 2)
 
 
 def _default_extraction_temperature() -> float:
-    try:
+    def _load() -> float:
         from src.config.settings import extraction_settings
 
         return extraction_settings.extraction_temperature
-    except Exception:
-        return 0.0
+
+    return resolve_setting(_load, 0.0)
 
 
 def _default_extraction_json_mode() -> bool:
-    try:
+    def _load() -> bool:
         from src.config.settings import extraction_settings
 
         return extraction_settings.extraction_json_mode
-    except Exception:
-        return True
+
+    return resolve_setting(_load, True)
 
 
 def _default_candidate_narrowing_enabled() -> bool:
-    try:
+    def _load() -> bool:
         from src.config.settings import extraction_settings
 
         return extraction_settings.extraction_candidate_narrowing_enabled
-    except Exception:
-        return False
+
+    return resolve_setting(_load, False)
 
 
 def _table_text_with_structured_rows(table: TableAsset) -> str:
@@ -203,6 +207,30 @@ def _table_text_with_structured_rows(table: TableAsset) -> str:
     if structured_rows:
         parts.append(structured_rows)
     return "\n\n".join(parts)
+
+
+def _normalize_enum_label_separators(value: str) -> str:
+    return value.strip().lower().replace(" ", "_").replace("-", "_")
+
+
+_CONTACT_POINT_TYPE_ALIASES: dict[str, ContactPointType] = {
+    "phone": ContactPointType.PHONE_NUMBER,
+    "telephone": ContactPointType.PHONE_NUMBER,
+    "telephone_number": ContactPointType.PHONE_NUMBER,
+    "tel": ContactPointType.PHONE_NUMBER,
+    "fax": ContactPointType.FAX_NUMBER,
+    "fax_number": ContactPointType.FAX_NUMBER,
+    "email": ContactPointType.EMAIL_ADDRESS,
+    "email_address": ContactPointType.EMAIL_ADDRESS,
+    "e_mail": ContactPointType.EMAIL_ADDRESS,
+    "website": ContactPointType.URL,
+    "web": ContactPointType.URL,
+    "web_address": ContactPointType.URL,
+}
+
+_CONTACT_OWNER_ENTITY_TYPES = frozenset(
+    {SemanticEntityType.MANUFACTURER, SemanticEntityType.SUPPLIER}
+)
 
 
 class ExtractionWorkflow:
@@ -737,11 +765,11 @@ class ExtractionWorkflow:
         # candidate router per GENERAL/UNKNOWN chunk -- each call is an
         # independent, side-effect-free LLM request, so run them
         # concurrently instead of one at a time across the batch.
-        max_workers = min(len(batch.chunks), _MAX_CONCURRENT_CANDIDATE_SELECTIONS)
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            selected_types = list(
-                executor.map(self.candidate_selector.select_for_chunk, batch.chunks)
-            )
+        selected_types = run_bounded_concurrent_map(
+            batch.chunks,
+            self.candidate_selector.select_for_chunk,
+            max_concurrency=_MAX_CONCURRENT_CANDIDATE_SELECTIONS,
+        )
         requested_types: frozenset[ExtractionPromptType] = frozenset().union(
             *selected_types
         )
@@ -1442,13 +1470,12 @@ class ExtractionWorkflow:
         )
         equipment_id = self._resolve_equipment_id(equipment_reference, equipment)
 
-        try:
-            procedure_type = ProcedureType(
-                self._optional_text(payload, "procedure_type", "type")
-                or ProcedureType.UNKNOWN.value
-            )
-        except ValueError:
-            procedure_type = ProcedureType.UNKNOWN
+        procedure_type = resolve_enum_value(
+            self._optional_text(payload, "procedure_type", "type"),
+            ProcedureType,
+            normalize=lambda text: text,
+            default=ProcedureType.UNKNOWN,
+        )
 
         return Procedure(
             procedure_id=self.id_generator.new_id("procedure"),
@@ -1796,70 +1823,27 @@ class ExtractionWorkflow:
 
     @staticmethod
     def _resolve_contact_point_type(value: Any) -> ContactPointType:
-        if isinstance(value, ContactPointType):
-            return value
-        if value is None:
-            return ContactPointType.UNKNOWN
-
-        normalized = str(value).strip().lower().replace(" ", "_").replace("-", "_")
-        aliases = {
-            "phone": ContactPointType.PHONE_NUMBER,
-            "telephone": ContactPointType.PHONE_NUMBER,
-            "telephone_number": ContactPointType.PHONE_NUMBER,
-            "tel": ContactPointType.PHONE_NUMBER,
-            "fax": ContactPointType.FAX_NUMBER,
-            "fax_number": ContactPointType.FAX_NUMBER,
-            "email": ContactPointType.EMAIL_ADDRESS,
-            "email_address": ContactPointType.EMAIL_ADDRESS,
-            "e_mail": ContactPointType.EMAIL_ADDRESS,
-            "website": ContactPointType.URL,
-            "web": ContactPointType.URL,
-            "web_address": ContactPointType.URL,
-        }
-        if normalized in aliases:
-            return aliases[normalized]
-        try:
-            return ContactPointType(normalized)
-        except ValueError:
-            return ContactPointType.UNKNOWN
+        return resolve_enum_value(
+            value,
+            ContactPointType,
+            normalize=_normalize_enum_label_separators,
+            aliases=_CONTACT_POINT_TYPE_ALIASES,
+            default=ContactPointType.UNKNOWN,
+        )
 
     @staticmethod
     def _resolve_contact_owner_type(value: Any) -> SemanticEntityType | None:
-        if isinstance(value, SemanticEntityType):
-            if value in {
-                SemanticEntityType.MANUFACTURER,
-                SemanticEntityType.SUPPLIER,
-            }:
-                return value
-            return None
-        if value is None:
-            return None
-
-        normalized = str(value).strip().lower().replace(" ", "_").replace("-", "_")
-        try:
-            owner_type = SemanticEntityType(normalized)
-        except ValueError:
-            return None
-        if owner_type in {
-            SemanticEntityType.MANUFACTURER,
-            SemanticEntityType.SUPPLIER,
-        }:
-            return owner_type
-        return None
+        return resolve_enum_value(
+            value,
+            SemanticEntityType,
+            normalize=_normalize_enum_label_separators,
+            allowed_members=_CONTACT_OWNER_ENTITY_TYPES,
+            default=None,
+        )
 
     @staticmethod
     def _pick(payload: dict[str, Any], *keys: str) -> Any:
-        normalized_payload = {
-            KEY_PATTERN.sub("_", key.lower()).strip("_"): value
-            for key, value in payload.items()
-        }
-
-        for key in keys:
-            normalized_key = KEY_PATTERN.sub("_", key.lower()).strip("_")
-            if normalized_key in normalized_payload:
-                return normalized_payload[normalized_key]
-
-        return None
+        return pick_payload_value(payload, *keys)
 
     @classmethod
     def _required_text(
@@ -1880,8 +1864,7 @@ class ExtractionWorkflow:
 
     @classmethod
     def _optional_text(cls, payload: dict[str, Any], *keys: str) -> str | None:
-        value = cls._pick(payload, *keys)
-        return normalize_extraction_text(value)
+        return optional_payload_text(payload, *keys)
 
     def _drop_empty_entities(
         self, extraction_result: ExtractionResult
@@ -1940,23 +1923,11 @@ class ExtractionWorkflow:
 
     @staticmethod
     def _parse_confidence(value: Any) -> float | None:
-        if value is None:
-            return None
-
-        if isinstance(value, (int, float)):
-            return float(value)
-
-        text = str(value).strip().strip('"').strip("'").strip()
-        if not text:
-            return None
-
-        try:
-            if text.endswith("%"):
-                return float(text[:-1].strip()) / 100
-
-            return float(text)
-        except ValueError:
-            return None
+        return coerce_confidence_score(
+            value,
+            treat_bool_as_number=True,
+            stringify_non_string_values=True,
+        )
 
     @staticmethod
     def _parse_bool(value: Any) -> bool | None:

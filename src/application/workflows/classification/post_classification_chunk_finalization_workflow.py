@@ -1,5 +1,4 @@
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
 
 from src.application.contracts.retrieval import VectorStore
@@ -18,6 +17,7 @@ from src.application.workflows.classification.chunk_type_classification_workflow
 from src.application.workflows.classification.hybrid_document_type_resolver import (
     HybridDocumentTypeResolver,
 )
+from src.application.workflows.common import resolve_setting, run_bounded_concurrent_map
 from src.application.workflows.embedding import EmbeddingWorkflow
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_inferer import (
     ChunkingProfileInferer,
@@ -42,21 +42,21 @@ from src.shared.progress import emit_progress
 
 
 def _default_enable_chunk_classification() -> bool:
-    try:
+    def _load() -> bool:
         from src.config.settings import classification_settings
 
         return classification_settings.chunk_classification_enabled
-    except Exception:
-        return False
+
+    return resolve_setting(_load, False)
 
 
 def _default_enable_question_generation() -> bool:
-    try:
+    def _load() -> bool:
         from src.config.settings import ingestion_settings
 
         return ingestion_settings.enable_question_generation
-    except Exception:
-        return False
+
+    return resolve_setting(_load, False)
 
 
 _MAX_CONCURRENT_CHUNK_CLASSIFICATIONS = 8
@@ -462,17 +462,14 @@ class PostClassificationChunkFinalizationWorkflow:
         # shared state and is safe to run concurrently; the DB write
         # (save_chunk_classification) is not safe across threads, so it
         # stays in a sequential pass afterward.
-        max_workers = min(total_chunks, _MAX_CONCURRENT_CHUNK_CLASSIFICATIONS)
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            classifications: list[ChunkClassification] = list(
-                executor.map(
-                    lambda chunk: chunk_classification_workflow.classify_chunk_without_saving(
-                        chunk,
-                        activity_context=activity_context,
-                    ),
-                    chunks,
-                )
-            )
+        classifications: list[ChunkClassification] = run_bounded_concurrent_map(
+            chunks,
+            lambda chunk: chunk_classification_workflow.classify_chunk_without_saving(
+                chunk,
+                activity_context=activity_context,
+            ),
+            max_concurrency=_MAX_CONCURRENT_CHUNK_CLASSIFICATIONS,
+        )
 
         self.classification_service.save_chunk_classifications(
             classifications,

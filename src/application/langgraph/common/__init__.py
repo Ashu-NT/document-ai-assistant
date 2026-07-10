@@ -22,6 +22,12 @@ from src.application.langgraph.common.response_text_resolver import (
 from src.application.langgraph.common.structured_entity_query_detector import (
     detect_structured_entity_type,
 )
+from src.application.langgraph.common.value_coercion import (
+    bool_value,
+    optional_bool,
+    optional_float,
+    optional_str,
+)
 
 __all__ = [
     "DEFAULT_AGENT_GRAPH_NAME",
@@ -29,10 +35,14 @@ __all__ = [
     "GraphError",
     "GraphMetadata",
     "GraphResult",
+    "bool_value",
     "detect_structured_entity_type",
     "generated_answer_text_from_state",
     "is_safe_failure_message",
     "is_usable_reflection_decision",
+    "optional_bool",
+    "optional_float",
+    "optional_str",
     "reflection_decision_from_state",
     "resolve_answer_intent",
     "resolve_answer_text",

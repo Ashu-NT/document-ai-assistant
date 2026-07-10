@@ -4,19 +4,25 @@ import re
 from enum import Enum
 from typing import TypeVar
 
+from src.application.workflows.common import resolve_enum_value
+
 KEY_PATTERN = re.compile(r"[^a-z0-9]+")
 
 _EnumT = TypeVar("_EnumT", bound=Enum)
 
 
+def _normalize_label(label: str) -> str:
+    return KEY_PATTERN.sub("_", label.lower()).strip("_")
+
+
 def resolve_enum_label(label: str, enum_cls: type[_EnumT]) -> _EnumT:
-    normalized = KEY_PATTERN.sub("_", label.lower()).strip("_")
-
-    for member in enum_cls:
-        if normalized in {member.value, member.name.lower()}:
-            return member
-
-    return enum_cls("unknown")
+    return resolve_enum_value(
+        label,
+        enum_cls,
+        normalize=_normalize_label,
+        match_member_name=True,
+        default=enum_cls("unknown"),
+    )
 
 
 def build_unknown_label_errors(raw_label: str, resolved: Enum) -> list[str]:

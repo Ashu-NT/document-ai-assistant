@@ -8,7 +8,9 @@ from src.application.langgraph.common import GraphError
 from src.application.langgraph.common import serialize_graph_value
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
+    attach_entity_type,
     build_error,
+    deserialize_identifiers,
     format_document_options,
     serialize_tool_result,
 )
@@ -32,8 +34,6 @@ from src.application.tools.retrieval.retrieve_identifiers_tool import RetrieveId
 from src.application.tools.retrieval.retrieve_structured_entities_tool import (
     RetrieveStructuredEntitiesRequest,
 )
-from src.domain.common.enums import IdentifierType
-from src.domain.document.entities.identifier import Identifier
 
 
 class PlanExecutor:
@@ -260,6 +260,9 @@ class PlanExecutor:
                 top_k=int(args.get("top_k") or 20),
             )
         if step.tool_name == "answer_question":
+            identifier_hits = (step_outputs or {}).get("identifier_hits", {})
+            structured_hits = (step_outputs or {}).get("structured_entity_hits", {})
+            structured_data = structured_hits.get("data") or {}
             return AnswerQuestionRequest(
                 question=str(args.get("question") or state.get("question") or state["user_input"]),
                 document_id=document_id,
@@ -267,9 +270,12 @@ class PlanExecutor:
                 allow_answer_generation=state["allow_answer_generation"],
                 include_context=state["include_context"],
                 require_citations=True,
-                resolved_identifiers=self._extract_resolved_identifiers(step_outputs or {}),
-                resolved_structured_entities=self._extract_resolved_structured_entities(
-                    step_outputs or {}
+                resolved_identifiers=deserialize_identifiers(
+                    (identifier_hits.get("data") or {}).get("identifiers") or []
+                ),
+                resolved_structured_entities=attach_entity_type(
+                    structured_data.get("items") or [],
+                    structured_data.get("entity_type"),
                 ),
             )
         if step.tool_name == "run_quality_gate":
@@ -285,47 +291,6 @@ class PlanExecutor:
                 write_output=bool(args.get("write_output", True)),
             )
         raise ValueError(f"Unsupported plan tool: {step.tool_name}")
-
-    @staticmethod
-    def _extract_resolved_identifiers(step_outputs: dict[str, dict[str, Any]]) -> list[Identifier]:
-        identifier_hits = step_outputs.get("identifier_hits", {})
-        raw_identifiers = (identifier_hits.get("data") or {}).get("identifiers") or []
-        result: list[Identifier] = []
-        for item in raw_identifiers:
-            if not isinstance(item, dict):
-                continue
-            try:
-                result.append(
-                    Identifier(
-                        identifier_id=item.get("identifier_id", ""),
-                        document_id=item.get("document_id", ""),
-                        raw_value=item.get("raw_value", ""),
-                        identifier_type=IdentifierType(item.get("identifier_type", "unknown")),
-                        normalized_value=item.get("normalized_value"),
-                        chunk_id=item.get("chunk_id"),
-                        section_id=item.get("section_id"),
-                        page_start=item.get("page_start"),
-                        page_end=item.get("page_end"),
-                    )
-                )
-            except (ValueError, KeyError):
-                continue
-        return result
-
-    @staticmethod
-    def _extract_resolved_structured_entities(
-        step_outputs: dict[str, dict[str, Any]],
-    ) -> list[dict[str, Any]]:
-        structured_hits = step_outputs.get("structured_entity_hits", {})
-        data = structured_hits.get("data") or {}
-        entity_type = data.get("entity_type")
-        raw_items = data.get("items") or []
-        result: list[dict[str, Any]] = []
-        for item in raw_items:
-            if not isinstance(item, dict):
-                continue
-            result.append({**item, "_entity_type": entity_type})
-        return result
 
     @staticmethod
     def _store_canonical_tool_result(

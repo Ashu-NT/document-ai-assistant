@@ -4,6 +4,7 @@ from typing import Any
 
 from src.application.langgraph.common import (
     detect_structured_entity_type,
+    optional_str,
     serialize_graph_value,
 )
 from src.domain.common import IdentifierType
@@ -46,11 +47,11 @@ def build_error(
 def resolve_selected_document(state: dict[str, Any]) -> tuple[str | None, str | None]:
     document_id = state.get("document_id")
     if isinstance(document_id, str) and document_id:
-        return document_id, _optional_str(state.get("document_title"))
+        return document_id, optional_str(state.get("document_title"))
 
     selected_document_id = state.get("selected_document_id")
     if isinstance(selected_document_id, str) and selected_document_id:
-        return selected_document_id, _optional_str(state.get("selected_document_title"))
+        return selected_document_id, optional_str(state.get("selected_document_title"))
 
     return None, None
 
@@ -146,6 +147,14 @@ def resolve_structured_entities(
         return []
 
     items = result.data.get("items") or []
+    return attach_entity_type(items, entity_type)
+
+
+def attach_entity_type(
+    items: list[Any],
+    entity_type: Any,
+) -> list[dict[str, Any]]:
+    """Attach ``_entity_type`` to each dict in ``items``, dropping non-dicts."""
     return [
         {**item, "_entity_type": entity_type}
         for item in items
@@ -213,10 +222,4 @@ def _optional_int(value: Any) -> int | None:
 def _optional_float(value: Any) -> float | None:
     if isinstance(value, int | float):
         return float(value)
-    return None
-
-
-def _optional_str(value: Any) -> str | None:
-    if isinstance(value, str) and value:
-        return value
     return None

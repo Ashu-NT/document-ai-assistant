@@ -3,7 +3,14 @@ from __future__ import annotations
 from typing import Any, Callable, Iterable, Sequence
 from uuid import uuid4
 
-from src.application.langgraph.common import GraphResult, serialize_graph_value
+from src.application.langgraph.common import (
+    GraphResult,
+    optional_str,
+    serialize_graph_value,
+)
+from src.application.langgraph.evaluation.agent_eval_metric_registry import (
+    AGENT_EVAL_METRIC_NAMES,
+)
 from src.application.langgraph.evaluation.agent_eval_result import (
     AgentCaseResult,
     AgentEvalReport,
@@ -18,37 +25,6 @@ from src.application.langgraph.evaluation.agent_test_case import (
 from src.application.langgraph.retrieval_strategy.models import RetrievalStrategy
 from src.application.langgraph.routing import RouteType
 from src.shared.exceptions import SchemaValidationError
-
-_METRIC_NAMES = (
-    "route_accuracy",
-    "deep_research_route_accuracy",
-    "document_selection_accuracy",
-    "clarification_accuracy",
-    "unsafe_block_rate",
-    "guardrail_block_rate",
-    "out_of_scope_redirect_rate",
-    "false_positive_guardrail_rate",
-    "false_negative_guardrail_rate",
-    "prompt_injection_block_rate",
-    "destructive_tool_block_rate",
-    "grounding_failure_catch_rate",
-    "plan_validity_rate",
-    "document_scope_safety_rate",
-    "tool_policy_compliance_rate",
-    "answer_expectation_rate",
-    "retrieval_strategy_selection_rate",
-    "retrieval_strategy_validity_rate",
-    "strategy_fallback_rate",
-    "multi_strategy_success_rate",
-    "strategy_document_scope_safety_rate",
-    "strategy_trace_coverage_rate",
-    "research_plan_validity_rate",
-    "research_task_success_rate",
-    "research_gap_detection_rate",
-    "research_document_scope_safety_rate",
-    "research_report_completeness_rate",
-    "research_citation_coverage_rate",
-)
 
 
 class AgentEvalRunner:
@@ -323,17 +299,17 @@ class AgentEvalRunner:
             research_task_results
         )
         retrieval_strategy_trace = data.get("retrieval_strategy_trace")
-        selected_document_id = _string_or_none(
+        selected_document_id = optional_str(
             data.get("selected_document_id")
-        ) or _string_or_none(data.get("document_id"))
-        selected_document_title = _string_or_none(
+        ) or optional_str(data.get("document_id"))
+        selected_document_title = optional_str(
             data.get("selected_document_title")
-        ) or _string_or_none(data.get("document_title"))
+        ) or optional_str(data.get("document_title"))
         return AgentTurnResult(
             user_input=turn_input.user_input,
             route=result.route,
             success=result.success,
-            response_text=_string_or_none(data.get("answer")) or result.response_text,
+            response_text=optional_str(data.get("answer")) or result.response_text,
             selected_document_id=selected_document_id,
             selected_document_title=selected_document_title,
             tool_names=_extract_trace_tool_names(result.trace or []),
@@ -352,7 +328,7 @@ class AgentEvalRunner:
             retrieval_strategy_enabled=retrieval_strategy_enabled,
             research_plan_present=isinstance(research_plan, dict),
             research_plan_task_count=_research_plan_task_count(research_plan),
-            research_plan_source=_string_or_none(data.get("research_plan_source")),
+            research_plan_source=optional_str(data.get("research_plan_source")),
             research_task_count=research_task_count,
             research_task_success_count=research_task_success_count,
             research_gap_count=len(research_gaps) if isinstance(research_gaps, list) else 0,
@@ -745,110 +721,15 @@ class AgentEvalRunner:
         self,
         case_results: Sequence[AgentCaseResult],
     ) -> AgentEvalSummary:
+        metric_averages = {
+            metric_name: _average_metric(case_results, metric_name)
+            for metric_name in AGENT_EVAL_METRIC_NAMES
+        }
         return AgentEvalSummary(
             case_count=len(case_results),
             passed_count=sum(1 for result in case_results if result.passed),
             failed_count=sum(1 for result in case_results if not result.passed),
-            route_accuracy=_average_metric(case_results, "route_accuracy"),
-            document_selection_accuracy=_average_metric(
-                case_results,
-                "document_selection_accuracy",
-            ),
-            clarification_accuracy=_average_metric(
-                case_results,
-                "clarification_accuracy",
-            ),
-            unsafe_block_rate=_average_metric(case_results, "unsafe_block_rate"),
-            guardrail_block_rate=_average_metric(case_results, "guardrail_block_rate"),
-            out_of_scope_redirect_rate=_average_metric(
-                case_results,
-                "out_of_scope_redirect_rate",
-            ),
-            false_positive_guardrail_rate=_average_metric(
-                case_results,
-                "false_positive_guardrail_rate",
-            ),
-            false_negative_guardrail_rate=_average_metric(
-                case_results,
-                "false_negative_guardrail_rate",
-            ),
-            prompt_injection_block_rate=_average_metric(
-                case_results,
-                "prompt_injection_block_rate",
-            ),
-            destructive_tool_block_rate=_average_metric(
-                case_results,
-                "destructive_tool_block_rate",
-            ),
-            grounding_failure_catch_rate=_average_metric(
-                case_results,
-                "grounding_failure_catch_rate",
-            ),
-            plan_validity_rate=_average_metric(case_results, "plan_validity_rate"),
-            document_scope_safety_rate=_average_metric(
-                case_results,
-                "document_scope_safety_rate",
-            ),
-            tool_policy_compliance_rate=_average_metric(
-                case_results,
-                "tool_policy_compliance_rate",
-            ),
-            answer_expectation_rate=_average_metric(
-                case_results,
-                "answer_expectation_rate",
-            ),
-            retrieval_strategy_selection_rate=_average_metric(
-                case_results,
-                "retrieval_strategy_selection_rate",
-            ),
-            retrieval_strategy_validity_rate=_average_metric(
-                case_results,
-                "retrieval_strategy_validity_rate",
-            ),
-            strategy_fallback_rate=_average_metric(
-                case_results,
-                "strategy_fallback_rate",
-            ),
-            multi_strategy_success_rate=_average_metric(
-                case_results,
-                "multi_strategy_success_rate",
-            ),
-            strategy_document_scope_safety_rate=_average_metric(
-                case_results,
-                "strategy_document_scope_safety_rate",
-            ),
-            strategy_trace_coverage_rate=_average_metric(
-                case_results,
-                "strategy_trace_coverage_rate",
-            ),
-            deep_research_route_accuracy=_average_metric(
-                case_results,
-                "deep_research_route_accuracy",
-            ),
-            research_plan_validity_rate=_average_metric(
-                case_results,
-                "research_plan_validity_rate",
-            ),
-            research_task_success_rate=_average_metric(
-                case_results,
-                "research_task_success_rate",
-            ),
-            research_gap_detection_rate=_average_metric(
-                case_results,
-                "research_gap_detection_rate",
-            ),
-            research_document_scope_safety_rate=_average_metric(
-                case_results,
-                "research_document_scope_safety_rate",
-            ),
-            research_report_completeness_rate=_average_metric(
-                case_results,
-                "research_report_completeness_rate",
-            ),
-            research_citation_coverage_rate=_average_metric(
-                case_results,
-                "research_citation_coverage_rate",
-            ),
+            **metric_averages,
         )
 
 
@@ -939,7 +820,7 @@ def _evaluate_document_selection(
         for value in (
             final_turn.selected_document_title,
             final_turn.selected_document_id,
-            _string_or_none(final_turn.diagnostics.get("selected_document_file_name")),
+            optional_str(final_turn.diagnostics.get("selected_document_file_name")),
             final_turn.response_text,
         )
         if value
@@ -996,7 +877,7 @@ def _evaluate_unsafe_block(
     graph_diagnostics = final_turn.diagnostics.get("graph_diagnostics") or {}
     response_text = (final_turn.response_text or "").lower()
     planning_errors = final_turn.diagnostics.get("planning_errors") or []
-    error_code = _string_or_none(final_turn.diagnostics.get("error_code"))
+    error_code = optional_str(final_turn.diagnostics.get("error_code"))
     blocked = any(
         (
             final_turn.route == RouteType.BLOCKED_ACTION.value,
@@ -1428,12 +1309,6 @@ def _unique_preserving_order(values: Iterable[str]) -> list[str]:
     return ordered
 
 
-def _string_or_none(value: Any) -> str | None:
-    if isinstance(value, str) and value:
-        return value
-    return None
-
-
 def _research_plan_task_count(value: Any) -> int:
     if not isinstance(value, dict):
         return 0
@@ -1479,7 +1354,7 @@ def _resolve_unsafe_blocked_flag(*, result: GraphResult) -> bool:
 def _resolve_blocked_reason(*, result: GraphResult) -> str | None:
     data = result.data or {}
     diagnostics = result.diagnostics or {}
-    return _string_or_none(data.get("blocked_reason")) or _string_or_none(
+    return optional_str(data.get("blocked_reason")) or optional_str(
         diagnostics.get("blocked_reason")
     )
 

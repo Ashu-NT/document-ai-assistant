@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-import re
 from typing import Any
 
-from src.application.workflows.extraction.extraction_text_value_normalizer import (
-    normalize_extraction_text,
-)
 from src.application.workflows.extraction.response.extraction_payload_contracts import (
     EXTRACTION_PAYLOAD_CONTRACTS,
     ExtractionPayloadContract,
 )
-
-KEY_PATTERN = re.compile(r"[^a-z0-9]+")
+from src.application.workflows.extraction.response.extraction_payload_field_picker import (
+    optional_payload_text,
+    pick_payload_value,
+)
 
 
 class ExtractionResponseSanitizer:
@@ -60,17 +58,8 @@ class ExtractionResponseSanitizer:
 
     @staticmethod
     def _pick(payload: dict[str, Any], *keys: str) -> Any:
-        normalized_payload = {
-            KEY_PATTERN.sub("_", key.lower()).strip("_"): value
-            for key, value in payload.items()
-        }
-        for key in keys:
-            normalized_key = KEY_PATTERN.sub("_", key.lower()).strip("_")
-            if normalized_key in normalized_payload:
-                return normalized_payload[normalized_key]
-        return None
+        return pick_payload_value(payload, *keys)
 
     @classmethod
     def _optional_text(cls, payload: dict[str, Any], *keys: str) -> str | None:
-        value = cls._pick(payload, *keys)
-        return normalize_extraction_text(value)
+        return optional_payload_text(payload, *keys)

@@ -8,6 +8,10 @@ from typing import Any
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.planning.execution_plan import ExecutionPlan
 from src.application.langgraph.planning.plan_policy import PlanPolicy
+from src.application.langgraph.planning.specs.plan_tool_spec import (
+    KNOWN_TOOL_ARGS,
+    MUTATING_TOOL_MARKERS,
+)
 from src.application.langgraph.state import AgentState
 
 _SAFE_TOOL_NAME_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
@@ -18,7 +22,6 @@ _RETRIEVAL_TOOLS = {
     "retrieve_structured_entities",
     "retrieval_trace",
 }
-_MUTATING_TOOL_MARKERS = ("ingest", "delete", "reingest", "remove", "replace")
 _UNSAFE_TOOL_MARKERS = (
     "bash",
     "cmd",
@@ -34,18 +37,6 @@ _UNSAFE_TOOL_MARKERS = (
     "sqlalchemy",
     "wget",
 )
-_KNOWN_ARGS: dict[str, set[str]] = {
-    "list_documents": set(),
-    "find_document": {"document_id", "query_text", "query"},
-    "document_details": {"document_id"},
-    "explore_document": {"document_id"},
-    "retrieve_chunks": {"document_id", "query_text", "question", "top_k", "chunk_types"},
-    "retrieve_identifiers": {"identifier_value", "identifier_type", "document_id", "query"},
-    "retrieve_structured_entities": {"entity_type", "document_id", "query_text", "top_k"},
-    "answer_question": {"document_id", "question", "top_k"},
-    "run_quality_gate": {"report_path", "thresholds_path"},
-    "retrieval_trace": {"document_id", "query_text", "top_k", "write_output"},
-}
 
 
 @dataclass(slots=True, frozen=True)
@@ -150,7 +141,7 @@ class PlanValidator:
 
     @staticmethod
     def _looks_mutating(tool_name: str) -> bool:
-        return any(marker in tool_name for marker in _MUTATING_TOOL_MARKERS)
+        return any(marker in tool_name for marker in MUTATING_TOOL_MARKERS)
 
     def _validate_required_args(
         self,
@@ -171,7 +162,7 @@ class PlanValidator:
             errors.append("Tool 'retrieval_trace' requires query_text.")
         elif tool_name == "retrieve_structured_entities" and not args.get("entity_type"):
             errors.append("Tool 'retrieve_structured_entities' requires entity_type.")
-        unknown_args = set(args.keys()) - _KNOWN_ARGS.get(tool_name, set())
+        unknown_args = set(args.keys()) - KNOWN_TOOL_ARGS.get(tool_name, set())
         if unknown_args:
             errors.append(
                 f"Tool '{tool_name}' contains unsupported args: {', '.join(sorted(unknown_args))}."
