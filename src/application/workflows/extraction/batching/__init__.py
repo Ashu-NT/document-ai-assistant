@@ -11,6 +11,15 @@ from src.application.workflows.extraction.batching.extraction_batch_outcome impo
 from src.application.workflows.extraction.batching.extraction_chunk_batcher import (
     ExtractionChunkBatcher,
 )
+from src.application.workflows.extraction.batching.extraction_table_chunk_hydrator import (
+    hydrate_table_chunks,
+)
+from src.application.workflows.extraction.batching.extraction_batch_executor import (
+    ExtractionBatchExecutor,
+)
+from src.application.workflows.extraction.batching.extraction_batch_retry_coordinator import (
+    ExtractionBatchRetryCoordinator,
+)
 
 __all__ = [
     "ExtractionBatch",
@@ -18,4 +27,7 @@ __all__ = [
     "ExtractionBatchOutcome",
     "safe_response_preview",
     "ExtractionChunkBatcher",
+    "hydrate_table_chunks",
+    "ExtractionBatchExecutor",
+    "ExtractionBatchRetryCoordinator",
 ]

@@ -204,6 +204,12 @@ Plus two `agent_runtime`-scoped shared modules (used by the `console_presenter.p
 
 ## 5. Phased Execution Plan
 
+### Phase 2 status: DONE (section 4.2, all 6 files)
+
+`extraction_workflow.py` (2031→426 LOC, 24 new files under `builders/`, `pruning/`, plus extensions to the pre-existing `batching/`/`candidates/`/`context/`), `ingestion_workflow.py` (1203→821 LOC — the plan's ~400 estimate didn't account for `run()`'s 8-stage control flow staying inline per the plan's own explicit "not part of this task" note on the deeper pipeline-context cut), `extraction_response_schema.py` (503→46 LOC, 13 files under `response/schemas/`), `extraction_result_merger.py` (417→102 LOC, 14 files under `response/merging/`, including an `identifier_merger.py` the plan's row didn't name but the file's actual `merge()` logic required), and the `post_classification_chunk_finalization_workflow.py` (582→284 LOC, 5 files under `finalization/`) + `hybrid_document_type_resolver.py` (pointed at the new shared `classification_workflow_settings.py`, otherwise unsplit per its EXEMPT marker) pair — all done by 5 parallel workers on disjoint file sets, each verified independently (parse-check, ruff, targeted tests) plus a final cross-check (full ruff sweep + import smoke-test of every new package + full `tests/unit` suite: **2301 passed, 0 failed**).
+
+Every split class's public constructor and method signatures are unchanged — confirmed both by each worker (signature diffing) and by the full test suite passing without any test needing to change its own class-construction code.
+
 Each phase is independently reviewable, testable, and revertible. Run the full verification sequence from section 1, rule 5, after every phase before starting the next.
 
 - **Phase 0 — Baseline.** Full `tests/unit` run + `ruff check` on the whole `src/` tree, recorded as the "before" baseline every later phase's green run gets compared against.

@@ -1,4 +1,3 @@
-from collections import Counter
 from typing import Callable
 
 from src.application.contracts.retrieval import VectorStore
@@ -14,16 +13,22 @@ from src.application.workflows.classification.chunk_classification_workflow impo
 from src.application.workflows.classification.chunk_type_classification_workflow import (
     ChunkTypeClassificationWorkflow,
 )
+from src.application.workflows.classification.classification_workflow_settings import (
+    default_enable_chunk_classification,
+    default_enable_question_generation,
+)
+from src.application.workflows.classification.finalization import (
+    AssetFallbackChunkRecovery,
+    FinalChunkClassificationRunner,
+    FinalChunkResolver,
+    FinalQuestionGenerationRunner,
+)
 from src.application.workflows.classification.hybrid_document_type_resolver import (
     HybridDocumentTypeResolver,
 )
-from src.application.workflows.common import resolve_setting, run_bounded_concurrent_map
 from src.application.workflows.embedding import EmbeddingWorkflow
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_inferer import (
     ChunkingProfileInferer,
-)
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
-    ChunkingProfile,
 )
 from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy_resolver import (
     DocumentChunkingPolicyResolver,
@@ -31,35 +36,12 @@ from src.application.workflows.parsing.builders.chunking.policies.document_chunk
 from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (
     GraphChunkBuilder,
 )
-from src.domain.classification import ChunkClassification
-from src.domain.common import ChunkType
-from src.domain.document import DocumentChunk, DocumentGraph, DocumentSection
+from src.domain.document import DocumentGraph, DocumentSection
 from src.domain.document.value_objects import DocumentStatistics
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import ApplicationError
 from src.shared.execution import tracked_action
 from src.shared.progress import emit_progress
-
-
-def _default_enable_chunk_classification() -> bool:
-    def _load() -> bool:
-        from src.config.settings import classification_settings
-
-        return classification_settings.chunk_classification_enabled
-
-    return resolve_setting(_load, False)
-
-
-def _default_enable_question_generation() -> bool:
-    def _load() -> bool:
-        from src.config.settings import ingestion_settings
-
-        return ingestion_settings.enable_question_generation
-
-    return resolve_setting(_load, False)
-
-
-_MAX_CONCURRENT_CHUNK_CLASSIFICATIONS = 8
 
 
 class PostClassificationChunkFinalizationWorkflow:
@@ -102,12 +84,30 @@ class PostClassificationChunkFinalizationWorkflow:
         self.enable_chunk_classification = (
             enable_chunk_classification
             if enable_chunk_classification is not None
-            else _default_enable_chunk_classification()
+            else default_enable_chunk_classification()
         )
         self.enable_question_generation = (
             enable_question_generation
             if enable_question_generation is not None
-            else _default_enable_question_generation()
+            else default_enable_question_generation()
+        )
+
+        asset_fallback_recovery = AssetFallbackChunkRecovery(
+            graph_chunk_builder=graph_chunk_builder,
+        )
+        self._final_chunk_resolver = FinalChunkResolver(
+            graph_chunk_builder=graph_chunk_builder,
+            asset_fallback_recovery=asset_fallback_recovery,
+        )
+        self._chunk_classification_runner = FinalChunkClassificationRunner(
+            classification_service=classification_service,
+            chunk_classification_workflow=chunk_classification_workflow,
+            chunk_type_classification_workflow=chunk_type_classification_workflow,
+            enable_chunk_classification=self.enable_chunk_classification,
+        )
+        self._question_generation_runner = FinalQuestionGenerationRunner(
+            question_generation_service=question_generation_service,
+            enable_question_generation=self.enable_question_generation,
         )
 
     @tracked_action(
@@ -197,7 +197,7 @@ class PostClassificationChunkFinalizationWorkflow:
             section_elements_by_id=section_elements_by_id,
             chunking_profile_override=decision.effective_chunking_profile,
         )
-        final_chunks, final_chunk_mode = self._final_chunks(
+        final_chunks, final_chunk_mode = self._final_chunk_resolver.resolve(
             graph=graph,
             sections=sections,
             decision=decision,
@@ -206,25 +206,25 @@ class PostClassificationChunkFinalizationWorkflow:
         )
         emit_progress(
             progress_callback,
-            self._final_chunk_progress_message(final_chunk_mode),
+            self._final_chunk_resolver.progress_message(final_chunk_mode),
         )
         emit_progress(
             progress_callback,
             f"Final chunk set contains {len(final_chunks)} chunk(s).",
         )
-        self._classify_chunk_types_if_enabled(
+        self._chunk_classification_runner.classify_chunk_types_if_enabled(
             chunks=final_chunks,
             progress_callback=progress_callback,
         )
         graph.document.document_type = decision.effective_document_type
         graph.replace_chunks(final_chunks)
         graph.clear_chunk_dependents()
-        self._classify_chunks_if_enabled(
+        self._chunk_classification_runner.classify_chunks_if_enabled(
             chunks=final_chunks,
             activity_context=activity_context,
             progress_callback=progress_callback,
         )
-        self._generate_questions_if_enabled(
+        self._question_generation_runner.generate_if_enabled(
             graph=graph,
             max_questions_per_chunk=max_questions_per_chunk,
             enable_question_generation=enable_question_generation,
@@ -276,307 +276,9 @@ class PostClassificationChunkFinalizationWorkflow:
 
         return graph
 
-    def _final_chunks(
-        self,
-        *,
-        graph: DocumentGraph,
-        sections: list[DocumentSection],
-        decision,
-        effective_include_picture_chunks: bool,
-        progress_callback: Callable[[str], None] | None = None,
-    ) -> tuple[list[DocumentChunk], str]:
-        stored_chunks = sorted(
-            graph.chunks.values(),
-            key=lambda chunk: chunk.sequence_number,
-        )
-        rebuilt_chunks = self.graph_chunk_builder.build_chunks(
-            graph=graph,
-            sections=sections,
-            document_type_override=decision.effective_document_type,
-            chunking_profile_override=decision.effective_chunking_profile,
-        )
-        if decision.should_rechunk:
-            selected_chunks, selected_mode = rebuilt_chunks, "rechunked"
-        elif not stored_chunks:
-            selected_chunks, selected_mode = rebuilt_chunks, "rebuilt_missing"
-        elif self._chunk_structures_match(stored_chunks, rebuilt_chunks):
-            selected_chunks, selected_mode = stored_chunks, "reused"
-        else:
-            selected_chunks, selected_mode = rebuilt_chunks, "refreshed_stale"
-
-        if selected_chunks:
-            return selected_chunks, selected_mode
-
-        fallback_chunks = self._attempt_asset_fallback(
-            graph=graph,
-            sections=sections,
-            decision=decision,
-            progress_callback=progress_callback,
-        )
-        if fallback_chunks:
-            return fallback_chunks, "asset_fallback"
-
-        if stored_chunks:
-            emit_progress(
-                progress_callback,
-                (
-                    f"Rebuilding produced zero chunks under the "
-                    f"{decision.effective_chunking_profile.value} profile; falling back to "
-                    f"{len(stored_chunks)} previously stored chunk(s) instead of failing."
-                ),
-            )
-            return stored_chunks, "reused_after_empty_rebuild"
-
-        raise ApplicationError(
-            "Post-classification chunk finalization produced zero chunks for a non-empty parsed document.",
-            details=self._build_zero_chunk_diagnostics(
-                graph=graph,
-                decision=decision,
-                effective_include_picture_chunks=effective_include_picture_chunks,
-                fallback_attempted=True,
-            ),
-        )
-
-    def _attempt_asset_fallback(
-        self,
-        *,
-        graph: DocumentGraph,
-        sections: list[DocumentSection],
-        decision,
-        progress_callback: Callable[[str], None] | None,
-    ) -> list[DocumentChunk]:
-        if not self._has_meaningful_asset_evidence(graph):
-            return []
-
-        emit_progress(
-            progress_callback,
-            "No final chunks were produced. Retrying with an asset-aware fallback chunking policy...",
-        )
-        fallback_chunks = self.graph_chunk_builder.build_chunks(
-            graph=graph,
-            sections=sections,
-            document_type_override=decision.effective_document_type,
-            chunking_profile_override=ChunkingProfile.DEFAULT,
-        )
-        if fallback_chunks:
-            emit_progress(
-                progress_callback,
-                f"Asset-aware fallback recovered {len(fallback_chunks)} chunk(s).",
-            )
-        return fallback_chunks
-
-    @staticmethod
-    def _has_meaningful_asset_evidence(graph: DocumentGraph) -> bool:
-        for asset in graph.tables.values():
-            if asset.has_content():
-                return True
-
-        for asset in graph.pictures.values():
-            if (
-                asset.has_ocr_text()
-                or bool(asset.metadata.caption and asset.metadata.caption.strip())
-                or bool(asset.metadata.nearby_text and asset.metadata.nearby_text.strip())
-            ):
-                return True
-
-        for element in graph.elements.values():
-            parser_extra = (
-                element.parser_metadata.extra
-                if element.parser_metadata is not None
-                else {}
-            )
-            if element.table_id and str(parser_extra.get("markdown") or "").strip():
-                return True
-            if element.picture_id and any(
-                str(parser_extra.get(key) or "").strip()
-                for key in ("caption", "ocr_text", "nearby_text")
-            ):
-                return True
-        return False
-
-    @staticmethod
-    def _build_zero_chunk_diagnostics(
-        *,
-        graph: DocumentGraph,
-        decision,
-        effective_include_picture_chunks: bool,
-        fallback_attempted: bool,
-    ) -> dict[str, object]:
-        element_type_counts = Counter(
-            element.element_type.value
-            for element in graph.elements.values()
-        )
-        return {
-            "document_id": graph.document.document_id,
-            "document_type": decision.effective_document_type.value,
-            "chunking_profile": decision.effective_chunking_profile.value,
-            "element_count": len(graph.elements),
-            "element_type_counts": dict(element_type_counts),
-            "table_count": len(graph.tables),
-            "picture_count": len(graph.pictures),
-            "stored_chunk_count": len(graph.chunks),
-            "include_picture_chunks": effective_include_picture_chunks,
-            "asset_fallback_attempted": fallback_attempted,
-        }
-
-    def _classify_chunk_types_if_enabled(
-        self,
-        *,
-        chunks: list[DocumentChunk],
-        progress_callback: Callable[[str], None] | None = None,
-    ) -> None:
-        if self.chunk_type_classification_workflow is None:
-            return
-        self.chunk_type_classification_workflow.classify_unresolved_chunks(
-            chunks,
-            progress_callback=progress_callback,
-        )
-
-    def _classify_chunks_if_enabled(
-        self,
-        *,
-        chunks: list[DocumentChunk],
-        activity_context: ActivityContext | None = None,
-        progress_callback: Callable[[str], None] | None = None,
-    ) -> None:
-        if not self.enable_chunk_classification:
-            emit_progress(
-                progress_callback,
-                "Chunk classification disabled; skipping final chunk classification.",
-            )
-            return
-
-        chunk_classification_workflow = self.chunk_classification_workflow
-        if chunk_classification_workflow is None:
-            raise ApplicationError(
-                "Chunk classification is enabled but no chunk classification workflow is configured.",
-            )
-
-        total_chunks = len(chunks)
-        emit_progress(
-            progress_callback,
-            f"Classifying {total_chunks} final chunk(s)...",
-        )
-
-        # The LLM call + validation (classify_chunk_without_saving) has no
-        # shared state and is safe to run concurrently; the DB write
-        # (save_chunk_classification) is not safe across threads, so it
-        # stays in a sequential pass afterward.
-        classifications: list[ChunkClassification] = run_bounded_concurrent_map(
-            chunks,
-            lambda chunk: chunk_classification_workflow.classify_chunk_without_saving(
-                chunk,
-                activity_context=activity_context,
-            ),
-            max_concurrency=_MAX_CONCURRENT_CHUNK_CLASSIFICATIONS,
-        )
-
-        self.classification_service.save_chunk_classifications(
-            classifications,
-            activity_context=activity_context,
-        )
-        emit_progress(
-            progress_callback,
-            f"Classified {total_chunks} final chunk(s).",
-        )
-
-    def _generate_questions_if_enabled(
-        self,
-        *,
-        graph: DocumentGraph,
-        max_questions_per_chunk: int,
-        enable_question_generation: bool | None = None,
-        activity_context: ActivityContext | None = None,
-        progress_callback: Callable[[str], None] | None = None,
-    ) -> None:
-        resolved_enable_question_generation = (
-            self.enable_question_generation
-            if enable_question_generation is None
-            else enable_question_generation
-        )
-        if not resolved_enable_question_generation:
-            emit_progress(
-                progress_callback,
-                "Question generation disabled; skipping final chunk questions.",
-            )
-            graph.replace_questions([])
-            return
-
-        questionable_chunks = [
-            chunk
-            for chunk in graph.chunks.values()
-            if chunk.chunk_type != ChunkType.OVERVIEW
-        ]
-        emit_progress(
-            progress_callback,
-            f"Generating questions for {len(questionable_chunks)} chunk(s)...",
-        )
-        graph.replace_questions(
-            self.question_generation_service.generate_for_chunks(
-                questionable_chunks,
-                max_questions_per_chunk=max_questions_per_chunk,
-                activity_context=activity_context,
-                progress_callback=progress_callback,
-            )
-        )
-        emit_progress(
-            progress_callback,
-            f"Generated {len(graph.questions)} question(s) for final chunk set.",
-        )
-
     @staticmethod
     def _ordered_sections(graph: DocumentGraph) -> list[DocumentSection]:
         return sorted(
             graph.sections.values(),
             key=lambda section: section.sequence_number or 0,
         )
-
-    @classmethod
-    def _chunk_structures_match(
-        cls,
-        stored_chunks: list[DocumentChunk],
-        rebuilt_chunks: list[DocumentChunk],
-    ) -> bool:
-        if len(stored_chunks) != len(rebuilt_chunks):
-            return False
-
-        return [
-            cls._chunk_structure_signature(chunk)
-            for chunk in stored_chunks
-        ] == [
-            cls._chunk_structure_signature(chunk)
-            for chunk in rebuilt_chunks
-        ]
-
-    @staticmethod
-    def _chunk_structure_signature(
-        chunk: DocumentChunk,
-    ) -> tuple[object, ...]:
-        return (
-            chunk.content,
-            chunk.chunk_type.value,
-            tuple(chunk.section_path),
-            tuple(chunk.element_ids),
-            tuple(chunk.table_ids),
-            tuple(chunk.picture_ids),
-            chunk.source.page_start,
-            chunk.source.page_end,
-            chunk.chunk_index,
-            chunk.chunk_total,
-            chunk.embedding_text,
-        )
-
-    @staticmethod
-    def _final_chunk_progress_message(mode: str) -> str:
-        if mode == "rechunked":
-            return "Building final chunk set..."
-        if mode == "rebuilt_missing":
-            return "Rebuilding final chunk set because no stored final chunks were available..."
-        if mode == "refreshed_stale":
-            return "Refreshing stored final chunk set using the current chunk builder..."
-        if mode == "asset_fallback":
-            return "Using asset-aware fallback chunk set..."
-        if mode == "reused_after_empty_rebuild":
-            return "Keeping previously stored final chunk set after rebuild produced none..."
-        return "Reusing stored final chunk set..."
-

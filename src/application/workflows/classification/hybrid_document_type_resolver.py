@@ -1,7 +1,11 @@
+from src.application.workflows.classification.classification_workflow_settings import (
+    default_strong_model_threshold,
+    default_strong_structural_threshold,
+    default_weak_signal_threshold,
+)
 from src.application.workflows.classification.document_type_decision import (
     DocumentTypeDecision,
 )
-from src.application.workflows.common import resolve_setting
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
 )
@@ -10,33 +14,6 @@ from src.application.workflows.parsing.builders.chunking.policies.chunking_profi
 )
 from src.domain.classification import DocumentClassification
 from src.domain.common import DocumentType
-
-
-def _default_strong_model_threshold() -> float:
-    def _load() -> float:
-        from src.config.settings import classification_settings
-
-        return classification_settings.strong_model_threshold
-
-    return resolve_setting(_load, 0.80)
-
-
-def _default_strong_structural_threshold() -> float:
-    def _load() -> float:
-        from src.config.settings import classification_settings
-
-        return classification_settings.strong_structural_threshold
-
-    return resolve_setting(_load, 0.75)
-
-
-def _default_weak_signal_threshold() -> float:
-    def _load() -> float:
-        from src.config.settings import classification_settings
-
-        return classification_settings.weak_signal_threshold
-
-    return resolve_setting(_load, 0.55)
 
 
 class HybridDocumentTypeResolver:
@@ -50,17 +27,17 @@ class HybridDocumentTypeResolver:
         self.strong_model_threshold = (
             strong_model_threshold
             if strong_model_threshold is not None
-            else _default_strong_model_threshold()
+            else default_strong_model_threshold()
         )
         self.strong_structural_threshold = (
             strong_structural_threshold
             if strong_structural_threshold is not None
-            else _default_strong_structural_threshold()
+            else default_strong_structural_threshold()
         )
         self.weak_signal_threshold = (
             weak_signal_threshold
             if weak_signal_threshold is not None
-            else _default_weak_signal_threshold()
+            else default_weak_signal_threshold()
         )
 
     def resolve(

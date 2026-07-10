@@ -1,23 +1,43 @@
-from src.domain.common import SourceLocation
-from src.domain.extraction import (
-    ContactPoint,
-    EquipmentInfo,
-    ContactPointType,
-    ExtractedIdentifier,
-    ExtractionResult,
-    MaintenanceInterval,
-    MaintenanceTask,
-    Manufacturer,
-    Procedure,
-    ProcedureType,
-    SafetyWarning,
-    SparePart,
-    Specification,
-    Supplier,
-    TroubleshootingEntry,
-)
+from src.domain.extraction import ExtractionResult
 from src.shared.collections import unique_in_order
 from src.shared.ids import IdGenerator, IdPrefix
+
+from src.application.workflows.extraction.response.merging.contact_point_merger import (
+    merge_contact_points,
+)
+from src.application.workflows.extraction.response.merging.equipment_merger import (
+    merge_equipment,
+)
+from src.application.workflows.extraction.response.merging.identifier_merger import (
+    merge_identifiers,
+)
+from src.application.workflows.extraction.response.merging.maintenance_interval_merger import (
+    merge_maintenance_intervals,
+)
+from src.application.workflows.extraction.response.merging.manufacturer_merger import (
+    merge_manufacturers,
+)
+from src.application.workflows.extraction.response.merging.procedure_merger import (
+    merge_procedures,
+)
+from src.application.workflows.extraction.response.merging.safety_warning_merger import (
+    merge_safety_warnings,
+)
+from src.application.workflows.extraction.response.merging.spare_part_merger import (
+    merge_spare_parts,
+)
+from src.application.workflows.extraction.response.merging.specification_merger import (
+    merge_specifications,
+)
+from src.application.workflows.extraction.response.merging.supplier_merger import (
+    merge_suppliers,
+)
+from src.application.workflows.extraction.response.merging.task_merger import (
+    merge_tasks,
+)
+from src.application.workflows.extraction.response.merging.troubleshooting_entry_merger import (
+    merge_troubleshooting_entries,
+)
 
 
 class ExtractionResultMerger:
@@ -30,18 +50,18 @@ class ExtractionResultMerger:
         document_id: str,
         partial_results: list[ExtractionResult],
     ) -> ExtractionResult:
-        merged_tasks = self._merge_tasks(partial_results)
-        merged_parts = self._merge_spare_parts(partial_results)
-        merged_equipment = self._merge_equipment(partial_results)
-        merged_manufacturers = self._merge_manufacturers(partial_results)
-        merged_suppliers = self._merge_suppliers(partial_results)
-        merged_contact_points = self._merge_contact_points(partial_results)
-        merged_procedures = self._merge_procedures(partial_results)
-        merged_specifications = self._merge_specifications(partial_results)
-        merged_safety_warnings = self._merge_safety_warnings(partial_results)
-        merged_maintenance_intervals = self._merge_maintenance_intervals(partial_results)
-        merged_troubleshooting_entries = self._merge_troubleshooting_entries(partial_results)
-        merged_identifiers = self._merge_identifiers(partial_results)
+        merged_tasks = merge_tasks(partial_results)
+        merged_parts = merge_spare_parts(partial_results)
+        merged_equipment = merge_equipment(partial_results)
+        merged_manufacturers = merge_manufacturers(partial_results)
+        merged_suppliers = merge_suppliers(partial_results)
+        merged_contact_points = merge_contact_points(partial_results)
+        merged_procedures = merge_procedures(partial_results)
+        merged_specifications = merge_specifications(partial_results)
+        merged_safety_warnings = merge_safety_warnings(partial_results)
+        merged_maintenance_intervals = merge_maintenance_intervals(partial_results)
+        merged_troubleshooting_entries = merge_troubleshooting_entries(partial_results)
+        merged_identifiers = merge_identifiers(partial_results)
         source_chunk_ids = unique_in_order(
             chunk_id
             for result in partial_results
@@ -80,338 +100,3 @@ class ExtractionResultMerger:
                 for result in partial_results
             ),
         )
-
-    def _merge_tasks(self, partial_results: list[ExtractionResult]) -> list[MaintenanceTask]:
-        merged: dict[tuple[str, ...], MaintenanceTask] = {}
-        for result in partial_results:
-            for item in result.maintenance_tasks:
-                key = (
-                    self._normalize(item.title),
-                    self._normalize(item.interval),
-                    self._normalize(item.component_name or item.equipment_id),
-                )
-                if key not in merged:
-                    merged[key] = item
-                    continue
-                self._merge_task(merged[key], item)
-        return list(merged.values())
-
-    def _merge_spare_parts(self, partial_results: list[ExtractionResult]) -> list[SparePart]:
-        merged: dict[tuple[str, ...], SparePart] = {}
-        for result in partial_results:
-            for item in result.spare_parts:
-                key = (
-                    self._normalize(item.part_number or item.description),
-                    self._normalize(item.manufacturer_name),
-                    self._normalize(item.component_name),
-                )
-                if key not in merged:
-                    merged[key] = item
-                    continue
-                self._merge_spare_part(merged[key], item)
-        return list(merged.values())
-
-    def _merge_equipment(self, partial_results: list[ExtractionResult]) -> list[EquipmentInfo]:
-        merged: dict[tuple[str, ...], EquipmentInfo] = {}
-        for result in partial_results:
-            for item in result.equipment:
-                key = (
-                    self._normalize(item.name),
-                    self._normalize(item.model_number),
-                    self._normalize(item.serial_number),
-                    self._normalize(item.manufacturer_name),
-                )
-                if key not in merged:
-                    merged[key] = item
-                    continue
-                self._merge_equipment_info(merged[key], item)
-        return list(merged.values())
-
-    def _merge_manufacturers(self, partial_results: list[ExtractionResult]) -> list[Manufacturer]:
-        merged: dict[str, Manufacturer] = {}
-        for result in partial_results:
-            for item in result.manufacturers:
-                key = self._normalize(item.name)
-                if key not in merged:
-                    merged[key] = item
-                    continue
-                self._merge_manufacturer(merged[key], item)
-        return list(merged.values())
-
-    def _merge_suppliers(self, partial_results: list[ExtractionResult]) -> list[Supplier]:
-        merged: dict[str, Supplier] = {}
-        for result in partial_results:
-            for item in result.suppliers:
-                key = self._normalize(item.name)
-                if key not in merged:
-                    merged[key] = item
-                    continue
-                self._merge_supplier(merged[key], item)
-        return list(merged.values())
-
-    def _merge_contact_points(
-        self,
-        partial_results: list[ExtractionResult],
-    ) -> list[ContactPoint]:
-        merged: dict[tuple[str, ...], ContactPoint] = {}
-        for result in partial_results:
-            for item in result.contact_points:
-                key = (
-                    self._normalize(item.value),
-                    self._normalize(item.owner_name),
-                    self._normalize(
-                        item.owner_entity_type.value
-                        if item.owner_entity_type is not None
-                        else None
-                    ),
-                    self._normalize(item.contact_type.value),
-                )
-                if key not in merged:
-                    merged[key] = item
-                    continue
-                self._merge_contact_point(merged[key], item)
-        return list(merged.values())
-
-    def _merge_procedures(self, partial_results: list[ExtractionResult]) -> list[Procedure]:
-        merged: dict[tuple[str, ...], Procedure] = {}
-        for result in partial_results:
-            for item in result.procedures:
-                key = (
-                    self._normalize(item.title),
-                    self._normalize(item.component_name),
-                )
-                if key not in merged:
-                    merged[key] = item
-                    continue
-                self._merge_procedure(merged[key], item)
-        return list(merged.values())
-
-    def _merge_specifications(
-        self,
-        partial_results: list[ExtractionResult],
-    ) -> list[Specification]:
-        merged: dict[tuple[str, ...], Specification] = {}
-        for result in partial_results:
-            for item in result.specifications:
-                key = (
-                    self._normalize(item.parameter),
-                    self._normalize(item.component_name),
-                )
-                if key not in merged:
-                    merged[key] = item
-                    continue
-                self._merge_specification(merged[key], item)
-        return list(merged.values())
-
-    def _merge_safety_warnings(
-        self,
-        partial_results: list[ExtractionResult],
-    ) -> list[SafetyWarning]:
-        merged: dict[str, SafetyWarning] = {}
-        for result in partial_results:
-            for item in result.safety_warnings:
-                key = self._normalize(item.message)
-                if key not in merged:
-                    merged[key] = item
-                    continue
-                self._merge_safety_warning(merged[key], item)
-        return list(merged.values())
-
-    def _merge_maintenance_intervals(
-        self,
-        partial_results: list[ExtractionResult],
-    ) -> list[MaintenanceInterval]:
-        merged: dict[tuple[str, ...], MaintenanceInterval] = {}
-        for result in partial_results:
-            for item in result.maintenance_intervals:
-                key = (
-                    self._normalize(item.interval),
-                    self._normalize(item.component_name),
-                )
-                if key not in merged:
-                    merged[key] = item
-                    continue
-                self._merge_maintenance_interval(merged[key], item)
-        return list(merged.values())
-
-    def _merge_troubleshooting_entries(
-        self,
-        partial_results: list[ExtractionResult],
-    ) -> list[TroubleshootingEntry]:
-        merged: dict[tuple[str, ...], TroubleshootingEntry] = {}
-        for result in partial_results:
-            for item in result.troubleshooting_entries:
-                key = (
-                    self._normalize(item.symptom),
-                    self._normalize(item.component_name),
-                )
-                if key not in merged:
-                    merged[key] = item
-                    continue
-                self._merge_troubleshooting_entry(merged[key], item)
-        return list(merged.values())
-
-    def _merge_identifiers(
-        self,
-        partial_results: list[ExtractionResult],
-    ) -> list[ExtractedIdentifier]:
-        merged: dict[tuple[str, str], ExtractedIdentifier] = {}
-        for result in partial_results:
-            for item in result.extracted_identifiers:
-                key = (
-                    self._normalize(item.raw_value),
-                    self._normalize(item.identifier_type),
-                )
-                if key not in merged:
-                    merged[key] = item
-                    continue
-                self._merge_identifier(merged[key], item)
-        return list(merged.values())
-
-    def _merge_task(self, current: MaintenanceTask, candidate: MaintenanceTask) -> None:
-        current.description = current.description or candidate.description
-        current.interval = current.interval or candidate.interval
-        current.component_name = current.component_name or candidate.component_name
-        current.equipment_id = current.equipment_id or candidate.equipment_id
-        current.source_metadata = current.source_metadata or candidate.source_metadata
-        self._merge_common_fields(current, candidate)
-
-    def _merge_spare_part(self, current: SparePart, candidate: SparePart) -> None:
-        current.part_number = current.part_number or candidate.part_number
-        current.description = current.description or candidate.description
-        current.quantity = current.quantity or candidate.quantity
-        current.component_name = current.component_name or candidate.component_name
-        current.manufacturer_name = current.manufacturer_name or candidate.manufacturer_name
-        current.source_metadata = current.source_metadata or candidate.source_metadata
-        self._merge_common_fields(current, candidate)
-
-    def _merge_equipment_info(self, current: EquipmentInfo, candidate: EquipmentInfo) -> None:
-        current.name = current.name or candidate.name
-        current.model_number = current.model_number or candidate.model_number
-        current.serial_number = current.serial_number or candidate.serial_number
-        current.manufacturer_name = current.manufacturer_name or candidate.manufacturer_name
-        current.source_metadata = current.source_metadata or candidate.source_metadata
-        self._merge_common_fields(current, candidate)
-
-    def _merge_manufacturer(self, current: Manufacturer, candidate: Manufacturer) -> None:
-        current.website = current.website or candidate.website
-        current.country = current.country or candidate.country
-        current.source_metadata = current.source_metadata or candidate.source_metadata
-        self._merge_common_fields(current, candidate)
-
-    def _merge_supplier(self, current: Supplier, candidate: Supplier) -> None:
-        current.website = current.website or candidate.website
-        current.country = current.country or candidate.country
-        current.source_metadata = current.source_metadata or candidate.source_metadata
-        self._merge_common_fields(current, candidate)
-
-    def _merge_contact_point(self, current: ContactPoint, candidate: ContactPoint) -> None:
-        if current.contact_type == ContactPointType.UNKNOWN:
-            current.contact_type = candidate.contact_type
-        current.label = current.label or candidate.label
-        current.owner_name = current.owner_name or candidate.owner_name
-        current.owner_entity_type = current.owner_entity_type or candidate.owner_entity_type
-        current.source_metadata = current.source_metadata or candidate.source_metadata
-        self._merge_common_fields(current, candidate)
-
-    def _merge_procedure(self, current: Procedure, candidate: Procedure) -> None:
-        current.steps = current.steps or candidate.steps
-        current.component_name = current.component_name or candidate.component_name
-        current.equipment_id = current.equipment_id or candidate.equipment_id
-        if current.procedure_type == ProcedureType.UNKNOWN:
-            current.procedure_type = candidate.procedure_type
-        current.source_metadata = current.source_metadata or candidate.source_metadata
-        self._merge_common_fields(current, candidate)
-
-    def _merge_specification(self, current: Specification, candidate: Specification) -> None:
-        current.unit = current.unit or candidate.unit
-        current.component_name = current.component_name or candidate.component_name
-        current.source_metadata = current.source_metadata or candidate.source_metadata
-        self._merge_common_fields(current, candidate)
-
-    def _merge_safety_warning(self, current: SafetyWarning, candidate: SafetyWarning) -> None:
-        current.component_name = current.component_name or candidate.component_name
-        current.source_metadata = current.source_metadata or candidate.source_metadata
-        self._merge_common_fields(current, candidate)
-
-    def _merge_maintenance_interval(
-        self,
-        current: MaintenanceInterval,
-        candidate: MaintenanceInterval,
-    ) -> None:
-        current.maintenance_task_id = (
-            current.maintenance_task_id or candidate.maintenance_task_id
-        )
-        current.source_metadata = current.source_metadata or candidate.source_metadata
-        self._merge_common_fields(current, candidate)
-
-    def _merge_troubleshooting_entry(
-        self,
-        current: TroubleshootingEntry,
-        candidate: TroubleshootingEntry,
-    ) -> None:
-        current.cause = current.cause or candidate.cause
-        current.remedy = current.remedy or candidate.remedy
-        current.component_name = current.component_name or candidate.component_name
-        current.equipment_id = current.equipment_id or candidate.equipment_id
-        current.source_metadata = current.source_metadata or candidate.source_metadata
-        self._merge_common_fields(current, candidate)
-
-    def _merge_identifier(
-        self,
-        current: ExtractedIdentifier,
-        candidate: ExtractedIdentifier,
-    ) -> None:
-        current.source_chunk_id = current.source_chunk_id or candidate.source_chunk_id
-        current.confidence_score = self._best_confidence(
-            current.confidence_score,
-            candidate.confidence_score,
-        )
-        current.requires_human_review = (
-            current.requires_human_review
-            or candidate.requires_human_review
-        )
-
-    def _merge_common_fields(self, current, candidate) -> None:
-        current.source_chunk_id = current.source_chunk_id or candidate.source_chunk_id
-        current.confidence_score = self._best_confidence(
-            current.confidence_score,
-            candidate.confidence_score,
-        )
-        current.requires_human_review = (
-            current.requires_human_review
-            or candidate.requires_human_review
-        )
-        if self._is_empty_source(current.source) and not self._is_empty_source(candidate.source):
-            current.source = SourceLocation(
-                page_start=candidate.source.page_start,
-                page_end=candidate.source.page_end,
-                bbox=candidate.source.bbox,
-            )
-
-    @staticmethod
-    def _best_confidence(
-        left: float | None,
-        right: float | None,
-    ) -> float | None:
-        if left is None:
-            return right
-        if right is None:
-            return left
-        return max(left, right)
-
-    @staticmethod
-    def _is_empty_source(source: SourceLocation) -> bool:
-        return source.page_start is None and source.page_end is None and source.bbox is None
-
-    @staticmethod
-    def _normalize(value: str | None) -> str:
-        if value is None:
-            return ""
-        normalized = "".join(
-            character.lower()
-            for character in value.strip()
-            if character.isalnum()
-        )
-        return normalized
-

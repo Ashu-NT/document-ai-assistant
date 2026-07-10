@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Callable
@@ -22,16 +21,28 @@ from src.application.workflows.classification import (
 from src.application.workflows.embedding import EmbeddedChunk, EmbeddingWorkflow
 from src.application.workflows.extraction import ExtractionWorkflow
 from src.application.workflows.ingestion.content_hash import compute_content_hash_from_graph
+from src.application.workflows.ingestion.context import (
+    resolve_activity_context,
+    resolve_audit_context,
+    resolve_event_context,
+)
+from src.application.workflows.ingestion.events import IngestionStageEventPublisher
+from src.application.workflows.ingestion.hashing import compute_file_hash
 from src.application.workflows.linking import SemanticLinkingWorkflow
 from src.application.workflows.ingestion.ingestion_exceptions import (
-    DocumentNotFoundForReingestionError,
     IngestionWorkflowError,
-    ReingestionNotSupportedError,
 )
 from src.application.workflows.ingestion.ingestion_request import IngestionRequest
 from src.application.workflows.ingestion.ingestion_result import IngestionResult
 from src.application.workflows.ingestion.ingestion_stage import IngestionStage
 from src.application.workflows.ingestion.ingestion_status import IngestionStatus
+from src.application.workflows.ingestion.pipeline import (
+    DuplicateCheckStep,
+    ExtractionRetryStep,
+    QualityCheckStep,
+    ReingestionStep,
+    build_success_result,
+)
 from src.application.workflows.ingestion.reingestion_request import (
     ReingestionRequest,
 )
@@ -109,6 +120,32 @@ class IngestionWorkflow:
         self.audit_service = audit_service
         self.event_service = event_service
 
+        self._event_publisher = IngestionStageEventPublisher(
+            id_generator=self.id_generator,
+            event_service=self.event_service,
+            unit_of_work=self.unit_of_work,
+        )
+        self._duplicate_check_step = DuplicateCheckStep(
+            duplicate_detection_service=self.duplicate_detection_service,
+        )
+        self._quality_check_step = QualityCheckStep(quality_gate=self.quality_gate)
+        self._reingestion_step = ReingestionStep(
+            document_lookup_service=self.document_lookup_service,
+        )
+        self._extraction_retry_step = ExtractionRetryStep(
+            document_lookup_service=self.document_lookup_service,
+            post_classification_chunk_finalization_workflow=(
+                self.post_classification_chunk_finalization_workflow
+            ),
+            extraction_workflow=self.extraction_workflow,
+            document_registration_service=self.document_registration_service,
+            id_generator=self.id_generator,
+            unit_of_work=self.unit_of_work,
+            identifier_promotion_service=self.identifier_promotion_service,
+            deterministic_identifier_scanner=self.deterministic_identifier_scanner,
+            semantic_linking_workflow=self.semantic_linking_workflow,
+        )
+
     @tracked_action(
         action="document.ingestion.completed",
         entity_type="document",
@@ -130,21 +167,21 @@ class IngestionWorkflow:
 
         file_path = str(Path(request.file_path).expanduser().resolve())
         file_name = _file_name_from_path(file_path)
-        file_hash = self._compute_file_hash(Path(file_path))
+        file_hash = compute_file_hash(Path(file_path))
         content_hash: str | None = None
         run_id = self.id_generator.new_id(IdPrefix.INGESTION_RUN)
         correlation_id = request.correlation_id or run_id
-        resolved_activity_context = self._resolve_activity_context(
+        resolved_activity_context = resolve_activity_context(
             request=request,
             correlation_id=correlation_id,
             activity_context=activity_context,
         )
-        resolved_audit_context = self._resolve_audit_context(
+        resolved_audit_context = resolve_audit_context(
             request=request,
             correlation_id=correlation_id,
             audit_context=audit_context,
         )
-        resolved_event_context = self._resolve_event_context(
+        resolved_event_context = resolve_event_context(
             request=request,
             correlation_id=correlation_id,
             event_context=event_context,
@@ -158,7 +195,7 @@ class IngestionWorkflow:
             status=IngestionStatus.PENDING,
         )
         self._persist_run(ingestion_run, create=True)
-        self._publish_event(
+        self._event_publisher.publish_event(
             IngestionEvent.started(
                 event_id=self.id_generator.new_event_id(),
                 ingestion_run_id=run_id,
@@ -171,7 +208,7 @@ class IngestionWorkflow:
         warnings: list[str] = []
 
         emit_progress(progress_callback, f"Starting ingestion for {file_name}...")
-        self._publish_stage_started(
+        self._event_publisher.publish_stage_started(
             ingestion_run=ingestion_run,
             stage=IngestionStage.DUPLICATE_CHECK,
             event_context=resolved_event_context,
@@ -179,7 +216,7 @@ class IngestionWorkflow:
             progress_callback=progress_callback,
         )
         current_stage = IngestionStage.DUPLICATE_CHECK
-        file_duplicate_document_id = self._check_file_hash_duplicate(
+        file_duplicate_document_id = self._duplicate_check_step.check_file_hash_duplicate(
             request=request,
             file_hash=file_hash,
             activity_context=resolved_activity_context,
@@ -187,7 +224,7 @@ class IngestionWorkflow:
         if file_duplicate_document_id is not None:
             duplicate_status = IngestionStatus.SKIPPED_FILE_DUPLICATE
             ingestion_run.status = duplicate_status
-            self._publish_stage_completed(
+            self._event_publisher.publish_stage_completed(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.DUPLICATE_CHECK,
                 status=ingestion_run.status,
@@ -198,7 +235,7 @@ class IngestionWorkflow:
             ingestion_run.document_id = file_duplicate_document_id
             ingestion_run.finished_at = datetime.now(UTC)
             self._persist_run(ingestion_run)
-            self._publish_event(
+            self._event_publisher.publish_event(
                 IngestionEvent.skipped_duplicate(
                     event_id=self.id_generator.new_event_id(),
                     ingestion_run_id=run_id,
@@ -227,7 +264,7 @@ class IngestionWorkflow:
                 current_stage=IngestionStage.DUPLICATE_CHECK,
                 correlation_id=correlation_id,
             )
-        self._publish_stage_completed(
+        self._event_publisher.publish_stage_completed(
             ingestion_run=ingestion_run,
             stage=IngestionStage.DUPLICATE_CHECK,
             status=ingestion_run.status,
@@ -248,7 +285,7 @@ class IngestionWorkflow:
                 ingestion_run,
                 IngestionStatus.PARSING,
             )
-            self._publish_stage_started(
+            self._event_publisher.publish_stage_started(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.PARSING,
                 event_context=resolved_event_context,
@@ -275,7 +312,7 @@ class IngestionWorkflow:
             parser = getattr(self.parsing_workflow, "parser", None)
             ingestion_run.parser_name = getattr(parser, "parser_name", None)
             ingestion_run.parser_version = getattr(parser, "parser_version", None)
-            self._publish_stage_completed(
+            self._event_publisher.publish_stage_completed(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.PARSING,
                 status=ingestion_run.status,
@@ -295,10 +332,12 @@ class IngestionWorkflow:
                 content_hash=content_hash,
             )
 
-            content_duplicate_document_id = self._check_content_hash_duplicate(
-                request=request,
-                content_hash=content_hash,
-                activity_context=resolved_activity_context,
+            content_duplicate_document_id = (
+                self._duplicate_check_step.check_content_hash_duplicate(
+                    request=request,
+                    content_hash=content_hash,
+                    activity_context=resolved_activity_context,
+                )
             )
             if content_duplicate_document_id is not None:
                 duplicate_status = IngestionStatus.SKIPPED_CONTENT_DUPLICATE
@@ -306,7 +345,7 @@ class IngestionWorkflow:
                 ingestion_run.document_id = content_duplicate_document_id
                 ingestion_run.finished_at = datetime.now(UTC)
                 self._persist_run(ingestion_run)
-                self._publish_event(
+                self._event_publisher.publish_event(
                     IngestionEvent.skipped_duplicate(
                         event_id=self.id_generator.new_event_id(),
                         ingestion_run_id=run_id,
@@ -337,7 +376,7 @@ class IngestionWorkflow:
                 )
 
             current_stage = IngestionStage.REGISTRATION
-            self._publish_stage_started(
+            self._event_publisher.publish_stage_started(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.REGISTRATION,
                 event_context=resolved_event_context,
@@ -360,7 +399,7 @@ class IngestionWorkflow:
                 ingestion_run,
                 IngestionStatus.REGISTERED,
             )
-            self._publish_stage_completed(
+            self._event_publisher.publish_stage_completed(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.REGISTRATION,
                 status=ingestion_run.status,
@@ -371,7 +410,7 @@ class IngestionWorkflow:
             )
 
             current_stage = IngestionStage.CLASSIFICATION
-            self._publish_stage_started(
+            self._event_publisher.publish_stage_started(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.CLASSIFICATION,
                 event_context=resolved_event_context,
@@ -393,7 +432,7 @@ class IngestionWorkflow:
                 ingestion_run,
                 IngestionStatus.CLASSIFIED,
             )
-            self._publish_stage_completed(
+            self._event_publisher.publish_stage_completed(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.CLASSIFICATION,
                 status=ingestion_run.status,
@@ -411,7 +450,7 @@ class IngestionWorkflow:
             )
 
             current_stage = IngestionStage.FINALIZATION
-            self._publish_stage_started(
+            self._event_publisher.publish_stage_started(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.FINALIZATION,
                 event_context=resolved_event_context,
@@ -433,7 +472,7 @@ class IngestionWorkflow:
                 ingestion_run,
                 IngestionStatus.FINALIZED,
             )
-            self._publish_stage_completed(
+            self._event_publisher.publish_stage_completed(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.FINALIZATION,
                 status=ingestion_run.status,
@@ -454,7 +493,7 @@ class IngestionWorkflow:
                 )
 
             current_stage = IngestionStage.EXTRACTION
-            self._publish_stage_started(
+            self._event_publisher.publish_stage_started(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.EXTRACTION,
                 event_context=resolved_event_context,
@@ -512,7 +551,7 @@ class IngestionWorkflow:
                 )
                 self.unit_of_work.commit()
 
-            self._publish_stage_completed(
+            self._event_publisher.publish_stage_completed(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.EXTRACTION,
                 status=ingestion_run.status,
@@ -539,7 +578,7 @@ class IngestionWorkflow:
             )
 
             current_stage = IngestionStage.EMBEDDING
-            self._publish_stage_started(
+            self._event_publisher.publish_stage_started(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.EMBEDDING,
                 event_context=resolved_event_context,
@@ -557,7 +596,7 @@ class IngestionWorkflow:
                 ingestion_run,
                 IngestionStatus.EMBEDDED,
             )
-            self._publish_stage_completed(
+            self._event_publisher.publish_stage_completed(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.EMBEDDING,
                 status=ingestion_run.status,
@@ -568,7 +607,7 @@ class IngestionWorkflow:
             )
 
             current_stage = IngestionStage.INDEXING
-            self._publish_stage_started(
+            self._event_publisher.publish_stage_started(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.INDEXING,
                 event_context=resolved_event_context,
@@ -589,7 +628,7 @@ class IngestionWorkflow:
                 ingestion_run,
                 IngestionStatus.INDEXED,
             )
-            self._publish_stage_completed(
+            self._event_publisher.publish_stage_completed(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.INDEXING,
                 status=ingestion_run.status,
@@ -601,7 +640,7 @@ class IngestionWorkflow:
 
             if request.run_quality_checks:
                 current_stage = IngestionStage.QUALITY
-                self._publish_stage_started(
+                self._event_publisher.publish_stage_started(
                     ingestion_run=ingestion_run,
                     stage=IngestionStage.QUALITY,
                     event_context=resolved_event_context,
@@ -609,12 +648,12 @@ class IngestionWorkflow:
                     file_name=file_name,
                     progress_callback=progress_callback,
                 )
-                quality_diagnostics = self._run_quality_checks(
+                quality_diagnostics = self._quality_check_step.run(
                     parsing_result=parsing_result,
                     final_graph=final_graph,
                     warnings=warnings,
                 )
-                self._publish_stage_completed(
+                self._event_publisher.publish_stage_completed(
                     ingestion_run=ingestion_run,
                     stage=IngestionStage.QUALITY,
                     status=ingestion_run.status,
@@ -627,7 +666,7 @@ class IngestionWorkflow:
             current_stage = IngestionStage.COMPLETE
             ingestion_run.mark_complete(datetime.now(UTC))
             self._persist_run(ingestion_run)
-            result = self._build_success_result(
+            result = build_success_result(
                 request=request,
                 ingestion_run=ingestion_run,
                 final_graph=final_graph,
@@ -638,7 +677,7 @@ class IngestionWorkflow:
                 quality_diagnostics=quality_diagnostics,
                 extraction_result=extraction_result,
             )
-            self._publish_event(
+            self._event_publisher.publish_event(
                 IngestionEvent.completed(
                     event_id=self.id_generator.new_event_id(),
                     ingestion_run_id=run_id,
@@ -664,7 +703,7 @@ class IngestionWorkflow:
                 error_message=str(exc),
             )
             self._persist_run(ingestion_run)
-            self._publish_event(
+            self._event_publisher.publish_event(
                 IngestionEvent.failed(
                     event_id=self.id_generator.new_event_id(),
                     ingestion_run_id=run_id,
@@ -707,39 +746,9 @@ class IngestionWorkflow:
         activity_context: ActivityContext | None = None,
         audit_context: AuditContext | None = None,
     ) -> IngestionResult:
-        if self.document_lookup_service is None:
-            raise ReingestionNotSupportedError(
-                "Reingestion requires a document_lookup_service dependency, "
-                "which this IngestionWorkflow instance was not constructed with.",
-                error_code="reingestion_not_supported",
-                details={"document_id": request.document_id},
-            )
-
-        existing_graph = self.document_lookup_service.get_document_graph(
-            request.document_id,
+        ingestion_request = self._reingestion_step.prepare_request(
+            request,
             activity_context=activity_context,
-        )
-        if existing_graph is None:
-            raise DocumentNotFoundForReingestionError(
-                "Reingestion target document does not exist.",
-                error_code="reingestion.document_not_found",
-                details={"document_id": request.document_id},
-            )
-
-        preserved_document_id = (
-            request.document_id if request.preserve_document_id else None
-        )
-        ingestion_request = IngestionRequest(
-            file_path=existing_graph.document.file_path,
-            document_type=existing_graph.document.document_type.value,
-            title=existing_graph.document.title,
-            source_name=existing_graph.document.source_name,
-            metadata=dict(request.metadata),
-            force=True,
-            run_quality_checks=request.run_quality_checks,
-            requested_by=request.requested_by,
-            correlation_id=request.correlation_id,
-            preserve_document_id=preserved_document_id,
         )
         return self.run(
             ingestion_request,
@@ -773,284 +782,13 @@ class IngestionWorkflow:
         extraction retry. If a saved extraction result already exists with
         unresolved chunk IDs, only that unresolved subset is retried and then
         merged back into the persisted result.
+
+        See `ExtractionRetryStep.run` for the full implementation.
         """
-        if self.document_lookup_service is None:
-            raise ReingestionNotSupportedError(
-                "Retrying extraction requires a document_lookup_service "
-                "dependency, which this IngestionWorkflow instance was not "
-                "constructed with.",
-                error_code="reingestion_not_supported",
-                details={"document_id": document_id},
-            )
-
-        final_graph = self.document_lookup_service.get_document_graph(
+        return self._extraction_retry_step.run(
             document_id,
-            activity_context=activity_context,
-        )
-        if final_graph is None:
-            raise DocumentNotFoundForReingestionError(
-                "Document to retry extraction for does not exist.",
-                error_code="reingestion.document_not_found",
-                details={"document_id": document_id},
-            )
-
-        if not final_graph.chunks:
-            if not final_graph.elements:
-                raise IngestionWorkflowError(
-                    "Document has no persisted elements or chunks to repair in place.",
-                    error_code="ingestion.final_graph.empty",
-                    details={"document_id": document_id},
-                )
-            emit_progress(
-                progress_callback,
-                (
-                    "Document has persisted elements but no final chunks. "
-                    "Rebuilding final chunk set in place before retrying extraction..."
-                ),
-            )
-            final_graph = self.post_classification_chunk_finalization_workflow.finalize(
-                document_id,
-                embed_final_chunks=False,
-                activity_context=activity_context,
-                progress_callback=progress_callback,
-            )
-            if not final_graph.chunks:
-                raise IngestionWorkflowError(
-                    "Recovered finalization still produced no chunks for extraction.",
-                    error_code="ingestion.final_graph.no_chunks",
-                    details={
-                        "document_id": document_id,
-                        "element_count": len(final_graph.elements),
-                        "section_count": len(final_graph.sections),
-                    },
-                )
-
-        extraction_service = getattr(self.extraction_workflow, "extraction_service", None)
-        existing_extraction_result = (
-            extraction_service.get_document_extraction_result(document_id)
-            if extraction_service is not None
-            else None
-        )
-        retry_chunks = list(final_graph.chunks.values())
-        if (
-            existing_extraction_result is not None
-            and existing_extraction_result.unresolved_chunk_ids
-        ):
-            unresolved_chunk_ids = set(existing_extraction_result.unresolved_chunk_ids)
-            retry_chunks = [
-                chunk
-                for chunk in final_graph.chunks.values()
-                if chunk.chunk_id in unresolved_chunk_ids
-            ]
-            if not retry_chunks:
-                raise IngestionWorkflowError(
-                    "Saved unresolved extraction chunk IDs no longer exist in the final document graph.",
-                    error_code="ingestion.extraction.unresolved_chunks_missing",
-                    details={
-                        "document_id": document_id,
-                        "unresolved_chunk_ids": list(
-                            existing_extraction_result.unresolved_chunk_ids
-                        ),
-                    },
-                )
-            emit_progress(
-                progress_callback,
-                (
-                    "Retrying only unresolved extraction chunks: "
-                    f"{len(retry_chunks)} chunk(s)."
-                ),
-            )
-        else:
-            existing_extraction_result = None
-
-        emit_progress(progress_callback, "Extraction started.")
-        extraction_result = self.extraction_workflow.extract(
-            document_id,
-            retry_chunks,
             activity_context=activity_context,
             progress_callback=progress_callback,
-            replace_existing=True,
-            tables=final_graph.tables,
-            sections=final_graph.sections,
-            base_result=existing_extraction_result,
-        )
-        self.unit_of_work.commit()
-
-        if self.identifier_promotion_service is not None:
-            promoted_identifiers = self.identifier_promotion_service.promote(
-                extraction_result=extraction_result,
-                document_graph=final_graph,
-                id_generator=self.id_generator,
-            )
-            if promoted_identifiers:
-                for identifier in promoted_identifiers:
-                    final_graph.identifiers[identifier.identifier_id] = identifier
-                self.document_registration_service.register_document_identifiers(
-                    promoted_identifiers,
-                    activity_context=activity_context,
-                )
-                self.unit_of_work.commit()
-        if self.deterministic_identifier_scanner is not None:
-            existing_normalized = {
-                (i.normalized_value or "", i.identifier_type.value)
-                for i in final_graph.identifiers.values()
-            }
-            scanned_identifiers = self.deterministic_identifier_scanner.scan(
-                final_graph,
-                self.id_generator,
-                existing_normalized=existing_normalized,
-            )
-            if scanned_identifiers:
-                for identifier in scanned_identifiers:
-                    final_graph.identifiers[identifier.identifier_id] = identifier
-                self.document_registration_service.register_document_identifiers(
-                    scanned_identifiers,
-                    activity_context=activity_context,
-                )
-                self.unit_of_work.commit()
-
-        semantic_relationship_count = None
-        if self.semantic_linking_workflow is not None:
-            semantic_relationships = self.semantic_linking_workflow.link(document_id)
-            semantic_relationship_count = len(semantic_relationships)
-            self.unit_of_work.commit()
-
-        emit_progress(progress_callback, "Extraction completed.")
-        return IngestionResult(
-            status=IngestionStatus.EXTRACTED,
-            document_id=document_id,
-            file_name=final_graph.document.file_name,
-            document_type=final_graph.document.document_type.value,
-            chunk_count=len(final_graph.chunks),
-            current_stage=IngestionStage.EXTRACTION,
-            diagnostics={
-                "extraction_id": extraction_result.extraction_id,
-                "maintenance_task_count": len(extraction_result.maintenance_tasks),
-                "spare_part_count": len(extraction_result.spare_parts),
-                "unresolved_chunk_count": len(extraction_result.unresolved_chunk_ids),
-                "semantic_relationship_count": semantic_relationship_count,
-            },
-        )
-
-    def _check_file_hash_duplicate(
-        self,
-        *,
-        request: IngestionRequest,
-        file_hash: str,
-        activity_context,
-    ) -> str | None:
-        from src.config.settings import duplicate_detection_settings
-
-        if request.force:
-            return None
-
-        if not duplicate_detection_settings.enable_file_hash_check:
-            return None
-
-        result = self.duplicate_detection_service.check_file_hash(
-            file_hash,
-            activity_context=activity_context,
-        )
-        return result.payload.get("existing_document_id")
-
-    def _check_content_hash_duplicate(
-        self,
-        *,
-        request: IngestionRequest,
-        content_hash: str,
-        activity_context,
-    ) -> str | None:
-        from src.config.settings import duplicate_detection_settings
-
-        if request.force:
-            return None
-
-        if not duplicate_detection_settings.enable_content_hash_check:
-            return None
-
-        result = self.duplicate_detection_service.check_content_hash(
-            content_hash,
-            activity_context=activity_context,
-        )
-        return result.payload.get("existing_document_id")
-
-    def _run_quality_checks(
-        self,
-        *,
-        parsing_result,
-        final_graph,
-        warnings: list[str],
-    ) -> dict[str, object]:
-        parsing_quality = self.quality_gate.check_parsing(
-            final_graph.document.document_id,
-            sections=list(final_graph.sections.values()),
-            elements=list(final_graph.elements.values()),
-            ocr_trace=parsing_result.ocr_trace,
-        )
-        chunking_quality = self.quality_gate.check_chunking(
-            final_graph.document.document_id,
-            chunks=list(final_graph.chunks.values()),
-        )
-        for quality_result in (parsing_quality, chunking_quality):
-            for check in quality_result.failures():
-                warnings.append(f"{check.check_name}: {check.message}")
-        return {
-            "parsing_quality": parsing_quality.summary(),
-            "chunking_quality": chunking_quality.summary(),
-        }
-
-    def _build_success_result(
-        self,
-        *,
-        request: IngestionRequest,
-        ingestion_run: IngestionRun,
-        final_graph,
-        embedded_chunks: list[EmbeddedChunk],
-        file_name: str,
-        warnings: list[str],
-        correlation_id: str,
-        quality_diagnostics: dict[str, object],
-        extraction_result,
-    ) -> IngestionResult:
-        statistics = final_graph.document.statistics
-        diagnostics = {
-            "file_path": final_graph.document.file_path,
-            "file_hash": final_graph.document.hashes.file_hash,
-            "content_hash": final_graph.document.hashes.content_hash,
-            "metadata": dict(request.metadata),
-            "quality": quality_diagnostics,
-            "vector_indexing_boundary": (
-                "Qdrant writes and SQLite vector mappings are orchestrated in order but are not atomic across both stores."
-            ),
-        }
-        if request.source_name:
-            diagnostics["source_name"] = request.source_name
-        if extraction_result is not None:
-            diagnostics["extraction_id"] = extraction_result.extraction_id
-            diagnostics["extraction_unresolved_chunk_count"] = len(
-                extraction_result.unresolved_chunk_ids
-            )
-
-        return IngestionResult(
-            status=IngestionStatus.COMPLETE,
-            ingestion_run_id=ingestion_run.run_id,
-            document_id=final_graph.document.document_id,
-            title=final_graph.document.title,
-            file_name=file_name,
-            document_type=final_graph.document.document_type.value,
-            page_count=statistics.page_count,
-            section_count=statistics.section_count,
-            element_count=statistics.element_count,
-            chunk_count=statistics.chunk_count,
-            table_count=statistics.table_count,
-            picture_count=statistics.picture_count,
-            identifier_count=statistics.identifier_count,
-            generated_question_count=len(final_graph.questions),
-            vector_count=len(embedded_chunks),
-            warnings=warnings,
-            diagnostics=diagnostics,
-            current_stage=IngestionStage.COMPLETE,
-            correlation_id=correlation_id,
         )
 
     def _persist_run(self, ingestion_run: IngestionRun, *, create: bool = False) -> None:
@@ -1067,125 +805,6 @@ class IngestionWorkflow:
     ) -> None:
         ingestion_run.mark_status(status, error_message=None)
         self._persist_run(ingestion_run)
-
-    def _publish_stage_started(
-        self,
-        *,
-        ingestion_run: IngestionRun,
-        stage: IngestionStage,
-        event_context: EventContext | None,
-        file_name: str,
-        progress_callback: Callable[[str], None] | None = None,
-        document_id: str | None = None,
-    ) -> None:
-        emit_progress(progress_callback, f"{stage.value.replace('_', ' ').title()} started.")
-        self._publish_event(
-            IngestionEvent.stage_started(
-                event_id=self.id_generator.new_event_id(),
-                ingestion_run_id=ingestion_run.run_id,
-                stage=stage.value,
-                document_id=document_id or ingestion_run.document_id,
-                file_path=ingestion_run.file_path,
-                file_name=file_name,
-            ),
-            event_context=event_context,
-        )
-
-    def _publish_stage_completed(
-        self,
-        *,
-        ingestion_run: IngestionRun,
-        stage: IngestionStage,
-        status: IngestionStatus,
-        event_context: EventContext | None,
-        file_name: str,
-        payload: dict | None = None,
-        document_id: str | None = None,
-    ) -> None:
-        self._publish_event(
-            IngestionEvent.stage_completed(
-                event_id=self.id_generator.new_event_id(),
-                ingestion_run_id=ingestion_run.run_id,
-                stage=stage.value,
-                status=status.value,
-                document_id=document_id or ingestion_run.document_id,
-                file_path=ingestion_run.file_path,
-                file_name=file_name,
-                payload=payload,
-            ),
-            event_context=event_context,
-        )
-
-    def _publish_event(
-        self,
-        event: IngestionEvent,
-        *,
-        event_context: EventContext | None,
-    ) -> None:
-        if self.event_service is None:
-            return
-        self.event_service.publish(event, context=event_context)
-        self.unit_of_work.commit()
-
-
-    @staticmethod
-    def _compute_file_hash(file_path: Path) -> str:
-        digest = hashlib.sha256()
-        with file_path.open("rb") as handle:
-            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                digest.update(chunk)
-        return digest.hexdigest()
-
-    def _resolve_activity_context(
-        self,
-        *,
-        request: IngestionRequest,
-        correlation_id: str,
-        activity_context: ActivityContext | None,
-    ) -> ActivityContext:
-        if activity_context is not None:
-            return activity_context
-        return ActivityContext(
-            actor_id=request.requested_by,
-            actor_type="user" if request.requested_by else "system",
-            request_id=correlation_id,
-            correlation_id=correlation_id,
-            source="ingestion_workflow",
-        )
-
-    def _resolve_audit_context(
-        self,
-        *,
-        request: IngestionRequest,
-        correlation_id: str,
-        audit_context: AuditContext | None,
-    ) -> AuditContext:
-        if audit_context is not None:
-            return audit_context
-        return AuditContext(
-            actor_id=request.requested_by,
-            actor_type="user" if request.requested_by else "system",
-            request_id=correlation_id,
-            correlation_id=correlation_id,
-            source="ingestion_workflow",
-        )
-
-    def _resolve_event_context(
-        self,
-        *,
-        request: IngestionRequest,
-        correlation_id: str,
-        event_context: EventContext | None,
-    ) -> EventContext:
-        if event_context is not None:
-            return event_context
-        return EventContext(
-            actor_id=request.requested_by,
-            actor_type="user" if request.requested_by else "system",
-            request_id=correlation_id,
-            correlation_id=correlation_id,
-            source="ingestion_workflow",
-        )
 
     def _question_generation_model(self) -> str | None:
         question_service = getattr(
