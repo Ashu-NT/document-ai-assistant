@@ -230,6 +230,33 @@ def test_answer_prompt_builder_includes_provided_sources() -> None:
     assert "Section: Maintenance Schedule" in prompt
 
 
+def test_answer_prompt_builder_describes_sections_and_reference_notes_shape() -> None:
+    """Plan section 9.6 (sections/reference_notes redesign): the model must
+    be told the optional shape and that source_number in reference_notes
+    is exempt from the "don't reference SOURCE labels" grounding rule."""
+    builder = AnswerPromptBuilder()
+    chunk = _make_chunk()
+    structured_context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.GENERAL,
+        chunks=[chunk],
+    )
+    request = AnswerGenerationRequest(
+        question="Test?",
+        context_chunks=[chunk],
+        answer_intent=AnswerIntent.GENERAL,
+        structured_context=structured_context,
+        format_policy=AnswerFormatPolicy.for_intent(AnswerIntent.GENERAL),
+    )
+
+    prompt = builder.build(request)
+
+    assert '"sections"' in prompt
+    assert '"reference_notes"' in prompt
+    assert '"reference_note_ids"' in prompt
+    assert '"source_number"' in prompt
+    assert "does not apply to it" in prompt
+
+
 def test_answer_prompt_builder_instructs_against_leaking_entity_ids() -> None:
     """Plan section 9.6/Phase 10 validation: Phase 8 added a "Structured
     entities:" block that serializes entity_id/target_entity_id values

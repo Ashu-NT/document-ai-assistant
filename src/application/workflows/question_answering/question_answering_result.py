@@ -5,6 +5,10 @@ from typing import Any
 
 from src.application.contracts.guardrails.guardrail_decision import GuardrailDecision
 from src.application.contracts.guardrails.guardrail_result import GuardrailResult
+from src.application.services.answer_generation.answer_generation_result import (
+    AnswerSection,
+    ReferenceNote,
+)
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
@@ -41,4 +45,7 @@ class QuestionAnsweringResult:
 
     confidence: str | None = None
     answer_intent: AnswerIntent | None = None
+    limitation_note: str | None = None
+    sections: list[AnswerSection] = field(default_factory=list)
+    reference_notes: list[ReferenceNote] = field(default_factory=list)
     diagnostics: dict[str, Any] = field(default_factory=dict)

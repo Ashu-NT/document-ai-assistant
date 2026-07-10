@@ -44,7 +44,21 @@ class AnswerPromptBuilder:
             '{\n  "answer_text": "<grounded answer>",\n'
             '  "limitation_note": "<optional: state explicitly what the '
             'provided sources do not cover, omit this field entirely if '
-            'there is no limitation to report>"\n}\n'
+            'there is no limitation to report>",\n'
+            '  "sections": [{"heading": "<short heading>", "body": '
+            '"<section text>", "reference_note_ids": ["<id from '
+            'reference_notes below>"]}],\n'
+            '  "reference_notes": [{"note_id": "<short id you choose, e.g. '
+            '\'r1\'>", "claim_text": "<the specific claim this note '
+            'supports>", "source_number": <the SOURCE number below that '
+            "supports this claim>}]\n}\n"
+            'Only include "sections"/"reference_notes" when the answer '
+            "naturally breaks into distinct topics or claims worth "
+            "attributing individually; omit both entirely for a short, "
+            "single-fact answer. `source_number` in reference_notes must "
+            "be a number for a SOURCE shown below -- this is a structured "
+            "field, not part of answer_text, so the grounding rule against "
+            "referencing SOURCE labels in the answer does not apply to it.\n"
             "Do not wrap the JSON in markdown fences.\n\n"
             f"{self._intent_block(request)}"
             f"{self._format_policy_block(request)}"

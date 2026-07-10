@@ -1,7 +1,13 @@
 import pytest
 
 from src.application.contracts.guardrails.guardrail_decision import GuardrailDecision
+from src.application.contracts.guardrails.guardrail_violation import GuardrailViolation
+from src.application.contracts.guardrails.violation_type import ViolationType
 from src.application.guardrails.retrieval.query_scope_guardrail import QueryScopeGuardrail
+from src.application.services.answer_generation.answer_generation_result import (
+    AnswerSection,
+    ReferenceNote,
+)
 from src.application.services.document_exploration.document_exploration_result import (
     DocumentExplorationResult,
 )
@@ -680,6 +686,128 @@ def test_post_answer_guardrail_block_returns_blocked_route(
 
     assert result.route == QuestionAnsweringRoute.BLOCKED_BY_GUARDRAIL
     assert result.safe_user_message is not None
+
+
+def test_final_result_carries_through_limitation_note_sections_and_reference_notes(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    """Plan section 9.6 (sections/reference_notes redesign): these three
+    GeneratedAnswer fields must reach the final QuestionAnsweringResult --
+    limitation_note was previously silently dropped here, and
+    sections/reference_notes are new, so both are easy to forget."""
+    chunk = _make_chunk()
+    wf_result = _make_retrieval_result_with_chunks([chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+    fake_gen = FakeAnswerGenerationService(
+        limitation_note="Only the primary interval was found.",
+        sections=[AnswerSection(heading="H", body="B", reference_note_ids=["r1"])],
+        reference_notes=[
+            ReferenceNote(note_id="r1", claim_text="c", source_number=1, chunk_id="chunk_001")
+        ],
+    )
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the torque spec?",
+        allow_answer_generation=True,
+    )
+
+    result = workflow.run(request)
+
+    assert result.limitation_note == "Only the primary interval was found."
+    assert result.sections == [
+        AnswerSection(heading="H", body="B", reference_note_ids=["r1"])
+    ]
+    assert result.reference_notes == [
+        ReferenceNote(note_id="r1", claim_text="c", source_number=1, chunk_id="chunk_001")
+    ]
+
+
+def test_post_answer_guardrail_warnings_surface_in_diagnostics_without_blocking(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    """A warn-only guardrail result (allowed=True, with violations) must
+    not block the answer, but its violations must still reach
+    diagnostics -- otherwise the new CitationGuardrail/UnsupportedClaim
+    Guardrail checks would be computed and immediately discarded."""
+    chunk = _make_chunk()
+    wf_result = _make_retrieval_result_with_chunks([chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+
+    warning_guardrail = FakeGuardrail(
+        allowed=True,
+        decision=GuardrailDecision.UNSUPPORTED_CLAIMS,
+        reason="1 section(s) have no supporting reference notes.",
+        violations=[
+            GuardrailViolation(
+                violation_type=ViolationType.UNSUPPORTED_CLAIM,
+                description="Section 'H' has no reference notes supporting its content.",
+                field="sections",
+            )
+        ],
+    )
+    fake_gen = FakeAnswerGenerationService()
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+        post_answer_guardrails=[warning_guardrail],
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the torque spec?",
+        allow_answer_generation=True,
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    warnings = result.diagnostics["post_answer_guardrail_warnings"]
+    assert len(warnings) == 1
+    assert warnings[0]["decision"] == GuardrailDecision.UNSUPPORTED_CLAIMS.value
+    assert "no reference notes" in warnings[0]["violations"][0]
+
+
+def test_post_answer_guardrail_context_receives_sections_and_reference_notes_as_dicts(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    """GuardrailContext.sections/.reference_notes must be plain dicts, not
+    the typed AnswerSection/ReferenceNote dataclasses -- matching the
+    existing loose-dict convention `citations` already uses on that
+    class, so guardrails/models never depends on application/services."""
+    chunk = _make_chunk()
+    wf_result = _make_retrieval_result_with_chunks([chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+
+    spy_guardrail = FakeGuardrail(allowed=True, decision=GuardrailDecision.ALLOW)
+    fake_gen = FakeAnswerGenerationService(
+        sections=[AnswerSection(heading="H", body="B", reference_note_ids=["r1"])],
+        reference_notes=[
+            ReferenceNote(note_id="r1", claim_text="c", source_number=1, chunk_id="chunk_001")
+        ],
+    )
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+        post_answer_guardrails=[spy_guardrail],
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the torque spec?",
+        allow_answer_generation=True,
+    )
+
+    workflow.run(request)
+
+    received = spy_guardrail.received_contexts[0]
+    assert received.sections == [
+        {"heading": "H", "body": "B", "reference_note_ids": ["r1"]}
+    ]
+    assert received.reference_notes == [
+        {"note_id": "r1", "claim_text": "c", "source_number": 1, "chunk_id": "chunk_001"}
+    ]
 
 
 # ---------------------------------------------------------------------------

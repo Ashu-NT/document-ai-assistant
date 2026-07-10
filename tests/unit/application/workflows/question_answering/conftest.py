@@ -11,7 +11,9 @@ from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
 from src.application.services.answer_generation.answer_generation_result import (
+    AnswerSection,
     GeneratedAnswer,
+    ReferenceNote,
 )
 from src.application.services.document_exploration.document_exploration_result import (
     DocumentCoverage,
@@ -73,6 +75,7 @@ class FakeGuardrail:
         reason: str = "fake",
         safe_user_message: str | None = None,
         approved_chunk_ids: list[str] | None = None,
+        violations: list | None = None,
     ) -> None:
         self._result = GuardrailResult(
             decision=decision,
@@ -81,9 +84,12 @@ class FakeGuardrail:
             confidence=ConfidenceLevel.HIGH,
             safe_user_message=safe_user_message,
             approved_chunk_ids=approved_chunk_ids or [],
+            violations=violations or [],
         )
+        self.received_contexts: list[GuardrailContext] = []
 
     def check(self, context: GuardrailContext) -> GuardrailResult:
+        self.received_contexts.append(context)
         return self._result
 
 
@@ -118,11 +124,17 @@ class FakeAnswerGenerationService:
         citations: list[Citation] | None = None,
         answer_intent: AnswerIntent | None = None,
         raises: Exception | None = None,
+        limitation_note: str | None = None,
+        sections: list[AnswerSection] | None = None,
+        reference_notes: list[ReferenceNote] | None = None,
     ) -> None:
         self._answer_text = answer_text
         self._citations = citations or []
         self._answer_intent = answer_intent
         self._raises = raises
+        self._limitation_note = limitation_note
+        self._sections = sections or []
+        self._reference_notes = reference_notes or []
         self.called_with: AnswerGenerationRequest | None = None
 
     def generate(self, request: AnswerGenerationRequest, activity_context=None) -> GeneratedAnswer:
@@ -136,6 +148,9 @@ class FakeAnswerGenerationService:
             prompt_version="v1",
             model_name="qwen3:8b",
             answer_intent=self._answer_intent,
+            limitation_note=self._limitation_note,
+            sections=self._sections,
+            reference_notes=self._reference_notes,
             diagnostics=(
                 {"answer_intent": self._answer_intent.value}
                 if self._answer_intent is not None

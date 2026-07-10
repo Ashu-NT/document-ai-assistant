@@ -386,6 +386,7 @@ class QuestionAnsweringWorkflow:
         generated = self._answer_generation_service.generate(gen_request)
 
         # Phase 6: post-answer guardrails
+        post_answer_guardrail_warnings: list[dict] = []
         if self._post_answer_guardrails:
             post_context = GuardrailContext(
                 query_text=request.question,
@@ -398,10 +399,35 @@ class QuestionAnsweringWorkflow:
                     if generated.answer_intent is not None
                     else None
                 ),
+                # Converted to plain dicts here (not passed as the typed
+                # AnswerSection/ReferenceNote dataclasses) to match
+                # GuardrailContext's existing loose-dict convention for
+                # cross-layer data (see `citations` on the same class) --
+                # plan section 9.6 sections/reference_notes redesign.
+                sections=[
+                    {
+                        "heading": section.heading,
+                        "body": section.body,
+                        "reference_note_ids": section.reference_note_ids,
+                    }
+                    for section in generated.sections
+                ],
+                reference_notes=[
+                    {
+                        "note_id": note.note_id,
+                        "claim_text": note.claim_text,
+                        "source_number": note.source_number,
+                        "chunk_id": note.chunk_id,
+                    }
+                    for note in generated.reference_notes
+                ],
                 metadata=generated.diagnostics,
             )
-            post_blocking = GuardrailRunner(self._post_answer_guardrails).run(
+            post_results = GuardrailRunner(self._post_answer_guardrails).run_all(
                 post_context
+            )
+            post_blocking = next(
+                (result for result in post_results if not result.allowed), None
             )
             if post_blocking is not None:
                 return QuestionAnsweringResult(
@@ -416,6 +442,17 @@ class QuestionAnsweringWorkflow:
                     resolved_structured_entities=resolved_structured_entities,
                     diagnostics={"blocked_by": "post_answer_guardrail"},
                 )
+            post_answer_guardrail_warnings = [
+                {
+                    "decision": result.decision.value,
+                    "reason": result.reason,
+                    "violations": [
+                        violation.description for violation in result.violations
+                    ],
+                }
+                for result in post_results
+                if result.violations
+            ]
 
         self._emit_progress(progress_callback, "Answer ready.")
         return QuestionAnsweringResult(
@@ -429,6 +466,9 @@ class QuestionAnsweringWorkflow:
             resolved_structured_entities=resolved_structured_entities,
             confidence=confidence,
             answer_intent=generated.answer_intent,
+            limitation_note=generated.limitation_note,
+            sections=generated.sections,
+            reference_notes=generated.reference_notes,
             diagnostics={
                 "enough_evidence": workflow_result.enough_evidence,
                 "prompt_version": generated.prompt_version,
@@ -436,6 +476,11 @@ class QuestionAnsweringWorkflow:
                 "retry_query": request.retry_query,
                 **generated.diagnostics,
                 **workflow_result.diagnostics,
+                **(
+                    {"post_answer_guardrail_warnings": post_answer_guardrail_warnings}
+                    if post_answer_guardrail_warnings
+                    else {}
+                ),
             },
         )
 

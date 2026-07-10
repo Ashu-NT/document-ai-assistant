@@ -19,3 +19,12 @@ class GuardrailRunner:
             if not result.allowed:
                 return result
         return None
+
+    def run_all(self, context: GuardrailContext) -> list[GuardrailResult]:
+        """Runs every guardrail and returns every result, including
+        non-blocking ones. `run()` only surfaces the first blocking
+        result and discards everything else -- callers that need a
+        warn-only guardrail's recorded violations (e.g. the answering
+        guardrails from plan section 9.6) must use this instead, or those
+        violations are silently never seen by anyone."""
+        return [guardrail.check(context) for guardrail in self._guardrails]

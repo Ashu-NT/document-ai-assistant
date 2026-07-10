@@ -23,10 +23,14 @@ from src.application.services.answer_generation.answer_generation_response_parse
     AnswerGenerationResponseParser,
 )
 from src.application.services.answer_generation.answer_generation_response_schema import (
+    AnswerSectionPayload,
+    ReferenceNotePayload,
     build_answer_generation_response_json_schema,
 )
 from src.application.services.answer_generation.answer_generation_result import (
+    AnswerSection,
     GeneratedAnswer,
+    ReferenceNote,
 )
 from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
     AnswerContextOrganizer,
@@ -158,6 +162,7 @@ class AnswerGenerationService:
         )
         parsed_output = self.response_parser.parse(raw_output)
         model_name = self.answer_generation_model or "default"
+        sources = structured_context.sources if structured_context is not None else ()
 
         return self._build_generated_answer(
             answer_text=parsed_output.answer_text,
@@ -170,7 +175,42 @@ class AnswerGenerationService:
             diagnostics=diagnostics,
             raw_model_output=raw_output,
             limitation_note=parsed_output.limitation_note,
+            sections=self._resolve_sections(parsed_output.sections),
+            reference_notes=self._resolve_reference_notes(
+                parsed_output.reference_notes, sources
+            ),
         )
+
+    @staticmethod
+    def _resolve_sections(
+        payload_sections: list[AnswerSectionPayload],
+    ) -> list[AnswerSection]:
+        return [
+            AnswerSection(
+                heading=section.heading,
+                body=section.body,
+                reference_note_ids=list(section.reference_note_ids),
+            )
+            for section in payload_sections
+        ]
+
+    @staticmethod
+    def _resolve_reference_notes(
+        payload_notes: list[ReferenceNotePayload],
+        sources,
+    ) -> list[ReferenceNote]:
+        chunk_id_by_source_number = {
+            source.source_number: source.chunk_id for source in sources
+        }
+        return [
+            ReferenceNote(
+                note_id=note.note_id,
+                claim_text=note.claim_text,
+                source_number=note.source_number,
+                chunk_id=chunk_id_by_source_number.get(note.source_number),
+            )
+            for note in payload_notes
+        ]
 
     @staticmethod
     def _build_citations(
@@ -321,6 +361,8 @@ class AnswerGenerationService:
         diagnostics: dict[str, object],
         raw_model_output: str,
         limitation_note: str | None = None,
+        sections: list[AnswerSection] | None = None,
+        reference_notes: list[ReferenceNote] | None = None,
     ) -> GeneratedAnswer:
         return GeneratedAnswer(
             answer_text=answer_text,
@@ -339,4 +381,6 @@ class AnswerGenerationService:
             diagnostics=diagnostics,
             raw_model_output=raw_model_output,
             limitation_note=limitation_note,
+            sections=sections or [],
+            reference_notes=reference_notes or [],
         )

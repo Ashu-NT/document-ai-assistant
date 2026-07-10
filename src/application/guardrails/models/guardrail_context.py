@@ -36,6 +36,20 @@ class GuardrailContext:
     answer_text: str | None = None
     min_evidence_chunks: int = 1
 
+    # Optional structured breakdown of the answer (plan section 9.6
+    # sections/reference_notes redesign), converted from GeneratedAnswer's
+    # typed AnswerSection/ReferenceNote dataclasses to plain dicts at the
+    # construction site -- matching the loose-dict convention `citations`
+    # above already uses, rather than importing those types here and
+    # creating a new dependency from guardrails/models on
+    # application/services/answer_generation (a layer this module has never
+    # depended on; it only depends on domain/ today).
+    # Shape: {"heading": str, "body": str, "reference_note_ids": list[str]}
+    sections: list[dict[str, Any]] = field(default_factory=list)
+    # Shape: {"note_id": str, "claim_text": str, "source_number": int,
+    #         "chunk_id": str | None}
+    reference_notes: list[dict[str, Any]] = field(default_factory=list)
+
     runtime_mode: str | None = None
     user_requested_debug: bool = False
     session_id: str | None = None
