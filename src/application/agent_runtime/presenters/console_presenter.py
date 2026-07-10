@@ -82,6 +82,12 @@ class ConsolePresenter:
                 "",
             ]
         )
+        sections_block = _render_sections_block(result)
+        if sections_block:
+            lines.extend([_console_safe_text(sections_block), ""])
+        reference_notes_block = _render_reference_notes_block(result)
+        if reference_notes_block:
+            lines.extend([_console_safe_text(reference_notes_block), ""])
         footer = _render_status_footer(result, session=session)
         if footer:
             lines.append(footer)
@@ -257,6 +263,9 @@ def _render_status_footer(result, *, session) -> str:
     reflection = data.get("reflection_decision") or reflection_decision_from_state(data)
     if reflection:
         fields.append(("Reflection", reflection))
+    limitation_note = data.get("limitation_note")
+    if limitation_note:
+        fields.append(("Limitation", limitation_note))
     source_count = len(data.get("citations", []) or [])
     if source_count:
         fields.append(("Sources", source_count))
@@ -271,6 +280,42 @@ def _render_status_footer(result, *, session) -> str:
             continue
         lines.append(f"{label:<11}: {value}")
     lines.append("--------------------------------------------------")
+    return "\n".join(lines)
+
+
+def _render_sections_block(result) -> str:
+    sections = (result.data or {}).get("sections") or []
+    if not sections:
+        return ""
+    lines = ["Sections", "--------"]
+    for section in sections:
+        if not isinstance(section, dict):
+            continue
+        if section.get("heading"):
+            lines.append(section["heading"])
+        if section.get("body"):
+            lines.append(section["body"])
+        lines.append("")
+    return "\n".join(lines).rstrip()
+
+
+def _render_reference_notes_block(result) -> str:
+    notes = (result.data or {}).get("reference_notes") or []
+    if not notes:
+        return ""
+    lines = ["Reference Notes", "---------------"]
+    for note in notes:
+        if not isinstance(note, dict):
+            continue
+        note_id = note.get("note_id") or "-"
+        claim_text = note.get("claim_text") or ""
+        source_number = note.get("source_number")
+        source_label = f"Source {source_number}" if source_number is not None else "Source ?"
+        # chunk_id itself is never printed here (it's an internal id) --
+        # only used to decide whether to flag this note as unresolved, the
+        # same signal CitationGuardrail already checks internally.
+        marker = "" if note.get("chunk_id") else " (unverified)"
+        lines.append(f"[{note_id}] {claim_text} -> {source_label}{marker}")
     return "\n".join(lines)
 
 

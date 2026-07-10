@@ -182,6 +182,136 @@ def test_presenter_shows_generated_answer_for_accept_when_response_text_is_safe_
     assert "Reflection : ACCEPT" in output
 
 
+def test_presenter_renders_sections_and_reference_notes() -> None:
+    presenter = ConsolePresenter()
+    session = _build_session()
+    result = GraphResult.ok(
+        response_text="The filter is replaced every 1000 hours.",
+        route="answer_question",
+        data={
+            "answer": "The filter is replaced every 1000 hours.",
+            "sections": [
+                {
+                    "heading": "Maintenance interval",
+                    "body": "Replace every 1000 hours.",
+                    "reference_note_ids": ["r1"],
+                }
+            ],
+            "reference_notes": [
+                {
+                    "note_id": "r1",
+                    "claim_text": "Replace every 1000 operating hours.",
+                    "source_number": 1,
+                    "chunk_id": "chunk_001",
+                }
+            ],
+        },
+    )
+
+    output = presenter.render_graph_result(
+        user_input="When should I replace the filter?",
+        result=result,
+        react_trace=ReactTrace(route="answer_question"),
+        session=session,
+        policy=DemoVisibilityPolicy(),
+        show_react=False,
+    )
+
+    assert "Sections" in output
+    assert "Maintenance interval" in output
+    assert "Replace every 1000 hours." in output
+    assert "Reference Notes" in output
+    assert "[r1] Replace every 1000 operating hours. -> Source 1" in output
+    assert "(unverified)" not in output
+    final_answer_index = output.index("Final Answer")
+    sections_index = output.index("Sections")
+    reference_notes_index = output.index("Reference Notes")
+    assert final_answer_index < sections_index < reference_notes_index
+
+
+def test_presenter_flags_unresolved_reference_note() -> None:
+    presenter = ConsolePresenter()
+    session = _build_session()
+    result = GraphResult.ok(
+        response_text="Answer text.",
+        route="answer_question",
+        data={
+            "answer": "Answer text.",
+            "reference_notes": [
+                {
+                    "note_id": "r1",
+                    "claim_text": "A claim that cites a source that doesn't exist.",
+                    "source_number": 99,
+                    "chunk_id": None,
+                }
+            ],
+        },
+    )
+
+    output = presenter.render_graph_result(
+        user_input="Question",
+        result=result,
+        react_trace=ReactTrace(route="answer_question"),
+        session=session,
+        policy=DemoVisibilityPolicy(),
+        show_react=False,
+    )
+
+    assert "[r1] A claim that cites a source that doesn't exist. -> Source 99 (unverified)" in output
+    assert "chunk_001" not in output
+
+
+def test_presenter_renders_limitation_note_in_footer() -> None:
+    presenter = ConsolePresenter()
+    session = _build_session()
+    result = GraphResult.ok(
+        response_text="Answer text.",
+        route="answer_question",
+        data={
+            "answer": "Answer text.",
+            "limitation_note": "Only the primary interval was found.",
+            "citations": [{"chunk_id": "chunk_1"}],
+        },
+    )
+
+    output = presenter.render_graph_result(
+        user_input="Question",
+        result=result,
+        react_trace=ReactTrace(route="answer_question"),
+        session=session,
+        policy=DemoVisibilityPolicy(),
+        show_react=False,
+    )
+
+    assert "Limitation : Only the primary interval was found." in output
+
+
+def test_presenter_output_unchanged_when_new_fields_absent() -> None:
+    """Backward-compatibility regression check: an answer that doesn't use
+    sections/reference_notes/limitation_note (today's normal case) must
+    render with no trace of the new blocks/footer field."""
+    presenter = ConsolePresenter()
+    session = _build_session()
+    result = GraphResult.ok(
+        response_text="Answer text.",
+        route="answer_question",
+        data={"answer": "Answer text.", "citations": [{"chunk_id": "chunk_1"}]},
+    )
+
+    output = presenter.render_graph_result(
+        user_input="Question",
+        result=result,
+        react_trace=ReactTrace(route="answer_question"),
+        session=session,
+        policy=DemoVisibilityPolicy(),
+        show_react=False,
+    )
+
+    assert "Sections" not in output
+    assert "Reference Notes" not in output
+    assert "Limitation" not in output
+
+
 def test_presenter_does_not_duplicate_banner_per_turn() -> None:
     presenter = ConsolePresenter()
     session = _build_session()

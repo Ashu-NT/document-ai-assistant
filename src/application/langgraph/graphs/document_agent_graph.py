@@ -400,6 +400,9 @@ class DocumentAgentGraph:
                 answer = recovered_answer
         answer_intent = _extract_answer_intent(tool_results)
         citations = _extract_citations(tool_results)
+        limitation_note = _extract_limitation_note(tool_results)
+        sections = _extract_sections(tool_results)
+        reference_notes = _extract_reference_notes(tool_results)
         context_chunks = _extract_context_chunks(
             tool_results=tool_results,
             citations=citations,
@@ -442,6 +445,9 @@ class DocumentAgentGraph:
             "answer_intent": answer_intent,
             "context_chunks": context_chunks,
             "citations": citations,
+            "limitation_note": limitation_note,
+            "sections": sections,
+            "reference_notes": reference_notes,
             "reflection_result": state.get("reflection_result"),
             "reflection_decision": state.get("reflection_decision"),
             "reflection_score": state.get("reflection_score"),
@@ -879,6 +885,32 @@ def _extract_citations(tool_results: dict[str, Any]) -> list[dict[str, Any]]:
         if isinstance(citations, list):
             return serialize_graph_value(citations)
 
+    return []
+
+
+def _extract_limitation_note(tool_results: dict[str, Any]) -> str | None:
+    answer_question_payload = _tool_payload(tool_results, "answer_question")
+    if not isinstance(answer_question_payload, dict):
+        return None
+    value = answer_question_payload.get("limitation_note")
+    return value if isinstance(value, str) and value else None
+
+
+def _extract_sections(tool_results: dict[str, Any]) -> list[dict[str, Any]]:
+    answer_question_payload = _tool_payload(tool_results, "answer_question")
+    if isinstance(answer_question_payload, dict):
+        sections = answer_question_payload.get("sections")
+        if isinstance(sections, list):
+            return serialize_graph_value(sections)
+    return []
+
+
+def _extract_reference_notes(tool_results: dict[str, Any]) -> list[dict[str, Any]]:
+    answer_question_payload = _tool_payload(tool_results, "answer_question")
+    if isinstance(answer_question_payload, dict):
+        reference_notes = answer_question_payload.get("reference_notes")
+        if isinstance(reference_notes, list):
+            return serialize_graph_value(reference_notes)
     return []
 
 
