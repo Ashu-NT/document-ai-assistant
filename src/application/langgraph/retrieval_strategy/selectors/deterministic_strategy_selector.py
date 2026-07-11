@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from src.application.langgraph.retrieval_strategy.constants.retrieval_strategy_constants import (
+    MULTI_PRIMARY_STRATEGIES,
+    SIGNAL_CATEGORY_TO_STRATEGY,
+)
 from src.application.langgraph.retrieval_strategy.models import (
     RetrievalContext,
     RetrievalStrategy,
@@ -10,8 +14,11 @@ from src.application.langgraph.retrieval_strategy.policies import (
     RetrievalStrategyPolicy,
     StrategyPriorityPolicy,
 )
-from src.application.workflows.shared.maintenance_signal_detection import (
-    mentions_maintenance_interval,
+from src.application.langgraph.retrieval_strategy.selectors.strategy_confidence_scorer import (
+    score_confidence,
+)
+from src.application.langgraph.retrieval_strategy.selectors.strategy_secondary_selector import (
+    select_secondary_strategies,
 )
 
 
@@ -76,7 +83,7 @@ class DeterministicStrategySelector:
         has_multi_signal = any(signal.category == "multi" for signal in signals)
 
         strong_multi_candidates = [
-            strategy for strategy in strong if strategy in _MULTI_PRIMARY_STRATEGIES
+            strategy for strategy in strong if strategy in MULTI_PRIMARY_STRATEGIES
         ]
         if (
             has_multi_signal
@@ -87,7 +94,7 @@ class DeterministicStrategySelector:
             return self._build_decision(
                 primary_strategy=RetrievalStrategy.MULTI_STRATEGY,
                 secondary_strategies=selected,
-                confidence=self._confidence(scores, selected[0]),
+                confidence=score_confidence(scores, selected[0]),
                 reason="The query contains multiple retrieval intents that should be executed together.",
                 context=context,
                 policy=policy,
@@ -96,7 +103,7 @@ class DeterministicStrategySelector:
             )
 
         primary = ranked[0]
-        secondary = self._secondary_strategies(
+        secondary = select_secondary_strategies(
             context=context,
             ranked=ranked,
             scores=scores,
@@ -106,7 +113,7 @@ class DeterministicStrategySelector:
         return self._build_decision(
             primary_strategy=primary,
             secondary_strategies=secondary,
-            confidence=self._confidence(scores, primary),
+            confidence=score_confidence(scores, primary),
             reason=self._reason(primary, secondary, signals),
             context=context,
             policy=policy,
@@ -126,7 +133,7 @@ class DeterministicStrategySelector:
     ) -> dict[RetrievalStrategy, float]:
         scores: dict[RetrievalStrategy, float] = {}
         for signal in signals:
-            strategy = _SIGNAL_CATEGORY_TO_STRATEGY.get(signal.category)
+            strategy = SIGNAL_CATEGORY_TO_STRATEGY.get(signal.category)
             if strategy is None:
                 continue
             scores[strategy] = scores.get(strategy, 0.0) + signal.score
@@ -147,44 +154,6 @@ class DeterministicStrategySelector:
             key=lambda item: (-item[1], priority.get(item[0], len(priority))),
         )
         return [strategy for strategy, score in ranked if score > 0]
-
-    def _secondary_strategies(
-        self,
-        *,
-        context: RetrievalContext,
-        ranked: list[RetrievalStrategy],
-        scores: dict[RetrievalStrategy, float],
-        primary: RetrievalStrategy,
-        policy: RetrievalStrategyPolicy,
-    ) -> list[RetrievalStrategy]:
-        if not policy.allow_multi_strategy:
-            return []
-
-        allowed = [
-            strategy
-            for strategy in ranked[1:]
-            if scores.get(strategy, 0.0) >= 4.0
-        ]
-        if (
-            primary == RetrievalStrategy.MAINTENANCE_LOOKUP
-            and _looks_like_maintenance_interval_query(context)
-            and RetrievalStrategy.TABLE_LOOKUP in ranked
-            and RetrievalStrategy.TABLE_LOOKUP not in allowed
-        ):
-            allowed = [RetrievalStrategy.TABLE_LOOKUP, *allowed]
-        if primary in {
-            RetrievalStrategy.MAINTENANCE_LOOKUP,
-            RetrievalStrategy.PROCEDURE_LOOKUP,
-            RetrievalStrategy.TECHNICAL_SPECIFICATION,
-            RetrievalStrategy.CERTIFICATION_LOOKUP,
-        } and RetrievalStrategy.TABLE_LOOKUP in allowed:
-            ordered = [RetrievalStrategy.TABLE_LOOKUP] + [
-                strategy
-                for strategy in allowed
-                if strategy != RetrievalStrategy.TABLE_LOOKUP
-            ]
-            return ordered[: max(policy.max_strategies_per_query - 1, 0)]
-        return allowed[: max(policy.max_strategies_per_query - 1, 0)]
 
     def _build_decision(
         self,
@@ -241,25 +210,6 @@ class DeterministicStrategySelector:
         )
 
     @staticmethod
-    def _confidence(
-        scores: dict[RetrievalStrategy, float],
-        primary: RetrievalStrategy,
-    ) -> float:
-        best = scores.get(primary, 0.0)
-        runner_up = max(
-            (score for strategy, score in scores.items() if strategy != primary),
-            default=0.0,
-        )
-        margin = best - runner_up
-        if best >= 8.0 and margin >= 2.0:
-            return 0.95
-        if best >= 6.0:
-            return 0.88
-        if best >= 4.0:
-            return 0.78
-        return 0.65
-
-    @staticmethod
     def _reason(
         primary: RetrievalStrategy,
         secondary: list[RetrievalStrategy],
@@ -272,39 +222,3 @@ class DeterministicStrategySelector:
                 f"secondary strategies {[item.value for item in secondary]}. Signals: {matched}."
             )
         return f"Primary strategy {primary.value} was selected from signals: {matched}."
-
-
-_SIGNAL_CATEGORY_TO_STRATEGY: dict[str, RetrievalStrategy] = {
-    "identifier": RetrievalStrategy.IDENTIFIER_LOOKUP,
-    "table": RetrievalStrategy.TABLE_LOOKUP,
-    "maintenance": RetrievalStrategy.MAINTENANCE_LOOKUP,
-    "procedure": RetrievalStrategy.PROCEDURE_LOOKUP,
-    "specification": RetrievalStrategy.TECHNICAL_SPECIFICATION,
-    "troubleshooting": RetrievalStrategy.TROUBLESHOOTING_LOOKUP,
-    "certification": RetrievalStrategy.CERTIFICATION_LOOKUP,
-    "drawing": RetrievalStrategy.DRAWING_LOOKUP,
-    "figure": RetrievalStrategy.FIGURE_LOOKUP,
-    "section": RetrievalStrategy.SECTION_LOOKUP,
-    "document_exploration": RetrievalStrategy.DOCUMENT_EXPLORATION,
-}
-
-_MULTI_PRIMARY_STRATEGIES: set[RetrievalStrategy] = {
-    RetrievalStrategy.TECHNICAL_SPECIFICATION,
-    RetrievalStrategy.MAINTENANCE_LOOKUP,
-    RetrievalStrategy.PROCEDURE_LOOKUP,
-    RetrievalStrategy.TROUBLESHOOTING_LOOKUP,
-    RetrievalStrategy.CERTIFICATION_LOOKUP,
-    RetrievalStrategy.DRAWING_LOOKUP,
-    RetrievalStrategy.FIGURE_LOOKUP,
-    RetrievalStrategy.SECTION_LOOKUP,
-}
-
-
-def _looks_like_maintenance_interval_query(context: RetrievalContext) -> bool:
-    query_text = (
-        context.analyzed_query.effective_query()
-        if context.analyzed_query is not None
-        else context.query_text
-    )
-    normalized = query_text.lower()
-    return mentions_maintenance_interval(normalized)

@@ -2,6 +2,20 @@ from __future__ import annotations
 
 import re
 
+from src.application.langgraph.retrieval_strategy.constants.retrieval_signal_terms import (
+    ANSWER_INTENT_TO_CATEGORY,
+    CERTIFICATION_TERMS,
+    CHUNK_TYPE_TO_CATEGORY,
+    DRAWING_TERMS,
+    FIGURE_TERMS,
+    IDENTIFIER_TERMS,
+    MAINTENANCE_TERMS,
+    PROCEDURE_TERMS,
+    SECTION_TERMS,
+    SPECIFICATION_TERMS,
+    TABLE_TERMS,
+    TROUBLESHOOTING_TERMS,
+)
 from src.application.langgraph.retrieval_strategy.models import (
     RetrievalContext,
     RetrievalStrategySignal,
@@ -9,139 +23,6 @@ from src.application.langgraph.retrieval_strategy.models import (
 from src.application.workflows.shared.identifier_value_pattern import (
     IDENTIFIER_VALUE_PATTERN,
 )
-from src.domain.common import ChunkType
-
-_IDENTIFIER_TERMS = (
-    "part no",
-    "part number",
-    "serial number",
-    "model",
-    "order code",
-    "tag",
-    "certificate number",
-    "drawing number",
-    "manufacturer",
-    "supplier",
-    "made by",
-    "manufactured by",
-    "id ",
-)
-_SPECIFICATION_TERMS = (
-    "specification",
-    "specifications",
-    "specs",
-    "technical specification",
-    "technical specifications",
-    "technical data",
-    "pressure",
-    "test pressure",
-    "design pressure",
-    "temperature",
-    "voltage",
-    "power",
-    "capacity",
-    "rating",
-    "weight",
-    "dimension",
-    "material",
-    "dn",
-    "bar",
-    "kw",
-    "volt",
-    "volts",
-    "amp",
-    "amps",
-    "ampere",
-    "amperes",
-    "mm",
-)
-# NOTE on cross-module duplication (investigated, not merged): see the
-# matching note above RetrievalQueryIntentInferer._MAINTENANCE_MARKERS in
-# src/application/workflows/retrieval/retrieval_query_intent_inferer.py. This
-# list also conflates general-maintenance-topic terms ("maintenance",
-# "service", "inspection") with interval/frequency-specific terms ("daily",
-# "weekly", "monthly", "quarterly", "annually", "schedule") in one bucket --
-# a separate internal design difference from this module's own float-weighted
-# signal scoring, not something fixed as part of the maintenance-signal
-# cross-module investigation. Left separate from the other two lists,
-# deliberately, for the same reason: this feeds LangGraph strategy-signal
-# weighting, a different downstream decision with a different
-# false-positive tolerance than either retrieval targeting or answer
-# formatting.
-_MAINTENANCE_TERMS = (
-    "maintenance",
-    "maintenance interval",
-    "maintenance intervals",
-    "service",
-    "service interval",
-    "service intervals",
-    "inspection",
-    "inspection interval",
-    "inspection intervals",
-    "interval",
-    "operating hours",
-    "lubrication",
-    "oil change",
-    "replace filter",
-    "preventive maintenance",
-    "schedule",
-    "daily",
-    "weekly",
-    "monthly",
-    "quarterly",
-    "annually",
-)
-_PROCEDURE_TERMS = (
-    "how to",
-    "procedure",
-    "steps",
-    "install",
-    "remove",
-    "replace",
-    "start",
-    "stop",
-    "operate",
-    "commission",
-    "dismantle",
-    "assemble",
-    "configure",
-)
-_TROUBLESHOOTING_TERMS = (
-    "troubleshooting",
-    "fault",
-    "alarm",
-    "error",
-    "cause",
-    "remedy",
-    "problem",
-    "troubleshoot",
-    "failure",
-    "symptom",
-)
-_CERTIFICATION_TERMS = (
-    "certificate",
-    "certification",
-    "inspection",
-    "approval",
-    "lr",
-    "atex",
-    "iecex",
-    "surveyor",
-    "issued",
-    "compliance",
-    "valid",
-)
-_DRAWING_TERMS = (
-    "drawing",
-    "diagram",
-    "schematic",
-    "layout",
-    "dimensions",
-    "view",
-)
-_FIGURE_TERMS = ("figure", "fig.", "image", "picture")
-_TABLE_TERMS = ("table", "list", "schedule", "matrix", "row", "column", "values", "data table")
-_SECTION_TERMS = ("section", "page", "heading", "chapter", "appendix", "path")
 
 
 class RetrievalSignalExtractor:
@@ -182,16 +63,16 @@ class RetrievalSignalExtractor:
         signals: list[RetrievalStrategySignal],
         query_text: str,
     ) -> None:
-        self._score_terms(signals, query_text, "identifier", _IDENTIFIER_TERMS, 3.5)
-        self._score_terms(signals, query_text, "specification", _SPECIFICATION_TERMS, 2.5)
-        self._score_terms(signals, query_text, "maintenance", _MAINTENANCE_TERMS, 3.0)
-        self._score_terms(signals, query_text, "procedure", _PROCEDURE_TERMS, 3.0)
-        self._score_terms(signals, query_text, "troubleshooting", _TROUBLESHOOTING_TERMS, 3.0)
-        self._score_terms(signals, query_text, "certification", _CERTIFICATION_TERMS, 3.0)
-        self._score_terms(signals, query_text, "drawing", _DRAWING_TERMS, 2.5)
-        self._score_terms(signals, query_text, "figure", _FIGURE_TERMS, 2.5)
-        self._score_terms(signals, query_text, "table", _TABLE_TERMS, 2.5)
-        self._score_terms(signals, query_text, "section", _SECTION_TERMS, 2.0)
+        self._score_terms(signals, query_text, "identifier", IDENTIFIER_TERMS, 3.5)
+        self._score_terms(signals, query_text, "specification", SPECIFICATION_TERMS, 2.5)
+        self._score_terms(signals, query_text, "maintenance", MAINTENANCE_TERMS, 3.0)
+        self._score_terms(signals, query_text, "procedure", PROCEDURE_TERMS, 3.0)
+        self._score_terms(signals, query_text, "troubleshooting", TROUBLESHOOTING_TERMS, 3.0)
+        self._score_terms(signals, query_text, "certification", CERTIFICATION_TERMS, 3.0)
+        self._score_terms(signals, query_text, "drawing", DRAWING_TERMS, 2.5)
+        self._score_terms(signals, query_text, "figure", FIGURE_TERMS, 2.5)
+        self._score_terms(signals, query_text, "table", TABLE_TERMS, 2.5)
+        self._score_terms(signals, query_text, "section", SECTION_TERMS, 2.0)
 
     @staticmethod
     def _append_maintenance_interval_table_signal(
@@ -261,7 +142,7 @@ class RetrievalSignalExtractor:
         if analyzed_query is None:
             return
         for chunk_type in analyzed_query.chunk_types:
-            category = _CHUNK_TYPE_TO_CATEGORY.get(chunk_type)
+            category = CHUNK_TYPE_TO_CATEGORY.get(chunk_type)
             if category is None:
                 continue
             signals.append(
@@ -292,7 +173,7 @@ class RetrievalSignalExtractor:
         context: RetrievalContext,
     ) -> None:
         intent = (context.answer_intent or "").strip().lower()
-        category = _ANSWER_INTENT_TO_CATEGORY.get(intent)
+        category = ANSWER_INTENT_TO_CATEGORY.get(intent)
         if category is None:
             return
         signals.append(
@@ -335,31 +216,6 @@ class RetrievalSignalExtractor:
                         score=score,
                     )
                 )
-
-
-_CHUNK_TYPE_TO_CATEGORY: dict[ChunkType, str] = {
-    ChunkType.TECHNICAL_SPECIFICATION: "specification",
-    ChunkType.SPARE_PARTS_TABLE: "table",
-    ChunkType.CERTIFICATION_INFO: "certification",
-    ChunkType.MAINTENANCE_INTERVAL: "maintenance",
-    ChunkType.MAINTENANCE_PROCEDURE: "maintenance",
-    ChunkType.OPERATION_INSTRUCTION: "procedure",
-    ChunkType.INSTALLATION_INSTRUCTION: "procedure",
-    ChunkType.TROUBLESHOOTING: "troubleshooting",
-    ChunkType.DRAWING_REFERENCE: "drawing",
-    ChunkType.OVERVIEW: "document_exploration",
-}
-
-_ANSWER_INTENT_TO_CATEGORY: dict[str, str] = {
-    "maintenance_summary": "maintenance",
-    "procedure_steps": "procedure",
-    "specification_summary": "specification",
-    "troubleshooting": "troubleshooting",
-    "certification_summary": "certification",
-    "identifier_lookup": "identifier",
-    "table_summary": "table",
-    "document_summary": "document_exploration",
-}
 
 
 def _matches_term(query_text: str, term: str) -> bool:

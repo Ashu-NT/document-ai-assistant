@@ -1,68 +1,23 @@
 from __future__ import annotations
 
-import re
-
+from src.application.langgraph.reflection.detectors.identifier_inventory_context_detector import (
+    answer_contains_identifier_inventory,
+    is_selected_document_identifier_inventory_context,
+)
+from src.application.langgraph.reflection.detectors.maintenance_interval_context_detector import (
+    is_selected_document_maintenance_interval_context,
+)
+from src.application.langgraph.reflection.detectors.spare_parts_list_context_detector import (
+    answer_denies_spare_parts_list,
+    answer_only_has_unit_artifact_rows,
+    is_legitimate_partial_spare_parts_answer,
+    is_selected_document_spare_parts_list_context,
+)
 from src.application.langgraph.reflection.models import (
     ReflectionDecision,
     ReflectionDecisionType,
 )
 from src.application.langgraph.reflection.policies import ReflectionPolicy
-from src.application.workflows.shared.identifier_value_pattern import (
-    contains_identifier_value,
-)
-
-_IDENTIFIER_LISTING_VERBS = (
-    "list",
-    "show",
-    "display",
-    "enumerate",
-    "provide",
-    "give me",
-    "find all",
-)
-_IDENTIFIER_LISTING_MARKERS = (
-    "part number",
-    "part no",
-    "serial number",
-    "serial no",
-    "order code",
-    "order number",
-    "model number",
-    "drawing number",
-    "document number",
-    "tag number",
-    "equipment id",
-    "certificate",
-    "manufacturer",
-    "supplier",
-)
-_SPARE_PARTS_LIST_QUESTION_MARKERS = ("spare part", "spare parts")
-_SPARE_PARTS_DENIAL_PHRASES = (
-    "no spare part list",
-    "no spare parts list",
-    "no spare part table",
-    "no spare parts table",
-    "no specific spare part",
-    "no specific spare parts",
-    "spare part list table was not found",
-    "spare parts list table was not found",
-    "no comprehensive table of spare parts",
-    "no comprehensive spare parts table",
-    "no table or list of spare parts",
-    "not found directly related to the question",
-)
-_UNIT_ARTIFACT_ROW_PATTERN = re.compile(
-    r"quantity:\s*(pce|pcs|pc|ea|each|unit|units)\b",
-    re.IGNORECASE,
-)
-_IDENTIFYING_ROW_LABELS = (
-    "description:",
-    "type:",
-    "part no.:",
-    "p&id position:",
-    "service:",
-    "raw row:",
-)
 
 
 class ReflectionValidator:
@@ -85,19 +40,19 @@ class ReflectionValidator:
         diagnostics = dict(decision.diagnostics)
         normalized_confidence = min(max(float(decision.confidence), 0.0), 1.0)
         decision.confidence = normalized_confidence
-        maintenance_interval_context = _is_selected_document_maintenance_interval_context(
+        maintenance_interval_context = is_selected_document_maintenance_interval_context(
             question=question,
             answer_intent=answer_intent,
             selected_document_id=selected_document_id,
             has_relevant_maintenance_evidence=has_relevant_maintenance_evidence,
         )
-        identifier_inventory_context = _is_selected_document_identifier_inventory_context(
+        identifier_inventory_context = is_selected_document_identifier_inventory_context(
             question=question,
             answer_intent=answer_intent,
             selected_document_id=selected_document_id,
             has_useful_evidence=has_useful_evidence,
         )
-        spare_parts_list_context = _is_selected_document_spare_parts_list_context(
+        spare_parts_list_context = is_selected_document_spare_parts_list_context(
             question=question,
             has_relevant_spare_parts_evidence=has_relevant_spare_parts_evidence,
         )
@@ -116,7 +71,7 @@ class ReflectionValidator:
             )
 
         if decision.decision == ReflectionDecisionType.RETRIEVE_AGAIN:
-            if spare_parts_list_context and _is_legitimate_partial_spare_parts_answer(
+            if spare_parts_list_context and is_legitimate_partial_spare_parts_answer(
                 answer_text
             ):
                 return _accept_with_limitations(
@@ -172,7 +127,7 @@ class ReflectionValidator:
                 ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS,
                 ReflectionDecisionType.CLARIFY,
             }
-            and not _answer_contains_identifier_inventory(answer_text)
+            and not answer_contains_identifier_inventory(answer_text)
         ):
             if (
                 policy.allow_retrieval_retry
@@ -209,8 +164,8 @@ class ReflectionValidator:
             ReflectionDecisionType.ACCEPT,
             ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS,
         }:
-            denies_list = _answer_denies_spare_parts_list(answer_text)
-            artifact_only = _answer_only_has_unit_artifact_rows(answer_text)
+            denies_list = answer_denies_spare_parts_list(answer_text)
+            artifact_only = answer_only_has_unit_artifact_rows(answer_text)
             if denies_list or artifact_only:
                 if denies_list:
                     retry_reason = (
@@ -318,7 +273,7 @@ class ReflectionValidator:
                     ),
                     diagnostics={**diagnostics, "validator": "fail_downgraded"},
                 )
-            if spare_parts_list_context and _is_legitimate_partial_spare_parts_answer(
+            if spare_parts_list_context and is_legitimate_partial_spare_parts_answer(
                 answer_text
             ):
                 return _accept_with_limitations(
@@ -344,7 +299,7 @@ class ReflectionValidator:
                     ),
                     diagnostics={**diagnostics, "validator": "reflection_limit_downgraded"},
                 )
-            if spare_parts_list_context and _is_legitimate_partial_spare_parts_answer(
+            if spare_parts_list_context and is_legitimate_partial_spare_parts_answer(
                 answer_text
             ):
                 return _accept_with_limitations(
@@ -381,134 +336,3 @@ def _accept_with_limitations(
         reason=reason,
         diagnostics=diagnostics,
     )
-
-
-def _is_selected_document_maintenance_interval_context(
-    *,
-    question: str,
-    answer_intent: str | None,
-    selected_document_id: str | None,
-    has_relevant_maintenance_evidence: bool,
-) -> bool:
-    if not selected_document_id or not has_relevant_maintenance_evidence:
-        return False
-    normalized_question = question.lower()
-    normalized_intent = (answer_intent or "").lower()
-    if "maintenance_summary" not in normalized_intent and "maintenance" not in normalized_question:
-        return False
-    return any(
-        marker in normalized_question
-        for marker in (
-            "maintenance interval",
-            "maintenance intervals",
-            "service interval",
-            "service intervals",
-            "inspection interval",
-            "inspection intervals",
-            "maintenance schedule",
-            "preventive maintenance",
-            "how often",
-            "schedule",
-        )
-    )
-
-
-def _is_selected_document_identifier_inventory_context(
-    *,
-    question: str,
-    answer_intent: str | None,
-    selected_document_id: str | None,
-    has_useful_evidence: bool,
-) -> bool:
-    if not selected_document_id or not has_useful_evidence:
-        return False
-    normalized_question = question.lower()
-    normalized_intent = (answer_intent or "").lower()
-    if "identifier" not in normalized_intent and not any(
-        marker in normalized_question for marker in _IDENTIFIER_LISTING_MARKERS
-    ):
-        return False
-    if not any(marker in normalized_question for marker in _IDENTIFIER_LISTING_VERBS):
-        return False
-    return any(marker in normalized_question for marker in _IDENTIFIER_LISTING_MARKERS)
-
-
-def _is_selected_document_spare_parts_list_context(
-    *,
-    question: str,
-    has_relevant_spare_parts_evidence: bool,
-) -> bool:
-    if not has_relevant_spare_parts_evidence:
-        return False
-    normalized_question = question.lower()
-    return any(
-        marker in normalized_question
-        for marker in _SPARE_PARTS_LIST_QUESTION_MARKERS
-    )
-
-
-def _is_legitimate_partial_spare_parts_answer(answer_text: str) -> bool:
-    normalized = " ".join(answer_text.lower().split())
-    if not any(marker in normalized for marker in _SPARE_PARTS_LIST_QUESTION_MARKERS):
-        return False
-    if _answer_denies_spare_parts_list(answer_text):
-        return False
-    if _answer_only_has_unit_artifact_rows(answer_text):
-        return False
-    if not re.search(r"\bpages?\b", normalized):
-        return False
-    has_identifying_row = any(label in normalized for label in _IDENTIFYING_ROW_LABELS)
-    has_raw_row = "raw row:" in normalized
-    has_partial_notice = "partial" in normalized
-    return has_identifying_row or has_raw_row or has_partial_notice
-
-
-def _answer_only_has_unit_artifact_rows(answer_text: str) -> bool:
-    normalized = answer_text.lower()
-    if not _UNIT_ARTIFACT_ROW_PATTERN.search(normalized):
-        return False
-    return not any(label in normalized for label in _IDENTIFYING_ROW_LABELS)
-
-
-def _answer_denies_spare_parts_list(answer_text: str) -> bool:
-    normalized = " ".join(answer_text.lower().split())
-    if any(phrase in normalized for phrase in _SPARE_PARTS_DENIAL_PHRASES):
-        return True
-    return "spare part" in normalized and (
-        "was not found" in normalized or "not found" in normalized
-    )
-
-
-def _answer_contains_identifier_inventory(answer_text: str) -> bool:
-    normalized_answer = answer_text.lower()
-    if "requested identifiers" in normalized_answer:
-        return True
-    if any(
-        label in normalized_answer
-        for label in (
-            "serial numbers:",
-            "part numbers:",
-            "model numbers:",
-            "drawing numbers:",
-            "certificate numbers:",
-            "order / component codes:",
-        )
-    ):
-        return True
-    if any(
-        marker in normalized_answer
-        for marker in (
-            "serial number",
-            "serial numbers",
-            "part number",
-            "part numbers",
-            "model number",
-            "model numbers",
-            "order code",
-            "order number",
-            "drawing number",
-            "certificate number",
-        )
-    ):
-        return contains_identifier_value(answer_text)
-    return False

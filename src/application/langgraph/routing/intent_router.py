@@ -1,120 +1,41 @@
 from __future__ import annotations
 
-import re
-from src.application.guardrails import GuardrailContext, GuardrailDecision
+from src.application.guardrails import GuardrailContext
 from src.application.guardrails.services import PreRouteGuardrailService
+from src.application.langgraph.routing.constants.route_command_patterns import (
+    CLEAR_DOCUMENT_COMMANDS,
+    CURRENT_DOCUMENT_COMMANDS,
+    DETAILS_PREFIXES,
+    EXIT_COMMANDS,
+    EXPLORATION_CURRENT_COMMANDS,
+    EXPLORATION_PREFIXES,
+    FIND_DOCUMENT_PREFIXES,
+    HELP_COMMANDS,
+    LIST_DOCUMENTS_COMMANDS,
+    RETRIEVAL_PREFIXES,
+    SELECT_DOCUMENT_PREFIXES,
+    TRACE_PREFIXES,
+)
+from src.application.langgraph.routing.detectors.deep_research_detector import (
+    looks_like_deep_research,
+)
+from src.application.langgraph.routing.detectors.planned_task_detector import (
+    build_planned_task_decision,
+    looks_like_planned_task,
+)
+from src.application.langgraph.routing.pre_route_guardrail_decision_mapper import (
+    map_guardrail_decision,
+)
 from src.application.langgraph.routing.route_decision import RouteDecision
+from src.application.langgraph.routing.route_input_normalizer import (
+    extract_candidate_index,
+    normalize_route_input,
+    references_current_document,
+    strip_prefix,
+)
 from src.application.langgraph.routing.route_type import RouteType
 from src.application.langgraph.routing.unsafe_action_detector import (
     UnsafeActionDetector,
-)
-
-_WHITESPACE_RE = re.compile(r"\s+")
-_DIGIT_ONLY_RE = re.compile(r"^\d+$")
-_OPTION_SELECTION_RE = re.compile(r"^(?:option|choose|select)\s+(\d+)$")
-
-_LIST_DOCUMENTS_COMMANDS = {
-    "list documents",
-    "list docs",
-    "show documents",
-    "documents",
-}
-_HELP_COMMANDS = {"help", "commands", "what can you do"}
-_EXIT_COMMANDS = {"exit", "quit", "q"}
-_CURRENT_DOCUMENT_COMMANDS = {
-    "current document",
-    "what document is selected",
-    "show selected document",
-}
-_CLEAR_DOCUMENT_COMMANDS = {
-    "clear document",
-    "forget document",
-    "reset document",
-    "unset document",
-}
-_SELECT_DOCUMENT_PREFIXES = (
-    "open document ",
-    "open ",
-    "select document ",
-    "select ",
-    "use document ",
-    "set document ",
-    "switch to ",
-)
-_FIND_DOCUMENT_PREFIXES = ("find document ", "locate document ")
-_DETAILS_PREFIXES = (
-    "details for ",
-    "show details ",
-    "details ",
-    "statistics ",
-    "stats ",
-)
-_EXPLORATION_PREFIXES = ("explore document ", "explore ", "what is in ")
-_RETRIEVAL_PREFIXES = ("retrieve ", "show context ", "evidence ")
-_TRACE_PREFIXES = ("trace ", "show trace ", "retrieval trace ")
-_EXPLORATION_CURRENT_COMMANDS = {
-    "explore",
-    "explore document",
-    "explore it",
-    "show sections",
-    "sections",
-    "what is in this document",
-    "what is in it",
-}
-_QUESTION_CURRENT_REFERENCES = (
-    " this document",
-    " this manual",
-    " this report",
-    " this certificate",
-    " this drawing",
-    " this datasheet",
-    " it",
-)
-_PLANNED_COMPARE_MARKERS = ("compare",)
-_PLANNED_RETRIEVE_MARKERS = (
-    "retrieve evidence",
-    "show context",
-    "summarize evidence",
-)
-_PLANNED_EXPLORE_MARKERS = ("explore",)
-_PLANNED_LIST_AND_FIND_MARKERS = ("show documents", "list documents")
-_PLANNED_FOLLOW_UP_MARKERS = (
-    "summarize",
-    "answer",
-    "maintenance",
-    "specification",
-    "safety",
-    "procedure",
-    "troubleshooting",
-    "tables",
-)
-_DEEP_RESEARCH_ROUTE_MARKERS = (
-    "compare",
-    "analyze",
-    "research",
-    "report",
-    "checklist",
-    "summarize all",
-    "find every",
-    "identify missing",
-    "cross-check",
-    "across the document",
-    "all maintenance",
-    "all inspection",
-    "all warnings",
-    "all specifications",
-    "preventive maintenance",
-    "evidence supports",
-)
-_DEEP_RESEARCH_COMPLEX_MARKERS = (
-    "compare",
-    "summarize all",
-    "find every",
-    "all maintenance",
-    "all inspection",
-    "all warnings",
-    "all specifications",
-    "preventive maintenance",
 )
 
 
@@ -141,10 +62,10 @@ class IntentRouter:
         selected_document_id: str | None = None,
         deep_research_enabled: bool = False,
     ) -> RouteDecision:
-        normalized_input = _normalize(user_input)
+        normalized_input = normalize_route_input(user_input)
         extracted_document_query = document_query
 
-        clarification_candidate_index = _extract_candidate_index(normalized_input)
+        clarification_candidate_index = extract_candidate_index(normalized_input)
         if clarification_candidate_index is not None:
             return RouteDecision(
                 route_type=RouteType.CLARIFICATION_RESPONSE,
@@ -154,7 +75,7 @@ class IntentRouter:
                 is_session_command=True,
             )
 
-        if normalized_input in _HELP_COMMANDS:
+        if normalized_input in HELP_COMMANDS:
             return RouteDecision(
                 route_type=RouteType.HELP,
                 confidence=0.99,
@@ -162,7 +83,7 @@ class IntentRouter:
                 is_session_command=True,
             )
 
-        if normalized_input in _EXIT_COMMANDS:
+        if normalized_input in EXIT_COMMANDS:
             return RouteDecision(
                 route_type=RouteType.EXIT,
                 confidence=0.99,
@@ -170,7 +91,7 @@ class IntentRouter:
                 is_session_command=True,
             )
 
-        if normalized_input in _CURRENT_DOCUMENT_COMMANDS:
+        if normalized_input in CURRENT_DOCUMENT_COMMANDS:
             return RouteDecision(
                 route_type=RouteType.CURRENT_DOCUMENT,
                 confidence=0.99,
@@ -180,7 +101,7 @@ class IntentRouter:
                 is_session_command=True,
             )
 
-        if normalized_input in _CLEAR_DOCUMENT_COMMANDS:
+        if normalized_input in CLEAR_DOCUMENT_COMMANDS:
             return RouteDecision(
                 route_type=RouteType.CLEAR_DOCUMENT,
                 confidence=0.99,
@@ -188,7 +109,7 @@ class IntentRouter:
                 is_session_command=True,
             )
 
-        if normalized_input in _LIST_DOCUMENTS_COMMANDS:
+        if normalized_input in LIST_DOCUMENTS_COMMANDS:
             return RouteDecision(
                 route_type=RouteType.LIST_DOCUMENTS,
                 confidence=0.99,
@@ -204,7 +125,7 @@ class IntentRouter:
             )
         )
         if not pre_route_result.allowed:
-            return self._guardrail_decision(
+            return map_guardrail_decision(
                 result=pre_route_result,
                 user_input=user_input,
                 extracted_document_query=extracted_document_query,
@@ -226,10 +147,10 @@ class IntentRouter:
                 requires_document=True,
             )
 
-        if normalized_input.startswith(_SELECT_DOCUMENT_PREFIXES):
-            extracted_document_query = _strip_prefix(
+        if normalized_input.startswith(SELECT_DOCUMENT_PREFIXES):
+            extracted_document_query = strip_prefix(
                 normalized_input,
-                _SELECT_DOCUMENT_PREFIXES,
+                SELECT_DOCUMENT_PREFIXES,
             )
             return RouteDecision(
                 route_type=RouteType.SELECT_DOCUMENT,
@@ -247,10 +168,10 @@ class IntentRouter:
                 requires_document=True,
             )
 
-        if normalized_input.startswith(_FIND_DOCUMENT_PREFIXES):
-            extracted_document_query = _strip_prefix(
+        if normalized_input.startswith(FIND_DOCUMENT_PREFIXES):
+            extracted_document_query = strip_prefix(
                 normalized_input,
-                _FIND_DOCUMENT_PREFIXES,
+                FIND_DOCUMENT_PREFIXES,
             )
             return RouteDecision(
                 route_type=RouteType.FIND_DOCUMENT,
@@ -260,10 +181,10 @@ class IntentRouter:
                 requires_document=True,
             )
 
-        if normalized_input.startswith(_DETAILS_PREFIXES):
-            extracted_document_query = _strip_prefix(
+        if normalized_input.startswith(DETAILS_PREFIXES):
+            extracted_document_query = strip_prefix(
                 normalized_input,
-                _DETAILS_PREFIXES,
+                DETAILS_PREFIXES,
             )
             return RouteDecision(
                 route_type=RouteType.DOCUMENT_DETAILS,
@@ -274,7 +195,7 @@ class IntentRouter:
                 uses_current_document=extracted_document_query is None,
             )
 
-        if normalized_input in _EXPLORATION_CURRENT_COMMANDS:
+        if normalized_input in EXPLORATION_CURRENT_COMMANDS:
             return RouteDecision(
                 route_type=RouteType.DOCUMENT_EXPLORATION,
                 confidence=0.95,
@@ -283,16 +204,16 @@ class IntentRouter:
                 uses_current_document=True,
             )
 
-        if normalized_input.startswith(_EXPLORATION_PREFIXES):
-            if _looks_like_planned_task(normalized_input):
-                return _planned_task_decision(
+        if normalized_input.startswith(EXPLORATION_PREFIXES):
+            if looks_like_planned_task(normalized_input):
+                return build_planned_task_decision(
                     user_input=user_input,
                     extracted_document_query=extracted_document_query,
                     normalized_input=normalized_input,
                 )
-            extracted_document_query = _strip_prefix(
+            extracted_document_query = strip_prefix(
                 normalized_input,
-                _EXPLORATION_PREFIXES,
+                EXPLORATION_PREFIXES,
             )
             return RouteDecision(
                 route_type=RouteType.DOCUMENT_EXPLORATION,
@@ -302,9 +223,9 @@ class IntentRouter:
                 requires_document=True,
             )
 
-        if normalized_input.startswith(_RETRIEVAL_PREFIXES):
-            if _looks_like_planned_task(normalized_input):
-                return _planned_task_decision(
+        if normalized_input.startswith(RETRIEVAL_PREFIXES):
+            if looks_like_planned_task(normalized_input):
+                return build_planned_task_decision(
                     user_input=user_input,
                     extracted_document_query=extracted_document_query,
                     normalized_input=normalized_input,
@@ -314,9 +235,9 @@ class IntentRouter:
                 confidence=0.93,
                 reason="Matched explicit retrieval command.",
                 extracted_document_query=extracted_document_query,
-                extracted_question=_strip_prefix(
+                extracted_question=strip_prefix(
                     normalized_input,
-                    _RETRIEVAL_PREFIXES,
+                    RETRIEVAL_PREFIXES,
                 ),
             )
 
@@ -334,19 +255,19 @@ class IntentRouter:
                 reason="Retrieval trace command is missing a query.",
             )
 
-        if normalized_input.startswith(_TRACE_PREFIXES):
+        if normalized_input.startswith(TRACE_PREFIXES):
             return RouteDecision(
                 route_type=RouteType.RETRIEVAL_TRACE,
                 confidence=0.94,
                 reason="Matched explicit retrieval-trace command.",
                 extracted_document_query=extracted_document_query,
-                extracted_question=_strip_prefix(
+                extracted_question=strip_prefix(
                     normalized_input,
-                    _TRACE_PREFIXES,
+                    TRACE_PREFIXES,
                 ),
             )
 
-        if _looks_like_deep_research(
+        if looks_like_deep_research(
             normalized_input,
             deep_research_enabled=deep_research_enabled,
         ):
@@ -357,12 +278,12 @@ class IntentRouter:
                 extracted_document_query=extracted_document_query,
                 extracted_question=user_input.strip(),
                 requires_document=True,
-                uses_current_document=_references_current_document(normalized_input),
+                uses_current_document=references_current_document(normalized_input),
                 is_compound=True,
             )
 
-        if _looks_like_planned_task(normalized_input):
-            return _planned_task_decision(
+        if looks_like_planned_task(normalized_input):
+            return build_planned_task_decision(
                 user_input=user_input,
                 extracted_document_query=extracted_document_query,
                 normalized_input=normalized_input,
@@ -381,146 +302,5 @@ class IntentRouter:
             reason="Fell back to question answering.",
             extracted_document_query=extracted_document_query,
             extracted_question=user_input.strip(),
-            uses_current_document=_references_current_document(normalized_input),
+            uses_current_document=references_current_document(normalized_input),
         )
-
-    @staticmethod
-    def _guardrail_decision(
-        *,
-        result,
-        user_input: str,
-        extracted_document_query: str | None,
-    ) -> RouteDecision:
-        options = {
-            "guardrail_decision": result.decision.value,
-            "guardrail_reason": result.reason,
-            "guardrail_user_message": result.user_message,
-            "guardrail_result": result.to_dict(),
-            "guardrail_trace_id": result.trace_id,
-            "guardrail_trace": result.diagnostics.get("guardrail_trace", []),
-            "blocked_tools": list(result.blocked_tools),
-        }
-        violations = result.violations
-        if violations:
-            first_violation = violations[0]
-            options["blocked_terms"] = list(first_violation.matched_terms)
-            options["blocked_severity"] = (
-                first_violation.severity.value
-                if first_violation.severity is not None
-                else result.severity.value
-            )
-        if result.decision in {
-            GuardrailDecision.REDIRECT,
-            GuardrailDecision.OUT_OF_SCOPE,
-        }:
-            return RouteDecision(
-                route_type=RouteType.OUT_OF_SCOPE,
-                confidence=1.0,
-                reason=result.reason,
-                extracted_document_query=extracted_document_query,
-                extracted_question=user_input.strip(),
-                options=options,
-            )
-        if result.decision in {
-            GuardrailDecision.CLARIFY,
-            GuardrailDecision.NEEDS_CLARIFICATION,
-        }:
-            return RouteDecision(
-                route_type=RouteType.NEEDS_CLARIFICATION,
-                confidence=0.95,
-                reason=result.reason,
-                extracted_document_query=extracted_document_query,
-                extracted_question=user_input.strip(),
-                options=options,
-            )
-        options["unsafe_request_blocked"] = (
-            result.diagnostics.get("scope_category")
-            == "unsafe_destructive"
-        )
-        options["blocked_reason"] = result.reason
-        return RouteDecision(
-            route_type=RouteType.BLOCKED_ACTION,
-            confidence=1.0,
-            reason=result.reason,
-            extracted_document_query=extracted_document_query,
-            extracted_question=user_input.strip(),
-            options=options,
-        )
-
-
-def _normalize(value: str) -> str:
-    return _WHITESPACE_RE.sub(" ", value.strip().lower())
-
-
-def _strip_prefix(value: str, prefixes: tuple[str, ...]) -> str | None:
-    for prefix in prefixes:
-        if value.startswith(prefix):
-            stripped = value[len(prefix) :].strip()
-            return stripped or None
-    return None
-
-
-def _extract_candidate_index(value: str) -> int | None:
-    if not value:
-        return None
-    if _DIGIT_ONLY_RE.fullmatch(value):
-        return max(int(value) - 1, 0)
-    match = _OPTION_SELECTION_RE.fullmatch(value)
-    if match is None:
-        return None
-    return max(int(match.group(1)) - 1, 0)
-
-
-def _references_current_document(value: str) -> bool:
-    if value in {"answer this document", "answer from this document"}:
-        return True
-    return any(reference in f" {value}" for reference in _QUESTION_CURRENT_REFERENCES)
-
-
-def _looks_like_planned_task(value: str) -> bool:
-    padded = f" {value} "
-    if "compare" in value and " and " in padded:
-        return True
-    if any(marker in value for marker in _PLANNED_RETRIEVE_MARKERS) and " and " in padded:
-        return any(marker in value for marker in _PLANNED_FOLLOW_UP_MARKERS)
-    if any(marker in value for marker in _PLANNED_EXPLORE_MARKERS) and " and " in padded:
-        return any(marker in value for marker in _PLANNED_FOLLOW_UP_MARKERS)
-    if any(marker in value for marker in _PLANNED_LIST_AND_FIND_MARKERS) and any(
-        marker in value for marker in ("open ", "find ", "open document ")
-    ):
-        return True
-    return False
-
-
-def _planned_task_decision(
-    *,
-    user_input: str,
-    extracted_document_query: str | None,
-    normalized_input: str,
-    ) -> RouteDecision:
-    return RouteDecision(
-        route_type=RouteType.PLANNED_TASK,
-        confidence=0.9,
-        reason="Detected a deterministic compound request that should use the planning path.",
-        extracted_document_query=extracted_document_query,
-        extracted_question=user_input.strip(),
-        uses_current_document=_references_current_document(normalized_input),
-        is_compound=True,
-        requires_plan=True,
-        plan_hint=user_input.strip(),
-    )
-
-
-def _looks_like_deep_research(
-    value: str,
-    *,
-    deep_research_enabled: bool,
-) -> bool:
-    padded = f" {value} "
-    if any(marker in value for marker in _DEEP_RESEARCH_ROUTE_MARKERS if marker != "compare"):
-        return True
-    if "compare" in value and (" and " in padded or " with " in padded):
-        return True
-    if deep_research_enabled and any(marker in value for marker in _DEEP_RESEARCH_COMPLEX_MARKERS):
-        return True
-    return False

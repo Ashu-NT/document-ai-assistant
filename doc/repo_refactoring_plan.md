@@ -246,6 +246,16 @@ No new package `__init__.py` facades were introduced anywhere in Phase 5. Four d
 
 Verified: full ruff sweep (clean) + import smoke-test of every new package + full `tests/unit` suite: **2301 passed, 0 failed**.
 
+### Phase 6 status: DONE (section 4.5, all 8 non-exempt files)
+
+`reflection_service.py` (580→199 LOC, 6 files split between the existing `services/` dir and a new `evaluators/` sibling folder), `reflection_validator.py` (515→338 LOC, 3 files under a new `detectors/` sibling folder — matching an existing precedent already used elsewhere in this codebase, e.g. `guardrails/detectors/` next to `guardrails/validation/`), `intent_router.py` (526→306 LOC, 6 files split between two new subfolders and the parent level), `retry_retrieval_node.py` (448→355 LOC, 1 file under a new `mappers/` folder — item #16/#17's helper removal was already done in an earlier phase), `retrieval_signal_extractor.py` + `deterministic_strategy_selector.py` (373→228 + 310→224 LOC, 3 new files combined into one task since both touch the shared `retrieval_strategy/constants/` folder), `deterministic_research_planner.py` (604→160 LOC, 8 files split between the parent level and a new `task_builders/` folder), and `research_state_mapper.py` (343→107 LOC, 8 files under a new `mappers/` folder) — all done across parallel workers on disjoint file sets. `answer_question_node.py` and `research_gap_detector.py` (the section's 2 exempt files) needed no action.
+
+**Explicit override applied**: the plan doc's original row for `research_state_mapper.py` proposed making it a "thin facade" — written before the team's facade-removal decision. The assigned worker was instructed to disregard that specific wording and instead judge the file on its actual current content. It traced every external call site and found `ResearchStateMapper` does genuine composition (combining multiple per-entity mappers into `ResearchPlan`/`ResearchResult` objects with its own derived fields) — a real orchestrator, not a facade — so it was correctly kept rather than deleted or turned into a re-export shim.
+
+No new package `__init__.py` facades were introduced anywhere in Phase 6. Six different background workers across Phases 4-6 have now independently flagged the same kind of suspicious content (fake system-reminder-style text about date changes and agent-tool lists) — see the note after Phase 5 for the likely explanation (legitimate harness-injected reminders being unfamiliar to fresh subagents). No worker treated any of it as an instruction.
+
+Verified: full ruff sweep (clean) + import smoke-test of every new package + full `tests/unit` suite: **2301 passed, 0 failed**.
+
 Each phase is independently reviewable, testable, and revertible. Run the full verification sequence from section 1, rule 5, after every phase before starting the next.
 
 - **Phase 0 — Baseline.** Full `tests/unit` run + `ruff check` on the whole `src/` tree, recorded as the "before" baseline every later phase's green run gets compared against.
