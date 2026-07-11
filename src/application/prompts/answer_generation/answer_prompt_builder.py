@@ -1,12 +1,10 @@
 from typing import TYPE_CHECKING
 
-from src.application.prompts.answer_generation.maintenance_prompt_context_formatter import (
-    MaintenancePromptContextFormatter,
-)
 from src.application.prompts.answer_generation.prompt_context import (
-    OrganizedContextFormatter,
+    EvidenceSchemaFormatter,
     PromptContextProjector,
-    RawSourceFormatter,
+    RawSourceAppendixFormatter,
+    StructuredEvidencePayloadSerializer,
 )
 from src.application.prompts.answer_generation.answer_prompt_version import (
     ANSWER_PROMPT_VERSION,
@@ -34,32 +32,36 @@ class AnswerPromptBuilder:
 
     def __init__(
         self,
-        maintenance_context_formatter: MaintenancePromptContextFormatter | None = None,
         prompt_context_projector: PromptContextProjector | None = None,
-        organized_context_formatter: OrganizedContextFormatter | None = None,
-        raw_source_formatter: RawSourceFormatter | None = None,
+        evidence_schema_formatter: EvidenceSchemaFormatter | None = None,
+        structured_evidence_payload_serializer: StructuredEvidencePayloadSerializer
+        | None = None,
+        raw_source_appendix_formatter: RawSourceAppendixFormatter | None = None,
     ) -> None:
-        self.maintenance_context_formatter = (
-            maintenance_context_formatter or MaintenancePromptContextFormatter()
-        )
         self.prompt_context_projector = (
             prompt_context_projector or PromptContextProjector()
         )
-        self.organized_context_formatter = (
-            organized_context_formatter
-            or OrganizedContextFormatter(
-                maintenance_context_formatter=self.maintenance_context_formatter
-            )
+        self.evidence_schema_formatter = (
+            evidence_schema_formatter or EvidenceSchemaFormatter()
         )
-        self.raw_source_formatter = raw_source_formatter or RawSourceFormatter()
+        self.structured_evidence_payload_serializer = (
+            structured_evidence_payload_serializer
+            or StructuredEvidencePayloadSerializer()
+        )
+        self.raw_source_appendix_formatter = (
+            raw_source_appendix_formatter or RawSourceAppendixFormatter()
+        )
 
     def build(self, request: "AnswerGenerationRequest") -> str:
         prompt_context = self.prompt_context_projector.project(
             request.structured_context
         )
-        source_blocks = self.raw_source_formatter.format(prompt_context)
-
-        return (
+        evidence_schema = self.evidence_schema_formatter.format(prompt_context)
+        structured_payload = self.structured_evidence_payload_serializer.serialize(
+            prompt_context
+        )
+        source_blocks = self.raw_source_appendix_formatter.format(prompt_context)
+        prompt = (
             f"{ANSWER_GROUNDING_RULES}\n\n"
             "Return JSON only with this shape:\n"
             '{\n  "answer_text": "<grounded answer>",\n'
@@ -85,10 +87,16 @@ class AnswerPromptBuilder:
             f"{self._format_policy_block(request)}"
             f"Question: {request.question}\n\n"
             f"{self._identifier_block(request)}"
-            f"{self.organized_context_formatter.format(prompt_context)}"
-            "Raw sources:\n"
-            f"{source_blocks}"
         )
+        if evidence_schema:
+            prompt += evidence_schema
+        if structured_payload:
+            prompt += "Structured evidence payload:\n"
+            prompt += f"{structured_payload}\n\n"
+        if source_blocks:
+            prompt += "Raw source appendix:\n"
+            prompt += source_blocks
+        return prompt
 
     @staticmethod
     def _identifier_block(request: "AnswerGenerationRequest") -> str:

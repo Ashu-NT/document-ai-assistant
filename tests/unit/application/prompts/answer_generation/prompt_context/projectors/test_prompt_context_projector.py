@@ -1,4 +1,4 @@
-from src.application.prompts.answer_generation.prompt_context.prompt_context_projector import (
+from src.application.prompts.answer_generation.prompt_context.projectors import (
     PromptContextProjector,
 )
 from src.application.services.answer_generation import AnswerIntent

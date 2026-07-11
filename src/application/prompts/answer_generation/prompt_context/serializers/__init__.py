@@ -1,9 +1,3 @@
-from src.application.prompts.answer_generation.prompt_context.appendix.raw_source_appendix_formatter import (
-    RawSourceAppendixFormatter,
-)
-from src.application.prompts.answer_generation.prompt_context.projectors.prompt_context_projector import (
-    PromptContextProjector,
-)
 from src.application.prompts.answer_generation.prompt_context.serializers.evidence_schema_formatter import (
     EvidenceSchemaFormatter,
 )
@@ -13,7 +7,5 @@ from src.application.prompts.answer_generation.prompt_context.serializers.struct
 
 __all__ = [
     "EvidenceSchemaFormatter",
-    "PromptContextProjector",
-    "RawSourceAppendixFormatter",
     "StructuredEvidencePayloadSerializer",
 ]

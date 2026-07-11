@@ -4,7 +4,7 @@ from src.application.prompts.answer_generation.prompt_context.models import (
 )
 
 
-class RawSourceFormatter:
+class RawSourceAppendixFormatter:
     def format(self, context: PromptContextBundle | None) -> str:
         if context is None or not context.sources:
             return ""

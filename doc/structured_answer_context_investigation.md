@@ -4,6 +4,16 @@
 
 `StructuredAnswerContext` is not just a flat string container.
 
+## Current Implementation Status
+
+- Phase 1 is implemented:
+  - prompt-facing projection now lives under
+    `src/application/prompts/answer_generation/prompt_context/projectors/`
+- Phase 2 is implemented:
+  - the generic LLM path now emits `Evidence schema`,
+    `Structured evidence payload`, and `Raw source appendix`
+- Later phases in this report remain planning guidance, not completed work
+
 The current pipeline does preserve structured evidence in application memory through typed models such as:
 
 - `AnswerSource`
@@ -63,7 +73,10 @@ This is better than raw chunk dumping, but it is not the same as giving the mode
 - `src/application/services/answer_generation/answer_generation_service.py`
 - `src/application/services/answer_generation/answer_generation_request.py`
 - `src/application/prompts/answer_generation/answer_prompt_builder.py`
-- `src/application/prompts/answer_generation/maintenance_prompt_context_formatter.py`
+- `src/application/prompts/answer_generation/prompt_context/projectors/prompt_context_projector.py`
+- `src/application/prompts/answer_generation/prompt_context/serializers/evidence_schema_formatter.py`
+- `src/application/prompts/answer_generation/prompt_context/serializers/structured_evidence_payload_serializer.py`
+- `src/application/prompts/answer_generation/prompt_context/appendix/raw_source_appendix_formatter.py`
 
 ### Direct structured-data consumers
 
@@ -367,42 +380,54 @@ This is the true flattening boundary for generic answer generation.
 
 ## How the LLM actually sees the context
 
-`AnswerPromptBuilder` creates two major evidence sections:
+`AnswerPromptBuilder` now creates three prompt-facing evidence sections:
 
-1. `Organized context:`
-2. `Raw sources:`
+1. `Evidence schema:`
+2. `Structured evidence payload:`
+3. `Raw source appendix:`
 
 Relevant code:
 
-- `src/application/prompts/answer_generation/answer_prompt_builder.py:104-161`
-- `src/application/prompts/answer_generation/answer_prompt_builder.py:174-198`
+- `src/application/prompts/answer_generation/answer_prompt_builder.py:55-99`
+- `src/application/prompts/answer_generation/prompt_context/projectors/prompt_context_projector.py:14-89`
+- `src/application/prompts/answer_generation/prompt_context/serializers/evidence_schema_formatter.py:6-19`
+- `src/application/prompts/answer_generation/prompt_context/serializers/structured_evidence_payload_serializer.py:9-75`
+- `src/application/prompts/answer_generation/prompt_context/appendix/raw_source_appendix_formatter.py:7-39`
 
-### Organized context
+### Evidence schema
 
-This block contains:
+This block is an explanatory contract for the model. It describes the main
+evidence collections:
 
-- answer intent
-- source count
-- formatted maintenance entries
-- flat key-values
-- structured entities rendered as lines
-- relationship lines
-- source group summaries
-- section group summaries
+- sources
+- key-values
+- maintenance entries
+- structured entities
+- source groups
+- section groups
 
-But this is all serialized into plain text lines.
+It explains what each collection means, but it is not itself the evidence body.
 
-Examples of the serialization style:
+### Structured evidence payload
 
-- `- [SOURCE 2] Pressure: 10 bar`
-- `- manufacturer [man_1]: name: X, website: Y`
-- `  - supplies -> spare_part [sp_1]: part_number: Z, description: ...`
+This is the main evidence block for the generic LLM path.
 
-This is organized, but it is not a nested machine-readable object anymore.
+It is emitted as JSON text and contains nested arrays/objects for:
 
-### Raw sources
+- sources
+- key-values
+- maintenance entries
+- structured entities
+- typed relationships
+- source groups
+- section groups
 
-This block then appends each source as text:
+This is materially stronger than the old line-based rendering because the model
+now sees nested objects instead of only prose-like summaries.
+
+### Raw source appendix
+
+This block appends each source as text:
 
 - source number
 - document title
@@ -410,17 +435,18 @@ This block then appends each source as text:
 - pages
 - raw content
 
-So the LLM still gets the original chunk text after the organized summary block.
+So the LLM still gets the original chunk text after the structured payload.
 
 ## Does the current design preserve structure for the LLM?
 
-### Yes, partially
+### Yes, more than before
 
 The LLM does receive evidence that is better structured than raw chunk dumping:
 
-- maintenance entries are formatted as consistent blocks
+- maintenance entries as JSON records
 - key-values are normalized
-- entity relationships are explicitly named
+- structured entities stay nested
+- entity relationships are explicit nested objects
 - source numbers and provenance remain visible
 - raw sources are still included for grounding
 
@@ -428,36 +454,38 @@ The LLM does receive evidence that is better structured than raw chunk dumping:
 
 The LLM does not receive:
 
-- nested JSON for `StructuredAnswerContext`
-- explicit structured row arrays as arrays
-- entity/relationship objects in machine-readable form
-- a source-to-entity mapping schema beyond textual labels
+- the full internal `StructuredAnswerContext` object directly
+- a fully canonicalized evidence graph with prompt-time deduplication rules
+- tables as a dedicated first-class top-level prompt section
+- evidence topology such as direct/supporting/context roles
 
-Instead, the LLM receives a text rendering of those objects.
+Instead, it receives a prompt-oriented JSON/text projection of those objects.
 
 So the design is:
 
 - semantically enriched
-- prompt-organized
-- not schema-structured at inference time
+- schema-structured at the prompt boundary
+- not yet topology-rich or fully canonicalized
 
 ## Specific Observations About Flattening Quality
 
-## 1. `structured_entities` are preserved better than before, but still stringified
+## 1. `structured_entities` are now preserved as nested payload objects
 
-`AnswerPromptBuilder._organized_context_block()` loops over `structured_entities` and calls `_format_entity_fields()`.
+`AnswerPromptBuilder` no longer walks raw `structured_entities` directly.
+
+Instead it:
+
+- projects `StructuredAnswerContext` through `PromptContextProjector`
+- serializes the prompt bundle through `StructuredEvidencePayloadSerializer`
 
 Relevant code:
 
-- `src/application/prompts/answer_generation/answer_prompt_builder.py:127-172`
+- `src/application/prompts/answer_generation/answer_prompt_builder.py:55-99`
+- `src/application/prompts/answer_generation/prompt_context/projectors/prompt_context_projector.py:14-89`
+- `src/application/prompts/answer_generation/prompt_context/serializers/structured_evidence_payload_serializer.py:45-75`
 
-That helper converts entity fields into comma-joined strings:
-
-- lists become `"; "`-joined text
-- fields become `"key: value"` pairs
-- relationships become textual child lines
-
-This keeps semantics visible, but complex entity structure is flattened into prose-like strings.
+This is a clear improvement because entity fields and relationships remain
+nested JSON objects instead of being reduced to comma-joined strings.
 
 ## 2. Table structure is only partially carried into the prompt
 
@@ -475,10 +503,13 @@ Relevant code:
 
 But in the generic LLM prompt path:
 
-- there is no dedicated row-grid rendering block
-- table rows are only reflected indirectly through extracted key-values, maintenance entries, or hydrated raw text
+- table rows can now be emitted inside `sources[*].table_rows`
+- but there is still no dedicated top-level `tables` section
+- table evidence is still mixed inside source objects instead of being elevated
+  into its own prompt evidence family
 
-So the model does not receive table structure as an explicit table object.
+So the model receives more table structure than before, but table semantics are
+still underexposed compared with a true first-class table payload.
 
 ## 3. Section and grouping structure is shallow
 
@@ -497,13 +528,13 @@ This is useful for organization, but it is not a deep semantic hierarchy.
 
 The prompt includes both:
 
-- organized evidence summaries
+- a structured JSON evidence payload
 - full raw source text blocks
 
 Relevant code:
 
-- `src/application/prompts/answer_generation/answer_prompt_builder.py:41-56`
-- `src/application/prompts/answer_generation/answer_prompt_builder.py:174-198`
+- `src/application/prompts/answer_generation/answer_prompt_builder.py:55-99`
+- `src/application/prompts/answer_generation/prompt_context/appendix/raw_source_appendix_formatter.py:7-39`
 
 For the LLM, this means the carefully structured layer competes with a larger flat text layer later in the same prompt.
 
