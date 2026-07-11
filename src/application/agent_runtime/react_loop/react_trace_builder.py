@@ -1,14 +1,33 @@
 from __future__ import annotations
 
-from typing import Any
-
 from src.application.agent_runtime.policies.demo_visibility_policy import (
     DemoVisibilityPolicy,
 )
 from src.application.agent_runtime.react_loop.react_event import ReactEvent
 from src.application.agent_runtime.react_loop.react_step import ReactStep
 from src.application.agent_runtime.react_loop.react_trace import ReactTrace
-from src.shared.text.text_preview import preview_text
+from src.application.agent_runtime.react_loop.trace_sections.action_step_formatter import (
+    format_action_steps,
+)
+from src.application.agent_runtime.react_loop.trace_sections.guardrail_message_formatter import (
+    format_guardrail_message,
+)
+from src.application.agent_runtime.react_loop.trace_sections.observation_formatter import (
+    format_observation,
+)
+from src.application.agent_runtime.react_loop.trace_sections.plan_step_formatter import (
+    format_plan_steps,
+    format_research_plan,
+)
+from src.application.agent_runtime.react_loop.trace_sections.reflection_formatter import (
+    format_reflection,
+)
+from src.application.agent_runtime.react_loop.trace_sections.retrieval_strategy_formatter import (
+    format_retrieval_strategy,
+)
+from src.application.agent_runtime.react_loop.trace_sections.thought_summary_formatter import (
+    format_thought_summary,
+)
 
 
 class ReactTraceBuilder:
@@ -28,14 +47,14 @@ class ReactTraceBuilder:
             trace,
             ReactEvent.THOUGHT_SUMMARY,
             "Thought Summary",
-            _thought_summary(result.route, data, user_input),
+            format_thought_summary(result.route, data, user_input),
         )
         if result.route == "out_of_scope":
             self._append(
                 trace,
                 ReactEvent.GUARDRAIL,
                 "Guardrail",
-                _guardrail_message(data, result.response_text),
+                format_guardrail_message(data, result.response_text),
             )
             return trace
         if result.route == "blocked_action" or data.get("unsafe_request_blocked"):
@@ -45,7 +64,7 @@ class ReactTraceBuilder:
                 if data.get("unsafe_request_blocked")
                 else ReactEvent.GUARDRAIL,
                 "Safety Block" if data.get("unsafe_request_blocked") else "Guardrail",
-                _guardrail_message(data, result.response_text),
+                format_guardrail_message(data, result.response_text),
             )
             return trace
         if isinstance(data.get("execution_plan"), dict) and data.get("plan_steps"):
@@ -53,10 +72,10 @@ class ReactTraceBuilder:
                 trace,
                 ReactEvent.PLAN,
                 "Plan",
-                _format_plan_steps(data.get("plan_steps")),
+                format_plan_steps(data.get("plan_steps")),
             )
         if policy.show_research_plan and isinstance(data.get("research_plan"), dict):
-            research_body = _format_research_plan(data.get("research_plan"))
+            research_body = format_research_plan(data.get("research_plan"))
             if research_body:
                 self._append(
                     trace,
@@ -65,7 +84,7 @@ class ReactTraceBuilder:
                     research_body,
                 )
         if policy.show_retrieval_strategy:
-            retrieval_body = _format_retrieval_strategy(data)
+            retrieval_body = format_retrieval_strategy(data)
             if retrieval_body:
                 self._append(
                     trace,
@@ -74,7 +93,7 @@ class ReactTraceBuilder:
                     retrieval_body,
                 )
         if policy.show_tools:
-            action_body = _format_action_steps(result.trace or [])
+            action_body = format_action_steps(result.trace or [])
             if action_body:
                 self._append(
                     trace,
@@ -83,7 +102,7 @@ class ReactTraceBuilder:
                     action_body,
                 )
         if policy.show_observations:
-            observation_body = _format_observation(data, max_chars=policy.max_observation_chars)
+            observation_body = format_observation(data, max_chars=policy.max_observation_chars)
             if observation_body:
                 self._append(
                     trace,
@@ -92,7 +111,7 @@ class ReactTraceBuilder:
                     observation_body,
                 )
         if policy.show_reflection:
-            reflection_body = _format_reflection(data)
+            reflection_body = format_reflection(data)
             if reflection_body:
                 self._append(
                     trace,
@@ -127,367 +146,3 @@ class ReactTraceBuilder:
                 body=normalized,
             )
         )
-
-
-def _thought_summary(route: str | None, data: dict[str, Any], user_input: str) -> str:
-    intent = str((data or {}).get("answer_intent") or "")
-    if route == "answer_question":
-        if intent == "identifier_lookup":
-            return (
-                "The request asks for specific identifiers; I will retrieve and list "
-                "exact values from the document."
-            )
-        if intent == "maintenance_summary":
-            return (
-                "The request is about maintenance information; I will retrieve relevant "
-                "tasks, intervals, and procedures."
-            )
-        if intent == "procedure_steps":
-            return (
-                "The request asks for procedural steps; I will retrieve and present "
-                "them in order."
-            )
-        if intent == "safety_warnings":
-            return (
-                "The request is about safety warnings; I will retrieve and present "
-                "relevant cautions and hazards."
-            )
-        if intent == "troubleshooting":
-            return (
-                "The request asks for troubleshooting guidance; I will retrieve "
-                "relevant diagnostic steps and remedies."
-            )
-        if intent == "specification_summary":
-            return (
-                "The request asks for technical specifications; I will retrieve and "
-                "summarize the relevant values."
-            )
-        if intent == "certification_summary":
-            return (
-                "The request is about certifications or compliance; I will retrieve "
-                "the relevant certification details."
-            )
-        if intent == "table_summary":
-            return (
-                "The request asks for tabular information; I will retrieve and present "
-                "the relevant table data."
-            )
-        if intent == "document_summary":
-            return (
-                "The request asks for a document overview; I will retrieve and "
-                "summarize the key sections."
-            )
-        return (
-            "The request asks for document evidence, so I will retrieve grounded "
-            "context before answering."
-        )
-    if route == "planned_task":
-        return (
-            "The request has multiple parts, so I will execute a validated plan "
-            "step by step."
-        )
-    if route == "deep_research":
-        return (
-            "The request requires synthesis across multiple evidence groups; I will "
-            "collect and compare task-specific evidence before writing the report."
-        )
-    if route == "out_of_scope":
-        return (
-            "This request is outside the document assistant scope, so I will not "
-            "run retrieval or tools."
-        )
-    if route == "blocked_action" or data.get("unsafe_request_blocked"):
-        if data.get("unsafe_request_blocked"):
-            return (
-                "The request attempts a destructive corpus operation, so I will stop "
-                "before executing tools."
-            )
-        return (
-            "The request violates a guardrail policy, so I will stop before "
-            "running tools or answer generation."
-        )
-    if data.get("pending_clarification"):
-        return "The request is ambiguous, so I need clarification before continuing."
-    if route == "retrieve_evidence":
-        return (
-            "The request asks for supporting evidence, so I will retrieve the most "
-            "relevant grounded context."
-        )
-    return "The request will be handled through the grounded document workflow."
-
-
-def _guardrail_message(data: dict[str, Any], response_text: str | None) -> str:
-    reason = (
-        data.get("guardrail_user_message")
-        or data.get("blocked_reason")
-        or response_text
-    )
-    if isinstance(reason, str) and reason.strip():
-        return reason.strip()
-    return (
-        "This request was stopped by a runtime guardrail before any unsupported "
-        "actions were executed."
-    )
-
-
-def _format_plan_steps(plan_steps: Any) -> str:
-    if not isinstance(plan_steps, list):
-        return ""
-    lines: list[str] = []
-    for index, step in enumerate(plan_steps, start=1):
-        if not isinstance(step, dict):
-            continue
-        description = step.get("description") or step.get("tool_name") or f"Step {index}"
-        lines.append(f"{index}. {description}")
-    return "\n".join(lines)
-
-
-def _format_research_plan(research_plan: dict[str, Any]) -> str:
-    tasks = research_plan.get("tasks")
-    if not isinstance(tasks, list):
-        return ""
-    lines: list[str] = []
-    for index, task in enumerate(tasks, start=1):
-        if not isinstance(task, dict):
-            continue
-        title = str(task.get("title") or f"Task {index}").strip()
-        strategy_hint = str(task.get("strategy_hint") or "").strip()
-        if strategy_hint:
-            lines.append(f"{index}. {title} ({strategy_hint})")
-        else:
-            lines.append(f"{index}. {title}")
-    return "\n".join(lines)
-
-
-def _format_retrieval_strategy(data: dict[str, Any]) -> str:
-    advisor_lines = _format_strategy_advisor(data)
-    decision = data.get("retrieval_strategy_decision")
-    if isinstance(decision, dict):
-        primary = str(decision.get("primary_strategy") or "-")
-        secondaries = decision.get("secondary_strategies") or []
-        secondary_text = ", ".join(str(item) for item in secondaries) if secondaries else "-"
-        lines = [
-            f"Primary: {primary}",
-            f"Secondary: {secondary_text}",
-        ]
-        confidence = decision.get("confidence")
-        if isinstance(confidence, int | float):
-            lines.append(f"Confidence: {float(confidence):.2f}")
-        reason = str(decision.get("reason") or "").strip()
-        if reason:
-            lines.append(f"Reason: {reason}")
-        if advisor_lines:
-            lines = advisor_lines + [""] + lines
-        return "\n".join(lines)
-
-    research_plan = data.get("research_plan")
-    research_trace = data.get("research_trace")
-    if not isinstance(research_plan, dict):
-        return "\n".join(advisor_lines).strip()
-    tasks = research_plan.get("tasks")
-    if not isinstance(tasks, list):
-        return "\n".join(advisor_lines).strip()
-    strategies_per_task = {}
-    if isinstance(research_trace, dict):
-        raw_map = research_trace.get("retrieval_strategies_per_task")
-        if isinstance(raw_map, dict):
-            strategies_per_task = raw_map
-    lines: list[str] = list(advisor_lines)
-    if lines:
-        lines.append("")
-    for task in tasks:
-        if not isinstance(task, dict):
-            continue
-        title = str(task.get("title") or "Task").strip()
-        task_id = str(task.get("task_id") or "").strip()
-        primary = (
-            str(strategies_per_task.get(task_id) or "").strip()
-            or str(task.get("strategy_hint") or "").strip()
-        )
-        if not primary:
-            continue
-        secondaries = _task_secondaries(task)
-        lines.append(f"Task: {title}")
-        lines.append(f"Primary: {primary}")
-        lines.append(
-            "Secondary: " + (", ".join(secondaries) if secondaries else "-")
-        )
-        lines.append("")
-    return "\n".join(lines).strip()
-
-
-def _task_secondaries(task: dict[str, Any]) -> list[str]:
-    diagnostics = task.get("diagnostics")
-    if isinstance(diagnostics, dict):
-        raw = diagnostics.get("secondary_strategies")
-        if isinstance(raw, list):
-            return [str(item) for item in raw if str(item).strip()]
-    title = str(task.get("title") or "").casefold()
-    if "maintenance" in title or "specification" in title or "technical" in title:
-        return ["TABLE_LOOKUP"]
-    return []
-
-
-def _format_action_steps(trace_entries: list[dict[str, Any]]) -> str:
-    lines: list[str] = []
-    seen: set[tuple[str, str]] = set()
-    for entry in trace_entries:
-        if not isinstance(entry, dict):
-            continue
-        tool_name = str(entry.get("tool_name") or "").strip()
-        if not tool_name:
-            continue
-        node_name = str(entry.get("node_name") or "").strip() or tool_name
-        key = (node_name, tool_name)
-        if key in seen:
-            continue
-        seen.add(key)
-        lines.append(f"Tool: {tool_name}")
-        lines.append(f"Purpose: {_tool_purpose(tool_name)}")
-        lines.append("")
-    return "\n".join(lines).strip()
-
-
-def _tool_purpose(tool_name: str) -> str:
-    purposes = {
-        "retrieve_chunks": "collect document-scoped evidence.",
-        "retrieve_tables": "collect structured table evidence.",
-        "retrieve_identifiers": "collect identifier-level evidence.",
-        "retrieve_figures": "collect figure-adjacent evidence.",
-        "answer_question": "generate a grounded answer from validated evidence.",
-        "find_document": "resolve the requested document in the corpus.",
-        "list_documents": "list available documents in the corpus.",
-    }
-    return purposes.get(tool_name, "execute a validated application action.")
-
-
-def _format_observation(data: dict[str, Any], *, max_chars: int) -> str:
-    context_chunks = data.get("context_chunks")
-    if isinstance(context_chunks, list) and context_chunks:
-        lines = ["Found evidence from the current request:"]
-        for chunk in context_chunks[:4]:
-            if not isinstance(chunk, dict):
-                continue
-            title = _chunk_title(chunk)
-            pages = _page_label(chunk.get("source"))
-            detail = f"- {title}"
-            if pages:
-                detail += f" ({pages})"
-            lines.append(detail)
-        return preview_text("\n".join(lines), max_chars)
-    citations = data.get("citations")
-    if isinstance(citations, list) and citations:
-        return preview_text(f"Collected {len(citations)} grounded citation(s).", max_chars)
-    if data.get("pending_clarification"):
-        question = data.get("clarification_question") or "Clarification is required."
-        return preview_text(str(question), max_chars)
-    return ""
-
-
-def _format_reflection(data: dict[str, Any]) -> str:
-    reflection_result = data.get("reflection_result")
-    if not isinstance(reflection_result, dict):
-        research_trace = data.get("research_trace")
-        if not isinstance(research_trace, dict):
-            return ""
-        strategy_coverage = research_trace.get("strategy_coverage")
-        if not isinstance(strategy_coverage, dict):
-            return ""
-        ratio = strategy_coverage.get("ratio")
-        covered = strategy_coverage.get("covered_concepts", [])
-        uncovered = strategy_coverage.get("uncovered_concepts", [])
-        passed = bool(strategy_coverage.get("passed", False))
-        lines = [
-            f"Decision: {'PASS' if passed else 'REPLAN_REQUIRED'}",
-        ]
-        if isinstance(ratio, int | float):
-            lines.append(f"Concept coverage: {float(ratio):.0%}")
-        if covered:
-            lines.append(
-                "Covered concepts: " + ", ".join(str(item) for item in covered)
-            )
-        if uncovered:
-            lines.append(
-                "Uncovered concepts: " + ", ".join(str(item) for item in uncovered)
-            )
-        return "\n".join(lines)
-    decision = (reflection_result.get("decision") or {}).get("decision") or data.get(
-        "reflection_decision"
-    )
-    reason = (reflection_result.get("decision") or {}).get("reason")
-    lines = [f"Decision: {decision or '-'}"]
-    if data.get("reflection_score") is not None:
-        lines.append(f"Overall score: {data.get('reflection_score')}")
-    if reason:
-        lines.append(f"Reason: {reason}")
-    return "\n".join(lines)
-
-
-def _chunk_title(chunk: dict[str, Any]) -> str:
-    title = chunk.get("section_title")
-    if isinstance(title, str) and title.strip():
-        return title.strip()
-    section_path = chunk.get("section_path")
-    if isinstance(section_path, list) and section_path:
-        return str(section_path[-1])
-    chunk_type = chunk.get("chunk_type")
-    return str(chunk_type or "Evidence")
-
-
-def _page_label(source: Any) -> str:
-    if not isinstance(source, dict):
-        return ""
-    page_start = source.get("page_start")
-    page_end = source.get("page_end")
-    if page_start is None:
-        return ""
-    if page_end is None or page_start == page_end:
-        return f"p.{page_start}"
-    return f"pp.{page_start}-{page_end}"
-
-
-def _format_strategy_advisor(data: dict[str, Any]) -> list[str]:
-    advisor_result = data.get("strategy_advisor_result")
-    if not isinstance(advisor_result, dict):
-        return []
-    status = str(advisor_result.get("status") or "").strip()
-    proposal = advisor_result.get("proposal")
-    advisor_reason = str(advisor_result.get("reason") or "").strip()
-    trace_payload = data.get("strategy_advisor_trace")
-    trace_reason = (
-        str((trace_payload or {}).get("reason") or "").strip()
-        if isinstance(trace_payload, dict)
-        else ""
-    )
-    if status == "skipped":
-        return []
-    lines = [f"Advisor: {status or '-'}"]
-    if advisor_reason:
-        lines.append(f"Advisor reason: {advisor_reason}")
-    elif trace_reason:
-        lines.append(f"Advisor reason: {trace_reason}")
-    if isinstance(proposal, dict):
-        concepts = proposal.get("concepts") or []
-        recommended = proposal.get("recommended_strategies") or []
-        route = str(proposal.get("route") or "").strip()
-        reason = str(proposal.get("reason") or "").strip()
-        if concepts:
-            lines.append("Concepts: " + ", ".join(str(item) for item in concepts))
-        if recommended:
-            lines.append(
-                "Recommended: " + ", ".join(str(item) for item in recommended)
-            )
-        if route:
-            lines.append(f"Route recommendation: {route}")
-        if reason:
-            lines.append(f"Advisor reason: {reason}")
-    events = (((data.get("strategy_advisor_trace") or {}).get("events")) if isinstance(data.get("strategy_advisor_trace"), dict) else None) or []
-    if isinstance(events, list) and events:
-        lines.append(
-            "Events: " + " -> ".join(
-                str(event.get("name") or "").strip()
-                for event in events
-                if isinstance(event, dict) and str(event.get("name") or "").strip()
-            )
-        )
-    return lines

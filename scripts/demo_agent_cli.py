@@ -87,7 +87,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         from src.application.agent_runtime.commands import CommandDispatcher
         from src.application.agent_runtime.demo_agent import DemoAgent
-        from src.application.agent_runtime.demo_agent_runtime import build_agent_runtime
+        from src.application.agent_runtime.bootstrap.agent_runtime_builder import (
+            build_agent_runtime,
+        )
         from src.application.agent_runtime.presenters import (
             ConsolePresenter,
             JsonPresenter,

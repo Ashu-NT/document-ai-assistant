@@ -1,10 +1,8 @@
-from dataclasses import replace
-
 from src.application.prompts.answer_generation import ANSWER_PROMPT_VERSION, AnswerPromptBuilder
 from src.application.services.ai.llm_service import LLMService
-from src.application.services.answer_generation.formatting.answer_format_policy import (
-    ANSWER_FORMAT_POLICY_RULES_VERSION,
-    AnswerFormatPolicy,
+from src.application.services.answer_generation.answer_generation_diagnostics_builder import (
+    build_generation_diagnostics,
+    build_maintenance_diagnostics,
 )
 from src.application.services.answer_generation.formatting.identifier_answer_renderer import (
     IdentifierAnswerRenderer,
@@ -14,10 +12,12 @@ from src.application.services.answer_generation.formatting.spare_parts_list_rend
 )
 from src.application.services.answer_generation.intent.answer_intent_analyzer import (
     AnswerIntentAnalyzer,
-    AnswerIntentDecision,
 )
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
+)
+from src.application.services.answer_generation.answer_generation_request_resolver import (
+    AnswerGenerationRequestResolver,
 )
 from src.application.services.answer_generation.answer_generation_response_parser import (
     AnswerGenerationResponseParser,
@@ -34,12 +34,6 @@ from src.application.services.answer_generation.answer_generation_result import 
 )
 from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
     AnswerContextOrganizer,
-)
-from src.application.workflows.question_answering.answer_context.key_value_extractor import (
-    KEY_VALUE_EXTRACTOR_RULES_VERSION,
-)
-from src.application.workflows.question_answering.answer_context.maintenance_entry_merger import (
-    MAINTENANCE_ENTRY_MERGER_RULES_VERSION,
 )
 from src.domain.common.processing_metadata import ModelProcessingMetadata
 from src.domain.retrieval.citation import Citation
@@ -85,6 +79,10 @@ class AnswerGenerationService:
         self.answer_generation_model = (
             answer_generation_model or _default_answer_generation_model()
         )
+        self.request_resolver = AnswerGenerationRequestResolver(
+            answer_intent_analyzer=self.answer_intent_analyzer,
+            answer_context_organizer=self.answer_context_organizer,
+        )
 
     @tracked_action(
         action="answer_generation.generated",
@@ -98,7 +96,7 @@ class AnswerGenerationService:
         request: AnswerGenerationRequest,
         activity_context: ActivityContext | None = None,
     ) -> GeneratedAnswer:
-        resolved_request, intent_decision = self._resolve_request(request)
+        resolved_request, intent_decision = self.request_resolver.resolve(request)
         prompt_version = getattr(
             self.prompt_builder,
             "prompt_version",
@@ -106,8 +104,8 @@ class AnswerGenerationService:
         )
         citations, cited_chunk_ids = self._build_citations(resolved_request.context_chunks)
         structured_context = resolved_request.structured_context
-        maintenance_diagnostics = self._maintenance_diagnostics(structured_context)
-        diagnostics = self._build_diagnostics(
+        maintenance_diagnostics = build_maintenance_diagnostics(structured_context)
+        diagnostics = build_generation_diagnostics(
             resolved_request=resolved_request,
             intent_decision=intent_decision,
             structured_context=structured_context,
@@ -223,130 +221,6 @@ class AnswerGenerationService:
                 citations.append(chunk.citation)
                 cited_chunk_ids.append(chunk.chunk_id)
         return citations, cited_chunk_ids
-
-    def _resolve_request(
-        self,
-        request: AnswerGenerationRequest,
-    ) -> tuple[AnswerGenerationRequest, AnswerIntentDecision]:
-        context_chunks = request.context_chunks
-
-        intent_decision = self._resolve_intent_decision(
-            request=request,
-            context_chunks=context_chunks,
-        )
-        answer_intent = request.answer_intent or intent_decision.intent
-        structured_context = request.structured_context
-        if structured_context is None:
-            structured_context = self.answer_context_organizer.organize(
-                answer_intent=answer_intent,
-                chunks=context_chunks,
-            )
-        elif structured_context.answer_intent != answer_intent:
-            structured_context = replace(
-                structured_context,
-                answer_intent=answer_intent,
-            )
-
-        format_policy = request.format_policy or AnswerFormatPolicy.resolve(
-            intent=answer_intent,
-            structured_context=structured_context,
-        )
-        resolved_request = replace(
-            request,
-            context_chunks=context_chunks,
-            answer_intent=answer_intent,
-            structured_context=structured_context,
-            format_policy=format_policy,
-        )
-        return resolved_request, intent_decision
-
-    def _resolve_intent_decision(
-        self,
-        *,
-        request: AnswerGenerationRequest,
-        context_chunks: list[RetrievedChunk],
-    ) -> AnswerIntentDecision:
-        # An upstream caller (QuestionAnsweringWorkflow) that already built
-        # structured_context has necessarily already run analyze() once to
-        # decide what to extract into it. Reusing that decision instead of
-        # calling analyze() again here removes a second, redundant
-        # AnswerIntentAnalyzer computation (previously via a second
-        # AnswerIntentAnalyzer instance) per answer, and closes off the
-        # possibility of the two computations disagreeing (they always used
-        # the same inputs today, but nothing enforced that).
-        if request.answer_intent_decision is not None:
-            return request.answer_intent_decision
-        return self.answer_intent_analyzer.analyze(
-            question=request.question,
-            retrieval_intent=request.retrieval_intent,
-            chunk_type_preferences=request.chunk_type_preferences,
-            approved_chunks=context_chunks,
-            legacy_query_intent=request.query_intent,
-            route=request.route,
-        )
-
-    @staticmethod
-    def _maintenance_diagnostics(
-        structured_context,
-    ) -> dict[str, int]:
-        if structured_context is None:
-            return {
-                "maintenance_items_found": 0,
-                "maintenance_items_with_interval": 0,
-                "maintenance_items_without_interval": 0,
-                "maintenance_items_merged": 0,
-            }
-        diagnostics = structured_context.diagnostics
-        return {
-            "maintenance_items_found": int(
-                diagnostics.get("maintenance_items_found", 0)
-            ),
-            "maintenance_items_with_interval": int(
-                diagnostics.get("maintenance_items_with_interval", 0)
-            ),
-            "maintenance_items_without_interval": int(
-                diagnostics.get("maintenance_items_without_interval", 0)
-            ),
-            "maintenance_items_merged": int(
-                diagnostics.get("maintenance_items_merged", 0)
-            ),
-        }
-
-    @staticmethod
-    def _build_diagnostics(
-        *,
-        resolved_request: AnswerGenerationRequest,
-        intent_decision: AnswerIntentDecision,
-        structured_context,
-        maintenance_diagnostics: dict[str, int],
-    ) -> dict[str, object]:
-        return {
-            "answer_intent": (
-                resolved_request.answer_intent.value
-                if resolved_request.answer_intent is not None
-                else None
-            ),
-            "answer_intent_confidence": intent_decision.confidence,
-            "answer_intent_reason": intent_decision.reason,
-            "answer_intent_signals": intent_decision.matched_signals,
-            "format_policy": (
-                resolved_request.format_policy.preferred_format
-                if resolved_request.format_policy is not None
-                else None
-            ),
-            "format_policy_context_signals": (
-                resolved_request.format_policy.context_signals
-                if resolved_request.format_policy is not None
-                else {}
-            ),
-            "format_policy_rules_version": ANSWER_FORMAT_POLICY_RULES_VERSION,
-            "key_value_extractor_rules_version": KEY_VALUE_EXTRACTOR_RULES_VERSION,
-            "maintenance_entry_merger_rules_version": MAINTENANCE_ENTRY_MERGER_RULES_VERSION,
-            "structured_context_source_count": (
-                structured_context.source_count if structured_context is not None else 0
-            ),
-            **maintenance_diagnostics,
-        }
 
     @staticmethod
     def _build_generated_answer(

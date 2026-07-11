@@ -1,6 +1,8 @@
 from types import SimpleNamespace
 
-from src.application.agent_runtime.demo_agent_runtime import _LazyIngestionWorkflow
+from src.application.agent_runtime.bootstrap.lazy_ingestion_workflow import (
+    _LazyIngestionWorkflow,
+)
 
 
 def test_lazy_ingestion_workflow_does_not_build_until_called(monkeypatch) -> None:

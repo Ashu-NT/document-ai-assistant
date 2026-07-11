@@ -1,4 +1,4 @@
-from src.application.agent_runtime.demo_agent_runtime import DemoRuntimeStatus
+from src.application.agent_runtime.bootstrap.agent_runtime import DemoRuntimeStatus
 from src.application.agent_runtime.presenters import StartupBanner
 
 

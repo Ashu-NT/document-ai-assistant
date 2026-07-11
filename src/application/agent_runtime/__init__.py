@@ -1,7 +1,11 @@
-from src.application.agent_runtime.demo_agent_runtime import (
+from src.application.agent_runtime.bootstrap.agent_runtime import (
     AgentRuntime,
     DemoRuntimeStatus,
+)
+from src.application.agent_runtime.bootstrap.agent_runtime_builder import (
     build_agent_runtime,
+)
+from src.application.agent_runtime.bootstrap.agent_runtime_lifecycle import (
     close_agent_runtime,
 )
 from src.application.agent_runtime.session import (

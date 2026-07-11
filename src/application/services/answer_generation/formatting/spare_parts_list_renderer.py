@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from typing import Sequence
 
+from src.application.services.answer_generation.formatting.spare_parts.spare_parts_group import (
+    SparePartsGroup,
+)
+from src.application.services.answer_generation.formatting.spare_parts_table_evidence_detector import (
+    has_table_evidence,
+)
 from src.application.services.answer_generation.formatting.spare_parts_table_parser import (
     SPARE_PARTS_TABLE_PARSER_RULES_VERSION,
-    SparePartsGroup,
     SparePartsTableParser,
 )
 from src.application.services.answer_generation.intent.answer_intent import (
@@ -102,7 +107,7 @@ class SparePartsListRenderer:
         for source in sources:
             if source.chunk_type != ChunkType.SPARE_PARTS_TABLE.value:
                 continue
-            if not self._table_parser.has_table_evidence(source):
+            if not has_table_evidence(source):
                 continue
             groups.append(self._table_parser.build_group(source))
         if not groups:

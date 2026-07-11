@@ -256,6 +256,16 @@ No new package `__init__.py` facades were introduced anywhere in Phase 6. Six di
 
 Verified: full ruff sweep (clean) + import smoke-test of every new package + full `tests/unit` suite: **2301 passed, 0 failed**.
 
+### Phase 7 status: DONE (section 4.6, all 8 files)
+
+The team confirmed proceeding with `answer_generation_service.py` despite its "moderate-confidence, not a must-do" flag (asked explicitly before starting this phase). `answer_intent_analyzer.py` (701→118 LOC, 5 files), `spare_parts_table_parser.py` (473→164 LOC, 7 files — one deliberate facade-avoidance deviation: a single-external-caller method became a free function instead of a thin wrapper), `answer_generation_service.py` (386→260 LOC, 2 files), `answer_format_policy.py` (305→138 LOC, 1 file — data/logic separation matching the `classification/rules/` vs `classification/pipeline/` precedent), `demo_agent_runtime.py` (501→0 LOC — **deleted entirely**, 7 files under `bootstrap/`; unlike Phase 6's `research_state_mapper.py`, this file turned out to have no real orchestration left once everything was extracted, so it was removed rather than kept, with every external consumer updated to import the real `bootstrap/` submodules directly), `react_trace_builder.py` (493→148 LOC, 7 files under `trace_sections/`), `console_presenter.py` (417→53 LOC, 2 files under `console/` — the plan's proposed third file, a chunk-label-formatter, was correctly skipped since that logic moved to the new cross-cutting shared module below), and `event_stream_adapter.py` (329→171 LOC, 2 files) — all done across two passes of parallel workers (5 of 8 landed cleanly in the first pass before a session-limit crash interrupted the rest; the remaining 3 were re-run, two of them resuming correctly-preserved partial work rather than starting over).
+
+**Two new cross-cutting shared modules created ahead of the dependent splits** (to avoid 3 parallel workers racing to create the same files): `agent_runtime/common/page_label_formatter.py` (`format_page_range_label`) and `agent_runtime/common/chunk_label_formatter.py` (`chunk_display_title`, with a `fallback` parameter preserving each of the 3 original call sites' different default text — "Chunk" vs "Evidence" — the same "optional parameter for near-identical duplicates" pattern established in Phase 1). Reconciled from `console_presenter.py`, `react_trace_builder.py`, and `event_stream_adapter.py`'s independently-duplicated page-range/chunk-label logic; a 4th near-duplicate in `scripts/agent_cli.py` was deliberately left alone since its output format differs (plain `"50-52"` vs `"pp.50-52"`, `"-"` vs `""` for missing data) and it wasn't named in this section's plan rows.
+
+No new package `__init__.py` facades were introduced anywhere in Phase 7.
+
+Verified: full ruff sweep (only the 2 pre-existing, already-documented issues in `scripts/demo_agent_cli.py` remain) + import smoke-test of every new package + full `tests/unit` suite: **2301 passed, 0 failed**.
+
 Each phase is independently reviewable, testable, and revertible. Run the full verification sequence from section 1, rule 5, after every phase before starting the next.
 
 - **Phase 0 — Baseline.** Full `tests/unit` run + `ruff check` on the whole `src/` tree, recorded as the "before" baseline every later phase's green run gets compared against.

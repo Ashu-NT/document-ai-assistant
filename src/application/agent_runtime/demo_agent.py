@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from src.application.agent_runtime.commands import CommandDispatcher, CommandResult
-from src.application.agent_runtime.demo_agent_runtime import (
-    AgentRuntime,
+from src.application.agent_runtime.bootstrap.agent_runtime import AgentRuntime
+from src.application.agent_runtime.bootstrap.agent_runtime_lifecycle import (
     close_agent_runtime,
 )
+from src.application.agent_runtime.commands import CommandDispatcher, CommandResult
 from src.application.agent_runtime.policies import DemoVisibilityPolicy
 from src.application.agent_runtime.react_loop import ReactTrace, ReactTraceBuilder
 from src.application.agent_runtime.session import Session, SessionManager

@@ -1,261 +1,38 @@
 from __future__ import annotations
 
-import re
-from dataclasses import dataclass
-from typing import Iterable, Sequence
+from typing import Sequence
 
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
-from src.application.workflows.shared.identifier_value_pattern import (
-    contains_identifier_value,
+from src.application.services.answer_generation.intent.answer_intent_decision import (
+    AnswerIntentDecision,
+    compute_confidence,
 )
-from src.application.workflows.shared.negation_detection import (
-    has_non_negated_occurrence,
+from src.application.services.answer_generation.intent.answer_intent_ranking import (
+    pick_intent,
+    runner_up,
+)
+from src.application.services.answer_generation.intent.answer_intent_vocabulary import (
+    ANSWER_INTENT_RULES_VERSION,
+    INTENT_PRIORITY,
+)
+from src.application.services.answer_generation.intent.chunk_content_signal_scorer import (
+    apply_chunk_content_signal,
+    apply_chunk_type_preference_signal,
+)
+from src.application.services.answer_generation.intent.question_signal_scorer import (
+    apply_maintenance_procedure_disambiguation,
+    apply_question_signals,
+    apply_retrieval_intent_signal,
+    apply_route_signal,
+    normalize_text,
 )
 from src.config.logging import get_logger
 from src.domain.common import ChunkType
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
 _logger = get_logger(__name__)
-
-# Bumped whenever the scoring buckets, weights, or term lists below change
-# materially -- mirrors RETRIEVAL_INTENT_RULES_VERSION's convention (and the
-# `*_PROMPT_VERSION` pattern every LLM-prompt classifier already uses), so a
-# future fallback-rate report for answer-intent can correlate a shift against
-# a specific rule-pack version rather than an untracked code change.
-ANSWER_INTENT_RULES_VERSION = "v1"
-
-_SPECIFICATION_TERMS = (
-    "specification",
-    "specifications",
-    "spec",
-    "technical data",
-    "technical details",
-    "pressure",
-    "temperature",
-    "size",
-    "dimension",
-    "rating",
-    "capacity",
-    "voltage",
-    "current",
-    "material",
-    "power",
-    "dn ",
-)
-# NOTE on cross-module duplication (investigated, not merged): see the
-# matching note above RetrievalQueryIntentInferer._MAINTENANCE_MARKERS in
-# src/application/workflows/retrieval/retrieval_query_intent_inferer.py.
-# This list is intentionally broader (bare "service"/"inspection",
-# "overhaul", "routine maintenance") than the retrieval inferer's -- answer
-# FORMATTING tolerates more false positives than retrieval TARGETING does,
-# since misjudging the answer's shape is a lower-cost mistake than fetching
-# the wrong chunk types. A third, also-drifted list exists in
-# RetrievalSignalExtractor._MAINTENANCE_TERMS for LangGraph strategy
-# signals. Not unified -- three different downstream decisions with
-# different false-positive tolerances.
-_MAINTENANCE_TERMS = (
-    "maintenance",
-    "maintenance task",
-    "maintenance tasks",
-    "maintenance schedule",
-    "maintenance interval",
-    "maintenance intervals",
-    "preventive maintenance",
-    "service interval",
-    "service schedule",
-    "inspection schedule",
-    "routine maintenance",
-    "maintenance checklist",
-    "interval",
-    "service",
-    "inspection",
-    "oil change",
-    "lubricate",
-    "lubrication",
-    "grease",
-    "overhaul",
-)
-_PROCEDURE_TERMS = (
-    "how to",
-    "how do i",
-    "how can i",
-    "procedure",
-    "steps",
-    "step",
-    "install",
-    "disassemble",
-    "assemble",
-    "remove",
-    "replace",
-    "start",
-    "stop",
-    "operate",
-    "shutdown",
-    "commission",
-    "commissioning",
-    "connect",
-    "configure",
-)
-_SAFETY_TERMS = ("warning", "danger", "safety", "caution", "hazard")
-_TROUBLESHOOTING_TERMS = (
-    "fault",
-    "error",
-    "alarm",
-    "problem",
-    "cause",
-    "remedy",
-    "troubleshoot",
-    "symptom",
-)
-_CERTIFICATION_TERMS = (
-    "certificate",
-    "approval",
-    "inspection",
-    "surveyor",
-    "compliance",
-    "lr",
-    "atex",
-    "iecex",
-)
-_IDENTIFIER_TERMS = (
-    "part number",
-    "serial number",
-    "order code",
-    "order number",
-    "model number",
-    "model",
-    "tag",
-    "drawing number",
-    " id ",
-)
-_TABLE_TERMS = ("table", "list", "schedule", "matrix")
-_DOCUMENT_SUMMARY_TERMS = (
-    "summary",
-    "summarize",
-    "overview",
-    "what is in",
-    "what's in",
-    "what does this document contain",
-    "what does the document contain",
-)
-_IDENTIFIER_LISTING_VERBS = (
-    "list",
-    "show",
-    "display",
-    "enumerate",
-    "provide",
-    "give me",
-    "find all",
-)
-_IDENTIFIER_LISTING_MARKERS = (
-    "part number",
-    "part no",
-    "serial number",
-    "serial no",
-    "order code",
-    "order number",
-    "model number",
-    "drawing number",
-    "document number",
-    "tag number",
-    "equipment id",
-    "certificate",
-    "manufacturer",
-    "supplier",
-)
-_SPARE_PARTS_LIST_PHRASES = (
-    "spare part list",
-    "spare parts list",
-    "spare part table",
-    "spare parts table",
-    "table of spare part",
-    "table of spare parts",
-    "spare part no list",
-    "spare parts no list",
-    "list of spare part",
-    "list of spare parts",
-)
-_MAINTENANCE_SUMMARY_PHRASES = (
-    "maintenance task",
-    "maintenance tasks",
-    "maintenance schedule",
-    "maintenance interval",
-    "maintenance intervals",
-    "preventive maintenance",
-    "service interval",
-    "service schedule",
-    "inspection schedule",
-    "routine maintenance",
-    "maintenance checklist",
-)
-_EXPLICIT_PROCEDURE_PHRASES = (
-    "how to",
-    "how do i",
-    "how can i",
-    "show steps",
-    "show the steps",
-    "what are the steps",
-    "procedure for",
-    "steps for",
-)
-_TECHNICAL_VALUE_PATTERN = re.compile(
-    r"\b("
-    r"\d+(\.\d+)?\s*(bar|mm|cm|m|kw|w|v|a|hz|dn|pcs|pc)\b"
-    r"|dn\s*\d+\b"
-    r"|design pressure\b"
-    r"|test pressure\b"
-    r"|working pressure\b"
-    r")",
-    re.IGNORECASE,
-)
-_STEP_PATTERN = re.compile(r"^\s*(\d+[\).\s]|[-*]\s+)", re.MULTILINE)
-_CHUNK_TYPE_TO_INTENT: dict[ChunkType, AnswerIntent] = {
-    ChunkType.TECHNICAL_SPECIFICATION: AnswerIntent.SPECIFICATION_SUMMARY,
-    ChunkType.CERTIFICATION_INFO: AnswerIntent.CERTIFICATION_SUMMARY,
-    ChunkType.SPARE_PARTS_TABLE: AnswerIntent.TABLE_SUMMARY,
-    ChunkType.MAINTENANCE_INTERVAL: AnswerIntent.MAINTENANCE_SUMMARY,
-    ChunkType.MAINTENANCE_PROCEDURE: AnswerIntent.PROCEDURE_STEPS,
-    ChunkType.OPERATION_INSTRUCTION: AnswerIntent.PROCEDURE_STEPS,
-    ChunkType.INSTALLATION_INSTRUCTION: AnswerIntent.PROCEDURE_STEPS,
-    ChunkType.SAFETY_WARNING: AnswerIntent.SAFETY_WARNINGS,
-    ChunkType.TROUBLESHOOTING: AnswerIntent.TROUBLESHOOTING,
-    ChunkType.OVERVIEW: AnswerIntent.DOCUMENT_SUMMARY,
-}
-_RETRIEVAL_INTENT_TO_ANSWER_INTENT: dict[str, AnswerIntent] = {
-    "maintenance": AnswerIntent.MAINTENANCE_SUMMARY,
-    "specification": AnswerIntent.SPECIFICATION_SUMMARY,
-    "procedure": AnswerIntent.PROCEDURE_STEPS,
-    "troubleshooting": AnswerIntent.TROUBLESHOOTING,
-    "safety": AnswerIntent.SAFETY_WARNINGS,
-    "table": AnswerIntent.TABLE_SUMMARY,
-    "identifier": AnswerIntent.IDENTIFIER_LOOKUP,
-    "overview": AnswerIntent.DOCUMENT_SUMMARY,
-    "document_exploration": AnswerIntent.DOCUMENT_SUMMARY,
-}
-_INTENT_PRIORITY: tuple[AnswerIntent, ...] = (
-    AnswerIntent.SPECIFICATION_SUMMARY,
-    AnswerIntent.MAINTENANCE_SUMMARY,
-    AnswerIntent.PROCEDURE_STEPS,
-    AnswerIntent.SAFETY_WARNINGS,
-    AnswerIntent.TROUBLESHOOTING,
-    AnswerIntent.CERTIFICATION_SUMMARY,
-    AnswerIntent.IDENTIFIER_LOOKUP,
-    AnswerIntent.TABLE_SUMMARY,
-    AnswerIntent.DOCUMENT_SUMMARY,
-    AnswerIntent.GENERAL,
-)
-
-
-@dataclass(slots=True, frozen=True)
-class AnswerIntentDecision:
-    intent: AnswerIntent
-    confidence: float
-    reason: str
-    matched_signals: list[str]
-    runner_up_intent: AnswerIntent | None = None
-    runner_up_score: int = 0
 
 
 class AnswerIntentAnalyzer:
@@ -269,36 +46,38 @@ class AnswerIntentAnalyzer:
         legacy_query_intent: str | None = None,
         route: str | None = None,
     ) -> AnswerIntentDecision:
-        normalized_question = self._normalize(question)
+        normalized_question = normalize_text(question)
         chunks = list(approved_chunks or [])
-        scores = {intent: 0 for intent in _INTENT_PRIORITY}
-        matched = {intent: [] for intent in _INTENT_PRIORITY}
+        scores = {intent: 0 for intent in INTENT_PRIORITY}
+        matched: dict[AnswerIntent, list[str]] = {
+            intent: [] for intent in INTENT_PRIORITY
+        }
 
-        self._apply_question_signals(normalized_question, scores, matched)
-        self._apply_route_signal(route, scores, matched)
-        self._apply_retrieval_intent_signal(
+        apply_question_signals(normalized_question, scores, matched)
+        apply_route_signal(route, scores, matched)
+        apply_retrieval_intent_signal(
             retrieval_intent or legacy_query_intent,
             scores,
             matched,
         )
-        self._apply_chunk_type_preference_signal(
+        apply_chunk_type_preference_signal(
             chunk_type_preferences or [],
             scores,
             matched,
         )
-        self._apply_chunk_content_signal(
+        apply_chunk_content_signal(
             question=normalized_question,
             chunks=chunks,
             scores=scores,
             matched=matched,
         )
-        self._apply_maintenance_procedure_disambiguation(
+        apply_maintenance_procedure_disambiguation(
             normalized_question,
             scores,
             matched,
         )
 
-        best_intent = self._pick_intent(scores)
+        best_intent = pick_intent(scores)
         if scores[best_intent] <= 0:
             _logger.info(
                 "answer_intent_fallback_general reason=no_strong_signal "
@@ -312,8 +91,8 @@ class AnswerIntentAnalyzer:
                 matched_signals=[],
             )
 
-        runner_up_intent, runner_up_score = self._runner_up(scores, best_intent)
-        confidence = self._confidence(
+        runner_up_intent, runner_up_score = runner_up(scores, best_intent)
+        confidence = compute_confidence(
             best_score=scores[best_intent],
             runner_up_score=runner_up_score,
         )
@@ -337,365 +116,3 @@ class AnswerIntentAnalyzer:
             runner_up_intent=runner_up_intent,
             runner_up_score=runner_up_score,
         )
-
-    @staticmethod
-    def _normalize(value: str | None) -> str:
-        return " ".join((value or "").strip().lower().split())
-
-    def _apply_question_signals(
-        self,
-        question: str,
-        scores: dict[AnswerIntent, int],
-        matched: dict[AnswerIntent, list[str]],
-    ) -> None:
-        self._score_terms(
-            question,
-            AnswerIntent.SPECIFICATION_SUMMARY,
-            _SPECIFICATION_TERMS,
-            6,
-            scores,
-            matched,
-        )
-        self._score_terms(
-            question,
-            AnswerIntent.MAINTENANCE_SUMMARY,
-            _MAINTENANCE_TERMS,
-            6,
-            scores,
-            matched,
-        )
-        self._score_terms(
-            question,
-            AnswerIntent.PROCEDURE_STEPS,
-            _PROCEDURE_TERMS,
-            6,
-            scores,
-            matched,
-        )
-        self._score_terms(
-            question,
-            AnswerIntent.SAFETY_WARNINGS,
-            _SAFETY_TERMS,
-            6,
-            scores,
-            matched,
-        )
-        self._score_terms(
-            question,
-            AnswerIntent.TROUBLESHOOTING,
-            _TROUBLESHOOTING_TERMS,
-            6,
-            scores,
-            matched,
-        )
-        self._score_terms(
-            question,
-            AnswerIntent.CERTIFICATION_SUMMARY,
-            _CERTIFICATION_TERMS,
-            6,
-            scores,
-            matched,
-        )
-        self._score_terms(
-            question,
-            AnswerIntent.IDENTIFIER_LOOKUP,
-            _IDENTIFIER_TERMS,
-            6,
-            scores,
-            matched,
-        )
-        self._score_terms(
-            question,
-            AnswerIntent.TABLE_SUMMARY,
-            _TABLE_TERMS,
-            5,
-            scores,
-            matched,
-        )
-        self._score_terms(
-            question,
-            AnswerIntent.DOCUMENT_SUMMARY,
-            _DOCUMENT_SUMMARY_TERMS,
-            5,
-            scores,
-            matched,
-        )
-        if "how often" in question:
-            scores[AnswerIntent.MAINTENANCE_SUMMARY] += 3
-            matched[AnswerIntent.MAINTENANCE_SUMMARY].append("question:how often")
-        if any(phrase in question for phrase in _MAINTENANCE_SUMMARY_PHRASES):
-            scores[AnswerIntent.MAINTENANCE_SUMMARY] += 4
-            matched[AnswerIntent.MAINTENANCE_SUMMARY].append(
-                "question:maintenance_summary_phrase"
-            )
-        if "what is in" in question or "what's in" in question:
-            scores[AnswerIntent.DOCUMENT_SUMMARY] += 2
-            matched[AnswerIntent.DOCUMENT_SUMMARY].append("question:what is in")
-        if self._contains_identifier_reference(question):
-            scores[AnswerIntent.IDENTIFIER_LOOKUP] += 3
-            matched[AnswerIntent.IDENTIFIER_LOOKUP].append(
-                "question:identifier_reference"
-            )
-        if self._looks_like_identifier_listing_question(question):
-            scores[AnswerIntent.IDENTIFIER_LOOKUP] += 8
-            matched[AnswerIntent.IDENTIFIER_LOOKUP].append(
-                "question:identifier_listing_request"
-            )
-        if any(phrase in question for phrase in _SPARE_PARTS_LIST_PHRASES):
-            scores[AnswerIntent.TABLE_SUMMARY] += 10
-            matched[AnswerIntent.TABLE_SUMMARY].append(
-                "question:spare_parts_list_phrase"
-            )
-
-    def _apply_route_signal(
-        self,
-        route: str | None,
-        scores: dict[AnswerIntent, int],
-        matched: dict[AnswerIntent, list[str]],
-    ) -> None:
-        if route == "document_exploration":
-            scores[AnswerIntent.DOCUMENT_SUMMARY] += 5
-            matched[AnswerIntent.DOCUMENT_SUMMARY].append("route:document_exploration")
-
-    def _apply_retrieval_intent_signal(
-        self,
-        retrieval_intent: str | None,
-        scores: dict[AnswerIntent, int],
-        matched: dict[AnswerIntent, list[str]],
-    ) -> None:
-        normalized = self._normalize(retrieval_intent)
-        answer_intent = _RETRIEVAL_INTENT_TO_ANSWER_INTENT.get(normalized)
-        if answer_intent is None:
-            return
-        scores[answer_intent] += 4
-        matched[answer_intent].append(f"retrieval:{normalized}")
-
-    def _apply_chunk_type_preference_signal(
-        self,
-        chunk_types: Sequence[ChunkType],
-        scores: dict[AnswerIntent, int],
-        matched: dict[AnswerIntent, list[str]],
-    ) -> None:
-        for chunk_type in chunk_types:
-            answer_intent = _CHUNK_TYPE_TO_INTENT.get(chunk_type)
-            if answer_intent is None:
-                continue
-            scores[answer_intent] += 2
-            matched[answer_intent].append(f"chunk_type:{chunk_type.value}")
-
-    def _apply_chunk_content_signal(
-        self,
-        *,
-        question: str,
-        chunks: Sequence[RetrievedChunk],
-        scores: dict[AnswerIntent, int],
-        matched: dict[AnswerIntent, list[str]],
-    ) -> None:
-        if not chunks:
-            return
-
-        normalized_contents = [self._normalize(chunk.content) for chunk in chunks]
-        allow_specification_boost = self._looks_like_specification_question(question) or not (
-            self._looks_like_maintenance_question(question)
-            and not self._looks_like_explicit_procedure_question(question)
-        )
-        if allow_specification_boost and any(
-            self._has_technical_values(chunk.content) for chunk in chunks
-        ):
-            scores[AnswerIntent.SPECIFICATION_SUMMARY] += 3
-            matched[AnswerIntent.SPECIFICATION_SUMMARY].append(
-                "context:technical_values"
-            )
-        if any(
-            self._looks_like_table(chunk.content) or self._has_table_evidence(chunk)
-            for chunk in chunks
-        ):
-            scores[AnswerIntent.TABLE_SUMMARY] += 2
-            matched[AnswerIntent.TABLE_SUMMARY].append("context:table_like")
-        if any(self._looks_like_spare_parts_content(chunk.content) for chunk in chunks):
-            scores[AnswerIntent.TABLE_SUMMARY] += 3
-            matched[AnswerIntent.TABLE_SUMMARY].append("context:spare_parts_content")
-        if any(self._contains_identifier_values(chunk.content) for chunk in chunks):
-            scores[AnswerIntent.IDENTIFIER_LOOKUP] += 2
-            matched[AnswerIntent.IDENTIFIER_LOOKUP].append("context:identifier_values")
-        if any(self._contains_procedure_steps(chunk.content) for chunk in chunks):
-            scores[AnswerIntent.PROCEDURE_STEPS] += 2
-            matched[AnswerIntent.PROCEDURE_STEPS].append("context:ordered_steps")
-        if any("maintenance" in content for content in normalized_contents):
-            scores[AnswerIntent.MAINTENANCE_SUMMARY] += 2
-            matched[AnswerIntent.MAINTENANCE_SUMMARY].append("context:maintenance_text")
-        if any("warning" in content for content in normalized_contents):
-            scores[AnswerIntent.SAFETY_WARNINGS] += 2
-            matched[AnswerIntent.SAFETY_WARNINGS].append("context:safety_text")
-        if any(
-            any(term in content for term in ("fault", "cause", "remedy", "troubleshooting"))
-            for content in normalized_contents
-        ):
-            scores[AnswerIntent.TROUBLESHOOTING] += 2
-            matched[AnswerIntent.TROUBLESHOOTING].append(
-                "context:troubleshooting_text"
-            )
-        if any(
-            any(
-                term in content
-                for term in ("certificate", "approval", "inspection", "compliance")
-            )
-            for content in normalized_contents
-        ):
-            scores[AnswerIntent.CERTIFICATION_SUMMARY] += 2
-            matched[AnswerIntent.CERTIFICATION_SUMMARY].append(
-                "context:certification_text"
-            )
-
-    def _apply_maintenance_procedure_disambiguation(
-        self,
-        question: str,
-        scores: dict[AnswerIntent, int],
-        matched: dict[AnswerIntent, list[str]],
-    ) -> None:
-        if not self._looks_like_maintenance_question(question):
-            return
-        if self._looks_like_explicit_procedure_question(question):
-            scores[AnswerIntent.PROCEDURE_STEPS] += 2
-            matched[AnswerIntent.PROCEDURE_STEPS].append(
-                "question:explicit_procedure_request"
-            )
-            return
-        scores[AnswerIntent.MAINTENANCE_SUMMARY] += 4
-        matched[AnswerIntent.MAINTENANCE_SUMMARY].append(
-            "question:maintenance_over_procedure"
-        )
-
-    @staticmethod
-    def _score_terms(
-        text: str,
-        intent: AnswerIntent,
-        terms: Iterable[str],
-        weight: int,
-        scores: dict[AnswerIntent, int],
-        matched: dict[AnswerIntent, list[str]],
-    ) -> None:
-        # Negation-aware: a term preceded by a negation cue ("not", "without",
-        # "unrelated to", ...) within a short lookback window doesn't
-        # contribute to its intent's score -- e.g. "this is not a maintenance
-        # question" no longer scores MAINTENANCE_SUMMARY. Shares the exact
-        # cue vocabulary/lookback logic RetrievalQueryIntentInferer uses via
-        # negation_detection.has_non_negated_occurrence.
-        for term in terms:
-            if has_non_negated_occurrence(text, term):
-                scores[intent] += weight
-                matched[intent].append(f"question:{term}")
-
-    @staticmethod
-    def _has_technical_values(content: str) -> bool:
-        return bool(_TECHNICAL_VALUE_PATTERN.search(content))
-
-    @staticmethod
-    def _contains_procedure_steps(content: str) -> bool:
-        normalized = content.lower()
-        return bool(_STEP_PATTERN.search(content)) or any(
-            marker in normalized
-            for marker in ("step 1", "step 2", "first,", "then ", "next ", "finally")
-        )
-
-    @staticmethod
-    def _contains_identifier_values(content: str) -> bool:
-        normalized = content.lower()
-        if any(
-            marker in normalized
-            for marker in (
-                "serial number",
-                "part number",
-                "order code",
-                "model number",
-                "tag no",
-                "drawing number",
-            )
-        ):
-            return True
-        return contains_identifier_value(content)
-
-    @staticmethod
-    def _looks_like_table(content: str) -> bool:
-        return sum(1 for line in content.splitlines() if "|" in line) >= 2
-
-    @staticmethod
-    def _has_table_evidence(chunk: RetrievedChunk) -> bool:
-        return (
-            chunk.metadata.get("table_evidence_hydrated") == "true"
-            or bool(chunk.metadata.get("table_rows_json"))
-        )
-
-    @staticmethod
-    def _looks_like_spare_parts_content(content: str) -> bool:
-        normalized = content.lower()
-        return "spare part" in normalized or "spare parts" in normalized
-
-    @staticmethod
-    def _looks_like_maintenance_question(question: str) -> bool:
-        return "maintenance" in question or any(
-            phrase in question for phrase in _MAINTENANCE_SUMMARY_PHRASES
-        )
-
-    @staticmethod
-    def _looks_like_explicit_procedure_question(question: str) -> bool:
-        return any(phrase in question for phrase in _EXPLICIT_PROCEDURE_PHRASES)
-
-    @staticmethod
-    def _looks_like_specification_question(question: str) -> bool:
-        return any(term in question for term in _SPECIFICATION_TERMS)
-
-    @staticmethod
-    def _contains_identifier_reference(question: str) -> bool:
-        return any(marker in question for marker in _IDENTIFIER_LISTING_MARKERS)
-
-    @staticmethod
-    def _looks_like_identifier_listing_question(question: str) -> bool:
-        if not any(marker in question for marker in _IDENTIFIER_LISTING_VERBS):
-            return False
-        return AnswerIntentAnalyzer._contains_identifier_reference(question)
-
-    @staticmethod
-    def _pick_intent(scores: dict[AnswerIntent, int]) -> AnswerIntent:
-        best_score = max(scores.values())
-        candidates = [
-            intent for intent in _INTENT_PRIORITY if scores.get(intent, 0) == best_score
-        ]
-        return candidates[0] if candidates else AnswerIntent.GENERAL
-
-    @staticmethod
-    def _runner_up(
-        scores: dict[AnswerIntent, int],
-        best_intent: AnswerIntent,
-    ) -> tuple[AnswerIntent | None, int]:
-        """Highest-scoring intent other than best_intent, tie-broken by the
-        same _INTENT_PRIORITY order _pick_intent uses. None/0 when no other
-        intent scored at all -- exposed on AnswerIntentDecision so callers
-        get the same runner-up visibility RetrievalQueryIntentClassification
-        already provides on the retrieval side, instead of _confidence()
-        computing and discarding it internally."""
-        runner_up_intent: AnswerIntent | None = None
-        runner_up_score = 0
-        for intent in _INTENT_PRIORITY:
-            if intent == best_intent:
-                continue
-            score = scores.get(intent, 0)
-            if score > runner_up_score:
-                runner_up_score = score
-                runner_up_intent = intent
-        if runner_up_score <= 0:
-            return None, 0
-        return runner_up_intent, runner_up_score
-
-    @staticmethod
-    def _confidence(*, best_score: int, runner_up_score: int) -> float:
-        margin = best_score - runner_up_score
-        if best_score >= 10 and margin >= 3:
-            return 0.95
-        if best_score >= 8 and margin >= 2:
-            return 0.9
-        if best_score >= 6:
-            return 0.82
-        if best_score >= 4:
-            return 0.72
-        return 0.62
