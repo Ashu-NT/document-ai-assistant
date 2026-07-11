@@ -7,33 +7,21 @@ from src.application.guardrails.services import PreToolGuardrailService
 from src.application.langgraph.common import GraphError
 from src.application.langgraph.common import serialize_graph_value
 from src.application.langgraph.factories.tool_registry import ToolRegistry
-from src.application.langgraph.nodes.node_utils import (
-    attach_entity_type,
-    build_error,
-    deserialize_identifiers,
-    format_document_options,
-    serialize_tool_result,
+from src.application.langgraph.nodes.node_utils import build_error, serialize_tool_result
+from src.application.langgraph.planning.combined_answer_formatter import format_combined_answer
+from src.application.langgraph.planning.execution.plan_step_request_builder import (
+    build_plan_step_request,
+    resolved_document_id,
 )
 from src.application.langgraph.planning.execution_plan import ExecutionPlan
+from src.application.langgraph.planning.plan_step_state_updater import (
+    apply_failure_state,
+    apply_success_state,
+    store_canonical_tool_result,
+)
 from src.application.langgraph.state import AgentState
 from src.application.langgraph.tracing import GraphRunRecorder
 from src.application.tools.common import ToolResult
-from src.application.tools.documents import (
-    DocumentDetailsRequest,
-    FindDocumentRequest,
-    ListDocumentsRequest,
-)
-from src.application.tools.evaluation import (
-    RetrievalTraceRequest,
-    RunQualityGateRequest,
-)
-from src.application.tools.exploration import ExploreDocumentRequest
-from src.application.tools.question_answering import AnswerQuestionRequest
-from src.application.tools.retrieval import RetrieveChunksRequest
-from src.application.tools.retrieval.retrieve_identifiers_tool import RetrieveIdentifiersRequest
-from src.application.tools.retrieval.retrieve_structured_entities_tool import (
-    RetrieveStructuredEntitiesRequest,
-)
 
 
 class PlanExecutor:
@@ -78,7 +66,6 @@ class PlanExecutor:
                 )
                 break
 
-            resolved_document_id = self._resolved_document_id(next_state)
             token = self.recorder.start_node(
                 "plan_step",
                 route=next_state.get("route"),
@@ -86,7 +73,7 @@ class PlanExecutor:
                 plan_id=plan.plan_id,
                 plan_goal=plan.goal,
                 step_id=step.step_id,
-                selected_document_id=resolved_document_id,
+                selected_document_id=resolved_document_id(next_state),
             )
             try:
                 result = self._execute_step(
@@ -105,7 +92,7 @@ class PlanExecutor:
             serialized["tool_name"] = step.tool_name
             serialized["step_id"] = step.step_id
             tool_results[step.output_key] = serialized
-            self._store_canonical_tool_result(
+            store_canonical_tool_result(
                 tool_results=tool_results,
                 tool_name=step.tool_name,
                 serialized=serialized,
@@ -131,7 +118,7 @@ class PlanExecutor:
 
             next_state["tool_results"] = tool_results
             next_state["trace"] = trace
-            self._apply_success_state(
+            apply_success_state(
                 next_state=next_state,
                 step=step,
                 result=result,
@@ -145,7 +132,7 @@ class PlanExecutor:
 
             failed_step = step.step_id
             plan_success = False
-            if self._apply_failure_state(
+            if apply_failure_state(
                 next_state=next_state,
                 step=step,
                 result=result,
@@ -179,10 +166,6 @@ class PlanExecutor:
     ) -> bool:
         return all(dependency in completed_dependencies for dependency in depends_on)
 
-    @staticmethod
-    def _resolved_document_id(state: AgentState) -> str | None:
-        return state.get("document_id") or state.get("selected_document_id")
-
     def _execute_step(
         self,
         *,
@@ -192,14 +175,14 @@ class PlanExecutor:
         step_outputs: dict[str, dict[str, Any]],
     ) -> ToolResult:
         if step.tool_name == "format_combined_answer":
-            return self._format_combined_answer(step=step, step_outputs=step_outputs)
+            return format_combined_answer(step=step, step_outputs=step_outputs)
 
         guardrail_result = self.pre_tool_guardrail_service.check(
             GuardrailContext(
                 user_input=state.get("user_input") or "",
                 query_text=state.get("user_input") or "",
                 route=state.get("route"),
-                document_id=self._resolved_document_id(state),
+                document_id=resolved_document_id(state),
                 selected_document_id=state.get("selected_document_id"),
                 requested_tool=step.tool_name,
                 requested_action=f"execute:{step.tool_name}",
@@ -216,198 +199,9 @@ class PlanExecutor:
             )
 
         tool = tool_registry.require(step.tool_name)
-        request = self._build_request(
+        request = build_plan_step_request(
             step=step,
             state=state,
             step_outputs=step_outputs,
         )
         return tool.run(request)
-
-    def _build_request(self, *, step, state: AgentState, step_outputs: dict[str, dict[str, Any]] | None = None):
-        document_id = self._resolved_document_id(state)
-        args = step.args
-        if step.tool_name == "list_documents":
-            return ListDocumentsRequest()
-        if step.tool_name == "find_document":
-            query_text = args.get("query_text") or state.get("document_query")
-            document_selector = state.get("document_id") if not query_text else None
-            return FindDocumentRequest(
-                document_id=document_selector,
-                query_text=query_text,
-            )
-        if step.tool_name == "document_details":
-            return DocumentDetailsRequest(document_id=document_id)
-        if step.tool_name == "explore_document":
-            return ExploreDocumentRequest(document_id=document_id)
-        if step.tool_name == "retrieve_chunks":
-            return RetrieveChunksRequest(
-                query_text=str(args.get("query_text") or state.get("question") or state["user_input"]),
-                document_id=document_id,
-                top_k=state.get("top_k") or 5,
-            )
-        if step.tool_name == "retrieve_identifiers":
-            return RetrieveIdentifiersRequest(
-                identifier_value=args.get("identifier_value"),
-                query_text=str(args.get("query_text") or state.get("question") or state["user_input"]),
-                document_id=document_id,
-                top_k=state.get("top_k") or 5,
-            )
-        if step.tool_name == "retrieve_structured_entities":
-            return RetrieveStructuredEntitiesRequest(
-                entity_type=str(args.get("entity_type") or ""),
-                query_text=args.get("query_text"),
-                document_id=document_id,
-                top_k=int(args.get("top_k") or 20),
-            )
-        if step.tool_name == "answer_question":
-            identifier_hits = (step_outputs or {}).get("identifier_hits", {})
-            structured_hits = (step_outputs or {}).get("structured_entity_hits", {})
-            structured_data = structured_hits.get("data") or {}
-            return AnswerQuestionRequest(
-                question=str(args.get("question") or state.get("question") or state["user_input"]),
-                document_id=document_id,
-                top_k=state.get("top_k"),
-                allow_answer_generation=state["allow_answer_generation"],
-                include_context=state["include_context"],
-                require_citations=True,
-                resolved_identifiers=deserialize_identifiers(
-                    (identifier_hits.get("data") or {}).get("identifiers") or []
-                ),
-                resolved_structured_entities=attach_entity_type(
-                    structured_data.get("items") or [],
-                    structured_data.get("entity_type"),
-                ),
-            )
-        if step.tool_name == "run_quality_gate":
-            return RunQualityGateRequest(
-                report_path=args.get("report_path"),
-                thresholds_path=args.get("thresholds_path"),
-            )
-        if step.tool_name == "retrieval_trace":
-            return RetrievalTraceRequest(
-                query_text=str(args.get("query_text") or state.get("question") or state["user_input"]),
-                document_id=document_id,
-                top_k=state.get("top_k") or 5,
-                write_output=bool(args.get("write_output", True)),
-            )
-        raise ValueError(f"Unsupported plan tool: {step.tool_name}")
-
-    @staticmethod
-    def _store_canonical_tool_result(
-        *,
-        tool_results: dict[str, Any],
-        tool_name: str,
-        serialized: dict[str, Any],
-    ) -> None:
-        canonical_key = {
-            "retrieve_chunks": "retrieve_evidence",
-        }.get(tool_name, tool_name)
-        tool_results[canonical_key] = serialized
-
-    def _apply_success_state(
-        self,
-        *,
-        next_state: AgentState,
-        step,
-        result: ToolResult,
-        step_outputs: dict[str, dict[str, Any]],
-    ) -> None:
-        if not result.success:
-            return
-        if step.tool_name == "find_document":
-            data = result.data or {}
-            if isinstance(data, dict):
-                title = data.get("display_name") or data.get("title")
-                next_state["document_id"] = data.get("document_id")
-                next_state["document_title"] = title
-                next_state["selected_document_id"] = data.get("document_id")
-                next_state["selected_document_title"] = title
-                next_state["selected_document_file_name"] = data.get("file_name")
-                next_state["needs_clarification"] = False
-                next_state["clarification_message"] = None
-                next_state["pending_clarification"] = None
-                next_state["clarification_options"] = []
-                next_state["clarification_question"] = None
-                next_state["clarification_candidate_index"] = None
-        elif step.tool_name == "format_combined_answer":
-            data = result.data or {}
-            if isinstance(data, dict):
-                next_state["response_text"] = data.get("text")
-        elif step.tool_name == "answer_question":
-            payload = step_outputs.get(step.output_key, {}).get("data")
-            if isinstance(payload, dict):
-                next_state["response_text"] = (
-                    payload.get("answer_text")
-                    or payload.get("safe_user_message")
-                    or next_state.get("response_text")
-                )
-
-    def _apply_failure_state(
-        self,
-        *,
-        next_state: AgentState,
-        step,
-        result: ToolResult,
-    ) -> bool:
-        if step.tool_name == "find_document":
-            if result.error_code == "multiple_documents_found":
-                matches = result.diagnostics.get("matches", [])
-                next_state["needs_clarification"] = True
-                next_state["clarification_options"] = matches if isinstance(matches, list) else []
-                next_state["clarification_question"] = (
-                    "I found multiple matching documents. Which one do you mean?"
-                )
-                next_state["pending_clarification"] = {
-                    "kind": "document_selection",
-                    "route": next_state.get("route"),
-                }
-                next_state["clarification_message"] = format_document_options(
-                    next_state["clarification_options"]
-                )
-                next_state["response_text"] = next_state["clarification_message"]
-                return True
-            if result.error_code == "document_not_found":
-                next_state["needs_clarification"] = True
-                next_state["clarification_message"] = (
-                    "I could not find that document. Please refine the document name or ID."
-                )
-                next_state["response_text"] = next_state["clarification_message"]
-                return True
-
-        next_state["error"] = build_error(
-            message=result.message or "Plan step failed.",
-            error_code=result.error_code or "tool_failed",
-            diagnostics={
-                "tool_name": step.tool_name,
-                "step_id": step.step_id,
-                **dict(result.diagnostics or {}),
-            },
-        )
-        return True
-
-    @staticmethod
-    def _format_combined_answer(*, step, step_outputs: dict[str, dict[str, Any]]) -> ToolResult:
-        labels = list(step.args.get("section_labels", []))
-        sections: list[str] = []
-        for index, dependency in enumerate(step.depends_on):
-            label = labels[index] if index < len(labels) else f"Section {index + 1}"
-            payload = step_outputs.get(dependency, {}).get("data")
-            body = PlanExecutor._extract_answer_text(payload)
-            sections.append(f"{label}:\n{body}")
-        body_text = "\n\n".join(sections).strip()
-        if body_text:
-            summary = "Comparison summary: both sections were answered from the selected document."
-            text = f"{body_text}\n\n{summary}"
-        else:
-            text = "No combined answer could be produced."
-        return ToolResult.ok(data={"text": text})
-
-    @staticmethod
-    def _extract_answer_text(payload: Any) -> str:
-        if isinstance(payload, dict):
-            return (
-                str(payload.get("answer_text") or "")
-                or str(payload.get("safe_user_message") or "")
-                or str(payload.get("response_text") or "")
-            ).strip() or "No answer was available."
-        return "No answer was available."

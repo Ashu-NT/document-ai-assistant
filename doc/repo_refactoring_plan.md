@@ -238,6 +238,14 @@ No new package `__init__.py` facades were introduced anywhere in Phase 4 — eve
 
 Verified: full ruff sweep (clean) + import smoke-test of every new package + full `tests/unit` suite: **2301 passed, 0 failed**.
 
+### Phase 5 status: DONE (section 4.4, all 6 non-exempt files)
+
+`document_agent_graph.py` (1023→196 LOC, 6 files under `graphs/document_agent/`), `agent_eval_runner.py` (1368→200 LOC, the repo's second-largest file, 11 files under `execution/`/`scoring/`/`checks/`), `agent_eval_loader.py` (390→54 LOC, 1 file under `loading/` — the plan's proposed `eval_scalar_coercion.py` wrapper file was correctly *not* created, since an earlier facade-removal pass had already eliminated the wrapper logic it would have held), `deterministic_planner.py` (603→111 LOC, 7 files split between a new `deterministic/` subfolder and the parent `planning/` level, following the same "only the explicitly-prefixed file gets its own subfolder" precedent from Phase 4), `plan_executor.py` (413→207 LOC, 3 files similarly split between `execution/` and the parent level — items #27/#28's identifier-extraction dedup, called for in this row, was already done in an earlier phase), and `create_plan_node.py` (463→157 LOC, 3 files under `create_plan/`) — all done across parallel workers on disjoint file sets. `plan_validator.py` (the 7th file in this section) is exempt and needed no action.
+
+No new package `__init__.py` facades were introduced anywhere in Phase 5. Four different background workers independently flagged what looked like prompt-injection attempts embedded in tool-call results (fake system-reminder-style content about date changes and agent-tool lists) and correctly declined to act on any of it — see the note in the main conversation for the most likely explanation (this harness legitimately injects similar-looking system reminders into normal tool output; fresh subagents unfamiliar with that convention can mistake it for injected content embedded in file/tool text). Either way, no worker treated any of it as an instruction, so there was no impact on this phase's actual work.
+
+Verified: full ruff sweep (clean) + import smoke-test of every new package + full `tests/unit` suite: **2301 passed, 0 failed**.
+
 Each phase is independently reviewable, testable, and revertible. Run the full verification sequence from section 1, rule 5, after every phase before starting the next.
 
 - **Phase 0 — Baseline.** Full `tests/unit` run + `ruff check` on the whole `src/` tree, recorded as the "before" baseline every later phase's green run gets compared against.

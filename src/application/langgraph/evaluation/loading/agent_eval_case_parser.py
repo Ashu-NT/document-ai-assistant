@@ -1,0 +1,347 @@
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+from src.application.langgraph.common.value_coercion import (
+    bool_value,
+    optional_bool,
+    optional_float,
+    optional_str,
+)
+from src.application.langgraph.evaluation.agent_test_case import (
+    AgentExpectedBehavior,
+    AgentTestCase,
+    AgentTurnInput,
+)
+from src.shared.exceptions import SchemaValidationError
+
+
+def extract_case_items(
+    payload: Any,
+    *,
+    source_path: Path,
+) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        case_items = payload
+    elif isinstance(payload, dict) and isinstance(payload.get("cases"), list):
+        case_items = payload["cases"]
+    else:
+        raise SchemaValidationError(
+            "Agent evaluation case file must contain a list of cases.",
+            details={"path": str(source_path)},
+        )
+
+    if not case_items:
+        raise SchemaValidationError(
+            "Agent evaluation case file did not contain any cases.",
+            details={"path": str(source_path)},
+        )
+    if not all(isinstance(item, dict) for item in case_items):
+        raise SchemaValidationError(
+            "Each agent evaluation case must be a mapping.",
+            details={"path": str(source_path)},
+        )
+    return case_items
+
+
+def parse_case(
+    payload: dict[str, Any],
+    *,
+    source_path: Path,
+    case_index: int,
+) -> AgentTestCase:
+    case_id = required_string(
+        payload,
+        "case_id",
+        source_path=source_path,
+        case_index=case_index,
+    )
+    name = required_string(
+        payload,
+        "name",
+        source_path=source_path,
+        case_index=case_index,
+    )
+    inputs_payload = payload.get("inputs")
+    if not isinstance(inputs_payload, list) or not inputs_payload:
+        raise SchemaValidationError(
+            "Agent evaluation case inputs must be a non-empty list.",
+            details={
+                "path": str(source_path),
+                "case_index": case_index,
+                "case_id": case_id,
+            },
+        )
+
+    expected_payload = payload.get("expected")
+    if not isinstance(expected_payload, dict):
+        raise SchemaValidationError(
+            "Agent evaluation case expected behavior must be a mapping.",
+            details={
+                "path": str(source_path),
+                "case_index": case_index,
+                "case_id": case_id,
+            },
+        )
+
+    try:
+        return AgentTestCase(
+            case_id=case_id,
+            name=name,
+            description=optional_str(payload.get("description"), strict=True, strip=True),
+            inputs=[
+                parse_turn(
+                    item,
+                    source_path=source_path,
+                    case_index=case_index,
+                    turn_index=turn_index,
+                    case_id=case_id,
+                )
+                for turn_index, item in enumerate(inputs_payload, start=1)
+            ],
+            expected=parse_expected(
+                expected_payload,
+                source_path=source_path,
+                case_index=case_index,
+                case_id=case_id,
+            ),
+            tags=string_list(payload.get("tags")),
+            metadata=mapping(payload.get("metadata")),
+        )
+    except ValueError as exc:
+        raise SchemaValidationError(
+            "Agent evaluation case contains invalid field values.",
+            details={
+                "path": str(source_path),
+                "case_index": case_index,
+                "case_id": case_id,
+            },
+        ) from exc
+
+
+def parse_turn(
+    payload: Any,
+    *,
+    source_path: Path,
+    case_index: int,
+    turn_index: int,
+    case_id: str,
+) -> AgentTurnInput:
+    if not isinstance(payload, dict):
+        raise SchemaValidationError(
+            "Agent evaluation turn input must be a mapping.",
+            details={
+                "path": str(source_path),
+                "case_index": case_index,
+                "case_id": case_id,
+                "turn_index": turn_index,
+            },
+        )
+
+    user_input = required_string(
+        payload,
+        "user_input",
+        source_path=source_path,
+        case_index=case_index,
+        case_id=case_id,
+        turn_index=turn_index,
+    )
+    return AgentTurnInput(
+        user_input=user_input,
+        document=optional_str(payload.get("document"), strict=True, strip=True),
+        document_id=optional_str(payload.get("document_id"), strict=True, strip=True),
+        allow_answer_generation=bool_value(
+            payload.get("allow_answer_generation"),
+            default=False,
+        ),
+        llm_planning_enabled=bool_value(
+            payload.get("llm_planning_enabled"),
+            default=False,
+        ),
+        deep_research_enabled=bool_value(
+            payload.get("deep_research_enabled"),
+            default=False,
+        ),
+        llm_research_planning_enabled=bool_value(
+            payload.get("llm_research_planning_enabled"),
+            default=False,
+        ),
+        retrieval_strategy_enabled=bool_value(
+            payload.get("retrieval_strategy_enabled"),
+            default=False,
+        ),
+        llm_retrieval_strategy_enabled=bool_value(
+            payload.get("llm_retrieval_strategy_enabled"),
+            default=False,
+        ),
+        requested_retrieval_strategy=optional_str(
+            payload.get("requested_retrieval_strategy"), strict=True, strip=True
+        ),
+        show_retrieval_strategy=bool_value(
+            payload.get("show_retrieval_strategy"),
+            default=False,
+        ),
+        show_context=bool_value(
+            payload.get("show_context"),
+            default=False,
+        ),
+        show_plan=bool_value(
+            payload.get("show_plan"),
+            default=False,
+        ),
+        show_research_plan=bool_value(
+            payload.get("show_research_plan"),
+            default=False,
+        ),
+        show_research_trace=bool_value(
+            payload.get("show_research_trace"),
+            default=False,
+        ),
+    )
+
+
+def parse_expected(
+    payload: dict[str, Any],
+    *,
+    source_path: Path,
+    case_index: int,
+    case_id: str,
+) -> AgentExpectedBehavior:
+    try:
+        return AgentExpectedBehavior(
+            final_route=optional_str(payload.get("final_route"), strict=True, strip=True),
+            selected_document_contains=optional_str(
+                payload.get("selected_document_contains"), strict=True, strip=True
+            ),
+            selected_document_id=optional_str(
+                payload.get("selected_document_id"), strict=True, strip=True
+            ),
+            should_clarify=optional_bool(payload.get("should_clarify")),
+            should_exit=optional_bool(payload.get("should_exit")),
+            required_tools=string_list(payload.get("required_tools")),
+            forbidden_tools=string_list(payload.get("forbidden_tools")),
+            required_plan_tools=string_list(
+                payload.get("required_plan_tools")
+            ),
+            forbidden_plan_tools=string_list(
+                payload.get("forbidden_plan_tools")
+            ),
+            answer_must_contain=string_list(
+                payload.get("answer_must_contain")
+            ),
+            answer_must_not_contain=string_list(
+                payload.get("answer_must_not_contain")
+            ),
+            context_document_id=optional_str(
+                payload.get("context_document_id"), strict=True, strip=True
+            ),
+            unsafe_request_blocked=optional_bool(
+                payload.get("unsafe_request_blocked")
+            ),
+            success=optional_bool(payload.get("success")),
+            retrieval_strategy_primary=optional_str(
+                payload.get("retrieval_strategy_primary"), strict=True, strip=True
+            ),
+            retrieval_strategy_secondary_contains=string_list(
+                payload.get("retrieval_strategy_secondary_contains")
+            ),
+            retrieval_strategy_trace_required=optional_bool(
+                payload.get("retrieval_strategy_trace_required")
+            ),
+            research_plan_required=optional_bool(
+                payload.get("research_plan_required")
+            ),
+            research_report_required=optional_bool(
+                payload.get("research_report_required")
+            ),
+            research_gap_detection_required=optional_bool(
+                payload.get("research_gap_detection_required")
+            ),
+            research_citation_required=optional_bool(
+                payload.get("research_citation_required")
+            ),
+            research_task_success_min_rate=optional_float(
+                payload.get("research_task_success_min_rate")
+            ),
+        )
+    except ValueError as exc:
+        raise SchemaValidationError(
+            "Agent evaluation expected behavior contains invalid values.",
+            details={
+                "path": str(source_path),
+                "case_index": case_index,
+                "case_id": case_id,
+            },
+        ) from exc
+
+
+def validate_unique_case_ids(
+    cases: list[AgentTestCase],
+    *,
+    source_path: Path,
+) -> None:
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    for case in cases:
+        if case.case_id in seen:
+            duplicates.append(case.case_id)
+            continue
+        seen.add(case.case_id)
+    if duplicates:
+        raise SchemaValidationError(
+            "Agent evaluation case IDs must be unique.",
+            details={
+                "path": str(source_path),
+                "duplicate_case_ids": sorted(set(duplicates)),
+            },
+        )
+
+
+def required_string(
+    payload: dict[str, Any],
+    key: str,
+    *,
+    source_path: Path,
+    case_index: int,
+    case_id: str | None = None,
+    turn_index: int | None = None,
+) -> str:
+    value = optional_str(payload.get(key), strict=True, strip=True)
+    if value is not None:
+        return value
+    details: dict[str, Any] = {
+        "path": str(source_path),
+        "case_index": case_index,
+        "missing_field": key,
+    }
+    if case_id is not None:
+        details["case_id"] = case_id
+    if turn_index is not None:
+        details["turn_index"] = turn_index
+    raise SchemaValidationError(
+        "Agent evaluation case is missing a required string field.",
+        details=details,
+    )
+
+
+def string_list(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise ValueError("Expected list value.")
+    result: list[str] = []
+    for item in value:
+        normalized = optional_str(item, strict=True, strip=True)
+        if normalized is None:
+            continue
+        result.append(normalized)
+    return result
+
+
+def mapping(value: Any) -> dict[str, Any]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError("Expected mapping value.")
+    return dict(value)

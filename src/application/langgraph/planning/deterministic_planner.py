@@ -1,54 +1,32 @@
 from __future__ import annotations
 
-import re
-from collections.abc import Sequence
-
-from src.application.langgraph.common.structured_entity_query_detector import (
-    detect_structured_entity_type,
+from src.application.langgraph.planning.compare_plan_builder import build_compare_plan
+from src.application.langgraph.planning.compound_request_classifier import (
+    is_compare_request,
+    is_explore_and_answer_request,
+    is_list_and_find_request,
+    is_retrieve_and_answer_request,
+    looks_compound,
+)
+from src.application.langgraph.planning.deterministic.identifier_plan_builder import (
+    build_identifier_plan,
+    extract_identifier_value,
+    has_identifier_term,
 )
 from src.application.langgraph.planning.execution_plan import ExecutionPlan
-from src.application.langgraph.planning.plan_step import PlanStep
+from src.application.langgraph.planning.explore_and_retrieve_plan_builders import (
+    build_explore_and_answer_plan,
+    build_retrieve_and_answer_plan,
+)
+from src.application.langgraph.planning.list_and_find_plan_builder import (
+    build_list_and_find_plan,
+)
+from src.application.langgraph.planning.structured_entity_plan_builder import (
+    build_structured_entity_plan,
+    extract_structured_entity_type,
+)
 from src.application.langgraph.state import AgentState
 from src.shared.ids import IdGenerator
-
-_COMPOUND_MARKERS = (
-    " and ",
-    " compare ",
-    " then ",
-    " also ",
-    "summarize evidence",
-    "retrieve evidence",
-)
-_TASK_KEYWORDS = (
-    "explore",
-    "retrieve",
-    "evidence",
-    "summarize",
-    "compare",
-    "specification",
-    "maintenance",
-    "safety",
-    "procedure",
-    "sections",
-    "tables",
-)
-_COMPARISON_TOPICS: tuple[tuple[str, str, str], ...] = (
-    ("specification", "Specifications", "What specifications are available in this document?"),
-    ("maintenance", "Maintenance tasks", "What maintenance tasks are described in this document?"),
-    ("safety", "Safety warnings", "What safety warnings are described in this document?"),
-    ("procedure", "Procedures", "What procedures are described in this document?"),
-    ("troubleshooting", "Troubleshooting", "What troubleshooting information is described in this document?"),
-)
-_IDENTIFIER_VALUE_RE = re.compile(
-    r"\b([A-Z]{1,5}-?\d{1,6}[A-Z0-9-]*|\d{3,}[A-Z0-9-]+|DN\s*\d+)\b"
-)
-_IDENTIFIER_TERM_RE = re.compile(
-    r"\b(?:part\s*(?:number|no\.?)|p/?n\.?|serial\s*(?:number|no\.?)|s/?n\.?|"
-    r"model\s*(?:number|no\.?)|order\s*code|drawing\s*(?:number|no\.?)|"
-    r"tag\s*(?:number|no\.?)?|certificate\s*(?:number|no\.?)|component\s*code|"
-    r"manufacturer|supplier|made\s*by|manufactured\s*by)\b",
-    re.IGNORECASE,
-)
 
 
 class DeterministicPlanner:
@@ -66,9 +44,10 @@ class DeterministicPlanner:
         document_id = explicit_document_id or selected_document_id
         document_title = state.get("document_title") or state.get("selected_document_title")
 
-        structured_entity_type = self._extract_structured_entity_type(normalized_input)
+        structured_entity_type = extract_structured_entity_type(normalized_input)
         if structured_entity_type:
-            return self._build_structured_entity_plan(
+            return build_structured_entity_plan(
+                self.id_generator,
                 normalized_input=normalized_input,
                 entity_type=structured_entity_type,
                 document_query=document_query,
@@ -76,9 +55,10 @@ class DeterministicPlanner:
                 document_title=document_title,
             )
 
-        identifier_value = self._extract_identifier_value(normalized_input)
-        if identifier_value or self._has_identifier_term(normalized_input):
-            return self._build_identifier_plan(
+        identifier_value = extract_identifier_value(normalized_input)
+        if identifier_value or has_identifier_term(normalized_input):
+            return build_identifier_plan(
+                self.id_generator,
                 normalized_input=normalized_input,
                 identifier_value=identifier_value,
                 document_query=document_query,
@@ -86,35 +66,39 @@ class DeterministicPlanner:
                 document_title=document_title,
             )
 
-        if not self._looks_compound(normalized_input):
+        if not looks_compound(normalized_input):
             return None
 
-        if self._is_list_and_find_request(normalized_input):
-            return self._build_list_and_find_plan(
+        if is_list_and_find_request(normalized_input):
+            return build_list_and_find_plan(
+                self.id_generator,
                 normalized_input=normalized_input,
                 document_query=document_query,
                 document_id=document_id,
                 document_title=document_title,
             )
 
-        if self._is_compare_request(normalized_input):
-            return self._build_compare_plan(
+        if is_compare_request(normalized_input):
+            return build_compare_plan(
+                self.id_generator,
                 normalized_input=normalized_input,
                 document_query=document_query,
                 document_id=document_id,
                 document_title=document_title,
             )
 
-        if self._is_explore_and_answer_request(normalized_input):
-            return self._build_explore_and_answer_plan(
+        if is_explore_and_answer_request(normalized_input):
+            return build_explore_and_answer_plan(
+                self.id_generator,
                 normalized_input=normalized_input,
                 document_query=document_query,
                 document_id=document_id,
                 document_title=document_title,
             )
 
-        if self._is_retrieve_and_answer_request(normalized_input):
-            return self._build_retrieve_and_answer_plan(
+        if is_retrieve_and_answer_request(normalized_input):
+            return build_retrieve_and_answer_plan(
+                self.id_generator,
                 normalized_input=normalized_input,
                 document_query=document_query,
                 document_id=document_id,
@@ -125,479 +109,3 @@ class DeterministicPlanner:
     @staticmethod
     def _normalize(value: str) -> str:
         return " ".join(value.strip().lower().split())
-
-    @staticmethod
-    def _extract_identifier_value(normalized_input: str) -> str | None:
-        match = _IDENTIFIER_VALUE_RE.search(normalized_input.upper())
-        return match.group(0).replace(" ", "") if match else None
-
-    @staticmethod
-    def _has_identifier_term(normalized_input: str) -> bool:
-        return bool(_IDENTIFIER_TERM_RE.search(normalized_input))
-
-    @staticmethod
-    def _extract_structured_entity_type(normalized_input: str) -> str | None:
-        return detect_structured_entity_type(normalized_input)
-
-    @staticmethod
-    def _identifier_type_from_input(normalized_input: str) -> str | None:
-        lower = normalized_input.lower()
-        if re.search(r"\bpart\s*(?:number|no\.?)\b|\bp/?n\.?\b", lower):
-            return "part_number"
-        if re.search(r"\bserial\s*(?:number|no\.?)\b|\bs/?n\.?\b", lower):
-            return "serial_number"
-        if re.search(r"\bmodel\s*(?:number|no\.?)\b", lower):
-            return "model_number"
-        if re.search(r"\bcertificate\s*(?:number|no\.?)?\b|\bcert\b", lower):
-            return "certificate_number"
-        if re.search(r"\bdrawing\s*(?:number|no\.?)\b", lower):
-            return "drawing_number"
-        if re.search(r"\border\s*code\b|\bcomponent\s*code\b", lower):
-            return "component_code"
-        if re.search(r"\bmanufacturer\b|\bsupplier\b|\bmade\s*by\b|\bmanufactured\s*by\b", lower):
-            return "manufacturer_name"
-        return None
-
-    def _build_identifier_plan(
-        self,
-        *,
-        normalized_input: str,
-        identifier_value: str | None,
-        document_query: str | None,
-        document_id: str | None,
-        document_title: str | None,
-    ) -> ExecutionPlan:
-        identifier_type = self._identifier_type_from_input(normalized_input)
-        retrieve_args: dict[str, object] = {}
-        if identifier_value:
-            retrieve_args["identifier_value"] = identifier_value
-        if identifier_type:
-            retrieve_args["identifier_type"] = identifier_type
-        if document_id:
-            retrieve_args["document_id"] = document_id
-
-        plan_steps = self._document_resolution_steps(document_query=document_query, document_id=document_id)
-        plan_steps.append(
-            self._step(
-                tool_name="retrieve_identifiers",
-                description="Look up identifiers matching the requested value or type.",
-                output_key="identifier_hits",
-                args=retrieve_args,
-            )
-        )
-
-        if "maintenance" in normalized_input:
-            plan_steps.append(
-                self._step(
-                    tool_name="retrieve_chunks",
-                    description="Retrieve maintenance procedure chunks linked to this identifier.",
-                    output_key="context_chunks",
-                    args={
-                        "query_text": f"{identifier_value or 'identifier'} maintenance replacement procedure",
-                        "chunk_types": ["maintenance_procedure"],
-                        **({"document_id": document_id} if document_id else {}),
-                    },
-                    depends_on=["identifier_hits"],
-                )
-            )
-        elif "specification" in normalized_input or "spec" in normalized_input:
-            plan_steps.append(
-                self._step(
-                    tool_name="retrieve_chunks",
-                    description="Retrieve technical specification chunks linked to this identifier.",
-                    output_key="context_chunks",
-                    args={
-                        "query_text": f"{identifier_value or 'identifier'} technical specification",
-                        "chunk_types": ["technical_specification"],
-                        **({"document_id": document_id} if document_id else {}),
-                    },
-                    depends_on=["identifier_hits"],
-                )
-            )
-        elif "context" in normalized_input or "where" in normalized_input or "used" in normalized_input:
-            plan_steps.append(
-                self._step(
-                    tool_name="retrieve_chunks",
-                    description="Retrieve chunks providing context for this identifier.",
-                    output_key="context_chunks",
-                    args={
-                        "query_text": f"{identifier_value or 'identifier'} context usage",
-                        **({"document_id": document_id} if document_id else {}),
-                    },
-                    depends_on=["identifier_hits"],
-                )
-            )
-
-        last_output = plan_steps[-1].output_key
-        plan_steps.append(
-            self._step(
-                tool_name="answer_question",
-                description="Answer the identifier query using the retrieved evidence.",
-                output_key="answer",
-                input_key=last_output if last_output != "identifier_hits" else None,
-                args={"question": normalized_input},
-                depends_on=[last_output],
-            )
-        )
-
-        return self._plan(
-            goal=normalized_input,
-            steps=plan_steps,
-            reason="Detected an identifier lookup request requiring structured identifier retrieval.",
-            requires_document=bool(document_id or document_query),
-            document_id=document_id,
-            document_title=document_title or document_query,
-            diagnostics={
-                "plan_kind": "identifier_lookup",
-                "identifier_value": identifier_value,
-                "identifier_type": identifier_type,
-            },
-        )
-
-    def _build_structured_entity_plan(
-        self,
-        *,
-        normalized_input: str,
-        entity_type: str,
-        document_query: str | None,
-        document_id: str | None,
-        document_title: str | None,
-    ) -> ExecutionPlan:
-        retrieve_args: dict[str, object] = {
-            "entity_type": entity_type,
-            "query_text": normalized_input,
-        }
-        if document_id:
-            retrieve_args["document_id"] = document_id
-
-        plan_steps = self._document_resolution_steps(document_query=document_query, document_id=document_id)
-        plan_steps.append(
-            self._step(
-                tool_name="retrieve_structured_entities",
-                description=f"Look up extracted {entity_type} rows matching the request.",
-                output_key="structured_entity_hits",
-                args=retrieve_args,
-            )
-        )
-        plan_steps.append(
-            self._step(
-                tool_name="answer_question",
-                description="Answer the question using the retrieved structured entity data.",
-                output_key="answer",
-                input_key="structured_entity_hits",
-                args={"question": normalized_input},
-                depends_on=["structured_entity_hits"],
-            )
-        )
-
-        return self._plan(
-            goal=normalized_input,
-            steps=plan_steps,
-            reason="Detected a structured-entity lookup request requiring extracted row retrieval.",
-            requires_document=bool(document_id or document_query),
-            document_id=document_id,
-            document_title=document_title or document_query,
-            diagnostics={
-                "plan_kind": "structured_entity_lookup",
-                "entity_type": entity_type,
-            },
-        )
-
-    def _looks_compound(self, normalized_input: str) -> bool:
-        if any(marker in f" {normalized_input} " for marker in _COMPOUND_MARKERS):
-            return True
-        keyword_hits = sum(
-            1 for keyword in _TASK_KEYWORDS if keyword in normalized_input
-        )
-        return keyword_hits >= 2 and " and " in f" {normalized_input} "
-
-    @staticmethod
-    def _is_explore_and_answer_request(normalized_input: str) -> bool:
-        return "explore" in normalized_input and any(
-            marker in normalized_input
-            for marker in ("list ", "summarize", "maintenance", "specification", "safety")
-        )
-
-    @staticmethod
-    def _is_retrieve_and_answer_request(normalized_input: str) -> bool:
-        return any(
-            marker in normalized_input
-            for marker in ("retrieve evidence", "show context", "summarize evidence")
-        ) and any(marker in normalized_input for marker in ("summarize", "answer", "it"))
-
-    @staticmethod
-    def _is_compare_request(normalized_input: str) -> bool:
-        return "compare" in normalized_input and " and " in normalized_input
-
-    @staticmethod
-    def _is_list_and_find_request(normalized_input: str) -> bool:
-        return "show documents" in normalized_input and any(
-            marker in normalized_input for marker in ("open ", "find ", "open document")
-        )
-
-    def _build_explore_and_answer_plan(
-        self,
-        *,
-        normalized_input: str,
-        document_query: str | None,
-        document_id: str | None,
-        document_title: str | None,
-    ) -> ExecutionPlan:
-        plan_steps = self._document_resolution_steps(document_query=document_query, document_id=document_id)
-        plan_steps.append(
-            self._step(
-                tool_name="explore_document",
-                description="Explore the selected document.",
-                output_key="exploration",
-            )
-        )
-        plan_steps.append(
-            self._step(
-                tool_name="answer_question",
-                description="Answer the requested follow-up question against the same document.",
-                output_key="answer",
-                args={"question": self._build_follow_up_question(normalized_input)},
-            )
-        )
-        return self._plan(
-            goal=normalized_input,
-            steps=plan_steps,
-            reason="Detected a compound request that needs document exploration plus grounded answering.",
-            requires_document=True,
-            document_id=document_id,
-            document_title=document_title or document_query,
-            diagnostics={"plan_kind": "explore_answer"},
-        )
-
-    def _build_retrieve_and_answer_plan(
-        self,
-        *,
-        normalized_input: str,
-        document_query: str | None,
-        document_id: str | None,
-        document_title: str | None,
-    ) -> ExecutionPlan:
-        plan_steps = self._document_resolution_steps(document_query=document_query, document_id=document_id)
-        retrieval_question = self._extract_retrieval_subject(normalized_input)
-        plan_steps.append(
-            self._step(
-                tool_name="retrieve_chunks",
-                description="Retrieve evidence chunks for the requested topic.",
-                output_key="retrieved_evidence",
-                args={"query_text": retrieval_question},
-            )
-        )
-        plan_steps.append(
-            self._step(
-                tool_name="answer_question",
-                description="Summarize the retrieved evidence as an answer.",
-                input_key="retrieved_evidence",
-                output_key="answer",
-                args={"question": self._build_summary_question(retrieval_question)},
-                depends_on=["retrieved_evidence"],
-            )
-        )
-        return self._plan(
-            goal=normalized_input,
-            steps=plan_steps,
-            reason="Detected a compound request that needs retrieval followed by deterministic answer generation.",
-            requires_document=True,
-            document_id=document_id,
-            document_title=document_title or document_query,
-            diagnostics={"plan_kind": "retrieve_answer"},
-        )
-
-    def _build_compare_plan(
-        self,
-        *,
-        normalized_input: str,
-        document_query: str | None,
-        document_id: str | None,
-        document_title: str | None,
-    ) -> ExecutionPlan:
-        comparison_topics = self._comparison_topics(normalized_input)
-        plan_steps = self._document_resolution_steps(document_query=document_query, document_id=document_id)
-        for index, (_, label, question) in enumerate(comparison_topics[:2], start=1):
-            output_key = f"answer_{index}"
-            plan_steps.append(
-                self._step(
-                    tool_name="answer_question",
-                    description=f"Answer the {label.lower()} part of the comparison.",
-                    output_key=output_key,
-                    args={"question": question, "section_label": label},
-                )
-            )
-        plan_steps.append(
-            self._step(
-                tool_name="format_combined_answer",
-                description="Combine both grounded answers into a deterministic comparison response.",
-                output_key="combined_answer",
-                depends_on=["answer_1", "answer_2"],
-                args={
-                    "section_labels": [topic[1] for topic in comparison_topics[:2]],
-                    "comparison_title": "Comparison",
-                },
-            )
-        )
-        return self._plan(
-            goal=normalized_input,
-            steps=plan_steps,
-            reason="Detected a comparison request that needs multiple grounded answer steps.",
-            requires_document=True,
-            document_id=document_id,
-            document_title=document_title or document_query,
-            diagnostics={
-                "plan_kind": "compare_answers",
-                "comparison_labels": [topic[1] for topic in comparison_topics[:2]],
-            },
-        )
-
-    def _build_list_and_find_plan(
-        self,
-        *,
-        normalized_input: str,
-        document_query: str | None,
-        document_id: str | None,
-        document_title: str | None,
-    ) -> ExecutionPlan:
-        target_query = document_query or self._extract_open_target(normalized_input)
-        steps = [
-            self._step(
-                tool_name="list_documents",
-                description="List available documents.",
-                output_key="listed_documents",
-            ),
-            self._step(
-                tool_name="find_document",
-                description="Find the requested document from the available list.",
-                output_key="resolved_document",
-                args={"query_text": target_query},
-                depends_on=["listed_documents"],
-            ),
-        ]
-        return self._plan(
-            goal=normalized_input,
-            steps=steps,
-            reason="Detected a compound request that first lists the corpus and then resolves a target document.",
-            requires_document=False,
-            document_id=document_id,
-            document_title=document_title or target_query,
-            diagnostics={"plan_kind": "list_and_find"},
-        )
-
-    def _document_resolution_steps(
-        self,
-        *,
-        document_query: str | None,
-        document_id: str | None,
-    ) -> list[PlanStep]:
-        if document_id or not document_query:
-            return []
-        return [
-            self._step(
-                tool_name="find_document",
-                description="Resolve the requested document before executing the remaining steps.",
-                output_key="resolved_document",
-                args={"query_text": document_query},
-            )
-        ]
-
-    def _plan(
-        self,
-        *,
-        goal: str,
-        steps: Sequence[PlanStep],
-        reason: str,
-        requires_document: bool,
-        document_id: str | None,
-        document_title: str | None,
-        diagnostics: dict[str, object],
-    ) -> ExecutionPlan:
-        resolved_diagnostics = {
-            "planner_confidence": 0.95,
-            **diagnostics,
-        }
-        return ExecutionPlan(
-            plan_id=self.id_generator.new_id("plan"),
-            goal=goal,
-            steps=list(steps),
-            reason=reason,
-            requires_document=requires_document,
-            document_id=document_id,
-            document_title=document_title,
-            diagnostics=resolved_diagnostics,
-        )
-
-    def _step(
-        self,
-        *,
-        tool_name: str,
-        description: str,
-        output_key: str,
-        input_key: str | None = None,
-        args: dict[str, object] | None = None,
-        depends_on: list[str] | None = None,
-        required: bool = True,
-    ) -> PlanStep:
-        return PlanStep(
-            step_id=self.id_generator.new_id("step"),
-            tool_name=tool_name,
-            description=description,
-            input_key=input_key,
-            output_key=output_key,
-            args=dict(args or {}),
-            depends_on=list(depends_on or []),
-            required=required,
-        )
-
-    def _comparison_topics(
-        self,
-        normalized_input: str,
-    ) -> list[tuple[str, str, str]]:
-        topics: list[tuple[int, tuple[str, str, str]]] = []
-        for topic in _COMPARISON_TOPICS:
-            marker = topic[0]
-            index = normalized_input.find(marker)
-            if index >= 0:
-                topics.append((index, topic))
-        topics.sort(key=lambda item: item[0])
-        resolved = [topic for _, topic in topics]
-        if len(resolved) >= 2:
-            return resolved
-        return [
-            _COMPARISON_TOPICS[0],
-            _COMPARISON_TOPICS[1],
-        ]
-
-    @staticmethod
-    def _extract_retrieval_subject(normalized_input: str) -> str:
-        for marker in ("retrieve evidence for ", "show context for ", "summarize evidence for "):
-            if marker in normalized_input:
-                tail = normalized_input.split(marker, 1)[1]
-                tail = tail.split(" and ", 1)[0].strip()
-                if tail:
-                    return tail
-        return normalized_input
-
-    @staticmethod
-    def _build_summary_question(subject: str) -> str:
-        return f"Summarize the evidence for {subject}."
-
-    @staticmethod
-    def _build_follow_up_question(normalized_input: str) -> str:
-        if "maintenance" in normalized_input:
-            return "What maintenance tasks are described in this document?"
-        if "specification" in normalized_input:
-            return "What specifications are available in this document?"
-        if "safety" in normalized_input:
-            return "What safety warnings are described in this document?"
-        return normalized_input
-
-    @staticmethod
-    def _extract_open_target(normalized_input: str) -> str | None:
-        for marker in ("open ", "open document ", "find document "):
-            if marker in normalized_input:
-                tail = normalized_input.split(marker, 1)[1].strip()
-                if tail:
-                    return tail
-        return None

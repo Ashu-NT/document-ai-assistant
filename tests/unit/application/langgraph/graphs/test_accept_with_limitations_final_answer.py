@@ -1,6 +1,8 @@
 import pytest
 
-from src.application.langgraph import DocumentAgentGraph, ToolRegistry
+from src.application.langgraph.graphs.document_agent.document_agent_result_builder import (
+    build_result,
+)
 
 
 @pytest.mark.parametrize(
@@ -20,9 +22,7 @@ def test_build_result_preserves_generated_answer_for_usable_reflection_decisions
     reflection_decision: str,
     answer_text: str,
 ) -> None:
-    graph = DocumentAgentGraph(ToolRegistry())
-
-    result = graph._build_result(  # noqa: SLF001
+    result = build_result(
         {
             "route": "answer_question",
             "response_text": (
@@ -54,9 +54,7 @@ def test_build_result_surfaces_limitation_note_sections_and_reference_notes() ->
     from the answer_question tool payload into GraphResult.data -- they
     were previously dropped here even though AnswerGenerationService/
     QuestionAnsweringResult already compute them."""
-    graph = DocumentAgentGraph(ToolRegistry())
-
-    result = graph._build_result(  # noqa: SLF001
+    result = build_result(
         {
             "route": "answer_question",
             "response_text": "The filter is replaced every 1000 hours.",
@@ -110,9 +108,7 @@ def test_build_result_surfaces_limitation_note_sections_and_reference_notes() ->
 
 
 def test_build_result_defaults_limitation_note_sections_and_reference_notes_when_absent() -> None:
-    graph = DocumentAgentGraph(ToolRegistry())
-
-    result = graph._build_result(  # noqa: SLF001
+    result = build_result(
         {
             "route": "answer_question",
             "response_text": "Answer.",

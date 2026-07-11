@@ -1,3 +1,5 @@
-from src.application.langgraph.graphs.document_agent_graph import DocumentAgentGraph
+from src.application.langgraph.graphs.document_agent.document_agent_graph import (
+    DocumentAgentGraph,
+)
 
 __all__ = ["DocumentAgentGraph"]
