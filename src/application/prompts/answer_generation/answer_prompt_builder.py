@@ -3,6 +3,11 @@ from typing import TYPE_CHECKING
 from src.application.prompts.answer_generation.maintenance_prompt_context_formatter import (
     MaintenancePromptContextFormatter,
 )
+from src.application.prompts.answer_generation.prompt_context import (
+    OrganizedContextFormatter,
+    PromptContextProjector,
+    RawSourceFormatter,
+)
 from src.application.prompts.answer_generation.answer_prompt_version import (
     ANSWER_PROMPT_VERSION,
 )
@@ -30,13 +35,29 @@ class AnswerPromptBuilder:
     def __init__(
         self,
         maintenance_context_formatter: MaintenancePromptContextFormatter | None = None,
+        prompt_context_projector: PromptContextProjector | None = None,
+        organized_context_formatter: OrganizedContextFormatter | None = None,
+        raw_source_formatter: RawSourceFormatter | None = None,
     ) -> None:
         self.maintenance_context_formatter = (
             maintenance_context_formatter or MaintenancePromptContextFormatter()
         )
+        self.prompt_context_projector = (
+            prompt_context_projector or PromptContextProjector()
+        )
+        self.organized_context_formatter = (
+            organized_context_formatter
+            or OrganizedContextFormatter(
+                maintenance_context_formatter=self.maintenance_context_formatter
+            )
+        )
+        self.raw_source_formatter = raw_source_formatter or RawSourceFormatter()
 
     def build(self, request: "AnswerGenerationRequest") -> str:
-        source_blocks = self._raw_source_block(request)
+        prompt_context = self.prompt_context_projector.project(
+            request.structured_context
+        )
+        source_blocks = self.raw_source_formatter.format(prompt_context)
 
         return (
             f"{ANSWER_GROUNDING_RULES}\n\n"
@@ -64,7 +85,7 @@ class AnswerPromptBuilder:
             f"{self._format_policy_block(request)}"
             f"Question: {request.question}\n\n"
             f"{self._identifier_block(request)}"
-            f"{self._organized_context_block(request)}"
+            f"{self.organized_context_formatter.format(prompt_context)}"
             "Raw sources:\n"
             f"{source_blocks}"
         )
@@ -115,113 +136,3 @@ class AnswerPromptBuilder:
         lines.extend(f"- {instruction}" for instruction in policy.instruction_lines)
         return "\n".join(lines) + "\n\n"
 
-    def _organized_context_block(self, request: "AnswerGenerationRequest") -> str:
-        context = request.structured_context
-        if context is None:
-            return ""
-
-        lines = [
-            "Organized context:",
-            f"- Intent: {context.answer_intent.value}",
-            f"- Source count: {context.source_count}",
-        ]
-        if context.maintenance_entries:
-            lines.extend(
-                self.maintenance_context_formatter.format(context.maintenance_entries)
-            )
-        if context.key_values:
-            lines.append("Key values:")
-            for item in context.key_values:
-                value = item.value
-                if item.unit and item.unit.lower() not in value.lower():
-                    value = f"{value} {item.unit}"
-                lines.append(
-                    f"- [SOURCE {item.source_number}] {item.key}: {value}"
-                )
-        if context.structured_entities:
-            lines.append("Structured entities:")
-            for entity in context.structured_entities:
-                lines.append(
-                    f"- {entity.entity_type} [{entity.entity_id}]: "
-                    f"{self._format_entity_fields(entity.fields)}"
-                )
-                for relationship in entity.relationships:
-                    lines.append(
-                        f"  - {relationship.relationship_type} -> "
-                        f"{relationship.target_entity_type} "
-                        f"[{relationship.target_entity_id}]: "
-                        f"{self._format_entity_fields(relationship.target_entity_fields)}"
-                    )
-        if context.source_groups:
-            lines.append("Source groups:")
-            for group in context.source_groups:
-                source_refs = ", ".join(
-                    f"SOURCE {source.source_number}" for source in group.sources
-                )
-                lines.append(
-                    f"- {group.group_name}: {source_refs}"
-                )
-        if context.section_groups:
-            lines.append("Section groups:")
-            for group in context.section_groups:
-                page_range = self._format_page_bounds(group.page_start, group.page_end)
-                source_refs = ", ".join(
-                    f"SOURCE {source_number}"
-                    for source_number in group.source_numbers
-                )
-                lines.append(
-                    f"- {group.group_name} | Pages: {page_range} | Sources: {source_refs}"
-                )
-        return "\n".join(lines) + "\n\n"
-
-    @staticmethod
-    def _format_entity_fields(fields: dict) -> str:
-        if not fields:
-            return "(no additional fields)"
-        parts = []
-        for key, value in fields.items():
-            if isinstance(value, list):
-                value = "; ".join(str(item) for item in value)
-            parts.append(f"{key}: {value}")
-        return ", ".join(parts)
-
-    def _raw_source_block(self, request: "AnswerGenerationRequest") -> str:
-        structured_context = request.structured_context
-        if structured_context is None or not structured_context.sources:
-            return ""
-        return "\n\n".join(
-            self._format_answer_source_block(source)
-            for source in structured_context.sources
-        )
-
-    @staticmethod
-    def _format_answer_source_block(source) -> str:
-        page_range = AnswerPromptBuilder._format_page_bounds(
-            source.page_start,
-            source.page_end,
-        )
-        section_path = source.section_path or "N/A"
-        document_title = source.document_title or "Current document"
-        return (
-            f"SOURCE {source.source_number}\n"
-            f"Document: {document_title}\n"
-            f"Section: {section_path}\n"
-            f"Pages: {page_range}\n"
-            "---\n"
-            f"{source.content}"
-        )
-
-    @staticmethod
-    def _format_page_bounds(
-        page_start: int | None,
-        page_end: int | None,
-    ) -> str:
-        if page_start is None and page_end is None:
-            return "N/A"
-        if page_start == page_end:
-            return str(page_start)
-        if page_start is None:
-            return str(page_end)
-        if page_end is None:
-            return str(page_start)
-        return f"{page_start}-{page_end}"
