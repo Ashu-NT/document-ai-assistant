@@ -5,8 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from src.application.evaluation.retrieval.benchmarking.corpus.retrieval_benchmark_corpus_seeder import (
-    RetrievalBenchmarkCorpusSeeder,
+from src.application.evaluation.retrieval.benchmarking.corpus.resolution.retrieval_benchmark_corpus_document_resolver import (
+    _seed_new_document,
+)
+from src.application.evaluation.retrieval.benchmarking.corpus.retrieval_benchmark_seed_target_collector import (
     _CorpusSeedTarget,
 )
 from src.application.workflows.ingestion.ingestion_result import IngestionResult
@@ -45,22 +47,13 @@ class FakeClassificationService:
         return self._classification
 
 
-def _make_seeder(ingestion_workflow, document_graph, classification=None):
-    return RetrievalBenchmarkCorpusSeeder(
-        duplicate_detection_service=None,
-        document_lookup_service=FakeDocumentLookupService(document_graph),
-        classification_service=FakeClassificationService(classification),
-        document_classification_workflow=None,
-        ingestion_workflow=ingestion_workflow,
-    )
-
-
 def test_seeder_uses_ingestion_workflow_for_new_document(
     sample_document_graph,
 ):
     doc_id = sample_document_graph.document.document_id
     ingestion_workflow = FakeIngestionWorkflow(document_id=doc_id)
-    seeder = _make_seeder(ingestion_workflow, sample_document_graph)
+    document_lookup_service = FakeDocumentLookupService(sample_document_graph)
+    classification_service = FakeClassificationService(None)
 
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
         f.write(b"%PDF-1.4\ntest")
@@ -72,9 +65,12 @@ def test_seeder_uses_ingestion_workflow_for_new_document(
             file_name=tmp_path.name,
             file_path=tmp_path,
         )
-        final_graph, classification, status = seeder._seed_new_document(
+        final_graph, classification, status = _seed_new_document(
             seed_target=seed_target,
             file_hash="abc123",
+            ingestion_workflow=ingestion_workflow,
+            document_lookup_service=document_lookup_service,
+            classification_service=classification_service,
         )
         assert len(ingestion_workflow.calls) == 1
         assert ingestion_workflow.calls[0].force is True

@@ -7,6 +7,9 @@ from src.infrastructure.db.repositories.document.chunk_reader import ChunkReader
 from src.infrastructure.db.repositories.document.document_duplicate_checker import (
     DocumentDuplicateChecker,
 )
+from src.infrastructure.db.repositories.document.document_graph_reader import (
+    DocumentGraphReader,
+)
 from src.infrastructure.db.repositories.document.document_reader import DocumentReader
 from src.infrastructure.db.repositories.document.document_writer import DocumentWriter
 from src.infrastructure.db.repositories.document.identifier_reader import IdentifierReader
@@ -23,6 +26,7 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
     def __init__(self, session: Session) -> None:
         self.duplicate_checker = DocumentDuplicateChecker(session)
         self.reader = DocumentReader(session)
+        self.graph_reader = DocumentGraphReader(session)
         self.writer = DocumentWriter(session)
         self.chunk_reader = ChunkReader(session)
         self.identifier_reader = IdentifierReader(session)
@@ -46,7 +50,7 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
         self.writer.delete_document(document_id)
 
     def get_document_graph(self, document_id: str) -> DocumentGraph | None:
-        return self.reader.get_document_graph(document_id)
+        return self.graph_reader.get_document_graph(document_id)
 
     def list_document_entries(self) -> list[DocumentCatalogEntry]:
         return self.reader.list_document_entries()

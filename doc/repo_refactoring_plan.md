@@ -1,6 +1,6 @@
 # Repository Refactoring Plan — Large File Decomposition & Duplicate-Code Consolidation
 
-## Status: DRAFT — for team review before implementation. No code has been changed.
+## Status: DONE — all 9 phases (0-8) implemented and verified. See "Refactor complete" below.
 
 ## 1. Purpose and Ground Rules
 
@@ -265,6 +265,22 @@ The team confirmed proceeding with `answer_generation_service.py` despite its "m
 No new package `__init__.py` facades were introduced anywhere in Phase 7.
 
 Verified: full ruff sweep (only the 2 pre-existing, already-documented issues in `scripts/demo_agent_cli.py` remain) + import smoke-test of every new package + full `tests/unit` suite: **2301 passed, 0 failed**.
+
+### Phase 8 status: DONE (section 4.7, all 6 non-exempt files — final phase)
+
+Team confirmed proceeding on all 3 rows the plan explicitly flagged for review before starting this phase: `extraction_models.py` (split, despite the DB/Alembic-migration-coordination note — Python class-declaration reorganization only, no schema/table/column change), `sql_keyword_scorer.py` (skip — never had a concrete split proposal in the plan), `post_response_guardrail_service.py` (skip — plan itself judged the optional split lower-value).
+
+`retrieval_benchmark_corpus_seeder.py` (713→233 LOC, 5 files split between the existing `corpus/` level and a new `corpus/resolution/` sibling folder — the resolution logic was kept as module-level functions with collaborators passed explicitly, rather than a stateful class, because a test mutates `seeder.classification_service` directly mid-test and `scripts/seed_retrieval_benchmark_corpus.py` reads `seeder.document_lookup_service`/`seeder.extraction_service` as live public attributes; `format_file_size` was confirmed to still have no second consumer per the Phase 1 finding and was left in place, now in the hasher file), `retrieval_truth_set_loader.py` (354→83 LOC, 3 files added to the existing `loaders/` dir), `agent_eval_report_markdown_renderer.py` (303→82 LOC, 4 files under a new `renderers/` subfolder — the plan's optional `serializers/`/`writers/` parity subfolders were correctly skipped as not required), `extraction_models.py` (486→324 LOC total across 14 files under a new `orm_models/extraction/` subfolder, one file per ORM class + a shared `_extraction_entity_columns_mixin.py` for the 11 classes that share the common column tail — item #31; every column's name/type/nullable/default/FK-target was script-verified identical to the original via an isolated `declarative_base()` comparison), `document_reader.py` (311→143 LOC, 1 new file `document_graph_reader.py` — the actual `DocumentReader` construction site turned out to be `document_repository.py`, not `extraction_repository.py` as the plan's hint suggested; updated to construct and wire in the new `DocumentGraphReader` as a second collaborator, same pattern as Phase 4's `AnswerContextOrganizer`), and `deterministic_hybrid_reranker.py` (308→117 LOC, 5 files under a new `deterministic/` subfolder) — all done across parallel workers on disjoint file sets, all landing cleanly on the first pass.
+
+**`extraction_models.py`'s `__init__.py` — the no-facade convention was correctly re-examined, not blindly applied**: the plan's original wording suggested a re-exporting `__init__.py` since dozens of files might import the 13 ORM classes directly from the old module path. The assigned worker checked first: only 1 file (`orm_models/__init__.py` itself) imported the submodule directly; all other ~30 consumers already went through the top-level `orm_models` package. Per the instruction to reconsider if the count fell in the "1-2" bucket, no facade `__init__.py` was created in `orm_models/extraction/` — instead the one real consumer (`orm_models/__init__.py`) was updated to import all 13 classes directly from their new submodule paths, and that pre-existing one-level-up file was updated in place (not emptied), matching every other phase's precedent for pre-existing re-export files.
+
+No new package `__init__.py` facades were introduced anywhere in Phase 8 (`corpus/resolution/`, `deterministic/` both got empty `__init__.py`; `renderers/` and `loaders/` needed none created or only inherited the existing empty one).
+
+Verified: full ruff sweep (only the same pre-existing, already-documented issues from earlier phases remain — `markdown_presenter.py`/`startup_banner.py`'s unused `Any`, `thinking_animation.py`'s unused `sleep`, `retry_query_builder.py`'s unused `AnswerIntent`, `retrieval_plan_validator.py`'s unused `RetrievalStrategy`, `research_synthesis_prompt_builder.py`'s unused `ResearchPlan`, `ingestion_event.py`'s unused `field`, `ingestion_workflow.py`'s unused `resolved_audit_context`, `sql_keyword_scorer.py`'s unused `normalized_section` — confirmed via `git status` that none of these files were touched by this phase or any prior one) + full `tests/unit` suite: **2301 passed, 0 failed**.
+
+## Refactor complete
+
+Phases 0 through 8 are now all done and independently verified. Every file over the team's >300 LOC threshold identified in the original scan (section 2) has either been split per this plan or explicitly exempted/skipped by team decision, and the cross-cutting duplication consolidation from section 3 is fully migrated. Section 6 below ("Efficiency Flags") was always explicitly out of scope for this structural refactor — a separate, optional follow-up, not part of this plan's ground rules or its "done" criteria — and was never started.
 
 Each phase is independently reviewable, testable, and revertible. Run the full verification sequence from section 1, rule 5, after every phase before starting the next.
 

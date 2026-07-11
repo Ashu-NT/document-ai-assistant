@@ -7,6 +7,9 @@ import pytest
 from src.application.evaluation.retrieval.benchmarking.corpus import (
     RetrievalBenchmarkCorpusSeeder,
 )
+from src.application.evaluation.retrieval.benchmarking.corpus.retrieval_benchmark_corpus_hasher import (
+    compute_hashes,
+)
 from src.application.evaluation.retrieval.benchmarking.datasets import (
     RetrievalBenchmarkDataset,
 )
@@ -496,7 +499,7 @@ def test_seed_corpus_reuses_existing_duplicate_without_ingesting_again(
         chunk_texts=["final chunk"],
         question_count=1,
     )
-    file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(file_path)[0]
+    file_hash = compute_hashes(file_path)[0]
     classifications = {
         "doc_existing": build_document_classification(
             document_id="doc_existing",
@@ -561,7 +564,7 @@ def test_seed_corpus_reuses_existing_duplicate_when_extraction_service_confirms_
         chunk_texts=["final chunk"],
         question_count=1,
     )
-    file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(file_path)[0]
+    file_hash = compute_hashes(file_path)[0]
     classifications = {
         "doc_existing": build_document_classification(
             document_id="doc_existing",
@@ -624,7 +627,7 @@ def test_seed_corpus_retries_extraction_for_existing_duplicate_missing_extractio
         chunk_texts=["final chunk"],
         question_count=1,
     )
-    file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(file_path)[0]
+    file_hash = compute_hashes(file_path)[0]
     classifications = {
         "doc_existing": build_document_classification(
             document_id="doc_existing",
@@ -703,7 +706,7 @@ def test_seed_corpus_retries_existing_duplicate_with_unresolved_extraction_chunk
         chunk_texts=["final chunk"],
         question_count=1,
     )
-    file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(file_path)[0]
+    file_hash = compute_hashes(file_path)[0]
     classifications = {
         "doc_existing": build_document_classification(
             document_id="doc_existing",
@@ -786,7 +789,7 @@ def test_seed_corpus_marks_zero_chunk_document_as_needing_reparse(
         document_type=DocumentType.MANUAL,
         chunk_texts=[],
     )
-    file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(file_path)[0]
+    file_hash = compute_hashes(file_path)[0]
     classifications = {
         "doc_existing": build_document_classification(
             document_id="doc_existing",
@@ -854,7 +857,7 @@ def test_seed_corpus_retries_zero_chunk_duplicate_when_persisted_elements_exist(
         chunk_texts=["Recovered from persisted elements"],
     )
     chunkless_but_populated_graph.replace_chunks([])
-    file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(file_path)[0]
+    file_hash = compute_hashes(file_path)[0]
     classifications = {
         "doc_existing": build_document_classification(
             document_id="doc_existing",
@@ -940,7 +943,7 @@ def test_seed_corpus_skips_unrecoverable_document_and_continues_with_the_rest(
         chunk_texts=["final chunk"],
         question_count=1,
     )
-    bad_file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(bad_file)[0]
+    bad_file_hash = compute_hashes(bad_file)[0]
     classifications = {
         "doc_good": build_document_classification(
             document_id="doc_good",
@@ -1018,7 +1021,7 @@ def test_seed_corpus_classifies_existing_duplicate_when_classification_missing(
         chunk_texts=["final chunk"],
         question_count=1,
     )
-    file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(file_path)[0]
+    file_hash = compute_hashes(file_path)[0]
     classification = build_document_classification(
         document_id="doc_existing",
         document_type=DocumentType.MANUAL,
@@ -1082,7 +1085,7 @@ def test_seed_corpus_force_reparses_existing_duplicate_via_ingestion_workflow() 
         chunk_texts=["final chunk"],
         question_count=1,
     )
-    file_hash = RetrievalBenchmarkCorpusSeeder._compute_hashes(file_path)[0]
+    file_hash = compute_hashes(file_path)[0]
     classification = build_document_classification(
         document_id="doc_new",
         document_type=DocumentType.MANUAL,

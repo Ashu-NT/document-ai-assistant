@@ -1,7 +1,7 @@
 from src.application.reporting.agent_eval.agent_eval_report_json_serializer import (
     AgentEvalReportJsonSerializer,
 )
-from src.application.reporting.agent_eval.agent_eval_report_markdown_renderer import (
+from src.application.reporting.agent_eval.renderers.agent_eval_report_markdown_renderer import (
     AgentEvalReportMarkdownRenderer,
 )
 from src.application.reporting.agent_eval.agent_eval_report_writer import (

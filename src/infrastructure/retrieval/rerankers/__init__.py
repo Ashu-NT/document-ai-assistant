@@ -1,4 +1,4 @@
-from src.infrastructure.retrieval.rerankers.deterministic_hybrid_reranker import (
+from src.infrastructure.retrieval.rerankers.deterministic.deterministic_hybrid_reranker import (
     DeterministicHybridReranker,
 )
 
