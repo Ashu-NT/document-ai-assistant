@@ -1,16 +1,22 @@
 from __future__ import annotations
 
-from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from src.application.contracts.guardrails.guardrail import Guardrail
-from src.application.contracts.guardrails.guardrail_context import GuardrailContext
 from src.application.contracts.guardrails.guardrail_result import GuardrailResult
 from src.application.services.retrieval import HybridRetrievalService
 from src.application.validation.retrieval import RetrievalQueryValidator
 from src.application.workflows.retrieval.deduplication import (
     RetrievedChunkDeduplicator,
-    RetrievalDeduplicationPolicy,
+)
+from src.application.workflows.retrieval.deduplication.retrieval_deduplication_policy_factory import (
+    build_default_retrieval_deduplication_policy,
+)
+from src.application.workflows.retrieval.retrieval_candidate_pool_sizer import (
+    RetrievalCandidatePoolSizer,
+)
+from src.application.workflows.retrieval.retrieval_workflow_guardrail_adapter import (
+    RetrievalWorkflowGuardrailAdapter,
 )
 from src.application.workflows.retrieval.retrieval_workflow_result import (
     RetrievalWorkflowResult,
@@ -20,9 +26,6 @@ from src.application.workflows.retrieval.retrieval_context_expander import (
 )
 from src.application.workflows.retrieval.retrieval_query_analyzer import (
     RetrievalQueryAnalyzer,
-)
-from src.application.workflows.retrieval.retrieval_query_intent import (
-    RetrievalQueryIntent,
 )
 from src.application.workflows.retrieval.structured import (
     StructuredEvidenceBundle,
@@ -41,40 +44,6 @@ if TYPE_CHECKING:
     from src.application.workflows.retrieval.tracing.retrieval_trace_recorder import (
         RetrievalTraceRecorder,
     )
-
-
-def _default_retrieval_deduplication_policy() -> RetrievalDeduplicationPolicy:
-    try:
-        from src.config.settings import retrieval_settings
-
-        return RetrievalDeduplicationPolicy(
-            exact_duplicate_enabled=retrieval_settings.exact_duplicate_enabled,
-            context_companion_collapse_enabled=(
-                retrieval_settings.context_companion_collapse_enabled
-            ),
-            overview_duplicate_collapse_enabled=(
-                retrieval_settings.overview_duplicate_collapse_enabled
-            ),
-            token_overlap_threshold=retrieval_settings.token_overlap_threshold,
-            containment_threshold=retrieval_settings.containment_threshold,
-            min_unique_token_count=retrieval_settings.min_unique_token_count,
-        )
-    except Exception:
-        return RetrievalDeduplicationPolicy()
-
-
-def _default_candidate_pool_top_k() -> int:
-    try:
-        from src.config.settings import retrieval_settings
-
-        return max(
-            retrieval_settings.final_retrieval_top_k,
-            retrieval_settings.dense_retrieval_top_k,
-            retrieval_settings.keyword_retrieval_top_k,
-            retrieval_settings.sql_retrieval_top_k,
-        )
-    except Exception:
-        return 10
 
 
 class RetrievalWorkflow:
@@ -100,7 +69,7 @@ class RetrievalWorkflow:
         self.retrieved_chunk_deduplicator = (
             retrieved_chunk_deduplicator
             or RetrievedChunkDeduplicator(
-                deduplication_policy=_default_retrieval_deduplication_policy()
+                deduplication_policy=build_default_retrieval_deduplication_policy()
             )
         )
         self.candidate_pool_top_k = candidate_pool_top_k
@@ -108,6 +77,12 @@ class RetrievalWorkflow:
         self.structured_evidence_resolver = structured_evidence_resolver
         self.pre_retrieval_guardrails = pre_retrieval_guardrails or []
         self.post_retrieval_guardrails = post_retrieval_guardrails or []
+        self._guardrail_adapter = RetrievalWorkflowGuardrailAdapter(
+            min_evidence_chunks=min_evidence_chunks
+        )
+        self._candidate_pool_sizer = RetrievalCandidatePoolSizer(
+            candidate_pool_top_k=candidate_pool_top_k
+        )
 
     @tracked_action(
         action="retrieval.workflow_completed",
@@ -134,8 +109,10 @@ class RetrievalWorkflow:
             trace_recorder.record_query_analysis(working_query, intent=intent)
 
         if self.pre_retrieval_guardrails:
-            pre_context = self._build_guardrail_context(working_query, intent=intent)
-            pre_result = self._run_guardrail_chain(
+            pre_context = self._guardrail_adapter.build_guardrail_context(
+                working_query, intent=intent
+            )
+            pre_result = self._guardrail_adapter.run_guardrail_chain(
                 self.pre_retrieval_guardrails, pre_context
             )
             if trace_recorder is not None:
@@ -160,7 +137,7 @@ class RetrievalWorkflow:
         if structured_evidence is not None:
             diagnostics.update(structured_evidence.diagnostics)
 
-        candidate_query = self._candidate_query(working_query)
+        candidate_query = self._candidate_pool_sizer.candidate_query(working_query)
         retrieval_result = self._retrieve_candidates(
             candidate_query,
             structured_evidence=structured_evidence,
@@ -218,12 +195,12 @@ class RetrievalWorkflow:
 
         post_guardrail_result: GuardrailResult | None = None
         if self.post_retrieval_guardrails:
-            post_context = self._build_guardrail_context(
+            post_context = self._guardrail_adapter.build_guardrail_context(
                 working_query,
                 intent=intent,
                 retrieved_chunks=retrieval_result.chunks,
             )
-            post_guardrail_result = self._run_guardrail_chain(
+            post_guardrail_result = self._guardrail_adapter.run_guardrail_chain(
                 self.post_retrieval_guardrails, post_context
             )
             if trace_recorder is not None:
@@ -280,46 +257,6 @@ class RetrievalWorkflow:
             structured_evidence=structured_evidence,
             diagnostics=diagnostics,
         )
-
-    def _build_guardrail_context(
-        self,
-        working_query: RetrievalQuery,
-        *,
-        intent: RetrievalQueryIntent,
-        retrieved_chunks: list | None = None,
-    ) -> GuardrailContext:
-        return GuardrailContext(
-            query_text=working_query.query_text,
-            document_id=working_query.document_id,
-            detected_identifiers=list(working_query.detected_identifiers),
-            query_intent=str(intent),
-            query_chunk_types=[ct.value for ct in working_query.chunk_types],
-            retrieved_chunks=retrieved_chunks or [],
-            min_evidence_chunks=self.min_evidence_chunks,
-        )
-
-    @staticmethod
-    def _run_guardrail_chain(
-        guardrails: list[Guardrail],
-        context: GuardrailContext,
-    ) -> GuardrailResult | None:
-        for guardrail in guardrails:
-            result = guardrail.check(context)
-            if not result.allowed:
-                return result
-        return None
-
-    def _candidate_query(
-        self,
-        query: RetrievalQuery,
-    ) -> RetrievalQuery:
-        candidate_pool_top_k = max(
-            query.top_k,
-            self.candidate_pool_top_k or _default_candidate_pool_top_k(),
-        )
-        if candidate_pool_top_k == query.top_k:
-            return query
-        return replace(query, top_k=candidate_pool_top_k)
 
     def _resolve_structured_evidence(
         self,

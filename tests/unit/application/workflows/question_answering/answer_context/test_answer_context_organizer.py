@@ -69,15 +69,19 @@ class _StubSectionGroupBuilder:
 
 
 class _StubKeyValueExtractor:
-    def __init__(self, key_values, maintenance_entries) -> None:
+    def __init__(self, key_values) -> None:
         self.key_values = key_values
-        self.maintenance_entries = maintenance_entries
         self.extract_calls: list[tuple[list[AnswerSource], AnswerIntent]] = []
-        self.extract_maintenance_calls: list[tuple[list[AnswerSource], AnswerIntent]] = []
 
     def extract(self, sources, *, answer_intent):
         self.extract_calls.append((list(sources), answer_intent))
         return self.key_values
+
+
+class _StubMaintenanceTaskExtractor:
+    def __init__(self, maintenance_entries) -> None:
+        self.maintenance_entries = maintenance_entries
+        self.extract_maintenance_calls: list[tuple[list[AnswerSource], AnswerIntent]] = []
 
     def extract_maintenance_entries(self, sources, *, answer_intent):
         self.extract_maintenance_calls.append((list(sources), answer_intent))
@@ -116,13 +120,15 @@ def test_context_organizer_uses_injected_structured_source_builder_as_the_source
     source_builder = _StubStructuredSourceBuilder(sources)
     source_group_builder = _StubSourceGroupBuilder([])
     section_group_builder = _StubSectionGroupBuilder([])
-    key_value_extractor = _StubKeyValueExtractor(key_values, [])
+    key_value_extractor = _StubKeyValueExtractor(key_values)
+    maintenance_task_extractor = _StubMaintenanceTaskExtractor([])
     merger = _StubMaintenanceEntryMerger([])
     organizer = AnswerContextOrganizer(
         structured_source_builder=source_builder,
         source_group_builder=source_group_builder,
         section_group_builder=section_group_builder,
         key_value_extractor=key_value_extractor,
+        maintenance_task_extractor=maintenance_task_extractor,
         maintenance_entry_merger=merger,
     )
     chunks = [_make_chunk(chunk_id="chunk_001", content="ignored by stub source builder")]
@@ -138,7 +144,7 @@ def test_context_organizer_uses_injected_structured_source_builder_as_the_source
     assert key_value_extractor.extract_calls == [
         (sources, AnswerIntent.SPECIFICATION_SUMMARY)
     ]
-    assert key_value_extractor.extract_maintenance_calls == [
+    assert maintenance_task_extractor.extract_maintenance_calls == [
         (sources, AnswerIntent.SPECIFICATION_SUMMARY)
     ]
     assert merger.calls == [[]]

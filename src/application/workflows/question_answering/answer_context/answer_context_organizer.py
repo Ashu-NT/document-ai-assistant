@@ -9,6 +9,9 @@ from src.application.services.answer_generation.intent.answer_intent import (
 from src.application.workflows.question_answering.answer_context.key_value_extractor import (
     KeyValueExtractor,
 )
+from src.application.workflows.question_answering.answer_context.maintenance.maintenance_task_extractor import (
+    MaintenanceTaskExtractor,
+)
 from src.application.workflows.question_answering.answer_context.maintenance_entry_merger import (
     MaintenanceEntryMerger,
 )
@@ -32,12 +35,16 @@ class AnswerContextOrganizer:
         self,
         *,
         key_value_extractor: KeyValueExtractor | None = None,
+        maintenance_task_extractor: MaintenanceTaskExtractor | None = None,
         maintenance_entry_merger: MaintenanceEntryMerger | None = None,
         source_group_builder: SourceGroupBuilder | None = None,
         section_group_builder: SectionGroupBuilder | None = None,
         structured_source_builder: StructuredSourceBuilder | None = None,
     ) -> None:
         self.key_value_extractor = key_value_extractor or KeyValueExtractor()
+        self.maintenance_task_extractor = (
+            maintenance_task_extractor or MaintenanceTaskExtractor()
+        )
         self.maintenance_entry_merger = (
             maintenance_entry_merger or MaintenanceEntryMerger()
         )
@@ -60,7 +67,7 @@ class AnswerContextOrganizer:
             sources,
             answer_intent=answer_intent,
         )
-        maintenance_entries = self.key_value_extractor.extract_maintenance_entries(
+        maintenance_entries = self.maintenance_task_extractor.extract_maintenance_entries(
             sources,
             answer_intent=answer_intent,
         )

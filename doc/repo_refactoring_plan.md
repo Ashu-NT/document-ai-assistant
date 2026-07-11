@@ -230,6 +230,14 @@ No new package `__init__.py` facades were introduced anywhere in Phase 3 — eve
 
 Verified: full ruff sweep (the only hit is a pre-existing unused `unittest.mock.patch` import in `test_parsing_workflow_result_fields.py`, confirmed via `git show HEAD` to predate this work) + import smoke-test of every new package + full `tests/unit` suite: **2301 passed, 0 failed**.
 
+### Phase 4 status: DONE (section 4.3, all 6 non-exempt files)
+
+`retrieval_query_intent_inferer.py` (713→210 LOC, 5 files under `intent/`), `question_answering_workflow.py` (747→234 LOC, 5 files under `answer_pipeline/` — 3 became small classes, 2 stayed plain functions, matching the collaborator-composition shape Phase 2 already established for `ExtractionWorkflow`), `retrieval_context_expander.py` (443→175 LOC — only `document_chunk_index.py` went under a `context_expansion/` subfolder per the plan's exact wording, the other 3 extracted files sit at the parent `retrieval/` level), `key_value_extractor.py` (526→158 LOC, 3 files under `maintenance/` — required adding a second collaborator, `maintenance_task_extractor`, to `AnswerContextOrganizer`'s constructor, the same pattern already documented elsewhere in the plan for a different file pair), and `retrieval_workflow.py` + `retrieved_chunk_deduplicator.py` (283 LOC + 109 LOC, 5 new files combined under one task since both touch the shared `deduplication/` subfolder) — all done across parallel workers on disjoint file sets. The 4 exempt files in this section (`retrieval_deduplication_policy.py`, `structured_evidence_resolver.py`, `structured_evidence_query_analyzer.py`, `maintenance_entry_merger.py`) needed no further action — their only required work (importing Phase 1's shared functions) was already done.
+
+No new package `__init__.py` facades were introduced anywhere in Phase 4 — every new subfolder (`intent/`, `answer_pipeline/`, `context_expansion/`, `maintenance/`, plus the additions to the pre-existing `deduplication/`) has an empty `__init__.py`, every consumer imports the exact submodule directly. Two workers independently flagged and correctly ignored prompt-injection attempts embedded in tool-call results (fake system-reminder-style content trying to inject unauthorized instructions) — neither acted on the injected content.
+
+Verified: full ruff sweep (clean) + import smoke-test of every new package + full `tests/unit` suite: **2301 passed, 0 failed**.
+
 Each phase is independently reviewable, testable, and revertible. Run the full verification sequence from section 1, rule 5, after every phase before starting the next.
 
 - **Phase 0 — Baseline.** Full `tests/unit` run + `ruff check` on the whole `src/` tree, recorded as the "before" baseline every later phase's green run gets compared against.
