@@ -16,6 +16,9 @@
   - prompt-time canonicalization now removes obvious entity/key-value duplication
     and keeps full raw content in the appendix instead of repeating it inside the
     main structured payload
+- Phase 4 is implemented:
+  - prompt-facing relationship graph edges and grouped evidence families are now
+    emitted alongside entity records
 - Later phases in this report remain planning guidance, not completed work
 
 The current pipeline does preserve structured evidence in application memory through typed models such as:
@@ -422,7 +425,8 @@ It is emitted as JSON text and contains nested arrays/objects for:
 - key-values
 - maintenance entries
 - structured entities
-- typed relationships
+- relationship edges
+- relationship families
 - source groups
 - section groups
 
@@ -450,7 +454,8 @@ The LLM does receive evidence that is better structured than raw chunk dumping:
 - maintenance entries as JSON records
 - key-values are normalized
 - structured entities stay nested
-- entity relationships are explicit nested objects
+- entity relationships are explicit graph edges
+- related semantic neighborhoods are grouped into evidence families
 - source numbers and provenance remain visible
 - canonicalized payload sources omit repeated raw content
 - raw sources are still included for grounding

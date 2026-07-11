@@ -204,6 +204,9 @@ def test_answer_prompt_builder_serializes_structured_entities_and_relationships(
     assert '"structured_entities"' in prompt
     assert '"entity_type": "maintenance_task"' in prompt
     assert '"entity_id": "task_001"' in prompt
+    assert '"relationship_edges"' in prompt
+    assert '"relationship_families"' in prompt
     assert '"relationship_type": "task_uses_procedure"' in prompt
+    assert '"source_entity_id": "task_001"' in prompt
     assert '"target_entity_id": "procedure_001"' in prompt
     assert '"steps": [' in prompt

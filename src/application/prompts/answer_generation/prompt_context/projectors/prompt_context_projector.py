@@ -9,6 +9,9 @@ from src.application.prompts.answer_generation.prompt_context.models import (
     PromptSourceGroupView,
     PromptSourceView,
 )
+from src.application.prompts.answer_generation.prompt_context.relationships.prompt_relationship_graph_builder import (
+    PromptRelationshipGraphBuilder,
+)
 from src.application.workflows.question_answering.answer_context.models import (
     StructuredAnswerContext,
 )
@@ -18,9 +21,13 @@ class PromptContextProjector:
     def __init__(
         self,
         prompt_evidence_canonicalizer: PromptEvidenceCanonicalizer | None = None,
+        prompt_relationship_graph_builder: PromptRelationshipGraphBuilder | None = None,
     ) -> None:
         self.prompt_evidence_canonicalizer = (
             prompt_evidence_canonicalizer or PromptEvidenceCanonicalizer()
+        )
+        self.prompt_relationship_graph_builder = (
+            prompt_relationship_graph_builder or PromptRelationshipGraphBuilder()
         )
 
     def project(
@@ -30,6 +37,20 @@ class PromptContextProjector:
         if context is None:
             return None
         projected_sources = [self._project_source(source) for source in context.sources]
+        projected_entities = [
+            self._project_entity(entity) for entity in context.structured_entities
+        ]
+        source_number_by_chunk_id = {
+            source.chunk_id: source.source_number
+            for source in projected_sources
+            if source.chunk_id
+        }
+        relationship_edges, relationship_families = (
+            self.prompt_relationship_graph_builder.build(
+                projected_entities,
+                source_number_by_chunk_id=source_number_by_chunk_id,
+            )
+        )
         return self.prompt_evidence_canonicalizer.canonicalize(
             PromptContextBundle(
                 answer_intent_value=context.answer_intent.value,
@@ -38,10 +59,9 @@ class PromptContextProjector:
                 appendix_sources=list(projected_sources),
                 key_values=list(context.key_values),
                 maintenance_entries=list(context.maintenance_entries),
-                entities=[
-                    self._project_entity(entity)
-                    for entity in context.structured_entities
-                ],
+                entities=projected_entities,
+                relationship_edges=relationship_edges,
+                relationship_families=relationship_families,
                 source_groups=[
                     PromptSourceGroupView(
                         group_name=group.group_name,

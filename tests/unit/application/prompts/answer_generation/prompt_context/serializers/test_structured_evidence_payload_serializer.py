@@ -59,7 +59,11 @@ def test_serializer_preserves_nested_entity_relationships_and_table_rows_for_tab
     payload = StructuredEvidencePayloadSerializer().serialize(bundle)
 
     assert '"structured_entities"' in payload
+    assert '"relationships"' not in payload
+    assert '"relationship_edges"' in payload
+    assert '"relationship_families"' in payload
     assert '"relationship_type": "equipment_has_specification"' in payload
+    assert '"source_entity_id": "equipment_001"' in payload
     assert '"target_entity_id": "spec_001"' in payload
     assert '"table_rows": [' in payload
     assert '"Parameter"' in payload

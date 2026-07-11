@@ -10,6 +10,12 @@ from src.application.prompts.answer_generation.prompt_context.models.prompt_grou
     PromptSectionGroupView,
     PromptSourceGroupView,
 )
+from src.application.prompts.answer_generation.prompt_context.models.prompt_evidence_family_view import (
+    PromptEvidenceFamilyView,
+)
+from src.application.prompts.answer_generation.prompt_context.models.prompt_relationship_edge_view import (
+    PromptRelationshipEdgeView,
+)
 from src.application.prompts.answer_generation.prompt_context.models.prompt_source_view import (
     PromptSourceView,
 )
@@ -28,6 +34,8 @@ class PromptContextBundle:
     key_values: list[AnswerKeyValue] = field(default_factory=list)
     maintenance_entries: list[AnswerMaintenanceEntry] = field(default_factory=list)
     entities: list[PromptEntityView] = field(default_factory=list)
+    relationship_edges: list[PromptRelationshipEdgeView] = field(default_factory=list)
+    relationship_families: list[PromptEvidenceFamilyView] = field(default_factory=list)
     source_groups: list[PromptSourceGroupView] = field(default_factory=list)
     section_groups: list[PromptSectionGroupView] = field(default_factory=list)
     diagnostics: dict[str, Any] = field(default_factory=dict)

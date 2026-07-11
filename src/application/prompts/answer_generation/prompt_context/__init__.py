@@ -7,6 +7,9 @@ from src.application.prompts.answer_generation.prompt_context.canonicalization.p
 from src.application.prompts.answer_generation.prompt_context.projectors.prompt_context_projector import (
     PromptContextProjector,
 )
+from src.application.prompts.answer_generation.prompt_context.relationships.prompt_relationship_graph_builder import (
+    PromptRelationshipGraphBuilder,
+)
 from src.application.prompts.answer_generation.prompt_context.serializers.evidence_schema_formatter import (
     EvidenceSchemaFormatter,
 )
@@ -18,6 +21,7 @@ __all__ = [
     "EvidenceSchemaFormatter",
     "PromptEvidenceCanonicalizer",
     "PromptContextProjector",
+    "PromptRelationshipGraphBuilder",
     "RawSourceAppendixFormatter",
     "StructuredEvidencePayloadSerializer",
 ]

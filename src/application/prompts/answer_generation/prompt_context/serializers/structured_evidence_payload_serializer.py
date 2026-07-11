@@ -22,6 +22,12 @@ class StructuredEvidencePayloadSerializer:
             "structured_entities": [
                 self._entity_payload(entity) for entity in context.entities
             ],
+            "relationship_edges": [
+                asdict(edge) for edge in context.relationship_edges
+            ],
+            "relationship_families": [
+                asdict(family) for family in context.relationship_families
+            ],
             "source_groups": [asdict(group) for group in context.source_groups],
             "section_groups": [asdict(group) for group in context.section_groups],
         }
@@ -52,18 +58,6 @@ class StructuredEvidencePayloadSerializer:
             "entity_id": entity.entity_id,
             "fields": dict(entity.fields),
             "source_chunk_id": entity.source_chunk_id,
-            "relationships": [
-                {
-                    "relationship_type": relationship.relationship_type,
-                    "direction": relationship.direction,
-                    "status": relationship.status,
-                    "confidence_score": relationship.confidence_score,
-                    "target_entity_type": relationship.target_entity_type,
-                    "target_entity_id": relationship.target_entity_id,
-                    "target_entity_fields": dict(relationship.target_entity_fields),
-                }
-                for relationship in entity.relationships
-            ],
         }
 
     @staticmethod

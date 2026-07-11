@@ -60,4 +60,8 @@ def test_projector_maps_structured_answer_context_into_prompt_bundle() -> None:
     assert bundle.sources[0].section_path == "Maintenance > Schedule"
     assert bundle.entities[0].entity_type == "maintenance_task"
     assert bundle.entities[0].relationships[0].target_entity_id == "procedure_001"
+    assert bundle.relationship_edges[0].source_entity_id == "task_001"
+    assert bundle.relationship_edges[0].target_entity_id == "procedure_001"
+    assert bundle.relationship_families[0].anchor_entity_id == "task_001"
+    assert bundle.relationship_families[0].related_entity_ids == ["procedure_001"]
     assert bundle.maintenance_entries
