@@ -64,4 +64,39 @@ def test_projector_maps_structured_answer_context_into_prompt_bundle() -> None:
     assert bundle.relationship_edges[0].target_entity_id == "procedure_001"
     assert bundle.relationship_families[0].anchor_entity_id == "task_001"
     assert bundle.relationship_families[0].related_entity_ids == ["procedure_001"]
+    assert bundle.source_families[0].direct_source_numbers == [1]
+    assert bundle.section_topology[0].section_name == "Schedule"
     assert bundle.maintenance_entries
+
+
+def test_projector_builds_first_class_table_views_from_source_rows() -> None:
+    chunk = RetrievedChunk(
+        chunk_id="chunk_002",
+        document_id="doc_001",
+        content="Test pressure: 700 bar",
+        score=0.8,
+        retrieval_source="dense",
+        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+        section_path=["Certificate", "Particulars"],
+        source=SourceLocation(page_start=7, page_end=7),
+        metadata={
+            "table_rows_json": '[["Parameter","Value"],["Test pressure","700 bar"]]'
+        },
+    )
+    context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[chunk],
+    )
+
+    bundle = PromptContextProjector().project(context)
+
+    assert bundle is not None
+    assert len(bundle.tables) == 1
+    assert bundle.tables[0].table_type == "certification_table"
+    assert bundle.tables[0].headers == ["Parameter", "Value"]
+    assert bundle.tables[0].rows[0].cells == ["Test pressure", "700 bar"]
+    assert bundle.tables[0].rows[0].cells_by_header == {
+        "Parameter": "Test pressure",
+        "Value": "700 bar",
+    }
+    assert bundle.sources[0].table_rows is None

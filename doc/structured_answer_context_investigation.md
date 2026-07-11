@@ -19,6 +19,22 @@
 - Phase 4 is implemented:
   - prompt-facing relationship graph edges and grouped evidence families are now
     emitted alongside entity records
+- Phase 5 is implemented:
+  - prompt-facing table evidence is now projected into first-class `tables`
+    payload records with headers, normalized rows, row-level provenance, and
+    top-level serialization instead of being duplicated inside payload `sources`
+- Phase 6 is implemented:
+  - prompt-facing evidence topology now emits `source_families` and
+    `section_topology` so the generic LLM path sees direct, supporting, and
+    contextual evidence roles rather than only lightweight group labels
+- Phase 7 is implemented:
+  - raw source appendix inclusion is now budget-aware and role-aware, so rich
+    structured evidence leads the prompt while raw chunk text is trimmed down to
+    the most relevant supporting excerpts
+- Phase 8 is implemented:
+  - answer-format policy context signals now distinguish richer evidence
+    conditions such as table rows, entity graphs, direct maintenance records,
+    exact identifier rows, and raw-source-dominant fallback cases
 - Later phases in this report remain planning guidance, not completed work
 
 The current pipeline does preserve structured evidence in application memory through typed models such as:

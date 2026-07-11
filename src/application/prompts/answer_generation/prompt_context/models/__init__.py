@@ -15,8 +15,20 @@ from src.application.prompts.answer_generation.prompt_context.models.prompt_grou
 from src.application.prompts.answer_generation.prompt_context.models.prompt_relationship_edge_view import (
     PromptRelationshipEdgeView,
 )
+from src.application.prompts.answer_generation.prompt_context.models.prompt_section_topology_view import (
+    PromptSectionTopologyView,
+)
 from src.application.prompts.answer_generation.prompt_context.models.prompt_source_view import (
     PromptSourceView,
+)
+from src.application.prompts.answer_generation.prompt_context.models.prompt_source_family_view import (
+    PromptSourceFamilyView,
+)
+from src.application.prompts.answer_generation.prompt_context.models.prompt_table_row_view import (
+    PromptTableRowView,
+)
+from src.application.prompts.answer_generation.prompt_context.models.prompt_table_view import (
+    PromptTableView,
 )
 
 __all__ = [
@@ -24,8 +36,12 @@ __all__ = [
     "PromptEvidenceFamilyView",
     "PromptEntityView",
     "PromptRelationshipEdgeView",
+    "PromptSectionTopologyView",
     "PromptRelationshipView",
     "PromptSectionGroupView",
+    "PromptSourceFamilyView",
     "PromptSourceGroupView",
     "PromptSourceView",
+    "PromptTableRowView",
+    "PromptTableView",
 ]

@@ -82,13 +82,16 @@ def test_structured_payload_includes_table_rows_when_available() -> None:
     prompt = builder.build(request)
 
     assert '"sources"' in prompt
+    assert '"tables": [' in prompt
+    assert '"source_families": [' in prompt
+    assert '"section_topology": [' in prompt
     assert '"table_rows": [' not in prompt
     assert '"content": "Test pressure: 700 bar' not in prompt
     assert "Raw source appendix:" in prompt
     assert "Test pressure: 700 bar" in prompt
 
 
-def test_table_summary_prompt_keeps_table_rows_in_structured_payload() -> None:
+def test_table_summary_prompt_promotes_rows_to_first_class_tables() -> None:
     builder = AnswerPromptBuilder()
     chunk = _make_chunk(
         metadata={
@@ -109,6 +112,9 @@ def test_table_summary_prompt_keeps_table_rows_in_structured_payload() -> None:
 
     prompt = builder.build(request)
 
-    assert '"table_rows": [' in prompt
+    assert '"tables": [' in prompt
+    assert '"table_rows": [' not in prompt
+    assert '"headers": [' in prompt
+    assert '"cells_by_header": {' in prompt
     assert '"Parameter"' in prompt
     assert '"700 bar"' in prompt

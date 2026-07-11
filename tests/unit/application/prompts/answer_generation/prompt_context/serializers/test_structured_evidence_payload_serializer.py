@@ -29,7 +29,7 @@ def _make_chunk() -> RetrievedChunk:
     )
 
 
-def test_serializer_preserves_nested_entity_relationships_and_table_rows_for_table_summary() -> None:
+def test_serializer_preserves_nested_entity_relationships_and_first_class_tables() -> None:
     context = AnswerContextOrganizer().organize(
         answer_intent=AnswerIntent.TABLE_SUMMARY,
         chunks=[_make_chunk()],
@@ -62,8 +62,15 @@ def test_serializer_preserves_nested_entity_relationships_and_table_rows_for_tab
     assert '"relationships"' not in payload
     assert '"relationship_edges"' in payload
     assert '"relationship_families"' in payload
+    assert '"source_families"' in payload
+    assert '"section_topology"' in payload
+    assert '"source_groups"' not in payload
+    assert '"section_groups"' not in payload
     assert '"relationship_type": "equipment_has_specification"' in payload
     assert '"source_entity_id": "equipment_001"' in payload
     assert '"target_entity_id": "spec_001"' in payload
-    assert '"table_rows": [' in payload
+    assert '"tables": [' in payload
+    assert '"table_rows": [' not in payload
+    assert '"headers": [' in payload
+    assert '"cells_by_header": {' in payload
     assert '"Parameter"' in payload

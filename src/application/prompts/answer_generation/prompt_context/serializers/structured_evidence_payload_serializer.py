@@ -19,6 +19,7 @@ class StructuredEvidencePayloadSerializer:
                 self._maintenance_entry_payload(entry)
                 for entry in context.maintenance_entries
             ],
+            "tables": [asdict(table) for table in context.tables],
             "structured_entities": [
                 self._entity_payload(entity) for entity in context.entities
             ],
@@ -28,8 +29,12 @@ class StructuredEvidencePayloadSerializer:
             "relationship_families": [
                 asdict(family) for family in context.relationship_families
             ],
-            "source_groups": [asdict(group) for group in context.source_groups],
-            "section_groups": [asdict(group) for group in context.section_groups],
+            "source_families": [
+                asdict(family) for family in context.source_families
+            ],
+            "section_topology": [
+                asdict(section) for section in context.section_topology
+            ],
         }
         return json.dumps(payload, indent=2, ensure_ascii=True)
 
@@ -46,7 +51,6 @@ class StructuredEvidencePayloadSerializer:
             "page_end": source.page_end,
             "retrieval_source": source.retrieval_source,
             "content": source.content,
-            "table_rows": source.table_rows,
             "identifier_values": source.identifier_values,
             "collapsed_chunk_ids": source.collapsed_chunk_ids,
         }

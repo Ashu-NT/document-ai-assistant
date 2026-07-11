@@ -551,6 +551,11 @@ def test_generate_diagnostics_surface_format_policy_context_signals() -> None:
         "is_sparse_evidence",
         "has_low_confidence_evidence",
         "has_rich_structured_evidence",
+        "has_table_rows",
+        "has_entity_graph",
+        "has_direct_maintenance_records",
+        "has_exact_identifier_rows",
+        "raw_source_dominant",
         "is_multi_document",
     }
 

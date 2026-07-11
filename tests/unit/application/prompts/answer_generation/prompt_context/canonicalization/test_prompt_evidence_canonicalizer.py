@@ -5,6 +5,8 @@ from src.application.prompts.answer_generation.prompt_context.models import (
     PromptContextBundle,
     PromptEntityView,
     PromptSourceView,
+    PromptTableRowView,
+    PromptTableView,
 )
 from src.application.services.answer_generation import AnswerIntent
 from src.application.workflows.question_answering.answer_context.models import (
@@ -83,6 +85,25 @@ def test_canonicalizer_prefers_key_values_over_table_rows_for_specification_summ
                 source_number=1,
             )
         ],
+        tables=[
+            PromptTableView(
+                table_id="chunk_001:table",
+                table_type="specification_table",
+                source_number=1,
+                chunk_id="chunk_001",
+                headers=["Parameter", "Value"],
+                rows=[
+                    PromptTableRowView(
+                        source_row_index=1,
+                        cells=["Test pressure", "700 bar"],
+                        cells_by_header={
+                            "Parameter": "Test pressure",
+                            "Value": "700 bar",
+                        },
+                    )
+                ],
+            )
+        ],
     )
 
     canonicalized = PromptEvidenceCanonicalizer().canonicalize(bundle)
@@ -95,7 +116,7 @@ def test_canonicalizer_prefers_key_values_over_table_rows_for_specification_summ
     ]
 
 
-def test_canonicalizer_keeps_table_rows_for_table_summary() -> None:
+def test_canonicalizer_promotes_table_summary_rows_to_top_level_tables() -> None:
     source = PromptSourceView(
         source_number=1,
         chunk_id="chunk_001",
@@ -109,12 +130,37 @@ def test_canonicalizer_keeps_table_rows_for_table_summary() -> None:
         source_count=1,
         sources=[source],
         appendix_sources=[source],
+        tables=[
+            PromptTableView(
+                table_id="chunk_001:table",
+                table_type="general_table",
+                source_number=1,
+                chunk_id="chunk_001",
+                headers=["Tag", "Part No"],
+                rows=[
+                    PromptTableRowView(
+                        source_row_index=1,
+                        cells=["V.00.01.01", "A00103"],
+                        cells_by_header={
+                            "Tag": "V.00.01.01",
+                            "Part No": "A00103",
+                        },
+                    )
+                ],
+            )
+        ],
     )
 
     canonicalized = PromptEvidenceCanonicalizer().canonicalize(bundle)
 
     assert canonicalized is not None
-    assert canonicalized.sources[0].table_rows == [
+    assert canonicalized.sources[0].table_rows is None
+    assert canonicalized.tables[0].headers == ["Tag", "Part No"]
+    assert canonicalized.tables[0].rows[0].cells_by_header == {
+        "Tag": "V.00.01.01",
+        "Part No": "A00103",
+    }
+    assert canonicalized.appendix_sources[0].table_rows == [
         ["Tag", "Part No"],
         ["V.00.01.01", "A00103"],
     ]

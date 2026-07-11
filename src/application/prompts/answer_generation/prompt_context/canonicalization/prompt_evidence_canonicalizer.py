@@ -56,8 +56,10 @@ class PromptEvidenceCanonicalizer:
             for entity in context.entities
             if entity.source_chunk_id in source_number_by_chunk_id
         }
+        table_source_numbers = {table.source_number for table in context.tables}
         payload_sources, table_rows_removed = self._canonicalize_sources(
             context,
+            table_source_numbers=table_source_numbers,
             key_value_source_numbers=key_value_source_numbers,
             maintenance_source_numbers=maintenance_source_numbers,
             entity_source_numbers=entity_source_numbers,
@@ -107,6 +109,7 @@ class PromptEvidenceCanonicalizer:
         self,
         context: PromptContextBundle,
         *,
+        table_source_numbers: set[int],
         key_value_source_numbers: set[int],
         maintenance_source_numbers: set[int],
         entity_source_numbers: set[int],
@@ -115,8 +118,8 @@ class PromptEvidenceCanonicalizer:
         table_rows_removed = 0
         for source in context.sources:
             keep_table_rows = self._should_keep_table_rows(
-                context.answer_intent_value,
                 source=source,
+                table_source_numbers=table_source_numbers,
                 key_value_source_numbers=key_value_source_numbers,
                 maintenance_source_numbers=maintenance_source_numbers,
                 entity_source_numbers=entity_source_numbers,
@@ -134,17 +137,17 @@ class PromptEvidenceCanonicalizer:
 
     @staticmethod
     def _should_keep_table_rows(
-        answer_intent_value: str,
         *,
         source: PromptSourceView,
+        table_source_numbers: set[int],
         key_value_source_numbers: set[int],
         maintenance_source_numbers: set[int],
         entity_source_numbers: set[int],
     ) -> bool:
         if not source.table_rows:
             return False
-        if answer_intent_value == AnswerIntent.TABLE_SUMMARY.value:
-            return True
+        if source.source_number in table_source_numbers:
+            return False
         source_has_richer_facts = source.source_number in (
             key_value_source_numbers
             | maintenance_source_numbers

@@ -16,12 +16,20 @@ from src.application.prompts.answer_generation.prompt_context.serializers.eviden
 from src.application.prompts.answer_generation.prompt_context.serializers.structured_evidence_payload_serializer import (
     StructuredEvidencePayloadSerializer,
 )
+from src.application.prompts.answer_generation.prompt_context.tables.prompt_table_projector import (
+    PromptTableProjector,
+)
+from src.application.prompts.answer_generation.prompt_context.topology.prompt_evidence_topology_builder import (
+    PromptEvidenceTopologyBuilder,
+)
 
 __all__ = [
     "EvidenceSchemaFormatter",
     "PromptEvidenceCanonicalizer",
     "PromptContextProjector",
+    "PromptEvidenceTopologyBuilder",
     "PromptRelationshipGraphBuilder",
+    "PromptTableProjector",
     "RawSourceAppendixFormatter",
     "StructuredEvidencePayloadSerializer",
 ]

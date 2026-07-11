@@ -12,6 +12,12 @@ from src.application.prompts.answer_generation.prompt_context.models import (
 from src.application.prompts.answer_generation.prompt_context.relationships.prompt_relationship_graph_builder import (
     PromptRelationshipGraphBuilder,
 )
+from src.application.prompts.answer_generation.prompt_context.tables.prompt_table_projector import (
+    PromptTableProjector,
+)
+from src.application.prompts.answer_generation.prompt_context.topology.prompt_evidence_topology_builder import (
+    PromptEvidenceTopologyBuilder,
+)
 from src.application.workflows.question_answering.answer_context.models import (
     StructuredAnswerContext,
 )
@@ -22,12 +28,18 @@ class PromptContextProjector:
         self,
         prompt_evidence_canonicalizer: PromptEvidenceCanonicalizer | None = None,
         prompt_relationship_graph_builder: PromptRelationshipGraphBuilder | None = None,
+        prompt_table_projector: PromptTableProjector | None = None,
+        prompt_evidence_topology_builder: PromptEvidenceTopologyBuilder | None = None,
     ) -> None:
         self.prompt_evidence_canonicalizer = (
             prompt_evidence_canonicalizer or PromptEvidenceCanonicalizer()
         )
         self.prompt_relationship_graph_builder = (
             prompt_relationship_graph_builder or PromptRelationshipGraphBuilder()
+        )
+        self.prompt_table_projector = prompt_table_projector or PromptTableProjector()
+        self.prompt_evidence_topology_builder = (
+            prompt_evidence_topology_builder or PromptEvidenceTopologyBuilder()
         )
 
     def project(
@@ -51,6 +63,12 @@ class PromptContextProjector:
                 source_number_by_chunk_id=source_number_by_chunk_id,
             )
         )
+        tables = self.prompt_table_projector.build(projected_sources)
+        source_families, section_topology = self.prompt_evidence_topology_builder.build(
+            answer_intent_value=context.answer_intent.value,
+            sources=projected_sources,
+            tables=tables,
+        )
         return self.prompt_evidence_canonicalizer.canonicalize(
             PromptContextBundle(
                 answer_intent_value=context.answer_intent.value,
@@ -59,9 +77,12 @@ class PromptContextProjector:
                 appendix_sources=list(projected_sources),
                 key_values=list(context.key_values),
                 maintenance_entries=list(context.maintenance_entries),
+                tables=tables,
                 entities=projected_entities,
                 relationship_edges=relationship_edges,
                 relationship_families=relationship_families,
+                source_families=source_families,
+                section_topology=section_topology,
                 source_groups=[
                     PromptSourceGroupView(
                         group_name=group.group_name,

@@ -2,13 +2,24 @@ from src.application.prompts.answer_generation.prompt_context.models import (
     PromptContextBundle,
     PromptSourceView,
 )
+from src.application.prompts.answer_generation.prompt_context.appendix.raw_source_inclusion_policy import (
+    RawSourceInclusionPolicy,
+)
 
 
 class RawSourceAppendixFormatter:
+    def __init__(
+        self,
+        raw_source_inclusion_policy: RawSourceInclusionPolicy | None = None,
+    ) -> None:
+        self.raw_source_inclusion_policy = (
+            raw_source_inclusion_policy or RawSourceInclusionPolicy()
+        )
+
     def format(self, context: PromptContextBundle | None) -> str:
         if context is None:
             return ""
-        sources = context.appendix_sources or context.sources
+        sources = self.raw_source_inclusion_policy.select(context)
         if not sources:
             return ""
         return "\n\n".join(
