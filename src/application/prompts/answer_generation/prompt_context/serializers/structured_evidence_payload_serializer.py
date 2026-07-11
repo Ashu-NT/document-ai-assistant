@@ -36,7 +36,7 @@ class StructuredEvidencePayloadSerializer:
                 asdict(section) for section in context.section_topology
             ],
         }
-        return json.dumps(payload, indent=2, ensure_ascii=True)
+        return json.dumps(payload, indent=2, ensure_ascii=True, default=str)
 
     @staticmethod
     def _source_payload(source) -> dict[str, object]:

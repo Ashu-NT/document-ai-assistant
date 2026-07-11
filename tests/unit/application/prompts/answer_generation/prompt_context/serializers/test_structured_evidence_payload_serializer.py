@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from src.application.prompts.answer_generation.prompt_context.projectors import (
     PromptContextProjector,
 )
@@ -74,3 +76,30 @@ def test_serializer_preserves_nested_entity_relationships_and_first_class_tables
     assert '"headers": [' in payload
     assert '"cells_by_header": {' in payload
     assert '"Parameter"' in payload
+
+
+def test_serializer_does_not_crash_on_non_json_native_entity_field_values() -> None:
+    """Regression test: a resolved entity's raw fields can carry values
+    straight from ORM-derived data (e.g. a `datetime` audit timestamp)
+    that were never meant to survive into a JSON-serialization boundary.
+    json.dumps must not crash on these -- it should stringify them, the
+    same `default=str` fallback already used elsewhere in this codebase
+    for arbitrary domain payloads (ocr_trace.py, quality_report_writer.py,
+    plan_validator.py)."""
+    context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.GENERAL,
+        chunks=[_make_chunk()],
+    )
+    installed_at = datetime(2024, 1, 1, 12, 30)
+    context.structured_entities.append(
+        AnswerStructuredEntity(
+            entity_type="equipment",
+            entity_id="equipment_001",
+            fields={"name": "Hydraulic pump", "installed_at": installed_at},
+        )
+    )
+
+    bundle = PromptContextProjector().project(context)
+    payload = StructuredEvidencePayloadSerializer().serialize(bundle)
+
+    assert str(installed_at) in payload
