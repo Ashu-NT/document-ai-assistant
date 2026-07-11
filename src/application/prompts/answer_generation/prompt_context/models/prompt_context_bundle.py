@@ -24,6 +24,7 @@ class PromptContextBundle:
     answer_intent_value: str
     source_count: int
     sources: list[PromptSourceView] = field(default_factory=list)
+    appendix_sources: list[PromptSourceView] = field(default_factory=list)
     key_values: list[AnswerKeyValue] = field(default_factory=list)
     maintenance_entries: list[AnswerMaintenanceEntry] = field(default_factory=list)
     entities: list[PromptEntityView] = field(default_factory=list)

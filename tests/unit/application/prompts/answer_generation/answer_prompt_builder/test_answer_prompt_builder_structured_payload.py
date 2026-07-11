@@ -82,7 +82,33 @@ def test_structured_payload_includes_table_rows_when_available() -> None:
     prompt = builder.build(request)
 
     assert '"sources"' in prompt
+    assert '"table_rows": [' not in prompt
+    assert '"content": "Test pressure: 700 bar' not in prompt
+    assert "Raw source appendix:" in prompt
+    assert "Test pressure: 700 bar" in prompt
+
+
+def test_table_summary_prompt_keeps_table_rows_in_structured_payload() -> None:
+    builder = AnswerPromptBuilder()
+    chunk = _make_chunk(
+        metadata={
+            "table_rows_json": '[["Parameter","Value"],["Test pressure","700 bar"]]'
+        }
+    )
+    structured_context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[chunk],
+    )
+    request = AnswerGenerationRequest(
+        question="Show the table",
+        context_chunks=[chunk],
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        structured_context=structured_context,
+        format_policy=AnswerFormatPolicy.for_intent(AnswerIntent.TABLE_SUMMARY),
+    )
+
+    prompt = builder.build(request)
+
     assert '"table_rows": [' in prompt
     assert '"Parameter"' in prompt
-    assert '"Test pressure"' in prompt
     assert '"700 bar"' in prompt

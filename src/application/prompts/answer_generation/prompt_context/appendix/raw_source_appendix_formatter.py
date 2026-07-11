@@ -6,10 +6,13 @@ from src.application.prompts.answer_generation.prompt_context.models import (
 
 class RawSourceAppendixFormatter:
     def format(self, context: PromptContextBundle | None) -> str:
-        if context is None or not context.sources:
+        if context is None:
+            return ""
+        sources = context.appendix_sources or context.sources
+        if not sources:
             return ""
         return "\n\n".join(
-            self._format_source_block(source) for source in context.sources
+            self._format_source_block(source) for source in sources
         )
 
     def _format_source_block(self, source: PromptSourceView) -> str:

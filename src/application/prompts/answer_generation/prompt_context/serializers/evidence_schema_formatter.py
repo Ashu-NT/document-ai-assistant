@@ -9,7 +9,7 @@ class EvidenceSchemaFormatter:
             return ""
         lines = [
             "Evidence schema:",
-            "- sources: retrieved evidence units with provenance, section/page scope, content, and structured table rows when available.",
+            "- sources: provenance records for retrieved evidence units with section/page scope and retained structured table rows when they are the primary prompt representation.",
             "- key_values: normalized factual values derived from text or tables, each tied to a source_number.",
             "- maintenance_entries: task-centered maintenance records with interval, component, notes, and explicit references.",
             "- structured_entities: typed entities with nested fields and typed relationships.",

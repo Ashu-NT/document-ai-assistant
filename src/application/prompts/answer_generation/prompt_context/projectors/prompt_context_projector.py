@@ -1,3 +1,6 @@
+from src.application.prompts.answer_generation.prompt_context.canonicalization.prompt_evidence_canonicalizer import (
+    PromptEvidenceCanonicalizer,
+)
 from src.application.prompts.answer_generation.prompt_context.models import (
     PromptContextBundle,
     PromptEntityView,
@@ -12,38 +15,55 @@ from src.application.workflows.question_answering.answer_context.models import (
 
 
 class PromptContextProjector:
+    def __init__(
+        self,
+        prompt_evidence_canonicalizer: PromptEvidenceCanonicalizer | None = None,
+    ) -> None:
+        self.prompt_evidence_canonicalizer = (
+            prompt_evidence_canonicalizer or PromptEvidenceCanonicalizer()
+        )
+
     def project(
         self,
         context: StructuredAnswerContext | None,
     ) -> PromptContextBundle | None:
         if context is None:
             return None
-        return PromptContextBundle(
-            answer_intent_value=context.answer_intent.value,
-            source_count=context.source_count,
-            sources=[self._project_source(source) for source in context.sources],
-            key_values=list(context.key_values),
-            maintenance_entries=list(context.maintenance_entries),
-            entities=[self._project_entity(entity) for entity in context.structured_entities],
-            source_groups=[
-                PromptSourceGroupView(
-                    group_name=group.group_name,
-                    chunk_type=group.chunk_type,
-                    source_numbers=[source.source_number for source in group.sources],
-                )
-                for group in context.source_groups
-            ],
-            section_groups=[
-                PromptSectionGroupView(
-                    group_name=group.group_name,
-                    section_path=group.section_path,
-                    page_start=group.page_start,
-                    page_end=group.page_end,
-                    source_numbers=list(group.source_numbers),
-                )
-                for group in context.section_groups
-            ],
-            diagnostics=dict(context.diagnostics),
+        projected_sources = [self._project_source(source) for source in context.sources]
+        return self.prompt_evidence_canonicalizer.canonicalize(
+            PromptContextBundle(
+                answer_intent_value=context.answer_intent.value,
+                source_count=context.source_count,
+                sources=list(projected_sources),
+                appendix_sources=list(projected_sources),
+                key_values=list(context.key_values),
+                maintenance_entries=list(context.maintenance_entries),
+                entities=[
+                    self._project_entity(entity)
+                    for entity in context.structured_entities
+                ],
+                source_groups=[
+                    PromptSourceGroupView(
+                        group_name=group.group_name,
+                        chunk_type=group.chunk_type,
+                        source_numbers=[
+                            source.source_number for source in group.sources
+                        ],
+                    )
+                    for group in context.source_groups
+                ],
+                section_groups=[
+                    PromptSectionGroupView(
+                        group_name=group.group_name,
+                        section_path=group.section_path,
+                        page_start=group.page_start,
+                        page_end=group.page_end,
+                        source_numbers=list(group.source_numbers),
+                    )
+                    for group in context.section_groups
+                ],
+                diagnostics=dict(context.diagnostics),
+            )
         )
 
     @staticmethod

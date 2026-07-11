@@ -29,9 +29,9 @@ def _make_chunk() -> RetrievedChunk:
     )
 
 
-def test_serializer_preserves_nested_entity_relationships_and_table_rows() -> None:
+def test_serializer_preserves_nested_entity_relationships_and_table_rows_for_table_summary() -> None:
     context = AnswerContextOrganizer().organize(
-        answer_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
         chunks=[_make_chunk()],
     )
     context.structured_entities.append(

@@ -12,6 +12,10 @@
 - Phase 2 is implemented:
   - the generic LLM path now emits `Evidence schema`,
     `Structured evidence payload`, and `Raw source appendix`
+- Phase 3 is implemented:
+  - prompt-time canonicalization now removes obvious entity/key-value duplication
+    and keeps full raw content in the appendix instead of repeating it inside the
+    main structured payload
 - Later phases in this report remain planning guidance, not completed work
 
 The current pipeline does preserve structured evidence in application memory through typed models such as:
@@ -29,7 +33,7 @@ That structure is assembled before answer generation and is used directly by som
 However, for the generic LLM answer path, the structure is ultimately serialized into prompt text by `AnswerPromptBuilder`. That means the system is:
 
 - structured in memory
-- semi-structured at the prompt boundary
+- schema-structured at the prompt boundary
 - not fully machine-structured inside the LLM context window
 
 So the short answer is:
@@ -448,6 +452,7 @@ The LLM does receive evidence that is better structured than raw chunk dumping:
 - structured entities stay nested
 - entity relationships are explicit nested objects
 - source numbers and provenance remain visible
+- canonicalized payload sources omit repeated raw content
 - raw sources are still included for grounding
 
 ### But no, not in a fully structured sense
@@ -455,7 +460,7 @@ The LLM does receive evidence that is better structured than raw chunk dumping:
 The LLM does not receive:
 
 - the full internal `StructuredAnswerContext` object directly
-- a fully canonicalized evidence graph with prompt-time deduplication rules
+- a fully topology-aware canonical evidence graph
 - tables as a dedicated first-class top-level prompt section
 - evidence topology such as direct/supporting/context roles
 
@@ -465,7 +470,7 @@ So the design is:
 
 - semantically enriched
 - schema-structured at the prompt boundary
-- not yet topology-rich or fully canonicalized
+- partially canonicalized, but not yet topology-rich
 
 ## Specific Observations About Flattening Quality
 

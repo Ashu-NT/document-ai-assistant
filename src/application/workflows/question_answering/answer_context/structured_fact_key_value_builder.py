@@ -1,42 +1,12 @@
 from __future__ import annotations
 
+from src.application.workflows.question_answering.answer_context.structured_entity_field_labels import (
+    field_labels_for_entity,
+)
 from src.application.workflows.question_answering.answer_context.models import (
     AnswerKeyValue,
 )
 from src.domain.document.entities.identifier import Identifier
-
-_ENTITY_FIELD_LABELS: dict[str, tuple[tuple[str, str], ...]] = {
-    "manufacturer": (
-        ("name", "Manufacturer Name"),
-        ("website", "Manufacturer Website"),
-        ("country", "Manufacturer Country"),
-    ),
-    "supplier": (
-        ("name", "Supplier Name"),
-        ("website", "Supplier Website"),
-        ("country", "Supplier Country"),
-    ),
-    "spare_part": (
-        ("part_number", "Part Number"),
-        ("description", "Part Description"),
-        ("quantity", "Part Quantity"),
-        ("component_name", "Part Component"),
-    ),
-    "equipment": (
-        ("name", "Equipment Name"),
-        ("model_number", "Equipment Model Number"),
-        ("serial_number", "Equipment Serial Number"),
-    ),
-    "maintenance_task": (
-        ("title", "Maintenance Task"),
-        ("interval", "Maintenance Interval"),
-        ("component_name", "Maintenance Component"),
-    ),
-    "contact_point": (
-        ("owner_name", "Contact Owner"),
-        ("label", "Contact Label"),
-    ),
-}
 
 
 class StructuredFactKeyValueBuilder:
@@ -84,7 +54,7 @@ class StructuredFactKeyValueBuilder:
             )
             if source_number is None:
                 continue
-            for field_name, label in self._field_labels_for_entity(candidate_type, entity):
+            for field_name, label in field_labels_for_entity(candidate_type, entity):
                 value = entity.get(field_name)
                 if value is None or not str(value).strip():
                     continue
@@ -121,37 +91,6 @@ class StructuredFactKeyValueBuilder:
                 if not related_type or not isinstance(related_entity, dict):
                     continue
                 yield str(related_type), related_entity
-
-    @classmethod
-    def _field_labels_for_entity(
-        cls,
-        entity_type: str,
-        entity: dict,
-    ) -> tuple[tuple[str, str], ...]:
-        if entity_type != "contact_point":
-            return _ENTITY_FIELD_LABELS.get(entity_type, ())
-
-        contact_label = cls._contact_value_label(entity)
-        return (
-            ("value", contact_label),
-            *_ENTITY_FIELD_LABELS["contact_point"],
-        )
-
-    @staticmethod
-    def _contact_value_label(entity: dict) -> str:
-        owner_entity_type = str(entity.get("owner_entity_type") or "").strip().lower()
-        owner_prefix = {
-            "manufacturer": "Manufacturer",
-            "supplier": "Supplier",
-        }.get(owner_entity_type, "Contact")
-        contact_type = str(entity.get("contact_type") or "").strip().lower()
-        contact_suffix = {
-            "phone_number": "Phone Number",
-            "fax_number": "Fax Number",
-            "email_address": "Email Address",
-            "url": "Website",
-        }.get(contact_type, "Value")
-        return f"{owner_prefix} {contact_suffix}"
 
     @staticmethod
     def _identifier_label(identifier_type: object) -> str:
