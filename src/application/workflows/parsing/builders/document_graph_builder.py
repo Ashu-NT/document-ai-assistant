@@ -1,4 +1,3 @@
-from collections import Counter, defaultdict
 from pathlib import Path
 
 from src.application.workflows.parsing.builders.chunking import SectionChunkBuilder
@@ -9,10 +8,15 @@ from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk
     ChunkTokenCounterFactory,
 )
 from src.application.workflows.parsing.builders.document_graph import (
+    AssetMetadataSynchronizer,
     AssetNearbyTextEnricher,
+    ChunkSignalAggregator,
+    DocumentMetadataExtractor,
     GraphChunkBuilder,
+    PageSizeExtractor,
     ParsedAssetFactory,
     ParsedElementFactory,
+    SectionBoundaryUpdater,
 )
 from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,
@@ -23,14 +27,13 @@ from src.application.workflows.parsing.canonical_element import (
     CanonicalElement as ParsedCanonicalElement,
 )
 from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
-from src.domain.common import ChunkType, DocumentType, ElementType
+from src.domain.common import ElementType
 from src.domain.document import (
     Document,
     DocumentGraph,
     DocumentHashes,
     DocumentStatistics,
 )
-from src.domain.elements import CanonicalElement
 from src.shared.exceptions import ChunkingError
 from src.shared.ids import IdGenerator
 
@@ -161,8 +164,12 @@ class DocumentGraphBuilder:
                     file_path=file_path,
                     hashes=hashes,
                     title=raw_parsed_document.title or Path(file_path).stem,
-                    document_type=self._extract_document_type(raw_parsed_document),
-                    language=self._extract_language(raw_parsed_document),
+                    document_type=DocumentMetadataExtractor.extract_document_type(
+                        raw_parsed_document
+                    ),
+                    language=DocumentMetadataExtractor.extract_language(
+                        raw_parsed_document
+                    ),
                 )
 
                 graph = DocumentGraph(document=document)
@@ -246,13 +253,13 @@ class DocumentGraphBuilder:
                     if parent_section_id and parent_section_id in section_lookup:
                         section = section_lookup[parent_section_id]
                         section.element_ids.append(domain_element.element_id)
-                        self._update_section_boundaries(section, domain_element)
+                        SectionBoundaryUpdater.update(section, domain_element)
                 stage.output_counts["graph_elements"] = len(graph.elements)
                 stage.output_counts["tables"] = len(graph.tables)
                 stage.output_counts["pictures"] = len(graph.pictures)
 
             self.asset_nearby_text_enricher.enrich(graph)
-            self._sync_asset_metadata_to_elements(graph)
+            AssetMetadataSynchronizer.sync(graph)
 
             page_sizes = self._extract_page_sizes(raw_parsed_document)
 
@@ -269,24 +276,14 @@ class DocumentGraphBuilder:
                     graph.add_chunk(chunk)
                 stage.output_counts["graph_chunks"] = len(graph.chunks)
 
-            section_signals: defaultdict[str, set[str]] = defaultdict(set)
-            chunk_type_counts: Counter[str] = Counter()
             with self.profiler.measure(
                 name="document_graph_builder.aggregate_chunk_signals",
                 input_counts={"chunks": len(graph.chunks)},
             ) as stage:
-                for chunk in graph.chunks.values():
-                    chunk_type_counts[str(chunk.chunk_type)] += 1
-                    if chunk.section_id and chunk.chunk_type not in {
-                        ChunkType.GENERAL,
-                        ChunkType.UNKNOWN,
-                    }:
-                        section_signals[chunk.section_id].add(str(chunk.chunk_type))
-
-                for section_id, signals in section_signals.items():
-                    if section_id in graph.sections:
-                        graph.sections[section_id].chunk_type_signals = sorted(signals)
-                stage.output_counts["sections_with_signals"] = len(section_signals)
+                chunk_type_counts, sections_with_signals = ChunkSignalAggregator.aggregate(
+                    graph
+                )
+                stage.output_counts["sections_with_signals"] = sections_with_signals
 
             with self.profiler.measure(
                 name="document_graph_builder.compute_statistics",
@@ -321,95 +318,7 @@ class DocumentGraphBuilder:
             ) from exc
 
     @staticmethod
-    def _update_section_boundaries(section, element: CanonicalElement) -> None:
-        reading_order = element.reading_order
-        if reading_order is not None:
-            if section.reading_order_start is None or reading_order < section.reading_order_start:
-                section.reading_order_start = reading_order
-            if section.reading_order_end is None or reading_order > section.reading_order_end:
-                section.reading_order_end = reading_order
-
-        source = element.source
-        if source.page_start is not None:
-            if section.source.page_start is None or source.page_start < section.source.page_start:
-                section.source.page_start = source.page_start
-        if source.page_end is not None:
-            if section.source.page_end is None or source.page_end > section.source.page_end:
-                section.source.page_end = source.page_end
-
-    @staticmethod
     def _extract_page_sizes(
         raw_parsed_document: RawParsedDocument,
     ) -> dict[int, tuple[float, float]]:
-        pages = getattr(raw_parsed_document.raw_document, "pages", None)
-        if not pages:
-            return {}
-
-        page_sizes: dict[int, tuple[float, float]] = {}
-        for page_no, page in pages.items():
-            size = getattr(page, "size", None)
-            width = getattr(size, "width", None)
-            height = getattr(size, "height", None)
-            if width is None or height is None:
-                continue
-            try:
-                page_sizes[int(page_no)] = (float(width), float(height))
-            except (TypeError, ValueError):
-                continue
-        return page_sizes
-
-    @staticmethod
-    def _extract_language(raw_parsed_document: RawParsedDocument) -> str | None:
-        language = raw_parsed_document.metadata.get("language")
-        if isinstance(language, str) and language.strip():
-            return language.strip()
-        return None
-
-    @staticmethod
-    def _extract_document_type(raw_parsed_document: RawParsedDocument) -> DocumentType:
-        raw_document_type = raw_parsed_document.metadata.get("document_type")
-        if isinstance(raw_document_type, str):
-            normalized = raw_document_type.strip().lower()
-            for document_type in DocumentType:
-                if normalized == document_type.value:
-                    return document_type
-
-        title = (raw_parsed_document.title or "").strip().lower()
-        title_markers = {
-            "datasheet": DocumentType.DATASHEET,
-            "manual": DocumentType.MANUAL,
-            "drawing": DocumentType.DRAWING,
-            "report": DocumentType.REPORT,
-            "certificate": DocumentType.CERTIFICATE,
-        }
-        for marker, document_type in title_markers.items():
-            if marker in title:
-                return document_type
-
-        return DocumentType.UNKNOWN
-
-    @staticmethod
-    def _sync_asset_metadata_to_elements(graph: DocumentGraph) -> None:
-        for element in graph.elements.values():
-            if element.parser_metadata is None:
-                continue
-
-            parser_extra = element.parser_metadata.extra
-            if element.table_id is not None and element.table_id in graph.tables:
-                table_asset = graph.tables[element.table_id]
-                parser_extra["markdown"] = table_asset.markdown
-                if table_asset.metadata.caption:
-                    parser_extra["caption"] = table_asset.metadata.caption
-                if table_asset.metadata.nearby_text:
-                    parser_extra["nearby_text"] = table_asset.metadata.nearby_text
-
-            if element.picture_id is not None and element.picture_id in graph.pictures:
-                picture_asset = graph.pictures[element.picture_id]
-                if picture_asset.metadata.caption:
-                    parser_extra["caption"] = picture_asset.metadata.caption
-                if picture_asset.metadata.nearby_text:
-                    parser_extra["nearby_text"] = picture_asset.metadata.nearby_text
-                if picture_asset.ocr_text:
-                    parser_extra["ocr_text"] = picture_asset.ocr_text
-                if picture_asset.image_path:
-                    parser_extra["image_path"] = picture_asset.image_path
+        return PageSizeExtractor.extract(raw_parsed_document)

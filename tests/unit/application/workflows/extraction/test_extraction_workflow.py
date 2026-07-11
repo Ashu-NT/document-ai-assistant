@@ -4,8 +4,15 @@ from src.application.prompts.extraction import IdentifierExtractionPromptBuilder
 from src.application.validation.extraction import ExtractionResultValidator
 from src.application.workflows.extraction import ExtractionWorkflow
 from src.application.workflows.extraction.batching import ExtractionChunkBatcher
+from src.application.workflows.extraction.batching.extraction_table_chunk_hydrator import (
+    hydrate_table_chunks,
+)
 from src.application.workflows.extraction.candidates import (
     ExtractionCandidateSelector,
+)
+from src.application.workflows.extraction.pruning.empty_entity_pruner import (
+    drop_empty_entities,
+    has_meaningful_entity_content,
 )
 from src.domain.assets import TableAsset
 from src.domain.common import ChunkType
@@ -596,13 +603,7 @@ def test_extract_emits_narrowed_progress_message_when_narrowing_applied(
     assert any("safety_warning" in message for message in progress_messages)
 
 
-def make_bare_workflow() -> ExtractionWorkflow:
-    workflow, _ = make_workflow(FakeLLMService([]), FakeExtractionService())
-    return workflow
-
-
 def test_has_meaningful_entity_content_false_when_all_content_fields_empty() -> None:
-    workflow = make_bare_workflow()
     task = MaintenanceTask(
         task_id="task_001",
         document_id="document_001",
@@ -611,13 +612,12 @@ def test_has_meaningful_entity_content_false_when_all_content_fields_empty() -> 
     )
 
     assert (
-        workflow._has_meaningful_entity_content(task, ("title", "description", "interval"))
+        has_meaningful_entity_content(task, ("title", "description", "interval"))
         is False
     )
 
 
 def test_has_meaningful_entity_content_true_when_string_field_set() -> None:
-    workflow = make_bare_workflow()
     task = MaintenanceTask(
         task_id="task_001",
         document_id="document_001",
@@ -626,13 +626,12 @@ def test_has_meaningful_entity_content_true_when_string_field_set() -> None:
     )
 
     assert (
-        workflow._has_meaningful_entity_content(task, ("title", "description", "interval"))
+        has_meaningful_entity_content(task, ("title", "description", "interval"))
         is True
     )
 
 
 def test_has_meaningful_entity_content_true_for_non_string_field() -> None:
-    workflow = make_bare_workflow()
     procedure = Procedure(
         procedure_id="procedure_001",
         document_id="document_001",
@@ -642,7 +641,7 @@ def test_has_meaningful_entity_content_true_for_non_string_field() -> None:
     )
 
     assert (
-        workflow._has_meaningful_entity_content(
+        has_meaningful_entity_content(
             procedure, ("title", "steps", "component_name", "equipment_id")
         )
         is True
@@ -650,7 +649,6 @@ def test_has_meaningful_entity_content_true_for_non_string_field() -> None:
 
 
 def test_has_meaningful_entity_content_false_for_empty_list_field() -> None:
-    workflow = make_bare_workflow()
     procedure = Procedure(
         procedure_id="procedure_001",
         document_id="document_001",
@@ -660,7 +658,7 @@ def test_has_meaningful_entity_content_false_for_empty_list_field() -> None:
     )
 
     assert (
-        workflow._has_meaningful_entity_content(
+        has_meaningful_entity_content(
             procedure, ("title", "steps", "component_name", "equipment_id")
         )
         is False
@@ -668,7 +666,6 @@ def test_has_meaningful_entity_content_false_for_empty_list_field() -> None:
 
 
 def test_drop_empty_entities_removes_fully_empty_items_across_all_types() -> None:
-    workflow = make_bare_workflow()
     result = ExtractionResult(
         extraction_id="extraction_001",
         document_id="document_001",
@@ -711,7 +708,7 @@ def test_drop_empty_entities_removes_fully_empty_items_across_all_types() -> Non
         ],
     )
 
-    filtered_result, dropped_count = workflow._drop_empty_entities(result)
+    filtered_result, dropped_count = drop_empty_entities(result)
 
     assert [task.task_id for task in filtered_result.maintenance_tasks] == ["task_real"]
     assert filtered_result.spare_parts == []
@@ -724,7 +721,6 @@ def test_drop_empty_entities_removes_fully_empty_items_across_all_types() -> Non
 def test_drop_empty_entities_keeps_items_with_only_non_content_fields_absent() -> None:
     # An item with a real component_name but no other fields should survive
     # — component_name alone is meaningful content.
-    workflow = make_bare_workflow()
     result = ExtractionResult(
         extraction_id="extraction_001",
         document_id="document_001",
@@ -740,7 +736,7 @@ def test_drop_empty_entities_keeps_items_with_only_non_content_fields_absent() -
         ],
     )
 
-    filtered_result, dropped_count = workflow._drop_empty_entities(result)
+    filtered_result, dropped_count = drop_empty_entities(result)
 
     assert len(filtered_result.specifications) == 1
     assert dropped_count == 0
@@ -2044,7 +2040,7 @@ def test_hydrate_table_chunks_replaces_partial_content_with_full_table(sample_ch
         table_ids=["table_001"],
     )
 
-    hydrated = ExtractionWorkflow._hydrate_table_chunks([partial_chunk], {"table_001": table})
+    hydrated = hydrate_table_chunks([partial_chunk], {"table_001": table})
 
     assert len(hydrated) == 1
     assert "HP-001" in hydrated[0].content
@@ -2071,7 +2067,7 @@ def test_hydrate_table_chunks_drops_later_chunks_sharing_the_same_table(sample_c
         table_ids=["table_001"],
     )
 
-    hydrated = ExtractionWorkflow._hydrate_table_chunks(
+    hydrated = hydrate_table_chunks(
         [first_chunk, second_chunk], {"table_001": table}
     )
 
@@ -2081,7 +2077,7 @@ def test_hydrate_table_chunks_drops_later_chunks_sharing_the_same_table(sample_c
 
 
 def test_hydrate_table_chunks_leaves_non_table_chunks_unchanged(sample_chunk) -> None:
-    hydrated = ExtractionWorkflow._hydrate_table_chunks([sample_chunk], {})
+    hydrated = hydrate_table_chunks([sample_chunk], {})
 
     assert hydrated == [sample_chunk]
 
@@ -2102,7 +2098,7 @@ def test_hydrate_table_chunks_appends_structured_row_echo_when_rows_present(
         table_ids=["table_001"],
     )
 
-    hydrated = ExtractionWorkflow._hydrate_table_chunks([partial_chunk], {"table_001": table})
+    hydrated = hydrate_table_chunks([partial_chunk], {"table_001": table})
 
     assert "Row 1: Part=HP-001 | Qty=1" in hydrated[0].content
     assert "Row 2: Part=HP-002 | Qty=2" in hydrated[0].content
@@ -2125,7 +2121,7 @@ def test_hydrate_table_chunks_omits_structured_row_echo_when_rows_absent(
         table_ids=["table_001"],
     )
 
-    hydrated = ExtractionWorkflow._hydrate_table_chunks([partial_chunk], {"table_001": table})
+    hydrated = hydrate_table_chunks([partial_chunk], {"table_001": table})
 
     assert "Row 1:" not in hydrated[0].content
 
@@ -2144,7 +2140,7 @@ def test_hydrate_table_chunks_includes_table_caption(sample_chunk) -> None:
         table_ids=["table_001"],
     )
 
-    hydrated = ExtractionWorkflow._hydrate_table_chunks([partial_chunk], {"table_001": table})
+    hydrated = hydrate_table_chunks([partial_chunk], {"table_001": table})
 
     assert "Spare parts for the hydraulic pump" in hydrated[0].content
 

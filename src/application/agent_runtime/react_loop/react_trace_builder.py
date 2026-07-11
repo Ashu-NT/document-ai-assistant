@@ -8,7 +8,7 @@ from src.application.agent_runtime.policies.demo_visibility_policy import (
 from src.application.agent_runtime.react_loop.react_event import ReactEvent
 from src.application.agent_runtime.react_loop.react_step import ReactStep
 from src.application.agent_runtime.react_loop.react_trace import ReactTrace
-from src.shared.text import preview_text as _truncate
+from src.shared.text.text_preview import preview_text
 
 
 class ReactTraceBuilder:
@@ -374,13 +374,13 @@ def _format_observation(data: dict[str, Any], *, max_chars: int) -> str:
             if pages:
                 detail += f" ({pages})"
             lines.append(detail)
-        return _truncate("\n".join(lines), max_chars)
+        return preview_text("\n".join(lines), max_chars)
     citations = data.get("citations")
     if isinstance(citations, list) and citations:
-        return _truncate(f"Collected {len(citations)} grounded citation(s).", max_chars)
+        return preview_text(f"Collected {len(citations)} grounded citation(s).", max_chars)
     if data.get("pending_clarification"):
         question = data.get("clarification_question") or "Clarification is required."
-        return _truncate(str(question), max_chars)
+        return preview_text(str(question), max_chars)
     return ""
 
 

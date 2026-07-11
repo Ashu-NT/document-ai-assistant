@@ -13,7 +13,7 @@ from src.application.agent_runtime.policies.demo_visibility_policy import (
 )
 from src.application.agent_runtime.react_loop.react_presenter import ReactPresenter
 from src.application.agent_runtime.react_loop.react_trace import ReactTrace
-from src.shared.text import console_safe_text, preview_text
+from src.shared.text.text_preview import console_safe_text, preview_text
 
 
 class ConsolePresenter:

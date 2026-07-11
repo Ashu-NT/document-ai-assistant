@@ -9,12 +9,20 @@ from src.application.validation.common import ValidationResult
 from src.application.validation.extraction import ExtractionResultValidator
 from src.application.workflows.extraction.batching import (
     ExtractionBatchDiagnostics,
-    ExtractionBatchExecutor,
-    ExtractionBatchRetryCoordinator,
     ExtractionChunkBatcher,
+)
+from src.application.workflows.extraction.batching.extraction_batch_executor import (
+    ExtractionBatchExecutor,
+)
+from src.application.workflows.extraction.batching.extraction_batch_retry_coordinator import (
+    ExtractionBatchRetryCoordinator,
+)
+from src.application.workflows.extraction.batching.extraction_table_chunk_hydrator import (
     hydrate_table_chunks,
 )
-from src.application.workflows.extraction.builders import ExtractionBuilderSupport
+from src.application.workflows.extraction.builders.extraction_builder_support import (
+    ExtractionBuilderSupport,
+)
 from src.application.workflows.extraction.candidates import (
     ExtractionCandidateLLMRouter,
     ExtractionCandidateSelector,
@@ -37,9 +45,8 @@ from src.application.workflows.extraction.extraction_workflow_settings import (
     _default_max_chars_per_batch,
     _default_max_chunks_per_batch,
 )
-from src.application.workflows.extraction.pruning import (
+from src.application.workflows.extraction.pruning.empty_entity_pruner import (
     drop_empty_entities,
-    has_meaningful_entity_content,
 )
 from src.application.workflows.extraction.response import (
     ExtractionResponseParser,
@@ -49,11 +56,11 @@ from src.domain.assets import TableAsset
 from src.domain.document import DocumentChunk, DocumentSection
 from src.domain.extraction import ExtractionResult
 from src.shared.activity import ActivityContext
-from src.shared.collections import unique_in_order
+from src.shared.collections.ordered_dedupe import unique_in_order
 from src.shared.execution import tracked_action
 from src.shared.exceptions import SchemaValidationError
 from src.shared.ids import IdGenerator
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 
 class ExtractionWorkflow:
@@ -204,7 +211,7 @@ class ExtractionWorkflow:
         self.last_batch_diagnostics = []
 
         if tables:
-            chunk_list = self._hydrate_table_chunks(chunk_list, tables)
+            chunk_list = hydrate_table_chunks(chunk_list, tables)
 
         self._builder_support.set_semantic_contexts(
             self.semantic_context_builder.build_all(
@@ -296,7 +303,7 @@ class ExtractionWorkflow:
             ]
         )
         extraction_result.unresolved_chunk_ids = final_unresolved_chunk_ids
-        extraction_result, dropped_empty_count = self._drop_empty_entities(
+        extraction_result, dropped_empty_count = drop_empty_entities(
             extraction_result
         )
         if dropped_empty_count:
@@ -379,13 +386,6 @@ class ExtractionWorkflow:
         return [chunks]
 
     @staticmethod
-    def _hydrate_table_chunks(
-        chunks: list[DocumentChunk],
-        tables: dict[str, TableAsset],
-    ) -> list[DocumentChunk]:
-        return hydrate_table_chunks(chunks, tables)
-
-    @staticmethod
     def _validate_input(
         document_id: str,
         chunks: list[DocumentChunk],
@@ -416,11 +416,3 @@ class ExtractionWorkflow:
 
         validation.raise_if_invalid()
 
-    def _drop_empty_entities(
-        self, extraction_result: ExtractionResult
-    ) -> tuple[ExtractionResult, int]:
-        return drop_empty_entities(extraction_result)
-
-    @staticmethod
-    def _has_meaningful_entity_content(entity, content_fields: tuple[str, ...]) -> bool:
-        return has_meaningful_entity_content(entity, content_fields)

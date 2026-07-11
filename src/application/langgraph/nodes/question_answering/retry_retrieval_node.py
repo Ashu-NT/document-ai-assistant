@@ -4,9 +4,11 @@ from typing import Any
 
 from src.application.langgraph.common import (
     GraphError,
-    resolve_answer_intent,
     resolve_state_response_text,
     serialize_graph_value,
+)
+from src.application.langgraph.common.answer_intent_resolver import (
+    resolve_answer_intent,
 )
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
@@ -22,6 +24,8 @@ from src.application.langgraph.retrieval_strategy import (
     RetrievalStrategyPolicy,
     RetrievalStrategyService,
     StrategyRetryPolicy,
+)
+from src.application.langgraph.retrieval_strategy.services.retrieval_strategy_state_adapter import (
     advisor_proposal_from_state,
     execution_result_to_tool_result,
     requested_strategy_from_state,

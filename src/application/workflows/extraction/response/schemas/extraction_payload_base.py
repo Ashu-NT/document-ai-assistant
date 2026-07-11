@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from src.application.workflows.common import coerce_confidence_score
+from src.application.workflows.common.confidence_coercion import coerce_confidence_score
 
 
 def coerce_raw_list(value: Any) -> list[Any]:

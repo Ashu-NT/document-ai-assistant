@@ -14,8 +14,8 @@ from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
 from src.shared.exceptions import SchemaValidationError
-from src.shared.progress import emit_progress
-from src.shared.text import preview_text
+from src.shared.progress.progress_emitter import emit_progress
+from src.shared.text.text_preview import preview_text
 
 
 class RetrievalBenchmarkEvaluator:

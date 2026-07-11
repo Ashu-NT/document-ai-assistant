@@ -17,7 +17,7 @@ from src.domain.document import DocumentChunk, GeneratedQuestion
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
 from src.shared.ids import IdGenerator, IdPrefix
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 
 _MAX_CONCURRENT_QUESTION_GENERATIONS = 8

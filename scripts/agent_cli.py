@@ -29,7 +29,7 @@ for _import_root in (PROJECT_ROOT, SRC_ROOT):
     if _import_root_str not in sys.path:
         sys.path.insert(0, _import_root_str)
 
-from src.shared.text import console_safe_text, preview_text
+from src.shared.text.text_preview import console_safe_text, preview_text
 
 
 @dataclass(slots=True)
@@ -281,10 +281,6 @@ def _short_id(value: str | None, limit: int = 12) -> str:
     return value[:limit]
 
 
-def _preview_text(value: str | None, limit: int = 400) -> str:
-    return preview_text(value, limit, empty_fallback="-")
-
-
 def _page_range_label(chunk: dict[str, Any]) -> str:
     source = chunk.get("source") or {}
     if not isinstance(source, dict):
@@ -335,7 +331,8 @@ def print_context_chunks(
         print(console_safe_text(f"  section:  {section_path_text}"))
         print(f"  pages:    {_page_range_label(chunk)}")
         print(f"  score:    {score_text}")
-        print(console_safe_text(f"  content:  {_preview_text(chunk.get('content'))}"))
+        content_preview = preview_text(chunk.get("content"), 400, empty_fallback="-")
+        print(console_safe_text(f"  content:  {content_preview}"))
         print()
 
 
@@ -370,7 +367,7 @@ def print_retrieval_strategy(result) -> None:
                 if not isinstance(step, dict):
                     continue
                 tool_name = step.get("tool_name") or "-"
-                query = _preview_text(step.get("query"), limit=120)
+                query = preview_text(step.get("query"), 120, empty_fallback="-")
                 print(f"{index}. {tool_name} - {query}")
     errors = data.get("retrieval_strategy_errors") or []
     if errors:

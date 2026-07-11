@@ -9,7 +9,7 @@ from src.application.langgraph.research.models import (
 from src.application.langgraph.retrieval_strategy import RetrievalContext
 from src.application.langgraph.retrieval_strategy.models import RetrievalStrategy
 from src.shared.ids import IdGenerator
-from src.shared.text import preview_text
+from src.shared.text.text_preview import preview_text
 
 
 class ResearchTaskExecutor:

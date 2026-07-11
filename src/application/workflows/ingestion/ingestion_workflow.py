@@ -21,13 +21,15 @@ from src.application.workflows.classification import (
 from src.application.workflows.embedding import EmbeddedChunk, EmbeddingWorkflow
 from src.application.workflows.extraction import ExtractionWorkflow
 from src.application.workflows.ingestion.content_hash import compute_content_hash_from_graph
-from src.application.workflows.ingestion.context import (
+from src.application.workflows.ingestion.context.ingestion_execution_context_resolver import (
     resolve_activity_context,
     resolve_audit_context,
     resolve_event_context,
 )
-from src.application.workflows.ingestion.events import IngestionStageEventPublisher
-from src.application.workflows.ingestion.hashing import compute_file_hash
+from src.application.workflows.ingestion.events.ingestion_stage_event_publisher import (
+    IngestionStageEventPublisher,
+)
+from src.application.workflows.ingestion.hashing.file_hash_service import compute_file_hash
 from src.application.workflows.linking import SemanticLinkingWorkflow
 from src.application.workflows.ingestion.ingestion_exceptions import (
     IngestionWorkflowError,
@@ -36,12 +38,20 @@ from src.application.workflows.ingestion.ingestion_request import IngestionReque
 from src.application.workflows.ingestion.ingestion_result import IngestionResult
 from src.application.workflows.ingestion.ingestion_stage import IngestionStage
 from src.application.workflows.ingestion.ingestion_status import IngestionStatus
-from src.application.workflows.ingestion.pipeline import (
+from src.application.workflows.ingestion.pipeline.duplicate_check_step import (
     DuplicateCheckStep,
+)
+from src.application.workflows.ingestion.pipeline.extraction_retry_step import (
     ExtractionRetryStep,
-    QualityCheckStep,
-    ReingestionStep,
+)
+from src.application.workflows.ingestion.pipeline.ingestion_result_assembler import (
     build_success_result,
+)
+from src.application.workflows.ingestion.pipeline.quality_check_step import (
+    QualityCheckStep,
+)
+from src.application.workflows.ingestion.pipeline.reingestion_step import (
+    ReingestionStep,
 )
 from src.application.workflows.ingestion.reingestion_request import (
     ReingestionRequest,
@@ -56,7 +66,7 @@ from src.shared.audit import AuditContext
 from src.shared.events import EventContext
 from src.shared.exceptions import ApplicationError
 from src.shared.execution import tracked_action
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 from src.shared.ids import IdGenerator, IdPrefix
 
 

@@ -17,10 +17,16 @@ from src.application.workflows.classification.classification_workflow_settings i
     default_enable_chunk_classification,
     default_enable_question_generation,
 )
-from src.application.workflows.classification.finalization import (
+from src.application.workflows.classification.finalization.asset_fallback_chunk_recovery import (
     AssetFallbackChunkRecovery,
+)
+from src.application.workflows.classification.finalization.final_chunk_classification_runner import (
     FinalChunkClassificationRunner,
+)
+from src.application.workflows.classification.finalization.final_chunk_resolver import (
     FinalChunkResolver,
+)
+from src.application.workflows.classification.finalization.final_question_generation_runner import (
     FinalQuestionGenerationRunner,
 )
 from src.application.workflows.classification.hybrid_document_type_resolver import (
@@ -41,7 +47,7 @@ from src.domain.document.value_objects import DocumentStatistics
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import ApplicationError
 from src.shared.execution import tracked_action
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 
 class PostClassificationChunkFinalizationWorkflow:

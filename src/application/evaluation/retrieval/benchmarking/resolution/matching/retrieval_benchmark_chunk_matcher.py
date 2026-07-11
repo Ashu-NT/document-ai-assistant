@@ -13,7 +13,7 @@ from src.application.evaluation.retrieval.benchmarking.resolution.models import 
     RetrievalBenchmarkResolutionCandidate,
 )
 from src.domain.document import DocumentChunk
-from src.shared.text import preview_text
+from src.shared.text.text_preview import preview_text
 
 
 class RetrievalBenchmarkChunkMatcher:

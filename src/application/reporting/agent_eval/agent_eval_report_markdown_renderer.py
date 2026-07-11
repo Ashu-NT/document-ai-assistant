@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from src.shared.text import preview_text
+from src.shared.text.text_preview import preview_text
 
 if TYPE_CHECKING:
     from src.application.langgraph.evaluation.agent_eval_result import (
@@ -246,7 +246,7 @@ class AgentEvalReportMarkdownRenderer:
                     ),
                     (
                         f"- Turn {index} response excerpt: "
-                        f"{_preview(turn_result.response_text)}"
+                        f"{preview_text(turn_result.response_text, 180, empty_fallback='-')}"
                     ),
                 ]
             )
@@ -301,7 +301,3 @@ class AgentEvalReportMarkdownRenderer:
                 )
         lines.append("")
         return lines
-
-
-def _preview(value: str | None, limit: int = 180) -> str:
-    return preview_text(value, limit, empty_fallback="-")

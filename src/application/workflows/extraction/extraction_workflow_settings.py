@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.application.workflows.common import resolve_setting
+from src.application.workflows.common.settings_resolver import resolve_setting
 
 # `ExtractionWorkflow`'s config-lookup defaults, split out of
 # extraction_workflow.py so that file's job is orchestration, not config

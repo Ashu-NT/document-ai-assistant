@@ -13,6 +13,8 @@ from src.application.langgraph.retrieval_strategy import (
     RetrievalPlanExecutor,
     RetrievalStrategyPolicy,
     RetrievalStrategyService,
+)
+from src.application.langgraph.retrieval_strategy.services.retrieval_strategy_state_adapter import (
     advisor_proposal_from_state,
     execution_result_to_tool_result,
     requested_strategy_from_state,

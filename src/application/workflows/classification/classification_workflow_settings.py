@@ -1,4 +1,4 @@
-from src.application.workflows.common import resolve_setting
+from src.application.workflows.common.settings_resolver import resolve_setting
 
 # Config-backed defaults shared by classification-domain workflows
 # (`PostClassificationChunkFinalizationWorkflow` and

@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
-from src.application.workflows.common import coerce_confidence_score
+from src.application.workflows.common.confidence_coercion import coerce_confidence_score
 from src.application.workflows.extraction.response.schemas.contact_point_payload import (
     ContactPointPayload,
 )
@@ -131,3 +131,10 @@ class ExtractionResponsePayload(BaseModel):
     @classmethod
     def _normalize_list_field(cls, value: Any) -> Any:
         return coerce_raw_list(value)
+
+
+_EXTRACTION_RESPONSE_JSON_SCHEMA = ExtractionResponsePayload.model_json_schema()
+
+
+def build_extraction_response_json_schema() -> dict[str, Any]:
+    return _EXTRACTION_RESPONSE_JSON_SCHEMA

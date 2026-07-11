@@ -8,7 +8,7 @@ from src.domain.document.value_objects import ChunkStatistics
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import InfrastructureError
 from src.shared.execution import tracked_action
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 
 @dataclass(slots=True)

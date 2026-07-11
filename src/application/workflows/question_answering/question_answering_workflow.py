@@ -69,7 +69,7 @@ from src.domain.retrieval.citation import Citation
 from src.domain.retrieval.retrieval_result import RetrievalResult
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 from src.application.contracts.guardrails import GuardrailResult
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 _ANSWER_GENERATION_DISABLED_MESSAGE = (
     "I found relevant document evidence, but answer generation is not enabled yet."

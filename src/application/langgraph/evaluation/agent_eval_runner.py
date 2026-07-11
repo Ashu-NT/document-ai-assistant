@@ -3,11 +3,8 @@ from __future__ import annotations
 from typing import Any, Callable, Iterable, Sequence
 from uuid import uuid4
 
-from src.application.langgraph.common import (
-    GraphResult,
-    optional_str,
-    serialize_graph_value,
-)
+from src.application.langgraph.common import GraphResult, serialize_graph_value
+from src.application.langgraph.common.value_coercion import optional_str
 from src.application.langgraph.evaluation.agent_eval_metric_registry import (
     AGENT_EVAL_METRIC_NAMES,
 )

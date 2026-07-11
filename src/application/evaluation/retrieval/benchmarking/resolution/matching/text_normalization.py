@@ -1,4 +1,4 @@
-from src.shared.text import normalize_alnum_text, tokenize_alnum
+from src.shared.text.alnum_tokenizer import normalize_alnum_text, tokenize_alnum
 
 
 def normalize_free_text(value: str | None) -> str:

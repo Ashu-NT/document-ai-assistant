@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
-from src.application.workflows.common import coerce_confidence_score
+from src.application.workflows.common.confidence_coercion import coerce_confidence_score
 
 _LIST_ITEM_PATTERN = re.compile(r"^\s*(?:[-*]+|\d+[\.\)]|[A-Za-z]\))\s*")
 

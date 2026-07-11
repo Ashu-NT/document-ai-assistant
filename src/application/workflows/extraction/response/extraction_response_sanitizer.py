@@ -8,7 +8,6 @@ from src.application.workflows.extraction.response.extraction_payload_contracts 
 )
 from src.application.workflows.extraction.response.extraction_payload_field_picker import (
     optional_payload_text,
-    pick_payload_value,
 )
 
 
@@ -42,7 +41,7 @@ class ExtractionResponseSanitizer:
         payload: dict[str, Any],
         content_keys: tuple[str, ...],
     ) -> bool:
-        return any(self._optional_text(payload, key) for key in content_keys)
+        return any(optional_payload_text(payload, key) for key in content_keys)
 
     def _has_required_fields(
         self,
@@ -52,14 +51,6 @@ class ExtractionResponseSanitizer:
         if not required_field_groups:
             return True
         return all(
-            self._optional_text(payload, *field_group)
+            optional_payload_text(payload, *field_group)
             for field_group in required_field_groups
         )
-
-    @staticmethod
-    def _pick(payload: dict[str, Any], *keys: str) -> Any:
-        return pick_payload_value(payload, *keys)
-
-    @classmethod
-    def _optional_text(cls, payload: dict[str, Any], *keys: str) -> str | None:
-        return optional_payload_text(payload, *keys)

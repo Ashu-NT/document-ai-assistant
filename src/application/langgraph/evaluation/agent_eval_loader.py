@@ -4,10 +4,12 @@ import json
 from pathlib import Path
 from typing import Any
 
-from src.application.langgraph.common import bool_value as _shared_bool_value
-from src.application.langgraph.common import optional_bool as _shared_optional_bool
-from src.application.langgraph.common import optional_float as _shared_optional_float
-from src.application.langgraph.common import optional_str as _shared_optional_str
+from src.application.langgraph.common.value_coercion import (
+    bool_value,
+    optional_bool,
+    optional_float,
+    optional_str,
+)
 from src.application.langgraph.evaluation.agent_test_case import (
     AgentExpectedBehavior,
     AgentTestCase,
@@ -129,7 +131,7 @@ class AgentEvalLoader:
             return AgentTestCase(
                 case_id=case_id,
                 name=name,
-                description=self._optional_string(payload.get("description")),
+                description=optional_str(payload.get("description"), strict=True, strip=True),
                 inputs=[
                     self._parse_turn(
                         item,
@@ -189,52 +191,52 @@ class AgentEvalLoader:
         )
         return AgentTurnInput(
             user_input=user_input,
-            document=self._optional_string(payload.get("document")),
-            document_id=self._optional_string(payload.get("document_id")),
-            allow_answer_generation=self._bool_value(
+            document=optional_str(payload.get("document"), strict=True, strip=True),
+            document_id=optional_str(payload.get("document_id"), strict=True, strip=True),
+            allow_answer_generation=bool_value(
                 payload.get("allow_answer_generation"),
                 default=False,
             ),
-            llm_planning_enabled=self._bool_value(
+            llm_planning_enabled=bool_value(
                 payload.get("llm_planning_enabled"),
                 default=False,
             ),
-            deep_research_enabled=self._bool_value(
+            deep_research_enabled=bool_value(
                 payload.get("deep_research_enabled"),
                 default=False,
             ),
-            llm_research_planning_enabled=self._bool_value(
+            llm_research_planning_enabled=bool_value(
                 payload.get("llm_research_planning_enabled"),
                 default=False,
             ),
-            retrieval_strategy_enabled=self._bool_value(
+            retrieval_strategy_enabled=bool_value(
                 payload.get("retrieval_strategy_enabled"),
                 default=False,
             ),
-            llm_retrieval_strategy_enabled=self._bool_value(
+            llm_retrieval_strategy_enabled=bool_value(
                 payload.get("llm_retrieval_strategy_enabled"),
                 default=False,
             ),
-            requested_retrieval_strategy=self._optional_string(
-                payload.get("requested_retrieval_strategy")
+            requested_retrieval_strategy=optional_str(
+                payload.get("requested_retrieval_strategy"), strict=True, strip=True
             ),
-            show_retrieval_strategy=self._bool_value(
+            show_retrieval_strategy=bool_value(
                 payload.get("show_retrieval_strategy"),
                 default=False,
             ),
-            show_context=self._bool_value(
+            show_context=bool_value(
                 payload.get("show_context"),
                 default=False,
             ),
-            show_plan=self._bool_value(
+            show_plan=bool_value(
                 payload.get("show_plan"),
                 default=False,
             ),
-            show_research_plan=self._bool_value(
+            show_research_plan=bool_value(
                 payload.get("show_research_plan"),
                 default=False,
             ),
-            show_research_trace=self._bool_value(
+            show_research_trace=bool_value(
                 payload.get("show_research_trace"),
                 default=False,
             ),
@@ -250,15 +252,15 @@ class AgentEvalLoader:
     ) -> AgentExpectedBehavior:
         try:
             return AgentExpectedBehavior(
-                final_route=self._optional_string(payload.get("final_route")),
-                selected_document_contains=self._optional_string(
-                    payload.get("selected_document_contains")
+                final_route=optional_str(payload.get("final_route"), strict=True, strip=True),
+                selected_document_contains=optional_str(
+                    payload.get("selected_document_contains"), strict=True, strip=True
                 ),
-                selected_document_id=self._optional_string(
-                    payload.get("selected_document_id")
+                selected_document_id=optional_str(
+                    payload.get("selected_document_id"), strict=True, strip=True
                 ),
-                should_clarify=self._optional_bool(payload.get("should_clarify")),
-                should_exit=self._optional_bool(payload.get("should_exit")),
+                should_clarify=optional_bool(payload.get("should_clarify")),
+                should_exit=optional_bool(payload.get("should_exit")),
                 required_tools=self._string_list(payload.get("required_tools")),
                 forbidden_tools=self._string_list(payload.get("forbidden_tools")),
                 required_plan_tools=self._string_list(
@@ -273,35 +275,35 @@ class AgentEvalLoader:
                 answer_must_not_contain=self._string_list(
                     payload.get("answer_must_not_contain")
                 ),
-                context_document_id=self._optional_string(
-                    payload.get("context_document_id")
+                context_document_id=optional_str(
+                    payload.get("context_document_id"), strict=True, strip=True
                 ),
-                unsafe_request_blocked=self._optional_bool(
+                unsafe_request_blocked=optional_bool(
                     payload.get("unsafe_request_blocked")
                 ),
-                success=self._optional_bool(payload.get("success")),
-                retrieval_strategy_primary=self._optional_string(
-                    payload.get("retrieval_strategy_primary")
+                success=optional_bool(payload.get("success")),
+                retrieval_strategy_primary=optional_str(
+                    payload.get("retrieval_strategy_primary"), strict=True, strip=True
                 ),
                 retrieval_strategy_secondary_contains=self._string_list(
                     payload.get("retrieval_strategy_secondary_contains")
                 ),
-                retrieval_strategy_trace_required=self._optional_bool(
+                retrieval_strategy_trace_required=optional_bool(
                     payload.get("retrieval_strategy_trace_required")
                 ),
-                research_plan_required=self._optional_bool(
+                research_plan_required=optional_bool(
                     payload.get("research_plan_required")
                 ),
-                research_report_required=self._optional_bool(
+                research_report_required=optional_bool(
                     payload.get("research_report_required")
                 ),
-                research_gap_detection_required=self._optional_bool(
+                research_gap_detection_required=optional_bool(
                     payload.get("research_gap_detection_required")
                 ),
-                research_citation_required=self._optional_bool(
+                research_citation_required=optional_bool(
                     payload.get("research_citation_required")
                 ),
-                research_task_success_min_rate=self._optional_float(
+                research_task_success_min_rate=optional_float(
                     payload.get("research_task_success_min_rate")
                 ),
             )
@@ -347,7 +349,7 @@ class AgentEvalLoader:
         case_id: str | None = None,
         turn_index: int | None = None,
     ) -> str:
-        value = self._optional_string(payload.get(key))
+        value = optional_str(payload.get(key), strict=True, strip=True)
         if value is not None:
             return value
         details: dict[str, Any] = {
@@ -364,10 +366,6 @@ class AgentEvalLoader:
             details=details,
         )
 
-    @staticmethod
-    def _optional_string(value: Any) -> str | None:
-        return _shared_optional_str(value, strict=True, strip=True)
-
     @classmethod
     def _string_list(cls, value: Any) -> list[str]:
         if value is None:
@@ -376,7 +374,7 @@ class AgentEvalLoader:
             raise ValueError("Expected list value.")
         result: list[str] = []
         for item in value:
-            normalized = cls._optional_string(item)
+            normalized = optional_str(item, strict=True, strip=True)
             if normalized is None:
                 continue
             result.append(normalized)
@@ -390,14 +388,3 @@ class AgentEvalLoader:
             raise ValueError("Expected mapping value.")
         return dict(value)
 
-    @staticmethod
-    def _bool_value(value: Any, *, default: bool) -> bool:
-        return _shared_bool_value(value, default=default)
-
-    @staticmethod
-    def _optional_bool(value: Any) -> bool | None:
-        return _shared_optional_bool(value)
-
-    @staticmethod
-    def _optional_float(value: Any) -> float | None:
-        return _shared_optional_float(value)

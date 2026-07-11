@@ -7,9 +7,11 @@ from src.application.langgraph.common import (
     GraphResult,
     is_safe_failure_message,
     is_usable_reflection_decision,
-    resolve_answer_intent,
     resolve_answer_text,
     serialize_graph_value,
+)
+from src.application.langgraph.common.answer_intent_resolver import (
+    resolve_answer_intent,
 )
 from src.application.langgraph.factories.node_factory import NodeFactory
 from src.application.langgraph.factories.tool_registry import ToolRegistry

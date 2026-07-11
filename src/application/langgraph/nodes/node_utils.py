@@ -4,9 +4,9 @@ from typing import Any
 
 from src.application.langgraph.common import (
     detect_structured_entity_type,
-    optional_str,
     serialize_graph_value,
 )
+from src.application.langgraph.common.value_coercion import optional_str
 from src.domain.common import IdentifierType
 from src.domain.document.entities.identifier import Identifier
 

@@ -4,7 +4,7 @@ from src.application.services.question_generation import QuestionGenerationServi
 from src.domain.common import ChunkType
 from src.domain.document import DocumentGraph
 from src.shared.activity import ActivityContext
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 
 class FinalQuestionGenerationRunner:

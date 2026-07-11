@@ -9,7 +9,7 @@ from src.domain.events import IngestionEvent
 from src.domain.workflow import IngestionRun
 from src.shared.events import EventContext
 from src.shared.ids import IdGenerator
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 
 class IngestionStageEventPublisher:

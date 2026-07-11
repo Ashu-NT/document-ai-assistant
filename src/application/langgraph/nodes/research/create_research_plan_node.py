@@ -5,7 +5,9 @@ from typing import Any
 from src.application.langgraph.nodes.node_utils import build_error, extend_trace, resolve_selected_document
 from src.application.langgraph.research import ResearchService, ResearchTrace
 from src.application.langgraph.research.services import ResearchStateMapper
-from src.application.langgraph.retrieval_strategy import advisor_proposal_from_state
+from src.application.langgraph.retrieval_strategy.services.retrieval_strategy_state_adapter import (
+    advisor_proposal_from_state,
+)
 from src.application.langgraph.routing import RouteType
 from src.application.langgraph.state import AgentState
 from src.application.langgraph.tracing import GraphRunRecorder

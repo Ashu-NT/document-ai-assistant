@@ -12,7 +12,7 @@ from src.infrastructure.db.orm_models import ChunkORM, DocumentORM
 from src.infrastructure.retrieval.keyword.sql_keyword_query_terms import (
     normalize_query_text,
 )
-from src.shared.text import compact_alnum, tokenize_alnum
+from src.shared.text.alnum_tokenizer import compact_alnum, tokenize_alnum
 
 _CONFIG_PATH = (
     PROJECT_ROOT / "src" / "config" / "retrieval_keyword" / "sql_keyword_scorer.yaml"

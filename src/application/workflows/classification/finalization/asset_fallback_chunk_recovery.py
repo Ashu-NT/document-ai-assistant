@@ -7,7 +7,7 @@ from src.application.workflows.parsing.builders.document_graph.graph_chunk_build
     GraphChunkBuilder,
 )
 from src.domain.document import DocumentChunk, DocumentGraph, DocumentSection
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 
 class AssetFallbackChunkRecovery:

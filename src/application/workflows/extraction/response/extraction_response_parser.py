@@ -10,7 +10,7 @@ from src.application.workflows.extraction.response.extraction_response_sanitizer
 from src.application.workflows.extraction.response.extraction_response_repairer import (
     ExtractionResponseRepairer,
 )
-from src.application.workflows.extraction.response.extraction_response_schema import (
+from src.application.workflows.extraction.response.schemas.extraction_response_payload import (
     ExtractionResponsePayload,
 )
 from src.shared.exceptions import SchemaValidationError

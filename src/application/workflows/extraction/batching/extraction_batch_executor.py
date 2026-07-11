@@ -18,7 +18,7 @@ from src.application.workflows.extraction.response import build_extraction_respo
 from src.domain.extraction import ExtractionResult
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import SchemaValidationError
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 # A single attempt at extracting one batch: build the (possibly narrowed)
 # prompt, call the extraction model, and assemble the structured result --

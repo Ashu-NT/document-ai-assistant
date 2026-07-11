@@ -3,10 +3,9 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
-from src.application.langgraph.common import (
-    GraphError,
+from src.application.langgraph.common import GraphError, serialize_graph_value
+from src.application.langgraph.common.answer_intent_resolver import (
     resolve_answer_intent,
-    serialize_graph_value,
 )
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import build_error, extend_trace

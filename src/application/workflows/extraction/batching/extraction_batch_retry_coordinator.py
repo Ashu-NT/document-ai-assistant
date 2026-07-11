@@ -17,7 +17,7 @@ from src.application.workflows.extraction.batching.extraction_chunk_batcher impo
 )
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import SchemaValidationError
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 # Retries a batch attempt up to `max_attempts` times, then -- if
 # `allow_partial_batches` is enabled -- either isolates a multi-chunk

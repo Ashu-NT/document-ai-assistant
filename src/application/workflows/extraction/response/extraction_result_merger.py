@@ -1,5 +1,5 @@
 from src.domain.extraction import ExtractionResult
-from src.shared.collections import unique_in_order
+from src.shared.collections.ordered_dedupe import unique_in_order
 from src.shared.ids import IdGenerator, IdPrefix
 
 from src.application.workflows.extraction.response.merging.contact_point_merger import (

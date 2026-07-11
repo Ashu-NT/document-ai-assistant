@@ -32,9 +32,9 @@ from src.domain.document import DocumentGraph, DocumentHashes
 from src.infrastructure.parsing.docling.docling_parser import DoclingParser
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
-from src.shared.formatting import format_elapsed_seconds
+from src.shared.formatting.duration_formatter import format_elapsed_seconds
 from src.shared.ids import IdGenerator, IdPrefix
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 _STAGE_HEARTBEAT_INTERVAL_SECONDS = 30.0
 T = TypeVar("T")

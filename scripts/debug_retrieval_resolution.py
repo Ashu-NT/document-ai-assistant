@@ -61,7 +61,7 @@ for _import_root in (PROJECT_ROOT, SRC_ROOT):
     if _import_root_str not in sys.path:
         sys.path.insert(0, _import_root_str)
 
-from src.shared.text import console_safe_text
+from src.shared.text.text_preview import console_safe_text
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:

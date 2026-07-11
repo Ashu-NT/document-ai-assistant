@@ -24,7 +24,7 @@ from src.application.workflows.ingestion.ingestion_status import IngestionStatus
 from src.application.workflows.linking import SemanticLinkingWorkflow
 from src.shared.activity import ActivityContext
 from src.shared.ids import IdGenerator
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 
 class ExtractionRetryStep:

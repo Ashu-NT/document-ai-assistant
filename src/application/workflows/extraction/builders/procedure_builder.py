@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.application.workflows.common import resolve_enum_value
+from src.application.workflows.common.enum_label_resolver import resolve_enum_value
 from src.application.workflows.extraction.builders.extraction_builder_support import (
     ExtractionBuilderSupport,
 )

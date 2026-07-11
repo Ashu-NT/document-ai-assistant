@@ -5,7 +5,7 @@ from src.application.prompts.extraction import (
     ExtractionPromptType,
 )
 from src.application.prompts.extraction.narrowed import ExtractionNarrowedPromptBuilder
-from src.application.workflows.common import run_bounded_concurrent_map
+from src.application.workflows.common.concurrent_chunk_runner import run_bounded_concurrent_map
 from src.application.workflows.extraction.batching.extraction_batch import ExtractionBatch
 from src.application.workflows.extraction.candidates.extraction_candidate_selector import (
     ExtractionCandidateSelector,

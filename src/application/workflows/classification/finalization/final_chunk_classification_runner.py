@@ -7,12 +7,12 @@ from src.application.workflows.classification.chunk_classification_workflow impo
 from src.application.workflows.classification.chunk_type_classification_workflow import (
     ChunkTypeClassificationWorkflow,
 )
-from src.application.workflows.common import run_bounded_concurrent_map
+from src.application.workflows.common.concurrent_chunk_runner import run_bounded_concurrent_map
 from src.domain.classification import ChunkClassification
 from src.domain.document import DocumentChunk
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import ApplicationError
-from src.shared.progress import emit_progress
+from src.shared.progress.progress_emitter import emit_progress
 
 _MAX_CONCURRENT_CHUNK_CLASSIFICATIONS = 8
 

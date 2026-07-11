@@ -4,7 +4,7 @@ import re
 from enum import Enum
 from typing import TypeVar
 
-from src.application.workflows.common import resolve_enum_value
+from src.application.workflows.common.enum_label_resolver import resolve_enum_value
 
 KEY_PATTERN = re.compile(r"[^a-z0-9]+")
 

@@ -1,7 +1,7 @@
 from collections import Counter
 
 from src.domain.document import DocumentGraph
-from src.shared.text import preview_text
+from src.shared.text.text_preview import preview_text
 
 
 class DocumentClassificationSummaryBuilder:
@@ -115,7 +115,7 @@ class DocumentClassificationSummaryBuilder:
             )
             previews.append(
                 f"[{chunk.chunk_type.value}] {section_path} (pages {page_range}): "
-                f"{self._preview_text(chunk.content)}"
+                f"{preview_text(chunk.content, self.preview_length, rstrip=True)}"
             )
 
         return previews
@@ -151,7 +151,7 @@ class DocumentClassificationSummaryBuilder:
             )
             previews.append(
                 f"{section_path} (pages {page_range}): "
-                f"{self._preview_text(element.text or '')}"
+                f"{preview_text(element.text or '', self.preview_length, rstrip=True)}"
             )
 
         return previews
@@ -163,9 +163,9 @@ class DocumentClassificationSummaryBuilder:
             caption = (table.metadata.caption or "").strip()
             content = table.markdown.strip()
             if caption:
-                signals.append(f"{caption}: {self._preview_text(content)}")
+                signals.append(f"{caption}: {preview_text(content, self.preview_length, rstrip=True)}")
             elif content:
-                signals.append(self._preview_text(content))
+                signals.append(preview_text(content, self.preview_length, rstrip=True))
 
         return signals
 
@@ -184,7 +184,7 @@ class DocumentClassificationSummaryBuilder:
             ]
             if not parts:
                 continue
-            signals.append(self._preview_text(" | ".join(parts)))
+            signals.append(preview_text(" | ".join(parts), self.preview_length, rstrip=True))
 
         return signals
 
@@ -204,9 +204,6 @@ class DocumentClassificationSummaryBuilder:
             for position in range(max_items)
         }
         return [values[index] for index in sorted(indexes)]
-
-    def _preview_text(self, value: str) -> str:
-        return preview_text(value, self.preview_length, rstrip=True)
 
     @staticmethod
     def _format_page_range(page_start: int | None, page_end: int | None) -> str:
