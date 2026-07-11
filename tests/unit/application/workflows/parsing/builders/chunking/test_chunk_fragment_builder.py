@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.chunking.builders.chunk_fragment_builder import (
+from src.application.workflows.parsing.builders.chunking.builders.fragment.chunk_fragment_builder import (
     ChunkFragmentBuilder,
 )
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
@@ -74,7 +74,7 @@ def test_is_large_picture_false_without_bbox() -> None:
     builder = make_builder(include_picture_chunks=False)
     element = make_picture_element(bbox=None)
 
-    assert builder._is_large_picture(element) is False
+    assert builder.picture_fragment_builder.is_large_picture(element) is False
 
 
 def test_is_large_picture_false_without_page_number() -> None:
@@ -86,14 +86,14 @@ def test_is_large_picture_false_without_page_number() -> None:
         bbox=BoundingBox(x1=0, y1=0, x2=600, y2=800), page_start=None
     )
 
-    assert builder._is_large_picture(element) is False
+    assert builder.picture_fragment_builder.is_large_picture(element) is False
 
 
 def test_is_large_picture_false_when_page_size_unknown() -> None:
     builder = make_builder(include_picture_chunks=False, page_sizes={})
     element = make_picture_element(bbox=BoundingBox(x1=0, y1=0, x2=600, y2=800))
 
-    assert builder._is_large_picture(element) is False
+    assert builder.picture_fragment_builder.is_large_picture(element) is False
 
 
 def test_is_large_picture_false_for_small_decorative_image() -> None:
@@ -104,7 +104,7 @@ def test_is_large_picture_false_for_small_decorative_image() -> None:
     )
     element = make_picture_element(bbox=BoundingBox(x1=0, y1=0, x2=60, y2=40))
 
-    assert builder._is_large_picture(element) is False
+    assert builder.picture_fragment_builder.is_large_picture(element) is False
 
 
 def test_is_large_picture_true_for_full_page_scan() -> None:
@@ -115,7 +115,7 @@ def test_is_large_picture_true_for_full_page_scan() -> None:
     )
     element = make_picture_element(bbox=BoundingBox(x1=0, y1=0, x2=600, y2=800))
 
-    assert builder._is_large_picture(element) is True
+    assert builder.picture_fragment_builder.is_large_picture(element) is True
 
 
 def test_is_large_picture_true_at_exact_threshold() -> None:
@@ -126,7 +126,7 @@ def test_is_large_picture_true_at_exact_threshold() -> None:
     )
     element = make_picture_element(bbox=BoundingBox(x1=0, y1=0, x2=300, y2=800))
 
-    assert builder._is_large_picture(element) is True
+    assert builder.picture_fragment_builder.is_large_picture(element) is True
 
 
 def test_full_page_picture_fragment_kept_despite_include_picture_chunks_false() -> None:
@@ -185,7 +185,7 @@ def test_table_chunk_type_detects_spare_parts_via_header_row_when_text_markers_m
         table_rows=[["Part", "Description"], ["HP-001", "Filter"]],
     )
 
-    chunk_type = builder._table_chunk_type(element, text)
+    chunk_type = builder.table_fragment_builder.table_chunk_type(element, text)
 
     assert chunk_type == ChunkType.SPARE_PARTS_TABLE
 
@@ -199,6 +199,6 @@ def test_table_chunk_type_stays_general_without_part_header_or_text_marker() -> 
         table_rows=[["Position", "Description"], ["1", "Filter housing"]],
     )
 
-    chunk_type = builder._table_chunk_type(element, text)
+    chunk_type = builder.table_fragment_builder.table_chunk_type(element, text)
 
     assert chunk_type == ChunkType.GENERAL

@@ -1,10 +1,10 @@
 from src.application.workflows.parsing.builders.chunking.builders.structured.families.approval_information_structured_family_builder import (
     ApprovalInformationStructuredFamilyBuilder,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.families.certificate_structured_family_builder import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.families.certificate.certificate_structured_family_builder import (
     CertificateStructuredFamilyBuilder,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.families.datasheet_structured_family_builder import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.families.datasheet.datasheet_structured_family_builder import (
     DatasheetStructuredFamilyBuilder,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.families.drawing_structured_family_builder import (

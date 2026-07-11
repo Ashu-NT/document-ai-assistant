@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from src.application.workflows.parsing.builders.chunking.builders.chunk_fragment_builder import (
+from src.application.workflows.parsing.builders.chunking.builders.fragment.chunk_fragment_builder import (
     ChunkFragmentBuilder,
 )
 from src.application.workflows.parsing.builders.chunking.builders.chunk_payload_factory import (

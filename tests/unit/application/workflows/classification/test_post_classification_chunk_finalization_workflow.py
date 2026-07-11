@@ -10,7 +10,7 @@ from src.application.workflows.classification import (
 from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (
     GraphChunkBuilder,
 )
-from src.application.workflows.parsing.builders.chunking.builders.section_chunk_builder import (
+from src.application.workflows.parsing.builders.chunking.builders.section_chunk.section_chunk_builder import (
     SectionChunkBuilder,
 )
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (

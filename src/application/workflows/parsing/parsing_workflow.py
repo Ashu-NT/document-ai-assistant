@@ -1,8 +1,6 @@
 import time
 from collections.abc import Callable
 from pathlib import Path
-from threading import Event, Thread
-from typing import TypeVar
 
 from src.application.reporting.document_parsing.chunking import (
     ChunkingReportWriter,
@@ -28,6 +26,10 @@ from src.application.workflows.parsing.normalizers.docling_document_normalizer i
 from src.application.workflows.parsing.parsing_workflow_result import (
     ParsingWorkflowResult,
 )
+from src.application.workflows.parsing.parsing_workflow_result_builder import (
+    build_parsing_workflow_result,
+)
+from src.application.workflows.parsing.runtime.parsing_stage_runner import run_stage
 from src.domain.document import DocumentGraph, DocumentHashes
 from src.infrastructure.parsing.docling.docling_parser import DoclingParser
 from src.shared.activity import ActivityContext
@@ -35,90 +37,6 @@ from src.shared.execution import tracked_action
 from src.shared.formatting.duration_formatter import format_elapsed_seconds
 from src.shared.ids import IdGenerator, IdPrefix
 from src.shared.progress.progress_emitter import emit_progress
-
-_STAGE_HEARTBEAT_INTERVAL_SECONDS = 30.0
-T = TypeVar("T")
-
-
-def _compute_parse_confidence(
-    *,
-    element_count: int,
-    orphan_count: int,
-    no_page_count: int,
-) -> float | None:
-    if element_count == 0:
-        return None
-    orphan_ratio = orphan_count / element_count
-    no_page_ratio = no_page_count / element_count
-    return round(1.0 - (orphan_ratio * 0.5 + no_page_ratio * 0.5), 4)
-
-
-def _collect_parse_warnings(
-    *,
-    element_count: int,
-    orphan_count: int,
-    no_page_count: int,
-    section_count: int,
-    chunk_count: int,
-) -> list[str]:
-    warnings: list[str] = []
-    if element_count > 0 and orphan_count / element_count > 0.25:
-        warnings.append(
-            f"High orphan element ratio: {orphan_count}/{element_count} elements have no section"
-        )
-    if element_count > 0 and no_page_count / element_count > 0.5:
-        warnings.append(
-            f"Many elements lack page numbers: {no_page_count}/{element_count}"
-        )
-    if section_count == 0:
-        warnings.append("Document produced no sections")
-    if chunk_count == 0:
-        warnings.append("Document produced no chunks")
-    return warnings
-
-
-class _StageHeartbeat:
-    def __init__(
-        self,
-        *,
-        label: str,
-        progress_callback: Callable[[str], None] | None,
-        interval_seconds: float = _STAGE_HEARTBEAT_INTERVAL_SECONDS,
-    ) -> None:
-        self.label = label
-        self.progress_callback = progress_callback
-        self.interval_seconds = interval_seconds
-        self._started_at = 0.0
-        self._stop_event = Event()
-        self._thread: Thread | None = None
-
-    def start(self) -> None:
-        if self.progress_callback is None or self._thread is not None:
-            return
-
-        self._started_at = time.perf_counter()
-        self._thread = Thread(
-            target=self._run,
-            name="parsing-stage-heartbeat",
-            daemon=True,
-        )
-        self._thread.start()
-
-    def stop(self) -> None:
-        if self._thread is None:
-            return
-
-        self._stop_event.set()
-        if self._thread.is_alive():
-            self._thread.join(timeout=0.1)
-
-    def _run(self) -> None:
-        while not self._stop_event.wait(self.interval_seconds):
-            elapsed_seconds = time.perf_counter() - self._started_at
-            self.progress_callback(
-                f"{self.label} still running... "
-                f"({format_elapsed_seconds(elapsed_seconds)} elapsed)"
-            )
 
 
 class ParsingWorkflow:
@@ -175,7 +93,7 @@ class ParsingWorkflow:
             progress_callback,
             f"Parsing workflow started for {file_name}.",
         )
-        raw_parsed_document = self._run_stage(
+        raw_parsed_document = run_stage(
             progress_callback=progress_callback,
             start_message=(
                 f"Docling conversion started for {file_name}. "
@@ -196,7 +114,7 @@ class ParsingWorkflow:
             stage_name="docling_conversion",
             stage_durations=stage_durations,
         )
-        canonical_elements = self._run_stage(
+        canonical_elements = run_stage(
             progress_callback=progress_callback,
             start_message="Normalizing Docling output into canonical elements...",
             heartbeat_label="Canonical normalization",
@@ -215,7 +133,7 @@ class ParsingWorkflow:
         )
         ocr_trace = None
         if self.canonical_element_ocr_enricher is not None:
-            canonical_elements = self._run_stage(
+            canonical_elements = run_stage(
                 progress_callback=progress_callback,
                 start_message=(
                     "Running canonical element OCR enrichment for "
@@ -236,7 +154,7 @@ class ParsingWorkflow:
                 stage_durations=stage_durations,
             )
         if self.page_ocr_fallback_workflow is not None:
-            ocr_merge_result = self._run_stage(
+            ocr_merge_result = run_stage(
                 progress_callback=progress_callback,
                 start_message=(
                     "Running page OCR fallback across "
@@ -261,7 +179,7 @@ class ParsingWorkflow:
             canonical_elements = ocr_merge_result.canonical_elements
             ocr_trace = ocr_merge_result.ocr_trace
 
-        document_graph = self._run_stage(
+        document_graph = run_stage(
             progress_callback=progress_callback,
             start_message=(
                 "Building document graph from "
@@ -291,7 +209,7 @@ class ParsingWorkflow:
         )
 
         if self.document_graph_validator is not None:
-            self._run_stage(
+            run_stage(
                 progress_callback=progress_callback,
                 start_message="Validating document graph...",
                 heartbeat_label="Document graph validation",
@@ -308,7 +226,7 @@ class ParsingWorkflow:
         total_elapsed_seconds = time.perf_counter() - total_started_at
         stage_durations["total"] = total_elapsed_seconds
 
-        result = self._build_result(
+        result = build_parsing_workflow_result(
             document_graph=document_graph,
             file_path=file_path,
             page_count=raw_parsed_document.page_count,
@@ -351,95 +269,3 @@ class ParsingWorkflow:
     def _validate_document_graph(self, document_graph: DocumentGraph) -> None:
         validation = self.document_graph_validator.validate(document_graph)
         validation.raise_if_invalid()
-
-
-    def _run_stage(
-        self,
-        *,
-        progress_callback: Callable[[str], None] | None,
-        start_message: str,
-        heartbeat_label: str,
-        failure_label: str,
-        operation: Callable[[], T],
-        completion_message_builder: Callable[[T, float], str],
-        stage_name: str | None = None,
-        stage_durations: dict[str, float] | None = None,
-    ) -> T:
-        emit_progress(progress_callback, start_message)
-        started_at = time.perf_counter()
-        heartbeat = _StageHeartbeat(
-            label=heartbeat_label,
-            progress_callback=progress_callback,
-        )
-        heartbeat.start()
-        try:
-            result = operation()
-        except Exception:
-            elapsed_seconds = time.perf_counter() - started_at
-            emit_progress(
-                progress_callback,
-                f"{failure_label} failed after "
-                f"{format_elapsed_seconds(elapsed_seconds)}.",
-            )
-            raise
-        finally:
-            heartbeat.stop()
-
-        elapsed_seconds = time.perf_counter() - started_at
-        if stage_name is not None and stage_durations is not None:
-            stage_durations[stage_name] = elapsed_seconds
-        emit_progress(
-            progress_callback,
-            completion_message_builder(result, elapsed_seconds),
-        )
-        return result
-
-    @staticmethod
-    def _build_result(
-        *,
-        document_graph: DocumentGraph,
-        file_path: str,
-        page_count: int | None,
-        ocr_trace=None,
-        stage_durations: dict[str, float] | None = None,
-    ) -> ParsingWorkflowResult:
-        elements = list(document_graph.elements.values())
-        orphan_count = sum(1 for e in elements if e.parent_section_id is None)
-        no_page_count = sum(
-            1 for e in elements if e.source.page_start is None
-        )
-        parse_confidence = _compute_parse_confidence(
-            element_count=len(elements),
-            orphan_count=orphan_count,
-            no_page_count=no_page_count,
-        )
-        warnings = _collect_parse_warnings(
-            element_count=len(elements),
-            orphan_count=orphan_count,
-            no_page_count=no_page_count,
-            section_count=len(document_graph.sections),
-            chunk_count=len(document_graph.chunks),
-        )
-        if ocr_trace is not None:
-            warnings.extend(
-                warning
-                for warning in ocr_trace.warnings
-                if warning not in warnings
-            )
-        return ParsingWorkflowResult(
-            document_id=document_graph.document.document_id,
-            file_path=file_path,
-            page_count=page_count,
-            element_count=len(elements),
-            section_count=len(document_graph.sections),
-            chunk_count=len(document_graph.chunks),
-            table_count=len(document_graph.tables),
-            picture_count=len(document_graph.pictures),
-            document_graph=document_graph,
-            parse_confidence=parse_confidence,
-            orphan_element_count=orphan_count,
-            elements_without_page_count=no_page_count,
-            parse_warnings=warnings,
-            ocr_trace=ocr_trace,
-            stage_durations=stage_durations or {},
-        )

@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.chunking.builders.chunk_semantic_signal_extractor import (
+from src.application.workflows.parsing.builders.chunking.builders.semantic_signals.chunk_semantic_signal_extractor import (
     ChunkSemanticSignalExtractor,
 )
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (

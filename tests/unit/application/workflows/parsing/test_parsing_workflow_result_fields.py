@@ -1,9 +1,9 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from src.application.workflows.parsing.parsing_workflow import (
-    _compute_parse_confidence,
-    _collect_parse_warnings,
+from src.application.workflows.parsing.parsing_workflow_metrics import (
+    compute_parse_confidence,
+    collect_parse_warnings,
 )
 from src.application.workflows.parsing.parsing_workflow_result import (
     ParsingWorkflowResult,
@@ -12,31 +12,31 @@ from src.application.workflows.parsing.parsing_workflow_result import (
 
 class TestParseConfidenceComputation:
     def test_perfect_parse_returns_1(self):
-        score = _compute_parse_confidence(
+        score = compute_parse_confidence(
             element_count=100, orphan_count=0, no_page_count=0
         )
         assert score == pytest.approx(1.0)
 
     def test_all_orphans_half_penalty(self):
-        score = _compute_parse_confidence(
+        score = compute_parse_confidence(
             element_count=100, orphan_count=100, no_page_count=0
         )
         assert score == pytest.approx(0.5)
 
     def test_all_missing_pages_half_penalty(self):
-        score = _compute_parse_confidence(
+        score = compute_parse_confidence(
             element_count=100, orphan_count=0, no_page_count=100
         )
         assert score == pytest.approx(0.5)
 
     def test_all_bad_returns_0(self):
-        score = _compute_parse_confidence(
+        score = compute_parse_confidence(
             element_count=100, orphan_count=100, no_page_count=100
         )
         assert score == pytest.approx(0.0)
 
     def test_zero_elements_returns_none(self):
-        score = _compute_parse_confidence(
+        score = compute_parse_confidence(
             element_count=0, orphan_count=0, no_page_count=0
         )
         assert score is None
@@ -44,7 +44,7 @@ class TestParseConfidenceComputation:
 
 class TestCollectParseWarnings:
     def test_no_warnings_on_clean_document(self):
-        warnings = _collect_parse_warnings(
+        warnings = collect_parse_warnings(
             element_count=100,
             orphan_count=0,
             no_page_count=0,
@@ -54,7 +54,7 @@ class TestCollectParseWarnings:
         assert warnings == []
 
     def test_warns_on_high_orphan_ratio(self):
-        warnings = _collect_parse_warnings(
+        warnings = collect_parse_warnings(
             element_count=100,
             orphan_count=30,
             no_page_count=0,
@@ -64,7 +64,7 @@ class TestCollectParseWarnings:
         assert any("orphan" in w.lower() for w in warnings)
 
     def test_warns_on_no_sections(self):
-        warnings = _collect_parse_warnings(
+        warnings = collect_parse_warnings(
             element_count=100,
             orphan_count=0,
             no_page_count=0,
@@ -74,7 +74,7 @@ class TestCollectParseWarnings:
         assert any("section" in w.lower() for w in warnings)
 
     def test_warns_on_no_chunks(self):
-        warnings = _collect_parse_warnings(
+        warnings = collect_parse_warnings(
             element_count=100,
             orphan_count=0,
             no_page_count=0,
