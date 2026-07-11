@@ -24,4 +24,7 @@ ANSWER_GROUNDING_RULES = (
     "information into a single coherent answer.\n"
     "- Do not summarize each source individually unless the user explicitly "
     "asks for a source-by-source breakdown.\n"
+    "- If the sources disagree on a fact, do not silently pick one: "
+    "explicitly state that the sources disagree and present each differing "
+    "value.\n"
 )

@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 from src.infrastructure.ai.llm import OllamaLLMProvider
@@ -157,3 +159,83 @@ def test_generate_response_schema_overrides_json_mode() -> None:
             "format": schema,
         }
     ]
+
+
+def test_generate_passes_num_ctx_alongside_temperature() -> None:
+    client = FakeOllamaClient(FakeOllamaResponse("{}"))
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434",
+        default_model="qwen3:8b",
+        client=client,
+    )
+
+    provider.generate(
+        "Answer the question.",
+        temperature=0.2,
+        num_ctx=8192,
+    )
+
+    assert client.calls == [
+        {
+            "model": "qwen3:8b",
+            "prompt": "Answer the question.",
+            "options": {"temperature": 0.2, "num_ctx": 8192},
+        }
+    ]
+
+
+def test_generate_omits_options_when_temperature_and_num_ctx_both_missing() -> None:
+    client = FakeOllamaClient(FakeOllamaResponse("{}"))
+    provider = OllamaLLMProvider(
+        base_url="http://localhost:11434",
+        default_model="qwen3:8b",
+        client=client,
+    )
+
+    provider.generate("Answer the question.")
+
+    assert client.calls == [
+        {
+            "model": "qwen3:8b",
+            "prompt": "Answer the question.",
+        }
+    ]
+
+
+# -- finding 3.7: settings-load failure logs a warning before falling back -
+
+
+def test_default_ollama_base_url_logs_warning_on_settings_failure(monkeypatch, caplog) -> None:
+    from src.infrastructure.ai.llm.ollama_llm_provider import (
+        DEFAULT_OLLAMA_BASE_URL,
+        _default_ollama_base_url,
+    )
+
+    monkeypatch.setattr("src.config.settings.llm_settings", object())
+
+    with caplog.at_level(logging.WARNING):
+        result = _default_ollama_base_url()
+
+    assert result == DEFAULT_OLLAMA_BASE_URL
+    assert any(
+        "settings_fallback" in message and "ollama_base_url" in message
+        for message in caplog.messages
+    )
+
+
+def test_default_ollama_model_logs_warning_on_settings_failure(monkeypatch, caplog) -> None:
+    from src.infrastructure.ai.llm.ollama_llm_provider import (
+        DEFAULT_OLLAMA_MODEL,
+        _default_ollama_model,
+    )
+
+    monkeypatch.setattr("src.config.settings.llm_settings", object())
+
+    with caplog.at_level(logging.WARNING):
+        result = _default_ollama_model()
+
+    assert result == DEFAULT_OLLAMA_MODEL
+    assert any(
+        "settings_fallback" in message and "general_llm" in message
+        for message in caplog.messages
+    )

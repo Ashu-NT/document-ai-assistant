@@ -56,7 +56,6 @@ class ReflectionValidator:
             question=question,
             has_relevant_spare_parts_evidence=has_relevant_spare_parts_evidence,
         )
-        has_answer_or_evidence = bool(answer_text.strip()) or has_useful_evidence
 
         if (
             policy.require_document_scope
@@ -244,18 +243,12 @@ class ReflectionValidator:
                     diagnostics={**diagnostics, "validator": "clarification_disabled"},
                 )
             if not decision.clarification_question:
-                if has_answer_or_evidence:
-                    return _accept_with_limitations(
-                        confidence=normalized_confidence,
-                        reason=(
-                            "Reflection requested clarification without a clarification "
-                            "question, but useful grounded evidence already exists."
-                        ),
-                        diagnostics={
-                            **diagnostics,
-                            "validator": "missing_clarification_question_downgraded",
-                        },
-                    )
+                # A CLARIFY decision only exists to give the user a chance to
+                # disambiguate. If there is no actual clarification question
+                # to ask, silently serving whatever answer/evidence happens
+                # to exist would defeat the point and could serve a wrong
+                # answer with no chance to clarify -- fail safe instead,
+                # regardless of whether evidence happens to exist.
                 return ReflectionDecision(
                     decision=ReflectionDecisionType.FAIL,
                     confidence=normalized_confidence,

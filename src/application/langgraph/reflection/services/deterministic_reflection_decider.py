@@ -67,6 +67,14 @@ class DeterministicReflectionDecider:
                 decision=ReflectionDecisionType.RETRIEVE_AGAIN,
                 confidence=0.9,
                 reason="The answer did not have enough approved evidence.",
+                # No real reformulation signal exists here -- pin retry_query
+                # to the original question itself (rather than leaving it
+                # unset) so RetryQueryBuilder uses it verbatim instead of
+                # falling back to appending "additional grounded evidence"
+                # boilerplate that adds no real search signal and can dilute
+                # keyword/BM25 relevance. The existing top_k increase on
+                # retry is what actually broadens recall here.
+                retry_query=question,
                 missing_information=["additional grounded evidence"],
             )
         if maintenance_interval_question:
@@ -188,5 +196,10 @@ class DeterministicReflectionDecider:
             decision=ReflectionDecisionType.RETRIEVE_AGAIN,
             confidence=0.75,
             reason="The answer appears incomplete for the current evidence set.",
+            # Same rationale as the insufficient-evidence branch above: no
+            # real reformulation signal exists for this generic case, so keep
+            # the retry query identical to the original question instead of
+            # diluting it with non-search-term boilerplate.
+            retry_query=question,
             missing_information=["more specific supporting evidence"],
         )

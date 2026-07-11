@@ -7,6 +7,22 @@ from src.application.langgraph.reflection.evaluators.maintenance_evidence_releva
 )
 from src.application.langgraph.reflection.models import AnswerQuality
 
+# A fluent-but-wrong answer must never be indistinguishable from a genuinely
+# faithful one just because it also happens to satisfy the lexical/length
+# proxies below -- an unresolved (hallucinated) citation caps the score at
+# this ceiling regardless of how many of the other signals pass.
+_UNRESOLVED_REFERENCE_NOTE_SCORE_CEILING = 0.5
+
+
+def _reference_note_chunk_id(note: Any) -> str | None:
+    """Read `chunk_id` off a reference note, whichever shape it arrives in --
+    a serialized dict (the common case, coming off a tool-result payload) or
+    a `ReferenceNote` dataclass instance (e.g. in tests that construct one
+    directly)."""
+    if isinstance(note, dict):
+        return note.get("chunk_id")
+    return getattr(note, "chunk_id", None)
+
 
 class AnswerQualityScorer:
     @staticmethod
@@ -15,6 +31,7 @@ class AnswerQualityScorer:
         question: str,
         answer: str,
         citations: list[dict[str, Any]],
+        reference_notes: list[Any] | None = None,
     ) -> AnswerQuality:
         normalized_answer = (answer or "").strip()
         answered_question = bool(normalized_answer)
@@ -58,6 +75,14 @@ class AnswerQualityScorer:
             issues.append("weak_question_alignment")
         if not contains_grounding:
             issues.append("missing_grounding")
+        if reference_notes and any(
+            _reference_note_chunk_id(note) is None for note in reference_notes
+        ):
+            # A hallucinated citation (source_number that never resolved to a
+            # real chunk) must never coexist with a perfect quality score --
+            # cap it, regardless of how many lexical/length signals passed.
+            score = round(min(score, _UNRESOLVED_REFERENCE_NOTE_SCORE_CEILING), 4)
+            issues.append("unresolved_reference_citation")
         return AnswerQuality(
             answered_question=answered_question,
             contains_requested_information=contains_requested_information,

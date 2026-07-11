@@ -25,7 +25,20 @@ def resolve_answer_text(
     tool_results: dict[str, Any],
     fallback_response_text: str | None,
     reflection_decision: str | None = None,
+    guardrail_replaced: bool = False,
 ) -> str | None:
+    # If PostResponseGuardrailService just replaced the response text with a
+    # safe-fallback message (grounding failure / secret leakage / prompt
+    # injection), that replacement must never be silently swapped back for
+    # the raw generated answer just because it happens to string-match one
+    # of the same sentinel messages reflection itself can legitimately
+    # produce -- finding 5.5. The caller (final_response_node.py) is the
+    # only place that knows *why* the current text equals a safe-failure
+    # message, so it passes that knowledge down explicitly instead of this
+    # function re-guessing it from the string alone.
+    if guardrail_replaced:
+        return fallback_response_text
+
     generated_answer = _generated_answer_text(tool_results)
     if (
         _is_usable_reflection_decision(reflection_decision)
@@ -55,6 +68,7 @@ def resolve_state_response_text(state: dict[str, Any]) -> str | None:
         tool_results=tool_results,
         fallback_response_text=fallback_response_text,
         reflection_decision=_reflection_decision_from_state(state),
+        guardrail_replaced=bool(state.get("response_text_guardrail_replaced", False)),
     )
 
 

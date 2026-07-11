@@ -34,6 +34,7 @@ class RawSourceInclusionPolicy:
             sources,
             key=lambda source: (
                 self._role_rank(roles.get(source.source_number, "supporting")),
+                -(source.score if source.score is not None else float("-inf")),
                 source.source_number,
             ),
         )

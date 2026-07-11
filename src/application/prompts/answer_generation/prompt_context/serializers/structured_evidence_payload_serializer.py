@@ -5,6 +5,14 @@ from src.application.prompts.answer_generation.prompt_context.models import (
     PromptContextBundle,
 )
 
+# Bounds the size of each structured-evidence array before it is serialized
+# into the prompt's JSON payload. Unlike the raw-prose appendix (see
+# PromptBudgetAllocator), nothing capped these arrays before -- a retrieval
+# set rich in tables/entities/relationships could inflate the JSON payload
+# without limit. Truncation keeps the first N items in their existing order
+# (no re-sorting/re-ranking here -- that is out of scope for this cap).
+_MAX_ITEMS_PER_ARRAY = 20
+
 
 class StructuredEvidencePayloadSerializer:
     def serialize(self, context: PromptContextBundle | None) -> str:
@@ -13,30 +21,42 @@ class StructuredEvidencePayloadSerializer:
         payload = {
             "answer_intent": context.answer_intent_value,
             "source_count": context.source_count,
-            "sources": [self._source_payload(source) for source in context.sources],
-            "key_values": [asdict(item) for item in context.key_values],
+            "sources": [
+                self._source_payload(source)
+                for source in self._capped(context.sources)
+            ],
+            "key_values": [
+                asdict(item) for item in self._capped(context.key_values)
+            ],
             "maintenance_entries": [
                 self._maintenance_entry_payload(entry)
-                for entry in context.maintenance_entries
+                for entry in self._capped(context.maintenance_entries)
             ],
-            "tables": [asdict(table) for table in context.tables],
+            "tables": [asdict(table) for table in self._capped(context.tables)],
             "structured_entities": [
-                self._entity_payload(entity) for entity in context.entities
+                self._entity_payload(entity)
+                for entity in self._capped(context.entities)
             ],
             "relationship_edges": [
-                asdict(edge) for edge in context.relationship_edges
+                asdict(edge) for edge in self._capped(context.relationship_edges)
             ],
             "relationship_families": [
-                asdict(family) for family in context.relationship_families
+                asdict(family)
+                for family in self._capped(context.relationship_families)
             ],
             "source_families": [
-                asdict(family) for family in context.source_families
+                asdict(family) for family in self._capped(context.source_families)
             ],
             "section_topology": [
-                asdict(section) for section in context.section_topology
+                asdict(section)
+                for section in self._capped(context.section_topology)
             ],
         }
-        return json.dumps(payload, indent=2, ensure_ascii=True, default=str)
+        return json.dumps(payload, ensure_ascii=True, default=str)
+
+    @staticmethod
+    def _capped(items: list) -> list:
+        return items[:_MAX_ITEMS_PER_ARRAY]
 
     @staticmethod
     def _source_payload(source) -> dict[str, object]:

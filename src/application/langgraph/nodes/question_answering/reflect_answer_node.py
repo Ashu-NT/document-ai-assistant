@@ -98,6 +98,7 @@ class ReflectAnswerNode:
                 citations=answer_payload.get("citations", []),
                 reflection_attempts=state.get("reflection_attempts", 0),
                 retrieval_retry_count=state.get("retrieval_retry_count", 0),
+                reference_notes=answer_payload.get("reference_notes", []),
             )
         except GraphError as exc:
             trace_entry = self.recorder.finish_node(

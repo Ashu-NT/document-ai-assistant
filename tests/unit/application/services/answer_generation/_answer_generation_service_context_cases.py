@@ -1,3 +1,5 @@
+import logging
+
 from src.application.prompts.answer_generation import ANSWER_PROMPT_VERSION
 from src.application.services.answer_generation import AnswerIntent
 from src.application.services.answer_generation.answer_generation_request import (
@@ -194,3 +196,44 @@ def test_generate_merges_duplicate_maintenance_entries_before_prompt_building() 
     )
     assert result.diagnostics["maintenance_items_found"] == 1
     assert result.diagnostics["maintenance_items_merged"] == 1
+
+
+# -- finding 3.7: settings-load failure logs a warning before falling back -
+
+
+def test_default_answer_generation_model_logs_warning_on_settings_failure(
+    monkeypatch, caplog
+) -> None:
+    from src.application.services.answer_generation.answer_generation_service import (
+        _default_answer_generation_model,
+    )
+
+    monkeypatch.setattr("src.config.settings.llm_settings", object())
+
+    with caplog.at_level(logging.WARNING):
+        result = _default_answer_generation_model()
+
+    assert result is None
+    assert any(
+        "settings_fallback" in message and "answer_generation_model" in message
+        for message in caplog.messages
+    )
+
+
+def test_default_answer_generation_temperature_logs_warning_on_settings_failure(
+    monkeypatch, caplog
+) -> None:
+    from src.application.services.answer_generation.answer_generation_service import (
+        _default_answer_generation_temperature,
+    )
+
+    monkeypatch.setattr("src.config.settings.llm_settings", object())
+
+    with caplog.at_level(logging.WARNING):
+        result = _default_answer_generation_temperature()
+
+    assert result == 0.2
+    assert any(
+        "settings_fallback" in message and "answer_generation_temperature" in message
+        for message in caplog.messages
+    )

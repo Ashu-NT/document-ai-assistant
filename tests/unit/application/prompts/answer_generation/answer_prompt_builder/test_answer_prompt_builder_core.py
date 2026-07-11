@@ -68,6 +68,46 @@ def test_answer_prompt_builder_produces_grounding_and_structured_evidence_sectio
     assert "Raw source appendix:" in prompt
 
 
+def test_answer_prompt_builder_instructs_flagging_contradictory_evidence() -> None:
+    builder = AnswerPromptBuilder()
+    request = AnswerGenerationRequest(
+        question="Test?",
+        context_chunks=[_make_chunk()],
+        answer_intent=AnswerIntent.GENERAL,
+        structured_context=None,
+        format_policy=AnswerFormatPolicy.for_intent(AnswerIntent.GENERAL),
+    )
+
+    prompt = builder.build(request)
+
+    assert "sources disagree" in prompt
+
+
+def test_answer_prompt_builder_restates_question_near_the_end() -> None:
+    builder = AnswerPromptBuilder()
+    chunk = _make_chunk()
+    structured_context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.GENERAL,
+        chunks=[chunk],
+    )
+    question = "When should I replace the hydraulic filter?"
+    request = AnswerGenerationRequest(
+        question=question,
+        context_chunks=[chunk],
+        answer_intent=AnswerIntent.GENERAL,
+        structured_context=structured_context,
+        format_policy=AnswerFormatPolicy.for_intent(AnswerIntent.GENERAL),
+    )
+
+    prompt = builder.build(request)
+
+    closing_reminder = f"Answer the question above using only the evidence shown: {question}"
+    assert closing_reminder in prompt
+    # The reminder must be the closing statement of the prompt, appearing
+    # after the raw source appendix -- not just present anywhere.
+    assert prompt.rfind(closing_reminder) > prompt.rfind("Raw source appendix:")
+
+
 def test_answer_prompt_builder_omits_structured_sections_without_structured_context() -> None:
     builder = AnswerPromptBuilder()
     request = AnswerGenerationRequest(
@@ -83,6 +123,41 @@ def test_answer_prompt_builder_omits_structured_sections_without_structured_cont
     assert "Evidence schema:" not in prompt
     assert "Structured evidence payload:" not in prompt
     assert "Raw source appendix:" not in prompt
+
+
+def test_answer_prompt_builder_exposes_last_context_bundle_with_diagnostics_and_appendix_selection() -> None:
+    """Finding 2.3/2.8: appendix_source_numbers (which sources were actually
+    shown as raw prose) and the canonicalizer's diagnostics counters are
+    computed during build() but were previously discarded once build() only
+    returned the prompt string. They must be recoverable afterward via
+    `last_context_bundle`."""
+    builder = AnswerPromptBuilder()
+    assert builder.last_context_bundle is None
+
+    chunks = [
+        _make_chunk(chunk_id="c1", content="Content A"),
+        _make_chunk(chunk_id="c2", content="Content B"),
+    ]
+    structured_context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.GENERAL,
+        chunks=chunks,
+    )
+    request = AnswerGenerationRequest(
+        question="Test?",
+        context_chunks=chunks,
+        answer_intent=AnswerIntent.GENERAL,
+        structured_context=structured_context,
+        format_policy=AnswerFormatPolicy.for_intent(AnswerIntent.GENERAL),
+    )
+
+    builder.build(request)
+
+    bundle = builder.last_context_bundle
+    assert bundle is not None
+    assert bundle.appendix_source_numbers == [1, 2]
+    assert "prompt_canonicalized_key_values_removed" in bundle.diagnostics
+    assert "prompt_payload_sources_content_omitted" in bundle.diagnostics
+    assert "prompt_payload_table_rows_removed" in bundle.diagnostics
 
 
 def test_answer_prompt_builder_includes_provided_sources_in_appendix() -> None:

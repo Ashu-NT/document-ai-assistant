@@ -1,3 +1,4 @@
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from src.application.prompts.answer_generation.prompt_context import (
@@ -51,6 +52,13 @@ class AnswerPromptBuilder:
         self.raw_source_appendix_formatter = (
             raw_source_appendix_formatter or RawSourceAppendixFormatter()
         )
+        # Captured by build() below so callers (e.g. AnswerGenerationService)
+        # can access, after the fact, which source_numbers were actually
+        # shown as raw prose (appendix_source_numbers) and the
+        # canonicalizer's own diagnostics counters (bundle.diagnostics) --
+        # both are otherwise computed and then discarded once build() only
+        # returns the formatted prompt string. None until build() has run.
+        self.last_context_bundle = None
 
     def build(self, request: "AnswerGenerationRequest") -> str:
         prompt_context = self.prompt_context_projector.project(
@@ -60,7 +68,14 @@ class AnswerPromptBuilder:
         structured_payload = self.structured_evidence_payload_serializer.serialize(
             prompt_context
         )
-        source_blocks = self.raw_source_appendix_formatter.format(prompt_context)
+        source_blocks, appendix_source_numbers = (
+            self.raw_source_appendix_formatter.format_with_selection(prompt_context)
+        )
+        if prompt_context is not None:
+            prompt_context = replace(
+                prompt_context, appendix_source_numbers=appendix_source_numbers
+            )
+        self.last_context_bundle = prompt_context
         prompt = (
             f"{ANSWER_GROUNDING_RULES}\n\n"
             "Return JSON only with this shape:\n"
@@ -96,6 +111,11 @@ class AnswerPromptBuilder:
         if source_blocks:
             prompt += "Raw source appendix:\n"
             prompt += source_blocks
+            prompt += "\n\n"
+        prompt += (
+            "Answer the question above using only the evidence shown: "
+            f"{request.question}\n"
+        )
         return prompt
 
     @staticmethod

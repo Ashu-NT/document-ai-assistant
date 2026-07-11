@@ -9,9 +9,6 @@ from src.application.prompts.answer_generation.prompt_context.models import (
     PromptContextBundle,
     PromptSourceView,
 )
-from src.application.services.answer_generation.intent.answer_intent import (
-    AnswerIntent,
-)
 
 
 class PromptEvidenceCanonicalizer:
@@ -45,24 +42,14 @@ class PromptEvidenceCanonicalizer:
             context,
             entity_fingerprints=entity_fingerprints,
         )
-        key_value_source_numbers = {item.source_number for item in key_values}
-        maintenance_source_numbers = {
-            reference.source_number
-            for entry in context.maintenance_entries
-            for reference in entry.references
-        }
-        entity_source_numbers = {
-            source_number_by_chunk_id[entity.source_chunk_id]
-            for entity in context.entities
-            if entity.source_chunk_id in source_number_by_chunk_id
-        }
         table_source_numbers = {table.source_number for table in context.tables}
+        captured_values_by_source = self._captured_values_by_source(
+            key_values, entity_fingerprints
+        )
         payload_sources, table_rows_removed = self._canonicalize_sources(
             context,
             table_source_numbers=table_source_numbers,
-            key_value_source_numbers=key_value_source_numbers,
-            maintenance_source_numbers=maintenance_source_numbers,
-            entity_source_numbers=entity_source_numbers,
+            captured_values_by_source=captured_values_by_source,
         )
         diagnostics = dict(context.diagnostics)
         diagnostics.update(
@@ -110,47 +97,82 @@ class PromptEvidenceCanonicalizer:
         context: PromptContextBundle,
         *,
         table_source_numbers: set[int],
-        key_value_source_numbers: set[int],
-        maintenance_source_numbers: set[int],
-        entity_source_numbers: set[int],
+        captured_values_by_source: dict[int, set[str]],
     ) -> tuple[list[PromptSourceView], int]:
         payload_sources: list[PromptSourceView] = []
         table_rows_removed = 0
         for source in context.sources:
-            keep_table_rows = self._should_keep_table_rows(
+            kept_rows, removed_count = self._filter_table_rows(
                 source=source,
                 table_source_numbers=table_source_numbers,
-                key_value_source_numbers=key_value_source_numbers,
-                maintenance_source_numbers=maintenance_source_numbers,
-                entity_source_numbers=entity_source_numbers,
+                captured_values=captured_values_by_source.get(
+                    source.source_number, set()
+                ),
             )
-            if source.table_rows and not keep_table_rows:
-                table_rows_removed += 1
+            table_rows_removed += removed_count
             payload_sources.append(
-                replace(
-                    source,
-                    content="",
-                    table_rows=source.table_rows if keep_table_rows else None,
-                )
+                replace(source, content="", table_rows=kept_rows)
             )
         return payload_sources, table_rows_removed
 
     @staticmethod
-    def _should_keep_table_rows(
+    def _captured_values_by_source(
+        key_values,
+        entity_fingerprints: set[tuple[str, str, int]],
+    ) -> dict[int, set[str]]:
+        """Value strings already captured (surfaced elsewhere in the JSON
+        payload) per source_number, from key_values and entity fields.
+        Used by `_filter_table_rows` to keep row-level fidelity: a raw table
+        row is only worth dropping if every one of its cell values is
+        verifiably represented by a captured key-value/entity fact for that
+        same source -- not merely because the source has *some* richer
+        representation elsewhere (see `_filter_table_rows`).
+        """
+        captured: dict[int, set[str]] = {}
+        for item in key_values:
+            normalized_value = " ".join(str(item.value or "").split()).strip().lower()
+            if not normalized_value:
+                continue
+            captured.setdefault(item.source_number, set()).add(normalized_value)
+        for _label, value, source_number in entity_fingerprints:
+            captured.setdefault(source_number, set()).add(value)
+        return captured
+
+    @staticmethod
+    def _filter_table_rows(
         *,
         source: PromptSourceView,
         table_source_numbers: set[int],
-        key_value_source_numbers: set[int],
-        maintenance_source_numbers: set[int],
-        entity_source_numbers: set[int],
-    ) -> bool:
+        captured_values: set[str],
+    ) -> tuple[list[list[str]] | None, int]:
         if not source.table_rows:
-            return False
+            return None, 0
         if source.source_number in table_source_numbers:
-            return False
-        source_has_richer_facts = source.source_number in (
-            key_value_source_numbers
-            | maintenance_source_numbers
-            | entity_source_numbers
-        )
-        return not source_has_richer_facts
+            # This source's raw rows are already fully represented (headers
+            # included) in the top-level `tables` array built from the same
+            # source.table_rows -- dropping the duplicate here is
+            # deduplication, not data loss, regardless of row count.
+            return None, len(source.table_rows)
+        if not captured_values:
+            return list(source.table_rows), 0
+        kept_rows: list[list[str]] = []
+        removed = 0
+        for row in source.table_rows:
+            if PromptEvidenceCanonicalizer._row_is_fully_captured(
+                row, captured_values
+            ):
+                removed += 1
+            else:
+                kept_rows.append(row)
+        return (kept_rows or None), removed
+
+    @staticmethod
+    def _row_is_fully_captured(row: list[str], captured_values: set[str]) -> bool:
+        normalized_cells = [
+            " ".join(str(cell).split()).strip().lower()
+            for cell in row
+            if str(cell).strip()
+        ]
+        if not normalized_cells:
+            return True
+        return all(cell in captured_values for cell in normalized_cells)

@@ -51,3 +51,9 @@ class PromptContextBundle:
     source_groups: list[PromptSourceGroupView] = field(default_factory=list)
     section_groups: list[PromptSectionGroupView] = field(default_factory=list)
     diagnostics: dict[str, Any] = field(default_factory=dict)
+    # Populated by AnswerPromptBuilder.build() after the raw-prose appendix
+    # is assembled: the source_number values that actually made it into the
+    # raw appendix under RawSourceInclusionPolicy's budget (as opposed to
+    # merely being listed, content-blanked, in the structured JSON payload).
+    # Empty until then. See RawSourceInclusionPolicy.select().
+    appendix_source_numbers: list[int] = field(default_factory=list)

@@ -15,8 +15,14 @@ class FakeLLMService:
     def __init__(
         self,
         response: str = '{"answer_text":"The answer is 1000 hours."}',
+        responses: list[str] | None = None,
     ) -> None:
         self.response = response
+        # When provided, `responses[i]` is returned for the i-th call
+        # (0-indexed); once exhausted, the last entry repeats -- lets a
+        # test simulate "first attempt malformed, retry succeeds" without
+        # needing a stateful generator.
+        self.responses = list(responses) if responses is not None else None
         self.calls: list[dict] = []
 
     def generate(
@@ -25,10 +31,23 @@ class FakeLLMService:
         model: str | None = None,
         *,
         response_schema: dict | None = None,
+        temperature: float | None = None,
+        num_ctx: int | None = None,
     ) -> str:
         self.calls.append(
-            {"prompt": prompt, "model": model, "response_schema": response_schema}
+            {
+                "prompt": prompt,
+                "model": model,
+                "response_schema": response_schema,
+                "temperature": temperature,
+                "num_ctx": num_ctx,
+            }
         )
+        if self.responses is not None:
+            call_index = len(self.calls) - 1
+            if call_index < len(self.responses):
+                return self.responses[call_index]
+            return self.responses[-1]
         return self.response
 
 

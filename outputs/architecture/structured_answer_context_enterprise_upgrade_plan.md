@@ -4,7 +4,7 @@
 
 - **All 10 execution phases implemented.** See section 10 for the phase-by-phase plan and each phase's own `[IMPLEMENTED]`/`[PARTIALLY IMPLEMENTED]` status note with a "what was done vs. proposed" reconciliation.
 - Final validation (Phase 10) confirmed: full `tests/unit` suite green at 2262 passed / 0 failed / 0 errors; `ruff --select F401,F841,F811` clean across the full touched subtree (`answer_context`, `answer_generation`, `prompts/answer_generation`, `prompts/common`).
-- Two items remain deliberately open, not oversights — each has a documented reason in its own section: 4.8 (table evidence still simplified to one row grid — no additional data source identified), 4.9 (`AnswerSourceGroup`/`AnswerSectionGroup` still prompt-only — no renderer with a real grouping need found). Two items are partially implemented by deliberate scope decision: 4.6/9.6 (`limitation_note` added; `sections`/`reference_notes` deferred pending a guardrail-layer redesign).
+- Two items remain deliberately open, not oversights — each has a documented reason in its own section: 4.8 (table evidence still simplified to one row grid — no additional data source identified), 4.9 (`AnswerSourceGroup`/`AnswerSectionGroup` still prompt-only — no renderer with a real grouping need found). 4.6/9.6 (LLM schema `limitation_note`/`sections`/`reference_notes`) was originally partially implemented in Phase 8, but per the correction in section 0.3, a separate later engagement fully implemented `sections`/`reference_notes` and the guardrail-layer consumption this document had flagged as the blocking dependency — 4.6/9.6 is now fully implemented, not partial. See section 0.3.
 - Original audit-only framing (below) is retained for history; treat every phase's own status note as the current source of truth over this top-level summary.
 
 ## 0. Post-Audit Amendment
@@ -21,6 +21,19 @@ All line references elsewhere in this document have been re-verified against the
 ## 0.2 Reference Refresh (file/line locations only)
 
 A separate, unrelated file-splitting refactor (tracked in `doc/repo_refactoring_plan.md`, phases 0-8) landed after all 10 phases of this plan were implemented, and further split several of the same files this plan touches: `question_answering_workflow.py` (structured-fact joining and answer-generation orchestration moved into `answer_pipeline/structured_fact_joiner.py` and `answer_pipeline/answer_generation_pipeline.py`), `answer_generation_service.py` (request/intent resolution moved into `answer_generation_request_resolver.py`), `answer_format_policy.py` (the `_POLICIES` catalog moved into `answer_format_policy_catalog.py`), `answer_intent_analyzer.py` (its two lookup tables moved into `answer_intent_vocabulary.py`), and `spare_parts_table_parser.py` (its four table-layout strategies moved into sibling parser modules, with `SparePartsGroup` moving into `spare_parts/spare_parts_group.py`). No substantive claim in this document changed as a result of that refactor — every issue, decision, and phase outcome described here remains true as originally found. Only the file/line pointers throughout this document were refreshed to match where that logic currently lives.
+
+## 0.3 Substantive Correction: 9.6 Sections/Reference-Notes Status
+
+Section 9.6, section 4.6's heading tag, the Phase 8 status note, and the section 10.0 traceability matrix row for 4.6 all previously claimed `sections`/`reference_notes` were **deferred**, "gated on a guardrail-layer redesign" that had not happened yet. That framing is now stale.
+
+A separate, later engagement fully implemented `sections`/`reference_notes`/`limitation_note` end to end:
+
+- `AnswerGenerationResponsePayload` (`src/application/services/answer_generation/answer_generation_response_schema.py`) now declares `limitation_note`, `sections: list[AnswerSectionPayload]`, and `reference_notes: list[ReferenceNotePayload]` alongside `answer_text`, each with an explicit docstring citing "plan section 9.6."
+- `GeneratedAnswer` (`src/application/services/answer_generation/answer_generation_result.py`) carries the same three fields (`limitation_note`, `sections: list[AnswerSection]`, `reference_notes: list[ReferenceNote]`), with `ReferenceNote.chunk_id` resolved once by `AnswerGenerationService` against the sources actually used for the generation.
+- `QuestionAnsweringResult` (`src/application/workflows/question_answering/question_answering_result.py:48-50`) threads all three fields through unchanged.
+- The guardrail-layer redesign that 9.6 said was the blocking dependency has also already happened: `CitationGuardrail` (`src/application/guardrails/answering/citation_guardrail.py`) checks `context.reference_notes` for unresolved `chunk_id`s (hallucinated citations), and `UnsupportedClaimGuardrail` (`src/application/guardrails/answering/unsupported_claim_guardrail.py`) checks `context.sections` for entries with empty `reference_note_ids` (ungrounded claims). Both guardrails' own docstrings cite "plan section 9.6 sections/reference_notes redesign."
+
+Corrected below: section 4.6's heading tag, section 9.6's body, the Phase 8 status note (section 10, Phase 8), the section 10.0 matrix row for 4.6, and section 14's Final Recommendation.
 
 ## 0.1 Reviewer Follow-Up On The Amendment
 
@@ -284,24 +297,26 @@ Reference:
 - prompt builder becomes the place where formatting logic leaks
 - future output types will push even more special cases into prompt text
 
-## 4.6 LLM schema is too weak for enterprise answer generation [PARTIALLY IMPLEMENTED in Phase 8]
+## 4.6 LLM schema is too weak for enterprise answer generation [IMPLEMENTED in Phase 8, see 0.3]
 
-Current response schema:
+Original response schema (pre-Phase-8):
 
 - only `answer_text`
 - `src/application/services/answer_generation/answer_generation_response_schema.py:8-15`
 
-Current parser:
+Original parser:
 
 - `src/application/services/answer_generation/answer_generation_response_parser.py:19-35`
 
-### Impact
+### Impact (as originally found)
 
 - no enforced answer sections
 - no enforced limitation note
 - no enforced citations structure
 - no enforced normalized references or evidence claims
 - final answer quality relies too much on prompt wording
+
+✅ Fully resolved — see the correction in 0.3 and the current state described in 9.6. `AnswerGenerationResponsePayload` now declares `limitation_note`, `sections`, and `reference_notes`; `GeneratedAnswer` and `QuestionAnsweringResult` carry all three through; `CitationGuardrail` and `UnsupportedClaimGuardrail` consume `reference_notes`/`sections` structurally.
 
 ## 4.7 Deterministic renderers are useful but fragmented [IMPLEMENTED in Phase 7]
 
@@ -744,7 +759,7 @@ Instead:
 
 ✅ Done for `AnswerSource`-level consumption: both renderers now consume `StructuredAnswerContext` (via `sources`/`key_values`) instead of raw `RetrievedChunk`/duplicated parsing. Not done for group-level consumption (`AnswerSourceGroup`/`AnswerSectionGroup`, 4.9) or `include_sources_inline` (4.17) — both investigated and left open with reasoning in Phase 7's status note, since forcing either would have been cosmetic churn or a new feature rather than a real unification.
 
-## 9.6 Strengthen the answer-generation schema [PARTIALLY IMPLEMENTED in Phase 8]
+## 9.6 Strengthen the answer-generation schema [IMPLEMENTED, see 0.3]
 
 The LLM response schema should evolve from:
 
@@ -759,7 +774,12 @@ to something closer to:
 
 This does not mean exposing raw internal ids. It means enforcing answer structure instead of leaving everything to prose.
 
-✅ `limitation_note` added (optional, `GeneratedAnswer.limitation_note`). `sections`/`reference_notes` deferred — every current consumer of `GeneratedAnswer.answer_text` (5 guardrails, the answer-question tool, the QA workflow) is built around one flat answer string; adding either field now would be unconsumed until those consumers are redesigned to work over structured sections instead of prose, which is separate, larger follow-up work. See Phase 8's design note.
+✅ Fully implemented, in two waves (see the correction in 0.3). Phase 8 added `limitation_note` (optional, `GeneratedAnswer.limitation_note`). A separate, later engagement added `sections`/`reference_notes` and the guardrail-layer consumption this section originally said they were blocked on:
+
+- `AnswerGenerationResponsePayload` (`src/application/services/answer_generation/answer_generation_response_schema.py`) declares `sections: list[AnswerSectionPayload]` and `reference_notes: list[ReferenceNotePayload]` alongside `answer_text`/`limitation_note`, both optional/default-empty so every existing `answer_text`-only response stays valid.
+- `GeneratedAnswer` (`src/application/services/answer_generation/answer_generation_result.py`) carries `sections: list[AnswerSection]` and `reference_notes: list[ReferenceNote]`; `ReferenceNote.chunk_id` is resolved once by `AnswerGenerationService` against the sources actually used for the generation.
+- `QuestionAnsweringResult` (`src/application/workflows/question_answering/question_answering_result.py:48-50`) threads all three fields through.
+- `CitationGuardrail` (`src/application/guardrails/answering/citation_guardrail.py`) consumes `reference_notes`, flagging any note whose `chunk_id` is `None` (a `source_number` that didn't match a real source) as a hallucinated citation. `UnsupportedClaimGuardrail` (`src/application/guardrails/answering/unsupported_claim_guardrail.py`) consumes `sections`, flagging any section with empty `reference_note_ids` as an ungrounded claim. Both are warn-only for this first pass (never block, only record a violation).
 
 ## 9.7 Stop dropping structured context [IMPLEMENTED in Phase 4]
 
@@ -796,7 +816,7 @@ Every issue in sections 4 and 5, and every solution in section 9 (including the 
 | 4.3 / 5.1.B structured context sometimes dropped | Phase 4 — **done** | 9.7 |
 | 4.4 / 5.1.A `AnswerFormatPolicy.resolve()` ignores context | Phase 6 — **done** | 9.4 |
 | 4.5 prompt depends on flattened lists | Phase 8 — **done** (`structured_entities`/relationships now serialized) | 9.6 |
-| 4.6 LLM schema too weak | Phase 8 — **partially done** (`limitation_note` added; `sections`/`reference_notes` deferred, see Phase 8's design note) | 9.6 |
+| 4.6 LLM schema too weak | Phase 8 — **done** (`limitation_note` added in Phase 8; `sections`/`reference_notes` and guardrail consumption added by a later engagement, see 0.3/9.6) | 9.6 |
 | 4.7 deterministic renderers fragmented | Phase 7 — **done** | 9.5 |
 | 4.8 table evidence partially modeled | Phase 4 — **still open**, `table_evidence`/`asset_evidence` deferred (no additional data source identified, see Phase 4's design note) | 9.2 (`table_evidence`) |
 | 4.9 groups are prompt-facing only | Phase 7 — investigated, **still open** (no renderer with a real grouping need found; see Phase 7's "Not addressed" note) | 9.5 |
@@ -902,10 +922,12 @@ Full regression: run alongside Phase 6's changes; see Phase 6 and this phase's o
 ## Phase 8 - Prompt/schema hardening [IMPLEMENTED]
 
 - ✅ upgrade prompt builder to serialize the richer context cleanly (closes 4.5's `structured_entities` gap) — found, while auditing `AnswerPromptBuilder._organized_context_block()`, that `StructuredAnswerContext.structured_entities` (Phase 4's typed evidence view, with `.relationships[*].target_entity_fields`) was **never serialized into the LLM prompt at all** — only the flattened `key_values` were. This meant the 4.16 fix (a resolved `task_uses_procedure` relationship's `steps` surviving onto `AnswerRelationship.target_entity_fields["steps"]`) only ever reached the two deterministic renderers, never the LLM-generation path itself — the exact same "resolved data silently never reaches the answer" shape as 4.3/4.16, one hop further down, specific to the LLM path. Added a "Structured entities:" block to `_organized_context_block()` that renders each entity's `entity_type`/`entity_id`/`fields`, plus each of its `relationships` (`relationship_type -> target_entity_type [target_entity_id]: target_entity_fields`), with list-valued fields (e.g. `steps`) joined with `"; "`. Some overlap with the existing `key_values` block is expected and accepted, matching 4.2's own established precedent ("AnswerKeyValue extraction still runs in parallel unchanged... this is additive, not a replacement") — the new block's real value is the fields `StructuredFactKeyValueBuilder` has no label-map entry for (steps being the concrete case), not deduplication against `key_values`.
-- ✅ strengthen the pydantic response schema for answer generation (partial implementation of 9.6, see design note) — added an optional `limitation_note: str | None` field to `AnswerGenerationResponsePayload`, threaded through unchanged (`extra="forbid"` still enforced) to a new `GeneratedAnswer.limitation_note` field, so a caller can check "did the model flag an explicit limitation" as a real typed field instead of string-parsing `answer_text`. `AnswerPromptBuilder.build()`'s JSON-shape instructions updated to describe the new optional field to the model.
+- ✅ strengthen the pydantic response schema for answer generation (first wave of 9.6, see design note and 0.3) — added an optional `limitation_note: str | None` field to `AnswerGenerationResponsePayload`, threaded through unchanged (`extra="forbid"` still enforced) to a new `GeneratedAnswer.limitation_note` field, so a caller can check "did the model flag an explicit limitation" as a real typed field instead of string-parsing `answer_text`. `AnswerPromptBuilder.build()`'s JSON-shape instructions updated to describe the new optional field to the model.
 - ✅ keep parser strict — no change needed to `AnswerGenerationResponseParser`; pydantic validation (and `extra="forbid"`) already rejects anything not declared on the schema, and adding a new *declared* optional field doesn't loosen that.
 
-**Design note on scope, found during implementation:** 9.6 proposes evolving the schema toward `answer_text` + `limitation_note` + `sections` + `reference_notes`. Implemented `limitation_note` only, not `sections`/`reference_notes`. Reason: traced every consumer of `GeneratedAnswer.answer_text` (`answer_support_guardrail.py`, `citation_guardrail.py`, `safety_answer_guardrail.py`, `unsupported_claim_guardrail.py`, `unsupported_suggestion_guardrail.py`, `answer_question_tool.py`, `question_answering_workflow.py`) and found every single one of them is built around one flat answer string. Adding `sections`/`reference_notes` today would either (a) sit as unconsumed fields — repeating the exact 4.11/4.17 "decorative field with no reader" mistake this plan has now caught three times — or (b) require redesigning how every guardrail scans an answer for claims/citations to work over structured sections instead of prose, which is a genuinely different, much larger piece of work than "hardening" the existing schema. `limitation_note` was implemented because it has a real, immediate, non-decorative consumer (`GeneratedAnswer.limitation_note` itself, a first-class typed field any caller can branch on today) without needing that redesign. `sections`/`reference_notes` are left as explicit future work, gated on a guardrail-layer redesign that is out of this phase's scope.
+**Design note on scope, found during implementation:** 9.6 proposes evolving the schema toward `answer_text` + `limitation_note` + `sections` + `reference_notes`. This phase implemented `limitation_note` only, not `sections`/`reference_notes`. Reason at the time: traced every consumer of `GeneratedAnswer.answer_text` (`answer_support_guardrail.py`, `citation_guardrail.py`, `safety_answer_guardrail.py`, `unsupported_claim_guardrail.py`, `unsupported_suggestion_guardrail.py`, `answer_question_tool.py`, `question_answering_workflow.py`) and found every single one of them is built around one flat answer string. Adding `sections`/`reference_notes` at that point would either (a) sit as unconsumed fields — repeating the exact 4.11/4.17 "decorative field with no reader" mistake this plan has now caught three times — or (b) require redesigning how every guardrail scans an answer for claims/citations to work over structured sections instead of prose, which is a genuinely different, much larger piece of work than "hardening" the existing schema. `limitation_note` was implemented because it has a real, immediate, non-decorative consumer (`GeneratedAnswer.limitation_note` itself, a first-class typed field any caller can branch on today) without needing that redesign. `sections`/`reference_notes` were left as explicit future work at the end of this phase, gated on a guardrail-layer redesign that was out of this phase's scope.
+
+**Update (see 0.3): that guardrail-layer redesign has since happened, in a separate, later engagement.** `sections`/`reference_notes` are now on `AnswerGenerationResponsePayload`, `GeneratedAnswer`, and `QuestionAnsweringResult`, and `CitationGuardrail`/`UnsupportedClaimGuardrail` now consume them structurally (`reference_notes` for hallucinated-citation detection via unresolved `chunk_id`, `sections` for unsupported-claim detection via empty `reference_note_ids`). 9.6 is now fully implemented, not partial — this phase's original scope note above is retained for history but is no longer the current status.
 
 Full regression: 2261 tests green across the entire `tests/unit` suite (2258 before this phase + 3 new). New tests: `test_answer_prompt_builder_serializes_structured_entities_and_relationships`, `test_answer_prompt_builder_omits_structured_entities_block_when_absent` (`test_answer_prompt_builder.py`), `test_generate_surfaces_limitation_note_from_llm_response` (`test_answer_generation_service.py`); `test_generate_returns_llm_output_as_answer_text` extended to assert `limitation_note is None` for a response that omits it.
 
@@ -1065,5 +1087,5 @@ The right path is:
 
 That will move this area from "helpful prompt helper" to "enterprise answer-evidence layer".
 
-**Outcome:** all 10 phases implemented per this recommendation's own ordering. `StructuredAnswerContext` is now the canonical answer-evidence projection consumed by the organizer, both deterministic renderers, the format policy, and the LLM prompt builder alike — the single-shared-DTO goal from Decision #1 (section 12) is realized in practice, not just decided on paper. Two items remain open by explicit, documented design choice rather than left incomplete: 4.8 (table evidence) and 4.9 (source/section groups) — both re-evaluated as recently as Phase 9 and found to have no concrete, non-speculative next step yet. `sections`/`reference_notes` (9.6) are the one clearly-scoped piece of future work, gated on a guardrail-layer redesign that is deliberately out of this plan's scope.
+**Outcome:** all 10 phases implemented per this recommendation's own ordering. `StructuredAnswerContext` is now the canonical answer-evidence projection consumed by the organizer, both deterministic renderers, the format policy, and the LLM prompt builder alike — the single-shared-DTO goal from Decision #1 (section 12) is realized in practice, not just decided on paper. Two items remain open by explicit, documented design choice rather than left incomplete: 4.8 (table evidence) and 4.9 (source/section groups) — both re-evaluated as recently as Phase 9 and found to have no concrete, non-speculative next step yet. `sections`/`reference_notes` (9.6) are, per the correction in 0.3, now also fully implemented — including the guardrail-layer consumption this recommendation originally flagged as deliberately out of scope — by a separate, later engagement.
 

@@ -11,11 +11,13 @@ def extract_answer(
     response_text: str | None,
     *,
     reflection_decision: str | None = None,
+    guardrail_replaced: bool = False,
 ) -> str | None:
     return resolve_answer_text(
         tool_results=tool_results,
         fallback_response_text=response_text,
         reflection_decision=reflection_decision,
+        guardrail_replaced=guardrail_replaced,
     )
 
 
@@ -62,6 +64,19 @@ def extract_reference_notes(tool_results: dict[str, Any]) -> list[dict[str, Any]
         reference_notes = answer_question_payload.get("reference_notes")
         if isinstance(reference_notes, list):
             return serialize_graph_value(reference_notes)
+    return []
+
+
+def extract_post_answer_guardrail_warnings(
+    tool_results: dict[str, Any],
+) -> list[dict[str, Any]]:
+    answer_question_payload = tool_payload(tool_results, "answer_question")
+    if isinstance(answer_question_payload, dict):
+        diagnostics = answer_question_payload.get("diagnostics")
+        if isinstance(diagnostics, dict):
+            warnings = diagnostics.get("post_answer_guardrail_warnings")
+            if isinstance(warnings, list):
+                return serialize_graph_value(warnings)
     return []
 
 

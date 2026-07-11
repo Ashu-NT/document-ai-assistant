@@ -1,3 +1,5 @@
+import logging
+
 from src.application.langgraph.reflection.models import ReflectionDecisionType
 from src.application.langgraph.reflection.policies import ReflectionPolicy
 from src.application.langgraph.reflection.services import ReflectionService
@@ -235,3 +237,92 @@ def test_reflection_service_spec_only_evidence_stays_retry_or_fail() -> None:
         ReflectionDecisionType.RETRIEVE_AGAIN,
         ReflectionDecisionType.FAIL,
     }
+
+
+def _review_kwargs(**overrides: object) -> dict:
+    base = dict(
+        original_user_question="What is the pump flow rate specification?",
+        generated_answer="The pump flow rate is 120 m3/h, as shown on page 4.",
+        selected_document_id="doc_1",
+        selected_document_title="FWC12 Manual",
+        answer_intent="specification",
+        approved_chunks=[
+            {
+                "chunk_id": "chunk_4",
+                "document_id": "doc_1",
+                "content": "Pump flow rate is 120 m3/h.",
+                "source": {"page_start": 4},
+            }
+        ],
+        rejected_chunks=[],
+        citations=[{"chunk_id": "chunk_4", "source": {"page_start": 4}}],
+        reflection_attempts=0,
+        retrieval_retry_count=0,
+    )
+    base.update(overrides)
+    return base
+
+
+def test_review_without_reference_notes_is_byte_identical_to_before_the_change() -> None:
+    """Mandatory backward-compatibility test at the service level: omitting
+    reference_notes (the new, optional review() kwarg) must produce exactly
+    the same scores as calling review() with reference_notes=None."""
+    service = ReflectionService(policy=ReflectionPolicy(enabled=False))
+
+    without_param = service.review(**_review_kwargs())
+    with_explicit_none = service.review(**_review_kwargs(reference_notes=None))
+
+    assert without_param.answer_quality_score == with_explicit_none.answer_quality_score
+    assert without_param.evidence_quality_score == with_explicit_none.evidence_quality_score
+    assert without_param.overall_score == with_explicit_none.overall_score
+
+
+def test_review_caps_answer_quality_when_reference_note_is_unresolved() -> None:
+    service = ReflectionService(policy=ReflectionPolicy(enabled=False))
+
+    fully_resolved = service.review(
+        **_review_kwargs(
+            reference_notes=[
+                {
+                    "note_id": "r1",
+                    "claim_text": "Pump flow rate is 120 m3/h.",
+                    "source_number": 1,
+                    "chunk_id": "chunk_4",
+                }
+            ]
+        )
+    )
+    unresolved = service.review(
+        **_review_kwargs(
+            reference_notes=[
+                {
+                    "note_id": "r1",
+                    "claim_text": "Pump flow rate is 120 m3/h.",
+                    "source_number": 1,
+                    "chunk_id": None,
+                }
+            ]
+        )
+    )
+
+    assert unresolved.answer_quality_score <= 0.5
+    assert unresolved.answer_quality_score < fully_resolved.answer_quality_score
+
+
+def test_review_logs_reflection_score_recorded_with_expected_fields(caplog) -> None:
+    service = ReflectionService(policy=ReflectionPolicy(enabled=False))
+
+    with caplog.at_level(logging.INFO):
+        service.review(**_review_kwargs())
+
+    matching_records = [
+        record for record in caplog.records if record.message == "reflection_score_recorded"
+    ]
+    assert len(matching_records) == 1
+    record = matching_records[0]
+    assert record.decision == ReflectionDecisionType.ACCEPT.value
+    assert isinstance(record.answer_quality_score, float)
+    assert isinstance(record.evidence_quality_score, float)
+    assert isinstance(record.grounding_score, float)
+    assert isinstance(record.overall_score, float)
+    assert record.intent == "specification"

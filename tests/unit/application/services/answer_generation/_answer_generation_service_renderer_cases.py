@@ -216,3 +216,95 @@ def test_generate_rejects_malformed_answer_generation_json() -> None:
                 context_chunks=[_make_chunk()],
             )
         )
+
+
+# -- finding 3.3: compound-question gap for deterministic renderers --------
+
+
+def test_generate_deterministic_identifier_renderer_sets_no_limitation_note_for_non_compound_question() -> None:
+    llm = FakeLLMService(response="This answer should not be used.")
+    service, _ = make_service(llm)
+    result = service.generate(
+        AnswerGenerationRequest(
+            question="list all serial and part nmubers",
+            context_chunks=[_make_chunk()],
+            answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+            resolved_identifiers=[
+                Identifier(
+                    "id_part",
+                    "doc_001",
+                    raw_value="PN-001",
+                    identifier_type=IdentifierType.PART_NUMBER,
+                ),
+            ],
+        )
+    )
+    assert result.limitation_note is None
+
+
+def test_generate_deterministic_identifier_renderer_sets_limitation_note_for_compound_question() -> None:
+    llm = FakeLLMService(response="This answer should not be used.")
+    service, _ = make_service(llm)
+    result = service.generate(
+        AnswerGenerationRequest(
+            question="list all part numbers and how do i replace the pump",
+            context_chunks=[_make_chunk()],
+            answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+            resolved_identifiers=[
+                Identifier(
+                    "id_part",
+                    "doc_001",
+                    raw_value="PN-001",
+                    identifier_type=IdentifierType.PART_NUMBER,
+                ),
+            ],
+        )
+    )
+    assert result.limitation_note is not None
+    assert "identifier" in result.limitation_note
+    assert "follow-up" in result.limitation_note
+
+
+def test_generate_deterministic_spare_parts_renderer_sets_no_limitation_note_for_non_compound_question() -> None:
+    llm = FakeLLMService(response="No specific spare part list table was found.")
+    service, _ = make_service(llm)
+    chunk = RetrievedChunk(
+        chunk_id="chunk_spare",
+        document_id="doc_001",
+        content="| Position No: | Qty: | Denomination: | Spare Part No: |\n|---|---|---|---|\n| 1 | 2 | Filter | A00103 |\n",
+        score=0.9,
+        retrieval_source="dense",
+        chunk_type=ChunkType.SPARE_PARTS_TABLE,
+        section_path=["7 Components", "Spare Parts"],
+        source=SourceLocation(page_start=45, page_end=46),
+        citation=_make_citation("chunk_spare"),
+    )
+    result = service.generate(
+        AnswerGenerationRequest(question="table of spare part list", context_chunks=[chunk])
+    )
+    assert result.limitation_note is None
+
+
+def test_generate_deterministic_spare_parts_renderer_sets_limitation_note_for_compound_question() -> None:
+    llm = FakeLLMService(response="No specific spare part list table was found.")
+    service, _ = make_service(llm)
+    chunk = RetrievedChunk(
+        chunk_id="chunk_spare",
+        document_id="doc_001",
+        content="| Position No: | Qty: | Denomination: | Spare Part No: |\n|---|---|---|---|\n| 1 | 2 | Filter | A00103 |\n",
+        score=0.9,
+        retrieval_source="dense",
+        chunk_type=ChunkType.SPARE_PARTS_TABLE,
+        section_path=["7 Components", "Spare Parts"],
+        source=SourceLocation(page_start=45, page_end=46),
+        citation=_make_citation("chunk_spare"),
+    )
+    result = service.generate(
+        AnswerGenerationRequest(
+            question="table of spare part list and how do i replace the seal",
+            context_chunks=[chunk],
+        )
+    )
+    assert result.limitation_note is not None
+    assert "spare parts" in result.limitation_note
+    assert "follow-up" in result.limitation_note

@@ -1,5 +1,10 @@
+import json
 from datetime import datetime
 
+from src.application.prompts.answer_generation.prompt_context.models import (
+    PromptContextBundle,
+    PromptSourceView,
+)
 from src.application.prompts.answer_generation.prompt_context.projectors import (
     PromptContextProjector,
 )
@@ -11,6 +16,9 @@ from src.application.workflows.question_answering.answer_context import (
     AnswerContextOrganizer,
     AnswerRelationship,
     AnswerStructuredEntity,
+)
+from src.application.workflows.question_answering.answer_context.models import (
+    AnswerKeyValue,
 )
 from src.domain.common import ChunkType
 from src.domain.common.source_location import SourceLocation
@@ -103,3 +111,62 @@ def test_serializer_does_not_crash_on_non_json_native_entity_field_values() -> N
     payload = StructuredEvidencePayloadSerializer().serialize(bundle)
 
     assert str(installed_at) in payload
+
+
+def test_serializer_caps_arrays_larger_than_the_max_item_limit() -> None:
+    key_values = [
+        AnswerKeyValue(key=f"Key {i}", value=f"Value {i}", unit=None, source_number=1)
+        for i in range(25)
+    ]
+    bundle = PromptContextBundle(
+        answer_intent_value=AnswerIntent.GENERAL.value,
+        source_count=1,
+        sources=[
+            PromptSourceView(source_number=1, chunk_id="chunk_001", content="")
+        ],
+        key_values=key_values,
+    )
+
+    payload = json.loads(StructuredEvidencePayloadSerializer().serialize(bundle))
+
+    assert len(payload["key_values"]) == 20
+    assert payload["key_values"][0]["key"] == "Key 0"
+    assert payload["key_values"][-1]["key"] == "Key 19"
+
+
+def test_serializer_does_not_truncate_arrays_under_the_cap() -> None:
+    key_values = [
+        AnswerKeyValue(key=f"Key {i}", value=f"Value {i}", unit=None, source_number=1)
+        for i in range(3)
+    ]
+    bundle = PromptContextBundle(
+        answer_intent_value=AnswerIntent.GENERAL.value,
+        source_count=1,
+        sources=[
+            PromptSourceView(source_number=1, chunk_id="chunk_001", content="")
+        ],
+        key_values=key_values,
+    )
+
+    payload = json.loads(StructuredEvidencePayloadSerializer().serialize(bundle))
+
+    assert len(payload["key_values"]) == 3
+    assert [item["key"] for item in payload["key_values"]] == [
+        "Key 0",
+        "Key 1",
+        "Key 2",
+    ]
+
+
+def test_serializer_emits_compact_json_with_no_indentation() -> None:
+    bundle = PromptContextProjector().project(
+        AnswerContextOrganizer().organize(
+            answer_intent=AnswerIntent.GENERAL,
+            chunks=[_make_chunk()],
+        )
+    )
+
+    payload = StructuredEvidencePayloadSerializer().serialize(bundle)
+
+    assert "\n" not in payload
+    assert json.loads(payload) is not None

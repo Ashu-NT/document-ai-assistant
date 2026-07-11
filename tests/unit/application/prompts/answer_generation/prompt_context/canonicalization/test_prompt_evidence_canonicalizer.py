@@ -164,3 +164,46 @@ def test_canonicalizer_promotes_table_summary_rows_to_top_level_tables() -> None
         ["Tag", "Part No"],
         ["V.00.01.01", "A00103"],
     ]
+
+
+def test_canonicalizer_keeps_uncaptured_table_rows_when_key_value_coverage_is_partial() -> None:
+    """Regression test for the source-level-boolean bug: a source whose
+    table was only PARTIALLY captured as key_values (2 of 8 rows) must not
+    have its other rows silently dropped just because *some* key-value
+    representation exists for that source. Only rows whose exact cell
+    values are all verifiably captured elsewhere may be omitted."""
+    source = PromptSourceView(
+        source_number=1,
+        chunk_id="chunk_001",
+        document_title="Manual",
+        section_path="Valve List",
+        content="valve table",
+        table_rows=[
+            ["Tag", "Part No"],
+            ["V.00.01.01", "A00103"],
+            ["V.00.01.02", "A00104"],
+            ["V.00.01.03", "A00105"],
+        ],
+    )
+    bundle = PromptContextBundle(
+        answer_intent_value=AnswerIntent.TABLE_SUMMARY.value,
+        source_count=1,
+        sources=[source],
+        appendix_sources=[source],
+        key_values=[
+            AnswerKeyValue(key="Tag", value="V.00.01.01", unit=None, source_number=1),
+            AnswerKeyValue(key="Part No", value="A00103", unit=None, source_number=1),
+        ],
+        tables=[],
+    )
+
+    canonicalized = PromptEvidenceCanonicalizer().canonicalize(bundle)
+
+    assert canonicalized is not None
+    kept_rows = canonicalized.sources[0].table_rows
+    assert kept_rows is not None
+    assert ["Tag", "Part No"] in kept_rows
+    assert ["V.00.01.02", "A00104"] in kept_rows
+    assert ["V.00.01.03", "A00105"] in kept_rows
+    assert ["V.00.01.01", "A00103"] not in kept_rows
+    assert canonicalized.diagnostics["prompt_payload_table_rows_removed"] == 1

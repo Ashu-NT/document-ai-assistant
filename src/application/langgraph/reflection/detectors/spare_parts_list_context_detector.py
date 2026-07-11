@@ -57,8 +57,11 @@ def is_legitimate_partial_spare_parts_answer(answer_text: str) -> bool:
         return False
     has_identifying_row = any(label in normalized for label in _IDENTIFYING_ROW_LABELS)
     has_raw_row = "raw row:" in normalized
-    has_partial_notice = "partial" in normalized
-    return has_identifying_row or has_raw_row or has_partial_notice
+    # A bare "partial" notice with no actual row data is not enough on its
+    # own -- an answer claiming "this is only a partial list (see page 4)"
+    # with zero identifying/raw rows must not be accepted as legitimate
+    # partial coverage. Require at least one real data signal.
+    return has_identifying_row or has_raw_row
 
 
 def answer_only_has_unit_artifact_rows(answer_text: str) -> bool:

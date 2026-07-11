@@ -24,6 +24,7 @@ class LLMService:
         temperature: float | None = None,
         json_mode: bool = False,
         response_schema: dict[str, Any] | None = None,
+        num_ctx: int | None = None,
     ) -> str:
         provider_kwargs: dict[str, Any] = {}
         if temperature is not None:
@@ -32,4 +33,6 @@ class LLMService:
             provider_kwargs["json_mode"] = json_mode
         if response_schema is not None:
             provider_kwargs["response_schema"] = response_schema
+        if num_ctx is not None:
+            provider_kwargs["num_ctx"] = num_ctx
         return self.llm_provider.generate(prompt, model=model, **provider_kwargs)

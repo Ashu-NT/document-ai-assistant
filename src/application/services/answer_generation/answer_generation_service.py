@@ -10,8 +10,20 @@ from src.application.services.answer_generation.formatting.identifier_answer_ren
 from src.application.services.answer_generation.formatting.spare_parts_list_renderer import (
     SparePartsListRenderer,
 )
+from src.application.services.answer_generation.intent.answer_intent import AnswerIntent
 from src.application.services.answer_generation.intent.answer_intent_analyzer import (
     AnswerIntentAnalyzer,
+)
+from src.application.services.answer_generation.intent.answer_intent_vocabulary import (
+    CERTIFICATION_TERMS,
+    DOCUMENT_SUMMARY_TERMS,
+    IDENTIFIER_TERMS,
+    MAINTENANCE_TERMS,
+    PROCEDURE_TERMS,
+    SAFETY_TERMS,
+    SPECIFICATION_TERMS,
+    TABLE_TERMS,
+    TROUBLESHOOTING_TERMS,
 )
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
@@ -23,6 +35,7 @@ from src.application.services.answer_generation.answer_generation_response_parse
     AnswerGenerationResponseParser,
 )
 from src.application.services.answer_generation.answer_generation_response_schema import (
+    AnswerGenerationResponsePayload,
     AnswerSectionPayload,
     ReferenceNotePayload,
     build_answer_generation_response_json_schema,
@@ -35,11 +48,64 @@ from src.application.services.answer_generation.answer_generation_result import 
 from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
     AnswerContextOrganizer,
 )
+from src.config.logging import get_logger
 from src.domain.common.processing_metadata import ModelProcessingMetadata
 from src.domain.retrieval.citation import Citation
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 from src.shared.activity import ActivityContext
+from src.shared.exceptions import SchemaValidationError
 from src.shared.execution import tracked_action
+
+_logger = get_logger(__name__)
+
+# Bounded retry-with-repair for malformed/schema-invalid LLM JSON (finding
+# 3.1): 1 original attempt + 1 corrective retry. Mirrors the extraction
+# pipeline's ExtractionBatchRetryCoordinator shape, adapted to this
+# service's single-call (not batched) generation. Deliberately a small
+# hardcoded constant, not a settings-driven value -- nothing asked for
+# per-deployment tuning of this number.
+_MAX_GENERATION_ATTEMPTS = 2
+
+# Conservative, cheap compound-question signal for finding 3.3: a
+# deterministic renderer can silently answer only half of a compound
+# question. Only the 3 explicit conjunction phrases below are treated as a
+# clause boundary -- no broader NLP splitting.
+_COMPOUND_CONJUNCTIONS = (" and ", " also ", " as well as ")
+
+# Reuses the EXISTING keyword vocabulary from answer_intent_vocabulary.py
+# (no new keyword list invented) so each half of a compound question can be
+# checked against the other intent categories' term sets.
+_INTENT_TERM_SETS: dict[AnswerIntent, tuple[str, ...]] = {
+    AnswerIntent.SPECIFICATION_SUMMARY: SPECIFICATION_TERMS,
+    AnswerIntent.MAINTENANCE_SUMMARY: MAINTENANCE_TERMS,
+    AnswerIntent.PROCEDURE_STEPS: PROCEDURE_TERMS,
+    AnswerIntent.SAFETY_WARNINGS: SAFETY_TERMS,
+    AnswerIntent.TROUBLESHOOTING: TROUBLESHOOTING_TERMS,
+    AnswerIntent.CERTIFICATION_SUMMARY: CERTIFICATION_TERMS,
+    AnswerIntent.IDENTIFIER_LOOKUP: IDENTIFIER_TERMS,
+    AnswerIntent.TABLE_SUMMARY: TABLE_TERMS,
+    AnswerIntent.DOCUMENT_SUMMARY: DOCUMENT_SUMMARY_TERMS,
+}
+
+# IDENTIFIER_LOOKUP and TABLE_SUMMARY are not "a different, unrelated"
+# category from each other for this check -- SparePartsListRenderer
+# already deterministically answers both, and TABLE_TERMS' bare "list"
+# would otherwise false-positive on ordinary identifier-listing questions
+# (e.g. "list all serial and part numbers"). Excluding the sibling
+# category keeps the signal conservative rather than noisy.
+_COMPOUND_EXCLUDED_INTENTS_BY_DRIVING: dict[AnswerIntent, frozenset[AnswerIntent]] = {
+    AnswerIntent.IDENTIFIER_LOOKUP: frozenset(
+        {AnswerIntent.IDENTIFIER_LOOKUP, AnswerIntent.TABLE_SUMMARY}
+    ),
+    AnswerIntent.TABLE_SUMMARY: frozenset(
+        {AnswerIntent.IDENTIFIER_LOOKUP, AnswerIntent.TABLE_SUMMARY}
+    ),
+}
+
+_RENDERER_LIMITATION_LABELS: dict[str, str] = {
+    "identifier_answer_renderer": "identifier",
+    "spare_parts_list_renderer": "spare parts",
+}
 
 
 def _default_answer_generation_model() -> str | None:
@@ -48,7 +114,110 @@ def _default_answer_generation_model() -> str | None:
 
         return llm_settings.answer_generation_llm or llm_settings.general_llm
     except Exception:
+        _logger.warning(
+            "answer_generation.settings_fallback setting=answer_generation_model "
+            "fallback_value=%s",
+            None,
+        )
         return None
+
+
+def _default_answer_generation_temperature() -> float:
+    try:
+        from src.config.settings import llm_settings
+
+        return llm_settings.answer_generation_temperature
+    except Exception:
+        fallback = 0.2
+        _logger.warning(
+            "answer_generation.settings_fallback setting=answer_generation_temperature "
+            "fallback_value=%s",
+            fallback,
+        )
+        return fallback
+
+
+def _default_answer_generation_num_ctx() -> int:
+    try:
+        from src.config.settings import llm_settings
+
+        return llm_settings.answer_generation_num_ctx
+    except Exception:
+        fallback = 8192
+        _logger.warning(
+            "answer_generation.settings_fallback setting=answer_generation_num_ctx "
+            "fallback_value=%s",
+            fallback,
+        )
+        return fallback
+
+
+def _default_capture_answer_prompt_text() -> bool:
+    try:
+        from src.config.settings import llm_settings
+
+        return llm_settings.capture_answer_prompt_text
+    except Exception:
+        fallback = False
+        _logger.warning(
+            "answer_generation.settings_fallback setting=capture_answer_prompt_text "
+            "fallback_value=%s",
+            fallback,
+        )
+        return fallback
+
+
+def _build_corrective_note(previous_error: str) -> str:
+    """A minimal string suffix appended to the already-built prompt for the
+    one corrective retry -- mirrors ExtractionBatchRetryCoordinator's
+    "feed the previous error back into the next prompt" pattern, but kept
+    local to this service rather than inside AnswerPromptBuilder (owned
+    elsewhere)."""
+    return (
+        "\n\nYour previous response was rejected because it did not match "
+        f"the required schema: {previous_error}\n"
+        "Fix this specific problem and return a corrected JSON response "
+        "that matches the schema exactly."
+    )
+
+
+def _detect_unrelated_intent_signal(
+    question: str, driving_intent: AnswerIntent | None
+) -> AnswerIntent | None:
+    """Returns another intent category's signal if `question` looks like a
+    compound question (joined by an explicit conjunction) whose other half
+    scores toward a DIFFERENT, unrelated answer-intent category than the
+    one driving the current deterministic-renderer path. Conservative by
+    design: only 3 conjunction phrases, only existing vocabulary term
+    membership, no scoring."""
+    normalized = " " + " ".join((question or "").strip().lower().split()) + " "
+    matched_conjunction = next(
+        (conjunction for conjunction in _COMPOUND_CONJUNCTIONS if conjunction in normalized),
+        None,
+    )
+    if matched_conjunction is None:
+        return None
+
+    left, _, right = normalized.partition(matched_conjunction)
+    excluded_intents = _COMPOUND_EXCLUDED_INTENTS_BY_DRIVING.get(
+        driving_intent,
+        frozenset({driving_intent}) if driving_intent is not None else frozenset(),
+    )
+    for half in (left, right):
+        for intent, terms in _INTENT_TERM_SETS.items():
+            if intent in excluded_intents:
+                continue
+            if any(term in half for term in terms):
+                return intent
+    return None
+
+
+def _build_compound_question_limitation_note(renderer_name: str) -> str:
+    label = _RENDERER_LIMITATION_LABELS.get(renderer_name, "requested")
+    return (
+        f"This answer only addresses the {label} portion of your question "
+        "— ask a follow-up for the rest."
+    )
 
 
 class AnswerGenerationService:
@@ -62,6 +231,9 @@ class AnswerGenerationService:
         spare_parts_list_renderer: SparePartsListRenderer | None = None,
         response_parser: AnswerGenerationResponseParser | None = None,
         answer_generation_model: str | None = None,
+        answer_generation_temperature: float | None = None,
+        answer_generation_num_ctx: int | None = None,
+        capture_answer_prompt_text: bool | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.prompt_builder = prompt_builder or AnswerPromptBuilder()
@@ -78,6 +250,21 @@ class AnswerGenerationService:
         self.response_parser = response_parser or AnswerGenerationResponseParser()
         self.answer_generation_model = (
             answer_generation_model or _default_answer_generation_model()
+        )
+        self.answer_generation_temperature = (
+            answer_generation_temperature
+            if answer_generation_temperature is not None
+            else _default_answer_generation_temperature()
+        )
+        self.answer_generation_num_ctx = (
+            answer_generation_num_ctx
+            if answer_generation_num_ctx is not None
+            else _default_answer_generation_num_ctx()
+        )
+        self.capture_answer_prompt_text = (
+            capture_answer_prompt_text
+            if capture_answer_prompt_text is not None
+            else _default_capture_answer_prompt_text()
         )
         self.request_resolver = AnswerGenerationRequestResolver(
             answer_intent_analyzer=self.answer_intent_analyzer,
@@ -137,6 +324,14 @@ class AnswerGenerationService:
                 deterministic_diagnostics.update(
                     self.spare_parts_list_renderer.last_diagnostics()
                 )
+            unrelated_intent = _detect_unrelated_intent_signal(
+                resolved_request.question, resolved_request.answer_intent
+            )
+            limitation_note = (
+                _build_compound_question_limitation_note(deterministic_renderer_name)
+                if unrelated_intent is not None
+                else None
+            )
             return self._build_generated_answer(
                 answer_text=deterministic_answer,
                 citations=citations,
@@ -150,15 +345,13 @@ class AnswerGenerationService:
                     **deterministic_diagnostics,
                 },
                 raw_model_output=deterministic_answer,
+                limitation_note=limitation_note,
             )
 
         prompt = self.prompt_builder.build(resolved_request)
-        raw_output = self.llm_service.generate(
-            prompt,
-            model=self.answer_generation_model,
-            response_schema=build_answer_generation_response_json_schema(),
-        )
-        parsed_output = self.response_parser.parse(raw_output)
+        if self.capture_answer_prompt_text:
+            diagnostics["prompt_text"] = prompt
+        parsed_output, raw_output = self._generate_and_parse(prompt)
         model_name = self.answer_generation_model or "default"
         sources = structured_context.sources if structured_context is not None else ()
 
@@ -175,9 +368,44 @@ class AnswerGenerationService:
             limitation_note=parsed_output.limitation_note,
             sections=self._resolve_sections(parsed_output.sections),
             reference_notes=self._resolve_reference_notes(
-                parsed_output.reference_notes, sources
+                parsed_output.reference_notes,
+                sources,
+                appendix_source_numbers=self._appendix_source_numbers(),
             ),
         )
+
+    def _generate_and_parse(
+        self, prompt: str
+    ) -> tuple[AnswerGenerationResponsePayload, str]:
+        """Calls the LLM and parses its response, retrying once with a
+        corrective note appended to the prompt if the first attempt's
+        response is malformed/schema-invalid (finding 3.1). The parser
+        itself already attempts a same-call JSON repair before raising, so
+        this loop only covers the case where that repair still isn't
+        enough -- at most `_MAX_GENERATION_ATTEMPTS` LLM calls total. If the
+        final attempt still fails, the original SchemaValidationError type
+        is re-raised unchanged (no fake success is synthesized)."""
+        last_error: SchemaValidationError | None = None
+        for attempt_index in range(1, _MAX_GENERATION_ATTEMPTS + 1):
+            attempt_prompt = (
+                prompt
+                if last_error is None
+                else prompt + _build_corrective_note(str(last_error))
+            )
+            raw_output = self.llm_service.generate(
+                attempt_prompt,
+                model=self.answer_generation_model,
+                response_schema=build_answer_generation_response_json_schema(),
+                temperature=self.answer_generation_temperature,
+                num_ctx=self.answer_generation_num_ctx,
+            )
+            try:
+                return self.response_parser.parse(raw_output), raw_output
+            except SchemaValidationError as exc:
+                last_error = exc
+                if attempt_index >= _MAX_GENERATION_ATTEMPTS:
+                    raise
+        raise last_error  # pragma: no cover - unreachable safeguard
 
     @staticmethod
     def _resolve_sections(
@@ -192,13 +420,33 @@ class AnswerGenerationService:
             for section in payload_sections
         ]
 
+    def _appendix_source_numbers(self) -> set[int] | None:
+        """The source_numbers that actually made it into the raw-prose
+        appendix under RawSourceInclusionPolicy's budget, if the prompt
+        builder in use exposes that (the real AnswerPromptBuilder does, via
+        `last_context_bundle` set during `build()`). Returns None when this
+        isn't available (e.g. a test double prompt builder, or no prompt
+        was built at all on the deterministic-renderer paths) so callers
+        can fall back to the pre-existing, unrestricted behavior instead of
+        wrongly unresolving every citation.
+        """
+        bundle = getattr(self.prompt_builder, "last_context_bundle", None)
+        if bundle is None:
+            return None
+        return set(bundle.appendix_source_numbers)
+
     @staticmethod
     def _resolve_reference_notes(
         payload_notes: list[ReferenceNotePayload],
         sources,
+        *,
+        appendix_source_numbers: set[int] | None = None,
     ) -> list[ReferenceNote]:
         chunk_id_by_source_number = {
-            source.source_number: source.chunk_id for source in sources
+            source.source_number: source.chunk_id
+            for source in sources
+            if appendix_source_numbers is None
+            or source.source_number in appendix_source_numbers
         }
         return [
             ReferenceNote(

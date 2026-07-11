@@ -1,10 +1,13 @@
 from typing import Any
 
 from src.application.contracts.ai import LLMProvider
+from src.config.logging import get_logger
 from src.shared.exceptions import LLMProviderError
 
 DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
 DEFAULT_OLLAMA_MODEL = "qwen2.5:3b"
+
+_logger = get_logger(__name__)
 
 
 def _default_ollama_base_url() -> str:
@@ -13,6 +16,11 @@ def _default_ollama_base_url() -> str:
 
         return llm_settings.ollama_base_url or DEFAULT_OLLAMA_BASE_URL
     except Exception:
+        _logger.warning(
+            "ollama_provider.settings_fallback setting=ollama_base_url "
+            "fallback_value=%s",
+            DEFAULT_OLLAMA_BASE_URL,
+        )
         return DEFAULT_OLLAMA_BASE_URL
 
 
@@ -22,6 +30,11 @@ def _default_ollama_model() -> str:
 
         return llm_settings.general_llm or DEFAULT_OLLAMA_MODEL
     except Exception:
+        _logger.warning(
+            "ollama_provider.settings_fallback setting=general_llm "
+            "fallback_value=%s",
+            DEFAULT_OLLAMA_MODEL,
+        )
         return DEFAULT_OLLAMA_MODEL
 
 
@@ -45,6 +58,7 @@ class OllamaLLMProvider(LLMProvider):
         temperature: float | None = None,
         json_mode: bool = False,
         response_schema: dict[str, Any] | None = None,
+        num_ctx: int | None = None,
     ) -> str:
         model_name = model or self.default_model
         extra_kwargs: dict[str, Any] = {}
@@ -52,8 +66,13 @@ class OllamaLLMProvider(LLMProvider):
             extra_kwargs["format"] = response_schema
         elif json_mode:
             extra_kwargs["format"] = "json"
+        options: dict[str, Any] = {}
         if temperature is not None:
-            extra_kwargs["options"] = {"temperature": temperature}
+            options["temperature"] = temperature
+        if num_ctx is not None:
+            options["num_ctx"] = num_ctx
+        if options:
+            extra_kwargs["options"] = options
 
         try:
             response = self._get_client().generate(

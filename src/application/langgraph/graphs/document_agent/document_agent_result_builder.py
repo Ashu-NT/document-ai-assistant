@@ -18,13 +18,16 @@ def build_result(state: AgentState) -> GraphResult:
     route = state.get("route")
     tool_results = state.get("tool_results", {})
     reflection_decision = state.get("reflection_decision")
+    guardrail_replaced = bool(state.get("response_text_guardrail_replaced", False))
     answer = answer_extractor.extract_answer(
         tool_results,
         state.get("response_text"),
         reflection_decision=reflection_decision,
+        guardrail_replaced=guardrail_replaced,
     )
     if (
-        is_usable_reflection_decision(reflection_decision)
+        not guardrail_replaced
+        and is_usable_reflection_decision(reflection_decision)
         and is_safe_failure_message(answer)
     ):
         recovered_answer = answer_extractor.extract_answer(
@@ -39,6 +42,9 @@ def build_result(state: AgentState) -> GraphResult:
     limitation_note = answer_extractor.extract_limitation_note(tool_results)
     sections = answer_extractor.extract_sections(tool_results)
     reference_notes = answer_extractor.extract_reference_notes(tool_results)
+    post_answer_guardrail_warnings = (
+        answer_extractor.extract_post_answer_guardrail_warnings(tool_results)
+    )
     context_chunks = extract_context_chunks(
         tool_results=tool_results,
         citations=citations,
@@ -78,12 +84,14 @@ def build_result(state: AgentState) -> GraphResult:
         "should_exit": state.get("should_exit", False),
         "answer": answer,
         "final_response_warning": state.get("final_response_warning"),
+        "response_text_guardrail_replaced": guardrail_replaced,
         "answer_intent": answer_intent,
         "context_chunks": context_chunks,
         "citations": citations,
         "limitation_note": limitation_note,
         "sections": sections,
         "reference_notes": reference_notes,
+        "post_answer_guardrail_warnings": post_answer_guardrail_warnings,
         "reflection_result": state.get("reflection_result"),
         "reflection_decision": state.get("reflection_decision"),
         "reflection_score": state.get("reflection_score"),

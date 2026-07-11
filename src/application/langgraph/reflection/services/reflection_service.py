@@ -36,7 +36,10 @@ from src.application.prompts.reflection import (
     ReflectionPromptBuilder,
 )
 from src.application.services.ai import LLMService
+from src.config.logging import get_logger
 from src.shared.exceptions import ApplicationError
+
+_logger = get_logger(__name__)
 
 
 class ReflectionService:
@@ -70,6 +73,7 @@ class ReflectionService:
         citations: list[dict[str, Any]],
         reflection_attempts: int,
         retrieval_retry_count: int,
+        reference_notes: list[Any] | None = None,
     ) -> ReflectionResult:
         has_relevant_maintenance_evidence = (
             MaintenanceEvidenceRelevanceDetector.has_relevant_evidence(
@@ -89,11 +93,13 @@ class ReflectionService:
             question=original_user_question,
             answer=generated_answer,
             citations=citations,
+            reference_notes=reference_notes,
         )
         evidence_quality = EvidenceQualityScorer.score(
             approved_chunks=approved_chunks,
             rejected_chunks=rejected_chunks,
             selected_document_id=selected_document_id,
+            reference_notes=reference_notes,
         )
         context_document_ids = sorted(
             {
@@ -171,6 +177,17 @@ class ReflectionService:
             )
             / 4.0,
             4,
+        )
+        _logger.info(
+            "reflection_score_recorded",
+            extra={
+                "decision": effective_decision.decision.value,
+                "answer_quality_score": answer_quality.score,
+                "evidence_quality_score": evidence_quality.score,
+                "grounding_score": grounding_score,
+                "overall_score": overall_score,
+                "intent": answer_intent,
+            },
         )
         return ReflectionResult(
             decision=effective_decision,

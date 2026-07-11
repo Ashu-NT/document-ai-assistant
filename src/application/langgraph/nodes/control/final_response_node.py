@@ -74,8 +74,16 @@ class FinalResponseNode:
         )
         final_response_text = safe_response_text
         final_response_warning = None
+        # If the guardrail itself is the reason final_response_text now
+        # equals a safe-failure message (allowed=False -- it replaced the
+        # answer for a grounding/secret/injection reason), that replacement
+        # must never be undone by the recovery heuristic below just because
+        # the text happens to string-match a sentinel message reflection
+        # can also legitimately produce on its own (finding 5.5).
+        response_text_guardrail_replaced = not guardrail_result.allowed
         if (
-            is_usable_reflection_decision(reflection_decision)
+            not response_text_guardrail_replaced
+            and is_usable_reflection_decision(reflection_decision)
             and is_safe_failure_message(final_response_text)
             and isinstance(generated_answer, str)
             and generated_answer.strip()
@@ -97,6 +105,7 @@ class FinalResponseNode:
         )
         return {
             "response_text": final_response_text,
+            "response_text_guardrail_replaced": response_text_guardrail_replaced,
             "guardrail_result": guardrail_result.to_dict(),
             "guardrail_decision": guardrail_result.decision.value,
             "guardrail_trace_id": guardrail_result.trace_id,
