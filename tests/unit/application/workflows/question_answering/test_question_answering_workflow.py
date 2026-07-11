@@ -1548,6 +1548,16 @@ class _StubLLMService:
         return self._response
 
 
+class _CapturingLLMService:
+    def __init__(self, response: str) -> None:
+        self._response = response
+        self.prompts: list[str] = []
+
+    def generate(self, prompt, model=None, *, response_schema=None) -> str:
+        self.prompts.append(prompt)
+        return self._response
+
+
 def test_answer_intent_is_resolved_exactly_once_when_structured_facts_are_joined(
     fake_exploration_service: FakeDocumentExplorationService,
 ) -> None:
@@ -1608,6 +1618,68 @@ def test_answer_intent_is_resolved_exactly_once_when_structured_facts_are_joined
     assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
     assert result.answer_text == "ACME Corp is the manufacturer."
     assert spy_analyzer.call_count == 1
+
+
+def test_workflow_with_real_generation_service_preserves_relationship_graph_in_prompt(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    retrieved_chunk = _make_chunk("chunk_a")
+    fake_retrieval = FakeRetrievalWorkflow(
+        result=_make_retrieval_result_with_chunks([retrieved_chunk])
+    )
+    llm = _CapturingLLMService('{"answer_text":"Replace the hydraulic filter."}')
+    real_gen_service = AnswerGenerationService(
+        llm_service=llm,
+        answer_generation_model="qwen3:8b",
+    )
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=real_gen_service,
+    )
+    request = QuestionAnsweringRequest(
+        question="How do I replace the hydraulic filter?",
+        allow_answer_generation=True,
+        resolved_structured_entities=[
+            {
+                "title": "Replace hydraulic filter",
+                "interval": "Every 500 hours",
+                "source_chunk_id": "chunk_a",
+                "_entity_type": "maintenance_task",
+                "related_entities": [
+                    {
+                        "relationship_type": "task_uses_procedure",
+                        "direction": "outgoing",
+                        "status": "accepted",
+                        "confidence_score": 0.9,
+                        "entity_type": "procedure",
+                        "entity_id": "procedure_001",
+                        "entity": {
+                            "procedure_id": "procedure_001",
+                            "title": "Replace hydraulic filter",
+                            "steps": [
+                                "Depressurize the line.",
+                                "Remove the old filter.",
+                                "Install the new filter.",
+                            ],
+                        },
+                    }
+                ],
+            }
+        ],
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert llm.prompts
+    prompt = llm.prompts[0]
+    assert '"relationship_edges": [' in prompt
+    assert '"relationship_families": [' in prompt
+    assert '"source_families": [' in prompt
+    assert '"section_topology": [' in prompt
+    assert '"relationship_type": "task_uses_procedure"' in prompt
+    assert '"target_entity_type": "procedure"' in prompt
 
 
 def test_no_generation_service_and_disabled_returns_placeholder(

@@ -35,7 +35,14 @@
   - answer-format policy context signals now distinguish richer evidence
     conditions such as table rows, entity graphs, direct maintenance records,
     exact identifier rows, and raw-source-dominant fallback cases
-- Later phases in this report remain planning guidance, not completed work
+- Phase 9 is implemented:
+  - the prompt-context path is now covered by dedicated table/topology/appendix
+    tests plus workflow and answer-generation integration tests that exercise
+    the real prompt builder and confirm the richer payload reaches the LLM path
+- Phase 10 is implemented:
+  - full validation now confirms the upgraded structured-answer-context path is
+    green across the prompt, answer-generation, question-answering, and full
+    `tests/unit` suite coverage used by this repo
 
 The current pipeline does preserve structured evidence in application memory through typed models such as:
 
@@ -1097,84 +1104,46 @@ Target file:
 - answer formatting instructions become more evidence-aware
 - prompt structure and answer formatting policy reinforce each other
 
-## Phase 9. Test strategy
+## Phase 9. Test strategy [Implemented]
 
-### Unit tests to add
+### Unit coverage now in place
 
-#### Prompt projection tests
+- prompt projection tests verify structured entities, nested relationship data,
+  first-class tables, and projected prompt bundles
+- canonicalization tests verify promoted structured evidence is not repeated
+  noisily across payload sections
+- appendix policy tests verify raw-source inclusion is conditional, role-aware,
+  and budget-aware
+- answer-format policy tests verify richer context signals affect prompt
+  instructions deterministically
 
-- structured entities are projected without losing nested fields
-- relationships are preserved as structured graph records
-- maintenance entries remain structured
-- tables are emitted as structured row evidence
+### Integration coverage now in place
 
-#### Deduplication tests
+- `QuestionAnsweringWorkflow` integration tests verify the real answer
+  generation path carries relationship graphs into the prompt
+- `AnswerGenerationService` integration tests verify the real prompt builder
+  emits `tables`, `source_families`, `section_topology`, and a budgeted raw
+  source appendix
+- deterministic renderer tests remain green, so the richer LLM path did not
+  regress the direct-rendering answers
 
-- one fact does not appear in three parallel prompt sections
-- raw source appendix excludes facts already promoted into structured sections
+## Phase 10. Full validation [Implemented]
 
-#### Prompt rendering tests
+### Validation performed
 
-- generic LLM prompt includes structured payload block
-- raw-source appendix is conditional
-- prompt no longer relies on comma-joined entity strings as the only entity format
+- targeted prompt / answer-generation / question-answering suites passed after
+  the Phase 9 additions
+- full `tests/unit` validation passed in the repo runtime used for this work
 
-#### Policy tests
+### Current validation result
 
-- rich structured table evidence changes prompt inclusion strategy
-- sparse evidence still preserves enough raw context
+- `tests/unit/application/prompts/answer_generation`
+- `tests/unit/application/services/answer_generation`
+- `tests/unit/application/workflows/question_answering`
+- full `tests/unit` suite
 
-### Integration tests to add
-
-- `QuestionAnsweringWorkflow` builds richer structured prompt evidence from retrieved chunks
-- deterministic renderers still behave unchanged
-- generic LLM prompt path uses the new projection layer
-
-## Phase 10. Recommended implementation order
-
-### Pass A
-
-- build prompt-facing projection layer
-- do not change answer behavior yet
-
-### Pass B
-
-- switch prompt builder from direct model walking to projected bundle
-
-### Pass C
-
-- add structured serializer for entities, relationships, and tables
-
-### Pass D
-
-- add prompt-time canonicalization and raw-source inclusion policy
-
-### Pass E
-
-- upgrade groups into evidence topology
-
-### Pass F
-
-- expand tests and tune answer format policy
-
-## Recommended first concrete change set
-
-If this were implemented incrementally, the best first slice would be:
-
-1. add `PromptContextProjector`
-2. add prompt bundle models
-3. migrate `AnswerPromptBuilder` to consume that bundle
-4. keep current textual rendering format temporarily
-
-That gives a safe internal seam first.
-
-After that, the second slice should be:
-
-1. structured serializer for entities and relationships
-2. table-first prompt evidence
-3. conditional raw-source appendix
-
-That is the point where the generic LLM path would materially improve.
+All of the above are green with the structured prompt-context upgrades in
+place.
 
 ## Final planning verdict
 

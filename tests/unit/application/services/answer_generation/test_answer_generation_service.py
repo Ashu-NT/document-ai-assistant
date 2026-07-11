@@ -71,6 +71,29 @@ def _make_chunk(
     )
 
 
+def _make_table_chunk(
+    *,
+    chunk_id: str,
+    chunk_type: ChunkType,
+    content: str,
+    section_path: list[str],
+    page_start: int,
+    page_end: int,
+    metadata: dict[str, str] | None = None,
+) -> RetrievedChunk:
+    return RetrievedChunk(
+        chunk_id=chunk_id,
+        document_id="doc_001",
+        content=content,
+        score=0.9,
+        retrieval_source="dense",
+        chunk_type=chunk_type,
+        section_path=section_path,
+        source=SourceLocation(page_start=page_start, page_end=page_end),
+        metadata=metadata or {},
+    )
+
+
 def _make_citation(chunk_id: str, document_id: str = "doc_001") -> Citation:
     return Citation(
         citation_id=f"cit_{chunk_id}",
@@ -364,6 +387,58 @@ def test_generate_builds_structured_context_and_format_policy_before_prompt() ->
     assert built_request.structured_context.key_values
     assert built_request.format_policy is not None
     assert built_request.format_policy.preferred_format == "structured_bullets"
+
+
+def test_generate_real_prompt_builder_emits_topology_tables_and_budgeted_appendix() -> None:
+    llm = FakeLLMService(response='{"answer_text":"Table answer"}')
+    service = AnswerGenerationService(
+        llm_service=llm,
+        answer_generation_model="qwen3:8b",
+    )
+    request = AnswerGenerationRequest(
+        question="Show the specification table",
+        context_chunks=[
+            _make_table_chunk(
+                chunk_id="chunk_table",
+                chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                content="Test pressure and design pressure values.",
+                section_path=["Certificate", "Particulars"],
+                page_start=5,
+                page_end=5,
+                metadata={
+                    "table_rows_json": '[["Parameter","Value"],["Test pressure","700 bar"]]'
+                },
+            ),
+            _make_table_chunk(
+                chunk_id="chunk_supporting",
+                chunk_type=ChunkType.GENERAL,
+                content="The certificate particulars summarize the main ratings.",
+                section_path=["Certificate", "Particulars"],
+                page_start=5,
+                page_end=5,
+            ),
+            _make_table_chunk(
+                chunk_id="chunk_context",
+                chunk_type=ChunkType.OVERVIEW,
+                content="Overview context that should be deprioritized in the appendix.",
+                section_path=["Certificate", "Overview"],
+                page_start=4,
+                page_end=4,
+            ),
+        ],
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+    )
+
+    service.generate(request)
+
+    prompt = llm.calls[0]["prompt"]
+    assert '"tables": [' in prompt
+    assert '"source_families": [' in prompt
+    assert '"section_topology": [' in prompt
+    assert "Raw source appendix:" in prompt
+    assert "SOURCE 1" in prompt
+    assert "SOURCE 2" in prompt
+    assert "SOURCE 3" not in prompt
 
 
 def test_generate_uses_maintenance_summary_path_and_reports_diagnostics() -> None:
