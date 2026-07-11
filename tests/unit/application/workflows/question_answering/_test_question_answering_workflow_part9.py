@@ -1,0 +1,296 @@
+import pytest
+
+from src.application.contracts.guardrails.guardrail_decision import GuardrailDecision
+
+from src.application.contracts.guardrails.guardrail_violation import GuardrailViolation
+
+from src.application.contracts.guardrails.violation_type import ViolationType
+
+from src.application.guardrails.retrieval.query_scope_guardrail import QueryScopeGuardrail
+
+from src.application.services.answer_generation.answer_generation_result import (
+    AnswerSection,
+    ReferenceNote,
+)
+
+from src.application.services.document_exploration.document_exploration_result import (
+    DocumentExplorationResult,
+)
+
+from src.application.services.document_exploration.document_exploration_service import (
+    DocumentNotFoundError,
+)
+
+from src.application.workflows.question_answering.question_answering_request import (
+    QuestionAnsweringRequest,
+)
+
+from src.application.workflows.question_answering.question_answering_route import (
+    QuestionAnsweringRoute,
+)
+
+from src.application.workflows.question_answering.question_answering_workflow import (
+    QuestionAnsweringWorkflow,
+)
+
+from src.application.services.answer_generation.answer_generation_service import (
+    AnswerGenerationService,
+)
+
+from src.application.services.answer_generation.intent.answer_intent import (
+    AnswerIntent,
+)
+
+from src.application.services.answer_generation.intent.answer_intent_analyzer import (
+    AnswerIntentAnalyzer,
+)
+
+from src.application.workflows.retrieval.retrieval_query_chunk_type_preference_mapper import (
+    RetrievalQueryChunkTypePreferenceMapper,
+)
+
+from src.application.workflows.retrieval.retrieval_query_intent import (
+    RetrievalQueryIntent,
+)
+
+from src.application.workflows.retrieval.retrieval_workflow_result import (
+    RetrievalWorkflowResult,
+)
+
+from src.domain.common import ChunkType
+
+from src.domain.common.source_location import SourceLocation
+
+from src.domain.retrieval import RetrievalQuery, RetrievalResult
+
+from src.domain.retrieval.citation import Citation
+
+from src.domain.retrieval.retrieved_chunk import RetrievedChunk
+
+from tests.unit.application.workflows.question_answering.conftest import (
+    FakeAnswerGenerationService,
+    FakeDocumentExplorationService,
+    FakeDocumentLookupService,
+    FakeGuardrail,
+    FakeRetrievalWorkflow,
+    FakeStructuredEvidenceResolver,
+)
+
+def make_workflow(
+    fake_retrieval: FakeRetrievalWorkflow,
+    fake_exploration: FakeDocumentExplorationService,
+    pre_query_guardrails=None,
+    context_guardrails=None,
+    answer_generation_service=None,
+    post_answer_guardrails=None,
+    document_lookup_service=None,
+    structured_evidence_resolver=None,
+) -> QuestionAnsweringWorkflow:
+    return QuestionAnsweringWorkflow(
+        retrieval_workflow=fake_retrieval,
+        exploration_service=fake_exploration,
+        pre_query_guardrails=pre_query_guardrails,
+        context_guardrails=context_guardrails,
+        answer_generation_service=answer_generation_service,
+        post_answer_guardrails=post_answer_guardrails,
+        document_lookup_service=document_lookup_service,
+        structured_evidence_resolver=structured_evidence_resolver,
+    )
+
+def _make_chunk(chunk_id: str = "chunk_001", citation: Citation | None = None) -> RetrievedChunk:
+    return RetrievedChunk(
+        chunk_id=chunk_id,
+        document_id="doc_001",
+        content=f"Technical content for {chunk_id}.",
+        score=0.9,
+        retrieval_source="dense",
+        chunk_type=ChunkType.GENERAL,
+        section_path=["Section"],
+        source=SourceLocation(page_start=1, page_end=1),
+        citation=citation,
+    )
+
+def _make_retrieval_result_with_chunks(
+    chunks: list[RetrievedChunk],
+) -> RetrievalWorkflowResult:
+    query = RetrievalQuery(query_id="q_test", query_text="test")
+    result = RetrievalResult(result_id="r_test", query=query, chunks=chunks)
+    return RetrievalWorkflowResult(
+        retrieval_result=result,
+        enough_evidence=True,
+        min_evidence_chunks=1,
+        context_chunks=chunks,
+    )
+
+class _CountingAnswerIntentAnalyzer(AnswerIntentAnalyzer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.call_count = 0
+
+    def analyze(self, **kwargs):
+        self.call_count += 1
+        return super().analyze(**kwargs)
+
+class _StubLLMService:
+    def __init__(self, response: str) -> None:
+        self._response = response
+
+    def generate(self, prompt, model=None, *, response_schema=None) -> str:
+        return self._response
+
+class _CapturingLLMService:
+    def __init__(self, response: str) -> None:
+        self._response = response
+        self.prompts: list[str] = []
+
+    def generate(self, prompt, model=None, *, response_schema=None) -> str:
+        self.prompts.append(prompt)
+        return self._response
+
+def test_resolved_structured_entities_without_lookup_service_do_not_crash(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    """Regression test for 4.3/9.7: structured_context used to come back
+    None whenever the resolved entity's source chunk couldn't be fetched
+    (no lookup service here, so build_from_structured_entities() has no
+    source_number to key against and produces no AnswerKeyValue rows) --
+    silently discarding the organized context. It must now always be
+    returned once successfully organized; the raw entity still reaches
+    structured_entities via StructuredEvidenceViewBuilder, which needs the
+    entity dict, not a resolved chunk."""
+    retrieved_chunk = _make_chunk("chunk_a")
+    wf_result = _make_retrieval_result_with_chunks([retrieved_chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+    fake_gen = FakeAnswerGenerationService()
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the manufacturer website?",
+        allow_answer_generation=True,
+        resolved_structured_entities=[
+            {
+                "name": "ACME Corp",
+                "website": "https://acme.example",
+                "source_chunk_id": "chunk_manufacturer",
+                "_entity_type": "manufacturer",
+            }
+        ],
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert fake_gen.called_with is not None
+    structured_context = fake_gen.called_with.structured_context
+    assert structured_context is not None
+    assert structured_context.key_values == []
+    assert len(structured_context.structured_entities) == 1
+    entity = structured_context.structured_entities[0]
+    assert entity.entity_type == "manufacturer"
+    assert entity.fields["name"] == "ACME Corp"
+    assert len(fake_gen.called_with.context_chunks) == 1
+
+def test_context_override_falls_back_to_structured_evidence_resolver(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    from src.application.workflows.retrieval.structured import StructuredEvidenceBundle
+
+    override_chunk = _make_chunk("chunk_override")
+    bundle = StructuredEvidenceBundle(
+        structured_entities=[
+            {
+                "name": "ACME Corp",
+                "website": "https://acme.example",
+                "source_chunk_id": "chunk_override",
+                "_entity_type": "manufacturer",
+            }
+        ]
+    )
+    resolver = FakeStructuredEvidenceResolver(bundle)
+    fake_retrieval = FakeRetrievalWorkflow(
+        result=_make_retrieval_result_with_chunks([override_chunk])
+    )
+    fake_gen = FakeAnswerGenerationService()
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+        structured_evidence_resolver=resolver,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the manufacturer website?",
+        allow_answer_generation=True,
+        context_override_chunks=[override_chunk],
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert resolver.calls
+    assert len(result.resolved_structured_entities) == 1
+    assert fake_gen.called_with is not None
+    assert len(fake_gen.called_with.resolved_structured_entities) == 1
+
+def test_answer_intent_is_resolved_exactly_once_when_structured_facts_are_joined(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    """Regression test: AnswerIntentAnalyzer.analyze() used to run twice per
+    QA turn whenever structured facts were resolved -- once in
+    QuestionAnsweringWorkflow._join_structured_facts (to decide what
+    AnswerContextOrganizer extracts into structured_context), and again
+    inside AnswerGenerationService._resolve_request, because the workflow
+    never passed its already-computed decision through. Uses a REAL
+    AnswerGenerationService (not FakeAnswerGenerationService) so the fix in
+    AnswerGenerationService._resolve_intent_decision is actually exercised,
+    sharing one spy AnswerIntentAnalyzer instance between the workflow and
+    the service to count calls across both call sites."""
+    from src.domain.document.entities.chunk import DocumentChunk
+
+    retrieved_chunk = _make_chunk("chunk_a")
+    wf_result = _make_retrieval_result_with_chunks([retrieved_chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+
+    manufacturer_source_chunk = DocumentChunk(
+        chunk_id="chunk_manufacturer",
+        document_id="doc_001",
+        section_id=None,
+        content="ACME Corp, Germany",
+    )
+    lookup_service = FakeDocumentLookupService(
+        chunks_by_id={"chunk_manufacturer": manufacturer_source_chunk}
+    )
+    spy_analyzer = _CountingAnswerIntentAnalyzer()
+    real_gen_service = AnswerGenerationService(
+        llm_service=_StubLLMService(
+            '{"answer_text": "ACME Corp is the manufacturer."}'
+        ),
+        answer_intent_analyzer=spy_analyzer,
+        answer_generation_model="qwen3:8b",
+    )
+    workflow = QuestionAnsweringWorkflow(
+        retrieval_workflow=fake_retrieval,
+        exploration_service=fake_exploration_service,
+        answer_generation_service=real_gen_service,
+        document_lookup_service=lookup_service,
+        answer_intent_analyzer=spy_analyzer,
+    )
+    request = QuestionAnsweringRequest(
+        question="What is the manufacturer?",
+        allow_answer_generation=True,
+        resolved_structured_entities=[
+            {
+                "name": "ACME Corp",
+                "source_chunk_id": "chunk_manufacturer",
+                "_entity_type": "manufacturer",
+            }
+        ],
+    )
+
+    result = workflow.run(request)
+
+    assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
+    assert result.answer_text == "ACME Corp is the manufacturer."
+    assert spy_analyzer.call_count == 1
