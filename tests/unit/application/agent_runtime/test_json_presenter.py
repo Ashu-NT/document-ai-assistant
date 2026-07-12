@@ -67,3 +67,52 @@ def test_json_excludes_raw_prompts_and_chain_of_thought() -> None:
 
     assert "raw_llm_plan" not in payload
     assert "chain-of-thought" not in str(payload)
+
+
+def test_json_presenter_includes_sections_reference_notes_and_limitation_note() -> None:
+    """finding 6.9: JSON export must carry the same structure the console
+    shows -- sections, reference_notes, and limitation_note."""
+    session = SessionManager().create_session(
+        session_id="demo-session",
+        runtime_options=RuntimeOptions(),
+    )
+    result = GraphResult.ok(
+        response_text="Replace the filter every 1000 hours.",
+        route="answer_question",
+        data={
+            "answer": "Replace the filter every 1000 hours.",
+            "sections": [
+                {
+                    "heading": "Interval",
+                    "body": "Every 1000 hours.",
+                    "reference_note_ids": ["r1"],
+                }
+            ],
+            "reference_notes": [
+                {
+                    "note_id": "r1",
+                    "claim_text": "Every 1000 operating hours.",
+                    "source_number": 1,
+                    "chunk_id": "chunk_1",
+                }
+            ],
+            "limitation_note": "Only the primary interval was found.",
+        },
+    )
+
+    payload = JsonPresenter().render(
+        session=session,
+        result=result,
+        react_trace=ReactTrace(route="answer_question"),
+        include_trace=False,
+    )
+
+    assert payload["sections"] == [
+        {
+            "heading": "Interval",
+            "body": "Every 1000 hours.",
+            "reference_note_ids": ["r1"],
+        }
+    ]
+    assert payload["reference_notes"][0]["note_id"] == "r1"
+    assert payload["limitation_note"] == "Only the primary interval was found."

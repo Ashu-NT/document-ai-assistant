@@ -67,7 +67,10 @@ def test_build_visibility_policy_reveals_internal_ids_only_in_debug_mode() -> No
     assert debug_policy.show_internal_ids is True
 
 
-def test_demo_agent_cli_suppresses_post_run_trace_in_normal_show_react_mode() -> None:
+def test_demo_agent_cli_show_react_alone_triggers_post_run_trace() -> None:
+    """finding 6.8: --show-react alone must be sufficient to render the
+    post-run trace -- it previously silently required --debug or
+    --write-trace as well. debug/write_trace no longer gate this at all."""
     mod = _load_script("demo_agent_cli")
 
     class _Presenter:
@@ -106,7 +109,26 @@ def test_demo_agent_cli_suppresses_post_run_trace_in_normal_show_react_mode() ->
         policy=object(),
     )
 
-    assert presenter.show_react is False
+    assert presenter.show_react is True
+
+
+def test_demo_agent_cli_show_react_help_documents_its_effect(capsys) -> None:
+    """finding 6.8: --show-react previously had no help text at all -- its
+    --help output must now explain what it does."""
+    mod = _load_script("demo_agent_cli")
+
+    try:
+        mod.parse_args(["--help"])
+    except SystemExit:
+        pass
+
+    help_output = capsys.readouterr().out
+    show_react_index = help_output.index("--show-react")
+    # The help text for --show-react is the text between its own entry and
+    # the next "--" option in argparse's rendered help block.
+    following_text = help_output[show_react_index : show_react_index + 200]
+    assert "trace" in following_text.lower()
+
 
 
 def test_demo_agent_cli_allows_post_run_trace_in_debug_mode() -> None:

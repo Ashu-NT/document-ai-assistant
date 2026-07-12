@@ -2,6 +2,36 @@ from __future__ import annotations
 
 import sys
 
+# How far back from the cut point to look for a whitespace boundary before
+# giving up and falling back to a raw slice (finding 6.10) -- bounded so a
+# single long unbroken token (e.g. a URL or identifier) can't force an
+# unbounded backward scan.
+_WORD_BOUNDARY_LOOKBACK_CHARS = 40
+_WHITESPACE_CHARS = (" ", "\t", "\n", "\r")
+
+
+def truncate_at_word_boundary(text: str, limit: int) -> str:
+    """Slices `text` to at most `limit` characters, preferring to stop at
+    the last whitespace boundary within a short lookback window so a
+    truncation doesn't cut a word in half. Falls back to a raw character
+    slice if no whitespace boundary exists within that window (e.g. one
+    long unbroken token) rather than scanning the whole string."""
+    if limit <= 0:
+        return ""
+    if limit >= len(text):
+        return text
+    truncated = text[:limit]
+    if text[limit] in _WHITESPACE_CHARS:
+        # The cut already lands exactly at a word boundary.
+        return truncated
+    lookback_start = max(0, limit - _WORD_BOUNDARY_LOOKBACK_CHARS)
+    boundary = max(
+        truncated.rfind(char, lookback_start) for char in _WHITESPACE_CHARS
+    )
+    if boundary == -1:
+        return truncated
+    return truncated[:boundary]
+
 
 def preview_text(
     value: object,
@@ -20,7 +50,7 @@ def preview_text(
         return empty_fallback
     if len(text) <= limit:
         return text
-    truncated = text[: max(0, limit - 3)]
+    truncated = truncate_at_word_boundary(text, max(0, limit - 3))
     if rstrip:
         truncated = truncated.rstrip()
     return f"{truncated}..."

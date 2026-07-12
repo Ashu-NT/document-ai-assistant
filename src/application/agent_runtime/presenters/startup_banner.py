@@ -65,7 +65,9 @@ class StartupBanner:
         lines.extend(
             [
                 "",
-                "==========================================================",
+                # finding 6.12: match the top rule's width exactly (86 chars)
+                # instead of the previous mismatched 58-char rule.
+                "======================================================================================",
             ]
         )
         return "\n".join(lines)

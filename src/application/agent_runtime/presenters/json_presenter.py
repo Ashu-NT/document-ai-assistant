@@ -21,6 +21,9 @@ class JsonPresenter:
             "selected_document": session.selected_document.display_name,
             "context_chunks": data.get("context_chunks", []),
             "citations": data.get("citations", []),
+            "sections": data.get("sections", []),
+            "reference_notes": data.get("reference_notes", []),
+            "limitation_note": data.get("limitation_note"),
             "diagnostics": result.diagnostics or {},
         }
         if include_trace:

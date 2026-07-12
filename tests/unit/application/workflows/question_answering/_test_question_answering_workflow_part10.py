@@ -135,7 +135,7 @@ class _StubLLMService:
     def __init__(self, response: str) -> None:
         self._response = response
 
-    def generate(self, prompt, model=None, *, response_schema=None) -> str:
+    def generate(self, prompt, model=None, **kwargs) -> str:
         return self._response
 
 class _CapturingLLMService:
@@ -143,7 +143,7 @@ class _CapturingLLMService:
         self._response = response
         self.prompts: list[str] = []
 
-    def generate(self, prompt, model=None, *, response_schema=None) -> str:
+    def generate(self, prompt, model=None, **kwargs) -> str:
         self.prompts.append(prompt)
         return self._response
 

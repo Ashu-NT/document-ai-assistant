@@ -181,6 +181,12 @@ def test_presenter_shows_generated_answer_for_accept_when_response_text_is_safe_
     assert "Reflection : ACCEPT" in output
 
 def test_presenter_renders_sections_and_reference_notes() -> None:
+    # finding 6.2: a reference note linked to a section (via
+    # reference_note_ids) now renders grouped, indented, underneath that
+    # section -- and is therefore no longer repeated in the separate flat
+    # "Reference Notes" block, since that block only shows notes NOT linked
+    # to any section (this test's single note IS linked, so that block must
+    # not appear at all).
     presenter = ConsolePresenter()
     session = _build_session()
     result = GraphResult.ok(
@@ -217,16 +223,22 @@ def test_presenter_renders_sections_and_reference_notes() -> None:
 
     assert "Sections" in output
     assert "Maintenance interval" in output
+    assert "-" * len("Maintenance interval") in output
     assert "Replace every 1000 hours." in output
-    assert "Reference Notes" in output
     assert "[r1] Replace every 1000 operating hours. -> Source 1" in output
     assert "(unverified)" not in output
+    assert "[UNVERIFIED]" not in output
+    assert "Reference Notes" not in output
     final_answer_index = output.index("Final Answer")
     sections_index = output.index("Sections")
-    reference_notes_index = output.index("Reference Notes")
-    assert final_answer_index < sections_index < reference_notes_index
+    assert final_answer_index < sections_index
 
 def test_presenter_flags_unresolved_reference_note() -> None:
+    # finding 6.4: the unverified marker is now a leading, all-caps
+    # [UNVERIFIED] tag rather than a low-visibility trailing "(unverified)"
+    # suffix. This note has no section linking it, so it's "orphaned" and
+    # still renders in the flat Reference Notes block (finding 6.2's
+    # decision: that block shows notes not claimed by any section).
     presenter = ConsolePresenter()
     session = _build_session()
     result = GraphResult.ok(
@@ -254,10 +266,21 @@ def test_presenter_flags_unresolved_reference_note() -> None:
         show_react=False,
     )
 
-    assert "[r1] A claim that cites a source that doesn't exist. -> Source 99 (unverified)" in output
+    assert "Reference Notes" in output
+    assert (
+        "[UNVERIFIED] [r1] A claim that cites a source that doesn't exist. -> Source 99"
+        in output
+    )
+    assert "(unverified)" not in output
     assert "chunk_001" not in output
+    unverified_index = output.index("[UNVERIFIED]")
+    note_id_index = output.index("[r1]")
+    assert unverified_index < note_id_index
 
-def test_presenter_renders_limitation_note_in_footer() -> None:
+def test_presenter_renders_limitation_note_as_own_block() -> None:
+    # finding 6.6: limitation_note gets its own labeled block right after
+    # Final Answer instead of one more flat `label: value` row in the
+    # footer alongside Elapsed -- it must no longer appear there.
     presenter = ConsolePresenter()
     session = _build_session()
     result = GraphResult.ok(
@@ -279,4 +302,9 @@ def test_presenter_renders_limitation_note_in_footer() -> None:
         show_react=False,
     )
 
-    assert "Limitation : Only the primary interval was found." in output
+    assert "Limitation" in output
+    assert "Only the primary interval was found." in output
+    assert "Limitation : Only the primary interval was found." not in output
+    final_answer_index = output.index("Final Answer")
+    limitation_index = output.index("Limitation")
+    assert final_answer_index < limitation_index

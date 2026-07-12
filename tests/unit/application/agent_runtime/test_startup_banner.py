@@ -44,3 +44,19 @@ def test_banner_includes_selected_document() -> None:
     )
 
     assert "Selected Doc    : FWC12 Manual" in banner
+
+
+def test_banner_top_and_bottom_rules_match_width() -> None:
+    """finding 6.12: the banner's top and bottom rule widths must match."""
+    banner = StartupBanner().render(
+        runtime_status=DemoRuntimeStatus(),
+        selected_document_name=None,
+        quiet=False,
+        no_examples=False,
+    )
+
+    rule_lines = [
+        line for line in banner.splitlines() if line and set(line) == {"="}
+    ]
+    assert len(rule_lines) >= 2
+    assert len(rule_lines[0]) == len(rule_lines[-1])

@@ -62,3 +62,53 @@ def test_markdown_excludes_raw_prompts() -> None:
     )
 
     assert "secret" not in markdown
+
+
+def test_markdown_includes_sections_reference_notes_and_limitation_note() -> None:
+    """finding 6.9: Markdown export must carry the same structure the
+    console shows -- sections, reference_notes, and limitation_note."""
+    session = SessionManager().create_session(
+        session_id="demo-session",
+        runtime_options=RuntimeOptions(),
+    )
+    result = GraphResult.ok(
+        response_text="Replace the filter every 1000 hours.",
+        route="answer_question",
+        data={
+            "answer": "Replace the filter every 1000 hours.",
+            "sections": [
+                {
+                    "heading": "Interval",
+                    "body": "Every 1000 hours.",
+                    "reference_note_ids": ["r1"],
+                }
+            ],
+            "reference_notes": [
+                {
+                    "note_id": "r1",
+                    "claim_text": "Every 1000 operating hours.",
+                    "source_number": 1,
+                    "chunk_id": None,
+                }
+            ],
+            "limitation_note": "Only the primary interval was found.",
+        },
+        messages=[
+            {"role": "user", "content": "When is the filter replaced?"},
+            {"role": "assistant", "content": "Replace the filter every 1000 hours."},
+        ],
+    )
+
+    markdown = MarkdownPresenter().render(
+        session=session,
+        result=result,
+        react_trace=ReactTrace(route="answer_question"),
+    )
+
+    assert "## Limitation" in markdown
+    assert "Only the primary interval was found." in markdown
+    assert "## Sections" in markdown
+    assert "### Interval" in markdown
+    assert "Every 1000 hours." in markdown
+    assert "## Reference Notes" in markdown
+    assert "[UNVERIFIED] [r1] Every 1000 operating hours. -> Source 1" in markdown

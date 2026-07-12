@@ -46,7 +46,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--no-examples", action="store_true")
     parser.add_argument("--help-examples", action="store_true")
-    parser.add_argument("--show-react", action="store_true")
+    parser.add_argument(
+        "--show-react",
+        action="store_true",
+        help=(
+            "Print the agent trace (and, after the run, reflection/guardrail "
+            "details) for this turn."
+        ),
+    )
     parser.add_argument("--deep-research", action="store_true")
     parser.add_argument("--reflection", action="store_true")
     parser.add_argument("--llm-planning", action="store_true")
@@ -266,10 +273,12 @@ def _print_handled_result(
     show_react: bool,
     policy,
 ) -> None:
-    render_post_run_trace = show_react and bool(
-        getattr(getattr(session, "runtime_options", None), "debug", False)
-        or getattr(getattr(session, "runtime_options", None), "write_trace", False)
-    )
+    # finding 6.8: --show-react alone must be sufficient to render the
+    # post-run trace -- it previously silently required --debug or
+    # --write-trace as well, with no indication of that dependency anywhere
+    # (including --help). debug/write_trace no longer gate this; they are
+    # unrelated to whether the trace is now shown.
+    render_post_run_trace = show_react
     if handled.command_result is not None:
         print(
             presenter.render_command_result(

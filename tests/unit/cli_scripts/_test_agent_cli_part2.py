@@ -264,3 +264,99 @@ def test_agent_cli_print_graph_result_shows_debug_metadata_only_when_requested(c
     output = capsys.readouterr().out
     assert "Route: answer_question" in output
     assert "Success: True" in output
+
+
+def test_agent_cli_print_graph_result_renders_sections_notes_citations_and_guardrails(
+    capsys,
+) -> None:
+    """finding 6.7: agent_cli.py must reach parity with demo_agent_cli.py
+    for sections/reference-notes/limitation-note/checkable citations and
+    guardrail warnings -- by reusing graph_result_renderer.py's functions."""
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="Replace the filter every 1000 hours.",
+        route="answer_question",
+        data={
+            "answer": "Replace the filter every 1000 hours.",
+            "limitation_note": "Only the primary interval was found.",
+            "sections": [
+                {
+                    "heading": "Interval",
+                    "body": "Every 1000 hours.",
+                    "reference_note_ids": ["r1"],
+                }
+            ],
+            "reference_notes": [
+                {
+                    "note_id": "r1",
+                    "claim_text": "Every 1000 operating hours.",
+                    "source_number": 1,
+                    "chunk_id": "chunk_1",
+                },
+                {
+                    "note_id": "r2",
+                    "claim_text": "An unrelated orphaned claim.",
+                    "source_number": 2,
+                    "chunk_id": None,
+                },
+            ],
+            "citations": [
+                {
+                    "document_name": "FWC12 Manual",
+                    "section_title": "Maintenance Schedule",
+                    "source": {"page_start": 58, "page_end": 59},
+                }
+            ],
+            "post_answer_guardrail_warnings": [
+                {
+                    "decision": "WARN",
+                    "reason": "Citation could not be resolved.",
+                    "violations": ["unresolved_citation:source_9"],
+                }
+            ],
+        },
+    )
+
+    mod.print_graph_result(
+        result,
+        show_context=False,
+        show_trace=False,
+    )
+
+    output = capsys.readouterr().out
+    assert "Limitation" in output
+    assert "Only the primary interval was found." in output
+    assert "Sections" in output
+    assert "Interval" in output
+    assert "[r1] Every 1000 operating hours. -> Source 1" in output
+    assert "Reference Notes" in output
+    assert "[UNVERIFIED] [r2] An unrelated orphaned claim. -> Source 2" in output
+    assert "Citations" in output
+    assert "- FWC12 Manual, pp.58-59 (Maintenance Schedule)" in output
+    assert "Guardrail Notes" in output
+    assert "[WARN] Citation could not be resolved." in output
+    assert "unresolved_citation:source_9" in output
+
+
+def test_agent_cli_print_graph_result_stays_quiet_when_new_fields_absent(capsys) -> None:
+    """Backward-compatibility: an answer with none of the new fields must
+    render exactly as before, with no new blocks appearing."""
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="Answer text.",
+        route="answer_question",
+        data={"answer": "Answer text."},
+    )
+
+    mod.print_graph_result(
+        result,
+        show_context=False,
+        show_trace=False,
+    )
+
+    output = capsys.readouterr().out
+    assert "Sections" not in output
+    assert "Reference Notes" not in output
+    assert "Limitation" not in output
+    assert "Citations" not in output
+    assert "Guardrail Notes" not in output

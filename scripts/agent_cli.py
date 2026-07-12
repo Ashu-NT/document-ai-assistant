@@ -29,6 +29,13 @@ for _import_root in (PROJECT_ROOT, SRC_ROOT):
     if _import_root_str not in sys.path:
         sys.path.insert(0, _import_root_str)
 
+from src.application.agent_runtime.presenters.console.graph_result_renderer import (
+    render_citations_block,
+    render_guardrail_warnings_block,
+    render_limitation_block,
+    render_reference_notes_block,
+    render_sections_block,
+)
 from src.shared.text.text_preview import console_safe_text, preview_text
 
 
@@ -586,6 +593,22 @@ def print_graph_result(
         if show_debug:
             print()
         print(console_safe_text(answer_text))
+    # finding 6.7: bring agent_cli.py to parity with demo_agent_cli.py for
+    # sections/reference-notes/limitation-note/checkable citations/guardrail
+    # warnings -- reusing the same rendering functions graph_result_renderer.py
+    # exposes rather than re-implementing this a second time. Each block is
+    # purely additive: it renders nothing when the corresponding data is
+    # absent, so a plain answer-only turn prints exactly as it did before.
+    for block in (
+        render_limitation_block(result),
+        render_sections_block(result),
+        render_reference_notes_block(result),
+        render_citations_block(result),
+        render_guardrail_warnings_block(result),
+    ):
+        if block:
+            print()
+            print(console_safe_text(block))
     answer_intent = (result.data or {}).get("answer_intent")
     if answer_intent and show_debug:
         print(f"\nAnswer intent: {answer_intent}")
