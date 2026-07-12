@@ -90,10 +90,14 @@ class IdentifierAnswerRenderer:
             return None
 
         requested_types = self._requested_identifier_types(question)
-        grouped_values: dict[IdentifierType, list[str]] = defaultdict(list)
+        grouped_values: dict[IdentifierType, list[tuple[str, str | None]]] = defaultdict(list)
         seen: set[tuple[IdentifierType, str]] = set()
 
         if structured_context is not None:
+            page_by_source_number = {
+                source.source_number: self._format_page_range(source.page_start, source.page_end)
+                for source in structured_context.sources
+            }
             for key_value in structured_context.key_values:
                 identifier_type = self._identifier_type_from_key_value(key_value)
                 if identifier_type is None:
@@ -107,7 +111,8 @@ class IdentifierAnswerRenderer:
                 if fingerprint in seen:
                     continue
                 seen.add(fingerprint)
-                grouped_values[identifier_type].append(value)
+                page_label = page_by_source_number.get(key_value.source_number)
+                grouped_values[identifier_type].append((value, page_label))
 
         for identifier in resolved_identifiers:
             identifier_type = self._normalized_identifier_type(identifier.identifier_type)
@@ -122,12 +127,14 @@ class IdentifierAnswerRenderer:
             if fingerprint in seen:
                 continue
             seen.add(fingerprint)
-            grouped_values[identifier_type].append(value)
+            page_label = self._format_page_range(identifier.page_start, identifier.page_end)
+            grouped_values[identifier_type].append((value, page_label))
 
         if not grouped_values:
             return None
 
-        lines = ["Requested identifiers", ""]
+        total_count = sum(len(values) for values in grouped_values.values())
+        lines = [f"Requested identifiers ({total_count} found)", ""]
         ordered_types = [
             identifier_type
             for identifier_type in _TYPE_ORDER
@@ -136,11 +143,20 @@ class IdentifierAnswerRenderer:
         for index, identifier_type in enumerate(ordered_types):
             label = _IDENTIFIER_TYPE_LABELS[identifier_type]
             lines.append(f"{label}:")
-            for value in grouped_values[identifier_type]:
-                lines.append(f"- {value}")
+            for value, page_label in grouped_values[identifier_type]:
+                suffix = f" ({page_label})" if page_label else ""
+                lines.append(f"- {value}{suffix}")
             if index < len(ordered_types) - 1:
                 lines.append("")
         return "\n".join(lines).strip()
+
+    @staticmethod
+    def _format_page_range(page_start: int | None, page_end: int | None) -> str | None:
+        if page_start is None:
+            return None
+        if page_end is None or page_end == page_start:
+            return f"p.{page_start}"
+        return f"pp.{page_start}-{page_end}"
 
     @staticmethod
     def _clean_value(value: str | None) -> str | None:

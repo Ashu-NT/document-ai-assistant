@@ -8,6 +8,7 @@ from src.application.services.answer_generation.intent.answer_intent import (
 
 from src.application.workflows.question_answering.answer_context import (
     AnswerKeyValue,
+    AnswerSource,
     StructuredAnswerContext,
 )
 
@@ -21,12 +22,16 @@ def _make_identifier(
     raw_value: str = "HP-001",
     identifier_type: IdentifierType = IdentifierType.PART_NUMBER,
     document_id: str = "doc_1",
+    page_start: int | None = None,
+    page_end: int | None = None,
 ) -> Identifier:
     return Identifier(
         identifier_id=identifier_id,
         document_id=document_id,
         raw_value=raw_value,
         identifier_type=identifier_type,
+        page_start=page_start,
+        page_end=page_end,
     )
 
 def _make_key_value(
@@ -141,3 +146,95 @@ def test_render_skips_blank_identifier_value() -> None:
     )
 
     assert result is None
+
+def test_render_header_includes_total_found_count() -> None:
+    renderer = IdentifierAnswerRenderer()
+
+    result = renderer.render(
+        question="List the part number and serial number",
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        structured_context=None,
+        resolved_identifiers=[
+            _make_identifier(
+                identifier_id="id_1",
+                raw_value="HP-001",
+                identifier_type=IdentifierType.PART_NUMBER,
+            ),
+            _make_identifier(
+                identifier_id="id_2",
+                raw_value="SN-9999",
+                identifier_type=IdentifierType.SERIAL_NUMBER,
+            ),
+        ],
+    )
+
+    assert result is not None
+    assert result.startswith("Requested identifiers (2 found)")
+
+def test_render_appends_page_reference_from_resolved_identifier() -> None:
+    renderer = IdentifierAnswerRenderer()
+
+    result = renderer.render(
+        question="What is the part number?",
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        structured_context=None,
+        resolved_identifiers=[
+            _make_identifier(raw_value="HP-001", page_start=12, page_end=12)
+        ],
+    )
+
+    assert result is not None
+    assert "- HP-001 (p.12)" in result
+
+def test_render_appends_page_range_reference_spanning_multiple_pages() -> None:
+    renderer = IdentifierAnswerRenderer()
+
+    result = renderer.render(
+        question="What is the part number?",
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        structured_context=None,
+        resolved_identifiers=[
+            _make_identifier(raw_value="HP-001", page_start=12, page_end=13)
+        ],
+    )
+
+    assert result is not None
+    assert "- HP-001 (pp.12-13)" in result
+
+def test_render_omits_page_reference_when_unavailable() -> None:
+    renderer = IdentifierAnswerRenderer()
+
+    result = renderer.render(
+        question="What is the part number?",
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        structured_context=None,
+        resolved_identifiers=[_make_identifier(raw_value="HP-001")],
+    )
+
+    assert result is not None
+    assert "- HP-001" in result
+    assert "(p." not in result
+
+def test_render_appends_page_reference_from_structured_context_source() -> None:
+    renderer = IdentifierAnswerRenderer()
+
+    result = renderer.render(
+        question="What is the part number?",
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        structured_context=StructuredAnswerContext(
+            answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+            key_values=[_make_key_value(key="Part Number", value="HP-002", source_number=3)],
+            sources=[
+                AnswerSource(
+                    source_number=3,
+                    chunk_id="chunk_3",
+                    page_start=20,
+                    page_end=21,
+                )
+            ],
+        ),
+        resolved_identifiers=[],
+    )
+
+    assert result is not None
+    assert "- HP-002 (pp.20-21)" in result
