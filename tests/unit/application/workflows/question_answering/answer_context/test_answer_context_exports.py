@@ -9,6 +9,8 @@ from src.application.workflows.question_answering.answer_context import (
     AnswerSource,
     AnswerSourceGroup,
     AnswerStructuredEntity,
+    AnswerTable,
+    AnswerTableRow,
     MaintenanceEntryMerger,
     StructuredAnswerContext,
     StructuredEvidenceViewBuilder,
@@ -48,6 +50,10 @@ from src.application.workflows.question_answering.answer_context.models import (
 from src.application.workflows.question_answering.answer_context.models import (
     StructuredAnswerContext as ModelStructuredAnswerContext,
 )
+from src.application.workflows.question_answering.answer_context.tables import (
+    AnswerTable as TableAnswerTable,
+    AnswerTableRow as TableAnswerTableRow,
+)
 from src.application.workflows.question_answering.answer_context.structured_evidence_view_builder import (
     StructuredEvidenceViewBuilder as StructuredEvidenceViewBuilderImpl,
 )
@@ -68,6 +74,8 @@ def test_package_root_re_exports_answer_context_types_stably() -> None:
     assert AnswerSource is ModelAnswerSource
     assert AnswerSourceGroup is ModelAnswerSourceGroup
     assert AnswerStructuredEntity is ModelAnswerStructuredEntity
+    assert AnswerTable is TableAnswerTable
+    assert AnswerTableRow is TableAnswerTableRow
     assert StructuredAnswerContext is ModelStructuredAnswerContext
 
 

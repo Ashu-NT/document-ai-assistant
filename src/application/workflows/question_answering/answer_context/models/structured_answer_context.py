@@ -22,12 +22,16 @@ from src.application.workflows.question_answering.answer_context.models.answer_s
 from src.application.workflows.question_answering.answer_context.models.answer_structured_entity import (
     AnswerStructuredEntity,
 )
+from src.application.workflows.question_answering.answer_context.tables.answer_table import (
+    AnswerTable,
+)
 
 
 @dataclass(slots=True)
 class StructuredAnswerContext:
     answer_intent: AnswerIntent
     sources: list[AnswerSource] = field(default_factory=list)
+    tables: list[AnswerTable] = field(default_factory=list)
     source_groups: list[AnswerSourceGroup] = field(default_factory=list)
     section_groups: list[AnswerSectionGroup] = field(default_factory=list)
     key_values: list[AnswerKeyValue] = field(default_factory=list)

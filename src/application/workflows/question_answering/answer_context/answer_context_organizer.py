@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import inspect
 from typing import Sequence
 
 from src.application.services.answer_generation.intent.answer_intent import (
@@ -24,6 +25,9 @@ from src.application.workflows.question_answering.answer_context.source_group_bu
 from src.application.workflows.question_answering.answer_context.structured_source_builder import (
     StructuredSourceBuilder,
 )
+from src.application.workflows.question_answering.answer_context.tables.answer_table_projector import (
+    AnswerTableProjector,
+)
 from src.application.workflows.question_answering.answer_context.models import (
     StructuredAnswerContext,
 )
@@ -40,6 +44,7 @@ class AnswerContextOrganizer:
         source_group_builder: SourceGroupBuilder | None = None,
         section_group_builder: SectionGroupBuilder | None = None,
         structured_source_builder: StructuredSourceBuilder | None = None,
+        answer_table_projector: AnswerTableProjector | None = None,
     ) -> None:
         self.key_value_extractor = key_value_extractor or KeyValueExtractor()
         self.maintenance_task_extractor = (
@@ -53,6 +58,7 @@ class AnswerContextOrganizer:
         self.structured_source_builder = (
             structured_source_builder or StructuredSourceBuilder()
         )
+        self.answer_table_projector = answer_table_projector or AnswerTableProjector()
 
     def organize(
         self,
@@ -61,15 +67,24 @@ class AnswerContextOrganizer:
         chunks: Sequence[RetrievedChunk],
     ) -> StructuredAnswerContext:
         sources = self.structured_source_builder.build_sources(chunks)
+        tables = self.answer_table_projector.build(sources)
         source_groups = self.source_group_builder.build(sources)
         section_groups = self.section_group_builder.build(sources)
         key_values = self.key_value_extractor.extract(
             sources,
-            answer_intent=answer_intent,
+            **self._extractor_kwargs(
+                self.key_value_extractor.extract,
+                answer_intent=answer_intent,
+                tables=tables,
+            ),
         )
         maintenance_entries = self.maintenance_task_extractor.extract_maintenance_entries(
             sources,
-            answer_intent=answer_intent,
+            **self._extractor_kwargs(
+                self.maintenance_task_extractor.extract_maintenance_entries,
+                answer_intent=answer_intent,
+                tables=tables,
+            ),
         )
         extracted_maintenance_entry_count = len(maintenance_entries)
         maintenance_entries = self.maintenance_entry_merger.merge(maintenance_entries)
@@ -83,6 +98,7 @@ class AnswerContextOrganizer:
                 Counter(source.chunk_type or "unknown" for source in sources)
             ),
             "section_group_count": len(section_groups),
+            "table_count": len(tables),
             "document_ids": sorted(
                 {
                     source.document_id
@@ -102,6 +118,7 @@ class AnswerContextOrganizer:
         return StructuredAnswerContext(
             answer_intent=answer_intent,
             sources=sources,
+            tables=tables,
             source_groups=source_groups,
             section_groups=section_groups,
             key_values=key_values,
@@ -109,3 +126,10 @@ class AnswerContextOrganizer:
             source_count=len(sources),
             diagnostics=diagnostics,
         )
+
+    @staticmethod
+    def _extractor_kwargs(callable_obj, **kwargs):
+        supported = inspect.signature(callable_obj).parameters
+        return {
+            key: value for key, value in kwargs.items() if key in supported
+        }

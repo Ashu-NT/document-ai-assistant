@@ -9,6 +9,10 @@ from src.application.workflows.question_answering.answer_context.models import (
     AnswerStructuredEntity,
     StructuredAnswerContext,
 )
+from src.application.workflows.question_answering.answer_context.tables import (
+    AnswerTable,
+    AnswerTableRow,
+)
 
 __all__ = [
     "AnswerContextOrganizer",
@@ -20,6 +24,8 @@ __all__ = [
     "AnswerSource",
     "AnswerSourceGroup",
     "AnswerStructuredEntity",
+    "AnswerTable",
+    "AnswerTableRow",
     "MaintenanceEntryMerger",
     "StructuredAnswerContext",
     "StructuredEvidenceViewBuilder",

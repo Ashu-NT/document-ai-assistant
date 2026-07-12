@@ -10,3 +10,4 @@ class AnswerKeyValue:
     unit: str | None
     source_number: int
     confidence: float | None = None
+    field_kind: str | None = None

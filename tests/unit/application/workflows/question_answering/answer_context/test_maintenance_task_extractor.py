@@ -77,3 +77,22 @@ def test_extract_maintenance_entries_ignores_table_rows_when_absent() -> None:
     )
 
     assert entries == []
+
+
+def test_extract_maintenance_entries_from_schedule_matrix() -> None:
+    extractor = MaintenanceTaskExtractor()
+    source = _make_source(
+        table_rows=[
+            ["Task", "D", "W", "M", "Q", "S", "A"],
+            ["Inspect basket", "", "", "x", "", "x", "x"],
+        ]
+    )
+
+    entries = extractor.extract_maintenance_entries(
+        [source],
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+    )
+
+    assert len(entries) == 1
+    assert entries[0].task == "Inspect basket"
+    assert entries[0].interval == "Monthly; Semi-Annual; Annual"

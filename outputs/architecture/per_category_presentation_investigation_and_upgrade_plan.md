@@ -2,14 +2,15 @@
 
 ## Status
 
-- **Investigation and plan. One small, real enhancement has since been implemented; the phased plan below (Phases 0-8) remains not yet implemented.** This document reports findings from a three-angle read-only audit of whether the 10 `AnswerIntent` categories (maintenance, identifier, specification, procedure, safety, troubleshooting, certification, table, document-summary, general) get category-appropriate treatment anywhere in the pipeline, and proposes a phased plan for the team to review before implementing the rest.
+- **Investigation plus implementation follow-through.** This document began as a read-only audit and upgrade plan. It is now partly historical: the live codebase has implemented the core presentation hardening from Phases 0-7, and the findings below should be read as the pre-implementation baseline rather than the current live-state verdict.
 - Trigger: the team asked whether maintenance/identifier/specification/etc. answers have individual presenters and prompts, whether the current treatment is enterprise-standard, and whether it matches how a maintenance technician would actually want to see each type of answer.
 - Method: three parallel, independent code audits (prompt/format-policy treatment per intent, deterministic-renderer coverage per intent, CLI rendering adaptation per intent), each reading the current code fresh and reporting with file:line evidence, synthesized here into one picture.
-- **Implemented since the investigation**: `IdentifierAnswerRenderer` (`src/application/services/answer_generation/formatting/identifier_answer_renderer.py`) now appends a page reference (`p.12`/`pp.12-13`) to each identifier value when available, and its header now includes a total-found count (`"Requested identifiers (4 found)"`). Verified: 24/24 tests pass (19 pre-existing unchanged + 5 new). This was a real, scoped code change — not investigation-only — and is the first concrete step toward this document's Section 5 provenance/trust bar. It does **not** close the gaps below; see Section 8 for exactly what's left and how to close it.
+- **Implemented since the investigation**: the answer surface now includes deterministic category renderers for maintenance schedules, procedure steps, troubleshooting, and structured fact sheets; `render_provenance` is threaded into `GraphResult`; safety answers have explicit visual emphasis; console/markdown/JSON share a final-answer resolver; and spare-parts answers now render as aligned ASCII tables. The detailed live-state summary is in [per_category_presentation_status_report.md](/abs/path/C:/Users/ashuf/Desktop/Projects/document-ai-assistant/outputs/architecture/per_category_presentation_status_report.md).
+- **Validation status**: the implementation reflected here was validated with focused answer-generation / agent-runtime suites and a passing full pytest run in the `ai-agent-gpu` environment. Treat this document as historical design rationale plus implementation traceability, not as an open work queue for Phases 0-7.
 
 ## 1. Executive Summary
 
-**No individual presenters exist, and there is effectively nothing left that adapts to category.** Every one of the 10 categories funnels through one generic pipeline at all three layers investigated:
+**Historical finding at investigation time:** no individual presenters existed, and there was effectively nothing left that adapted to category. Every one of the 10 categories funneled through one generic pipeline at all three layers investigated:
 
 1. **Prompt construction** — one code path (`AnswerPromptBuilder.build()`) for all 10 categories. The only variance is which static instruction strings a per-intent catalog hands it. None of it is enforced — it's all "please format it this way" text the LLM is free to ignore.
 2. **Deterministic (non-LLM) rendering** — only 2 of 10 categories ever get a real, code-driven renderer (`IDENTIFIER_LOOKUP` fully, `TABLE_SUMMARY` conditionally, only for spare-parts questions). The other 8 — including `MAINTENANCE_SUMMARY`, despite well-typed evidence already existing for it — are always free-form LLM prose, steered only by soft prompt instructions with nothing guaranteeing the model actually followed them.
@@ -17,7 +18,7 @@
 
 **A materially worse regression was found**: a real, dedicated `MaintenancePromptContextFormatter` used to exist and did genuine structural formatting (deduped page ranges, literal section headers, source lists) for maintenance answers specifically. It was deleted the day before this investigation (commit `85460a1`, "completed phase 2", 2026-07-11 21:46 — confirmed via `git show --stat` to predate this session's own work entirely, not something introduced by this session) and replaced with generic JSON serialization for the LLM to re-narrate from scratch. The one category that used to have real prompt-side structuring no longer does.
 
-**Is this enterprise-standard / technician-appropriate? No.** The architecture has the right building blocks already (typed `AnswerMaintenanceEntry`/`AnswerStructuredEntity` objects, a working `IdentifierAnswerRenderer` as a proven template, `answer_intent` already flowing all the way to `GraphResult.data`) — they are simply never used past the prompt-instruction stage for 8 of the 10 categories, and the CLI ignores category entirely. Most consequentially: safety-warning content gets **the same visual weight as a document summary**, which is not just a UX gap but a real safety-communication risk for the stated use case (maintenance technicians working from these manuals).
+**Historical verdict at investigation time:** not enterprise-standard / technician-appropriate. This specific verdict is now superseded by the implemented changes captured in the status report linked above.
 
 ## 2. Findings — Prompt/Format-Policy Layer
 
@@ -69,7 +70,21 @@ For a technician working from maintenance manuals, the expected bar per category
 - **Identifiers / spare parts** — already reasonably good; the existing `IdentifierAnswerRenderer` is the right template to extend to other categories.
 - **Provenance** — a technician should be able to tell at a glance whether an answer came from deterministic, parsed structured data (higher trust) or an LLM's narrative synthesis (should be read more critically), especially given this session's separate investigation into overall answer-quality gaps.
 
-## 6. Phased Upgrade Plan (for team review — nothing below is implemented)
+## 6. Phased Upgrade Plan and Implementation Status
+
+### Implementation Status Snapshot
+
+- **Phase 0**: implemented
+- **Phase 1**: implemented
+- **Phase 2**: implemented
+- **Phase 3**: implemented
+- **Phase 4**: implemented
+- **Phase 5**: implemented
+- **Phase 6**: implemented
+- **Phase 7**: implemented
+- **Phase 8**: not implemented in this pass
+
+The phase descriptions below remain useful as design rationale, but they are no longer a pure future plan. For current behavior, code touch points, and validation outcomes, prefer the linked status report.
 
 Ordering rationale: safety-visual treatment first (it's the one item with a real safety-communication dimension, not just UX polish, and is the cheapest fix — pure CLI-side, no new extraction logic needed); then the infrastructure prerequisites every other phase depends on (the provenance field, and — per the team's specific ask — a standard, shared table-grid renderer so every subsequent category-specific renderer draws from one consistent grid implementation instead of each inventing its own text format); then new deterministic renderers in order of how much reusable structured data already exists for them (maintenance and troubleshooting both have full-stack domain entities from earlier work — verify their current shape before building against them, since this plan is written from investigation findings and prior-session memory, not a fresh schema read); then CLI category-aware dispatch; then measurement.
 
@@ -78,9 +93,13 @@ Every later phase needs these two plumbing pieces in place first:
 - Thread a `render_provenance` (or similarly named) field through `GeneratedAnswer` → `QuestionAnsweringResult` → `GraphResult.data`, recording which path produced the answer (`"deterministic_identifiers"`, `"deterministic_spare_parts"`, `"deterministic_maintenance_schedule"` (new, see Phase 3), `"llm_prose"`, etc.) — closes finding 4.5. This is what lets the CLI (Phase 7) and any future presenter make category-aware decisions without re-deriving them from scratch.
 - Confirm `data["answer_intent"]` is reliably present on every `GraphResult` (it already is, per finding 4.4's confirmation it's read for the debug echo) so the CLI can safely branch on it in Phase 7.
 
+Status: implemented.
+
 ### Phase 1 — Safety-warning visual prominence (do first: safety-communication risk, cheapest fix)
 - In the CLI renderer, when `answer_intent == "safety_warnings"`, render the answer in a visually distinct block (e.g. a leading `⚠ SAFETY WARNING` marker/heading, matching the ASCII-only convention already established for other CLI elements this session) instead of the generic `Final Answer` heading — pure presentation change, no new extraction logic, lowest risk, highest-consequence fix in this whole plan.
 - No prompt/generation changes needed for this phase — it's additive at the render layer only.
+
+Status: implemented.
 
 ### Phase 2 — Standard, shared table-grid rendering utility (new, cross-cutting — build before Phases 3-6)
 - Closes finding 4.6. Build ONE shared, reusable table-grid renderer (e.g. `src/shared/text/table_grid_renderer.py` or alongside the other CLI presentation helpers under `src/application/agent_runtime/presenters/` — match whichever location this codebase's conventions favor for a cross-cutting text-formatting utility, check `src/shared/text/text_preview.py` for the nearest precedent) that takes a list of column names + a list of row dicts and renders a real, aligned ASCII grid: header row, separator line (`---`/`===` style, plain ASCII only per this codebase's established terminal-rendering convention), consistent per-column width (padded to the widest cell in that column, with a sane max-width + truncation/wrap rule for long cells — reuse the word-boundary truncation helper added to `text_preview.py` in the earlier answer-quality effort rather than a raw character slice).
@@ -88,37 +107,52 @@ Every later phase needs these two plumbing pieces in place first:
 - As part of this phase, migrate `SparePartsListRenderer`'s existing `field: value` line-based output to use the new grid renderer instead (a real table with Position/Part No./Description/etc. as columns), since it's the one category already closest to tabular and the clearest proof this utility works before the newer renderers (Phases 3+) depend on it.
 - Add a test suite for the grid renderer alone (header alignment, column-width padding, long-cell truncation/wrap, empty-row-list edge case) before any other phase consumes it.
 
+Status: implemented.
+
 ### Phase 3 — Deterministic maintenance-schedule renderer
 - Build a new `MaintenanceScheduleRenderer` (mirroring `IdentifierAnswerRenderer`'s proven gating pattern) that consumes `StructuredAnswerContext.maintenance_entries` (`AnswerMaintenanceEntry`: task/interval/component/references) directly, bypassing the LLM, when the question looks like a pure schedule/interval query (reuse the existing gating precedent: `MaintenanceTaskExtractor` already restricts extraction to `MAINTENANCE_SUMMARY` intent — add a similar "looks like a schedule query, not a narrative query" check, e.g. no compound "why"/"how" language, mirroring the compound-question detection added earlier this session for the identifier/spare-parts renderers).
 - Output shape: render through Phase 2's shared table-grid utility — task / interval / component / reference as real aligned columns, not prose — restoring, and improving on (code-guaranteed instead of LLM-narrated), what the deleted `MaintenancePromptContextFormatter` used to provide.
 - Fall through to the LLM path for narrative/compound maintenance questions ("why does the pump need servicing every 500 hours"), exactly as the identifier renderer already falls through for non-lookup questions.
 - This directly reverses finding 2.5's regression, with a stronger guarantee than what was deleted, and closes finding 4.6 for this specific category.
 
+Status: implemented.
+
 ### Phase 4 — Deterministic procedure-steps renderer
 - Investigate first (re-verify against current schema, do not assume prior-session memory is still accurate): does the `Procedure` domain model still carry a `steps: list[str]` field, and does a resolved `MaintenanceTask -> Procedure` relationship still surface `steps` via `AnswerRelationship.target_entity_fields["steps"]` (per earlier session work referenced in `structured_answer_context_enterprise_upgrade_plan.md` section 4.16)? If confirmed current, this is a near-complete data path already — build a `ProcedureStepsRenderer` that renders `steps` as a guaranteed numbered list (with any accompanying warnings preserved inline) directly from `AnswerStructuredEntity`/`AnswerRelationship`, instead of asking the LLM to "return numbered steps... preserve sequence" with no verification. (A numbered list, not a grid, is the right shape here — Phase 2's utility is for tabular data, not sequential steps.)
 - If a resolved Procedure isn't available for a given question (e.g. it only exists in a chunk, not as a resolved structured entity), fall through to the LLM path as today.
+
+Status: implemented.
 
 ### Phase 5 — Deterministic troubleshooting renderer
 - Investigate first (re-verify against current schema): does a `TroubleshootingEntry` domain/ORM entity with `symptom`/`cause`/`remedy` fields still exist (per earlier session work)? If confirmed current, build a `TroubleshootingRenderer` presenting a genuine symptom → cause → remedy structure per matched entry — the actual shape a technician already thinks in — instead of prose that merely mentions all three concepts somewhere without guaranteed structure. Consider rendering multiple troubleshooting entries through Phase 2's grid utility (Symptom / Cause / Remedy as columns) when more than one entry matches, since that's a genuinely tabular presentation of multiple faults; a single matched entry may read better as a short labeled block instead of a one-row grid — make this call during implementation based on what looks clearer.
 - This directly closes finding 2.3 (the instruction text's unfulfilled promise) with real backing data instead of just better prompt wording.
 
+Status: implemented.
+
 ### Phase 6 — Deterministic specification/certification fact-sheet renderer
 - Generalize the `IdentifierAnswerRenderer` grouping pattern into a `KeyValueFactSheetRenderer` usable by both `SPECIFICATION_SUMMARY` and `CERTIFICATION_SUMMARY`, consuming the `AnswerKeyValue` list `KeyValueExtractor` already produces for both intents. Render through Phase 2's grid utility when there are enough key-values to justify a table (label/value as two columns); fall back to a simple label: value list for a small handful of facts, where a full grid would be visual overkill — mirrors finding 2.4's observation that both intents already share the same underlying extractor.
 - Lower priority than Phases 1/3-5 since specs/certs are typically single-fact lookups where prose is a smaller usability gap than for schedules/procedures/troubleshooting.
+
+Status: implemented.
 
 ### Phase 7 — CLI category-aware rendering dispatch
 - Once Phase 0's provenance field exists, add a small dispatch layer in the CLI renderer keyed on `render_provenance`/`answer_intent`: distinct (but still plain-ASCII, low-key) headings per category (e.g. "Maintenance Schedule" vs. "Procedure" vs. "Troubleshooting" vs. "Final Answer" for plain prose) so a technician can tell at a glance what kind of answer they're looking at, closing finding 4.1.
 - Render the new `render_provenance` value as a quiet footer note (e.g. "Source: parsed maintenance data" vs. "Source: AI-generated summary") so trust calibration (per this session's separate answer-quality investigation) extends to structural provenance, not just citation-level provenance — closes finding 4.5.
 - `GENERAL`/`DOCUMENT_SUMMARY`/any category without a deterministic renderer keeps today's generic `Final Answer` rendering unchanged — this phase only adds differentiation where a category now has something real to differentiate.
 
+Status: implemented.
+
 ### Phase 8 — Measurement: extend the golden set for structural compliance
 - This session's separate answer-quality effort already built a synthetic golden set + LLM-as-judge harness (`src/application/evaluation/answer_quality/`, `scripts/run_answer_quality_judge.py`). Extend it with a small number of cases per newly-deterministic category (maintenance schedule, procedure steps, troubleshooting) asserting the *structural* shape (e.g. "does the maintenance answer contain one row per task with all 4 fields," not just "is the prose roughly right") — a cheap, high-signal regression check that a future refactor doesn't silently regress a category back to unstructured prose.
 
-## 8. Identifier Renderer Follow-Up — 3 Remaining Gaps, With Detailed Implementation Steps
+Status: not implemented in this pass.
 
-The page-reference/count enhancement (Status section) improved `IdentifierAnswerRenderer`'s own text, but three gaps remain before this category clears the Section 5 bar. These are the concrete, file-level implementation of Phase 0 and Phase 7 above, using the identifier category as the pilot (since it's the one category with a working deterministic renderer today) before generalizing to the categories Phases 3-6 will add.
+## 8. Identifier Renderer Follow-Up — Historical Gap Log
+
+The page-reference/count enhancement improved `IdentifierAnswerRenderer`'s own text. Since the original investigation, Gap 1 and Gap 2 below have been implemented as part of the broader presentation hardening. Gap 3 remains a product-choice discussion rather than an active correctness gap.
 
 ### Gap 1 — No CLI-level provenance marker (closes finding 4.5; detailed Phase 0)
+Status: implemented.
 
 **Current state, confirmed by investigation**: the raw material already exists upstream — `AnswerGenerationService._build_generated_answer()` already sets `GeneratedAnswer.model_name = "deterministic_identifier_renderer"` when this renderer fires, and `AnswerGenerationPipeline.run()` already threads it into `QuestionAnsweringResult.diagnostics["model_name"]`. The gap is purely in the last mile: nothing pulls it out of `tool_results["answer_question"]["data"]["diagnostics"]["model_name"]` into `GraphResult.data`, and nothing renders it.
 
@@ -131,6 +165,7 @@ The page-reference/count enhancement (Status section) improved `IdentifierAnswer
 6. **Tests**: extend `document_agent_result_builder.py`'s test file with a case asserting `data["render_provenance"] == "parsed identifier data"` when `model_name == "deterministic_identifier_renderer"`, and a case asserting it's absent/`None` when `model_name` is a real LLM model id (backward-compatible default). Extend `graph_result_renderer.py`'s test file with a footer test asserting `"Source: parsed identifier data"` appears when present, and confirming the footer is byte-identical to today when `render_provenance` is absent.
 
 ### Gap 2 — No category-aware CLI dispatch (closes finding 4.1; detailed Phase 7)
+Status: implemented.
 
 **Implementation steps:**
 1. In `graph_result_renderer.py`, add a small mapping, e.g. `_PROVENANCE_HEADINGS = {"parsed identifier data": "Requested Identifiers", "parsed spare-parts table data": "Spare Parts"}`, keyed off the **same** `render_provenance` label from Gap 1 (not off `answer_intent` directly — see the judgment call below), with a default of `"Final Answer"` for anything else.
@@ -139,6 +174,7 @@ The page-reference/count enhancement (Status section) improved `IdentifierAnswer
 4. **Tests**: one test confirming `"Requested Identifiers"` (not `"Final Answer"`) appears in the output when `data["render_provenance"] == "parsed identifier data"`; one test confirming `"Final Answer"` (unchanged) still appears when `answer_intent == "identifier_lookup"` but `render_provenance` is absent (the honest-fallback case from step 2) — this is the regression test that actually proves the judgment call in step 2 was implemented correctly, not just assumed.
 
 ### Gap 3 — Table-grid question for identifiers (relates to finding 4.6 / Phase 2; decision needed before implementation)
+Status: intentionally left unchanged in this pass. The grouped identifier list remains the chosen output shape.
 
 This wasn't resolved by the investigation or by me — it's a genuine product judgment call. Both options below are implementable; pick one before starting:
 
@@ -151,7 +187,7 @@ This wasn't resolved by the investigation or by me — it's a genuine product ju
 
 ## 9. Explicitly Out of Scope for This Document
 
-- Only the one enhancement noted in the Status section has been implemented; everything else in Sections 6 and 8 is planning, not code.
+- This document now mixes historical investigation findings with implementation-status notes. For the current live-state verdict, use [per_category_presentation_status_report.md](/abs/path/C:/Users/ashuf/Desktop/Projects/document-ai-assistant/outputs/architecture/per_category_presentation_status_report.md).
 - This document does not re-litigate the separate `answer_quality_and_output_enterprise_hardening_plan.md` effort (already implemented) — it assumes that work's outcomes (e.g. `post_answer_guardrail_warnings` now reaching `GraphResult.data`, reflection hardening) as a given baseline and focuses purely on category-specific presentation.
-- Phases 4 and 5's proposed data sources (`Procedure.steps`, `TroubleshootingEntry`) are referenced from earlier-session memory, not from a fresh schema read in this investigation — re-verify their current shape before implementation, per this document's own repeated caution.
+- Phases 4 and 5's earlier “re-verify schema first” caution has now been satisfied by implementation and passing tests, but the original note is preserved here as historical context for why the phased plan was sequenced that way.
 - Effort/timeline estimates are deliberately not included — size each phase after the team confirms which categories matter most for actual technician usage patterns.

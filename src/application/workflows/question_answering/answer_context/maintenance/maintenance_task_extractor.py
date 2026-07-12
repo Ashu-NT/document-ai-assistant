@@ -13,10 +13,17 @@ from src.application.workflows.question_answering.answer_context.maintenance.mai
     parse_table_cells,
     parse_table_header,
 )
+from src.application.workflows.question_answering.answer_context.maintenance.maintenance_table_candidate_extractor import (
+    MaintenanceTableCandidateExtractor,
+)
 from src.application.workflows.question_answering.answer_context.models import (
     AnswerMaintenanceEntry,
     AnswerMaintenanceReference,
     AnswerSource,
+)
+from src.application.workflows.question_answering.answer_context.tables import (
+    AnswerTable,
+    AnswerTableProjector,
 )
 
 _HEADER_SEPARATOR_PATTERN = re.compile(
@@ -25,23 +32,39 @@ _HEADER_SEPARATOR_PATTERN = re.compile(
 
 
 class MaintenanceTaskExtractor:
+    def __init__(
+        self,
+        maintenance_table_candidate_extractor: MaintenanceTableCandidateExtractor | None = None,
+        answer_table_projector: AnswerTableProjector | None = None,
+    ) -> None:
+        self.maintenance_table_candidate_extractor = (
+            maintenance_table_candidate_extractor or MaintenanceTableCandidateExtractor()
+        )
+        self.answer_table_projector = answer_table_projector or AnswerTableProjector()
+
     def extract_maintenance_entries(
         self,
         sources: Sequence[AnswerSource],
         *,
         answer_intent: AnswerIntent,
+        tables: Sequence[AnswerTable] | None = None,
     ) -> list[AnswerMaintenanceEntry]:
         if answer_intent != AnswerIntent.MAINTENANCE_SUMMARY:
             return []
 
         entries: list[AnswerMaintenanceEntry] = []
         seen: set[tuple[int, str, str, str]] = set()
+        resolved_tables = list(tables) if tables is not None else self.answer_table_projector.build(sources)
+        tables_by_source_number = {
+            table.source_number: table for table in resolved_tables
+        }
         for source in sources:
-            candidates = list(self._maintenance_candidates(source.content))
-            if source.table_rows:
-                candidates.extend(
-                    self._maintenance_candidates_from_rows(source.table_rows)
+            candidates = list(
+                self._source_candidates(
+                    source,
+                    table=tables_by_source_number.get(source.source_number),
                 )
+            )
             for candidate in candidates:
                 fingerprint = (
                     source.source_number,
@@ -71,6 +94,22 @@ class MaintenanceTaskExtractor:
                     )
                 )
         return entries
+
+    def _source_candidates(
+        self,
+        source: AnswerSource,
+        *,
+        table: AnswerTable | None,
+    ):
+        if table is not None:
+            table_candidates = self.maintenance_table_candidate_extractor.extract(table)
+            if table_candidates:
+                yield from table_candidates
+                return
+
+        yield from self._maintenance_candidates(source.content)
+        if source.table_rows:
+            yield from self._maintenance_candidates_from_rows(source.table_rows)
 
     def _maintenance_candidates(
         self,
@@ -109,18 +148,11 @@ class MaintenanceTaskExtractor:
         self,
         rows: list[list[str]],
     ) -> list[MaintenanceCandidate]:
-        """Additive counterpart to _maintenance_candidates()'s table-row
-        branch, reading cells directly from the structured row grid instead
-        of markdown-splitting each line. A single TableAsset.rows grid is
-        one contiguous table (unlike free-form chunk text, which can mix
-        multiple tables/prose), so the header check only needs to run once
-        against the first row."""
         if not rows:
             return []
 
         table_header = parse_table_header(rows[0])
         body_rows = rows[1:] if table_header is not None else rows
-
         candidates: list[MaintenanceCandidate] = []
         for cells in body_rows:
             if len(cells) < 2:

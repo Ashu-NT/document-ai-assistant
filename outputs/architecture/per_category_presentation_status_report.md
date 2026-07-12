@@ -36,6 +36,22 @@ The live code review focused on:
 - `src/application/agent_runtime/presenters/json_presenter.py`
 - `src/application/langgraph/reflection/detectors/spare_parts_list_context_detector.py`
 
+## Phase Coverage
+
+This status report reflects the implemented outcome of Phases 0-7 from the historical plan:
+
+- Phase 0: implemented
+- Phase 1: implemented
+- Phase 2: implemented
+- Phase 3: implemented
+- Phase 4: implemented
+- Phase 5: implemented
+- Phase 6: implemented
+- Phase 7: implemented
+- Phase 8: still pending and intentionally left out of this implementation pass
+
+In other words, the plan document is now historical context plus rationale, while this report is the live-state summary for the presentation layer.
+
 ## Gaps That Existed Before This Pass
 
 ### 1. Presenter answer selection was inconsistent
