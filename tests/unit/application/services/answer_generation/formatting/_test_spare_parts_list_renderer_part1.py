@@ -138,7 +138,7 @@ def test_render_groups_rows_by_section_and_page() -> None:
     assert "Filter" in result
     assert "A00103" in result
 
-def test_render_multiple_chunks_produce_multiple_numbered_groups() -> None:
+def test_render_multiple_chunks_return_summary_for_broad_query() -> None:
     renderer = SparePartsListRenderer()
     chunk_a = _make_source(
         chunk_id="chunk_a",
@@ -170,8 +170,10 @@ def test_render_multiple_chunks_produce_multiple_numbered_groups() -> None:
     )
 
     assert result is not None
+    assert result.startswith("Multiple spare-parts tables were found")
     assert "1. Exploded Views and Spare Parts List for the Disposer" in result
     assert "2. Vacuum / Transfer Pump Assembly - Spare Parts List" in result
+    assert "Ask for a specific component" in result
 
 def test_render_marks_unparseable_table_content_as_partial() -> None:
     renderer = SparePartsListRenderer()

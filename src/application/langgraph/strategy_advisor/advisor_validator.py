@@ -3,6 +3,9 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
+from src.application.langgraph.strategy_advisor.concept_grounding import (
+    is_grounded_concept,
+)
 from src.application.langgraph.strategy_advisor.advisor_models import (
     StrategyAdvisorIntent,
     StrategyAdvisorProposal,
@@ -101,7 +104,6 @@ class StrategyAdvisorValidator:
                 "Strategy advisor concepts must be a non-empty list.",
                 details={"concepts": raw_concepts},
             )
-        normalized_query = self._normalize(query_text)
         concepts: list[str] = []
         seen: set[str] = set()
         for item in raw_concepts:
@@ -117,7 +119,7 @@ class StrategyAdvisorValidator:
                     "Strategy advisor returned duplicated concepts.",
                     details={"concept": concept},
                 )
-            if normalized not in normalized_query:
+            if not is_grounded_concept(concept=concept, query_text=query_text):
                 raise SchemaValidationError(
                     "Strategy advisor returned a concept not grounded in the user query.",
                     details={"concept": concept, "query_text": query_text},

@@ -7,6 +7,9 @@ from typing import Sequence
 from src.application.workflows.question_answering.answer_context.maintenance.maintenance_task_text_cleaner import (
     clean_task,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_header_semantics import (
+    schedule_interval_labels,
+)
 from src.application.workflows.shared.maintenance_action_verbs import (
     MAINTENANCE_ACTION_VERBS,
 )
@@ -99,6 +102,8 @@ def _normalize_table_header_cell(cell: str) -> str | None:
     for canonical, aliases in _TABLE_HEADER_ALIASES.items():
         if normalized == canonical or normalized in aliases:
             return canonical
+    if schedule_interval_labels(cell):
+        return "interval"
     return None
 
 
@@ -140,6 +145,8 @@ def candidate_from_table_row(
         (cell.strip() for cell in cells if _MAINTENANCE_INTERVAL_PATTERN.search(cell)),
         None,
     )
+    if interval_cell == task_cell:
+        return candidate_from_line(task_cell)
     component = extract_component(task_cell)
     notes_candidates = [
         cell.strip()

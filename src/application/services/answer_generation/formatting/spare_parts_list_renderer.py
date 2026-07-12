@@ -2,6 +2,17 @@ from __future__ import annotations
 
 from typing import Sequence
 
+from src.application.services.answer_generation.formatting.spare_parts.spare_parts_group_selector import (
+    SparePartsGroupSelector,
+)
+from src.application.services.answer_generation.formatting.spare_parts.spare_parts_row_presentation import (
+    row_field_label,
+    row_field_max_width,
+    visible_row_fields,
+)
+from src.application.services.answer_generation.formatting.spare_parts.spare_parts_summary_renderer import (
+    SparePartsSummaryRenderer,
+)
 from src.application.services.answer_generation.formatting.spare_parts.spare_parts_group import (
     SparePartsGroup,
 )
@@ -27,46 +38,6 @@ _PARTIAL_CONTENT_NOTICE = (
 )
 _EXPORT_FORMAT_MARKERS = ("markdown", "csv", "export", "spreadsheet", ".csv", ".md")
 _SPARE_PARTS_REQUEST_MARKERS = ("spare part", "spare parts")
-_ROW_FIELD_LABELS: dict[str, str] = {
-    "position": "Position",
-    "pid_position": "P&ID Position",
-    "quantity": "Quantity",
-    "unit": "Unit",
-    "service": "Service",
-    "type": "Type",
-    "description": "Description",
-    "part_no": "Part No.",
-    "service_package": "Service package",
-    "component": "Component",
-    "manufacturer": "Manufacturer",
-}
-_ROW_FIELD_ORDER = (
-    "position",
-    "pid_position",
-    "quantity",
-    "unit",
-    "service",
-    "type",
-    "description",
-    "part_no",
-    "service_package",
-    "component",
-    "manufacturer",
-)
-_ROW_FIELD_MAX_WIDTHS: dict[str, int] = {
-    "position": 14,
-    "pid_position": 18,
-    "quantity": 10,
-    "unit": 8,
-    "service": 26,
-    "type": 36,
-    "description": 34,
-    "part_no": 18,
-    "service_package": 18,
-    "component": 24,
-    "manufacturer": 24,
-}
-
 _STRUCTURED_ENTITY_TYPE = "spare_part"
 _STRUCTURED_GROUP_TITLE = "Spare Parts (from extracted data)"
 
@@ -89,9 +60,18 @@ class SparePartsListRenderer:
     metadata (plan section 4.7/9.5).
     """
 
-    def __init__(self, *, table_parser: SparePartsTableParser | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        table_parser: SparePartsTableParser | None = None,
+        group_selector: SparePartsGroupSelector | None = None,
+        summary_renderer: SparePartsSummaryRenderer | None = None,
+    ) -> None:
         self._table_parser = table_parser or SparePartsTableParser()
+        self._group_selector = group_selector or SparePartsGroupSelector()
+        self._summary_renderer = summary_renderer or SparePartsSummaryRenderer()
         self._last_dropped_row_count = 0
+        self._last_hidden_raw_row_count = 0
         self._last_partial = False
 
     def render(
@@ -101,8 +81,10 @@ class SparePartsListRenderer:
         answer_intent: AnswerIntent | None,
         sources: Sequence[AnswerSource],
         resolved_structured_entities: Sequence[dict] = (),
+        show_raw_evidence: bool = False,
     ) -> str | None:
         self._last_dropped_row_count = 0
+        self._last_hidden_raw_row_count = 0
         self._last_partial = False
         if answer_intent not in _SUPPORTED_INTENTS:
             return None
@@ -115,7 +97,9 @@ class SparePartsListRenderer:
             resolved_structured_entities
         )
         if structured_group is not None:
-            return self._render_groups([structured_group])
+            return self._render_groups(
+                [structured_group], show_raw_evidence=show_raw_evidence
+            )
 
         groups: list[SparePartsGroup] = []
         for source in sources:
@@ -129,7 +113,13 @@ class SparePartsListRenderer:
 
         self._last_dropped_row_count = sum(group.dropped_row_count for group in groups)
         self._last_partial = any(group.partial for group in groups)
-        return self._render_groups(groups)
+        selection = self._group_selector.select(question=question, groups=groups)
+        if len(selection.groups) > 1 and not selection.narrowed:
+            return self._summary_renderer.render(selection.groups)
+        return self._render_groups(
+            selection.groups,
+            show_raw_evidence=show_raw_evidence,
+        )
 
     def last_diagnostics(self) -> dict[str, object]:
         """Diagnostics from the most recent render() call, so a caller can
@@ -144,6 +134,7 @@ class SparePartsListRenderer:
         return {
             "spare_parts_table_parser_rules_version": SPARE_PARTS_TABLE_PARSER_RULES_VERSION,
             "spare_parts_dropped_row_count": self._last_dropped_row_count,
+            "spare_parts_hidden_raw_row_count": self._last_hidden_raw_row_count,
             "spare_parts_partial": self._last_partial,
         }
 
@@ -203,7 +194,12 @@ class SparePartsListRenderer:
 
     # -- rendering -----------------------------------------------------------
 
-    def _render_groups(self, groups: Sequence[SparePartsGroup]) -> str:
+    def _render_groups(
+        self,
+        groups: Sequence[SparePartsGroup],
+        *,
+        show_raw_evidence: bool,
+    ) -> str:
         lines = ["Spare parts lists found:", ""]
         for index, group in enumerate(groups, start=1):
             lines.append(f"{index}. {group.section_title}")
@@ -216,8 +212,11 @@ class SparePartsListRenderer:
             if group.rows:
                 lines.append("   Available rows:")
                 lines.extend(self._indented_table_lines(group.rows))
-            for raw_row in group.raw_rows:
-                lines.append(f"   - Raw row: {raw_row}")
+            if show_raw_evidence:
+                for raw_row in group.raw_rows:
+                    lines.append(f"   - Raw row: {raw_row}")
+            else:
+                self._last_hidden_raw_row_count += len(group.raw_rows)
             if group.partial:
                 lines.append(f"   {_PARTIAL_CONTENT_NOTICE}")
             if index < len(groups):
@@ -229,10 +228,10 @@ class SparePartsListRenderer:
         columns = [
             AsciiTableColumn(
                 key=field,
-                title=_ROW_FIELD_LABELS[field],
-                max_width=_ROW_FIELD_MAX_WIDTHS[field],
+                title=row_field_label(field),
+                max_width=row_field_max_width(field),
             )
-            for field in _visible_row_fields(rows)
+            for field in visible_row_fields(rows)
         ]
         if not columns:
             return []
@@ -246,11 +245,3 @@ class SparePartsListRenderer:
         if page_end is None or page_end == page_start:
             return str(page_start)
         return f"{page_start}-{page_end}"
-
-
-def _visible_row_fields(rows: Sequence[dict[str, str]]) -> list[str]:
-    visible_fields: list[str] = []
-    for field in _ROW_FIELD_ORDER:
-        if any(str(row.get(field, "")).strip() for row in rows):
-            visible_fields.append(field)
-    return visible_fields

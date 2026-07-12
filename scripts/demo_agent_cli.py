@@ -54,6 +54,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "details) for this turn."
         ),
     )
+    parser.add_argument(
+        "--show-raw-evidence",
+        action="store_true",
+        help="Show raw fallback evidence rows in deterministic table answers.",
+    )
     parser.add_argument("--deep-research", action="store_true")
     parser.add_argument("--reflection", action="store_true")
     parser.add_argument("--llm-planning", action="store_true")
@@ -82,6 +87,7 @@ def _build_visibility_policy(args: argparse.Namespace) -> "DemoVisibilityPolicy"
     return DemoVisibilityPolicy(
         debug=args.debug,
         show_internal_ids=args.debug,
+        show_raw_evidence=args.show_raw_evidence,
     )
 
 
@@ -128,6 +134,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             no_examples=args.no_examples,
             help_examples=args.help_examples,
             show_react=args.show_react,
+            show_raw_evidence=args.show_raw_evidence,
             deep_research=args.deep_research,
             reflection=args.reflection,
             llm_planning=args.llm_planning,

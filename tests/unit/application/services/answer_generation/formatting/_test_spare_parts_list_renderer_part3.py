@@ -155,6 +155,57 @@ def test_render_prefers_table_rows_json_over_chunk_text_regex_parsing() -> None:
     assert "Z99999" not in result
     assert "from chunk text" not in result
 
+
+def test_render_can_show_raw_row_fallback_when_explicitly_requested() -> None:
+    renderer = SparePartsListRenderer()
+
+    result = renderer.render(
+        question="table of spare part list",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        show_raw_evidence=True,
+        sources=[_make_source(content="5 Filter Housing A00103 Yes", section_title="Spare Parts List")],
+    )
+
+    assert result is not None
+    assert "Raw row: 5 Filter Housing A00103 Yes" in result
+    assert renderer.last_diagnostics()["spare_parts_hidden_raw_row_count"] == 0
+
+
+def test_render_narrows_to_best_matching_group_for_specific_component_query() -> None:
+    renderer = SparePartsListRenderer()
+    disposer_chunk = _make_source(
+        chunk_id="chunk_disposer",
+        content=(
+            "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
+            "|---|---|---|---|\n"
+            "| 1 | 2 | Filter | A00103 |\n"
+        ),
+        section_title="Exploded Views and Spare Parts List for the Disposer",
+        page_start=45,
+        page_end=46,
+    )
+    pump_chunk = _make_source(
+        chunk_id="chunk_pump",
+        content=(
+            "| Position No: | Qty: | Denomination: | Spare Part No: |\n"
+            "|---|---|---|---|\n"
+            "| 14.00 | 1 | Pump Casing | 70.00 |\n"
+        ),
+        section_title="Vacuum / Transfer Pump Assembly - Spare Parts List",
+        page_start=85,
+        page_end=87,
+    )
+
+    result = renderer.render(
+        question="show spare parts for the transfer pump",
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        sources=[disposer_chunk, pump_chunk],
+    )
+
+    assert result is not None
+    assert "Vacuum / Transfer Pump Assembly - Spare Parts List" in result
+    assert "Exploded Views and Spare Parts List for the Disposer" not in result
+
 def test_render_falls_back_to_chunk_parsing_when_table_rows_json_has_no_header() -> None:
     renderer = SparePartsListRenderer()
     chunk_content = (

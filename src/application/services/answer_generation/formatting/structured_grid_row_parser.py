@@ -42,18 +42,17 @@ def as_structured_header(cells: Sequence[str]) -> list[str | None] | None:
     # every row parsed underneath it.
     normalized_cells = [_normalize_cell(cell) for cell in cells]
     mapped: list[str | None] = []
-    seen_fields: set[str] = set()
     content_field_found = False
     for cell in normalized_cells:
         field_key = _exact_field_for_cell(cell)
         if field_key is not None:
-            if field_key in seen_fields:
-                return None
-            seen_fields.add(field_key)
             if field_key in CONTENT_FIELDS:
                 content_field_found = True
         mapped.append(field_key)
-    if len(seen_fields) < 2 or not content_field_found:
+    present_fields = [field for field in mapped if field is not None]
+    if len(set(present_fields)) < 2 or not content_field_found:
+        return None
+    if not _header_banks(mapped):
         return None
     return mapped
 
@@ -95,9 +94,9 @@ def rows_from_structured_grid(
     rows: list[dict[str, str]] = []
     dropped_row_count = 0
     for cells in grid[1:]:
-        row = row_from_structured_cells(cells, header)
-        if row is not None:
-            rows.append(row)
+        parsed_rows = _rows_from_cells(cells, header)
+        if parsed_rows:
+            rows.extend(parsed_rows)
         else:
             dropped_row_count += 1
 
@@ -105,3 +104,50 @@ def rows_from_structured_grid(
         return None
 
     return rows, [], dropped_row_count > 0, dropped_row_count
+
+
+def _rows_from_cells(
+    cells: Sequence[str],
+    header: Sequence[str | None],
+) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for bank in _header_banks(header):
+        bank_cells = [
+            cells[index] if index < len(cells) else ""
+            for index, _ in bank
+        ]
+        bank_header = [field_key for _, field_key in bank]
+        row = row_from_structured_cells(bank_cells, bank_header)
+        if row is not None:
+            rows.append(row)
+    return rows
+
+
+def _header_banks(header: Sequence[str | None]) -> list[list[tuple[int, str]]]:
+    mapped_positions = [
+        (index, field_key)
+        for index, field_key in enumerate(header)
+        if field_key is not None
+    ]
+    if len(mapped_positions) < 2:
+        return []
+
+    field_sequence = [field_key for _, field_key in mapped_positions]
+    if len(set(field_sequence)) == len(field_sequence):
+        return [mapped_positions]
+
+    for bank_size in range(2, len(field_sequence)):
+        if len(field_sequence) % bank_size != 0:
+            continue
+        prototype = field_sequence[:bank_size]
+        if len(set(prototype)) != len(prototype):
+            continue
+        if all(
+            field_sequence[offset : offset + bank_size] == prototype
+            for offset in range(0, len(field_sequence), bank_size)
+        ):
+            return [
+                mapped_positions[offset : offset + bank_size]
+                for offset in range(0, len(mapped_positions), bank_size)
+            ]
+    return []

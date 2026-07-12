@@ -68,6 +68,7 @@ class DemoAgent:
                 session_id=self.session.session_id,
                 allow_answer_generation=False,
                 include_context=False,
+                show_raw_evidence=self.session.runtime_options.show_raw_evidence,
                 llm_planning_enabled=self.session.runtime_options.llm_planning,
                 deep_research_enabled=self.session.runtime_options.deep_research,
                 llm_research_planning_enabled=self.session.runtime_options.llm_planning,
@@ -144,6 +145,7 @@ class DemoAgent:
                 self.runtime.runtime_settings.get("generation_enabled", False)
             ),
             include_context=False,
+            show_raw_evidence=opts.show_raw_evidence,
             llm_planning_enabled=opts.llm_planning,
             deep_research_enabled=opts.deep_research,
             llm_research_planning_enabled=opts.llm_planning,
@@ -205,6 +207,7 @@ class DemoAgent:
         return {
             "quiet": session.runtime_options.quiet,
             "show_react": session.runtime_options.show_react,
+            "show_raw_evidence": session.runtime_options.show_raw_evidence,
             "deep_research": session.runtime_options.deep_research,
             "reflection": session.runtime_options.reflection,
             "llm_planning": session.runtime_options.llm_planning,

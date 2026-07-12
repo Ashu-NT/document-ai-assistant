@@ -18,6 +18,7 @@ class RuntimeOptions:
     no_examples: bool = False
     help_examples: bool = False
     show_react: bool = False
+    show_raw_evidence: bool = False
     deep_research: bool = False
     reflection: bool = False
     llm_planning: bool = False

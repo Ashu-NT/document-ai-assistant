@@ -236,7 +236,7 @@ def test_render_layout_c_two_column_exploded_view_pairs() -> None:
     assert "Pump Casing" in result
     assert "Lantern bracket" in result
 
-def test_render_layout_d_falls_back_to_raw_row_for_unrecognized_shape() -> None:
+def test_render_layout_d_hides_raw_row_fallback_by_default() -> None:
     renderer = SparePartsListRenderer()
     content = "5 Filter Housing A00103 Yes"
 
@@ -247,8 +247,9 @@ def test_render_layout_d_falls_back_to_raw_row_for_unrecognized_shape() -> None:
     )
 
     assert result is not None
-    assert "Raw row: 5 Filter Housing A00103 Yes" in result
+    assert "Raw row: 5 Filter Housing A00103 Yes" not in result
     assert "Only partial row content was available in the retrieved context." in result
+    assert renderer.last_diagnostics()["spare_parts_hidden_raw_row_count"] == 1
 
 def test_render_does_not_invent_part_no_from_plain_quantity_like_token() -> None:
     renderer = SparePartsListRenderer()

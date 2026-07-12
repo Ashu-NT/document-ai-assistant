@@ -208,6 +208,7 @@ class AnswerGenerationPipeline:
         gen_request = AnswerGenerationRequest(
             question=request.question,
             context_chunks=joined_chunks,
+            show_raw_evidence=request.show_raw_evidence,
             query_intent=analyzed_intent,
             retrieval_intent=analyzed_intent,
             chunk_type_preferences=list(analyzed_query.chunk_types),

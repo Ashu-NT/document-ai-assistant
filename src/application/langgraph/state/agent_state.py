@@ -16,6 +16,7 @@ class AgentState(TypedDict):
     question: str | None
     allow_answer_generation: bool
     include_context: bool
+    show_raw_evidence: bool
     llm_planning_enabled: bool
     show_plan: bool
     show_raw_plan: bool
@@ -111,6 +112,7 @@ def build_agent_state(
     document_query: str | None = None,
     allow_answer_generation: bool = False,
     include_context: bool = False,
+    show_raw_evidence: bool = False,
     llm_planning_enabled: bool = False,
     show_plan: bool = False,
     show_raw_plan: bool = False,
@@ -149,6 +151,7 @@ def build_agent_state(
         question=None,
         allow_answer_generation=allow_answer_generation,
         include_context=include_context,
+        show_raw_evidence=show_raw_evidence,
         llm_planning_enabled=llm_planning_enabled,
         show_plan=show_plan,
         show_raw_plan=show_raw_plan,

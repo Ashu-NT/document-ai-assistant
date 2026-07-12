@@ -29,6 +29,7 @@ class AnswerQuestionRequest(ToolRequest):
     top_k: int | None = None
     allow_answer_generation: bool = False
     include_context: bool = False
+    show_raw_evidence: bool = False
     require_citations: bool = True
     trace: bool = False
     context_override_chunks: list[RetrievedChunk] | None = None
@@ -90,6 +91,7 @@ class AnswerQuestionTool:
             document_alias=request.document_alias,
             top_k=request.top_k,
             include_context=request.include_context,
+            show_raw_evidence=request.show_raw_evidence,
             allow_answer_generation=request.allow_answer_generation,
             require_citations=request.require_citations,
             context_override_chunks=request.context_override_chunks,

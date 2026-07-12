@@ -13,6 +13,9 @@ from src.application.workflows.question_answering.answer_context.maintenance.mai
     parse_table_cells,
     parse_table_header,
 )
+from src.application.workflows.question_answering.answer_context.maintenance.maintenance_source_relevance_filter import (
+    MaintenanceSourceRelevanceFilter,
+)
 from src.application.workflows.question_answering.answer_context.maintenance.maintenance_table_candidate_extractor import (
     MaintenanceTableCandidateExtractor,
 )
@@ -36,11 +39,15 @@ class MaintenanceTaskExtractor:
         self,
         maintenance_table_candidate_extractor: MaintenanceTableCandidateExtractor | None = None,
         answer_table_projector: AnswerTableProjector | None = None,
+        source_relevance_filter: MaintenanceSourceRelevanceFilter | None = None,
     ) -> None:
         self.maintenance_table_candidate_extractor = (
             maintenance_table_candidate_extractor or MaintenanceTableCandidateExtractor()
         )
         self.answer_table_projector = answer_table_projector or AnswerTableProjector()
+        self.source_relevance_filter = (
+            source_relevance_filter or MaintenanceSourceRelevanceFilter()
+        )
 
     def extract_maintenance_entries(
         self,
@@ -106,6 +113,9 @@ class MaintenanceTaskExtractor:
             if table_candidates:
                 yield from table_candidates
                 return
+
+        if not self.source_relevance_filter.is_relevant(source, table=table):
+            return
 
         yield from self._maintenance_candidates(source.content)
         if source.table_rows:

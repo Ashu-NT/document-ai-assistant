@@ -21,6 +21,7 @@ from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 class AnswerGenerationRequest:
     question: str
     context_chunks: list[RetrievedChunk]
+    show_raw_evidence: bool = False
     query_intent: str | None = None
     retrieval_intent: str | None = None
     chunk_type_preferences: list[ChunkType] = field(default_factory=list)

@@ -87,3 +87,32 @@ def test_evidence_reference_notes_accepts_dataclass_instances_not_just_dicts() -
 
     assert "unresolved_reference_notes" in result.issues
     assert result.score < 1.0
+
+
+def test_evidence_quality_penalizes_partial_page_coverage() -> None:
+    approved_chunks = [
+        {
+            "chunk_id": "chunk_12",
+            "document_id": "doc_1",
+            "content": "Weekly maintenance latest after 100 operating hours.",
+            "source": {"page_start": 12},
+        },
+        {
+            "chunk_id": "chunk_13",
+            "document_id": "doc_1",
+            "content": "Annual maintenance latest after 2000 operating hours.",
+            "source": {"page_start": 13},
+        },
+    ]
+
+    result = EvidenceQualityScorer.score(
+        approved_chunks=approved_chunks,
+        rejected_chunks=[],
+        selected_document_id="doc_1",
+        referenced_pages=[12],
+    )
+
+    assert "partial_page_coverage" in result.issues
+    assert result.missing_pages == [13]
+    assert result.page_coverage_ratio == 0.5
+    assert result.score < 1.0

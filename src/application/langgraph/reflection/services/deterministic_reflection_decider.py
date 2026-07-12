@@ -52,6 +52,38 @@ class DeterministicReflectionDecider:
                 confidence=1.0,
                 reason="Evidence leaked outside the selected document scope.",
             )
+        if answer_quality.unexpected_pages:
+            decision = (
+                ReflectionDecisionType.FAIL
+                if retrieval_retry_count >= policy.max_retrieval_retries
+                else ReflectionDecisionType.RETRIEVE_AGAIN
+            )
+            return ReflectionDecision(
+                decision=decision,
+                confidence=0.96,
+                reason=(
+                    "The answer cited pages outside the approved evidence for this turn."
+                ),
+                retry_query=question if decision == ReflectionDecisionType.RETRIEVE_AGAIN else None,
+                missing_information=["page-aligned grounded answer"],
+                diagnostics={"hard_grounding_violation": "unexpected_answer_pages"},
+            )
+        if answer_quality.has_duplicate_content:
+            decision = (
+                ReflectionDecisionType.FAIL
+                if retrieval_retry_count >= policy.max_retrieval_retries
+                else ReflectionDecisionType.RETRIEVE_AGAIN
+            )
+            return ReflectionDecision(
+                decision=decision,
+                confidence=0.9,
+                reason=(
+                    "The answer repeated materially duplicated content instead of a clean grounded summary."
+                ),
+                retry_query=question if decision == ReflectionDecisionType.RETRIEVE_AGAIN else None,
+                missing_information=["deduplicated grounded answer"],
+                diagnostics={"hard_grounding_violation": "duplicate_answer_content"},
+            )
         if maintenance_interval_question and not has_relevant_maintenance_evidence:
             return ReflectionDecision(
                 decision=ReflectionDecisionType.FAIL,

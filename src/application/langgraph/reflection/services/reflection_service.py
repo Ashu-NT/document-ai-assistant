@@ -89,17 +89,26 @@ class ReflectionService:
                 selected_document_id=selected_document_id,
             )
         )
+        evidence_quality = EvidenceQualityScorer.score(
+            approved_chunks=approved_chunks,
+            rejected_chunks=rejected_chunks,
+            selected_document_id=selected_document_id,
+            reference_notes=reference_notes,
+            referenced_pages=None,
+        )
         answer_quality = AnswerQualityScorer.score(
             question=original_user_question,
             answer=generated_answer,
             citations=citations,
             reference_notes=reference_notes,
+            approved_pages=evidence_quality.page_numbers,
         )
         evidence_quality = EvidenceQualityScorer.score(
             approved_chunks=approved_chunks,
             rejected_chunks=rejected_chunks,
             selected_document_id=selected_document_id,
             reference_notes=reference_notes,
+            referenced_pages=answer_quality.referenced_pages,
         )
         context_document_ids = sorted(
             {
@@ -162,6 +171,8 @@ class ReflectionService:
             has_useful_evidence=evidence_quality.has_sufficient_evidence,
             has_relevant_maintenance_evidence=has_relevant_maintenance_evidence,
             has_relevant_spare_parts_evidence=has_relevant_spare_parts_evidence,
+            has_unexpected_page_references=bool(answer_quality.unexpected_pages),
+            has_duplicate_answer_content=answer_quality.has_duplicate_content,
         )
         grounding_score = min(
             answer_quality.score,

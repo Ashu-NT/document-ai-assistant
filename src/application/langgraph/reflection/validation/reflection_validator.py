@@ -36,10 +36,13 @@ class ReflectionValidator:
         has_useful_evidence: bool = False,
         has_relevant_maintenance_evidence: bool = False,
         has_relevant_spare_parts_evidence: bool = False,
+        has_unexpected_page_references: bool = False,
+        has_duplicate_answer_content: bool = False,
     ) -> ReflectionDecision:
         diagnostics = dict(decision.diagnostics)
         normalized_confidence = min(max(float(decision.confidence), 0.0), 1.0)
         decision.confidence = normalized_confidence
+        hard_grounding_violation = decision.diagnostics.get("hard_grounding_violation")
         maintenance_interval_context = is_selected_document_maintenance_interval_context(
             question=question,
             answer_intent=answer_intent,
@@ -68,11 +71,58 @@ class ReflectionValidator:
                 reason="Reflection detected document-scope leakage in the evidence set.",
                 diagnostics={**diagnostics, "validator": "scope_violation"},
             )
+        if has_unexpected_page_references:
+            return ReflectionDecision(
+                decision=ReflectionDecisionType.FAIL,
+                confidence=normalized_confidence,
+                reason=(
+                    "The answer cited pages outside the approved evidence for this turn."
+                ),
+                diagnostics={
+                    **diagnostics,
+                    "validator": "unexpected_answer_pages",
+                    "hard_grounding_violation": "unexpected_answer_pages",
+                },
+            )
+        if has_duplicate_answer_content and decision.decision in {
+            ReflectionDecisionType.ACCEPT,
+            ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS,
+        }:
+            if (
+                policy.allow_retrieval_retry
+                and retrieval_retry_count < policy.max_retrieval_retries
+            ):
+                return ReflectionDecision(
+                    decision=ReflectionDecisionType.RETRIEVE_AGAIN,
+                    confidence=normalized_confidence,
+                    reason=(
+                        "The answer repeated duplicated content instead of a clean grounded summary."
+                    ),
+                    retry_query=question,
+                    missing_information=["deduplicated grounded answer"],
+                    diagnostics={
+                        **diagnostics,
+                        "validator": "duplicate_answer_content_retry",
+                        "hard_grounding_violation": "duplicate_answer_content",
+                    },
+                )
+            return ReflectionDecision(
+                decision=ReflectionDecisionType.FAIL,
+                confidence=normalized_confidence,
+                reason=(
+                    "The answer repeated duplicated content instead of a clean grounded summary."
+                ),
+                diagnostics={
+                    **diagnostics,
+                    "validator": "duplicate_answer_content_fail",
+                    "hard_grounding_violation": "duplicate_answer_content",
+                },
+            )
 
         if decision.decision == ReflectionDecisionType.RETRIEVE_AGAIN:
             if spare_parts_list_context and is_legitimate_partial_spare_parts_answer(
                 answer_text
-            ):
+            ) and not hard_grounding_violation:
                 return _accept_with_limitations(
                     confidence=normalized_confidence,
                     reason=(
@@ -86,7 +136,7 @@ class ReflectionValidator:
                     },
                 )
             if not policy.allow_retrieval_retry:
-                if maintenance_interval_context:
+                if maintenance_interval_context and not hard_grounding_violation:
                     return _accept_with_limitations(
                         confidence=normalized_confidence,
                         reason=(
@@ -102,7 +152,7 @@ class ReflectionValidator:
                     diagnostics={**diagnostics, "validator": "retry_disabled"},
                 )
             if retrieval_retry_count >= policy.max_retrieval_retries:
-                if maintenance_interval_context:
+                if maintenance_interval_context and not hard_grounding_violation:
                     return _accept_with_limitations(
                         confidence=normalized_confidence,
                         reason=(
@@ -226,7 +276,7 @@ class ReflectionValidator:
                 )
 
         if decision.decision == ReflectionDecisionType.CLARIFY:
-            if maintenance_interval_context:
+            if maintenance_interval_context and not hard_grounding_violation:
                 return _accept_with_limitations(
                     confidence=normalized_confidence,
                     reason=(
@@ -257,7 +307,7 @@ class ReflectionValidator:
                 )
 
         if decision.decision == ReflectionDecisionType.FAIL:
-            if maintenance_interval_context:
+            if maintenance_interval_context and not hard_grounding_violation:
                 return _accept_with_limitations(
                     confidence=normalized_confidence,
                     reason=(
@@ -268,7 +318,7 @@ class ReflectionValidator:
                 )
             if spare_parts_list_context and is_legitimate_partial_spare_parts_answer(
                 answer_text
-            ):
+            ) and not hard_grounding_violation:
                 return _accept_with_limitations(
                     confidence=normalized_confidence,
                     reason=(
@@ -283,7 +333,7 @@ class ReflectionValidator:
                 )
 
         if reflection_attempts > policy.max_reflection_attempts:
-            if maintenance_interval_context:
+            if maintenance_interval_context and not hard_grounding_violation:
                 return _accept_with_limitations(
                     confidence=normalized_confidence,
                     reason=(
@@ -294,7 +344,7 @@ class ReflectionValidator:
                 )
             if spare_parts_list_context and is_legitimate_partial_spare_parts_answer(
                 answer_text
-            ):
+            ) and not hard_grounding_violation:
                 return _accept_with_limitations(
                     confidence=normalized_confidence,
                     reason=(

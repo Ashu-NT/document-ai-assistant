@@ -61,6 +61,7 @@ class GraphRequestValidator(Validator[dict[str, Any]]):
         for field_name in (
             "allow_answer_generation",
             "include_context",
+            "show_raw_evidence",
             "llm_planning_enabled",
             "show_plan",
             "show_raw_plan",

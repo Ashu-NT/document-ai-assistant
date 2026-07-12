@@ -239,6 +239,34 @@ def test_reflection_service_spec_only_evidence_stays_retry_or_fail() -> None:
     }
 
 
+def test_reflection_service_fails_when_answer_cites_unapproved_pages() -> None:
+    service = ReflectionService(policy=ReflectionPolicy(enabled=False))
+
+    result = service.review(
+        original_user_question="What are the maintenance intervals?",
+        generated_answer="The maintenance interval is weekly on page 10.",
+        selected_document_id="doc_1",
+        selected_document_title="FWC12 Manual",
+        answer_intent="maintenance_summary",
+        approved_chunks=[
+            {
+                "chunk_id": "chunk_58",
+                "document_id": "doc_1",
+                "chunk_type": "maintenance_interval",
+                "content": "Weekly maintenance latest after 100 operating hours.",
+                "source": {"page_start": 58},
+            }
+        ],
+        rejected_chunks=[],
+        citations=[{"chunk_id": "chunk_10", "source": {"page_start": 10}}],
+        reflection_attempts=0,
+        retrieval_retry_count=0,
+    )
+
+    assert result.decision.decision == ReflectionDecisionType.FAIL
+    assert "approved evidence" in result.decision.reason.lower()
+
+
 def _review_kwargs(**overrides: object) -> dict:
     base = dict(
         original_user_question="What is the pump flow rate specification?",

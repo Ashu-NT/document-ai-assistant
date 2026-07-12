@@ -11,8 +11,8 @@ from src.application.workflows.question_answering.answer_context.tables.answer_t
     AnswerTableRow,
 )
 from src.application.workflows.question_answering.answer_context.tables.table_header_semantics import (
-    is_positive_schedule_marker,
-    schedule_interval_label,
+    active_schedule_labels,
+    schedule_interval_labels,
 )
 from src.application.workflows.shared.maintenance_text_cleaning import (
     clean_interval,
@@ -43,9 +43,9 @@ class MaintenanceTableCandidateExtractor:
         notes_index = self._optional_column_index(table, "notes")
         component_index = self._optional_column_index(table, "component")
         interval_columns = [
-            (index, schedule_interval_label(header))
+            (index, header)
             for index, header in enumerate(table.headers)
-            if schedule_interval_label(header) is not None
+            if schedule_interval_labels(header)
         ]
         for row in table.rows:
             candidate = self._matrix_row_candidate(
@@ -65,7 +65,7 @@ class MaintenanceTableCandidateExtractor:
         task_index: int,
         notes_index: int | None,
         component_index: int | None,
-        interval_columns: list[tuple[int, str | None]],
+        interval_columns: list[tuple[int, str]],
     ) -> MaintenanceCandidate | None:
         if task_index >= len(row.cells):
             return None
@@ -75,10 +75,12 @@ class MaintenanceTableCandidateExtractor:
 
         active_intervals = [
             interval_label
-            for index, interval_label in interval_columns
-            if interval_label is not None
-            and index < len(row.cells)
-            and is_positive_schedule_marker(row.cells[index])
+            for index, header in interval_columns
+            if index < len(row.cells)
+            for interval_label in active_schedule_labels(
+                header=header,
+                cell_value=row.cells[index],
+            )
         ]
         if not active_intervals:
             return None

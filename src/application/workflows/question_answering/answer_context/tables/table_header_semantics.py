@@ -86,12 +86,25 @@ def match_header_role(header: str) -> str | None:
 
 
 def schedule_interval_label(header: str) -> str | None:
+    labels = schedule_interval_labels(header)
+    if not labels:
+        return None
+    if len(labels) == 1:
+        return labels[0]
+    return " / ".join(labels)
+
+
+def schedule_interval_labels(header: str) -> tuple[str, ...]:
     normalized = normalize_header(header)
     if normalized in _SCHEDULE_INTERVAL_HEADERS:
-        return _SCHEDULE_INTERVAL_HEADERS[normalized]
+        return (_SCHEDULE_INTERVAL_HEADERS[normalized],)
     if normalized.startswith("every ") or normalized.endswith(" hours"):
-        return " ".join(header.strip().split())
-    return None
+        return (" ".join(header.strip().split()),)
+
+    tokens = _tokenize_schedule_header(normalized)
+    if len(tokens) >= 2 and all(token in _SCHEDULE_INTERVAL_HEADERS for token in tokens):
+        return tuple(_SCHEDULE_INTERVAL_HEADERS[token] for token in tokens)
+    return ()
 
 
 def is_positive_schedule_marker(value: str) -> bool:
@@ -101,6 +114,29 @@ def is_positive_schedule_marker(value: str) -> bool:
     if normalized in (MAINTENANCE_PLACEHOLDER_VALUES - {"x"}):
         return False
     return normalized in _POSITIVE_SCHEDULE_MARKERS
+
+
+def active_schedule_labels(
+    *,
+    header: str,
+    cell_value: str,
+) -> tuple[str, ...]:
+    labels = schedule_interval_labels(header)
+    if not labels:
+        return ()
+    if len(labels) == 1:
+        return labels if is_positive_schedule_marker(cell_value) else ()
+
+    marker_tokens = _tokenize_schedule_marker(cell_value)
+    if len(marker_tokens) == len(labels):
+        return tuple(
+            label
+            for label, marker in zip(labels, marker_tokens, strict=False)
+            if is_positive_schedule_marker(marker)
+        )
+    if is_positive_schedule_marker(cell_value):
+        return labels
+    return ()
 
 
 def looks_identifier_label(label: str) -> bool:
@@ -119,3 +155,20 @@ def looks_identifier_label(label: str) -> bool:
             "tag",
         )
     )
+
+
+def _tokenize_schedule_header(value: str) -> list[str]:
+    separators = value.replace("/", " ").replace(",", " ").replace(";", " ")
+    return [token for token in separators.split() if token]
+
+
+def _tokenize_schedule_marker(value: str) -> list[str]:
+    separators = (
+        str(value or "")
+        .strip()
+        .lower()
+        .replace("/", " ")
+        .replace(",", " ")
+        .replace(";", " ")
+    )
+    return [token for token in separators.split() if token]

@@ -11,6 +11,7 @@ class DemoVisibilityPolicy:
     show_research_plan: bool = True
     show_retrieval_strategy: bool = True
     show_reflection: bool = True
+    show_raw_evidence: bool = False
     show_raw_json: bool = False
     show_raw_prompts: bool = False
     show_internal_ids: bool = False

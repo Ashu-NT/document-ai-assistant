@@ -338,6 +338,7 @@ class AnswerGenerationService:
         deterministic_result = self.deterministic_renderer_dispatcher.render(
             question=resolved_request.question,
             answer_intent=resolved_request.answer_intent,
+            show_raw_evidence=resolved_request.show_raw_evidence,
             structured_context=structured_context,
             resolved_identifiers=resolved_request.resolved_identifiers,
             resolved_structured_entities=resolved_request.resolved_structured_entities,

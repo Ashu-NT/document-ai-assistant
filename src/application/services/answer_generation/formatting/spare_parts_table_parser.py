@@ -140,7 +140,7 @@ class SparePartsTableParser:
             return
 
         pair_rows = rows_from_position_pairs(text)
-        if len(pair_rows) >= 2:
+        if pair_rows:
             rows.extend(pair_rows)
             return
 

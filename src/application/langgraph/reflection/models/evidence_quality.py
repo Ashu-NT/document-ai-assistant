@@ -9,6 +9,8 @@ class EvidenceQuality:
     rejected_chunk_count: int
     document_ids: list[str]
     page_numbers: list[int]
+    missing_pages: list[int]
+    page_coverage_ratio: float
     has_document_leakage: bool
     has_sufficient_evidence: bool
     score: float

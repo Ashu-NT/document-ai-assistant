@@ -80,3 +80,39 @@ def test_strategy_advisor_validator_rejects_ungrounded_or_hallucinated_fields() 
         )
     else:  # pragma: no cover
         raise AssertionError("Expected strategy advisor validation to reject extra keys.")
+
+
+def test_strategy_advisor_validator_accepts_grounded_normalized_concepts() -> None:
+    validator = StrategyAdvisorValidator()
+
+    proposal = validator.validate_response(
+        """
+        {
+          "intent": "comparison",
+          "route": "deep_research",
+          "confidence": 0.88,
+          "concepts": ["scheduled servicing", "fault recovery"],
+          "recommended_strategies": [
+            "MAINTENANCE_LOOKUP",
+            "TROUBLESHOOTING_LOOKUP"
+          ],
+          "comparison": true,
+          "requires_table": false,
+          "reason": "The query compares maintenance and troubleshooting concepts."
+        }
+        """,
+        request=StrategyAdvisorRequest(
+            query_text="compare troubleshooting procedures and maintenance tasks",
+            deterministic_route="answer_question",
+            deterministic_route_confidence=0.70,
+            deterministic_reason="Fell back to question answering.",
+            deterministic_strategies=[RetrievalStrategy.MAINTENANCE_LOOKUP],
+            allowed_routes=["answer_question", "deep_research"],
+        ),
+    )
+
+    assert proposal.concepts == ["scheduled servicing", "fault recovery"]
+    assert proposal.recommended_strategies == [
+        RetrievalStrategy.MAINTENANCE_LOOKUP,
+        RetrievalStrategy.TROUBLESHOOTING_LOOKUP,
+    ]

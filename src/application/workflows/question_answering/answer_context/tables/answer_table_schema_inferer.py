@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from src.application.workflows.question_answering.answer_context.tables.table_header_semantics import (
     match_header_role,
-    schedule_interval_label,
+    schedule_interval_labels,
 )
 
 
@@ -19,9 +19,9 @@ class AnswerTableSchemaInferer:
             if (role := match_header_role(header)) is not None
         }
         schedule_columns = {
-            index: interval_label
+            index: interval_labels
             for index, header in enumerate(headers)
-            if (interval_label := schedule_interval_label(header)) is not None
+            if (interval_labels := schedule_interval_labels(header))
         }
         chunk_type_value = (chunk_type or "").strip().lower()
         roles = set(column_roles.values())

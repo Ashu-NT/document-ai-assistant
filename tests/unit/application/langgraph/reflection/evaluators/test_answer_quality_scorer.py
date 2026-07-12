@@ -79,3 +79,33 @@ def test_empty_reference_notes_list_does_not_cap_the_score() -> None:
     )
 
     assert result.score == 1.0
+
+
+def test_answer_quality_flags_unexpected_answer_pages_against_approved_scope() -> None:
+    result = AnswerQualityScorer.score(
+        question=_QUESTION,
+        answer="The pump maximum flow rate is 120 m3/h, as shown on page 99.",
+        citations=[{"chunk_id": "chunk_99", "source": {"page_start": 99}}],
+        approved_pages=[4],
+    )
+
+    assert "unexpected_answer_pages" in result.issues
+    assert result.unexpected_pages == [99]
+    assert result.score < 1.0
+
+
+def test_answer_quality_detects_duplicate_content_lines() -> None:
+    result = AnswerQualityScorer.score(
+        question="What are the maintenance intervals?",
+        answer=(
+            "- Weekly maintenance latest after 100 operating hours.\n"
+            "- Weekly maintenance latest after 100 operating hours.\n"
+            "- Annual maintenance latest after 2000 operating hours."
+        ),
+        citations=[{"chunk_id": "chunk_58", "source": {"page_start": 58}}],
+        approved_pages=[58],
+    )
+
+    assert "duplicate_answer_content" in result.issues
+    assert result.has_duplicate_content is True
+    assert result.duplicate_line_count == 1

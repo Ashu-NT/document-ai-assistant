@@ -51,6 +51,7 @@ class DeterministicAnswerRendererDispatcher:
         *,
         question: str,
         answer_intent: AnswerIntent | None,
+        show_raw_evidence: bool,
         structured_context: StructuredAnswerContext | None,
         resolved_identifiers: list[Identifier],
         resolved_structured_entities: list[dict],
@@ -71,6 +72,7 @@ class DeterministicAnswerRendererDispatcher:
         spare_parts_answer = self._spare_parts_list_renderer.render(
             question=question,
             answer_intent=answer_intent,
+            show_raw_evidence=show_raw_evidence,
             sources=structured_context.sources if structured_context is not None else (),
             resolved_structured_entities=resolved_structured_entities,
         )
