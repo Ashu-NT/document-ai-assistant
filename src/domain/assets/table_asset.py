@@ -46,7 +46,9 @@ class TableAsset:
         if len(self.rows) < 2:
             return None
 
-        headers = self.rows[0]
+        headers = self._structured_row_headers()
+        if headers is None:
+            return None
         lines = []
         for row_index, row in enumerate(self.rows[1:], start=1):
             cells = [
@@ -63,3 +65,30 @@ class TableAsset:
             return None
 
         return "\n".join(lines)
+
+    def _structured_row_headers(self) -> list[str] | None:
+        headers = [" ".join(str(cell or "").split()).strip() for cell in self.rows[0]]
+        if len(headers) < 2 or any(not header for header in headers):
+            return None
+        lowered = [header.lower() for header in headers]
+        if len(set(lowered)) != len(lowered):
+            return None
+        if any(_looks_schedule_marker_header(header) for header in headers):
+            return None
+        numeric_like = sum(1 for header in headers if _looks_numeric(header))
+        if numeric_like >= max(1, len(headers) // 2):
+            return None
+        return headers
+
+
+def _looks_numeric(value: str) -> bool:
+    stripped = value.strip().replace(",", "").replace(".", "").replace("-", "")
+    return bool(stripped) and stripped.isdigit()
+
+
+def _looks_schedule_marker_header(value: str) -> bool:
+    tokens = [token.strip().lower() for token in value.split() if token.strip()]
+    if not tokens:
+        return False
+    schedule_codes = {"d", "w", "m", "q", "s", "a"}
+    return all(token in schedule_codes for token in tokens)

@@ -46,3 +46,17 @@ def test_table_asset_to_structured_row_text_returns_none_for_header_only_table()
     )
 
     assert table.to_structured_row_text() is None
+
+
+def test_table_asset_to_structured_row_text_skips_schedule_marker_headers() -> None:
+    table = TableAsset(
+        table_id="table_004",
+        document_id="doc_001",
+        markdown="unused",
+        rows=[
+            ["Task", "D", "W", "M"],
+            ["Inspect filter", "x", "", "x"],
+        ],
+    )
+
+    assert table.to_structured_row_text() is None

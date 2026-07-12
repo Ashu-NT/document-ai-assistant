@@ -18,6 +18,15 @@ from src.application.workflows.question_answering.answer_context.structured_fact
 from src.application.workflows.question_answering.answer_pipeline.retrieved_chunk_converter import (
     to_retrieved_chunk,
 )
+from src.application.workflows.question_answering.answer_pipeline.structured_evidence_scope import (
+    StructuredEvidenceScope,
+)
+from src.application.workflows.question_answering.answer_pipeline.structured_evidence_scope_filter import (
+    StructuredEvidenceScopeFilter,
+)
+from src.application.workflows.question_answering.answer_pipeline.structured_fact_join_result import (
+    StructuredFactJoinResult,
+)
 from src.application.workflows.question_answering.evidence import FinalEvidencePreparer
 from src.application.workflows.question_answering.question_answering_route import (
     QuestionAnsweringRoute,
@@ -58,11 +67,8 @@ class StructuredFactJoiner:
         question: str,
         resolved_identifiers: list,
         resolved_structured_entities: list,
-    ) -> tuple[
-        list[RetrievedChunk],
-        StructuredAnswerContext | None,
-        AnswerIntentDecision | None,
-    ]:
+    ) -> StructuredFactJoinResult:
+        approved_chunk_ids = {chunk.chunk_id for chunk in approved_chunks}
         existing_chunk_ids = {chunk.chunk_id for chunk in approved_chunks}
         needed_chunk_ids: set[str] = set()
         for identifier in resolved_identifiers:
@@ -96,32 +102,46 @@ class StructuredFactJoiner:
             query=analyzed_query,
             chunks=joined_chunks,
         )
+        approved_prepared_chunks = [
+            chunk for chunk in prepared_chunks if chunk.chunk_id in approved_chunk_ids
+        ]
+        scope_filter = StructuredEvidenceScopeFilter(
+            StructuredEvidenceScope.from_chunks(approved_prepared_chunks)
+        )
+        scoped_identifiers = scope_filter.filter_identifiers(resolved_identifiers)
+        scoped_structured_entities = scope_filter.filter_entities(
+            resolved_structured_entities
+        )
 
-        if not resolved_identifiers and not resolved_structured_entities:
-            return prepared_chunks, None, None
+        if not scoped_identifiers and not scoped_structured_entities:
+            return StructuredFactJoinResult(
+                chunks=approved_prepared_chunks,
+                structured_context=None,
+                intent_decision=None,
+            )
 
         intent_decision = self._resolve_structured_answer_intent_decision(
             question=question,
             analyzed_query=analyzed_query,
-            prepared_chunks=prepared_chunks,
+            prepared_chunks=approved_prepared_chunks,
         )
         structured_context = self._answer_context_organizer.organize(
             answer_intent=intent_decision.intent,
-            chunks=prepared_chunks,
+            chunks=approved_prepared_chunks,
         )
         source_number_by_chunk_id = self._source_number_by_chunk_id(
-            chunks=prepared_chunks,
+            chunks=approved_prepared_chunks,
             structured_context=structured_context,
         )
 
         extra_key_values = (
             self._structured_fact_key_value_builder.build_from_identifiers(
-                list(resolved_identifiers),
+                scoped_identifiers,
                 source_number_by_chunk_id=source_number_by_chunk_id,
             )
         )
         entities_by_type: dict[str, list[dict]] = {}
-        for entity in resolved_structured_entities:
+        for entity in scoped_structured_entities:
             if not isinstance(entity, dict):
                 continue
             entity_type = entity.get("_entity_type")
@@ -145,10 +165,16 @@ class StructuredFactJoiner:
         structured_context.key_values.extend(extra_key_values)
         structured_context.structured_entities.extend(
             self._structured_evidence_view_builder.build(
-                list(resolved_structured_entities)
+                scoped_structured_entities
             )
         )
-        return prepared_chunks, structured_context, intent_decision
+        return StructuredFactJoinResult(
+            chunks=approved_prepared_chunks,
+            structured_context=structured_context,
+            intent_decision=intent_decision,
+            resolved_identifiers=scoped_identifiers,
+            resolved_structured_entities=scoped_structured_entities,
+        )
 
     def _resolve_structured_answer_intent_decision(
         self,

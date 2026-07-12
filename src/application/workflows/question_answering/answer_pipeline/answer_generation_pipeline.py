@@ -193,15 +193,18 @@ class AnswerGenerationPipeline:
         # LLM only ever sees approved_chunks (plus any structured-fact source
         # chunks joined in below)
         emit_progress(progress_callback, "Generating answer...")
-        joined_chunks, structured_context, intent_decision = (
-            self._structured_fact_joiner.join(
-                approved_chunks=approved_chunks,
-                analyzed_query=analyzed_query,
-                question=request.question,
-                resolved_identifiers=resolved_identifiers,
-                resolved_structured_entities=resolved_structured_entities,
-            )
+        join_result = self._structured_fact_joiner.join(
+            approved_chunks=approved_chunks,
+            analyzed_query=analyzed_query,
+            question=request.question,
+            resolved_identifiers=resolved_identifiers,
+            resolved_structured_entities=resolved_structured_entities,
         )
+        joined_chunks = join_result.chunks
+        structured_context = join_result.structured_context
+        intent_decision = join_result.intent_decision
+        resolved_identifiers = join_result.resolved_identifiers
+        resolved_structured_entities = join_result.resolved_structured_entities
         gen_request = AnswerGenerationRequest(
             question=request.question,
             context_chunks=joined_chunks,

@@ -2,10 +2,36 @@
 
 ## Status
 
-- **Investigation only. No code has been changed.** This document independently verifies an external review's findings (pasted CLI transcripts against the current system) with five parallel, read-only code audits, each grounded against real ingested-document data in `data/maintenance_ai.db` (read-only SQL only — no LLM available in this environment, no writes). Every finding below was reproduced or directly confirmed against real stored rows, not assumed from the transcripts alone.
-- Trigger: after the team implemented the per-category presentation upgrade (table-grid rendering, an extended `KeyValueExtractor`, and new `TableSchemaInferer`/`TableProjector` components), an external review of real CLI output found the output "looks better than before but not enterprise standard" — specifically: mixed/partial context despite tables being "well hydrated," unreliable structured row extraction, critically broken evidence scoping, overly verbose output exposing internal fallback data, and weak reflection.
-- **Constraint honored throughout this document**: real document data (`data/maintenance_ai.db`, ~18 ingested documents) was used only to *ground and reproduce* each finding — every root cause and proposed fix below is described in general, schema-driven terms applicable to any document this system ingests, not hardcoded to the specific document used for verification.
-- Method: five parallel code audits — table schema inference/row-parsing, evidence-scoping architecture, maintenance interval column-mapping, reflection scoring + strategy advisor, and output verbosity/raw-data exposure — synthesized here into one picture.
+- **Investigation only. No code has been changed.** This document independently verifies an external review's findings (pasted CLI transcripts against the current system) with five parallel, read-only code audits, each grounded against real ingested-document data in `data/maintenance_ai.db` (read-only SQL only - no LLM available in this environment, no writes). Every finding below was reproduced or directly confirmed against real stored rows, not assumed from the transcripts alone.
+- Trigger: after the team implemented the per-category presentation upgrade (table-grid rendering, an extended `KeyValueExtractor`, and new `TableSchemaInferer`/`TableProjector` components), an external review of real CLI output found the output "looks better than before but not enterprise standard" - specifically: mixed/partial context despite tables being "well hydrated," unreliable structured row extraction, critically broken evidence scoping, overly verbose output exposing internal fallback data, and weak reflection.
+- **Constraint honored throughout this document**: real document data (`data/maintenance_ai.db`, ~18 ingested documents) was used only to *ground and reproduce* each finding - every root cause and proposed fix below is described in general, schema-driven terms applicable to any document this system ingests, not hardcoded to the specific document used for verification.
+- Method: five parallel code audits - table schema inference/row-parsing, evidence-scoping architecture, maintenance interval column-mapping, reflection scoring + strategy advisor, and output verbosity/raw-data exposure - synthesized here into one picture.
+
+### Review Update (2026-07-12)
+
+- The "no code has been changed" preface above is now stale. Since this investigation was first written, the repo has gained a real answer-context table layer: `AnswerContextOrganizer` now builds `tables` through `AnswerTableProjector`, `StructuredAnswerContext` now carries those projected tables, `KeyValueExtractor` consumes `SpecificationTableKeyValueExtractor`, `MaintenanceTaskExtractor` consumes `MaintenanceTableCandidateExtractor`, and the prompt serializer now includes `tables` in the structured evidence payload sent to the generic LLM path.
+- That means one important part of the earlier concern is already partially addressed: table evidence is no longer only a raw markdown blob by the time answer generation runs. There is now a typed in-memory representation for tables in `src/application/workflows/question_answering/answer_context/tables/` and that representation is forwarded into `src/application/prompts/answer_generation/prompt_context/serializers/structured_evidence_payload_serializer.py`.
+- The investigation's main correctness finding still holds after this code review: the structured-entity resolver path is still document-wide and still falls back from query text search to `list_* (document_id)` without any approved-chunk or approved-table scope. `StructuredFactJoiner` also still widens answer-time evidence by fetching extra source chunks from resolved entities rather than enforcing the already-approved evidence boundary.
+- Two additional current-state clarifications from this review:
+  - `TableAsset.to_structured_row_text()` is still a blind first-row header zipper. The new answer-context table projector does not fix that earlier hydration-stage behavior by itself.
+  - `MaintenanceTaskExtractor` now prefers projected tables when they are recognized, but its raw-source fallback is still broad: after table extraction misses, it still scans every provided source for maintenance-like verbs without a source-level topicality filter.
+- The implementation work that follows this review should therefore prioritize:
+  1. answer-time structured-evidence scope enforcement,
+  2. safer structured row echo generation for hydrated table evidence,
+  3. then the remaining maintenance/table interpretation gaps.
+
+### Implementation Update (2026-07-12, current repo state)
+
+- Phase-1 style answer-time scope enforcement is now implemented in the codebase:
+  - `src/application/workflows/question_answering/answer_pipeline/structured_evidence_scope.py`
+  - `src/application/workflows/question_answering/answer_pipeline/structured_evidence_scope_filter.py`
+  - `src/application/workflows/question_answering/answer_pipeline/structured_fact_join_result.py`
+  - `StructuredFactJoiner` now keeps final answer-time structured facts inside the approved evidence boundary, while still allowing duplicate source chunks that collapse into already-approved chunks to map back safely through `dedup_collapsed_chunk_ids`.
+- The hydration-stage table row echo is also safer than the historical findings below describe: `TableAsset.to_structured_row_text()` now suppresses schedule-marker header shapes instead of blindly emitting `header=value` rows for them.
+- The historical findings in Sections 2-6 remain valuable as root-cause documentation, but they no longer describe the repo perfectly as-is. After this implementation pass:
+  - the approved-evidence grounding boundary is materially stronger,
+  - schedule-matrix row echo corruption is reduced,
+  - but maintenance topicality filtering, richer table-shape interpretation, and reflection/advisor hardening still remain open follow-up work.
 
 ## 1. Executive Summary
 

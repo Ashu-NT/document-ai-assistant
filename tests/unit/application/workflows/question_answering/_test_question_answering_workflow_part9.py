@@ -150,14 +150,9 @@ class _CapturingLLMService:
 def test_resolved_structured_entities_without_lookup_service_do_not_crash(
     fake_exploration_service: FakeDocumentExplorationService,
 ) -> None:
-    """Regression test for 4.3/9.7: structured_context used to come back
-    None whenever the resolved entity's source chunk couldn't be fetched
-    (no lookup service here, so build_from_structured_entities() has no
-    source_number to key against and produces no AnswerKeyValue rows) --
-    silently discarding the organized context. It must now always be
-    returned once successfully organized; the raw entity still reaches
-    structured_entities via StructuredEvidenceViewBuilder, which needs the
-    entity dict, not a resolved chunk."""
+    """Out-of-scope structured entities must not crash the workflow and
+    must not leak into answer-time context when their source chunk never
+    entered the approved evidence set."""
     retrieved_chunk = _make_chunk("chunk_a")
     wf_result = _make_retrieval_result_with_chunks([retrieved_chunk])
     fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
@@ -184,13 +179,8 @@ def test_resolved_structured_entities_without_lookup_service_do_not_crash(
 
     assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
     assert fake_gen.called_with is not None
-    structured_context = fake_gen.called_with.structured_context
-    assert structured_context is not None
-    assert structured_context.key_values == []
-    assert len(structured_context.structured_entities) == 1
-    entity = structured_context.structured_entities[0]
-    assert entity.entity_type == "manufacturer"
-    assert entity.fields["name"] == "ACME Corp"
+    assert fake_gen.called_with.structured_context is None
+    assert fake_gen.called_with.resolved_structured_entities == []
     assert len(fake_gen.called_with.context_chunks) == 1
 
 def test_context_override_falls_back_to_structured_evidence_resolver(

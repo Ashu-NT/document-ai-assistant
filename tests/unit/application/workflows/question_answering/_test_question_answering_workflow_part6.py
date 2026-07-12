@@ -194,13 +194,9 @@ def test_resolved_structured_entity_joins_missing_source_chunk_into_context(
     assert fake_gen.called_with is not None
     context_chunk_ids = {c.chunk_id for c in fake_gen.called_with.context_chunks}
     assert "chunk_a" in context_chunk_ids
-    assert "chunk_manufacturer" in context_chunk_ids
-    assert fake_gen.called_with.structured_context is not None
-    key_value_pairs = {
-        (kv.key, kv.value) for kv in fake_gen.called_with.structured_context.key_values
-    }
-    assert ("Manufacturer Website", "https://acme.example") in key_value_pairs
-    assert ("Manufacturer Name", "ACME Corp") in key_value_pairs
+    assert "chunk_manufacturer" not in context_chunk_ids
+    assert fake_gen.called_with.structured_context is None
+    assert fake_gen.called_with.resolved_structured_entities == []
 
 def test_retrieval_workflow_structured_evidence_is_forwarded_into_generation_context(
     fake_exploration_service: FakeDocumentExplorationService,
@@ -299,9 +295,6 @@ def test_resolved_identifier_joins_missing_source_chunk_into_context(
     assert lookup_service.requested_ids == ["chunk_identifier"]
     assert fake_gen.called_with is not None
     context_chunk_ids = {c.chunk_id for c in fake_gen.called_with.context_chunks}
-    assert "chunk_identifier" in context_chunk_ids
-    assert fake_gen.called_with.structured_context is not None
-    key_value_pairs = {
-        (kv.key, kv.value) for kv in fake_gen.called_with.structured_context.key_values
-    }
-    assert ("Part Number", "HP-001") in key_value_pairs
+    assert "chunk_identifier" not in context_chunk_ids
+    assert fake_gen.called_with.structured_context is None
+    assert fake_gen.called_with.resolved_identifiers == []
