@@ -77,7 +77,8 @@ def test_render_falls_back_to_chunk_parsing_when_no_structured_entities() -> Non
     )
 
     assert result is not None
-    assert "Part No.: A00103" in result
+    assert "Part No." in result
+    assert "A00103" in result
 
 def test_render_ignores_structured_entities_of_other_types() -> None:
     renderer = SparePartsListRenderer()
@@ -99,7 +100,8 @@ def test_render_ignores_structured_entities_of_other_types() -> None:
 
     # Non-spare-part entities are ignored, so it falls back to chunk parsing.
     assert result is not None
-    assert "Part No.: A00103" in result
+    assert "Part No." in result
+    assert "A00103" in result
 
 def test_render_skips_structured_entities_missing_part_number_and_description() -> None:
     renderer = SparePartsListRenderer()
@@ -148,7 +150,8 @@ def test_render_prefers_table_rows_json_over_chunk_text_regex_parsing() -> None:
 
     assert result is not None
     assert "Filter (from rows)" in result
-    assert "Part No.: A00103" in result
+    assert "Part No." in result
+    assert "A00103" in result
     assert "Z99999" not in result
     assert "from chunk text" not in result
 
@@ -180,7 +183,8 @@ def test_render_falls_back_to_chunk_parsing_when_table_rows_json_has_no_header()
     )
 
     assert result is not None
-    assert "Part No.: A00103" in result
+    assert "Part No." in result
+    assert "A00103" in result
 
 def test_render_falls_back_to_chunk_parsing_when_table_rows_json_malformed() -> None:
     renderer = SparePartsListRenderer()
@@ -203,4 +207,5 @@ def test_render_falls_back_to_chunk_parsing_when_table_rows_json_malformed() -> 
     )
 
     assert result is not None
-    assert "Part No.: A00103" in result
+    assert "Part No." in result
+    assert "A00103" in result

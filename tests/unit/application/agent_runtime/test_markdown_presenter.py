@@ -112,3 +112,40 @@ def test_markdown_includes_sections_reference_notes_and_limitation_note() -> Non
     assert "Every 1000 hours." in markdown
     assert "## Reference Notes" in markdown
     assert "[UNVERIFIED] [r1] Every 1000 operating hours. -> Source 1" in markdown
+
+
+def test_markdown_uses_resolved_final_answer_for_accept_with_limitations() -> None:
+    session = SessionManager().create_session(
+        session_id="demo-session",
+        runtime_options=RuntimeOptions(),
+    )
+    result = GraphResult.ok(
+        response_text=(
+            "I could not verify a grounded answer confidently enough from the "
+            "current document evidence."
+        ),
+        route="answer_question",
+        data={
+            "answer": "Weekly maintenance is required every 100 operating hours.",
+            "reflection_decision": "ACCEPT_WITH_LIMITATIONS",
+            "tool_results": {
+                "answer_question": {
+                    "success": True,
+                    "data": {
+                        "answer_text": (
+                            "Weekly maintenance is required every 100 operating hours."
+                        )
+                    },
+                }
+            },
+        },
+    )
+
+    markdown = MarkdownPresenter().render(
+        session=session,
+        result=result,
+        react_trace=ReactTrace(route="answer_question"),
+    )
+
+    assert "Weekly maintenance is required every 100 operating hours." in markdown
+    assert "I could not verify a grounded answer confidently enough" not in markdown

@@ -165,7 +165,7 @@ def test_workflow_with_real_generation_service_preserves_relationship_graph_in_p
         answer_generation_service=real_gen_service,
     )
     request = QuestionAnsweringRequest(
-        question="How do I replace the hydraulic filter?",
+        question="Summarize the hydraulic filter maintenance context.",
         allow_answer_generation=True,
         resolved_structured_entities=[
             {

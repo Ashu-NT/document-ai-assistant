@@ -5,11 +5,13 @@ from typing import Any
 from src.application.agent_runtime.common.page_label_formatter import (
     format_page_range_label,
 )
+from src.application.agent_runtime.presenters.final_answer_resolver import (
+    resolve_presented_answer_text,
+)
 from src.application.langgraph.common import (
-    is_safe_failure_message,
-    is_usable_reflection_decision,
     reflection_decision_from_state,
 )
+from src.application.langgraph.common.render_provenance import answer_heading
 from src.application.agent_runtime.policies.demo_visibility_policy import (
     DemoVisibilityPolicy,
 )
@@ -38,10 +40,11 @@ def render_graph_result(
         trace_text = react_presenter.render(react_trace, policy=policy)
         if trace_text:
             lines.extend([trace_text, ""])
+    answer_block_heading = _answer_block_heading(result)
     lines.extend(
         [
-            "Final Answer",
-            "------------",
+            answer_block_heading,
+            "-" * len(answer_block_heading),
             console_safe_text(final_answer_text(result)),
             "",
         ]
@@ -91,6 +94,9 @@ def _render_status_footer(result, *, session) -> str:
     strategy = _strategy_label(data)
     if strategy:
         fields.append(("Strategy", strategy))
+    render_provenance = data.get("render_provenance")
+    if render_provenance:
+        fields.append(("Answer From", render_provenance))
     reflection = data.get("reflection_decision") or reflection_decision_from_state(data)
     if reflection:
         # finding 6.5: always surface reflection's stated reason next to its
@@ -327,31 +333,15 @@ def _strategy_label(data: dict[str, Any]) -> str | None:
 
 
 def final_answer_text(result) -> str:
+    return resolve_presented_answer_text(result)
+
+
+def _answer_block_heading(result) -> str:
     data = result.data or {}
-    response_text = result.response_text
-    answer_text = data.get("answer")
-    # finding 5.5 (this renderer's own independent copy): if
-    # PostResponseGuardrailService just replaced response_text with a
-    # safe-fallback message (grounding failure / secret leakage / prompt
-    # injection), that replacement must win outright. Without this
-    # short-circuit, the recovery swap below could revert it back to the
-    # raw generated answer just because the current text happens to
-    # string-match one of the same sentinel messages reflection can also
-    # legitimately produce -- exactly mirroring the fix already applied to
-    # the canonical resolve_answer_text() in response_text_resolver.py and
-    # to document_agent_result_builder.py.
-    if data.get("response_text_guardrail_replaced"):
-        return response_text or answer_text or ""
-    reflection = data.get("reflection_decision") or reflection_decision_from_state(data)
-    if (
-        is_usable_reflection_decision(reflection)
-        and is_safe_failure_message(response_text)
-        and isinstance(answer_text, str)
-        and answer_text.strip()
-        and not is_safe_failure_message(answer_text)
-    ):
-        return answer_text
-    return response_text or answer_text or ""
+    return answer_heading(
+        answer_intent=data.get("answer_intent"),
+        render_provenance=data.get("render_provenance"),
+    )
 
 
 def _elapsed_seconds(trace_entries: list[dict[str, Any]]) -> float | None:

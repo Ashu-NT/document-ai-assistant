@@ -38,6 +38,7 @@ def build_result(state: AgentState) -> GraphResult:
         if recovered_answer and not is_safe_failure_message(recovered_answer):
             answer = recovered_answer
     answer_intent = answer_extractor.extract_answer_intent(tool_results)
+    render_provenance = answer_extractor.extract_render_provenance(tool_results)
     citations = answer_extractor.extract_citations(tool_results)
     limitation_note = answer_extractor.extract_limitation_note(tool_results)
     sections = answer_extractor.extract_sections(tool_results)
@@ -86,6 +87,7 @@ def build_result(state: AgentState) -> GraphResult:
         "final_response_warning": state.get("final_response_warning"),
         "response_text_guardrail_replaced": guardrail_replaced,
         "answer_intent": answer_intent,
+        "render_provenance": render_provenance,
         "context_chunks": context_chunks,
         "citations": citations,
         "limitation_note": limitation_note,
@@ -170,6 +172,8 @@ def build_result(state: AgentState) -> GraphResult:
         diagnostics["guardrail_trace"] = state.get("guardrail_trace", [])
     if answer_intent is not None:
         diagnostics["answer_intent"] = answer_intent
+    if render_provenance is not None:
+        diagnostics["render_provenance"] = render_provenance
     if state.get("reflection_decision"):
         diagnostics["reflection_decision"] = state.get("reflection_decision")
         diagnostics["reflection_score"] = state.get("reflection_score")

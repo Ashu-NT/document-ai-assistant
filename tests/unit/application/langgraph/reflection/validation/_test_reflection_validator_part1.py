@@ -13,14 +13,19 @@ _GROUNDED_SPARE_PARTS_ANSWER = (
     "   Pages: 85-87\n"
     "   Section: 7 Components > Vacuum / Transfer Pump\n\n"
     "   Available rows:\n"
-    "   - Description: Filter\n"
-    "     Part No.: A00103\n\n"
+    "   +-------------+----------+\n"
+    "   | Description | Part No. |\n"
+    "   +-------------+----------+\n"
+    "   | Filter      | A00103   |\n"
+    "   +-------------+----------+\n\n"
     "2. Valve List > Spare Parts\n"
     "   Pages: 97\n\n"
     "   Available rows:\n"
-    "   - P&ID Position: V.00.01.01\n"
-    "     Service: Dry Running Protection\n"
-    "     Part No.: A00103\n\n"
+    "   +----------------+------------------------+----------+\n"
+    "   | P&ID Position  | Service                | Part No. |\n"
+    "   +----------------+------------------------+----------+\n"
+    "   | V.00.01.01     | Dry Running Protection | A00103   |\n"
+    "   +----------------+------------------------+----------+\n\n"
     "Only partial row content was available in the retrieved context.\n"
 )
 
@@ -138,7 +143,11 @@ def test_validator_rejects_answer_with_only_header_or_unit_artifact_rows() -> No
             "1. Spare Parts List\n"
             "   Pages: 85-87\n\n"
             "   Available rows:\n"
-            "   - Quantity: Pce\n"
+            "   +----------+\n"
+            "   | Quantity |\n"
+            "   +----------+\n"
+            "   | Pce      |\n"
+            "   +----------+\n"
         ),
         has_useful_evidence=True,
         has_relevant_maintenance_evidence=False,
@@ -168,9 +177,11 @@ def test_validator_accepts_spare_parts_answer_with_real_rows_alongside_quantity(
             "1. Spare Parts List\n"
             "   Pages: 85-87\n\n"
             "   Available rows:\n"
-            "   - Quantity: Pce\n"
-            "     Denomination: Filter\n"
-            "     Spare Part No.: A00103\n"
+            "   +----------+-------------+----------------+\n"
+            "   | Quantity | Description | Spare Part No. |\n"
+            "   +----------+-------------+----------------+\n"
+            "   | Pce      | Filter      | A00103         |\n"
+            "   +----------+-------------+----------------+\n"
         ),
         has_useful_evidence=True,
         has_relevant_maintenance_evidence=False,

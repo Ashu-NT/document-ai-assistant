@@ -19,6 +19,7 @@ from src.application.workflows.question_answering.answer_context.models import (
     AnswerSource,
 )
 from src.domain.common import ChunkType
+from src.shared.text.ascii_table_renderer import AsciiTableColumn, render_ascii_table
 
 _SUPPORTED_INTENTS = {AnswerIntent.TABLE_SUMMARY, AnswerIntent.IDENTIFIER_LOOKUP}
 _PARTIAL_CONTENT_NOTICE = (
@@ -26,7 +27,6 @@ _PARTIAL_CONTENT_NOTICE = (
 )
 _EXPORT_FORMAT_MARKERS = ("markdown", "csv", "export", "spreadsheet", ".csv", ".md")
 _SPARE_PARTS_REQUEST_MARKERS = ("spare part", "spare parts")
-
 _ROW_FIELD_LABELS: dict[str, str] = {
     "position": "Position",
     "pid_position": "P&ID Position",
@@ -53,6 +53,20 @@ _ROW_FIELD_ORDER = (
     "component",
     "manufacturer",
 )
+_ROW_FIELD_MAX_WIDTHS: dict[str, int] = {
+    "position": 14,
+    "pid_position": 18,
+    "quantity": 10,
+    "unit": 8,
+    "service": 26,
+    "type": 36,
+    "description": 34,
+    "part_no": 18,
+    "service_package": 18,
+    "component": 24,
+    "manufacturer": 24,
+}
+
 _STRUCTURED_ENTITY_TYPE = "spare_part"
 _STRUCTURED_GROUP_TITLE = "Spare Parts (from extracted data)"
 
@@ -199,12 +213,11 @@ class SparePartsListRenderer:
             lines.append(f"   Section: {group.section_path or '-'}")
             lines.append("   Type: spare_parts_table")
             lines.append("")
-            if group.rows or group.raw_rows:
+            if group.rows:
                 lines.append("   Available rows:")
-                for row in group.rows:
-                    self._append_row_lines(lines, row)
-                for raw_row in group.raw_rows:
-                    lines.append(f"   - Raw row: {raw_row}")
+                lines.extend(self._indented_table_lines(group.rows))
+            for raw_row in group.raw_rows:
+                lines.append(f"   - Raw row: {raw_row}")
             if group.partial:
                 lines.append(f"   {_PARTIAL_CONTENT_NOTICE}")
             if index < len(groups):
@@ -212,14 +225,19 @@ class SparePartsListRenderer:
         return "\n".join(lines).strip()
 
     @staticmethod
-    def _append_row_lines(lines: list[str], row: dict[str, str]) -> None:
-        first = True
-        for field in _ROW_FIELD_ORDER:
-            if field not in row:
-                continue
-            prefix = "   - " if first else "     "
-            lines.append(f"{prefix}{_ROW_FIELD_LABELS[field]}: {row[field]}")
-            first = False
+    def _indented_table_lines(rows: Sequence[dict[str, str]]) -> list[str]:
+        columns = [
+            AsciiTableColumn(
+                key=field,
+                title=_ROW_FIELD_LABELS[field],
+                max_width=_ROW_FIELD_MAX_WIDTHS[field],
+            )
+            for field in _visible_row_fields(rows)
+        ]
+        if not columns:
+            return []
+        table_text = render_ascii_table(columns=columns, rows=rows)
+        return [f"   {line}" for line in table_text.splitlines()]
 
     @staticmethod
     def _page_range(page_start: int | None, page_end: int | None) -> str:
@@ -228,3 +246,11 @@ class SparePartsListRenderer:
         if page_end is None or page_end == page_start:
             return str(page_start)
         return f"{page_start}-{page_end}"
+
+
+def _visible_row_fields(rows: Sequence[dict[str, str]]) -> list[str]:
+    visible_fields: list[str] = []
+    for field in _ROW_FIELD_ORDER:
+        if any(str(row.get(field, "")).strip() for row in rows):
+            visible_fields.append(field)
+    return visible_fields

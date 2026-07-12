@@ -78,8 +78,10 @@ def test_render_skips_bare_quantity_unit_artifact_rows() -> None:
 
     assert result is not None
     assert "Quantity: Pce" not in result
-    assert "Description: Filter" in result
-    assert "Part No.: A00103" in result
+    assert "Description" in result
+    assert "Filter" in result
+    assert "Part No." in result
+    assert "A00103" in result
     assert "Only partial row content was available in the retrieved context." in result
 
 def test_render_extracts_pid_style_valve_rows_with_part_no() -> None:
@@ -106,8 +108,10 @@ def test_render_extracts_pid_style_valve_rows_with_part_no() -> None:
     )
 
     assert result is not None
-    assert "P&ID Position: V.00.01.01" in result
-    assert "Part No.: A00103" in result
+    assert "P&ID Position" in result
+    assert "V.00.01.01" in result
+    assert "Part No." in result
+    assert "A00103" in result
     assert "Dry Running Protection" in result
 
 def test_render_excludes_safety_section_without_real_table_rows() -> None:
@@ -148,7 +152,8 @@ def test_render_excludes_safety_section_without_real_table_rows() -> None:
     assert "2.8 Spare Parts" not in result
     assert "Pages: 11" not in result
     assert "Spare Parts List" in result
-    assert "Part No.: A00103" in result
+    assert "Part No." in result
+    assert "A00103" in result
 
 def test_render_layout_a_structured_header_table() -> None:
     renderer = SparePartsListRenderer()
@@ -165,10 +170,12 @@ def test_render_layout_a_structured_header_table() -> None:
     )
 
     assert result is not None
-    assert "Position: 1" in result
-    assert "Quantity: 2" in result
-    assert "Description: Filter" in result
-    assert "Part No.: A00103" in result
+    assert "Position" in result
+    assert "Quantity" in result
+    assert "Description" in result
+    assert "Part No." in result
+    assert "Filter" in result
+    assert "A00103" in result
 
 def test_render_layout_a_free_form_position_quantity_unit_description() -> None:
     renderer = SparePartsListRenderer()
@@ -181,10 +188,14 @@ def test_render_layout_a_free_form_position_quantity_unit_description() -> None:
     )
 
     assert result is not None
-    assert "Position: 0010" in result
-    assert "Quantity: 1" in result
-    assert "Unit: Pce" in result
-    assert "Description: housing" in result
+    assert "Position" in result
+    assert "0010" in result
+    assert "Quantity" in result
+    assert "1" in result
+    assert "Unit" in result
+    assert "Pce" in result
+    assert "Description" in result
+    assert "housing" in result
     assert "Part No." not in result
 
 def test_render_layout_b_pid_valve_style_row() -> None:
@@ -198,10 +209,14 @@ def test_render_layout_b_pid_valve_style_row() -> None:
     )
 
     assert result is not None
-    assert "P&ID Position: V.00.01.01" in result
-    assert "Service: Dry Running Protection" in result
-    assert "Type: Solenoid G1/2 2/2-way 24Vdc" in result
-    assert "Part No.: A00103" in result
+    assert "P&ID Position" in result
+    assert "V.00.01.01" in result
+    assert "Service" in result
+    assert "Dry Running Protection" in result
+    assert "Type" in result
+    assert "Solenoid G1/2 2/2-way 24Vdc" in result
+    assert "Part No." in result
+    assert "A00103" in result
 
 def test_render_layout_c_two_column_exploded_view_pairs() -> None:
     renderer = SparePartsListRenderer()
@@ -214,10 +229,12 @@ def test_render_layout_c_two_column_exploded_view_pairs() -> None:
     )
 
     assert result is not None
-    assert "Position: 14.00" in result
-    assert "Description: Pump Casing" in result
-    assert "Position: 70.00" in result
-    assert "Description: Lantern bracket" in result
+    assert "Position" in result
+    assert "14.00" in result
+    assert "70.00" in result
+    assert "Description" in result
+    assert "Pump Casing" in result
+    assert "Lantern bracket" in result
 
 def test_render_layout_d_falls_back_to_raw_row_for_unrecognized_shape() -> None:
     renderer = SparePartsListRenderer()
@@ -274,9 +291,12 @@ def test_render_prefers_structured_entities_over_chunk_parsing() -> None:
 
     assert result is not None
     assert "Filter (from extracted data)" in result
-    assert "Part No.: A00103" in result
-    assert "Component: Pump" in result
-    assert "Manufacturer: Acme" in result
+    assert "Part No." in result
+    assert "A00103" in result
+    assert "Component" in result
+    assert "Pump" in result
+    assert "Manufacturer" in result
+    assert "Acme" in result
     # The regex-parsed chunk content must not appear -- structured data wins.
     assert "Z99999" not in result
     assert "from chunk text" not in result

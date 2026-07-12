@@ -68,7 +68,7 @@ def test_generate_builds_structured_context_and_format_policy_before_prompt() ->
     )
     service.generate(
         AnswerGenerationRequest(
-            question="specification",
+            question="Explain the pressure specification in detail",
             context_chunks=[
                 _make_chunk(
                     content="Test pressure: 700 bar\nDesign pressure: 350 bar",

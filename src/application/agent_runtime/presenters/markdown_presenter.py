@@ -5,6 +5,10 @@ from typing import Any
 from src.application.agent_runtime.presenters.console.graph_result_renderer import (
     format_reference_note_line,
 )
+from src.application.agent_runtime.presenters.final_answer_resolver import (
+    resolve_presented_answer_text,
+)
+from src.application.langgraph.common.render_provenance import answer_heading
 
 
 class MarkdownPresenter:
@@ -44,12 +48,15 @@ class MarkdownPresenter:
             )
         lines.extend(
             [
-                "## Final Answer",
+                f"## {_answer_heading(data)}",
                 "",
-                str(data.get("answer") or result.response_text or ""),
+                str(resolve_presented_answer_text(result)),
                 "",
             ]
         )
+        render_provenance = data.get("render_provenance")
+        if render_provenance:
+            lines.extend(["## Answer From", "", str(render_provenance), ""])
         limitation_note = data.get("limitation_note")
         if limitation_note:
             lines.extend(["## Limitation", "", str(limitation_note), ""])
@@ -88,3 +95,10 @@ class MarkdownPresenter:
             ]
         )
         return "\n".join(lines).rstrip() + "\n"
+
+
+def _answer_heading(data: dict[str, Any]) -> str:
+    return answer_heading(
+        answer_intent=data.get("answer_intent"),
+        render_provenance=data.get("render_provenance"),
+    )

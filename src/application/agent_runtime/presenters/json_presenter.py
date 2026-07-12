@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.application.agent_runtime.presenters.final_answer_resolver import (
+    resolve_presented_answer_text,
+)
+
 
 class JsonPresenter:
     def to_payload(
@@ -16,9 +20,11 @@ class JsonPresenter:
         payload = {
             "route": result.route,
             "success": result.success,
-            "answer": data.get("answer") or result.response_text,
+            "answer": resolve_presented_answer_text(result),
             "document_id": data.get("selected_document_id") or data.get("document_id"),
             "selected_document": session.selected_document.display_name,
+            "answer_intent": data.get("answer_intent"),
+            "render_provenance": data.get("render_provenance"),
             "context_chunks": data.get("context_chunks", []),
             "citations": data.get("citations", []),
             "sections": data.get("sections", []),

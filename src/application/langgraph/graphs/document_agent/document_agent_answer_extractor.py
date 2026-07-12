@@ -4,6 +4,7 @@ from typing import Any
 
 from src.application.langgraph.common import resolve_answer_text, serialize_graph_value
 from src.application.langgraph.common.answer_intent_resolver import resolve_answer_intent
+from src.application.langgraph.common.render_provenance import render_provenance_label
 
 
 def extract_answer(
@@ -78,6 +79,19 @@ def extract_post_answer_guardrail_warnings(
             if isinstance(warnings, list):
                 return serialize_graph_value(warnings)
     return []
+
+
+def extract_render_provenance(tool_results: dict[str, Any]) -> str | None:
+    answer_question_payload = tool_payload(tool_results, "answer_question")
+    if not isinstance(answer_question_payload, dict):
+        return None
+    diagnostics = answer_question_payload.get("diagnostics")
+    if not isinstance(diagnostics, dict):
+        return None
+    model_name = diagnostics.get("model_name")
+    if not isinstance(model_name, str) or not model_name.strip():
+        return None
+    return render_provenance_label(model_name.strip())
 
 
 def tool_payload(

@@ -12,8 +12,11 @@ _GENUINE_PARTIAL_WITH_ROW_DATA = (
     "1. Spare Parts List\n"
     "   Pages: 85-87\n\n"
     "   Available rows:\n"
-    "   - Description: Filter\n"
-    "     Part No.: A00103\n\n"
+    "   +-------------+----------+\n"
+    "   | Description | Part No. |\n"
+    "   +-------------+----------+\n"
+    "   | Filter      | A00103   |\n"
+    "   +-------------+----------+\n\n"
     "Only a partial list of spare parts could be extracted from the "
     "retrieved context.\n"
 )

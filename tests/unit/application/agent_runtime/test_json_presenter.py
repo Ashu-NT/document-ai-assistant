@@ -116,3 +116,40 @@ def test_json_presenter_includes_sections_reference_notes_and_limitation_note() 
     ]
     assert payload["reference_notes"][0]["note_id"] == "r1"
     assert payload["limitation_note"] == "Only the primary interval was found."
+
+
+def test_json_presenter_uses_resolved_final_answer_for_accept_with_limitations() -> None:
+    session = SessionManager().create_session(
+        session_id="demo-session",
+        runtime_options=RuntimeOptions(),
+    )
+    result = GraphResult.ok(
+        response_text=(
+            "I could not verify a grounded answer confidently enough from the "
+            "current document evidence."
+        ),
+        route="answer_question",
+        data={
+            "answer": "Weekly maintenance is required every 100 operating hours.",
+            "reflection_decision": "ACCEPT_WITH_LIMITATIONS",
+            "tool_results": {
+                "answer_question": {
+                    "success": True,
+                    "data": {
+                        "answer_text": (
+                            "Weekly maintenance is required every 100 operating hours."
+                        )
+                    },
+                }
+            },
+        },
+    )
+
+    payload = JsonPresenter().render(
+        session=session,
+        result=result,
+        react_trace=ReactTrace(route="answer_question"),
+        include_trace=False,
+    )
+
+    assert payload["answer"] == "Weekly maintenance is required every 100 operating hours."

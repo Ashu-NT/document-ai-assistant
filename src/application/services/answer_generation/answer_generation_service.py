@@ -7,6 +7,13 @@ from src.application.services.answer_generation.answer_generation_diagnostics_bu
 from src.application.services.answer_generation.formatting.identifier_answer_renderer import (
     IdentifierAnswerRenderer,
 )
+from src.application.services.answer_generation.formatting.renderers import (
+    DeterministicAnswerRendererDispatcher,
+    KeyValueFactSheetRenderer,
+    MaintenanceScheduleRenderer,
+    ProcedureStepsRenderer,
+    TroubleshootingRenderer,
+)
 from src.application.services.answer_generation.formatting.spare_parts_list_renderer import (
     SparePartsListRenderer,
 )
@@ -105,6 +112,10 @@ _COMPOUND_EXCLUDED_INTENTS_BY_DRIVING: dict[AnswerIntent, frozenset[AnswerIntent
 _RENDERER_LIMITATION_LABELS: dict[str, str] = {
     "identifier_answer_renderer": "identifier",
     "spare_parts_list_renderer": "spare parts",
+    "maintenance_schedule_renderer": "maintenance schedule",
+    "procedure_steps_renderer": "procedure steps",
+    "troubleshooting_renderer": "troubleshooting guidance",
+    "key_value_fact_sheet_renderer": "structured facts",
 }
 
 
@@ -229,6 +240,10 @@ class AnswerGenerationService:
         answer_context_organizer: AnswerContextOrganizer | None = None,
         identifier_answer_renderer: IdentifierAnswerRenderer | None = None,
         spare_parts_list_renderer: SparePartsListRenderer | None = None,
+        maintenance_schedule_renderer: MaintenanceScheduleRenderer | None = None,
+        procedure_steps_renderer: ProcedureStepsRenderer | None = None,
+        troubleshooting_renderer: TroubleshootingRenderer | None = None,
+        key_value_fact_sheet_renderer: KeyValueFactSheetRenderer | None = None,
         response_parser: AnswerGenerationResponseParser | None = None,
         answer_generation_model: str | None = None,
         answer_generation_temperature: float | None = None,
@@ -247,7 +262,29 @@ class AnswerGenerationService:
         self.spare_parts_list_renderer = (
             spare_parts_list_renderer or SparePartsListRenderer()
         )
+        self.maintenance_schedule_renderer = (
+            maintenance_schedule_renderer or MaintenanceScheduleRenderer()
+        )
+        self.procedure_steps_renderer = (
+            procedure_steps_renderer or ProcedureStepsRenderer()
+        )
+        self.troubleshooting_renderer = (
+            troubleshooting_renderer or TroubleshootingRenderer()
+        )
+        self.key_value_fact_sheet_renderer = (
+            key_value_fact_sheet_renderer or KeyValueFactSheetRenderer()
+        )
         self.response_parser = response_parser or AnswerGenerationResponseParser()
+        self.deterministic_renderer_dispatcher = (
+            DeterministicAnswerRendererDispatcher(
+                identifier_answer_renderer=self.identifier_answer_renderer,
+                spare_parts_list_renderer=self.spare_parts_list_renderer,
+                maintenance_schedule_renderer=self.maintenance_schedule_renderer,
+                procedure_steps_renderer=self.procedure_steps_renderer,
+                troubleshooting_renderer=self.troubleshooting_renderer,
+                key_value_fact_sheet_renderer=self.key_value_fact_sheet_renderer,
+            )
+        )
         self.answer_generation_model = (
             answer_generation_model or _default_answer_generation_model()
         )
@@ -298,53 +335,41 @@ class AnswerGenerationService:
             structured_context=structured_context,
             maintenance_diagnostics=maintenance_diagnostics,
         )
-        deterministic_answer = self.identifier_answer_renderer.render(
+        deterministic_result = self.deterministic_renderer_dispatcher.render(
             question=resolved_request.question,
             answer_intent=resolved_request.answer_intent,
             structured_context=structured_context,
             resolved_identifiers=resolved_request.resolved_identifiers,
+            resolved_structured_entities=resolved_request.resolved_structured_entities,
         )
-        deterministic_renderer_name = "identifier_answer_renderer"
-        if deterministic_answer is None:
-            deterministic_answer = self.spare_parts_list_renderer.render(
-                question=resolved_request.question,
-                answer_intent=resolved_request.answer_intent,
-                sources=structured_context.sources if structured_context is not None else (),
-                resolved_structured_entities=resolved_request.resolved_structured_entities,
-            )
-            deterministic_renderer_name = "spare_parts_list_renderer"
-        if deterministic_answer is not None:
-            model_name = (
-                "deterministic_identifier_renderer"
-                if deterministic_renderer_name == "identifier_answer_renderer"
-                else "deterministic_spare_parts_renderer"
-            )
-            deterministic_diagnostics = {"deterministic_renderer": deterministic_renderer_name}
-            if deterministic_renderer_name == "spare_parts_list_renderer":
-                deterministic_diagnostics.update(
-                    self.spare_parts_list_renderer.last_diagnostics()
-                )
+        if deterministic_result is not None:
+            deterministic_diagnostics = {
+                "deterministic_renderer": deterministic_result.renderer_name,
+                **deterministic_result.diagnostics,
+            }
             unrelated_intent = _detect_unrelated_intent_signal(
                 resolved_request.question, resolved_request.answer_intent
             )
             limitation_note = (
-                _build_compound_question_limitation_note(deterministic_renderer_name)
+                _build_compound_question_limitation_note(
+                    deterministic_result.renderer_name
+                )
                 if unrelated_intent is not None
                 else None
             )
             return self._build_generated_answer(
-                answer_text=deterministic_answer,
+                answer_text=deterministic_result.answer_text,
                 citations=citations,
                 cited_chunk_ids=cited_chunk_ids,
                 prompt_version=prompt_version,
-                model_name=model_name,
+                model_name=deterministic_result.model_name,
                 answer_intent=resolved_request.answer_intent,
                 confidence=intent_decision.confidence,
                 diagnostics={
                     **diagnostics,
                     **deterministic_diagnostics,
                 },
-                raw_model_output=deterministic_answer,
+                raw_model_output=deterministic_result.answer_text,
                 limitation_note=limitation_note,
             )
 

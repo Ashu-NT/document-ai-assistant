@@ -131,10 +131,12 @@ def test_render_groups_rows_by_section_and_page() -> None:
     assert "Section: 7 Components > Spare Parts" in result
     assert "Type: spare_parts_table" in result
     assert "Available rows:" in result
-    assert "- Position: 1" in result
-    assert "Quantity: 2" in result
-    assert "Description: Filter" in result
-    assert "Part No.: A00103" in result
+    assert "Position" in result
+    assert "Quantity" in result
+    assert "Description" in result
+    assert "Part No." in result
+    assert "Filter" in result
+    assert "A00103" in result
 
 def test_render_multiple_chunks_produce_multiple_numbered_groups() -> None:
     renderer = SparePartsListRenderer()
