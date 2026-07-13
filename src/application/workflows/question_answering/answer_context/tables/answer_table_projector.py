@@ -13,14 +13,19 @@ from src.application.workflows.question_answering.answer_context.tables.answer_t
 from src.application.workflows.question_answering.answer_context.tables.answer_table_schema_inferer import (
     AnswerTableSchemaInferer,
 )
+from src.domain.assets.table_rows.table_row_canonicalizer import (
+    TableRowCanonicalizer,
+)
 
 
 class AnswerTableProjector:
     def __init__(
         self,
         schema_inferer: AnswerTableSchemaInferer | None = None,
+        row_canonicalizer: TableRowCanonicalizer | None = None,
     ) -> None:
         self.schema_inferer = schema_inferer or AnswerTableSchemaInferer()
+        self.row_canonicalizer = row_canonicalizer or TableRowCanonicalizer()
 
     def build(self, sources: Sequence[AnswerSource]) -> list[AnswerTable]:
         tables: list[AnswerTable] = []
@@ -41,12 +46,11 @@ class AnswerTableProjector:
         return tables
 
     def _build_table(self, source: AnswerSource) -> AnswerTable | None:
-        cleaned_rows = [self._clean_row(row) for row in source.table_rows or []]
-        cleaned_rows = [row for row in cleaned_rows if row]
+        cleaned_rows = self.row_canonicalizer.canonicalize(source.table_rows or [])
         if not cleaned_rows:
             return None
 
-        has_headers = self._has_header_row(cleaned_rows)
+        has_headers = self.row_canonicalizer.has_explicit_header_row(cleaned_rows)
         headers = cleaned_rows[0] if has_headers else []
         body_rows = cleaned_rows[1:] if has_headers else cleaned_rows
         table_category = source.metadata.get("table_category")
@@ -92,25 +96,6 @@ class AnswerTableProjector:
         )
 
     @staticmethod
-    def _clean_row(row: list[str]) -> list[str]:
-        normalized = [" ".join(str(cell or "").split()).strip() for cell in row]
-        return normalized if any(normalized) else []
-
-    def _has_header_row(self, rows: list[list[str]]) -> bool:
-        if len(rows) < 2:
-            return False
-        header = rows[0]
-        if len(header) < 2:
-            return False
-        lowered = [cell.lower() for cell in header if cell]
-        if len(lowered) != len(header):
-            return False
-        if len(set(lowered)) != len(lowered):
-            return False
-        numeric_like = sum(1 for cell in header if self._looks_numeric(cell))
-        return numeric_like < max(1, len(header) // 2)
-
-    @staticmethod
     def _cells_by_header(headers: list[str], row: list[str]) -> dict[str, str]:
         if not headers:
             return {}
@@ -119,11 +104,6 @@ class AnswerTableProjector:
             for index, header in enumerate(headers)
             if header and index < len(row) and row[index]
         }
-
-    @staticmethod
-    def _looks_numeric(value: str) -> bool:
-        stripped = value.strip().replace(",", "").replace(".", "").replace("-", "")
-        return bool(stripped) and stripped.isdigit()
 
     @staticmethod
     def _decode_table_ids(metadata: dict[str, str]) -> list[str]:

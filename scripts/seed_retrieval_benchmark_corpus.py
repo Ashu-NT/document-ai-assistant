@@ -90,6 +90,21 @@ def parse_args() -> argparse.Namespace:
             "already exists instead of reusing the stored graph."
         ),
     )
+    target_group = parser.add_mutually_exclusive_group()
+    target_group.add_argument(
+        "--document-alias",
+        help=(
+            "Seed only one benchmark target identified by its truth-set "
+            "document alias."
+        ),
+    )
+    target_group.add_argument(
+        "--file-name",
+        help=(
+            "Seed only one benchmark target identified by its truth-set "
+            "file name."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -309,6 +324,12 @@ def main() -> int:
     else:
         print_status(f"Input directory: {input_directory}")
     print_status(f"Manifest output path: {output_path}")
+    if args.document_alias:
+        print_status(f"Target filter: document_alias={args.document_alias}")
+    elif args.file_name:
+        print_status(f"Target filter: file_name={args.file_name}")
+    else:
+        print_status("Target filter: all benchmark documents in the truth set")
     print_status(
         "Duplicate handling: "
         + (
@@ -328,6 +349,8 @@ def main() -> int:
         manifest = seeder.seed_corpus(
             truth_set_path=truth_set_path,
             input_directory=input_directory,
+            document_alias=args.document_alias,
+            file_name=args.file_name,
             force_reparse_existing=args.force_reparse,
             progress_callback=print_status,
         )

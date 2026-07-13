@@ -2,6 +2,7 @@ import re
 
 
 class IntervalExpressionParser:
+    _SCHEDULE_CODE_MARKERS = {"a", "d", "m", "q", "s", "w"}
     _CALENDAR_MARKERS = (
         "daily",
         "day",
@@ -34,6 +35,8 @@ class IntervalExpressionParser:
         if not text:
             return False
 
+        if self._looks_like_schedule_code_expression(text):
+            return True
         if any(marker in text for marker in self._CALENDAR_MARKERS):
             return True
         if any(marker in text for marker in self._EVENT_MARKERS):
@@ -44,3 +47,11 @@ class IntervalExpressionParser:
                 text,
             )
         )
+
+    def _looks_like_schedule_code_expression(self, text: str) -> bool:
+        tokens = [
+            token
+            for token in text.replace("/", " ").replace(",", " ").replace(";", " ").split()
+            if token
+        ]
+        return bool(tokens) and all(token in self._SCHEDULE_CODE_MARKERS for token in tokens)

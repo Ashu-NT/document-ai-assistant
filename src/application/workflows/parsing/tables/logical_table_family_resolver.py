@@ -66,6 +66,14 @@ class LogicalTableFamilyResolver:
         if previous_table is None or current_table is None:
             return False
 
+        previous_item_label = self._item_label(previous)
+        current_item_label = self._item_label(current)
+        if previous_item_label == current_item_label == "document_index":
+            return self._pages_are_adjacent(previous, current) and self._column_counts_are_compatible(
+                previous_table,
+                current_table,
+            )
+
         if previous.parent_section_id != current.parent_section_id:
             return False
 
@@ -74,13 +82,16 @@ class LogicalTableFamilyResolver:
         if not previous_signature or previous_signature != current_signature:
             return False
 
-        if (
-            previous_table.column_count is not None
-            and current_table.column_count is not None
-            and previous_table.column_count != current_table.column_count
-        ):
+        if not self._column_counts_are_compatible(previous_table, current_table):
             return False
 
+        return self._pages_are_adjacent(previous, current)
+
+    def _pages_are_adjacent(
+        self,
+        previous: CanonicalElement,
+        current: CanonicalElement,
+    ) -> bool:
         previous_page = previous.source.page_end or previous.source.page_start
         current_page = current.source.page_start or current.source.page_end
         if previous_page is None or current_page is None:
@@ -88,6 +99,21 @@ class LogicalTableFamilyResolver:
 
         page_gap = current_page - previous_page
         return 0 <= page_gap <= self.max_continuation_page_gap
+
+    @staticmethod
+    def _column_counts_are_compatible(previous_table, current_table) -> bool:
+        return not (
+            previous_table.column_count is not None
+            and current_table.column_count is not None
+            and previous_table.column_count != current_table.column_count
+        )
+
+    @staticmethod
+    def _item_label(element: CanonicalElement) -> str | None:
+        if element.parser_metadata is None:
+            return None
+        value = str(element.parser_metadata.extra.get("item_label") or "").strip().lower()
+        return value or None
 
     def _build_assignments(
         self,

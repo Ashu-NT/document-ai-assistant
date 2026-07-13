@@ -59,4 +59,25 @@ def test_table_asset_to_structured_row_text_skips_schedule_marker_headers() -> N
         ],
     )
 
-    assert table.to_structured_row_text() is None
+    assert table.to_structured_row_text() == (
+        "Row 1: Task=Inspect filter | Intervals=Daily, Monthly"
+    )
+
+
+def test_table_asset_to_structured_row_text_renders_headerless_key_value_rows() -> None:
+    table = TableAsset(
+        table_id="table_005",
+        document_id="doc_001",
+        markdown="unused",
+        rows=[
+            ["Tank Capacity", "1,200L"],
+            ["Pump Capacity", "max 16,000L/hr"],
+            ["Voltage", "400V 50Hz"],
+        ],
+    )
+
+    assert table.to_structured_row_text() == (
+        "Row 1: Label=Tank Capacity | Value=1,200L\n"
+        "Row 2: Label=Pump Capacity | Value=max 16,000L/hr\n"
+        "Row 3: Label=Voltage | Value=400V 50Hz"
+    )

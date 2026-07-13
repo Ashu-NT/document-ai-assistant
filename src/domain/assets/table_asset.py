@@ -2,7 +2,12 @@ from dataclasses import dataclass, field
 
 from src.domain.assets.asset_metadata import AssetMetadata
 from src.domain.assets.table_cell_span import TableCellSpan
+from src.domain.assets.table_rows.structured_row_renderer import (
+    StructuredRowRenderer,
+)
 from src.domain.common import AuditMetadata
+
+_STRUCTURED_ROW_RENDERER = StructuredRowRenderer()
 
 
 @dataclass(slots=True)
@@ -47,58 +52,4 @@ class TableAsset:
         return "\n".join(parts)
 
     def to_structured_row_text(self) -> str | None:
-        """Renders each body row as an explicit `header=value` line, using the
-        first row as column labels. Meant to be appended alongside
-        `to_embedding_text()` -- not a replacement -- so a consumer (LLM
-        extraction, QA evidence) has an unambiguous, row-by-row echo of the
-        table to cross-check against the markdown, rather than having to
-        visually re-parse pipe-delimited text itself."""
-        if len(self.rows) < 2:
-            return None
-
-        headers = self._structured_row_headers()
-        if headers is None:
-            return None
-        lines = []
-        for row_index, row in enumerate(self.rows[1:], start=1):
-            cells = [
-                f"{headers[column_index].strip()}={cell.strip()}"
-                for column_index, cell in enumerate(row)
-                if column_index < len(headers)
-                and headers[column_index].strip()
-                and cell.strip()
-            ]
-            if cells:
-                lines.append(f"Row {row_index}: " + " | ".join(cells))
-
-        if not lines:
-            return None
-
-        return "\n".join(lines)
-
-    def _structured_row_headers(self) -> list[str] | None:
-        headers = [" ".join(str(cell or "").split()).strip() for cell in self.rows[0]]
-        if len(headers) < 2 or any(not header for header in headers):
-            return None
-        lowered = [header.lower() for header in headers]
-        if len(set(lowered)) != len(lowered):
-            return None
-        if any(_looks_schedule_marker_header(header) for header in headers):
-            return None
-        numeric_like = sum(1 for header in headers if _looks_numeric(header))
-        if numeric_like >= max(1, len(headers) // 2):
-            return None
-        return headers
-
-
-def _looks_numeric(value: str) -> bool:
-    stripped = value.strip().replace(",", "").replace(".", "").replace("-", "")
-    return bool(stripped) and stripped.isdigit()
-
-
-def _looks_schedule_marker_header(value: str) -> bool:
-    tokens = [token.strip().lower() for token in value.split() if token.strip()]
-    if not tokens:
-        return False
-    schedule_codes = {"d", "w", "m", "q", "s", "a"}
-    return all(token in schedule_codes for token in tokens)
+        return _STRUCTURED_ROW_RENDERER.render(self.rows)

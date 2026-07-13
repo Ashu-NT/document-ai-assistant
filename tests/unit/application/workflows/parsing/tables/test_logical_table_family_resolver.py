@@ -139,3 +139,40 @@ def test_resolver_keeps_distinct_table_headers_in_separate_families() -> None:
     assert second.family_total == 1
     assert first.continuation_role == "single"
     assert second.continuation_role == "single"
+
+
+def test_resolver_groups_adjacent_document_index_tables_even_without_matching_headers() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.tables["table_1"] = _make_table_asset(
+        table_id="table_1",
+        rows=[["1", "Introduction", "3"]],
+        column_count=3,
+    )
+    graph.tables["table_2"] = _make_table_asset(
+        table_id="table_2",
+        rows=[["2", "Operation", "6"]],
+        column_count=3,
+    )
+    first = _make_table_element(
+        element_id="el_1",
+        table_id="table_1",
+        page_start=2,
+        reading_order=1,
+    )
+    second = _make_table_element(
+        element_id="el_2",
+        table_id="table_2",
+        page_start=3,
+        parent_section_id="sec_999",
+        reading_order=2,
+    )
+    first.parser_metadata.extra["item_label"] = "document_index"
+    second.parser_metadata.extra["item_label"] = "document_index"
+    graph.add_element(first)
+    graph.add_element(second)
+
+    LogicalTableFamilyResolver().resolve(graph)
+
+    assert graph.tables["table_1"].logical_table_family_id == "table_family_table_1"
+    assert graph.tables["table_2"].logical_table_family_id == "table_family_table_1"
+    assert graph.tables["table_2"].continuation_role == "end"

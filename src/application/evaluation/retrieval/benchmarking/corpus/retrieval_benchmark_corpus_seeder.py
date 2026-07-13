@@ -74,6 +74,8 @@ class RetrievalBenchmarkCorpusSeeder:
         *,
         truth_set_path: Path | str | None = None,
         input_directory: Path | str | None = None,
+        document_alias: str | None = None,
+        file_name: str | None = None,
         force_reparse_existing: bool = False,
         activity_context: ActivityContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
@@ -98,6 +100,8 @@ class RetrievalBenchmarkCorpusSeeder:
         seed_targets = collect_seed_targets(
             dataset=dataset,
             input_directory=resolved_input_directory,
+            document_alias=document_alias,
+            file_name=file_name,
         )
         total_targets = len(seed_targets)
         emit_progress(
