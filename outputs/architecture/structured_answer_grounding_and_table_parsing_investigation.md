@@ -2,12 +2,12 @@
 
 ## Status
 
-- **Investigation only. No code has been changed.** This document independently verifies an external review's findings (pasted CLI transcripts against the current system) with five parallel, read-only code audits, each grounded against real ingested-document data in `data/maintenance_ai.db` (read-only SQL only - no LLM available in this environment, no writes). Every finding below was reproduced or directly confirmed against real stored rows, not assumed from the transcripts alone.
+- This document started as an investigation and upgrade plan. The repo has now moved beyond investigation: the structured-answer grounding, table-parsing, raw-evidence gating, reflection, and strategy-advisor hardening described here have been implemented in the current codebase.
 - Trigger: after the team implemented the per-category presentation upgrade (table-grid rendering, an extended `KeyValueExtractor`, and new `TableSchemaInferer`/`TableProjector` components), an external review of real CLI output found the output "looks better than before but not enterprise standard" - specifically: mixed/partial context despite tables being "well hydrated," unreliable structured row extraction, critically broken evidence scoping, overly verbose output exposing internal fallback data, and weak reflection.
-- **Constraint honored throughout this document**: real document data (`data/maintenance_ai.db`, ~18 ingested documents) was used only to *ground and reproduce* each finding - every root cause and proposed fix below is described in general, schema-driven terms applicable to any document this system ingests, not hardcoded to the specific document used for verification.
+- **Constraint honored throughout this document**: real document data (`data/maintenance_ai.db`, ~18 ingested documents) was used only to *ground and reproduce* each finding - every root cause and fix described here remains schema-driven and document-agnostic rather than tuned to a specific benchmark document.
 - Method: five parallel code audits - table schema inference/row-parsing, evidence-scoping architecture, maintenance interval column-mapping, reflection scoring + strategy advisor, and output verbosity/raw-data exposure - synthesized here into one picture.
 
-### Review Update (2026-07-12)
+### Historical Review Snapshot (2026-07-12, pre-fix observations)
 
 - The "no code has been changed" preface above is now stale. Since this investigation was first written, the repo has gained a real answer-context table layer: `AnswerContextOrganizer` now builds `tables` through `AnswerTableProjector`, `StructuredAnswerContext` now carries those projected tables, `KeyValueExtractor` consumes `SpecificationTableKeyValueExtractor`, `MaintenanceTaskExtractor` consumes `MaintenanceTableCandidateExtractor`, and the prompt serializer now includes `tables` in the structured evidence payload sent to the generic LLM path.
 - That means one important part of the earlier concern is already partially addressed: table evidence is no longer only a raw markdown blob by the time answer generation runs. There is now a typed in-memory representation for tables in `src/application/workflows/question_answering/answer_context/tables/` and that representation is forwarded into `src/application/prompts/answer_generation/prompt_context/serializers/structured_evidence_payload_serializer.py`.
@@ -22,16 +22,39 @@
 
 ### Implementation Update (2026-07-12, current repo state)
 
-- Phase-1 style answer-time scope enforcement is now implemented in the codebase:
+- Phase 1 is implemented at the answer-time grounding boundary:
   - `src/application/workflows/question_answering/answer_pipeline/structured_evidence_scope.py`
   - `src/application/workflows/question_answering/answer_pipeline/structured_evidence_scope_filter.py`
   - `src/application/workflows/question_answering/answer_pipeline/structured_fact_join_result.py`
-  - `StructuredFactJoiner` now keeps final answer-time structured facts inside the approved evidence boundary, while still allowing duplicate source chunks that collapse into already-approved chunks to map back safely through `dedup_collapsed_chunk_ids`.
-- The hydration-stage table row echo is also safer than the historical findings below describe: `TableAsset.to_structured_row_text()` now suppresses schedule-marker header shapes instead of blindly emitting `header=value` rows for them.
-- The historical findings in Sections 2-6 remain valuable as root-cause documentation, but they no longer describe the repo perfectly as-is. After this implementation pass:
-  - the approved-evidence grounding boundary is materially stronger,
-  - schedule-matrix row echo corruption is reduced,
-  - but maintenance topicality filtering, richer table-shape interpretation, and reflection/advisor hardening still remain open follow-up work.
+  - `StructuredFactJoiner` now keeps final answer-time structured facts inside the approved evidence boundary, while still allowing deduplicated chunk families to map back safely through `dedup_collapsed_chunk_ids`.
+- Phase 2 is implemented:
+  - `src/application/workflows/question_answering/answer_context/maintenance/maintenance_source_relevance_filter.py`
+  - `MaintenanceTaskExtractor` now filters broad source noise before converting sources into maintenance entries.
+- Phase 3 is implemented:
+  - `table_header_semantics.schedule_interval_labels(...)`
+  - `table_header_semantics.active_schedule_labels(...)`
+  - `MaintenanceTableCandidateExtractor` and `maintenance_candidate_parser.py` now handle schedule markers and interval fallback more safely.
+  - `structured_grid_row_parser.py` now tolerates repeated field banks better.
+  - `spare_parts_table_parser.py` now accepts single position/description pairs instead of dropping them to raw-row fallback as aggressively as before.
+- Phase 4 is implemented:
+  - `show_raw_evidence` is now threaded from CLI/runtime policy into `AnswerGenerationRequest` and `SparePartsListRenderer`.
+  - Raw fallback rows are hidden by default and only shown when explicitly requested.
+- Phase 5 is implemented:
+  - `SparePartsGroupSelector` and `SparePartsSummaryRenderer` now provide summary-first behavior for broad spare-parts requests and narrowing for more specific component-oriented queries.
+- Phase 6 is implemented:
+  - `answer_page_reference_analyzer.py`
+  - `answer_duplicate_content_detector.py`
+  - `AnswerQuality` / `EvidenceQuality` now track page coverage and duplicate-content signals.
+  - Reflection now blocks or retries on unexpected pages and duplicate answer content instead of accepting them silently.
+- Phase 7 is implemented:
+  - `src/application/langgraph/strategy_advisor/concept_grounding.py`
+  - `StrategyAdvisorValidator` now accepts normalized concepts that are genuinely grounded in the query instead of requiring verbatim substring matches.
+- Verification:
+  - Focused suites for spare-parts rendering, maintenance context, reflection, and strategy-advisor grounding pass.
+  - A full `python -m pytest -q` run in `ai-agent-gpu` completed successfully after these changes.
+- The historical findings in Sections 2-6 remain valuable as root-cause documentation, but they no longer describe the repo perfectly as-is. The current codebase now has materially stronger answer-time grounding, safer table interpretation, quieter default output, and stricter reflection/advisor behavior.
+
+Sections 2-6 below are therefore best read as the preserved pre-fix root-cause record that motivated the implementation work above.
 
 ## 1. Executive Summary
 
@@ -108,13 +131,13 @@ Scope: `src/application/services/answer_generation/formatting/spare_parts_list_r
 | 6.3 | **A natural home for a gate already exists but doesn't reach this layer.** `DemoVisibilityPolicy` already has unused-for-this-purpose fields `show_raw_json`/`show_raw_prompts` alongside `debug` — a fitting place for a new `show_raw_evidence` field. But this policy currently only reaches the react-trace/tool-observation display (`graph_result_renderer.py`) — it's never threaded into the answer-generation layer where raw-row text is actually built into the final answer string. Gating this requires new plumbing (a new param threaded from CLI args through `AnswerGenerationRequest` down to the renderer), not just flipping an existing switch. | `demo_visibility_policy.py`; `graph_result_renderer.py:39-40` |
 | 6.4 | **Structural verbosity estimate**: raw-row fallback can add up to 25 lines per affected group, and a group can end up with 0 parsed rows + up to 25 raw-row lines (100% fallback noise) shown with no visual distinction from cleanly-parsed groups. For a multi-table document where even one or two chunks fail clean parsing, this can roughly double total answer length — matching the reviewer's observed "3 tables + raw-row fallbacks" ballooning symptom. | `spare_parts_table_parser.py:36,75,155-164` |
 
-## 7. Phased Implementation Plan (for team review — nothing below is implemented)
+## 7. Phased Implementation Plan and Current Status
 
 Ordering rationale: fix the correctness bugs that produce visibly wrong data first (evidence scoping — the single most severe, "answer isn't from the retrieved pages" defect — then the two table-parsing bugs, then the maintenance column-mapping bugs that share one of those root causes); then hide what shouldn't be user-facing; then strengthen reflection so it can catch regressions in everything above automatically; then fix the advisor. Every phase's fix must be schema/architecture-general — validated against the diverse ~18-document corpus's variety of table layouts, not tuned to one document's specific content.
 
-### Phase 1 — Evidence-scope enforcement (Priority 0: the grounding-boundary failure)
+### Phase 1 — Evidence-scope enforcement (implemented)
 
-This is the fix the external review's own proposed architecture describes, adapted to this codebase's actual current structure (`StructuredEntityResolver`/`StructuredEvidenceResolver`/DB readers), confirmed by Section 2's trace:
+This was implemented in the codebase at the answer-time grounding boundary rather than by trying to retrofit retrieval-time structured-record queries with post-retrieval scope they do not yet have access to. The current implementation centers on `StructuredEvidenceScope`, `StructuredEvidenceScopeFilter`, and `StructuredFactJoiner`.
 
 1. **Introduce an `EvidenceScope` value object** (chunk_ids, table_ids, page_numbers, document_id) built once per turn from `RetrievalWorkflowResult.approved_chunks` (plus anything `StructuredFactJoiner` explicitly joins in) — this is the "validated evidence scope" the review calls for.
 2. **Thread it into the resolution path**: `StructuredEvidenceResolver.resolve()` → `StructuredEntityResolver.resolve()` → the DB readers (`troubleshooting_entry_reader.py`, `spare_part_reader.py`, and the analogous maintenance/procedure readers). Add a scoped query method to each reader, e.g. `find_for_evidence(document_id, chunk_ids, table_ids)`, using the traceability columns (`source_chunk_id`, etc.) that already exist per finding 2.7 — this is schema-compatible with every document in the corpus, not a new column.
@@ -124,40 +147,40 @@ This is the fix the external review's own proposed architecture describes, adapt
 6. Apply the same scoping to procedure-steps (finding 2.4) in the same change, since it shares the identical code path.
 7. **Tests**: for each of troubleshooting/procedure/maintenance, a case where a document has structured records both inside and outside the current turn's evidence scope, asserting only in-scope records render — using synthetic fixture data, not any specific real document's content, so the test generalizes.
 
-### Phase 2 — Maintenance's independent unscoped-relevance bug (finding 4.2)
+### Phase 2 — Maintenance's independent unscoped-relevance bug (implemented)
 
 Distinct from Phase 1 (maintenance is already chunk-scoped by construction) — this needs a per-chunk *topicality* filter, not a DB-query fix:
 1. Before treating a chunk as maintenance-candidate material, require either a `chunk_type` in a maintenance-relevant set (e.g. `maintenance_interval`, not `safety_warning`/`operation_instruction`/`overview`) or a minimum keyword-density signal beyond a single incidental verb match.
 2. Tighten `looks_like_maintenance_task`/`looks_like_maintenance_line` so a single generic verb match isn't sufficient in isolation — require it to co-occur with a genuine schedule/interval signal specific to that source's chunk type, or gate more strictly on chunk_type first.
 3. **Test with synthetic chunks of varying chunk_types** (not any specific document) containing incidental verb matches, asserting only genuinely maintenance-typed content survives.
 
-### Phase 3 — Table interpretation bugs (findings 3.1-3.3)
+### Phase 3 — Table interpretation bugs (implemented)
 
 1. **Bug A (legend leak)**: guard `TableAsset.to_structured_row_text()` to only produce `"header=value"` echoes when the table is confirmed key-value shaped (reuse `AnswerTableSchemaInferer`'s existing role-matching, don't duplicate it) — skip/omit this echo for anything else, rather than blindly zipping row-0. Separately, teach `table_header_semantics.schedule_interval_label()` to recognize and split merged multi-code legend headers (tokenize on whitespace, check each token against the known code set) so genuinely schedule-matrix tables get correctly classified and routed to the existing, correct `MaintenanceTableCandidateExtractor` instead of degrading to the naive fallback. This directly fixes finding 4.1/4.3 as well, since they share this root cause.
 2. **Bug B (two-column flattening)**: change `_parse_free_text_blob`'s acceptance gate to accept a single `position + description` match per cell (not require `>= 2`), while keeping a guard against genuinely free-running prose being misparsed as a position pair (e.g. require the position token to match the existing position-code pattern strictly, which already exists). Also address the compounding issue (finding 3.3): allow `as_structured_header()` to recognize a genuine repeated two-bank header (`"Pos | Description | Pos | Description"`) as two independent field groups instead of unconditionally rejecting the repeated key.
 3. **Tests**: synthetic table fixtures — one with a merged multi-code legend header, one with an uneven two-column position/description layout — covering the general shape of the bug, not any one real document's exact table.
 
-### Phase 4 — Hide fallback/internal data from normal users (findings 6.1-6.3)
+### Phase 4 — Hide fallback/internal data from normal users (implemented)
 
 1. Add `show_raw_evidence: bool = False` to `DemoVisibilityPolicy` (the natural, already-anticipated home per finding 6.3).
 2. Thread it from CLI args (`--show-raw-evidence`, alongside the existing `--debug`) through `AnswerGenerationRequest` into `SparePartsListRenderer.render()`/`_render_groups()`, gating the "Raw row: ..." lines behind it — default off, so normal users never see them; the underlying data still exists for debugging.
 3. Alternative/complementary approach also worth considering: move raw-row content out of the primary answer string entirely into `last_diagnostics()`-style out-of-band diagnostics (mirroring how `spare_parts_dropped_row_count`/`spare_parts_partial` already work) — only the CLI, when the flag is set, prints them separately. This keeps the core answer string clean regardless of caller.
 4. **Tests**: default-off behavior (no raw rows in output) and flag-on behavior (raw rows appear), using synthetic incomplete-row fixtures.
 
-### Phase 5 — Summarize-first for broad structured queries (finding 6.2)
+### Phase 5 — Summarize-first for broad structured queries (implemented)
 
 1. When a spare-parts (or similarly multi-table-capable) query doesn't name a specific equipment/component, render a short summary first (equipment/list name, pages, available-info columns) rather than dumping every matching table's full row content — matching the review's proposed two-step UX (summarize, then support a narrower follow-up).
 2. This needs a genuinely general equipment/component-name matching heuristic (not hardcoded equipment names) — e.g. compare the question's noun phrases against each table's own section/heading text already captured at ingestion, falling back to "show everything" when no narrowing signal is found (preserving today's behavior as the safe default when the heuristic can't confidently narrow).
 3. **Test** with synthetic multi-table fixtures under different equipment names, confirming narrowing works generically, not for one specific equipment name.
 
-### Phase 6 — Strengthen reflection with deterministic, page-scope-aware checks (findings 5.1-5.3)
+### Phase 6 — Strengthen reflection with deterministic, page-scope-aware checks (implemented)
 
 1. **Add the missing page-membership check**: extract cited pages from the final answer text/citations, compute `unexpected_pages = answer_pages - retrieved_pages` and `missing_pages = retrieved_pages - answer_pages`; a non-empty `unexpected_pages` should block ACCEPT outright (this is a correctness violation, not a quality nuance); a large `missing_pages` relative to retrieved evidence should at minimum lower the score materially, not just add a generic "incomplete" note.
 2. **Add a duplicate-content check**: a simple near-duplicate-row detector (e.g. normalized-text similarity or exact-match-after-whitespace-normalization across rows in a rendered table) feeding into the score — this would have caught the maintenance table's near-verbatim duplicated rows from Section 3.1.
 3. **Widen the scoring resolution**: replace the coarse boolean-average formulas with a finer-grained composite (e.g. real coverage ratios, not booleans) so genuinely different answers can't collapse onto the same score bucket — this is what would stop the "identical 0.8334 for two different bad answers" symptom from recurring even after 1-2 are fixed.
 4. **Tests**: synthetic reflection inputs with known page mismatches and known duplicate rows, asserting the new checks fire and block/downgrade acceptance — independent of Phase 1's actual bug fix, so this becomes a permanent regression guard against a future evidence-scoping regression.
 
-### Phase 7 — Fix or disable the strategy advisor (finding 5.4)
+### Phase 7 — Fix or disable the strategy advisor (implemented)
 
 1. Preferred fix: change `_validate_concepts` from a literal substring-containment check to something that matches the advisor's own intended contract (short category/concept labels) — e.g. validate against a known vocabulary/enum of retrieval-strategy concepts (which the advisor's own prompt already uses) rather than requiring verbatim presence in the user's raw query text.
 2. If a quick, confident fix isn't feasible this phase, disable the advisor behind its existing trigger conditions (feature-flag it off) rather than leaving it running and failing on nearly every real invocation — per the review's own suggestion, it's currently adding latency/trace noise with no observed benefit since deterministic routing already selects correctly on its own.
@@ -165,7 +188,7 @@ Distinct from Phase 1 (maintenance is already chunk-scoped by construction) — 
 
 ## 8. Explicitly Out of Scope for This Document
 
-- No code was changed to produce this report — investigation and planning only.
+- This document began as investigation and planning, but the corresponding implementation has now landed. The sections above should therefore be read as historical findings plus a statused implementation record, not as a pure pre-implementation memo.
 - Real document data was used exclusively to *verify and reproduce* findings; no proposed fix in Section 7 references or special-cases any specific document, table layout convention (e.g. "M/S/A"), or equipment name — every fix is described in terms of the general architecture/heuristic that needs to change.
 - This document does not re-litigate the already-implemented `answer_quality_and_output_enterprise_hardening_plan.md` or `per_category_presentation_investigation_and_upgrade_plan.md` efforts — it assumes their outcomes as a baseline and focuses on the new defects surfaced by the team's own subsequent implementation work (table schema inferer/projector, extended `KeyValueExtractor`, new troubleshooting/procedure-steps renderers).
 - Effort/timeline estimates are deliberately not included — size each phase after the team confirms priority given real usage patterns; Phase 1 (evidence scoping) is flagged as the one phase with a genuine correctness/trust dimension that likely warrants going first regardless of relative effort.
