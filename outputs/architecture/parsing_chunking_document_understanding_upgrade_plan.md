@@ -20,6 +20,34 @@ The main gap is not that parsing is missing. The main gap is that the parsed str
 
 This plan upgrades the current design without replacing the existing architecture.
 
+## Implementation Status Update
+
+Status as of 2026-07-13:
+
+- Phase 1 implemented
+- Phase 2 implemented
+- Phase 3 implemented
+- Phase 4 implemented
+- Phase 5 implemented
+- Phase 6 implemented
+- Phase 7 implemented
+- Phase 8 implemented
+
+What is now live in the codebase:
+
+- numbered section paths are preserved and reused downstream
+- TOC outline artifacts and matched headers are exposed in `scripts/debug_parse_document.py`
+- logical table families are resolved and persisted
+- table categories propagate through chunks, DB persistence, retrieval payloads, hydration, and answer-table projection
+- logical-table-aware chunk generation preserves family identity and row-span metadata
+- retrieval hydration expands from physical table fragments to persisted logical table families
+- `scripts/export_document_table_assets.py` now exposes persisted logical table families, continuation order, category metadata, and normalized section-path views
+
+Important boundary:
+
+- live parse-only artifacts such as the TOC outline and raw pre-sanitization section-path trace remain inspectable through `scripts/debug_parse_document.py`
+- persisted graph inspection in `scripts/export_document_table_assets.py` can only show what survives reload, namely stored section paths, normalized matching paths, logical table family metadata, and saved table structure
+
 ## Scope
 
 This plan covers:
@@ -555,7 +583,7 @@ The plan should include:
 
 Store one canonical source plus necessary derived views, not many redundant copies.
 
-## Phase 1. Section Path and Outline Foundation
+## Phase 1. Section Path and Outline Foundation [IMPLEMENTED]
 
 ### Goal
 
@@ -596,7 +624,7 @@ Make section paths robust enough to serve retrieval, chunking, and answer ground
 - better human-readable references
 - less path drift between parse and answer layers
 
-## Phase 2. TOC as a Reusable Outline Artifact
+## Phase 2. TOC as a Reusable Outline Artifact [IMPLEMENTED]
 
 ### Goal
 
@@ -633,7 +661,7 @@ Use the TOC as a durable structure prior, not just a one-time section-level heur
 - better page-aware retrieval hints
 - stronger section-path quality for long manuals and reports
 
-## Phase 3. Logical Table Family Resolution
+## Phase 3. Logical Table Family Resolution [IMPLEMENTED]
 
 ### Goal
 
@@ -688,7 +716,7 @@ Resolve multi-fragment table evidence into logical tables before chunking and re
 - maintenance schedules become complete evidence objects
 - spare-part and datasheet tables stop fragmenting semantically
 
-## Phase 4. Generic Table Semantic Classification
+## Phase 4. Generic Table Semantic Classification [IMPLEMENTED]
 
 ### Goal
 
@@ -777,7 +805,7 @@ These should become explicit, reusable categories rather than only being implied
 - better retrieval chunk filtering
 - better answer-context formatting
 
-## Phase 5. Logical-Table-Aware Chunk Generation
+## Phase 5. Logical-Table-Aware Chunk Generation [IMPLEMENTED]
 
 ### Goal
 
@@ -822,7 +850,7 @@ Chunk technical tables as meaningful evidence units, not accidental physical fra
 - cleaner answer grounding
 - less need to repair chunk semantics later
 
-## Phase 6. Retrieval Hydration and Table Expansion
+## Phase 6. Retrieval Hydration and Table Expansion [IMPLEMENTED]
 
 ### Goal
 
@@ -863,7 +891,7 @@ When any member of a logical table family is retrieved, the system should be abl
 - fewer misleading partial-table answers
 - better reuse of persisted parsing work
 
-## Phase 7. Answer-Context Table Projection
+## Phase 7. Answer-Context Table Projection [IMPLEMENTED]
 
 ### Goal
 
@@ -1346,7 +1374,7 @@ This approach generalizes to unseen technical documents because it reasons from:
 
 instead of relying on one corpus's exact vocabulary.
 
-## Phase 8. Debug and Inspection Tooling
+## Phase 8. Debug and Inspection Tooling [IMPLEMENTED]
 
 ### Goal
 
@@ -1371,6 +1399,17 @@ Make document-understanding artifacts inspectable during development and evaluat
    - normalized matching path
 
 3. Show TOC outline and matched headers.
+
+### Implemented outcome
+
+- `scripts/debug_parse_document.py`
+  - shows TOC outline entries and matched headers
+  - shows logical table family metadata for tables and chunks
+  - shows table category metadata and row-span metadata
+- `scripts/export_document_table_assets.py`
+  - groups persisted tables into logical table families
+  - shows continuation order, family membership, category metadata, and normalized section-path views
+  - intentionally does not claim raw parse-time TOC/section-path data that is not persisted in the stored graph
 
 ### Expected benefit
 
@@ -1449,6 +1488,39 @@ The upgrade is successful when all of the following are true:
 6. Phase 6: retrieval hydration and table expansion
 7. Phase 7: answer-context table projection
 8. Phase 8: debug tooling
+
+## Post-Implementation Validation Checklist
+
+Implementation is complete, but this upgrade still needs structured validation on real technical documents before it should be treated as fully closed.
+
+### Automated validation
+
+- [x] Parsing, chunking, retrieval-hydration, answer-context, mapper, and CLI script unit tests were updated and passed during implementation.
+- [x] `scripts/debug_parse_document.py` exposes TOC outline, logical table family, table category, and chunk-level table metadata for live parse inspection.
+- [x] `scripts/export_document_table_assets.py` exposes persisted logical table family membership, continuation order, category metadata, and normalized section-path views.
+
+### Manual document-level validation still required
+
+- [ ] Verify that numbered section paths remain stable and useful on at least one manual, one datasheet, one certificate, one report, and one drawing.
+- [ ] Verify that TOC tables split across pages still resolve into one logical outline artifact in `scripts/debug_parse_document.py`.
+- [ ] Verify that multi-page maintenance, troubleshooting, and spare-parts tables resolve into one logical table family instead of isolated physical tables.
+- [ ] Verify that direct table evidence drives chunk typing even when inherited section wording would otherwise bias the chunk type.
+- [ ] Verify that retrieval of any one table-family member hydrates the complete logical table evidence in QA and extraction paths.
+- [ ] Verify that answer-context table projection keeps headers, rows, and table-family semantics understandable for downstream answer generation.
+
+### Suggested manual verification commands
+
+- `python scripts/debug_parse_document.py --input "TestDoc\\19P006-31-FWC12-5-1-0_Manual.pdf"`
+- `python scripts/export_document_table_assets.py --document "19P006-31-FWC12-5-1-0_Manual"`
+- `python scripts/run_retrieval_benchmark.py --truth-set TestDoc/retrieval_truth_set.md`
+
+### Closeout rule
+
+This plan should be considered fully complete only when:
+
+1. the automated tests remain green
+2. the manual validation items above are checked off on representative document families
+3. no major regressions appear in retrieval grounding or table-heavy answer quality
 
 ## Final Recommendation
 

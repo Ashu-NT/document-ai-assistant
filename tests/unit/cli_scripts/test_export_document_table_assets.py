@@ -65,6 +65,15 @@ def test_export_document_table_assets_build_report_includes_table_markdown(
     sample_document_graph,
 ) -> None:
     mod = _load_script("export_document_table_assets")
+    sample_document_graph.tables["table_001"].logical_table_family_id = "ltf_001"
+    sample_document_graph.tables["table_001"].family_index = 1
+    sample_document_graph.tables["table_001"].family_total = 1
+    sample_document_graph.tables["table_001"].continuation_role = "single"
+    sample_document_graph.tables["table_001"].normalized_header_signature = (
+        "part number|description"
+    )
+    sample_document_graph.tables["table_001"].table_category = "spare_parts_table"
+    sample_document_graph.tables["table_001"].table_category_confidence = 0.94
     document_entry = DocumentCatalogEntry(
         document_id=sample_document_graph.document.document_id,
         title=sample_document_graph.document.title,
@@ -89,6 +98,70 @@ def test_export_document_table_assets_build_report_includes_table_markdown(
     )
 
     assert "# Table Asset Report: Hydraulic Pump Manual" in report
+    assert "## Logical Table Families" in report
+    assert "### Family 1: `ltf_001`" in report
+    assert "- table_category: `spare_parts_table`" in report
     assert "### Table 1: `table_001`" in report
     assert "| Part Number | Description |" in report
-    assert "- section: `Maintenance Schedule`" in report
+    assert "- stored section path: `Maintenance Schedule`" in report
+    assert "- normalized matching path: `Maintenance Schedule`" in report
+    assert "- family_position: `1/1`" in report
+
+
+def test_export_document_table_assets_builds_multi_member_family_summary() -> None:
+    mod = _load_script("export_document_table_assets")
+    table_assets = [
+        mod.ResolvedTableAsset(
+            table_id="table_001",
+            markdown="table 1",
+            section_path="7 Maintenance > 7.1 Schedule",
+            normalized_section_path="Maintenance > Schedule",
+            page_start=10,
+            page_end=10,
+            row_count=4,
+            column_count=3,
+            caption="Maintenance schedule",
+            nearby_text=None,
+            element_ids=["el_001"],
+            structured_rows_text=None,
+            logical_table_family_id="ltf_maintenance",
+            family_index=1,
+            family_total=2,
+            continuation_role="start",
+            normalized_header_signature="task|daily|weekly",
+            table_category="maintenance_interval_table",
+            table_category_confidence=0.91,
+        ),
+        mod.ResolvedTableAsset(
+            table_id="table_002",
+            markdown="table 2",
+            section_path="7 Maintenance > 7.1 Schedule",
+            normalized_section_path="Maintenance > Schedule",
+            page_start=11,
+            page_end=11,
+            row_count=4,
+            column_count=3,
+            caption="Maintenance schedule cont.",
+            nearby_text=None,
+            element_ids=["el_002"],
+            structured_rows_text=None,
+            logical_table_family_id="ltf_maintenance",
+            family_index=2,
+            family_total=2,
+            continuation_role="end",
+            normalized_header_signature="task|daily|weekly",
+            table_category="maintenance_interval_table",
+            table_category_confidence=0.95,
+        ),
+    ]
+
+    summaries = mod.build_logical_table_family_summaries(table_assets)
+
+    assert len(summaries) == 1
+    assert summaries[0].family_id == "ltf_maintenance"
+    assert summaries[0].member_table_ids == ["table_001", "table_002"]
+    assert summaries[0].page_start == 10
+    assert summaries[0].page_end == 11
+    assert summaries[0].table_category == "maintenance_interval_table"
+    assert summaries[0].table_category_confidence == 0.95
+    assert summaries[0].continuation_roles == ["start", "end"]

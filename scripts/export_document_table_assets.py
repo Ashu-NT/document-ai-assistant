@@ -26,12 +26,17 @@ for _import_root in (PROJECT_ROOT, SRC_ROOT):
     if _import_root_str not in sys.path:
         sys.path.insert(0, _import_root_str)
 
+from src.application.workflows.parsing.builders.chunking.text import (
+    normalized_section_path_text,
+)
+
 
 @dataclass(slots=True)
 class ResolvedTableAsset:
     table_id: str
     markdown: str
     section_path: str | None
+    normalized_section_path: str | None
     page_start: int | None
     page_end: int | None
     row_count: int | None
@@ -40,6 +45,26 @@ class ResolvedTableAsset:
     nearby_text: str | None
     element_ids: list[str]
     structured_rows_text: str | None
+    logical_table_family_id: str | None
+    family_index: int | None
+    family_total: int | None
+    continuation_role: str | None
+    normalized_header_signature: str | None
+    table_category: str | None
+    table_category_confidence: float | None
+
+
+@dataclass(slots=True)
+class LogicalTableFamilySummary:
+    family_id: str
+    member_table_ids: list[str]
+    page_start: int | None
+    page_end: int | None
+    section_paths: list[str]
+    normalized_section_paths: list[str]
+    table_category: str | None
+    table_category_confidence: float | None
+    continuation_roles: list[str]
 
 
 def _entry_field(document_entry, field_name: str):
@@ -108,6 +133,24 @@ def format_page_range(page_start: int | None, page_end: int | None) -> str:
     return f"{page_start}-{page_end}"
 
 
+def format_confidence(value: float | None) -> str:
+    if value is None:
+        return "-"
+    return f"{value:.2f}"
+
+
+def _unique_preserving_order(values: Sequence[str]) -> list[str]:
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for raw_value in values:
+        value = str(raw_value or "").strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        ordered.append(value)
+    return ordered
+
+
 def resolve_table_assets(document_graph) -> list[ResolvedTableAsset]:
     resolved: list[ResolvedTableAsset] = []
     elements = list(document_graph.elements.values())
@@ -138,6 +181,14 @@ def resolve_table_assets(document_graph) -> list[ResolvedTableAsset]:
                 table_id=table.table_id,
                 markdown=table.markdown,
                 section_path=section.path_text() if section is not None else None,
+                normalized_section_path=(
+                    normalized_section_path_text(
+                        list(section.section_path),
+                        document_title=document_graph.document.title,
+                    )
+                    if section is not None
+                    else None
+                ),
                 page_start=min(pages) if pages else table.metadata.source.page_start,
                 page_end=max(pages) if pages else table.metadata.source.page_end,
                 row_count=table.row_count if table.row_count is not None else len(table.rows),
@@ -150,6 +201,13 @@ def resolve_table_assets(document_graph) -> list[ResolvedTableAsset]:
                 nearby_text=table.metadata.nearby_text,
                 element_ids=[element.element_id for element in linked_elements],
                 structured_rows_text=table.to_structured_row_text(),
+                logical_table_family_id=table.logical_table_family_id,
+                family_index=table.family_index,
+                family_total=table.family_total,
+                continuation_role=table.continuation_role,
+                normalized_header_signature=table.normalized_header_signature,
+                table_category=table.table_category,
+                table_category_confidence=table.table_category_confidence,
             )
         )
 
@@ -164,10 +222,88 @@ def resolve_table_assets(document_graph) -> list[ResolvedTableAsset]:
     return resolved
 
 
+def build_logical_table_family_summaries(
+    table_assets: Sequence[ResolvedTableAsset],
+) -> list[LogicalTableFamilySummary]:
+    family_buckets: dict[str, list[ResolvedTableAsset]] = {}
+    for table in table_assets:
+        family_id = table.logical_table_family_id or f"physical::{table.table_id}"
+        family_buckets.setdefault(family_id, []).append(table)
+
+    summaries: list[LogicalTableFamilySummary] = []
+    for family_id, members in family_buckets.items():
+        ordered_members = sorted(
+            members,
+            key=lambda item: (
+                item.family_index if item.family_index is not None else 10_000,
+                item.page_start or 0,
+                item.table_id,
+            ),
+        )
+        pages = [
+            page
+            for member in ordered_members
+            for page in (member.page_start, member.page_end)
+            if page is not None
+        ]
+        summaries.append(
+            LogicalTableFamilySummary(
+                family_id=family_id,
+                member_table_ids=[member.table_id for member in ordered_members],
+                page_start=min(pages) if pages else None,
+                page_end=max(pages) if pages else None,
+                section_paths=_unique_preserving_order(
+                    [
+                        member.section_path or ""
+                        for member in ordered_members
+                    ]
+                ),
+                normalized_section_paths=_unique_preserving_order(
+                    [
+                        member.normalized_section_path or ""
+                        for member in ordered_members
+                    ]
+                ),
+                table_category=next(
+                    (
+                        member.table_category
+                        for member in ordered_members
+                        if member.table_category
+                    ),
+                    None,
+                ),
+                table_category_confidence=max(
+                    (
+                        member.table_category_confidence
+                        for member in ordered_members
+                        if member.table_category_confidence is not None
+                    ),
+                    default=None,
+                ),
+                continuation_roles=_unique_preserving_order(
+                    [
+                        member.continuation_role or ""
+                        for member in ordered_members
+                    ]
+                ),
+            )
+        )
+
+    summaries.sort(
+        key=lambda item: (
+            item.page_start or 0,
+            item.page_end or 0,
+            item.family_id,
+        )
+    )
+    return summaries
+
+
 def build_report(*, document_entry, document_graph, table_assets: list[ResolvedTableAsset]) -> str:
     display_name = _entry_field(document_entry, "title") or _entry_field(
         document_entry, "file_name"
     )
+    family_summaries = build_logical_table_family_summaries(table_assets)
     lines = [
         f"# Table Asset Report: {display_name}",
         "",
@@ -179,6 +315,7 @@ def build_report(*, document_entry, document_graph, table_assets: list[ResolvedT
         f"- document_type: `{_entry_field(document_entry, 'document_type')}`",
         f"- page_count: `{_entry_field(document_entry, 'page_count') if _entry_field(document_entry, 'page_count') is not None else '-'}`",
         f"- stored table asset count: `{len(table_assets)}`",
+        f"- logical table family count: `{len(family_summaries)}`",
         "",
     ]
 
@@ -195,6 +332,31 @@ def build_report(*, document_entry, document_graph, table_assets: list[ResolvedT
 
     lines.extend(
         [
+            "## Logical Table Families",
+            "",
+            "_Note: TOC outline and raw pre-sanitization section paths are available in `scripts/debug_parse_document.py`; the persisted graph export shows the stored section path and normalized matching path that survive reload._",
+            "",
+        ]
+    )
+    for index, family in enumerate(family_summaries, start=1):
+        lines.extend(
+            [
+                f"### Family {index}: `{family.family_id}`",
+                "",
+                f"- pages: `{format_page_range(family.page_start, family.page_end)}`",
+                f"- member_count: `{len(family.member_table_ids)}`",
+                f"- member_tables: `{', '.join(family.member_table_ids)}`",
+                f"- continuation_roles: `{', '.join(family.continuation_roles) if family.continuation_roles else '-'}`",
+                f"- table_category: `{family.table_category or '-'}`",
+                f"- table_category_confidence: `{format_confidence(family.table_category_confidence)}`",
+                f"- stored section paths: `{' | '.join(family.section_paths) if family.section_paths else '-'}`",
+                f"- normalized matching paths: `{' | '.join(family.normalized_section_paths) if family.normalized_section_paths else '-'}`",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
             "## Tables",
             "",
         ]
@@ -204,10 +366,17 @@ def build_report(*, document_entry, document_graph, table_assets: list[ResolvedT
             [
                 f"### Table {index}: `{table.table_id}`",
                 "",
-                f"- section: `{table.section_path or '-'}`",
+                f"- stored section path: `{table.section_path or '-'}`",
+                f"- normalized matching path: `{table.normalized_section_path or '-'}`",
                 f"- pages: `{format_page_range(table.page_start, table.page_end)}`",
                 f"- row_count: `{table.row_count if table.row_count is not None else '-'}`",
                 f"- column_count: `{table.column_count if table.column_count is not None else '-'}`",
+                f"- logical_table_family_id: `{table.logical_table_family_id or '-'}`",
+                f"- family_position: `{f'{table.family_index}/{table.family_total}' if table.family_index is not None and table.family_total is not None else '-'}`",
+                f"- continuation_role: `{table.continuation_role or '-'}`",
+                f"- normalized_header_signature: `{table.normalized_header_signature or '-'}`",
+                f"- table_category: `{table.table_category or '-'}`",
+                f"- table_category_confidence: `{format_confidence(table.table_category_confidence)}`",
                 f"- linked element ids: `{', '.join(table.element_ids) if table.element_ids else '-'}`",
                 f"- caption: `{table.caption or '-'}`",
                 "",
