@@ -1,8 +1,19 @@
 import inspect
 from typing import Any
 
+from src.application.workflows.parsing.normalizers.docling_table_row_grid_builder import (
+    DoclingTableRowGridBuilder,
+)
+
 
 class DoclingTableExtractor:
+    def __init__(
+        self,
+        *,
+        row_grid_builder: DoclingTableRowGridBuilder | None = None,
+    ) -> None:
+        self.row_grid_builder = row_grid_builder or DoclingTableRowGridBuilder()
+
     def is_table_item(self, item: Any) -> bool:
         raw_ref = self._extract_raw_ref(item)
         if raw_ref.startswith("#/tables/"):
@@ -144,39 +155,7 @@ class DoclingTableExtractor:
         if not table_cells:
             return []
 
-        rows_by_index: dict[int, dict[int, str]] = {}
-        for cell in table_cells:
-            row_index = self._coerce_int(self._get_value(cell, "start_row_offset_idx"))
-            column_index = self._coerce_int(self._get_value(cell, "start_col_offset_idx"))
-            text = self._clean_text(self._get_value(cell, "text"))
-            if row_index is None or column_index is None or not text:
-                continue
-
-            rows_by_index.setdefault(row_index, {})[column_index] = text
-
-        if not rows_by_index:
-            return []
-
-        max_column_index = max(
-            (
-                max(columns.keys())
-                for columns in rows_by_index.values()
-                if columns
-            ),
-            default=-1,
-        )
-
-        rows: list[list[str]] = []
-        for row_index in sorted(rows_by_index):
-            columns = rows_by_index[row_index]
-            rows.append(
-                [
-                    columns.get(column_index, "")
-                    for column_index in range(max_column_index + 1)
-                ]
-            )
-
-        return rows
+        return self.row_grid_builder.build_rows(table_cells)
 
     def _extract_table_cells(self, item: Any) -> list[Any]:
         data = self._get_value(item, "data")

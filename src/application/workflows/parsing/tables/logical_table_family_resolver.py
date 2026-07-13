@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.tables.logical_table_family_assignment import (
     LogicalTableFamilyAssignment,
 )
+from src.application.workflows.parsing.tables.table_header_compatibility_matcher import (
+    TableHeaderCompatibilityMatcher,
+)
 from src.application.workflows.parsing.tables.table_header_signature_builder import (
     TableHeaderSignatureBuilder,
 )
@@ -13,10 +16,17 @@ class LogicalTableFamilyResolver:
         self,
         *,
         header_signature_builder: TableHeaderSignatureBuilder | None = None,
+        header_compatibility_matcher: TableHeaderCompatibilityMatcher | None = None,
         max_continuation_page_gap: int = 1,
     ) -> None:
         self.header_signature_builder = (
             header_signature_builder or TableHeaderSignatureBuilder()
+        )
+        self.header_compatibility_matcher = (
+            header_compatibility_matcher
+            or TableHeaderCompatibilityMatcher(
+                header_signature_builder=self.header_signature_builder
+            )
         )
         self.max_continuation_page_gap = max_continuation_page_gap
 
@@ -77,9 +87,10 @@ class LogicalTableFamilyResolver:
         if previous.parent_section_id != current.parent_section_id:
             return False
 
-        previous_signature = self.header_signature_builder.build(previous_table)
-        current_signature = self.header_signature_builder.build(current_table)
-        if not previous_signature or previous_signature != current_signature:
+        if not self.header_compatibility_matcher.are_compatible(
+            previous_table,
+            current_table,
+        ):
             return False
 
         if not self._column_counts_are_compatible(previous_table, current_table):

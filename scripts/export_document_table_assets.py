@@ -182,7 +182,9 @@ def resolve_table_assets(document_graph) -> list[ResolvedTableAsset]:
                 markdown=table.markdown,
                 section_path=section.path_text() if section is not None else None,
                 normalized_section_path=(
-                    normalized_section_path_text(
+                    " > ".join(section.normalized_section_path)
+                    if section is not None and section.normalized_section_path
+                    else normalized_section_path_text(
                         list(section.section_path),
                         document_title=document_graph.document.title,
                     )

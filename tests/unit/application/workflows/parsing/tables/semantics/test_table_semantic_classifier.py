@@ -118,3 +118,54 @@ def test_classify_detects_schedule_matrix_with_reference_columns() -> None:
 
     assert category == TableCategory.MAINTENANCE_INTERVAL_TABLE
     assert confidence >= 0.9
+
+
+def test_classify_uses_nearby_context_for_compact_maintenance_schedule_table() -> None:
+    category, confidence = TableSemanticClassifier().classify(
+        table=_make_table(
+            [
+                ["D", "Q Q", "M S A", "Task Reference"],
+                ["X", "", "Inspect basket", ""],
+                ["", "X", "Change lubricant", "See annex"],
+            ]
+        ),
+        nearby_text="Half-yearly maintenance work. Annual maintenance work.",
+    )
+
+    assert category == TableCategory.MAINTENANCE_INTERVAL_TABLE
+    assert confidence >= 0.85
+
+
+def test_classify_detects_split_header_spare_parts_table() -> None:
+    category, confidence = TableSemanticClassifier().classify(
+        table=_make_table(
+            [
+                [
+                    "Position No:",
+                    "Qty: Denomination: Spare Part",
+                    "No: Included in Service Package:",
+                ],
+                ["P31 1", "Disassembly screw for carrier", "-18/02 2"],
+                ["P32 1", "Torque protection bar", "-28/V"],
+            ]
+        ),
+        section_path=["Components", "Spare Parts List"],
+    )
+
+    assert category == TableCategory.SPARE_PARTS_TABLE
+    assert confidence >= 0.85
+
+
+def test_classify_valve_list_is_not_sensor_instrument_table_from_pid_text_alone() -> None:
+    category, _ = TableSemanticClassifier().classify(
+        table=_make_table(
+            [
+                ["P&ID Pos Nr.", "Service Function", "Type", "Part No."],
+                ["V.00.01.01", "Dry Running Protection", "Solenoid", "A00103"],
+                ["V.00.03.01", "Macerator Suction Valve", "Ball Valve", "A00181"],
+            ]
+        ),
+        section_path=["Components", "Valve List"],
+    )
+
+    assert category == TableCategory.IDENTIFIER_TABLE

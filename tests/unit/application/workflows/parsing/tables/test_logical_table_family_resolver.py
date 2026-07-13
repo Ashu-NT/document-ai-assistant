@@ -176,3 +176,52 @@ def test_resolver_groups_adjacent_document_index_tables_even_without_matching_he
     assert graph.tables["table_1"].logical_table_family_id == "table_family_table_1"
     assert graph.tables["table_2"].logical_table_family_id == "table_family_table_1"
     assert graph.tables["table_2"].continuation_role == "end"
+
+
+def test_resolver_groups_adjacent_tables_with_split_header_cells_into_one_family() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.tables["table_1"] = _make_table_asset(
+        table_id="table_1",
+        rows=[
+            [
+                "Position No:",
+                "Qty: Denomination: Spare Part No: Included in Service Package:",
+            ],
+            ["P1 1", "Motor"],
+        ],
+        column_count=5,
+    )
+    graph.tables["table_2"] = _make_table_asset(
+        table_id="table_2",
+        rows=[
+            [
+                "Position No:",
+                "Qty: Denomination: Spare Part",
+                "No: Included in Service Package:",
+            ],
+            ["P2 1", "Carrier", "-18 2"],
+        ],
+        column_count=5,
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_1",
+            table_id="table_1",
+            page_start=45,
+            reading_order=1,
+        )
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_2",
+            table_id="table_2",
+            page_start=46,
+            reading_order=2,
+        )
+    )
+
+    LogicalTableFamilyResolver().resolve(graph)
+
+    assert graph.tables["table_1"].logical_table_family_id == "table_family_table_1"
+    assert graph.tables["table_2"].logical_table_family_id == "table_family_table_1"
+    assert graph.tables["table_2"].continuation_role == "end"
