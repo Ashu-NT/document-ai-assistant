@@ -1,17 +1,31 @@
 from __future__ import annotations
 
-
 _MOJIBAKE_MARKERS = (
-    "â€",
-    "â€™",
-    "â€œ",
-    "â€",
-    "â€“",
-    "â€”",
-    "â€¦",
-    "Ã",
-    "Â",
+    "\u00c3\u00a2\u20ac",
+    "\u00c3\u00a2\u20ac\u00e2\u201e\u00a2",
+    "\u00c3\u00a2\u20ac\u00c5\u201c",
+    "\u00c3\u00a2\u20ac\u00c2\u009d",
+    "\u00c3\u00a2\u20ac\u00e2\u20ac\u0153",
+    "\u00c3\u00a2\u20ac\u00e2\u20ac\u009d",
+    "\u00c3\u00a2\u20ac\u00c2\u00a6",
+    "\u00c3\u0192",
+    "\u00c3\u201a",
+    "\u00e2\u20ac\u2122",
+    "\u00e2\u20ac\u0153",
+    "\u00e2\u20ac\u009d",
+    "\u00e2\u20ac\u201c",
+    "\u00e2\u20ac\u201d",
+    "\u00e2\u20ac\u00a6",
 )
+_DIRECT_REPLACEMENTS = {
+    "\u00e2\u20ac\u2122": "\u2019",
+    "\u00e2\u20ac\u0153": "\u201c",
+    "\u00e2\u20ac\u009d": "\u201d",
+    "\u00e2\u20ac\u201c": "\u2013",
+    "\u00e2\u20ac\u201d": "\u2014",
+    "\u00e2\u20ac\u00a6": "\u2026",
+    "\u00c2\u00a0": " ",
+}
 
 
 def repair_docling_text(value: str | None) -> str:
@@ -21,6 +35,7 @@ def repair_docling_text(value: str | None) -> str:
 
     normalized = text.replace("\xa0", " ")
     repaired = _repair_utf8_mojibake(normalized)
+    repaired = _apply_direct_replacements(repaired)
     return repaired.strip()
 
 
@@ -81,3 +96,10 @@ def _mojibake_score(value: str) -> int:
         if 0x80 <= ord(character) <= 0x9F
     )
     return marker_score + control_score
+
+
+def _apply_direct_replacements(value: str) -> str:
+    repaired = value
+    for source, target in _DIRECT_REPLACEMENTS.items():
+        repaired = repaired.replace(source, target)
+    return repaired

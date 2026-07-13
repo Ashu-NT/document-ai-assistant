@@ -156,6 +156,38 @@ def test_classify_detects_split_header_spare_parts_table() -> None:
     assert confidence >= 0.85
 
 
+def test_classify_detects_lubrication_schedule_from_generic_section_and_time_signals() -> None:
+    category, confidence = TableSemanticClassifier().classify(
+        table=_make_table(
+            [
+                ["Task", "Lubricant", "Interval"],
+                ["Main bearing", "Grease", "Every 500 hours"],
+                ["Drive shaft", "Oil", "When needed"],
+            ]
+        ),
+        section_path=["Components", "Vacuum Pump", "Lubrication Schedule"],
+    )
+
+    assert category == TableCategory.MAINTENANCE_INTERVAL_TABLE
+    assert confidence >= 0.85
+
+
+def test_classify_detects_troubleshooting_from_generic_section_context() -> None:
+    category, confidence = TableSemanticClassifier().classify(
+        table=_make_table(
+            [
+                ["Symptom", "Cause", "Action"],
+                ["Low pressure", "Blocked line", "Clean the line"],
+                ["No start", "No power", "Check the supply"],
+            ]
+        ),
+        section_path=["Components", "Pump", "Trouble-Shooting"],
+    )
+
+    assert category == TableCategory.TROUBLESHOOTING_TABLE
+    assert confidence >= 0.85
+
+
 def test_classify_valve_list_is_not_sensor_instrument_table_from_pid_text_alone() -> None:
     category, _ = TableSemanticClassifier().classify(
         table=_make_table(
