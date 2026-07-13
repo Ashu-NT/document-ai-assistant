@@ -57,3 +57,12 @@ def test_table_chunk_type_uses_technical_data_category() -> None:
     )
 
     assert chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+
+
+def test_table_chunk_type_uses_operation_reference_category() -> None:
+    chunk_type = _make_builder().table_chunk_type(
+        _make_table_element(table_category="operation_reference_table"),
+        "| Operating key | Meaning |",
+    )
+
+    assert chunk_type == ChunkType.OPERATION_INSTRUCTION

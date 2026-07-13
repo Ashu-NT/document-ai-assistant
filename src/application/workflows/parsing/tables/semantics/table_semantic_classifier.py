@@ -108,6 +108,13 @@ class TableSemanticClassifier:
             section_text=section_text,
         ):
             return TableCategory.SPARE_PARTS_TABLE, 0.9
+        if self.rule_evaluator.looks_like_operation_reference_table(
+            headers,
+            label_cells,
+            direct_text,
+            section_text,
+        ):
+            return TableCategory.OPERATION_REFERENCE_TABLE, 0.84
         if self.rule_evaluator.looks_like_operating_limits_table(
             headers,
             label_cells,
@@ -118,6 +125,7 @@ class TableSemanticClassifier:
             headers,
             label_cells,
             direct_text,
+            section_text,
         ):
             return TableCategory.TECHNICAL_DATA_TABLE, 0.88
         if self.rule_evaluator.looks_like_certification_table(
@@ -140,6 +148,7 @@ class TableSemanticClassifier:
             labels=label_cells,
             body_rows=body_rows,
             direct_text=direct_text,
+            section_text=section_text,
         ):
             return TableCategory.IDENTIFIER_TABLE, 0.76
         return TableCategory.GENERAL_TABLE, 0.4

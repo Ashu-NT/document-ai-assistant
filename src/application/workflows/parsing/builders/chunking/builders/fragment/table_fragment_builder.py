@@ -179,6 +179,8 @@ class TableFragmentBuilder:
             return ChunkType.MAINTENANCE_INTERVAL
         if table_category == "troubleshooting_table":
             return ChunkType.TROUBLESHOOTING
+        if table_category == "operation_reference_table":
+            return ChunkType.OPERATION_INSTRUCTION
         if table_category in {"technical_data_table", "operating_limits_table"}:
             return ChunkType.TECHNICAL_SPECIFICATION
         if table_category == "certification_table":

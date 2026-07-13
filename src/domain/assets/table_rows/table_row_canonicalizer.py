@@ -14,6 +14,9 @@ class TableRowCanonicalizer:
         cleaned_rows = clean_rows(rows)
         if len(cleaned_rows) < 2:
             return cleaned_rows
+        umbrella_header_rows = self._canonicalize_umbrella_header_rows(cleaned_rows)
+        if umbrella_header_rows is not None:
+            cleaned_rows = umbrella_header_rows
         if self.has_explicit_header_row(cleaned_rows):
             return cleaned_rows
         key_value_rows = self._canonicalize_key_value_rows(cleaned_rows)
@@ -93,3 +96,31 @@ class TableRowCanonicalizer:
         if len(pairs) < 2:
             return None
         return [["Label", "Value"], *pairs]
+
+    def _canonicalize_umbrella_header_rows(
+        self,
+        rows: list[list[str]],
+    ) -> list[list[str]] | None:
+        if len(rows) < 2:
+            return None
+
+        first_row = rows[0]
+        second_row = rows[1]
+        first_non_empty = [normalize_cell(cell) for cell in first_row if normalize_cell(cell)]
+        second_non_empty = [normalize_cell(cell) for cell in second_row if normalize_cell(cell)]
+        if len(second_non_empty) < 2:
+            return None
+        if not any(looks_explicit_header_cell(cell) for cell in second_non_empty):
+            return None
+        if not self._looks_umbrella_header(first_non_empty):
+            return None
+        return [second_row, *rows[2:]]
+
+    @staticmethod
+    def _looks_umbrella_header(non_empty_cells: list[str]) -> bool:
+        if not non_empty_cells:
+            return False
+        if len(non_empty_cells) == 1:
+            return True
+        normalized = {cell.casefold() for cell in non_empty_cells if cell}
+        return len(normalized) == 1

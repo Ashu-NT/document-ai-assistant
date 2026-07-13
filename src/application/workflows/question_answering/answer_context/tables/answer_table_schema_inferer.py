@@ -42,6 +42,7 @@ class AnswerTableSchemaInferer:
             "certification_table",
             "connection_table",
             "identifier_table",
+            "operation_reference_table",
             "sensor_instrument_table",
             "spare_parts_table",
         }:

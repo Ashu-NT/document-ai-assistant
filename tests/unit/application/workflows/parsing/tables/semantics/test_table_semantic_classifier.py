@@ -156,6 +156,54 @@ def test_classify_detects_split_header_spare_parts_table() -> None:
     assert confidence >= 0.85
 
 
+def test_classify_detects_operation_reference_table_from_operation_context() -> None:
+    category, confidence = TableSemanticClassifier().classify(
+        table=_make_table(
+            [
+                ["Operating key(s)", "Meaning"],
+                ["Zero", "Press to confirm a parameter change"],
+                ["Span", "Press to navigate to the next item"],
+            ]
+        ),
+        section_path=["Operation options", "Function of the operating elements"],
+    )
+
+    assert category == TableCategory.OPERATION_REFERENCE_TABLE
+    assert confidence >= 0.8
+
+
+def test_classify_detects_identifier_table_from_order_code_section() -> None:
+    category, confidence = TableSemanticClassifier().classify(
+        table=_make_table(
+            [
+                ["Position 3 (Output)", "Position 3 (Output)"],
+                ["Selected option", "Description"],
+                ["2", "4-20 mA HART"],
+                ["3", "PROFIBUS PA"],
+            ]
+        ),
+        section_path=["Extended order code", "Basic specification"],
+    )
+
+    assert category == TableCategory.IDENTIFIER_TABLE
+    assert confidence >= 0.75
+
+
+def test_classify_detects_operating_limits_from_supply_voltage_and_protection() -> None:
+    category, confidence = TableSemanticClassifier().classify(
+        table=_make_table(
+            [
+                ["Type of protection", "Supply voltage"],
+                ["Intrinsically safe", "11.5 to 30 V DC"],
+                ["Other types of protection", "11.5 to 45 V DC"],
+            ]
+        ),
+    )
+
+    assert category == TableCategory.OPERATING_LIMITS_TABLE
+    assert confidence >= 0.8
+
+
 def test_classify_detects_lubrication_schedule_from_generic_section_and_time_signals() -> None:
     category, confidence = TableSemanticClassifier().classify(
         table=_make_table(

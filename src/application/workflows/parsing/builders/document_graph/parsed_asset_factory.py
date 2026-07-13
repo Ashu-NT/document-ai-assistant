@@ -29,12 +29,14 @@ class ParsedAssetFactory:
                 table_id=table_id,
                 document_id=document_id,
                 markdown=(
-                    parsed_element.metadata.get("markdown")
-                    or parsed_element.text
+                    self._clean_multiline_text(
+                        parsed_element.metadata.get("markdown")
+                        or parsed_element.text
+                    )
                     or ""
                 ),
                 parent_section_id=parent_section_id,
-                rows=parsed_element.metadata.get("table_rows") or [],
+                rows=self._clean_rows(parsed_element.metadata.get("table_rows")),
                 row_ids=self._build_row_ids(
                     table_id=table_id,
                     row_count=(
@@ -107,3 +109,30 @@ class ParsedAssetFactory:
     def _clean_text(value: object) -> str | None:
         text = repair_docling_text(str(value or "")).strip()
         return text or None
+
+    @classmethod
+    def _clean_multiline_text(cls, value: object) -> str | None:
+        if value is None:
+            return None
+        lines = [
+            repair_docling_text(str(line)).rstrip()
+            for line in str(value).splitlines()
+        ]
+        text = "\n".join(lines).strip()
+        return text or None
+
+    @classmethod
+    def _clean_rows(cls, rows: object) -> list[list[str]]:
+        if not isinstance(rows, list):
+            return []
+        cleaned_rows: list[list[str]] = []
+        for row in rows:
+            if not isinstance(row, list):
+                continue
+            cleaned_rows.append(
+                [
+                    cls._clean_text(cell) or ""
+                    for cell in row
+                ]
+            )
+        return cleaned_rows

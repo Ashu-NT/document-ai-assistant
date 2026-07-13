@@ -4,6 +4,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+    repair_docling_text,
+)
 from src.domain.assets import AssetMetadata, PictureAsset, TableAsset, TableCellSpan
 from src.domain.document import DocumentGraph, DocumentStatistics
 from src.infrastructure.db.mappers import (
@@ -23,6 +26,7 @@ from src.infrastructure.db.orm_models import (
     SectionORM,
 )
 from src.shared.exceptions import DatabaseError
+
 
 class DocumentGraphReader:
     def __init__(self, session: Session) -> None:
@@ -134,8 +138,13 @@ class DocumentGraphReader:
                     table_id=element.table_id,
                     document_id=element.document_id,
                     parent_section_id=element.parent_section_id,
-                    markdown=str(parser_extra.get("markdown") or element.text or ""),
-                    rows=parser_extra.get("table_rows") or [],
+                    markdown=DocumentGraphReader._clean_multiline_text(
+                        parser_extra.get("markdown") or element.text or ""
+                    )
+                    or "",
+                    rows=DocumentGraphReader._clean_rows(
+                        parser_extra.get("table_rows")
+                    ),
                     row_ids=[
                         str(row_id)
                         for row_id in (parser_extra.get("table_row_ids") or [])
@@ -160,12 +169,14 @@ class DocumentGraphReader:
                     metadata=AssetMetadata(
                         source=element.source,
                         caption=(
-                            str(parser_extra.get("caption"))
+                            DocumentGraphReader._clean_text(parser_extra.get("caption"))
                             if parser_extra.get("caption") is not None
                             else None
                         ),
                         nearby_text=(
-                            str(parser_extra.get("nearby_text"))
+                            DocumentGraphReader._clean_text(
+                                parser_extra.get("nearby_text")
+                            )
                             if parser_extra.get("nearby_text") is not None
                             else None
                         ),
@@ -220,6 +231,38 @@ class DocumentGraphReader:
                         ),
                     ),
                 )
+
+    @staticmethod
+    def _clean_text(value: object) -> str | None:
+        text = repair_docling_text(str(value or "")).strip()
+        return text or None
+
+    @classmethod
+    def _clean_multiline_text(cls, value: object) -> str | None:
+        if value is None:
+            return None
+        lines = [
+            repair_docling_text(str(line)).rstrip()
+            for line in str(value).splitlines()
+        ]
+        text = "\n".join(lines).strip()
+        return text or None
+
+    @classmethod
+    def _clean_rows(cls, rows: object) -> list[list[str]]:
+        if not isinstance(rows, list):
+            return []
+        cleaned_rows: list[list[str]] = []
+        for row in rows:
+            if not isinstance(row, list):
+                continue
+            cleaned_rows.append(
+                [
+                    cls._clean_text(cell) or ""
+                    for cell in row
+                ]
+            )
+        return cleaned_rows
 
     @staticmethod
     def _coerce_float(value: object) -> float | None:

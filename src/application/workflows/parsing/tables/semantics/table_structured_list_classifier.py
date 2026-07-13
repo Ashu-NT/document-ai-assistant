@@ -75,6 +75,7 @@ class TableStructuredListClassifier:
         labels: list[str],
         body_rows: list[list[str]],
         direct_text: str,
+        section_text: str,
     ) -> bool:
         header_text = self.signal_matcher.normalized_text(*headers)
         label_text = self.signal_matcher.normalized_text(*labels)
@@ -103,6 +104,15 @@ class TableStructuredListClassifier:
             header_text,
             ("serial number", "part number", "part no", "part nr", "tag", "model", "service function", "type"),
         )
+        ordering_context = (
+            self.signal_matcher.contains(section_text, "order code")
+            or self.signal_matcher.contains(section_text, "ordering")
+            or self.signal_matcher.contains(section_text, "basic specification")
+        )
+        ordering_markers = self.signal_matcher.count_unique(
+            self.signal_matcher.normalized_text(header_text, label_text, direct_text),
+            ("selected option", "description", "order code", "approval", "option"),
+        )
         return (
             direct_hits >= 2
             and technical_header_hits == 0
@@ -112,6 +122,16 @@ class TableStructuredListClassifier:
                     identifier_rows >= 2
                     and header_hits >= 2
                 )
+            )
+        ) or (
+            ordering_context
+            and ordering_markers >= 2
+            and (
+                identifier_rows >= 1
+                or self.signal_matcher.count_unique(
+                    direct_text,
+                    ("selected option", "description", "approval"),
+                ) >= 2
             )
         )
 

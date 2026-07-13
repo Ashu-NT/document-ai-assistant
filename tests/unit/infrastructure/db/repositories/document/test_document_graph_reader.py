@@ -118,6 +118,30 @@ def test_rehydrate_assets_restores_logical_table_family_metadata() -> None:
     assert table.normalized_header_signature == "task|interval"
 
 
+def test_rehydrate_assets_repairs_table_text_mojibake() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.add_element(
+        _make_table_element(
+            table_id="table_1",
+            extra={
+                "markdown": b"| Description |\n|---|\n| Don\xe2\x80\x99ts \xe2\x86\x92 Setup |".decode(
+                    "cp1252"
+                ),
+                "table_rows": [
+                    ["Description"],
+                    [b"Don\xe2\x80\x99ts \xe2\x86\x92 Setup".decode("cp1252")],
+                ],
+            },
+        )
+    )
+
+    DocumentGraphReader._rehydrate_assets(graph)
+
+    table = graph.tables["table_1"]
+    assert "Don\u2019ts \u2192 Setup" in table.markdown
+    assert table.rows == [["Description"], ["Don\u2019ts \u2192 Setup"]]
+
+
 def test_rehydrate_assets_restores_picture_ocr_provenance() -> None:
     graph = DocumentGraph(document=_make_document())
     graph.add_element(
