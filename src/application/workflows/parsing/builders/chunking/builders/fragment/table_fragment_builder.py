@@ -9,6 +9,7 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
     resolve_parser_extra,
 )
 from src.application.workflows.parsing.parsing_value_coercion import (
+    coerce_float,
     coerce_positive_int,
 )
 from src.domain.common import ChunkType
@@ -69,12 +70,81 @@ class TableFragmentBuilder:
 
         return "\n\n".join(parts).strip()
 
+    def table_context_text(
+        self,
+        *,
+        elements: list[CanonicalElement],
+        index: int,
+        element: CanonicalElement,
+    ) -> str | None:
+        parser_extra = resolve_parser_extra(element)
+        caption = clean_chunk_text(parser_extra.get("caption"))
+        nearby_text = (
+            self.asset_context_resolver.nearby_text(elements=elements, index=index)
+            if self.include_table_context
+            else None
+        )
+        parts = [part for part in [caption, nearby_text] if part]
+        return "\n\n".join(parts).strip() if parts else None
+
+    @staticmethod
+    def table_markdown_text(element: CanonicalElement) -> str | None:
+        parser_extra = resolve_parser_extra(element)
+        return clean_chunk_text(parser_extra.get("markdown") or element.text)
+
+    @staticmethod
+    def compose_table_text(
+        *,
+        context_text: str | None,
+        markdown_text: str | None,
+    ) -> str | None:
+        parts = [part for part in [context_text, markdown_text] if part]
+        if not parts:
+            return None
+        return "\n\n".join(parts).strip()
+
+    @staticmethod
+    def table_rows(element: CanonicalElement) -> list[list[str]] | None:
+        parser_extra = resolve_parser_extra(element)
+        table_rows = parser_extra.get("table_rows")
+        return table_rows if table_rows else None
+
+    @staticmethod
+    def table_metadata(element: CanonicalElement) -> dict[str, object]:
+        parser_extra = resolve_parser_extra(element)
+        return {
+            "logical_table_family_id": str(
+                parser_extra.get("logical_table_family_id") or ""
+            ).strip()
+            or None,
+            "logical_table_family_index": coerce_positive_int(
+                parser_extra.get("family_index")
+            ),
+            "logical_table_family_total": coerce_positive_int(
+                parser_extra.get("family_total")
+            ),
+            "logical_table_continuation_role": str(
+                parser_extra.get("continuation_role") or ""
+            ).strip()
+            or None,
+            "table_category": str(parser_extra.get("table_category") or "").strip()
+            or None,
+            "table_category_confidence": coerce_float(
+                parser_extra.get("table_category_confidence")
+            ),
+        }
+
     def table_chunk_type(
         self,
         element: CanonicalElement,
         text: str | None,
     ) -> ChunkType:
         parser_extra = resolve_parser_extra(element)
+        table_category = str(parser_extra.get("table_category") or "").strip().lower()
+        category_chunk_type = self._chunk_type_from_table_category(table_category)
+        if category_chunk_type is not None:
+            return category_chunk_type
+
         haystack = " ".join(
             part
             for part in [
@@ -100,6 +170,20 @@ class TableFragmentBuilder:
             return ChunkType.SPARE_PARTS_TABLE
 
         return ChunkType.GENERAL
+
+    @staticmethod
+    def _chunk_type_from_table_category(table_category: str) -> ChunkType | None:
+        if table_category == "spare_parts_table":
+            return ChunkType.SPARE_PARTS_TABLE
+        if table_category == "maintenance_interval_table":
+            return ChunkType.MAINTENANCE_INTERVAL
+        if table_category == "troubleshooting_table":
+            return ChunkType.TROUBLESHOOTING
+        if table_category in {"technical_data_table", "operating_limits_table"}:
+            return ChunkType.TECHNICAL_SPECIFICATION
+        if table_category == "certification_table":
+            return ChunkType.CERTIFICATION_INFO
+        return None
 
     @staticmethod
     def _has_spare_part_header_row(parser_extra: dict) -> bool:

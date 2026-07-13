@@ -48,6 +48,7 @@ class ChunkPayloadFactory:
             fragments=fragments,
             content=cleaned_content,
         )
+        table_fragment = self._primary_table_fragment(fragments)
 
         return ChunkPayload(
             section_id=section_id,
@@ -71,6 +72,38 @@ class ChunkPayloadFactory:
             ),
             page_start=self._min_fragment_page(fragments),
             page_end=self._max_fragment_page(fragments),
+            logical_table_family_id=(
+                table_fragment.logical_table_family_id if table_fragment is not None else None
+            ),
+            logical_table_family_index=(
+                table_fragment.logical_table_family_index
+                if table_fragment is not None
+                else None
+            ),
+            logical_table_family_total=(
+                table_fragment.logical_table_family_total
+                if table_fragment is not None
+                else None
+            ),
+            logical_table_continuation_role=(
+                table_fragment.logical_table_continuation_role
+                if table_fragment is not None
+                else None
+            ),
+            table_category=(
+                table_fragment.table_category if table_fragment is not None else None
+            ),
+            table_category_confidence=(
+                table_fragment.table_category_confidence
+                if table_fragment is not None
+                else None
+            ),
+            table_row_start=(
+                table_fragment.table_row_start if table_fragment is not None else None
+            ),
+            table_row_end=(
+                table_fragment.table_row_end if table_fragment is not None else None
+            ),
             embedding_text=self._build_embedding_text(
                 document_title=document_title,
                 section_path=section_path,
@@ -85,6 +118,15 @@ class ChunkPayloadFactory:
         for fragment in fragments:
             if fragment.table_rows:
                 return fragment.table_rows
+        return None
+
+    @staticmethod
+    def _primary_table_fragment(
+        fragments: list[ChunkFragment],
+    ) -> ChunkFragment | None:
+        for fragment in fragments:
+            if fragment.table_ids or fragment.logical_table_family_id is not None:
+                return fragment
         return None
 
     def _assemble_chunk_content(

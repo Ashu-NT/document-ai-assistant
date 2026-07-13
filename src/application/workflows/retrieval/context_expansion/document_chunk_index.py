@@ -17,6 +17,7 @@ class DocumentChunkIndex:
         by_chunk_id: dict[str, object],
         by_section_id: dict[str, list],
         by_table_id: dict[str, list],
+        by_logical_table_family_id: dict[str, list],
         by_picture_id: dict[str, list],
         overview_by_section_path: dict[tuple, list],
         by_section_path_prefix: dict[tuple, list],
@@ -26,6 +27,7 @@ class DocumentChunkIndex:
         self.by_chunk_id = by_chunk_id
         self.by_section_id = by_section_id
         self.by_table_id = by_table_id
+        self.by_logical_table_family_id = by_logical_table_family_id
         self.by_picture_id = by_picture_id
         self.overview_by_section_path = overview_by_section_path
         self.by_section_path_prefix = by_section_path_prefix
@@ -37,6 +39,7 @@ class DocumentChunkIndex:
         by_chunk_id: dict[str, object] = {}
         by_section_id: dict[str, list] = {}
         by_table_id: dict[str, list] = {}
+        by_logical_table_family_id: dict[str, list] = {}
         by_picture_id: dict[str, list] = {}
         overview_by_section_path: dict[tuple, list] = {}
         by_section_path_prefix: dict[tuple, list] = {}
@@ -51,6 +54,11 @@ class DocumentChunkIndex:
 
             for table_id in chunk.table_ids:
                 by_table_id.setdefault(table_id, []).append(chunk)
+            if chunk.logical_table_family_id is not None:
+                by_logical_table_family_id.setdefault(
+                    chunk.logical_table_family_id,
+                    [],
+                ).append(chunk)
             for picture_id in chunk.picture_ids:
                 by_picture_id.setdefault(picture_id, []).append(chunk)
 
@@ -74,6 +82,7 @@ class DocumentChunkIndex:
             by_chunk_id=by_chunk_id,
             by_section_id=by_section_id,
             by_table_id=by_table_id,
+            by_logical_table_family_id=by_logical_table_family_id,
             by_picture_id=by_picture_id,
             overview_by_section_path=overview_by_section_path,
             by_section_path_prefix=by_section_path_prefix,
@@ -102,6 +111,13 @@ class DocumentChunkIndex:
 
         for table_id in anchor_document_chunk.table_ids:
             _add_all(self.by_table_id.get(table_id, []))
+        if anchor_document_chunk.logical_table_family_id is not None:
+            _add_all(
+                self.by_logical_table_family_id.get(
+                    anchor_document_chunk.logical_table_family_id,
+                    [],
+                )
+            )
         for picture_id in anchor_document_chunk.picture_ids:
             _add_all(self.by_picture_id.get(picture_id, []))
 

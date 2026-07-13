@@ -35,6 +35,54 @@ def ensure_database_schema(engine: Engine) -> None:
     )
     _ensure_sqlite_column(
         engine=engine,
+        table_name="chunks",
+        column_name="logical_table_family_id",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="logical_table_family_index",
+        column_ddl="INTEGER",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="logical_table_family_total",
+        column_ddl="INTEGER",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="logical_table_continuation_role",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="table_category",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="table_category_confidence",
+        column_ddl="REAL",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="table_row_start",
+        column_ddl="INTEGER",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="table_row_end",
+        column_ddl="INTEGER",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
         table_name="extraction_results",
         column_name="source_chunk_ids_json",
         column_ddl="TEXT",

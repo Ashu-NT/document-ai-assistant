@@ -74,3 +74,30 @@ def test_rehydrate_assets_defaults_gracefully_when_table_rows_missing() -> None:
     assert table.column_count is None
     assert table.has_structured_rows() is False
     assert table.has_content() is True
+
+
+def test_rehydrate_assets_restores_logical_table_family_metadata() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.add_element(
+        _make_table_element(
+            table_id="table_1",
+            extra={
+                "markdown": "| Task | Interval |\n|---|---|\n| Inspect filter | Daily |",
+                "table_rows": [["Task", "Interval"], ["Inspect filter", "Daily"]],
+                "logical_table_family_id": "table_family_table_1",
+                "family_index": 1,
+                "family_total": 2,
+                "continuation_role": "start",
+                "normalized_header_signature": "task|interval",
+            },
+        )
+    )
+
+    DocumentGraphReader._rehydrate_assets(graph)
+
+    table = graph.tables["table_1"]
+    assert table.logical_table_family_id == "table_family_table_1"
+    assert table.family_index == 1
+    assert table.family_total == 2
+    assert table.continuation_role == "start"
+    assert table.normalized_header_signature == "task|interval"

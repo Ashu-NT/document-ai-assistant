@@ -4,6 +4,9 @@ from src.application.workflows.parsing.builders.chunking.builders.fragment.asset
 from src.application.workflows.parsing.builders.chunking.builders.fragment.picture_fragment_builder import (
     PictureFragmentBuilder,
 )
+from src.application.workflows.parsing.builders.chunking.builders.fragment.logical_table_family_fragment_builder import (
+    LogicalTableFamilyFragmentBuilder,
+)
 from src.application.workflows.parsing.builders.chunking.builders.fragment.table_fragment_builder import (
     TableFragmentBuilder,
 )
@@ -21,6 +24,10 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
     is_furniture_or_embedded_picture,
     is_low_value_fragment,
     resolve_parser_extra,
+)
+from src.application.workflows.parsing.parsing_value_coercion import coerce_float
+from src.application.workflows.parsing.tables.families import (
+    LogicalTableFamilyRowMerger,
 )
 from src.domain.common import ChunkType, ElementType
 from src.domain.common import DocumentType
@@ -59,6 +66,12 @@ class ChunkFragmentBuilder:
             include_table_context=include_table_context,
             asset_context_resolver=self.asset_context_resolver,
         )
+        self.logical_table_family_fragment_builder = (
+            LogicalTableFamilyFragmentBuilder(
+                table_fragment_builder=self.table_fragment_builder,
+            )
+        )
+        self.logical_table_family_row_merger = LogicalTableFamilyRowMerger()
         self.picture_fragment_builder = PictureFragmentBuilder(
             page_sizes=page_sizes or {},
             asset_context_resolver=self.asset_context_resolver,
@@ -83,6 +96,17 @@ class ChunkFragmentBuilder:
             )
         )
         fragments: list[ChunkFragment] = list(structured_fragments)
+        self._enrich_structured_table_fragments(
+            fragments=fragments,
+            elements=elements,
+        )
+        family_result = self.logical_table_family_fragment_builder.build(
+            section=section,
+            elements=elements,
+            excluded_element_ids=consumed_element_ids,
+        )
+        fragments.extend(family_result.fragments)
+        consumed_element_ids.update(family_result.consumed_element_ids)
 
         for index, element in enumerate(elements):
             if element.element_id in consumed_element_ids:
@@ -109,15 +133,23 @@ class ChunkFragmentBuilder:
             return None
 
         table_rows: list[list[str]] | None = None
+        table_context: str | None = None
+        table_metadata: dict[str, object] = {}
         if element.table_id is not None or element.element_type == ElementType.TABLE:
             if not self.table_fragment_builder.should_chunk_table_element(element):
                 return None
-            text = self.table_fragment_builder.table_fragment_text(
+            table_context = self.table_fragment_builder.table_context_text(
                 elements=elements, index=index, element=element
+            )
+            markdown_text = self.table_fragment_builder.table_markdown_text(element)
+            text = self.table_fragment_builder.compose_table_text(
+                context_text=table_context,
+                markdown_text=markdown_text,
             )
             chunk_type = self.table_fragment_builder.table_chunk_type(element, text)
             standalone = True
-            table_rows = resolve_parser_extra(element).get("table_rows") or None
+            table_rows = self.table_fragment_builder.table_rows(element)
+            table_metadata = self.table_fragment_builder.table_metadata(element)
         elif element.picture_id is not None or element.element_type == ElementType.PICTURE:
             if not self.include_picture_chunks and not self.picture_fragment_builder.is_large_picture(
                 element
@@ -158,7 +190,18 @@ class ChunkFragmentBuilder:
             page_start=element.source.page_start,
             page_end=element.source.page_end,
             token_count=self.text_splitter.count_tokens(text),
+            table_context=table_context,
             table_rows=table_rows,
+            logical_table_family_id=table_metadata.get("logical_table_family_id"),
+            logical_table_family_index=table_metadata.get("logical_table_family_index"),
+            logical_table_family_total=table_metadata.get("logical_table_family_total"),
+            logical_table_continuation_role=table_metadata.get(
+                "logical_table_continuation_role"
+            ),
+            table_category=table_metadata.get("table_category"),
+            table_category_confidence=table_metadata.get("table_category_confidence"),
+            table_row_start=1 if table_rows and len(table_rows) > 1 else None,
+            table_row_end=(len(table_rows) - 1) if table_rows and len(table_rows) > 1 else None,
         )
 
     @staticmethod
@@ -178,3 +221,75 @@ class ChunkFragmentBuilder:
         item_label = str(parser_extra.get("item_label") or "").strip().lower()
         raw_source_type = str(parser_extra.get("raw_source_type") or "").strip().lower()
         return item_label == "document_index" or raw_source_type == "documentindex"
+
+    def _enrich_structured_table_fragments(
+        self,
+        *,
+        fragments: list[ChunkFragment],
+        elements: list[CanonicalElement],
+    ) -> None:
+        element_by_id = {element.element_id: element for element in elements}
+
+        for fragment in fragments:
+            family_id = self._resolve_fragment_family_id(
+                fragment=fragment,
+                element_by_id=element_by_id,
+            )
+            if family_id is None:
+                continue
+
+            family_elements = [
+                element
+                for element in elements
+                if str(
+                    resolve_parser_extra(element).get("logical_table_family_id") or ""
+                ).strip()
+                == family_id
+            ]
+            if not family_elements:
+                continue
+
+            first_element = family_elements[0]
+            parser_extra = resolve_parser_extra(first_element)
+            merged_rows = self.logical_table_family_row_merger.merge_row_groups(
+                [
+                    self.table_fragment_builder.table_rows(element) or []
+                    for element in family_elements
+                ]
+            )
+            fragment.logical_table_family_id = family_id
+            fragment.logical_table_family_index = 1
+            fragment.logical_table_family_total = 1
+            fragment.logical_table_continuation_role = "single"
+            fragment.table_ids = [
+                element.table_id
+                for element in family_elements
+                if element.table_id is not None
+            ]
+            fragment.table_category = (
+                str(parser_extra.get("table_category") or "").strip() or None
+            )
+            fragment.table_category_confidence = coerce_float(
+                parser_extra.get("table_category_confidence")
+            )
+            if merged_rows:
+                fragment.table_rows = merged_rows
+                fragment.table_row_start = 1
+                fragment.table_row_end = len(merged_rows) - 1 if len(merged_rows) > 1 else None
+
+    @staticmethod
+    def _resolve_fragment_family_id(
+        *,
+        fragment: ChunkFragment,
+        element_by_id: dict[str, CanonicalElement],
+    ) -> str | None:
+        for element_id in fragment.element_ids:
+            element = element_by_id.get(element_id)
+            if element is None:
+                continue
+            family_id = str(
+                resolve_parser_extra(element).get("logical_table_family_id") or ""
+            ).strip()
+            if family_id:
+                return family_id
+        return None

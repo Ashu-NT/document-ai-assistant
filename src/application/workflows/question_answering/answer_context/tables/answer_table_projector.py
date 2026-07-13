@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Sequence
 
 from src.application.workflows.question_answering.answer_context.models import (
@@ -23,12 +24,20 @@ class AnswerTableProjector:
 
     def build(self, sources: Sequence[AnswerSource]) -> list[AnswerTable]:
         tables: list[AnswerTable] = []
+        seen_keys: set[str] = set()
         for source in sources:
             if not source.table_rows:
+                continue
+            table_key = (
+                source.metadata.get("logical_table_family_id")
+                or source.chunk_id
+            )
+            if table_key in seen_keys:
                 continue
             table = self._build_table(source)
             if table is not None:
                 tables.append(table)
+                seen_keys.add(table_key)
         return tables
 
     def _build_table(self, source: AnswerSource) -> AnswerTable | None:
@@ -40,9 +49,11 @@ class AnswerTableProjector:
         has_headers = self._has_header_row(cleaned_rows)
         headers = cleaned_rows[0] if has_headers else []
         body_rows = cleaned_rows[1:] if has_headers else cleaned_rows
+        table_category = source.metadata.get("table_category")
         table_kind, column_roles = self.schema_inferer.infer(
             chunk_type=source.chunk_type,
             headers=headers,
+            table_category=table_category,
         )
         rows = [
             AnswerTableRow(
@@ -70,6 +81,14 @@ class AnswerTableProjector:
             rows=rows,
             table_kind=table_kind,
             column_roles=column_roles,
+            logical_table_family_id=source.metadata.get("logical_table_family_id"),
+            physical_table_ids=self._decode_table_ids(source.metadata),
+            table_category=table_category,
+            table_category_confidence=self._coerce_float(
+                source.metadata.get("table_category_confidence")
+            ),
+            row_start=self._coerce_int(source.metadata.get("table_row_start")),
+            row_end=self._coerce_int(source.metadata.get("table_row_end")),
         )
 
     @staticmethod
@@ -105,3 +124,36 @@ class AnswerTableProjector:
     def _looks_numeric(value: str) -> bool:
         stripped = value.strip().replace(",", "").replace(".", "").replace("-", "")
         return bool(stripped) and stripped.isdigit()
+
+    @staticmethod
+    def _decode_table_ids(metadata: dict[str, str]) -> list[str]:
+        raw = metadata.get("hydrated_table_ids") or metadata.get("table_ids") or ""
+        if not raw:
+            return []
+        if raw.startswith("[") and raw.endswith("]"):
+            try:
+                decoded = json.loads(raw)
+            except ValueError:
+                decoded = []
+            if isinstance(decoded, list):
+                return [str(value).strip() for value in decoded if str(value).strip()]
+            return []
+        return [value.strip() for value in raw.split(",") if value.strip()]
+
+    @staticmethod
+    def _coerce_int(value: str | None) -> int | None:
+        if not value:
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _coerce_float(value: str | None) -> float | None:
+        if not value:
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None

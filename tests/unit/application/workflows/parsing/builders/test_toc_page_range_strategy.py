@@ -95,3 +95,57 @@ def test_toc_strategy_detects_contents_and_structured_document_index_rows() -> N
     assert levels["hdr_root"] == 1
     assert levels["hdr_child"] == 2
     assert levels["hdr_grandchild"] == 3
+
+
+def test_toc_strategy_merges_split_toc_tables_across_adjacent_pages() -> None:
+    elements = [
+        make_element("hdr_cover", ElementType.SECTION_HEADER, "Service Manual", 1, 1),
+        make_element("hdr_toc", ElementType.SECTION_HEADER, "Contents", 2, 2),
+        make_element(
+            "tbl_toc_a",
+            ElementType.TABLE,
+            "",
+            2,
+            3,
+            metadata={
+                "item_label": "document_index",
+                "table_rows": [
+                    ["1", "Introduction", "3"],
+                    ["1.1", "Overview", "4"],
+                ],
+            },
+        ),
+        make_element(
+            "tbl_toc_b",
+            ElementType.TABLE,
+            "",
+            3,
+            4,
+            metadata={
+                "item_label": "document_index",
+                "table_rows": [
+                    ["2", "Operation", "6"],
+                    ["2.1", "Startup", "7"],
+                ],
+            },
+        ),
+        make_element("hdr_intro", ElementType.SECTION_HEADER, "Introduction", 3, 5),
+        make_element("hdr_overview", ElementType.SECTION_HEADER, "Overview", 4, 6),
+        make_element("hdr_operation", ElementType.SECTION_HEADER, "Operation", 6, 7),
+        make_element("hdr_startup", ElementType.SECTION_HEADER, "Startup", 7, 8),
+    ]
+    headers = [element for element in elements if element.element_type == ElementType.SECTION_HEADER]
+    strategy = TocPageRangeStrategy()
+
+    outline = strategy.build_outline(headers, elements)
+    levels = strategy.assign_levels(headers, elements)
+
+    assert len(outline.entries) == 4
+    assert outline.header_numberings["hdr_intro"] == "1"
+    assert outline.header_numberings["hdr_overview"] == "1.1"
+    assert outline.header_numberings["hdr_operation"] == "2"
+    assert outline.header_numberings["hdr_startup"] == "2.1"
+    assert levels["hdr_intro"] == 1
+    assert levels["hdr_overview"] == 2
+    assert levels["hdr_operation"] == 1
+    assert levels["hdr_startup"] == 2

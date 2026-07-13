@@ -1,5 +1,10 @@
+from dataclasses import replace as dataclass_replace
+
 from src.application.workflows.parsing.builders.chunking.builders.chunk_payload_factory import (
     ChunkPayloadFactory,
+)
+from src.application.workflows.parsing.builders.chunking.builders.fragment.table_fragment_splitter import (
+    TableFragmentSplitter,
 )
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
@@ -132,11 +137,33 @@ class ChunkFragmentPacker:
         text_splitter: ChunkTextSplitter,
         section_path_lookup: dict[tuple[str, ...], str] | None = None,
     ) -> list[ChunkPayload]:
+        if fragment.table_rows:
+            split_fragments = TableFragmentSplitter(text_splitter=text_splitter).split(
+                fragment
+            )
+            if len(split_fragments) > 1 or split_fragments[0] is not fragment:
+                return [
+                    payload_factory.build_payload(
+                        document_title=document_title,
+                        fragments=[split_fragment],
+                        content_override=split_fragment.text,
+                        section_path_lookup=section_path_lookup,
+                    )
+                    for split_fragment in split_fragments
+                    if split_fragment.text.strip()
+                ]
+
         windows = text_splitter.split(fragment.text)
         return [
             payload_factory.build_payload(
                 document_title=document_title,
-                fragments=[fragment],
+                fragments=[
+                    dataclass_replace(
+                        fragment,
+                        table_row_start=fragment.table_row_start,
+                        table_row_end=fragment.table_row_end,
+                    )
+                ],
                 content_override=window,
                 section_path_lookup=section_path_lookup,
             )

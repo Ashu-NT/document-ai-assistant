@@ -184,3 +184,76 @@ def test_build_report_includes_toc_outline_when_available() -> None:
     assert "### TOC Entries" in report
     assert "Introduction" in report
     assert "Overview" in report
+
+
+def test_build_report_includes_logical_table_family_summary_when_available() -> None:
+    builder = make_builder()
+    raw_parsed_document = make_raw_parsed_document()
+    canonical_elements = [
+        make_parsed_element(
+            element_id="hdr_1",
+            element_type=ElementType.SECTION_HEADER,
+            order_index=1,
+            text="Maintenance",
+            page_start=1,
+            metadata={"heading_level": 1},
+        ),
+        make_parsed_element(
+            element_id="tbl_1",
+            element_type=ElementType.TABLE,
+            order_index=2,
+            text="| Task | Daily | Weekly |\n|---|---|---|\n| Inspect filter | x |  |",
+            page_start=1,
+            metadata={
+                "markdown": "| Task | Daily | Weekly |\n|---|---|---|\n| Inspect filter | x |  |",
+                "table_rows": [
+                    ["Task", "Daily", "Weekly"],
+                    ["Inspect filter", "x", ""],
+                ],
+                "row_count": 2,
+                "column_count": 3,
+            },
+        ),
+        make_parsed_element(
+            element_id="tbl_2",
+            element_type=ElementType.TABLE,
+            order_index=3,
+            text="| Task | Daily | Weekly |\n|---|---|---|\n| Replace gasket |  | x |",
+            page_start=2,
+            metadata={
+                "markdown": "| Task | Daily | Weekly |\n|---|---|---|\n| Replace gasket |  | x |",
+                "table_rows": [
+                    ["Task", "Daily", "Weekly"],
+                    ["Replace gasket", "", "x"],
+                ],
+                "row_count": 2,
+                "column_count": 3,
+            },
+        ),
+    ]
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=canonical_elements,
+        raw_parsed_document=raw_parsed_document,
+    )
+
+    report = build_report(
+        input_path=Path("data/input/pump_manual.pdf"),
+        output_path=Path("outputs/debug_parsing/pump_manual_parsing_report.md"),
+        file_hash="file_hash_001",
+        content_hash="content_hash_001",
+        raw_parsed_document=raw_parsed_document,
+        canonical_elements=canonical_elements,
+        document_graph=graph,
+        section_build_result=builder.last_section_build_result,
+    )
+
+    assert "## Logical Table Families" in report
+    assert "maintenance_interval_table" in report
+    assert "table_family_" in report
+    assert "logical_table_family_id" in report

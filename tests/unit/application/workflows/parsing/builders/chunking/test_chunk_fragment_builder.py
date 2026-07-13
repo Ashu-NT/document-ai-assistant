@@ -16,22 +16,26 @@ from src.domain.elements import CanonicalElement
 
 def make_table_element(
     *,
+    element_id: str = "tbl_1",
+    table_id: str = "table_001",
     text: str,
     markdown: str,
     table_rows: list[list[str]] | None = None,
+    metadata: dict | None = None,
 ) -> CanonicalElement:
     return CanonicalElement(
-        element_id="tbl_1",
+        element_id=element_id,
         document_id="doc_001",
         element_type=ElementType.TABLE,
         text=text,
-        table_id="table_001",
+        table_id=table_id,
         source=SourceLocation(page_start=1, page_end=1),
         parser_metadata=ParserMetadata(
             parser_name="docling",
             extra={
                 "markdown": markdown,
                 **({"table_rows": table_rows} if table_rows is not None else {}),
+                **(metadata or {}),
             },
         ),
     )
@@ -202,3 +206,66 @@ def test_table_chunk_type_stays_general_without_part_header_or_text_marker() -> 
     chunk_type = builder.table_fragment_builder.table_chunk_type(element, text)
 
     assert chunk_type == ChunkType.GENERAL
+
+
+def test_build_section_fragments_combines_same_logical_table_family() -> None:
+    builder = make_builder(include_picture_chunks=False)
+    section = _make_section()
+    elements = [
+        make_table_element(
+            element_id="tbl_1",
+            table_id="table_001",
+            text="| Task | Monthly |\n|---|---|\n| Inspect filter | x |",
+            markdown="| Task | Monthly |\n|---|---|\n| Inspect filter | x |",
+            table_rows=[["Task", "Monthly"], ["Inspect filter", "x"]],
+            metadata={
+                "logical_table_family_id": "table_family_1",
+                "family_index": 1,
+                "family_total": 2,
+                "continuation_role": "start",
+                "table_category": "maintenance_interval_table",
+                "table_category_confidence": 0.95,
+            },
+        ),
+        make_table_element(
+            element_id="tbl_2",
+            table_id="table_002",
+            text="| Task | Monthly |\n|---|---|\n| Replace gasket | x |",
+            markdown="| Task | Monthly |\n|---|---|\n| Replace gasket | x |",
+            table_rows=[["Task", "Monthly"], ["Replace gasket", "x"]],
+            metadata={
+                "logical_table_family_id": "table_family_1",
+                "family_index": 2,
+                "family_total": 2,
+                "continuation_role": "end",
+                "table_category": "maintenance_interval_table",
+                "table_category_confidence": 0.95,
+            },
+        ),
+    ]
+
+    fragments = builder.build_section_fragments(
+        document_title="Pump Manual",
+        document_type=None,
+        section=section,
+        elements=elements,
+    )
+
+    family_fragments = [
+        fragment
+        for fragment in fragments
+        if fragment.logical_table_family_id == "table_family_1"
+    ]
+    assert len(family_fragments) == 1
+    fragment = family_fragments[0]
+    assert fragment.logical_table_family_id == "table_family_1"
+    assert fragment.table_ids == ["table_001", "table_002"]
+    assert fragment.table_category == "maintenance_interval_table"
+    assert fragment.table_category_confidence == 0.95
+    assert fragment.table_row_start == 1
+    assert fragment.table_row_end == 2
+    assert fragment.table_rows == [
+        ["Task", "Monthly"],
+        ["Inspect filter", "x"],
+        ["Replace gasket", "x"],
+    ]

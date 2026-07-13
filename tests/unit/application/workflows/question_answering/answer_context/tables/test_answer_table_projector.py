@@ -43,3 +43,48 @@ def test_projector_detects_maintenance_schedule_matrix() -> None:
 
     assert len(tables) == 1
     assert tables[0].table_kind == "maintenance_schedule_matrix"
+
+
+def test_projector_deduplicates_same_logical_table_family_and_carries_metadata() -> None:
+    projector = AnswerTableProjector()
+    tables = projector.build(
+        [
+            AnswerSource(
+                source_number=1,
+                chunk_id="chunk_sched_1",
+                chunk_type="maintenance_interval",
+                table_rows=[
+                    ["Task", "Monthly"],
+                    ["Inspect basket", "x"],
+                ],
+                metadata={
+                    "logical_table_family_id": "table_family_001",
+                    "hydrated_table_ids": "table_001,table_002",
+                    "table_category": "maintenance_interval_table",
+                    "table_category_confidence": "0.95",
+                    "table_row_start": "1",
+                    "table_row_end": "2",
+                },
+            ),
+            AnswerSource(
+                source_number=2,
+                chunk_id="chunk_sched_2",
+                chunk_type="maintenance_interval",
+                table_rows=[
+                    ["Task", "Monthly"],
+                    ["Replace gasket", "x"],
+                ],
+                metadata={
+                    "logical_table_family_id": "table_family_001",
+                },
+            ),
+        ]
+    )
+
+    assert len(tables) == 1
+    assert tables[0].logical_table_family_id == "table_family_001"
+    assert tables[0].physical_table_ids == ["table_001", "table_002"]
+    assert tables[0].table_category == "maintenance_interval_table"
+    assert tables[0].table_category_confidence == 0.95
+    assert tables[0].row_start == 1
+    assert tables[0].row_end == 2

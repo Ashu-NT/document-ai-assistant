@@ -19,3 +19,13 @@ def coerce_positive_int(value: Any) -> int | None:
         return None
 
     return number if number > 0 else None
+
+
+def coerce_float(value: Any) -> float | None:
+    if value is None:
+        return None
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None

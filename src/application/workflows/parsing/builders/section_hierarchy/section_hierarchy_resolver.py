@@ -161,4 +161,8 @@ class SectionHierarchyResolver:
 
         resolution.effective_levels = normalize_levels(headers, resolution.effective_levels)
         self._contextual_numbering_resolver.apply(headers, resolution)
+        if resolution.toc_outline is not None:
+            resolution.toc_outline.header_numberings = dict(
+                resolution.header_numberings
+            )
         return resolution

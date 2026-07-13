@@ -1,6 +1,10 @@
 import json
 from dataclasses import replace as dataclass_replace
 
+from src.application.workflows.parsing.tables.families import (
+    LogicalTableFamilyLookup,
+    LogicalTableFamilyRowMerger,
+)
 from src.domain.assets import TableAsset
 from src.domain.common import ChunkType
 from src.domain.document import DocumentGraph
@@ -41,18 +45,26 @@ class TableEvidenceHydrator:
                 hydrated_chunks.append(chunk)
                 continue
 
-            unseen_table_ids = [
-                table_id
-                for table_id in source_chunk.table_ids
-                if (chunk.document_id, table_id) not in seen_table_keys
-            ]
-            if not unseen_table_ids:
+            family_lookup = LogicalTableFamilyLookup.from_tables(graph.tables)
+            row_merger = LogicalTableFamilyRowMerger()
+            family_id = (
+                source_chunk.logical_table_family_id
+                or family_lookup.family_id_for_table_ids(source_chunk.table_ids)
+            )
+            if family_id:
+                group_key = (chunk.document_id, family_id)
+            else:
+                group_key = (
+                    chunk.document_id,
+                    ",".join(sorted(source_chunk.table_ids)),
+                )
+            if group_key in seen_table_keys:
                 continue
 
             qualifying_tables = [
-                graph.tables[table_id]
-                for table_id in unseen_table_ids
-                if table_id in graph.tables and graph.tables[table_id].has_content()
+                table
+                for table in family_lookup.members_for_table_ids(source_chunk.table_ids)
+                if table.has_content()
             ]
             if not qualifying_tables:
                 hydrated_chunks.append(chunk)
@@ -63,22 +75,36 @@ class TableEvidenceHydrator:
                 for table in qualifying_tables
             ]
 
-            seen_table_keys.update(
-                (chunk.document_id, table_id) for table_id in unseen_table_ids
-            )
+            seen_table_keys.add(group_key)
             metadata = dict(chunk.metadata)
             metadata["table_evidence_hydrated"] = "true"
-            metadata["hydrated_table_ids"] = ",".join(unseen_table_ids)
-            # Structured rows are only stashed for the first qualifying table --
-            # a chunk referencing more than one table is rare (chunk fragments
-            # are built per-table-element), and every downstream consumer
-            # expects a single row grid per chunk.
-            structured_table = next(
-                (table for table in qualifying_tables if table.has_structured_rows()),
+            hydrated_table_ids = [table.table_id for table in qualifying_tables]
+            metadata["hydrated_table_ids"] = ",".join(hydrated_table_ids)
+            if family_id:
+                metadata["logical_table_family_id"] = family_id
+            table_category = source_chunk.table_category or next(
+                (table.table_category for table in qualifying_tables if table.table_category),
                 None,
             )
-            if structured_table is not None:
-                metadata["table_rows_json"] = json.dumps(structured_table.rows)
+            if table_category:
+                metadata["table_category"] = table_category
+            table_category_confidence = (
+                source_chunk.table_category_confidence
+                if source_chunk.table_category_confidence is not None
+                else next(
+                    (
+                        table.table_category_confidence
+                        for table in qualifying_tables
+                        if table.table_category_confidence is not None
+                    ),
+                    None,
+                )
+            )
+            if table_category_confidence is not None:
+                metadata["table_category_confidence"] = str(table_category_confidence)
+            merged_rows = row_merger.merge_tables(qualifying_tables)
+            if merged_rows is not None:
+                metadata["table_rows_json"] = json.dumps(merged_rows)
             hydrated_chunks.append(
                 dataclass_replace(
                     chunk,

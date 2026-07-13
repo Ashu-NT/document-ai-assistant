@@ -23,3 +23,9 @@ class AnswerTable:
     rows: list[AnswerTableRow] = field(default_factory=list)
     table_kind: str = "general_table"
     column_roles: dict[int, str] = field(default_factory=dict)
+    logical_table_family_id: str | None = None
+    physical_table_ids: list[str] = field(default_factory=list)
+    table_category: str | None = None
+    table_category_confidence: float | None = None
+    row_start: int | None = None
+    row_end: int | None = None

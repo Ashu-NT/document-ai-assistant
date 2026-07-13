@@ -23,6 +23,10 @@ from src.application.workflows.parsing.builders.section_build_result import (
 )
 from src.application.workflows.parsing.builders.section_builder import SectionBuilder
 from src.application.workflows.parsing.profiling import GraphBuildProfiler
+from src.application.workflows.parsing.tables import (
+    LogicalTableFamilyResolver,
+    TableSemanticResolver,
+)
 from src.application.workflows.parsing.canonical_element import (
     CanonicalElement as ParsedCanonicalElement,
 )
@@ -118,6 +122,8 @@ class DocumentGraphBuilder:
                 profiler=self.profiler,
             )
         self.asset_factory = ParsedAssetFactory(id_generator)
+        self.logical_table_family_resolver = LogicalTableFamilyResolver()
+        self.table_semantic_resolver = TableSemanticResolver()
         self.asset_nearby_text_enricher = AssetNearbyTextEnricher(
             token_counter_factory=token_counter_factory,
             profiler=self.profiler
@@ -260,6 +266,8 @@ class DocumentGraphBuilder:
 
             self.asset_nearby_text_enricher.enrich(graph)
             AssetMetadataSynchronizer.sync(graph)
+            self.logical_table_family_resolver.resolve(graph)
+            self.table_semantic_resolver.resolve(graph)
 
             page_sizes = self._extract_page_sizes(raw_parsed_document)
 

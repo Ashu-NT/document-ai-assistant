@@ -11,6 +11,9 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry 
     TocOutline,
     normalize_toc_title,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_candidate_collector import (
+    TocCandidateCollector,
+)
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry_parser import (
     TocEntryParser,
 )
@@ -33,7 +36,11 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
         "toc",
     }
     _TOC_SCAN_PAGE_LIMIT = 8
-    _TOC_SCAN_SPAN = 3
+
+    def __init__(self) -> None:
+        self._candidate_collector = TocCandidateCollector(
+            max_scan_page=self._TOC_SCAN_PAGE_LIMIT
+        )
 
     def can_apply(
         self,
@@ -114,15 +121,11 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
         if anchor_page is None:
             return TocOutline()
 
-        candidate_elements = [
-            element
-            for element in sorted(elements, key=lambda item: item.order_index)
-            if self._is_toc_candidate_element(
-                element,
-                anchor_page=anchor_page,
-                anchor_order=anchor_order,
-            )
-        ]
+        candidate_elements = self._candidate_collector.collect(
+            elements,
+            anchor_page=anchor_page,
+            anchor_order=anchor_order,
+        )
 
         entries: list[TocEntry] = []
         for element in candidate_elements:
@@ -182,33 +185,6 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
                 return page_no, None, table.order_index
 
         return None, None, None
-
-    def _is_toc_candidate_element(
-        self,
-        element: CanonicalElement,
-        *,
-        anchor_page: int,
-        anchor_order: int | None,
-    ) -> bool:
-        page_no = element.page_start or element.page_end
-        if page_no is None:
-            return False
-
-        if page_no < anchor_page or page_no >= anchor_page + self._TOC_SCAN_SPAN:
-            return False
-
-        if (
-            anchor_order is not None
-            and page_no == anchor_page
-            and element.order_index <= anchor_order
-        ):
-            return False
-
-        return element.element_type in {
-            ElementType.TABLE,
-            ElementType.TEXT,
-            ElementType.LIST_ITEM,
-        }
 
     @classmethod
     def _looks_like_toc_header(cls, value: str | None) -> bool:

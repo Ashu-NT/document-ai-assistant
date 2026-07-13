@@ -138,6 +138,17 @@ class DocumentGraphReader:
                     rows=parser_extra.get("table_rows") or [],
                     row_count=parser_extra.get("row_count"),
                     column_count=parser_extra.get("column_count"),
+                    logical_table_family_id=parser_extra.get("logical_table_family_id"),
+                    family_index=parser_extra.get("family_index"),
+                    family_total=parser_extra.get("family_total"),
+                    continuation_role=parser_extra.get("continuation_role"),
+                    normalized_header_signature=parser_extra.get(
+                        "normalized_header_signature"
+                    ),
+                    table_category=parser_extra.get("table_category"),
+                    table_category_confidence=parser_extra.get(
+                        "table_category_confidence"
+                    ),
                     metadata=AssetMetadata(
                         source=element.source,
                         caption=(

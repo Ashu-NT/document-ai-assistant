@@ -1,3 +1,5 @@
+import json
+
 from qdrant_client.http.models import models
 
 from src.domain.common import ChunkType, SourceLocation
@@ -26,7 +28,26 @@ class QdrantPayloadMapper:
             "chunk_total": chunk.chunk_total,
             "page_start": chunk.source.page_start,
             "page_end": chunk.source.page_end,
+            "table_ids": list(chunk.table_ids),
         }
+        if chunk.logical_table_family_id is not None:
+            payload["logical_table_family_id"] = chunk.logical_table_family_id
+        if chunk.logical_table_family_index is not None:
+            payload["logical_table_family_index"] = chunk.logical_table_family_index
+        if chunk.logical_table_family_total is not None:
+            payload["logical_table_family_total"] = chunk.logical_table_family_total
+        if chunk.logical_table_continuation_role is not None:
+            payload["logical_table_continuation_role"] = (
+                chunk.logical_table_continuation_role
+            )
+        if chunk.table_category is not None:
+            payload["table_category"] = chunk.table_category
+        if chunk.table_category_confidence is not None:
+            payload["table_category_confidence"] = chunk.table_category_confidence
+        if chunk.table_row_start is not None:
+            payload["table_row_start"] = chunk.table_row_start
+        if chunk.table_row_end is not None:
+            payload["table_row_end"] = chunk.table_row_end
         if chunk.statistics is not None:
             payload["char_count"] = chunk.statistics.char_count
             if chunk.statistics.token_count_estimate is not None:
@@ -60,6 +81,20 @@ class QdrantPayloadMapper:
         }
         if payload.get("document_type") is not None:
             metadata["document_type"] = str(payload.get("document_type"))
+        if payload.get("table_ids") is not None:
+            metadata["table_ids"] = json.dumps(payload.get("table_ids"))
+        for key in (
+            "logical_table_family_id",
+            "logical_table_family_index",
+            "logical_table_family_total",
+            "logical_table_continuation_role",
+            "table_category",
+            "table_category_confidence",
+            "table_row_start",
+            "table_row_end",
+        ):
+            if payload.get(key) is not None:
+                metadata[key] = str(payload.get(key))
 
         raw_identifier_values = payload.get("identifier_values") or []
         identifier_values = (

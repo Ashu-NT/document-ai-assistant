@@ -86,3 +86,56 @@ def test_hydrate_omits_table_rows_json_when_table_has_no_structured_rows() -> No
     assert len(hydrated) == 1
     assert hydrated[0].metadata["table_evidence_hydrated"] == "true"
     assert "table_rows_json" not in hydrated[0].metadata
+
+
+def test_hydrate_merges_rows_across_logical_table_family() -> None:
+    first = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="| Task | Monthly |\n|---|---|\n| Inspect filter | x |",
+        rows=[["Task", "Monthly"], ["Inspect filter", "x"]],
+        logical_table_family_id="table_family_001",
+        family_index=1,
+        family_total=2,
+        table_category="maintenance_interval_table",
+    )
+    second = TableAsset(
+        table_id="table_002",
+        document_id="doc_001",
+        markdown="| Task | Monthly |\n|---|---|\n| Replace gasket | x |",
+        rows=[["Task", "Monthly"], ["Replace gasket", "x"]],
+        logical_table_family_id="table_family_001",
+        family_index=2,
+        family_total=2,
+        table_category="maintenance_interval_table",
+    )
+    graph = DocumentGraph(document=_make_document())
+    graph.tables[first.table_id] = first
+    graph.tables[second.table_id] = second
+    graph.add_chunk(
+        DocumentChunk(
+            chunk_id="chunk_001",
+            document_id="doc_001",
+            section_id=None,
+            content=first.markdown,
+            table_ids=[first.table_id],
+            logical_table_family_id="table_family_001",
+            table_category="maintenance_interval_table",
+        )
+    )
+    chunk = _make_retrieved_chunk(content=first.markdown)
+
+    hydrated = TableEvidenceHydrator().hydrate(
+        chunks=[chunk],
+        graphs_by_document_id={"doc_001": graph},
+    )
+
+    assert len(hydrated) == 1
+    assert hydrated[0].metadata["logical_table_family_id"] == "table_family_001"
+    assert hydrated[0].metadata["table_category"] == "maintenance_interval_table"
+    assert json.loads(hydrated[0].metadata["table_rows_json"]) == [
+        ["Task", "Monthly"],
+        ["Inspect filter", "x"],
+        ["Replace gasket", "x"],
+    ]
+    assert "Replace gasket" in hydrated[0].content

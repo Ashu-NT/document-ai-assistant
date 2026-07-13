@@ -3,6 +3,9 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry 
     TocOutline,
     normalize_toc_title,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_candidate_collector import (
+    TocCandidateCollector,
+)
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry_parser import (
     TocEntryParser,
 )
@@ -12,6 +15,7 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_header
 
 __all__ = [
     "TocEntry",
+    "TocCandidateCollector",
     "TocEntryParser",
     "TocHeaderMatcher",
     "TocOutline",

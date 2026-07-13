@@ -22,6 +22,28 @@ class RetrievedChunkMapper:
             "chunk_index": str(row.chunk_index),
             "chunk_total": str(row.chunk_total),
         }
+        if row.table_ids_json:
+            metadata["table_ids"] = row.table_ids_json
+        if row.logical_table_family_id:
+            metadata["logical_table_family_id"] = row.logical_table_family_id
+        if row.logical_table_family_index is not None:
+            metadata["logical_table_family_index"] = str(row.logical_table_family_index)
+        if row.logical_table_family_total is not None:
+            metadata["logical_table_family_total"] = str(row.logical_table_family_total)
+        if row.logical_table_continuation_role:
+            metadata["logical_table_continuation_role"] = (
+                row.logical_table_continuation_role
+            )
+        if row.table_category:
+            metadata["table_category"] = row.table_category
+        if row.table_category_confidence is not None:
+            metadata["table_category_confidence"] = str(
+                row.table_category_confidence
+            )
+        if row.table_row_start is not None:
+            metadata["table_row_start"] = str(row.table_row_start)
+        if row.table_row_end is not None:
+            metadata["table_row_end"] = str(row.table_row_end)
         if extra_metadata:
             metadata.update(extra_metadata)
         return RetrievedChunk(

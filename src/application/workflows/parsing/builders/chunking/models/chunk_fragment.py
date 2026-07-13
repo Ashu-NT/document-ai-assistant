@@ -20,4 +20,13 @@ class ChunkFragment:
     page_start: int | None = None
     page_end: int | None = None
     token_count: int = 0
+    table_context: str | None = None
     table_rows: list[list[str]] | None = None
+    logical_table_family_id: str | None = None
+    logical_table_family_index: int | None = None
+    logical_table_family_total: int | None = None
+    logical_table_continuation_role: str | None = None
+    table_category: str | None = None
+    table_category_confidence: float | None = None
+    table_row_start: int | None = None
+    table_row_end: int | None = None

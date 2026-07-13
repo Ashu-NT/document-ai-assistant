@@ -1,0 +1,141 @@
+from src.application.workflows.parsing.tables import LogicalTableFamilyResolver
+from src.domain.assets import TableAsset
+from src.domain.common import ElementType, ParserMetadata, SourceLocation
+from src.domain.document import Document, DocumentGraph, DocumentHashes
+from src.domain.elements import CanonicalElement
+
+
+def _make_document() -> Document:
+    return Document(
+        document_id="doc_001",
+        file_name="manual.pdf",
+        file_path="data/input/manual.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+    )
+
+
+def _make_table_element(
+    *,
+    element_id: str,
+    table_id: str,
+    page_start: int,
+    parent_section_id: str = "sec_001",
+    reading_order: int = 1,
+) -> CanonicalElement:
+    return CanonicalElement(
+        element_id=element_id,
+        document_id="doc_001",
+        element_type=ElementType.TABLE,
+        text="| Header | Value |",
+        parent_section_id=parent_section_id,
+        reading_order=reading_order,
+        source=SourceLocation(page_start=page_start, page_end=page_start),
+        table_id=table_id,
+        parser_metadata=ParserMetadata(parser_name="docling", extra={}),
+    )
+
+
+def _make_table_asset(
+    *,
+    table_id: str,
+    rows: list[list[str]],
+    parent_section_id: str = "sec_001",
+    column_count: int | None = None,
+) -> TableAsset:
+    return TableAsset(
+        table_id=table_id,
+        document_id="doc_001",
+        markdown="| Header | Value |",
+        parent_section_id=parent_section_id,
+        rows=rows,
+        row_count=len(rows),
+        column_count=column_count or len(rows[0]),
+    )
+
+
+def test_resolver_groups_adjacent_same_header_tables_into_one_family() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.tables["table_1"] = _make_table_asset(
+        table_id="table_1",
+        rows=[["Task", "Interval"], ["Inspect filter", "Daily"]],
+    )
+    graph.tables["table_2"] = _make_table_asset(
+        table_id="table_2",
+        rows=[["Task", "Interval"], ["Replace gasket", "Weekly"]],
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_1",
+            table_id="table_1",
+            page_start=10,
+            reading_order=1,
+        )
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_2",
+            table_id="table_2",
+            page_start=11,
+            reading_order=2,
+        )
+    )
+
+    LogicalTableFamilyResolver().resolve(graph)
+
+    first = graph.tables["table_1"]
+    second = graph.tables["table_2"]
+    assert first.logical_table_family_id == "table_family_table_1"
+    assert second.logical_table_family_id == first.logical_table_family_id
+    assert first.family_index == 1
+    assert first.family_total == 2
+    assert first.continuation_role == "start"
+    assert second.family_index == 2
+    assert second.family_total == 2
+    assert second.continuation_role == "end"
+    assert first.normalized_header_signature == "task|interval"
+    assert (
+        graph.elements["el_2"].parser_metadata.extra["logical_table_family_id"]
+        == first.logical_table_family_id
+    )
+
+
+def test_resolver_keeps_distinct_table_headers_in_separate_families() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.tables["table_1"] = _make_table_asset(
+        table_id="table_1",
+        rows=[["Task", "Interval"], ["Inspect filter", "Daily"]],
+    )
+    graph.tables["table_2"] = _make_table_asset(
+        table_id="table_2",
+        rows=[["Part Number", "Description"], ["HP-001", "Filter"]],
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_1",
+            table_id="table_1",
+            page_start=10,
+            reading_order=1,
+        )
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_2",
+            table_id="table_2",
+            page_start=11,
+            reading_order=2,
+        )
+    )
+
+    LogicalTableFamilyResolver().resolve(graph)
+
+    first = graph.tables["table_1"]
+    second = graph.tables["table_2"]
+    assert first.logical_table_family_id == "table_family_table_1"
+    assert second.logical_table_family_id == "table_family_table_2"
+    assert first.family_total == 1
+    assert second.family_total == 1
+    assert first.continuation_role == "single"
+    assert second.continuation_role == "single"

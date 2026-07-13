@@ -16,6 +16,13 @@ class TableAsset:
     rows: list[list[str]] = field(default_factory=list)
     row_count: int | None = None
     column_count: int | None = None
+    logical_table_family_id: str | None = None
+    family_index: int | None = None
+    family_total: int | None = None
+    continuation_role: str | None = None
+    normalized_header_signature: str | None = None
+    table_category: str | None = None
+    table_category_confidence: float | None = None
 
     metadata: AssetMetadata = field(default_factory=AssetMetadata)
     audit: AuditMetadata = field(default_factory=AuditMetadata)

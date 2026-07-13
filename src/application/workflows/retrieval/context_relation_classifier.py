@@ -40,6 +40,13 @@ def _shares_chunk_family(anchor_document_chunk, document_chunk) -> bool:
 
 
 def _shares_assets(anchor_document_chunk, document_chunk) -> bool:
+    if (
+        anchor_document_chunk.logical_table_family_id is not None
+        and anchor_document_chunk.logical_table_family_id
+        == document_chunk.logical_table_family_id
+    ):
+        return True
+
     return bool(
         set(anchor_document_chunk.table_ids) & set(document_chunk.table_ids)
         or set(anchor_document_chunk.picture_ids) & set(document_chunk.picture_ids)

@@ -1,0 +1,162 @@
+from src.application.workflows.parsing.tables.logical_table_family_assignment import (
+    LogicalTableFamilyAssignment,
+)
+from src.application.workflows.parsing.tables.table_header_signature_builder import (
+    TableHeaderSignatureBuilder,
+)
+from src.domain.document import DocumentGraph
+from src.domain.elements import CanonicalElement
+
+
+class LogicalTableFamilyResolver:
+    def __init__(
+        self,
+        *,
+        header_signature_builder: TableHeaderSignatureBuilder | None = None,
+        max_continuation_page_gap: int = 1,
+    ) -> None:
+        self.header_signature_builder = (
+            header_signature_builder or TableHeaderSignatureBuilder()
+        )
+        self.max_continuation_page_gap = max_continuation_page_gap
+
+    def resolve(self, graph: DocumentGraph) -> None:
+        table_elements = self._sorted_table_elements(graph)
+        families: list[list[CanonicalElement]] = []
+
+        for element in table_elements:
+            if not families or not self._continues_family(graph, families[-1][-1], element):
+                families.append([element])
+                continue
+            families[-1].append(element)
+
+        for family in families:
+            assignment_by_table_id = self._build_assignments(graph, family)
+            for element in family:
+                if element.table_id is None:
+                    continue
+                assignment = assignment_by_table_id.get(element.table_id)
+                if assignment is None:
+                    continue
+                self._apply_assignment(graph, element, assignment)
+
+    @staticmethod
+    def _sorted_table_elements(graph: DocumentGraph) -> list[CanonicalElement]:
+        return sorted(
+            [
+                element
+                for element in graph.elements.values()
+                if element.table_id is not None and element.table_id in graph.tables
+            ],
+            key=lambda element: (
+                element.source.page_start or 0,
+                element.source.page_end or 0,
+                element.reading_order or 0,
+            ),
+        )
+
+    def _continues_family(
+        self,
+        graph: DocumentGraph,
+        previous: CanonicalElement,
+        current: CanonicalElement,
+    ) -> bool:
+        previous_table = graph.tables.get(previous.table_id or "")
+        current_table = graph.tables.get(current.table_id or "")
+        if previous_table is None or current_table is None:
+            return False
+
+        if previous.parent_section_id != current.parent_section_id:
+            return False
+
+        previous_signature = self.header_signature_builder.build(previous_table)
+        current_signature = self.header_signature_builder.build(current_table)
+        if not previous_signature or previous_signature != current_signature:
+            return False
+
+        if (
+            previous_table.column_count is not None
+            and current_table.column_count is not None
+            and previous_table.column_count != current_table.column_count
+        ):
+            return False
+
+        previous_page = previous.source.page_end or previous.source.page_start
+        current_page = current.source.page_start or current.source.page_end
+        if previous_page is None or current_page is None:
+            return False
+
+        page_gap = current_page - previous_page
+        return 0 <= page_gap <= self.max_continuation_page_gap
+
+    def _build_assignments(
+        self,
+        graph: DocumentGraph,
+        family: list[CanonicalElement],
+    ) -> dict[str, LogicalTableFamilyAssignment]:
+        first_table_id = family[0].table_id
+        if first_table_id is None:
+            return {}
+
+        logical_table_family_id = f"table_family_{first_table_id}"
+        family_total = len(family)
+        assignments: dict[str, LogicalTableFamilyAssignment] = {}
+
+        for index, element in enumerate(family, start=1):
+            table_id = element.table_id
+            if table_id is None:
+                continue
+
+            table = graph.tables.get(table_id)
+            normalized_header_signature = (
+                self.header_signature_builder.build(table) if table is not None else None
+            )
+            assignments[table_id] = LogicalTableFamilyAssignment(
+                logical_table_family_id=logical_table_family_id,
+                family_index=index,
+                family_total=family_total,
+                continuation_role=self._resolve_continuation_role(
+                    family_index=index,
+                    family_total=family_total,
+                ),
+                normalized_header_signature=normalized_header_signature,
+            )
+
+        return assignments
+
+    @staticmethod
+    def _resolve_continuation_role(*, family_index: int, family_total: int) -> str:
+        if family_total <= 1:
+            return "single"
+        if family_index == 1:
+            return "start"
+        if family_index == family_total:
+            return "end"
+        return "middle"
+
+    @staticmethod
+    def _apply_assignment(
+        graph: DocumentGraph,
+        element: CanonicalElement,
+        assignment: LogicalTableFamilyAssignment,
+    ) -> None:
+        table = graph.tables.get(element.table_id or "")
+        if table is not None:
+            table.logical_table_family_id = assignment.logical_table_family_id
+            table.family_index = assignment.family_index
+            table.family_total = assignment.family_total
+            table.continuation_role = assignment.continuation_role
+            table.normalized_header_signature = assignment.normalized_header_signature
+
+        parser_metadata = element.parser_metadata
+        if parser_metadata is None:
+            return
+
+        parser_metadata.extra = {
+            **dict(parser_metadata.extra or {}),
+            "logical_table_family_id": assignment.logical_table_family_id,
+            "family_index": assignment.family_index,
+            "family_total": assignment.family_total,
+            "continuation_role": assignment.continuation_role,
+            "normalized_header_signature": assignment.normalized_header_signature,
+        }

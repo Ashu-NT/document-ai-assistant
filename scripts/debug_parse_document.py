@@ -474,6 +474,78 @@ def build_toc_outline_section(section_build_result: SectionBuildResult | None) -
     return lines
 
 
+def build_logical_table_family_section(document_graph: Any) -> list[str]:
+    lines = ["## Logical Table Families", ""]
+    tables = list(document_graph.tables.values())
+    family_tables = [table for table in tables if safe_getattr(table, "logical_table_family_id")]
+    if not family_tables:
+        lines.append("_No logical table family metadata available._")
+        lines.append("")
+        return lines
+
+    families: dict[str, list[Any]] = {}
+    for table in family_tables:
+        families.setdefault(
+            safe_getattr(table, "logical_table_family_id", default=""),
+            [],
+        ).append(table)
+
+    for family_id, members in sorted(families.items(), key=lambda item: item[0]):
+        ordered_members = sorted(
+            members,
+            key=lambda table: (
+                safe_getattr(table, "family_index", default=0) or 0,
+                safe_getattr(table, "table_id", default=""),
+            ),
+        )
+        categories = sorted(
+            {
+                display_value(safe_getattr(table, "table_category"))
+                for table in ordered_members
+                if safe_getattr(table, "table_category")
+            }
+        )
+        page_ranges = [
+            format_page_range(
+                safe_getattr(table, "metadata", "source", "page_start"),
+                safe_getattr(table, "metadata", "source", "page_end"),
+            )
+            for table in ordered_members
+        ]
+        lines.extend(
+            [
+                f"### {family_id}",
+                f"- member count: `{len(ordered_members)}`",
+                f"- categories: `{', '.join(categories) if categories else ''}`",
+                f"- page ranges: `{', '.join(page_ranges)}`",
+                format_table(
+                    headers=[
+                        "family_index",
+                        "table_id",
+                        "continuation_role",
+                        "table_category",
+                        "confidence",
+                        "header_signature",
+                    ],
+                    rows=[
+                        [
+                            f"{safe_getattr(table, 'family_index', default='')}/{safe_getattr(table, 'family_total', default='')}",
+                            safe_getattr(table, "table_id"),
+                            safe_getattr(table, "continuation_role"),
+                            safe_getattr(table, "table_category"),
+                            safe_getattr(table, "table_category_confidence"),
+                            safe_getattr(table, "normalized_header_signature"),
+                        ]
+                        for table in ordered_members
+                    ],
+                ),
+                "",
+            ]
+        )
+
+    return lines
+
+
 def invert_mapping(mapping: dict[str, str]) -> dict[str, str]:
     return {
         value: key
@@ -891,6 +963,7 @@ def build_report(
         for element in document_graph.elements.values()
         if safe_getattr(element, "table_id")
     }
+    lines.extend(build_logical_table_family_section(document_graph))
     lines.append("## Table Assets")
     lines.append("")
     if not document_graph.tables:
@@ -906,6 +979,12 @@ def build_report(
                     f"- document id: `{safe_getattr(table, 'document_id', default='')}`",
                     f"- element id: `{safe_getattr(linked_element, 'element_id', default='')}`",
                     f"- page_start/page_end: `{format_page_range(safe_getattr(source, 'page_start'), safe_getattr(source, 'page_end'))}`",
+                    f"- logical_table_family_id: `{safe_getattr(table, 'logical_table_family_id', default='')}`",
+                    f"- family_index/family_total: `{safe_getattr(table, 'family_index', default='')}/{safe_getattr(table, 'family_total', default='')}`",
+                    f"- continuation_role: `{safe_getattr(table, 'continuation_role', default='')}`",
+                    f"- table_category: `{safe_getattr(table, 'table_category', default='')}`",
+                    f"- table_category_confidence: `{safe_getattr(table, 'table_category_confidence', default='')}`",
+                    f"- normalized_header_signature: `{safe_getattr(table, 'normalized_header_signature', default='')}`",
                     f"- markdown preview: `{preview_text(safe_getattr(table, 'markdown'), limit=320)}`",
                     "- metadata:",
                     "```json",
@@ -1206,6 +1285,7 @@ def build_chunk_section(
                 "section_path",
                 "chunk_pos",
                 "type",
+                "table_family",
                 "elements",
                 "pages",
                 "content preview",
@@ -1221,6 +1301,9 @@ def build_chunk_section(
                         f"{safe_getattr(chunk, 'chunk_total', default='')}"
                     ),
                     display_value(safe_getattr(chunk, "chunk_type")),
+                    display_value(
+                        safe_getattr(chunk, "logical_table_family_id", default="")
+                    ),
                     len(safe_getattr(chunk, "element_ids", default=[]) or []),
                     format_page_range(
                         safe_getattr(chunk, "source", "page_start"),
@@ -1244,6 +1327,12 @@ def build_chunk_section(
                 f"- sequence_number: `{safe_getattr(chunk, 'sequence_number', default='')}`",
                 f"- chunk_index/chunk_total: `{safe_getattr(chunk, 'chunk_index', default='')}/{safe_getattr(chunk, 'chunk_total', default='')}`",
                 f"- chunk type: `{display_value(safe_getattr(chunk, 'chunk_type'))}`",
+                f"- logical_table_family_id: `{safe_getattr(chunk, 'logical_table_family_id', default='')}`",
+                f"- logical_table_family_index/total: `{safe_getattr(chunk, 'logical_table_family_index', default='')}/{safe_getattr(chunk, 'logical_table_family_total', default='')}`",
+                f"- logical_table_continuation_role: `{safe_getattr(chunk, 'logical_table_continuation_role', default='')}`",
+                f"- table_category: `{safe_getattr(chunk, 'table_category', default='')}`",
+                f"- table_category_confidence: `{safe_getattr(chunk, 'table_category_confidence', default='')}`",
+                f"- table_row_start/table_row_end: `{safe_getattr(chunk, 'table_row_start', default='')}/{safe_getattr(chunk, 'table_row_end', default='')}`",
                 f"- page_start/page_end: `{format_page_range(safe_getattr(chunk, 'source', 'page_start'), safe_getattr(chunk, 'source', 'page_end'))}`",
                 f"- token_count: `{token_count if token_count is not None else ''}`",
                 f"- section_path: `{format_section_path(safe_getattr(chunk, 'section_path'))}`",

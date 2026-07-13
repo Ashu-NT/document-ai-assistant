@@ -19,6 +19,14 @@ class DocumentChunk:
     element_ids: list[str] = field(default_factory=list)
     table_ids: list[str] = field(default_factory=list)
     picture_ids: list[str] = field(default_factory=list)
+    logical_table_family_id: str | None = None
+    logical_table_family_index: int | None = None
+    logical_table_family_total: int | None = None
+    logical_table_continuation_role: str | None = None
+    table_category: str | None = None
+    table_category_confidence: float | None = None
+    table_row_start: int | None = None
+    table_row_end: int | None = None
 
     source: SourceLocation = field(default_factory=SourceLocation)
 

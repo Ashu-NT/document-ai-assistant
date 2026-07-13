@@ -58,7 +58,7 @@ def test_resolver_falls_back_to_toc_when_all_docling_levels_are_one() -> None:
     assert resolution.sources["hdr_child"] == "toc_page_range"
     assert resolution.toc_outline is not None
     assert len(resolution.toc_outline.entries) == 2
-    assert resolution.toc_outline.header_numberings["hdr_intro"] == "1"
+    assert "hdr_intro" in resolution.toc_outline.matched_entries
 
 
 def test_resolver_applies_layout_refinement_inside_toc_ranges() -> None:

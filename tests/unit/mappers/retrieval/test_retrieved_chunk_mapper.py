@@ -2,6 +2,11 @@ from src.infrastructure.db.mappers import RetrievedChunkMapper ,ChunkMapper
 
 
 def test_retrieved_chunk_mapper_from_chunk_orm(sample_chunk) -> None:
+    sample_chunk.table_ids = ["table_001"]
+    sample_chunk.logical_table_family_id = "table_family_001"
+    sample_chunk.table_category = "maintenance_interval_table"
+    sample_chunk.table_row_start = 1
+    sample_chunk.table_row_end = 3
     chunk_orm = ChunkMapper.to_orm(sample_chunk)
 
     retrieved = RetrievedChunkMapper.from_chunk_orm(
@@ -17,6 +22,11 @@ def test_retrieved_chunk_mapper_from_chunk_orm(sample_chunk) -> None:
     assert retrieved.section_path == sample_chunk.section_path
     assert retrieved.identifier_values == []
     assert retrieved.statistics == sample_chunk.statistics
+    assert retrieved.metadata["table_ids"] == '["table_001"]'
+    assert retrieved.metadata["logical_table_family_id"] == "table_family_001"
+    assert retrieved.metadata["table_category"] == "maintenance_interval_table"
+    assert retrieved.metadata["table_row_start"] == "1"
+    assert retrieved.metadata["table_row_end"] == "3"
 
 
 def test_retrieved_chunk_mapper_from_chunk_orm_with_identifier_values(sample_chunk) -> None:

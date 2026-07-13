@@ -137,6 +137,23 @@ class ChunkORM(Base):
     element_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     table_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     picture_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    logical_table_family_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    logical_table_family_index: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+    logical_table_family_total: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+    logical_table_continuation_role: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
+    table_category: Mapped[str | None] = mapped_column(String, nullable=True)
+    table_category_confidence: Mapped[float | None] = mapped_column(nullable=True)
+    table_row_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    table_row_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     chunk_type: Mapped[str] = mapped_column(
         String,
