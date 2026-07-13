@@ -1,3 +1,5 @@
+import json
+
 from src.domain.common import DocumentType
 from src.domain.document.entities import Document
 from src.domain.document.value_objects import DocumentHashes, DocumentStatistics
@@ -17,6 +19,7 @@ class DocumentMapper:
             document_type=document.document_type.value,
             language=document.language,
             source_name=document.source_name,
+            metadata_json=json.dumps(document.metadata),
             page_count=document.statistics.page_count,
             created_at=document.audit.created_at,
         )
@@ -35,6 +38,7 @@ class DocumentMapper:
             document_type=DocumentType(orm.document_type),
             language=orm.language,
             source_name=orm.source_name,
+            metadata=json.loads(orm.metadata_json or "{}"),
             statistics=DocumentStatistics(
                 page_count=orm.page_count,
             ),

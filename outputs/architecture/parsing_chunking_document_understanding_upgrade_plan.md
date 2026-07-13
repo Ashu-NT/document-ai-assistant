@@ -32,6 +32,7 @@ Status as of 2026-07-13:
 - Phase 6 implemented
 - Phase 7 implemented
 - Phase 8 implemented
+- Phase 9 implemented
 
 What is now live in the codebase:
 
@@ -42,6 +43,10 @@ What is now live in the codebase:
 - logical-table-aware chunk generation preserves family identity and row-span metadata
 - retrieval hydration expands from physical table fragments to persisted logical table families
 - `scripts/export_document_table_assets.py` now exposes persisted logical table families, continuation order, category metadata, and normalized section-path views
+- document-level parse metadata now persists parser info, artifact versions, header numberings, and serialized TOC outline state
+- sections now persist raw, sanitized display, and normalized matching section-path variants
+- persisted table artifacts now preserve row identifiers and span-aware cell metadata in addition to markdown and row grids
+- persisted picture assets now preserve OCR provenance fields such as provider, confidence, and mode
 
 Important boundary:
 
@@ -1417,6 +1422,40 @@ Make document-understanding artifacts inspectable during development and evaluat
 - safer future tuning
 - less guesswork when retrieval misses happen
 
+## Phase 9. Metadata Durability [IMPLEMENTED]
+
+### Goal
+
+Persist the strongest parse/chunking artifacts so future retrieval, grounding, backfill, and debugging work does not need to re-infer them from weaker text-only data.
+
+### Implemented outcome
+
+- `src/domain/document/entities/document.py`
+  - `Document.metadata` now carries durable parse metadata
+- `src/infrastructure/db/orm_models/document_models.py`
+  - `documents.metadata_json`
+  - `sections.raw_section_path`
+  - `sections.normalized_section_path`
+- `src/infrastructure/db/schema_management.py`
+  - SQLite schema backfill now ensures those columns exist on older databases
+- `src/application/workflows/parsing/builders/document_graph/document_persistent_metadata_builder.py`
+  - persists parser metadata, artifact versions, header numberings, TOC outline state, and table-understanding counts
+- `src/application/workflows/parsing/normalizers/docling_table_extractor.py`
+  - preserves span-aware table cell metadata, including multi-line cell normalization
+- `src/application/workflows/parsing/builders/document_graph/parsed_asset_factory.py`
+  - creates stable table row identifiers and carries OCR provenance onto picture assets
+- `src/application/workflows/parsing/builders/document_graph/asset_metadata_synchronizer.py`
+  - syncs row ids, cell spans, and OCR provenance back into element parser metadata for DB persistence
+- `src/infrastructure/db/repositories/document/document_graph_reader.py`
+  - rehydrates row ids, span-aware table cells, and picture OCR provenance after DB round-trip
+
+### Expected benefit
+
+- safer future backfills and re-chunking
+- stronger retrieval and answer-grounding inputs
+- less metadata loss between parsing and persistence
+- clearer forward path for table-row-aware extraction and human review tooling
+
 ## Test Plan
 
 ## Parsing and section hierarchy
@@ -1496,6 +1535,7 @@ Implementation is complete, but this upgrade still needs structured validation o
 ### Automated validation
 
 - [x] Parsing, chunking, retrieval-hydration, answer-context, mapper, and CLI script unit tests were updated and passed during implementation.
+- [x] Full `python -m pytest -q` passed after the metadata durability upgrades.
 - [x] `scripts/debug_parse_document.py` exposes TOC outline, logical table family, table category, and chunk-level table metadata for live parse inspection.
 - [x] `scripts/export_document_table_assets.py` exposes persisted logical table family membership, continuation order, category metadata, and normalized section-path views.
 

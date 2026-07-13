@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from src.domain.assets.asset_metadata import AssetMetadata
+from src.domain.assets.table_cell_span import TableCellSpan
 from src.domain.common import AuditMetadata
 
 
@@ -14,6 +15,8 @@ class TableAsset:
     parent_section_id: str | None = None
 
     rows: list[list[str]] = field(default_factory=list)
+    row_ids: list[str] = field(default_factory=list)
+    cell_spans: list[TableCellSpan] = field(default_factory=list)
     row_count: int | None = None
     column_count: int | None = None
     logical_table_family_id: str | None = None

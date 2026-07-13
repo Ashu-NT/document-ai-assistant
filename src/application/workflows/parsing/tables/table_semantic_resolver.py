@@ -35,4 +35,5 @@ class TableSemanticResolver:
                     **parser_extra,
                     "table_category": category.value,
                     "table_category_confidence": confidence,
+                    "table_semantic_version": "1",
                 }

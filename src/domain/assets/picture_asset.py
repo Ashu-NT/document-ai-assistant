@@ -14,6 +14,8 @@ class PictureAsset:
     image_path: str | None = None
     ocr_text: str | None = None
     ocr_confidence: float | None = None
+    ocr_provider: str | None = None
+    ocr_mode: str | None = None
 
     metadata: AssetMetadata = field(default_factory=AssetMetadata)
     audit: AuditMetadata = field(default_factory=AuditMetadata)

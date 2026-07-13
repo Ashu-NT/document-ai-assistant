@@ -1,14 +1,8 @@
 from tests.unit.application.evaluation.retrieval.benchmarking.corpus._test_retrieval_benchmark_corpus_seeder_support import *  # noqa: F401,F403
 
-def test_seed_corpus_force_reparses_existing_duplicate_via_ingestion_workflow() -> None:
-    """--force-reparse routes through the canonical IngestionWorkflow, same as a
-    genuinely new document. IngestionRequest has no way to target an existing
-    document_id (and reusing one would mean re-running extraction against it,
-    which is unsafe today - extraction results are not replaced atomically),
-    so a forced reseed always produces a *new* document_id. The old
-    document_id is left in place, orphaned, since safe delete isn't supported
-    yet either - that's tracked as a known, accepted limitation, not silently
-    swept under the rug."""
+def test_seed_corpus_force_reparses_existing_duplicate_in_place() -> None:
+    """--force-reparse should reuse the existing document_id through the
+    canonical reingestion path, not mint a duplicate document."""
     tmp_path = make_workspace_temp_dir()
     truth_set_path = tmp_path / "retrieval_truth_set.md"
     truth_set_path.write_text("truth set", encoding="utf-8")
@@ -28,7 +22,7 @@ def test_seed_corpus_force_reparses_existing_duplicate_via_ingestion_workflow() 
         ],
     )
     final_graph = build_document_graph(
-        document_id="doc_new",
+        document_id="doc_existing",
         file_name=file_path.name,
         file_path=str(file_path),
         document_type=DocumentType.MANUAL,
@@ -37,28 +31,28 @@ def test_seed_corpus_force_reparses_existing_duplicate_via_ingestion_workflow() 
     )
     file_hash = compute_hashes(file_path)[0]
     classification = build_document_classification(
-        document_id="doc_new",
+        document_id="doc_existing",
         document_type=DocumentType.MANUAL,
         confidence_score=0.92,
     )
     operations: list[str] = []
     unit_of_work = FakeUnitOfWork()
     fake_ingestion_workflow = FakeIngestionWorkflow(
-        results_by_path={
-            str(file_path): IngestionResult(
+        reingest_results={
+            "doc_existing": IngestionResult(
                 status=IngestionStatus.COMPLETE,
-                document_id="doc_new",
+                document_id="doc_existing",
                 file_name=file_path.name,
             ),
-        }
+        },
     )
     seeder, _ = build_seeder(
         dataset=dataset,
         operations=operations,
-        final_graphs_by_document_id={"doc_new": final_graph},
+        final_graphs_by_document_id={"doc_existing": final_graph},
         ingestion_workflow=fake_ingestion_workflow,
         duplicate_matches={file_hash: "doc_existing"},
-        classifications={"doc_new": classification},
+        classifications={"doc_existing": classification},
         unit_of_work=unit_of_work,
     )
 
@@ -68,13 +62,14 @@ def test_seed_corpus_force_reparses_existing_duplicate_via_ingestion_workflow() 
         force_reparse_existing=True,
     )
 
-    assert len(fake_ingestion_workflow.calls) == 1
-    assert fake_ingestion_workflow.calls[0].file_path == str(file_path)
-    assert fake_ingestion_workflow.calls[0].force is True
+    assert fake_ingestion_workflow.calls == []
+    assert len(fake_ingestion_workflow.reingest_calls) == 1
+    assert fake_ingestion_workflow.reingest_calls[0].document_id == "doc_existing"
+    assert fake_ingestion_workflow.reingest_calls[0].preserve_document_id is True
+    assert fake_ingestion_workflow.reingest_calls[0].force is True
     assert operations == []
-    # a genuinely new document_id, distinct from the stale "doc_existing"
-    assert manifest.documents[0].document_id == "doc_new"
-    assert manifest.documents[0].seed_status == "reseeded_new"
+    assert manifest.documents[0].document_id == "doc_existing"
+    assert manifest.documents[0].seed_status == "reseeded_in_place"
 
 def test_seed_corpus_rejects_conflicting_alias_mapping() -> None:
     tmp_path = make_workspace_temp_dir()

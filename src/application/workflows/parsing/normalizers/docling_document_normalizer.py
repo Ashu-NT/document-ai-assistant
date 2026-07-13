@@ -214,12 +214,21 @@ class DoclingDocumentNormalizer:
             rows = self.table_extractor.extract_rows(item)
             if rows:
                 metadata["table_rows"] = rows
+                metadata["table_structure_tier"] = "row_grid"
+
+            cell_spans = self.table_extractor.extract_cell_spans(item)
+            if cell_spans:
+                metadata["table_cell_spans"] = cell_spans
+                metadata["table_structure_tier"] = "span_aware"
 
             row_count, column_count = self.table_extractor.extract_dimensions(item)
             if row_count is not None:
                 metadata["row_count"] = row_count
             if column_count is not None:
                 metadata["column_count"] = column_count
+
+            if markdown and "table_structure_tier" not in metadata:
+                metadata["table_structure_tier"] = "markdown_only"
 
         if caption:
             metadata["caption"] = caption
@@ -231,6 +240,14 @@ class DoclingDocumentNormalizer:
         ocr_text = self._clean_text(self._get_value(item, "ocr_text"))
         if ocr_text:
             metadata["ocr_text"] = ocr_text
+
+        ocr_provider = self._clean_text(self._get_value(item, "ocr_provider"))
+        if ocr_provider:
+            metadata["ocr_provider"] = ocr_provider
+
+        ocr_confidence = self._get_value(item, "ocr_confidence")
+        if isinstance(ocr_confidence, (int, float)):
+            metadata["ocr_confidence"] = float(ocr_confidence)
 
         return metadata
 

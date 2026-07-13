@@ -16,6 +16,14 @@ class AssetMetadataSynchronizer:
             if element.table_id is not None and element.table_id in graph.tables:
                 table_asset = graph.tables[element.table_id]
                 parser_extra["markdown"] = table_asset.markdown
+                parser_extra["table_rows"] = [list(row) for row in table_asset.rows]
+                parser_extra["table_row_ids"] = list(table_asset.row_ids)
+                parser_extra["table_cell_spans"] = [
+                    span.to_dict() for span in table_asset.cell_spans
+                ]
+                parser_extra["row_count"] = table_asset.row_count
+                parser_extra["column_count"] = table_asset.column_count
+                parser_extra["table_structure_version"] = "1"
                 if table_asset.metadata.caption:
                     parser_extra["caption"] = table_asset.metadata.caption
                 if table_asset.metadata.nearby_text:
@@ -29,5 +37,12 @@ class AssetMetadataSynchronizer:
                     parser_extra["nearby_text"] = picture_asset.metadata.nearby_text
                 if picture_asset.ocr_text:
                     parser_extra["ocr_text"] = picture_asset.ocr_text
+                if picture_asset.ocr_provider:
+                    parser_extra["ocr_provider"] = picture_asset.ocr_provider
+                if picture_asset.ocr_confidence is not None:
+                    parser_extra["ocr_confidence"] = picture_asset.ocr_confidence
+                if picture_asset.ocr_mode:
+                    parser_extra["ocr_mode"] = picture_asset.ocr_mode
+                parser_extra["ocr_provenance_version"] = "1"
                 if picture_asset.image_path:
                     parser_extra["image_path"] = picture_asset.image_path

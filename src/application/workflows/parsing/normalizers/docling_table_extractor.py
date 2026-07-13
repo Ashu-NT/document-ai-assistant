@@ -86,6 +86,40 @@ class DoclingTableExtractor:
     def extract_rows(self, item: Any) -> list[list[str]]:
         return self._extract_rows(item)
 
+    def extract_cell_spans(self, item: Any) -> list[dict[str, object]]:
+        table_cells = self._extract_table_cells(item)
+        spans: list[dict[str, object]] = []
+
+        for cell in table_cells:
+            row_start = self._coerce_int(self._get_value(cell, "start_row_offset_idx"))
+            row_end = self._coerce_int(self._get_value(cell, "end_row_offset_idx"))
+            col_start = self._coerce_int(self._get_value(cell, "start_col_offset_idx"))
+            col_end = self._coerce_int(self._get_value(cell, "end_col_offset_idx"))
+            text = self._clean_text(self._get_value(cell, "text"))
+            if (
+                row_start is None
+                or row_end is None
+                or col_start is None
+                or col_end is None
+                or not text
+            ):
+                continue
+
+            raw_lines = [line.strip() for line in text.splitlines() if line.strip()]
+            spans.append(
+                {
+                    "row_start": row_start,
+                    "row_end": max(row_start, row_end - 1),
+                    "col_start": col_start,
+                    "col_end": max(col_start, col_end - 1),
+                    "text": text,
+                    "normalized_text": " ".join(raw_lines) if raw_lines else text,
+                    "raw_lines": raw_lines,
+                }
+            )
+
+        return spans
+
     @staticmethod
     def _call_markdown_method(
         method: Any,

@@ -31,6 +31,7 @@ from src.application.evaluation.retrieval.benchmarking.models import (
 from src.application.workflows.ingestion import IngestionResult, IngestionStatus
 
 from src.application.workflows.ingestion.ingestion_request import IngestionRequest
+from src.application.workflows.ingestion.reingestion_request import ReingestionRequest
 
 from src.domain.classification import ClassificationResult, DocumentClassification
 
@@ -139,13 +140,16 @@ class FakeIngestionWorkflow:
     def __init__(
         self,
         results_by_path: dict[str, IngestionResult] | None = None,
+        reingest_results: dict[str, IngestionResult] | None = None,
         retry_extraction_results: dict[str, IngestionResult] | None = None,
         retry_extraction_errors: dict[str, Exception] | None = None,
     ) -> None:
         self.results_by_path = results_by_path or {}
+        self.reingest_results = reingest_results or {}
         self.retry_extraction_results = retry_extraction_results or {}
         self.retry_extraction_errors = retry_extraction_errors or {}
         self.calls: list[IngestionRequest] = []
+        self.reingest_calls: list[ReingestionRequest] = []
         self.retry_extraction_calls: list[str] = []
 
     def run(
@@ -163,6 +167,24 @@ class FakeIngestionWorkflow:
         result = self.results_by_path.get(request.file_path)
         if result is None:
             raise KeyError(f"FakeIngestionWorkflow: no result configured for {request.file_path}")
+        return result
+
+    def reingest(
+        self,
+        request: ReingestionRequest,
+        *,
+        activity_context=None,
+        audit_context=None,
+        progress_callback=None,
+    ) -> IngestionResult:
+        self.reingest_calls.append(request)
+        if progress_callback:
+            progress_callback(f"fake reingest for {request.document_id}")
+        result = self.reingest_results.get(request.document_id)
+        if result is None:
+            raise KeyError(
+                f"FakeIngestionWorkflow: no reingest result configured for {request.document_id}"
+            )
         return result
 
     def retry_extraction(

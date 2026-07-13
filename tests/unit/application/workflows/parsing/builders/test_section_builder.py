@@ -53,6 +53,8 @@ def test_section_builder_creates_default_root_when_no_headers_exist() -> None:
     assert len(result.sections) == 1
     assert result.sections[0].title == "Document"
     assert result.element_section_paths["txt_1"] == ["Document"]
+    assert result.sections[0].raw_section_path == ["Document"]
+    assert result.sections[0].normalized_section_path == ["Document"]
 
 
 def test_section_builder_populates_parent_ids_and_paths_for_nested_sections() -> None:
@@ -240,4 +242,13 @@ def test_section_builder_uses_resolved_numbering_in_section_paths() -> None:
     assert result.element_section_paths["txt_1"] == [
         "7 Components",
         "7.1 Macerators",
+    ]
+    sections_by_title = {section.title: section for section in result.sections}
+    assert sections_by_title["7.1 Macerators"].raw_section_path == [
+        "7 Components",
+        "7.1 Macerators",
+    ]
+    assert sections_by_title["7.1 Macerators"].normalized_section_path == [
+        "Components",
+        "Macerators",
     ]

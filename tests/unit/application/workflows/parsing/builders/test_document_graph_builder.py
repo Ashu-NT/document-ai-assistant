@@ -9,3 +9,4 @@ from tests.unit.application.workflows.parsing.builders._test_document_graph_buil
 from tests.unit.application.workflows.parsing.builders._test_document_graph_builder_part9 import *  # noqa: F401,F403
 from tests.unit.application.workflows.parsing.builders._test_document_graph_builder_part10 import *  # noqa: F401,F403
 from tests.unit.application.workflows.parsing.builders._test_document_graph_builder_part11 import *  # noqa: F401,F403
+from tests.unit.application.workflows.parsing.builders._test_document_graph_builder_part12 import *  # noqa: F401,F403

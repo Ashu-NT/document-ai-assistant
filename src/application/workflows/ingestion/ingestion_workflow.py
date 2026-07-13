@@ -755,6 +755,7 @@ class IngestionWorkflow:
         *,
         activity_context: ActivityContext | None = None,
         audit_context: AuditContext | None = None,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> IngestionResult:
         ingestion_request = self._reingestion_step.prepare_request(
             request,
@@ -764,6 +765,7 @@ class IngestionWorkflow:
             ingestion_request,
             activity_context=activity_context,
             audit_context=audit_context,
+            progress_callback=progress_callback,
         )
 
     def retry_extraction(

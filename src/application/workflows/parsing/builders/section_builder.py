@@ -1,3 +1,6 @@
+from src.application.workflows.parsing.builders.chunking.text.section_path_matching import (
+    normalize_section_path_for_matching,
+)
 from src.application.workflows.parsing.profiling import GraphBuildProfiler
 from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,
@@ -74,12 +77,21 @@ class SectionBuilder:
         }
 
         if not headers:
+            root_path = [default_title]
             root_section = DocumentSection(
                 section_id=self.id_generator.new_id(IdPrefix.SECTION),
                 document_id=document_id,
                 title=default_title,
                 level=1,
-                section_path=[default_title],
+                section_path=list(root_path),
+                raw_section_path=list(root_path),
+                normalized_section_path=(
+                    normalize_section_path_for_matching(
+                        root_path,
+                        document_title=default_title,
+                    )
+                    or list(root_path)
+                ),
                 source=self._source_from_element(
                     ordered_elements[0] if ordered_elements else None
                 ),
@@ -154,7 +166,10 @@ class SectionBuilder:
             name="section_builder.relink_section_paths",
             input_counts={"sections": len(sections)},
         ) as stage:
-            self.section_path_relinker.relink(sections)
+            self.section_path_relinker.relink(
+                sections,
+                document_title=default_title,
+            )
             stage.output_counts["sections"] = len(sections)
         with self.profiler.measure(
             name="section_builder.assign_elements_to_sections",
@@ -224,22 +239,17 @@ class SectionBuilder:
             return None
 
         return DocumentSection(
-                    section_id=self.id_generator.new_id(IdPrefix.SECTION),
-                    document_id=document_id,
-                    title=default_title,
-                    level=1,
-                    section_path=[default_title],
-                    source=self._source_from_element(
-                        leading_elements[0]
-                    ),
-                    sequence_number=1,
-                    reading_order_start=(
-                        leading_elements[0].order_index
-                    ),
-                    reading_order_end=(
-                        leading_elements[-1].order_index
-                    ),
-                )
+            section_id=self.id_generator.new_id(IdPrefix.SECTION),
+            document_id=document_id,
+            title=default_title,
+            level=1,
+            section_path=[default_title],
+            raw_section_path=[default_title],
+            source=self._source_from_element(leading_elements[0]),
+            sequence_number=1,
+            reading_order_start=leading_elements[0].order_index,
+            reading_order_end=leading_elements[-1].order_index,
+        )
 
     @staticmethod
     def _source_from_element(element: CanonicalElement | None) -> SourceLocation:

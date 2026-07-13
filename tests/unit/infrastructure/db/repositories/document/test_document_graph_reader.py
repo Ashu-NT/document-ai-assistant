@@ -37,6 +37,18 @@ def test_rehydrate_assets_populates_structured_rows_from_parser_extra() -> None:
             extra={
                 "markdown": "| Part | Description |\n|---|---|\n| HP-001 | Filter |",
                 "table_rows": [["Part", "Description"], ["HP-001", "Filter"]],
+                "table_row_ids": ["table_1:row:0", "table_1:row:1"],
+                "table_cell_spans": [
+                    {
+                        "row_start": 0,
+                        "row_end": 0,
+                        "col_start": 0,
+                        "col_end": 0,
+                        "text": "Part",
+                        "normalized_text": "Part",
+                        "raw_lines": ["Part"],
+                    }
+                ],
                 "row_count": 2,
                 "column_count": 2,
             },
@@ -47,6 +59,9 @@ def test_rehydrate_assets_populates_structured_rows_from_parser_extra() -> None:
 
     table = graph.tables["table_1"]
     assert table.rows == [["Part", "Description"], ["HP-001", "Filter"]]
+    assert table.row_ids == ["table_1:row:0", "table_1:row:1"]
+    assert len(table.cell_spans) == 1
+    assert table.cell_spans[0].normalized_text == "Part"
     assert table.row_count == 2
     assert table.column_count == 2
     assert table.has_structured_rows() is True
@@ -101,3 +116,35 @@ def test_rehydrate_assets_restores_logical_table_family_metadata() -> None:
     assert table.family_total == 2
     assert table.continuation_role == "start"
     assert table.normalized_header_signature == "task|interval"
+
+
+def test_rehydrate_assets_restores_picture_ocr_provenance() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.add_element(
+        CanonicalElement(
+            element_id="el_pic_1",
+            document_id="doc_001",
+            element_type=ElementType.PICTURE,
+            text="Figure 1",
+            picture_id="picture_1",
+            parser_metadata=ParserMetadata(
+                parser_name="docling",
+                extra={
+                    "image_path": "outputs/images/picture_1.png",
+                    "ocr_text": "MODEL X1",
+                    "ocr_provider": "paddleocr",
+                    "ocr_confidence": 0.92,
+                    "ocr_mode": "asset",
+                },
+            ),
+        )
+    )
+
+    DocumentGraphReader._rehydrate_assets(graph)
+
+    picture = graph.pictures["picture_1"]
+    assert picture.image_path == "outputs/images/picture_1.png"
+    assert picture.ocr_text == "MODEL X1"
+    assert picture.ocr_provider == "paddleocr"
+    assert picture.ocr_confidence == 0.92
+    assert picture.ocr_mode == "asset"

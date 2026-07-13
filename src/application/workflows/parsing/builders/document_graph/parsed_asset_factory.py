@@ -4,7 +4,7 @@ from src.application.workflows.parsing.canonical_element import (
 from src.application.workflows.parsing.builders.document_graph.source_location_factory import (
     SourceLocationFactory,
 )
-from src.domain.assets import AssetMetadata, PictureAsset, TableAsset
+from src.domain.assets import AssetMetadata, PictureAsset, TableAsset, TableCellSpan
 from src.shared.ids import IdGenerator
 
 
@@ -32,6 +32,16 @@ class ParsedAssetFactory:
                 ),
                 parent_section_id=parent_section_id,
                 rows=parsed_element.metadata.get("table_rows") or [],
+                row_ids=self._build_row_ids(
+                    table_id=table_id,
+                    row_count=(
+                        parsed_element.metadata.get("row_count")
+                        or len(parsed_element.metadata.get("table_rows") or [])
+                    ),
+                ),
+                cell_spans=TableCellSpan.list_from_data(
+                    parsed_element.metadata.get("table_cell_spans")
+                ),
                 row_count=parsed_element.metadata.get("row_count"),
                 column_count=parsed_element.metadata.get("column_count"),
                 metadata=AssetMetadata(
@@ -57,6 +67,16 @@ class ParsedAssetFactory:
                 parent_section_id=parent_section_id,
                 image_path=parsed_element.metadata.get("image_path"),
                 ocr_text=parsed_element.metadata.get("ocr_text"),
+                ocr_confidence=self._coerce_float(
+                    parsed_element.metadata.get("ocr_confidence")
+                ),
+                ocr_provider=self._clean_text(
+                    parsed_element.metadata.get("ocr_provider")
+                ),
+                ocr_mode=self._clean_text(
+                    parsed_element.metadata.get("ocr_mode")
+                    or parsed_element.metadata.get("ocr_target_type")
+                ),
                 metadata=AssetMetadata(
                     source=SourceLocationFactory.from_parsed(parsed_element),
                     caption=parsed_element.metadata.get("caption")
@@ -64,3 +84,23 @@ class ParsedAssetFactory:
                 ),
             ),
         )
+
+    @staticmethod
+    def _build_row_ids(*, table_id: str, row_count: object) -> list[str]:
+        try:
+            count = max(0, int(row_count))
+        except (TypeError, ValueError):
+            return []
+        return [f"{table_id}:row:{index}" for index in range(count)]
+
+    @staticmethod
+    def _coerce_float(value: object) -> float | None:
+        try:
+            return float(value) if value is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _clean_text(value: object) -> str | None:
+        text = str(value or "").strip()
+        return text or None

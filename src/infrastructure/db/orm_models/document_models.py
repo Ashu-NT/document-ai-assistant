@@ -34,6 +34,7 @@ class DocumentORM(Base):
     )
     language: Mapped[str | None] = mapped_column(String, nullable=True)
     source_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
@@ -59,6 +60,8 @@ class SectionORM(Base):
 
     parent_section_id: Mapped[str | None] = mapped_column(String, nullable=True)
     section_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    raw_section_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    normalized_section_path: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     page_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
     page_end: Mapped[int | None] = mapped_column(Integer, nullable=True)

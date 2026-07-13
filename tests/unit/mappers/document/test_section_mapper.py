@@ -2,6 +2,8 @@ from src.infrastructure.db.mappers import SectionMapper
 
 
 def test_section_mapper_round_trip(sample_section) -> None:
+    sample_section.raw_section_path = ["7 Components", "7.1 Macerators"]
+    sample_section.normalized_section_path = ["Components", "Macerators"]
     orm = SectionMapper.to_orm(sample_section)
     domain = SectionMapper.to_domain(orm, element_ids=sample_section.element_ids)
 
@@ -9,4 +11,8 @@ def test_section_mapper_round_trip(sample_section) -> None:
     assert domain.document_id == sample_section.document_id
     assert domain.title == sample_section.title
     assert domain.section_path == sample_section.section_path
+    assert domain.raw_section_path == sample_section.raw_section_path
+    assert (
+        domain.normalized_section_path == sample_section.normalized_section_path
+    )
     assert domain.element_ids == sample_section.element_ids

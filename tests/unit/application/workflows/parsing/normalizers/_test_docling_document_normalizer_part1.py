@@ -186,6 +186,69 @@ def test_table_item_becomes_table_element_and_preserves_metadata() -> None:
     assert normalized[0].metadata["table_rows"] == [["Part", "Description"]]
     assert normalized[0].metadata["row_count"] == 1
     assert normalized[0].metadata["column_count"] == 2
+    assert normalized[0].metadata["table_structure_tier"] == "span_aware"
+    assert normalized[0].metadata["table_cell_spans"] == [
+        {
+            "row_start": 0,
+            "row_end": 0,
+            "col_start": 0,
+            "col_end": 0,
+            "text": "Part",
+            "normalized_text": "Part",
+            "raw_lines": ["Part"],
+        },
+        {
+            "row_start": 0,
+            "row_end": 0,
+            "col_start": 1,
+            "col_end": 1,
+            "text": "Description",
+            "normalized_text": "Description",
+            "raw_lines": ["Description"],
+        },
+    ]
+
+
+def test_table_cell_spans_preserve_multiline_cell_text() -> None:
+    raw_document = FakeRawDocument(
+        [
+            FakeDoclingItem(
+                label="table",
+                self_ref="#/tables/1",
+                markdown="| Task | Interval |",
+                prov=[FakeProvenance(2)],
+                data={
+                    "table_cells": [
+                        {
+                            "start_row_offset_idx": 0,
+                            "end_row_offset_idx": 1,
+                            "start_col_offset_idx": 0,
+                            "end_col_offset_idx": 1,
+                            "text": "Maintenance\nTask",
+                        },
+                        {
+                            "start_row_offset_idx": 0,
+                            "end_row_offset_idx": 1,
+                            "start_col_offset_idx": 1,
+                            "end_col_offset_idx": 2,
+                            "text": "2000 hours /\n2 years",
+                        },
+                    ]
+                },
+            )
+        ]
+    )
+
+    normalized = DoclingDocumentNormalizer().normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_001",
+    )
+
+    spans = normalized[0].metadata["table_cell_spans"]
+    assert spans[0]["raw_lines"] == ["Maintenance", "Task"]
+    assert spans[0]["normalized_text"] == "Maintenance Task"
+    assert spans[1]["raw_lines"] == ["2000 hours /", "2 years"]
+    assert spans[1]["normalized_text"] == "2000 hours / 2 years"
 
 def test_table_item_passes_raw_document_to_markdown_export() -> None:
     table_item = FakeDoclingItem(

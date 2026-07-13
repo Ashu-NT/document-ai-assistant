@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from src.domain.assets import AssetMetadata, PictureAsset, TableAsset
+from src.domain.assets import AssetMetadata, PictureAsset, TableAsset, TableCellSpan
 from src.domain.document import DocumentGraph, DocumentStatistics
 from src.infrastructure.db.mappers import (
     ChunkMapper,
@@ -136,6 +136,14 @@ class DocumentGraphReader:
                     parent_section_id=element.parent_section_id,
                     markdown=str(parser_extra.get("markdown") or element.text or ""),
                     rows=parser_extra.get("table_rows") or [],
+                    row_ids=[
+                        str(row_id)
+                        for row_id in (parser_extra.get("table_row_ids") or [])
+                        if str(row_id).strip()
+                    ],
+                    cell_spans=TableCellSpan.list_from_data(
+                        parser_extra.get("table_cell_spans")
+                    ),
                     row_count=parser_extra.get("row_count"),
                     column_count=parser_extra.get("column_count"),
                     logical_table_family_id=parser_extra.get("logical_table_family_id"),
@@ -179,6 +187,25 @@ class DocumentGraphReader:
                         if parser_extra.get("ocr_text") is not None
                         else None
                     ),
+                    ocr_confidence=DocumentGraphReader._coerce_float(
+                        parser_extra.get("ocr_confidence")
+                    ),
+                    ocr_provider=(
+                        str(parser_extra.get("ocr_provider"))
+                        if parser_extra.get("ocr_provider") is not None
+                        else None
+                    ),
+                    ocr_mode=(
+                        str(
+                            parser_extra.get("ocr_mode")
+                            or parser_extra.get("ocr_target_type")
+                        )
+                        if (
+                            parser_extra.get("ocr_mode") is not None
+                            or parser_extra.get("ocr_target_type") is not None
+                        )
+                        else None
+                    ),
                     metadata=AssetMetadata(
                         source=element.source,
                         caption=(
@@ -193,3 +220,10 @@ class DocumentGraphReader:
                         ),
                     ),
                 )
+
+    @staticmethod
+    def _coerce_float(value: object) -> float | None:
+        try:
+            return float(value) if value is not None else None
+        except (TypeError, ValueError):
+            return None

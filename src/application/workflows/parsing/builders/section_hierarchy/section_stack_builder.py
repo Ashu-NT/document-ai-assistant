@@ -68,6 +68,7 @@ class SectionStackBuilder:
                     parent_section.section_id if parent_section is not None else None
                 ),
                 section_path=section_path,
+                raw_section_path=list(section_path),
                 source=self._source_from_element(header),
                 sequence_number=index,
                 reading_order_start=header.order_index,

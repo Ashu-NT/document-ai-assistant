@@ -13,6 +13,9 @@ from src.application.workflows.parsing.builders.document_graph.chunk_statistics_
 from src.application.workflows.parsing.builders.document_graph.document_metadata_extractor import (
     DocumentMetadataExtractor,
 )
+from src.application.workflows.parsing.builders.document_graph.document_persistent_metadata_builder import (
+    DocumentPersistentMetadataBuilder,
+)
 from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (
     GraphChunkBuilder,
 )
@@ -35,6 +38,7 @@ __all__ = [
     "ChunkSignalAggregator",
     "ChunkStatisticsBuilder",
     "DocumentMetadataExtractor",
+    "DocumentPersistentMetadataBuilder",
     "GraphChunkBuilder",
     "PageSizeExtractor",
     "ParsedAssetFactory",

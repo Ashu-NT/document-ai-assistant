@@ -12,6 +12,7 @@ from src.application.workflows.parsing.builders.document_graph import (
     AssetNearbyTextEnricher,
     ChunkSignalAggregator,
     DocumentMetadataExtractor,
+    DocumentPersistentMetadataBuilder,
     GraphChunkBuilder,
     PageSizeExtractor,
     ParsedAssetFactory,
@@ -133,6 +134,7 @@ class DocumentGraphBuilder:
             section_chunk_builder=self.section_chunk_builder,
             profiler=self.profiler,
         )
+        self.persistent_metadata_builder = DocumentPersistentMetadataBuilder()
         self.last_section_build_result: SectionBuildResult | None = None
         if hasattr(self.section_builder, "set_profiler"):
             self.section_builder.set_profiler(self.profiler)
@@ -268,6 +270,11 @@ class DocumentGraphBuilder:
             AssetMetadataSynchronizer.sync(graph)
             self.logical_table_family_resolver.resolve(graph)
             self.table_semantic_resolver.resolve(graph)
+            graph.document.metadata = self.persistent_metadata_builder.build(
+                raw_parsed_document=raw_parsed_document,
+                section_build_result=section_build_result,
+                graph=graph,
+            )
 
             page_sizes = self._extract_page_sizes(raw_parsed_document)
 

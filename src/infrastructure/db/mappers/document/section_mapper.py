@@ -17,6 +17,8 @@ class SectionMapper:
             level=section.level,
             parent_section_id=section.parent_section_id,
             section_path=json.dumps(section.section_path),
+            raw_section_path=json.dumps(section.raw_section_path),
+            normalized_section_path=json.dumps(section.normalized_section_path),
             page_start=section.source.page_start,
             page_end=section.source.page_end,
             sequence_number=section.sequence_number,
@@ -36,6 +38,10 @@ class SectionMapper:
             level=orm.level,
             parent_section_id=orm.parent_section_id,
             section_path=json.loads(orm.section_path or "[]"),
+            raw_section_path=json.loads(orm.raw_section_path or "[]"),
+            normalized_section_path=json.loads(
+                orm.normalized_section_path or "[]"
+            ),
             source=columns_to_source_location(
                 page_start=orm.page_start,
                 page_end=orm.page_end,

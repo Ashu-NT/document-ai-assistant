@@ -13,6 +13,7 @@ from src.application.services.extraction import ExtractionService
 from src.application.workflows.classification import DocumentClassificationWorkflow
 from src.application.workflows.ingestion import IngestionWorkflow
 from src.application.workflows.ingestion.ingestion_request import IngestionRequest
+from src.application.workflows.ingestion.reingestion_request import ReingestionRequest
 from src.domain.classification import DocumentClassification
 from src.domain.document import DocumentGraph
 from src.shared.activity import ActivityContext
@@ -41,10 +42,11 @@ def resolve_corpus_document(
     seed_index: int | None = None,
     total_targets: int | None = None,
 ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
-    """Decide which of the existing-document handling strategies applies to
-    `seed_target` (reuse as-is, retry extraction in place, mark as needing a
-    full reparse, force-reparse into a new document_id) or, if no duplicate
-    exists yet, run the full seed workflow for a genuinely new document.
+    """Resolve how a corpus seed target should be handled.
+
+    Existing documents can be reused as-is, repaired in place, marked as
+    needing a full reparse, or force-reparsed in place. New documents go
+    through the normal canonical ingestion workflow.
     """
     prefix = progress_prefix(index=seed_index, total=total_targets)
     emit_progress(
@@ -63,23 +65,23 @@ def resolve_corpus_document(
                 progress_callback,
                 (
                     f"{prefix} Existing document found for {seed_target.document_alias}: "
-                    f"{existing_document_id}. Force reparse enabled; re-ingesting through "
-                    "the canonical IngestionWorkflow (this produces a new document_id — "
-                    f"{existing_document_id} is left in place, orphaned, since safe "
-                    "reingestion-in-place and delete are not yet supported)."
+                    f"{existing_document_id}. Force reparse enabled; re-ingesting in "
+                    "place through the canonical IngestionWorkflow (same "
+                    "document_id, replacing the persisted graph/chunks/"
+                    "extraction/vectors)."
                 ),
             )
-            final_graph, classification, seed_status = _seed_new_document(
-                seed_target=seed_target,
-                file_hash=file_hash,
-                ingestion_workflow=ingestion_workflow,
-                document_lookup_service=document_lookup_service,
-                classification_service=classification_service,
-                activity_context=activity_context,
-                progress_callback=progress_callback,
-                seed_index=seed_index,
-                total_targets=total_targets,
-                resulting_seed_status="reseeded_new",
+            final_graph, classification, seed_status = (
+                _reseed_existing_document_in_place(
+                    document_id=existing_document_id,
+                    ingestion_workflow=ingestion_workflow,
+                    document_lookup_service=document_lookup_service,
+                    classification_service=classification_service,
+                    activity_context=activity_context,
+                    progress_callback=progress_callback,
+                    seed_index=seed_index,
+                    total_targets=total_targets,
+                )
             )
         elif (
             extraction_service is not None
@@ -260,17 +262,7 @@ def _seed_new_document(
     total_targets: int | None = None,
     resulting_seed_status: str = "seeded_new",
 ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
-    """Ingest `seed_target` through the canonical `IngestionWorkflow`.
-
-    Used both for genuinely new documents and for `--force-reparse` of an
-    already-seeded document. `IngestionRequest` has no way to target an
-    existing `document_id` (and reusing one would require re-running
-    extraction against it, which is not safe today — extraction results
-    are keyed by a fresh `extraction_id` per run with no replace-by-document
-    boundary, the same atomicity gap that blocks `IngestionWorkflow.reingest`).
-    So a forced reseed always produces a new document_id; the caller passes
-    `resulting_seed_status="reseeded_new"` to make that visible in the manifest.
-    """
+    """Ingest a genuinely new seed target through the canonical workflow."""
     prefix = progress_prefix(index=seed_index, total=total_targets)
     emit_progress(
         progress_callback,
@@ -296,6 +288,42 @@ def _seed_new_document(
     return final_graph, classification, resulting_seed_status
 
 
+def _reseed_existing_document_in_place(
+    *,
+    document_id: str,
+    ingestion_workflow: IngestionWorkflow,
+    document_lookup_service: DocumentLookupService,
+    classification_service: ClassificationService,
+    activity_context: ActivityContext | None = None,
+    progress_callback: Callable[[str], None] | None = None,
+    seed_index: int | None = None,
+    total_targets: int | None = None,
+) -> tuple[DocumentGraph, DocumentClassification | None, str]:
+    """Re-run the canonical ingestion pipeline while preserving document_id."""
+    prefix = progress_prefix(index=seed_index, total=total_targets)
+    emit_progress(
+        progress_callback,
+        f"{prefix} Delegating to canonical IngestionWorkflow reingest path...",
+    )
+    result = ingestion_workflow.reingest(
+        ReingestionRequest(
+            document_id=document_id,
+            requested_by="benchmark_seeder",
+            run_quality_checks=False,
+        ),
+        activity_context=activity_context,
+        progress_callback=scoped_progress_callback(progress_callback, prefix),
+    )
+    final_graph = document_lookup_service.get_document_graph(result.document_id)
+    if final_graph is None:
+        raise ApplicationError(
+            "Reingested document graph could not be loaded after ingestion.",
+            details={"document_id": result.document_id},
+        )
+    classification = classification_service.get_document_classification(result.document_id)
+    return final_graph, classification, "reseeded_in_place"
+
+
 def _reuse_existing_document(
     *,
     document_id: str,
@@ -311,14 +339,10 @@ def _reuse_existing_document(
     """Reuse an already-ingested document as-is, without reparsing or
     re-finalizing anything.
 
-    This is safe (and correct, not just cheap) because the caller
-    (`resolve_corpus_document`) only reaches this method after confirming the
-    document has a completed extraction result — a document whose
-    extraction never finished (e.g. a prior run failed mid-batch) is
-    routed to `_retry_extraction_for_existing_document` instead. So
-    chunks, embeddings, extraction, and identifiers are already
-    complete and consistent here; re-running finalization would only
-    redo work with the same file content, for no benefit.
+    This is safe because the caller only reaches this method after confirming
+    the document has a completed extraction result. So chunks, embeddings,
+    extraction, and identifiers are already complete and consistent here;
+    re-running finalization would only redo work with the same file content.
     """
     prefix = progress_prefix(index=seed_index, total=total_targets)
     emit_progress(
@@ -366,13 +390,7 @@ def _retry_extraction_for_existing_document(
     seed_index: int | None = None,
     total_targets: int | None = None,
 ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
-    """Repair a document whose extraction never completed (its
-    `documents`/`chunks`/`sections` rows were already committed by a
-    prior run before that run's extraction step raised), by retrying
-    only extraction — and, if enabled, semantic linking — through
-    `IngestionWorkflow.retry_extraction`. Does not re-parse the source
-    file or mint a new document_id.
-    """
+    """Repair a document whose extraction never completed in a prior run."""
     prefix = progress_prefix(index=seed_index, total=total_targets)
     emit_progress(
         progress_callback,
@@ -405,13 +423,12 @@ def _mark_document_needs_reparse(
     classification_service: ClassificationService,
     activity_context: ActivityContext | None = None,
 ) -> tuple[DocumentGraph, DocumentClassification | None, str]:
-    """A document with zero chunks has nothing for extraction to run
-    against *and* no persisted elements to rebuild from — it failed before
-    a usable graph was committed, so only a full `--force-reparse` can fix
-    it. Rather than raising and dropping the
-    document out of the manifest entirely, it is included as-is
-    (`chunk_count=0`) with a distinguishing `seed_status` so it stays
-    visible and actionable instead of silently disappearing.
+    """Keep a broken persisted document visible in the manifest.
+
+    A document with zero chunks has nothing for extraction to run against and
+    no persisted elements to rebuild from, so only a full force-reparse can
+    fix it. Rather than dropping it from the manifest, it is included as-is
+    with a distinguishing status so it remains actionable.
     """
     classification = classification_service.get_document_classification(document_id)
     return document_graph, classification, "no_chunks_needs_reparse"

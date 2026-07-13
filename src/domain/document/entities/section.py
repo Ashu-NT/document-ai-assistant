@@ -12,6 +12,8 @@ class DocumentSection:
     level: int = 1
     parent_section_id: str | None = None
     section_path: list[str] = field(default_factory=list)
+    raw_section_path: list[str] = field(default_factory=list)
+    normalized_section_path: list[str] = field(default_factory=list)
 
     source: SourceLocation = field(default_factory=SourceLocation)
 

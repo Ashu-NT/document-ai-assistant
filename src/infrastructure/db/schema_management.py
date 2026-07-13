@@ -11,8 +11,26 @@ def ensure_database_schema(engine: Engine) -> None:
 
     _ensure_sqlite_column(
         engine=engine,
+        table_name="documents",
+        column_name="metadata_json",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
         table_name="elements",
         column_name="parser_extra_json",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="sections",
+        column_name="raw_section_path",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="sections",
+        column_name="normalized_section_path",
         column_ddl="TEXT",
     )
     _ensure_sqlite_column(

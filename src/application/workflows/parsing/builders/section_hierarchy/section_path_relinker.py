@@ -1,3 +1,6 @@
+from src.application.workflows.parsing.builders.chunking.text.section_path_matching import (
+    normalize_section_path_for_matching,
+)
 from src.application.workflows.parsing.builders.chunking.text.section_path_sanitizer import (
     sanitize_section_path,
 )
@@ -8,6 +11,8 @@ class SectionPathRelinker:
     def relink(
         self,
         sections: list[DocumentSection],
+        *,
+        document_title: str | None = None,
     ) -> None:
         section_by_path: dict[tuple[str, ...], DocumentSection] = {}
         ordered_sections = sorted(
@@ -19,13 +24,30 @@ class SectionPathRelinker:
         )
 
         for section in ordered_sections:
+            raw_path = list(
+                section.raw_section_path
+                or section.section_path
+                or ([section.title] if section.title else [])
+            )
+            if not section.raw_section_path:
+                section.raw_section_path = list(raw_path)
+
             sanitized_path = sanitize_section_path(
-                list(section.section_path or ([section.title] if section.title else []))
+                list(raw_path),
+                document_title=document_title,
             )
             if not sanitized_path:
                 sanitized_path = [section.title] if section.title else []
 
+            normalized_path = normalize_section_path_for_matching(
+                raw_path,
+                document_title=document_title,
+            )
+            if not normalized_path:
+                normalized_path = list(sanitized_path)
+
             section.section_path = sanitized_path
+            section.normalized_section_path = normalized_path
             section.level = max(1, len(sanitized_path))
 
             parent_section = self._find_parent_section(

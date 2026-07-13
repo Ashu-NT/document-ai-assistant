@@ -159,4 +159,5 @@ class LogicalTableFamilyResolver:
             "family_total": assignment.family_total,
             "continuation_role": assignment.continuation_role,
             "normalized_header_signature": assignment.normalized_header_signature,
+            "logical_table_family_version": "1",
         }

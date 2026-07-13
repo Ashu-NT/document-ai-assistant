@@ -39,6 +39,7 @@ def test_section_stack_builder_populates_parent_ids_and_paths() -> None:
     assert sections[1].parent_section_id == sections[0].section_id
     assert sections[2].parent_section_id == sections[1].section_id
     assert sections[2].section_path == ["Introduction", "Overview", "Details"]
+    assert sections[2].raw_section_path == ["Introduction", "Overview", "Details"]
 
 
 def test_section_stack_builder_clears_stale_stack_when_returning_to_root() -> None:
