@@ -47,8 +47,8 @@ def test_document_graph_builder_persists_outline_and_artifact_metadata() -> None
 
     metadata = graph.document.metadata
     assert metadata["parser"] == {"name": "docling", "version": "1.2.3"}
-    assert metadata["artifact_versions"]["section_path_schema"] == "2"
-    assert metadata["artifact_versions"]["table_structure_schema"] == "1"
+    assert metadata["artifact_versions"]["section_path_schema"] == "3"
+    assert metadata["artifact_versions"]["table_structure_schema"] == "2"
     assert metadata["outline"]["header_numberings"] == {
         "hdr_1": "7",
         "hdr_2": "7.1",

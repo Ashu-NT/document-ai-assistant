@@ -79,10 +79,7 @@ class LogicalTableFamilyResolver:
         previous_item_label = self._item_label(previous)
         current_item_label = self._item_label(current)
         if previous_item_label == current_item_label == "document_index":
-            return self._pages_are_adjacent(previous, current) and self._column_counts_are_compatible(
-                previous_table,
-                current_table,
-            )
+            return self._pages_are_adjacent(previous, current)
 
         if previous.parent_section_id != current.parent_section_id:
             return False

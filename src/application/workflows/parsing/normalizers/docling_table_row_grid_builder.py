@@ -3,6 +3,10 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from src.application.workflows.parsing.normalizers.docling_table_row_repairer import (
+    DoclingTableRowRepairer,
+)
+
 
 class DoclingTableRowGridBuilder:
     """Builds a best-effort row grid from Docling table cell spans."""
@@ -11,6 +15,13 @@ class DoclingTableRowGridBuilder:
         r"^(?:d|w|m|q|s|a|daily|weekly|monthly|quarterly|semi-annual|semi annual|annual|annually|yearly)$",
         re.IGNORECASE,
     )
+
+    def __init__(
+        self,
+        *,
+        row_repairer: DoclingTableRowRepairer | None = None,
+    ) -> None:
+        self.row_repairer = row_repairer or DoclingTableRowRepairer()
 
     def build_rows(self, table_cells: list[Any]) -> list[list[str]]:
         spans = [
@@ -41,11 +52,12 @@ class DoclingTableRowGridBuilder:
                 continue
             self._write_span(grid, span)
 
-        return [
+        rows = [
             row
             for row in grid
             if any(cell.strip() for cell in row)
         ]
+        return self.row_repairer.repair_rows(rows)
 
     def _distribute_interval_header_tokens(
         self,

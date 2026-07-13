@@ -1,6 +1,10 @@
 import re
 from functools import lru_cache
 
+from src.application.workflows.parsing.builders.chunking.text.section_path_semantic_pruner import (
+    prune_semantic_bridge_segments,
+)
+
 _BRANDING_PARTS = {
     "environmentally",
     "responsible solutions",
@@ -71,6 +75,7 @@ def sanitize_section_path(
     ):
         cleaned_parts = cleaned_parts[1:]
 
+    cleaned_parts = prune_semantic_bridge_segments(cleaned_parts)
     return cleaned_parts
 
 

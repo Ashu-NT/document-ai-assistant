@@ -8,8 +8,8 @@ from src.domain.document import DocumentGraph
 
 
 class DocumentPersistentMetadataBuilder:
-    SECTION_PATH_SCHEMA_VERSION = "2"
-    TABLE_STRUCTURE_SCHEMA_VERSION = "1"
+    SECTION_PATH_SCHEMA_VERSION = "3"
+    TABLE_STRUCTURE_SCHEMA_VERSION = "2"
     TABLE_SEMANTIC_SCHEMA_VERSION = "1"
     OCR_PROVENANCE_SCHEMA_VERSION = "1"
 
