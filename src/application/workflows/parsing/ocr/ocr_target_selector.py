@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+    repair_docling_text,
+)
 from src.application.workflows.parsing.ocr.ocr_selection_policy import OCRSelectionPolicy
 from src.application.workflows.parsing.ocr.ocr_selection_result import OCRSelectionResult
 from src.application.workflows.parsing.ocr.ocr_target import OCRTarget
@@ -149,7 +152,7 @@ class OCRTargetSelector:
     def _clean_text(value: object) -> str | None:
         if value is None:
             return None
-        text = str(value).strip()
+        text = repair_docling_text(str(value)).strip()
         return text or None
 
     @staticmethod
@@ -199,4 +202,3 @@ class OCRTargetSelector:
         seen_keys.add(key)
         targets.append(target)
         return True
-

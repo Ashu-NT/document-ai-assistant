@@ -3,6 +3,9 @@ import re
 from src.application.workflows.parsing.builders.section_hierarchy.heading_numbering import (
     numbering_depth,
 )
+from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+    repair_docling_text,
+)
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry import (
     TocEntry,
     normalize_toc_title,
@@ -102,6 +105,7 @@ class TocEntryParser:
             if not line or set(line) <= {"-", ":", "|"}:
                 continue
 
+            line = repair_docling_text(line)
             line = re.sub(r"\s+", " ", line)
             match = re.match(r"^(?P<title>.+?)\.{2,}\s*(?P<page>\d+)$", line)
             if match is None:
@@ -164,7 +168,7 @@ class TocEntryParser:
 
     @staticmethod
     def _clean_cell(value: object) -> str:
-        return re.sub(r"\s+", " ", str(value or "").strip())
+        return re.sub(r"\s+", " ", repair_docling_text(str(value or "")).strip())
 
     @staticmethod
     def _dedupe_consecutive(values: list[str]) -> list[str]:
@@ -182,6 +186,7 @@ class TocEntryParser:
         if not value:
             return ""
 
-        text = re.sub(r"\.{2,}", " ", value)
+        text = repair_docling_text(value)
+        text = re.sub(r"\.{2,}", " ", text)
         text = re.sub(r"\s+", " ", text)
         return text.strip(" .|-")

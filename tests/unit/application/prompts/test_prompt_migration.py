@@ -51,7 +51,7 @@ def test_old_prompt_builder_import_paths_are_gone() -> None:
     ]
 
     for path in _iter_first_party_python_files():
-        if path == Path(__file__):
+        if path.resolve() == Path(__file__).resolve():
             continue
         contents = path.read_text(encoding="utf-8")
         for marker in old_import_markers:

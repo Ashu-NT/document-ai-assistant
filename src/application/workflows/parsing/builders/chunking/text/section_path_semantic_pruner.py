@@ -44,12 +44,20 @@ _STRONG_BRANCH_MARKERS = (
     "sensor list",
     "valve list",
 )
+_ROOT_SEGMENT_LIMIT = 2
+_OVERNESTED_BRANCH_MARKER_THRESHOLD = 3
+_OVERNESTED_PATH_LENGTH_THRESHOLD = 6
 
 
 def prune_semantic_bridge_segments(section_path: list[str]) -> list[str]:
     if len(section_path) < 3:
         return list(section_path)
 
+    pruned = _drop_weak_bridge_segments(section_path)
+    return _collapse_overnested_terminal_branch(pruned)
+
+
+def _drop_weak_bridge_segments(section_path: list[str]) -> list[str]:
     pruned: list[str] = []
     pending_weak_segments: list[str] = []
 
@@ -72,6 +80,33 @@ def prune_semantic_bridge_segments(section_path: list[str]) -> list[str]:
 
     pruned.extend(pending_weak_segments)
     return pruned
+
+
+def _collapse_overnested_terminal_branch(section_path: list[str]) -> list[str]:
+    if len(section_path) < _OVERNESTED_PATH_LENGTH_THRESHOLD:
+        return list(section_path)
+
+    normalized_parts = [_normalize_segment(part) for part in section_path]
+    branch_positions = [
+        index
+        for index, normalized in enumerate(normalized_parts)
+        if _contains_any(normalized, _STRONG_BRANCH_MARKERS)
+    ]
+    if len(branch_positions) < _OVERNESTED_BRANCH_MARKER_THRESHOLD:
+        return list(section_path)
+
+    terminal_position = branch_positions[-1]
+    if terminal_position < _ROOT_SEGMENT_LIMIT:
+        return list(section_path)
+
+    prefix = list(section_path[:_ROOT_SEGMENT_LIMIT])
+    suffix = list(section_path[terminal_position:])
+    collapsed: list[str] = []
+    for part in [*prefix, *suffix]:
+        if collapsed and _normalize_segment(collapsed[-1]) == _normalize_segment(part):
+            continue
+        collapsed.append(part)
+    return collapsed
 
 
 def _normalize_segment(value: str | None) -> str:

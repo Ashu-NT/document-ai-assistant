@@ -9,6 +9,9 @@ from src.application.workflows.parsing.normalizers.docling_item_extractor import
 from src.application.workflows.parsing.normalizers.docling_provenance_extractor import (
     DoclingProvenanceExtractor,
 )
+from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+    repair_docling_text,
+)
 from src.application.workflows.parsing.normalizers.docling_table_extractor import (
     DoclingTableExtractor,
 )
@@ -256,7 +259,7 @@ class DoclingDocumentNormalizer:
         if value is None:
             return None
 
-        text = str(value).strip()
+        text = repair_docling_text(str(value)).strip()
         return text or None
 
     @staticmethod

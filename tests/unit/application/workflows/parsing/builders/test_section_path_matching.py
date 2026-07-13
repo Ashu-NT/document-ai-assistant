@@ -84,3 +84,36 @@ def test_normalize_section_path_for_matching_prunes_overview_bridge_before_speci
         "Spare Parts",
         "Preventive Maintenance",
     ]
+
+
+def test_normalize_section_path_for_matching_collapses_overnested_sibling_chain() -> None:
+    section_path = [
+        "7 Components",
+        "7.1 Macerators",
+        "Macerator Description",
+        "What it Does",
+        "How it Works",
+        "Transport of the Macerator",
+        "Mounting",
+        "Electrical Installation",
+        "Supply Voltage",
+        "Cables",
+        "Direction of Rotation",
+        "Safety Interlock Switch",
+        "Commissioning & Shutdown",
+        "Check before Start Up",
+        "Checks during Start Up",
+        "Operation",
+        "Start and stop",
+        "Trouble Shooting",
+        "Machine does not Start and makes no Sound",
+        "Maintenance",
+    ]
+
+    normalized = normalize_section_path_for_matching(section_path)
+
+    assert normalized == [
+        "Components",
+        "Macerators",
+        "Maintenance",
+    ]

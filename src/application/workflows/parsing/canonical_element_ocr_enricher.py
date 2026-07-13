@@ -1,6 +1,9 @@
 from src.application.contracts.ai import OCRResult
 from src.application.services.ai import OCRService
 from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+    repair_docling_text,
+)
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import OCRProviderError
 
@@ -80,5 +83,5 @@ class CanonicalElementOCREnricher:
         if value is None:
             return None
 
-        text = str(value).strip()
+        text = repair_docling_text(str(value)).strip()
         return text or None

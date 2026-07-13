@@ -20,6 +20,7 @@ class DoclingSingleColumnStructuredTableReconstructor:
         re.IGNORECASE,
     )
     _WHITESPACE_PATTERN = re.compile(r"\s+")
+    _IDENTIFIER_TOKEN_PATTERN = re.compile(r"^[A-Z0-9]+(?:[./-][A-Z0-9]+)*$")
 
     def reconstruct(self, rows: list[list[str]]) -> list[list[str]]:
         if len(rows) < 2 or not self._looks_single_column(rows):
@@ -112,10 +113,7 @@ class DoclingSingleColumnStructuredTableReconstructor:
         remaining = self._normalize(normalized[leading_match.end() :])
         trailing_code = ""
         if header_spec.expects_trailing_code:
-            trailing_match = self._TRAILING_CODE_PATTERN.search(remaining)
-            if trailing_match is not None:
-                trailing_code = self._normalize(trailing_match.group("code"))
-                remaining = self._normalize(remaining[: trailing_match.start()])
+            remaining, trailing_code = self._split_trailing_identifier(remaining)
 
         if len(header_spec.headers) == 2:
             if not remaining:
@@ -125,6 +123,41 @@ class DoclingSingleColumnStructuredTableReconstructor:
         if not remaining:
             return None
         return [leading_code, remaining, trailing_code]
+
+    def _split_trailing_identifier(self, value: str) -> tuple[str, str]:
+        multi_token_split = self._extract_multi_token_identifier_span(value)
+        if multi_token_split is not None:
+            return multi_token_split
+
+        trailing_match = self._TRAILING_CODE_PATTERN.search(value)
+        if trailing_match is not None:
+            trailing_code = self._normalize(trailing_match.group("code"))
+            remaining = self._normalize(value[: trailing_match.start()])
+            return remaining, trailing_code
+
+        tokens = value.split()
+        for span_size in range(min(3, len(tokens)), 0, -1):
+            trailing_tokens = tokens[-span_size:]
+            trailing_value = self._normalize(" ".join(trailing_tokens).strip(" ,;:"))
+            if not self._looks_like_identifier_span(trailing_tokens, trailing_value):
+                continue
+            remaining = self._normalize(" ".join(tokens[:-span_size]))
+            if remaining:
+                return remaining, trailing_value
+
+        return value, ""
+
+    def _extract_multi_token_identifier_span(self, value: str) -> tuple[str, str] | None:
+        tokens = value.split()
+        for span_size in range(min(3, len(tokens)), 1, -1):
+            trailing_tokens = tokens[-span_size:]
+            trailing_value = self._normalize(" ".join(trailing_tokens).strip(" ,;:"))
+            if not self._looks_like_multi_token_identifier_span(trailing_tokens, trailing_value):
+                continue
+            remaining = self._normalize(" ".join(tokens[:-span_size]))
+            if remaining:
+                return remaining, trailing_value
+        return None
 
     def _middle_label(
         self,
@@ -168,3 +201,52 @@ class DoclingSingleColumnStructuredTableReconstructor:
 
     def _normalize_for_match(self, value: str | None) -> str:
         return self._normalize(value).casefold()
+
+    def _looks_like_identifier_span(
+        self,
+        tokens: list[str],
+        normalized_value: str,
+    ) -> bool:
+        if not normalized_value or not any(character.isdigit() for character in normalized_value):
+            return False
+
+        normalized_tokens = [
+            self._normalize(token.strip(" ,;:"))
+            for token in tokens
+            if self._normalize(token.strip(" ,;:"))
+        ]
+        if not normalized_tokens:
+            return False
+
+        for token in normalized_tokens:
+            if token.casefold() != token and not self._IDENTIFIER_TOKEN_PATTERN.fullmatch(token):
+                return False
+
+        return any(
+            any(character.isupper() for character in token) or any(character.isdigit() for character in token)
+            for token in normalized_tokens
+        )
+
+    def _looks_like_multi_token_identifier_span(
+        self,
+        tokens: list[str],
+        normalized_value: str,
+    ) -> bool:
+        if not normalized_value or not any(character.isdigit() for character in normalized_value):
+            return False
+
+        normalized_tokens = [
+            self._normalize(token.strip(" ,;:"))
+            for token in tokens
+            if self._normalize(token.strip(" ,;:"))
+        ]
+        if len(normalized_tokens) < 2:
+            return False
+
+        if any(any(character.islower() for character in token) for token in normalized_tokens):
+            return False
+
+        return all(
+            self._IDENTIFIER_TOKEN_PATTERN.fullmatch(token) is not None
+            for token in normalized_tokens
+        )

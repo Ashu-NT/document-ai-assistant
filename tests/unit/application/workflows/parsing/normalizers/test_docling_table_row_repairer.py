@@ -33,3 +33,42 @@ def test_repair_rows_reconstructs_single_column_identifier_table() -> None:
     assert "Food waste Macerator Suction Valve" in repaired[1][1]
     assert repaired[2][0] == "V.00.04.01"
     assert repaired[2][2] == "A00103"
+
+
+def test_repair_rows_reconstructs_identifier_rows_with_multi_token_part_numbers() -> None:
+    rows = [
+        ["P&ID Pos Nr. Service Function Type Part No."],
+        ["M.01.01.01 Macerator 1 Lid Position Switch Position switch, FA 4510-2DN"],
+        ["M.00.08.01 FW Liquor Transfer Tank Level 4-20mA Radar level LR9020 A00031"],
+    ]
+
+    repaired = DoclingTableRowRepairer().repair_rows(rows)
+
+    assert repaired[0] == ["P&ID Pos Nr.", "Service Function Type", "Part No."]
+    assert repaired[1] == [
+        "M.01.01.01",
+        "Macerator 1 Lid Position Switch Position switch,",
+        "FA 4510-2DN",
+    ]
+    assert repaired[2] == [
+        "M.00.08.01",
+        "FW Liquor Transfer Tank Level 4-20mA Radar level",
+        "LR9020 A00031",
+    ]
+
+
+def test_repair_rows_reconstructs_single_column_toc_table() -> None:
+    rows = [
+        ["1.1 Explanation of Documentation ...................................................................................................... 6"],
+        ["1.2 Other Applicable Documents ........................................................................................................ 6"],
+        ["2.1 General Operating Information ..................................................................................................... 9"],
+    ]
+
+    repaired = DoclingTableRowRepairer().repair_rows(rows)
+
+    assert repaired == [
+        ["Number", "Title", "Page"],
+        ["1.1", "Explanation of Documentation", "6"],
+        ["1.2", "Other Applicable Documents", "6"],
+        ["2.1", "General Operating Information", "9"],
+    ]

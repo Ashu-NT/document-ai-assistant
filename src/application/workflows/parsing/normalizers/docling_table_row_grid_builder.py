@@ -3,6 +3,9 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+    repair_docling_text,
+)
 from src.application.workflows.parsing.normalizers.docling_table_row_repairer import (
     DoclingTableRowRepairer,
 )
@@ -183,7 +186,7 @@ def _coerce_int(value: Any) -> int | None:
 def _clean_text(value: Any) -> str | None:
     if value is None:
         return None
-    text = " ".join(str(value).split()).strip()
+    text = " ".join(repair_docling_text(str(value)).split()).strip()
     return text or None
 
 

@@ -1,6 +1,9 @@
 import inspect
 from typing import Any
 
+from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+    repair_docling_text,
+)
 from src.application.workflows.parsing.normalizers.docling_table_row_grid_builder import (
     DoclingTableRowGridBuilder,
 )
@@ -183,7 +186,7 @@ class DoclingTableExtractor:
         if value is None:
             return None
 
-        text = str(value).strip()
+        text = repair_docling_text(str(value)).strip()
         return text or None
 
     @classmethod
