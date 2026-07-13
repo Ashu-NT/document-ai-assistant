@@ -201,6 +201,23 @@ Later semantic classification helps through:
 
 But table meaning is still mostly inferred after the fact instead of being recognized as a first-class parsing/chunking concern.
 
+### 4.1 Current compatibility helpers still embed narrow assumptions
+
+Some of the current table convenience logic is useful, but it should not become the enterprise semantic contract.
+
+Concrete example from the live code:
+
+- `src/domain/assets/table_asset.py`
+  - `_looks_schedule_marker_header()` still assumes a narrow code set like `D/W/M/Q/S/A`
+
+That is acceptable as a compatibility heuristic for rendering helper text, but it is too narrow to drive core table understanding for unseen technical documents.
+
+The upgraded design should explicitly treat helpers like this as:
+
+- compatibility-only
+- low-confidence conveniences
+- never the primary semantic classifier
+
 ### 5. Hydration and answer projection still flatten too much
 
 The system preserves useful raw data, but later stages still reduce it:
@@ -267,7 +284,276 @@ The wrong move is:
 - hardcoding current document labels
 - bypassing parsing with QA-only hacks
 
+### 5. Treat upstream parser accuracy as helpful but insufficient
+
+The current Docling runtime already exposes strong upstream parsing controls through:
+
+- `src/infrastructure/parsing/docling/docling_converter_factory.py`
+
+Those settings can improve physical extraction quality, but this plan must not assume that better upstream table detection alone solves:
+
+- logical multi-page table families
+- merged-cell semantics
+- category inference
+- retrieval-ready table understanding
+
+In other words:
+
+- better parser precision helps
+- richer document-understanding artifacts are still required
+
+### 6. Keep pandas as an optional debug/export layer, not the domain model
+
+DataFrame-style views can be helpful for:
+
+- debugging
+- developer export
+- inspection tooling
+
+But pandas should not become the canonical table representation inside the application/domain path.
+
+The canonical source of truth should remain application-owned structured artifacts that preserve:
+
+- span-aware cells
+- logical family membership
+- category/confidence
+- compatibility row grids
+
+Optional pandas views can be derived later for tooling only
+
 ## Target Upgrade Plan
+
+## Required Cross-Cutting Contracts Before Implementation
+
+These contracts must be defined before implementation starts. Without them, the upgrade will improve parsing ideas on paper but still lose structure before retrieval and QA can use it.
+
+## Canonical table artifact contract
+
+### Goal
+
+Define one canonical table representation that survives the full pipeline.
+
+### Current gap
+
+Today the durable table shape is effectively:
+
+- `markdown`
+- `rows`
+- `row_count`
+- `column_count`
+
+That is not enough for:
+
+- merged-cell semantics
+- multi-line cell handling
+- logical table families
+- table categories with confidence
+
+### Required contract
+
+The canonical table artifact should include:
+
+1. physical identity
+   - `table_id`
+   - source element reference
+   - page range
+
+2. span-aware cells
+   - `row_start`
+   - `row_end`
+   - `col_start`
+   - `col_end`
+   - `row_span`
+   - `col_span`
+   - `raw_text`
+   - `normalized_text`
+   - optional `raw_lines`
+
+3. derived views
+   - logical grid
+   - flattened rows
+   - markdown
+
+4. table understanding metadata
+   - `logical_table_family_id`
+   - `family_index`
+   - `family_total`
+   - `continuation_role`
+   - `table_category`
+   - `table_category_confidence`
+   - optional `secondary_categories`
+   - `header_signature`
+   - optional `header_bands`
+
+### Important rule
+
+`rows: list[list[str]]` remains a compatibility view. It must not remain the only source of truth.
+
+## Persistence and rehydration contract
+
+### Goal
+
+Guarantee that richer table structure survives DB round-trip.
+
+### Current gap
+
+Current rehydration restores only:
+
+- `markdown`
+- `table_rows`
+- `row_count`
+- `column_count`
+
+from persisted parser metadata.
+
+### Required contract
+
+The plan must define:
+
+1. where richer table metadata is serialized
+2. how it is deserialized
+3. what must remain reconstructible after reload without re-running Docling
+
+### Minimum persistence guarantee
+
+After persistence and reload, the system must still recover:
+
+- span-aware cells
+- logical family membership
+- table category
+- compatibility row grids
+
+## Chunk and retrieval propagation contract
+
+### Goal
+
+Ensure table understanding reaches retrieval and answer grounding.
+
+### Current gap
+
+Chunks currently preserve `table_ids`, but not:
+
+- logical table family id
+- table category
+- category confidence
+- row-family position
+
+### Required contract
+
+Table-aware chunks should propagate through:
+
+- `src/application/workflows/parsing/builders/chunking/builders/chunk_payload_factory.py`
+- `src/application/workflows/parsing/builders/document_graph/graph_chunk_builder.py`
+- `src/infrastructure/db/mappers/document/chunk_mapper.py`
+- `src/infrastructure/db/mappers/retrieval/retrieved_chunk_mapper.py`
+
+The minimum metadata contract is:
+
+- `logical_table_family_id`
+- `table_category`
+- `table_category_confidence`
+- physical `table_ids`
+- optional row-range within family
+
+This metadata must survive through persisted chunks and retrieval mappers.
+
+## Fallback tiers for incomplete structure
+
+### Goal
+
+Avoid brittle behavior when Docling structure is partial.
+
+### Current gap
+
+The current extractor can already fall back to markdown/text export, so the plan cannot assume span-aware cells always exist.
+
+### Required fallback tiers
+
+1. Tier A: span-aware structure available
+   - full merged-cell and row-reconstruction logic
+
+2. Tier B: row grid only available
+   - row-based semantic inference
+   - no merged-cell guarantees
+
+3. Tier C: markdown/text only available
+   - conservative parsing only
+   - no high-confidence structural claims
+
+### Important rule
+
+The system should degrade gracefully, not fail hard because one table lacks span metadata.
+
+## Migration and compatibility contract
+
+### Goal
+
+Keep current row-based consumers working while richer structure is introduced.
+
+### Current gap
+
+Current downstream consumers still assume row grids, especially:
+
+- table evidence hydration
+- answer table projection
+- extraction table hydration
+
+### Required contract
+
+The plan should explicitly state:
+
+1. existing `rows` stays available as derived compatibility output
+2. existing `table_rows_json` stays supported during migration
+3. richer span-aware and family metadata is additive first
+4. row-only consumers are upgraded incrementally
+
+## Ambiguity and confidence handling
+
+### Goal
+
+Avoid overconfident categorization on ambiguous tables.
+
+### Required contract
+
+Every categorized logical table should support:
+
+- `table_category`
+- `table_category_confidence`
+- optional `secondary_categories`
+- optional `supporting_signals`
+
+### Behavior
+
+- high confidence:
+  - usable for retrieval preference and chunk typing
+- medium confidence:
+  - usable as a soft ranking hint
+- low confidence:
+  - preserve as `general_table` or weak category only
+
+## Performance and storage guardrails
+
+### Goal
+
+Keep the richer representation practical for large manuals and reports.
+
+### Required guardrails
+
+The plan should include:
+
+1. profiling on large documents
+2. parser metadata size monitoring
+3. limits on duplicated derived forms
+4. no unnecessary duplication of:
+   - raw text
+   - normalized text
+   - markdown
+   - row grids
+   - span-aware cells
+
+### Important rule
+
+Store one canonical source plus necessary derived views, not many redundant copies.
 
 ## Phase 1. Section Path and Outline Foundation
 
@@ -360,6 +646,7 @@ Resolve multi-fragment table evidence into logical tables before chunking and re
 - `src/application/workflows/parsing/builders/document_graph_builder.py`
 - `src/infrastructure/db/repositories/document/document_graph_reader.py`
 - `src/domain/assets/table_asset.py`
+- `src/infrastructure/db/mappers/document/element_mapper.py`
 
 ### New grouped area recommended
 
@@ -388,8 +675,12 @@ Resolve multi-fragment table evidence into logical tables before chunking and re
    - `family_total`
    - `continuation_role`
    - `normalized_header_signature`
+   - `table_category`
+   - `table_category_confidence`
 
 4. Rehydrate logical table families from persisted graph data.
+
+5. Preserve compatibility row grids as derived views rather than canonical structure.
 
 ### Expected benefit
 
@@ -410,6 +701,7 @@ Recognize the type of technical table generically and early.
 - `src/application/workflows/parsing/builders/chunking/builders/semantic_signals/chunk_semantic_signal_extractor.py`
 - `src/application/workflows/question_answering/answer_context/tables/table_header_semantics.py`
 - `src/application/workflows/question_answering/answer_context/tables/answer_table_schema_inferer.py`
+- `src/application/workflows/question_answering/evidence/table_evidence_hydrator.py`
 
 ### Target generic table families
 
@@ -468,6 +760,16 @@ These should become explicit, reusable categories rather than only being implied
    - exact current-manual labels
    should be treated only as examples of broader semantics, not as the design itself
 
+6. Introduce explicit confidence handling.
+   - `table_category_confidence`
+   - optional secondary categories
+   - weak categories remain soft ranking hints, not hard filters
+
+7. Respect fallback tiers.
+   - span-aware tables
+   - row-grid-only tables
+   - markdown/text-only tables
+
 ### Expected benefit
 
 - fewer wrongly typed table chunks
@@ -501,6 +803,7 @@ Chunk technical tables as meaningful evidence units, not accidental physical fra
    - table family id
    - physical table ids
    - logical table category
+   - logical table category confidence
    - row span within family
    - continuation markers
 
@@ -509,6 +812,9 @@ Chunk technical tables as meaningful evidence units, not accidental physical fra
 5. Make merge policy numbering-aware and family-aware.
    - do not merge unrelated numbered siblings
    - do not merge across logical table boundaries unless explicitly intended
+
+6. Propagate retrieval-useful table metadata through persisted chunks.
+   - no runtime-only table categorization that disappears after reload
 
 ### Expected benefit
 
@@ -527,6 +833,8 @@ When any member of a logical table family is retrieved, the system should be abl
 - `src/application/workflows/extraction/batching/extraction_table_chunk_hydrator.py`
 - `src/application/workflows/question_answering/evidence/table_evidence_hydrator.py`
 - `src/application/workflows/retrieval/context_expansion/document_chunk_index.py`
+- `src/infrastructure/db/mappers/document/chunk_mapper.py`
+- `src/infrastructure/db/mappers/retrieval/retrieved_chunk_mapper.py`
 
 ### Changes
 
@@ -544,6 +852,10 @@ When any member of a logical table family is retrieved, the system should be abl
    - troubleshooting queries can prefer troubleshooting tables
    - identifier/specification queries can prefer identifier/specification tables
    - TOC tables can be aggressively down-ranked after outline extraction
+
+5. Preserve fallback behavior for low-structure tables.
+   - if only row grid exists, hydrate row grid
+   - if only markdown exists, hydrate conservatively without pretending strong structure
 
 ### Expected benefit
 
@@ -571,6 +883,8 @@ Expose structured tables to answer generation in a way that preserves their sema
    - continuation order
    - normalized headers
    - table semantics
+   - optional grouped header bands
+   - optional row-label inheritance metadata
 
 2. Replace generic row echo with schema-aware row serialization.
    - key-value tables
@@ -826,7 +1140,7 @@ The system should reconstruct rows from table-cell coordinates and spans, not fr
 
 #### Current risk
 
-If downstream logic relies too heavily on flattened markdown or naïve row parsing, it can misread:
+If downstream logic relies too heavily on flattened markdown or naive row parsing, it can misread:
 
 - wrapped descriptions
 - long denomination fields
@@ -1030,7 +1344,7 @@ This approach generalizes to unseen technical documents because it reasons from:
 - interval syntax
 - cell behavior
 
-instead of relying on one corpus’ exact vocabulary.
+instead of relying on one corpus's exact vocabulary.
 
 ## Phase 8. Debug and Inspection Tooling
 
@@ -1079,6 +1393,7 @@ Make document-understanding artifacts inspectable during development and evaluat
 - unrelated same-page small tables do not merge
 - continued maintenance tables preserve member order
 - split TOC tables preserve logical family identity
+- logical family metadata survives DB persist/rehydrate
 
 ## Table semantics
 
@@ -1087,12 +1402,14 @@ Make document-understanding artifacts inspectable during development and evaluat
 - technical/specification tables outrank inherited safety context
 - spare-parts tables still classify correctly
 - resolved logical tables receive stable table categories
+- weak or ambiguous categories remain soft hints rather than overcommitted labels
 
 ## Chunking
 
 - logical family metadata propagates onto final chunks
 - large logical tables can be row-group chunked without losing family identity
 - section merge respects numbering and semantic boundaries
+- chunk table metadata survives DB persist/rehydrate
 
 ## Retrieval and QA
 
@@ -1100,6 +1417,14 @@ Make document-understanding artifacts inspectable during development and evaluat
 - table-category-aware retrieval prefers the right table families for matching intents
 - answer table projection preserves headers and row semantics
 - continuation tables do not disappear after first-family hydration
+
+## Table structure edge cases
+
+- merged header spanning multiple columns is preserved
+- merged left label spanning multiple rows supports row-label inheritance
+- one multi-line wrapped cell beside single-line neighbor cells remains one row
+- row-grid-only fallback tables remain usable
+- markdown/text-only fallback tables do not claim high-confidence structure
 
 ## Acceptance Criteria
 

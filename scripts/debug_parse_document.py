@@ -420,6 +420,60 @@ def build_section_tree(section_build_result: SectionBuildResult | None) -> str:
     return "\n".join(lines) if lines else "_No section hierarchy available._"
 
 
+def build_toc_outline_section(section_build_result: SectionBuildResult | None) -> list[str]:
+    lines = ["## TOC Outline", ""]
+    toc_outline = (
+        safe_getattr(section_build_result, "toc_outline")
+        if section_build_result is not None
+        else None
+    )
+    entries = list(safe_getattr(toc_outline, "entries", default=[]) or [])
+    matched_entries = safe_getattr(toc_outline, "matched_entries", default={}) or {}
+
+    if not entries:
+        lines.append("_No TOC outline artifact available._")
+        lines.append("")
+        return lines
+
+    lines.extend(
+        [
+            f"- toc header id: `{safe_getattr(toc_outline, 'toc_header_id', default='')}`",
+            f"- outline entry count: `{len(entries)}`",
+            f"- matched header count: `{len(matched_entries)}`",
+            "",
+            "### TOC Entries",
+            format_table(
+                headers=[
+                    "numbering",
+                    "title",
+                    "page",
+                    "level_hint",
+                    "matched_header_id",
+                ],
+                rows=[
+                    [
+                        safe_getattr(entry, "numbering"),
+                        safe_getattr(entry, "title"),
+                        safe_getattr(entry, "start_page"),
+                        safe_getattr(entry, "level_hint"),
+                        next(
+                            (
+                                header_id
+                                for header_id, matched_entry in matched_entries.items()
+                                if matched_entry is entry
+                            ),
+                            "",
+                        ),
+                    ]
+                    for entry in entries
+                ],
+            ),
+            "",
+        ]
+    )
+    return lines
+
+
 def invert_mapping(mapping: dict[str, str]) -> dict[str, str]:
     return {
         value: key
@@ -752,6 +806,7 @@ def build_report(
     lines.append("")
     lines.append(build_section_tree(section_build_result))
     lines.append("")
+    lines.extend(build_toc_outline_section(section_build_result))
 
     section_header_by_section_id = (
         invert_mapping(section_build_result.header_section_ids)

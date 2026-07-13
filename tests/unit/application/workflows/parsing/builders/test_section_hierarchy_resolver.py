@@ -56,6 +56,9 @@ def test_resolver_falls_back_to_toc_when_all_docling_levels_are_one() -> None:
     assert resolution.effective_levels["hdr_intro"] == 1
     assert resolution.effective_levels["hdr_child"] == 2
     assert resolution.sources["hdr_child"] == "toc_page_range"
+    assert resolution.toc_outline is not None
+    assert len(resolution.toc_outline.entries) == 2
+    assert resolution.toc_outline.header_numberings["hdr_intro"] == "1"
 
 
 def test_resolver_applies_layout_refinement_inside_toc_ranges() -> None:
@@ -144,3 +147,5 @@ def test_resolver_uses_structured_contents_and_explicit_parent_hints() -> None:
     assert resolution.explicit_parent_headers["hdr_1_3_3"] == "hdr_1_3"
     assert resolution.explicit_parent_headers["hdr_prep"] == "hdr_1_2"
     assert resolution.explicit_parent_headers["hdr_lab_task"] == "hdr_1_3"
+    assert resolution.toc_outline is not None
+    assert len(resolution.toc_outline.entries) == 5

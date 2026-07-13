@@ -17,6 +17,9 @@ from src.application.workflows.parsing.builders.chunking.models.chunk_fragment i
 from src.application.workflows.parsing.builders.chunking.text.section_path_sanitizer import (
     sanitize_section_path,
 )
+from src.application.workflows.parsing.builders.chunking.text.section_path_matching import (
+    normalize_section_path_for_matching,
+)
 from src.application.workflows.parsing.builders.chunking.text.text_normalization import (
     normalize_comparable_text,
 )
@@ -148,9 +151,10 @@ class ChunkSemanticSignalExtractor:
     @lru_cache(maxsize=4096)
     def _path_texts(section_path: tuple[str, ...]) -> tuple[str, str]:
         sanitized_path = sanitize_section_path(list(section_path))
+        matching_path = normalize_section_path_for_matching(sanitized_path)
         normalized_parts = [
             normalize_comparable_text(segment)
-            for segment in sanitized_path
+            for segment in matching_path
             if segment
         ]
         if not normalized_parts:

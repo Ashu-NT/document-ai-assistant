@@ -22,6 +22,9 @@ from src.application.workflows.parsing.builders.section_hierarchy.section_level_
 from src.application.workflows.parsing.builders.section_hierarchy.toc_page_range_strategy import (
     TocPageRangeStrategy,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.toc import (
+    TocOutline,
+)
 from src.application.workflows.parsing.canonical_element import CanonicalElement
 from src.application.workflows.parsing.parsing_value_coercion import (
     coerce_positive_int,
@@ -36,6 +39,7 @@ class SectionHierarchyResolution:
     raw_levels: dict[str, int | None] = field(default_factory=dict)
     header_numberings: dict[str, str] = field(default_factory=dict)
     explicit_parent_headers: dict[str, str] = field(default_factory=dict)
+    toc_outline: TocOutline | None = None
 
 
 class SectionHierarchyResolver:
@@ -107,6 +111,7 @@ class SectionHierarchyResolver:
                 headers,
                 canonical_elements,
             )
+            resolution.toc_outline = toc_outline
             toc_levels = self.toc_page_range_strategy.assign_levels(
                 headers,
                 canonical_elements,

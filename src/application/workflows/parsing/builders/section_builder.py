@@ -130,6 +130,7 @@ class SectionBuilder:
                 headers,
                 hierarchy_resolution.effective_levels,
                 hierarchy_resolution.explicit_parent_headers,
+                hierarchy_resolution.header_numberings,
             )
             stage.output_counts["sections"] = len(sections)
         section_lookup = {section.section_id: section for section in sections}
@@ -186,8 +187,10 @@ class SectionBuilder:
             header_levels=hierarchy_resolution.effective_levels,
             header_sources=hierarchy_resolution.sources,
             header_raw_levels=hierarchy_resolution.raw_levels,
+            header_numberings=hierarchy_resolution.header_numberings,
             header_parent_headers=hierarchy_resolution.explicit_parent_headers,
             header_section_ids=header_section_ids,
+            toc_outline=hierarchy_resolution.toc_outline,
         )
 
     def resolve_section_id(

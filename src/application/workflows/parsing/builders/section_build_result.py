@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 
+from src.application.workflows.parsing.builders.section_hierarchy.toc import TocOutline
 from src.domain.document import DocumentSection
 
 
@@ -11,5 +12,7 @@ class SectionBuildResult:
     header_levels: dict[str, int] = field(default_factory=dict)
     header_sources: dict[str, str] = field(default_factory=dict)
     header_raw_levels: dict[str, int | None] = field(default_factory=dict)
+    header_numberings: dict[str, str] = field(default_factory=dict)
     header_parent_headers: dict[str, str] = field(default_factory=dict)
     header_section_ids: dict[str, str] = field(default_factory=dict)
+    toc_outline: TocOutline | None = None

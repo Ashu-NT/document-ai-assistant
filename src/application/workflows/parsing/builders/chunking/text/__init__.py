@@ -12,6 +12,10 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
     tail_words,
     unique_preserve_order,
 )
+from src.application.workflows.parsing.builders.chunking.text.section_path_matching import (
+    normalize_section_path_for_matching,
+    normalized_section_path_text,
+)
 from src.application.workflows.parsing.builders.chunking.text.tokenization import (
     ChunkTokenCounter,
     ChunkTokenCounterFactory,
@@ -32,6 +36,8 @@ __all__ = [
     "is_low_value_fragment",
     "is_reference_title",
     "looks_like_boilerplate",
+    "normalize_section_path_for_matching",
+    "normalized_section_path_text",
     "tail_words",
     "unique_preserve_order",
 ]

@@ -1,4 +1,7 @@
 from src.application.workflows.parsing.builders import SectionBuilder
+from src.application.workflows.parsing.builders.section_hierarchy import (
+    SectionHierarchyResolution,
+)
 from src.application.workflows.parsing.canonical_element import CanonicalElement
 from src.domain.common import ElementType
 from src.shared.ids import IdGenerator
@@ -192,4 +195,49 @@ def test_section_builder_ignores_filtered_headers_during_hierarchy_resolution() 
         "7 Components",
         "7.1 Macerators",
         "Maintenance 7.1.11",
+    ]
+
+
+class _FakeHierarchyResolver:
+    def resolve(
+        self,
+        canonical_elements: list[CanonicalElement],
+    ) -> SectionHierarchyResolution:
+        del canonical_elements
+        return SectionHierarchyResolution(
+            effective_levels={
+                "hdr_1": 1,
+                "hdr_2": 2,
+            },
+            sources={
+                "hdr_1": "toc_page_range",
+                "hdr_2": "toc_page_range",
+            },
+            header_numberings={
+                "hdr_1": "7",
+                "hdr_2": "7.1",
+            },
+        )
+
+
+def test_section_builder_uses_resolved_numbering_in_section_paths() -> None:
+    elements = [
+        make_element("hdr_1", ElementType.SECTION_HEADER, "Components", 1, {"heading_level": 1}),
+        make_element("hdr_2", ElementType.SECTION_HEADER, "Macerators", 2, {"heading_level": 2}),
+        make_element("txt_1", ElementType.TEXT, "Macerator body text", 3),
+    ]
+    builder = SectionBuilder(
+        IdGenerator(),
+        hierarchy_resolver=_FakeHierarchyResolver(),
+    )
+
+    result = builder.build("doc_001", elements)
+
+    assert result.header_numberings == {
+        "hdr_1": "7",
+        "hdr_2": "7.1",
+    }
+    assert result.element_section_paths["txt_1"] == [
+        "7 Components",
+        "7.1 Macerators",
     ]

@@ -96,3 +96,28 @@ def test_section_stack_builder_honors_explicit_parent_hints() -> None:
         "1.3 A first DSP project",
         "1.3.3 Overflows",
     ]
+
+
+def test_section_stack_builder_prefixes_resolved_numbering_when_header_text_is_unnumbered() -> None:
+    headers = [
+        make_header("hdr_root", "Components", 1),
+        make_header("hdr_child", "Macerators", 2),
+    ]
+    builder = SectionStackBuilder(IdGenerator())
+
+    sections, _ = builder.build(
+        "doc_001",
+        headers,
+        {
+            "hdr_root": 1,
+            "hdr_child": 2,
+        },
+        header_numberings={
+            "hdr_root": "7",
+            "hdr_child": "7.1",
+        },
+    )
+
+    assert sections[0].title == "7 Components"
+    assert sections[1].title == "7.1 Macerators"
+    assert sections[1].section_path == ["7 Components", "7.1 Macerators"]

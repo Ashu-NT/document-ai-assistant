@@ -113,3 +113,74 @@ def test_build_report_includes_structural_profile_inference_section() -> None:
     assert "- classification: `not run`" in report
     assert "## Initial Chunks" in report
     assert "## Post-Classification Chunks" in report
+
+
+def test_build_report_includes_toc_outline_when_available() -> None:
+    builder = make_builder()
+    raw_parsed_document = make_raw_parsed_document()
+    canonical_elements = [
+        make_parsed_element(
+            element_id="hdr_toc",
+            element_type=ElementType.SECTION_HEADER,
+            order_index=1,
+            text="Contents",
+            page_start=1,
+            metadata={"heading_level": 1},
+        ),
+        make_parsed_element(
+            element_id="tbl_toc",
+            element_type=ElementType.TABLE,
+            order_index=2,
+            text="",
+            page_start=1,
+            metadata={
+                "item_label": "document_index",
+                "table_rows": [
+                    ["1", "Introduction", "2"],
+                    ["1.1", "Overview", "3"],
+                ],
+            },
+        ),
+        make_parsed_element(
+            element_id="hdr_1",
+            element_type=ElementType.SECTION_HEADER,
+            order_index=3,
+            text="Introduction",
+            page_start=2,
+            metadata={"heading_level": 1},
+        ),
+        make_parsed_element(
+            element_id="hdr_2",
+            element_type=ElementType.SECTION_HEADER,
+            order_index=4,
+            text="Overview",
+            page_start=3,
+            metadata={"heading_level": 1},
+        ),
+    ]
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=canonical_elements,
+        raw_parsed_document=raw_parsed_document,
+    )
+
+    report = build_report(
+        input_path=Path("data/input/pump_manual.pdf"),
+        output_path=Path("outputs/debug_parsing/pump_manual_parsing_report.md"),
+        file_hash="file_hash_001",
+        content_hash="content_hash_001",
+        raw_parsed_document=raw_parsed_document,
+        canonical_elements=canonical_elements,
+        document_graph=graph,
+        section_build_result=builder.last_section_build_result,
+    )
+
+    assert "## TOC Outline" in report
+    assert "### TOC Entries" in report
+    assert "Introduction" in report
+    assert "Overview" in report

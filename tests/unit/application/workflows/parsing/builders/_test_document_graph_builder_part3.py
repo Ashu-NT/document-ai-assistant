@@ -192,7 +192,7 @@ def test_document_graph_builder_skips_table_of_contents_chunks() -> None:
     chunks = list(graph.chunks.values())
 
     assert len(chunks) == 1
-    assert chunks[0].section_path == ["Introduction"]
+    assert chunks[0].section_path == ["1 Introduction"]
     assert "real body content" in chunks[0].content
 
 def test_document_graph_builder_adds_document_and_section_context_to_embedding_text() -> None:

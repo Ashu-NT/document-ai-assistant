@@ -1,12 +1,21 @@
 from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.builders.section_hierarchy.section_heading_labeler import (
+    SectionHeadingLabeler,
+)
 from src.domain.common import BoundingBox, SourceLocation
 from src.domain.document import DocumentSection
 from src.shared.ids import IdGenerator, IdPrefix
 
 
 class SectionStackBuilder:
-    def __init__(self, id_generator: IdGenerator) -> None:
+    def __init__(
+        self,
+        id_generator: IdGenerator,
+        *,
+        heading_labeler: SectionHeadingLabeler | None = None,
+    ) -> None:
         self.id_generator = id_generator
+        self.heading_labeler = heading_labeler or SectionHeadingLabeler()
 
     def build(
         self,
@@ -14,6 +23,7 @@ class SectionStackBuilder:
         headers: list[CanonicalElement],
         effective_levels: dict[str, int],
         explicit_parent_headers: dict[str, str] | None = None,
+        header_numberings: dict[str, str] | None = None,
     ) -> tuple[list[DocumentSection], dict[str, str]]:
         sections: list[DocumentSection] = []
         header_section_ids: dict[str, str] = {}
@@ -34,7 +44,15 @@ class SectionStackBuilder:
             )
             if parent_section is None:
                 parent_section = self._find_parent_section(level, stack)
-            title = header.text or header.section_title or f"Section {index}"
+            raw_title = header.text or header.section_title or f"Section {index}"
+            title = self.heading_labeler.build_label(
+                raw_title=raw_title,
+                resolved_numbering=(
+                    header_numberings.get(header.element_id)
+                    if header_numberings is not None
+                    else None
+                ),
+            )
             section_path = (
                 [*parent_section.section_path, title]
                 if parent_section is not None
