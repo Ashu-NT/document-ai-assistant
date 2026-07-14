@@ -70,7 +70,12 @@ class SpecificationTableKeyValueExtractor:
         if table.table_kind == "key_value_table":
             return list(self._key_value_rows(table, answer_intent=answer_intent))
 
-        if table.table_kind in {"record_table", "specification_matrix"}:
+        if table.table_kind == "specification_matrix":
+            if self._looks_label_value_projection(table):
+                return list(self._key_value_rows(table, answer_intent=answer_intent))
+            return list(self._record_rows(table, answer_intent=answer_intent))
+
+        if table.table_kind == "record_table":
             return list(self._record_rows(table, answer_intent=answer_intent))
 
         if not table.headers and self._looks_pair_table(table):
@@ -155,6 +160,15 @@ class SpecificationTableKeyValueExtractor:
         }:
             return False
         return any(len(row.cells) >= 2 for row in table.rows)
+
+    @staticmethod
+    def _looks_label_value_projection(table: AnswerTable) -> bool:
+        if len(table.headers) < 2:
+            return False
+        return (
+            table.column_roles.get(0) == "label"
+            and table.column_roles.get(1) == "value"
+        )
 
     def _build_key_value(
         self,

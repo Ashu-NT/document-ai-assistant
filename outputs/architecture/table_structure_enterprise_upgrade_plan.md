@@ -469,11 +469,13 @@ Implemented so far:
 - `performance_curve_matrix` reaches QA as a typed table kind instead of flattening to weak pseudo facts
 - troubleshooting tables now reach QA as typed `symptom/cause/remedy/notes` projections
 - spare-parts tables use a dedicated reusable normalizer shared with extraction
+- maintenance schedule tables now project into semantic `task/interval/component/notes` rows
+- specification matrices now project into semantic `label/value` rows for answer-context consumption
+- the QA projection router is now split into dedicated builders by table family under:
+  - `src/application/workflows/question_answering/answer_context/tables/projections/`
 
 Still remaining:
 
-- dedicated projector subpackage split by table kind
-- maintenance and specification typed projector separation
 - prompt-facing serialization based on typed projections rather than mixed row heuristics
 
 ### Goal

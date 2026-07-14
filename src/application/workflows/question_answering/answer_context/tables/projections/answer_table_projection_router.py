@@ -9,11 +9,17 @@ from src.application.workflows.question_answering.answer_context.tables.projecti
 from src.application.workflows.question_answering.answer_context.tables.projections.generic_table_projection_builder import (
     GenericTableProjectionBuilder,
 )
+from src.application.workflows.question_answering.answer_context.tables.projections.maintenance_schedule_table_projection_builder import (
+    MaintenanceScheduleTableProjectionBuilder,
+)
 from src.application.workflows.question_answering.answer_context.tables.projections.performance_curve_table_projection_builder import (
     PerformanceCurveTableProjectionBuilder,
 )
 from src.application.workflows.question_answering.answer_context.tables.projections.spare_parts_table_projection_builder import (
     SparePartsTableProjectionBuilder,
+)
+from src.application.workflows.question_answering.answer_context.tables.projections.specification_matrix_table_projection_builder import (
+    SpecificationMatrixTableProjectionBuilder,
 )
 from src.application.workflows.question_answering.answer_context.tables.projections.troubleshooting_table_projection_builder import (
     TroubleshootingTableProjectionBuilder,
@@ -28,8 +34,14 @@ class AnswerTableProjectionRouter:
         troubleshooting_projection_builder: (
             TroubleshootingTableProjectionBuilder | None
         ) = None,
+        maintenance_projection_builder: (
+            MaintenanceScheduleTableProjectionBuilder | None
+        ) = None,
         performance_curve_projection_builder: (
             PerformanceCurveTableProjectionBuilder | None
+        ) = None,
+        specification_projection_builder: (
+            SpecificationMatrixTableProjectionBuilder | None
         ) = None,
         generic_projection_builder: GenericTableProjectionBuilder | None = None,
     ) -> None:
@@ -40,9 +52,17 @@ class AnswerTableProjectionRouter:
             troubleshooting_projection_builder
             or TroubleshootingTableProjectionBuilder()
         )
+        self.maintenance_projection_builder = (
+            maintenance_projection_builder
+            or MaintenanceScheduleTableProjectionBuilder()
+        )
         self.performance_curve_projection_builder = (
             performance_curve_projection_builder
             or PerformanceCurveTableProjectionBuilder()
+        )
+        self.specification_projection_builder = (
+            specification_projection_builder
+            or SpecificationMatrixTableProjectionBuilder()
         )
         self.generic_projection_builder = (
             generic_projection_builder or GenericTableProjectionBuilder()
@@ -74,6 +94,15 @@ class AnswerTableProjectionRouter:
         if troubleshooting_projection is not None:
             return troubleshooting_projection
 
+        maintenance_projection = self.maintenance_projection_builder.project(
+            source=source,
+            cleaned_rows=cleaned_rows,
+            table_category=table_category,
+            table_shape=table_shape,
+        )
+        if maintenance_projection is not None:
+            return maintenance_projection
+
         performance_curve_projection = (
             self.performance_curve_projection_builder.project(
                 cleaned_rows=cleaned_rows,
@@ -82,6 +111,14 @@ class AnswerTableProjectionRouter:
         )
         if performance_curve_projection is not None:
             return performance_curve_projection
+
+        specification_projection = self.specification_projection_builder.project(
+            source=source,
+            cleaned_rows=cleaned_rows,
+            table_shape=table_shape,
+        )
+        if specification_projection is not None:
+            return specification_projection
 
         return self.generic_projection_builder.project(
             source=source,

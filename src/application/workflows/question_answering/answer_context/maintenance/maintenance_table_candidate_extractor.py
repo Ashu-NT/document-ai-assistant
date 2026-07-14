@@ -28,6 +28,8 @@ class MaintenanceTableCandidateExtractor:
         if table.table_kind == "maintenance_schedule_table":
             return list(self._rowwise_candidates(table))
         if table.table_kind == "maintenance_schedule_matrix":
+            if self._looks_rowwise_projection(table):
+                return list(self._rowwise_candidates(table))
             return list(self._matrix_candidates(table))
         return []
 
@@ -128,3 +130,16 @@ class MaintenanceTableCandidateExtractor:
             if role == role_name:
                 return index
         return None
+
+    @staticmethod
+    def _looks_rowwise_projection(table: AnswerTable) -> bool:
+        interval_role_indexes = [
+            index for index, role in table.column_roles.items() if role == "interval"
+        ]
+        if not interval_role_indexes:
+            return False
+        return not any(
+            schedule_interval_labels(header)
+            for index, header in enumerate(table.headers)
+            if index not in interval_role_indexes
+        )

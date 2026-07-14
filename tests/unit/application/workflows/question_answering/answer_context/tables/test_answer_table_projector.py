@@ -43,6 +43,19 @@ def test_projector_detects_maintenance_schedule_matrix() -> None:
 
     assert len(tables) == 1
     assert tables[0].table_kind == "maintenance_schedule_matrix"
+    assert tables[0].headers == ["Task", "Interval", "Component", "Notes"]
+    assert tables[0].column_roles == {
+        0: "task",
+        1: "interval",
+        2: "component",
+        3: "notes",
+    }
+    assert tables[0].rows[0].cells == [
+        "Inspect basket",
+        "Monthly; Semi-Annual; Annual",
+        "",
+        "",
+    ]
 
 
 def test_projector_detects_implicit_maintenance_schedule_matrix() -> None:
@@ -66,9 +79,19 @@ def test_projector_detects_implicit_maintenance_schedule_matrix() -> None:
 
     assert len(tables) == 1
     assert tables[0].table_kind == "maintenance_schedule_matrix"
-    assert tables[0].headers[-2:] == ["Task", "Notes"]
-    assert "task" in tables[0].column_roles.values()
-    assert "notes" in tables[0].column_roles.values()
+    assert tables[0].headers == ["Task", "Interval", "Component", "Notes"]
+    assert tables[0].rows[0].cells == [
+        "Check basket for blockages",
+        "Daily",
+        "",
+        "",
+    ]
+    assert tables[0].rows[1].cells == [
+        "Clean dirt from the housing",
+        "Quarterly",
+        "",
+        "See gearbox annex",
+    ]
 
 
 def test_projector_deduplicates_same_logical_table_family_and_carries_metadata() -> None:
@@ -297,9 +320,13 @@ def test_projector_preserves_specification_matrix_shape_as_table_kind() -> None:
 
     assert len(tables) == 1
     assert tables[0].table_kind == "specification_matrix"
-    assert tables[0].headers == [
-        "Parameter",
-        "Compact version",
-        "Remote version",
-        "Unit",
+    assert tables[0].headers == ["Label", "Value"]
+    assert tables[0].column_roles == {0: "label", 1: "value"}
+    assert tables[0].rows[0].cells == [
+        "Pressure range (Compact version)",
+        "0...10 bar",
+    ]
+    assert tables[0].rows[1].cells == [
+        "Pressure range (Remote version)",
+        "0...16 bar",
     ]

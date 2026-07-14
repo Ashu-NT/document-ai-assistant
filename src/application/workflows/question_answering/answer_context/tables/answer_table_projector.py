@@ -16,8 +16,10 @@ from src.application.workflows.question_answering.answer_context.tables.answer_t
 from src.application.workflows.question_answering.answer_context.tables.projections import (
     AnswerTableProjectionRouter,
     GenericTableProjectionBuilder,
+    MaintenanceScheduleTableProjectionBuilder,
     PerformanceCurveTableProjectionBuilder,
     SparePartsTableProjectionBuilder,
+    SpecificationMatrixTableProjectionBuilder,
     TroubleshootingTableProjectionBuilder,
 )
 from src.domain.assets.table_rows import (
@@ -55,12 +57,16 @@ class AnswerTableProjector:
                     or TroubleshootingTableNormalizer()
                 )
             ),
+            maintenance_projection_builder=MaintenanceScheduleTableProjectionBuilder(
+                schema_inferer=schema_inferer,
+            ),
             performance_curve_projection_builder=PerformanceCurveTableProjectionBuilder(
                 performance_curve_normalizer=(
                     performance_curve_normalizer
                     or PerformanceCurveMatrixNormalizer()
                 )
             ),
+            specification_projection_builder=SpecificationMatrixTableProjectionBuilder(),
             generic_projection_builder=GenericTableProjectionBuilder(
                 schema_inferer=schema_inferer,
                 row_canonicalizer=self.row_canonicalizer,
