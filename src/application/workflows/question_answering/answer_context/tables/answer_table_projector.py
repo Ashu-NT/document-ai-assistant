@@ -16,6 +16,9 @@ from src.application.workflows.question_answering.answer_context.tables.spare_pa
 from src.application.workflows.question_answering.answer_context.tables.answer_table_schema_inferer import (
     AnswerTableSchemaInferer,
 )
+from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
+    PerformanceCurveMatrixNormalizer,
+)
 from src.domain.assets.table_rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
@@ -27,11 +30,15 @@ class AnswerTableProjector:
         schema_inferer: AnswerTableSchemaInferer | None = None,
         row_canonicalizer: TableRowCanonicalizer | None = None,
         spare_parts_table_normalizer: SparePartsTableNormalizer | None = None,
+        performance_curve_normalizer: PerformanceCurveMatrixNormalizer | None = None,
     ) -> None:
         self.schema_inferer = schema_inferer or AnswerTableSchemaInferer()
         self.row_canonicalizer = row_canonicalizer or TableRowCanonicalizer()
         self.spare_parts_table_normalizer = (
             spare_parts_table_normalizer or SparePartsTableNormalizer()
+        )
+        self.performance_curve_normalizer = (
+            performance_curve_normalizer or PerformanceCurveMatrixNormalizer()
         )
 
     def build(self, sources: Sequence[AnswerSource]) -> list[AnswerTable]:
@@ -58,6 +65,7 @@ class AnswerTableProjector:
             return None
 
         table_category = source.metadata.get("table_category")
+        table_shape = source.metadata.get("table_shape")
         normalized_spare_parts = self.spare_parts_table_normalizer.normalize(
             cleaned_rows,
             table_category=table_category,
@@ -67,16 +75,35 @@ class AnswerTableProjector:
             headers = normalized_spare_parts.headers
             body_rows = normalized_spare_parts.rows
             has_headers = True
+            table_kind = "record_table"
+            column_roles = self.schema_inferer.infer(
+                chunk_type=source.chunk_type,
+                headers=headers,
+                table_category=table_category,
+                rows=body_rows,
+            )[1]
         else:
-            has_headers = self.row_canonicalizer.has_explicit_header_row(cleaned_rows)
-            headers = cleaned_rows[0] if has_headers else []
-            body_rows = cleaned_rows[1:] if has_headers else cleaned_rows
-        table_kind, column_roles = self.schema_inferer.infer(
-            chunk_type=source.chunk_type,
-            headers=headers,
-            table_category=table_category,
-            rows=body_rows,
-        )
+            performance_curve = (
+                self.performance_curve_normalizer.normalize(cleaned_rows)
+                if table_shape in {None, "", "performance_curve_matrix"}
+                else None
+            )
+            if performance_curve is not None:
+                headers = performance_curve.headers
+                body_rows = performance_curve.rows
+                has_headers = True
+                table_kind = "performance_curve_matrix"
+                column_roles = performance_curve.column_roles
+            else:
+                has_headers = self.row_canonicalizer.has_explicit_header_row(cleaned_rows)
+                headers = cleaned_rows[0] if has_headers else []
+                body_rows = cleaned_rows[1:] if has_headers else cleaned_rows
+                table_kind, column_roles = self.schema_inferer.infer(
+                    chunk_type=source.chunk_type,
+                    headers=headers,
+                    table_category=table_category,
+                    rows=body_rows,
+                )
         rows = [
             AnswerTableRow(
                 source_row_index=source_row_index,

@@ -74,6 +74,7 @@ def test_export_document_table_assets_build_report_includes_table_markdown(
     )
     sample_document_graph.tables["table_001"].table_category = "spare_parts_table"
     sample_document_graph.tables["table_001"].table_category_confidence = 0.94
+    sample_document_graph.tables["table_001"].table_shape = "record_table"
     document_entry = DocumentCatalogEntry(
         document_id=sample_document_graph.document.document_id,
         title=sample_document_graph.document.title,
@@ -106,6 +107,7 @@ def test_export_document_table_assets_build_report_includes_table_markdown(
     assert "- stored section path: `Maintenance Schedule`" in report
     assert "- normalized matching path: `Maintenance Schedule`" in report
     assert "- family_position: `1/1`" in report
+    assert "- table_shape: `record_table`" in report
 
 
 def test_export_document_table_assets_builds_multi_member_family_summary() -> None:
@@ -131,6 +133,7 @@ def test_export_document_table_assets_builds_multi_member_family_summary() -> No
             normalized_header_signature="task|daily|weekly",
             table_category="maintenance_interval_table",
             table_category_confidence=0.91,
+            table_shape="maintenance_schedule_matrix",
         ),
         mod.ResolvedTableAsset(
             table_id="table_002",
@@ -152,6 +155,7 @@ def test_export_document_table_assets_builds_multi_member_family_summary() -> No
             normalized_header_signature="task|daily|weekly",
             table_category="maintenance_interval_table",
             table_category_confidence=0.95,
+            table_shape="maintenance_schedule_matrix",
         ),
     ]
 

@@ -188,3 +188,68 @@ def test_projector_normalizes_headerless_spare_parts_pairs_into_position_descrip
     assert tables[0].rows[1].cells == ["70.00", "Lantern bracket"]
     assert tables[0].rows[2].cells == ["14.04", "Plug (filling)"]
     assert tables[0].rows[3].cells == ["70.18", "Screw"]
+
+
+def test_projector_normalizes_performance_curve_tables_into_typed_answer_tables() -> None:
+    projector = AnswerTableProjector()
+    tables = projector.build(
+        [
+            AnswerSource(
+                source_number=1,
+                chunk_id="chunk_curve",
+                chunk_type="technical_specification",
+                table_rows=[
+                    [
+                        "Pump type",
+                        "Motor power",
+                        "Motor power",
+                        "Q m3/h",
+                        "0",
+                        "1",
+                        "1.5",
+                    ],
+                    [
+                        "Pump type",
+                        "kW",
+                        "HP",
+                        "Q l/min",
+                        "0",
+                        "16.6",
+                        "25",
+                    ],
+                    ["MXV 25-220C", "3", "4", "H m", "228", "213", "202"],
+                ],
+                metadata={"table_category": "technical_data_table"},
+            )
+        ]
+    )
+
+    assert len(tables) == 1
+    assert tables[0].table_kind == "performance_curve_matrix"
+    assert tables[0].headers == [
+        "Pump type",
+        "Motor power (kW)",
+        "Motor power (HP)",
+        "Curve metric",
+        "Q m3/h 0 / Q l/min 0",
+        "Q m3/h 1 / Q l/min 16.6",
+        "Q m3/h 1.5 / Q l/min 25",
+    ]
+    assert tables[0].column_roles == {
+        0: "series",
+        1: "descriptor",
+        2: "descriptor",
+        3: "curve_metric",
+        4: "curve_point",
+        5: "curve_point",
+        6: "curve_point",
+    }
+    assert tables[0].rows[0].cells == [
+        "MXV 25-220C",
+        "3",
+        "4",
+        "H m",
+        "228",
+        "213",
+        "202",
+    ]

@@ -52,6 +52,7 @@ class ResolvedTableAsset:
     normalized_header_signature: str | None
     table_category: str | None
     table_category_confidence: float | None
+    table_shape: str | None
 
 
 @dataclass(slots=True)
@@ -210,6 +211,7 @@ def resolve_table_assets(document_graph) -> list[ResolvedTableAsset]:
                 normalized_header_signature=table.normalized_header_signature,
                 table_category=table.table_category,
                 table_category_confidence=table.table_category_confidence,
+                table_shape=table.resolved_table_shape(),
             )
         )
 
@@ -379,6 +381,7 @@ def build_report(*, document_entry, document_graph, table_assets: list[ResolvedT
                 f"- normalized_header_signature: `{table.normalized_header_signature or '-'}`",
                 f"- table_category: `{table.table_category or '-'}`",
                 f"- table_category_confidence: `{format_confidence(table.table_category_confidence)}`",
+                f"- table_shape: `{table.table_shape or '-'}`",
                 f"- linked element ids: `{', '.join(table.element_ids) if table.element_ids else '-'}`",
                 f"- caption: `{table.caption or '-'}`",
                 "",

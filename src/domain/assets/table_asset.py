@@ -2,12 +2,16 @@ from dataclasses import dataclass, field
 
 from src.domain.assets.asset_metadata import AssetMetadata
 from src.domain.assets.table_cell_span import TableCellSpan
+from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
+    PerformanceCurveMatrixNormalizer,
+)
 from src.domain.assets.table_rows.structured_row_renderer import (
     StructuredRowRenderer,
 )
 from src.domain.common import AuditMetadata
 
 _STRUCTURED_ROW_RENDERER = StructuredRowRenderer()
+_PERFORMANCE_CURVE_NORMALIZER = PerformanceCurveMatrixNormalizer()
 
 
 @dataclass(slots=True)
@@ -31,6 +35,7 @@ class TableAsset:
     normalized_header_signature: str | None = None
     table_category: str | None = None
     table_category_confidence: float | None = None
+    table_shape: str | None = None
 
     metadata: AssetMetadata = field(default_factory=AssetMetadata)
     audit: AuditMetadata = field(default_factory=AuditMetadata)
@@ -53,3 +58,10 @@ class TableAsset:
 
     def to_structured_row_text(self) -> str | None:
         return _STRUCTURED_ROW_RENDERER.render(self.rows)
+
+    def resolved_table_shape(self) -> str | None:
+        if self.table_shape:
+            return self.table_shape
+        if _PERFORMANCE_CURVE_NORMALIZER.normalize(self.rows) is not None:
+            return "performance_curve_matrix"
+        return None

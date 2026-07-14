@@ -12,6 +12,7 @@ def build_docling_converter(*, enable_ocr_override: bool | None = None) -> Any:
     pdf_pipeline_options_class = components["PdfPipelineOptions"]
     ocr_auto_options_class = components["OcrAutoOptions"]
     rapid_ocr_options_class = components["RapidOcrOptions"]
+    table_former_mode_class = components.get("TableFormerMode")
 
     effective_enable_ocr = (
         enable_ocr_override
@@ -20,7 +21,11 @@ def build_docling_converter(*, enable_ocr_override: bool | None = None) -> Any:
     )
 
     pipeline_options = pdf_pipeline_options_class()
-    _configure_pipeline_options(pipeline_options, enable_ocr=effective_enable_ocr)
+    _configure_pipeline_options(
+        pipeline_options,
+        enable_ocr=effective_enable_ocr,
+        table_former_mode_class=table_former_mode_class,
+    )
 
     if effective_enable_ocr:
         pipeline_options.ocr_options = _build_ocr_options(
@@ -38,7 +43,12 @@ def build_docling_converter(*, enable_ocr_override: bool | None = None) -> Any:
     )
 
 
-def _configure_pipeline_options(pipeline_options: Any, *, enable_ocr: bool) -> None:
+def _configure_pipeline_options(
+    pipeline_options: Any,
+    *,
+    enable_ocr: bool,
+    table_former_mode_class: Any | None,
+) -> None:
     pipeline_options.accelerator_options.device = _normalize_accelerator_device()
     pipeline_options.accelerator_options.num_threads = docling_settings.num_threads
     pipeline_options.images_scale = docling_settings.images_scale
@@ -47,6 +57,24 @@ def _configure_pipeline_options(pipeline_options: Any, *, enable_ocr: bool) -> N
     pipeline_options.ocr_batch_size = docling_settings.ocr_batch_size
     pipeline_options.layout_batch_size = docling_settings.layout_batch_size
     pipeline_options.table_batch_size = docling_settings.table_batch_size
+    _apply_table_structure_options(
+        pipeline_options,
+        table_former_mode_class=table_former_mode_class,
+    )
+
+
+def _apply_table_structure_options(
+    pipeline_options: Any,
+    *,
+    table_former_mode_class: Any | None,
+) -> None:
+    table_structure_options = getattr(pipeline_options, "table_structure_options", None)
+    if table_structure_options is None:
+        return
+    table_structure_options.mode = _normalize_table_structure_mode(
+        table_former_mode_class
+    )
+    table_structure_options.do_cell_matching = docling_settings.table_cell_matching
 
 
 def _build_ocr_options(
@@ -110,6 +138,28 @@ def _normalize_accelerator_device() -> str:
     )
 
 
+def _normalize_table_structure_mode(table_former_mode_class: Any | None):
+    normalized_mode = docling_settings.table_structure_mode.strip().lower()
+    supported_modes = {"accurate", "fast"}
+    if normalized_mode not in supported_modes:
+        raise InfrastructureError(
+            "Unsupported Docling table structure mode configured.",
+            details={
+                "table_structure_mode": docling_settings.table_structure_mode,
+                "supported_modes": sorted(supported_modes),
+            },
+        )
+
+    if table_former_mode_class is None:
+        return normalized_mode
+
+    mode_mapping = {
+        "accurate": getattr(table_former_mode_class, "ACCURATE", "accurate"),
+        "fast": getattr(table_former_mode_class, "FAST", "fast"),
+    }
+    return mode_mapping[normalized_mode]
+
+
 def _resolve_pdf_backend(components: dict[str, Any]):
     normalized_backend = _normalize_pdf_backend_value()
     backend_mapping = {
@@ -163,6 +213,7 @@ def _import_docling_components() -> dict[str, Any]:
         OcrAutoOptions,
         PdfPipelineOptions,
         RapidOcrOptions,
+        TableFormerMode,
     )
     from docling.document_converter import DocumentConverter, PdfFormatOption
 
@@ -173,6 +224,7 @@ def _import_docling_components() -> dict[str, Any]:
         "PdfPipelineOptions": PdfPipelineOptions,
         "OcrAutoOptions": OcrAutoOptions,
         "RapidOcrOptions": RapidOcrOptions,
+        "TableFormerMode": TableFormerMode,
         "PyPdfiumDocumentBackend": PyPdfiumDocumentBackend,
         "DoclingParseDocumentBackend": DoclingParseDocumentBackend,
         "ThreadedDoclingParseDocumentBackend": ThreadedDoclingParseDocumentBackend,

@@ -166,6 +166,7 @@ class DocumentGraphReader:
                     table_category_confidence=parser_extra.get(
                         "table_category_confidence"
                     ),
+                    table_shape=parser_extra.get("table_shape"),
                     metadata=AssetMetadata(
                         source=element.source,
                         caption=(

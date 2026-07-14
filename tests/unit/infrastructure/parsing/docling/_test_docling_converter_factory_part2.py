@@ -21,6 +21,13 @@ class FakeAcceleratorOptions:
         self.num_threads = 4
         self.device = "auto"
 
+
+class FakeTableStructureOptions:
+    def __init__(self) -> None:
+        self.mode = "accurate"
+        self.do_cell_matching = True
+
+
 class FakePdfPipelineOptions:
     def __init__(self) -> None:
         self.images_scale = 1.0
@@ -31,6 +38,7 @@ class FakePdfPipelineOptions:
         self.table_batch_size = 4
         self.ocr_options = None
         self.accelerator_options = FakeAcceleratorOptions()
+        self.table_structure_options = FakeTableStructureOptions()
 
 class FakePdfFormatOption:
     def __init__(self, *, pipeline_options=None, **kwargs) -> None:
@@ -49,6 +57,12 @@ class FakeRapidOcrOptions:
     def __init__(self, **kwargs) -> None:
         self.kwargs = kwargs
 
+
+class FakeTableFormerMode:
+    ACCURATE = "accurate"
+    FAST = "fast"
+
+
 class FakeDoclingSettings:
     def __init__(
         self,
@@ -58,6 +72,8 @@ class FakeDoclingSettings:
         images_scale: float,
         num_threads: int,
         enable_table_structure: bool,
+        table_structure_mode: str,
+        table_cell_matching: bool,
         enable_ocr: bool,
         ocr_engine: str,
         rapidocr_backend: str,
@@ -72,6 +88,8 @@ class FakeDoclingSettings:
         self.images_scale = images_scale
         self.num_threads = num_threads
         self.enable_table_structure = enable_table_structure
+        self.table_structure_mode = table_structure_mode
+        self.table_cell_matching = table_cell_matching
         self.enable_ocr = enable_ocr
         self.ocr_engine = ocr_engine
         self.rapidocr_backend = rapidocr_backend
@@ -89,6 +107,7 @@ def fake_components() -> dict[str, object]:
         "PdfPipelineOptions": FakePdfPipelineOptions,
         "OcrAutoOptions": FakeOcrAutoOptions,
         "RapidOcrOptions": FakeRapidOcrOptions,
+        "TableFormerMode": FakeTableFormerMode,
         "PyPdfiumDocumentBackend": FakePyPdfiumDocumentBackend,
         "DoclingParseDocumentBackend": FakeDoclingParseDocumentBackend,
         "ThreadedDoclingParseDocumentBackend": FakeThreadedDoclingParseDocumentBackend,
@@ -111,6 +130,8 @@ def test_build_docling_converter_enable_ocr_override_forces_ocr_off(
             images_scale=1.0,
             num_threads=1,
             enable_table_structure=True,
+            table_structure_mode="accurate",
+            table_cell_matching=True,
             enable_ocr=True,
             ocr_engine="auto",
             rapidocr_backend="torch",
@@ -147,6 +168,8 @@ def test_build_docling_converter_uses_threaded_docling_parse_backend(
             images_scale=1.0,
             num_threads=1,
             enable_table_structure=True,
+            table_structure_mode="accurate",
+            table_cell_matching=True,
             enable_ocr=False,
             ocr_engine="auto",
             rapidocr_backend="torch",
@@ -180,6 +203,8 @@ def test_build_docling_converter_rejects_unsupported_pdf_backend(
             images_scale=1.0,
             num_threads=1,
             enable_table_structure=True,
+            table_structure_mode="accurate",
+            table_cell_matching=True,
             enable_ocr=False,
             ocr_engine="auto",
             rapidocr_backend="torch",

@@ -52,6 +52,7 @@ class ParsedAssetFactory:
                 ),
                 row_count=parsed_element.metadata.get("row_count"),
                 column_count=parsed_element.metadata.get("column_count"),
+                table_shape=self._clean_text(parsed_element.metadata.get("table_shape")),
                 metadata=AssetMetadata(
                     source=SourceLocationFactory.from_parsed(parsed_element),
                     caption=parsed_element.metadata.get("caption"),

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
+    PerformanceCurveMatrixNormalizer,
+)
 from src.domain.assets.table_rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
@@ -17,8 +20,12 @@ class StructuredRowRenderer:
     def __init__(
         self,
         canonicalizer: TableRowCanonicalizer | None = None,
+        performance_curve_normalizer: PerformanceCurveMatrixNormalizer | None = None,
     ) -> None:
         self.canonicalizer = canonicalizer or TableRowCanonicalizer()
+        self.performance_curve_normalizer = (
+            performance_curve_normalizer or PerformanceCurveMatrixNormalizer()
+        )
 
     def render(self, rows: list[list[str]]) -> str | None:
         cleaned_rows = self.canonicalizer.canonicalize(rows)
@@ -26,24 +33,17 @@ class StructuredRowRenderer:
             return None
         if self._looks_schedule_matrix(cleaned_rows):
             return self._render_schedule_matrix(cleaned_rows)
+        performance_curve = self.performance_curve_normalizer.normalize(cleaned_rows)
+        if performance_curve is not None:
+            return self._render_labeled_rows(
+                headers=performance_curve.headers,
+                rows=performance_curve.rows,
+            )
 
-        headers = dedupe_headers(cleaned_rows[0])
-        body_rows = cleaned_rows[1:]
-        lines: list[str] = []
-        for row_index, row in enumerate(body_rows, start=1):
-            rendered_cells = [
-                f"{headers[column_index]}={normalize_cell(cell)}"
-                for column_index, cell in enumerate(row)
-                if column_index < len(headers)
-                and headers[column_index]
-                and normalize_cell(cell)
-            ]
-            if rendered_cells:
-                lines.append(f"Row {row_index}: " + " | ".join(rendered_cells))
-
-        if not lines:
-            return None
-        return "\n".join(lines)
+        return self._render_labeled_rows(
+            headers=dedupe_headers(cleaned_rows[0]),
+            rows=cleaned_rows[1:],
+        )
 
     def _looks_schedule_matrix(self, rows: list[list[str]]) -> bool:
         headers = [normalize_cell(cell) for cell in rows[0]]
@@ -95,6 +95,27 @@ class StructuredRowRenderer:
             if rendered_cells:
                 lines.append(f"Row {row_index}: " + " | ".join(rendered_cells))
 
+        if not lines:
+            return None
+        return "\n".join(lines)
+
+    @staticmethod
+    def _render_labeled_rows(
+        *,
+        headers: list[str],
+        rows: list[list[str]],
+    ) -> str | None:
+        lines: list[str] = []
+        for row_index, row in enumerate(rows, start=1):
+            rendered_cells = [
+                f"{headers[column_index]}={normalize_cell(cell)}"
+                for column_index, cell in enumerate(row)
+                if column_index < len(headers)
+                and headers[column_index]
+                and normalize_cell(cell)
+            ]
+            if rendered_cells:
+                lines.append(f"Row {row_index}: " + " | ".join(rendered_cells))
         if not lines:
             return None
         return "\n".join(lines)

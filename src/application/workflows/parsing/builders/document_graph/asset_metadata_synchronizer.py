@@ -15,6 +15,7 @@ class AssetMetadataSynchronizer:
             parser_extra = element.parser_metadata.extra
             if element.table_id is not None and element.table_id in graph.tables:
                 table_asset = graph.tables[element.table_id]
+                table_shape = table_asset.resolved_table_shape()
                 parser_extra["markdown"] = table_asset.markdown
                 parser_extra["table_rows"] = [list(row) for row in table_asset.rows]
                 parser_extra["table_row_ids"] = list(table_asset.row_ids)
@@ -24,6 +25,8 @@ class AssetMetadataSynchronizer:
                 parser_extra["row_count"] = table_asset.row_count
                 parser_extra["column_count"] = table_asset.column_count
                 parser_extra["table_structure_version"] = "1"
+                if table_shape:
+                    parser_extra["table_shape"] = table_shape
                 if table_asset.metadata.caption:
                     parser_extra["caption"] = table_asset.metadata.caption
                 if table_asset.metadata.nearby_text:

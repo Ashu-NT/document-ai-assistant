@@ -29,6 +29,16 @@ class DoclingSettings(AppBaseSettings):
         alias="DOCLING_ENABLE_TABLE_STRUCTURE",
     )
 
+    table_structure_mode: str = Field(
+        default="accurate",
+        alias="DOCLING_TABLE_STRUCTURE_MODE",
+    )
+
+    table_cell_matching: bool = Field(
+        default=True,
+        alias="DOCLING_TABLE_CELL_MATCHING",
+    )
+
     enable_ocr: bool = Field(
         default=True,
         alias="DOCLING_ENABLE_OCR",
