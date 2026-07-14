@@ -53,6 +53,15 @@ class ParsedAssetFactory:
                 row_count=parsed_element.metadata.get("row_count"),
                 column_count=parsed_element.metadata.get("column_count"),
                 table_shape=self._clean_text(parsed_element.metadata.get("table_shape")),
+                table_structure_quality=self._coerce_float(
+                    parsed_element.metadata.get("table_structure_quality")
+                ),
+                header_paths=self._clean_header_paths(
+                    parsed_element.metadata.get("table_header_paths_json")
+                ),
+                axis_summary=self._clean_axis_summary(
+                    parsed_element.metadata.get("table_axis_summary")
+                ),
                 metadata=AssetMetadata(
                     source=SourceLocationFactory.from_parsed(parsed_element),
                     caption=parsed_element.metadata.get("caption"),
@@ -108,6 +117,31 @@ class ParsedAssetFactory:
             return float(value) if value is not None else None
         except (TypeError, ValueError):
             return None
+
+    @classmethod
+    def _clean_header_paths(cls, value: object) -> list[list[str]]:
+        if not isinstance(value, list):
+            return []
+        cleaned_paths: list[list[str]] = []
+        for path in value:
+            if not isinstance(path, list):
+                continue
+            cleaned_path = [cls._clean_text(part) or "" for part in path]
+            cleaned_path = [part for part in cleaned_path if part]
+            cleaned_paths.append(cleaned_path)
+        return cleaned_paths
+
+    @classmethod
+    def _clean_axis_summary(cls, value: object) -> dict[str, str]:
+        if not isinstance(value, dict):
+            return {}
+        cleaned_summary: dict[str, str] = {}
+        for key, raw_value in value.items():
+            cleaned_key = cls._clean_text(key)
+            cleaned_value = cls._clean_text(raw_value)
+            if cleaned_key and cleaned_value:
+                cleaned_summary[cleaned_key] = cleaned_value
+        return cleaned_summary
 
     @staticmethod
     def _clean_text(value: object) -> str | None:

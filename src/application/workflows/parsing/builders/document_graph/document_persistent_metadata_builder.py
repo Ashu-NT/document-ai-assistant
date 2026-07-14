@@ -9,7 +9,7 @@ from src.domain.document import DocumentGraph
 
 class DocumentPersistentMetadataBuilder:
     SECTION_PATH_SCHEMA_VERSION = "3"
-    TABLE_STRUCTURE_SCHEMA_VERSION = "2"
+    TABLE_STRUCTURE_SCHEMA_VERSION = "3"
     TABLE_SEMANTIC_SCHEMA_VERSION = "1"
     OCR_PROVENANCE_SCHEMA_VERSION = "1"
 
@@ -24,6 +24,11 @@ class DocumentPersistentMetadataBuilder:
             table.table_category
             for table in graph.tables.values()
             if table.table_category
+        )
+        table_shapes = Counter(
+            table.table_shape
+            for table in graph.tables.values()
+            if table.table_shape
         )
         logical_table_families = {
             table.logical_table_family_id
@@ -53,5 +58,6 @@ class DocumentPersistentMetadataBuilder:
             "table_understanding": {
                 "logical_table_family_count": len(logical_table_families),
                 "table_category_counts": dict(table_categories),
+                "table_shape_counts": dict(table_shapes),
             },
         }

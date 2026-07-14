@@ -27,6 +27,16 @@ class AssetMetadataSynchronizer:
                 parser_extra["table_structure_version"] = "1"
                 if table_shape:
                     parser_extra["table_shape"] = table_shape
+                if table_asset.table_structure_quality is not None:
+                    parser_extra["table_structure_quality"] = (
+                        table_asset.table_structure_quality
+                    )
+                if table_asset.header_paths:
+                    parser_extra["table_header_paths_json"] = [
+                        list(path) for path in table_asset.header_paths
+                    ]
+                if table_asset.axis_summary:
+                    parser_extra["table_axis_summary"] = dict(table_asset.axis_summary)
                 if table_asset.metadata.caption:
                     parser_extra["caption"] = table_asset.metadata.caption
                 if table_asset.metadata.nearby_text:

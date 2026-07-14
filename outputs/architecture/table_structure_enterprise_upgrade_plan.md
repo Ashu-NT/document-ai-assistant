@@ -21,6 +21,49 @@ This is the main reason the PURO pump-curve example looks acceptable in Markdown
 
 The goal of this upgrade is to make table understanding first-class across parsing, chunking, extraction, retrieval, and answer generation without introducing dump files or document-specific rules.
 
+## Current Implementation Status
+
+### Completed
+
+- Phase 1 settings exposure is implemented.
+  - `src/config/settings/docling_settings.py`
+  - `src/infrastructure/parsing/docling/docling_converter_factory.py`
+  - `DOCLING_TABLE_STRUCTURE_MODE`
+  - `DOCLING_TABLE_CELL_MATCHING`
+- The first end-to-end typed shape is implemented for `performance_curve_matrix`.
+  - `src/domain/assets/table_rows/performance_curve_matrix_detector.py`
+  - `src/domain/assets/table_rows/performance_curve_matrix_normalizer.py`
+  - `src/domain/assets/table_rows/structured_row_renderer.py`
+  - `src/application/workflows/question_answering/answer_context/tables/answer_table_projector.py`
+- Persisted table assets now carry an explicit `table_shape` when available.
+  - `src/domain/assets/table_asset.py`
+  - `src/application/workflows/parsing/builders/document_graph/parsed_asset_factory.py`
+  - `src/application/workflows/parsing/builders/document_graph/asset_metadata_synchronizer.py`
+  - `src/infrastructure/db/repositories/document/document_graph_reader.py`
+- Debug table export now shows `table_shape`.
+  - `scripts/export_document_table_assets.py`
+
+### Partially implemented
+
+- Phase 2 / Phase 3 foundation has started via a reusable structure-summary layer for the shapes we already detect safely.
+  - `src/application/workflows/parsing/tables/structure/`
+  - current summaries:
+    - `maintenance_schedule_matrix`
+    - `performance_curve_matrix`
+- Persisted table assets now also begin carrying:
+  - `table_structure_quality`
+  - `table_header_paths_json`
+  - `table_axis_summary`
+- Document-level metadata now exposes `table_shape_counts` and a bumped `table_structure_schema`.
+
+### Still remaining
+
+- generic span-aware normalized table model for arbitrary merged headers
+- continued-table header hierarchy reconstruction across pages
+- typed QA projection package split by projector class
+- extraction-side normalized table evidence payloads
+- optional selective fallback table-structure provider
+
 ---
 
 ## Current Diagnosis
@@ -213,6 +256,8 @@ Only after internal normalization is stable:
 
 ## Phase 1 — Expose and preserve richer Docling table structure
 
+Status: completed
+
 ### Goal
 
 Make sure the parser and persisted table asset carry the best raw structure the current stack can provide before adding new semantics.
@@ -239,6 +284,27 @@ Make sure the parser and persisted table asset carry the best raw structure the 
 ---
 
 ## Phase 2 — Build a span-aware normalized table model
+
+Status: partially implemented
+
+Implemented so far:
+
+- reusable structure-summary package scaffold under:
+  - `src/application/workflows/parsing/tables/structure/`
+- implemented normalized shape summaries for:
+  - `maintenance_schedule_matrix`
+  - `performance_curve_matrix`
+- persisted:
+  - `table_structure_quality`
+  - `table_header_paths_json`
+  - `table_axis_summary`
+
+Not implemented yet:
+
+- generic span grid materialization for arbitrary merged and multi-band headers
+- general header-band detection
+- generic header-path builder independent of current known shapes
+- generic structure quality evaluator for all table families
 
 ### Goal
 
@@ -282,6 +348,20 @@ This is the phase that fixes PURO-like failures generically.
 
 ## Phase 3 — Separate table category from table shape
 
+Status: partially implemented
+
+Implemented so far:
+
+- `table_shape` is now persisted separately from `table_category`
+- current shape persistence covers the shapes detected by the structure-summary layer
+- document metadata now includes `table_shape_counts`
+
+Still remaining:
+
+- shape inference beyond the currently supported matrices
+- using normalized header paths in logical family matching
+- broader shape-specific routing downstream
+
 ### Goal
 
 Keep current semantic table categories, but enrich them with structural shape so downstream logic can behave correctly.
@@ -312,6 +392,8 @@ Keep current semantic table categories, but enrich them with structural shape so
 
 ## Phase 4 — Make chunking and hydration carry normalized table meaning
 
+Status: not started
+
 ### Goal
 
 Ensure the full table family that reaches extraction and QA includes normalized structure, not just Markdown plus raw rows.
@@ -335,6 +417,18 @@ Ensure the full table family that reaches extraction and QA includes normalized 
 ---
 
 ## Phase 5 — Replace flat QA projection with typed table projections
+
+Status: partially implemented
+
+Implemented so far:
+
+- `performance_curve_matrix` reaches QA as a typed table kind instead of flattening to weak pseudo facts
+
+Still remaining:
+
+- dedicated projector subpackage split by table kind
+- maintenance, specification, and troubleshooting typed projector separation
+- prompt-facing serialization based on typed projections rather than mixed row heuristics
 
 ### Goal
 
@@ -377,6 +471,8 @@ Then update:
 
 ## Phase 6 — Improve extraction to use normalized table evidence
 
+Status: not started
+
 ### Goal
 
 Extraction should benefit from the same structure improvements as QA.
@@ -398,6 +494,8 @@ Extraction should benefit from the same structure improvements as QA.
 ---
 
 ## Phase 7 — Add selective low-quality table fallback
+
+Status: not started
 
 ### Goal
 
@@ -525,3 +623,9 @@ After that, the next best slice is:
 - `maintenance_schedule_matrix`
 - then `specification_matrix`
 - then selective fallback
+
+### Next active slice
+
+1. strengthen `maintenance_schedule_matrix` with richer header-path and axis metadata in chunk hydration and answer/debug output
+2. add `specification_matrix` / technical-grid shape support
+3. feed the richer normalized payload into QA and extraction before introducing fallback engines

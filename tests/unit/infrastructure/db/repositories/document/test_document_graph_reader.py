@@ -104,6 +104,14 @@ def test_rehydrate_assets_restores_logical_table_family_metadata() -> None:
                 "family_total": 2,
                 "continuation_role": "start",
                 "normalized_header_signature": "task|interval",
+                "table_shape": "maintenance_schedule_matrix",
+                "table_structure_quality": 0.93,
+                "table_header_paths_json": [["Task"], ["Interval", "Daily"]],
+                "table_axis_summary": {
+                    "row_axis": "task",
+                    "column_axis": "interval",
+                    "value_axis": "marker",
+                },
             },
         )
     )
@@ -116,6 +124,10 @@ def test_rehydrate_assets_restores_logical_table_family_metadata() -> None:
     assert table.family_total == 2
     assert table.continuation_role == "start"
     assert table.normalized_header_signature == "task|interval"
+    assert table.table_shape == "maintenance_schedule_matrix"
+    assert table.table_structure_quality == 0.93
+    assert table.header_paths == [["Task"], ["Interval", "Daily"]]
+    assert table.axis_summary["row_axis"] == "task"
 
 
 def test_rehydrate_assets_repairs_table_text_mojibake() -> None:

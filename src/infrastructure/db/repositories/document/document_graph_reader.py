@@ -167,6 +167,15 @@ class DocumentGraphReader:
                         "table_category_confidence"
                     ),
                     table_shape=parser_extra.get("table_shape"),
+                    table_structure_quality=DocumentGraphReader._coerce_float(
+                        parser_extra.get("table_structure_quality")
+                    ),
+                    header_paths=DocumentGraphReader._clean_header_paths(
+                        parser_extra.get("table_header_paths_json")
+                    ),
+                    axis_summary=DocumentGraphReader._clean_axis_summary(
+                        parser_extra.get("table_axis_summary")
+                    ),
                     metadata=AssetMetadata(
                         source=element.source,
                         caption=(
@@ -271,3 +280,28 @@ class DocumentGraphReader:
             return float(value) if value is not None else None
         except (TypeError, ValueError):
             return None
+
+    @classmethod
+    def _clean_header_paths(cls, value: object) -> list[list[str]]:
+        if not isinstance(value, list):
+            return []
+        cleaned_paths: list[list[str]] = []
+        for path in value:
+            if not isinstance(path, list):
+                continue
+            cleaned_path = [cls._clean_text(part) or "" for part in path]
+            cleaned_path = [part for part in cleaned_path if part]
+            cleaned_paths.append(cleaned_path)
+        return cleaned_paths
+
+    @classmethod
+    def _clean_axis_summary(cls, value: object) -> dict[str, str]:
+        if not isinstance(value, dict):
+            return {}
+        cleaned_summary: dict[str, str] = {}
+        for key, raw_value in value.items():
+            cleaned_key = cls._clean_text(key)
+            cleaned_value = cls._clean_text(raw_value)
+            if cleaned_key and cleaned_value:
+                cleaned_summary[cleaned_key] = cleaned_value
+        return cleaned_summary

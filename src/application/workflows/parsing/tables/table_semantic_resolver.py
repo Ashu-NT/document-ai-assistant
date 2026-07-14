@@ -2,6 +2,9 @@ from src.application.workflows.parsing.tables.semantics import (
     TableCategory,
     TableSemanticClassifier,
 )
+from src.application.workflows.parsing.tables.structure import (
+    TableStructureSummaryBuilder,
+)
 from src.domain.document import DocumentGraph
 from src.domain.elements import CanonicalElement
 
@@ -11,8 +14,12 @@ class TableSemanticResolver:
         self,
         *,
         classifier: TableSemanticClassifier | None = None,
+        structure_summary_builder: TableStructureSummaryBuilder | None = None,
     ) -> None:
         self.classifier = classifier or TableSemanticClassifier()
+        self.structure_summary_builder = (
+            structure_summary_builder or TableStructureSummaryBuilder()
+        )
 
     def resolve(self, graph: DocumentGraph) -> None:
         for element in graph.elements.values():
@@ -36,12 +43,33 @@ class TableSemanticResolver:
             )
             table.table_category = category.value
             table.table_category_confidence = confidence
+            structure_summary = self.structure_summary_builder.build(table.rows)
+            if structure_summary is not None:
+                table.table_shape = structure_summary.table_shape.value
+                table.table_structure_quality = structure_summary.quality_score
+                table.header_paths = [
+                    list(path) for path in structure_summary.header_paths
+                ]
+                table.axis_summary = dict(structure_summary.axis_summary)
 
             if element.parser_metadata is not None:
-                element.parser_metadata.extra = {
+                updated_extra = {
                     **parser_extra,
                     "normalized_table_section_path": section_path,
                     "table_category": category.value,
                     "table_category_confidence": confidence,
-                    "table_semantic_version": "2",
+                    "table_semantic_version": "3",
                 }
+                if table.table_shape:
+                    updated_extra["table_shape"] = table.table_shape
+                if table.table_structure_quality is not None:
+                    updated_extra["table_structure_quality"] = (
+                        table.table_structure_quality
+                    )
+                if table.header_paths:
+                    updated_extra["table_header_paths_json"] = [
+                        list(path) for path in table.header_paths
+                    ]
+                if table.axis_summary:
+                    updated_extra["table_axis_summary"] = dict(table.axis_summary)
+                element.parser_metadata.extra = updated_extra

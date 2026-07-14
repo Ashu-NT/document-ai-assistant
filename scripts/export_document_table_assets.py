@@ -53,6 +53,9 @@ class ResolvedTableAsset:
     table_category: str | None
     table_category_confidence: float | None
     table_shape: str | None
+    table_structure_quality: float | None
+    header_paths: list[list[str]]
+    axis_summary: dict[str, str]
 
 
 @dataclass(slots=True)
@@ -212,6 +215,9 @@ def resolve_table_assets(document_graph) -> list[ResolvedTableAsset]:
                 table_category=table.table_category,
                 table_category_confidence=table.table_category_confidence,
                 table_shape=table.resolved_table_shape(),
+                table_structure_quality=table.table_structure_quality,
+                header_paths=[list(path) for path in table.header_paths],
+                axis_summary=dict(table.axis_summary),
             )
         )
 
@@ -382,11 +388,25 @@ def build_report(*, document_entry, document_graph, table_assets: list[ResolvedT
                 f"- table_category: `{table.table_category or '-'}`",
                 f"- table_category_confidence: `{format_confidence(table.table_category_confidence)}`",
                 f"- table_shape: `{table.table_shape or '-'}`",
+                f"- table_structure_quality: `{format_confidence(table.table_structure_quality)}`",
+                f"- axis_summary: `{', '.join(f'{key}={value}' for key, value in table.axis_summary.items()) if table.axis_summary else '-'}`",
                 f"- linked element ids: `{', '.join(table.element_ids) if table.element_ids else '-'}`",
                 f"- caption: `{table.caption or '-'}`",
                 "",
             ]
         )
+        if table.header_paths:
+            lines.extend(
+                [
+                    "#### Header Paths",
+                    "",
+                    *[
+                        f"- column {index + 1}: `{' > '.join(path)}`"
+                        for index, path in enumerate(table.header_paths)
+                    ],
+                    "",
+                ]
+            )
         if table.nearby_text:
             lines.extend(
                 [

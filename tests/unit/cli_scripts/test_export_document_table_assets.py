@@ -75,6 +75,15 @@ def test_export_document_table_assets_build_report_includes_table_markdown(
     sample_document_graph.tables["table_001"].table_category = "spare_parts_table"
     sample_document_graph.tables["table_001"].table_category_confidence = 0.94
     sample_document_graph.tables["table_001"].table_shape = "record_table"
+    sample_document_graph.tables["table_001"].table_structure_quality = 0.91
+    sample_document_graph.tables["table_001"].header_paths = [
+        ["Part Number"],
+        ["Description"],
+    ]
+    sample_document_graph.tables["table_001"].axis_summary = {
+        "row_axis": "record",
+        "column_axis": "field",
+    }
     document_entry = DocumentCatalogEntry(
         document_id=sample_document_graph.document.document_id,
         title=sample_document_graph.document.title,
@@ -108,6 +117,9 @@ def test_export_document_table_assets_build_report_includes_table_markdown(
     assert "- normalized matching path: `Maintenance Schedule`" in report
     assert "- family_position: `1/1`" in report
     assert "- table_shape: `record_table`" in report
+    assert "- table_structure_quality: `0.91`" in report
+    assert "- axis_summary: `row_axis=record, column_axis=field`" in report
+    assert "- column 1: `Part Number`" in report
 
 
 def test_export_document_table_assets_builds_multi_member_family_summary() -> None:
@@ -134,6 +146,9 @@ def test_export_document_table_assets_builds_multi_member_family_summary() -> No
             table_category="maintenance_interval_table",
             table_category_confidence=0.91,
             table_shape="maintenance_schedule_matrix",
+            table_structure_quality=0.9,
+            header_paths=[["Task"], ["Interval", "Daily"]],
+            axis_summary={"row_axis": "task"},
         ),
         mod.ResolvedTableAsset(
             table_id="table_002",
@@ -156,6 +171,9 @@ def test_export_document_table_assets_builds_multi_member_family_summary() -> No
             table_category="maintenance_interval_table",
             table_category_confidence=0.95,
             table_shape="maintenance_schedule_matrix",
+            table_structure_quality=0.92,
+            header_paths=[["Task"], ["Interval", "Weekly"]],
+            axis_summary={"row_axis": "task"},
         ),
     ]
 

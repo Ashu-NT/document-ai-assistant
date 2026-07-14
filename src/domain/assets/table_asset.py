@@ -36,6 +36,9 @@ class TableAsset:
     table_category: str | None = None
     table_category_confidence: float | None = None
     table_shape: str | None = None
+    table_structure_quality: float | None = None
+    header_paths: list[list[str]] = field(default_factory=list)
+    axis_summary: dict[str, str] = field(default_factory=dict)
 
     metadata: AssetMetadata = field(default_factory=AssetMetadata)
     audit: AuditMetadata = field(default_factory=AuditMetadata)
