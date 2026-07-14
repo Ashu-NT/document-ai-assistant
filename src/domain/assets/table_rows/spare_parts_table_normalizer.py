@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 
+from src.domain.assets.table_rows.normalized_table_rows import NormalizedTableRows
 from src.domain.assets.table_rows.table_row_patterns import (
     looks_explicit_header_cell,
     normalize_cell,
@@ -52,12 +52,6 @@ _POSITION_TOKEN_PATTERN = re.compile(r"^[A-Za-z]?\d{1,6}(?:\.\d{2})?$")
 _QUANTITY_PATTERN = re.compile(r"^\d{1,4}$")
 _UNIT_PATTERN = re.compile(r"^[A-Za-z]{2,12}$")
 _PART_CODE_PATTERN = re.compile(r"^-?[A-Za-z0-9]+(?:[./-][A-Za-z0-9]+)*$")
-
-
-@dataclass(frozen=True, slots=True)
-class NormalizedTableRows:
-    headers: list[str]
-    rows: list[list[str]]
 
 
 class SparePartsTableNormalizer:

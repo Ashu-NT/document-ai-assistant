@@ -15,6 +15,9 @@ from src.application.workflows.question_answering.answer_context.tables.projecti
 from src.application.workflows.question_answering.answer_context.tables.projections.spare_parts_table_projection_builder import (
     SparePartsTableProjectionBuilder,
 )
+from src.application.workflows.question_answering.answer_context.tables.projections.troubleshooting_table_projection_builder import (
+    TroubleshootingTableProjectionBuilder,
+)
 
 
 class AnswerTableProjectionRouter:
@@ -22,6 +25,9 @@ class AnswerTableProjectionRouter:
         self,
         *,
         spare_parts_projection_builder: SparePartsTableProjectionBuilder | None = None,
+        troubleshooting_projection_builder: (
+            TroubleshootingTableProjectionBuilder | None
+        ) = None,
         performance_curve_projection_builder: (
             PerformanceCurveTableProjectionBuilder | None
         ) = None,
@@ -29,6 +35,10 @@ class AnswerTableProjectionRouter:
     ) -> None:
         self.spare_parts_projection_builder = (
             spare_parts_projection_builder or SparePartsTableProjectionBuilder()
+        )
+        self.troubleshooting_projection_builder = (
+            troubleshooting_projection_builder
+            or TroubleshootingTableProjectionBuilder()
         )
         self.performance_curve_projection_builder = (
             performance_curve_projection_builder
@@ -55,6 +65,14 @@ class AnswerTableProjectionRouter:
         )
         if spare_parts_projection is not None:
             return spare_parts_projection
+
+        troubleshooting_projection = self.troubleshooting_projection_builder.project(
+            source=source,
+            cleaned_rows=cleaned_rows,
+            table_category=table_category,
+        )
+        if troubleshooting_projection is not None:
+            return troubleshooting_projection
 
         performance_curve_projection = (
             self.performance_curve_projection_builder.project(

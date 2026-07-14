@@ -85,3 +85,51 @@ def test_renderer_builds_structured_performance_curve_payload() -> None:
     assert "Pump type=MXV 25-220C" in rendered
     assert "Curve metric=H m" in rendered
     assert "Curve points=" in rendered
+
+
+def test_renderer_builds_structured_spare_parts_payload() -> None:
+    renderer = ExtractionTablePayloadRenderer()
+    table = TableAsset(
+        table_id="table_spare",
+        document_id="doc_001",
+        markdown="spares",
+        rows=[
+            [
+                "Part Pos. Qty Unit",
+                "Designation Size / Dimension, Material / Surface",
+                "Part No",
+            ],
+            ["0010 1 Pce", "housing", ""],
+            ["P31 1", "Disassembly screw for carrier", "-18/02 2"],
+        ],
+        table_category="spare_parts_table",
+    )
+
+    rendered = renderer.render(table)
+
+    assert rendered is not None
+    assert "Structured spare-parts records:" in rendered
+    assert "Position=0010" in rendered
+    assert "Part No.=-18/02" in rendered
+
+
+def test_renderer_builds_structured_troubleshooting_payload() -> None:
+    renderer = ExtractionTablePayloadRenderer()
+    table = TableAsset(
+        table_id="table_troubleshooting",
+        document_id="doc_001",
+        markdown="troubleshooting",
+        rows=[
+            ["Symptom", "Probable cause", "Remedy"],
+            ["Pump does not start", "No power supply", "Check fuse"],
+        ],
+        table_category="troubleshooting_table",
+    )
+
+    rendered = renderer.render(table)
+
+    assert rendered is not None
+    assert "Structured troubleshooting records:" in rendered
+    assert "Symptom=Pump does not start" in rendered
+    assert "Cause=No power supply" in rendered
+    assert "Remedy=Check fuse" in rendered

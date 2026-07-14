@@ -18,15 +18,13 @@ from src.application.workflows.question_answering.answer_context.tables.projecti
     GenericTableProjectionBuilder,
     PerformanceCurveTableProjectionBuilder,
     SparePartsTableProjectionBuilder,
+    TroubleshootingTableProjectionBuilder,
 )
-from src.application.workflows.question_answering.answer_context.tables.spare_parts_table_normalizer import (
-    SparePartsTableNormalizer,
-)
-from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
+from src.domain.assets.table_rows import (
     PerformanceCurveMatrixNormalizer,
-)
-from src.domain.assets.table_rows.table_row_canonicalizer import (
+    SparePartsTableNormalizer,
     TableRowCanonicalizer,
+    TroubleshootingTableNormalizer,
 )
 
 
@@ -36,6 +34,9 @@ class AnswerTableProjector:
         schema_inferer: AnswerTableSchemaInferer | None = None,
         row_canonicalizer: TableRowCanonicalizer | None = None,
         spare_parts_table_normalizer: SparePartsTableNormalizer | None = None,
+        troubleshooting_table_normalizer: (
+            TroubleshootingTableNormalizer | None
+        ) = None,
         performance_curve_normalizer: PerformanceCurveMatrixNormalizer | None = None,
         projection_router: AnswerTableProjectionRouter | None = None,
     ) -> None:
@@ -47,6 +48,12 @@ class AnswerTableProjector:
                     spare_parts_table_normalizer or SparePartsTableNormalizer()
                 ),
                 schema_inferer=schema_inferer,
+            ),
+            troubleshooting_projection_builder=TroubleshootingTableProjectionBuilder(
+                troubleshooting_table_normalizer=(
+                    troubleshooting_table_normalizer
+                    or TroubleshootingTableNormalizer()
+                )
             ),
             performance_curve_projection_builder=PerformanceCurveTableProjectionBuilder(
                 performance_curve_normalizer=(

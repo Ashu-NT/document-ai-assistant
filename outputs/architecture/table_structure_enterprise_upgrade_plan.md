@@ -333,6 +333,10 @@ Implemented so far:
 - implemented normalized shape summaries for:
   - `maintenance_schedule_matrix`
   - `performance_curve_matrix`
+- added reusable header-path extraction via:
+  - `src/application/workflows/parsing/tables/structure/table_header_path_builder.py`
+- added generic record-table fallback summarization via:
+  - `src/application/workflows/parsing/tables/structure/generic_record_structure_summarizer.py`
 - persisted:
   - `table_structure_quality`
   - `table_header_paths_json`
@@ -342,10 +346,10 @@ Implemented so far:
 
 Not implemented yet:
 
-- generic span grid materialization for arbitrary merged and multi-band headers
+- generic span grid materialization for arbitrary merged and multi-band headers beyond current header-path extraction
 - general header-band detection
-- generic header-path builder independent of current known shapes
-- generic structure quality evaluator for all table families
+- deeper axis-role inference for arbitrary left-band or stacked-header layouts
+- richer structure quality evaluation for low-confidence arbitrary tables
 
 ### Goal
 
@@ -463,11 +467,13 @@ Status: partially implemented
 Implemented so far:
 
 - `performance_curve_matrix` reaches QA as a typed table kind instead of flattening to weak pseudo facts
+- troubleshooting tables now reach QA as typed `symptom/cause/remedy/notes` projections
+- spare-parts tables use a dedicated reusable normalizer shared with extraction
 
 Still remaining:
 
 - dedicated projector subpackage split by table kind
-- maintenance, specification, and troubleshooting typed projector separation
+- maintenance and specification typed projector separation
 - prompt-facing serialization based on typed projections rather than mixed row heuristics
 
 ### Goal
@@ -531,6 +537,8 @@ Implemented so far:
 - extraction-side payload routing is split into small builders under:
   - `src/application/workflows/extraction/batching/table_payload/`
 - payload coverage currently includes:
+  - `spare_parts_table`
+  - `troubleshooting_table`
   - `maintenance_schedule_matrix`
   - `specification_matrix`
   - `performance_curve_matrix`
@@ -539,7 +547,6 @@ Implemented so far:
 Still remaining:
 
 - richer use of reconstructed header hierarchies once continued-table stitching lands
-- broader typed extraction payloads for spare-parts and troubleshooting tables
 - optional prompt-side chunk block formatting if we later want explicit table payload sections outside hydrated chunk content
 
 ### Tests

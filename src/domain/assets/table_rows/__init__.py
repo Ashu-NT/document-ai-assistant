@@ -1,5 +1,11 @@
+from src.domain.assets.table_rows.normalized_table_rows import (
+    NormalizedTableRows,
+)
 from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
+)
+from src.domain.assets.table_rows.spare_parts_table_normalizer import (
+    SparePartsTableNormalizer,
 )
 from src.domain.assets.table_rows.structured_row_renderer import (
     StructuredRowRenderer,
@@ -7,9 +13,15 @@ from src.domain.assets.table_rows.structured_row_renderer import (
 from src.domain.assets.table_rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
+from src.domain.assets.table_rows.troubleshooting_table_normalizer import (
+    TroubleshootingTableNormalizer,
+)
 
 __all__ = [
+    "NormalizedTableRows",
     "PerformanceCurveMatrixNormalizer",
+    "SparePartsTableNormalizer",
     "StructuredRowRenderer",
     "TableRowCanonicalizer",
+    "TroubleshootingTableNormalizer",
 ]

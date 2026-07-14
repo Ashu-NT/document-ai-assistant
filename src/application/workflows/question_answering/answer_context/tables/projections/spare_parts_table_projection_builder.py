@@ -9,7 +9,7 @@ from src.application.workflows.question_answering.answer_context.tables.answer_t
 from src.application.workflows.question_answering.answer_context.tables.projections.answer_table_projection import (
     AnswerTableProjection,
 )
-from src.application.workflows.question_answering.answer_context.tables.spare_parts_table_normalizer import (
+from src.domain.assets.table_rows import (
     SparePartsTableNormalizer,
 )
 

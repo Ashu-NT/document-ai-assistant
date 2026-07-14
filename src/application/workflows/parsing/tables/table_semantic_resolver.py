@@ -43,7 +43,7 @@ class TableSemanticResolver:
             )
             table.table_category = category.value
             table.table_category_confidence = confidence
-            structure_summary = self.structure_summary_builder.build(table.rows)
+            structure_summary = self.structure_summary_builder.build(table)
             if structure_summary is not None:
                 table.table_shape = structure_summary.table_shape.value
                 table.table_structure_quality = structure_summary.quality_score

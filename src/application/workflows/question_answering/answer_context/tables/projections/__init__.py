@@ -13,6 +13,9 @@ from src.application.workflows.question_answering.answer_context.tables.projecti
 from src.application.workflows.question_answering.answer_context.tables.projections.spare_parts_table_projection_builder import (
     SparePartsTableProjectionBuilder,
 )
+from src.application.workflows.question_answering.answer_context.tables.projections.troubleshooting_table_projection_builder import (
+    TroubleshootingTableProjectionBuilder,
+)
 
 __all__ = [
     "AnswerTableProjection",
@@ -20,4 +23,5 @@ __all__ = [
     "GenericTableProjectionBuilder",
     "PerformanceCurveTableProjectionBuilder",
     "SparePartsTableProjectionBuilder",
+    "TroubleshootingTableProjectionBuilder",
 ]
