@@ -1,27 +1,7 @@
 {
   "truth_set_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\retrieval_truth_set.md",
   "input_directory": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc",
-  "generated_at": "2026-07-14T09:49:09.664018+00:00",
-  "document_count": 1,
-  "documents": [
-    {
-      "document_alias": "manual_fwc12",
-      "document_id": "doc_352c75dbf41d4f77b1970e7f39d6b716",
-      "file_name": "19P006-31-FWC12-5-1-0_Manual.pdf",
-      "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\19P006-31-FWC12-5-1-0_Manual.pdf",
-      "file_hash": "708f50744466ccc60d874467b63003421e6d13eb5e86d38e69635b2b9a9dec35",
-      "content_hash": "66e7e9f053292177e0d3860c3a391bda7948e92557e2afaccdbe589a1afa2d91",
-      "document_type": "manual",
-      "page_count": 98,
-      "section_count": 201,
-      "element_count": 2035,
-      "chunk_count": 320,
-      "question_count": 0,
-      "classification_label": "manual",
-      "classification_confidence": 0.98,
-      "embedding_model": "BAAI/bge-small-en-v1.5",
-      "vector_collection": "document_chunks",
-      "seed_status": "reseeded_in_place"
-    }
-  ]
+  "generated_at": "2026-07-14T17:56:24.984474+00:00",
+  "document_count": 0,
+  "documents": []
 }
