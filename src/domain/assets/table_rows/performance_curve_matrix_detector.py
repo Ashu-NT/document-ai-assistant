@@ -71,9 +71,10 @@ class PerformanceCurveMatrixDetector:
             if not sample_value:
                 break
 
-            header_numeric = _looks_numericish(top_value) or _looks_numericish(bottom_value)
+            if not self._looks_like_curve_axis_point(top_value, bottom_value):
+                break
             inspected_cells += 1
-            if not header_numeric or not _looks_numericish(sample_value):
+            if not _looks_numericish(sample_value):
                 break
 
             consecutive_numeric_columns += 1
@@ -84,6 +85,26 @@ class PerformanceCurveMatrixDetector:
         if inspected_cells == 0:
             return False
         return numeric_cells / inspected_cells >= 0.6
+
+    @staticmethod
+    def _looks_like_curve_axis_point(top_value: str, bottom_value: str) -> bool:
+        """A curve data column's two header cells are the same axis point
+        expressed in two units (e.g. "0"/"0", "1"/"16.6") - both numeric,
+        or one numeric with the other left blank by a merged header cell.
+
+        A non-blank, non-numeric header cell (e.g. a size/variant code
+        like "A"/"B"/"C") means this is a labeled variant column, not a
+        curve axis point, even if the other header row happens to be
+        numeric - that shape belongs to a specification/dimension table,
+        not a performance curve matrix.
+        """
+        top_is_numeric = _looks_numericish(top_value)
+        bottom_is_numeric = _looks_numericish(bottom_value)
+        if not top_is_numeric and top_value:
+            return False
+        if not bottom_is_numeric and bottom_value:
+            return False
+        return top_is_numeric or bottom_is_numeric
 
     def _has_descriptor_signal(
         self,
