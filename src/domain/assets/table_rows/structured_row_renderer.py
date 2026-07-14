@@ -3,6 +3,9 @@ from __future__ import annotations
 from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
 )
+from src.domain.assets.table_rows.spare_parts_table_normalizer import (
+    SparePartsTableNormalizer,
+)
 from src.domain.assets.table_rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
@@ -14,6 +17,9 @@ from src.domain.assets.table_rows.table_row_patterns import (
     looks_interval_header,
     normalize_cell,
 )
+from src.domain.assets.table_rows.troubleshooting_table_normalizer import (
+    TroubleshootingTableNormalizer,
+)
 
 
 class StructuredRowRenderer:
@@ -21,13 +27,40 @@ class StructuredRowRenderer:
         self,
         canonicalizer: TableRowCanonicalizer | None = None,
         performance_curve_normalizer: PerformanceCurveMatrixNormalizer | None = None,
+        spare_parts_table_normalizer: SparePartsTableNormalizer | None = None,
+        troubleshooting_table_normalizer: TroubleshootingTableNormalizer | None = None,
     ) -> None:
         self.canonicalizer = canonicalizer or TableRowCanonicalizer()
         self.performance_curve_normalizer = (
             performance_curve_normalizer or PerformanceCurveMatrixNormalizer()
         )
+        self.spare_parts_table_normalizer = (
+            spare_parts_table_normalizer or SparePartsTableNormalizer()
+        )
+        self.troubleshooting_table_normalizer = (
+            troubleshooting_table_normalizer or TroubleshootingTableNormalizer()
+        )
 
-    def render(self, rows: list[list[str]]) -> str | None:
+    def render(
+        self,
+        rows: list[list[str]],
+        *,
+        table_category: str | None = None,
+        table_shape: str | None = None,
+        chunk_type: str | None = None,
+    ) -> str | None:
+        specialized_rows = self._normalize_specialized_rows(
+            rows,
+            table_category=table_category,
+            table_shape=table_shape,
+            chunk_type=chunk_type,
+        )
+        if specialized_rows is not None:
+            return self._render_labeled_rows(
+                headers=specialized_rows.headers,
+                rows=specialized_rows.rows,
+            )
+
         cleaned_rows = self.canonicalizer.canonicalize(rows)
         if len(cleaned_rows) < 2:
             return None
@@ -44,6 +77,29 @@ class StructuredRowRenderer:
             headers=dedupe_headers(cleaned_rows[0]),
             rows=cleaned_rows[1:],
         )
+
+    def _normalize_specialized_rows(
+        self,
+        rows: list[list[str]],
+        *,
+        table_category: str | None,
+        table_shape: str | None,
+        chunk_type: str | None,
+    ):
+        del table_shape
+
+        for normalizer in (
+            self.spare_parts_table_normalizer,
+            self.troubleshooting_table_normalizer,
+        ):
+            normalized_rows = normalizer.normalize(
+                rows,
+                table_category=table_category,
+                chunk_type=chunk_type,
+            )
+            if normalized_rows is not None:
+                return normalized_rows
+        return None
 
     def _looks_schedule_matrix(self, rows: list[list[str]]) -> bool:
         headers = [normalize_cell(cell) for cell in rows[0]]

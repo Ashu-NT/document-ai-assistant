@@ -118,3 +118,58 @@ def test_table_asset_to_structured_row_text_normalizes_performance_curve_tables(
         "Q m3/h 1 / Q l/min 16.6=213 | "
         "Q m3/h 1.5 / Q l/min 25=202"
     )
+
+
+def test_table_asset_to_structured_row_text_normalizes_spare_parts_tables() -> None:
+    table = TableAsset(
+        table_id="table_007",
+        document_id="doc_001",
+        markdown="unused",
+        table_category="spare_parts_table",
+        rows=[
+            [
+                "SPARE PARTS LIST",
+                "SPARE PARTS LIST",
+                "SPARE PARTS LIST",
+                "SPARE PARTS LIST",
+            ],
+            [
+                "Part Pos. Qty Unit",
+                "Designation Size / Dimension, Material / Surface",
+                "Part No",
+                "",
+            ],
+            ["0010 1 Pce", "housing", "", ""],
+            ["", "0115 1 Pce drive shaft", "", ""],
+        ],
+    )
+
+    assert table.to_structured_row_text() == (
+        "Row 1: Position=0010 | Quantity=1 | Unit=Pce | Description=housing\n"
+        "Row 2: Position=0115 | Quantity=1 | Unit=Pce | Description=drive shaft"
+    )
+
+
+def test_table_asset_to_structured_row_text_normalizes_troubleshooting_tables() -> None:
+    table = TableAsset(
+        table_id="table_008",
+        document_id="doc_001",
+        markdown="unused",
+        table_category="troubleshooting_table",
+        rows=[
+            ["PROBLEM", "PROBABLE CAUSES", "", "POSSIBLE REMEDIES", ""],
+            [
+                "(1) The motor does not start",
+                "1a)",
+                "Motor overload protection cuts in",
+                "1a)",
+                "Check the power supply.",
+            ],
+        ],
+    )
+
+    assert table.to_structured_row_text() == (
+        "Row 1: Symptom=(1) The motor does not start | "
+        "Cause=Motor overload protection cuts in | "
+        "Remedy=Check the power supply."
+    )

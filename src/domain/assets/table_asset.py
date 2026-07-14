@@ -60,7 +60,11 @@ class TableAsset:
         return "\n".join(parts)
 
     def to_structured_row_text(self) -> str | None:
-        return _STRUCTURED_ROW_RENDERER.render(self.rows)
+        return _STRUCTURED_ROW_RENDERER.render(
+            self.rows,
+            table_category=self.table_category,
+            table_shape=self.resolved_table_shape(),
+        )
 
     def resolved_table_shape(self) -> str | None:
         if self.table_shape:

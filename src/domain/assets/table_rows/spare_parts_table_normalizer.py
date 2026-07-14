@@ -190,6 +190,13 @@ class SparePartsTableNormalizer:
         for offset, cell in enumerate(cells[seed_index + 1 :], start=1):
             if not cell:
                 continue
+            if (
+                "unit" not in row
+                and len(cell.split()) == 1
+                and _UNIT_PATTERN.match(cell)
+            ):
+                row["unit"] = cell
+                continue
             if offset == 1 and not self._looks_part_code(cell):
                 description_parts.append(cell)
                 continue
