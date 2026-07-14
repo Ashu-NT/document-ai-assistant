@@ -36,6 +36,49 @@ def test_maps_synonym_headers_to_the_canonical_fields() -> None:
     assert normalized.headers == ["Symptom", "Cause", "Remedy"]
 
 
+def test_maps_bare_description_header_to_symptom_and_rectification_to_remedy() -> None:
+    """Regression test grounded in a real ingested document: a table
+    headed "Description | Cause | Rectification" is a legitimate
+    Symptom/Cause/Remedy table using vocabulary this normalizer didn't
+    previously recognize at all.
+    """
+    normalized = TroubleshootingTableNormalizer().normalize(
+        [
+            ["Description", "Cause", "Rectification"],
+            [
+                "Motor does not start.",
+                "Fault in the electrical power supply.",
+                "Check lines and fuses. Compare the motor data with the mains supply.",
+            ],
+        ],
+        table_category="troubleshooting_table",
+        chunk_type=None,
+    )
+
+    assert normalized is not None
+    assert normalized.headers == ["Symptom", "Cause", "Remedy"]
+
+
+def test_bare_description_fallback_does_not_shadow_a_real_cause_or_remedy_column() -> None:
+    """Regression test: "description" is only a last-resort symptom
+    signal - a genuine "Cause Description"/"Remedy Description" compound
+    header must still map to its real field, not get swallowed as a
+    symptom column just because it contains the word "description".
+    """
+    normalized = TroubleshootingTableNormalizer().normalize(
+        [
+            ["Symptom", "Cause Description", "Remedy Description"],
+            ["Pump does not start", "No power supply", "Check breaker"],
+        ],
+        table_category="troubleshooting_table",
+        chunk_type=None,
+    )
+
+    assert normalized is not None
+    assert normalized.headers == ["Symptom", "Cause", "Remedy"]
+    assert normalized.rows == [["Pump does not start", "No power supply", "Check breaker"]]
+
+
 def test_does_not_normalize_when_neither_category_nor_chunk_type_matches() -> None:
     normalized = TroubleshootingTableNormalizer().normalize(
         [

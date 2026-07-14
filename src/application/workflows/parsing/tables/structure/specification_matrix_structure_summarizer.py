@@ -189,10 +189,17 @@ class SpecificationMatrixStructureSummarizer:
         manufacturer/serial/location fields is a record table, not a
         specification comparison, even when each row has a label-like
         first cell and several populated text columns.
+
+        Uses substring containment, not exact header equality - real
+        headers commonly qualify these words ("Manufacturer Designation",
+        "Serial No.") rather than using them bare, and an exact-match
+        check missed those variants entirely.
         """
         normalized = [header.casefold() for header in headers]
         identity_signal_count = sum(
-            1 for header in normalized if header in _IDENTITY_RECORD_HEADERS
+            1
+            for header in normalized
+            if any(marker in header for marker in _IDENTITY_RECORD_HEADERS)
         )
         return identity_signal_count >= 2
 
