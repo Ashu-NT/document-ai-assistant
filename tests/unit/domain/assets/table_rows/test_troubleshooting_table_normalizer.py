@@ -143,3 +143,30 @@ def test_drops_rows_with_no_symptom_cause_or_remedy_signal() -> None:
 
     assert normalized is not None
     assert normalized.rows == [["Leaking seal", "Wear", "Replace seal", ""]]
+
+
+def test_prefers_descriptive_troubleshooting_cells_over_enumerator_markers() -> None:
+    normalized = TroubleshootingTableNormalizer().normalize(
+        [
+            ["PROBLEM", "PROBABLE CAUSES", "", "POSSIBLE REMEDIES", ""],
+            [
+                "(1) The motor does not start",
+                "1a)",
+                "Motor overload protection cuts in",
+                "1a)",
+                "Check the power supply and make sure that the shaft is free.",
+            ],
+        ],
+        table_category="troubleshooting_table",
+        chunk_type=None,
+    )
+
+    assert normalized is not None
+    assert normalized.headers == ["Symptom", "Cause", "Remedy"]
+    assert normalized.rows == [
+        [
+            "(1) The motor does not start",
+            "Motor overload protection cuts in",
+            "Check the power supply and make sure that the shaft is free.",
+        ]
+    ]
