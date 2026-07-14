@@ -163,13 +163,20 @@ def _empty_extraction_response() -> str:
   "manufacturers": []
 }"""
 
-def _make_table_chunk(sample_chunk, *, chunk_id: str, content: str, table_ids: list[str]):
+def _make_table_chunk(
+    sample_chunk,
+    *,
+    chunk_id: str,
+    content: str,
+    table_ids: list[str],
+    chunk_type: ChunkType | None = None,
+):
     return sample_chunk.__class__(
         chunk_id=chunk_id,
         document_id=sample_chunk.document_id,
         section_id=sample_chunk.section_id,
         content=content,
-        chunk_type=sample_chunk.chunk_type,
+        chunk_type=chunk_type if chunk_type is not None else sample_chunk.chunk_type,
         section_path=sample_chunk.section_path,
         element_ids=sample_chunk.element_ids,
         table_ids=table_ids,

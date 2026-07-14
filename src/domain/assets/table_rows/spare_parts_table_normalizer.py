@@ -162,7 +162,7 @@ class SparePartsTableNormalizer:
         if position_pairs:
             return position_pairs
 
-        free_form_row = self._parse_free_form_row(joined)
+        free_form_row = self._parse_free_form_row(cells)
         if free_form_row is not None:
             return [free_form_row]
 
@@ -240,8 +240,9 @@ class SparePartsTableNormalizer:
         if candidate and SparePartsTableNormalizer._looks_part_code(candidate):
             row["part_no"] = candidate
 
-    def _parse_free_form_row(self, value: str) -> dict[str, str] | None:
-        tokens = value.split()
+    def _parse_free_form_row(self, cells: list[str]) -> dict[str, str] | None:
+        joined = " ".join(cells).strip()
+        tokens = joined.split()
         if len(tokens) < 3:
             return None
         if not self._looks_position_token(tokens[0]) or not _QUANTITY_PATTERN.match(tokens[1]):
@@ -255,7 +256,18 @@ class SparePartsTableNormalizer:
         if len(tokens) > 2 and _UNIT_PATTERN.match(tokens[2]):
             row["unit"] = tokens[2]
             description_start = 3
-        description = " ".join(tokens[description_start:]).strip()
+
+        description_tokens = tokens[description_start:]
+        trailing_cell = cells[-1].strip() if cells else ""
+        if (
+            len(description_tokens) >= 2
+            and self._looks_part_code(trailing_cell)
+            and trailing_cell == description_tokens[-1]
+        ):
+            row["part_no"] = trailing_cell
+            description_tokens = description_tokens[:-1]
+
+        description = " ".join(description_tokens).strip()
         if not description:
             return None
         row["description"] = description

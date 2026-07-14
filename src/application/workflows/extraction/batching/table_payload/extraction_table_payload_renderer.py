@@ -51,7 +51,7 @@ class ExtractionTablePayloadRenderer:
         )
         self.generic_builder = generic_builder or GenericTablePayloadBuilder()
 
-    def render(self, table: TableAsset) -> str | None:
+    def render(self, table: TableAsset, *, chunk_type: str | None = None) -> str | None:
         for builder in (
             self.spare_parts_builder,
             self.troubleshooting_builder,
@@ -59,7 +59,7 @@ class ExtractionTablePayloadRenderer:
             self.specification_matrix_builder,
             self.performance_curve_builder,
         ):
-            rendered = builder.build(table)
+            rendered = builder.build(table, chunk_type=chunk_type)
             if rendered:
                 return rendered
-        return self.generic_builder.build(table)
+        return self.generic_builder.build(table, chunk_type=chunk_type)

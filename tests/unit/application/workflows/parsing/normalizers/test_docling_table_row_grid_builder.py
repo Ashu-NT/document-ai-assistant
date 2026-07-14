@@ -1,6 +1,9 @@
+import pytest
+
 from src.application.workflows.parsing.normalizers.docling_table_row_grid_builder import (
     DoclingTableRowGridBuilder,
 )
+from src.shared.exceptions import DocumentNormalizationError
 
 
 def test_build_rows_propagates_vertical_spans_for_repeated_problem_context() -> None:
@@ -93,3 +96,24 @@ def test_build_rows_distributes_compact_interval_headers_across_columns() -> Non
         ["Task", "M", "S", "A"],
         ["Inspect basket", "X", "", ""],
     ]
+
+
+def test_build_rows_fails_loudly_on_an_implausibly_large_malformed_span() -> None:
+    """Regression test: a single malformed cell span with a corrupted,
+    very large offset must not trigger an unbounded, slow grid
+    allocation - it should surface as a clear parsing error instead.
+    """
+    builder = DoclingTableRowGridBuilder()
+
+    with pytest.raises(DocumentNormalizationError):
+        builder.build_rows(
+            [
+                {
+                    "start_row_offset_idx": 0,
+                    "end_row_offset_idx": 2_000_000,
+                    "start_col_offset_idx": 0,
+                    "end_col_offset_idx": 1,
+                    "text": "corrupted",
+                }
+            ]
+        )

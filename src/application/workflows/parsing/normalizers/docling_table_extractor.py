@@ -76,19 +76,17 @@ class DoclingTableExtractor:
             return (None, None)
 
         row_count = max(
-            [
-                self._coerce_int(self._get_value(cell, "end_row_offset_idx"))
-                or (self._coerce_int(self._get_value(cell, "start_row_offset_idx")) or 0) + 1
+            (
+                self._resolve_offset_end(cell, "end_row_offset_idx", "start_row_offset_idx")
                 for cell in table_cells
-            ],
+            ),
             default=0,
         )
         column_count = max(
-            [
-                self._coerce_int(self._get_value(cell, "end_col_offset_idx"))
-                or (self._coerce_int(self._get_value(cell, "start_col_offset_idx")) or 0) + 1
+            (
+                self._resolve_offset_end(cell, "end_col_offset_idx", "start_col_offset_idx")
                 for cell in table_cells
-            ],
+            ),
             default=0,
         )
 
@@ -96,6 +94,16 @@ class DoclingTableExtractor:
             row_count or None,
             column_count or None,
         )
+
+    def _resolve_offset_end(self, cell: Any, end_key: str, start_key: str) -> int:
+        # `or` would treat a legitimate offset of 0 as falsy and fall
+        # through to the start-offset fallback - check for None
+        # explicitly instead.
+        end_value = self._coerce_int(self._get_value(cell, end_key))
+        if end_value is not None:
+            return end_value
+        start_value = self._coerce_int(self._get_value(cell, start_key))
+        return (start_value or 0) + 1
 
     def extract_rows(self, item: Any) -> list[list[str]]:
         return self._extract_rows(item)

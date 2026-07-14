@@ -17,6 +17,26 @@ def test_detects_genuine_specification_comparison_matrix() -> None:
     assert summary.table_shape == TableShape.SPECIFICATION_MATRIX
 
 
+def test_detects_a_spec_matrix_with_a_bare_single_letter_variant_column() -> None:
+    """Regression test: a genuine spec/comparison table with a variant
+    column literally named "A" (common in engineering drawings comparing
+    options A/B/C) must not be excluded just because "a" happens to be
+    a member of the maintenance-schedule single-letter set (D/W/M/Q/S/A)
+    - that set is the right signal for a real schedule matrix, not for
+    an incidental single-letter column name here.
+    """
+    summary = SpecificationMatrixStructureSummarizer().summarize(
+        [
+            ["Pump model", "A", "B", "C", "Weight"],
+            ["Compact pump", "250", "180", "90", "12.5"],
+            ["Standard pump", "300", "220", "110", "18.0"],
+        ]
+    )
+
+    assert summary is not None
+    assert summary.table_shape == TableShape.SPECIFICATION_MATRIX
+
+
 def test_does_not_detect_maintenance_narrative_table_with_free_text_intervals() -> None:
     """Regression test: a "Task | Interval | Notes" table with free-text
     interval descriptions (not boolean schedule markers) belongs to the

@@ -35,7 +35,12 @@ class LogicalTableFamilyResolver:
         families: list[list[CanonicalElement]] = []
 
         for element in table_elements:
-            if not families or not self._continues_family(graph, families[-1][-1], element):
+            if not families or not self._continues_family(
+                graph,
+                families[-1][0],
+                families[-1][-1],
+                element,
+            ):
                 families.append([element])
                 continue
             families[-1].append(element)
@@ -68,6 +73,7 @@ class LogicalTableFamilyResolver:
     def _continues_family(
         self,
         graph: DocumentGraph,
+        anchor: CanonicalElement,
         previous: CanonicalElement,
         current: CanonicalElement,
     ) -> bool:
@@ -90,10 +96,40 @@ class LogicalTableFamilyResolver:
         ):
             return False
 
+        if not self._anchor_still_compatible(graph, anchor, previous, current_table):
+            return False
+
         if not self._column_counts_are_compatible(previous_table, current_table):
             return False
 
         return self._pages_are_adjacent(previous, current)
+
+    def _anchor_still_compatible(
+        self,
+        graph: DocumentGraph,
+        anchor: CanonicalElement,
+        previous: CanonicalElement,
+        current_table,
+    ) -> bool:
+        """Matching only against the immediately preceding table lets a
+        generic, headerless "bridge" table transitively chain two
+        genuinely unrelated tables into one family (each pairwise step
+        looks compatible on its own, e.g. by tolerating a one-sided
+        umbrella title, but the family as a whole ends up merging, say,
+        "Bearing Specifications" with "Motor Specifications"). Requiring
+        the family's first table to also stay compatible closes that gap
+        without touching the page-adjacency/section checks, which must
+        stay anchored to the immediately preceding table, not the first.
+        """
+        if anchor is previous:
+            return True
+        anchor_table = graph.tables.get(anchor.table_id or "")
+        if anchor_table is None:
+            return True
+        return self.header_compatibility_matcher.are_compatible(
+            anchor_table,
+            current_table,
+        )
 
     def _pages_are_adjacent(
         self,

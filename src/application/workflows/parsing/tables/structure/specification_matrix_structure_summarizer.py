@@ -12,11 +12,23 @@ from src.domain.assets.table_rows.table_row_canonicalizer import (
 from src.domain.assets.table_rows.table_row_patterns import (
     count_interval_columns,
     looks_explicit_header_cell,
-    looks_interval_header,
     looks_label_cell,
     looks_numeric,
     normalize_cell,
 )
+
+_FULL_SCHEDULE_WORDS = {
+    "daily",
+    "weekly",
+    "monthly",
+    "quarterly",
+    "annual",
+    "annually",
+    "semi annual",
+    "semi-annual",
+    "yearly",
+    "before startup",
+}
 
 _NOTES_HEADERS = {"note", "notes", "remark", "remarks"}
 _TROUBLESHOOTING_HEADERS = {
@@ -145,11 +157,31 @@ class SpecificationMatrixStructureSummarizer:
         column is called ("Task", "Description", ...) - even though it
         can otherwise satisfy the generic label/header checks above.
         Left unclassified here rather than misrouted.
+
+        Deliberately does not reuse `looks_interval_header`'s bare
+        single-letter D/W/M/Q/S/A membership check - that's the right
+        signal for a genuine maintenance-schedule matrix (where those
+        letters ARE the real column headers), but a spec/comparison
+        table keyed by a discrete variant column literally named "A"
+        (common in engineering drawings comparing options A/B/C) would
+        otherwise be wrongly excluded by a single coincidental letter.
         """
-        return any(
-            "interval" in header.casefold() or looks_interval_header(header)
-            for header in headers
-        )
+        for header in headers:
+            normalized = header.casefold()
+            if not normalized:
+                continue
+            if "interval" in normalized:
+                return True
+            if normalized in _FULL_SCHEDULE_WORDS:
+                return True
+            if normalized.startswith("every "):
+                return True
+            if any(
+                token in normalized
+                for token in ("hour", "week", "month", "year")
+            ):
+                return True
+        return False
 
     @staticmethod
     def _looks_like_identity_record_listing(headers: list[str]) -> bool:

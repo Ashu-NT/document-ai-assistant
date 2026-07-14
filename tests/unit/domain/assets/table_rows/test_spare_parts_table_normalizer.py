@@ -68,3 +68,27 @@ def test_normalizes_rows_when_unit_is_split_into_the_next_column() -> None:
         ["5040", "4", "Pce", "spring washer"],
         ["7000", "2", "Pce", "seal housing"],
     ]
+
+
+def test_normalizes_a_cleanly_columnar_table_and_recovers_the_trailing_part_number() -> None:
+    """Regression test: when Docling cell matching works correctly and a
+    spare-parts table is already split into separate columns (the more
+    common real-world layout, as opposed to the merged-cell shift cases
+    above), the trailing Part No. cell must not be silently absorbed
+    into Description.
+    """
+    normalized = SparePartsTableNormalizer().normalize(
+        [
+            ["Pos", "Qty", "Unit", "Description", "Part No"],
+            ["10", "2", "Pce", "Hex bolt M8x20", "900.123.456"],
+            ["20", "1", "Pce", "Washer", "900.789.012"],
+        ],
+        table_category="spare_parts_table",
+        chunk_type=None,
+    )
+
+    assert normalized is not None
+    assert normalized.rows == [
+        ["2", "Pce", "Hex bolt M8x20", "900.123.456", "10"],
+        ["1", "Pce", "Washer", "900.789.012", "20"],
+    ]

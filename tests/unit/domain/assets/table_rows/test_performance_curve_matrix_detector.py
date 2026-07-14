@@ -59,3 +59,43 @@ def test_detects_curve_column_when_one_header_row_is_blank_from_a_merged_span() 
     assert spec is not None
     assert spec.metric_index == 2
     assert spec.data_start_index == 3
+
+
+def test_detects_curve_even_when_the_first_data_row_has_a_sparse_column() -> None:
+    """Regression test: detection previously relied solely on the third
+    row (the first data row) as the canonical sample - a single blank
+    cell there (a sensor reading not taken at one flow point) sank
+    detection for the whole table even when later rows were fully
+    populated. A few candidate rows should be tried before giving up.
+    """
+    rows = [
+        ["Pump type", "Motor power", "Motor power", "Q m3/h", "0", "1", "1.5"],
+        ["Pump type", "kW", "HP", "Q l/min", "0", "16.6", "25"],
+        ["MXV 25-220C", "3", "4", "H m", "228", "", "202"],
+        ["MXV 25-220C", "3", "4", "H m", "230", "215", "200"],
+    ]
+
+    spec = PerformanceCurveMatrixDetector().detect(rows)
+
+    assert spec is not None
+    assert spec.metric_index == 3
+    assert spec.data_start_index == 4
+
+
+def test_does_not_detect_a_discrete_numeric_variant_axis_repeated_on_both_header_rows() -> None:
+    """Regression test: a genuine curve axis point is the same physical
+    value expressed in two different units (e.g. "1"/"16.6"), so at
+    least one data column should show a real conversion between the two
+    header rows. A spec table keyed by discrete numeric size codes (bolt
+    diameters) that happen to repeat identically on both header rows -
+    because there's no unit to convert - must not be misread as a curve.
+    """
+    rows = [
+        ["Fastener", "Torque", "6", "8", "10", "12"],
+        ["Fastener", "Nm", "6", "8", "10", "12"],
+        ["Steel bolt", "", "5", "15", "30", "55"],
+    ]
+
+    spec = PerformanceCurveMatrixDetector().detect(rows)
+
+    assert spec is None

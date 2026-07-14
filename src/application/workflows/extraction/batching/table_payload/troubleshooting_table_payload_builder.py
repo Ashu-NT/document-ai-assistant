@@ -21,11 +21,11 @@ class TroubleshootingTablePayloadBuilder:
         )
         self.support = support or TablePayloadSupport()
 
-    def build(self, table: TableAsset) -> str | None:
+    def build(self, table: TableAsset, *, chunk_type: str | None = None) -> str | None:
         normalized = self.troubleshooting_table_normalizer.normalize(
             self.support.cleaned_rows(table),
             table_category=table.table_category,
-            chunk_type=None,
+            chunk_type=chunk_type,
         )
         if normalized is None:
             return None

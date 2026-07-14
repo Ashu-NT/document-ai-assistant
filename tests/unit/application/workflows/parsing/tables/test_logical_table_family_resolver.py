@@ -307,3 +307,106 @@ def test_resolver_groups_adjacent_tables_when_first_page_has_umbrella_title_row(
     assert graph.tables["table_1"].normalized_header_signature == (
         "parameter|compact version|remote version"
     )
+
+
+def test_resolver_does_not_transitively_bridge_unrelated_tables_through_a_headerless_middle_table() -> None:
+    """Regression test: a generic, headerless "bridge" table between two
+    unrelated umbrella-titled tables can look pairwise-compatible with
+    each neighbor individually (each step tolerates only one side having
+    a title), but the family as a whole must not merge two genuinely
+    unrelated tables like "Bearing Specifications" and "Motor
+    Specifications" just because a generic table sat between them.
+    """
+    graph = DocumentGraph(document=_make_document())
+    graph.tables["table_bearing"] = _make_table_asset(
+        table_id="table_bearing",
+        rows=[
+            ["Bearing Specifications", "Bearing Specifications"],
+            ["Parameter", "Value"],
+            ["Bore", "25mm"],
+        ],
+        column_count=2,
+    )
+    graph.tables["table_bridge"] = _make_table_asset(
+        table_id="table_bridge",
+        rows=[
+            ["Parameter", "Value"],
+            ["Grease type", "Lithium"],
+        ],
+        column_count=2,
+    )
+    graph.tables["table_motor"] = _make_table_asset(
+        table_id="table_motor",
+        rows=[
+            ["Motor Specifications", "Motor Specifications"],
+            ["Parameter", "Value"],
+            ["Voltage", "400V"],
+        ],
+        column_count=2,
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_bearing",
+            table_id="table_bearing",
+            page_start=30,
+            reading_order=1,
+        )
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_bridge",
+            table_id="table_bridge",
+            page_start=31,
+            reading_order=2,
+        )
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_motor",
+            table_id="table_motor",
+            page_start=32,
+            reading_order=3,
+        )
+    )
+
+    LogicalTableFamilyResolver().resolve(graph)
+
+    assert (
+        graph.tables["table_motor"].logical_table_family_id
+        != graph.tables["table_bearing"].logical_table_family_id
+    )
+    assert graph.tables["table_motor"].family_total == 1
+
+
+def test_resolver_still_groups_a_genuine_four_page_continuation() -> None:
+    """The anchor check added for the bridging fix above must not break
+    a real multi-page continuation family longer than two tables.
+    """
+    graph = DocumentGraph(document=_make_document())
+    for index, table_id in enumerate(["page_1", "page_2", "page_3", "page_4"]):
+        graph.tables[table_id] = _make_table_asset(
+            table_id=table_id,
+            rows=[
+                ["Task", "Interval", "Notes"],
+                [f"Task on {table_id}", "Every 6 months", ""],
+            ],
+            column_count=3,
+        )
+        graph.add_element(
+            _make_table_element(
+                element_id=f"el_{table_id}",
+                table_id=table_id,
+                page_start=40 + index,
+                reading_order=index + 1,
+            )
+        )
+
+    LogicalTableFamilyResolver().resolve(graph)
+
+    family_ids = {
+        table_id: graph.tables[table_id].logical_table_family_id
+        for table_id in ["page_1", "page_2", "page_3", "page_4"]
+    }
+    assert len(set(family_ids.values())) == 1
+    assert graph.tables["page_4"].family_total == 4
+    assert graph.tables["page_4"].continuation_role == "end"

@@ -12,6 +12,9 @@ class PerformanceCurveMatrixSpec:
     data_start_index: int
 
 
+_MAX_SAMPLE_ROW_CANDIDATES = 5
+
+
 class PerformanceCurveMatrixDetector:
     def detect(self, rows: list[list[str]]) -> PerformanceCurveMatrixSpec | None:
         if len(rows) < 3:
@@ -19,36 +22,45 @@ class PerformanceCurveMatrixDetector:
 
         first_header = rows[0]
         second_header = rows[1]
-        sample_row = rows[2]
-        max_width = max(len(first_header), len(second_header), len(sample_row))
+        sample_row_candidates = rows[2 : 2 + _MAX_SAMPLE_ROW_CANDIDATES]
+        max_width = max(
+            len(first_header),
+            len(second_header),
+            *(len(row) for row in sample_row_candidates),
+        )
         if max_width < 5:
             return None
 
         for start_index in range(2, max_width - 2):
-            if not self._has_curve_block(
-                first_header=first_header,
-                second_header=second_header,
-                sample_row=sample_row,
-                start_index=start_index,
-            ):
-                continue
+            # A single sparse data row (a sensor reading not taken at
+            # one point, a trailing blank cell) shouldn't sink detection
+            # for the whole table - try a few candidate rows before
+            # giving up on this start_index.
+            for sample_row in sample_row_candidates:
+                if not self._has_curve_block(
+                    first_header=first_header,
+                    second_header=second_header,
+                    sample_row=sample_row,
+                    start_index=start_index,
+                ):
+                    continue
 
-            metric_index = start_index - 1
-            if metric_index < 1:
-                continue
-            if not self._has_descriptor_signal(
-                first_header=first_header,
-                second_header=second_header,
-                metric_index=metric_index,
-            ):
-                continue
+                metric_index = start_index - 1
+                if metric_index < 1:
+                    continue
+                if not self._has_descriptor_signal(
+                    first_header=first_header,
+                    second_header=second_header,
+                    metric_index=metric_index,
+                ):
+                    continue
 
-            descriptor_indexes = tuple(range(metric_index))
-            return PerformanceCurveMatrixSpec(
-                descriptor_indexes=descriptor_indexes,
-                metric_index=metric_index,
-                data_start_index=start_index,
-            )
+                descriptor_indexes = tuple(range(metric_index))
+                return PerformanceCurveMatrixSpec(
+                    descriptor_indexes=descriptor_indexes,
+                    metric_index=metric_index,
+                    data_start_index=start_index,
+                )
         return None
 
     def _has_curve_block(
@@ -62,6 +74,8 @@ class PerformanceCurveMatrixDetector:
         consecutive_numeric_columns = 0
         numeric_cells = 0
         inspected_cells = 0
+        both_numeric_pairs = 0
+        both_numeric_pairs_differ = 0
 
         for column_index in range(start_index, max(len(first_header), len(second_header))):
             top_value = _cell(first_header, column_index)
@@ -76,6 +90,10 @@ class PerformanceCurveMatrixDetector:
             inspected_cells += 1
             if not _looks_numericish(sample_value):
                 break
+            if _looks_numericish(top_value) and _looks_numericish(bottom_value):
+                both_numeric_pairs += 1
+                if top_value != bottom_value:
+                    both_numeric_pairs_differ += 1
 
             consecutive_numeric_columns += 1
             numeric_cells += 1
@@ -83,6 +101,15 @@ class PerformanceCurveMatrixDetector:
         if consecutive_numeric_columns < 3:
             return False
         if inspected_cells == 0:
+            return False
+        if both_numeric_pairs > 0 and both_numeric_pairs_differ == 0:
+            # Every dual-numeric header column repeats the identical value
+            # in both rows - a genuine curve axis point is the same
+            # physical point in two different units (e.g. "1"/"16.6"),
+            # so at least one column should show a real conversion. All
+            # columns matching exactly means this is a discrete numeric
+            # variant/size axis (e.g. bolt diameters 6/8/10/12mm) that
+            # happens to appear on both header rows, not a curve.
             return False
         return numeric_cells / inspected_cells >= 0.6
 

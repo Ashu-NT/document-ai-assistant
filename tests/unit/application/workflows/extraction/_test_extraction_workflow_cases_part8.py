@@ -177,6 +177,38 @@ def test_hydrate_table_chunks_includes_structure_context_when_available(
     assert "Structured specification records:" in hydrated[0].content
     assert "Row 1: Parameter=Pressure range | Compact version=0...10 | Remote version=0...16" in hydrated[0].content
 
+def test_hydrate_table_chunks_uses_chunk_type_to_render_typed_payload_without_table_category(
+    sample_chunk,
+) -> None:
+    """Regression test: extraction-side payload rendering must recognize
+    a table classified only via the chunk's chunk_type (no table_category
+    metadata yet), the same way the QA-side typed projection already
+    does - otherwise the identical table gets a proper typed payload in
+    QA but only the generic row-dump payload at extraction time.
+    """
+    table = TableAsset(
+        table_id="table_001",
+        document_id=sample_chunk.document_id,
+        markdown="| Symptom | Cause | Remedy |\n|---|---|---|\n| Pump does not start | No power | Check breaker |",
+        rows=[
+            ["Symptom", "Cause", "Remedy"],
+            ["Pump does not start", "No power", "Check breaker"],
+        ],
+        table_category=None,
+    )
+    chunk = _make_table_chunk(
+        sample_chunk,
+        chunk_id="chunk_table_1",
+        content="| Symptom | Cause | Remedy |\n|---|---|---|\n| Pump does not start | No power | Check breaker |",
+        table_ids=["table_001"],
+        chunk_type=ChunkType.TROUBLESHOOTING,
+    )
+
+    hydrated = hydrate_table_chunks([chunk], {"table_001": table})
+
+    assert "Structured troubleshooting records:" in hydrated[0].content
+
+
 def test_extract_hydrates_split_table_chunks_before_building_prompt(sample_chunk) -> None:
     table = TableAsset(
         table_id="table_001",

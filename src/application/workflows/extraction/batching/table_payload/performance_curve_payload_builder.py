@@ -17,7 +17,7 @@ class PerformanceCurvePayloadBuilder:
             performance_curve_normalizer or PerformanceCurveMatrixNormalizer()
         )
 
-    def build(self, table: TableAsset) -> str | None:
+    def build(self, table: TableAsset, *, chunk_type: str | None = None) -> str | None:
         if table.resolved_table_shape() not in {None, "", "performance_curve_matrix"}:
             return None
 

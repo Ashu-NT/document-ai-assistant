@@ -14,7 +14,7 @@ class GenericTablePayloadBuilder:
     ) -> None:
         self.support = support or TablePayloadSupport()
 
-    def build(self, table: TableAsset) -> str | None:
+    def build(self, table: TableAsset, *, chunk_type: str | None = None) -> str | None:
         cleaned_rows = self.support.cleaned_rows(table)
         if len(cleaned_rows) < 2:
             return None

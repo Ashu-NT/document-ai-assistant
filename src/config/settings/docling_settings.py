@@ -78,3 +78,8 @@ class DoclingSettings(AppBaseSettings):
         default=4,
         alias="DOCLING_TABLE_BATCH_SIZE",
     )
+
+    max_table_grid_cells: int = Field(
+        default=200_000,
+        alias="DOCLING_MAX_TABLE_GRID_CELLS",
+    )

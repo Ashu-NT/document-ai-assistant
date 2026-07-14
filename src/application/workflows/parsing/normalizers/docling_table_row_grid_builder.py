@@ -9,6 +9,8 @@ from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
 from src.application.workflows.parsing.normalizers.docling_table_row_repairer import (
     DoclingTableRowRepairer,
 )
+from src.config.settings import docling_settings
+from src.shared.exceptions import DocumentNormalizationError
 
 
 class DoclingTableRowGridBuilder:
@@ -37,6 +39,7 @@ class DoclingTableRowGridBuilder:
 
         max_row = max(span.row_end for span in spans)
         max_col = max(span.col_end for span in spans)
+        self._guard_grid_size(max_row=max_row, max_col=max_col)
         grid = [
             ["" for _ in range(max_col + 1)]
             for _ in range(max_row + 1)
@@ -61,6 +64,25 @@ class DoclingTableRowGridBuilder:
             if any(cell.strip() for cell in row)
         ]
         return self.row_repairer.repair_rows(rows)
+
+    @staticmethod
+    def _guard_grid_size(*, max_row: int, max_col: int) -> None:
+        """A single malformed cell span with a corrupted, very large
+        offset would otherwise cause an unbounded, slow grid allocation
+        (multi-GB scale) with no signal - fail loudly instead so a bad
+        document surfaces as a clear parsing error, not a hang.
+        """
+        cell_count = (max_row + 1) * (max_col + 1)
+        if cell_count > docling_settings.max_table_grid_cells:
+            raise DocumentNormalizationError(
+                "Docling table cell spans imply an implausibly large grid.",
+                details={
+                    "max_row": max_row,
+                    "max_col": max_col,
+                    "cell_count": cell_count,
+                    "max_table_grid_cells": docling_settings.max_table_grid_cells,
+                },
+            )
 
     def _distribute_interval_header_tokens(
         self,
