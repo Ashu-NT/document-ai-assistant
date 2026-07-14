@@ -79,13 +79,28 @@ The goal of this upgrade is to make table understanding first-class across parsi
   - `src/application/workflows/parsing/tables/structure/table_structure_context_renderer.py`
   - `src/application/workflows/question_answering/evidence/table_evidence_hydrator.py`
   - `src/application/workflows/extraction/batching/extraction_table_chunk_hydrator.py`
+- The QA table projection layer is now split into per-shape builders behind the same orchestration entrypoint.
+  - `src/application/workflows/question_answering/answer_context/tables/projections/`
+  - `src/application/workflows/question_answering/answer_context/tables/answer_table_projector.py`
+- Extraction hydration now prepends normalized table evidence payloads before raw markdown for supported shapes.
+  - `src/application/workflows/extraction/batching/table_payload/`
+  - `src/application/workflows/extraction/batching/extraction_table_chunk_hydrator.py`
+  - current coverage:
+    - `maintenance_schedule_matrix`
+  - `specification_matrix`
+  - `performance_curve_matrix`
+  - generic record-table fallback
+- Logical table family header matching now understands multi-row headers better before semantic table summarization runs.
+  - `src/application/workflows/parsing/tables/table_header_signature_builder.py`
+  - `src/application/workflows/parsing/tables/table_header_compatibility_matcher.py`
+  - current improvements:
+    - collapse uniform umbrella title rows when deeper headers exist
+    - use multi-row header paths for continuation signatures
+    - use span coverage when raw cell spans are available
 
 ### Still remaining
 
 - generic span-aware normalized table model for arbitrary merged headers
-- continued-table header hierarchy reconstruction across pages
-- typed QA projection package split by projector class
-- extraction-side normalized table evidence payloads beyond content-preface hydration
 - optional selective fallback table-structure provider
 
 ---
@@ -322,6 +337,8 @@ Implemented so far:
   - `table_structure_quality`
   - `table_header_paths_json`
   - `table_axis_summary`
+- continuation matching now uses richer multi-row header signatures instead of only the first visible row
+- uniform umbrella title rows are now collapsed when deeper leaf headers exist
 
 Not implemented yet:
 
@@ -383,7 +400,6 @@ Implemented so far:
 Still remaining:
 
 - shape inference beyond the currently supported matrices
-- using normalized header paths in logical family matching
 - broader shape-specific routing downstream
 
 ### Goal
@@ -495,7 +511,7 @@ Then update:
 
 ## Phase 6 — Improve extraction to use normalized table evidence
 
-Status: not started
+Status: partially implemented
 
 ### Goal
 
@@ -508,6 +524,23 @@ Extraction should benefit from the same structure improvements as QA.
 - Add extraction-side serializers if needed under:
   - `src/application/workflows/extraction/batching/`
 - Keep raw markdown in the payload as fallback, but lead with normalized semantics
+
+Implemented so far:
+
+- extraction hydration now emits shape-aware normalized payload text ahead of raw markdown
+- extraction-side payload routing is split into small builders under:
+  - `src/application/workflows/extraction/batching/table_payload/`
+- payload coverage currently includes:
+  - `maintenance_schedule_matrix`
+  - `specification_matrix`
+  - `performance_curve_matrix`
+  - generic structured-record fallback
+
+Still remaining:
+
+- richer use of reconstructed header hierarchies once continued-table stitching lands
+- broader typed extraction payloads for spare-parts and troubleshooting tables
+- optional prompt-side chunk block formatting if we later want explicit table payload sections outside hydrated chunk content
 
 ### Tests
 
@@ -653,6 +686,6 @@ After that, the next best slice is:
 
 ### Next active slice
 
-1. split typed QA table projection into per-shape projector files so future shapes do not accumulate inside one class
-2. add a richer extraction-side normalized table payload beyond the current structure preface + row echo
-3. implement continued-table header hierarchy reconstruction before selective fallback engines
+1. decide whether prompt-side table projection should also be split per shape after extraction payloads are stable
+2. expand typed payload coverage for spare-parts and troubleshooting tables once the parsing-side table model is richer
+3. build the fuller generic span-aware normalization layer for arbitrarily merged headers before selective fallback engines

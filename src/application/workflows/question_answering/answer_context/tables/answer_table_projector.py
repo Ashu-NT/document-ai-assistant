@@ -10,11 +10,17 @@ from src.application.workflows.question_answering.answer_context.tables.answer_t
     AnswerTable,
     AnswerTableRow,
 )
-from src.application.workflows.question_answering.answer_context.tables.spare_parts_table_normalizer import (
-    SparePartsTableNormalizer,
-)
 from src.application.workflows.question_answering.answer_context.tables.answer_table_schema_inferer import (
     AnswerTableSchemaInferer,
+)
+from src.application.workflows.question_answering.answer_context.tables.projections import (
+    AnswerTableProjectionRouter,
+    GenericTableProjectionBuilder,
+    PerformanceCurveTableProjectionBuilder,
+    SparePartsTableProjectionBuilder,
+)
+from src.application.workflows.question_answering.answer_context.tables.spare_parts_table_normalizer import (
+    SparePartsTableNormalizer,
 )
 from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
@@ -31,14 +37,27 @@ class AnswerTableProjector:
         row_canonicalizer: TableRowCanonicalizer | None = None,
         spare_parts_table_normalizer: SparePartsTableNormalizer | None = None,
         performance_curve_normalizer: PerformanceCurveMatrixNormalizer | None = None,
+        projection_router: AnswerTableProjectionRouter | None = None,
     ) -> None:
-        self.schema_inferer = schema_inferer or AnswerTableSchemaInferer()
         self.row_canonicalizer = row_canonicalizer or TableRowCanonicalizer()
-        self.spare_parts_table_normalizer = (
-            spare_parts_table_normalizer or SparePartsTableNormalizer()
-        )
-        self.performance_curve_normalizer = (
-            performance_curve_normalizer or PerformanceCurveMatrixNormalizer()
+        schema_inferer = schema_inferer or AnswerTableSchemaInferer()
+        self.projection_router = projection_router or AnswerTableProjectionRouter(
+            spare_parts_projection_builder=SparePartsTableProjectionBuilder(
+                spare_parts_table_normalizer=(
+                    spare_parts_table_normalizer or SparePartsTableNormalizer()
+                ),
+                schema_inferer=schema_inferer,
+            ),
+            performance_curve_projection_builder=PerformanceCurveTableProjectionBuilder(
+                performance_curve_normalizer=(
+                    performance_curve_normalizer
+                    or PerformanceCurveMatrixNormalizer()
+                )
+            ),
+            generic_projection_builder=GenericTableProjectionBuilder(
+                schema_inferer=schema_inferer,
+                row_canonicalizer=self.row_canonicalizer,
+            ),
         )
 
     def build(self, sources: Sequence[AnswerSource]) -> list[AnswerTable]:
@@ -47,10 +66,7 @@ class AnswerTableProjector:
         for source in sources:
             if not source.table_rows:
                 continue
-            table_key = (
-                source.metadata.get("logical_table_family_id")
-                or source.chunk_id
-            )
+            table_key = source.metadata.get("logical_table_family_id") or source.chunk_id
             if table_key in seen_keys:
                 continue
             table = self._build_table(source)
@@ -64,48 +80,15 @@ class AnswerTableProjector:
         if not cleaned_rows:
             return None
 
-        table_category = source.metadata.get("table_category")
-        table_shape = source.table_shape or source.metadata.get("table_shape")
-        normalized_spare_parts = self.spare_parts_table_normalizer.normalize(
-            cleaned_rows,
-            table_category=table_category,
-            chunk_type=source.chunk_type,
+        projection = self.projection_router.project(
+            source=source,
+            cleaned_rows=cleaned_rows,
         )
-        if normalized_spare_parts is not None:
-            headers = normalized_spare_parts.headers
-            body_rows = normalized_spare_parts.rows
-            has_headers = True
-            table_kind = "record_table"
-            column_roles = self.schema_inferer.infer(
-                chunk_type=source.chunk_type,
-                headers=headers,
-                table_category=table_category,
-                table_shape=table_shape,
-                rows=body_rows,
-            )[1]
-        else:
-            performance_curve = (
-                self.performance_curve_normalizer.normalize(cleaned_rows)
-                if table_shape in {None, "", "performance_curve_matrix"}
-                else None
-            )
-            if performance_curve is not None:
-                headers = performance_curve.headers
-                body_rows = performance_curve.rows
-                has_headers = True
-                table_kind = "performance_curve_matrix"
-                column_roles = performance_curve.column_roles
-            else:
-                has_headers = self.row_canonicalizer.has_explicit_header_row(cleaned_rows)
-                headers = cleaned_rows[0] if has_headers else []
-                body_rows = cleaned_rows[1:] if has_headers else cleaned_rows
-                table_kind, column_roles = self.schema_inferer.infer(
-                    chunk_type=source.chunk_type,
-                    headers=headers,
-                    table_category=table_category,
-                    table_shape=table_shape,
-                    rows=body_rows,
-                )
+        if projection is None:
+            return None
+
+        headers = projection.headers
+        body_rows = projection.body_rows
         rows = [
             AnswerTableRow(
                 source_row_index=source_row_index,
@@ -114,12 +97,13 @@ class AnswerTableProjector:
             )
             for source_row_index, row in enumerate(
                 body_rows,
-                start=1 if has_headers else 0,
+                start=1 if projection.has_headers else 0,
             )
         ]
         if not rows and not headers:
             return None
 
+        table_shape = source.table_shape or source.metadata.get("table_shape")
         return AnswerTable(
             source_number=source.source_number,
             chunk_id=source.chunk_id,
@@ -130,11 +114,11 @@ class AnswerTableProjector:
             page_end=source.page_end,
             headers=headers,
             rows=rows,
-            table_kind=table_kind,
-            column_roles=column_roles,
+            table_kind=projection.table_kind,
+            column_roles=projection.column_roles,
             logical_table_family_id=source.metadata.get("logical_table_family_id"),
             physical_table_ids=self._decode_table_ids(source.metadata),
-            table_category=table_category,
+            table_category=source.metadata.get("table_category"),
             table_category_confidence=self._coerce_float(
                 source.metadata.get("table_category_confidence")
             ),

@@ -262,3 +262,48 @@ def test_resolver_groups_adjacent_tables_with_split_header_cells_into_one_family
     assert graph.tables["table_1"].logical_table_family_id == "table_family_table_1"
     assert graph.tables["table_2"].logical_table_family_id == "table_family_table_1"
     assert graph.tables["table_2"].continuation_role == "end"
+
+
+def test_resolver_groups_adjacent_tables_when_first_page_has_umbrella_title_row() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.tables["table_1"] = _make_table_asset(
+        table_id="table_1",
+        rows=[
+            ["Technical data", "", ""],
+            ["Parameter", "Compact version", "Remote version"],
+            ["Pressure range", "0...10", "0...16"],
+        ],
+        column_count=3,
+    )
+    graph.tables["table_2"] = _make_table_asset(
+        table_id="table_2",
+        rows=[
+            ["Parameter", "Compact version", "Remote version"],
+            ["Flow range", "1...2", "1...3"],
+        ],
+        column_count=3,
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_1",
+            table_id="table_1",
+            page_start=30,
+            reading_order=1,
+        )
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_2",
+            table_id="table_2",
+            page_start=31,
+            reading_order=2,
+        )
+    )
+
+    LogicalTableFamilyResolver().resolve(graph)
+
+    assert graph.tables["table_1"].logical_table_family_id == "table_family_table_1"
+    assert graph.tables["table_2"].logical_table_family_id == "table_family_table_1"
+    assert graph.tables["table_1"].normalized_header_signature == (
+        "parameter|compact version|remote version"
+    )

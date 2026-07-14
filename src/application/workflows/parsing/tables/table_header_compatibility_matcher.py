@@ -51,13 +51,16 @@ class TableHeaderCompatibilityMatcher:
 
     @staticmethod
     def _collapsed_header_text(table: TableAsset) -> str | None:
-        if not table.rows:
+        header_paths = TableHeaderSignatureBuilder().build_paths(table)
+        if not header_paths:
             return None
-        header_parts = [
-            _normalize_token_text(cell)
-            for cell in table.rows[0]
-            if _normalize_token_text(cell)
-        ]
+        header_parts = []
+        for path in header_paths:
+            normalized_path = [
+                _normalize_token_text(part) for part in path if _normalize_token_text(part)
+            ]
+            if normalized_path:
+                header_parts.extend(normalized_path)
         if not header_parts:
             return None
         return " ".join(header_parts)

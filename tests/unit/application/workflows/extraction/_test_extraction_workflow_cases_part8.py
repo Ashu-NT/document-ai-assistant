@@ -174,6 +174,8 @@ def test_hydrate_table_chunks_includes_structure_context_when_available(
 
     assert "Table shape: specification_matrix" in hydrated[0].content
     assert "Header paths: Parameter | Field > Compact version | Field > Remote version" in hydrated[0].content
+    assert "Structured specification records:" in hydrated[0].content
+    assert "Row 1: Parameter=Pressure range | Compact version=0...10 | Remote version=0...16" in hydrated[0].content
 
 def test_extract_hydrates_split_table_chunks_before_building_prompt(sample_chunk) -> None:
     table = TableAsset(

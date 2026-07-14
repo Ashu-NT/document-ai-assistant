@@ -9,10 +9,14 @@ from src.application.workflows.parsing.tables.families import (
 from src.application.workflows.parsing.tables.structure import (
     TableStructureContextRenderer,
 )
+from src.application.workflows.extraction.batching.table_payload import (
+    ExtractionTablePayloadRenderer,
+)
 from src.domain.assets import TableAsset
 from src.domain.document import DocumentChunk
 
 _STRUCTURE_CONTEXT_RENDERER = TableStructureContextRenderer()
+_TABLE_PAYLOAD_RENDERER = ExtractionTablePayloadRenderer()
 
 
 def _table_text_with_structured_rows(table: TableAsset) -> str:
@@ -20,9 +24,12 @@ def _table_text_with_structured_rows(table: TableAsset) -> str:
     structure_context = _STRUCTURE_CONTEXT_RENDERER.render(table)
     if structure_context:
         parts.append(structure_context)
+    structured_payload = _TABLE_PAYLOAD_RENDERER.render(table)
+    if structured_payload:
+        parts.append(structured_payload)
     parts.append(table.to_embedding_text())
     structured_rows = table.to_structured_row_text()
-    if structured_rows:
+    if structured_rows and not structured_payload:
         parts.append(structured_rows)
     return "\n\n".join(parts)
 
