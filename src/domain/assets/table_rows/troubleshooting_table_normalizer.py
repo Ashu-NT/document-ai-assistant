@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from src.domain.assets.table_rows.normalized_table_rows import NormalizedTableRows
 from src.domain.assets.table_rows.table_row_patterns import (
     looks_explicit_header_cell,
@@ -98,9 +100,17 @@ class TroubleshootingTableNormalizer:
 
     def _map_header(self, header: str) -> str | None:
         for field in _FIELD_ORDER:
-            if any(marker in header for marker in _FIELD_MARKERS[field]):
+            if any(self._contains_marker(header, marker) for marker in _FIELD_MARKERS[field]):
                 return field
         return None
+
+    @staticmethod
+    def _contains_marker(header: str, marker: str) -> bool:
+        """Word-boundary match, not plain substring containment - a bare
+        substring check would let a short marker like "action" match
+        inside an unrelated word like "reaction".
+        """
+        return re.search(rf"\b{re.escape(marker)}\b", header) is not None
 
     @staticmethod
     def _parse_row(

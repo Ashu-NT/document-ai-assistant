@@ -188,8 +188,6 @@ def test_extract_uses_specification_matrix_rows_as_specification_fields() -> Non
     )
 
     assert [(item.key, item.value) for item in key_values] == [
-        ("Parameter", "Pressure range"),
-        ("Compact version", "0...10"),
-        ("Remote version", "0...16"),
-        ("Unit", "bar"),
+        ("Pressure range (Compact version)", "0...10 bar"),
+        ("Pressure range (Remote version)", "0...16 bar"),
     ]

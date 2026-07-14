@@ -119,7 +119,7 @@ def candidate_from_table_row(
             table_header[index]: cells[index].strip()
             for index in range(len(cells))
         }
-        task = mapped.get("task", "").strip()
+        task = clean_task(mapped.get("task", "").strip()) or ""
         if not task or not looks_like_maintenance_task(task):
             return None
         interval = clean_interval(mapped.get("interval"))
