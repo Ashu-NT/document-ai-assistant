@@ -71,6 +71,30 @@ _MAINTENANCE_CONTENT_MARKERS: tuple[str, ...] = (
     "lubrication",
     "preventive maintenance",
 )
+_SPARE_PARTS_QUERY_MARKERS: tuple[str, ...] = (
+    "spare part",
+    "spare parts",
+)
+_SPARE_PARTS_LIST_QUERY_MARKERS: tuple[str, ...] = (
+    "list",
+    "table",
+)
+_SPARE_PARTS_TABLE_CONTENT_MARKERS: tuple[str, ...] = (
+    "position no",
+    "pos.",
+    "pos nr",
+    "qty",
+    "quantity",
+    "designation",
+    "denomination",
+    "part no",
+    "spare part no",
+    "article no",
+    "material no",
+    "order no",
+    "p&id",
+    "service function",
+)
 
 
 def _is_toc_chunk(text: str, lower: str) -> bool:
@@ -173,6 +197,19 @@ class ContextFilteringGuardrail:
                 chunk_id=chunk.chunk_id,
             )
         if (
+            _is_spare_parts_list_query(query_text)
+            and chunk.chunk_type == ChunkType.SPARE_PARTS_TABLE
+            and not _has_spare_parts_table_content(chunk, text, lower)
+        ):
+            return GuardrailViolation(
+                violation_type=ViolationType.IRRELEVANT_CHUNKS,
+                message=(
+                    "Spare-parts chunk does not contain direct table/list evidence "
+                    "for a spare-parts table request."
+                ),
+                chunk_id=chunk.chunk_id,
+            )
+        if (
             _is_maintenance_interval_query(query_text)
             and not _is_explicit_specification_query(query_text)
             and chunk.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
@@ -201,3 +238,25 @@ def _is_explicit_specification_query(query_text: str) -> bool:
 
 def _has_maintenance_content(lower: str) -> bool:
     return any(marker in lower for marker in _MAINTENANCE_CONTENT_MARKERS)
+
+
+def _is_spare_parts_list_query(query_text: str) -> bool:
+    normalized = query_text.lower()
+    return any(marker in normalized for marker in _SPARE_PARTS_QUERY_MARKERS) and any(
+        marker in normalized for marker in _SPARE_PARTS_LIST_QUERY_MARKERS
+    )
+
+
+def _has_spare_parts_table_content(
+    chunk: RetrievedChunk,
+    text: str,
+    lower: str,
+) -> bool:
+    table_category = str(chunk.metadata.get("table_category", "")).strip().lower()
+    if table_category == "spare_parts_table":
+        return True
+    if "|" not in text and not any(marker in lower for marker in _SPARE_PARTS_TABLE_CONTENT_MARKERS):
+        return False
+    has_marker = any(marker in lower for marker in _SPARE_PARTS_TABLE_CONTENT_MARKERS)
+    has_digit = any(character.isdigit() for character in text)
+    return has_marker and has_digit

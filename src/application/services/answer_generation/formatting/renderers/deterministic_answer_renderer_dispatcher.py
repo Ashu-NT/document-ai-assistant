@@ -74,6 +74,7 @@ class DeterministicAnswerRendererDispatcher:
             answer_intent=answer_intent,
             show_raw_evidence=show_raw_evidence,
             sources=structured_context.sources if structured_context is not None else (),
+            tables=structured_context.tables if structured_context is not None else (),
             resolved_structured_entities=resolved_structured_entities,
         )
         if spare_parts_answer is not None:

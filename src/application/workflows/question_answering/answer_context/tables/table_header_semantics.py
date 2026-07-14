@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from src.application.workflows.shared.maintenance_text_cleaning import (
     MAINTENANCE_PLACEHOLDER_VALUES,
 )
@@ -48,6 +50,28 @@ _HEADER_ROLE_ALIASES: dict[str, tuple[str, ...]] = {
         "remarks",
         "task reference",
     ),
+    "position": (
+        "item",
+        "item no",
+        "part pos",
+        "pos",
+        "pos.",
+        "pos nr",
+        "position",
+        "position no",
+    ),
+    "quantity": ("qty", "quantity"),
+    "unit": ("unit",),
+    "part_no": (
+        "article no",
+        "material no",
+        "order no",
+        "part no",
+        "part number",
+        "spare part no",
+    ),
+    "service": ("function", "service", "service function"),
+    "type": ("type",),
 }
 
 _SCHEDULE_INTERVAL_HEADERS: dict[str, str] = {
@@ -81,9 +105,13 @@ _POSITIVE_SCHEDULE_MARKERS = {
     "✓",
 }
 
+_HEADER_PUNCTUATION_PATTERN = re.compile(r"[.:;]+")
+
 
 def normalize_header(value: str) -> str:
-    return " ".join(str(value or "").strip().lower().split())
+    normalized = str(value or "").strip().lower()
+    normalized = _HEADER_PUNCTUATION_PATTERN.sub(" ", normalized)
+    return " ".join(normalized.split())
 
 
 def match_header_role(header: str) -> str | None:

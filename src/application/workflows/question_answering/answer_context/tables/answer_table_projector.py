@@ -10,6 +10,9 @@ from src.application.workflows.question_answering.answer_context.tables.answer_t
     AnswerTable,
     AnswerTableRow,
 )
+from src.application.workflows.question_answering.answer_context.tables.spare_parts_table_normalizer import (
+    SparePartsTableNormalizer,
+)
 from src.application.workflows.question_answering.answer_context.tables.answer_table_schema_inferer import (
     AnswerTableSchemaInferer,
 )
@@ -23,9 +26,13 @@ class AnswerTableProjector:
         self,
         schema_inferer: AnswerTableSchemaInferer | None = None,
         row_canonicalizer: TableRowCanonicalizer | None = None,
+        spare_parts_table_normalizer: SparePartsTableNormalizer | None = None,
     ) -> None:
         self.schema_inferer = schema_inferer or AnswerTableSchemaInferer()
         self.row_canonicalizer = row_canonicalizer or TableRowCanonicalizer()
+        self.spare_parts_table_normalizer = (
+            spare_parts_table_normalizer or SparePartsTableNormalizer()
+        )
 
     def build(self, sources: Sequence[AnswerSource]) -> list[AnswerTable]:
         tables: list[AnswerTable] = []
@@ -50,10 +57,20 @@ class AnswerTableProjector:
         if not cleaned_rows:
             return None
 
-        has_headers = self.row_canonicalizer.has_explicit_header_row(cleaned_rows)
-        headers = cleaned_rows[0] if has_headers else []
-        body_rows = cleaned_rows[1:] if has_headers else cleaned_rows
         table_category = source.metadata.get("table_category")
+        normalized_spare_parts = self.spare_parts_table_normalizer.normalize(
+            cleaned_rows,
+            table_category=table_category,
+            chunk_type=source.chunk_type,
+        )
+        if normalized_spare_parts is not None:
+            headers = normalized_spare_parts.headers
+            body_rows = normalized_spare_parts.rows
+            has_headers = True
+        else:
+            has_headers = self.row_canonicalizer.has_explicit_header_row(cleaned_rows)
+            headers = cleaned_rows[0] if has_headers else []
+            body_rows = cleaned_rows[1:] if has_headers else cleaned_rows
         table_kind, column_roles = self.schema_inferer.infer(
             chunk_type=source.chunk_type,
             headers=headers,

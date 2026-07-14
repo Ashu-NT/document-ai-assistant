@@ -177,3 +177,53 @@ def test_explicit_specification_query_keeps_technical_specification_chunk() -> N
     result = guardrail.check(context)
 
     assert technical_chunk.chunk_id in result.approved_chunk_ids
+
+
+def test_spare_parts_table_query_filters_non_table_spare_parts_chunks() -> None:
+    safety_chunk = make_chunk(
+        "spare_safety",
+        (
+            "Only original spare parts and equipment authorised by FMD are suitable "
+            "and safe for use. Incorrect or faulty spare parts can lead to damage."
+        ),
+        ChunkType.SPARE_PARTS_TABLE,
+    )
+    maintenance_chunk = make_chunk(
+        "spare_maintenance",
+        "Description | Interval | Refers to | Cleaning of the machine | After daily use |",
+        ChunkType.SPARE_PARTS_TABLE,
+    )
+    table_chunk = make_chunk(
+        "spare_table",
+        "| Position No: | Qty: | Designation: | Part No: |\n| 1 | 2 | Filter | A00103 |",
+        ChunkType.SPARE_PARTS_TABLE,
+    )
+    table_chunk.metadata["table_category"] = "spare_parts_table"
+    guardrail = ContextFilteringGuardrail()
+    context = GuardrailContext(
+        query_text="table of spare part list",
+        retrieved_chunks=[safety_chunk, maintenance_chunk, table_chunk],
+    )
+
+    result = guardrail.check(context)
+
+    assert table_chunk.chunk_id in result.approved_chunk_ids
+    assert safety_chunk.chunk_id in result.rejected_chunk_ids
+    assert maintenance_chunk.chunk_id in result.rejected_chunk_ids
+
+
+def test_spare_parts_table_query_keeps_unclassified_chunk_with_real_table_headers() -> None:
+    table_chunk = make_chunk(
+        "spare_table",
+        "| Pos. | Qty | Designation | Material No |\n| 1 | 2 | Filter | A00103 |",
+        ChunkType.SPARE_PARTS_TABLE,
+    )
+    guardrail = ContextFilteringGuardrail()
+    context = GuardrailContext(
+        query_text="show the spare parts table",
+        retrieved_chunks=[table_chunk],
+    )
+
+    result = guardrail.check(context)
+
+    assert table_chunk.chunk_id in result.approved_chunk_ids

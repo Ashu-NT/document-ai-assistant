@@ -29,6 +29,9 @@ from src.application.services.answer_generation.intent.answer_intent import (
 from src.application.workflows.question_answering.answer_context.models import (
     AnswerSource,
 )
+from src.application.workflows.question_answering.answer_context.tables.answer_table import (
+    AnswerTable,
+)
 from src.domain.common import ChunkType
 from src.shared.text.ascii_table_renderer import AsciiTableColumn, render_ascii_table
 
@@ -57,7 +60,9 @@ class SparePartsListRenderer:
     than raw `RetrievedChunk`s -- `AnswerSource.table_rows` is already
     decoded once by `StructuredSourceBuilder`, so `SparePartsTableParser`
     doesn't need its own second `table_rows_json` decode of the same chunk
-    metadata (plan section 4.7/9.5).
+    metadata (plan section 4.7/9.5). When `StructuredAnswerContext.tables`
+    is available, the renderer now prefers those normalized `AnswerTable`
+    objects over reparsing weaker raw chunk text.
     """
 
     def __init__(
@@ -80,6 +85,7 @@ class SparePartsListRenderer:
         question: str,
         answer_intent: AnswerIntent | None,
         sources: Sequence[AnswerSource],
+        tables: Sequence[AnswerTable] = (),
         resolved_structured_entities: Sequence[dict] = (),
         show_raw_evidence: bool = False,
     ) -> str | None:
@@ -101,6 +107,39 @@ class SparePartsListRenderer:
                 [structured_group], show_raw_evidence=show_raw_evidence
             )
 
+        groups = self._build_groups_from_answer_tables(tables)
+        if groups:
+            return self._render_selected_groups(
+                question=question,
+                groups=groups,
+                show_raw_evidence=show_raw_evidence,
+            )
+
+        groups = self._build_groups_from_sources(sources)
+        if not groups:
+            return None
+
+        return self._render_selected_groups(
+            question=question,
+            groups=groups,
+            show_raw_evidence=show_raw_evidence,
+        )
+
+    def _build_groups_from_answer_tables(
+        self,
+        tables: Sequence[AnswerTable],
+    ) -> list[SparePartsGroup]:
+        groups: list[SparePartsGroup] = []
+        for table in tables:
+            group = self._table_parser.build_group_from_answer_table(table)
+            if group is not None:
+                groups.append(group)
+        return groups
+
+    def _build_groups_from_sources(
+        self,
+        sources: Sequence[AnswerSource],
+    ) -> list[SparePartsGroup]:
         groups: list[SparePartsGroup] = []
         for source in sources:
             if source.chunk_type != ChunkType.SPARE_PARTS_TABLE.value:
@@ -108,9 +147,15 @@ class SparePartsListRenderer:
             if not has_table_evidence(source):
                 continue
             groups.append(self._table_parser.build_group(source))
-        if not groups:
-            return None
+        return groups
 
+    def _render_selected_groups(
+        self,
+        *,
+        question: str,
+        groups: Sequence[SparePartsGroup],
+        show_raw_evidence: bool,
+    ) -> str:
         self._last_dropped_row_count = sum(group.dropped_row_count for group in groups)
         self._last_partial = any(group.partial for group in groups)
         selection = self._group_selector.select(question=question, groups=groups)
