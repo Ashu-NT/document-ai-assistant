@@ -16,7 +16,25 @@ class TableHeaderSignatureBuilder:
             return None
         return "|".join(" > ".join(path) for path in paths if path)
 
+    def build_display_signature(self, table: TableAsset) -> str | None:
+        """Human-readable signature with a uniform umbrella title
+        stripped. For persisted/displayed metadata only - matching logic
+        must use the lossless `build`/`build_paths` instead, since two
+        unrelated tables can share a generic deeper header once their
+        one distinguishing title is thrown away.
+        """
+        paths = self.build_umbrella_collapsed_paths(table)
+        if not paths:
+            return None
+        return "|".join(" > ".join(path) for path in paths if path)
+
     def build_paths(self, table: TableAsset) -> tuple[tuple[str, ...], ...]:
+        """Full header paths, umbrella title included. This is the
+        lossless signature used for exact/fuzzy matching - dropping the
+        umbrella here would let two unrelated tables that merely share a
+        generic deeper header (e.g. "Parameter | Value") collapse onto
+        the same signature once their distinguishing title is stripped.
+        """
         if not table.rows:
             return ()
 
@@ -33,8 +51,26 @@ class TableHeaderSignatureBuilder:
             )
             for column_index in range(column_count)
         )
-        populated_paths = tuple(path for path in raw_paths if path)
-        return self._collapse_uniform_umbrella(populated_paths)
+        return tuple(path for path in raw_paths if path)
+
+    def build_umbrella_collapsed_paths(
+        self, table: TableAsset
+    ) -> tuple[tuple[str, ...], ...]:
+        """Header paths with a uniform umbrella title stripped. Only safe
+        to use for matching two tables whose umbrella titles are already
+        confirmed compatible (see `umbrella_text`) - otherwise this is the
+        lossy view that can make unrelated tables look identical.
+        """
+        return self._collapse_uniform_umbrella(self.build_paths(table))
+
+    def umbrella_text(self, table: TableAsset) -> str | None:
+        if not table.rows:
+            return None
+        first_row = table.rows[0]
+        if not self._looks_uniform_umbrella_row(first_row):
+            return None
+        label = self._uniform_row_label(first_row)
+        return label or None
 
     def _resolve_header_row_count(self, table: TableAsset) -> int:
         rows = table.rows
@@ -141,10 +177,9 @@ class TableHeaderSignatureBuilder:
         numeric_count = sum(1 for cell in non_empty if looks_numeric(cell))
         return (explicit_count * 3) + label_count - (numeric_count * 3)
 
-    @staticmethod
-    def _uniform_row_label(row: list[str]) -> str:
+    def _uniform_row_label(self, row: list[str]) -> str:
         for cell in row:
-            cleaned = normalize_cell(cell)
+            cleaned = self._normalize_cell(cell)
             if cleaned:
                 return cleaned
         return ""

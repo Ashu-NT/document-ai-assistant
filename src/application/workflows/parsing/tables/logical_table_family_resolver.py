@@ -143,7 +143,9 @@ class LogicalTableFamilyResolver:
 
             table = graph.tables.get(table_id)
             normalized_header_signature = (
-                self.header_signature_builder.build(table) if table is not None else None
+                self.header_signature_builder.build_display_signature(table)
+                if table is not None
+                else None
             )
             assignments[table_id] = LogicalTableFamilyAssignment(
                 logical_table_family_id=logical_table_family_id,
