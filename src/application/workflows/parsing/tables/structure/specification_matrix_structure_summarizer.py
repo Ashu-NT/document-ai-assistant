@@ -31,7 +31,6 @@ _TROUBLESHOOTING_HEADERS = {
     "symptom",
 }
 _UNIT_HEADERS = {"unit", "units"}
-_TASK_HEADERS = {"task"}
 _IDENTITY_RECORD_HEADERS = {
     "manufacturer",
     "serial number",
@@ -83,7 +82,7 @@ class SpecificationMatrixStructureSummarizer:
             return False
         if any(header.casefold() in _TROUBLESHOOTING_HEADERS for header in headers):
             return False
-        if self._looks_like_maintenance_narrative(headers):
+        if self._has_interval_header_signal(headers):
             return False
         if self._looks_like_identity_record_listing(headers):
             return False
@@ -138,20 +137,19 @@ class SpecificationMatrixStructureSummarizer:
         ) >= 2
 
     @staticmethod
-    def _looks_like_maintenance_narrative(headers: list[str]) -> bool:
-        """A "Task | Interval | Notes"-shaped table (free-text interval
-        descriptions rather than boolean schedule markers) belongs to the
-        maintenance-schedule family, not a parameter/value comparison -
-        even though it can otherwise satisfy the generic label/header
-        checks above. Left unclassified here rather than misrouted.
+    def _has_interval_header_signal(headers: list[str]) -> bool:
+        """A table with a literal "Interval"-style column (free-text
+        schedule descriptions like "Every 6 months", not just boolean
+        schedule markers) belongs to the maintenance-schedule family, not
+        a parameter/value comparison, regardless of what the first
+        column is called ("Task", "Description", ...) - even though it
+        can otherwise satisfy the generic label/header checks above.
+        Left unclassified here rather than misrouted.
         """
-        normalized = [header.casefold() for header in headers]
-        has_task_column = any(header in _TASK_HEADERS for header in normalized)
-        has_interval_signal = any(
-            "interval" in header or looks_interval_header(header)
-            for header in normalized
+        return any(
+            "interval" in header.casefold() or looks_interval_header(header)
+            for header in headers
         )
-        return has_task_column and has_interval_signal
 
     @staticmethod
     def _looks_like_identity_record_listing(headers: list[str]) -> bool:

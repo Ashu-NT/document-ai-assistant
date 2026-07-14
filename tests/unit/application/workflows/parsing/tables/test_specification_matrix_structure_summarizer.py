@@ -35,6 +35,33 @@ def test_does_not_detect_maintenance_narrative_table_with_free_text_intervals() 
     assert summary is None
 
 
+def test_does_not_detect_maintenance_interval_table_when_first_column_is_not_named_task() -> None:
+    """Regression test grounded in a real ingested document: a
+    maintenance-interval table whose first column is called
+    "Description" rather than "Task" must still be excluded - the
+    presence of a literal "Interval" column is enough on its own,
+    regardless of what the first column happens to be named.
+    """
+    summary = SpecificationMatrixStructureSummarizer().summarize(
+        [
+            ["Description", "Interval", "Refers to"],
+            ["Cleaning of the machine", "After daily use", ""],
+            [
+                "Check of the line strainer in the flush water pipe",
+                "First time after a month use, then when needed",
+                "",
+            ],
+            [
+                "Preventive maintenance 1",
+                "First time after 1 month use, then after 1 year, and 3 yearly from then on",
+                "Check electrical connections.",
+            ],
+        ]
+    )
+
+    assert summary is None
+
+
 def test_does_not_detect_equipment_identity_record_listing() -> None:
     """Regression test: a listing of distinct pieces of equipment
     identified by manufacturer/serial/location fields is a record table,

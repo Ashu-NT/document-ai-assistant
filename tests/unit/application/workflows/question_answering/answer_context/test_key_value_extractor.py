@@ -191,3 +191,67 @@ def test_extract_uses_specification_matrix_rows_as_specification_fields() -> Non
         ("Pressure range (Compact version)", "0...10 bar"),
         ("Pressure range (Remote version)", "0...16 bar"),
     ]
+
+
+def test_extract_does_not_fabricate_pairs_from_a_wide_troubleshooting_table() -> None:
+    """Regression test grounded in a real ingested document: a multi-
+    column troubleshooting table's rendered markdown rows must not be
+    mined as raw (first-cell, second-cell) key-value pairs - that
+    produces nonsense like key="PROBLEM" value="PROBABLE CAUSES" (the
+    header row) and key="(1) The motor does not start" value="1a)" (a
+    data row, pairing the symptom with a bare numbering token instead of
+    real content).
+    """
+    extractor = KeyValueExtractor()
+    source = _make_source(
+        content=(
+            "| PROBLEM | PROBABLE CAUSES | PROBABLE CAUSES | POSSIBLE REMEDIES | POSSIBLE REMEDIES |\n"
+            "|---|---|---|---|---|\n"
+            "| (1) The motor does not start | 1a) | Motor overload protection cuts in | 1a) | "
+            "Check the power supply. |"
+        ),
+        chunk_type="troubleshooting",
+        metadata={"table_category": "troubleshooting_table"},
+        table_rows=[
+            ["PROBLEM", "PROBABLE CAUSES", "", "POSSIBLE REMEDIES", ""],
+            [
+                "(1) The motor does not start",
+                "1a)",
+                "Motor overload protection cuts in",
+                "1a)",
+                "Check the power supply.",
+            ],
+        ],
+    )
+
+    key_values = extractor.extract(
+        [source],
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+    )
+
+    assert key_values == []
+
+
+def test_extract_does_not_treat_a_structured_row_echo_line_as_a_key_value_fact() -> None:
+    """Regression test: `to_structured_row_text()`'s generic per-row echo
+    ("Row 1: Header=Value | Header=Value") is free text, not markdown
+    table syntax, so it isn't caught by the table-row guard above - but
+    "Row 1"/"Row 2" is not a real field name and the squashed remainder
+    is not a real value, so it must not become a fabricated fact either.
+    """
+    extractor = KeyValueExtractor()
+    source = _make_source(
+        content=(
+            "Row 1: PROBLEM=(1) The motor does not start | PROBABLE CAUSES=1a) | "
+            "POSSIBLE REMEDIES=1a)"
+        ),
+        chunk_type="troubleshooting",
+        metadata={"table_category": "troubleshooting_table"},
+    )
+
+    key_values = extractor.extract(
+        [source],
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+    )
+
+    assert key_values == []

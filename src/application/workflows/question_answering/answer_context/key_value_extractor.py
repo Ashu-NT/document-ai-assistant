@@ -44,6 +44,7 @@ _KEY_VALUE_PATTERN = re.compile(
     r"^(?P<key>[A-Za-z][A-Za-z0-9 /().%-]{1,80})\s*[:=\-]\s*(?P<value>.+)$"
 )
 _UNIT_PATTERN = re.compile(r"\b(bar|mm|cm|m|kw|w|v|a|hz|dn|pcs|pc|c)\b", re.IGNORECASE)
+_ROW_LABEL_PATTERN = re.compile(r"^row\s*\d+$", re.IGNORECASE)
 _SUPPORTED_INTENTS = {
     AnswerIntent.CERTIFICATION_SUMMARY,
     AnswerIntent.IDENTIFIER_LOOKUP,
@@ -84,11 +85,18 @@ class KeyValueExtractor:
             for item in table_key_values
         }
         table_sources = {item.source_number for item in table_key_values}
+        multi_column_table_sources = {
+            table.source_number for table in resolved_tables if len(table.headers) > 2
+        }
 
         for source in sources:
             if source.source_number in table_sources:
                 continue
-            for raw_key, raw_value in self._candidate_pairs(source.content):
+            skip_table_rows = source.source_number in multi_column_table_sources
+            for raw_key, raw_value in self._candidate_pairs(
+                source.content,
+                skip_table_rows=skip_table_rows,
+            ):
                 key = self._normalize_key(raw_key)
                 if key is None:
                     continue
@@ -111,13 +119,26 @@ class KeyValueExtractor:
                 )
         return key_values
 
-    def _candidate_pairs(self, content: str) -> list[tuple[str, str]]:
+    def _candidate_pairs(
+        self,
+        content: str,
+        *,
+        skip_table_rows: bool = False,
+    ) -> list[tuple[str, str]]:
+        """Markdown table rows are only meaningful as a bare (key, value)
+        pair when the table itself is genuinely two columns. A table
+        with more columns already has its own typed projection (spare
+        parts, troubleshooting, curves, ...) - naively taking its first
+        two rendered cells produces nonsense (e.g. a Symptom/Cause/Remedy
+        table's header row "PROBLEM | PROBABLE CAUSES | ..." would
+        otherwise become the fabricated fact "PROBLEM = PROBABLE CAUSES").
+        """
         pairs: list[tuple[str, str]] = []
         for line in content.splitlines():
             stripped = line.strip()
             if not stripped:
                 continue
-            table_match = _TABLE_ROW_PATTERN.match(stripped)
+            table_match = None if skip_table_rows else _TABLE_ROW_PATTERN.match(stripped)
             if table_match is not None:
                 cells = [cell.strip() for cell in table_match.group("cells").split("|")]
                 if len(cells) >= 2 and cells[0] and cells[1]:
@@ -138,6 +159,8 @@ class KeyValueExtractor:
     def _normalize_key(cls, raw_key: str) -> str | None:
         cleaned = " ".join(str(raw_key or "").strip().split()).strip(" |:-")
         if not cleaned:
+            return None
+        if _ROW_LABEL_PATTERN.match(cleaned):
             return None
         normalized = cleaned.lower()
         for canonical, aliases in _KEY_ALIASES.items():

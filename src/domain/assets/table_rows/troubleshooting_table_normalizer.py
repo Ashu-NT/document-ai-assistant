@@ -29,6 +29,7 @@ _FIELD_MARKERS = {
     ),
     "notes": ("comment", "comments", "note", "notes", "remark", "remarks"),
 }
+_NUMBERING_TOKEN_PATTERN = re.compile(r"^\(?\d{1,3}[a-z]?[).]?$", re.IGNORECASE)
 
 
 class TroubleshootingTableNormalizer:
@@ -51,6 +52,10 @@ class TroubleshootingTableNormalizer:
         header_indexes = self._header_indexes(rows[0])
         if not header_indexes:
             return None
+        header_indexes = self._realign_numbering_columns(
+            header_indexes,
+            data_rows=rows[1:],
+        )
 
         ordered_fields = [
             field
@@ -108,9 +113,59 @@ class TroubleshootingTableNormalizer:
     def _contains_marker(header: str, marker: str) -> bool:
         """Word-boundary match, not plain substring containment - a bare
         substring check would let a short marker like "action" match
-        inside an unrelated word like "reaction".
+        inside an unrelated word like "reaction". A trailing "s?" tolerates
+        the regular plural real headers commonly use ("Probable Causes",
+        "Corrective Actions") - the one irregular plural in this
+        vocabulary ("remedy" -> "remedies") is already listed as its own
+        literal marker, so this never needs to handle it.
         """
-        return re.search(rf"\b{re.escape(marker)}\b", header) is not None
+        return re.search(rf"\b{re.escape(marker)}s?\b", header) is not None
+
+    @staticmethod
+    def _realign_numbering_columns(
+        header_indexes: dict[int, str],
+        *,
+        data_rows: list[list[str]],
+    ) -> dict[int, str]:
+        """A header spanning a "1a) <text>" sub-column pair sometimes
+        lands its label on the numbering sub-column only, leaving the
+        actual text one column over, unlabeled (a Docling merged-header
+        artifact, not a marker-matching problem). When a mapped column's
+        values are consistently bare numbering tokens ("1a)", "(2)") and
+        the very next column is unmapped and has real text, the mapping
+        belongs on that next column instead.
+        """
+        if not data_rows:
+            return header_indexes
+
+        realigned = dict(header_indexes)
+        for index, field in header_indexes.items():
+            next_index = index + 1
+            if next_index in header_indexes:
+                continue
+
+            inspected = 0
+            numbering_like = 0
+            next_column_populated = 0
+            for row in data_rows:
+                if index >= len(row):
+                    continue
+                value = normalize_cell(row[index])
+                if not value:
+                    continue
+                inspected += 1
+                if _NUMBERING_TOKEN_PATTERN.match(value):
+                    numbering_like += 1
+                if next_index < len(row) and normalize_cell(row[next_index]):
+                    next_column_populated += 1
+
+            if inspected == 0 or numbering_like != inspected:
+                continue
+            if next_column_populated < inspected:
+                continue
+            realigned[next_index] = field
+            del realigned[index]
+        return realigned
 
     @staticmethod
     def _parse_row(

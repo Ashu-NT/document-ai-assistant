@@ -67,6 +67,69 @@ def test_does_not_map_a_header_via_a_substring_inside_an_unrelated_word() -> Non
     assert normalized.headers == ["Symptom", "Cause"]
 
 
+def test_maps_a_pluralized_header_to_its_singular_marker() -> None:
+    """Regression test: word-boundary marker matching must still accept
+    the regular plural real headers commonly use ("Probable Causes"),
+    not just the exact singular marker text.
+    """
+    normalized = TroubleshootingTableNormalizer().normalize(
+        [
+            ["Problem", "Probable Causes", "Corrective Actions"],
+            ["Motor overheats", "Blocked ventilation", "Clean vents"],
+        ],
+        table_category="troubleshooting_table",
+        chunk_type=None,
+    )
+
+    assert normalized is not None
+    assert normalized.headers == ["Symptom", "Cause", "Remedy"]
+
+
+def test_realigns_a_merged_header_that_landed_on_its_numbering_sub_column() -> None:
+    """Regression test, grounded in a real ingested document: a header
+    like "PROBABLE CAUSES" can visually span a "1a) <text>" sub-column
+    pair but land its label on the bare numbering sub-column only,
+    leaving the actual cause/remedy text one column over, unlabeled.
+    The real content must still be recovered, not the numbering token.
+    """
+    normalized = TroubleshootingTableNormalizer().normalize(
+        [
+            ["PROBLEM", "PROBABLE CAUSES", "", "POSSIBLE REMEDIES", ""],
+            [
+                "(1) The motor does not start",
+                "1a)",
+                "Motor overload protection cuts in",
+                "1a)",
+                "Check the power supply.",
+            ],
+            [
+                "(1) The motor does not start",
+                "1b)",
+                "Shaft locked",
+                "1b)",
+                "Remove the cause of lockage.",
+            ],
+        ],
+        table_category="troubleshooting_table",
+        chunk_type=None,
+    )
+
+    assert normalized is not None
+    assert normalized.headers == ["Symptom", "Cause", "Remedy"]
+    assert normalized.rows == [
+        [
+            "(1) The motor does not start",
+            "Motor overload protection cuts in",
+            "Check the power supply.",
+        ],
+        [
+            "(1) The motor does not start",
+            "Shaft locked",
+            "Remove the cause of lockage.",
+        ],
+    ]
+
+
 def test_drops_rows_with_no_symptom_cause_or_remedy_signal() -> None:
     normalized = TroubleshootingTableNormalizer().normalize(
         [
