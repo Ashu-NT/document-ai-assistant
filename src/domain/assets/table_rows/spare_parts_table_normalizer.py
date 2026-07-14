@@ -169,12 +169,10 @@ class SparePartsTableNormalizer:
         return []
 
     def _parse_explicit_row(self, cells: list[str]) -> dict[str, str] | None:
-        first_cell = cells[0]
-        tokens = first_cell.split()
-        if len(tokens) < 2:
+        seed = self._seed_tokens(cells)
+        if seed is None:
             return None
-        if not self._looks_position_token(tokens[0]) or not _QUANTITY_PATTERN.match(tokens[1]):
-            return None
+        seed_index, tokens = seed
 
         row: dict[str, str] = {
             "position": tokens[0],
@@ -189,19 +187,34 @@ class SparePartsTableNormalizer:
         if len(tokens) > remainder_start:
             description_parts.append(" ".join(tokens[remainder_start:]))
 
-        if len(cells) >= 2 and cells[1]:
-            description_parts.append(cells[1])
+        for offset, cell in enumerate(cells[seed_index + 1 :], start=1):
+            if not cell:
+                continue
+            if offset == 1 and not self._looks_part_code(cell):
+                description_parts.append(cell)
+                continue
+            snapshot = dict(row)
+            self._apply_tail_code(row, cell)
+            if row == snapshot and not self._looks_part_code(cell):
+                description_parts.append(cell)
         description = " ".join(part.strip() for part in description_parts if part.strip()).strip()
         if description:
             row["description"] = description
 
-        if len(cells) >= 3:
-            self._apply_tail_code(row, cells[2])
-        if len(cells) >= 4 and not row.get("service_package"):
-            self._apply_tail_code(row, cells[3])
-
         if row.get("description") or row.get("part_no"):
             return row
+        return None
+
+    def _seed_tokens(self, cells: list[str]) -> tuple[int, list[str]] | None:
+        for index, cell in enumerate(cells):
+            tokens = cell.split()
+            if len(tokens) < 2:
+                continue
+            if not self._looks_position_token(tokens[0]):
+                continue
+            if not _QUANTITY_PATTERN.match(tokens[1]):
+                continue
+            return index, tokens
         return None
 
     @staticmethod

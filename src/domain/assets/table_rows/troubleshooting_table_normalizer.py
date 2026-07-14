@@ -17,7 +17,15 @@ _FIELD_LABELS = {
 }
 _FIELD_MARKERS = {
     "symptom": ("fault", "problem", "symptom", "trouble", "warning"),
-    "cause": ("cause", "probable cause", "possible cause", "reason"),
+    "cause": (
+        "cause",
+        "causes",
+        "probable cause",
+        "probable causes",
+        "possible cause",
+        "possible causes",
+        "reason",
+    ),
     "remedy": (
         "action",
         "corrective action",
@@ -29,6 +37,7 @@ _FIELD_MARKERS = {
     ),
     "notes": ("comment", "comments", "note", "notes", "remark", "remarks"),
 }
+_ENUMERATION_PATTERN = re.compile(r"^\(?\d+[A-Za-z]?\)?[.)]?$")
 
 
 class TroubleshootingTableNormalizer:
@@ -118,22 +127,39 @@ class TroubleshootingTableNormalizer:
         row: list[str],
         header_indexes: dict[int, str],
     ) -> dict[str, str] | None:
-        parsed: dict[str, str] = {}
-        extras: list[str] = []
+        candidates: dict[str, list[tuple[int, str]]] = {}
+        extras: list[tuple[int, str]] = []
         for index, cell in enumerate(row):
             value = normalize_cell(cell)
             if not value:
                 continue
             mapped_field = header_indexes.get(index)
             if mapped_field is None:
-                extras.append(value)
+                extras.append((index, value))
                 continue
-            parsed[mapped_field] = value
+            candidates.setdefault(mapped_field, []).append((index, value))
+
+        parsed = {
+            field: TroubleshootingTableNormalizer._best_field_value(values)
+            for field, values in candidates.items()
+        }
+        used_extra_indexes = TroubleshootingTableNormalizer._promote_richer_extras(
+            parsed=parsed,
+            extras=extras,
+            header_indexes=header_indexes,
+        )
 
         if extras:
             existing_notes = parsed.get("notes", "")
             parsed["notes"] = " | ".join(
-                part for part in (existing_notes, *extras) if part
+                part for part in (
+                    existing_notes,
+                    *(
+                        value
+                        for index, value in extras
+                        if index not in used_extra_indexes
+                    ),
+                ) if part
             )
 
         signal_fields = [
@@ -142,3 +168,73 @@ class TroubleshootingTableNormalizer:
         if not signal_fields:
             return None
         return parsed
+
+    @staticmethod
+    def _best_field_value(values: list[tuple[int, str]]) -> str:
+        return max(values, key=TroubleshootingTableNormalizer._field_value_score)[1]
+
+    @staticmethod
+    def _field_value_score(item: tuple[int, str]) -> tuple[int, int]:
+        value = item[1]
+        normalized = value.casefold()
+        score = 0 if _ENUMERATION_PATTERN.match(normalized) else 3
+        score += sum(character.isalpha() for character in value)
+        return score, len(value)
+
+    @staticmethod
+    def _promote_richer_extras(
+        *,
+        parsed: dict[str, str],
+        extras: list[tuple[int, str]],
+        header_indexes: dict[int, str],
+    ) -> set[int]:
+        used_indexes: set[int] = set()
+        if not extras:
+            return used_indexes
+        cause_index = min(
+            (index for index, field in header_indexes.items() if field == "cause"),
+            default=None,
+        )
+        remedy_index = min(
+            (index for index, field in header_indexes.items() if field == "remedy"),
+            default=None,
+        )
+        if TroubleshootingTableNormalizer._needs_richer_value(parsed.get("cause")):
+            candidate = TroubleshootingTableNormalizer._candidate_from_extras(
+                extras,
+                lower_bound=cause_index,
+                upper_bound=remedy_index,
+            )
+            if candidate is not None:
+                used_indexes.add(candidate[0])
+                parsed["cause"] = candidate[1]
+        if TroubleshootingTableNormalizer._needs_richer_value(parsed.get("remedy")):
+            candidate = TroubleshootingTableNormalizer._candidate_from_extras(
+                extras,
+                lower_bound=remedy_index if remedy_index is not None else cause_index,
+            )
+            if candidate is not None:
+                used_indexes.add(candidate[0])
+                parsed["remedy"] = candidate[1]
+        return used_indexes
+
+    @staticmethod
+    def _candidate_from_extras(
+        extras: list[tuple[int, str]],
+        *,
+        lower_bound: int | None,
+        upper_bound: int | None = None,
+    ) -> tuple[int, str] | None:
+        candidates = [
+            (index, value)
+            for index, value in extras
+            if (lower_bound is None or index > lower_bound)
+            and (upper_bound is None or index < upper_bound)
+            and not TroubleshootingTableNormalizer._needs_richer_value(value)
+        ]
+        return max(candidates, key=lambda item: len(item[1])) if candidates else None
+
+    @staticmethod
+    def _needs_richer_value(value: str | None) -> bool:
+        normalized = normalize_cell(value)
+        return not normalized or _ENUMERATION_PATTERN.match(normalized.casefold()) is not None
