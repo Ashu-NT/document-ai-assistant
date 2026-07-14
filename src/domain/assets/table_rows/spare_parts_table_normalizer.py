@@ -78,9 +78,8 @@ class SparePartsTableNormalizer:
                 continue
             if self._looks_like_title_row(normalized_cells):
                 continue
-            header_fields = self._header_fields(normalized_cells)
-            if header_fields:
-                for field in header_fields:
+            if self._looks_like_header_row(normalized_cells):
+                for field in self._header_fields(normalized_cells):
                     if field not in detected_header_fields:
                         detected_header_fields.append(field)
                 continue
@@ -124,11 +123,28 @@ class SparePartsTableNormalizer:
         normalized = cells[0].casefold()
         return normalized in {"spare parts list", "spare parts", "exploded views"}
 
+    def _looks_like_header_row(self, cells: list[str]) -> bool:
+        """Whether this row IS a header at all - kept separate from
+        `_header_fields`'s marker mapping, which can legitimately come up
+        empty for a recognized header row (e.g. "Reference | Code") that
+        just doesn't use any of the known field vocabulary. Conflating
+        the two previously let such header rows fall through and get
+        miscounted as failed data rows, which could reject the whole
+        table via the row-count guard below.
+
+        A real position+quantity seed (e.g. "0020 4 Pce pin") overrides
+        the header-keyword check - `looks_explicit_header_cell` matches
+        several short, generic keywords ("pin", "wire", "tag", ...) that
+        are common trailing words in genuine part descriptions, not just
+        column headers.
+        """
+        if self._seed_tokens(cells) is not None:
+            return False
+        joined = " ".join(cells).casefold()
+        return any(looks_explicit_header_cell(cell) for cell in cells) or "spare part" in joined
+
     def _header_fields(self, cells: list[str]) -> list[str]:
         joined = " ".join(cells).casefold()
-        if not any(looks_explicit_header_cell(cell) for cell in cells) and "spare part" not in joined:
-            return []
-
         detected: list[str] = []
         for field in _FIELD_ORDER:
             if any(marker in joined for marker in _FIELD_MARKERS[field]):
@@ -166,7 +182,30 @@ class SparePartsTableNormalizer:
         if free_form_row is not None:
             return [free_form_row]
 
+        reference_row = self._parse_reference_code_row(cells)
+        if reference_row is not None:
+            return [reference_row]
+
         return []
+
+    def _parse_reference_code_row(self, cells: list[str]) -> dict[str, str] | None:
+        """A plain two-column "description -> part code" lookup row with
+        no position/quantity concept at all (e.g. a table headed
+        "Reference | Code"), common for simple parts-reference lists.
+        Only accepted for exactly two populated cells where the second
+        looks like a real part code, so this doesn't swallow rows that
+        belong to one of the more specific position-led shapes above.
+        """
+        if len(cells) != 2:
+            return None
+        description, code = cells[0].strip(), cells[1].strip()
+        if not description or not code:
+            return None
+        if self._looks_position_token(description):
+            return None
+        if not self._looks_part_code(code):
+            return None
+        return {"description": description, "part_no": code}
 
     def _parse_explicit_row(self, cells: list[str]) -> dict[str, str] | None:
         seed = self._seed_tokens(cells)
