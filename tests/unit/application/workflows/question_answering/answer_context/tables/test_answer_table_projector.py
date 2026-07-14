@@ -45,6 +45,31 @@ def test_projector_detects_maintenance_schedule_matrix() -> None:
     assert tables[0].table_kind == "maintenance_schedule_matrix"
 
 
+def test_projector_detects_implicit_maintenance_schedule_matrix() -> None:
+    projector = AnswerTableProjector()
+    tables = projector.build(
+        [
+            AnswerSource(
+                source_number=1,
+                chunk_id="chunk_sched",
+                chunk_type="maintenance_interval",
+                table_rows=[
+                    ["D", "Q Q", "M S A", "Task Reference"],
+                    ["General Maintenance Work on the Press", "", "", ""],
+                    ["X", "", "Check basket for blockages", ""],
+                    ["", "X", "Clean dirt from the housing", "See gearbox annex"],
+                ],
+                metadata={"table_category": "maintenance_interval_table"},
+            )
+        ]
+    )
+
+    assert len(tables) == 1
+    assert tables[0].table_kind == "maintenance_schedule_matrix"
+    assert tables[0].column_roles[2] == "task"
+    assert tables[0].column_roles[3] == "notes"
+
+
 def test_projector_deduplicates_same_logical_table_family_and_carries_metadata() -> None:
     projector = AnswerTableProjector()
     tables = projector.build(

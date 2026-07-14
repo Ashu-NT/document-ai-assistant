@@ -109,6 +109,27 @@ def test_extract_identifier_lookup_keeps_identifier_rows_from_structured_table()
     ]
 
 
+def test_extract_identifier_lookup_normalizes_part_no_and_serial_no_aliases() -> None:
+    extractor = KeyValueExtractor()
+    source = _make_source(
+        table_rows=[
+            ["Parameter", "Value"],
+            ["Serial No.", "D4093386"],
+            ["Part No.", "A00103"],
+        ]
+    )
+
+    key_values = extractor.extract(
+        [source],
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+    )
+
+    assert [(item.key, item.value) for item in key_values] == [
+        ("Serial Number", "D4093386"),
+        ("Part Number", "A00103"),
+    ]
+
+
 def test_extract_uses_generic_record_table_headers_as_fields() -> None:
     extractor = KeyValueExtractor()
     source = _make_source(

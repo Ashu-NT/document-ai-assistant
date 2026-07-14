@@ -38,7 +38,16 @@ _HEADER_ROLE_ALIASES: dict[str, tuple[str, ...]] = {
         "service interval",
     ),
     "component": ("assembly", "component", "equipment", "location", "part", "system"),
-    "notes": ("comment", "comments", "note", "notes", "remark", "remarks"),
+    "notes": (
+        "comment",
+        "comments",
+        "note",
+        "notes",
+        "reference",
+        "remark",
+        "remarks",
+        "task reference",
+    ),
 }
 
 _SCHEDULE_INTERVAL_HEADERS: dict[str, str] = {
@@ -103,7 +112,8 @@ def schedule_interval_labels(header: str) -> tuple[str, ...]:
 
     tokens = _tokenize_schedule_header(normalized)
     if len(tokens) >= 2 and all(token in _SCHEDULE_INTERVAL_HEADERS for token in tokens):
-        return tuple(_SCHEDULE_INTERVAL_HEADERS[token] for token in tokens)
+        labels = [_SCHEDULE_INTERVAL_HEADERS[token] for token in tokens]
+        return tuple(dict.fromkeys(labels))
     return ()
 
 

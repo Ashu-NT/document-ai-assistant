@@ -91,8 +91,9 @@ class SqlKeywordRepository:
                     retrieval_source="sql_keyword",
                     extra_metadata=score_breakdown.metadata,
                     identifier_values=identifier_values_by_chunk_id.get(row.id),
+                    document_name=document_row.title or document_row.file_name,
                 )
-                for row, _document_row, score_breakdown in selected_rows
+                for row, document_row, score_breakdown in selected_rows
             ]
 
         except SQLAlchemyError as exc:

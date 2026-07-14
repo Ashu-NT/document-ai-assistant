@@ -6,6 +6,9 @@ from src.application.workflows.question_answering.answer_context.maintenance.mai
     candidate_from_table_row,
     extract_component,
 )
+from src.application.workflows.question_answering.answer_context.maintenance.maintenance_task_text_cleaner import (
+    clean_task,
+)
 from src.application.workflows.question_answering.answer_context.tables.answer_table import (
     AnswerTable,
     AnswerTableRow,
@@ -45,7 +48,7 @@ class MaintenanceTableCandidateExtractor:
         interval_columns = [
             (index, header)
             for index, header in enumerate(table.headers)
-            if schedule_interval_labels(header)
+            if index != task_index and schedule_interval_labels(header)
         ]
         for row in table.rows:
             candidate = self._matrix_row_candidate(
@@ -69,7 +72,7 @@ class MaintenanceTableCandidateExtractor:
     ) -> MaintenanceCandidate | None:
         if task_index >= len(row.cells):
             return None
-        task = clean_optional_text(row.cells[task_index])
+        task = clean_task(row.cells[task_index])
         if task is None:
             return None
 

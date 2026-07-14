@@ -28,11 +28,11 @@ _KEY_ALIASES: dict[str, tuple[str, ...]] = {
     "Material": ("material",),
     "Model": ("model", "model number"),
     "Order code": ("order code", "ordering code", "order number"),
-    "Part Number": ("part number",),
+    "Part Number": ("part number", "part no", "part no.", "part nr", "part nr."),
     "Power": ("power",),
     "Pressure": ("pressure",),
     "Quantity": ("quantity", "qty"),
-    "Serial Number": ("serial number",),
+    "Serial Number": ("serial number", "serial no", "serial no.", "serial nr", "serial nr."),
     "Size": ("size", "nominal size"),
     "Temperature": ("temperature",),
     "Test pressure": ("test pressure",),
@@ -156,7 +156,9 @@ class KeyValueExtractor:
                 "model",
                 "order code",
                 "order number",
+                "part no",
                 "part number",
+                "serial no",
                 "serial number",
             )
         ):

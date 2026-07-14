@@ -235,6 +235,9 @@ def extract_component(task: str) -> str | None:
         return None
     component = " ".join(match.group("component").split())
     component = re.split(r"\b(?:for|during|before|after|when|if)\b", component, maxsplit=1)[0]
+    component = re.sub(r"^(?:all|both|each)\s+", "", component, flags=re.IGNORECASE)
+    if component.lower().startswith("that "):
+        return None
     return component.rstrip(" .;:") or None
 
 

@@ -1,6 +1,7 @@
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )
+from src.domain.retrieval.citation import Citation
 from src.domain.retrieval import RetrievedChunk
 
 
@@ -29,6 +30,23 @@ def to_retrieved_chunk(
         section_id=document_chunk.section_id,
         section_path=list(document_chunk.section_path),
         source=document_chunk.source,
+        citation=Citation(
+            citation_id=f"cit_{document_chunk.chunk_id}",
+            document_id=document_chunk.document_id,
+            chunk_id=document_chunk.chunk_id,
+            section_id=document_chunk.section_id,
+            document_name=(
+                anchor_chunk.citation.document_name
+                if anchor_chunk.citation is not None
+                else None
+            ),
+            section_title=(
+                document_chunk.section_path[-1]
+                if document_chunk.section_path
+                else None
+            ),
+            source=document_chunk.source,
+        ),
         statistics=document_chunk.statistics,
         metadata=metadata,
     )

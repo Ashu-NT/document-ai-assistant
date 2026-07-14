@@ -21,6 +21,16 @@ _SPECIFICATION_INTENTS = {
     AnswerIntent.SPECIFICATION_SUMMARY,
     AnswerIntent.TABLE_SUMMARY,
 }
+_CANONICAL_LABEL_ALIASES: dict[str, str] = {
+    "part no": "Part Number",
+    "part no.": "Part Number",
+    "part nr": "Part Number",
+    "part nr.": "Part Number",
+    "serial no": "Serial Number",
+    "serial no.": "Serial Number",
+    "serial nr": "Serial Number",
+    "serial nr.": "Serial Number",
+}
 
 
 class SpecificationTableKeyValueExtractor:
@@ -173,7 +183,9 @@ class SpecificationTableKeyValueExtractor:
     @staticmethod
     def _clean_label(value: str | None) -> str | None:
         cleaned = " ".join(str(value or "").split()).strip(" |:-")
-        return cleaned or None
+        if not cleaned:
+            return None
+        return _CANONICAL_LABEL_ALIASES.get(cleaned.lower(), cleaned)
 
     @staticmethod
     def _clean_value(value: str | None) -> str | None:

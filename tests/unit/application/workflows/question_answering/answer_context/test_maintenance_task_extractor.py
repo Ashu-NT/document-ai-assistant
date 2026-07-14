@@ -96,3 +96,52 @@ def test_extract_maintenance_entries_from_schedule_matrix() -> None:
     assert len(entries) == 1
     assert entries[0].task == "Inspect basket"
     assert entries[0].interval == "Monthly; Semi-Annual; Annual"
+
+
+def test_extract_maintenance_entries_from_schedule_matrix_cleans_schedule_prefix() -> None:
+    extractor = MaintenanceTaskExtractor()
+    source = _make_source(
+        table_rows=[
+            ["Task", "D", "M", "S", "A"],
+            ["M S A=Check gearbox for leaks", "x", "", "x", "x"],
+        ]
+    )
+
+    entries = extractor.extract_maintenance_entries(
+        [source],
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+    )
+
+    assert len(entries) == 1
+    assert entries[0].task == "Check gearbox for leaks"
+    assert entries[0].interval == "Daily; Semi-Annual; Annual"
+
+
+def test_extract_maintenance_entries_from_implicit_schedule_matrix() -> None:
+    extractor = MaintenanceTaskExtractor()
+    source = _make_source(
+        table_rows=[
+            ["D", "Q Q", "M S A", "Task Reference"],
+            ["General Maintenance Work on the Press", "", "", ""],
+            ["X", "", "Check basket for blockages", ""],
+            ["", "X", "Clean dirt from the housing", "See gearbox annex"],
+            ["X", "", "M S A=Check that the screw runs evenly in the basket", ""],
+        ],
+    )
+    source.chunk_type = "maintenance_interval"
+    source.metadata = {"table_category": "maintenance_interval_table"}
+
+    entries = extractor.extract_maintenance_entries(
+        [source],
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+    )
+
+    assert len(entries) == 3
+    assert entries[0].task == "Check basket for blockages"
+    assert entries[0].interval == "Daily"
+    assert entries[1].task == "Clean dirt from the housing"
+    assert entries[1].interval == "Quarterly"
+    assert entries[1].notes == "See gearbox annex"
+    assert entries[2].task == "Check that the screw runs evenly in the basket"
+    assert entries[2].interval == "Daily"
+    assert entries[2].component is None

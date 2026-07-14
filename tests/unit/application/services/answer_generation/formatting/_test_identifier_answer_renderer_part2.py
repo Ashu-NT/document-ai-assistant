@@ -238,3 +238,39 @@ def test_render_appends_page_reference_from_structured_context_source() -> None:
 
     assert result is not None
     assert "- HP-002 (pp.20-21)" in result
+
+
+def test_render_maps_part_no_variant_and_extracts_terminal_identifier_token() -> None:
+    renderer = IdentifierAnswerRenderer()
+
+    result = renderer.render(
+        question="List the part numbers",
+        answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        structured_context=StructuredAnswerContext(
+            answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+            key_values=[
+                _make_key_value(
+                    key="P&ID Pos Nr. Service Function Type Part No.",
+                    value=(
+                        "V.00.01.01 Dry Running Protection Solenoid "
+                        "G1/2 Solenoid, 2/2-way, 24Vdc A00103"
+                    ),
+                    source_number=4,
+                )
+            ],
+            sources=[
+                AnswerSource(
+                    source_number=4,
+                    chunk_id="chunk_4",
+                    page_start=97,
+                    page_end=97,
+                )
+            ],
+        ),
+        resolved_identifiers=[],
+    )
+
+    assert result is not None
+    assert "Part Numbers:" in result
+    assert "- A00103 (p.97)" in result
+    assert "24Vdc" not in result

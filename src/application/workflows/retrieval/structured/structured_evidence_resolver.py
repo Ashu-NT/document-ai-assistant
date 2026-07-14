@@ -21,6 +21,7 @@ from src.application.workflows.shared.structured_evidence_deduplication import (
 )
 from src.domain.common import IdentifierType
 from src.domain.document.entities.identifier import Identifier
+from src.domain.retrieval.citation import Citation
 from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 
 
@@ -212,6 +213,16 @@ class StructuredEvidenceResolver:
                     section_id=chunk.section_id,
                     section_path=list(chunk.section_path),
                     source=chunk.source,
+                    citation=Citation(
+                        citation_id=f"cit_{chunk.chunk_id}",
+                        document_id=chunk.document_id,
+                        chunk_id=chunk.chunk_id,
+                        section_id=chunk.section_id,
+                        section_title=(
+                            chunk.section_path[-1] if chunk.section_path else None
+                        ),
+                        source=chunk.source,
+                    ),
                     statistics=chunk.statistics,
                     metadata=metadata,
                 )

@@ -29,6 +29,22 @@ def test_retrieved_chunk_mapper_from_chunk_orm(sample_chunk) -> None:
     assert retrieved.metadata["table_row_end"] == "3"
 
 
+def test_retrieved_chunk_mapper_attaches_citation_metadata(sample_chunk) -> None:
+    chunk_orm = ChunkMapper.to_orm(sample_chunk)
+
+    retrieved = RetrievedChunkMapper.from_chunk_orm(
+        chunk_orm,
+        document_name="FWC12 Manual",
+    )
+
+    assert retrieved.citation is not None
+    assert retrieved.citation.document_id == sample_chunk.document_id
+    assert retrieved.citation.chunk_id == sample_chunk.chunk_id
+    assert retrieved.citation.document_name == "FWC12 Manual"
+    assert retrieved.citation.section_title == sample_chunk.section_path[-1]
+    assert retrieved.citation.source.page_start == sample_chunk.source.page_start
+
+
 def test_retrieved_chunk_mapper_from_chunk_orm_with_identifier_values(sample_chunk) -> None:
     chunk_orm = ChunkMapper.to_orm(sample_chunk)
 

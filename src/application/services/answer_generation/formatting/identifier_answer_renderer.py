@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Sequence
+import re
 
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
@@ -33,10 +34,18 @@ _IDENTIFIER_TYPE_LABELS: dict[IdentifierType, str] = {
 }
 _IDENTIFIER_KEY_TO_TYPE: dict[str, IdentifierType] = {
     "Part Number": IdentifierType.PART_NUMBER,
+    "Part No": IdentifierType.PART_NUMBER,
+    "Part No.": IdentifierType.PART_NUMBER,
+    "Part Nr": IdentifierType.PART_NUMBER,
+    "Part Nr.": IdentifierType.PART_NUMBER,
     "Serial Number": IdentifierType.SERIAL_NUMBER,
+    "Serial No": IdentifierType.SERIAL_NUMBER,
+    "Serial No.": IdentifierType.SERIAL_NUMBER,
     "Model": IdentifierType.MODEL_NUMBER,
     "Product Name": IdentifierType.PRODUCT_NAME,
     "Order code": IdentifierType.COMPONENT_CODE,
+    "Order Code": IdentifierType.COMPONENT_CODE,
+    "Order Number": IdentifierType.COMPONENT_CODE,
     "Phone Number": IdentifierType.PHONE_NUMBER,
     "Fax Number": IdentifierType.FAX_NUMBER,
     "Email": IdentifierType.EMAIL_ADDRESS,
@@ -44,6 +53,11 @@ _IDENTIFIER_KEY_TO_TYPE: dict[str, IdentifierType] = {
     "URL": IdentifierType.URL,
     "Website": IdentifierType.URL,
 }
+_UNIT_LIKE_IDENTIFIER_TOKEN_PATTERN = re.compile(
+    r"^\d+(?:vdc|vac|hz|bar|kg|kw|w|v|a|mm|cm|m|l|hr|hrs)$",
+    re.IGNORECASE,
+)
+_CODE_LIKE_TOKEN_PATTERN = re.compile(r"\b[A-Za-z0-9][A-Za-z0-9./_-]{2,}\b")
 _TYPE_ORDER: tuple[IdentifierType, ...] = (
     IdentifierType.PART_NUMBER,
     IdentifierType.SERIAL_NUMBER,
@@ -104,15 +118,16 @@ class IdentifierAnswerRenderer:
                     continue
                 if requested_types and identifier_type not in requested_types:
                     continue
-                value = self._clean_value(key_value.value)
-                if value is None:
-                    continue
-                fingerprint = (identifier_type, value.lower())
-                if fingerprint in seen:
-                    continue
-                seen.add(fingerprint)
                 page_label = page_by_source_number.get(key_value.source_number)
-                grouped_values[identifier_type].append((value, page_label))
+                for value in self._normalized_key_value_values(
+                    identifier_type,
+                    key_value.value,
+                ):
+                    fingerprint = (identifier_type, value.lower())
+                    if fingerprint in seen:
+                        continue
+                    seen.add(fingerprint)
+                    grouped_values[identifier_type].append((value, page_label))
 
         for identifier in resolved_identifiers:
             identifier_type = self._normalized_identifier_type(identifier.identifier_type)
@@ -120,15 +135,16 @@ class IdentifierAnswerRenderer:
                 continue
             if requested_types and identifier_type not in requested_types:
                 continue
-            value = self._clean_value(identifier.raw_value)
-            if value is None:
-                continue
-            fingerprint = (identifier_type, value.lower())
-            if fingerprint in seen:
-                continue
-            seen.add(fingerprint)
             page_label = self._format_page_range(identifier.page_start, identifier.page_end)
-            grouped_values[identifier_type].append((value, page_label))
+            for value in self._normalized_key_value_values(
+                identifier_type,
+                identifier.raw_value,
+            ):
+                fingerprint = (identifier_type, value.lower())
+                if fingerprint in seen:
+                    continue
+                seen.add(fingerprint)
+                grouped_values[identifier_type].append((value, page_label))
 
         if not grouped_values:
             return None
@@ -177,7 +193,88 @@ class IdentifierAnswerRenderer:
     def _identifier_type_from_key_value(
         key_value: AnswerKeyValue,
     ) -> IdentifierType | None:
-        return _IDENTIFIER_KEY_TO_TYPE.get(key_value.key)
+        key = " ".join(str(key_value.key or "").strip().split())
+        if not key:
+            return None
+        if key in _IDENTIFIER_KEY_TO_TYPE:
+            return _IDENTIFIER_KEY_TO_TYPE[key]
+
+        normalized = key.lower().replace("nr.", "no.").replace("nr", "no")
+        if "part no" in normalized or "part number" in normalized:
+            return IdentifierType.PART_NUMBER
+        if "serial no" in normalized or "serial number" in normalized:
+            return IdentifierType.SERIAL_NUMBER
+        if "model" in normalized:
+            return IdentifierType.MODEL_NUMBER
+        if "product name" in normalized:
+            return IdentifierType.PRODUCT_NAME
+        if "order code" in normalized or "order number" in normalized:
+            return IdentifierType.COMPONENT_CODE
+        if "phone" in normalized or "telephone" in normalized or "tel" == normalized:
+            return IdentifierType.PHONE_NUMBER
+        if "fax" in normalized:
+            return IdentifierType.FAX_NUMBER
+        if "email" in normalized:
+            return IdentifierType.EMAIL_ADDRESS
+        if "url" in normalized or "website" in normalized or "web address" in normalized:
+            return IdentifierType.URL
+        return None
+
+    def _normalized_key_value_values(
+        self,
+        identifier_type: IdentifierType,
+        raw_value: str | None,
+    ) -> list[str]:
+        cleaned = self._clean_value(raw_value)
+        if cleaned is None:
+            return []
+        if identifier_type not in {
+            IdentifierType.PART_NUMBER,
+            IdentifierType.SERIAL_NUMBER,
+            IdentifierType.MODEL_NUMBER,
+            IdentifierType.DRAWING_NUMBER,
+            IdentifierType.COMPONENT_CODE,
+            IdentifierType.CERTIFICATE_NUMBER,
+        }:
+            return [cleaned]
+        extracted = self._extract_identifier_tokens(cleaned)
+        if not extracted:
+            return [cleaned]
+        if identifier_type == IdentifierType.PART_NUMBER:
+            if self._looks_like_revision_suffix_value(cleaned, extracted[0]):
+                return [cleaned]
+            return [extracted[-1]]
+        return [extracted[0]]
+
+    def _extract_identifier_tokens(self, value: str) -> list[str]:
+        compact = self._clean_value(value)
+        if compact is None:
+            return []
+        if " " not in compact and not _UNIT_LIKE_IDENTIFIER_TOKEN_PATTERN.match(compact):
+            return [compact]
+
+        tokens: list[str] = []
+        for match in _CODE_LIKE_TOKEN_PATTERN.finditer(compact):
+            token = match.group(0).strip(".,;:()[]")
+            if len(token) < 3:
+                continue
+            if _UNIT_LIKE_IDENTIFIER_TOKEN_PATTERN.match(token):
+                continue
+            if not any(character.isdigit() for character in token):
+                continue
+            if token.lower() in {"2/2-way", "g1/2", "g1/4"}:
+                continue
+            if token not in tokens:
+                tokens.append(token)
+        return tokens
+
+    @staticmethod
+    def _looks_like_revision_suffix_value(value: str, first_token: str) -> bool:
+        remainder = value[len(first_token) :].strip()
+        if not remainder:
+            return False
+        normalized = " ".join(remainder.lower().split())
+        return normalized.startswith("rev ")
 
     @staticmethod
     def _requested_identifier_types(question: str) -> set[IdentifierType]:

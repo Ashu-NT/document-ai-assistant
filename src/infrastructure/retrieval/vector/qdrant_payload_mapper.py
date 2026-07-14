@@ -5,6 +5,7 @@ from qdrant_client.http.models import models
 from src.domain.common import ChunkType, SourceLocation
 from src.domain.document.entities import DocumentChunk
 from src.domain.document.value_objects import ChunkStatistics
+from src.domain.retrieval.citation import Citation
 from src.domain.retrieval import RetrievedChunk
 
 
@@ -73,6 +74,11 @@ class QdrantPayloadMapper:
             if isinstance(raw_section_path, list)
             else []
         )
+        source = SourceLocation(
+            page_start=QdrantPayloadMapper._coerce_int(payload.get("page_start")),
+            page_end=QdrantPayloadMapper._coerce_int(payload.get("page_end")),
+        )
+        chunk_id = str(payload.get("chunk_id") or point.id)
 
         metadata = {
             "sequence_number": str(payload.get("sequence_number") or ""),
@@ -104,7 +110,7 @@ class QdrantPayloadMapper:
         )
 
         return RetrievedChunk(
-            chunk_id=str(payload.get("chunk_id") or point.id),
+            chunk_id=chunk_id,
             document_id=str(payload.get("document_id") or ""),
             content=str(payload.get("content") or ""),
             score=float(point.score),
@@ -116,9 +122,26 @@ class QdrantPayloadMapper:
                 else None
             ),
             section_path=section_path,
-            source=SourceLocation(
-                page_start=QdrantPayloadMapper._coerce_int(payload.get("page_start")),
-                page_end=QdrantPayloadMapper._coerce_int(payload.get("page_end")),
+            source=source,
+            citation=Citation(
+                citation_id=f"cit_{chunk_id}",
+                document_id=str(payload.get("document_id") or ""),
+                chunk_id=chunk_id,
+                section_id=(
+                    str(payload.get("section_id"))
+                    if payload.get("section_id") is not None
+                    else None
+                ),
+                document_name=(
+                    str(
+                        payload.get("document_name")
+                        or payload.get("document_title")
+                        or ""
+                    ).strip()
+                    or None
+                ),
+                section_title=section_path[-1] if section_path else None,
+                source=source,
             ),
             statistics=QdrantPayloadMapper._statistics_from_payload(payload),
             metadata=metadata,

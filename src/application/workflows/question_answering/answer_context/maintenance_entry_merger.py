@@ -9,6 +9,9 @@ from src.application.workflows.question_answering.answer_context.models import (
     AnswerMaintenanceEntry,
     AnswerMaintenanceReference,
 )
+from src.application.workflows.question_answering.answer_context.maintenance.maintenance_task_text_cleaner import (
+    clean_task,
+)
 from src.application.workflows.shared.maintenance_action_verbs import (
     MAINTENANCE_ACTION_VERBS,
 )
@@ -48,16 +51,16 @@ class MaintenanceEntryMerger:
         self,
         entries: Sequence[AnswerMaintenanceEntry],
     ) -> list[AnswerMaintenanceEntry]:
-        # Two entries can only ever merge if their normalized interval AND
-        # leading action both match exactly (the first two gates in
-        # _are_mergeable) -- so bucketing by that pair up front is
-        # behavior-identical to comparing every entry against every other
-        # entry, just without the guaranteed-false cross-bucket comparisons.
-        buckets: dict[tuple[str, str], list[dict]] = {}
+        # We bucket by leading action only, then let _profiles_mergeable()
+        # decide whether intervals are compatible. This preserves the old
+        # behavior for genuinely different explicit intervals while also
+        # allowing a "Not specified" duplicate to merge into the richer
+        # interval-bearing record for the same task/component.
+        buckets: dict[str, list[dict]] = {}
 
         for index, entry in enumerate(entries):
             profile = self._build_profile(entry)
-            key = (profile.normalized_interval, profile.leading_action)
+            key = profile.leading_action
             bucket = buckets.setdefault(key, [])
 
             merged = False
@@ -97,8 +100,10 @@ class MaintenanceEntryMerger:
         right: _EntryProfile,
     ) -> bool:
         """Task/component half of _are_mergeable(), operating on precomputed
-        fields. Interval/action equality is already guaranteed by both
+        fields. Leading-action equality is already guaranteed by both
         profiles sharing the same bucket key in merge()."""
+        if not self._intervals_compatible(left, right):
+            return False
         if left.normalized_task == right.normalized_task:
             return True
         if left.normalized_task in right.normalized_task or right.normalized_task in left.normalized_task:
@@ -118,6 +123,18 @@ class MaintenanceEntryMerger:
             >= 0.75
         )
 
+    @staticmethod
+    def _intervals_compatible(
+        left: _EntryProfile,
+        right: _EntryProfile,
+    ) -> bool:
+        if left.normalized_interval == right.normalized_interval:
+            return True
+        return (
+            left.normalized_interval == "not specified"
+            or right.normalized_interval == "not specified"
+        )
+
     def _merge_pair(
         self,
         left: AnswerMaintenanceEntry,
@@ -125,7 +142,7 @@ class MaintenanceEntryMerger:
     ) -> AnswerMaintenanceEntry:
         references = self._merge_references(left.references, right.references)
         return AnswerMaintenanceEntry(
-            task=self._prefer_more_descriptive_text(left.task, right.task),
+            task=self._prefer_task(left.task, right.task),
             description=self._prefer_description(left, right),
             interval=self._merge_interval(left.interval, right.interval),
             component=self._prefer_component(left.component, right.component),
@@ -184,6 +201,15 @@ class MaintenanceEntryMerger:
         return left_cleaned or right_cleaned
 
     @staticmethod
+    def _prefer_task(left: str, right: str) -> str:
+        left_clean = clean_task(left) or left
+        right_clean = clean_task(right) or right
+        return MaintenanceEntryMerger._prefer_more_descriptive_text(
+            left_clean,
+            right_clean,
+        )
+
+    @staticmethod
     def _prefer_more_descriptive_text(left: str, right: str) -> str:
         left_clean = " ".join(left.split())
         right_clean = " ".join(right.split())
@@ -213,14 +239,16 @@ class MaintenanceEntryMerger:
 
     @staticmethod
     def _leading_action(task: str) -> str:
-        match = _LEADING_VERB_PATTERN.match(task.strip())
+        normalized_task = clean_task(task) or task
+        match = _LEADING_VERB_PATTERN.match(normalized_task.strip())
         if match is None:
             return ""
         return match.group(1).lower()
 
     @staticmethod
     def _normalize_text(value: str) -> str:
-        return " ".join(_WORD_PATTERN.findall(value.lower()))
+        normalized_value = clean_task(value) or value
+        return " ".join(_WORD_PATTERN.findall(normalized_value.lower()))
 
     def _normalize_component(self, value: str | None) -> str:
         cleaned = self._clean_optional_text(value)

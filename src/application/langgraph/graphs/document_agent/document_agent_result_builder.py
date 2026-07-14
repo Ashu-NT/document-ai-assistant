@@ -39,7 +39,13 @@ def build_result(state: AgentState) -> GraphResult:
             answer = recovered_answer
     answer_intent = answer_extractor.extract_answer_intent(tool_results)
     render_provenance = answer_extractor.extract_render_provenance(tool_results)
-    citations = answer_extractor.extract_citations(tool_results)
+    citations = _enrich_citations(
+        citations=answer_extractor.extract_citations(tool_results),
+        fallback_document_title=state.get("document_title")
+        or state.get("selected_document_title"),
+        selected_document_id=state.get("selected_document_id")
+        or state.get("document_id"),
+    )
     limitation_note = answer_extractor.extract_limitation_note(tool_results)
     sections = answer_extractor.extract_sections(tool_results)
     reference_notes = answer_extractor.extract_reference_notes(tool_results)
@@ -233,3 +239,25 @@ def build_result(state: AgentState) -> GraphResult:
         trace=state.get("trace", []),
         messages=state.get("history", []),
     )
+
+
+def _enrich_citations(
+    *,
+    citations: list[dict],
+    fallback_document_title: str | None,
+    selected_document_id: str | None,
+) -> list[dict]:
+    enriched: list[dict] = []
+    for citation in citations:
+        if not isinstance(citation, dict):
+            continue
+        enriched_citation = dict(citation)
+        if (
+            not enriched_citation.get("document_name")
+            and fallback_document_title
+            and selected_document_id
+            and enriched_citation.get("document_id") == selected_document_id
+        ):
+            enriched_citation["document_name"] = fallback_document_title
+        enriched.append(enriched_citation)
+    return enriched

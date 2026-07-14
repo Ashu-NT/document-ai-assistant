@@ -58,6 +58,7 @@ class AnswerTableProjector:
             chunk_type=source.chunk_type,
             headers=headers,
             table_category=table_category,
+            rows=body_rows,
         )
         rows = [
             AnswerTableRow(

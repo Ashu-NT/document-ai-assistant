@@ -80,6 +80,22 @@ def test_merge_keeps_entries_with_different_intervals_separate() -> None:
     assert len(merged) == 2
 
 
+def test_merge_absorbs_not_specified_duplicate_into_interval_entry() -> None:
+    merger = MaintenanceEntryMerger()
+    entries = [
+        _make_entry(task="Check gearbox for leaks", interval="Not specified"),
+        _make_entry(
+            task="M S A=Check gearbox for leaks",
+            interval="Monthly; Semi-Annual; Annual",
+        ),
+    ]
+
+    merged = merger.merge(entries)
+
+    assert len(merged) == 1
+    assert merged[0].interval == "Monthly; Semi-Annual; Annual"
+
+
 def test_merge_keeps_entries_with_different_leading_action_separate() -> None:
     merger = MaintenanceEntryMerger()
     entries = [

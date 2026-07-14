@@ -2,6 +2,7 @@ import json
 
 from src.domain.common import ChunkType
 from src.domain.document.value_objects import ChunkStatistics
+from src.domain.retrieval.citation import Citation
 from src.domain.retrieval import RetrievedChunk
 from src.infrastructure.db.mappers.common import columns_to_source_location
 from src.infrastructure.db.orm_models import ChunkORM
@@ -16,7 +17,13 @@ class RetrievedChunkMapper:
         retrieval_source: str = "sql_keyword",
         extra_metadata: dict[str, str] | None = None,
         identifier_values: list[str] | None = None,
+        document_name: str | None = None,
     ) -> RetrievedChunk:
+        section_path = json.loads(row.section_path or "[]")
+        source = columns_to_source_location(
+            page_start=row.page_start,
+            page_end=row.page_end,
+        )
         metadata = {
             "sequence_number": str(row.sequence_number),
             "chunk_index": str(row.chunk_index),
@@ -54,10 +61,16 @@ class RetrievedChunkMapper:
             retrieval_source=retrieval_source,
             chunk_type=ChunkType(row.chunk_type),
             section_id=row.section_id,
-            section_path=json.loads(row.section_path or "[]"),
-            source=columns_to_source_location(
-                page_start=row.page_start,
-                page_end=row.page_end,
+            section_path=section_path,
+            source=source,
+            citation=Citation(
+                citation_id=f"cit_{row.id}",
+                document_id=row.document_id,
+                chunk_id=row.id,
+                section_id=row.section_id,
+                document_name=document_name or None,
+                section_title=section_path[-1] if section_path else None,
+                source=source,
             ),
             statistics=ChunkStatistics(
                 char_count=row.char_count or len(row.content or ""),
