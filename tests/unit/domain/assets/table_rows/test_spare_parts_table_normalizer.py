@@ -92,3 +92,56 @@ def test_normalizes_a_cleanly_columnar_table_and_recovers_the_trailing_part_numb
         ["2", "Pce", "Hex bolt M8x20", "900.123.456", "10"],
         ["1", "Pce", "Washer", "900.789.012", "20"],
     ]
+
+
+def test_normalizes_a_plain_reference_to_code_lookup_table_with_no_position_or_quantity() -> None:
+    """Regression test grounded in a real ingested document: a simple
+    parts-reference table headed "Reference | Code" has no position or
+    quantity concept at all - every existing row-parsing strategy
+    required a position+quantity-led row, so this whole shape used to
+    fail to normalize entirely.
+    """
+    normalized = SparePartsTableNormalizer().normalize(
+        [
+            ["REFERENCE", "CODE"],
+            [
+                "LP PUMP MXVL25-220C SST 316L DN25 400/3/50 (THREADED PORTS)",
+                "1514101",
+            ],
+            ["HP PIPE PA-SR-P03", "0327243"],
+        ],
+        table_category="spare_parts_table",
+        chunk_type=None,
+    )
+
+    assert normalized is not None
+    assert normalized.headers == ["Description", "Part No."]
+    assert normalized.rows == [
+        [
+            "LP PUMP MXVL25-220C SST 316L DN25 400/3/50 (THREADED PORTS)",
+            "1514101",
+        ],
+        ["HP PIPE PA-SR-P03", "0327243"],
+    ]
+
+
+def test_does_not_misread_a_data_row_ending_in_a_header_like_word_as_a_header() -> None:
+    """Regression test: `looks_explicit_header_cell` matches several
+    short, generic keywords ("pin", "wire", "tag", ...) that are also
+    common trailing words in genuine part descriptions (e.g. "0020 4 Pce
+    pin"). A data row must not be silently dropped just because it ends
+    in one of these words - a real position+quantity seed always wins.
+    """
+    normalized = SparePartsTableNormalizer().normalize(
+        [
+            ["Part Pos. Qty Unit", "Designation", "Part No", ""],
+            ["0010 1 Pce", "housing", "", ""],
+            ["0020 4 Pce pin", "", "", ""],
+        ],
+        table_category="spare_parts_table",
+        chunk_type=None,
+    )
+
+    assert normalized is not None
+    assert len(normalized.rows) == 2
+    assert normalized.rows[1][0] == "0020"
