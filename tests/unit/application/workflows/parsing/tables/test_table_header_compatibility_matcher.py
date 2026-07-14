@@ -62,6 +62,38 @@ def test_continuation_pages_with_minor_umbrella_variation_are_compatible() -> No
     assert TableHeaderCompatibilityMatcher().are_compatible(table_a, table_b) is True
 
 
+def test_continuation_pages_of_a_textual_maintenance_table_are_compatible() -> None:
+    """Regression test: two pages of the same continued maintenance table
+    (repeated "Task | Interval | Notes" header, different task rows per
+    page) must still match. Each page's own first data row is full text,
+    which previously got misread as a second header row, so the
+    signature ended up comparing each page's differing data instead of
+    the shared header - silently fragmenting the table family.
+    """
+    table_a = TableAsset(
+        table_id="t1",
+        document_id="d1",
+        markdown="x",
+        rows=[
+            ["Task", "Interval", "Notes"],
+            ["Check oil level", "Every 6 months", "See gearbox annex"],
+            ["Inspect belts", "Every 3 months", ""],
+        ],
+    )
+    table_b = TableAsset(
+        table_id="t2",
+        document_id="d1",
+        markdown="x",
+        rows=[
+            ["Task", "Interval", "Notes"],
+            ["Replace filter", "Every 12 months", "Use OEM part"],
+            ["Grease bearings", "Every 6 months", ""],
+        ],
+    )
+
+    assert TableHeaderCompatibilityMatcher().are_compatible(table_a, table_b) is True
+
+
 def test_same_simple_header_without_umbrella_is_still_compatible() -> None:
     table_a = TableAsset(
         table_id="t1",

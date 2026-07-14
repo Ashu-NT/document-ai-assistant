@@ -89,3 +89,31 @@ def test_builder_uses_multi_row_paths_when_spans_exist() -> None:
     signature = builder.build(table)
 
     assert signature == "motor power > kw|motor power > hp|flow > q l/min"
+
+
+def test_builder_does_not_treat_a_textual_first_data_row_as_a_second_header_row() -> None:
+    """Regression test: a maintenance/troubleshooting-style table whose
+    first data row is a full text description (not a short label) reads
+    just as "label-like" as a genuine header row. Without real merged-
+    cell evidence, that row must stay data, not get folded into the
+    header signature - otherwise the signature (and the persisted header
+    paths shown to the LLM) leak one row's actual content, and two pages
+    of the same continued table stop matching because each page's own
+    (different) first data row gets compared instead of the real header.
+    """
+    builder = TableHeaderSignatureBuilder()
+    table = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="table",
+        rows=[
+            ["Task", "Interval", "Notes"],
+            ["Check oil level", "Every 6 months", "See gearbox annex"],
+            ["Replace filter", "Every 12 months", "Use OEM part"],
+        ],
+        column_count=3,
+    )
+
+    signature = builder.build(table)
+
+    assert signature == "task|interval|notes"

@@ -62,18 +62,28 @@ class TableHeaderPathBuilder:
         for row_index in range(1, max_rows):
             if row_index < header_row_count:
                 continue
-            if not self._looks_header_row(rows[row_index]):
-                break
             if row_index >= len(rows) - 1:
                 break
-            next_row = rows[row_index + 1]
-            if self._header_signal_score(rows[row_index]) < self._header_signal_score(
-                next_row
-            ):
+            if not self._has_structural_header_evidence(table, row_index):
                 break
             header_row_count += 1
 
         return max(1, header_row_count)
+
+    @staticmethod
+    def _has_structural_header_evidence(table: TableAsset, row_index: int) -> bool:
+        """Widening the header past what the umbrella/span checks above
+        already established requires real merged-cell evidence for this
+        specific row, not just "this row reads as text" - a table's own
+        first data row (e.g. a maintenance task description, a
+        troubleshooting symptom) reads just as textual/label-like as a
+        genuine header row, so a text-only score comparison cannot tell
+        them apart and would misclassify real data as more header.
+        """
+        return any(
+            span.row_start <= row_index <= span.row_end and span.col_span > 1
+            for span in table.cell_spans
+        )
 
     def _path_for_column(
         self,
@@ -147,13 +157,6 @@ class TableHeaderPathBuilder:
             return True
         normalized = {self.normalize_header_cell(cell) for cell in non_empty if cell}
         return len(normalized) == 1
-
-    def _header_signal_score(self, row: list[str]) -> int:
-        non_empty = [normalize_cell(cell) for cell in row if normalize_cell(cell)]
-        explicit_count = sum(1 for cell in non_empty if looks_explicit_header_cell(cell))
-        label_count = sum(1 for cell in non_empty if looks_label_cell(cell))
-        numeric_count = sum(1 for cell in non_empty if looks_numeric(cell))
-        return (explicit_count * 3) + label_count - (numeric_count * 3)
 
     def _uniform_row_label(self, row: list[str]) -> str:
         for cell in row:
