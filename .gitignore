@@ -7,6 +7,7 @@ outputs/agent_sessions/
 outputs/debug_answer_generation/
 outputs/debug_ocr
 outputs/debug_tables
+outputs/debug_answering
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

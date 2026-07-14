@@ -8,6 +8,9 @@ from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
     repair_docling_text,
 )
 from src.domain.assets import AssetMetadata, PictureAsset, TableAsset, TableCellSpan
+from src.domain.assets.table_rows.table_row_patterns import (
+    drop_globally_empty_columns,
+)
 from src.shared.ids import IdGenerator
 
 
@@ -135,4 +138,4 @@ class ParsedAssetFactory:
                     for cell in row
                 ]
             )
-        return cleaned_rows
+        return drop_globally_empty_columns(cleaned_rows)

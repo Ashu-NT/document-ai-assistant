@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from src.domain.assets.table_rows.compact_schedule_matrix_canonicalizer import (
+    CompactScheduleMatrixCanonicalizer,
+)
 from src.domain.assets.table_rows.table_row_patterns import (
     clean_rows,
     looks_explicit_header_cell,
@@ -10,10 +13,27 @@ from src.domain.assets.table_rows.table_row_patterns import (
 
 
 class TableRowCanonicalizer:
+    def __init__(
+        self,
+        *,
+        compact_schedule_canonicalizer: (
+            CompactScheduleMatrixCanonicalizer | None
+        ) = None,
+    ) -> None:
+        self.compact_schedule_canonicalizer = (
+            compact_schedule_canonicalizer
+            or CompactScheduleMatrixCanonicalizer()
+        )
+
     def canonicalize(self, rows: list[list[str]]) -> list[list[str]]:
         cleaned_rows = clean_rows(rows)
         if len(cleaned_rows) < 2:
             return cleaned_rows
+        compact_schedule_rows = self.compact_schedule_canonicalizer.canonicalize(
+            cleaned_rows
+        )
+        if compact_schedule_rows is not None:
+            cleaned_rows = compact_schedule_rows
         umbrella_header_rows = self._canonicalize_umbrella_header_rows(cleaned_rows)
         if umbrella_header_rows is not None:
             cleaned_rows = umbrella_header_rows

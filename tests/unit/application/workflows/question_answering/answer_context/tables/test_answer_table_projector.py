@@ -66,8 +66,9 @@ def test_projector_detects_implicit_maintenance_schedule_matrix() -> None:
 
     assert len(tables) == 1
     assert tables[0].table_kind == "maintenance_schedule_matrix"
-    assert tables[0].column_roles[2] == "task"
-    assert tables[0].column_roles[3] == "notes"
+    assert tables[0].headers[-2:] == ["Task", "Notes"]
+    assert "task" in tables[0].column_roles.values()
+    assert "notes" in tables[0].column_roles.values()
 
 
 def test_projector_deduplicates_same_logical_table_family_and_carries_metadata() -> None:

@@ -145,3 +145,32 @@ def test_extract_maintenance_entries_from_implicit_schedule_matrix() -> None:
     assert entries[2].task == "Check that the screw runs evenly in the basket"
     assert entries[2].interval == "Daily"
     assert entries[2].component is None
+
+
+def test_extract_maintenance_entries_from_collapsed_compact_schedule_rows() -> None:
+    extractor = MaintenanceTaskExtractor()
+    source = _make_source(
+        table_rows=[
+            ["D", "Q Q", "M S A", "Task Reference"],
+            ["General Maintenance Work on the Press"],
+            ["X", "General visual inspection daily or after period of particularly high load"],
+            ["X", "Check basket for fat, fibre growth or blockages & clogging"],
+            ["", "X", "Clean dirt from the housing", "See gearbox Annex"],
+        ],
+    )
+    source.chunk_type = "maintenance_interval"
+    source.metadata = {"table_category": "maintenance_interval_table"}
+
+    entries = extractor.extract_maintenance_entries(
+        [source],
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+    )
+
+    assert len(entries) == 3
+    assert entries[0].task == "General visual inspection daily or after period of particularly high load"
+    assert entries[0].interval == "Daily"
+    assert entries[1].task == "Check basket for fat, fibre growth or blockages & clogging"
+    assert entries[1].interval == "Daily"
+    assert entries[2].task == "Clean dirt from the housing"
+    assert entries[2].interval == "Quarterly"
+    assert entries[2].notes == "See gearbox Annex"

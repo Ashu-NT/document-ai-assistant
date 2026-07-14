@@ -89,7 +89,27 @@ def clean_rows(rows: Iterable[Iterable[object]]) -> list[list[str]]:
         cleaned_row = [normalize_cell(cell) for cell in row]
         if any(cleaned_row):
             cleaned_rows.append(cleaned_row)
-    return cleaned_rows
+    return drop_globally_empty_columns(cleaned_rows)
+
+
+def drop_globally_empty_columns(rows: list[list[str]]) -> list[list[str]]:
+    if not rows:
+        return rows
+    max_width = max((len(row) for row in rows), default=0)
+    keep_indexes = [
+        index
+        for index in range(max_width)
+        if any(index < len(row) and normalize_cell(row[index]) for row in rows)
+    ]
+    if len(keep_indexes) == max_width:
+        return rows
+    return [
+        [
+            normalize_cell(row[index]) if index < len(row) else ""
+            for index in keep_indexes
+        ]
+        for row in rows
+    ]
 
 
 def looks_numeric(value: str) -> bool:

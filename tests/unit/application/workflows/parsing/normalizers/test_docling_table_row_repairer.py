@@ -106,3 +106,44 @@ def test_repair_rows_does_not_misclassify_spare_parts_rows_as_toc() -> None:
     assert repaired[0] == ["Position No.", "Qty", "Description"]
     assert repaired[1][0] == "P1"
     assert repaired[2][0] == "P2"
+
+
+def test_repair_rows_collapses_uniform_repeated_label_rows() -> None:
+    rows = [
+        ["D", "Q Q", "M S A", "Task Reference", "", "", "", ""],
+        [
+            "General Maintenance Work on the Press",
+            "General Maintenance Work on the Press",
+            "General Maintenance Work on the Press",
+            "General Maintenance Work on the Press",
+            "General Maintenance Work on the Press",
+            "General Maintenance Work on the Press",
+            "General Maintenance Work on the Press",
+            "General Maintenance Work on the Press",
+        ],
+        ["X", "", "Inspect basket", "", "", "", "", ""],
+    ]
+
+    repaired = DoclingTableRowRepairer().repair_rows(rows)
+
+    assert repaired[1] == [
+        "General Maintenance Work on the Press",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+    ]
+
+
+def test_repair_rows_preserves_multi_interval_marker_rows() -> None:
+    rows = [
+        ["D", "W", "M"],
+        ["X", "X", "X"],
+    ]
+
+    repaired = DoclingTableRowRepairer().repair_rows(rows)
+
+    assert repaired == rows
