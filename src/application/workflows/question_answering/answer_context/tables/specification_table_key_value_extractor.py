@@ -70,7 +70,7 @@ class SpecificationTableKeyValueExtractor:
         if table.table_kind == "key_value_table":
             return list(self._key_value_rows(table, answer_intent=answer_intent))
 
-        if table.table_kind == "record_table":
+        if table.table_kind in {"record_table", "specification_matrix"}:
             return list(self._record_rows(table, answer_intent=answer_intent))
 
         if not table.headers and self._looks_pair_table(table):

@@ -12,6 +12,8 @@ def _make_source(
     content: str = "",
     table_rows: list[list[str]] | None = None,
     chunk_type: str | None = None,
+    table_shape: str | None = None,
+    metadata: dict[str, str] | None = None,
 ) -> AnswerSource:
     return AnswerSource(
         source_number=1,
@@ -19,6 +21,8 @@ def _make_source(
         content=content,
         table_rows=table_rows,
         chunk_type=chunk_type,
+        table_shape=table_shape,
+        metadata=metadata or {},
     )
 
 
@@ -164,3 +168,28 @@ def test_extract_does_not_treat_narrative_sentence_as_power_key_value() -> None:
     )
 
     assert key_values == []
+
+
+def test_extract_uses_specification_matrix_rows_as_specification_fields() -> None:
+    extractor = KeyValueExtractor()
+    source = _make_source(
+        chunk_type="technical_specification",
+        table_shape="specification_matrix",
+        metadata={"table_category": "technical_data_table"},
+        table_rows=[
+            ["Parameter", "Compact version", "Remote version", "Unit"],
+            ["Pressure range", "0...10", "0...16", "bar"],
+        ],
+    )
+
+    key_values = extractor.extract(
+        [source],
+        answer_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+    )
+
+    assert [(item.key, item.value) for item in key_values] == [
+        ("Parameter", "Pressure range"),
+        ("Compact version", "0...10"),
+        ("Remote version", "0...16"),
+        ("Unit", "bar"),
+    ]

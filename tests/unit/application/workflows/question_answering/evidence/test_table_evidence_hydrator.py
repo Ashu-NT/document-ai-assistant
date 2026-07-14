@@ -69,6 +69,66 @@ def test_hydrate_stashes_structured_rows_json_when_table_has_rows() -> None:
     assert "Row 1: Part=HP-001 | Qty=1" in hydrated[0].content
 
 
+def test_hydrate_stashes_table_structure_metadata_when_available() -> None:
+    table = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="| Task | Daily |\n|---|---|\n| Inspect filter | x |",
+        rows=[["Task", "Daily"], ["Inspect filter", "x"]],
+        table_shape="maintenance_schedule_matrix",
+        table_structure_quality=0.92,
+        header_paths=[["Task"], ["Interval", "Daily"]],
+        axis_summary={"row_axis": "task", "column_axis": "interval"},
+    )
+    graph = _make_graph(
+        table=table,
+        source_chunk_content="| Task | Daily |\n|---|---|\n| Inspect filter | x |",
+    )
+    chunk = _make_retrieved_chunk(content=table.markdown or "")
+
+    hydrated = TableEvidenceHydrator().hydrate(
+        chunks=[chunk],
+        graphs_by_document_id={"doc_001": graph},
+    )
+
+    assert hydrated[0].metadata["table_shape"] == "maintenance_schedule_matrix"
+    assert hydrated[0].metadata["table_structure_quality"] == "0.92"
+    assert json.loads(hydrated[0].metadata["table_header_paths_json"]) == [
+        ["Task"],
+        ["Interval", "Daily"],
+    ]
+    assert json.loads(hydrated[0].metadata["table_axis_summary"]) == {
+        "row_axis": "task",
+        "column_axis": "interval",
+    }
+
+
+def test_hydrate_includes_structure_context_in_hydrated_content() -> None:
+    table = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="| Task | Daily |\n|---|---|\n| Inspect filter | x |",
+        rows=[["Task", "Daily"], ["Inspect filter", "x"]],
+        table_shape="maintenance_schedule_matrix",
+        header_paths=[["Task"], ["Interval", "Daily"]],
+        axis_summary={"row_axis": "task", "column_axis": "interval"},
+    )
+    graph = _make_graph(
+        table=table,
+        source_chunk_content="| Task | Daily |\n|---|---|\n| Inspect filter | x |",
+    )
+    chunk = _make_retrieved_chunk(content=table.markdown or "")
+
+    hydrated = TableEvidenceHydrator().hydrate(
+        chunks=[chunk],
+        graphs_by_document_id={"doc_001": graph},
+    )
+
+    assert "Table shape: maintenance_schedule_matrix" in hydrated[0].content
+    assert "Header paths: Task | Interval > Daily" in hydrated[0].content
+    assert "Axis summary: row_axis=task; column_axis=interval" in hydrated[0].content
+
+
 def test_hydrate_omits_table_rows_json_when_table_has_no_structured_rows() -> None:
     table = TableAsset(
         table_id="table_001",

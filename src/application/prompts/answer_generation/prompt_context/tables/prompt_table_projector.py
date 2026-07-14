@@ -51,6 +51,11 @@ class PromptTableProjector:
                     page_start=source.page_start,
                     page_end=source.page_end,
                     retrieval_source=source.retrieval_source,
+                    table_shape=source.table_shape,
+                    table_category=source.metadata.get("table_category"),
+                    table_structure_quality=source.table_structure_quality,
+                    header_paths=[list(path) for path in source.table_header_paths],
+                    axis_summary=dict(source.table_axis_summary),
                     headers=headers,
                     rows=rows,
                 )

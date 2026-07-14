@@ -21,6 +21,10 @@ class AnswerSource:
     score: float | None = None
     content: str = ""
     table_rows: list[list[str]] | None = None
+    table_shape: str | None = None
+    table_structure_quality: float | None = None
+    table_header_paths: list[list[str]] = field(default_factory=list)
+    table_axis_summary: dict[str, str] = field(default_factory=dict)
     # Carried straight from the source RetrievedChunk (plan section 9.1) so
     # answer formatting doesn't have to re-derive signal that already
     # existed upstream -- see 4.1.

@@ -65,7 +65,7 @@ class AnswerTableProjector:
             return None
 
         table_category = source.metadata.get("table_category")
-        table_shape = source.metadata.get("table_shape")
+        table_shape = source.table_shape or source.metadata.get("table_shape")
         normalized_spare_parts = self.spare_parts_table_normalizer.normalize(
             cleaned_rows,
             table_category=table_category,
@@ -80,6 +80,7 @@ class AnswerTableProjector:
                 chunk_type=source.chunk_type,
                 headers=headers,
                 table_category=table_category,
+                table_shape=table_shape,
                 rows=body_rows,
             )[1]
         else:
@@ -102,6 +103,7 @@ class AnswerTableProjector:
                     chunk_type=source.chunk_type,
                     headers=headers,
                     table_category=table_category,
+                    table_shape=table_shape,
                     rows=body_rows,
                 )
         rows = [
@@ -136,6 +138,10 @@ class AnswerTableProjector:
             table_category_confidence=self._coerce_float(
                 source.metadata.get("table_category_confidence")
             ),
+            table_shape=table_shape,
+            table_structure_quality=source.table_structure_quality,
+            header_paths=[list(path) for path in source.table_header_paths],
+            axis_summary=dict(source.table_axis_summary),
             row_start=self._coerce_int(source.metadata.get("table_row_start")),
             row_end=self._coerce_int(source.metadata.get("table_row_end")),
         )

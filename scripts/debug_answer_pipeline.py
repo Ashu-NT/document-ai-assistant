@@ -112,6 +112,40 @@ def decode_table_rows(metadata: dict[str, str]) -> list[list[str]]:
     return decoded if isinstance(decoded, list) else []
 
 
+def decode_json_object_list(metadata: dict[str, str], key: str) -> list[list[str]]:
+    raw = metadata.get(key)
+    if not raw:
+        return []
+    try:
+        decoded = json.loads(raw)
+    except ValueError:
+        return []
+    if not isinstance(decoded, list):
+        return []
+    return [
+        [str(part).strip() for part in value if str(part).strip()]
+        for value in decoded
+        if isinstance(value, list)
+    ]
+
+
+def decode_json_object_map(metadata: dict[str, str], key: str) -> dict[str, str]:
+    raw = metadata.get(key)
+    if not raw:
+        return {}
+    try:
+        decoded = json.loads(raw)
+    except ValueError:
+        return {}
+    if not isinstance(decoded, dict):
+        return {}
+    return {
+        str(name).strip(): str(value).strip()
+        for name, value in decoded.items()
+        if str(name).strip() and str(value).strip()
+    }
+
+
 def json_block(value: Any) -> str:
     return "```json\n" + json.dumps(value, indent=2, default=str) + "\n```"
 
@@ -127,6 +161,8 @@ def chunk_lines(chunks: Sequence[Any], *, title: str) -> list[str]:
     for index, chunk in enumerate(chunks, start=1):
         metadata = dict(getattr(chunk, "metadata", {}) or {})
         rows = decode_table_rows(metadata)
+        header_paths = decode_json_object_list(metadata, "table_header_paths_json")
+        axis_summary = decode_json_object_map(metadata, "table_axis_summary")
         source = getattr(chunk, "source", None)
         lines.extend(
             [
@@ -138,9 +174,13 @@ def chunk_lines(chunks: Sequence[Any], *, title: str) -> list[str]:
                 f"- pages: `{getattr(source, 'page_start', None)}-{getattr(source, 'page_end', None)}`",
                 f"- section_path: `{ ' > '.join(getattr(chunk, 'section_path', []) or []) }`",
                 f"- table_category: `{metadata.get('table_category')}`",
+                f"- table_shape: `{metadata.get('table_shape')}`",
+                f"- table_structure_quality: `{metadata.get('table_structure_quality')}`",
                 f"- hydrated: `{metadata.get('table_evidence_hydrated', 'false')}`",
                 f"- logical_table_family_id: `{metadata.get('logical_table_family_id')}`",
                 f"- decoded_table_rows: `{len(rows)}`",
+                f"- header_paths: `{header_paths}`",
+                f"- axis_summary: `{axis_summary}`",
                 f"- content_preview: `{preview_text(getattr(chunk, 'content', ''), 300, empty_fallback='')}`",
                 "",
             ]
@@ -205,6 +245,10 @@ def build_report(data: dict[str, Any], *, include_prompt: bool) -> str:
                 f"### Structured Table {index}",
                 f"- table_kind: `{table.table_kind}`",
                 f"- table_category: `{table.table_category}`",
+                f"- table_shape: `{table.table_shape}`",
+                f"- table_structure_quality: `{table.table_structure_quality}`",
+                f"- header_paths: `{table.header_paths}`",
+                f"- axis_summary: `{table.axis_summary}`",
                 f"- headers: `{table.headers}`",
                 f"- column_roles: `{table.column_roles}`",
                 f"- row_count: `{len(table.rows)}`",

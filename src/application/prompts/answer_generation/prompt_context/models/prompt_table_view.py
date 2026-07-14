@@ -20,5 +20,10 @@ class PromptTableView:
     page_start: int | None = None
     page_end: int | None = None
     retrieval_source: str | None = None
+    table_shape: str | None = None
+    table_category: str | None = None
+    table_structure_quality: float | None = None
+    header_paths: list[list[str]] = field(default_factory=list)
+    axis_summary: dict[str, str] = field(default_factory=dict)
     headers: list[str] = field(default_factory=list)
     rows: list[PromptTableRowView] = field(default_factory=list)

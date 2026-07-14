@@ -65,3 +65,50 @@ def test_table_semantic_resolver_persists_maintenance_structure_metadata() -> No
         ["Interval", "Monthly"],
     ]
     assert parser_extra["table_axis_summary"]["value_axis"] == "marker"
+
+
+def test_table_semantic_resolver_persists_specification_matrix_metadata() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.tables["table_2"] = TableAsset(
+        table_id="table_2",
+        document_id="doc_001",
+        markdown="| Parameter | Compact version | Remote version | Unit |",
+        rows=[
+            ["Parameter", "Compact version", "Remote version", "Unit"],
+            ["Pressure range", "0...10", "0...16", "bar"],
+            ["Output signal", "4-20 mA", "4-20 mA", "mA"],
+        ],
+        row_count=3,
+        column_count=4,
+    )
+    graph.add_element(
+        CanonicalElement(
+            element_id="el_table_2",
+            document_id="doc_001",
+            element_type=ElementType.TABLE,
+            text="| Parameter | Compact version | Remote version | Unit |",
+            table_id="table_2",
+            source=SourceLocation(page_start=6, page_end=6),
+            parser_metadata=ParserMetadata(parser_name="docling", extra={}),
+        )
+    )
+
+    TableSemanticResolver().resolve(graph)
+
+    table = graph.tables["table_2"]
+    parser_extra = graph.elements["el_table_2"].parser_metadata.extra
+
+    assert table.table_category in {
+        "operating_limits_table",
+        "technical_data_table",
+    }
+    assert table.table_shape == "specification_matrix"
+    assert table.header_paths == [
+        ["Parameter"],
+        ["Field", "Compact version"],
+        ["Field", "Remote version"],
+        ["Unit"],
+    ]
+    assert table.axis_summary["row_axis"] == "parameter"
+    assert parser_extra["table_shape"] == "specification_matrix"
+    assert parser_extra["table_axis_summary"]["value_axis"] == "specification_value"

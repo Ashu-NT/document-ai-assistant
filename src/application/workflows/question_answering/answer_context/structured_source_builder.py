@@ -47,6 +47,16 @@ class StructuredSourceBuilder:
             score=chunk.score,
             content=chunk.content,
             table_rows=StructuredSourceBuilder._decode_table_rows(chunk.metadata),
+            table_shape=chunk.metadata.get("table_shape") or None,
+            table_structure_quality=StructuredSourceBuilder._coerce_float(
+                chunk.metadata.get("table_structure_quality")
+            ),
+            table_header_paths=StructuredSourceBuilder._decode_table_header_paths(
+                chunk.metadata
+            ),
+            table_axis_summary=StructuredSourceBuilder._decode_table_axis_summary(
+                chunk.metadata
+            ),
             retrieval_source=chunk.retrieval_source,
             section_id=chunk.section_id,
             statistics=chunk.statistics,
@@ -76,3 +86,49 @@ class StructuredSourceBuilder:
         except ValueError:
             return None
         return decoded if isinstance(decoded, list) else None
+
+    @staticmethod
+    def _decode_table_header_paths(metadata: dict[str, str]) -> list[list[str]]:
+        raw = metadata.get("table_header_paths_json")
+        if not raw:
+            return []
+        try:
+            decoded = json.loads(raw)
+        except ValueError:
+            return []
+        if not isinstance(decoded, list):
+            return []
+        cleaned: list[list[str]] = []
+        for path in decoded:
+            if not isinstance(path, list):
+                continue
+            values = [str(part).strip() for part in path if str(part).strip()]
+            if values:
+                cleaned.append(values)
+        return cleaned
+
+    @staticmethod
+    def _decode_table_axis_summary(metadata: dict[str, str]) -> dict[str, str]:
+        raw = metadata.get("table_axis_summary")
+        if not raw:
+            return {}
+        try:
+            decoded = json.loads(raw)
+        except ValueError:
+            return {}
+        if not isinstance(decoded, dict):
+            return {}
+        return {
+            str(key).strip(): str(value).strip()
+            for key, value in decoded.items()
+            if str(key).strip() and str(value).strip()
+        }
+
+    @staticmethod
+    def _coerce_float(value: str | None) -> float | None:
+        if not value:
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None

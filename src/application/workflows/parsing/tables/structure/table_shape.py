@@ -6,3 +6,4 @@ class TableShape(StrEnum):
     RECORD_TABLE = "record_table"
     MAINTENANCE_SCHEDULE_MATRIX = "maintenance_schedule_matrix"
     PERFORMANCE_CURVE_MATRIX = "performance_curve_matrix"
+    SPECIFICATION_MATRIX = "specification_matrix"

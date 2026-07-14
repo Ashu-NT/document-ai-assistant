@@ -16,6 +16,7 @@ class AnswerTableSchemaInferer:
         chunk_type: str | None,
         headers: list[str],
         table_category: str | None = None,
+        table_shape: str | None = None,
         rows: list[list[str]] | None = None,
     ) -> tuple[str, dict[int, str]]:
         column_roles = {
@@ -30,6 +31,7 @@ class AnswerTableSchemaInferer:
         }
         chunk_type_value = (chunk_type or "").strip().lower()
         table_category_value = (table_category or "").strip().lower()
+        table_shape_value = (table_shape or "").strip().lower()
         roles = set(column_roles.values())
 
         if schedule_columns:
@@ -49,6 +51,8 @@ class AnswerTableSchemaInferer:
             return "maintenance_schedule_table", column_roles
         if "label" in roles and "value" in roles:
             return "key_value_table", column_roles
+        if table_shape_value == "specification_matrix":
+            return "specification_matrix", column_roles
         if table_category_value == "troubleshooting_table":
             return "troubleshooting_table", column_roles
         if table_category_value in {

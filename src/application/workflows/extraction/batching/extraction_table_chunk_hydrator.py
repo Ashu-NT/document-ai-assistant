@@ -6,12 +6,21 @@ from src.application.workflows.parsing.tables.families import (
     LogicalTableFamilyLookup,
     LogicalTableFamilyRowMerger,
 )
+from src.application.workflows.parsing.tables.structure import (
+    TableStructureContextRenderer,
+)
 from src.domain.assets import TableAsset
 from src.domain.document import DocumentChunk
 
+_STRUCTURE_CONTEXT_RENDERER = TableStructureContextRenderer()
+
 
 def _table_text_with_structured_rows(table: TableAsset) -> str:
-    parts = [table.to_embedding_text()]
+    parts: list[str] = []
+    structure_context = _STRUCTURE_CONTEXT_RENDERER.render(table)
+    if structure_context:
+        parts.append(structure_context)
+    parts.append(table.to_embedding_text())
     structured_rows = table.to_structured_row_text()
     if structured_rows:
         parts.append(structured_rows)

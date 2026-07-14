@@ -81,6 +81,8 @@ def test_serializer_preserves_nested_entity_relationships_and_first_class_tables
     assert '"target_entity_id": "spec_001"' in payload
     assert '"tables": [' in payload
     assert '"table_rows": [' not in payload
+    assert '"table_shape"' in payload
+    assert '"table_header_paths"' in payload
     assert '"headers": [' in payload
     assert '"cells_by_header": {' in payload
     assert '"Parameter"' in payload

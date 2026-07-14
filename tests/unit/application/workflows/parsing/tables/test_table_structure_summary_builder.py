@@ -57,3 +57,29 @@ def test_builder_summarizes_performance_curve_matrix() -> None:
         "descriptor_axis": "curve_metric",
     }
     assert summary.quality_score >= 0.8
+
+
+def test_builder_summarizes_specification_matrix() -> None:
+    summary = TableStructureSummaryBuilder().build(
+        [
+            ["Parameter", "Compact version", "Remote version", "Unit"],
+            ["Pressure range", "0...10", "0...16", "bar"],
+            ["Output signal", "4-20 mA", "4-20 mA", "mA"],
+        ]
+    )
+
+    assert summary is not None
+    assert summary.table_shape == TableShape.SPECIFICATION_MATRIX
+    assert summary.header_paths == [
+        ["Parameter"],
+        ["Field", "Compact version"],
+        ["Field", "Remote version"],
+        ["Unit"],
+    ]
+    assert summary.axis_summary == {
+        "row_axis": "parameter",
+        "column_axis": "field",
+        "value_axis": "specification_value",
+        "descriptor_axis": "unit",
+    }
+    assert summary.quality_score >= 0.7

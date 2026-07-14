@@ -27,5 +27,9 @@ class AnswerTable:
     physical_table_ids: list[str] = field(default_factory=list)
     table_category: str | None = None
     table_category_confidence: float | None = None
+    table_shape: str | None = None
+    table_structure_quality: float | None = None
+    header_paths: list[list[str]] = field(default_factory=list)
+    axis_summary: dict[str, str] = field(default_factory=dict)
     row_start: int | None = None
     row_end: int | None = None

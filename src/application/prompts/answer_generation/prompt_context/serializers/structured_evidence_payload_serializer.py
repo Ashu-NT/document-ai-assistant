@@ -73,6 +73,10 @@ class StructuredEvidencePayloadSerializer:
             "content": source.content,
             "identifier_values": source.identifier_values,
             "collapsed_chunk_ids": source.collapsed_chunk_ids,
+            "table_shape": source.table_shape,
+            "table_structure_quality": source.table_structure_quality,
+            "table_header_paths": [list(path) for path in source.table_header_paths],
+            "table_axis_summary": dict(source.table_axis_summary),
         }
 
     @staticmethod

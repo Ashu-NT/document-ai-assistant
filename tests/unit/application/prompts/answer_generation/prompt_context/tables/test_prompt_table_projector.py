@@ -44,3 +44,49 @@ def test_build_skips_sources_without_table_rows() -> None:
     tables = PromptTableProjector().build([source])
 
     assert tables == []
+
+
+def test_build_preserves_structured_table_metadata_and_uses_shape_signal() -> None:
+    source = PromptSourceView(
+        source_number=5,
+        chunk_id="chunk_sched_001",
+        chunk_type="maintenance_interval",
+        table_rows=[["Task", "Weekly"], ["Inspect filter", "x"]],
+        table_shape="maintenance_schedule_matrix",
+        table_structure_quality=0.94,
+        table_header_paths=[["Task"], ["Interval", "Weekly"]],
+        table_axis_summary={"row_axis": "task", "column_axis": "interval"},
+        metadata={"table_category": "maintenance_interval_table"},
+    )
+
+    tables = PromptTableProjector().build([source])
+
+    assert len(tables) == 1
+    assert tables[0].table_type == "maintenance_table"
+    assert tables[0].table_shape == "maintenance_schedule_matrix"
+    assert tables[0].table_structure_quality == 0.94
+    assert tables[0].header_paths == [["Task"], ["Interval", "Weekly"]]
+    assert tables[0].axis_summary == {
+        "row_axis": "task",
+        "column_axis": "interval",
+    }
+
+
+def test_build_uses_specification_matrix_shape_for_prompt_table_type() -> None:
+    source = PromptSourceView(
+        source_number=6,
+        chunk_id="chunk_spec_matrix",
+        chunk_type="technical_specification",
+        table_rows=[
+            ["Parameter", "Compact version", "Remote version", "Unit"],
+            ["Pressure range", "0...10", "0...16", "bar"],
+        ],
+        table_shape="specification_matrix",
+        metadata={"table_category": "technical_data_table"},
+    )
+
+    tables = PromptTableProjector().build([source])
+
+    assert len(tables) == 1
+    assert tables[0].table_type == "specification_table"
+    assert tables[0].table_shape == "specification_matrix"

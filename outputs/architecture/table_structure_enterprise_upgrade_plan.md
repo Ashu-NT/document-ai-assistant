@@ -55,13 +55,37 @@ The goal of this upgrade is to make table understanding first-class across parsi
   - `table_header_paths_json`
   - `table_axis_summary`
 - Document-level metadata now exposes `table_shape_counts` and a bumped `table_structure_schema`.
+- The first QA/prompt propagation slice is now implemented for hydrated table evidence.
+  - `src/application/workflows/question_answering/evidence/table_evidence_hydrator.py`
+  - `src/application/workflows/question_answering/answer_context/structured_source_builder.py`
+  - `src/application/workflows/question_answering/answer_context/tables/answer_table.py`
+  - `src/application/workflows/question_answering/answer_context/tables/answer_table_projector.py`
+  - `src/application/prompts/answer_generation/prompt_context/projectors/prompt_context_projector.py`
+  - `src/application/prompts/answer_generation/prompt_context/tables/prompt_table_projector.py`
+  - `src/application/prompts/answer_generation/prompt_context/tables/prompt_table_type_detector.py`
+  - `src/application/prompts/answer_generation/prompt_context/serializers/structured_evidence_payload_serializer.py`
+  - `scripts/debug_answer_pipeline.py`
+- Hydrated answer/prompt table views now preserve:
+  - `table_shape`
+  - `table_structure_quality`
+  - `header_paths`
+  - `axis_summary`
+- The next typed table shape is now implemented for generic technical comparison/spec grids.
+  - `src/application/workflows/parsing/tables/structure/specification_matrix_structure_summarizer.py`
+  - `src/application/workflows/question_answering/answer_context/tables/answer_table_schema_inferer.py`
+  - `src/application/workflows/question_answering/answer_context/tables/specification_table_key_value_extractor.py`
+  - `src/application/prompts/answer_generation/prompt_context/tables/prompt_table_type_detector.py`
+- QA and extraction hydrated table content now include a reusable structure preface when available.
+  - `src/application/workflows/parsing/tables/structure/table_structure_context_renderer.py`
+  - `src/application/workflows/question_answering/evidence/table_evidence_hydrator.py`
+  - `src/application/workflows/extraction/batching/extraction_table_chunk_hydrator.py`
 
 ### Still remaining
 
 - generic span-aware normalized table model for arbitrary merged headers
 - continued-table header hierarchy reconstruction across pages
 - typed QA projection package split by projector class
-- extraction-side normalized table evidence payloads
+- extraction-side normalized table evidence payloads beyond content-preface hydration
 - optional selective fallback table-structure provider
 
 ---
@@ -552,6 +576,9 @@ Show:
 
 - raw hydrated rows
 - normalized table shape
+- structure quality
+- header paths
+- axis summary
 - typed projection
 - prompt-facing serialized table payload
 
@@ -626,6 +653,6 @@ After that, the next best slice is:
 
 ### Next active slice
 
-1. strengthen `maintenance_schedule_matrix` with richer header-path and axis metadata in chunk hydration and answer/debug output
-2. add `specification_matrix` / technical-grid shape support
-3. feed the richer normalized payload into QA and extraction before introducing fallback engines
+1. split typed QA table projection into per-shape projector files so future shapes do not accumulate inside one class
+2. add a richer extraction-side normalized table payload beyond the current structure preface + row echo
+3. implement continued-table header hierarchy reconstruction before selective fallback engines

@@ -88,9 +88,13 @@ def test_projector_deduplicates_same_logical_table_family_and_carries_metadata()
                     "hydrated_table_ids": "table_001,table_002",
                     "table_category": "maintenance_interval_table",
                     "table_category_confidence": "0.95",
+                    "table_shape": "maintenance_schedule_matrix",
                     "table_row_start": "1",
                     "table_row_end": "2",
                 },
+                table_structure_quality=0.91,
+                table_header_paths=[["Task"], ["Interval", "Monthly"]],
+                table_axis_summary={"row_axis": "task", "column_axis": "interval"},
             ),
             AnswerSource(
                 source_number=2,
@@ -112,6 +116,13 @@ def test_projector_deduplicates_same_logical_table_family_and_carries_metadata()
     assert tables[0].physical_table_ids == ["table_001", "table_002"]
     assert tables[0].table_category == "maintenance_interval_table"
     assert tables[0].table_category_confidence == 0.95
+    assert tables[0].table_shape == "maintenance_schedule_matrix"
+    assert tables[0].table_structure_quality == 0.91
+    assert tables[0].header_paths == [["Task"], ["Interval", "Monthly"]]
+    assert tables[0].axis_summary == {
+        "row_axis": "task",
+        "column_axis": "interval",
+    }
     assert tables[0].row_start == 1
     assert tables[0].row_end == 2
 
@@ -252,4 +263,43 @@ def test_projector_normalizes_performance_curve_tables_into_typed_answer_tables(
         "228",
         "213",
         "202",
+    ]
+
+
+def test_projector_preserves_specification_matrix_shape_as_table_kind() -> None:
+    projector = AnswerTableProjector()
+    tables = projector.build(
+        [
+            AnswerSource(
+                source_number=1,
+                chunk_id="chunk_spec_matrix",
+                chunk_type="technical_specification",
+                table_rows=[
+                    ["Parameter", "Compact version", "Remote version", "Unit"],
+                    ["Pressure range", "0...10", "0...16", "bar"],
+                ],
+                metadata={"table_category": "technical_data_table"},
+                table_shape="specification_matrix",
+                table_header_paths=[
+                    ["Parameter"],
+                    ["Field", "Compact version"],
+                    ["Field", "Remote version"],
+                    ["Unit"],
+                ],
+                table_axis_summary={
+                    "row_axis": "parameter",
+                    "column_axis": "field",
+                    "value_axis": "specification_value",
+                },
+            )
+        ]
+    )
+
+    assert len(tables) == 1
+    assert tables[0].table_kind == "specification_matrix"
+    assert tables[0].headers == [
+        "Parameter",
+        "Compact version",
+        "Remote version",
+        "Unit",
     ]

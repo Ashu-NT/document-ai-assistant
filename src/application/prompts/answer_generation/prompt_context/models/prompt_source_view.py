@@ -17,6 +17,10 @@ class PromptSourceView:
     score: float | None = None
     content: str = ""
     table_rows: list[list[str]] | None = None
+    table_shape: str | None = None
+    table_structure_quality: float | None = None
+    table_header_paths: list[list[str]] = field(default_factory=list)
+    table_axis_summary: dict[str, str] = field(default_factory=dict)
     retrieval_source: str | None = None
     section_id: str | None = None
     metadata: dict[str, str] = field(default_factory=dict)

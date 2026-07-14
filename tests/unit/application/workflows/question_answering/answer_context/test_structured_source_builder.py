@@ -98,6 +98,32 @@ def test_build_sources_decodes_table_rows_json() -> None:
     assert sources[0].table_rows == [["a", "b"], ["1", "2"]]
 
 
+def test_build_sources_decodes_typed_table_structure_metadata() -> None:
+    builder = StructuredSourceBuilder()
+
+    sources = builder.build_sources(
+        [
+            _make_chunk(
+                metadata={
+                    "table_shape": "maintenance_schedule_matrix",
+                    "table_structure_quality": "0.91",
+                    "table_header_paths_json": '[["Task"],["Interval","Weekly"]]',
+                    "table_axis_summary": '{"row_axis":"task","column_axis":"interval"}',
+                }
+            )
+        ]
+    )
+
+    source = sources[0]
+    assert source.table_shape == "maintenance_schedule_matrix"
+    assert source.table_structure_quality == 0.91
+    assert source.table_header_paths == [["Task"], ["Interval", "Weekly"]]
+    assert source.table_axis_summary == {
+        "row_axis": "task",
+        "column_axis": "interval",
+    }
+
+
 def test_build_sources_returns_none_for_malformed_table_rows_json() -> None:
     builder = StructuredSourceBuilder()
 

@@ -139,6 +139,42 @@ def test_hydrate_table_chunks_includes_table_caption(sample_chunk) -> None:
 
     assert "Spare parts for the hydraulic pump" in hydrated[0].content
 
+
+def test_hydrate_table_chunks_includes_structure_context_when_available(
+    sample_chunk,
+) -> None:
+    table = TableAsset(
+        table_id="table_001",
+        document_id=sample_chunk.document_id,
+        markdown="| Parameter | Compact version | Remote version |\n|---|---|---|\n| Pressure range | 0...10 | 0...16 |",
+        rows=[
+            ["Parameter", "Compact version", "Remote version"],
+            ["Pressure range", "0...10", "0...16"],
+        ],
+        table_shape="specification_matrix",
+        header_paths=[
+            ["Parameter"],
+            ["Field", "Compact version"],
+            ["Field", "Remote version"],
+        ],
+        axis_summary={
+            "row_axis": "parameter",
+            "column_axis": "field",
+            "value_axis": "specification_value",
+        },
+    )
+    partial_chunk = _make_table_chunk(
+        sample_chunk,
+        chunk_id="chunk_table_1",
+        content="| Parameter | Compact version | Remote version |\n|---|---|---|\n| Pressure range | 0...10 | 0...16 |",
+        table_ids=["table_001"],
+    )
+
+    hydrated = hydrate_table_chunks([partial_chunk], {"table_001": table})
+
+    assert "Table shape: specification_matrix" in hydrated[0].content
+    assert "Header paths: Parameter | Field > Compact version | Field > Remote version" in hydrated[0].content
+
 def test_extract_hydrates_split_table_chunks_before_building_prompt(sample_chunk) -> None:
     table = TableAsset(
         table_id="table_001",

@@ -5,6 +5,9 @@ from src.application.workflows.parsing.tables.families import (
     LogicalTableFamilyLookup,
     LogicalTableFamilyRowMerger,
 )
+from src.application.workflows.parsing.tables.structure import (
+    TableStructureContextRenderer,
+)
 from src.domain.assets import TableAsset
 from src.domain.common import ChunkType
 from src.domain.document import DocumentGraph
@@ -21,6 +24,15 @@ _TABLE_LIKE_CHUNK_TYPES = {
 
 
 class TableEvidenceHydrator:
+    def __init__(
+        self,
+        *,
+        table_structure_context_renderer: TableStructureContextRenderer | None = None,
+    ) -> None:
+        self.table_structure_context_renderer = (
+            table_structure_context_renderer or TableStructureContextRenderer()
+        )
+
     def hydrate(
         self,
         *,
@@ -102,6 +114,20 @@ class TableEvidenceHydrator:
             )
             if table_category_confidence is not None:
                 metadata["table_category_confidence"] = str(table_category_confidence)
+            table_shape = self._resolve_table_shape(qualifying_tables)
+            if table_shape:
+                metadata["table_shape"] = table_shape
+            table_structure_quality = self._resolve_table_structure_quality(
+                qualifying_tables
+            )
+            if table_structure_quality is not None:
+                metadata["table_structure_quality"] = str(table_structure_quality)
+            header_paths = self._merge_header_paths(qualifying_tables)
+            if header_paths:
+                metadata["table_header_paths_json"] = json.dumps(header_paths)
+            axis_summary = self._merge_axis_summary(qualifying_tables)
+            if axis_summary:
+                metadata["table_axis_summary"] = json.dumps(axis_summary)
             merged_rows = row_merger.merge_tables(qualifying_tables)
             if merged_rows is not None:
                 metadata["table_rows_json"] = json.dumps(merged_rows)
@@ -115,9 +141,12 @@ class TableEvidenceHydrator:
 
         return hydrated_chunks
 
-    @staticmethod
-    def _table_text_with_structured_rows(table: TableAsset) -> str:
-        parts = [table.to_embedding_text()]
+    def _table_text_with_structured_rows(self, table: TableAsset) -> str:
+        parts: list[str] = []
+        structure_context = self.table_structure_context_renderer.render(table)
+        if structure_context:
+            parts.append(structure_context)
+        parts.append(table.to_embedding_text())
         structured_rows = table.to_structured_row_text()
         if structured_rows:
             parts.append(structured_rows)
@@ -132,3 +161,44 @@ class TableEvidenceHydrator:
             return True
 
         return "|" in chunk.content
+
+    @staticmethod
+    def _resolve_table_shape(tables: list[TableAsset]) -> str | None:
+        for table in tables:
+            table_shape = table.resolved_table_shape()
+            if table_shape:
+                return table_shape
+        return None
+
+    @staticmethod
+    def _resolve_table_structure_quality(tables: list[TableAsset]) -> float | None:
+        for table in tables:
+            if table.table_structure_quality is not None:
+                return table.table_structure_quality
+        return None
+
+    @staticmethod
+    def _merge_header_paths(tables: list[TableAsset]) -> list[list[str]]:
+        merged: list[list[str]] = []
+        seen: set[tuple[str, ...]] = set()
+        for table in tables:
+            for path in table.header_paths:
+                cleaned = tuple(
+                    str(part).strip() for part in path if str(part).strip()
+                )
+                if not cleaned or cleaned in seen:
+                    continue
+                seen.add(cleaned)
+                merged.append(list(cleaned))
+        return merged
+
+    @staticmethod
+    def _merge_axis_summary(tables: list[TableAsset]) -> dict[str, str]:
+        merged: dict[str, str] = {}
+        for table in tables:
+            for key, value in table.axis_summary.items():
+                cleaned_key = str(key).strip()
+                cleaned_value = str(value).strip()
+                if cleaned_key and cleaned_value and cleaned_key not in merged:
+                    merged[cleaned_key] = cleaned_value
+        return merged
