@@ -7,6 +7,9 @@ from src.domain.assets.table_rows.table_row_patterns import (
     looks_explicit_header_cell,
     normalize_cell,
 )
+from src.domain.assets.table_rows.troubleshooting_row_continuation_merger import (
+    TroubleshootingRowContinuationMerger,
+)
 
 _FIELD_ORDER = ("symptom", "cause", "remedy", "notes")
 _FIELD_LABELS = {
@@ -39,6 +42,7 @@ _FIELD_MARKERS = {
 }
 _NUMBERING_TOKEN_PATTERN = re.compile(r"^\(?\d{1,3}[a-z]?[).]?$", re.IGNORECASE)
 _ENUMERATION_PATTERN = re.compile(r"^\(?\d+[A-Za-z]?\)?[.)]?$")
+_ROW_CONTINUATION_MERGER = TroubleshootingRowContinuationMerger()
 
 
 class TroubleshootingTableNormalizer:
@@ -83,6 +87,10 @@ class TroubleshootingTableNormalizer:
 
         if not normalized_rows:
             return None
+        normalized_rows = _ROW_CONTINUATION_MERGER.merge(
+            headers=[_FIELD_LABELS[field] for field in ordered_fields],
+            rows=normalized_rows,
+        )
 
         return NormalizedTableRows(
             headers=[_FIELD_LABELS[field] for field in ordered_fields],
@@ -120,14 +128,6 @@ class TroubleshootingTableNormalizer:
 
     @staticmethod
     def _contains_marker(header: str, marker: str) -> bool:
-        """Word-boundary match, not plain substring containment - a bare
-        substring check would let a short marker like "action" match
-        inside an unrelated word like "reaction". A trailing "s?" tolerates
-        the regular plural real headers commonly use ("Probable Causes",
-        "Corrective Actions") - the one irregular plural in this
-        vocabulary ("remedy" -> "remedies") is already listed as its own
-        literal marker, so this never needs to handle it.
-        """
         return re.search(rf"\b{re.escape(marker)}s?\b", header) is not None
 
     @staticmethod
@@ -136,14 +136,6 @@ class TroubleshootingTableNormalizer:
         *,
         data_rows: list[list[str]],
     ) -> dict[int, str]:
-        """A header spanning a "1a) <text>" sub-column pair sometimes
-        lands its label on the numbering sub-column only, leaving the
-        actual text one column over, unlabeled (a Docling merged-header
-        artifact, not a marker-matching problem). When a mapped column's
-        values are consistently bare numbering tokens ("1a)", "(2)") and
-        the very next column is unmapped and has real text, the mapping
-        belongs on that next column instead.
-        """
         if not data_rows:
             return header_indexes
 

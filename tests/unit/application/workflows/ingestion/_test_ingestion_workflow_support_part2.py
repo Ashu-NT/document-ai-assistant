@@ -115,6 +115,7 @@ def _build_workflow(
     document_lookup_service=None,
     semantic_linking_workflow=None,
     post_classification_chunk_finalization_workflow=None,
+    extraction_enabled: bool = True,
 ):
     return IngestionWorkflow(
         unit_of_work=FakeUnitOfWork(),
@@ -137,6 +138,7 @@ def _build_workflow(
         ),
         embedding_workflow=embedding_workflow or FakeEmbeddingWorkflow(),
         id_generator=IdGenerator(),
+        extraction_enabled=extraction_enabled,
         event_service=event_service,
         document_lookup_service=document_lookup_service,
         semantic_linking_workflow=semantic_linking_workflow,

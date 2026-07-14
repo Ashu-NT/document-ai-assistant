@@ -49,6 +49,7 @@ def resolve_corpus_document(
     through the normal canonical ingestion workflow.
     """
     prefix = progress_prefix(index=seed_index, total=total_targets)
+    extraction_enabled = getattr(ingestion_workflow, "extraction_enabled", True)
     emit_progress(
         progress_callback,
         f"{prefix} Checking duplicate status...",
@@ -97,7 +98,48 @@ def resolve_corpus_document(
                     details={"document_id": existing_document_id},
                 )
 
-            if not document_graph.chunks:
+            if not extraction_enabled:
+                if not document_graph.chunks:
+                    emit_progress(
+                        progress_callback,
+                        (
+                            f"{prefix} Existing document found for {seed_target.document_alias}: "
+                            f"{existing_document_id}. It has no extraction result, but "
+                            "structured extraction is disabled by config. Marking it as "
+                            "needing a full --force-reparse instead of attempting in-place "
+                            "repair."
+                        ),
+                    )
+                    final_graph, classification, seed_status = (
+                        _mark_document_needs_reparse(
+                            document_id=existing_document_id,
+                            document_graph=document_graph,
+                            classification_service=classification_service,
+                            activity_context=activity_context,
+                        )
+                    )
+                else:
+                    emit_progress(
+                        progress_callback,
+                        (
+                            f"{prefix} Existing document found for {seed_target.document_alias}: "
+                            f"{existing_document_id}. It has no extraction result, but "
+                            "structured extraction is disabled by config. Reusing its "
+                            "already-ingested graph without retrying extraction."
+                        ),
+                    )
+                    final_graph, classification, seed_status = _reuse_existing_document(
+                        document_id=existing_document_id,
+                        document_lookup_service=document_lookup_service,
+                        classification_service=classification_service,
+                        document_classification_workflow=document_classification_workflow,
+                        unit_of_work=unit_of_work,
+                        activity_context=activity_context,
+                        progress_callback=progress_callback,
+                        seed_index=seed_index,
+                        total_targets=total_targets,
+                    )
+            elif not document_graph.chunks:
                 if not document_graph.elements:
                     emit_progress(
                         progress_callback,
@@ -169,28 +211,51 @@ def resolve_corpus_document(
                 existing_extraction_result is not None
                 and existing_extraction_result.unresolved_chunk_ids
             ):
-                emit_progress(
-                    progress_callback,
-                    (
-                        f"{prefix} Existing document found for {seed_target.document_alias}: "
-                        f"{existing_document_id}. Its saved extraction result still has "
-                        f"{len(existing_extraction_result.unresolved_chunk_ids)} unresolved "
-                        "chunk(s). Retrying only that unresolved subset in place "
-                        "(no re-parse, same document_id)..."
-                    ),
-                )
-                final_graph, classification, seed_status = (
-                    _retry_extraction_for_existing_document(
+                if not extraction_enabled:
+                    emit_progress(
+                        progress_callback,
+                        (
+                            f"{prefix} Existing document found for {seed_target.document_alias}: "
+                            f"{existing_document_id}. Its saved extraction result still has "
+                            f"{len(existing_extraction_result.unresolved_chunk_ids)} unresolved "
+                            "chunk(s), but structured extraction is disabled by config. "
+                            "Reusing its already-ingested graph without retrying extraction."
+                        ),
+                    )
+                    final_graph, classification, seed_status = _reuse_existing_document(
                         document_id=existing_document_id,
-                        ingestion_workflow=ingestion_workflow,
                         document_lookup_service=document_lookup_service,
                         classification_service=classification_service,
+                        document_classification_workflow=document_classification_workflow,
+                        unit_of_work=unit_of_work,
                         activity_context=activity_context,
                         progress_callback=progress_callback,
                         seed_index=seed_index,
                         total_targets=total_targets,
                     )
-                )
+                else:
+                    emit_progress(
+                        progress_callback,
+                        (
+                            f"{prefix} Existing document found for {seed_target.document_alias}: "
+                            f"{existing_document_id}. Its saved extraction result still has "
+                            f"{len(existing_extraction_result.unresolved_chunk_ids)} unresolved "
+                            "chunk(s). Retrying only that unresolved subset in place "
+                            "(no re-parse, same document_id)..."
+                        ),
+                    )
+                    final_graph, classification, seed_status = (
+                        _retry_extraction_for_existing_document(
+                            document_id=existing_document_id,
+                            ingestion_workflow=ingestion_workflow,
+                            document_lookup_service=document_lookup_service,
+                            classification_service=classification_service,
+                            activity_context=activity_context,
+                            progress_callback=progress_callback,
+                            seed_index=seed_index,
+                            total_targets=total_targets,
+                        )
+                    )
             else:
                 emit_progress(
                     progress_callback,

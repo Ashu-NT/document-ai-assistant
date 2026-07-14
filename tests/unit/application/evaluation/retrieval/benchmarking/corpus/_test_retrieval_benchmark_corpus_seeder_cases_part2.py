@@ -159,6 +159,74 @@ def test_seed_corpus_retries_existing_duplicate_with_unresolved_extraction_chunk
         for message in messages
     )
 
+
+def test_seed_corpus_reuses_existing_duplicate_when_extraction_is_disabled(
+) -> None:
+    tmp_path = make_workspace_temp_dir()
+    truth_set_path = tmp_path / "retrieval_truth_set.md"
+    truth_set_path.write_text("truth set", encoding="utf-8")
+    input_directory = tmp_path / "docs"
+    input_directory.mkdir()
+    file_path = input_directory / "manual.pdf"
+    file_path.write_text("duplicate", encoding="utf-8")
+
+    dataset = build_dataset(
+        truth_set_path,
+        [
+            build_case(
+                case_id="D-005C",
+                document_alias="manual_alias",
+                file_name=file_path.name,
+            )
+        ],
+    )
+    final_graph = build_document_graph(
+        document_id="doc_existing",
+        file_name=file_path.name,
+        file_path=str(file_path),
+        document_type=DocumentType.MANUAL,
+        chunk_texts=["final chunk"],
+        question_count=1,
+    )
+    file_hash = compute_hashes(file_path)[0]
+    classifications = {
+        "doc_existing": build_document_classification(
+            document_id="doc_existing",
+            document_type=DocumentType.MANUAL,
+            confidence_score=0.88,
+        )
+    }
+    fake_ingestion_workflow = FakeIngestionWorkflow(
+        extraction_enabled=False,
+    )
+    extraction_service = FakeExtractionService(
+        documents_missing_extraction={"doc_existing"}
+    )
+    seeder, _ = build_seeder(
+        dataset=dataset,
+        operations=[],
+        final_graphs_by_document_id={"doc_existing": final_graph},
+        ingestion_workflow=fake_ingestion_workflow,
+        duplicate_matches={file_hash: "doc_existing"},
+        classifications=classifications,
+        extraction_service=extraction_service,
+    )
+    messages: list[str] = []
+
+    manifest = seeder.seed_corpus(
+        truth_set_path=truth_set_path,
+        input_directory=input_directory,
+        progress_callback=messages.append,
+    )
+
+    assert extraction_service.has_extraction_result_calls == ["doc_existing"]
+    assert fake_ingestion_workflow.retry_extraction_calls == []
+    assert manifest.documents[0].seed_status == "reused_existing"
+    assert any(
+        "structured extraction is disabled by config" in message.lower()
+        for message in messages
+    )
+
 def test_seed_corpus_marks_zero_chunk_document_as_needing_reparse(
 ) -> None:
     """A document with no extraction result, zero chunks, and no persisted

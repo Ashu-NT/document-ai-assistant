@@ -60,6 +60,7 @@ class ExtractionRetryStep:
         document_registration_service: DocumentRegistrationService,
         id_generator: IdGenerator,
         unit_of_work: UnitOfWork,
+        extraction_enabled: bool = True,
         identifier_promotion_service: IdentifierPromotionService | None = None,
         deterministic_identifier_scanner: DeterministicIdentifierScanner | None = None,
         semantic_linking_workflow: SemanticLinkingWorkflow | None = None,
@@ -72,6 +73,7 @@ class ExtractionRetryStep:
         self.document_registration_service = document_registration_service
         self.id_generator = id_generator
         self.unit_of_work = unit_of_work
+        self.extraction_enabled = extraction_enabled
         self.identifier_promotion_service = identifier_promotion_service
         self.deterministic_identifier_scanner = deterministic_identifier_scanner
         self.semantic_linking_workflow = semantic_linking_workflow
@@ -89,6 +91,12 @@ class ExtractionRetryStep:
                 "dependency, which this IngestionWorkflow instance was not "
                 "constructed with.",
                 error_code="reingestion_not_supported",
+                details={"document_id": document_id},
+            )
+        if not self.extraction_enabled:
+            raise IngestionWorkflowError(
+                "Retrying extraction is disabled by config.",
+                error_code="ingestion.extraction.disabled",
                 details={"document_id": document_id},
             )
 

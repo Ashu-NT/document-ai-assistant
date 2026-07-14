@@ -143,11 +143,13 @@ class FakeIngestionWorkflow:
         reingest_results: dict[str, IngestionResult] | None = None,
         retry_extraction_results: dict[str, IngestionResult] | None = None,
         retry_extraction_errors: dict[str, Exception] | None = None,
+        extraction_enabled: bool = True,
     ) -> None:
         self.results_by_path = results_by_path or {}
         self.reingest_results = reingest_results or {}
         self.retry_extraction_results = retry_extraction_results or {}
         self.retry_extraction_errors = retry_extraction_errors or {}
+        self.extraction_enabled = extraction_enabled
         self.calls: list[IngestionRequest] = []
         self.reingest_calls: list[ReingestionRequest] = []
         self.retry_extraction_calls: list[str] = []

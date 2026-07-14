@@ -98,6 +98,12 @@ def patched(monkeypatch):
     )
     monkeypatch.setattr(
         ingestion_orchestrator.extraction_settings,
+        "extraction_enabled",
+        True,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        ingestion_orchestrator.extraction_settings,
         "identifier_extraction_enabled",
         True,
         raising=False,
@@ -181,6 +187,19 @@ def test_identifier_services_are_none_when_disabled(monkeypatch, patched):
     assert ingestion_workflow.kwargs["deterministic_identifier_scanner"] is None
 
 
+def test_ingestion_workflow_receives_extraction_enabled_flag(monkeypatch, patched):
+    monkeypatch.setattr(
+        ingestion_orchestrator.extraction_settings,
+        "extraction_enabled",
+        False,
+        raising=False,
+    )
+
+    runtime = build_ingestion_runtime()
+
+    assert runtime.ingestion_workflow.kwargs["extraction_enabled"] is False
+
+
 def test_semantic_linking_workflow_wired_when_enabled(monkeypatch, patched):
     monkeypatch.setattr(
         ingestion_orchestrator.extraction_settings,
@@ -207,6 +226,25 @@ def test_semantic_linking_workflow_is_none_when_disabled(monkeypatch, patched):
     monkeypatch.setattr(
         ingestion_orchestrator.extraction_settings,
         "semantic_linking_enabled",
+        False,
+        raising=False,
+    )
+
+    runtime = build_ingestion_runtime()
+
+    assert runtime.ingestion_workflow.kwargs["semantic_linking_workflow"] is None
+
+
+def test_semantic_linking_workflow_is_none_when_extraction_is_disabled(monkeypatch, patched):
+    monkeypatch.setattr(
+        ingestion_orchestrator.extraction_settings,
+        "semantic_linking_enabled",
+        True,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        ingestion_orchestrator.extraction_settings,
+        "extraction_enabled",
         False,
         raising=False,
     )

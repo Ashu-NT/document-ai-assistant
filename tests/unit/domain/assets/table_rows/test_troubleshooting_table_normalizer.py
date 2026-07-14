@@ -170,3 +170,49 @@ def test_prefers_descriptive_troubleshooting_cells_over_enumerator_markers() -> 
             "Check the power supply and make sure that the shaft is free.",
         ]
     ]
+
+
+def test_merges_wrapped_troubleshooting_cause_rows_after_normalization() -> None:
+    normalized = TroubleshootingTableNormalizer().normalize(
+        [
+            ["PROBLEM", "PROBABLE CAUSES", "", "POSSIBLE REMEDIES", ""],
+            [
+                "(6) Leakage from the mechanical seal",
+                "6a)",
+                "The mechanical seal has been",
+                "6a)",
+                "Replace the mechanical seal.",
+            ],
+            [
+                "(6) Leakage from the mechanical seal",
+                "6b)",
+                "run dry or has stuck",
+                "6b)",
+                "Replace the mechanical seal.",
+            ],
+            [
+                "(6) Leakage from the mechanical seal",
+                "6c)",
+                "Slight initial drip during filling or on first start-up.",
+                "6c)",
+                "Replace the mechanical seal.",
+            ],
+        ],
+        table_category="troubleshooting_table",
+        chunk_type=None,
+    )
+
+    assert normalized is not None
+    assert normalized.headers == ["Symptom", "Cause", "Remedy"]
+    assert normalized.rows == [
+        [
+            "(6) Leakage from the mechanical seal",
+            "The mechanical seal has been run dry or has stuck",
+            "Replace the mechanical seal.",
+        ],
+        [
+            "(6) Leakage from the mechanical seal",
+            "Slight initial drip during filling or on first start-up.",
+            "Replace the mechanical seal.",
+        ],
+    ]

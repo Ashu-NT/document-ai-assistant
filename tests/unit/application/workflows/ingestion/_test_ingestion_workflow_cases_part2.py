@@ -97,6 +97,24 @@ def test_retry_extraction_raises_when_document_lookup_service_not_wired(
     with pytest.raises(ReingestionNotSupportedError):
         workflow.retry_extraction("doc_001")
 
+def test_retry_extraction_raises_when_structured_extraction_is_disabled(
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        document_lookup_service=FakeDocumentLookupService(sample_document_graph),
+        extraction_enabled=False,
+    )
+
+    with pytest.raises(Exception) as exc_info:
+        workflow.retry_extraction(sample_document_graph.document.document_id)
+
+    assert "disabled by config" in str(exc_info.value)
+
 def test_retry_extraction_raises_when_document_does_not_exist(
     sample_document_graph,
     sample_document_classification,
@@ -140,6 +158,50 @@ def test_retry_extraction_reextracts_in_place_without_reparsing(
     assert document_registration_service.calls == []
     assert document_registration_service.replace_calls == []
     assert workflow.unit_of_work.commit_count >= 1
+
+def test_ingestion_workflow_skips_structured_extraction_when_disabled(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nmanual")
+    extraction_workflow = FakeExtractionWorkflow(sample_extraction_result)
+    embedding_workflow = FakeEmbeddingWorkflow()
+    event_service = FakeEventService()
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        extraction_workflow=extraction_workflow,
+        embedding_workflow=embedding_workflow,
+        event_service=event_service,
+        extraction_enabled=False,
+    )
+    messages: list[str] = []
+
+    result = workflow.run(
+        IngestionRequest(
+            file_path=str(input_file),
+            run_quality_checks=False,
+        ),
+        progress_callback=messages.append,
+    )
+
+    assert result.status == IngestionStatus.COMPLETE
+    assert result.diagnostics["extraction_skipped"] is True
+    assert extraction_workflow.calls == []
+    assert embedding_workflow.embed_calls
+    assert any("Extraction skipped by config" in message for message in messages)
+    extraction_completed = next(
+        event
+        for event in event_service.events
+        if event.event_type == "ingestion.stage.completed"
+        and event.stage == IngestionStage.EXTRACTION.value
+    )
+    assert extraction_completed.payload["skipped"] is True
+    assert extraction_completed.payload["extraction_id"] is None
 
 def test_retry_extraction_forwards_progress_callback_and_emits_stage_messages(
     sample_document_graph,

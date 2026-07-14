@@ -176,7 +176,10 @@ def build_ingestion_runtime(
         )
 
     semantic_linking_workflow = None
-    if extraction_settings.semantic_linking_enabled:
+    if (
+        extraction_settings.extraction_enabled
+        and extraction_settings.semantic_linking_enabled
+    ):
         semantic_linking_workflow = SemanticLinkingWorkflow(
             extraction_service=extraction_service,
             id_generator=resolved_id_generator,
@@ -195,6 +198,7 @@ def build_ingestion_runtime(
         extraction_workflow=extraction_workflow,
         embedding_workflow=embedding_workflow,
         id_generator=resolved_id_generator,
+        extraction_enabled=extraction_settings.extraction_enabled,
         identifier_promotion_service=identifier_promotion_service,
         deterministic_identifier_scanner=deterministic_identifier_scanner,
         document_lookup_service=document_lookup_service,

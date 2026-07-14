@@ -19,6 +19,7 @@ def build_success_result(
     correlation_id: str,
     quality_diagnostics: dict[str, object],
     extraction_result,
+    extraction_skipped: bool,
 ) -> IngestionResult:
     """Assemble the terminal `IngestionResult` for a fully completed run."""
     statistics = final_graph.document.statistics
@@ -28,6 +29,7 @@ def build_success_result(
         "content_hash": final_graph.document.hashes.content_hash,
         "metadata": dict(request.metadata),
         "quality": quality_diagnostics,
+        "extraction_skipped": extraction_skipped,
         "vector_indexing_boundary": (
             "Qdrant writes and SQLite vector mappings are orchestrated in order but are not atomic across both stores."
         ),
