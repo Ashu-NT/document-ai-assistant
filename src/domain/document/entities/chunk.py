@@ -27,6 +27,10 @@ class DocumentChunk:
     table_category_confidence: float | None = None
     table_row_start: int | None = None
     table_row_end: int | None = None
+    table_shape: str | None = None
+    table_structure_quality: float | None = None
+    header_paths: list[list[str]] = field(default_factory=list)
+    axis_summary: dict[str, str] = field(default_factory=dict)
 
     source: SourceLocation = field(default_factory=SourceLocation)
 

@@ -132,6 +132,87 @@ class TableFragmentBuilder:
             "table_category_confidence": coerce_float(
                 parser_extra.get("table_category_confidence")
             ),
+            "table_shape": str(parser_extra.get("table_shape") or "").strip() or None,
+            "table_structure_quality": coerce_float(
+                parser_extra.get("table_structure_quality")
+            ),
+            "header_paths": TableFragmentBuilder._clean_header_paths(
+                parser_extra.get("table_header_paths_json")
+            ),
+            "axis_summary": TableFragmentBuilder._clean_axis_summary(
+                parser_extra.get("table_axis_summary")
+            ),
+        }
+
+    @staticmethod
+    def _clean_header_paths(value: object) -> list[list[str]]:
+        if not isinstance(value, list):
+            return []
+        return [
+            [str(part) for part in path if str(part).strip()]
+            for path in value
+            if isinstance(path, list)
+        ]
+
+    @staticmethod
+    def _clean_axis_summary(value: object) -> dict[str, str]:
+        if not isinstance(value, dict):
+            return {}
+        return {
+            str(key): str(axis_value)
+            for key, axis_value in value.items()
+            if str(key).strip() and str(axis_value).strip()
+        }
+
+    @staticmethod
+    def merge_family_table_metadata(
+        elements: list[CanonicalElement],
+    ) -> dict[str, object]:
+        """Reconciles table_shape/table_structure_quality/header_paths/axis_summary
+        across every member of a logical table family, mirroring the merge rules
+        already used on the QA side (table_evidence_hydrator.py) for consistency."""
+        per_element_metadata = [
+            TableFragmentBuilder.table_metadata(element) for element in elements
+        ]
+
+        table_shape = next(
+            (
+                metadata["table_shape"]
+                for metadata in per_element_metadata
+                if metadata["table_shape"]
+            ),
+            None,
+        )
+        table_structure_quality = next(
+            (
+                metadata["table_structure_quality"]
+                for metadata in per_element_metadata
+                if metadata["table_structure_quality"] is not None
+            ),
+            None,
+        )
+
+        header_paths: list[list[str]] = []
+        seen_paths: set[tuple[str, ...]] = set()
+        for metadata in per_element_metadata:
+            for path in metadata["header_paths"]:
+                cleaned = tuple(path)
+                if not cleaned or cleaned in seen_paths:
+                    continue
+                seen_paths.add(cleaned)
+                header_paths.append(list(cleaned))
+
+        axis_summary: dict[str, str] = {}
+        for metadata in per_element_metadata:
+            for key, value in metadata["axis_summary"].items():
+                if key not in axis_summary:
+                    axis_summary[key] = value
+
+        return {
+            "table_shape": table_shape,
+            "table_structure_quality": table_structure_quality,
+            "header_paths": header_paths,
+            "axis_summary": axis_summary,
         }
 
     def table_chunk_type(

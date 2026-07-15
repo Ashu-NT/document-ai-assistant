@@ -29,6 +29,10 @@ class ChunkMapper:
             table_category_confidence=chunk.table_category_confidence,
             table_row_start=chunk.table_row_start,
             table_row_end=chunk.table_row_end,
+            table_shape=chunk.table_shape,
+            table_structure_quality=chunk.table_structure_quality,
+            header_paths_json=ChunkMapper._dump_header_paths(chunk.header_paths),
+            axis_summary_json=ChunkMapper._dump_axis_summary(chunk.axis_summary),
             chunk_type=chunk.chunk_type.value,
             chunk_type_source=chunk.chunk_type_source,
             section_path=json.dumps(chunk.section_path),
@@ -83,6 +87,10 @@ class ChunkMapper:
             table_category_confidence=orm.table_category_confidence,
             table_row_start=orm.table_row_start,
             table_row_end=orm.table_row_end,
+            table_shape=orm.table_shape,
+            table_structure_quality=orm.table_structure_quality,
+            header_paths=ChunkMapper._load_header_paths(orm.header_paths_json),
+            axis_summary=ChunkMapper._load_axis_summary(orm.axis_summary_json),
             source=columns_to_source_location(
                 page_start=orm.page_start,
                 page_end=orm.page_end,
@@ -114,3 +122,45 @@ class ChunkMapper:
             return []
 
         return [str(value) for value in loaded if str(value)]
+
+    @staticmethod
+    def _dump_header_paths(header_paths: list[list[str]]) -> str:
+        return json.dumps([list(path) for path in header_paths])
+
+    @staticmethod
+    def _load_header_paths(raw_value: str | None) -> list[list[str]]:
+        if not raw_value:
+            return []
+
+        try:
+            loaded = json.loads(raw_value)
+        except json.JSONDecodeError:
+            return []
+
+        if not isinstance(loaded, list):
+            return []
+
+        return [
+            [str(part) for part in path]
+            for path in loaded
+            if isinstance(path, list)
+        ]
+
+    @staticmethod
+    def _dump_axis_summary(axis_summary: dict[str, str]) -> str:
+        return json.dumps(dict(axis_summary))
+
+    @staticmethod
+    def _load_axis_summary(raw_value: str | None) -> dict[str, str]:
+        if not raw_value:
+            return {}
+
+        try:
+            loaded = json.loads(raw_value)
+        except json.JSONDecodeError:
+            return {}
+
+        if not isinstance(loaded, dict):
+            return {}
+
+        return {str(key): str(value) for key, value in loaded.items()}
