@@ -78,6 +78,57 @@ def test_list_documents_trunc_none():
     mod = _load_script("list_documents")
     assert mod._trunc(None, 10) == "-"
 
+def test_ingest_document_module_importable():
+    mod = _load_script("ingest_document")
+    assert hasattr(mod, "parse_args")
+    assert hasattr(mod, "main")
+
+def test_ingest_document_parse_args_defaults():
+    mod = _load_script("ingest_document")
+    args = mod.parse_args(["--input", "example.pdf"])
+    assert args.input == "example.pdf"
+    assert args.document_type is None
+    assert args.force is False
+    assert args.generate_questions is False
+    assert args.enable_ocr is None
+    assert args.skip_quality_checks is False
+    assert args.json is False
+
+def test_ingest_document_parse_args_optional_flags():
+    mod = _load_script("ingest_document")
+    args = mod.parse_args(
+        [
+            "--input",
+            "example.pdf",
+            "--document-type",
+            "manual",
+            "--title",
+            "Example Manual",
+            "--source-name",
+            "local",
+            "--force",
+            "--generate-questions",
+            "--enable-ocr",
+            "--skip-quality-checks",
+            "--trace",
+            "--json",
+        ]
+    )
+    assert args.document_type == "manual"
+    assert args.title == "Example Manual"
+    assert args.source_name == "local"
+    assert args.force is True
+    assert args.generate_questions is True
+    assert args.enable_ocr is True
+    assert args.skip_quality_checks is True
+    assert args.trace is True
+    assert args.json is True
+
+def test_ingest_document_main_returns_1_for_missing_input_file():
+    mod = _load_script("ingest_document")
+    result = mod.main(["--input", "does_not_exist.pdf"])
+    assert result == 1
+
 def test_ask_document_module_importable():
     mod = _load_script("ask_document")
     assert hasattr(mod, "parse_args")
