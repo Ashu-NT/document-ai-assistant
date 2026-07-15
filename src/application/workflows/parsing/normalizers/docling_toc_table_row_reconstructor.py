@@ -30,7 +30,17 @@ class DoclingTocTableRowReconstructor:
         if len(parsed_rows) < 3:
             return rows
 
-        if len(parsed_rows) < max(3, len(self._non_empty_cells(rows)) // 2):
+        row_entry_count = sum(
+            1
+            for row in rows
+            if self._parse_row(row) is not None
+        )
+        minimum_expected = (
+            max(3, row_entry_count)
+            if row_entry_count >= 2
+            else max(3, len(self._non_empty_cells(rows)) // 2)
+        )
+        if len(parsed_rows) < minimum_expected:
             return rows
 
         strong_match_count = sum(
@@ -58,12 +68,55 @@ class DoclingTocTableRowReconstructor:
     def _parse_rows(self, rows: list[list[str]]) -> list[_ParsedTocEntry]:
         parsed: list[_ParsedTocEntry] = []
         for row in rows:
+            parsed_row = self._parse_row(row)
+            if parsed_row is not None:
+                parsed.append(parsed_row)
+                continue
             row_entries: list[_ParsedTocEntry] = []
             for cell in row:
                 row_entries.extend(self._parse_cell(cell))
             for entry in self._dedupe_row_entries(row_entries):
                 parsed.append(entry)
         return parsed
+
+    def _parse_row(self, row: list[str]) -> _ParsedTocEntry | None:
+        cells = [self._clean_cell(cell) for cell in row if self._clean_cell(cell)]
+        if len(cells) < 2:
+            return None
+
+        page_index, page_number = self._extract_row_page(cells)
+        if page_index is None or page_number is None:
+            return None
+
+        numbering: str | None = None
+        title_parts: list[str] = []
+        for index, cell in enumerate(cells):
+            if index == page_index:
+                continue
+            exact_number = self._extract_exact_number(cell)
+            if exact_number is not None and numbering is None:
+                numbering = exact_number
+                continue
+
+            combined_number, combined_title = self._split_number_and_title(cell)
+            if combined_number is not None and numbering is None:
+                numbering = combined_number
+                if combined_title:
+                    title_parts.append(combined_title)
+                continue
+            title_parts.append(cell)
+
+        clean_title = self._clean_title(title_parts)
+        if not clean_title:
+            return None
+        if numbering is None and not self._looks_like_root_toc_title(clean_title):
+            return None
+        return _ParsedTocEntry(
+            numbering=numbering or "",
+            title=clean_title,
+            page=page_number,
+            used_dot_leader=False,
+        )
 
     def _parse_cell(self, cell: str) -> list[_ParsedTocEntry]:
         entry = self._parse_entry(cell)
@@ -72,11 +125,10 @@ class DoclingTocTableRowReconstructor:
         return [entry]
 
     def _parse_entry(self, value: str) -> _ParsedTocEntry | None:
-        text = repair_docling_text(str(value or "")).strip().strip("|").strip()
+        text = self._clean_cell(value)
         if not text:
             return None
 
-        text = re.sub(r"\s+", " ", text)
         dot_leader_match = self._DOT_LEADER_PATTERN.match(text)
         match = dot_leader_match or self._SPACE_PAGE_PATTERN.match(text)
         if match is None:
@@ -121,6 +173,51 @@ class DoclingTocTableRowReconstructor:
             for cell in row
             if str(cell).strip()
         ]
+
+    @staticmethod
+    def _clean_cell(value: object) -> str:
+        return re.sub(
+            r"\s+",
+            " ",
+            repair_docling_text(str(value or "")).strip().strip("|").strip(),
+        )
+
+    @staticmethod
+    def _extract_row_page(cells: list[str]) -> tuple[int | None, int | None]:
+        for index in range(len(cells) - 1, -1, -1):
+            if re.fullmatch(r"\d{1,4}", cells[index]):
+                return index, int(cells[index])
+        return None, None
+
+    @staticmethod
+    def _extract_exact_number(value: str) -> str | None:
+        match = re.fullmatch(r"(\d+(?:\.\d+)*)", value.strip())
+        if match is None:
+            return None
+        return match.group(1)
+
+    @staticmethod
+    def _split_number_and_title(value: str) -> tuple[str | None, str | None]:
+        stripped = value.strip()
+        match = re.match(r"^(?P<number>\d+(?:\.\d+)*)\s+(?P<title>.+)$", stripped)
+        if match is None:
+            return None, stripped or None
+        return match.group("number"), match.group("title").strip(" .")
+
+    def _clean_title(self, title_parts: list[str]) -> str:
+        title = " ".join(self._dedupe_row_entries_text(title_parts))
+        return title.strip(" .|-")
+
+    @staticmethod
+    def _dedupe_row_entries_text(values: list[str]) -> list[str]:
+        deduped: list[str] = []
+        for value in values:
+            if not value:
+                continue
+            if deduped and deduped[-1] == value:
+                continue
+            deduped.append(value)
+        return deduped
 
     def _looks_like_root_toc_title(self, value: str) -> bool:
         if any(character.isdigit() for character in value):

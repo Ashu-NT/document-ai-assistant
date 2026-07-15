@@ -1,4 +1,5 @@
 from src.domain.assets.table_cell_span import TableCellSpan
+from src.domain.common import BoundingBox
 
 
 def test_row_span_and_col_span_computed_from_start_end() -> None:
@@ -24,6 +25,8 @@ def test_to_dict_includes_derived_spans_and_all_fields() -> None:
         text="Parameter",
         normalized_text="parameter",
         raw_lines=["Param", "eter"],
+        page_number=5,
+        bbox=BoundingBox(x1=10.0, y1=20.0, x2=30.0, y2=40.0),
     )
 
     data = span.to_dict()
@@ -38,6 +41,13 @@ def test_to_dict_includes_derived_spans_and_all_fields() -> None:
         "text": "Parameter",
         "normalized_text": "parameter",
         "raw_lines": ["Param", "eter"],
+        "page_number": 5,
+        "bbox": {
+            "x1": 10.0,
+            "y1": 20.0,
+            "x2": 30.0,
+            "y2": 40.0,
+        },
     }
 
 
@@ -50,6 +60,8 @@ def test_from_dict_defaults_row_end_and_col_end_to_start_when_missing() -> None:
     assert span.col_end == 3
     assert span.normalized_text is None
     assert span.raw_lines == []
+    assert span.page_number is None
+    assert span.bbox is None
 
 
 def test_from_dict_filters_blank_raw_lines() -> None:
@@ -76,6 +88,8 @@ def test_to_dict_from_dict_round_trips() -> None:
         text="900.123.456",
         normalized_text="900123456",
         raw_lines=["900.123.456"],
+        page_number=2,
+        bbox=BoundingBox(x1=1.0, y1=2.0, x2=3.0, y2=4.0),
     )
 
     restored = TableCellSpan.from_dict(original.to_dict())

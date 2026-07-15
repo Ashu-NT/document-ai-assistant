@@ -145,6 +145,9 @@ class DocumentGraphReader:
                     rows=DocumentGraphReader._clean_rows(
                         parser_extra.get("table_rows")
                     ),
+                    parallel_stream_rows=DocumentGraphReader._clean_parallel_stream_rows(
+                        parser_extra.get("table_parallel_stream_rows")
+                    ),
                     row_ids=[
                         str(row_id)
                         for row_id in (parser_extra.get("table_row_ids") or [])
@@ -155,6 +158,7 @@ class DocumentGraphReader:
                     ),
                     row_count=parser_extra.get("row_count"),
                     column_count=parser_extra.get("column_count"),
+                    local_reading_order=parser_extra.get("table_local_reading_order"),
                     logical_table_family_id=parser_extra.get("logical_table_family_id"),
                     family_index=parser_extra.get("family_index"),
                     family_total=parser_extra.get("family_total"),
@@ -273,6 +277,17 @@ class DocumentGraphReader:
                 ]
             )
         return cleaned_rows
+
+    @classmethod
+    def _clean_parallel_stream_rows(cls, value: object) -> list[list[list[str]]]:
+        if not isinstance(value, list):
+            return []
+        cleaned_streams: list[list[list[str]]] = []
+        for stream_rows in value:
+            cleaned_rows = cls._clean_rows(stream_rows)
+            if cleaned_rows:
+                cleaned_streams.append(cleaned_rows)
+        return cleaned_streams
 
     @staticmethod
     def _coerce_float(value: object) -> float | None:

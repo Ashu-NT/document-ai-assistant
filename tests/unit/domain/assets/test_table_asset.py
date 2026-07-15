@@ -173,3 +173,24 @@ def test_table_asset_to_structured_row_text_normalizes_troubleshooting_tables() 
         "Cause=Motor overload protection cuts in | "
         "Remedy=Check the power supply."
     )
+
+
+def test_table_asset_to_structured_row_text_renders_parallel_streams_separately() -> None:
+    table = TableAsset(
+        table_id="table_009",
+        document_id="doc_001",
+        markdown="unused",
+        rows=[["Primary", "Ignored"], ["A", "B"]],
+        parallel_stream_rows=[
+            [["Part Number", "Description"], ["HP-001", "Filter"]],
+            [["Part Number", "Description"], ["HP-002", "Gasket"]],
+        ],
+        local_reading_order="left_to_right_top_to_bottom",
+    )
+
+    assert table.to_structured_row_text() == (
+        "Parallel Table Stream 1:\n"
+        "Row 1: Part Number=HP-001 | Description=Filter\n\n"
+        "Parallel Table Stream 2:\n"
+        "Row 1: Part Number=HP-002 | Description=Gasket"
+    )

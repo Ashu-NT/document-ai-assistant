@@ -94,3 +94,26 @@ def test_header_path_builder_resolves_correct_header_after_column_drop() -> None
     paths = TableHeaderPathBuilder().build_paths(table)
 
     assert paths == (("parameter",), ("value",))
+
+
+def test_build_table_asset_rehydrates_parallel_stream_rows() -> None:
+    factory = ParsedAssetFactory(IdGenerator())
+    parsed_element = _parsed_table_element(
+        table_rows=[["Parameter", "Value"], ["Voltage", "400V"]],
+        table_parallel_stream_rows=[
+            [["Parameter", "Value"], ["Voltage", "400V"]],
+            [["Parameter", "Value"], ["Frequency", "50Hz"]],
+        ],
+        column_count=2,
+    )
+
+    _, table = factory.build_table_asset(
+        document_id="doc_1",
+        parent_section_id=None,
+        parsed_element=parsed_element,
+    )
+
+    assert table.parallel_stream_rows == [
+        [["Parameter", "Value"], ["Voltage", "400V"]],
+        [["Parameter", "Value"], ["Frequency", "50Hz"]],
+    ]

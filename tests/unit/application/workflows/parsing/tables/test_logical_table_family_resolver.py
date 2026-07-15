@@ -24,6 +24,7 @@ def _make_table_element(
     page_start: int,
     parent_section_id: str = "sec_001",
     reading_order: int = 1,
+    parser_extra: dict | None = None,
 ) -> CanonicalElement:
     return CanonicalElement(
         element_id=element_id,
@@ -34,7 +35,10 @@ def _make_table_element(
         reading_order=reading_order,
         source=SourceLocation(page_start=page_start, page_end=page_start),
         table_id=table_id,
-        parser_metadata=ParserMetadata(parser_name="docling", extra={}),
+        parser_metadata=ParserMetadata(
+            parser_name="docling",
+            extra=dict(parser_extra or {}),
+        ),
     )
 
 
@@ -410,3 +414,46 @@ def test_resolver_still_groups_a_genuine_four_page_continuation() -> None:
     assert len(set(family_ids.values())) == 1
     assert graph.tables["page_4"].family_total == 4
     assert graph.tables["page_4"].continuation_role == "end"
+
+
+def test_resolver_does_not_merge_same_page_tables_from_different_layout_lanes() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.tables["table_left"] = _make_table_asset(
+        table_id="table_left",
+        rows=[["Task", "Interval"], ["Inspect filter", "Daily"]],
+    )
+    graph.tables["table_right"] = _make_table_asset(
+        table_id="table_right",
+        rows=[["Task", "Interval"], ["Replace gasket", "Weekly"]],
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_left",
+            table_id="table_left",
+            page_start=12,
+            reading_order=1,
+            parser_extra={
+                "layout_region_id": "page_12:lane_1",
+                "layout_lane_count": 2,
+                "layout_lane_index": 1,
+            },
+        )
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_right",
+            table_id="table_right",
+            page_start=12,
+            reading_order=2,
+            parser_extra={
+                "layout_region_id": "page_12:lane_2",
+                "layout_lane_count": 2,
+                "layout_lane_index": 2,
+            },
+        )
+    )
+
+    LogicalTableFamilyResolver().resolve(graph)
+
+    assert graph.tables["table_left"].logical_table_family_id == "table_family_table_left"
+    assert graph.tables["table_right"].logical_table_family_id == "table_family_table_right"

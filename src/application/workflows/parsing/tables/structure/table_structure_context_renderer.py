@@ -26,4 +26,9 @@ class TableStructureContextRenderer:
                     if str(key).strip() and str(value).strip()
                 )
             )
+        if table.parallel_stream_rows:
+            details = f"Parallel streams: {len(table.parallel_stream_rows)}"
+            if table.local_reading_order:
+                details += f" ({table.local_reading_order})"
+            parts.append(details)
         return "\n".join(parts) if parts else None

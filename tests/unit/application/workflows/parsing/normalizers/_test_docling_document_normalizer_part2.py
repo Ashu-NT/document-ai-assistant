@@ -75,11 +75,13 @@ class FakeRawDocument:
         texts: list[FakeDoclingItem] | None = None,
         tables: list[FakeDoclingItem] | None = None,
         pictures: list[FakeDoclingItem] | None = None,
+        pages: dict[int, object] | None = None,
     ) -> None:
         self._items = items
         self.texts = texts or []
         self.tables = tables or []
         self.pictures = pictures or []
+        self.pages = pages or {}
         self.iterate_items_calls = 0
 
     def iterate_items(
@@ -168,3 +170,155 @@ def test_normalize_falls_back_to_raw_document_collections() -> None:
     assert normalized[0].element_id == "canon_1"
     assert normalized[0].text == "Overview text."
     assert normalized[1].element_type == ElementType.TABLE
+
+
+def test_normalizer_attaches_layout_metadata_to_canonical_elements() -> None:
+    raw_document = FakeRawDocument(
+        [
+            FakeDoclingItem(
+                label="text",
+                text="Overview text.",
+                self_ref="#/texts/1",
+                prov=[FakeProvenance(1, FakeBBox(40, 100, 420, 180))],
+            ),
+            FakeDoclingItem(
+                label="text",
+                text="Left column detail.",
+                self_ref="#/texts/3",
+                prov=[FakeProvenance(1, FakeBBox(55, 220, 430, 300))],
+            ),
+            FakeDoclingItem(
+                label="text",
+                text="Second column text.",
+                self_ref="#/texts/2",
+                prov=[FakeProvenance(1, FakeBBox(560, 110, 940, 190))],
+            ),
+            FakeDoclingItem(
+                label="text",
+                text="Right column detail.",
+                self_ref="#/texts/4",
+                prov=[FakeProvenance(1, FakeBBox(575, 230, 950, 310))],
+            ),
+        ],
+        pages={
+            1: SimpleNamespace(size=SimpleNamespace(width=1000, height=1400)),
+        },
+    )
+
+    normalized = DoclingDocumentNormalizer().normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_002",
+    )
+
+    metadata_by_id = {
+        element.element_id: element.metadata
+        for element in normalized
+    }
+    left = metadata_by_id["#/texts/1"]
+    right = metadata_by_id["#/texts/2"]
+    assert left["page_orientation"] == "portrait"
+    assert left["layout_lane_count"] == 2
+    assert left["layout_lane_index"] == 1
+    assert left["layout_region_id"] == "page_1:lane_1"
+    assert right["layout_lane_index"] == 2
+    assert right["layout_region_id"] == "page_1:lane_2"
+
+
+def test_normalizer_persists_parallel_table_stream_metadata_for_sparse_side_by_side_tables() -> None:
+    raw_document = FakeRawDocument(
+        [
+            FakeDoclingItem(
+                label="table",
+                self_ref="#/tables/2",
+                markdown="| Left | Right |",
+                prov=[FakeProvenance(1)],
+                data={
+                    "table_cells": [
+                        {
+                            "start_row_offset_idx": 0,
+                            "end_row_offset_idx": 1,
+                            "start_col_offset_idx": 0,
+                            "end_col_offset_idx": 1,
+                            "text": "Parameter",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 40, "y1": 100, "x2": 250, "y2": 120}}],
+                        },
+                        {
+                            "start_row_offset_idx": 0,
+                            "end_row_offset_idx": 1,
+                            "start_col_offset_idx": 1,
+                            "end_col_offset_idx": 2,
+                            "text": "Value",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 260, "y1": 100, "x2": 330, "y2": 120}}],
+                        },
+                        {
+                            "start_row_offset_idx": 1,
+                            "end_row_offset_idx": 2,
+                            "start_col_offset_idx": 0,
+                            "end_col_offset_idx": 1,
+                            "text": "Voltage",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 40, "y1": 130, "x2": 250, "y2": 150}}],
+                        },
+                        {
+                            "start_row_offset_idx": 1,
+                            "end_row_offset_idx": 2,
+                            "start_col_offset_idx": 1,
+                            "end_col_offset_idx": 2,
+                            "text": "400V",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 260, "y1": 130, "x2": 330, "y2": 150}}],
+                        },
+                        {
+                            "start_row_offset_idx": 0,
+                            "end_row_offset_idx": 1,
+                            "start_col_offset_idx": 2,
+                            "end_col_offset_idx": 3,
+                            "text": "Parameter",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 620, "y1": 100, "x2": 830, "y2": 120}}],
+                        },
+                        {
+                            "start_row_offset_idx": 0,
+                            "end_row_offset_idx": 1,
+                            "start_col_offset_idx": 3,
+                            "end_col_offset_idx": 4,
+                            "text": "Value",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 840, "y1": 100, "x2": 910, "y2": 120}}],
+                        },
+                        {
+                            "start_row_offset_idx": 1,
+                            "end_row_offset_idx": 2,
+                            "start_col_offset_idx": 2,
+                            "end_col_offset_idx": 3,
+                            "text": "Frequency",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 620, "y1": 130, "x2": 830, "y2": 150}}],
+                        },
+                        {
+                            "start_row_offset_idx": 1,
+                            "end_row_offset_idx": 2,
+                            "start_col_offset_idx": 3,
+                            "end_col_offset_idx": 4,
+                            "text": "50Hz",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 840, "y1": 130, "x2": 910, "y2": 150}}],
+                        },
+                    ]
+                },
+            )
+        ],
+        pages={
+            1: SimpleNamespace(size=SimpleNamespace(width=1000, height=1400)),
+        },
+    )
+
+    normalized = DoclingDocumentNormalizer().normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_003",
+    )
+
+    metadata = normalized[0].metadata
+    assert metadata["table_parallel_stream_count"] == 2
+    assert metadata["table_local_reading_order"] == "left_to_right_top_to_bottom"
+    assert metadata["table_region_partition_version"] == "1"
+    assert metadata["table_structure_tier"] == "parallel_streams"
+    assert metadata["table_parallel_stream_rows"] == [
+        [["Parameter", "Value"], ["Voltage", "400V"]],
+        [["Parameter", "Value"], ["Frequency", "50Hz"]],
+    ]
+    assert metadata["table_rows"] == [["Parameter", "Value"], ["Voltage", "400V"], ["Frequency", "50Hz"]]

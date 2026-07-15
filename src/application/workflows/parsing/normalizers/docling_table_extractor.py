@@ -7,15 +7,30 @@ from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
 from src.application.workflows.parsing.normalizers.docling_table_row_grid_builder import (
     DoclingTableRowGridBuilder,
 )
+from src.application.workflows.parsing.normalizers.table_layout.docling_table_cell_candidate_builder import (
+    DoclingTableCellCandidateBuilder,
+)
+from src.application.workflows.parsing.normalizers.table_layout.table_reconstruction_result import (
+    TableReconstructionResult,
+)
 
 
 class DoclingTableExtractor:
     def __init__(
         self,
         *,
+        cell_candidate_builder: DoclingTableCellCandidateBuilder | None = None,
         row_grid_builder: DoclingTableRowGridBuilder | None = None,
     ) -> None:
         self.row_grid_builder = row_grid_builder or DoclingTableRowGridBuilder()
+        self.cell_candidate_builder = (
+            cell_candidate_builder
+            or getattr(
+                self.row_grid_builder,
+                "cell_candidate_builder",
+                DoclingTableCellCandidateBuilder(),
+            )
+        )
 
     def is_table_item(self, item: Any) -> bool:
         raw_ref = self._extract_raw_ref(item)
@@ -106,41 +121,21 @@ class DoclingTableExtractor:
         return (start_value or 0) + 1
 
     def extract_rows(self, item: Any) -> list[list[str]]:
-        return self._extract_rows(item)
+        return self.extract_structure(item).rows
+
+    def extract_structure(self, item: Any) -> TableReconstructionResult:
+        table_cells = self._extract_table_cells(item)
+        if not table_cells:
+            return TableReconstructionResult(rows=[], cell_spans=[])
+
+        spans = self.cell_candidate_builder.build(table_cells)
+        return self.row_grid_builder.build_reconstruction(spans)
 
     def extract_cell_spans(self, item: Any) -> list[dict[str, object]]:
-        table_cells = self._extract_table_cells(item)
-        spans: list[dict[str, object]] = []
-
-        for cell in table_cells:
-            row_start = self._coerce_int(self._get_value(cell, "start_row_offset_idx"))
-            row_end = self._coerce_int(self._get_value(cell, "end_row_offset_idx"))
-            col_start = self._coerce_int(self._get_value(cell, "start_col_offset_idx"))
-            col_end = self._coerce_int(self._get_value(cell, "end_col_offset_idx"))
-            text = self._clean_text(self._get_value(cell, "text"))
-            if (
-                row_start is None
-                or row_end is None
-                or col_start is None
-                or col_end is None
-                or not text
-            ):
-                continue
-
-            raw_lines = [line.strip() for line in text.splitlines() if line.strip()]
-            spans.append(
-                {
-                    "row_start": row_start,
-                    "row_end": max(row_start, row_end - 1),
-                    "col_start": col_start,
-                    "col_end": max(col_start, col_end - 1),
-                    "text": text,
-                    "normalized_text": " ".join(raw_lines) if raw_lines else text,
-                    "raw_lines": raw_lines,
-                }
-            )
-
-        return spans
+        return [
+            span.to_dict()
+            for span in self.extract_structure(item).cell_spans
+        ]
 
     @staticmethod
     def _call_markdown_method(
@@ -162,11 +157,7 @@ class DoclingTableExtractor:
         return method()
 
     def _extract_rows(self, item: Any) -> list[list[str]]:
-        table_cells = self._extract_table_cells(item)
-        if not table_cells:
-            return []
-
-        return self.row_grid_builder.build_rows(table_cells)
+        return self.extract_structure(item).rows
 
     def _extract_table_cells(self, item: Any) -> list[Any]:
         data = self._get_value(item, "data")

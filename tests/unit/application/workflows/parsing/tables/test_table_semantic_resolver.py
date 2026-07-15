@@ -112,3 +112,59 @@ def test_table_semantic_resolver_persists_specification_matrix_metadata() -> Non
     assert table.axis_summary["row_axis"] == "parameter"
     assert parser_extra["table_shape"] == "specification_matrix"
     assert parser_extra["table_axis_summary"]["value_axis"] == "specification_value"
+
+
+def test_table_semantic_resolver_persists_normalized_troubleshooting_rows() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.tables["table_3"] = TableAsset(
+        table_id="table_3",
+        document_id="doc_001",
+        markdown="troubleshooting",
+        rows=[
+            ["PROBLEM", "PROBABLE CAUSES", "", "POSSIBLE REMEDIES", ""],
+            [
+                "(6) Leakage from the mechanical seal",
+                "6a)",
+                "The mechanical seal has been",
+                "6a)",
+                "Replace the mechanical seal.",
+            ],
+            [
+                "(6) Leakage from the mechanical seal",
+                "6b)",
+                "run dry or has stuck",
+                "6b)",
+                "Replace the mechanical seal.",
+            ],
+        ],
+    )
+    graph.add_element(
+        CanonicalElement(
+            element_id="el_table_3",
+            document_id="doc_001",
+            element_type=ElementType.TABLE,
+            text="troubleshooting",
+            table_id="table_3",
+            source=SourceLocation(page_start=20, page_end=20),
+            parser_metadata=ParserMetadata(parser_name="docling", extra={}),
+        )
+    )
+
+    TableSemanticResolver().resolve(graph)
+
+    table = graph.tables["table_3"]
+    parser_extra = graph.elements["el_table_3"].parser_metadata.extra
+
+    assert table.table_category == "troubleshooting_table"
+    assert table.rows == [
+        ["Symptom", "Cause", "Remedy"],
+        [
+            "(6) Leakage from the mechanical seal",
+            "The mechanical seal has been run dry or has stuck",
+            "Replace the mechanical seal.",
+        ],
+    ]
+    assert parser_extra["table_rows"] == table.rows
+    assert parser_extra["table_row_normalization_version"] == "1"
+    assert parser_extra["row_count"] == 2
+    assert parser_extra["column_count"] == 3

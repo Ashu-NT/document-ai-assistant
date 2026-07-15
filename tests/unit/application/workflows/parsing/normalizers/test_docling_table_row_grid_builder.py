@@ -117,3 +117,94 @@ def test_build_rows_fails_loudly_on_an_implausibly_large_malformed_span() -> Non
                 }
             ]
         )
+
+
+def test_build_rows_reconstructs_parallel_toc_lanes_when_cell_geometry_exists() -> None:
+    builder = DoclingTableRowGridBuilder()
+
+    def make_cell(row, col, text, x1, x2):
+        return {
+            "start_row_offset_idx": row,
+            "end_row_offset_idx": row + 1,
+            "start_col_offset_idx": col,
+            "end_col_offset_idx": col + 1,
+            "text": text,
+            "prov": [
+                {
+                    "page_no": 1,
+                    "bbox": {"x1": x1, "y1": 100 + (row * 20), "x2": x2, "y2": 118 + (row * 20)},
+                }
+            ],
+        }
+
+    rows = builder.build_rows(
+        [
+            make_cell(0, 0, "1 Preface", 40, 320),
+            make_cell(0, 1, "11", 330, 360),
+            make_cell(1, 0, "1.1 Introduction", 40, 320),
+            make_cell(1, 1, "12", 330, 360),
+            make_cell(2, 0, "2 Safety", 40, 320),
+            make_cell(2, 1, "15", 330, 360),
+            make_cell(0, 2, "6 Maintenance", 610, 900),
+            make_cell(0, 3, "67", 910, 940),
+            make_cell(1, 2, "7 Operating Instructions", 610, 900),
+            make_cell(1, 3, "69", 910, 940),
+            make_cell(2, 2, "7.2 Troubleshooting", 610, 900),
+            make_cell(2, 3, "81", 910, 940),
+        ]
+    )
+
+    assert rows == [
+        ["Number", "Title", "Page"],
+        ["1", "Preface", "11"],
+        ["1.1", "Introduction", "12"],
+        ["2", "Safety", "15"],
+        ["6", "Maintenance", "67"],
+        ["7", "Operating Instructions", "69"],
+        ["7.2", "Troubleshooting", "81"],
+    ]
+
+
+def test_build_reconstruction_preserves_parallel_specification_streams() -> None:
+    builder = DoclingTableRowGridBuilder()
+
+    def make_cell(row, col, text, x1, x2):
+        return {
+            "start_row_offset_idx": row,
+            "end_row_offset_idx": row + 1,
+            "start_col_offset_idx": col,
+            "end_col_offset_idx": col + 1,
+            "text": text,
+            "prov": [
+                {
+                    "page_no": 1,
+                    "bbox": {"x1": x1, "y1": 100 + (row * 20), "x2": x2, "y2": 118 + (row * 20)},
+                }
+            ],
+        }
+
+    reconstruction = builder.build_reconstruction(
+        builder.cell_candidate_builder.build(
+            [
+                make_cell(0, 0, "Parameter", 40, 250),
+                make_cell(0, 1, "Value", 260, 330),
+                make_cell(1, 0, "Voltage", 40, 250),
+                make_cell(1, 1, "400V", 260, 330),
+                make_cell(0, 2, "Parameter", 620, 830),
+                make_cell(0, 3, "Value", 840, 910),
+                make_cell(1, 2, "Frequency", 620, 830),
+                make_cell(1, 3, "50Hz", 840, 910),
+            ]
+        )
+    )
+
+    assert reconstruction.parallel_stream_rows == [
+        [["Parameter", "Value"], ["Voltage", "400V"]],
+        [["Parameter", "Value"], ["Frequency", "50Hz"]],
+    ]
+    assert reconstruction.local_reading_order == "left_to_right_top_to_bottom"
+    assert reconstruction.rows == [
+        ["Parameter", "Value"],
+        ["Voltage", "400V"],
+        ["Frequency", "50Hz"],
+    ]

@@ -133,3 +133,27 @@ def test_renderer_builds_structured_troubleshooting_payload() -> None:
     assert "Symptom=Pump does not start" in rendered
     assert "Cause=No power supply" in rendered
     assert "Remedy=Check fuse" in rendered
+
+
+def test_renderer_renders_parallel_stream_payloads_separately() -> None:
+    renderer = ExtractionTablePayloadRenderer()
+    table = TableAsset(
+        table_id="table_parallel",
+        document_id="doc_001",
+        markdown="parallel",
+        rows=[["Unused", "Unused"], ["x", "y"]],
+        parallel_stream_rows=[
+            [["Parameter", "Value"], ["Voltage", "400V"]],
+            [["Parameter", "Value"], ["Frequency", "50Hz"]],
+        ],
+        table_shape="specification_matrix",
+        header_paths=[["Parameter"], ["Value"]],
+    )
+
+    rendered = renderer.render(table)
+
+    assert rendered is not None
+    assert "Parallel Table Stream 1:" in rendered
+    assert "Parallel Table Stream 2:" in rendered
+    assert "Parameter=Voltage | Value=400V" in rendered
+    assert "Parameter=Frequency | Value=50Hz" in rendered

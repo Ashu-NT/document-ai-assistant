@@ -24,10 +24,12 @@ class TableAsset:
     parent_section_id: str | None = None
 
     rows: list[list[str]] = field(default_factory=list)
+    parallel_stream_rows: list[list[list[str]]] = field(default_factory=list)
     row_ids: list[str] = field(default_factory=list)
     cell_spans: list[TableCellSpan] = field(default_factory=list)
     row_count: int | None = None
     column_count: int | None = None
+    local_reading_order: str | None = None
     logical_table_family_id: str | None = None
     family_index: int | None = None
     family_total: int | None = None
@@ -60,6 +62,24 @@ class TableAsset:
         return "\n".join(parts)
 
     def to_structured_row_text(self) -> str | None:
+        if self.parallel_stream_rows:
+            stream_renderings: list[str] = []
+            for index, rows in enumerate(self.parallel_stream_rows, start=1):
+                rendered = _STRUCTURED_ROW_RENDERER.render(
+                    rows,
+                    table_category=self.table_category,
+                    table_shape=self.resolved_table_shape(),
+                )
+                if not rendered:
+                    continue
+                if len(self.parallel_stream_rows) > 1:
+                    stream_renderings.append(
+                        f"Parallel Table Stream {index}:\n{rendered}"
+                    )
+                else:
+                    stream_renderings.append(rendered)
+            if stream_renderings:
+                return "\n\n".join(stream_renderings)
         return _STRUCTURED_ROW_RENDERER.render(
             self.rows,
             table_category=self.table_category,

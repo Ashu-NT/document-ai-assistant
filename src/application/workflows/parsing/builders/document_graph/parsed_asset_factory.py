@@ -56,6 +56,9 @@ class ParsedAssetFactory:
                 ),
                 parent_section_id=parent_section_id,
                 rows=rows,
+                parallel_stream_rows=self._clean_parallel_stream_rows(
+                    parsed_element.metadata.get("table_parallel_stream_rows")
+                ),
                 row_ids=self._build_row_ids(
                     table_id=table_id,
                     row_count=(
@@ -66,6 +69,9 @@ class ParsedAssetFactory:
                 cell_spans=cell_spans,
                 row_count=parsed_element.metadata.get("row_count"),
                 column_count=column_count,
+                local_reading_order=self._clean_text(
+                    parsed_element.metadata.get("table_local_reading_order")
+                ),
                 table_shape=self._clean_text(parsed_element.metadata.get("table_shape")),
                 table_structure_quality=self._coerce_float(
                     parsed_element.metadata.get("table_structure_quality")
@@ -196,6 +202,19 @@ class ParsedAssetFactory:
             kept_column_indexes,
             original_width,
         )
+
+    @classmethod
+    def _clean_parallel_stream_rows(cls, value: object) -> list[list[list[str]]]:
+        if not isinstance(value, list):
+            return []
+        cleaned_streams: list[list[list[str]]] = []
+        for stream_rows in value:
+            if not isinstance(stream_rows, list):
+                continue
+            cleaned_rows, _, _ = cls._clean_rows_with_column_map(stream_rows)
+            if cleaned_rows:
+                cleaned_streams.append(cleaned_rows)
+        return cleaned_streams
 
     @staticmethod
     def _remap_cell_spans(

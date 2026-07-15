@@ -1,0 +1,157 @@
+from collections import defaultdict
+
+from src.application.workflows.parsing.layout.layout_lane_detector import (
+    LayoutLaneDetection,
+)
+from src.application.workflows.parsing.layout.layout_reading_order_resolver import (
+    LayoutReadingOrderResolver,
+)
+from src.application.workflows.parsing.layout.models.layout_region_role import (
+    LayoutRegionRole,
+)
+from src.application.workflows.parsing.layout.models.page_layout_candidate import (
+    PageLayoutCandidate,
+)
+from src.application.workflows.parsing.layout.models.page_layout_region import (
+    PageLayoutRegion,
+)
+from src.domain.common import BoundingBox
+
+
+class LayoutRegionBuilder:
+    _FULL_WIDTH_RATIO = 0.8
+
+    def __init__(
+        self,
+        *,
+        reading_order_resolver: LayoutReadingOrderResolver | None = None,
+    ) -> None:
+        self.reading_order_resolver = (
+            reading_order_resolver or LayoutReadingOrderResolver()
+        )
+
+    def build(
+        self,
+        *,
+        page_number: int,
+        page_width: float | None,
+        detection: LayoutLaneDetection,
+        is_front_matter: bool,
+        candidates: list[PageLayoutCandidate],
+    ) -> tuple[PageLayoutRegion, ...]:
+        grouped: dict[str, list[PageLayoutCandidate]] = defaultdict(list)
+        region_meta: dict[str, tuple[int | None, str]] = {}
+
+        for candidate in candidates:
+            lane_index = self._resolve_lane_index(
+                candidate=candidate,
+                page_width=page_width,
+                detection=detection,
+            )
+            region_key = "full" if lane_index is None else f"lane:{lane_index}"
+            grouped[region_key].append(candidate)
+            region_meta[region_key] = (
+                lane_index,
+                self._resolve_role(
+                    candidate=candidate,
+                    lane_index=lane_index,
+                    lane_count=detection.lane_count,
+                    is_front_matter=is_front_matter,
+                ),
+            )
+
+        regions: list[PageLayoutRegion] = []
+        for region_key, items in sorted(grouped.items(), key=self._sort_region_group):
+            lane_index, role_value = region_meta[region_key]
+            ordered_items = self.reading_order_resolver.sort_candidates(items)
+            reading_order = self.reading_order_resolver.build_reading_order(items)
+            regions.append(
+                PageLayoutRegion(
+                    region_id=self._build_region_id(
+                        page_number=page_number,
+                        lane_index=lane_index,
+                    ),
+                    page_number=page_number,
+                    role=LayoutRegionRole(role_value),
+                    lane_index=lane_index,
+                    lane_count=detection.lane_count,
+                    bbox=self._merge_bbox(ordered_items),
+                    element_refs=tuple(item.element_ref for item in ordered_items),
+                    reading_order_by_element_ref=reading_order,
+                )
+            )
+        return tuple(regions)
+
+    def _resolve_lane_index(
+        self,
+        *,
+        candidate: PageLayoutCandidate,
+        page_width: float | None,
+        detection: LayoutLaneDetection,
+    ) -> int | None:
+        if detection.lane_count <= 1 or detection.split_x is None or candidate.bbox is None:
+            return 0
+
+        candidate_width = candidate.width() or 0.0
+        if page_width and candidate_width >= page_width * self._FULL_WIDTH_RATIO:
+            return None
+        if candidate.spans_split(detection.split_x):
+            return None
+
+        center_x = candidate.center_x()
+        if center_x is None:
+            return None
+        return 0 if center_x <= detection.split_x else 1
+
+    @staticmethod
+    def _resolve_role(
+        *,
+        candidate: PageLayoutCandidate,
+        lane_index: int | None,
+        lane_count: int,
+        is_front_matter: bool,
+    ) -> str:
+        label = candidate.label.strip().lower()
+        if is_front_matter:
+            return LayoutRegionRole.FRONT_MATTER.value
+        if "table" in label or label == "document_index":
+            return LayoutRegionRole.TABLE_REGION.value
+        if "picture" in label or "image" in label or "figure" in label:
+            return LayoutRegionRole.PICTURE_REGION.value
+        if lane_count > 1 and lane_index is None:
+            return LayoutRegionRole.FULL_WIDTH.value
+        if lane_count > 1:
+            return LayoutRegionRole.PARALLEL_COLUMN.value
+        return LayoutRegionRole.BODY_FLOW.value
+
+    @staticmethod
+    def _build_region_id(*, page_number: int, lane_index: int | None) -> str:
+        if lane_index is None:
+            return f"page_{page_number}:full"
+        return f"page_{page_number}:lane_{lane_index + 1}"
+
+    @staticmethod
+    def _sort_region_group(item: tuple[str, list[PageLayoutCandidate]]) -> tuple[float, int]:
+        key, candidates = item
+        top_y = min(
+            (
+                candidate.top_y()
+                for candidate in candidates
+                if candidate.top_y() is not None
+            ),
+            default=0.0,
+        )
+        region_rank = 0 if key == "full" else 1
+        return (top_y, region_rank)
+
+    @staticmethod
+    def _merge_bbox(candidates: list[PageLayoutCandidate]) -> BoundingBox | None:
+        bboxes = [candidate.bbox for candidate in candidates if candidate.bbox is not None]
+        if not bboxes:
+            return None
+        return BoundingBox(
+            x1=min(bbox.x1 for bbox in bboxes),
+            y1=min(bbox.y1 for bbox in bboxes),
+            x2=max(bbox.x2 for bbox in bboxes),
+            y2=max(bbox.y2 for bbox in bboxes),
+        )

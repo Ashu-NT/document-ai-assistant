@@ -94,6 +94,40 @@ def test_sync_omits_optional_table_structure_keys_when_unset() -> None:
     assert "nearby_text" not in extra
 
 
+def test_sync_forwards_parallel_stream_table_metadata() -> None:
+    graph = _make_graph()
+    table = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="| Parameter | Value |",
+        rows=[["Parameter", "Value"], ["Voltage", "400V"]],
+        parallel_stream_rows=[
+            [["Parameter", "Value"], ["Voltage", "400V"]],
+            [["Parameter", "Value"], ["Frequency", "50Hz"]],
+        ],
+        local_reading_order="left_to_right_top_to_bottom",
+    )
+    graph.tables["table_001"] = table
+    element = CanonicalElement(
+        element_id="el_1",
+        document_id="doc_001",
+        element_type=ElementType.TABLE,
+        table_id="table_001",
+        parser_metadata=ParserMetadata(parser_name="docling", extra={}),
+    )
+    graph.add_element(element)
+
+    AssetMetadataSynchronizer.sync(graph)
+
+    extra = element.parser_metadata.extra
+    assert extra["table_parallel_stream_count"] == 2
+    assert extra["table_local_reading_order"] == "left_to_right_top_to_bottom"
+    assert extra["table_parallel_stream_rows"] == [
+        [["Parameter", "Value"], ["Voltage", "400V"]],
+        [["Parameter", "Value"], ["Frequency", "50Hz"]],
+    ]
+
+
 def test_sync_forwards_picture_ocr_and_caption_fields() -> None:
     graph = _make_graph()
     picture = PictureAsset(

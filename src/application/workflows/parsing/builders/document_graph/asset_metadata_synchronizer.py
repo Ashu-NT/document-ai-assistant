@@ -18,6 +18,18 @@ class AssetMetadataSynchronizer:
                 table_shape = table_asset.resolved_table_shape()
                 parser_extra["markdown"] = table_asset.markdown
                 parser_extra["table_rows"] = [list(row) for row in table_asset.rows]
+                if table_asset.parallel_stream_rows:
+                    parser_extra["table_parallel_stream_rows"] = [
+                        [list(row) for row in stream_rows]
+                        for stream_rows in table_asset.parallel_stream_rows
+                    ]
+                    parser_extra["table_parallel_stream_count"] = len(
+                        table_asset.parallel_stream_rows
+                    )
+                if table_asset.local_reading_order:
+                    parser_extra["table_local_reading_order"] = (
+                        table_asset.local_reading_order
+                    )
                 parser_extra["table_row_ids"] = list(table_asset.row_ids)
                 parser_extra["table_cell_spans"] = [
                     span.to_dict() for span in table_asset.cell_spans

@@ -94,6 +94,23 @@ def test_repair_rows_reconstructs_single_column_toc_table() -> None:
     ]
 
 
+def test_repair_rows_reconstructs_multi_column_toc_table() -> None:
+    rows = [
+        ["1.1", "Explanation of Documentation", "6"],
+        ["1.2", "Other Applicable Documents", "6"],
+        ["2.1", "General Operating Information", "9"],
+    ]
+
+    repaired = DoclingTableRowRepairer().repair_rows(rows)
+
+    assert repaired == [
+        ["Number", "Title", "Page"],
+        ["1.1", "Explanation of Documentation", "6"],
+        ["1.2", "Other Applicable Documents", "6"],
+        ["2.1", "General Operating Information", "9"],
+    ]
+
+
 def test_repair_rows_does_not_misclassify_spare_parts_rows_as_toc() -> None:
     rows = [
         ["Position  No:"],
@@ -147,3 +164,40 @@ def test_repair_rows_preserves_multi_interval_marker_rows() -> None:
     repaired = DoclingTableRowRepairer().repair_rows(rows)
 
     assert repaired == rows
+
+
+def test_repair_rows_collapses_duplicate_template_columns_into_field_value_rows() -> None:
+    rows = [
+        [
+            "Card of Task Specification",
+            "Card of Task Specification",
+            "Card of Task Specification",
+        ],
+        ["Location:", "Location:", "Machine Room"],
+        ["Description of Task:", "Description of Task:", "Service main ropes"],
+        ["1.", "1.", "Check rope tension"],
+    ]
+
+    repaired = DoclingTableRowRepairer().repair_rows(rows)
+
+    assert repaired == [
+        ["Card of Task Specification", ""],
+        ["Location:", "Machine Room"],
+        ["Description of Task:", "Service main ropes"],
+        ["1.", "Check rope tension"],
+    ]
+
+
+def test_repair_rows_merges_sparse_continuation_rows_after_column_collapse() -> None:
+    rows = [
+        ["Cause", "Corrective action", "Corrective action"],
+        ["Blocked filter", "Replace the filter and", "Replace the filter and"],
+        ["", "clean the housing before restart.", "clean the housing before restart."],
+    ]
+
+    repaired = DoclingTableRowRepairer().repair_rows(rows)
+
+    assert repaired == [
+        ["Cause", "Corrective action"],
+        ["Blocked filter", "Replace the filter and clean the housing before restart."],
+    ]

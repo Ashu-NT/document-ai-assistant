@@ -6,6 +6,9 @@ from src.application.workflows.parsing.normalizers.docling_caption_extractor imp
 from src.application.workflows.parsing.normalizers.docling_item_extractor import (
     DoclingItemExtractor,
 )
+from src.application.workflows.parsing.normalizers.docling_layout_metadata_builder import (
+    DoclingLayoutMetadataBuilder,
+)
 from src.application.workflows.parsing.normalizers.docling_provenance_extractor import (
     DoclingProvenanceExtractor,
 )
@@ -14,6 +17,9 @@ from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
 )
 from src.application.workflows.parsing.normalizers.docling_table_extractor import (
     DoclingTableExtractor,
+)
+from src.application.workflows.parsing.normalizers.table_layout.table_reconstruction_result import (
+    TableReconstructionResult,
 )
 from src.application.workflows.parsing.canonical_element import CanonicalElement
 from src.application.workflows.parsing.parsing_value_coercion import (
@@ -26,6 +32,7 @@ from src.shared.exceptions import DocumentNormalizationError
 
 class DoclingDocumentNormalizer:
     def __init__(self) -> None:
+        self.layout_metadata_builder = DoclingLayoutMetadataBuilder()
         self.table_extractor = DoclingTableExtractor()
         self.item_extractor = DoclingItemExtractor(self.table_extractor)
         self.provenance_extractor = DoclingProvenanceExtractor()
@@ -43,6 +50,12 @@ class DoclingDocumentNormalizer:
                 raw_document,
                 items=items,
             )
+            layout_metadata_by_element_ref = self.layout_metadata_builder.build(
+                raw_document=raw_document,
+                items=items,
+                item_extractor=self.item_extractor,
+                provenance_extractor=self.provenance_extractor,
+            )
 
             for index, item in enumerate(
                 items,
@@ -57,6 +70,7 @@ class DoclingDocumentNormalizer:
                     element_type,
                     raw_document=raw_document,
                 )
+                table_structure = self._extract_table_structure(item, element_type)
                 caption = self._extract_caption_text(
                     item,
                     caption_extractor,
@@ -77,7 +91,11 @@ class DoclingDocumentNormalizer:
                     raw_ref=raw_ref,
                     element_type=element_type,
                     caption=caption,
+                    layout_metadata=layout_metadata_by_element_ref.get(
+                        raw_ref or f"canon_{index}"
+                    ),
                     markdown=table_markdown,
+                    table_structure=table_structure,
                 )
 
                 normalized.append(
@@ -169,6 +187,15 @@ class DoclingDocumentNormalizer:
             or self._get_value(item, "caption")
         )
 
+    def _extract_table_structure(
+        self,
+        item: Any,
+        element_type: ElementType,
+    ) -> TableReconstructionResult | None:
+        if element_type != ElementType.TABLE:
+            return None
+        return self.table_extractor.extract_structure(item)
+
     @staticmethod
     def _extract_section_title(
         element_type: ElementType,
@@ -186,11 +213,15 @@ class DoclingDocumentNormalizer:
         raw_ref: str | None,
         element_type: ElementType,
         caption: str | None,
+        layout_metadata: dict[str, Any] | None,
         markdown: str | None,
+        table_structure: TableReconstructionResult | None,
     ) -> dict[str, Any]:
         metadata: dict[str, Any] = {
             "raw_source_type": item.__class__.__name__,
         }
+        if layout_metadata:
+            metadata.update(layout_metadata)
         label = self.item_extractor.lower_label(item)
         if label:
             metadata["item_label"] = label
@@ -214,15 +245,36 @@ class DoclingDocumentNormalizer:
             if markdown:
                 metadata["markdown"] = markdown
 
-            rows = self.table_extractor.extract_rows(item)
+            rows = table_structure.rows if table_structure is not None else []
             if rows:
                 metadata["table_rows"] = rows
                 metadata["table_structure_tier"] = "row_grid"
 
-            cell_spans = self.table_extractor.extract_cell_spans(item)
+            cell_spans = (
+                [span.to_dict() for span in table_structure.cell_spans]
+                if table_structure is not None
+                else []
+            )
             if cell_spans:
                 metadata["table_cell_spans"] = cell_spans
                 metadata["table_structure_tier"] = "span_aware"
+
+            if table_structure is not None and table_structure.parallel_stream_rows:
+                metadata["table_parallel_stream_rows"] = [
+                    [list(row) for row in stream_rows]
+                    for stream_rows in table_structure.parallel_stream_rows
+                ]
+                metadata["table_parallel_stream_count"] = (
+                    table_structure.parallel_stream_count
+                )
+                metadata["table_region_partition_version"] = (
+                    table_structure.reconstruction_version or "1"
+                )
+                if table_structure.local_reading_order:
+                    metadata["table_local_reading_order"] = (
+                        table_structure.local_reading_order
+                    )
+                metadata["table_structure_tier"] = "parallel_streams"
 
             row_count, column_count = self.table_extractor.extract_dimensions(item)
             if rows:
