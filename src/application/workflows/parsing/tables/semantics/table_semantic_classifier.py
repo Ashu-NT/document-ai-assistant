@@ -1,3 +1,6 @@
+from src.application.workflows.parsing.tables.semantics.table_body_text_extractor import (
+    TableBodyTextExtractor,
+)
 from src.application.workflows.parsing.tables.semantics.table_category import (
     TableCategory,
 )
@@ -6,6 +9,9 @@ from src.application.workflows.parsing.tables.semantics.table_matrix_detector im
 )
 from src.application.workflows.parsing.tables.semantics.table_semantic_rule_evaluator import (
     TableSemanticRuleEvaluator,
+)
+from src.application.workflows.parsing.tables.semantics.table_specification_rule_evaluator import (
+    TableSpecificationRuleEvaluator,
 )
 from src.application.workflows.parsing.tables.semantics.table_structured_list_classifier import (
     TableStructuredListClassifier,
@@ -28,6 +34,8 @@ class TableSemanticClassifier:
         signal_matcher: TableTextSignalMatcher | None = None,
         structured_list_classifier: TableStructuredListClassifier | None = None,
         rule_evaluator: TableSemanticRuleEvaluator | None = None,
+        specification_rule_evaluator: TableSpecificationRuleEvaluator | None = None,
+        body_text_extractor: TableBodyTextExtractor | None = None,
     ) -> None:
         self.matrix_detector = matrix_detector or TableMatrixDetector()
         self.row_canonicalizer = row_canonicalizer or TableRowCanonicalizer()
@@ -37,6 +45,13 @@ class TableSemanticClassifier:
             or TableStructuredListClassifier(signal_matcher=self.signal_matcher)
         )
         self.rule_evaluator = rule_evaluator or TableSemanticRuleEvaluator(
+            signal_matcher=self.signal_matcher
+        )
+        self.specification_rule_evaluator = (
+            specification_rule_evaluator
+            or TableSpecificationRuleEvaluator(signal_matcher=self.signal_matcher)
+        )
+        self.body_text_extractor = body_text_extractor or TableBodyTextExtractor(
             signal_matcher=self.signal_matcher
         )
 
@@ -56,11 +71,11 @@ class TableSemanticClassifier:
             for cell in (rows[0] if has_header_row and rows else [])
         ]
         body_rows = rows[1:] if has_header_row else rows
-        label_cells = self.rule_evaluator.body_label_cells(
+        label_cells = self.body_text_extractor.body_label_cells(
             body_rows,
             has_header_row=has_header_row,
         )
-        body_text = self.rule_evaluator.body_text(body_rows)
+        body_text = self.body_text_extractor.body_text(body_rows)
         header_text = self.signal_matcher.normalized_text(*headers)
         direct_text = self.signal_matcher.normalized_text(
             header_text,
@@ -108,27 +123,27 @@ class TableSemanticClassifier:
             section_text=section_text,
         ):
             return TableCategory.SPARE_PARTS_TABLE, 0.9
-        if self.rule_evaluator.looks_like_operation_reference_table(
+        if self.specification_rule_evaluator.looks_like_operation_reference_table(
             headers,
             label_cells,
             direct_text,
             section_text,
         ):
             return TableCategory.OPERATION_REFERENCE_TABLE, 0.84
-        if self.rule_evaluator.looks_like_operating_limits_table(
+        if self.specification_rule_evaluator.looks_like_operating_limits_table(
             headers,
             label_cells,
             direct_text,
         ):
             return TableCategory.OPERATING_LIMITS_TABLE, 0.86
-        if self.rule_evaluator.looks_like_technical_data_table(
+        if self.specification_rule_evaluator.looks_like_technical_data_table(
             headers,
             label_cells,
             direct_text,
             section_text,
         ):
             return TableCategory.TECHNICAL_DATA_TABLE, 0.88
-        if self.rule_evaluator.looks_like_certification_table(
+        if self.specification_rule_evaluator.looks_like_certification_table(
             direct_text,
             section_text,
         ):

@@ -9,6 +9,9 @@ from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
 from src.application.workflows.parsing.normalizers.docling_table_row_repairer import (
     DoclingTableRowRepairer,
 )
+from src.application.workflows.parsing.tables.structure.compact_interval_header_token_matcher import (
+    CompactIntervalHeaderTokenMatcher,
+)
 from src.config.settings import docling_settings
 from src.shared.exceptions import DocumentNormalizationError
 
@@ -16,17 +19,16 @@ from src.shared.exceptions import DocumentNormalizationError
 class DoclingTableRowGridBuilder:
     """Builds a best-effort row grid from Docling table cell spans."""
 
-    _INTERVAL_HEADER_PATTERN = re.compile(
-        r"^(?:d|w|m|q|s|a|daily|weekly|monthly|quarterly|semi-annual|semi annual|annual|annually|yearly)$",
-        re.IGNORECASE,
-    )
-
     def __init__(
         self,
         *,
         row_repairer: DoclingTableRowRepairer | None = None,
+        interval_header_matcher: CompactIntervalHeaderTokenMatcher | None = None,
     ) -> None:
         self.row_repairer = row_repairer or DoclingTableRowRepairer()
+        self.interval_header_matcher = (
+            interval_header_matcher or CompactIntervalHeaderTokenMatcher()
+        )
 
     def build_rows(self, table_cells: list[Any]) -> list[list[str]]:
         spans = [
@@ -99,7 +101,7 @@ class DoclingTableRowGridBuilder:
         ]
         if len(tokens) != span.col_span:
             return False
-        if not all(self._looks_like_interval_header(token) for token in tokens):
+        if not all(self.interval_header_matcher.matches(token) for token in tokens):
             return False
 
         for offset, token in enumerate(tokens):
@@ -142,9 +144,6 @@ class DoclingTableRowGridBuilder:
         if existing == text:
             return
         grid[row_index][column_index] = f"{existing} {text}".strip()
-
-    def _looks_like_interval_header(self, value: str) -> bool:
-        return bool(self._INTERVAL_HEADER_PATTERN.match(value.strip()))
 
 
 class _Span:
