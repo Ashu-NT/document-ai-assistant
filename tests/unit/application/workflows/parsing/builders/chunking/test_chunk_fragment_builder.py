@@ -269,3 +269,59 @@ def test_build_section_fragments_combines_same_logical_table_family() -> None:
         ["Inspect filter", "x"],
         ["Replace gasket", "x"],
     ]
+
+
+def test_build_section_fragments_merges_structural_fields_across_family_members() -> None:
+    builder = make_builder(include_picture_chunks=False)
+    section = _make_section()
+    elements = [
+        make_table_element(
+            element_id="tbl_1",
+            table_id="table_001",
+            text="| Task | Monthly |\n|---|---|\n| Inspect filter | x |",
+            markdown="| Task | Monthly |\n|---|---|\n| Inspect filter | x |",
+            table_rows=[["Task", "Monthly"], ["Inspect filter", "x"]],
+            metadata={
+                "logical_table_family_id": "table_family_2",
+                "family_index": 1,
+                "family_total": 2,
+                "continuation_role": "start",
+                "table_header_paths_json": [["Task"]],
+                "table_axis_summary": {"rows": "task"},
+            },
+        ),
+        make_table_element(
+            element_id="tbl_2",
+            table_id="table_002",
+            text="| Task | Monthly |\n|---|---|\n| Replace gasket | x |",
+            markdown="| Task | Monthly |\n|---|---|\n| Replace gasket | x |",
+            table_rows=[["Task", "Monthly"], ["Replace gasket", "x"]],
+            metadata={
+                "logical_table_family_id": "table_family_2",
+                "family_index": 2,
+                "family_total": 2,
+                "continuation_role": "end",
+                "table_shape": "record_table",
+                "table_structure_quality": 0.8,
+                "table_header_paths_json": [["Monthly"]],
+                "table_axis_summary": {"columns": "monthly"},
+            },
+        ),
+    ]
+
+    fragments = builder.build_section_fragments(
+        document_title="Pump Manual",
+        document_type=None,
+        section=section,
+        elements=elements,
+    )
+
+    fragment = next(
+        fragment
+        for fragment in fragments
+        if fragment.logical_table_family_id == "table_family_2"
+    )
+    assert fragment.table_shape == "record_table"
+    assert fragment.table_structure_quality == 0.8
+    assert fragment.header_paths == [["Task"], ["Monthly"]]
+    assert fragment.axis_summary == {"rows": "task", "columns": "monthly"}

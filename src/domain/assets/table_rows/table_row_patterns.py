@@ -92,15 +92,22 @@ def clean_rows(rows: Iterable[Iterable[object]]) -> list[list[str]]:
     return drop_globally_empty_columns(cleaned_rows)
 
 
-def drop_globally_empty_columns(rows: list[list[str]]) -> list[list[str]]:
+def compute_kept_column_indexes(rows: list[list[str]]) -> list[int]:
     if not rows:
-        return rows
+        return []
     max_width = max((len(row) for row in rows), default=0)
-    keep_indexes = [
+    return [
         index
         for index in range(max_width)
         if any(index < len(row) and normalize_cell(row[index]) for row in rows)
     ]
+
+
+def drop_globally_empty_columns(rows: list[list[str]]) -> list[list[str]]:
+    if not rows:
+        return rows
+    max_width = max((len(row) for row in rows), default=0)
+    keep_indexes = compute_kept_column_indexes(rows)
     if len(keep_indexes) == max_width:
         return rows
     return [

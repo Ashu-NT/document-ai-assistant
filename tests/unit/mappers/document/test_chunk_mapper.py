@@ -13,6 +13,10 @@ def test_chunk_mapper_round_trip(sample_chunk) -> None:
     sample_chunk.table_category_confidence = 0.94
     sample_chunk.table_row_start = 1
     sample_chunk.table_row_end = 12
+    sample_chunk.table_shape = "specification_matrix"
+    sample_chunk.table_structure_quality = 0.87
+    sample_chunk.header_paths = [["Parameter"], ["Value"]]
+    sample_chunk.axis_summary = {"rows": "parameter", "columns": "value"}
     orm = ChunkMapper.to_orm(sample_chunk)
     domain = ChunkMapper.to_domain(orm)
 
@@ -32,6 +36,22 @@ def test_chunk_mapper_round_trip(sample_chunk) -> None:
     assert domain.table_category_confidence == 0.94
     assert domain.table_row_start == 1
     assert domain.table_row_end == 12
+    assert domain.table_shape == "specification_matrix"
+    assert domain.table_structure_quality == 0.87
+    assert domain.header_paths == [["Parameter"], ["Value"]]
+    assert domain.axis_summary == {"rows": "parameter", "columns": "value"}
     assert orm.element_ids_json == '["el_001", "el_002"]'
     assert orm.table_ids_json == '["table_001"]'
     assert orm.picture_ids_json == '["pic_001"]'
+    assert orm.header_paths_json == '[["Parameter"], ["Value"]]'
+    assert orm.axis_summary_json == '{"rows": "parameter", "columns": "value"}'
+
+
+def test_chunk_mapper_defaults_table_structure_fields_when_absent(sample_chunk) -> None:
+    orm = ChunkMapper.to_orm(sample_chunk)
+    domain = ChunkMapper.to_domain(orm)
+
+    assert domain.table_shape is None
+    assert domain.table_structure_quality is None
+    assert domain.header_paths == []
+    assert domain.axis_summary == {}

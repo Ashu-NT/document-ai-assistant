@@ -133,6 +133,9 @@ class LogicalTableFamilyFragmentBuilder:
             ]
         )
         body_row_count = max(0, len(merged_rows or []) - 1)
+        merged_structure_metadata = self.table_fragment_builder.merge_family_table_metadata(
+            family_elements
+        )
 
         return ChunkFragment(
             text=text,
@@ -182,4 +185,8 @@ class LogicalTableFamilyFragmentBuilder:
             ),
             table_row_start=1 if body_row_count > 0 else None,
             table_row_end=body_row_count if body_row_count > 0 else None,
+            table_shape=merged_structure_metadata["table_shape"],
+            table_structure_quality=merged_structure_metadata["table_structure_quality"],
+            header_paths=merged_structure_metadata["header_paths"],
+            axis_summary=merged_structure_metadata["axis_summary"],
         )

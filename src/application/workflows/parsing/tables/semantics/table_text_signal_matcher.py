@@ -37,11 +37,8 @@ class TableTextSignalMatcher:
                 count += 1
                 continue
             tokens = [token for token in normalized_header.split() if token]
-            count += sum(
-                1
-                for token in tokens
-                if looks_interval_header(token)
-            )
+            if tokens and all(looks_interval_header(token) for token in tokens):
+                count += len(tokens)
         return count
 
 

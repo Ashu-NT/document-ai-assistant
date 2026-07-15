@@ -202,6 +202,10 @@ class ChunkFragmentBuilder:
             table_category_confidence=table_metadata.get("table_category_confidence"),
             table_row_start=1 if table_rows and len(table_rows) > 1 else None,
             table_row_end=(len(table_rows) - 1) if table_rows and len(table_rows) > 1 else None,
+            table_shape=table_metadata.get("table_shape"),
+            table_structure_quality=table_metadata.get("table_structure_quality"),
+            header_paths=table_metadata.get("header_paths") or [],
+            axis_summary=table_metadata.get("axis_summary") or {},
         )
 
     @staticmethod
@@ -257,6 +261,9 @@ class ChunkFragmentBuilder:
                     for element in family_elements
                 ]
             )
+            merged_structure_metadata = (
+                self.table_fragment_builder.merge_family_table_metadata(family_elements)
+            )
             fragment.logical_table_family_id = family_id
             fragment.logical_table_family_index = 1
             fragment.logical_table_family_total = 1
@@ -272,6 +279,12 @@ class ChunkFragmentBuilder:
             fragment.table_category_confidence = coerce_float(
                 parser_extra.get("table_category_confidence")
             )
+            fragment.table_shape = merged_structure_metadata["table_shape"]
+            fragment.table_structure_quality = merged_structure_metadata[
+                "table_structure_quality"
+            ]
+            fragment.header_paths = merged_structure_metadata["header_paths"]
+            fragment.axis_summary = merged_structure_metadata["axis_summary"]
             if merged_rows:
                 fragment.table_rows = merged_rows
                 fragment.table_row_start = 1

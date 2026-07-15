@@ -1,3 +1,6 @@
+from bisect import bisect_left
+from dataclasses import replace
+
 from src.application.workflows.parsing.canonical_element import (
     CanonicalElement as ParsedCanonicalElement,
 )
@@ -9,6 +12,7 @@ from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
 )
 from src.domain.assets import AssetMetadata, PictureAsset, TableAsset, TableCellSpan
 from src.domain.assets.table_rows.table_row_patterns import (
+    compute_kept_column_indexes,
     drop_globally_empty_columns,
 )
 from src.shared.ids import IdGenerator
@@ -26,6 +30,18 @@ class ParsedAssetFactory:
         parsed_element: ParsedCanonicalElement,
     ) -> tuple[str, TableAsset]:
         table_id = self.id_generator.new_id("table")
+        rows, kept_column_indexes, original_width = self._clean_rows_with_column_map(
+            parsed_element.metadata.get("table_rows")
+        )
+        cell_spans = TableCellSpan.list_from_data(
+            parsed_element.metadata.get("table_cell_spans")
+        )
+        column_count = parsed_element.metadata.get("column_count")
+        dropped_count = original_width - len(kept_column_indexes)
+        if dropped_count > 0:
+            cell_spans = self._remap_cell_spans(cell_spans, kept_column_indexes)
+            if isinstance(column_count, int):
+                column_count = column_count - dropped_count
         return (
             table_id,
             TableAsset(
@@ -39,7 +55,7 @@ class ParsedAssetFactory:
                     or ""
                 ),
                 parent_section_id=parent_section_id,
-                rows=self._clean_rows(parsed_element.metadata.get("table_rows")),
+                rows=rows,
                 row_ids=self._build_row_ids(
                     table_id=table_id,
                     row_count=(
@@ -47,11 +63,9 @@ class ParsedAssetFactory:
                         or len(parsed_element.metadata.get("table_rows") or [])
                     ),
                 ),
-                cell_spans=TableCellSpan.list_from_data(
-                    parsed_element.metadata.get("table_cell_spans")
-                ),
+                cell_spans=cell_spans,
                 row_count=parsed_element.metadata.get("row_count"),
-                column_count=parsed_element.metadata.get("column_count"),
+                column_count=column_count,
                 table_shape=self._clean_text(parsed_element.metadata.get("table_shape")),
                 table_structure_quality=self._coerce_float(
                     parsed_element.metadata.get("table_structure_quality")
@@ -160,9 +174,11 @@ class ParsedAssetFactory:
         return text or None
 
     @classmethod
-    def _clean_rows(cls, rows: object) -> list[list[str]]:
+    def _clean_rows_with_column_map(
+        cls, rows: object
+    ) -> tuple[list[list[str]], list[int], int]:
         if not isinstance(rows, list):
-            return []
+            return [], [], 0
         cleaned_rows: list[list[str]] = []
         for row in rows:
             if not isinstance(row, list):
@@ -173,4 +189,28 @@ class ParsedAssetFactory:
                     for cell in row
                 ]
             )
-        return drop_globally_empty_columns(cleaned_rows)
+        original_width = max((len(row) for row in cleaned_rows), default=0)
+        kept_column_indexes = compute_kept_column_indexes(cleaned_rows)
+        return (
+            drop_globally_empty_columns(cleaned_rows),
+            kept_column_indexes,
+            original_width,
+        )
+
+    @staticmethod
+    def _remap_cell_spans(
+        cell_spans: list[TableCellSpan],
+        kept_column_indexes: list[int],
+    ) -> list[TableCellSpan]:
+        if not kept_column_indexes:
+            return []
+        remapped_spans: list[TableCellSpan] = []
+        for span in cell_spans:
+            new_col_start = bisect_left(kept_column_indexes, span.col_start)
+            new_col_end = bisect_left(kept_column_indexes, span.col_end + 1) - 1
+            if new_col_end < new_col_start:
+                continue
+            remapped_spans.append(
+                replace(span, col_start=new_col_start, col_end=new_col_end)
+            )
+        return remapped_spans

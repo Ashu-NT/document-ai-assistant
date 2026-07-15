@@ -104,6 +104,20 @@ class ChunkPayloadFactory:
             table_row_end=(
                 table_fragment.table_row_end if table_fragment is not None else None
             ),
+            table_shape=(
+                table_fragment.table_shape if table_fragment is not None else None
+            ),
+            table_structure_quality=(
+                table_fragment.table_structure_quality
+                if table_fragment is not None
+                else None
+            ),
+            header_paths=(
+                list(table_fragment.header_paths) if table_fragment is not None else []
+            ),
+            axis_summary=(
+                dict(table_fragment.axis_summary) if table_fragment is not None else {}
+            ),
             embedding_text=self._build_embedding_text(
                 document_title=document_title,
                 section_path=section_path,

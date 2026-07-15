@@ -116,6 +116,10 @@ class GraphChunkBuilder:
                         table_category_confidence=chunk_payload.table_category_confidence,
                         table_row_start=chunk_payload.table_row_start,
                         table_row_end=chunk_payload.table_row_end,
+                        table_shape=chunk_payload.table_shape,
+                        table_structure_quality=chunk_payload.table_structure_quality,
+                        header_paths=list(chunk_payload.header_paths),
+                        axis_summary=dict(chunk_payload.axis_summary),
                         source=SourceLocation(
                             page_start=chunk_payload.page_start,
                             page_end=chunk_payload.page_end,

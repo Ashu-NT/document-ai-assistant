@@ -101,6 +101,30 @@ def ensure_database_schema(engine: Engine) -> None:
     )
     _ensure_sqlite_column(
         engine=engine,
+        table_name="chunks",
+        column_name="table_shape",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="table_structure_quality",
+        column_ddl="REAL",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="header_paths_json",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
+        table_name="chunks",
+        column_name="axis_summary_json",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
         table_name="extraction_results",
         column_name="source_chunk_ids_json",
         column_ddl="TEXT",

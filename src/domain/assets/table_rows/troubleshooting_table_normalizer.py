@@ -34,6 +34,7 @@ _FIELD_MARKERS = {
         "corrective action",
         "measure",
         "possible remedies",
+        "rectification",
         "remedies",
         "remedy",
         "solution",
@@ -124,6 +125,13 @@ class TroubleshootingTableNormalizer:
         for field in _FIELD_ORDER:
             if any(self._contains_marker(header, marker) for marker in _FIELD_MARKERS[field]):
                 return field
+        # "Description" is a bare, low-signal fallback for the symptom
+        # column - checked only after every field's own real marker has
+        # had a chance, so a genuine "Cause Description"/"Remedy
+        # Description" compound header still maps to its real field
+        # first instead of being swallowed as a symptom.
+        if self._contains_marker(header, "description"):
+            return "symptom"
         return None
 
     @staticmethod

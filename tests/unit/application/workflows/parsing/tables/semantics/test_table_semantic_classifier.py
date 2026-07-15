@@ -236,6 +236,36 @@ def test_classify_detects_troubleshooting_from_generic_section_context() -> None
     assert confidence >= 0.85
 
 
+def test_classify_does_not_treat_stray_letters_in_garbled_free_text_headers_as_schedule_codes() -> None:
+    """Regression test grounded in a real ingested document: OCR
+    corruption on a rotated troubleshooting cross-reference matrix
+    produced long free-text header cells that happen to contain the
+    bare word "a" (the English article) and a stray letter "s" as
+    standalone tokens. These must not be counted as genuine D/W/M/Q/S/A
+    schedule-code columns just because a coincidental token matches -
+    only a header cell that is ENTIRELY made of schedule-code tokens
+    (e.g. "M S A") is a real compact multi-code cell.
+    """
+    category, _ = TableSemanticClassifier().classify(
+        table=_make_table(
+            [
+                [
+                    "The pump willnot start",
+                    "PossibleProblems",
+                    "mo o s anssad ep paei a The pumped mediafowrate is unstable",
+                    "The lobe rotors are worn at an early stage",
+                    "eje jou jo equn uuns cs ans Possible Causes",
+                    "Potential Remedy Fillthepumpup",
+                ],
+                ["x", "", "", "x", "static friction", "use glycerine as lubricant"],
+                ["x", "xx", "", "x", "electrical supply", "Check order documentation"],
+            ]
+        ),
+    )
+
+    assert category != TableCategory.MAINTENANCE_INTERVAL_TABLE
+
+
 def test_classify_valve_list_is_not_sensor_instrument_table_from_pid_text_alone() -> None:
     category, _ = TableSemanticClassifier().classify(
         table=_make_table(

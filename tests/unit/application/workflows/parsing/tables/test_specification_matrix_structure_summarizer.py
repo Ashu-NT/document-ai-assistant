@@ -98,6 +98,23 @@ def test_does_not_detect_equipment_identity_record_listing() -> None:
     assert summary is None
 
 
+def test_does_not_detect_an_identity_record_with_qualified_header_variants() -> None:
+    """Regression test grounded in a real ingested document: identity
+    fields are commonly qualified ("Manufacturer Designation", "Serial
+    Number") rather than used bare - an exact-header-equality check
+    missed these variants entirely and let a genuine equipment
+    certificate record slip through as a specification comparison.
+    """
+    summary = SpecificationMatrixStructureSummarizer().summarize(
+        [
+            ["Description", "Manufacturer Designation", "Serial Number", "IMO Number"],
+            ["2 pcs., EC881-5", "L=500 mm, PN 350 bar", "SL060323", "0"],
+        ]
+    )
+
+    assert summary is None
+
+
 def test_does_not_detect_spare_parts_table() -> None:
     summary = SpecificationMatrixStructureSummarizer().summarize(
         [

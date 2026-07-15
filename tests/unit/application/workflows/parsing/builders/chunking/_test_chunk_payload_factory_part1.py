@@ -40,6 +40,57 @@ def _make_fragment(
         token_count=len(text.split()),
     )
 
+class TestTableStructureMetadataPropagation:
+    def test_build_payload_forwards_shape_quality_header_paths_and_axis_summary(
+        self,
+    ) -> None:
+        factory = ChunkPayloadFactory()
+        fragment = ChunkFragment(
+            text="| Parameter | Value |\n| --- | --- |\n| Bore | 25mm |",
+            chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+            standalone=True,
+            order_index=0,
+            section_id="sec_001",
+            section_title="Specifications",
+            section_path=["Specifications"],
+            section_level=2,
+            parent_section_id=None,
+            element_ids=["el_001"],
+            table_ids=["table_001"],
+            picture_ids=[],
+            page_start=1,
+            page_end=1,
+            token_count=10,
+            table_shape="specification_matrix",
+            table_structure_quality=0.91,
+            header_paths=[["Parameter"], ["Value"]],
+            axis_summary={"rows": "parameter", "columns": "value"},
+        )
+
+        payload = factory.build_payload(document_title="Manual", fragments=[fragment])
+
+        assert payload.table_shape == "specification_matrix"
+        assert payload.table_structure_quality == 0.91
+        assert payload.header_paths == [["Parameter"], ["Value"]]
+        assert payload.axis_summary == {"rows": "parameter", "columns": "value"}
+
+    def test_build_payload_defaults_when_no_table_fragment_present(self) -> None:
+        factory = ChunkPayloadFactory()
+        fragment = _make_fragment(
+            text="Refer to this manual for operating instructions.",
+            section_path=["Overview"],
+            section_title="Overview",
+            chunk_type=ChunkType.GENERAL,
+        )
+
+        payload = factory.build_payload(document_title="Manual", fragments=[fragment])
+
+        assert payload.table_shape is None
+        assert payload.table_structure_quality is None
+        assert payload.header_paths == []
+        assert payload.axis_summary == {}
+
+
 class TestEmbeddingTextIncludesSectionPath:
     def test_section_path_present_for_all_chunk_types(self) -> None:
         factory = ChunkPayloadFactory()
