@@ -209,6 +209,64 @@ def test_table_item_becomes_table_element_and_preserves_metadata() -> None:
     ]
 
 
+def test_table_dimensions_reflect_post_repair_rows_not_the_raw_single_column_grid() -> None:
+    # A genuine single-column Docling table-of-contents extraction: Docling
+    # failed to detect real column boundaries, so every row is one merged
+    # text cell (e.g. "1 Introduction 1"). DoclingTableRowRepairer's TOC
+    # reconstructor splits these into a wider, taller grid downstream of
+    # extract_dimensions() - row_count/column_count must track that, not the
+    # raw pre-repair single-column grid (F9b).
+    raw_document = FakeRawDocument(
+        [
+            FakeDoclingItem(
+                label="document_index",
+                self_ref="#/tables/0",
+                prov=[FakeProvenance(1)],
+                data={
+                    "table_cells": [
+                        {
+                            "start_row_offset_idx": 0,
+                            "end_row_offset_idx": 1,
+                            "start_col_offset_idx": 0,
+                            "end_col_offset_idx": 1,
+                            "text": "1 Introduction 1",
+                        },
+                        {
+                            "start_row_offset_idx": 1,
+                            "end_row_offset_idx": 2,
+                            "start_col_offset_idx": 0,
+                            "end_col_offset_idx": 1,
+                            "text": "2 Installation 5",
+                        },
+                        {
+                            "start_row_offset_idx": 2,
+                            "end_row_offset_idx": 3,
+                            "start_col_offset_idx": 0,
+                            "end_col_offset_idx": 1,
+                            "text": "3 Maintenance 12",
+                        },
+                    ]
+                },
+            )
+        ]
+    )
+
+    normalized = DoclingDocumentNormalizer().normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_001",
+    )
+
+    metadata = normalized[0].metadata
+    assert metadata["table_rows"] == [
+        ["Number", "Title", "Page"],
+        ["1", "Introduction", "1"],
+        ["2", "Installation", "5"],
+        ["3", "Maintenance", "12"],
+    ]
+    assert metadata["column_count"] == 3
+    assert metadata["row_count"] == 4
+
+
 def test_table_cell_spans_preserve_multiline_cell_text() -> None:
     raw_document = FakeRawDocument(
         [

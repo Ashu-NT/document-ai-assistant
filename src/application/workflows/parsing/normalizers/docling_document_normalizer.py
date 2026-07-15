@@ -225,6 +225,13 @@ class DoclingDocumentNormalizer:
                 metadata["table_structure_tier"] = "span_aware"
 
             row_count, column_count = self.table_extractor.extract_dimensions(item)
+            if rows:
+                # `rows` reflects the post-repair grid (DoclingTableRowRepairer's
+                # TOC/single-column reconstructors can split or add rows), while
+                # extract_dimensions() measures the pre-repair Docling cell grid -
+                # trust the actual final rows over the earlier raw dimensions.
+                row_count = len(rows)
+                column_count = max(len(row) for row in rows)
             if row_count is not None:
                 metadata["row_count"] = row_count
             if column_count is not None:
