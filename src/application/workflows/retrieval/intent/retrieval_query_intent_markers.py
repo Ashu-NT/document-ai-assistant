@@ -152,6 +152,12 @@ TABLE_MARKERS: tuple[str, ...] = (
     "spare parts list",
     "matrix",
 )
+TABLE_REQUEST_MARKERS: tuple[str, ...] = (
+    *TABLE_MARKERS,
+    "row",
+    "rows",
+    "list",
+)
 IDENTIFIER_KEYWORD_MARKERS: tuple[str, ...] = (
     "serial number",
     "part number",
@@ -162,6 +168,12 @@ IDENTIFIER_KEYWORD_MARKERS: tuple[str, ...] = (
     "drawing number",
     "certificate number",
     "what is position ",
+)
+IDENTIFIER_TABLE_MARKERS: tuple[str, ...] = (
+    *IDENTIFIER_KEYWORD_MARKERS,
+    "serial numbers",
+    "part numbers",
+    "model numbers",
 )
 SPECIFICATION_MARKERS: tuple[str, ...] = (
     "specification",
@@ -175,6 +187,12 @@ SPECIFICATION_MARKERS: tuple[str, ...] = (
     "pressure",
     "approval",
     "certificate",
+)
+SPECIFICATION_TABLE_MARKERS: tuple[str, ...] = (
+    *SPECIFICATION_MARKERS,
+    "technical data",
+    "datasheet",
+    "operating limits",
 )
 TROUBLESHOOTING_MARKERS: tuple[str, ...] = (
     "troubleshoot",

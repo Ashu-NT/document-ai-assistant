@@ -20,6 +20,9 @@ from src.infrastructure.retrieval.rerankers.deterministic.reranker_noise_penalty
     intent_noise_penalty,
     noise_penalty,
 )
+from src.infrastructure.retrieval.rerankers.deterministic.table_query_evidence_scorer import (
+    table_query_evidence_score,
+)
 
 
 class DeterministicHybridReranker(Reranker):
@@ -99,6 +102,13 @@ class DeterministicHybridReranker(Reranker):
             chunk.chunk_type,
             query,
             query_text=query_text,
+        )
+        score += table_query_evidence_score(
+            intent=intent,
+            query=query,
+            query_text=query_text,
+            chunk=chunk,
+            role=role,
         )
         score += float(section_hit_count) * 2.5
         score -= noise_penalty(chunk)

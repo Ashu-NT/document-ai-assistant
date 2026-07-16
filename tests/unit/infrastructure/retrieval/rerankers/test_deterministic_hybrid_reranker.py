@@ -185,3 +185,104 @@ def test_deterministic_hybrid_reranker_weighs_structured_match_count() -> None:
     reranked = reranker.rerank(query, [plain_chunk, structured_chunk])
 
     assert reranked[0].chunk_id == "chunk_structured"
+
+
+def test_deterministic_hybrid_reranker_prefers_direct_schedule_table_over_overview_for_table_like_maintenance_query() -> None:
+    reranker = DeterministicHybridReranker()
+    query = RetrievalQuery(
+        query_id="query_006",
+        query_text="What are the maintenance intervals schedule table?",
+    )
+    overview_chunk = make_chunk(
+        chunk_id="chunk_overview",
+        content="Section overview: the maintenance schedule table is shown below.",
+        chunk_type=ChunkType.OVERVIEW,
+        score=0.95,
+        section_path=["Maintenance", "Schedule"],
+        metadata={"sql_keyword_source_score": "10.0"},
+    )
+    schedule_chunk = make_chunk(
+        chunk_id="chunk_schedule",
+        content="Task | Daily | Weekly\nInspect basket | x |",
+        chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+        score=0.71,
+        section_path=["Maintenance", "Schedule"],
+        metadata={
+            "sql_keyword_source_score": "8.0",
+            "logical_table_family_id": "table_family_001",
+            "table_category": "maintenance_interval_table",
+            "table_category_confidence": "0.96",
+            "table_ids": "[\"table_001\"]",
+        },
+    )
+
+    reranked = reranker.rerank(query, [overview_chunk, schedule_chunk])
+
+    assert reranked[0].chunk_id == "chunk_schedule"
+
+
+def test_deterministic_hybrid_reranker_prefers_direct_specification_table_for_technical_data_query() -> None:
+    reranker = DeterministicHybridReranker()
+    query = RetrievalQuery(
+        query_id="query_007",
+        query_text="Show the technical data table.",
+    )
+    reference_chunk = make_chunk(
+        chunk_id="chunk_reference",
+        content="See technical data table below for the operating values.",
+        chunk_type=ChunkType.GENERAL,
+        score=0.93,
+        section_path=["Technical Data"],
+        metadata={"sql_keyword_source_score": "11.0"},
+    )
+    spec_chunk = make_chunk(
+        chunk_id="chunk_spec",
+        content="Parameter | Value\nPressure range | 0...10 bar",
+        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+        score=0.72,
+        section_path=["Technical Data"],
+        metadata={
+            "sql_keyword_source_score": "9.0",
+            "logical_table_family_id": "table_family_002",
+            "table_category": "technical_data_table",
+            "table_category_confidence": "0.90",
+            "table_ids": "[\"table_002\"]",
+        },
+    )
+
+    reranked = reranker.rerank(query, [reference_chunk, spec_chunk])
+
+    assert reranked[0].chunk_id == "chunk_spec"
+
+
+def test_deterministic_hybrid_reranker_prefers_direct_identifier_table_for_listing_query() -> None:
+    reranker = DeterministicHybridReranker()
+    query = RetrievalQuery(
+        query_id="query_008",
+        query_text="List all serial and part numbers.",
+    )
+    generic_chunk = make_chunk(
+        chunk_id="chunk_generic",
+        content="Serial and part numbers are listed in the table below.",
+        chunk_type=ChunkType.GENERAL,
+        score=0.94,
+        section_path=["Spare Parts"],
+        metadata={"sql_keyword_source_score": "12.0"},
+    )
+    table_chunk = make_chunk(
+        chunk_id="chunk_table",
+        content="Part No. | Serial Number\nA00103 | D4093386",
+        chunk_type=ChunkType.SPARE_PARTS_TABLE,
+        score=0.70,
+        section_path=["Spare Parts"],
+        metadata={
+            "sql_keyword_source_score": "8.0",
+            "logical_table_family_id": "table_family_003",
+            "table_category": "spare_parts_table",
+            "table_category_confidence": "0.91",
+        },
+    )
+
+    reranked = reranker.rerank(query, [generic_chunk, table_chunk])
+
+    assert reranked[0].chunk_id == "chunk_table"
