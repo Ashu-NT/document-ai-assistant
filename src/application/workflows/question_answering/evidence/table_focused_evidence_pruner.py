@@ -3,7 +3,6 @@ from src.application.workflows.shared.text_signature_utils import detect_scaffol
 from src.domain.common import ChunkType
 from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 
-_LOW_VALUE_CHUNK_TYPES = {ChunkType.OVERVIEW, ChunkType.GENERAL}
 _LOW_VALUE_ROLES = {"overview_companion", "context_companion"}
 _TABLE_LIKE_CHUNK_TYPES = {
     ChunkType.SPARE_PARTS_TABLE,
@@ -51,8 +50,14 @@ class TableFocusedEvidencePruner:
 
     @staticmethod
     def _is_low_value_companion(chunk: RetrievedChunk) -> bool:
+        # Only auto-generated scaffolding companions (the literal "Context: "/
+        # "Section overview: " prefixes injected by picture_fragment_builder.py
+        # and section_overview_chunk_builder.py) get pruned here -- chunk_type
+        # OVERVIEW/GENERAL is not itself a low-value signal, since GENERAL is
+        # the deterministic classifier's catch-all for any real content that
+        # didn't hit a specific category's keyword threshold (a caveat, a
+        # safety note, install context), and OVERVIEW can also be assigned to
+        # genuine organic prose by the optional LLM chunk-type classifier.
         if TableFocusedEvidencePruner._is_direct_table_evidence(chunk):
             return False
-        if detect_scaffolding_role(chunk.content) in _LOW_VALUE_ROLES:
-            return True
-        return chunk.chunk_type in _LOW_VALUE_CHUNK_TYPES
+        return detect_scaffolding_role(chunk.content) in _LOW_VALUE_ROLES

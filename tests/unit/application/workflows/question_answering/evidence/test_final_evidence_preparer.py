@@ -129,6 +129,50 @@ def test_prepare_keeps_specific_non_companion_chunks_with_table_evidence() -> No
     ]
 
 
+def test_prepare_keeps_general_chunk_without_scaffolding_prefix_for_table_queries() -> None:
+    # Regression guard for a real bug: GENERAL/OVERVIEW chunk_type alone used
+    # to be treated as low-value and pruned unconditionally, even for organic
+    # content that simply didn't hit a specific category's keyword threshold
+    # (a caveat, a safety note) -- as opposed to auto-generated scaffolding
+    # companions, which are only ever recognizable by their literal "Context:"/
+    # "Section overview:" prefix (picture_fragment_builder.py/
+    # section_overview_chunk_builder.py). Only the latter should be pruned.
+    query = _make_query(
+        query_text="Show the spare parts table.",
+        detected_intent="table",
+        chunk_types=[ChunkType.SPARE_PARTS_TABLE],
+    )
+    chunks = [
+        _make_chunk(
+            chunk_id="chunk_table",
+            chunk_type=ChunkType.SPARE_PARTS_TABLE,
+            content="| Pos | Description |\n| 10 | Filter |",
+            metadata={
+                "table_evidence_hydrated": "true",
+                "logical_table_family_id": "table_family_001",
+                "hydrated_table_ids": "table_001",
+            },
+        ),
+        _make_chunk(
+            chunk_id="chunk_caveat",
+            chunk_type=ChunkType.GENERAL,
+            content="Use only genuine replacement parts to preserve the warranty.",
+        ),
+        _make_chunk(
+            chunk_id="chunk_context_companion",
+            chunk_type=ChunkType.GENERAL,
+            content="Context: original parts should be used.",
+        ),
+    ]
+
+    prepared = _make_preparer().prepare(query=query, chunks=chunks)
+
+    assert [chunk.chunk_id for chunk in prepared] == [
+        "chunk_table",
+        "chunk_caveat",
+    ]
+
+
 def test_prepare_does_not_prune_non_table_focused_queries() -> None:
     query = _make_query(
         query_text="What is the purpose of the pump?",
