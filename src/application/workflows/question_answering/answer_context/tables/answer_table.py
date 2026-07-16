@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
+
 
 @dataclass(slots=True)
 class AnswerTableRow:
@@ -21,7 +25,7 @@ class AnswerTable:
     page_end: int | None
     headers: list[str] = field(default_factory=list)
     rows: list[AnswerTableRow] = field(default_factory=list)
-    table_kind: str = "general_table"
+    table_kind: TableQueryStrategy = TableQueryStrategy.GENERAL_TABLE
     column_roles: dict[int, str] = field(default_factory=dict)
     logical_table_family_id: str | None = None
     physical_table_ids: list[str] = field(default_factory=list)

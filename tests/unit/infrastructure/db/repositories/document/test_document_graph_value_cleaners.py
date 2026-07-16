@@ -4,6 +4,7 @@ from src.infrastructure.db.repositories.document.document_graph_value_cleaners i
     clean_multiline_text,
     clean_parallel_stream_rows,
     clean_rows,
+    clean_table_signals,
     clean_text,
     coerce_float,
     coerce_int,
@@ -84,3 +85,14 @@ def test_clean_axis_summary_drops_entries_with_blank_key_or_value() -> None:
     assert clean_axis_summary({"row_axis": "task", "  ": "ignored", "col_axis": ""}) == {
         "row_axis": "task",
     }
+
+
+def test_clean_table_signals_returns_empty_frozenset_for_non_list_input() -> None:
+    assert clean_table_signals(None) == frozenset()
+    assert clean_table_signals("not a list") == frozenset()
+
+
+def test_clean_table_signals_drops_blank_entries_and_dedupes() -> None:
+    assert clean_table_signals(
+        ["identifiers", "  ", "specifications", "identifiers"]
+    ) == frozenset({"identifiers", "specifications"})

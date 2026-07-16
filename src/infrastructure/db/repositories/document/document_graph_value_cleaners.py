@@ -83,3 +83,13 @@ def clean_axis_summary(value: object) -> dict[str, str]:
         if cleaned_key and cleaned_value:
             cleaned_summary[cleaned_key] = cleaned_value
     return cleaned_summary
+
+
+def clean_table_signals(value: object) -> frozenset[str]:
+    if not isinstance(value, list):
+        return frozenset()
+    return frozenset(
+        cleaned
+        for item in value
+        if (cleaned := clean_text(item)) is not None
+    )

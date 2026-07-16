@@ -3,7 +3,7 @@ import pytest
 from src.application.workflows.parsing.tables.structure.generic_record_structure_summarizer import (
     GenericRecordStructureSummarizer,
 )
-from src.application.workflows.shared.table_kind import TableKind
+from src.application.workflows.shared.table_shape import TableShape
 from src.domain.assets import TableAsset, TableCellSpan
 
 
@@ -62,7 +62,7 @@ def test_summarize_produces_record_table_summary_with_expected_quality_score() -
     summary = GenericRecordStructureSummarizer().summarize(table)
 
     assert summary is not None
-    assert summary.table_shape == TableKind.RECORD_TABLE
+    assert summary.table_shape == TableShape.RECORD_TABLE
     assert summary.header_paths == [["part"], ["description"], ["quantity"]]
     assert summary.axis_summary == {
         "row_axis": "record",

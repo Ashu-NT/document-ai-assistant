@@ -47,6 +47,13 @@ class TableSemanticResolver:
             )
             table.table_category = category.value
             table.table_category_confidence = confidence
+            signals = self.classifier.detect_signals(
+                table=table,
+                caption=table.metadata.caption,
+                nearby_text=table.metadata.nearby_text,
+                section_path=section_path,
+            )
+            table.signals = frozenset(signal.value for signal in signals)
             rows_normalized = self.row_normalizer.normalize(table)
             structure_summary = self.structure_summary_builder.build(table)
             if structure_summary is not None:
@@ -91,4 +98,6 @@ class TableSemanticResolver:
                     ]
                 if table.axis_summary:
                     updated_extra["table_axis_summary"] = dict(table.axis_summary)
+                if table.signals:
+                    updated_extra["table_signals"] = sorted(table.signals)
                 element.parser_metadata.extra = updated_extra

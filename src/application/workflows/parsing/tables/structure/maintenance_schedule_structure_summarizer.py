@@ -3,10 +3,10 @@ from __future__ import annotations
 from src.application.workflows.parsing.tables.semantics.table_matrix_detector import (
     TableMatrixDetector,
 )
-from src.application.workflows.shared.table_kind import TableKind
 from src.application.workflows.parsing.tables.structure.table_structure_summary import (
     TableStructureSummary,
 )
+from src.application.workflows.shared.table_shape import TableShape
 from src.domain.assets.table_rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
@@ -61,7 +61,7 @@ class MaintenanceScheduleStructureSummarizer:
             axis_summary["descriptor_axis"] = "notes"
 
         return TableStructureSummary(
-            table_shape=TableKind.MAINTENANCE_SCHEDULE_MATRIX,
+            table_shape=TableShape.MAINTENANCE_SCHEDULE_MATRIX,
             quality_score=quality_score,
             header_paths=header_paths,
             axis_summary=axis_summary,

@@ -14,6 +14,9 @@ from src.application.workflows.question_answering.answer_context.tables.answer_t
 from src.application.workflows.question_answering.answer_context.tables.table_header_semantics import (
     looks_identifier_label,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 
 _SPECIFICATION_INTENTS = {
     AnswerIntent.CERTIFICATION_SUMMARY,
@@ -64,18 +67,21 @@ class SpecificationTableKeyValueExtractor:
         *,
         answer_intent: AnswerIntent,
     ):
-        if table.table_kind.startswith("maintenance_"):
+        if table.table_kind in {
+            TableQueryStrategy.MAINTENANCE_SCHEDULE_TABLE,
+            TableQueryStrategy.MAINTENANCE_SCHEDULE_MATRIX,
+        }:
             return []
 
-        if table.table_kind == "key_value_table":
+        if table.table_kind == TableQueryStrategy.KEY_VALUE_TABLE:
             return list(self._key_value_rows(table, answer_intent=answer_intent))
 
-        if table.table_kind == "specification_matrix":
+        if table.table_kind == TableQueryStrategy.SPECIFICATION_MATRIX:
             if self._looks_label_value_projection(table):
                 return list(self._key_value_rows(table, answer_intent=answer_intent))
             return list(self._record_rows(table, answer_intent=answer_intent))
 
-        if table.table_kind == "record_table":
+        if table.table_kind == TableQueryStrategy.RECORD_TABLE:
             return list(self._record_rows(table, answer_intent=answer_intent))
 
         if not table.headers and self._looks_pair_table(table):

@@ -6,6 +6,9 @@ from src.application.workflows.question_answering.answer_context.models import (
 from src.application.workflows.question_answering.answer_context.tables.projections.answer_table_projection import (
     AnswerTableProjection,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 from src.domain.assets.table_rows import TroubleshootingTableNormalizer
 
 
@@ -45,6 +48,6 @@ class TroubleshootingTableProjectionBuilder:
             headers=normalized.headers,
             body_rows=normalized.rows,
             has_headers=True,
-            table_kind="troubleshooting_table",
+            table_kind=TableQueryStrategy.TROUBLESHOOTING_TABLE,
             column_roles=column_roles,
         )

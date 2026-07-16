@@ -3,20 +3,24 @@ from __future__ import annotations
 from src.application.workflows.question_answering.answer_context.maintenance.maintenance_candidate_parser import (
     looks_like_maintenance_task,
 )
-from src.application.workflows.shared.table_kind import TableKind
 from src.application.workflows.question_answering.answer_context.tables.table_header_semantics import (
     match_header_role,
     schedule_interval_labels,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
+from src.application.workflows.shared.table_category import TableCategory
+from src.application.workflows.shared.table_shape import TableShape
 
 _RECORD_TABLE_CATEGORIES = frozenset(
     {
-        "technical_data_table",
-        "operating_limits_table",
-        "connection_table",
-        "identifier_table",
-        "operation_reference_table",
-        "sensor_instrument_table",
+        TableCategory.TECHNICAL_DATA_TABLE,
+        TableCategory.OPERATING_LIMITS_TABLE,
+        TableCategory.CONNECTION_TABLE,
+        TableCategory.IDENTIFIER_TABLE,
+        TableCategory.OPERATION_REFERENCE_TABLE,
+        TableCategory.SENSOR_INSTRUMENT_TABLE,
     }
 )
 _RECORD_TABLE_CHUNK_TYPES = frozenset({"technical_specification", "certification_info"})
@@ -29,7 +33,7 @@ def resolve_table_type(
     chunk_type: str | None,
     headers: list[str] | None = None,
     rows: list[list[str]] | None = None,
-) -> tuple[TableKind, dict[int, str]]:
+) -> tuple[TableQueryStrategy, dict[int, str]]:
     """Single source of truth for "what kind of table is this," shared by the
     deterministic answer-renderer path (`AnswerTableSchemaInferer`) and the
     generic-LLM prompt path (`PromptTableTypeDetector`).
@@ -72,36 +76,36 @@ def resolve_table_type(
     chunk = (chunk_type or "").strip().lower()
 
     if "task" in roles and schedule_columns:
-        return TableKind.MAINTENANCE_SCHEDULE_MATRIX, column_roles
+        return TableQueryStrategy.MAINTENANCE_SCHEDULE_MATRIX, column_roles
     if "task" in roles and "interval" in roles:
-        return TableKind.MAINTENANCE_SCHEDULE_TABLE, column_roles
+        return TableQueryStrategy.MAINTENANCE_SCHEDULE_TABLE, column_roles
     if "label" in roles and "value" in roles:
-        return TableKind.KEY_VALUE_TABLE, column_roles
+        return TableQueryStrategy.KEY_VALUE_TABLE, column_roles
 
-    if shape == "maintenance_schedule_matrix":
-        return TableKind.MAINTENANCE_SCHEDULE_MATRIX, column_roles
-    if shape == "performance_curve_matrix":
-        return TableKind.PERFORMANCE_CURVE_MATRIX, column_roles
-    if shape == "specification_matrix":
-        return TableKind.SPECIFICATION_MATRIX, column_roles
+    if shape == TableShape.MAINTENANCE_SCHEDULE_MATRIX:
+        return TableQueryStrategy.MAINTENANCE_SCHEDULE_MATRIX, column_roles
+    if shape == TableShape.PERFORMANCE_CURVE_MATRIX:
+        return TableQueryStrategy.PERFORMANCE_CURVE_MATRIX, column_roles
+    if shape == TableShape.SPECIFICATION_MATRIX:
+        return TableQueryStrategy.SPECIFICATION_MATRIX, column_roles
 
-    if category == "toc_table":
-        return TableKind.TOC_TABLE, column_roles
-    if category == "maintenance_interval_table":
-        return TableKind.MAINTENANCE_SCHEDULE_TABLE, column_roles
-    if category == "troubleshooting_table":
-        return TableKind.TROUBLESHOOTING_TABLE, column_roles
-    if category == "spare_parts_table":
-        return TableKind.SPARE_PARTS_TABLE, column_roles
-    if category == "certification_table":
-        return TableKind.CERTIFICATION_TABLE, column_roles
+    if category == TableCategory.TOC_TABLE:
+        return TableQueryStrategy.TOC_TABLE, column_roles
+    if category == TableCategory.MAINTENANCE_INTERVAL_TABLE:
+        return TableQueryStrategy.MAINTENANCE_SCHEDULE_TABLE, column_roles
+    if category == TableCategory.TROUBLESHOOTING_TABLE:
+        return TableQueryStrategy.TROUBLESHOOTING_TABLE, column_roles
+    if category == TableCategory.SPARE_PARTS_TABLE:
+        return TableQueryStrategy.SPARE_PARTS_TABLE, column_roles
+    if category == TableCategory.CERTIFICATION_TABLE:
+        return TableQueryStrategy.CERTIFICATION_TABLE, column_roles
     if category in _RECORD_TABLE_CATEGORIES:
-        return TableKind.RECORD_TABLE, column_roles
+        return TableQueryStrategy.RECORD_TABLE, column_roles
 
     if chunk in _RECORD_TABLE_CHUNK_TYPES:
-        return TableKind.RECORD_TABLE, column_roles
+        return TableQueryStrategy.RECORD_TABLE, column_roles
 
-    return TableKind.GENERAL_TABLE, column_roles
+    return TableQueryStrategy.GENERAL_TABLE, column_roles
 
 
 def _infer_implicit_maintenance_roles(

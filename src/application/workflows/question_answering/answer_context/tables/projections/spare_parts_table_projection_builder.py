@@ -9,6 +9,9 @@ from src.application.workflows.question_answering.answer_context.tables.answer_t
 from src.application.workflows.question_answering.answer_context.tables.projections.answer_table_projection import (
     AnswerTableProjection,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 from src.domain.assets.table_rows import (
     SparePartsTableNormalizer,
 )
@@ -55,6 +58,6 @@ class SparePartsTableProjectionBuilder:
             headers=headers,
             body_rows=body_rows,
             has_headers=True,
-            table_kind="record_table",
+            table_kind=TableQueryStrategy.RECORD_TABLE,
             column_roles=column_roles,
         )

@@ -17,6 +17,9 @@ from src.application.workflows.question_answering.answer_context.tables.table_he
     active_schedule_labels,
     schedule_interval_labels,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 from src.application.workflows.shared.maintenance_text_cleaning import (
     clean_interval,
     clean_optional_text,
@@ -25,9 +28,9 @@ from src.application.workflows.shared.maintenance_text_cleaning import (
 
 class MaintenanceTableCandidateExtractor:
     def extract(self, table: AnswerTable) -> list[MaintenanceCandidate]:
-        if table.table_kind == "maintenance_schedule_table":
+        if table.table_kind == TableQueryStrategy.MAINTENANCE_SCHEDULE_TABLE:
             return list(self._rowwise_candidates(table))
-        if table.table_kind == "maintenance_schedule_matrix":
+        if table.table_kind == TableQueryStrategy.MAINTENANCE_SCHEDULE_MATRIX:
             if self._looks_rowwise_projection(table):
                 return list(self._rowwise_candidates(table))
             return list(self._matrix_candidates(table))

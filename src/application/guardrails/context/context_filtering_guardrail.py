@@ -8,6 +8,7 @@ from src.application.contracts.guardrails.guardrail_decision import GuardrailDec
 from src.application.contracts.guardrails.guardrail_result import GuardrailResult
 from src.application.contracts.guardrails.guardrail_violation import GuardrailViolation
 from src.application.contracts.guardrails.violation_type import ViolationType
+from src.application.workflows.shared.table_category import TableCategory
 from src.domain.common import ChunkType
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
@@ -253,7 +254,7 @@ def _has_spare_parts_table_content(
     lower: str,
 ) -> bool:
     table_category = str(chunk.metadata.get("table_category", "")).strip().lower()
-    if table_category == "spare_parts_table":
+    if table_category == TableCategory.SPARE_PARTS_TABLE:
         return True
     if "|" not in text and not any(marker in lower for marker in _SPARE_PARTS_TABLE_CONTENT_MARKERS):
         return False

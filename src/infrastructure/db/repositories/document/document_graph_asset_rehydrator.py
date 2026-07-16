@@ -6,6 +6,7 @@ from src.infrastructure.db.repositories.document.document_graph_value_cleaners i
     clean_multiline_text,
     clean_parallel_stream_rows,
     clean_rows,
+    clean_table_signals,
     clean_text,
     coerce_float,
     coerce_int,
@@ -62,6 +63,7 @@ def rehydrate_assets(graph: DocumentGraph) -> None:
                 axis_summary=clean_axis_summary(
                     parser_extra.get("table_axis_summary")
                 ),
+                signals=clean_table_signals(parser_extra.get("table_signals")),
                 layout_region_id=clean_text(parser_extra.get("layout_region_id")),
                 layout_region_role=clean_text(parser_extra.get("layout_region_role")),
                 layout_lane_index=coerce_int(parser_extra.get("layout_lane_index")),

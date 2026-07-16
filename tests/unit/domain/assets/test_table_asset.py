@@ -5,6 +5,27 @@ def test_table_asset_has_content(sample_table_asset) -> None:
     assert sample_table_asset.has_content()
 
 
+def test_table_asset_signals_defaults_to_empty_frozenset() -> None:
+    table = TableAsset(
+        table_id="table_009b",
+        document_id="doc_001",
+        markdown="unused",
+    )
+
+    assert table.signals == frozenset()
+
+
+def test_table_asset_signals_is_settable() -> None:
+    table = TableAsset(
+        table_id="table_009c",
+        document_id="doc_001",
+        markdown="unused",
+        signals=frozenset({"identifiers", "specifications"}),
+    )
+
+    assert table.signals == frozenset({"identifiers", "specifications"})
+
+
 def test_table_asset_layout_fields_default_to_none() -> None:
     table = TableAsset(
         table_id="table_010",

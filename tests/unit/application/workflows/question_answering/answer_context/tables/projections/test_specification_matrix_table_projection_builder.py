@@ -4,6 +4,9 @@ from src.application.workflows.question_answering.answer_context.models import (
 from src.application.workflows.question_answering.answer_context.tables.projections.specification_matrix_table_projection_builder import (
     SpecificationMatrixTableProjectionBuilder,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 
 
 def _make_source() -> AnswerSource:
@@ -46,7 +49,8 @@ def test_project_builds_label_value_rows_for_a_simple_matrix() -> None:
     )
 
     assert projection is not None
-    assert projection.table_kind == "specification_matrix"
+    assert isinstance(projection.table_kind, TableQueryStrategy)
+    assert projection.table_kind == TableQueryStrategy.SPECIFICATION_MATRIX
     assert projection.headers == ["Label", "Value"]
     assert projection.column_roles == {0: "label", 1: "value"}
     assert projection.body_rows == [["Bore", "25mm"], ["Voltage", "400V"]]

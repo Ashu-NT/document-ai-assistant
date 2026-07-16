@@ -11,22 +11,26 @@ from src.application.workflows.question_answering.answer_context.tables.answer_t
     _RESOLVED_TYPE_TO_ANSWER_KIND,
     AnswerTableSchemaInferer,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 from src.application.workflows.question_answering.answer_context.tables.table_type_resolution_core import (
     resolve_table_type,
 )
-from src.application.workflows.shared.table_kind import TableKind
+from src.application.workflows.shared.table_category import TableCategory
+from src.application.workflows.shared.table_shape import TableShape
 
 
 def _combinations():
-    for category in TableKind:
-        for shape in TableKind:
+    for category in TableCategory:
+        for shape in TableShape:
             yield category, shape
 
 
 @pytest.mark.parametrize("category,shape", list(_combinations()))
-def test_resolve_table_type_matches_both_adapters_for_every_table_kind_combination(
-    category: TableKind,
-    shape: TableKind,
+def test_resolve_table_type_matches_both_adapters_for_every_category_and_shape_combination(
+    category: TableCategory,
+    shape: TableShape,
 ) -> None:
     resolved, _ = resolve_table_type(
         table_category=category.value,
@@ -35,7 +39,7 @@ def test_resolve_table_type_matches_both_adapters_for_every_table_kind_combinati
         headers=[],
         rows=None,
     )
-    assert isinstance(resolved, TableKind)
+    assert isinstance(resolved, TableQueryStrategy)
 
     answer_kind = AnswerTableSchemaInferer().infer(
         chunk_type=None,

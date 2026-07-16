@@ -9,6 +9,9 @@ from src.application.workflows.question_answering.answer_context.tables.projecti
 from src.application.workflows.question_answering.answer_context.tables.projections.table_projection_support import (
     TableProjectionSupport,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 from src.domain.assets.table_rows.table_row_patterns import normalize_cell
 
 
@@ -50,7 +53,7 @@ class SpecificationMatrixTableProjectionBuilder:
             headers=["Label", "Value"],
             body_rows=normalized_rows,
             has_headers=True,
-            table_kind="specification_matrix",
+            table_kind=TableQueryStrategy.SPECIFICATION_MATRIX,
             column_roles={0: "label", 1: "value"},
         )
 

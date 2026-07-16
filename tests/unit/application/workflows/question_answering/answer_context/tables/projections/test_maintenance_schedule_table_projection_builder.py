@@ -4,6 +4,9 @@ from src.application.workflows.question_answering.answer_context.models import (
 from src.application.workflows.question_answering.answer_context.tables.projections.maintenance_schedule_table_projection_builder import (
     MaintenanceScheduleTableProjectionBuilder,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 
 
 def _make_source(**overrides: object) -> AnswerSource:
@@ -63,7 +66,8 @@ def test_project_builds_task_interval_and_notes_columns_and_drops_blank_rows() -
     )
 
     assert projection is not None
-    assert projection.table_kind == "maintenance_schedule_matrix"
+    assert isinstance(projection.table_kind, TableQueryStrategy)
+    assert projection.table_kind == TableQueryStrategy.MAINTENANCE_SCHEDULE_MATRIX
     assert projection.headers == ["Task", "Interval", "Component", "Notes"]
     assert projection.column_roles == {0: "task", 1: "interval", 2: "component", 3: "notes"}
     assert projection.body_rows == [

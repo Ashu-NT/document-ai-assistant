@@ -9,6 +9,9 @@ from src.application.workflows.question_answering.answer_context.tables.answer_t
 from src.application.workflows.question_answering.answer_context.tables.projections.answer_table_projection import (
     AnswerTableProjection,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 from src.domain.assets.table_rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
@@ -35,7 +38,7 @@ class GenericTableProjectionBuilder:
         has_headers = self.row_canonicalizer.has_explicit_header_row(cleaned_rows)
         headers = cleaned_rows[0] if has_headers else []
         body_rows = cleaned_rows[1:] if has_headers else cleaned_rows
-        table_kind, column_roles = self.schema_inferer.infer(
+        table_kind_value, column_roles = self.schema_inferer.infer(
             chunk_type=source.chunk_type,
             headers=headers,
             table_category=table_category,
@@ -46,6 +49,6 @@ class GenericTableProjectionBuilder:
             headers=headers,
             body_rows=body_rows,
             has_headers=has_headers,
-            table_kind=table_kind,
+            table_kind=TableQueryStrategy(table_kind_value),
             column_roles=column_roles,
         )

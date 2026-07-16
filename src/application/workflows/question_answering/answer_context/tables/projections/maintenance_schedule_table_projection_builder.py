@@ -15,6 +15,9 @@ from src.application.workflows.question_answering.answer_context.tables.projecti
 from src.application.workflows.question_answering.answer_context.tables.table_header_semantics import (
     active_schedule_labels,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 from src.domain.assets.table_rows.table_row_patterns import normalize_cell
 
 
@@ -44,16 +47,17 @@ class MaintenanceScheduleTableProjectionBuilder:
             source.table_header_paths,
         )
         body_rows = cleaned_rows[1:]
-        inferred_kind, column_roles = self.schema_inferer.infer(
+        inferred_kind_value, column_roles = self.schema_inferer.infer(
             chunk_type=source.chunk_type,
             headers=headers,
             table_category=table_category,
             table_shape=table_shape,
             rows=body_rows,
         )
+        inferred_kind = TableQueryStrategy(inferred_kind_value)
         if inferred_kind not in {
-            "maintenance_schedule_matrix",
-            "maintenance_schedule_table",
+            TableQueryStrategy.MAINTENANCE_SCHEDULE_MATRIX,
+            TableQueryStrategy.MAINTENANCE_SCHEDULE_TABLE,
         }:
             return None
 

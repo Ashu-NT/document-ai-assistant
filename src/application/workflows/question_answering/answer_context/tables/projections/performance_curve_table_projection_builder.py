@@ -3,6 +3,9 @@ from __future__ import annotations
 from src.application.workflows.question_answering.answer_context.tables.projections.answer_table_projection import (
     AnswerTableProjection,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
 )
@@ -35,6 +38,6 @@ class PerformanceCurveTableProjectionBuilder:
             headers=normalized.headers,
             body_rows=normalized.rows,
             has_headers=True,
-            table_kind="performance_curve_matrix",
+            table_kind=TableQueryStrategy.PERFORMANCE_CURVE_MATRIX,
             column_roles=normalized.column_roles,
         )

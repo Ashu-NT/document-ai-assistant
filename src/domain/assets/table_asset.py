@@ -41,6 +41,7 @@ class TableAsset:
     table_structure_quality: float | None = None
     header_paths: list[list[str]] = field(default_factory=list)
     axis_summary: dict[str, str] = field(default_factory=dict)
+    signals: frozenset[str] = field(default_factory=frozenset)
 
     layout_region_id: str | None = None
     layout_region_role: str | None = None

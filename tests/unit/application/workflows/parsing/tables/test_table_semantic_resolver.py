@@ -65,6 +65,8 @@ def test_table_semantic_resolver_persists_maintenance_structure_metadata() -> No
         ["Interval", "Monthly"],
     ]
     assert parser_extra["table_axis_summary"]["value_axis"] == "marker"
+    assert table.signals == frozenset({"maintenance_intervals", "schedules"})
+    assert parser_extra["table_signals"] == ["maintenance_intervals", "schedules"]
 
 
 def test_table_semantic_resolver_persists_specification_matrix_metadata() -> None:

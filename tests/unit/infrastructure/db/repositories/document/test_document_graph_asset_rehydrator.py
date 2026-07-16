@@ -112,6 +112,7 @@ def test_rehydrate_assets_restores_logical_table_family_metadata() -> None:
                     "column_axis": "interval",
                     "value_axis": "marker",
                 },
+                "table_signals": ["maintenance_intervals", "schedules"],
             },
         )
     )
@@ -128,6 +129,23 @@ def test_rehydrate_assets_restores_logical_table_family_metadata() -> None:
     assert table.table_structure_quality == 0.93
     assert table.header_paths == [["Task"], ["Interval", "Daily"]]
     assert table.axis_summary["row_axis"] == "task"
+    assert table.signals == frozenset({"maintenance_intervals", "schedules"})
+
+
+def test_rehydrate_assets_defaults_signals_to_empty_frozenset_when_absent() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.add_element(
+        _make_table_element(
+            table_id="table_1",
+            extra={
+                "markdown": "| Task | Interval |\n|---|---|\n| Inspect filter | Daily |",
+            },
+        )
+    )
+
+    rehydrate_assets(graph)
+
+    assert graph.tables["table_1"].signals == frozenset()
 
 
 def test_rehydrate_assets_restores_layout_fields() -> None:

@@ -3,10 +3,10 @@ from __future__ import annotations
 from src.application.workflows.parsing.tables.structure.table_header_path_builder import (
     TableHeaderPathBuilder,
 )
-from src.application.workflows.shared.table_kind import TableKind
 from src.application.workflows.parsing.tables.structure.table_structure_summary import (
     TableStructureSummary,
 )
+from src.application.workflows.shared.table_shape import TableShape
 from src.domain.assets import TableAsset
 from src.domain.assets.table_rows.table_row_patterns import normalize_cell
 
@@ -43,7 +43,7 @@ class GenericRecordStructureSummarizer:
             header_row_count=header_row_count,
         )
         return TableStructureSummary(
-            table_shape=TableKind.RECORD_TABLE,
+            table_shape=TableShape.RECORD_TABLE,
             quality_score=quality_score,
             header_paths=header_paths,
             axis_summary={

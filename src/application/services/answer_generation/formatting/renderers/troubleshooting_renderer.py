@@ -10,6 +10,9 @@ from src.application.workflows.question_answering.answer_context.models import (
 from src.application.workflows.question_answering.answer_context.tables.answer_table import (
     AnswerTable,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 from src.shared.text.ascii_table_renderer import AsciiTableColumn, render_ascii_table
 
 
@@ -69,7 +72,7 @@ class TroubleshootingRenderer:
         rows: list[dict[str, str]] = []
         seen: set[tuple[str, str, str, str]] = set()
         for table in tables:
-            if table.table_kind != "troubleshooting_table":
+            if table.table_kind != TableQueryStrategy.TROUBLESHOOTING_TABLE:
                 continue
             page_label = _page_label(table.page_start, table.page_end)
             for row in table.rows:

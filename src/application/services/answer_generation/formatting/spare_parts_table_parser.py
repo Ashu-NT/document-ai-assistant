@@ -30,6 +30,7 @@ from src.application.workflows.question_answering.answer_context.models import (
 from src.application.workflows.question_answering.answer_context.tables.answer_table import (
     AnswerTable,
 )
+from src.application.workflows.shared.table_category import TableCategory
 
 # Bumped whenever a table-layout strategy (structured header, PID/tag row,
 # position-pair, free-form) is added, removed, or changed materially --
@@ -206,9 +207,9 @@ class SparePartsTableParser:
     @staticmethod
     def _should_use_answer_table(table: AnswerTable) -> bool:
         table_category = (table.table_category or "").strip().lower()
-        if table_category and table_category != "spare_parts_table":
+        if table_category and table_category != TableCategory.SPARE_PARTS_TABLE:
             return False
-        if table_category == "spare_parts_table":
+        if table_category == TableCategory.SPARE_PARTS_TABLE:
             return True
         return (table.chunk_type or "").strip().lower() == "spare_parts_table"
 
