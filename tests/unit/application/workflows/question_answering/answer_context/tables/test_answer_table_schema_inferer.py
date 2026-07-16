@@ -51,8 +51,6 @@ def test_infer_collapses_record_style_categories_to_record_table() -> None:
         "identifier_table",
         "operation_reference_table",
         "sensor_instrument_table",
-        "spare_parts_table",
-        "certification_table",
     ):
         kind, _ = AnswerTableSchemaInferer().infer(
             chunk_type=None,
@@ -81,16 +79,15 @@ def test_infer_returns_general_table_when_nothing_matches() -> None:
 
 
 def test_infer_now_covers_toc_table_category() -> None:
-    """Newly-covered by the shared resolution core -- previously fell
-    through to general_table by omission, same output today, but now a
-    considered decision shared with the prompt path."""
+    """Newly-covered by the shared resolution core and preserved as its
+    own answer-table kind."""
     kind, _ = AnswerTableSchemaInferer().infer(
         chunk_type=None,
         headers=["Number", "Title", "Page"],
         table_category="toc_table",
     )
 
-    assert kind == "general_table"
+    assert kind == "toc_table"
 
 
 def test_infer_now_covers_maintenance_interval_table_category() -> None:
@@ -113,4 +110,24 @@ def test_infer_now_covers_performance_curve_matrix_shape() -> None:
         table_shape="performance_curve_matrix",
     )
 
-    assert kind == "general_table"
+    assert kind == "performance_curve_matrix"
+
+
+def test_infer_preserves_spare_parts_table_category() -> None:
+    kind, _ = AnswerTableSchemaInferer().infer(
+        chunk_type=None,
+        headers=["Position", "Description", "Part No."],
+        table_category="spare_parts_table",
+    )
+
+    assert kind == "spare_parts_table"
+
+
+def test_infer_preserves_certification_table_category() -> None:
+    kind, _ = AnswerTableSchemaInferer().infer(
+        chunk_type=None,
+        headers=["Quantity", "Description", "Size"],
+        table_category="certification_table",
+    )
+
+    assert kind == "certification_table"

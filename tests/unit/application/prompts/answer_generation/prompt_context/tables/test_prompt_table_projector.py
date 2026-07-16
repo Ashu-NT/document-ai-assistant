@@ -32,6 +32,7 @@ def test_build_projects_table_with_headers_rows_and_provenance() -> None:
     assert len(tables) == 1
     assert tables[0].table_id == "chunk_spec_001:table"
     assert tables[0].table_type == "certification_table"
+    assert tables[0].table_strategy == "key_value_table"
     assert tables[0].source_number == 3
     assert tables[0].headers == ["Parameter", "Value"]
     assert tables[0].rows[0].cells == ["Test pressure", "700 bar"]
@@ -70,6 +71,7 @@ def test_build_preserves_structured_table_metadata_and_uses_shape_signal() -> No
 
     assert len(tables) == 1
     assert tables[0].table_type == "maintenance_table"
+    assert tables[0].table_strategy == "maintenance_schedule_matrix"
     assert tables[0].table_shape == "maintenance_schedule_matrix"
     assert tables[0].table_structure_quality == 0.94
     assert tables[0].header_paths == [["Task"], ["Interval", "Weekly"]]
@@ -96,6 +98,7 @@ def test_build_uses_specification_matrix_shape_for_prompt_table_type() -> None:
 
     assert len(tables) == 1
     assert tables[0].table_type == "specification_table"
+    assert tables[0].table_strategy == "specification_matrix"
     assert tables[0].table_shape == "specification_matrix"
 
 
@@ -134,6 +137,7 @@ def test_build_from_answer_tables_preserves_typed_table_projection() -> None:
     assert len(tables) == 1
     assert tables[0].table_id == "table_family_001"
     assert tables[0].table_type == "maintenance_table"
+    assert tables[0].table_strategy == "maintenance_schedule_table"
     assert tables[0].document_title == "FWC12 Manual"
     assert tables[0].headers == ["Task", "Interval", "Component"]
     assert tables[0].rows[0].cells_by_header == {

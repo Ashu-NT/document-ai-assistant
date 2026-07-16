@@ -74,6 +74,15 @@ def test_maintenance_intent_narrows_for_schedule_wording():
     assert preferences[:2] == [ChunkType.MAINTENANCE_INTERVAL, ChunkType.SPARE_PARTS_TABLE]
 
 
+def test_maintenance_intent_narrows_for_service_interval_wording():
+    preferences = _map(
+        "What are the service intervals for this equipment?",
+        RetrievalQueryIntent.MAINTENANCE,
+    )
+
+    assert preferences[:2] == [ChunkType.MAINTENANCE_INTERVAL, ChunkType.SPARE_PARTS_TABLE]
+
+
 def test_maintenance_intent_narrows_for_how_often_wording():
     preferences = _map(
         "How often should the filter be replaced?", RetrievalQueryIntent.MAINTENANCE

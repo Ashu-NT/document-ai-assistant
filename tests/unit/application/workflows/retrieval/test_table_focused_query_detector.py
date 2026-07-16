@@ -40,6 +40,19 @@ def test_maintenance_interval_wording_is_table_focused() -> None:
     )
 
 
+def test_service_interval_wording_is_table_focused() -> None:
+    query = _make_query(
+        query_text="What are the service intervals for this equipment?",
+        detected_intent="maintenance",
+        chunk_types=[ChunkType.MAINTENANCE_INTERVAL],
+    )
+
+    assert (
+        is_table_focused_query(query=query, intent=RetrievalQueryIntent.MAINTENANCE)
+        is True
+    )
+
+
 def test_general_overview_query_is_not_table_focused() -> None:
     query = _make_query(
         query_text="What is the purpose of the pump?",

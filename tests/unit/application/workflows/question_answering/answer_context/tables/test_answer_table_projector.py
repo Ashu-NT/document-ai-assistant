@@ -173,6 +173,7 @@ def test_projector_normalizes_compound_spare_parts_headers_into_canonical_column
     )
 
     assert len(tables) == 1
+    assert tables[0].table_kind == "spare_parts_table"
     assert tables[0].headers == [
         "Position",
         "Quantity",
@@ -217,6 +218,7 @@ def test_projector_normalizes_headerless_spare_parts_pairs_into_position_descrip
     )
 
     assert len(tables) == 1
+    assert tables[0].table_kind == "spare_parts_table"
     assert tables[0].headers == ["Position", "Description"]
     assert tables[0].rows[0].cells == ["14.00", "Pump Casing"]
     assert tables[0].rows[1].cells == ["70.00", "Lantern bracket"]

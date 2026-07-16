@@ -5,6 +5,7 @@ Ingest a single document into the corpus without using the benchmark truth set.
 
 Usage:
     python scripts/ingest_document.py --input data/input/example.pdf
+    python scripts/ingest_document.py --input-dir data/input
     python scripts/ingest_document.py --input data/input/example.pdf --document-type manual
     python scripts/ingest_document.py --reingest-document-id doc_123
 """
@@ -18,12 +19,20 @@ from typing import Sequence
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = PROJECT_ROOT / "src"
+SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
 
-for _import_root in (PROJECT_ROOT, SRC_ROOT):
+for _import_root in (PROJECT_ROOT, SRC_ROOT, SCRIPTS_ROOT):
     _import_root_text = str(_import_root)
     if _import_root_text not in sys.path:
         sys.path.insert(0, _import_root_text)
 
+from ingest_document_batch_support import (
+    build_batch_json_payload,
+    run_recursive_pdf_batch,
+    run_reingestion_request,
+    run_single_input_path,
+    validate_ingest_document_args,
+)
 from src.shared.exceptions import ApplicationError
 from src.shared.formatting.ingestion_result_formatter import (
     build_ingestion_json_payload,
@@ -33,12 +42,16 @@ from src.shared.formatting.ingestion_result_formatter import (
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Ingest one document through the canonical ingestion workflow."
+        description="Ingest one document or recursively ingest all PDFs in a folder."
     )
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument(
         "--input",
         help="Path to the PDF/document to ingest.",
+    )
+    input_group.add_argument(
+        "--input-dir",
+        help="Path to a folder whose PDFs should be ingested recursively.",
     )
     input_group.add_argument(
         "--reingest-document-id",
@@ -104,49 +117,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         ),
     )
     args = parser.parse_args(list(argv) if argv is not None else None)
-    _validate_args(parser, args)
+    validate_ingest_document_args(parser, args)
     return args
 
 
 def print_status(message: str) -> None:
     print(f"[ingest-document] {message}", flush=True)
-
-
-def _validate_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
-    if args.reingest_document_id and args.reingest_if_duplicate:
-        parser.error(
-            "--reingest-if-duplicate only applies to --input mode, not "
-            "--reingest-document-id."
-        )
-
-    if args.reingest_document_id is None:
-        if args.force and args.reingest_if_duplicate:
-            parser.error(
-                "--force bypasses duplicate detection, so it cannot be combined "
-                "with --reingest-if-duplicate."
-            )
-        return
-
-    conflicting_flags: list[str] = []
-    for flag_name in (
-        "document_type",
-        "title",
-        "source_name",
-        "force",
-        "generate_questions",
-        "enable_ocr",
-        "trace",
-    ):
-        value = getattr(args, flag_name)
-        if value not in (None, False):
-            conflicting_flags.append(f"--{flag_name.replace('_', '-')}")
-
-    if conflicting_flags:
-        parser.error(
-            "--reingest-document-id uses the stored file path and stored document "
-            "metadata, so these flags are not supported with it: "
-            + ", ".join(conflicting_flags)
-        )
 
 
 def _build_runtime():
@@ -157,62 +133,29 @@ def _build_runtime():
     return build_ingestion_runtime()
 
 
-def _run_reingestion(args, runtime, *, progress_callback):
-    from src.application.workflows.ingestion import ReingestionRequest  # noqa: WPS433
-
-    return runtime.ingestion_workflow.reingest(
-        ReingestionRequest(
-            document_id=args.reingest_document_id,
-            run_quality_checks=not args.skip_quality_checks,
-            requested_by="ingest_document_script_reingest",
-        ),
-        progress_callback=progress_callback,
-    )
-
-
-def _run_ingestion(args, runtime, *, progress_callback):
-    from src.application.workflows.ingestion import IngestionRequest  # noqa: WPS433
-
-    return runtime.ingestion_workflow.run(
-        IngestionRequest(
-            file_path=str(Path(args.input).expanduser().resolve()),
-            document_type=args.document_type,
-            title=args.title,
-            source_name=args.source_name,
-            force=args.force,
-            generate_questions=args.generate_questions,
-            enable_ocr=args.enable_ocr,
-            run_quality_checks=not args.skip_quality_checks,
-            trace=args.trace,
-            requested_by="ingest_document_script",
-        ),
-        progress_callback=progress_callback,
-    )
-
-
-def _is_duplicate_result(result) -> bool:
-    status_value = getattr(result.status, "value", "")
-    return status_value in {
-        "skipped_file_duplicate",
-        "skipped_content_duplicate",
-    }
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     runtime = None
 
     try:
         input_path = None
+        input_dir = None
         if args.input is not None:
             input_path = Path(args.input).expanduser().resolve()
             if not input_path.exists():
                 print(f"Input file not found: {input_path}", file=sys.stderr)
                 return 1
+        if args.input_dir is not None:
+            input_dir = Path(args.input_dir).expanduser().resolve()
+            if not input_dir.exists() or not input_dir.is_dir():
+                print(f"Input directory not found: {input_dir}", file=sys.stderr)
+                return 1
 
         if not args.json:
             if input_path is not None:
                 print_status(f"Input path: {input_path}")
+            elif input_dir is not None:
+                print_status(f"Input directory: {input_dir}")
             else:
                 print_status(
                     f"Reingest target document ID: {args.reingest_document_id}"
@@ -223,6 +166,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print_status("Ingestion runtime ready.")
             if input_path is not None:
                 print_status(f"Starting ingestion for {input_path.name}...")
+            elif input_dir is not None:
+                print_status("Starting recursive PDF ingestion...")
             else:
                 print_status(
                     f"Starting in-place reingestion for {args.reingest_document_id}..."
@@ -230,31 +175,77 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         progress_callback = None if args.json else print_status
         if args.reingest_document_id is not None:
-            result = _run_reingestion(
+            result = run_reingestion_request(
                 args,
                 runtime,
                 progress_callback=progress_callback,
             )
-        else:
-            result = _run_ingestion(
-                args,
-                runtime,
-                progress_callback=progress_callback,
+        elif input_dir is not None:
+            batch_summary = run_recursive_pdf_batch(
+                input_dir,
+                run_for_path=lambda path, index, total: run_single_input_path(
+                    args,
+                    runtime,
+                    input_path=path,
+                    progress_callback=progress_callback,
+                    batch_index=index,
+                    batch_total=total,
+                ),
+                status_callback=progress_callback,
             )
-            if args.reingest_if_duplicate and _is_duplicate_result(result):
-                existing_document_id = result.duplicate_of_document_id or result.document_id
-                if existing_document_id:
-                    if not args.json:
-                        print_status(
-                            "Duplicate detected. Upgrading to safe in-place "
-                            f"reingestion for {existing_document_id}..."
+            if batch_summary.discovered_count == 0:
+                message = f"No PDF files found under: {input_dir}"
+                if args.json:
+                    print(
+                        json.dumps(
+                            {
+                                "mode": "batch",
+                                "input_dir": str(input_dir),
+                                "discovered_count": 0,
+                                "succeeded_count": 0,
+                                "failed_count": 0,
+                                "results": [],
+                                "failures": [],
+                                "error": message,
+                            },
+                            indent=2,
                         )
-                    args.reingest_document_id = existing_document_id
-                    result = _run_reingestion(
-                        args,
-                        runtime,
-                        progress_callback=progress_callback,
-        )
+                    )
+                else:
+                    print(message, file=sys.stderr)
+                return 1
+            if args.json:
+                print(
+                    json.dumps(
+                        build_batch_json_payload(
+                            batch_summary,
+                            result_payload_builder=build_ingestion_json_payload,
+                        ),
+                        indent=2,
+                    )
+                )
+            else:
+                print_status(
+                    "Recursive ingestion completed "
+                    f"({batch_summary.succeeded_count}/{batch_summary.discovered_count} "
+                    "PDFs succeeded)."
+                )
+                for result in batch_summary.results:
+                    print()
+                    print_ingestion_result(result)
+                if batch_summary.failures:
+                    print("\nFailures")
+                    print("--------")
+                    for failure in batch_summary.failures:
+                        print(f"- {failure.input_path}: {failure.error}")
+            return 0 if batch_summary.failed_count == 0 else 1
+        else:
+            result = run_single_input_path(
+                args,
+                runtime,
+                input_path=input_path,
+                progress_callback=progress_callback,
+            )
 
         if args.json:
             print(json.dumps(build_ingestion_json_payload(result), indent=2))

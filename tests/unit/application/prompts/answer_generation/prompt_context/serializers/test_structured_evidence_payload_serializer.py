@@ -83,6 +83,7 @@ def test_serializer_preserves_nested_entity_relationships_and_first_class_tables
     assert '"tables": [' in payload
     assert '"table_rows": [' not in payload
     assert '"table_shape"' in payload
+    assert '"table_strategy"' in payload
     assert '"table_header_paths"' in payload
     assert '"headers": [' in payload
     assert '"cells_by_header": {' in payload

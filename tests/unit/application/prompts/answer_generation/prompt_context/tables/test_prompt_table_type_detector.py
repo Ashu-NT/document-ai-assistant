@@ -30,7 +30,7 @@ def test_detect_maps_performance_curve_matrix_shape_to_specification_table() -> 
 
     assert (
         PromptTableTypeDetector().detect(source, headers=["RPM", "Flow"])
-        == "specification_table"
+        == "performance_curve_table"
     )
 
 
@@ -83,8 +83,23 @@ def test_detect_returns_general_table_when_nothing_matches() -> None:
 
 
 def test_detect_now_covers_toc_table_category_via_shared_core() -> None:
-    """Newly-covered by the shared resolution core -- same output as
-    before (falls through to general_table), now a considered decision."""
+    """Newly-covered by the shared resolution core and preserved as its
+    own prompt-visible table family."""
     source = _source(metadata={"table_category": "toc_table"})
 
-    assert PromptTableTypeDetector().detect(source, headers=[]) == "general_table"
+    assert PromptTableTypeDetector().detect(source, headers=[]) == "toc_table"
+
+
+def test_detect_key_value_table_still_falls_back_to_general_prompt_label() -> None:
+    source = _source()
+
+    assert PromptTableTypeDetector().detect(source, headers=["Label", "Value"]) == "general_table"
+
+
+def test_detect_now_preserves_troubleshooting_table_strategy_as_its_own_label() -> None:
+    source = _source(metadata={"table_category": "troubleshooting_table"})
+
+    assert (
+        PromptTableTypeDetector().detect(source, headers=["Symptom", "Cause", "Remedy"])
+        == "troubleshooting_table"
+    )

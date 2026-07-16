@@ -27,3 +27,4 @@ class PromptTableView:
     axis_summary: dict[str, str] = field(default_factory=dict)
     headers: list[str] = field(default_factory=list)
     rows: list[PromptTableRowView] = field(default_factory=list)
+    table_strategy: str | None = None

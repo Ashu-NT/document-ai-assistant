@@ -81,7 +81,10 @@ class SpecificationTableKeyValueExtractor:
                 return list(self._key_value_rows(table, answer_intent=answer_intent))
             return list(self._record_rows(table, answer_intent=answer_intent))
 
-        if table.table_kind == TableQueryStrategy.RECORD_TABLE:
+        if table.table_kind in {
+            TableQueryStrategy.CERTIFICATION_TABLE,
+            TableQueryStrategy.RECORD_TABLE,
+        }:
             return list(self._record_rows(table, answer_intent=answer_intent))
 
         if not table.headers and self._looks_pair_table(table):

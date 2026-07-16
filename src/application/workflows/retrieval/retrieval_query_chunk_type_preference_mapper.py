@@ -1,3 +1,9 @@
+from src.application.workflows.retrieval.intent.retrieval_query_focus_predicates import (
+    requests_certification_evidence,
+    requests_installation_or_commissioning_instructions,
+    requests_maintenance_interval_evidence,
+    requests_specification_setting_instructions,
+)
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )
@@ -22,10 +28,7 @@ class RetrievalQueryChunkTypePreferenceMapper:
                 ChunkType.DRAWING_REFERENCE,
                 ChunkType.GENERAL,
             ]
-            if any(
-                marker in query_text
-                for marker in ("certificate", "approval", "iecex", "atex")
-            ):
+            if requests_certification_evidence(query_text):
                 preferences.insert(0, ChunkType.CERTIFICATION_INFO)
             return self._unique(preferences)
 
@@ -50,15 +53,9 @@ class RetrievalQueryChunkTypePreferenceMapper:
                 ChunkType.GENERAL,
                 ChunkType.SPARE_PARTS_TABLE,
             ]
-            if any(
-                marker in query_text
-                for marker in ("certificate", "approval", "iecex", "atex")
-            ):
+            if requests_certification_evidence(query_text):
                 preferences.insert(0, ChunkType.CERTIFICATION_INFO)
-            if any(
-                marker in query_text
-                for marker in ("pressure", "torque", "flow", "set", "setting", "adjust", "optimis", "optimiz")
-            ):
+            if requests_specification_setting_instructions(query_text):
                 preferences.insert(1, ChunkType.OPERATION_INSTRUCTION)
             return self._unique(preferences)
 
@@ -72,10 +69,7 @@ class RetrievalQueryChunkTypePreferenceMapper:
                 ChunkType.GENERAL,
                 ChunkType.OVERVIEW,
             ]
-            if any(
-                marker in query_text
-                for marker in ("interval", "schedule", "how often", "hours", "daily", "weekly")
-            ):
+            if requests_maintenance_interval_evidence(query_text) or "hours" in query_text:
                 preferences = [
                     ChunkType.MAINTENANCE_INTERVAL,
                     ChunkType.SPARE_PARTS_TABLE,
@@ -98,9 +92,11 @@ class RetrievalQueryChunkTypePreferenceMapper:
                 ChunkType.GENERAL,
                 ChunkType.OVERVIEW,
             ]
-            if any(
-                marker in query_text
-                for marker in ("how often", "task", "interval", "schedule", "lubricat", "hours")
+            if (
+                requests_maintenance_interval_evidence(query_text)
+                or "task" in query_text
+                or "lubricat" in query_text
+                or "hours" in query_text
             ):
                 preferences = [
                     ChunkType.MAINTENANCE_INTERVAL,
@@ -112,16 +108,7 @@ class RetrievalQueryChunkTypePreferenceMapper:
                     ChunkType.GENERAL,
                     ChunkType.OVERVIEW,
                 ]
-            elif any(
-                marker in query_text
-                for marker in (
-                    "commission",
-                    "installation",
-                    "electrical connection",
-                    "connect",
-                    "objective",
-                )
-            ):
+            elif requests_installation_or_commissioning_instructions(query_text):
                 preferences = [
                     ChunkType.INSTALLATION_INSTRUCTION,
                     ChunkType.OPERATION_INSTRUCTION,

@@ -1,3 +1,6 @@
+from src.application.workflows.retrieval.intent.retrieval_query_focus_predicates import (
+    requests_maintenance_interval_evidence,
+)
 from src.application.workflows.retrieval.intent.retrieval_query_intent_markers import (
     IDENTIFIER_TABLE_MARKERS,
     SPECIFICATION_TABLE_MARKERS,
@@ -5,9 +8,6 @@ from src.application.workflows.retrieval.intent.retrieval_query_intent_markers i
 )
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
-)
-from src.application.workflows.shared.maintenance_signal_detection import (
-    MAINTENANCE_INTERVAL_MARKERS,
 )
 from src.domain.common import ChunkType
 from src.domain.retrieval import RetrievalQuery
@@ -32,7 +32,7 @@ def is_table_focused_query(
     if resolved_intent == RetrievalQueryIntent.TABLE:
         return True
     if resolved_intent == RetrievalQueryIntent.MAINTENANCE:
-        return _has_any_marker(query_text, MAINTENANCE_INTERVAL_MARKERS)
+        return requests_maintenance_interval_evidence(query_text)
     if resolved_intent == RetrievalQueryIntent.SPECIFICATION:
         return _has_any_marker(query_text, SPECIFICATION_TABLE_MARKERS)
     if resolved_intent == RetrievalQueryIntent.IDENTIFIER:

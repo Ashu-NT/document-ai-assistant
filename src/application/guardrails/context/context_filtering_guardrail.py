@@ -8,7 +8,9 @@ from src.application.contracts.guardrails.guardrail_decision import GuardrailDec
 from src.application.contracts.guardrails.guardrail_result import GuardrailResult
 from src.application.contracts.guardrails.guardrail_violation import GuardrailViolation
 from src.application.contracts.guardrails.violation_type import ViolationType
-from src.application.workflows.shared.table_category import TableCategory
+from src.application.workflows.retrieval.table_focus import (
+    has_spare_parts_table_evidence,
+)
 from src.domain.common import ChunkType
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
@@ -32,7 +34,6 @@ _BRANDING_MARKERS: frozenset[str] = frozenset(
     ]
 )
 
-_MIN_CONTENT_CHARS = 40
 _TOC_LINE_DENSITY_THRESHOLD = 0.50
 _MAINTENANCE_INTERVAL_QUERY_MARKERS: tuple[str, ...] = (
     "maintenance interval",
@@ -80,24 +81,6 @@ _SPARE_PARTS_LIST_QUERY_MARKERS: tuple[str, ...] = (
     "list",
     "table",
 )
-_SPARE_PARTS_TABLE_CONTENT_MARKERS: tuple[str, ...] = (
-    "position no",
-    "pos.",
-    "pos nr",
-    "qty",
-    "quantity",
-    "designation",
-    "denomination",
-    "part no",
-    "spare part no",
-    "article no",
-    "material no",
-    "order no",
-    "p&id",
-    "service function",
-)
-
-
 def _is_toc_chunk(text: str, lower: str) -> bool:
     if any(marker in lower for marker in _TOC_MARKERS):
         return True
@@ -200,7 +183,7 @@ class ContextFilteringGuardrail:
         if (
             _is_spare_parts_list_query(query_text)
             and chunk.chunk_type == ChunkType.SPARE_PARTS_TABLE
-            and not _has_spare_parts_table_content(chunk, text, lower)
+            and not has_spare_parts_table_evidence(chunk)
         ):
             return GuardrailViolation(
                 violation_type=ViolationType.IRRELEVANT_CHUNKS,
@@ -248,16 +231,3 @@ def _is_spare_parts_list_query(query_text: str) -> bool:
     )
 
 
-def _has_spare_parts_table_content(
-    chunk: RetrievedChunk,
-    text: str,
-    lower: str,
-) -> bool:
-    table_category = str(chunk.metadata.get("table_category", "")).strip().lower()
-    if table_category == TableCategory.SPARE_PARTS_TABLE:
-        return True
-    if "|" not in text and not any(marker in lower for marker in _SPARE_PARTS_TABLE_CONTENT_MARKERS):
-        return False
-    has_marker = any(marker in lower for marker in _SPARE_PARTS_TABLE_CONTENT_MARKERS)
-    has_digit = any(character.isdigit() for character in text)
-    return has_marker and has_digit

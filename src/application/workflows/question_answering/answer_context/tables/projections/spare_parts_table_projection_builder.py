@@ -58,6 +58,6 @@ class SparePartsTableProjectionBuilder:
             headers=headers,
             body_rows=body_rows,
             has_headers=True,
-            table_kind=TableQueryStrategy.RECORD_TABLE,
+            table_kind=TableQueryStrategy.SPARE_PARTS_TABLE,
             column_roles=column_roles,
         )

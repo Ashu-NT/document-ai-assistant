@@ -22,6 +22,9 @@ from src.application.workflows.question_answering.answer_context.tables.answer_t
     AnswerTable,
     AnswerTableRow,
 )
+from src.application.workflows.question_answering.answer_context.tables.table_type_resolution_core import (
+    resolve_table_type,
+)
 
 
 class PromptTableProjector:
@@ -51,6 +54,13 @@ class PromptTableProjector:
                     table_type=self.prompt_table_type_detector.detect(
                         source,
                         headers=headers,
+                    ),
+                    table_strategy=self._shared_table_strategy(
+                        chunk_type=source.chunk_type,
+                        headers=headers,
+                        table_category=source.metadata.get("table_category"),
+                        table_shape=source.table_shape,
+                        rows=[list(row.cells) for row in rows],
                     ),
                     source_number=source.source_number,
                     chunk_id=source.chunk_id,
@@ -84,6 +94,7 @@ class PromptTableProjector:
                 PromptTableView(
                     table_id=table.logical_table_family_id or f"{table.chunk_id}:table",
                     table_type=self._table_type_for_answer_table(table),
+                    table_strategy=table.table_kind.value,
                     source_number=table.source_number,
                     chunk_id=table.chunk_id,
                     chunk_type=table.chunk_type,
@@ -143,3 +154,21 @@ class PromptTableProjector:
         if table.headers:
             return [list(table.headers), *rows]
         return rows
+
+    @staticmethod
+    def _shared_table_strategy(
+        *,
+        chunk_type: str | None,
+        headers: list[str],
+        table_category: str | None,
+        table_shape: str | None,
+        rows: list[list[str]] | None,
+    ) -> str:
+        resolved, _ = resolve_table_type(
+            table_category=table_category,
+            table_shape=table_shape,
+            chunk_type=chunk_type,
+            headers=headers,
+            rows=rows,
+        )
+        return resolved.value

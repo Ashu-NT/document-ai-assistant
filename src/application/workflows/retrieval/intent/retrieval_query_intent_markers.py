@@ -158,6 +158,12 @@ TABLE_REQUEST_MARKERS: tuple[str, ...] = (
     "rows",
     "list",
 )
+CERTIFICATION_QUERY_MARKERS: tuple[str, ...] = (
+    "certificate",
+    "approval",
+    "iecex",
+    "atex",
+)
 IDENTIFIER_KEYWORD_MARKERS: tuple[str, ...] = (
     "serial number",
     "part number",
@@ -193,6 +199,23 @@ SPECIFICATION_TABLE_MARKERS: tuple[str, ...] = (
     "technical data",
     "datasheet",
     "operating limits",
+)
+SPECIFICATION_SETTING_MARKERS: tuple[str, ...] = (
+    "pressure",
+    "torque",
+    "flow",
+    "set",
+    "setting",
+    "adjust",
+    "optimis",
+    "optimiz",
+)
+INSTALLATION_PROCEDURE_MARKERS: tuple[str, ...] = (
+    "commission",
+    "installation",
+    "electrical connection",
+    "connect",
+    "objective",
 )
 TROUBLESHOOTING_MARKERS: tuple[str, ...] = (
     "troubleshoot",

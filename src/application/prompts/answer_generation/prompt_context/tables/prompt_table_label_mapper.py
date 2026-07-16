@@ -7,10 +7,10 @@ from src.application.workflows.question_answering.answer_context.tables.table_qu
 _PROMPT_LABELS: dict[TableQueryStrategy, str] = {
     TableQueryStrategy.MAINTENANCE_SCHEDULE_MATRIX: "maintenance_table",
     TableQueryStrategy.MAINTENANCE_SCHEDULE_TABLE: "maintenance_table",
-    TableQueryStrategy.PERFORMANCE_CURVE_MATRIX: "specification_table",
+    TableQueryStrategy.PERFORMANCE_CURVE_MATRIX: "performance_curve_table",
     TableQueryStrategy.SPECIFICATION_MATRIX: "specification_table",
-    TableQueryStrategy.TOC_TABLE: "general_table",
-    TableQueryStrategy.TROUBLESHOOTING_TABLE: "general_table",
+    TableQueryStrategy.TOC_TABLE: "toc_table",
+    TableQueryStrategy.TROUBLESHOOTING_TABLE: "troubleshooting_table",
     TableQueryStrategy.SPARE_PARTS_TABLE: "spare_parts_table",
     TableQueryStrategy.CERTIFICATION_TABLE: "certification_table",
     TableQueryStrategy.RECORD_TABLE: "general_table",
