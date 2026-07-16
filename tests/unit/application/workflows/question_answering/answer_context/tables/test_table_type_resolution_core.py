@@ -3,8 +3,10 @@ import pytest
 from src.application.prompts.answer_generation.prompt_context.models.prompt_source_view import (
     PromptSourceView,
 )
+from src.application.prompts.answer_generation.prompt_context.tables.prompt_table_label_mapper import (
+    prompt_table_label_for_strategy,
+)
 from src.application.prompts.answer_generation.prompt_context.tables.prompt_table_type_detector import (
-    _RESOLVED_TYPE_TO_PROMPT_LABEL,
     PromptTableTypeDetector,
 )
 from src.application.workflows.question_answering.answer_context.tables.answer_table_schema_inferer import (
@@ -49,7 +51,7 @@ def test_resolve_table_type_matches_both_adapters_for_every_category_and_shape_c
     )[0]
     assert answer_kind == _RESOLVED_TYPE_TO_ANSWER_KIND[resolved]
 
-    prompt_label = _RESOLVED_TYPE_TO_PROMPT_LABEL[resolved]
+    prompt_label = prompt_table_label_for_strategy(resolved)
     if prompt_label != "general_table":
         # A non-"general_table" mapping is returned immediately by the
         # detector without falling through to its residual heuristics, so
