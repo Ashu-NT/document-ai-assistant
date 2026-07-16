@@ -1,3 +1,6 @@
+from src.application.workflows.parsing.tables.families.logical_table_family_asset_composer import (
+    LogicalTableFamilyAssetComposer,
+)
 from src.application.workflows.parsing.tables.families.logical_table_family_lookup import (
     LogicalTableFamilyLookup,
 )
@@ -6,6 +9,7 @@ from src.application.workflows.parsing.tables.families.logical_table_family_row_
 )
 
 __all__ = [
+    "LogicalTableFamilyAssetComposer",
     "LogicalTableFamilyLookup",
     "LogicalTableFamilyRowMerger",
 ]

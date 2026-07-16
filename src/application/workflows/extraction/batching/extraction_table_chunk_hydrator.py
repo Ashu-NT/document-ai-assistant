@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import replace as dataclass_replace
 
 from src.application.workflows.parsing.tables.families import (
+    LogicalTableFamilyAssetComposer,
     LogicalTableFamilyLookup,
-    LogicalTableFamilyRowMerger,
 )
 from src.application.workflows.parsing.tables.structure import (
     TableStructureContextRenderer,
@@ -17,6 +17,7 @@ from src.domain.document import DocumentChunk
 
 _STRUCTURE_CONTEXT_RENDERER = TableStructureContextRenderer()
 _TABLE_PAYLOAD_RENDERER = ExtractionTablePayloadRenderer()
+_FAMILY_ASSET_COMPOSER = LogicalTableFamilyAssetComposer()
 
 
 def _table_text_with_structured_rows(
@@ -55,7 +56,6 @@ def hydrate_table_chunks(
     extraction model always sees complete table rows.
     """
     family_lookup = LogicalTableFamilyLookup.from_tables(tables)
-    row_merger = LogicalTableFamilyRowMerger()
     seen_group_keys: set[str] = set()
     hydrated: list[DocumentChunk] = []
     for chunk in chunks:
@@ -74,20 +74,21 @@ def hydrate_table_chunks(
         seen_group_keys.add(group_key)
 
         member_tables = family_lookup.members_for_table_ids(chunk.table_ids)
-        table_texts = [
-            _table_text_with_structured_rows(table, chunk_type=chunk.chunk_type)
-            for table in member_tables
-            if table.has_content()
-        ]
-        if not table_texts:
+        composed_table = _FAMILY_ASSET_COMPOSER.compose(
+            member_tables,
+            family_id=family_id,
+        )
+        if composed_table is None or not composed_table.has_content():
             hydrated.append(chunk)
             continue
 
-        merged_rows = row_merger.merge_tables(member_tables)
         hydrated.append(
             dataclass_replace(
                 chunk,
-                content="\n\n".join(table_texts),
+                content=_table_text_with_structured_rows(
+                    composed_table,
+                    chunk_type=chunk.chunk_type,
+                ),
                 table_ids=[table.table_id for table in member_tables],
                 logical_table_family_id=family_id,
                 table_category=chunk.table_category
@@ -108,9 +109,11 @@ def hydrate_table_chunks(
                     ),
                     None,
                 ),
-                table_row_start=1 if merged_rows and len(merged_rows) > 1 else None,
-                table_row_end=(len(merged_rows) - 1)
-                if merged_rows and len(merged_rows) > 1
+                table_row_start=1
+                if composed_table.rows and len(composed_table.rows) > 1
+                else None,
+                table_row_end=(len(composed_table.rows) - 1)
+                if composed_table.rows and len(composed_table.rows) > 1
                 else None,
             )
         )
