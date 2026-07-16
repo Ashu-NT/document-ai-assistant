@@ -289,6 +289,46 @@ def test_projector_normalizes_performance_curve_tables_into_typed_answer_tables(
     ]
 
 
+def test_projector_preserves_pre_normalized_performance_curve_tables() -> None:
+    projector = AnswerTableProjector()
+    tables = projector.build(
+        [
+            AnswerSource(
+                source_number=1,
+                chunk_id="chunk_curve_normalized",
+                chunk_type="technical_specification",
+                table_rows=[
+                    [
+                        "Pump type",
+                        "Motor power (kW)",
+                        "Motor power (HP)",
+                        "Curve metric",
+                        "Q m3/h 0 / Q l/min 0",
+                        "Q m3/h 1 / Q l/min 16.6",
+                        "Q m3/h 1.5 / Q l/min 25",
+                    ],
+                    ["MXV 25-220C", "3", "4", "H m", "228", "213", "202"],
+                ],
+                metadata={"table_category": "technical_data_table"},
+                table_shape="performance_curve_matrix",
+            )
+        ]
+    )
+
+    assert len(tables) == 1
+    assert tables[0].table_kind == "performance_curve_matrix"
+    assert tables[0].headers[3] == "Curve metric"
+    assert tables[0].column_roles == {
+        0: "series",
+        1: "descriptor",
+        2: "descriptor",
+        3: "curve_metric",
+        4: "curve_point",
+        5: "curve_point",
+        6: "curve_point",
+    }
+
+
 def test_projector_preserves_specification_matrix_shape_as_table_kind() -> None:
     projector = AnswerTableProjector()
     tables = projector.build(

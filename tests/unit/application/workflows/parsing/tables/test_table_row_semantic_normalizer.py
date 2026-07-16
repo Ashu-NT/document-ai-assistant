@@ -145,3 +145,33 @@ def test_normalize_rewrites_wrapped_specification_rows_via_key_value_normalizer(
         ["Weight", "120 kg"],
         ["Diameter", "250 mm"],
     ]
+
+
+def test_normalize_rewrites_performance_curve_rows_for_persistence() -> None:
+    table = TableAsset(
+        table_id="table_6",
+        document_id="doc_1",
+        markdown="curve",
+        table_category="technical_data_table",
+        rows=[
+            ["Pump type", "Motor power", "Motor power", "Q m3/h", "0", "1", "1.5"],
+            ["Pump type", "kW", "HP", "Q l/min", "0", "16.6", "25"],
+            ["MXV 25-220C", "3", "4", "H m", "228", "213", "202"],
+        ],
+    )
+
+    updated = TableRowSemanticNormalizer().normalize(table)
+
+    assert updated is True
+    assert table.rows == [
+        [
+            "Pump type",
+            "Motor power (kW)",
+            "Motor power (HP)",
+            "Curve metric",
+            "Q m3/h 0 / Q l/min 0",
+            "Q m3/h 1 / Q l/min 16.6",
+            "Q m3/h 1.5 / Q l/min 25",
+        ],
+        ["MXV 25-220C", "3", "4", "H m", "228", "213", "202"],
+    ]

@@ -59,28 +59,32 @@ class LogicalTableFamilyRowMerger:
         row_groups: Sequence[Sequence[Sequence[str]]],
     ) -> list[list[str]] | None:
         merged_rows: list[list[str]] = []
-        merged_header_signature: tuple[str, ...] | None = None
+        merged_header_block_signature: tuple[tuple[str, ...], ...] | None = None
 
         for rows in row_groups:
-            cleaned_rows = []
-            for row in rows:
-                cleaned_row = _clean_row(row)
-                if any(cleaned_row):
-                    cleaned_rows.append(cleaned_row)
+            cleaned_rows = _clean_rows(rows)
             if not cleaned_rows:
                 continue
 
             if not merged_rows:
                 merged_rows.extend(cleaned_rows)
-                merged_header_signature = _row_signature(cleaned_rows[0])
+                merged_header_row_count = self._header_row_count(cleaned_rows)
+                merged_header_block_signature = self._header_block_signature(
+                    cleaned_rows,
+                    header_row_count=merged_header_row_count,
+                )
                 continue
 
-            current_header_signature = _row_signature(cleaned_rows[0])
+            current_header_row_count = self._header_row_count(cleaned_rows)
+            current_header_block_signature = self._header_block_signature(
+                cleaned_rows,
+                header_row_count=current_header_row_count,
+            )
             if (
-                merged_header_signature is not None
-                and current_header_signature == merged_header_signature
+                merged_header_block_signature is not None
+                and current_header_block_signature == merged_header_block_signature
             ):
-                merged_rows.extend(cleaned_rows[1:])
+                merged_rows.extend(cleaned_rows[current_header_row_count:])
                 continue
 
             merged_rows.extend(cleaned_rows)
@@ -99,6 +103,26 @@ class LogicalTableFamilyRowMerger:
         if len(cleaned_rows) <= header_row_count:
             return []
         return cleaned_rows[header_row_count:]
+
+    def _header_row_count(self, rows: list[list[str]]) -> int:
+        temporary_table = TableAsset(
+            table_id="logical_table_family_merge",
+            document_id="logical_table_family_merge",
+            markdown="",
+            rows=rows,
+        )
+        return min(
+            max(1, self.header_path_builder.resolve_header_row_count(temporary_table)),
+            len(rows),
+        )
+
+    @staticmethod
+    def _header_block_signature(
+        rows: list[list[str]],
+        *,
+        header_row_count: int,
+    ) -> tuple[tuple[str, ...], ...]:
+        return tuple(_row_signature(row) for row in rows[:header_row_count])
 
 
 def _clean_row(row: Sequence[object]) -> list[str]:

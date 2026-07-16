@@ -199,3 +199,67 @@ def test_hydrate_merges_rows_across_logical_table_family() -> None:
         ["Replace gasket", "x"],
     ]
     assert "Replace gasket" in hydrated[0].content
+
+
+def test_hydrate_drops_repeated_multi_row_headers_when_family_pages_repeat_them() -> None:
+    first = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="technical data page 1",
+        rows=[
+            ["Technical data", "Technical data", "Technical data"],
+            ["Component", "Manufacturer", "Serial number"],
+            ["Pump", "Calpeda", "SN-001"],
+        ],
+        logical_table_family_id="table_family_002",
+        family_index=1,
+        family_total=2,
+        table_category="technical_data_table",
+        table_shape="record_table",
+        header_paths=[["component"], ["manufacturer"], ["serial number"]],
+    )
+    second = TableAsset(
+        table_id="table_002",
+        document_id="doc_001",
+        markdown="technical data page 2",
+        rows=[
+            ["Technical data", "Technical data", "Technical data"],
+            ["Component", "Manufacturer", "Serial number"],
+            ["Motor", "ABB", "SN-002"],
+        ],
+        logical_table_family_id="table_family_002",
+        family_index=2,
+        family_total=2,
+        table_category="technical_data_table",
+        table_shape="record_table",
+        header_paths=[["component"], ["manufacturer"], ["serial number"]],
+    )
+    graph = DocumentGraph(document=_make_document())
+    graph.tables[first.table_id] = first
+    graph.tables[second.table_id] = second
+    graph.add_chunk(
+        DocumentChunk(
+            chunk_id="chunk_001",
+            document_id="doc_001",
+            section_id=None,
+            content=first.markdown,
+            table_ids=[first.table_id],
+            logical_table_family_id="table_family_002",
+            table_category="technical_data_table",
+        )
+    )
+
+    hydrated = TableEvidenceHydrator().hydrate(
+        chunks=[_make_retrieved_chunk(content=first.markdown)],
+        graphs_by_document_id={"doc_001": graph},
+    )
+
+    assert json.loads(hydrated[0].metadata["table_rows_json"]) == [
+        ["Technical data", "Technical data", "Technical data"],
+        ["Component", "Manufacturer", "Serial number"],
+        ["Pump", "Calpeda", "SN-001"],
+        ["Motor", "ABB", "SN-002"],
+    ]
+    assert "Row 2: Component=Motor | Manufacturer=ABB | Serial number=SN-002" in hydrated[
+        0
+    ].content

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from src.domain.assets.table_rows.performance_curve_matrix_detector import (
+    _looks_numericish,
+)
 from src.domain.assets.table_rows.compact_schedule_matrix_canonicalizer import (
     CompactScheduleMatrixCanonicalizer,
 )
@@ -34,6 +37,8 @@ class TableRowCanonicalizer:
         )
         if compact_schedule_rows is not None:
             cleaned_rows = compact_schedule_rows
+        if self._looks_pre_normalized_performance_curve_rows(cleaned_rows):
+            return cleaned_rows
         umbrella_header_rows = self._canonicalize_umbrella_header_rows(cleaned_rows)
         if umbrella_header_rows is not None:
             cleaned_rows = umbrella_header_rows
@@ -144,3 +149,25 @@ class TableRowCanonicalizer:
             return True
         normalized = {cell.casefold() for cell in non_empty_cells if cell}
         return len(normalized) == 1
+
+    @staticmethod
+    def _looks_pre_normalized_performance_curve_rows(rows: list[list[str]]) -> bool:
+        if len(rows) < 2:
+            return False
+        headers = [normalize_cell(cell) for cell in rows[0]]
+        try:
+            metric_index = next(
+                index
+                for index, header in enumerate(headers)
+                if header.casefold() == "curve metric"
+            )
+        except StopIteration:
+            return False
+        if metric_index < 1 or len(headers) - metric_index - 1 < 3:
+            return False
+        sample_row = rows[1]
+        data_points = [
+            normalize_cell(sample_row[index]) if index < len(sample_row) else ""
+            for index in range(metric_index + 1, len(headers))
+        ]
+        return sum(1 for value in data_points if _looks_numericish(value)) >= 3

@@ -174,6 +174,34 @@ def test_table_asset_to_structured_row_text_normalizes_performance_curve_tables(
     )
 
 
+def test_table_asset_to_structured_row_text_preserves_pre_normalized_performance_curve_tables() -> None:
+    table = TableAsset(
+        table_id="table_006b",
+        document_id="doc_001",
+        markdown="unused",
+        rows=[
+            [
+                "Pump type",
+                "Motor power (kW)",
+                "Motor power (HP)",
+                "Curve metric",
+                "Q m3/h 0 / Q l/min 0",
+                "Q m3/h 1 / Q l/min 16.6",
+                "Q m3/h 1.5 / Q l/min 25",
+            ],
+            ["MXV 25-220C", "3", "4", "H m", "228", "213", "202"],
+        ],
+    )
+
+    assert table.to_structured_row_text() == (
+        "Row 1: Pump type=MXV 25-220C | Motor power (kW)=3 | "
+        "Motor power (HP)=4 | Curve metric=H m | "
+        "Q m3/h 0 / Q l/min 0=228 | "
+        "Q m3/h 1 / Q l/min 16.6=213 | "
+        "Q m3/h 1.5 / Q l/min 25=202"
+    )
+
+
 def test_table_asset_to_structured_row_text_normalizes_spare_parts_tables() -> None:
     table = TableAsset(
         table_id="table_007",

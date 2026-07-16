@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from src.domain.assets.table_rows.performance_curve_matrix_detector import (
     PerformanceCurveMatrixDetector,
     PerformanceCurveMatrixSpec,
+    _looks_numericish,
 )
 from src.domain.assets.table_rows.table_row_patterns import normalize_cell
 
@@ -29,7 +30,7 @@ class PerformanceCurveMatrixNormalizer:
     ) -> NormalizedPerformanceCurveMatrix | None:
         spec = self.detector.detect(rows)
         if spec is None:
-            return None
+            return self._normalize_pre_normalized_rows(rows)
 
         first_header = rows[0]
         second_header = rows[1]
@@ -46,6 +47,41 @@ class PerformanceCurveMatrixNormalizer:
             headers=headers,
             rows=body_rows,
             column_roles=self._build_column_roles(spec, len(headers)),
+        )
+
+    def _normalize_pre_normalized_rows(
+        self,
+        rows: list[list[str]],
+    ) -> NormalizedPerformanceCurveMatrix | None:
+        if len(rows) < 2:
+            return None
+
+        headers = [_cell(rows[0], index) for index in range(len(rows[0]))]
+        metric_index = self._metric_index(headers)
+        if metric_index is None:
+            return None
+        if metric_index < 1 or len(headers) - metric_index - 1 < 3:
+            return None
+
+        body_rows = [list(row) for row in rows[1:] if any(_cell(row, i) for i in range(len(row)))]
+        if not body_rows:
+            return None
+        sample_row = body_rows[0]
+        data_points = [
+            _cell(sample_row, column_index)
+            for column_index in range(metric_index + 1, len(headers))
+        ]
+        if sum(1 for value in data_points if _looks_numericish(value)) < 3:
+            return None
+
+        descriptor_indexes = tuple(range(metric_index))
+        return NormalizedPerformanceCurveMatrix(
+            headers=headers,
+            rows=body_rows,
+            column_roles=self._build_pre_normalized_column_roles(
+                metric_index=metric_index,
+                header_count=len(headers),
+            ),
         )
 
     def _build_headers(
@@ -116,6 +152,22 @@ class PerformanceCurveMatrixNormalizer:
         return roles
 
     @staticmethod
+    def _build_pre_normalized_column_roles(
+        *,
+        metric_index: int,
+        header_count: int,
+    ) -> dict[int, str]:
+        roles: dict[int, str] = {}
+        if metric_index >= 1:
+            roles[0] = "series"
+        for column_index in range(1, metric_index):
+            roles[column_index] = "descriptor"
+        roles[metric_index] = "curve_metric"
+        for column_index in range(metric_index + 1, header_count):
+            roles[column_index] = "curve_point"
+        return roles
+
+    @staticmethod
     def _merge_descriptor_header(primary: str, secondary: str) -> str:
         if not primary and not secondary:
             return "Descriptor"
@@ -144,6 +196,13 @@ class PerformanceCurveMatrixNormalizer:
         if primary_label and secondary_label and primary_label != secondary_label:
             return f"{primary_label} / {secondary_label}"
         return primary_label or secondary_label or "Curve value"
+
+    @staticmethod
+    def _metric_index(headers: list[str]) -> int | None:
+        for index, header in enumerate(headers):
+            if header.casefold() == "curve metric":
+                return index
+        return None
 
 
 def _cell(row: list[str], index: int) -> str:

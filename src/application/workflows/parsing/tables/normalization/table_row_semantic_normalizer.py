@@ -7,6 +7,7 @@ from src.domain.assets.table_rows import (
     GenericWrappedRowTableNormalizer,
     MaintenanceScheduleTableNormalizer,
     NormalizedTableRows,
+    PerformanceCurveTableNormalizer,
     SparePartsTableNormalizer,
     SpecificationKeyValueTableNormalizer,
     TroubleshootingTableNormalizer,
@@ -22,6 +23,7 @@ class TableRowSemanticNormalizer:
         maintenance_schedule_normalizer: (
             MaintenanceScheduleTableNormalizer | None
         ) = None,
+        performance_curve_normalizer: PerformanceCurveTableNormalizer | None = None,
         specification_key_value_normalizer: (
             SpecificationKeyValueTableNormalizer | None
         ) = None,
@@ -40,6 +42,9 @@ class TableRowSemanticNormalizer:
         )
         self.maintenance_schedule_normalizer = (
             maintenance_schedule_normalizer or MaintenanceScheduleTableNormalizer()
+        )
+        self.performance_curve_normalizer = (
+            performance_curve_normalizer or PerformanceCurveTableNormalizer()
         )
         self.specification_key_value_normalizer = (
             specification_key_value_normalizer
@@ -122,6 +127,7 @@ class TableRowSemanticNormalizer:
             self.spare_parts_normalizer,
             self.troubleshooting_normalizer,
             self.maintenance_schedule_normalizer,
+            self.performance_curve_normalizer,
             self.specification_key_value_normalizer,
             self.certification_particulars_normalizer,
             self.generic_wrapped_row_normalizer,

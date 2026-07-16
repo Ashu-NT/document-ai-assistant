@@ -13,6 +13,9 @@ from src.domain.assets.table_rows.normalized_table_rows import (
 from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
 )
+from src.domain.assets.table_rows.performance_curve_table_normalizer import (
+    PerformanceCurveTableNormalizer,
+)
 from src.domain.assets.table_rows.spare_parts_table_normalizer import (
     SparePartsTableNormalizer,
 )
@@ -35,6 +38,7 @@ __all__ = [
     "MaintenanceScheduleTableNormalizer",
     "NormalizedTableRows",
     "PerformanceCurveMatrixNormalizer",
+    "PerformanceCurveTableNormalizer",
     "SparePartsTableNormalizer",
     "SpecificationKeyValueTableNormalizer",
     "StructuredRowRenderer",

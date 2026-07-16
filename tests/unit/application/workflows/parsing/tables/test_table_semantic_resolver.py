@@ -170,3 +170,49 @@ def test_table_semantic_resolver_persists_normalized_troubleshooting_rows() -> N
     assert parser_extra["table_row_normalization_version"] == "1"
     assert parser_extra["row_count"] == 2
     assert parser_extra["column_count"] == 3
+
+
+def test_table_semantic_resolver_persists_normalized_performance_curve_rows() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.tables["table_4"] = TableAsset(
+        table_id="table_4",
+        document_id="doc_001",
+        markdown="curve",
+        rows=[
+            ["Pump type", "Motor power", "Motor power", "Q m3/h", "0", "1", "1.5"],
+            ["Pump type", "kW", "HP", "Q l/min", "0", "16.6", "25"],
+            ["MXV 25-220C", "3", "4", "H m", "228", "213", "202"],
+        ],
+    )
+    graph.add_element(
+        CanonicalElement(
+            element_id="el_table_4",
+            document_id="doc_001",
+            element_type=ElementType.TABLE,
+            text="curve",
+            table_id="table_4",
+            source=SourceLocation(page_start=30, page_end=30),
+            parser_metadata=ParserMetadata(parser_name="docling", extra={}),
+        )
+    )
+
+    TableSemanticResolver().resolve(graph)
+
+    table = graph.tables["table_4"]
+    parser_extra = graph.elements["el_table_4"].parser_metadata.extra
+
+    assert table.table_shape == "performance_curve_matrix"
+    assert table.rows == [
+        [
+            "Pump type",
+            "Motor power (kW)",
+            "Motor power (HP)",
+            "Curve metric",
+            "Q m3/h 0 / Q l/min 0",
+            "Q m3/h 1 / Q l/min 16.6",
+            "Q m3/h 1.5 / Q l/min 25",
+        ],
+        ["MXV 25-220C", "3", "4", "H m", "228", "213", "202"],
+    ]
+    assert parser_extra["table_rows"] == table.rows
+    assert parser_extra["table_row_normalization_version"] == "1"
