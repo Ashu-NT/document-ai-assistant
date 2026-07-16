@@ -8,6 +8,7 @@ from src.application.workflows.retrieval.intent.retrieval_query_intent_markers i
     SPECIFICATION_TABLE_MARKERS,
     TABLE_REQUEST_MARKERS,
 )
+from src.application.workflows.retrieval.table_focus import is_table_focused_query
 from src.application.workflows.shared.maintenance_signal_detection import (
     MAINTENANCE_INTERVAL_MARKERS,
 )
@@ -26,7 +27,7 @@ def table_query_evidence_score(
     chunk: RetrievedChunk,
     role: str,
 ) -> float:
-    if not _is_table_focused_query(intent=intent, query=query, query_text=query_text):
+    if not is_table_focused_query(query=query, intent=intent):
         return 0.0
 
     has_direct_table_evidence = _has_direct_table_evidence(chunk)
@@ -81,42 +82,6 @@ def table_query_evidence_score(
         score += 4.0
 
     return score
-
-
-def _is_table_focused_query(
-    *,
-    intent: RetrievalQueryIntent,
-    query: RetrievalQuery,
-    query_text: str,
-) -> bool:
-    if intent == RetrievalQueryIntent.TABLE:
-        return True
-    if intent == RetrievalQueryIntent.MAINTENANCE:
-        return _has_any_marker(query_text, MAINTENANCE_INTERVAL_MARKERS)
-    if intent == RetrievalQueryIntent.SPECIFICATION:
-        return _has_any_marker(query_text, SPECIFICATION_TABLE_MARKERS)
-    if intent == RetrievalQueryIntent.IDENTIFIER:
-        return _has_any_marker(query_text, IDENTIFIER_TABLE_MARKERS)
-    if intent == RetrievalQueryIntent.TROUBLESHOOTING:
-        return _has_any_marker(query_text, TABLE_REQUEST_MARKERS)
-
-    return bool(
-        query.chunk_types
-        and any(
-            chunk_type
-            in {
-                ChunkType.SPARE_PARTS_TABLE,
-                ChunkType.TECHNICAL_SPECIFICATION,
-                ChunkType.CERTIFICATION_INFO,
-                ChunkType.MAINTENANCE_INTERVAL,
-                ChunkType.TROUBLESHOOTING,
-            }
-            for chunk_type in query.chunk_types
-        )
-        and _has_any_marker(query_text, TABLE_REQUEST_MARKERS)
-    )
-
-
 def _has_direct_table_evidence(chunk: RetrievedChunk) -> bool:
     if chunk.chunk_type == ChunkType.SPARE_PARTS_TABLE:
         return True

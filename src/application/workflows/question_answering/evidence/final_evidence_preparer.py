@@ -2,6 +2,9 @@ from src.application.services.document import DocumentLookupService
 from src.application.workflows.question_answering.evidence.table_evidence_hydrator import (
     TableEvidenceHydrator,
 )
+from src.application.workflows.question_answering.evidence.table_focused_evidence_pruner import (
+    TableFocusedEvidencePruner,
+)
 from src.application.workflows.retrieval.deduplication.retrieved_chunk_deduplicator import (
     RetrievedChunkDeduplicator,
 )
@@ -16,12 +19,16 @@ class FinalEvidencePreparer:
         document_lookup_service: DocumentLookupService | None = None,
         table_evidence_hydrator: TableEvidenceHydrator | None = None,
         deduplicator: RetrievedChunkDeduplicator | None = None,
+        table_focused_evidence_pruner: TableFocusedEvidencePruner | None = None,
     ) -> None:
         self._document_lookup_service = document_lookup_service
         self._table_evidence_hydrator = (
             table_evidence_hydrator or TableEvidenceHydrator()
         )
         self._deduplicator = deduplicator or RetrievedChunkDeduplicator()
+        self._table_focused_evidence_pruner = (
+            table_focused_evidence_pruner or TableFocusedEvidencePruner()
+        )
 
     def prepare(
         self,
@@ -40,10 +47,14 @@ class FinalEvidencePreparer:
                 graphs_by_document_id=graphs_by_document_id,
             )
 
-        return self._deduplicator.deduplicate(
+        prepared_chunks = self._deduplicator.deduplicate(
             query=query,
             chunks=prepared_chunks,
         ).chunks
+        return self._table_focused_evidence_pruner.prune(
+            query=query,
+            chunks=prepared_chunks,
+        )
 
     def _load_document_graphs(
         self,
