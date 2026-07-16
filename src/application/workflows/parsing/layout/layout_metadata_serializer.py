@@ -14,8 +14,10 @@ class LayoutMetadataSerializer:
     ) -> dict[str, dict[str, object]]:
         serialized: dict[str, dict[str, object]] = {}
         for analysis in analyses:
+            page_order = 0
             for region in analysis.regions:
                 for element_ref in region.element_refs:
+                    page_order += 1
                     payload: dict[str, object] = {
                         "page_width": analysis.page_width,
                         "page_height": analysis.page_height,
@@ -26,6 +28,12 @@ class LayoutMetadataSerializer:
                         "layout_reading_order": region.reading_order_by_element_ref.get(
                             element_ref
                         ),
+                        # Flattened, page-global position across all regions in
+                        # their already-resolved traversal order (regions sorted
+                        # by top_y/rank, elements sorted within each region) --
+                        # unlike layout_reading_order (local to one region), this
+                        # is directly comparable across lanes on the same page.
+                        "layout_page_order": page_order,
                         "layout_model_version": self.VERSION,
                     }
                     if analysis.is_front_matter:

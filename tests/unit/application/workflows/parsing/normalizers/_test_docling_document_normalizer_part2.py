@@ -224,6 +224,90 @@ def test_normalizer_attaches_layout_metadata_to_canonical_elements() -> None:
     assert right["layout_region_id"] == "page_1:lane_2"
 
 
+def test_normalizer_reorders_row_major_two_column_page_into_column_major_order() -> None:
+    # Docling's native order here interleaves left/right roughly by paint
+    # position (row-major: left-top, right-top, left-bottom, right-bottom)
+    # rather than respecting the column boundary -- the exact failure mode
+    # the layout-lane reordering fix is meant to correct.
+    raw_document = FakeRawDocument(
+        [
+            FakeDoclingItem(
+                label="text",
+                text="Left column top.",
+                self_ref="#/texts/1",
+                prov=[FakeProvenance(1, FakeBBox(40, 100, 420, 180))],
+            ),
+            FakeDoclingItem(
+                label="text",
+                text="Right column top.",
+                self_ref="#/texts/2",
+                prov=[FakeProvenance(1, FakeBBox(560, 110, 940, 190))],
+            ),
+            FakeDoclingItem(
+                label="text",
+                text="Left column bottom.",
+                self_ref="#/texts/3",
+                prov=[FakeProvenance(1, FakeBBox(55, 220, 430, 300))],
+            ),
+            FakeDoclingItem(
+                label="text",
+                text="Right column bottom.",
+                self_ref="#/texts/4",
+                prov=[FakeProvenance(1, FakeBBox(575, 230, 950, 310))],
+            ),
+        ],
+        pages={
+            1: SimpleNamespace(size=SimpleNamespace(width=1000, height=1400)),
+        },
+    )
+
+    normalized = DoclingDocumentNormalizer().normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_002",
+    )
+
+    assert [element.text for element in normalized] == [
+        "Left column top.",
+        "Left column bottom.",
+        "Right column top.",
+        "Right column bottom.",
+    ]
+    assert [element.order_index for element in normalized] == [1, 2, 3, 4]
+
+
+def test_normalizer_leaves_single_column_page_order_untouched() -> None:
+    raw_document = FakeRawDocument(
+        [
+            FakeDoclingItem(
+                label="text",
+                text="Second paragraph.",
+                self_ref="#/texts/1",
+                prov=[FakeProvenance(1, FakeBBox(40, 220, 940, 300))],
+            ),
+            FakeDoclingItem(
+                label="text",
+                text="First paragraph.",
+                self_ref="#/texts/2",
+                prov=[FakeProvenance(1, FakeBBox(40, 100, 940, 180))],
+            ),
+        ],
+        pages={
+            1: SimpleNamespace(size=SimpleNamespace(width=1000, height=1400)),
+        },
+    )
+
+    normalized = DoclingDocumentNormalizer().normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_002",
+    )
+
+    assert [element.text for element in normalized] == [
+        "Second paragraph.",
+        "First paragraph.",
+    ]
+    assert [element.order_index for element in normalized] == [1, 2]
+
+
 def test_normalizer_persists_parallel_table_stream_metadata_for_sparse_side_by_side_tables() -> None:
     raw_document = FakeRawDocument(
         [

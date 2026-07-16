@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from src.application.workflows.parsing.normalizers.docling_caption_extractor import (
     DoclingCaptionExtractor,
 )
@@ -130,7 +132,7 @@ class DoclingDocumentNormalizer:
                     )
                 )
 
-            return normalized
+            return self._apply_multi_column_reading_order(normalized)
         except DocumentNormalizationError:
             raise
         except Exception as exc:
@@ -141,6 +143,48 @@ class DoclingDocumentNormalizer:
                     "parser_name": raw_parsed_document.parser_name,
                 },
             ) from exc
+
+    @staticmethod
+    def _apply_multi_column_reading_order(
+        elements: list[CanonicalElement],
+    ) -> list[CanonicalElement]:
+        """Re-sequences same-page elements into layout-resolved reading
+        order (left lane fully before right lane) wherever the page layout
+        analyzer detected genuine multi-column content. Docling's native
+        item order does not follow column boundaries, so on a two-column
+        page it can interleave left/right text roughly by paint position.
+        Single-column pages -- the overwhelming majority -- are left
+        byte-for-byte in their original order: a page is only touched here
+        if at least one of its elements carries layout_lane_count > 1.
+        """
+        positions_by_page: dict[int, list[int]] = defaultdict(list)
+        for position, element in enumerate(elements):
+            if element.page_start is not None:
+                positions_by_page[element.page_start].append(position)
+
+        reordered = list(elements)
+        for positions in positions_by_page.values():
+            if len(positions) < 2:
+                continue
+            entries = [(position, elements[position]) for position in positions]
+            if not any(
+                (entry_element.metadata.get("layout_lane_count") or 1) > 1
+                for _, entry_element in entries
+            ):
+                continue
+            entries.sort(
+                key=lambda entry: (
+                    entry[1].metadata.get("layout_page_order")
+                    if entry[1].metadata.get("layout_page_order") is not None
+                    else entry[0]
+                )
+            )
+            for position, (_, element) in zip(positions, entries):
+                reordered[position] = element
+
+        for index, element in enumerate(reordered, start=1):
+            element.order_index = index
+        return reordered
 
     @staticmethod
     def _extract_page_lane_count(
