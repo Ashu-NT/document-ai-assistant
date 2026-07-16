@@ -115,6 +115,10 @@ class _FakeExtractionService:
             )
         ]
 
+    def search_spare_parts(self, query: str, document_id: str | None = None):
+        self.search_calls.append(("spare_part", query, document_id))
+        return []
+
     def list_spare_parts(self, document_id: str | None = None):
         self.list_calls.append(("spare_part", document_id))
         return [
@@ -251,6 +255,42 @@ def test_retrieve_structured_entities_tool_requires_document_id_or_query_text() 
 
     assert result.success is False
     assert result.error_code == "invalid_request"
+
+def test_retrieve_structured_entities_tool_falls_back_to_list_when_search_finds_nothing() -> (
+    None
+):
+    service = _FakeExtractionService()
+    tool = RetrieveStructuredEntitiesTool(service)
+
+    result = tool.run(
+        RetrieveStructuredEntitiesRequest(
+            entity_type="spare_part",
+            document_id="doc_001",
+            query_text="does not match anything",
+        )
+    )
+
+    assert result.success is True
+    assert service.search_calls == [("spare_part", "does not match anything", "doc_001")]
+    assert service.list_calls == [("spare_part", "doc_001")]
+    assert result.data["items"][0]["part_number"] == "HP-001"
+
+def test_retrieve_structured_entities_tool_does_not_fall_back_without_document_id() -> (
+    None
+):
+    service = _FakeExtractionService()
+    tool = RetrieveStructuredEntitiesTool(service)
+
+    result = tool.run(
+        RetrieveStructuredEntitiesRequest(
+            entity_type="spare_part",
+            query_text="does not match anything",
+        )
+    )
+
+    assert result.success is True
+    assert result.data["items"] == []
+    assert not any(call[0] == "spare_part" for call in service.list_calls)
 
 def test_retrieve_structured_entities_tool_truncates_to_top_k() -> None:
     service = _FakeExtractionService()

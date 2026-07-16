@@ -131,6 +131,8 @@ class StructuredEvidenceResolver:
                         ExtractionPromptType.PROCEDURE,
                         ExtractionPromptType.TROUBLESHOOTING,
                         ExtractionPromptType.SAFETY_WARNING,
+                        ExtractionPromptType.SPARE_PART,
+                        ExtractionPromptType.SPECIFICATION,
                     }
                 ),
             )

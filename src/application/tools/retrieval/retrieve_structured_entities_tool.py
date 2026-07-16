@@ -83,6 +83,7 @@ class RetrieveStructuredEntitiesTool:
                 query_text=query_text,
                 document_id=document_id,
                 top_k=None,
+                fallback_to_list=document_id is not None,
             )
         except ApplicationError as exc:
             return application_error_result(exc, metadata=self.metadata)

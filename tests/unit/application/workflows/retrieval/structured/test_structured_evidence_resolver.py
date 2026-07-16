@@ -64,6 +64,7 @@ class FakeEntityResolver:
         return {
             ExtractionPromptType.MANUFACTURER: "manufacturer_id",
             ExtractionPromptType.SPARE_PART: "spare_part_id",
+            ExtractionPromptType.SPECIFICATION: "specification_id",
         }[entity_type]
 
 
@@ -197,6 +198,61 @@ def test_resolve_deduplicates_identifiers_with_same_normalized_value(
     bundle = resolver.resolve(query)
 
     assert len(bundle.identifiers) == 1
+
+
+def test_resolve_enables_fallback_to_list_for_spare_part_and_specification(
+    document_id,
+) -> None:
+    entity_resolver = FakeEntityResolver()
+    resolver = StructuredEvidenceResolver(
+        document_lookup_service=FakeDocumentLookupService(),
+        entity_resolver=entity_resolver,
+        query_analyzer=FakeQueryAnalyzer(
+            StructuredEvidenceQueryAnalysis(
+                entity_types=[
+                    ExtractionPromptType.SPARE_PART,
+                    ExtractionPromptType.SPECIFICATION,
+                ]
+            )
+        ),
+    )
+    query = RetrievalQuery(
+        query_id="query_004",
+        query_text="list the spare parts",
+        document_id=document_id,
+    )
+
+    resolver.resolve(query)
+
+    fallback_flags = {
+        entity_type: fallback_to_list
+        for entity_type, _, _, _, fallback_to_list in entity_resolver.resolve_calls
+    }
+    assert fallback_flags[ExtractionPromptType.SPARE_PART] is True
+    assert fallback_flags[ExtractionPromptType.SPECIFICATION] is True
+
+
+def test_resolve_does_not_enable_fallback_to_list_without_document_id() -> None:
+    entity_resolver = FakeEntityResolver()
+    resolver = StructuredEvidenceResolver(
+        document_lookup_service=FakeDocumentLookupService(),
+        entity_resolver=entity_resolver,
+        query_analyzer=FakeQueryAnalyzer(
+            StructuredEvidenceQueryAnalysis(
+                entity_types=[ExtractionPromptType.SPARE_PART]
+            )
+        ),
+    )
+    query = RetrievalQuery(
+        query_id="query_005",
+        query_text="list the spare parts",
+        document_id=None,
+    )
+
+    resolver.resolve(query)
+
+    _, _, _, _, fallback_to_list = entity_resolver.resolve_calls[0]
+    assert fallback_to_list is False
 
 
 def test_resolve_detail_entities_returns_empty_when_no_detail_entity_type() -> None:
