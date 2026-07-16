@@ -106,6 +106,35 @@ def test_classify_detects_toc_table_from_item_label() -> None:
     assert confidence >= 0.99
 
 
+def test_classify_detects_toc_table_from_contents_heading_without_item_label() -> None:
+    category, confidence = TableSemanticClassifier().classify(
+        table=_make_table([["1", "Introduction", "2"]]),
+        section_path=["Front Matter", "Table of Contents"],
+    )
+
+    assert category == TableCategory.TOC_TABLE
+    assert confidence >= 0.99
+
+
+def test_classify_does_not_misclassify_spec_table_mentioning_contents_as_toc() -> None:
+    # Regression guard for a real bug: bare "contents" used to be checked
+    # against the table's own body/header/caption text too, so a spec table
+    # with a "Tank Contents"/"Oil Contents" row would misfile as TOC_TABLE.
+    category, confidence = TableSemanticClassifier().classify(
+        table=_make_table(
+            [
+                ["Tank Contents", "1,200L"],
+                ["Oil Contents", "5L"],
+                ["Voltage", "400V 50Hz"],
+            ]
+        ),
+        section_path=["Safety", "Warnings"],
+    )
+
+    assert category == TableCategory.TECHNICAL_DATA_TABLE
+    assert confidence >= 0.85
+
+
 def test_classify_detects_schedule_matrix_with_reference_columns() -> None:
     category, confidence = TableSemanticClassifier().classify(
         table=_make_table(

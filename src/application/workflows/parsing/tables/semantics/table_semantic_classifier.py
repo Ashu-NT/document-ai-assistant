@@ -131,7 +131,12 @@ class TableSemanticClassifier:
         if (
             item_label == "document_index"
             or self.signal_matcher.contains(fallback_text, "table of contents")
-            or self.signal_matcher.contains(fallback_text, "contents")
+            # Bare "contents" is scoped to the section heading path only, not
+            # the table's own body/caption text -- a real TOC lives under a
+            # heading literally titled "Contents"/"Index", whereas the word
+            # shows up incidentally in plenty of real spec/datasheet tables
+            # ("oil contents", "tank contents", "package contents").
+            or self.signal_matcher.contains(section_text, "contents")
         ):
             return TableCategory.TOC_TABLE, 0.99
         if self.matrix_detector.is_maintenance_interval_matrix(table.rows):
