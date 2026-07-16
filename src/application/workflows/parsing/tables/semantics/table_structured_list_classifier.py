@@ -68,6 +68,35 @@ class TableStructuredListClassifier:
             )
         )
 
+    def has_strong_spare_parts_anchor(
+        self,
+        *,
+        headers: list[str],
+        labels: list[str],
+        direct_text: str,
+        section_text: str,
+    ) -> bool:
+        header_text = self.signal_matcher.normalized_text(*headers)
+        label_text = self.signal_matcher.normalized_text(*labels)
+        anchor_text = self.signal_matcher.normalized_text(
+            header_text,
+            label_text,
+            direct_text,
+        )
+        if self.signal_matcher.count_unique(
+            anchor_text,
+            ("spare part", "denomination", "service package"),
+        ) >= 1:
+            return True
+        primary_header_hits = self.signal_matcher.count_unique(
+            header_text,
+            ("qty", "quantity", "position", "position no"),
+        )
+        return primary_header_hits >= 2 and (
+            self.signal_matcher.contains(section_text, "spare parts")
+            or self.signal_matcher.contains(section_text, "spare parts list")
+        )
+
     def looks_like_identifier_table(
         self,
         *,

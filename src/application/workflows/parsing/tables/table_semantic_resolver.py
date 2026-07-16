@@ -38,12 +38,14 @@ class TableSemanticResolver:
                 if section is not None and section.normalized_section_path
                 else parser_extra.get("resolved_section_path") or []
             )
+            structure_summary = self.structure_summary_builder.build(table)
             category, confidence = self.classifier.classify(
                 table=table,
                 caption=table.metadata.caption,
                 nearby_text=table.metadata.nearby_text,
                 section_path=section_path,
                 item_label=parser_extra.get("item_label"),
+                structure_summary=structure_summary,
             )
             table.table_category = category.value
             table.table_category_confidence = confidence
@@ -55,7 +57,6 @@ class TableSemanticResolver:
             )
             table.signals = frozenset(signal.value for signal in signals)
             rows_normalized = self.row_normalizer.normalize(table)
-            structure_summary = self.structure_summary_builder.build(table)
             if structure_summary is not None:
                 table.table_shape = structure_summary.table_shape.value
                 table.table_structure_quality = structure_summary.quality_score

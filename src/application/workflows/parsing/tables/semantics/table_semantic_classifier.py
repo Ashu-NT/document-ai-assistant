@@ -12,6 +12,9 @@ from src.application.workflows.parsing.tables.semantics.table_semantic_rule_eval
 from src.application.workflows.parsing.tables.semantics.table_specification_rule_evaluator import (
     TableSpecificationRuleEvaluator,
 )
+from src.application.workflows.parsing.tables.semantics.table_signal_collector import (
+    TableSignalCollector,
+)
 from src.application.workflows.parsing.tables.semantics.table_structured_list_classifier import (
     TableStructuredListClassifier,
 )
@@ -23,7 +26,9 @@ from src.domain.assets.table_rows.table_row_canonicalizer import (
 )
 from src.domain.assets import TableAsset
 from src.application.workflows.shared.table_category import TableCategory
+from src.application.workflows.shared.table_shape import TableShape
 from src.application.workflows.shared.table_signal import TableSignal
+from src.application.workflows.parsing.tables.structure import TableStructureSummary
 
 
 @dataclass(slots=True, frozen=True)
@@ -61,6 +66,12 @@ class TableSemanticClassifier:
         self.specification_rule_evaluator = (
             specification_rule_evaluator
             or TableSpecificationRuleEvaluator(signal_matcher=self.signal_matcher)
+        )
+        self.signal_collector = TableSignalCollector(
+            matrix_detector=self.matrix_detector,
+            rule_evaluator=self.rule_evaluator,
+            specification_rule_evaluator=self.specification_rule_evaluator,
+            structured_list_classifier=self.structured_list_classifier,
         )
         self.body_text_extractor = body_text_extractor or TableBodyTextExtractor(
             signal_matcher=self.signal_matcher
@@ -114,6 +125,7 @@ class TableSemanticClassifier:
         nearby_text: str | None = None,
         section_path: list[str] | None = None,
         item_label: str | None = None,
+        structure_summary: TableStructureSummary | None = None,
     ) -> tuple[TableCategory, float]:
         context = self._build_context(
             table=table,
@@ -131,11 +143,6 @@ class TableSemanticClassifier:
         if (
             item_label == "document_index"
             or self.signal_matcher.contains(fallback_text, "table of contents")
-            # Bare "contents" is scoped to the section heading path only, not
-            # the table's own body/caption text -- a real TOC lives under a
-            # heading literally titled "Contents"/"Index", whereas the word
-            # shows up incidentally in plenty of real spec/datasheet tables
-            # ("oil contents", "tank contents", "package contents").
             or self.signal_matcher.contains(section_text, "contents")
         ):
             return TableCategory.TOC_TABLE, 0.99
@@ -160,13 +167,26 @@ class TableSemanticClassifier:
             section_text,
         ):
             return TableCategory.TROUBLESHOOTING_TABLE, 0.9
-        if self.structured_list_classifier.looks_like_spare_parts_table(
+        spare_parts_match = self.structured_list_classifier.looks_like_spare_parts_table(
             headers=headers,
             labels=label_cells,
             body_rows=body_rows,
             direct_text=direct_text,
             section_text=section_text,
-        ):
+        )
+        if spare_parts_match:
+            spec_shape = structure_summary is not None and structure_summary.table_shape in {
+                TableShape.SPECIFICATION_MATRIX,
+                TableShape.PERFORMANCE_CURVE_MATRIX,
+            }
+            strong_spare_anchor = self.structured_list_classifier.has_strong_spare_parts_anchor(
+                headers=headers,
+                labels=label_cells,
+                direct_text=direct_text,
+                section_text=section_text,
+            )
+            if spec_shape and not strong_spare_anchor:
+                return TableCategory.TECHNICAL_DATA_TABLE, 0.84
             return TableCategory.SPARE_PARTS_TABLE, 0.9
         if self.specification_rule_evaluator.looks_like_operation_reference_table(
             headers,
@@ -211,6 +231,11 @@ class TableSemanticClassifier:
             section_text=section_text,
         ):
             return TableCategory.IDENTIFIER_TABLE, 0.76
+        if structure_summary is not None and structure_summary.table_shape in {
+            TableShape.SPECIFICATION_MATRIX,
+            TableShape.PERFORMANCE_CURVE_MATRIX,
+        }:
+            return TableCategory.TECHNICAL_DATA_TABLE, 0.72
         return TableCategory.GENERAL_TABLE, 0.4
 
     def detect_signals(
@@ -221,76 +246,17 @@ class TableSemanticClassifier:
         nearby_text: str | None = None,
         section_path: list[str] | None = None,
     ) -> frozenset[TableSignal]:
-        """Multi-valued content signals, additive to `classify()`'s single
-        category decision. Evaluates every rule (rather than stopping at
-        the first match) so a table that e.g. matches spare-parts AND
-        contains identifier-like columns keeps both facts instead of
-        losing one to `classify()`'s first-match precedence.
-        """
         context = self._build_context(
             table=table,
             caption=caption,
             nearby_text=nearby_text,
             section_path=section_path,
         )
-        headers = context.headers
-        body_rows = context.body_rows
-        label_cells = context.label_cells
-        direct_text = context.direct_text
-        section_text = context.section_text
-
-        signals: set[TableSignal] = set()
-
-        if (
-            self.matrix_detector.is_maintenance_interval_matrix(table.rows)
-            or self.rule_evaluator.looks_like_maintenance_interval_table(
-                headers, label_cells, direct_text
-            )
-            or self.rule_evaluator.looks_like_lubrication_schedule_table(
-                headers, label_cells, direct_text, section_text
-            )
-        ):
-            signals.add(TableSignal.MAINTENANCE_INTERVALS)
-            signals.add(TableSignal.SCHEDULES)
-        if self.rule_evaluator.looks_like_troubleshooting_table(
-            headers, direct_text, section_text
-        ):
-            signals.add(TableSignal.TROUBLESHOOTING)
-        if self.structured_list_classifier.looks_like_spare_parts_table(
-            headers=headers,
-            labels=label_cells,
-            body_rows=body_rows,
-            direct_text=direct_text,
-            section_text=section_text,
-        ):
-            signals.add(TableSignal.SPARE_PARTS)
-        if self.specification_rule_evaluator.looks_like_operating_limits_table(
-            headers, label_cells, direct_text
-        ):
-            signals.add(TableSignal.OPERATING_LIMITS)
-        if self.specification_rule_evaluator.looks_like_technical_data_table(
-            headers, label_cells, direct_text, section_text
-        ):
-            signals.add(TableSignal.SPECIFICATIONS)
-        if self.specification_rule_evaluator.looks_like_certification_table(
-            direct_text, section_text
-        ):
-            signals.add(TableSignal.CERTIFICATION)
-        if self.structured_list_classifier.looks_like_connection_table(
-            headers=headers, direct_text=direct_text
-        ):
-            signals.add(TableSignal.CONNECTIONS)
-        if self.structured_list_classifier.looks_like_sensor_instrument_table(
-            headers=headers, direct_text=direct_text
-        ):
-            signals.add(TableSignal.SENSOR_DATA)
-        if self.structured_list_classifier.looks_like_identifier_table(
-            headers=headers,
-            labels=label_cells,
-            body_rows=body_rows,
-            direct_text=direct_text,
-            section_text=section_text,
-        ):
-            signals.add(TableSignal.IDENTIFIERS)
-
-        return frozenset(signals)
+        return self.signal_collector.collect(
+            rows=table.rows,
+            headers=context.headers,
+            label_cells=context.label_cells,
+            body_rows=context.body_rows,
+            direct_text=context.direct_text,
+            section_text=context.section_text,
+        )

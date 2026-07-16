@@ -201,6 +201,7 @@ def test_table_semantic_resolver_persists_normalized_performance_curve_rows() ->
     table = graph.tables["table_4"]
     parser_extra = graph.elements["el_table_4"].parser_metadata.extra
 
+    assert table.table_category == "technical_data_table"
     assert table.table_shape == "performance_curve_matrix"
     assert table.rows == [
         [
