@@ -21,6 +21,16 @@ _SPECIFICATION_TYPES = {
     ChunkType.TECHNICAL_SPECIFICATION,
     ChunkType.CERTIFICATION_INFO,
 }
+# Types TableFragmentBuilder.table_chunk_type() derives directly from a
+# parser-assigned TableCategory (always alongside standalone=True, for both
+# single-table and logical-table-family fragments) -- these are locked in
+# the same way _SPECIFICATION_TYPES already is, so the classifier's keyword
+# signal scores below can't second-guess and downgrade them to GENERAL.
+_STANDALONE_PRESERVED_TABLE_TYPES = _SPECIFICATION_TYPES | {
+    ChunkType.MAINTENANCE_INTERVAL,
+    ChunkType.TROUBLESHOOTING,
+    ChunkType.OPERATION_INSTRUCTION,
+}
 
 
 class ChunkTypeResolver:
@@ -127,7 +137,10 @@ class ChunkTypeResolver:
                 return fragment.chunk_type
 
         for fragment in fragments:
-            if fragment.standalone and fragment.chunk_type in _SPECIFICATION_TYPES:
+            if (
+                fragment.standalone
+                and fragment.chunk_type in _STANDALONE_PRESERVED_TABLE_TYPES
+            ):
                 return fragment.chunk_type
         return None
 

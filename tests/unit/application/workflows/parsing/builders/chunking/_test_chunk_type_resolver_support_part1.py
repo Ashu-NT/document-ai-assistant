@@ -28,6 +28,7 @@ def make_fragment(
     parent_section_id: str | None = "sec_parent",
     token_count: int = 24,
     table_ids: list[str] | None = None,
+    standalone: bool = False,
 ) -> ChunkFragment:
     return ChunkFragment(
         text=text,
@@ -39,6 +40,7 @@ def make_fragment(
         parent_section_id=parent_section_id,
         token_count=token_count,
         table_ids=table_ids or [],
+        standalone=standalone,
     )
 
 __all__ = [name for name in globals() if not name.startswith("__")]

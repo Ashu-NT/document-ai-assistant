@@ -177,3 +177,75 @@ def test_approval_section_title_resolves_to_certification_info() -> None:
     )
     result = ChunkTypeResolver().resolve(fragments=[fragment])
     assert result == ChunkType.CERTIFICATION_INFO
+
+def test_chunk_type_resolver_preserves_standalone_troubleshooting_table_type() -> None:
+    # Simulates TableFragmentBuilder.table_chunk_type() output for a table
+    # whose parser-assigned TableCategory was TROUBLESHOOTING_TABLE, but
+    # whose rendered text is too sparse to hit the keyword-signal threshold
+    # on its own -- the classifier's verdict must not be second-guessed.
+    resolver = ChunkTypeResolver()
+
+    chunk_type = resolver.resolve(
+        fragments=[
+            make_fragment(
+                section_title="Data",
+                text="| A | B |\n| 1 | 2 |",
+                chunk_type=ChunkType.TROUBLESHOOTING,
+                standalone=True,
+            )
+        ]
+    )
+
+    assert chunk_type == ChunkType.TROUBLESHOOTING
+
+def test_chunk_type_resolver_preserves_standalone_maintenance_interval_table_type() -> None:
+    resolver = ChunkTypeResolver()
+
+    chunk_type = resolver.resolve(
+        fragments=[
+            make_fragment(
+                section_title="Data",
+                text="| A | B |\n| 1 | 2 |",
+                chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+                standalone=True,
+            )
+        ]
+    )
+
+    assert chunk_type == ChunkType.MAINTENANCE_INTERVAL
+
+def test_chunk_type_resolver_preserves_standalone_operation_instruction_table_type() -> None:
+    resolver = ChunkTypeResolver()
+
+    chunk_type = resolver.resolve(
+        fragments=[
+            make_fragment(
+                section_title="Data",
+                text="| A | B |\n| 1 | 2 |",
+                chunk_type=ChunkType.OPERATION_INSTRUCTION,
+                standalone=True,
+            )
+        ]
+    )
+
+    assert chunk_type == ChunkType.OPERATION_INSTRUCTION
+
+def test_chunk_type_resolver_still_downgrades_non_standalone_weak_troubleshooting_signal() -> None:
+    # Guards the other direction: the standalone gate must still matter --
+    # a non-table-derived fragment that merely carries a TROUBLESHOOTING
+    # chunk_type with no real signal in its text should still fall back to
+    # keyword scoring (and lose, since there's no marker text here at all).
+    resolver = ChunkTypeResolver()
+
+    chunk_type = resolver.resolve(
+        fragments=[
+            make_fragment(
+                section_title="Data",
+                text="| A | B |\n| 1 | 2 |",
+                chunk_type=ChunkType.TROUBLESHOOTING,
+                standalone=False,
+            )
+        ]
+    )
+
+    assert chunk_type == ChunkType.GENERAL
