@@ -82,6 +82,21 @@ class ParsedAssetFactory:
                 axis_summary=self._clean_axis_summary(
                     parsed_element.metadata.get("table_axis_summary")
                 ),
+                layout_region_id=self._clean_text(
+                    parsed_element.metadata.get("layout_region_id")
+                ),
+                layout_region_role=self._clean_text(
+                    parsed_element.metadata.get("layout_region_role")
+                ),
+                layout_lane_index=self._coerce_int(
+                    parsed_element.metadata.get("layout_lane_index")
+                ),
+                layout_lane_count=self._coerce_int(
+                    parsed_element.metadata.get("layout_lane_count")
+                ),
+                page_orientation=self._clean_text(
+                    parsed_element.metadata.get("page_orientation")
+                ),
                 metadata=AssetMetadata(
                     source=SourceLocationFactory.from_parsed(parsed_element),
                     caption=parsed_element.metadata.get("caption"),
@@ -135,6 +150,13 @@ class ParsedAssetFactory:
     def _coerce_float(value: object) -> float | None:
         try:
             return float(value) if value is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _coerce_int(value: object) -> int | None:
+        try:
+            return int(value) if value is not None else None
         except (TypeError, ValueError):
             return None
 

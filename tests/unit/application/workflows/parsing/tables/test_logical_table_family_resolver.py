@@ -48,6 +48,9 @@ def _make_table_asset(
     rows: list[list[str]],
     parent_section_id: str = "sec_001",
     column_count: int | None = None,
+    layout_region_id: str | None = None,
+    layout_lane_count: int | None = None,
+    layout_lane_index: int | None = None,
 ) -> TableAsset:
     return TableAsset(
         table_id=table_id,
@@ -57,6 +60,9 @@ def _make_table_asset(
         rows=rows,
         row_count=len(rows),
         column_count=column_count or len(rows[0]),
+        layout_region_id=layout_region_id,
+        layout_lane_count=layout_lane_count,
+        layout_lane_index=layout_lane_index,
     )
 
 
@@ -416,15 +422,69 @@ def test_resolver_still_groups_a_genuine_four_page_continuation() -> None:
     assert graph.tables["page_4"].continuation_role == "end"
 
 
+def test_resolver_groups_multi_page_continuation_despite_differing_layout_region_ids() -> None:
+    """A continuation table's per-page layout_region_id naturally differs
+    across pages (e.g. "page_10:lane_1" vs "page_11:lane_1"). The lane
+    check that keeps same-page lanes apart must stay scoped to same-page
+    comparisons only, or it would wrongly split genuine multi-page
+    continuations that happen to carry region ids.
+    """
+    graph = DocumentGraph(document=_make_document())
+    graph.tables["table_1"] = _make_table_asset(
+        table_id="table_1",
+        rows=[["Task", "Interval"], ["Inspect filter", "Daily"]],
+        layout_region_id="page_10:lane_1",
+        layout_lane_count=1,
+        layout_lane_index=1,
+    )
+    graph.tables["table_2"] = _make_table_asset(
+        table_id="table_2",
+        rows=[["Task", "Interval"], ["Replace gasket", "Weekly"]],
+        layout_region_id="page_11:lane_1",
+        layout_lane_count=1,
+        layout_lane_index=1,
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_1",
+            table_id="table_1",
+            page_start=10,
+            reading_order=1,
+        )
+    )
+    graph.add_element(
+        _make_table_element(
+            element_id="el_2",
+            table_id="table_2",
+            page_start=11,
+            reading_order=2,
+        )
+    )
+
+    LogicalTableFamilyResolver().resolve(graph)
+
+    assert (
+        graph.tables["table_2"].logical_table_family_id
+        == graph.tables["table_1"].logical_table_family_id
+    )
+    assert graph.tables["table_2"].continuation_role == "end"
+
+
 def test_resolver_does_not_merge_same_page_tables_from_different_layout_lanes() -> None:
     graph = DocumentGraph(document=_make_document())
     graph.tables["table_left"] = _make_table_asset(
         table_id="table_left",
         rows=[["Task", "Interval"], ["Inspect filter", "Daily"]],
+        layout_region_id="page_12:lane_1",
+        layout_lane_count=2,
+        layout_lane_index=1,
     )
     graph.tables["table_right"] = _make_table_asset(
         table_id="table_right",
         rows=[["Task", "Interval"], ["Replace gasket", "Weekly"]],
+        layout_region_id="page_12:lane_2",
+        layout_lane_count=2,
+        layout_lane_index=2,
     )
     graph.add_element(
         _make_table_element(
@@ -432,11 +492,6 @@ def test_resolver_does_not_merge_same_page_tables_from_different_layout_lanes() 
             table_id="table_left",
             page_start=12,
             reading_order=1,
-            parser_extra={
-                "layout_region_id": "page_12:lane_1",
-                "layout_lane_count": 2,
-                "layout_lane_index": 1,
-            },
         )
     )
     graph.add_element(
@@ -445,11 +500,6 @@ def test_resolver_does_not_merge_same_page_tables_from_different_layout_lanes() 
             table_id="table_right",
             page_start=12,
             reading_order=2,
-            parser_extra={
-                "layout_region_id": "page_12:lane_2",
-                "layout_lane_count": 2,
-                "layout_lane_index": 2,
-            },
         )
     )
 

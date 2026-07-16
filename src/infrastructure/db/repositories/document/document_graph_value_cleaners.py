@@ -53,6 +53,13 @@ def coerce_float(value: object) -> float | None:
         return None
 
 
+def coerce_int(value: object) -> int | None:
+    try:
+        return int(value) if value is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
 def clean_header_paths(value: object) -> list[list[str]]:
     if not isinstance(value, list):
         return []

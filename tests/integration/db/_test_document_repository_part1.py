@@ -40,6 +40,11 @@ def test_document_repository_rehydrates_asset_metadata_for_rechunking(
             "ocr_text": "DN100 hose connection deck filler",
             "nearby_text": "Use with standard hose connection.",
             "image_path": "outputs/images/deck_filler.png",
+            "layout_region_id": "page_9:lane_1",
+            "layout_region_role": "body",
+            "layout_lane_index": 1,
+            "layout_lane_count": 1,
+            "page_orientation": "portrait",
         },
     )
     picture_element = sample_element.__class__(
@@ -87,6 +92,11 @@ def test_document_repository_rehydrates_asset_metadata_for_rechunking(
     assert loaded_element.parser_metadata.extra["ocr_text"] == "DN100 hose connection deck filler"
     assert loaded.tables["table_001"].metadata.caption == "Ordering information"
     assert loaded.pictures["pic_001"].metadata.nearby_text == "Use with standard hose connection."
+    assert loaded.tables["table_001"].layout_region_id == "page_9:lane_1"
+    assert loaded.tables["table_001"].layout_region_role == "body"
+    assert loaded.tables["table_001"].layout_lane_index == 1
+    assert loaded.tables["table_001"].layout_lane_count == 1
+    assert loaded.tables["table_001"].page_orientation == "portrait"
 
 def test_document_repository_finds_duplicate_by_file_hash(
     db_uow,

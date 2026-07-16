@@ -123,13 +123,20 @@ class DoclingTableExtractor:
     def extract_rows(self, item: Any) -> list[list[str]]:
         return self.extract_structure(item).rows
 
-    def extract_structure(self, item: Any) -> TableReconstructionResult:
+    def extract_structure(
+        self,
+        item: Any,
+        *,
+        page_lane_count: int | None = None,
+    ) -> TableReconstructionResult:
         table_cells = self._extract_table_cells(item)
         if not table_cells:
             return TableReconstructionResult(rows=[], cell_spans=[])
 
         spans = self.cell_candidate_builder.build(table_cells)
-        return self.row_grid_builder.build_reconstruction(spans)
+        return self.row_grid_builder.build_reconstruction(
+            spans, page_lane_count=page_lane_count
+        )
 
     def extract_cell_spans(self, item: Any) -> list[dict[str, object]]:
         return [

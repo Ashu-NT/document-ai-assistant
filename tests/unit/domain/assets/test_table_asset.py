@@ -5,6 +5,39 @@ def test_table_asset_has_content(sample_table_asset) -> None:
     assert sample_table_asset.has_content()
 
 
+def test_table_asset_layout_fields_default_to_none() -> None:
+    table = TableAsset(
+        table_id="table_010",
+        document_id="doc_001",
+        markdown="unused",
+    )
+
+    assert table.layout_region_id is None
+    assert table.layout_region_role is None
+    assert table.layout_lane_index is None
+    assert table.layout_lane_count is None
+    assert table.page_orientation is None
+
+
+def test_table_asset_layout_fields_are_settable() -> None:
+    table = TableAsset(
+        table_id="table_011",
+        document_id="doc_001",
+        markdown="unused",
+        layout_region_id="page_3:lane_1",
+        layout_region_role="body",
+        layout_lane_index=1,
+        layout_lane_count=2,
+        page_orientation="landscape",
+    )
+
+    assert table.layout_region_id == "page_3:lane_1"
+    assert table.layout_region_role == "body"
+    assert table.layout_lane_index == 1
+    assert table.layout_lane_count == 2
+    assert table.page_orientation == "landscape"
+
+
 def test_table_asset_builds_embedding_text(sample_table_asset) -> None:
     embedding_text = sample_table_asset.to_embedding_text()
 

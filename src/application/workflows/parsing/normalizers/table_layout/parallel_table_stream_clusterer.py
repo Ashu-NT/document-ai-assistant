@@ -1,13 +1,21 @@
 from __future__ import annotations
 
+from src.config.logging import get_logger
 from src.domain.assets import TableCellSpan
+
+_logger = get_logger(__name__)
 
 
 class ParallelTableStreamClusterer:
-    def cluster(self, spans: list[TableCellSpan]) -> list[list[TableCellSpan]]:
+    def cluster(
+        self,
+        spans: list[TableCellSpan],
+        *,
+        page_lane_count: int | None = None,
+    ) -> list[list[TableCellSpan]]:
         bounded = self._bounded_single_page_spans(spans)
         if len(bounded) < 6:
-            return []
+            return self._log_disagreement_and_return([], page_lane_count=page_lane_count)
 
         sorted_spans = sorted(bounded, key=self._center_x)
         page_width = max(span.bbox.x2 for span in sorted_spans if span.bbox is not None) - min(
@@ -30,7 +38,23 @@ class ParallelTableStreamClusterer:
                 clusters[-1].append(span)
             previous_center = center
 
-        return [cluster for cluster in clusters if len(cluster) >= 3]
+        result = [cluster for cluster in clusters if len(cluster) >= 3]
+        return self._log_disagreement_and_return(result, page_lane_count=page_lane_count)
+
+    @staticmethod
+    def _log_disagreement_and_return(
+        result: list[list[TableCellSpan]],
+        *,
+        page_lane_count: int | None,
+    ) -> list[list[TableCellSpan]]:
+        if page_lane_count is not None and len(result) != page_lane_count:
+            _logger.info(
+                "parallel_table_stream_lane_count_disagreement "
+                "cell_cluster_count=%s page_lane_count=%s",
+                len(result),
+                page_lane_count,
+            )
+        return result
 
     @staticmethod
     def _bounded_single_page_spans(

@@ -7,6 +7,7 @@ from src.application.workflows.parsing.tables.table_header_compatibility_matcher
 from src.application.workflows.parsing.tables.table_header_signature_builder import (
     TableHeaderSignatureBuilder,
 )
+from src.domain.assets import TableAsset
 from src.domain.document import DocumentGraph
 from src.domain.elements import CanonicalElement
 
@@ -90,7 +91,9 @@ class LogicalTableFamilyResolver:
         if previous.parent_section_id != current.parent_section_id:
             return False
 
-        if not self._same_page_regions_are_compatible(previous, current):
+        if not self._same_page_regions_are_compatible(
+            previous, current, previous_table, current_table
+        ):
             return False
 
         if not self.header_compatibility_matcher.are_compatible(
@@ -151,6 +154,8 @@ class LogicalTableFamilyResolver:
         self,
         previous: CanonicalElement,
         current: CanonicalElement,
+        previous_table: TableAsset,
+        current_table: TableAsset,
     ) -> bool:
         previous_page = previous.source.page_end or previous.source.page_start
         current_page = current.source.page_start or current.source.page_end
@@ -162,8 +167,8 @@ class LogicalTableFamilyResolver:
         if previous_item_label == current_item_label == "document_index":
             return True
 
-        previous_region_id = self._parser_extra_text(previous, "layout_region_id")
-        current_region_id = self._parser_extra_text(current, "layout_region_id")
+        previous_region_id = previous_table.layout_region_id
+        current_region_id = current_table.layout_region_id
         if (
             previous_region_id
             and current_region_id
@@ -171,13 +176,13 @@ class LogicalTableFamilyResolver:
         ):
             return False
 
-        previous_lane_count = self._parser_extra_int(previous, "layout_lane_count")
-        current_lane_count = self._parser_extra_int(current, "layout_lane_count")
+        previous_lane_count = previous_table.layout_lane_count
+        current_lane_count = current_table.layout_lane_count
         if max(previous_lane_count or 0, current_lane_count or 0) <= 1:
             return True
 
-        previous_lane_index = self._parser_extra_int(previous, "layout_lane_index")
-        current_lane_index = self._parser_extra_int(current, "layout_lane_index")
+        previous_lane_index = previous_table.layout_lane_index
+        current_lane_index = current_table.layout_lane_index
         if (
             previous_lane_index is not None
             and current_lane_index is not None
@@ -200,29 +205,6 @@ class LogicalTableFamilyResolver:
             return None
         value = str(element.parser_metadata.extra.get("item_label") or "").strip().lower()
         return value or None
-
-    @staticmethod
-    def _parser_extra_text(
-        element: CanonicalElement,
-        key: str,
-    ) -> str | None:
-        if element.parser_metadata is None:
-            return None
-        value = str(element.parser_metadata.extra.get(key) or "").strip()
-        return value or None
-
-    @staticmethod
-    def _parser_extra_int(
-        element: CanonicalElement,
-        key: str,
-    ) -> int | None:
-        if element.parser_metadata is None:
-            return None
-        value = element.parser_metadata.extra.get(key)
-        try:
-            return int(value) if value is not None else None
-        except (TypeError, ValueError):
-            return None
 
     def _build_assignments(
         self,

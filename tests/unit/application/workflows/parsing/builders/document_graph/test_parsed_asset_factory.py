@@ -96,6 +96,45 @@ def test_header_path_builder_resolves_correct_header_after_column_drop() -> None
     assert paths == (("parameter",), ("value",))
 
 
+def test_build_table_asset_populates_layout_fields_from_metadata() -> None:
+    factory = ParsedAssetFactory(IdGenerator())
+    parsed_element = _parsed_table_element(
+        layout_region_id="page_3:lane_1",
+        layout_region_role="body",
+        layout_lane_index="1",
+        layout_lane_count="2",
+        page_orientation="landscape",
+    )
+
+    _, table = factory.build_table_asset(
+        document_id="doc_1",
+        parent_section_id=None,
+        parsed_element=parsed_element,
+    )
+
+    assert table.layout_region_id == "page_3:lane_1"
+    assert table.layout_region_role == "body"
+    assert table.layout_lane_index == 1
+    assert table.layout_lane_count == 2
+    assert table.page_orientation == "landscape"
+
+
+def test_build_table_asset_defaults_layout_fields_to_none_when_absent() -> None:
+    factory = ParsedAssetFactory(IdGenerator())
+
+    _, table = factory.build_table_asset(
+        document_id="doc_1",
+        parent_section_id=None,
+        parsed_element=_parsed_table_element(),
+    )
+
+    assert table.layout_region_id is None
+    assert table.layout_region_role is None
+    assert table.layout_lane_index is None
+    assert table.layout_lane_count is None
+    assert table.page_orientation is None
+
+
 def test_build_table_asset_rehydrates_parallel_stream_rows() -> None:
     factory = ParsedAssetFactory(IdGenerator())
     parsed_element = _parsed_table_element(

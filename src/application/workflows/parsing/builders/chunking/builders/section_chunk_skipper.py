@@ -12,6 +12,7 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
+from src.config.settings import chunking_settings
 from src.domain.common import ElementType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
@@ -102,6 +103,12 @@ class SectionChunkSkipper:
         if page_end is not None and page_end > 2:
             return False
 
+        if (
+            chunking_settings.use_layout_front_matter_signal
+            and self._has_layout_front_matter_signal(elements)
+        ):
+            return True
+
         content_elements = [
             element
             for element in elements
@@ -167,6 +174,14 @@ class SectionChunkSkipper:
             and len(texts) >= 3
             and longest_text_tokens <= 12
             and total_tokens <= self.text_splitter.max_chunk_tokens // 4
+        )
+
+    @staticmethod
+    def _has_layout_front_matter_signal(elements: list[CanonicalElement]) -> bool:
+        return any(
+            element.parser_metadata is not None
+            and element.parser_metadata.extra.get("layout_is_front_matter")
+            for element in elements
         )
 
     @staticmethod

@@ -37,8 +37,10 @@ class DoclingParallelTableReconstructor:
     def reconstruct(
         self,
         spans: list[TableCellSpan],
+        *,
+        page_lane_count: int | None = None,
     ) -> TableReconstructionResult | None:
-        lane_groups = self.clusterer.cluster(spans)
+        lane_groups = self.clusterer.cluster(spans, page_lane_count=page_lane_count)
         if len(lane_groups) < 2:
             return None
 

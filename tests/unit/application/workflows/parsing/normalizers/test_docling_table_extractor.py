@@ -89,6 +89,45 @@ def test_resolve_offset_end_does_not_treat_a_real_zero_as_missing() -> None:
     assert resolved == 0
 
 
+def test_extract_structure_page_lane_count_is_a_pure_pass_through() -> None:
+    extractor = DoclingTableExtractor()
+
+    def make_cell(row, col, text, x1, x2):
+        return _FakeCell(
+            start_row_offset_idx=row,
+            end_row_offset_idx=row + 1,
+            start_col_offset_idx=col,
+            end_col_offset_idx=col + 1,
+            text=text,
+            prov=[
+                _FakeProvenance(1, _FakeBBox(x1, 100 + (row * 20), x2, 118 + (row * 20)))
+            ],
+        )
+
+    item = _FakeTableItem(
+        [
+            make_cell(0, 0, "Parameter", 40, 250),
+            make_cell(0, 1, "Value", 260, 330),
+            make_cell(1, 0, "Voltage", 40, 250),
+            make_cell(1, 1, "400V", 260, 330),
+            make_cell(0, 2, "Parameter", 620, 830),
+            make_cell(0, 3, "Value", 840, 910),
+            make_cell(1, 2, "Frequency", 620, 830),
+            make_cell(1, 3, "50Hz", 840, 910),
+        ]
+    )
+
+    without_hint = extractor.extract_structure(item)
+    with_mismatched_hint = extractor.extract_structure(item, page_lane_count=1)
+
+    assert without_hint.rows == with_mismatched_hint.rows
+    assert without_hint.parallel_stream_rows == with_mismatched_hint.parallel_stream_rows
+    assert without_hint.parallel_stream_rows == [
+        [["Parameter", "Value"], ["Voltage", "400V"]],
+        [["Parameter", "Value"], ["Frequency", "50Hz"]],
+    ]
+
+
 def test_extract_cell_spans_preserves_optional_page_and_bbox_metadata() -> None:
     extractor = DoclingTableExtractor()
     item = _FakeTableItem(

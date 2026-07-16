@@ -16,6 +16,7 @@ from src.config.settings.langgraph_setting import LangGraphSettings
 from src.config.settings.memory_settings import MemorySettings
 from src.config.settings.extraction_settings import ExtractionSettings
 from src.config.settings.duplicate_detection_settings import DuplicateDetectionSettings
+from src.config.settings.prompt_context_settings import PromptContextSettings
 from src.config.settings.storage_settings import StorageSettings
 
 
@@ -38,3 +39,4 @@ ocr_settings = OCRSettings()                        # type: ignore[call-arg]
 extraction_settings = ExtractionSettings()                      # type: ignore[call-arg]
 duplicate_detection_settings = DuplicateDetectionSettings()     # type: ignore[call-arg]
 storage_settings = StorageSettings()                            # type: ignore[call-arg]
+prompt_context_settings = PromptContextSettings()                # type: ignore[call-arg]

@@ -208,3 +208,41 @@ def test_build_reconstruction_preserves_parallel_specification_streams() -> None
         ["Voltage", "400V"],
         ["Frequency", "50Hz"],
     ]
+
+
+def test_build_reconstruction_page_lane_count_is_a_pure_pass_through() -> None:
+    builder = DoclingTableRowGridBuilder()
+
+    def make_cell(row, col, text, x1, x2):
+        return {
+            "start_row_offset_idx": row,
+            "end_row_offset_idx": row + 1,
+            "start_col_offset_idx": col,
+            "end_col_offset_idx": col + 1,
+            "text": text,
+            "prov": [
+                {
+                    "page_no": 1,
+                    "bbox": {"x1": x1, "y1": 100 + (row * 20), "x2": x2, "y2": 118 + (row * 20)},
+                }
+            ],
+        }
+
+    spans = builder.cell_candidate_builder.build(
+        [
+            make_cell(0, 0, "Parameter", 40, 250),
+            make_cell(0, 1, "Value", 260, 330),
+            make_cell(1, 0, "Voltage", 40, 250),
+            make_cell(1, 1, "400V", 260, 330),
+            make_cell(0, 2, "Parameter", 620, 830),
+            make_cell(0, 3, "Value", 840, 910),
+            make_cell(1, 2, "Frequency", 620, 830),
+            make_cell(1, 3, "50Hz", 840, 910),
+        ]
+    )
+
+    without_hint = builder.build_reconstruction(spans)
+    with_mismatched_hint = builder.build_reconstruction(spans, page_lane_count=1)
+
+    assert without_hint.rows == with_mismatched_hint.rows
+    assert without_hint.parallel_stream_rows == with_mismatched_hint.parallel_stream_rows

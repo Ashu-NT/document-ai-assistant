@@ -71,13 +71,21 @@ class DoclingDocumentNormalizer:
                     continue
 
                 element_type = self.item_extractor.extract_element_type(item)
+                raw_ref = self.item_extractor.extract_raw_ref(item)
+                element_layout_metadata = layout_metadata_by_element_ref.get(
+                    raw_ref or f"canon_{index}"
+                )
                 table_markdown = self.text_resolver.extract_table_markdown(
                     item,
                     element_type,
                     raw_document=raw_document,
                 )
                 table_structure = self.text_resolver.extract_table_structure(
-                    item, element_type
+                    item,
+                    element_type,
+                    page_lane_count=self._extract_page_lane_count(
+                        element_layout_metadata
+                    ),
                 )
                 caption = self.text_resolver.extract_caption_text(
                     item,
@@ -95,15 +103,12 @@ class DoclingDocumentNormalizer:
                 section_title = self.text_resolver.extract_section_title(
                     element_type, text
                 )
-                raw_ref = self.item_extractor.extract_raw_ref(item)
                 metadata = self.metadata_builder.build(
                     item,
                     raw_ref=raw_ref,
                     element_type=element_type,
                     caption=caption,
-                    layout_metadata=layout_metadata_by_element_ref.get(
-                        raw_ref or f"canon_{index}"
-                    ),
+                    layout_metadata=element_layout_metadata,
                     markdown=table_markdown,
                     table_structure=table_structure,
                 )
@@ -136,3 +141,12 @@ class DoclingDocumentNormalizer:
                     "parser_name": raw_parsed_document.parser_name,
                 },
             ) from exc
+
+    @staticmethod
+    def _extract_page_lane_count(
+        element_layout_metadata: dict[str, object] | None,
+    ) -> int | None:
+        if element_layout_metadata is None:
+            return None
+        value = element_layout_metadata.get("layout_lane_count")
+        return value if isinstance(value, int) else None

@@ -54,7 +54,12 @@ class DoclingTableRowGridBuilder:
             )
         )
 
-    def build_reconstruction(self, spans: list[TableCellSpan]) -> TableReconstructionResult:
+    def build_reconstruction(
+        self,
+        spans: list[TableCellSpan],
+        *,
+        page_lane_count: int | None = None,
+    ) -> TableReconstructionResult:
         if not spans:
             return TableReconstructionResult(rows=[], cell_spans=[])
 
@@ -62,7 +67,9 @@ class DoclingTableRowGridBuilder:
         if rows is not None:
             return TableReconstructionResult(rows=rows, cell_spans=spans)
 
-        parallel_result = self.parallel_table_reconstructor.reconstruct(spans)
+        parallel_result = self.parallel_table_reconstructor.reconstruct(
+            spans, page_lane_count=page_lane_count
+        )
         if parallel_result is not None:
             parallel_result.cell_spans = spans
             return parallel_result

@@ -18,3 +18,8 @@ class ChunkingSettings(AppBaseSettings):
         default=True,
         alias="CHUNK_TOKENIZER_LOCAL_ONLY",
     )
+
+    use_layout_front_matter_signal: bool = Field(
+        default=False,
+        alias="CHUNK_USE_LAYOUT_FRONT_MATTER_SIGNAL",
+    )

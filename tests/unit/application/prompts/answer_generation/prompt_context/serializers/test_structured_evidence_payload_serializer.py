@@ -20,6 +20,7 @@ from src.application.workflows.question_answering.answer_context import (
 from src.application.workflows.question_answering.answer_context.models import (
     AnswerKeyValue,
 )
+from src.config.settings import prompt_context_settings
 from src.domain.common import ChunkType
 from src.domain.common.source_location import SourceLocation
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
@@ -158,6 +159,52 @@ def test_serializer_does_not_truncate_arrays_under_the_cap() -> None:
         "Key 1",
         "Key 2",
     ]
+
+
+def test_serializer_includes_table_rows_when_flag_enabled(monkeypatch) -> None:
+    monkeypatch.setattr(
+        prompt_context_settings, "include_source_table_rows", True
+    )
+
+    context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        chunks=[_make_chunk()],
+    )
+    bundle = PromptContextProjector().project(context)
+
+    payload = json.loads(StructuredEvidencePayloadSerializer().serialize(bundle))
+
+    source = payload["sources"][0]
+    assert source["table_rows"] == [
+        ["Parameter", "Value"],
+        ["Test pressure", "700 bar"],
+    ]
+
+
+def test_serializer_caps_table_rows_at_the_configured_limit(monkeypatch) -> None:
+    monkeypatch.setattr(
+        prompt_context_settings, "include_source_table_rows", True
+    )
+    monkeypatch.setattr(
+        prompt_context_settings, "max_table_rows_per_source", 2
+    )
+
+    bundle = PromptContextBundle(
+        answer_intent_value=AnswerIntent.GENERAL.value,
+        source_count=1,
+        sources=[
+            PromptSourceView(
+                source_number=1,
+                chunk_id="chunk_001",
+                content="",
+                table_rows=[["A", "B"], ["1", "2"], ["3", "4"], ["5", "6"]],
+            )
+        ],
+    )
+
+    payload = json.loads(StructuredEvidencePayloadSerializer().serialize(bundle))
+
+    assert payload["sources"][0]["table_rows"] == [["A", "B"], ["1", "2"]]
 
 
 def test_serializer_emits_compact_json_with_no_indentation() -> None:

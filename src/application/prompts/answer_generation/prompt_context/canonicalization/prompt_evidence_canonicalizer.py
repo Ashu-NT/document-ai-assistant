@@ -9,6 +9,7 @@ from src.application.prompts.answer_generation.prompt_context.models import (
     PromptContextBundle,
     PromptSourceView,
 )
+from src.config.settings import prompt_context_settings
 
 
 class PromptEvidenceCanonicalizer:
@@ -147,11 +148,20 @@ class PromptEvidenceCanonicalizer:
     ) -> tuple[list[list[str]] | None, int]:
         if not source.table_rows:
             return None, 0
-        if source.source_number in table_source_numbers:
+        if (
+            not prompt_context_settings.include_source_table_rows
+            and source.source_number in table_source_numbers
+        ):
             # This source's raw rows are already fully represented (headers
             # included) in the top-level `tables` array built from the same
             # source.table_rows -- dropping the duplicate here is
-            # deduplication, not data loss, regardless of row count.
+            # deduplication, not data loss, regardless of row count. When
+            # `include_source_table_rows` is on, the whole point is to keep
+            # the raw rows source-local too (machine-exact, colocated with
+            # the source that produced them) rather than relying solely on
+            # the separate `tables` array -- so this dedup step is skipped
+            # in that mode, falling through to the (still-legitimate,
+            # unrelated) captured-key-value dedup below.
             return None, len(source.table_rows)
         if not captured_values:
             return list(source.table_rows), 0

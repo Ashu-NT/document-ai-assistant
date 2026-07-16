@@ -6,6 +6,7 @@ from src.infrastructure.db.repositories.document.document_graph_value_cleaners i
     clean_rows,
     clean_text,
     coerce_float,
+    coerce_int,
 )
 
 
@@ -52,6 +53,16 @@ def test_coerce_float_returns_none_for_none_and_invalid_input() -> None:
 def test_coerce_float_converts_numeric_input() -> None:
     assert coerce_float("0.75") == 0.75
     assert coerce_float(1) == 1.0
+
+
+def test_coerce_int_returns_none_for_none_and_invalid_input() -> None:
+    assert coerce_int(None) is None
+    assert coerce_int("not a number") is None
+
+
+def test_coerce_int_converts_numeric_input() -> None:
+    assert coerce_int("2") == 2
+    assert coerce_int(3.0) == 3
 
 
 def test_clean_header_paths_returns_empty_list_for_non_list_input() -> None:

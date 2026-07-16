@@ -4,14 +4,7 @@ from dataclasses import asdict
 from src.application.prompts.answer_generation.prompt_context.models import (
     PromptContextBundle,
 )
-
-# Bounds the size of each structured-evidence array before it is serialized
-# into the prompt's JSON payload. Unlike the raw-prose appendix (see
-# PromptBudgetAllocator), nothing capped these arrays before -- a retrieval
-# set rich in tables/entities/relationships could inflate the JSON payload
-# without limit. Truncation keeps the first N items in their existing order
-# (no re-sorting/re-ranking here -- that is out of scope for this cap).
-_MAX_ITEMS_PER_ARRAY = 20
+from src.config.settings import prompt_context_settings
 
 
 class StructuredEvidencePayloadSerializer:
@@ -55,12 +48,13 @@ class StructuredEvidencePayloadSerializer:
         return json.dumps(payload, ensure_ascii=True, default=str)
 
     @staticmethod
-    def _capped(items: list) -> list:
-        return items[:_MAX_ITEMS_PER_ARRAY]
+    def _capped(items: list, *, limit: int | None = None) -> list:
+        cap = limit if limit is not None else prompt_context_settings.max_items_per_array
+        return items[:cap]
 
     @staticmethod
     def _source_payload(source) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "source_number": source.source_number,
             "chunk_id": source.chunk_id,
             "chunk_name": source.chunk_name,
@@ -78,6 +72,12 @@ class StructuredEvidencePayloadSerializer:
             "table_header_paths": [list(path) for path in source.table_header_paths],
             "table_axis_summary": dict(source.table_axis_summary),
         }
+        if prompt_context_settings.include_source_table_rows and source.table_rows:
+            payload["table_rows"] = StructuredEvidencePayloadSerializer._capped(
+                source.table_rows,
+                limit=prompt_context_settings.max_table_rows_per_source,
+            )
+        return payload
 
     @staticmethod
     def _entity_payload(entity) -> dict[str, object]:

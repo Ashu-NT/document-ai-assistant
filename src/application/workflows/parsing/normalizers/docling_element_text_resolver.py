@@ -84,10 +84,14 @@ class DoclingElementTextResolver:
         self,
         item: Any,
         element_type: ElementType,
+        *,
+        page_lane_count: int | None = None,
     ) -> TableReconstructionResult | None:
         if element_type != ElementType.TABLE:
             return None
-        return self.table_extractor.extract_structure(item)
+        return self.table_extractor.extract_structure(
+            item, page_lane_count=page_lane_count
+        )
 
     @staticmethod
     def extract_section_title(

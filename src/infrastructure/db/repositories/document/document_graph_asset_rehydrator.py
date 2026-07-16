@@ -8,6 +8,7 @@ from src.infrastructure.db.repositories.document.document_graph_value_cleaners i
     clean_rows,
     clean_text,
     coerce_float,
+    coerce_int,
 )
 
 
@@ -48,8 +49,8 @@ def rehydrate_assets(graph: DocumentGraph) -> None:
                     "normalized_header_signature"
                 ),
                 table_category=parser_extra.get("table_category"),
-                table_category_confidence=parser_extra.get(
-                    "table_category_confidence"
+                table_category_confidence=coerce_float(
+                    parser_extra.get("table_category_confidence")
                 ),
                 table_shape=parser_extra.get("table_shape"),
                 table_structure_quality=coerce_float(
@@ -61,6 +62,11 @@ def rehydrate_assets(graph: DocumentGraph) -> None:
                 axis_summary=clean_axis_summary(
                     parser_extra.get("table_axis_summary")
                 ),
+                layout_region_id=clean_text(parser_extra.get("layout_region_id")),
+                layout_region_role=clean_text(parser_extra.get("layout_region_role")),
+                layout_lane_index=coerce_int(parser_extra.get("layout_lane_index")),
+                layout_lane_count=coerce_int(parser_extra.get("layout_lane_count")),
+                page_orientation=clean_text(parser_extra.get("page_orientation")),
                 metadata=AssetMetadata(
                     source=element.source,
                     caption=(

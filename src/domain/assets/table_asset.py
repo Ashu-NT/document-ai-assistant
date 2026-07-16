@@ -42,6 +42,12 @@ class TableAsset:
     header_paths: list[list[str]] = field(default_factory=list)
     axis_summary: dict[str, str] = field(default_factory=dict)
 
+    layout_region_id: str | None = None
+    layout_region_role: str | None = None
+    layout_lane_index: int | None = None
+    layout_lane_count: int | None = None
+    page_orientation: str | None = None
+
     metadata: AssetMetadata = field(default_factory=AssetMetadata)
     audit: AuditMetadata = field(default_factory=AuditMetadata)
 

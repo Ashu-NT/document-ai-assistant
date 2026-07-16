@@ -130,6 +130,79 @@ def test_rehydrate_assets_restores_logical_table_family_metadata() -> None:
     assert table.axis_summary["row_axis"] == "task"
 
 
+def test_rehydrate_assets_restores_layout_fields() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.add_element(
+        _make_table_element(
+            table_id="table_1",
+            extra={
+                "markdown": "| Task | Interval |\n|---|---|\n| Inspect filter | Daily |",
+                "table_rows": [["Task", "Interval"], ["Inspect filter", "Daily"]],
+                "layout_region_id": "page_3:lane_1",
+                "layout_region_role": "body",
+                "layout_lane_index": 1,
+                "layout_lane_count": 2,
+                "page_orientation": "landscape",
+            },
+        )
+    )
+
+    rehydrate_assets(graph)
+
+    table = graph.tables["table_1"]
+    assert table.layout_region_id == "page_3:lane_1"
+    assert table.layout_region_role == "body"
+    assert table.layout_lane_index == 1
+    assert table.layout_lane_count == 2
+    assert table.page_orientation == "landscape"
+
+
+def test_rehydrate_assets_defaults_layout_fields_to_none_when_absent() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.add_element(
+        _make_table_element(
+            table_id="table_1",
+            extra={
+                "markdown": "| Task | Interval |\n|---|---|\n| Inspect filter | Daily |",
+            },
+        )
+    )
+
+    rehydrate_assets(graph)
+
+    table = graph.tables["table_1"]
+    assert table.layout_region_id is None
+    assert table.layout_region_role is None
+    assert table.layout_lane_index is None
+    assert table.layout_lane_count is None
+    assert table.page_orientation is None
+
+
+def test_rehydrate_assets_coerces_table_category_confidence_to_float() -> None:
+    """table_category_confidence must go through the same numeric coercion
+    as table_structure_quality -- previously it was read via a bare .get()
+    with no coercion, so a stringly-typed value from an older record would
+    silently produce a non-float on the TableAsset field."""
+    graph = DocumentGraph(document=_make_document())
+    graph.add_element(
+        _make_table_element(
+            table_id="table_1",
+            extra={
+                "markdown": "| Part | Description |\n|---|---|\n| HP-001 | Filter |",
+                "table_category": "spare_parts_table",
+                "table_category_confidence": "0.87",
+            },
+        )
+    )
+
+    rehydrate_assets(graph)
+
+    table = graph.tables["table_1"]
+    assert table.table_category == "spare_parts_table"
+    assert table.table_category_confidence == 0.87
+    assert isinstance(table.table_category_confidence, float)
+
+
 def test_rehydrate_assets_repairs_table_text_mojibake() -> None:
     graph = DocumentGraph(document=_make_document())
     graph.add_element(

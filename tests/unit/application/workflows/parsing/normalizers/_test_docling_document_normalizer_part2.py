@@ -322,3 +322,111 @@ def test_normalizer_persists_parallel_table_stream_metadata_for_sparse_side_by_s
         [["Parameter", "Value"], ["Frequency", "50Hz"]],
     ]
     assert metadata["table_rows"] == [["Parameter", "Value"], ["Voltage", "400V"], ["Frequency", "50Hz"]]
+
+
+def test_normalizer_logs_lane_count_disagreement_without_altering_table_rows(caplog) -> None:
+    """This table's own cell geometry naturally splits into 2 parallel
+    lanes, but the table is the only element on the page, so the
+    page-level layout analyzer assigns it a single-lane region. The
+    disagreement between the two independent signals must only produce a
+    log line -- the reconstructed rows themselves must stay identical to
+    `test_normalizer_persists_parallel_table_stream_metadata_for_sparse_side_by_side_tables`.
+    """
+    raw_document = FakeRawDocument(
+        [
+            FakeDoclingItem(
+                label="table",
+                self_ref="#/tables/2",
+                markdown="| Left | Right |",
+                prov=[FakeProvenance(1)],
+                data={
+                    "table_cells": [
+                        {
+                            "start_row_offset_idx": 0,
+                            "end_row_offset_idx": 1,
+                            "start_col_offset_idx": 0,
+                            "end_col_offset_idx": 1,
+                            "text": "Parameter",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 40, "y1": 100, "x2": 250, "y2": 120}}],
+                        },
+                        {
+                            "start_row_offset_idx": 0,
+                            "end_row_offset_idx": 1,
+                            "start_col_offset_idx": 1,
+                            "end_col_offset_idx": 2,
+                            "text": "Value",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 260, "y1": 100, "x2": 330, "y2": 120}}],
+                        },
+                        {
+                            "start_row_offset_idx": 1,
+                            "end_row_offset_idx": 2,
+                            "start_col_offset_idx": 0,
+                            "end_col_offset_idx": 1,
+                            "text": "Voltage",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 40, "y1": 130, "x2": 250, "y2": 150}}],
+                        },
+                        {
+                            "start_row_offset_idx": 1,
+                            "end_row_offset_idx": 2,
+                            "start_col_offset_idx": 1,
+                            "end_col_offset_idx": 2,
+                            "text": "400V",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 260, "y1": 130, "x2": 330, "y2": 150}}],
+                        },
+                        {
+                            "start_row_offset_idx": 0,
+                            "end_row_offset_idx": 1,
+                            "start_col_offset_idx": 2,
+                            "end_col_offset_idx": 3,
+                            "text": "Parameter",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 620, "y1": 100, "x2": 830, "y2": 120}}],
+                        },
+                        {
+                            "start_row_offset_idx": 0,
+                            "end_row_offset_idx": 1,
+                            "start_col_offset_idx": 3,
+                            "end_col_offset_idx": 4,
+                            "text": "Value",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 840, "y1": 100, "x2": 910, "y2": 120}}],
+                        },
+                        {
+                            "start_row_offset_idx": 1,
+                            "end_row_offset_idx": 2,
+                            "start_col_offset_idx": 2,
+                            "end_col_offset_idx": 3,
+                            "text": "Frequency",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 620, "y1": 130, "x2": 830, "y2": 150}}],
+                        },
+                        {
+                            "start_row_offset_idx": 1,
+                            "end_row_offset_idx": 2,
+                            "start_col_offset_idx": 3,
+                            "end_col_offset_idx": 4,
+                            "text": "50Hz",
+                            "prov": [{"page_no": 1, "bbox": {"x1": 840, "y1": 130, "x2": 910, "y2": 150}}],
+                        },
+                    ]
+                },
+            )
+        ],
+        pages={
+            1: SimpleNamespace(size=SimpleNamespace(width=1000, height=1400)),
+        },
+    )
+
+    with caplog.at_level("INFO"):
+        normalized = DoclingDocumentNormalizer().normalize(
+            make_raw_parsed_document(raw_document),
+            "doc_003",
+        )
+
+    metadata = normalized[0].metadata
+    assert metadata["layout_lane_count"] == 1
+    assert metadata["table_parallel_stream_rows"] == [
+        [["Parameter", "Value"], ["Voltage", "400V"]],
+        [["Parameter", "Value"], ["Frequency", "50Hz"]],
+    ]
+    assert metadata["table_rows"] == [["Parameter", "Value"], ["Voltage", "400V"], ["Frequency", "50Hz"]]
+    assert "parallel_table_stream_lane_count_disagreement" in caplog.text
+    assert "cell_cluster_count=2" in caplog.text
+    assert "page_lane_count=1" in caplog.text
