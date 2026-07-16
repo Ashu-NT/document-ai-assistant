@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from typing import Callable
 
 from src.application.services.ai import LLMService
@@ -33,6 +34,13 @@ def _default_chunk_type_classification_model() -> str | None:
         )
     except Exception:
         return None
+
+
+@dataclass(slots=True)
+class _ChunkTypeClassificationOutcome:
+    chunk: DocumentChunk
+    resolved_type: ChunkType | None = None
+    error: str | None = None
 
 
 class ChunkTypeClassificationWorkflow:
@@ -97,26 +105,73 @@ class ChunkTypeClassificationWorkflow:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             results = list(
                 executor.map(
-                    lambda chunk: self.llm_classifier.classify(
-                        content=chunk.content,
-                        section_path=chunk.section_path,
-                    ),
+                    self._classify_candidate,
                     candidates,
                 )
             )
 
         reclassified = 0
-        for chunk, result in zip(candidates, results):
-            if result is not None:
-                chunk.chunk_type = result
-                chunk.chunk_type_source = _CHUNK_TYPE_CLASSIFICATION_SOURCE
+        failures: list[_ChunkTypeClassificationOutcome] = []
+        for outcome in results:
+            if outcome.resolved_type is not None:
+                outcome.chunk.chunk_type = outcome.resolved_type
+                outcome.chunk.chunk_type_source = _CHUNK_TYPE_CLASSIFICATION_SOURCE
                 reclassified += 1
+                continue
+            if outcome.error is not None:
+                failures.append(outcome)
+
+        if failures:
+            self._emit(
+                progress_callback,
+                self._build_failure_message(failures),
+            )
 
         self._emit(
             progress_callback,
-            f"LLM reclassified {reclassified}/{len(candidates)} chunk(s).",
+            (
+                f"LLM reclassified {reclassified}/{len(candidates)} chunk(s)"
+                + (
+                    f"; skipped {len(failures)} failed chunk(s)."
+                    if failures
+                    else "."
+                )
+            ),
         )
         return reclassified
+
+    def _classify_candidate(
+        self,
+        chunk: DocumentChunk,
+    ) -> _ChunkTypeClassificationOutcome:
+        try:
+            return _ChunkTypeClassificationOutcome(
+                chunk=chunk,
+                resolved_type=self.llm_classifier.classify(
+                    content=chunk.content,
+                    section_path=chunk.section_path,
+                ),
+            )
+        except Exception as exc:
+            return _ChunkTypeClassificationOutcome(
+                chunk=chunk,
+                error=f"{type(exc).__name__}: {exc}",
+            )
+
+    @staticmethod
+    def _build_failure_message(
+        failures: list[_ChunkTypeClassificationOutcome],
+    ) -> str:
+        preview = "; ".join(
+            f"{failure.chunk.chunk_id} ({failure.error})"
+            for failure in failures[:3]
+        )
+        suffix = " ..." if len(failures) > 3 else ""
+        return (
+            "Chunk-type reclassification skipped "
+            f"{len(failures)} chunk(s) after LLM/schema failures. "
+            f"First failures: {preview}{suffix}"
+        )
 
     @staticmethod
     def _emit(

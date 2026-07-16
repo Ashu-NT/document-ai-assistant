@@ -1,8 +1,8 @@
 {
   "truth_set_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\retrieval_truth_set.md",
   "input_directory": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc",
-  "generated_at": "2026-07-15T18:34:10.507231+00:00",
-  "document_count": 20,
+  "generated_at": "2026-07-15T22:40:36.247441+00:00",
+  "document_count": 22,
   "documents": [
     {
       "document_alias": "manual_fwc12",
@@ -21,7 +21,7 @@
       "classification_confidence": 0.98,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "certificate_hoses_ham2423501",
@@ -37,10 +37,10 @@
       "chunk_count": 35,
       "question_count": 0,
       "classification_label": "certificate",
-      "classification_confidence": 0.98,
+      "classification_confidence": 0.95,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "drawing_nav_lights_13759_3540",
@@ -49,17 +49,17 @@
       "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\13759_3540_01.00_REV.05 Arrangement Navigation Lights and Signals_AS-BUILT.pdf",
       "file_hash": "b26ca2eb4f1aaa0b463783cae2e514fe1aac9c61ec9399ccd7d1bb0d11fc9abb",
       "content_hash": "5719709a8fc75f5ddf2c2bfd9633be15648c398d65c0d7d291821484b80be82a",
-      "document_type": "unknown",
+      "document_type": "manual",
       "page_count": 1,
       "section_count": 1,
       "element_count": 604,
-      "chunk_count": 10,
+      "chunk_count": 13,
       "question_count": 0,
-      "classification_label": "unknown",
-      "classification_confidence": 0.4,
+      "classification_label": "manual",
+      "classification_confidence": 0.9,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "datasheet_mk311xxx",
@@ -68,17 +68,17 @@
       "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\DN25 - DN80_MK311xxx.pdf",
       "file_hash": "1481f98b7dc1e4f07a28567212aeaeced10f9448c374ad7ea462ba8b936feb39",
       "content_hash": "49a7215750c89b96b3491a192145d0f9f92fffd3cb53cb92a8acef3e9031fca8",
-      "document_type": "datasheet",
+      "document_type": "manual",
       "page_count": 4,
       "section_count": 27,
       "element_count": 177,
-      "chunk_count": 22,
+      "chunk_count": 28,
       "question_count": 0,
-      "classification_label": "datasheet",
+      "classification_label": "manual",
       "classification_confidence": 0.95,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "report_pressure_transmitter",
@@ -93,11 +93,11 @@
       "element_count": 945,
       "chunk_count": 184,
       "question_count": 0,
-      "classification_label": "manual",
+      "classification_label": "unknown",
       "classification_confidence": 0.85,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "certificate_ehlers_flow_415902",
@@ -106,17 +106,17 @@
       "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\2130_415902_05_Ehlers_CER_Flow_Measurement.pdf",
       "file_hash": "711c5df6f3f1b68be890ad8fc4f94fd069432bcc2f7c65041ca1e31f9eee7bf7",
       "content_hash": "b2e31739ba44f7f4f816694d81528a0bc2c183499de56f732f82f558e2f7f325",
-      "document_type": "manual",
+      "document_type": "certificate",
       "page_count": 18,
       "section_count": 67,
       "element_count": 4079,
-      "chunk_count": 79,
+      "chunk_count": 66,
       "question_count": 0,
-      "classification_label": "manual",
+      "classification_label": "certificate",
       "classification_confidence": 0.9,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "datasheet_motor_p62b355l4",
@@ -135,7 +135,7 @@
       "classification_confidence": 0.98,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "datasheet_deck_fillers",
@@ -151,10 +151,10 @@
       "chunk_count": 4,
       "question_count": 0,
       "classification_label": "datasheet",
-      "classification_confidence": 0.95,
+      "classification_confidence": 0.98,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "certificate_ac_generators_ham2303402",
@@ -173,7 +173,7 @@
       "classification_confidence": 0.95,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "report_transformer_d4000240",
@@ -189,10 +189,10 @@
       "chunk_count": 13,
       "question_count": 0,
       "classification_label": "report",
-      "classification_confidence": 0.98,
+      "classification_confidence": 0.96,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "report_man_shop_test_8351446",
@@ -211,7 +211,7 @@
       "classification_confidence": 0.95,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "certificate_motor_k2200110",
@@ -230,7 +230,26 @@
       "classification_confidence": 0.95,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
+    },
+    {
+      "document_alias": "manual_puro30_hem",
+      "document_id": "doc_d113c72396654667b035340a66db194f",
+      "file_name": "PURO 30-OWNERS MANUAL-HM13378-ROS213.pdf",
+      "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\PURO 30-OWNERS MANUAL-HM13378-ROS213.pdf",
+      "file_hash": "8f8c4eb8c9a68175a8d153df332d148004dea14da75469417a00a9f0f48c1bd1",
+      "content_hash": "e21952af0848871585e30b5a9aecc903a494e6250f4a25d338e5ac02efd5328e",
+      "document_type": "manual",
+      "page_count": 252,
+      "section_count": 657,
+      "element_count": 31107,
+      "chunk_count": 1828,
+      "question_count": 0,
+      "classification_label": "manual",
+      "classification_confidence": 0.95,
+      "embedding_model": "BAAI/bge-small-en-v1.5",
+      "vector_collection": "document_chunks",
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "manual_bauer_mv320_compressor",
@@ -249,7 +268,7 @@
       "classification_confidence": 0.98,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "certificate_mtu_engine_set_ham2152268",
@@ -265,10 +284,10 @@
       "chunk_count": 18,
       "question_count": 0,
       "classification_label": "certificate",
-      "classification_confidence": 0.95,
+      "classification_confidence": 0.98,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "certificate_ship_sanitation_017_2025",
@@ -284,10 +303,10 @@
       "chunk_count": 10,
       "question_count": 0,
       "classification_label": "certificate",
-      "classification_confidence": 0.9,
+      "classification_confidence": 0.98,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "datasheet_rule_bilge_pumps",
@@ -306,7 +325,26 @@
       "classification_confidence": 0.97,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
+    },
+    {
+      "document_alias": "manual_softener_9500",
+      "document_id": "doc_37bc9f20e1bf432796d05c5aaa3dd175",
+      "file_name": "SOFTENER 9500-OWNERS MANUAL-HM13378-SOF211.pdf",
+      "file_path": "C:\\Users\\ashuf\\Desktop\\Projects\\document-ai-assistant\\TestDoc\\SOFTENER 9500-OWNERS MANUAL-HM13378-SOF211.pdf",
+      "file_hash": "e9e566e3b1d208d0e772b12ac88c26604e8b9dd51f9eac1117ef94fac7800524",
+      "content_hash": "5ae02ff0fdcb89e29fda3184632a719cf267902b1a5db7a0cd57f3d2ced2091d",
+      "document_type": "manual",
+      "page_count": 140,
+      "section_count": 434,
+      "element_count": 18081,
+      "chunk_count": 1054,
+      "question_count": 0,
+      "classification_label": "manual",
+      "classification_confidence": 0.96,
+      "embedding_model": "BAAI/bge-small-en-v1.5",
+      "vector_collection": "document_chunks",
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "datasheet_volvo_penta_d6_440",
@@ -322,10 +360,10 @@
       "chunk_count": 17,
       "question_count": 0,
       "classification_label": "datasheet",
-      "classification_confidence": 0.95,
+      "classification_confidence": 0.97,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "report_vedder_maintenance",
@@ -341,10 +379,10 @@
       "chunk_count": 23,
       "question_count": 0,
       "classification_label": "report",
-      "classification_confidence": 0.98,
+      "classification_confidence": 0.95,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "drawing_ship_name_aft_side",
@@ -360,10 +398,10 @@
       "chunk_count": 17,
       "question_count": 0,
       "classification_label": "drawing",
-      "classification_confidence": 0.95,
+      "classification_confidence": 0.9,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     },
     {
       "document_alias": "certificate_gea_compact_unit_fuel_system",
@@ -382,7 +420,7 @@
       "classification_confidence": 0.95,
       "embedding_model": "BAAI/bge-small-en-v1.5",
       "vector_collection": "document_chunks",
-      "seed_status": "seeded_new"
+      "seed_status": "reseeded_in_place"
     }
   ]
 }
