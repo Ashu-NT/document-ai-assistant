@@ -97,7 +97,7 @@ The system already has a strong in-memory structured evidence model. The main ga
 
 ## Findings
 
-## 1. Parsing-time row normalization is still too narrow
+## 1. Parsing-time row normalization still needs broader real-world coverage
 
 Primary files:
 
@@ -107,10 +107,14 @@ Primary files:
 
 What is happening now:
 
-- `TableRowSemanticNormalizer` only delegates to:
+- `TableRowSemanticNormalizer` already delegates to:
   - `SparePartsTableNormalizer`
   - `TroubleshootingTableNormalizer`
-- if neither specialized normalizer matches, normalization stops there
+  - `MaintenanceScheduleTableNormalizer`
+  - `SpecificationKeyValueTableNormalizer`
+  - `CertificationParticularsTableNormalizer`
+  - `GenericWrappedRowTableNormalizer`
+- this is better than earlier snapshots, but broad real-world table coverage still depends on how well those generic normalizers reconstruct multi-line and matrix-heavy layouts
 
 Why this matters:
 
@@ -131,9 +135,9 @@ Observed architectural consequence:
 
 Bottom line:
 
-The table normalization layer is real, but its semantic coverage is still too narrow for a table-heavy technical-document system.
+The normalization layer is materially stronger than before, but it still needs more robust row/continuation reconstruction for wide operational tables and difficult maintenance/troubleshooting matrices.
 
-## 2. Prompt-time table normalization is weaker than answer-time normalization
+## 2. Prompt-time table projection diverges from answer-time table projection
 
 Primary files:
 
@@ -168,6 +172,16 @@ There are effectively two table-projection qualities in the codebase right now:
 - weaker prompt-time table projection
 
 That divergence is a core consistency problem.
+
+## Implementation Focus For This Pass
+
+The current implementation pass should stay tightly scoped to the highest-value shared fixes:
+
+1. Route prompt-time table projection through the already-built `StructuredAnswerContext.tables` path first, and only fall back to raw-source table projection when typed tables are missing.
+2. Reuse a single prompt-table label mapper so prompt labels do not fork across two code paths.
+3. Add a deterministic maintenance-table fallback renderer that uses `MaintenanceTableCandidateExtractor` directly when `maintenance_entries` are absent or incomplete.
+4. Keep old source-based prompt table projection only as a compatibility fallback, not the active path.
+5. Cover the new path with prompt projector, serializer, and deterministic renderer tests before expanding into broader retrieval filtering work.
 
 ## 3. Structured context exists in Python, but the prompt boundary still weakens it
 

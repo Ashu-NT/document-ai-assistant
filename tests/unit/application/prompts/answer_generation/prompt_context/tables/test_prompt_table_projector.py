@@ -4,6 +4,13 @@ from src.application.prompts.answer_generation.prompt_context.models import (
 from src.application.prompts.answer_generation.prompt_context.tables import (
     PromptTableProjector,
 )
+from src.application.workflows.question_answering.answer_context.tables.answer_table import (
+    AnswerTable,
+    AnswerTableRow,
+)
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 
 
 def test_build_projects_table_with_headers_rows_and_provenance() -> None:
@@ -90,3 +97,47 @@ def test_build_uses_specification_matrix_shape_for_prompt_table_type() -> None:
     assert len(tables) == 1
     assert tables[0].table_type == "specification_table"
     assert tables[0].table_shape == "specification_matrix"
+
+
+def test_build_from_answer_tables_preserves_typed_table_projection() -> None:
+    answer_table = AnswerTable(
+        source_number=8,
+        chunk_id="chunk_maint_001",
+        chunk_type="maintenance_interval",
+        document_title="FWC12 Manual",
+        section_path="Maintenance > Schedule",
+        page_start=58,
+        page_end=59,
+        headers=["Task", "Interval", "Component"],
+        rows=[
+            AnswerTableRow(
+                source_row_index=1,
+                cells=["Replace filter", "Every 500 hours", "Hydraulic pump"],
+                cells_by_header={
+                    "Task": "Replace filter",
+                    "Interval": "Every 500 hours",
+                    "Component": "Hydraulic pump",
+                },
+            )
+        ],
+        table_kind=TableQueryStrategy.MAINTENANCE_SCHEDULE_TABLE,
+        logical_table_family_id="table_family_001",
+        table_category="maintenance_interval_table",
+        table_shape="maintenance_schedule_table",
+        table_structure_quality=0.96,
+        header_paths=[["Task"], ["Interval"], ["Component"]],
+        axis_summary={"row_axis": "task", "column_axis": "interval"},
+    )
+
+    tables = PromptTableProjector().build_from_answer_tables([answer_table])
+
+    assert len(tables) == 1
+    assert tables[0].table_id == "table_family_001"
+    assert tables[0].table_type == "maintenance_table"
+    assert tables[0].document_title == "FWC12 Manual"
+    assert tables[0].headers == ["Task", "Interval", "Component"]
+    assert tables[0].rows[0].cells_by_header == {
+        "Task": "Replace filter",
+        "Interval": "Every 500 hours",
+        "Component": "Hydraulic pump",
+    }

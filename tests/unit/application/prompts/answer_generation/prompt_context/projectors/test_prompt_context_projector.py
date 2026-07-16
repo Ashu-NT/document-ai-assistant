@@ -7,6 +7,17 @@ from src.application.workflows.question_answering.answer_context import (
     AnswerRelationship,
     AnswerStructuredEntity,
 )
+from src.application.workflows.question_answering.answer_context.models import (
+    AnswerSource,
+    StructuredAnswerContext,
+)
+from src.application.workflows.question_answering.answer_context.tables.answer_table import (
+    AnswerTable,
+    AnswerTableRow,
+)
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 from src.domain.common import ChunkType
 from src.domain.common.source_location import SourceLocation
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
@@ -100,3 +111,54 @@ def test_projector_builds_first_class_table_views_from_source_rows() -> None:
         "Value": "700 bar",
     }
     assert bundle.sources[0].table_rows is None
+
+
+def test_projector_prefers_prebuilt_answer_tables_when_available() -> None:
+    context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+        sources=[
+            AnswerSource(
+                source_number=1,
+                chunk_id="chunk_sched",
+                document_id="doc_001",
+                document_title="FWC12 Manual",
+                section_path="Maintenance > Schedule",
+                page_start=58,
+                page_end=59,
+                table_rows=[["Legacy", "Rows"]],
+            )
+        ],
+        tables=[
+            AnswerTable(
+                source_number=1,
+                chunk_id="chunk_sched",
+                chunk_type="maintenance_interval",
+                document_title="FWC12 Manual",
+                section_path="Maintenance > Schedule",
+                page_start=58,
+                page_end=59,
+                headers=["Task", "Interval"],
+                rows=[
+                    AnswerTableRow(
+                        source_row_index=1,
+                        cells=["Inspect basket", "Monthly"],
+                        cells_by_header={
+                            "Task": "Inspect basket",
+                            "Interval": "Monthly",
+                        },
+                    )
+                ],
+                table_kind=TableQueryStrategy.MAINTENANCE_SCHEDULE_TABLE,
+                table_category="maintenance_interval_table",
+            )
+        ],
+        source_count=1,
+    )
+
+    bundle = PromptContextProjector().project(context)
+
+    assert bundle is not None
+    assert len(bundle.tables) == 1
+    assert bundle.tables[0].table_type == "maintenance_table"
+    assert bundle.tables[0].headers == ["Task", "Interval"]
+    assert bundle.tables[0].rows[0].cells == ["Inspect basket", "Monthly"]

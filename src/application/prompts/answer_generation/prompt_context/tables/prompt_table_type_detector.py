@@ -3,6 +3,9 @@ from __future__ import annotations
 from src.application.prompts.answer_generation.prompt_context.models.prompt_source_view import (
     PromptSourceView,
 )
+from src.application.prompts.answer_generation.prompt_context.tables.prompt_table_label_mapper import (
+    prompt_table_label_for_strategy,
+)
 from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
     TableQueryStrategy,
 )
@@ -10,21 +13,6 @@ from src.application.workflows.question_answering.answer_context.tables.table_ty
     resolve_table_type,
 )
 from src.application.workflows.shared.table_category import TableCategory
-
-_RESOLVED_TYPE_TO_PROMPT_LABEL: dict[TableQueryStrategy, str] = {
-    TableQueryStrategy.MAINTENANCE_SCHEDULE_MATRIX: "maintenance_table",
-    TableQueryStrategy.MAINTENANCE_SCHEDULE_TABLE: "maintenance_table",
-    TableQueryStrategy.PERFORMANCE_CURVE_MATRIX: "specification_table",
-    TableQueryStrategy.SPECIFICATION_MATRIX: "specification_table",
-    TableQueryStrategy.TOC_TABLE: "general_table",
-    TableQueryStrategy.TROUBLESHOOTING_TABLE: "general_table",
-    TableQueryStrategy.SPARE_PARTS_TABLE: "spare_parts_table",
-    TableQueryStrategy.CERTIFICATION_TABLE: "certification_table",
-    TableQueryStrategy.RECORD_TABLE: "general_table",
-    TableQueryStrategy.KEY_VALUE_TABLE: "general_table",
-    TableQueryStrategy.GENERAL_TABLE: "general_table",
-}
-
 
 class PromptTableTypeDetector:
     def detect(
@@ -48,7 +36,7 @@ class PromptTableTypeDetector:
             headers=headers,
             rows=source.table_rows,
         )
-        mapped = _RESOLVED_TYPE_TO_PROMPT_LABEL[resolved]
+        mapped = prompt_table_label_for_strategy(resolved)
         if mapped != "general_table":
             return mapped
 

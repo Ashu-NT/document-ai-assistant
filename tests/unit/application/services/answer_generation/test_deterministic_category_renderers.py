@@ -10,6 +10,13 @@ from src.application.workflows.question_answering.answer_context.models import (
     AnswerStructuredEntity,
     StructuredAnswerContext,
 )
+from src.application.workflows.question_answering.answer_context.tables.answer_table import (
+    AnswerTable,
+    AnswerTableRow,
+)
+from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
+    TableQueryStrategy,
+)
 
 from tests.unit.application.services.answer_generation._answer_generation_service_support import (
     FakeLLMService,
@@ -54,6 +61,54 @@ def test_generate_uses_deterministic_maintenance_schedule_renderer() -> None:
     assert "Task" in result.answer_text
     assert "Every 1000 operating hours" in result.answer_text
     assert "Isolate power before opening the housing." in result.answer_text
+    assert llm.calls == []
+
+
+def test_generate_uses_deterministic_maintenance_schedule_renderer_from_tables() -> None:
+    llm = FakeLLMService(response='{"answer_text":"unused"}')
+    service, _ = make_service(llm)
+    structured_context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+        tables=[
+            AnswerTable(
+                source_number=1,
+                chunk_id="chunk_sched",
+                chunk_type="maintenance_interval",
+                document_title="FWC12 Manual",
+                section_path="Maintenance > Schedule",
+                page_start=58,
+                page_end=59,
+                headers=["Task", "D", "M", "A"],
+                rows=[
+                    AnswerTableRow(
+                        source_row_index=1,
+                        cells=["Inspect basket", "x", "x", ""],
+                        cells_by_header={
+                            "Task": "Inspect basket",
+                            "D": "x",
+                            "M": "x",
+                            "A": "",
+                        },
+                    )
+                ],
+                table_kind=TableQueryStrategy.MAINTENANCE_SCHEDULE_MATRIX,
+                column_roles={0: "task"},
+            )
+        ],
+    )
+
+    result = service.generate(
+        AnswerGenerationRequest(
+            question="What are the maintenance intervals?",
+            context_chunks=[_make_chunk()],
+            answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+            structured_context=structured_context,
+        )
+    )
+
+    assert result.model_name == "deterministic_maintenance_schedule_renderer"
+    assert "Inspect basket" in result.answer_text
+    assert "Daily; Monthly" in result.answer_text
     assert llm.calls == []
 
 

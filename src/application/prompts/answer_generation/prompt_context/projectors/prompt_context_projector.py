@@ -63,7 +63,9 @@ class PromptContextProjector:
                 source_number_by_chunk_id=source_number_by_chunk_id,
             )
         )
-        tables = self.prompt_table_projector.build(projected_sources)
+        tables = self.prompt_table_projector.build_from_answer_tables(context.tables)
+        if not tables:
+            tables = self.prompt_table_projector.build(projected_sources)
         source_families, section_topology = self.prompt_evidence_topology_builder.build(
             answer_intent_value=context.answer_intent.value,
             sources=projected_sources,
