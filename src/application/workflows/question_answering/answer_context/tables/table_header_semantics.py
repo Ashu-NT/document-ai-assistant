@@ -5,6 +5,7 @@ import re
 from src.application.workflows.shared.maintenance_text_cleaning import (
     MAINTENANCE_PLACEHOLDER_VALUES,
 )
+from src.domain.assets.table_rows.table_row_patterns import SCHEDULE_INTERVAL_LABELS
 
 _HEADER_ROLE_ALIASES: dict[str, tuple[str, ...]] = {
     "label": (
@@ -74,25 +75,6 @@ _HEADER_ROLE_ALIASES: dict[str, tuple[str, ...]] = {
     "type": ("type",),
 }
 
-_SCHEDULE_INTERVAL_HEADERS: dict[str, str] = {
-    "a": "Annual",
-    "annual": "Annual",
-    "annually": "Annual",
-    "before startup": "Before startup",
-    "d": "Daily",
-    "daily": "Daily",
-    "m": "Monthly",
-    "monthly": "Monthly",
-    "q": "Quarterly",
-    "quarterly": "Quarterly",
-    "s": "Semi-Annual",
-    "semi annual": "Semi-Annual",
-    "semi-annual": "Semi-Annual",
-    "w": "Weekly",
-    "weekly": "Weekly",
-    "yearly": "Annual",
-}
-
 _POSITIVE_SCHEDULE_MARKERS = {
     "1",
     "check",
@@ -133,14 +115,14 @@ def schedule_interval_label(header: str) -> str | None:
 
 def schedule_interval_labels(header: str) -> tuple[str, ...]:
     normalized = normalize_header(header)
-    if normalized in _SCHEDULE_INTERVAL_HEADERS:
-        return (_SCHEDULE_INTERVAL_HEADERS[normalized],)
+    if normalized in SCHEDULE_INTERVAL_LABELS:
+        return (SCHEDULE_INTERVAL_LABELS[normalized],)
     if normalized.startswith("every ") or normalized.endswith(" hours"):
         return (" ".join(header.strip().split()),)
 
     tokens = _tokenize_schedule_header(normalized)
-    if len(tokens) >= 2 and all(token in _SCHEDULE_INTERVAL_HEADERS for token in tokens):
-        labels = [_SCHEDULE_INTERVAL_HEADERS[token] for token in tokens]
+    if len(tokens) >= 2 and all(token in SCHEDULE_INTERVAL_LABELS for token in tokens):
+        labels = [SCHEDULE_INTERVAL_LABELS[token] for token in tokens]
         return tuple(dict.fromkeys(labels))
     return ()
 

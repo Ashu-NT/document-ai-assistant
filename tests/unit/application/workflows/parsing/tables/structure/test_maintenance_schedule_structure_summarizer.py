@@ -3,7 +3,7 @@ import pytest
 from src.application.workflows.parsing.tables.structure.maintenance_schedule_structure_summarizer import (
     MaintenanceScheduleStructureSummarizer,
 )
-from src.application.workflows.parsing.tables.structure.table_shape import TableShape
+from src.application.workflows.shared.table_kind import TableKind
 
 
 def test_summarize_returns_none_when_not_a_maintenance_interval_matrix() -> None:
@@ -25,7 +25,7 @@ def test_summarize_produces_maintenance_schedule_matrix_summary() -> None:
     summary = MaintenanceScheduleStructureSummarizer().summarize(rows)
 
     assert summary is not None
-    assert summary.table_shape == TableShape.MAINTENANCE_SCHEDULE_MATRIX
+    assert summary.table_shape == TableKind.MAINTENANCE_SCHEDULE_MATRIX
     assert summary.header_paths == [
         ["Task"],
         ["Interval", "Daily"],

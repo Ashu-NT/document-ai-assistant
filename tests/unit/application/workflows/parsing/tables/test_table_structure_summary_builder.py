@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.tables.structure import (
-    TableShape,
     TableStructureSummaryBuilder,
 )
+from src.application.workflows.shared.table_kind import TableKind
 from src.domain.assets import TableAsset
 
 
@@ -26,7 +26,7 @@ def test_builder_summarizes_maintenance_schedule_matrix() -> None:
     )
 
     assert summary is not None
-    assert summary.table_shape == TableShape.MAINTENANCE_SCHEDULE_MATRIX
+    assert summary.table_shape == TableKind.MAINTENANCE_SCHEDULE_MATRIX
     assert summary.header_paths == [
         ["Task"],
         ["Interval", "Daily"],
@@ -55,7 +55,7 @@ def test_builder_summarizes_performance_curve_matrix() -> None:
     )
 
     assert summary is not None
-    assert summary.table_shape == TableShape.PERFORMANCE_CURVE_MATRIX
+    assert summary.table_shape == TableKind.PERFORMANCE_CURVE_MATRIX
     assert summary.header_paths == [
         ["Pump type"],
         ["Motor power", "kW"],
@@ -86,7 +86,7 @@ def test_builder_summarizes_specification_matrix() -> None:
     )
 
     assert summary is not None
-    assert summary.table_shape == TableShape.SPECIFICATION_MATRIX
+    assert summary.table_shape == TableKind.SPECIFICATION_MATRIX
     assert summary.header_paths == [
         ["Parameter"],
         ["Field", "Compact version"],
@@ -114,7 +114,7 @@ def test_builder_falls_back_to_generic_record_table_summary() -> None:
     )
 
     assert summary is not None
-    assert summary.table_shape == TableShape.RECORD_TABLE
+    assert summary.table_shape == TableKind.RECORD_TABLE
     assert summary.header_paths == [
         ["component"],
         ["manufacturer"],

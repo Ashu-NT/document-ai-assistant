@@ -1,8 +1,9 @@
 from typing import Any
 
-from src.shared.activity import ActivityContext, ActivitySeverity, ActivityStatus
+from src.shared.activity import ActivityContext, ActivityStatus
 from src.shared.execution.payloads import build_failure_payload
 from src.shared.execution.result_adapter import ResultAdapter
+from src.shared.severity import Severity
 
 
 class ActivityTracker:
@@ -32,7 +33,7 @@ class ActivityTracker:
             entity_type=action_result.entity_type or default_entity_type,
             entity_id=action_result.entity_id,
             status=ActivityStatus.COMPLETED,
-            severity=ActivitySeverity.INFO,
+            severity=Severity.INFO,
             payload=action_result.payload,
         )
 
@@ -56,6 +57,6 @@ class ActivityTracker:
             context=context,
             entity_type=default_entity_type,
             status=ActivityStatus.FAILED,
-            severity=ActivitySeverity.ERROR,
+            severity=Severity.ERROR,
             payload=build_failure_payload(exc),
         )

@@ -1,31 +1,12 @@
 from __future__ import annotations
 
-from src.domain.assets.table_rows.table_row_patterns import normalize_cell
-
-_OPEN_ENDINGS = {
-    "a",
-    "an",
-    "and",
-    "as",
-    "at",
-    "be",
-    "been",
-    "by",
-    "for",
-    "from",
-    "in",
-    "into",
-    "of",
-    "on",
-    "or",
-    "that",
-    "the",
-    "to",
-    "with",
-    "without",
-}
-_TERMINAL_PUNCTUATION = (".", "!", "?", ";", ":")
-_CONTINUATION_PREFIXES = ("(", "-", "*", "/", "•", "·")
+from src.domain.assets.table_rows.table_row_patterns import (
+    looks_continuation_start,
+    looks_incomplete_text,
+    looks_terminated_text,
+    merge_continuation_text,
+    normalize_cell,
+)
 
 
 class DoclingSparseContinuationRowMerger:
@@ -77,33 +58,9 @@ class DoclingSparseContinuationRowMerger:
             return False
         if previous.endswith("-"):
             return True
-        if self._looks_incomplete(previous):
+        if looks_incomplete_text(previous):
             return True
-        return not self._looks_terminated(previous) and self._looks_continuation_start(
-            current
-        )
-
-    @staticmethod
-    def _looks_incomplete(value: str) -> bool:
-        if not value or DoclingSparseContinuationRowMerger._looks_terminated(value):
-            return False
-        tokens = value.casefold().split()
-        if not tokens:
-            return False
-        return tokens[-1] in _OPEN_ENDINGS or value.endswith(("-", "/", ","))
-
-    @staticmethod
-    def _looks_terminated(value: str) -> bool:
-        return value.rstrip().endswith(_TERMINAL_PUNCTUATION)
-
-    @staticmethod
-    def _looks_continuation_start(value: str) -> bool:
-        stripped = value.lstrip()
-        if not stripped:
-            return False
-        if stripped[0].islower() or stripped[0].isdigit():
-            return True
-        return stripped.startswith(_CONTINUATION_PREFIXES)
+        return not looks_terminated_text(previous) and looks_continuation_start(current)
 
     def _attach(self, previous_row: list[str], current_row: list[str]) -> list[str]:
         merged = list(previous_row)
@@ -111,17 +68,5 @@ class DoclingSparseContinuationRowMerger:
             normalized = normalize_cell(value)
             if not normalized:
                 continue
-            merged[index] = self._merge_text(merged[index], normalized)
+            merged[index] = merge_continuation_text(merged[index], normalized)
         return merged
-
-    @staticmethod
-    def _merge_text(previous_value: str, current_value: str) -> str:
-        previous = normalize_cell(previous_value)
-        current = normalize_cell(current_value)
-        if not previous:
-            return current
-        if not current or previous.casefold() == current.casefold():
-            return previous
-        if previous.endswith("-"):
-            return f"{previous[:-1]}{current}".strip()
-        return f"{previous} {current}".strip()

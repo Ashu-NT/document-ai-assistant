@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from src.application.workflows.parsing.tables.structure.table_shape import (
-    TableShape,
-)
+from src.application.workflows.shared.table_kind import TableKind
 from src.application.workflows.parsing.tables.structure.table_structure_summary import (
     TableStructureSummary,
 )
@@ -34,7 +32,7 @@ class PerformanceCurveStructureSummarizer:
         header_paths = self._header_paths(cleaned_rows, normalized.headers)
         quality_score = self._quality_score(normalized.rows, normalized.headers)
         return TableStructureSummary(
-            table_shape=TableShape.PERFORMANCE_CURVE_MATRIX,
+            table_shape=TableKind.PERFORMANCE_CURVE_MATRIX,
             quality_score=quality_score,
             header_paths=header_paths,
             axis_summary={

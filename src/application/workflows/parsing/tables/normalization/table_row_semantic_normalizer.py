@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 from src.domain.assets import TableAsset
+from src.domain.assets.table_cell_span import TableCellSpan
 from src.domain.assets.table_rows import (
+    CertificationParticularsTableNormalizer,
+    GenericWrappedRowTableNormalizer,
+    MaintenanceScheduleTableNormalizer,
     NormalizedTableRows,
     SparePartsTableNormalizer,
+    SpecificationKeyValueTableNormalizer,
     TroubleshootingTableNormalizer,
 )
 
@@ -14,6 +19,18 @@ class TableRowSemanticNormalizer:
         *,
         spare_parts_normalizer: SparePartsTableNormalizer | None = None,
         troubleshooting_normalizer: TroubleshootingTableNormalizer | None = None,
+        maintenance_schedule_normalizer: (
+            MaintenanceScheduleTableNormalizer | None
+        ) = None,
+        specification_key_value_normalizer: (
+            SpecificationKeyValueTableNormalizer | None
+        ) = None,
+        certification_particulars_normalizer: (
+            CertificationParticularsTableNormalizer | None
+        ) = None,
+        generic_wrapped_row_normalizer: (
+            GenericWrappedRowTableNormalizer | None
+        ) = None,
     ) -> None:
         self.spare_parts_normalizer = (
             spare_parts_normalizer or SparePartsTableNormalizer()
@@ -21,11 +38,26 @@ class TableRowSemanticNormalizer:
         self.troubleshooting_normalizer = (
             troubleshooting_normalizer or TroubleshootingTableNormalizer()
         )
+        self.maintenance_schedule_normalizer = (
+            maintenance_schedule_normalizer or MaintenanceScheduleTableNormalizer()
+        )
+        self.specification_key_value_normalizer = (
+            specification_key_value_normalizer
+            or SpecificationKeyValueTableNormalizer()
+        )
+        self.certification_particulars_normalizer = (
+            certification_particulars_normalizer
+            or CertificationParticularsTableNormalizer()
+        )
+        self.generic_wrapped_row_normalizer = (
+            generic_wrapped_row_normalizer or GenericWrappedRowTableNormalizer()
+        )
 
     def normalize(self, table: TableAsset) -> bool:
         normalized_main_rows = self._normalize_rows(
             table.rows,
             table_category=table.table_category,
+            cell_spans=table.cell_spans,
         )
         updated = self._apply_main_rows(table, normalized_main_rows)
         if self._normalize_parallel_streams(table):
@@ -46,6 +78,7 @@ class TableRowSemanticNormalizer:
             normalized_rows = self._normalize_rows(
                 rows,
                 table_category=table.table_category,
+                cell_spans=table.cell_spans,
             )
             if normalized_rows is not None and normalized_rows != rows:
                 normalized_streams.append(normalized_rows)
@@ -67,10 +100,12 @@ class TableRowSemanticNormalizer:
         rows: list[list[str]],
         *,
         table_category: str | None,
+        cell_spans: list[TableCellSpan] | None = None,
     ) -> list[list[str]] | None:
         normalized = self._specialized_normalization(
             rows,
             table_category=table_category,
+            cell_spans=cell_spans,
         )
         if normalized is None:
             return None
@@ -81,15 +116,21 @@ class TableRowSemanticNormalizer:
         rows: list[list[str]],
         *,
         table_category: str | None,
+        cell_spans: list[TableCellSpan] | None = None,
     ) -> NormalizedTableRows | None:
         for normalizer in (
             self.spare_parts_normalizer,
             self.troubleshooting_normalizer,
+            self.maintenance_schedule_normalizer,
+            self.specification_key_value_normalizer,
+            self.certification_particulars_normalizer,
+            self.generic_wrapped_row_normalizer,
         ):
             normalized = normalizer.normalize(
                 rows,
                 table_category=table_category,
                 chunk_type=None,
+                cell_spans=cell_spans,
             )
             if normalized is not None:
                 return normalized

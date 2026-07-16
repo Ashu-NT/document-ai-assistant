@@ -1,36 +1,12 @@
 from __future__ import annotations
 
-from src.domain.assets.table_rows.table_row_patterns import normalize_cell
-
-_OPEN_ENDINGS = (
-    "a",
-    "an",
-    "and",
-    "are",
-    "as",
-    "at",
-    "be",
-    "been",
-    "by",
-    "for",
-    "from",
-    "has",
-    "have",
-    "in",
-    "into",
-    "is",
-    "of",
-    "on",
-    "or",
-    "that",
-    "the",
-    "to",
-    "was",
-    "were",
-    "with",
-    "without",
+from src.domain.assets.table_rows.table_row_patterns import (
+    looks_continuation_start,
+    looks_incomplete_text,
+    looks_terminated_text,
+    merge_continuation_text,
+    normalize_cell,
 )
-_TERMINAL_PUNCTUATION = (".", "!", "?", ";", ":")
 
 
 class TroubleshootingRowContinuationMerger:
@@ -149,30 +125,11 @@ class TroubleshootingRowContinuationMerger:
             return False
         if previous_value.casefold() == current_value.casefold():
             return False
-        if self._looks_incomplete(previous_value):
+        if looks_incomplete_text(previous_value):
             return True
-        return (
-            not self._looks_terminated(previous_value)
-            and self._looks_continuation_start(current_value)
+        return not looks_terminated_text(previous_value) and looks_continuation_start(
+            current_value
         )
-
-    @staticmethod
-    def _looks_incomplete(value: str) -> bool:
-        if not value or TroubleshootingRowContinuationMerger._looks_terminated(value):
-            return False
-        tokens = value.casefold().split()
-        if not tokens:
-            return False
-        return tokens[-1] in _OPEN_ENDINGS or value.endswith(("-", "/", ","))
-
-    @staticmethod
-    def _looks_terminated(value: str) -> bool:
-        return value.rstrip().endswith(_TERMINAL_PUNCTUATION)
-
-    @staticmethod
-    def _looks_continuation_start(value: str) -> bool:
-        stripped = value.lstrip()
-        return bool(stripped) and stripped[0].islower()
 
     @staticmethod
     def _same_or_missing(left: str, right: str) -> bool:
@@ -188,10 +145,4 @@ class TroubleshootingRowContinuationMerger:
 
     @staticmethod
     def _merge_text(previous_value: str, current_value: str) -> str:
-        if not previous_value:
-            return current_value
-        if not current_value or previous_value.casefold() == current_value.casefold():
-            return previous_value
-        if previous_value.endswith("-"):
-            return f"{previous_value[:-1]}{current_value}".strip()
-        return f"{previous_value} {current_value}".strip()
+        return merge_continuation_text(previous_value, current_value)

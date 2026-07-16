@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from src.application.workflows.parsing.tables.structure.table_shape import (
-    TableShape,
-)
+from src.application.workflows.shared.table_kind import TableKind
 from src.application.workflows.parsing.tables.structure.table_structure_summary import (
     TableStructureSummary,
 )
@@ -76,7 +74,7 @@ class SpecificationMatrixStructureSummarizer:
             axis_summary["descriptor_axis"] = "notes"
 
         return TableStructureSummary(
-            table_shape=TableShape.SPECIFICATION_MATRIX,
+            table_shape=TableKind.SPECIFICATION_MATRIX,
             quality_score=self._quality_score(cleaned_rows),
             header_paths=self._header_paths(headers),
             axis_summary=axis_summary,

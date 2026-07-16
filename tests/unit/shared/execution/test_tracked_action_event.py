@@ -1,15 +1,16 @@
 import pytest
 
 from src.domain.events import DomainEvent
-from src.shared.events import EventContext, EventSeverity
+from src.shared.events import EventContext
 from src.shared.execution import ActionResult, tracked_action
+from src.shared.severity import Severity
 
 
 class FakeEventService:
     def __init__(self) -> None:
         self.published = []
 
-    def publish(self, event, *, context=None, severity=EventSeverity.INFO):
+    def publish(self, event, *, context=None, severity=Severity.INFO):
         self.published.append(
             {
                 "event": event,
@@ -83,7 +84,7 @@ def test_tracked_action_records_event_from_action_result() -> None:
     assert event.aggregate_id == "doc_001"
     assert event.payload["document_id"] == "doc_001"
     assert published["context"].actor_id == "user_001"
-    assert published["severity"] == EventSeverity.INFO
+    assert published["severity"] == Severity.INFO
 
 
 def test_tracked_action_records_existing_domain_event() -> None:
@@ -117,4 +118,4 @@ def test_tracked_action_records_event_failure() -> None:
     assert event.event_type == "document.load.failed"
     assert event.aggregate_type == "document"
     assert event.payload["error_type"] == "RuntimeError"
-    assert published["severity"] == EventSeverity.ERROR
+    assert published["severity"] == Severity.ERROR

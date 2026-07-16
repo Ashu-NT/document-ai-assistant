@@ -4,69 +4,69 @@ from dataclasses import asdict, is_dataclass
 from typing import Any
 
 from src.application.services.extraction import ExtractionService
-from src.application.workflows.retrieval.structured.structured_entity_type import (
-    StructuredEntityType,
+from src.application.prompts.extraction.common.extraction_prompt_type import (
+    ExtractionPromptType,
 )
 from src.domain.extraction import SemanticEntityType
 from src.shared.exceptions import ApplicationError
 
 
 class StructuredEntityResolver:
-    _SEARCH_METHODS: dict[StructuredEntityType, str] = {
-        StructuredEntityType.MANUFACTURER: "search_manufacturers",
-        StructuredEntityType.SUPPLIER: "search_suppliers",
-        StructuredEntityType.CONTACT_POINT: "search_contact_points",
-        StructuredEntityType.SPARE_PART: "search_spare_parts",
-        StructuredEntityType.EQUIPMENT: "search_equipment",
-        StructuredEntityType.MAINTENANCE_TASK: "search_maintenance_tasks",
-        StructuredEntityType.PROCEDURE: "search_procedures",
-        StructuredEntityType.SPECIFICATION: "search_specifications",
-        StructuredEntityType.SAFETY_WARNING: "search_safety_warnings",
-        StructuredEntityType.MAINTENANCE_INTERVAL: "search_maintenance_intervals",
-        StructuredEntityType.TROUBLESHOOTING: "search_troubleshooting_entries",
+    _SEARCH_METHODS: dict[ExtractionPromptType, str] = {
+        ExtractionPromptType.MANUFACTURER: "search_manufacturers",
+        ExtractionPromptType.SUPPLIER: "search_suppliers",
+        ExtractionPromptType.CONTACT_POINT: "search_contact_points",
+        ExtractionPromptType.SPARE_PART: "search_spare_parts",
+        ExtractionPromptType.EQUIPMENT: "search_equipment",
+        ExtractionPromptType.MAINTENANCE_TASK: "search_maintenance_tasks",
+        ExtractionPromptType.PROCEDURE: "search_procedures",
+        ExtractionPromptType.SPECIFICATION: "search_specifications",
+        ExtractionPromptType.SAFETY_WARNING: "search_safety_warnings",
+        ExtractionPromptType.MAINTENANCE_INTERVAL: "search_maintenance_intervals",
+        ExtractionPromptType.TROUBLESHOOTING: "search_troubleshooting_entries",
     }
-    _LIST_METHODS: dict[StructuredEntityType, str] = {
-        StructuredEntityType.MANUFACTURER: "list_manufacturers",
-        StructuredEntityType.SUPPLIER: "list_suppliers",
-        StructuredEntityType.CONTACT_POINT: "list_contact_points",
-        StructuredEntityType.SPARE_PART: "list_spare_parts",
-        StructuredEntityType.EQUIPMENT: "list_equipment",
-        StructuredEntityType.MAINTENANCE_TASK: "list_maintenance_tasks",
-        StructuredEntityType.PROCEDURE: "list_procedures",
-        StructuredEntityType.SPECIFICATION: "list_specifications",
-        StructuredEntityType.SAFETY_WARNING: "list_safety_warnings",
-        StructuredEntityType.MAINTENANCE_INTERVAL: "list_maintenance_intervals",
-        StructuredEntityType.TROUBLESHOOTING: "list_troubleshooting_entries",
+    _LIST_METHODS: dict[ExtractionPromptType, str] = {
+        ExtractionPromptType.MANUFACTURER: "list_manufacturers",
+        ExtractionPromptType.SUPPLIER: "list_suppliers",
+        ExtractionPromptType.CONTACT_POINT: "list_contact_points",
+        ExtractionPromptType.SPARE_PART: "list_spare_parts",
+        ExtractionPromptType.EQUIPMENT: "list_equipment",
+        ExtractionPromptType.MAINTENANCE_TASK: "list_maintenance_tasks",
+        ExtractionPromptType.PROCEDURE: "list_procedures",
+        ExtractionPromptType.SPECIFICATION: "list_specifications",
+        ExtractionPromptType.SAFETY_WARNING: "list_safety_warnings",
+        ExtractionPromptType.MAINTENANCE_INTERVAL: "list_maintenance_intervals",
+        ExtractionPromptType.TROUBLESHOOTING: "list_troubleshooting_entries",
     }
-    _SEMANTIC_ENTITY_TYPES: dict[StructuredEntityType, SemanticEntityType] = {
-        StructuredEntityType.MANUFACTURER: SemanticEntityType.MANUFACTURER,
-        StructuredEntityType.SUPPLIER: SemanticEntityType.SUPPLIER,
-        StructuredEntityType.CONTACT_POINT: SemanticEntityType.CONTACT_POINT,
-        StructuredEntityType.SPARE_PART: SemanticEntityType.SPARE_PART,
-        StructuredEntityType.EQUIPMENT: SemanticEntityType.EQUIPMENT,
-        StructuredEntityType.MAINTENANCE_TASK: SemanticEntityType.MAINTENANCE_TASK,
-        StructuredEntityType.PROCEDURE: SemanticEntityType.PROCEDURE,
-        StructuredEntityType.SPECIFICATION: SemanticEntityType.SPECIFICATION,
-        StructuredEntityType.SAFETY_WARNING: SemanticEntityType.SAFETY_WARNING,
-        StructuredEntityType.MAINTENANCE_INTERVAL: SemanticEntityType.MAINTENANCE_INTERVAL,
-        StructuredEntityType.TROUBLESHOOTING: SemanticEntityType.TROUBLESHOOTING_ENTRY,
+    _SEMANTIC_ENTITY_TYPES: dict[ExtractionPromptType, SemanticEntityType] = {
+        ExtractionPromptType.MANUFACTURER: SemanticEntityType.MANUFACTURER,
+        ExtractionPromptType.SUPPLIER: SemanticEntityType.SUPPLIER,
+        ExtractionPromptType.CONTACT_POINT: SemanticEntityType.CONTACT_POINT,
+        ExtractionPromptType.SPARE_PART: SemanticEntityType.SPARE_PART,
+        ExtractionPromptType.EQUIPMENT: SemanticEntityType.EQUIPMENT,
+        ExtractionPromptType.MAINTENANCE_TASK: SemanticEntityType.MAINTENANCE_TASK,
+        ExtractionPromptType.PROCEDURE: SemanticEntityType.PROCEDURE,
+        ExtractionPromptType.SPECIFICATION: SemanticEntityType.SPECIFICATION,
+        ExtractionPromptType.SAFETY_WARNING: SemanticEntityType.SAFETY_WARNING,
+        ExtractionPromptType.MAINTENANCE_INTERVAL: SemanticEntityType.MAINTENANCE_INTERVAL,
+        ExtractionPromptType.TROUBLESHOOTING: SemanticEntityType.TROUBLESHOOTING_ENTRY,
     }
-    _STRUCTURED_ENTITY_TYPES: dict[SemanticEntityType, StructuredEntityType] = {
+    _STRUCTURED_ENTITY_TYPES: dict[SemanticEntityType, ExtractionPromptType] = {
         semantic_type: structured_type
         for structured_type, semantic_type in _SEMANTIC_ENTITY_TYPES.items()
     }
-    _ID_FIELDS: dict[StructuredEntityType, str] = {
-        StructuredEntityType.MANUFACTURER: "manufacturer_id",
-        StructuredEntityType.SUPPLIER: "supplier_id",
-        StructuredEntityType.CONTACT_POINT: "contact_point_id",
-        StructuredEntityType.SPARE_PART: "spare_part_id",
-        StructuredEntityType.EQUIPMENT: "equipment_id",
-        StructuredEntityType.MAINTENANCE_TASK: "task_id",
-        StructuredEntityType.PROCEDURE: "procedure_id",
-        StructuredEntityType.SPECIFICATION: "specification_id",
-        StructuredEntityType.SAFETY_WARNING: "safety_warning_id",
-        StructuredEntityType.MAINTENANCE_INTERVAL: "maintenance_interval_id",
-        StructuredEntityType.TROUBLESHOOTING: "troubleshooting_id",
+    _ID_FIELDS: dict[ExtractionPromptType, str] = {
+        ExtractionPromptType.MANUFACTURER: "manufacturer_id",
+        ExtractionPromptType.SUPPLIER: "supplier_id",
+        ExtractionPromptType.CONTACT_POINT: "contact_point_id",
+        ExtractionPromptType.SPARE_PART: "spare_part_id",
+        ExtractionPromptType.EQUIPMENT: "equipment_id",
+        ExtractionPromptType.MAINTENANCE_TASK: "task_id",
+        ExtractionPromptType.PROCEDURE: "procedure_id",
+        ExtractionPromptType.SPECIFICATION: "specification_id",
+        ExtractionPromptType.SAFETY_WARNING: "safety_warning_id",
+        ExtractionPromptType.MAINTENANCE_INTERVAL: "maintenance_interval_id",
+        ExtractionPromptType.TROUBLESHOOTING: "troubleshooting_id",
     }
 
     def __init__(self, extraction_service: ExtractionService) -> None:
@@ -74,7 +74,7 @@ class StructuredEntityResolver:
 
     def resolve(
         self,
-        entity_type: StructuredEntityType,
+        entity_type: ExtractionPromptType,
         *,
         query_text: str | None = None,
         document_id: str | None = None,
@@ -95,12 +95,12 @@ class StructuredEntityResolver:
         self._attach_related_entities(serialized_items, entity_type=entity_type)
         return serialized_items
 
-    def entity_id_field(self, entity_type: StructuredEntityType) -> str:
+    def entity_id_field(self, entity_type: ExtractionPromptType) -> str:
         return self._ID_FIELDS[entity_type]
 
     def _load_items(
         self,
-        entity_type: StructuredEntityType,
+        entity_type: ExtractionPromptType,
         *,
         query_text: str | None,
         document_id: str | None,
@@ -119,7 +119,7 @@ class StructuredEntityResolver:
         self,
         serialized_items: list[dict[str, Any]],
         *,
-        entity_type: StructuredEntityType,
+        entity_type: ExtractionPromptType,
     ) -> None:
         semantic_type = self._SEMANTIC_ENTITY_TYPES[entity_type]
         id_field = self._ID_FIELDS[entity_type]

@@ -3,7 +3,8 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from src.shared.activity.activity_types import ActivitySeverity, ActivityStatus
+from src.shared.activity.activity_types import ActivityStatus
+from src.shared.severity import Severity
 
 
 @dataclass
@@ -17,7 +18,7 @@ class ActivityRecord:
     entity_id: str | None = None
 
     status: ActivityStatus = ActivityStatus.COMPLETED
-    severity: ActivitySeverity = ActivitySeverity.INFO
+    severity: Severity = Severity.INFO
 
     actor_id: str | None = None
     actor_type: str = "system"

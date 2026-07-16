@@ -51,6 +51,18 @@ _MAINTENANCE_COMPONENT_PATTERN = re.compile(
     r"(?:(?:the|a|an)\s+)?(?P<component>[^,.;:]+)",
     re.IGNORECASE,
 )
+# Deliberately NOT merged with `table_header_semantics._HEADER_ROLE_ALIASES`
+# despite the overlap: that module's `match_header_role` is a general-purpose
+# classifier shared across every table-kind resolution (see
+# `table_type_resolution_core.py`), while this dict only ever maps to this
+# parser's own narrower 4-role maintenance-candidate output space. Two words
+# genuinely disagree between the two: "item" resolves to "component" here but
+# to "position" via `match_header_role` (checked first, since "label"/
+# "position" are declared ahead of "component" there), and "details" resolves
+# to "notes" here but to "value" there. Forcing one shared table would either
+# silently change `match_header_role`'s answer for its existing callers or
+# require a lossy role-translation layer -- not worth it to remove the
+# genuinely-missing aliases below, which are added directly instead.
 _TABLE_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "task": (
         "task",
@@ -59,6 +71,7 @@ _TABLE_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
         "activity",
         "action",
         "operation",
+        "inspection item",
     ),
     "interval": (
         "interval",
@@ -67,9 +80,20 @@ _TABLE_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
         "frequency/interval",
         "period",
         "schedule",
+        "inspection interval",
+        "service interval",
     ),
     "component": ("component", "equipment", "part", "item", "location"),
-    "notes": ("notes", "remark", "remarks", "comment", "comments", "details"),
+    "notes": (
+        "notes",
+        "note",
+        "remark",
+        "remarks",
+        "comment",
+        "comments",
+        "details",
+        "reference",
+    ),
 }
 
 

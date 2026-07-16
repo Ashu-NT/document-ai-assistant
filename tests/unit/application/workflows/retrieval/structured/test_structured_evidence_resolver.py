@@ -1,7 +1,7 @@
 import pytest
 
-from src.application.workflows.retrieval.structured.structured_entity_type import (
-    StructuredEntityType,
+from src.application.prompts.extraction.common.extraction_prompt_type import (
+    ExtractionPromptType,
 )
 from src.application.workflows.retrieval.structured.structured_evidence_query_analysis import (
     StructuredEvidenceQueryAnalysis,
@@ -62,8 +62,8 @@ class FakeEntityResolver:
     @staticmethod
     def entity_id_field(entity_type):
         return {
-            StructuredEntityType.MANUFACTURER: "manufacturer_id",
-            StructuredEntityType.SPARE_PART: "spare_part_id",
+            ExtractionPromptType.MANUFACTURER: "manufacturer_id",
+            ExtractionPromptType.SPARE_PART: "spare_part_id",
         }[entity_type]
 
 
@@ -90,7 +90,7 @@ def test_resolve_combines_identifiers_and_entities_into_scored_chunks(
     entity = {
         "manufacturer_id": "manufacturer_001",
         "source_chunk_id": chunk_id,
-        "_entity_type": StructuredEntityType.MANUFACTURER.value,
+        "_entity_type": ExtractionPromptType.MANUFACTURER.value,
         "related_entities": [],
     }
     document_lookup_service = FakeDocumentLookupService(
@@ -100,14 +100,14 @@ def test_resolve_combines_identifiers_and_entities_into_scored_chunks(
         chunks_by_id={chunk_id: sample_chunk},
     )
     entity_resolver = FakeEntityResolver(
-        entities_by_type={StructuredEntityType.MANUFACTURER: [entity]},
+        entities_by_type={ExtractionPromptType.MANUFACTURER: [entity]},
     )
     resolver = StructuredEvidenceResolver(
         document_lookup_service=document_lookup_service,
         entity_resolver=entity_resolver,
         query_analyzer=FakeQueryAnalyzer(
             StructuredEvidenceQueryAnalysis(
-                entity_types=[StructuredEntityType.MANUFACTURER],
+                entity_types=[ExtractionPromptType.MANUFACTURER],
                 identifier_types=[IdentifierType.PART_NUMBER],
             )
         ),
@@ -219,7 +219,7 @@ def test_resolve_detail_entities_returns_empty_when_no_detail_entity_type() -> N
 def test_resolve_detail_entities_delegates_to_entity_resolver_when_present() -> None:
     entity_resolver = FakeEntityResolver(
         entities_by_type={
-            StructuredEntityType.MANUFACTURER: [{"manufacturer_id": "manufacturer_001"}]
+            ExtractionPromptType.MANUFACTURER: [{"manufacturer_id": "manufacturer_001"}]
         }
     )
     resolver = StructuredEvidenceResolver(
@@ -227,7 +227,7 @@ def test_resolve_detail_entities_delegates_to_entity_resolver_when_present() -> 
         entity_resolver=entity_resolver,
         query_analyzer=FakeQueryAnalyzer(
             StructuredEvidenceQueryAnalysis(
-                detail_entity_type=StructuredEntityType.MANUFACTURER
+                detail_entity_type=ExtractionPromptType.MANUFACTURER
             )
         ),
     )
@@ -240,7 +240,7 @@ def test_resolve_detail_entities_delegates_to_entity_resolver_when_present() -> 
 
     assert results == [{"manufacturer_id": "manufacturer_001"}]
     entity_type, query_text, document_id, top_k, _ = entity_resolver.resolve_calls[0]
-    assert entity_type == StructuredEntityType.MANUFACTURER
+    assert entity_type == ExtractionPromptType.MANUFACTURER
     assert query_text == "who is the manufacturer's email"
     assert document_id == "doc_001"
     assert top_k == 5

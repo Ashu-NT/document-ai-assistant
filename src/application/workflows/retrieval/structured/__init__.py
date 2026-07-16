@@ -1,6 +1,3 @@
-from src.application.workflows.retrieval.structured.structured_entity_type import (
-    StructuredEntityType,
-)
 from src.application.workflows.retrieval.structured.structured_evidence_bundle import (
     StructuredEvidenceBundle,
 )
@@ -22,7 +19,6 @@ from src.application.workflows.retrieval.structured.structured_evidence_resolver
 
 __all__ = [
     "StructuredEntityResolver",
-    "StructuredEntityType",
     "StructuredEvidenceBundle",
     "StructuredEvidenceQueryAnalysis",
     "StructuredEvidenceQueryAnalyzer",

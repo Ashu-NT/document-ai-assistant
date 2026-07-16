@@ -204,15 +204,17 @@ def collect_document_semantics(
     """List structured entities (with their `related_entities` semantic
     links) directly for a document, bypassing the narrow question-text
     detector entirely - one or all entity types, whichever is asked for."""
+    from src.application.prompts.extraction.common.extraction_prompt_type import (
+        ExtractionPromptType,
+    )
     from src.application.tools.retrieval.retrieve_structured_entities_tool import (
         RetrieveStructuredEntitiesRequest,
-        StructuredEntityType,
     )
 
     entity_types = (
-        [StructuredEntityType(entity_type)]
+        [ExtractionPromptType(entity_type)]
         if entity_type
-        else list(StructuredEntityType)
+        else list(ExtractionPromptType)
     )
 
     raw_entities: list[dict[str, Any]] = []

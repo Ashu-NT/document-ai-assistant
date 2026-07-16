@@ -1,7 +1,8 @@
 import json
 
 from src.infrastructure.db.orm_models import EventEnvelopeORM
-from src.shared.events import EventEnvelope, EventSeverity, EventStatus
+from src.shared.events import EventEnvelope, EventStatus
+from src.shared.severity import Severity
 
 
 class EventEnvelopeMapper:
@@ -32,7 +33,7 @@ class EventEnvelopeMapper:
             aggregate_type=orm.aggregate_type,
             aggregate_id=orm.aggregate_id,
             status=EventStatus(orm.status),
-            severity=EventSeverity(orm.severity),
+            severity=Severity(orm.severity),
             actor_id=orm.actor_id,
             actor_type=orm.actor_type,
             request_id=orm.request_id,

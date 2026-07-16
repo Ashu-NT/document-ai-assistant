@@ -1,7 +1,8 @@
 from src.application.contracts.events import EventRepository
 from src.domain.events import DomainEvent
-from src.shared.events import EventContext, EventEnvelope, EventSeverity
+from src.shared.events import EventContext, EventEnvelope
 from src.shared.events.domain_event_serializer import DomainEventSerializer
+from src.shared.severity import Severity
 
 
 class EventService:
@@ -13,7 +14,7 @@ class EventService:
         event: DomainEvent,
         *,
         context: EventContext | None = None,
-        severity: EventSeverity = EventSeverity.INFO,
+        severity: Severity = Severity.INFO,
     ) -> EventEnvelope:
         context = context or EventContext()
 

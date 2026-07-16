@@ -3,8 +3,8 @@ from dataclasses import replace
 from src.application.workflows.retrieval.structured.structured_entity_resolver import (
     StructuredEntityResolver,
 )
-from src.application.workflows.retrieval.structured.structured_entity_type import (
-    StructuredEntityType,
+from src.application.prompts.extraction.common.extraction_prompt_type import (
+    ExtractionPromptType,
 )
 from src.domain.extraction import (
     SemanticEntityType,
@@ -54,7 +54,7 @@ def test_resolve_uses_search_method_when_query_text_given(sample_manufacturer) -
     resolver = StructuredEntityResolver(service)
 
     results = resolver.resolve(
-        StructuredEntityType.MANUFACTURER,
+        ExtractionPromptType.MANUFACTURER,
         query_text="acme",
         document_id=sample_manufacturer.document_id,
     )
@@ -78,7 +78,7 @@ def test_resolve_falls_back_to_list_when_search_returns_nothing(
     resolver = StructuredEntityResolver(service)
 
     results = resolver.resolve(
-        StructuredEntityType.MANUFACTURER,
+        ExtractionPromptType.MANUFACTURER,
         query_text="acme",
         document_id=sample_manufacturer.document_id,
         fallback_to_list=True,
@@ -95,7 +95,7 @@ def test_resolve_does_not_fall_back_when_fallback_disabled(sample_manufacturer) 
     resolver = StructuredEntityResolver(service)
 
     results = resolver.resolve(
-        StructuredEntityType.MANUFACTURER,
+        ExtractionPromptType.MANUFACTURER,
         query_text="acme",
         document_id=sample_manufacturer.document_id,
         fallback_to_list=False,
@@ -113,7 +113,7 @@ def test_resolve_without_query_text_uses_list_method_directly(
     resolver = StructuredEntityResolver(service)
 
     results = resolver.resolve(
-        StructuredEntityType.MANUFACTURER,
+        ExtractionPromptType.MANUFACTURER,
         document_id=sample_manufacturer.document_id,
     )
 
@@ -127,7 +127,7 @@ def test_resolve_truncates_to_top_k(sample_manufacturer) -> None:
     resolver = StructuredEntityResolver(service)
 
     results = resolver.resolve(
-        StructuredEntityType.MANUFACTURER,
+        ExtractionPromptType.MANUFACTURER,
         document_id=sample_manufacturer.document_id,
         top_k=1,
     )
@@ -138,8 +138,8 @@ def test_resolve_truncates_to_top_k(sample_manufacturer) -> None:
 def test_entity_id_field_returns_configured_field() -> None:
     resolver = StructuredEntityResolver(FakeExtractionService())
 
-    assert resolver.entity_id_field(StructuredEntityType.SUPPLIER) == "supplier_id"
-    assert resolver.entity_id_field(StructuredEntityType.MANUFACTURER) == "manufacturer_id"
+    assert resolver.entity_id_field(ExtractionPromptType.SUPPLIER) == "supplier_id"
+    assert resolver.entity_id_field(ExtractionPromptType.MANUFACTURER) == "manufacturer_id"
 
 
 def test_resolve_attaches_related_entities_via_semantic_relationships(
@@ -164,7 +164,7 @@ def test_resolve_attaches_related_entities_via_semantic_relationships(
     resolver = StructuredEntityResolver(service)
 
     results = resolver.resolve(
-        StructuredEntityType.MANUFACTURER,
+        ExtractionPromptType.MANUFACTURER,
         document_id=sample_manufacturer.document_id,
     )
 
@@ -172,6 +172,6 @@ def test_resolve_attaches_related_entities_via_semantic_relationships(
     assert len(related_entities) == 1
     related = related_entities[0]
     assert related["direction"] == "outgoing"
-    assert related["entity_type"] == StructuredEntityType.CONTACT_POINT.value
+    assert related["entity_type"] == ExtractionPromptType.CONTACT_POINT.value
     assert related["entity_id"] == sample_contact_point.contact_point_id
     assert related["entity"]["contact_point_id"] == sample_contact_point.contact_point_id

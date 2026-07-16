@@ -2,7 +2,8 @@ import json
 
 from src.domain.activity import ActivityRecord
 from src.infrastructure.db.orm_models import ActivityRecordORM
-from src.shared.activity import ActivitySeverity, ActivityStatus
+from src.shared.activity import ActivityStatus
+from src.shared.severity import Severity
 
 
 class ActivityRecordMapper:
@@ -34,7 +35,7 @@ class ActivityRecordMapper:
             entity_type=orm.entity_type,
             entity_id=orm.entity_id,
             status=ActivityStatus(orm.status),
-            severity=ActivitySeverity(orm.severity),
+            severity=Severity(orm.severity),
             actor_id=orm.actor_id,
             actor_type=orm.actor_type,
             request_id=orm.request_id,

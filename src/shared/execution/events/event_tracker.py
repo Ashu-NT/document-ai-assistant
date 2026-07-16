@@ -1,9 +1,10 @@
 from typing import Any, TYPE_CHECKING
 
 from src.domain.events import DomainEvent
-from src.shared.events import EventContext, EventSeverity
+from src.shared.events import EventContext
 from src.shared.execution.action_result import ActionResult
 from src.shared.execution.payloads import build_failure_payload
+from src.shared.severity import Severity
 from uuid import uuid4
 
 if TYPE_CHECKING:
@@ -28,7 +29,7 @@ class EventTracker:
             event_service.publish(
                 result,
                 context=context,
-                severity=EventSeverity.INFO,
+                severity=Severity.INFO,
             )
             return
 
@@ -67,5 +68,5 @@ class EventTracker:
         event_service.publish(
             event,
             context=context,
-            severity=EventSeverity.ERROR,
+            severity=Severity.ERROR,
         )

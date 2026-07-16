@@ -9,7 +9,7 @@ from __future__ import annotations
 # merged into any of those: each taxonomy answers a different question
 # (retrieval routing vs. answer formatting vs. structured-entity-type
 # selection) over a different value space (RetrievalQueryIntent enum members
-# vs. StructuredEntityType enum members here), so a shared vocabulary would
+# vs. ExtractionPromptType enum members here), so a shared vocabulary would
 # need a lossy translation layer between enums that don't correspond 1:1
 # rather than removing real duplication. Precedent from that pass: only
 # consolidate when two lists drift on the SAME narrow concept (e.g. the
@@ -19,8 +19,8 @@ from __future__ import annotations
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )
-from src.application.workflows.retrieval.structured.structured_entity_type import (
-    StructuredEntityType,
+from src.application.prompts.extraction.common.extraction_prompt_type import (
+    ExtractionPromptType,
 )
 from src.application.workflows.shared.maintenance_signal_detection import (
     mentions_maintenance_interval,
@@ -129,54 +129,54 @@ class StructuredEvidenceQueryAnalyzer:
     ) -> StructuredEvidenceQueryAnalysis:
         normalized = " ".join((query_text or "").strip().lower().split())
         detail_entity_type = self._detail_entity_type(normalized)
-        entity_types: list[StructuredEntityType] = []
+        entity_types: list[ExtractionPromptType] = []
 
         if detail_entity_type is not None:
             entity_types.append(detail_entity_type)
             if (
                 detail_entity_type in {
-                    StructuredEntityType.MANUFACTURER,
-                    StructuredEntityType.SUPPLIER,
+                    ExtractionPromptType.MANUFACTURER,
+                    ExtractionPromptType.SUPPLIER,
                 }
                 and any(term in normalized for term in _CONTACT_DETAIL_TERMS)
             ):
-                entity_types.append(StructuredEntityType.CONTACT_POINT)
+                entity_types.append(ExtractionPromptType.CONTACT_POINT)
 
         if any(term in normalized for term in _MANUFACTURER_TERMS):
-            entity_types.append(StructuredEntityType.MANUFACTURER)
+            entity_types.append(ExtractionPromptType.MANUFACTURER)
         if any(term in normalized for term in _SUPPLIER_TERMS):
-            entity_types.append(StructuredEntityType.SUPPLIER)
+            entity_types.append(ExtractionPromptType.SUPPLIER)
         if any(term in normalized for term in _SPARE_PART_TERMS):
-            entity_types.append(StructuredEntityType.SPARE_PART)
+            entity_types.append(ExtractionPromptType.SPARE_PART)
         if any(term in normalized for term in _EQUIPMENT_TERMS):
-            entity_types.append(StructuredEntityType.EQUIPMENT)
+            entity_types.append(ExtractionPromptType.EQUIPMENT)
         if any(term in normalized for term in _SPECIFICATION_TERMS):
             entity_types.extend(
                 [
-                    StructuredEntityType.SPECIFICATION,
-                    StructuredEntityType.EQUIPMENT,
+                    ExtractionPromptType.SPECIFICATION,
+                    ExtractionPromptType.EQUIPMENT,
                 ]
             )
         if mentions_maintenance_interval(normalized):
             entity_types.extend(
                 [
-                    StructuredEntityType.MAINTENANCE_INTERVAL,
-                    StructuredEntityType.MAINTENANCE_TASK,
+                    ExtractionPromptType.MAINTENANCE_INTERVAL,
+                    ExtractionPromptType.MAINTENANCE_TASK,
                 ]
             )
         elif any(term in normalized for term in _MAINTENANCE_TERMS):
             entity_types.extend(
                 [
-                    StructuredEntityType.MAINTENANCE_TASK,
-                    StructuredEntityType.PROCEDURE,
+                    ExtractionPromptType.MAINTENANCE_TASK,
+                    ExtractionPromptType.PROCEDURE,
                 ]
             )
         if any(term in normalized for term in _PROCEDURE_TERMS):
-            entity_types.append(StructuredEntityType.PROCEDURE)
+            entity_types.append(ExtractionPromptType.PROCEDURE)
         if any(term in normalized for term in _TROUBLESHOOTING_TERMS):
-            entity_types.append(StructuredEntityType.TROUBLESHOOTING)
+            entity_types.append(ExtractionPromptType.TROUBLESHOOTING)
         if any(term in normalized for term in _SAFETY_TERMS):
-            entity_types.append(StructuredEntityType.SAFETY_WARNING)
+            entity_types.append(ExtractionPromptType.SAFETY_WARNING)
 
         # Compared against RetrievalQueryIntent's own enum values (not bare
         # string literals) so a rename/typo fails loudly instead of silently
@@ -191,29 +191,29 @@ class StructuredEvidenceQueryAnalyzer:
         if intent == RetrievalQueryIntent.MAINTENANCE.value:
             entity_types.extend(
                 [
-                    StructuredEntityType.MAINTENANCE_TASK,
-                    StructuredEntityType.MAINTENANCE_INTERVAL,
-                    StructuredEntityType.PROCEDURE,
+                    ExtractionPromptType.MAINTENANCE_TASK,
+                    ExtractionPromptType.MAINTENANCE_INTERVAL,
+                    ExtractionPromptType.PROCEDURE,
                 ]
             )
         elif intent == RetrievalQueryIntent.PROCEDURE.value:
-            entity_types.append(StructuredEntityType.PROCEDURE)
+            entity_types.append(ExtractionPromptType.PROCEDURE)
         elif intent == RetrievalQueryIntent.TROUBLESHOOTING.value:
-            entity_types.append(StructuredEntityType.TROUBLESHOOTING)
+            entity_types.append(ExtractionPromptType.TROUBLESHOOTING)
         elif intent == RetrievalQueryIntent.SPECIFICATION.value:
             entity_types.extend(
                 [
-                    StructuredEntityType.SPECIFICATION,
-                    StructuredEntityType.EQUIPMENT,
+                    ExtractionPromptType.SPECIFICATION,
+                    ExtractionPromptType.EQUIPMENT,
                 ]
             )
 
         if detected_identifiers:
             entity_types.extend(
                 [
-                    StructuredEntityType.SPARE_PART,
-                    StructuredEntityType.EQUIPMENT,
-                    StructuredEntityType.SPECIFICATION,
+                    ExtractionPromptType.SPARE_PART,
+                    ExtractionPromptType.EQUIPMENT,
+                    ExtractionPromptType.SPECIFICATION,
                 ]
             )
 
@@ -229,28 +229,28 @@ class StructuredEvidenceQueryAnalyzer:
         )
 
     @staticmethod
-    def _detail_entity_type(normalized: str) -> StructuredEntityType | None:
+    def _detail_entity_type(normalized: str) -> ExtractionPromptType | None:
         if not any(term in normalized for term in _DETAIL_TERMS):
             return None
         if any(term in normalized for term in _MANUFACTURER_TERMS):
-            return StructuredEntityType.MANUFACTURER
+            return ExtractionPromptType.MANUFACTURER
         if any(term in normalized for term in _SUPPLIER_TERMS):
-            return StructuredEntityType.SUPPLIER
+            return ExtractionPromptType.SUPPLIER
         if any(term in normalized for term in _SPARE_PART_TERMS):
-            return StructuredEntityType.SPARE_PART
+            return ExtractionPromptType.SPARE_PART
         if any(term in normalized for term in _EQUIPMENT_TERMS):
-            return StructuredEntityType.EQUIPMENT
+            return ExtractionPromptType.EQUIPMENT
         if "maintenance task" in normalized:
-            return StructuredEntityType.MAINTENANCE_TASK
+            return ExtractionPromptType.MAINTENANCE_TASK
         if any(term in normalized for term in _WEBSITE_TERMS + _COUNTRY_TERMS):
-            return StructuredEntityType.MANUFACTURER
+            return ExtractionPromptType.MANUFACTURER
         return None
 
     @staticmethod
     def _ordered_unique(
-        values: list[StructuredEntityType],
-    ) -> list[StructuredEntityType]:
-        ordered: list[StructuredEntityType] = []
+        values: list[ExtractionPromptType],
+    ) -> list[ExtractionPromptType]:
+        ordered: list[ExtractionPromptType] = []
         for value in values:
             if value not in ordered:
                 ordered.append(value)

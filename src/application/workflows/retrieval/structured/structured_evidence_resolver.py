@@ -7,8 +7,8 @@ from src.application.services.document import DocumentLookupService
 from src.application.workflows.retrieval.structured.structured_entity_resolver import (
     StructuredEntityResolver,
 )
-from src.application.workflows.retrieval.structured.structured_entity_type import (
-    StructuredEntityType,
+from src.application.prompts.extraction.common.extraction_prompt_type import (
+    ExtractionPromptType,
 )
 from src.application.workflows.retrieval.structured.structured_evidence_bundle import (
     StructuredEvidenceBundle,
@@ -126,11 +126,11 @@ class StructuredEvidenceResolver:
                     query.document_id is not None
                     and entity_type
                     in {
-                        StructuredEntityType.MAINTENANCE_INTERVAL,
-                        StructuredEntityType.MAINTENANCE_TASK,
-                        StructuredEntityType.PROCEDURE,
-                        StructuredEntityType.TROUBLESHOOTING,
-                        StructuredEntityType.SAFETY_WARNING,
+                        ExtractionPromptType.MAINTENANCE_INTERVAL,
+                        ExtractionPromptType.MAINTENANCE_TASK,
+                        ExtractionPromptType.PROCEDURE,
+                        ExtractionPromptType.TROUBLESHOOTING,
+                        ExtractionPromptType.SAFETY_WARNING,
                     }
                 ),
             )

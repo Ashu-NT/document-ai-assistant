@@ -100,3 +100,48 @@ def test_normalize_leaves_unrelated_table_categories_untouched() -> None:
         ["Parameter", "Value"],
         ["Voltage", "400V"],
     ]
+
+
+def test_normalize_rewrites_compact_schedule_matrix_via_maintenance_normalizer() -> None:
+    table = TableAsset(
+        table_id="table_4",
+        document_id="doc_1",
+        markdown="maintenance schedule",
+        table_category="maintenance_interval_table",
+        rows=[
+            ["D", "Q Q", "M S A", "Task Reference"],
+            ["X", "General visual inspection"],
+        ],
+    )
+
+    updated = TableRowSemanticNormalizer().normalize(table)
+
+    assert updated is True
+    assert table.rows == [
+        ["Daily", "Quarterly", "Monthly", "Semi-Annual", "Annual", "Task", "Notes"],
+        ["x", "", "", "", "", "General visual inspection", ""],
+    ]
+
+
+def test_normalize_rewrites_wrapped_specification_rows_via_key_value_normalizer() -> None:
+    table = TableAsset(
+        table_id="table_5",
+        document_id="doc_1",
+        markdown="specs",
+        table_category="technical_data_table",
+        rows=[
+            ["Model", "XV2000", "Speed", "1450 RPM"],
+            ["Weight", "120 kg", "Diameter", "250 mm"],
+        ],
+    )
+
+    updated = TableRowSemanticNormalizer().normalize(table)
+
+    assert updated is True
+    assert table.rows == [
+        ["Label", "Value"],
+        ["Model", "XV2000"],
+        ["Speed", "1450 RPM"],
+        ["Weight", "120 kg"],
+        ["Diameter", "250 mm"],
+    ]

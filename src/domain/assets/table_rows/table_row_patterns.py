@@ -59,24 +59,56 @@ _EXPLICIT_HEADER_KEYWORDS = (
     "wire",
 )
 
-_SCHEDULE_HEADERS = {
-    "a",
-    "annual",
-    "annually",
-    "before startup",
-    "d",
-    "daily",
-    "m",
-    "monthly",
-    "q",
-    "quarterly",
-    "s",
-    "semi annual",
-    "semi-annual",
-    "w",
-    "weekly",
-    "yearly",
+SCHEDULE_INTERVAL_LABELS: dict[str, str] = {
+    "a": "Annual",
+    "annual": "Annual",
+    "annually": "Annual",
+    "before startup": "Before startup",
+    "d": "Daily",
+    "daily": "Daily",
+    "m": "Monthly",
+    "monthly": "Monthly",
+    "q": "Quarterly",
+    "quarterly": "Quarterly",
+    "s": "Semi-Annual",
+    "semi annual": "Semi-Annual",
+    "semi-annual": "Semi-Annual",
+    "w": "Weekly",
+    "weekly": "Weekly",
+    "yearly": "Annual",
 }
+_SCHEDULE_HEADERS = frozenset(SCHEDULE_INTERVAL_LABELS)
+
+_CONTINUATION_OPEN_ENDINGS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "been",
+    "by",
+    "for",
+    "from",
+    "has",
+    "have",
+    "in",
+    "into",
+    "is",
+    "of",
+    "on",
+    "or",
+    "that",
+    "the",
+    "to",
+    "was",
+    "were",
+    "with",
+    "without",
+}
+_CONTINUATION_TERMINAL_PUNCTUATION = (".", "!", "?", ";", ":")
+_CONTINUATION_PREFIXES = ("(", "-", "*", "/", "•", "·")
 
 
 def normalize_cell(value: object) -> str:
@@ -211,20 +243,42 @@ def count_boolean_markers(rows: Iterable[Iterable[str]], *, column_indexes: set[
 
 def _normalize_interval_label(header: str) -> str:
     normalized = normalize_cell(header).casefold()
-    if normalized in {"d", "daily"}:
-        return "Daily"
-    if normalized in {"w", "weekly"}:
-        return "Weekly"
-    if normalized in {"m", "monthly"}:
-        return "Monthly"
-    if normalized in {"q", "quarterly"}:
-        return "Quarterly"
-    if normalized in {"s", "semi annual", "semi-annual"}:
-        return "Semi-Annual"
-    if normalized in {"a", "annual", "annually", "yearly"}:
-        return "Annual"
-    return normalize_cell(header)
+    return SCHEDULE_INTERVAL_LABELS.get(normalized, normalize_cell(header))
 
 
 def _starts_with_identifier_like_code(value: str) -> bool:
     return bool(re.match(r"^[A-Z0-9]{1,6}(?:[./-][A-Z0-9]{1,6})+", value.upper()))
+
+
+def looks_terminated_text(value: str) -> bool:
+    return value.rstrip().endswith(_CONTINUATION_TERMINAL_PUNCTUATION)
+
+
+def looks_continuation_start(value: str) -> bool:
+    stripped = value.lstrip()
+    if not stripped:
+        return False
+    if stripped[0].islower() or stripped[0].isdigit():
+        return True
+    return stripped.startswith(_CONTINUATION_PREFIXES)
+
+
+def looks_incomplete_text(value: str) -> bool:
+    if not value or looks_terminated_text(value):
+        return False
+    tokens = value.casefold().split()
+    if not tokens:
+        return False
+    return tokens[-1] in _CONTINUATION_OPEN_ENDINGS or value.endswith(("-", "/", ","))
+
+
+def merge_continuation_text(previous_value: str, current_value: str) -> str:
+    previous = normalize_cell(previous_value)
+    current = normalize_cell(current_value)
+    if not previous:
+        return current
+    if not current or previous.casefold() == current.casefold():
+        return previous
+    if previous.endswith("-"):
+        return f"{previous[:-1]}{current}".strip()
+    return f"{previous} {current}".strip()

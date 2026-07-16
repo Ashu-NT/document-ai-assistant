@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.tables.structure.specification_matrix_structure_summarizer import (
     SpecificationMatrixStructureSummarizer,
 )
-from src.application.workflows.parsing.tables.structure.table_shape import TableShape
+from src.application.workflows.shared.table_kind import TableKind
 
 
 def test_detects_genuine_specification_comparison_matrix() -> None:
@@ -14,7 +14,7 @@ def test_detects_genuine_specification_comparison_matrix() -> None:
     )
 
     assert summary is not None
-    assert summary.table_shape == TableShape.SPECIFICATION_MATRIX
+    assert summary.table_shape == TableKind.SPECIFICATION_MATRIX
 
 
 def test_detects_a_spec_matrix_with_a_bare_single_letter_variant_column() -> None:
@@ -34,7 +34,7 @@ def test_detects_a_spec_matrix_with_a_bare_single_letter_variant_column() -> Non
     )
 
     assert summary is not None
-    assert summary.table_shape == TableShape.SPECIFICATION_MATRIX
+    assert summary.table_shape == TableKind.SPECIFICATION_MATRIX
 
 
 def test_does_not_detect_maintenance_narrative_table_with_free_text_intervals() -> None:

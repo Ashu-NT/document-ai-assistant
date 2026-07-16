@@ -1,7 +1,8 @@
 from src.application.contracts.activity import ActivityRepository
 from src.domain.activity import ActivityRecord
-from src.shared.activity import ActivityContext, ActivityPayload, ActivitySeverity, ActivityStatus
+from src.shared.activity import ActivityContext, ActivityPayload, ActivityStatus
 from src.shared.activity.activity_builder import ActivityBuilder
+from src.shared.severity import Severity
 
 
 class ActivityService:
@@ -17,7 +18,7 @@ class ActivityService:
         entity_type: str | None = None,
         entity_id: str | None = None,
         status: ActivityStatus = ActivityStatus.COMPLETED,
-        severity: ActivitySeverity = ActivitySeverity.INFO,
+        severity: Severity = Severity.INFO,
         payload: ActivityPayload | None = None,
     ) -> ActivityRecord:
         activity = ActivityBuilder.build(

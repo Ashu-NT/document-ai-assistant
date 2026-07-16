@@ -1,8 +1,8 @@
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )
-from src.application.workflows.retrieval.structured.structured_entity_type import (
-    StructuredEntityType,
+from src.application.prompts.extraction.common.extraction_prompt_type import (
+    ExtractionPromptType,
 )
 from src.application.workflows.retrieval.structured.structured_evidence_query_analyzer import (
     StructuredEvidenceQueryAnalyzer,
@@ -17,9 +17,9 @@ def test_analyze_maps_maintenance_intent_to_maintenance_entity_types() -> None:
         intent=RetrievalQueryIntent.MAINTENANCE.value,
     )
 
-    assert StructuredEntityType.MAINTENANCE_TASK in analysis.entity_types
-    assert StructuredEntityType.MAINTENANCE_INTERVAL in analysis.entity_types
-    assert StructuredEntityType.PROCEDURE in analysis.entity_types
+    assert ExtractionPromptType.MAINTENANCE_TASK in analysis.entity_types
+    assert ExtractionPromptType.MAINTENANCE_INTERVAL in analysis.entity_types
+    assert ExtractionPromptType.PROCEDURE in analysis.entity_types
 
 
 def test_analyze_maps_procedure_troubleshooting_and_specification_intents() -> None:
@@ -38,13 +38,13 @@ def test_analyze_maps_procedure_troubleshooting_and_specification_intents() -> N
         intent=RetrievalQueryIntent.SPECIFICATION.value,
     )
 
-    assert procedure_analysis.entity_types == [StructuredEntityType.PROCEDURE]
+    assert procedure_analysis.entity_types == [ExtractionPromptType.PROCEDURE]
     assert troubleshooting_analysis.entity_types == [
-        StructuredEntityType.TROUBLESHOOTING
+        ExtractionPromptType.TROUBLESHOOTING
     ]
     assert specification_analysis.entity_types == [
-        StructuredEntityType.SPECIFICATION,
-        StructuredEntityType.EQUIPMENT,
+        ExtractionPromptType.SPECIFICATION,
+        ExtractionPromptType.EQUIPMENT,
     ]
 
 
@@ -67,7 +67,7 @@ def test_analyze_detects_manufacturer_keyword_without_intent() -> None:
 
     analysis = analyzer.analyze(query_text="who is the manufacturer of the pump?")
 
-    assert StructuredEntityType.MANUFACTURER in analysis.entity_types
+    assert ExtractionPromptType.MANUFACTURER in analysis.entity_types
 
 
 def test_analyze_detects_detail_entity_type_with_contact_point() -> None:
@@ -77,8 +77,8 @@ def test_analyze_detects_detail_entity_type_with_contact_point() -> None:
         query_text="what is the manufacturer's email address?"
     )
 
-    assert analysis.detail_entity_type == StructuredEntityType.MANUFACTURER
-    assert StructuredEntityType.CONTACT_POINT in analysis.entity_types
+    assert analysis.detail_entity_type == ExtractionPromptType.MANUFACTURER
+    assert ExtractionPromptType.CONTACT_POINT in analysis.entity_types
 
 
 def test_analyze_extends_entity_types_when_identifiers_detected() -> None:
@@ -89,9 +89,9 @@ def test_analyze_extends_entity_types_when_identifiers_detected() -> None:
         detected_identifiers=["mk311007"],
     )
 
-    assert StructuredEntityType.SPARE_PART in analysis.entity_types
-    assert StructuredEntityType.EQUIPMENT in analysis.entity_types
-    assert StructuredEntityType.SPECIFICATION in analysis.entity_types
+    assert ExtractionPromptType.SPARE_PART in analysis.entity_types
+    assert ExtractionPromptType.EQUIPMENT in analysis.entity_types
+    assert ExtractionPromptType.SPECIFICATION in analysis.entity_types
 
 
 def test_analyze_reports_wants_identifier_inventory_for_listing_queries() -> None:
@@ -111,5 +111,5 @@ def test_analyze_deduplicates_entity_types_while_preserving_order() -> None:
         intent=RetrievalQueryIntent.SPECIFICATION.value,
     )
 
-    assert analysis.entity_types.count(StructuredEntityType.SPECIFICATION) == 1
-    assert analysis.entity_types.count(StructuredEntityType.EQUIPMENT) == 1
+    assert analysis.entity_types.count(ExtractionPromptType.SPECIFICATION) == 1
+    assert analysis.entity_types.count(ExtractionPromptType.EQUIPMENT) == 1

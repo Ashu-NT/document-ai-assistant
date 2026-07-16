@@ -1,5 +1,4 @@
 from src.application.workflows.parsing.tables.semantics import (
-    TableCategory,
     TableSemanticClassifier,
 )
 from src.application.workflows.parsing.tables.structure import (

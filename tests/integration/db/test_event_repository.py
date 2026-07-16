@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
-from src.shared.events import EventEnvelope, EventSeverity, EventStatus
+from src.shared.events import EventEnvelope, EventStatus
+from src.shared.severity import Severity
 
 
 def test_event_repository_saves_and_lists_by_aggregate(db_uow) -> None:
@@ -10,7 +11,7 @@ def test_event_repository_saves_and_lists_by_aggregate(db_uow) -> None:
         aggregate_type="document",
         aggregate_id="doc_001",
         status=EventStatus.PENDING,
-        severity=EventSeverity.INFO,
+        severity=Severity.INFO,
         payload={"classification_id": "classification_001"},
         occurred_at=datetime.now(timezone.utc),
     )

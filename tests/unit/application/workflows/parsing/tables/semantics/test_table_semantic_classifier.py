@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.tables.semantics import (
-    TableCategory,
     TableSemanticClassifier,
 )
+from src.application.workflows.shared.table_kind import TableKind
 from src.domain.assets import TableAsset
 
 
@@ -26,7 +26,7 @@ def test_classify_detects_generic_maintenance_interval_matrix() -> None:
         ),
     )
 
-    assert category == TableCategory.MAINTENANCE_INTERVAL_TABLE
+    assert category == TableKind.MAINTENANCE_INTERVAL_TABLE
     assert confidence >= 0.9
 
 
@@ -42,7 +42,7 @@ def test_classify_detects_headerless_technical_data_table() -> None:
         section_path=["Safety", "Warnings"],
     )
 
-    assert category == TableCategory.TECHNICAL_DATA_TABLE
+    assert category == TableKind.TECHNICAL_DATA_TABLE
     assert confidence >= 0.85
 
 
@@ -62,7 +62,7 @@ def test_classify_prefers_maintenance_interval_direct_evidence_over_spare_parts_
         section_path=["Spare Parts", "Preventive Maintenance"],
     )
 
-    assert category == TableCategory.MAINTENANCE_INTERVAL_TABLE
+    assert category == TableKind.MAINTENANCE_INTERVAL_TABLE
     assert confidence >= 0.85
 
 
@@ -76,7 +76,7 @@ def test_classify_detects_troubleshooting_table() -> None:
         ),
     )
 
-    assert category == TableCategory.TROUBLESHOOTING_TABLE
+    assert category == TableKind.TROUBLESHOOTING_TABLE
     assert confidence >= 0.9
 
 
@@ -91,7 +91,7 @@ def test_classify_detects_technical_data_table() -> None:
         ),
     )
 
-    assert category == TableCategory.TECHNICAL_DATA_TABLE
+    assert category == TableKind.TECHNICAL_DATA_TABLE
     assert confidence >= 0.8
 
 
@@ -101,7 +101,7 @@ def test_classify_detects_toc_table_from_item_label() -> None:
         item_label="document_index",
     )
 
-    assert category == TableCategory.TOC_TABLE
+    assert category == TableKind.TOC_TABLE
     assert confidence >= 0.99
 
 
@@ -116,7 +116,7 @@ def test_classify_detects_schedule_matrix_with_reference_columns() -> None:
         ),
     )
 
-    assert category == TableCategory.MAINTENANCE_INTERVAL_TABLE
+    assert category == TableKind.MAINTENANCE_INTERVAL_TABLE
     assert confidence >= 0.9
 
 
@@ -132,7 +132,7 @@ def test_classify_uses_nearby_context_for_compact_maintenance_schedule_table() -
         nearby_text="Half-yearly maintenance work. Annual maintenance work.",
     )
 
-    assert category == TableCategory.MAINTENANCE_INTERVAL_TABLE
+    assert category == TableKind.MAINTENANCE_INTERVAL_TABLE
     assert confidence >= 0.85
 
 
@@ -152,7 +152,7 @@ def test_classify_detects_split_header_spare_parts_table() -> None:
         section_path=["Components", "Spare Parts List"],
     )
 
-    assert category == TableCategory.SPARE_PARTS_TABLE
+    assert category == TableKind.SPARE_PARTS_TABLE
     assert confidence >= 0.85
 
 
@@ -168,7 +168,7 @@ def test_classify_detects_operation_reference_table_from_operation_context() -> 
         section_path=["Operation options", "Function of the operating elements"],
     )
 
-    assert category == TableCategory.OPERATION_REFERENCE_TABLE
+    assert category == TableKind.OPERATION_REFERENCE_TABLE
     assert confidence >= 0.8
 
 
@@ -185,7 +185,7 @@ def test_classify_detects_identifier_table_from_order_code_section() -> None:
         section_path=["Extended order code", "Basic specification"],
     )
 
-    assert category == TableCategory.IDENTIFIER_TABLE
+    assert category == TableKind.IDENTIFIER_TABLE
     assert confidence >= 0.75
 
 
@@ -200,7 +200,7 @@ def test_classify_detects_operating_limits_from_supply_voltage_and_protection() 
         ),
     )
 
-    assert category == TableCategory.OPERATING_LIMITS_TABLE
+    assert category == TableKind.OPERATING_LIMITS_TABLE
     assert confidence >= 0.8
 
 
@@ -216,7 +216,7 @@ def test_classify_detects_lubrication_schedule_from_generic_section_and_time_sig
         section_path=["Components", "Vacuum Pump", "Lubrication Schedule"],
     )
 
-    assert category == TableCategory.MAINTENANCE_INTERVAL_TABLE
+    assert category == TableKind.MAINTENANCE_INTERVAL_TABLE
     assert confidence >= 0.85
 
 
@@ -232,7 +232,7 @@ def test_classify_detects_troubleshooting_from_generic_section_context() -> None
         section_path=["Components", "Pump", "Trouble-Shooting"],
     )
 
-    assert category == TableCategory.TROUBLESHOOTING_TABLE
+    assert category == TableKind.TROUBLESHOOTING_TABLE
     assert confidence >= 0.85
 
 
@@ -263,7 +263,7 @@ def test_classify_does_not_treat_stray_letters_in_garbled_free_text_headers_as_s
         ),
     )
 
-    assert category != TableCategory.MAINTENANCE_INTERVAL_TABLE
+    assert category != TableKind.MAINTENANCE_INTERVAL_TABLE
 
 
 def test_classify_valve_list_is_not_sensor_instrument_table_from_pid_text_alone() -> None:
@@ -278,4 +278,4 @@ def test_classify_valve_list_is_not_sensor_instrument_table_from_pid_text_alone(
         section_path=["Components", "Valve List"],
     )
 
-    assert category == TableCategory.IDENTIFIER_TABLE
+    assert category == TableKind.IDENTIFIER_TABLE

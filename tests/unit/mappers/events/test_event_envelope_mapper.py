@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 
 from src.infrastructure.db.mappers.events import EventEnvelopeMapper
-from src.shared.events import EventEnvelope, EventSeverity, EventStatus
+from src.shared.events import EventEnvelope, EventStatus
+from src.shared.severity import Severity
 
 
 def test_event_envelope_mapper_round_trip() -> None:
@@ -11,7 +12,7 @@ def test_event_envelope_mapper_round_trip() -> None:
         aggregate_type="document",
         aggregate_id="doc_001",
         status=EventStatus.PENDING,
-        severity=EventSeverity.INFO,
+        severity=Severity.INFO,
         actor_id="user_001",
         payload={"classification_id": "classification_001"},
         occurred_at=datetime.now(timezone.utc),

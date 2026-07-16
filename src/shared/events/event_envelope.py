@@ -2,7 +2,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from src.shared.events.event_types import EventSeverity, EventStatus
+from src.shared.events.event_types import EventStatus
+from src.shared.severity import Severity
 
 
 @dataclass(slots=True)
@@ -14,7 +15,7 @@ class EventEnvelope:
     aggregate_id: str | None = None
 
     status: EventStatus = EventStatus.PENDING
-    severity: EventSeverity = EventSeverity.INFO
+    severity: Severity = Severity.INFO
 
     actor_id: str | None = None
     actor_type: str = "system"

@@ -3,28 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from src.domain.assets.table_rows.table_row_patterns import (
+    SCHEDULE_INTERVAL_LABELS,
     looks_boolean_marker,
     normalize_cell,
 )
 
-_SCHEDULE_LABELS: dict[str, str] = {
-    "a": "Annual",
-    "annual": "Annual",
-    "annually": "Annual",
-    "before startup": "Before startup",
-    "d": "Daily",
-    "daily": "Daily",
-    "m": "Monthly",
-    "monthly": "Monthly",
-    "q": "Quarterly",
-    "quarterly": "Quarterly",
-    "s": "Semi-Annual",
-    "semi annual": "Semi-Annual",
-    "semi-annual": "Semi-Annual",
-    "w": "Weekly",
-    "weekly": "Weekly",
-    "yearly": "Annual",
-}
 _NOTE_HEADER_MARKERS = ("comment", "note", "notes", "reference", "remark")
 _TASK_HEADER_MARKERS = ("activity", "action", "description", "task")
 _NOTE_VALUE_MARKERS = (
@@ -259,8 +242,8 @@ class CompactScheduleMatrixCanonicalizer:
         normalized = normalize_cell(header).casefold()
         if not normalized:
             return ()
-        if normalized in _SCHEDULE_LABELS:
-            return (_SCHEDULE_LABELS[normalized],)
+        if normalized in SCHEDULE_INTERVAL_LABELS:
+            return (SCHEDULE_INTERVAL_LABELS[normalized],)
         if normalized.startswith("every ") or normalized.endswith(" hours"):
             return (header,)
 
@@ -269,7 +252,7 @@ class CompactScheduleMatrixCanonicalizer:
             for token in normalized.replace("/", " ").replace(",", " ").replace(";", " ").split()
             if token
         ]
-        if not tokens or not all(token in _SCHEDULE_LABELS for token in tokens):
+        if not tokens or not all(token in SCHEDULE_INTERVAL_LABELS for token in tokens):
             return ()
-        labels = [_SCHEDULE_LABELS[token] for token in tokens]
+        labels = [SCHEDULE_INTERVAL_LABELS[token] for token in tokens]
         return tuple(dict.fromkeys(labels))

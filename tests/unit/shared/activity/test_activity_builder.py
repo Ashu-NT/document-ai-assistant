@@ -1,9 +1,9 @@
 from src.shared.activity import (
     ActivityContext,
-    ActivitySeverity,
     ActivityStatus,
 )
 from src.shared.activity.activity_builder import ActivityBuilder
+from src.shared.severity import Severity
 
 def test_activity_builder_builds_record_with_context() -> None:
     context = ActivityContext(
@@ -21,7 +21,7 @@ def test_activity_builder_builds_record_with_context() -> None:
         entity_type="document",
         entity_id="doc_001",
         status=ActivityStatus.COMPLETED,
-        severity=ActivitySeverity.INFO,
+        severity=Severity.INFO,
         payload={"file_name": "manual.pdf"},
     )
 
@@ -43,5 +43,5 @@ def test_activity_builder_uses_default_context() -> None:
 
     assert activity.actor_type == "system"
     assert activity.status == ActivityStatus.COMPLETED
-    assert activity.severity == ActivitySeverity.INFO
+    assert activity.severity == Severity.INFO
     assert activity.payload == {}

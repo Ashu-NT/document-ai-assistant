@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from src.application.prompts.extraction.common.extraction_prompt_type import (
+    ExtractionPromptType,
+)
 from src.application.services.extraction import ExtractionService
 from src.application.tools.common import (
     ToolMetadata,
@@ -12,7 +15,6 @@ from src.application.tools.common import (
 )
 from src.application.workflows.retrieval.structured import (
     StructuredEntityResolver,
-    StructuredEntityType,
 )
 from src.shared.exceptions import ApplicationError
 
@@ -57,11 +59,11 @@ class RetrieveStructuredEntitiesTool:
 
     def run(self, request: RetrieveStructuredEntitiesRequest) -> ToolResult:
         try:
-            entity_type = StructuredEntityType(request.entity_type)
+            entity_type = ExtractionPromptType(request.entity_type)
         except ValueError:
             return invalid_request_result(
                 "entity_type must be one of: "
-                + ", ".join(member.value for member in StructuredEntityType),
+                + ", ".join(member.value for member in ExtractionPromptType),
                 metadata=self.metadata,
                 diagnostics={"entity_type": request.entity_type},
             )

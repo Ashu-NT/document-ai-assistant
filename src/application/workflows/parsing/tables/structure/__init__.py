@@ -1,9 +1,6 @@
 from src.application.workflows.parsing.tables.structure.table_header_path_builder import (
     TableHeaderPathBuilder,
 )
-from src.application.workflows.parsing.tables.structure.table_shape import (
-    TableShape,
-)
 from src.application.workflows.parsing.tables.structure.table_structure_context_renderer import (
     TableStructureContextRenderer,
 )
@@ -15,7 +12,6 @@ from src.application.workflows.parsing.tables.structure.table_structure_summary_
 )
 
 __all__ = [
-    "TableShape",
     "TableHeaderPathBuilder",
     "TableStructureContextRenderer",
     "TableStructureSummary",

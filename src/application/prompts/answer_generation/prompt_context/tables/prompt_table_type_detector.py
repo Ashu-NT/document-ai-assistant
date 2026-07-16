@@ -3,6 +3,24 @@ from __future__ import annotations
 from src.application.prompts.answer_generation.prompt_context.models.prompt_source_view import (
     PromptSourceView,
 )
+from src.application.workflows.shared.table_kind import TableKind
+from src.application.workflows.question_answering.answer_context.tables.table_type_resolution_core import (
+    resolve_table_type,
+)
+
+_RESOLVED_TYPE_TO_PROMPT_LABEL: dict[TableKind, str] = {
+    TableKind.MAINTENANCE_SCHEDULE_MATRIX: "maintenance_table",
+    TableKind.MAINTENANCE_SCHEDULE_TABLE: "maintenance_table",
+    TableKind.PERFORMANCE_CURVE_MATRIX: "specification_table",
+    TableKind.SPECIFICATION_MATRIX: "specification_table",
+    TableKind.TOC_TABLE: "general_table",
+    TableKind.TROUBLESHOOTING_TABLE: "general_table",
+    TableKind.SPARE_PARTS_TABLE: "spare_parts_table",
+    TableKind.CERTIFICATION_TABLE: "certification_table",
+    TableKind.RECORD_TABLE: "general_table",
+    TableKind.KEY_VALUE_TABLE: "general_table",
+    TableKind.GENERAL_TABLE: "general_table",
+}
 
 
 class PromptTableTypeDetector:
@@ -20,20 +38,24 @@ class PromptTableTypeDetector:
         section_path = (source.section_path or "").strip().lower()
         header_text = " ".join(header.lower() for header in headers)
 
-        if table_shape == "maintenance_schedule_matrix":
-            return "maintenance_table"
-        if table_shape == "performance_curve_matrix":
-            return "specification_table"
-        if table_shape == "specification_matrix":
-            return "specification_table"
-        if table_category == "maintenance_interval_table":
-            return "maintenance_table"
+        resolved, _ = resolve_table_type(
+            table_category=table_category or None,
+            table_shape=table_shape or None,
+            chunk_type=chunk_type or None,
+            headers=headers,
+            rows=source.table_rows,
+        )
+        mapped = _RESOLVED_TYPE_TO_PROMPT_LABEL[resolved]
+        if mapped != "general_table":
+            return mapped
+
+        # Residual, prompt-only heuristics with no equivalent on the answer
+        # path -- `AnswerTableSchemaInferer` never had these, so they are
+        # deliberately kept out of the shared core rather than forced onto
+        # the answer path too. Only reached when the shared core's decision
+        # for this input has no more specific opinion than "general_table".
         if table_category == "technical_data_table":
             return "specification_table"
-        if table_category == "certification_table":
-            return "certification_table"
-        if table_category == "spare_parts_table":
-            return "spare_parts_table"
         if chunk_type == "spare_parts_table":
             return "spare_parts_table"
         if "certificate" in section_path or "particulars" in section_path:

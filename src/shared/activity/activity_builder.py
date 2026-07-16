@@ -1,7 +1,8 @@
 from src.domain.activity.activity_record import ActivityRecord
 from src.shared.activity.activity_context import ActivityContext
 from src.shared.activity.activity_payload import ActivityPayload
-from src.shared.activity.activity_types import ActivitySeverity, ActivityStatus
+from src.shared.activity.activity_types import ActivityStatus
+from src.shared.severity import Severity
 
 
 class ActivityBuilder:
@@ -14,7 +15,7 @@ class ActivityBuilder:
         entity_type: str | None = None,
         entity_id: str | None = None,
         status: ActivityStatus = ActivityStatus.COMPLETED,
-        severity: ActivitySeverity = ActivitySeverity.INFO,
+        severity: Severity = Severity.INFO,
         payload: ActivityPayload | None = None,
     ) -> ActivityRecord:
         context = context or ActivityContext()
