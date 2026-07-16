@@ -51,3 +51,18 @@ def test_merge_attaches_continuation_ending_in_previously_missing_open_ending() 
             "The calibration was Verified and corrected by the technician.",
         ],
     ]
+
+
+def test_merge_attaches_row_with_repeated_anchor_and_continued_description() -> None:
+    rows = [
+        ["Task", "Description"],
+        ["1", "Inspect the pump housing and"],
+        ["1", "verify the shaft seal."],
+    ]
+
+    merged = DoclingSparseContinuationRowMerger().merge(rows)
+
+    assert merged == [
+        ["Task", "Description"],
+        ["1", "Inspect the pump housing and verify the shaft seal."],
+    ]

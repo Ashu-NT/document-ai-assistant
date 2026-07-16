@@ -63,3 +63,22 @@ def test_normalize_returns_none_when_nothing_needs_merging() -> None:
     )
 
     assert normalized is None
+
+
+def test_normalize_merges_wrapped_row_with_repeated_anchor_when_span_evidence_exists() -> None:
+    rows = [
+        ["Task", "Description"],
+        ["1", "Inspect the pump housing and"],
+        ["1", "verify the shaft seal."],
+    ]
+
+    normalized = GenericWrappedRowTableNormalizer().normalize(
+        rows,
+        table_category=None,
+        chunk_type=None,
+        cell_spans=_WRAP_EVIDENCE,
+    )
+
+    assert normalized is not None
+    assert normalized.headers == ["Task", "Description"]
+    assert normalized.rows == [["1", "Inspect the pump housing and verify the shaft seal."]]

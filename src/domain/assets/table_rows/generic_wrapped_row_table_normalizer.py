@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from src.domain.assets.table_cell_span import TableCellSpan
 from src.domain.assets.table_rows.normalized_table_rows import NormalizedTableRows
+from src.domain.assets.table_rows.row_continuation_patterns import (
+    merge_row_cells,
+    resolve_sparse_continuation_indexes,
+)
 from src.domain.assets.table_rows.table_row_patterns import (
     clean_rows,
-    looks_continuation_start,
-    looks_incomplete_text,
-    looks_terminated_text,
-    merge_continuation_text,
-    normalize_cell,
 )
 
 
@@ -64,37 +63,14 @@ class GenericWrappedRowTableNormalizer:
             merged[-1] = self._attach(merged[-1], row)
         return merged
 
-    @staticmethod
-    def _non_empty_indexes(row: list[str]) -> list[int]:
-        return [index for index, value in enumerate(row) if normalize_cell(value)]
-
     def _should_attach(self, previous_row: list[str], current_row: list[str]) -> bool:
-        current_indexes = self._non_empty_indexes(current_row)
-        if len(current_indexes) != 1 or current_indexes[0] == 0:
-            return False
-        index = current_indexes[0]
-        if index >= len(previous_row) or not normalize_cell(previous_row[index]):
-            return False
-
-        previous_value = normalize_cell(previous_row[index])
-        current_value = normalize_cell(current_row[index])
-        if previous_value.casefold() == current_value.casefold():
-            return False
-        if previous_value.endswith("-"):
-            return True
-        if looks_incomplete_text(previous_value):
-            return True
-        return not looks_terminated_text(previous_value) and looks_continuation_start(
-            current_value
+        return bool(
+            resolve_sparse_continuation_indexes(
+                previous_row,
+                current_row,
+            )
         )
 
     @staticmethod
     def _attach(previous_row: list[str], current_row: list[str]) -> list[str]:
-        merged = list(previous_row)
-        for index, value in enumerate(current_row):
-            normalized = normalize_cell(value)
-            if not normalized:
-                continue
-            existing = merged[index] if index < len(merged) else ""
-            merged[index] = merge_continuation_text(existing, normalized)
-        return merged
+        return merge_row_cells(previous_row, current_row)

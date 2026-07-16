@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.tables.normalization import (
     TableRowSemanticNormalizer,
 )
-from src.domain.assets import TableAsset
+from src.domain.assets import TableAsset, TableCellSpan
 
 
 def test_normalize_rewrites_troubleshooting_rows_into_persistable_grid() -> None:
@@ -174,4 +174,35 @@ def test_normalize_rewrites_performance_curve_rows_for_persistence() -> None:
             "Q m3/h 1.5 / Q l/min 25",
         ],
         ["MXV 25-220C", "3", "4", "H m", "228", "213", "202"],
+    ]
+
+
+def test_normalize_merges_generic_wrapped_rows_with_repeated_anchor() -> None:
+    table = TableAsset(
+        table_id="table_7",
+        document_id="doc_1",
+        markdown="tasks",
+        table_category="general_table",
+        rows=[
+            ["Task", "Description"],
+            ["1", "Inspect the pump housing and"],
+            ["1", "verify the shaft seal."],
+        ],
+        cell_spans=[
+            TableCellSpan(
+                row_start=1,
+                row_end=2,
+                col_start=1,
+                col_end=1,
+                text="Inspect the pump housing and verify the shaft seal.",
+            )
+        ],
+    )
+
+    updated = TableRowSemanticNormalizer().normalize(table)
+
+    assert updated is True
+    assert table.rows == [
+        ["Task", "Description"],
+        ["1", "Inspect the pump housing and verify the shaft seal."],
     ]

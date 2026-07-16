@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from src.domain.assets.table_rows.row_continuation_patterns import (
+    looks_like_continuation_pair,
+)
 from src.domain.assets.table_rows.table_row_patterns import (
-    looks_continuation_start,
-    looks_incomplete_text,
-    looks_terminated_text,
     merge_continuation_text,
     normalize_cell,
 )
@@ -121,15 +121,7 @@ class TroubleshootingRowContinuationMerger:
         return merged_row
 
     def _looks_split_fragment(self, previous_value: str, current_value: str) -> bool:
-        if not previous_value or not current_value:
-            return False
-        if previous_value.casefold() == current_value.casefold():
-            return False
-        if looks_incomplete_text(previous_value):
-            return True
-        return not looks_terminated_text(previous_value) and looks_continuation_start(
-            current_value
-        )
+        return looks_like_continuation_pair(previous_value, current_value)
 
     @staticmethod
     def _same_or_missing(left: str, right: str) -> bool:
