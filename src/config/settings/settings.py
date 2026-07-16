@@ -19,22 +19,22 @@ from src.config.settings.duplicate_detection_settings import DuplicateDetectionS
 from src.config.settings.storage_settings import StorageSettings
 
 
-app_settings = AppSettings()
-database_settings = DatabaseSettings()
-qdrant_settings = QdrantSettings()
-llm_settings = LLMSettings()
-embedding_settings = EmbeddingSettings()
-ingestion_settings = IngestionSettings()
-docling_settings = DoclingSettings()
-retrieval_settings = RetrievalSettings()
-guardrail_settings = GuardrailSettings()
-classification_settings = ClassificationSettings()
-chunking_settings = ChunkingSettings()
-logging_settings = LoggingSettings()
-agent_settings = AgentSettings()
-langgraph_settings = LangGraphSettings()
-memory_settings = MemorySettings()
-ocr_settings = OCRSettings()
-extraction_settings = ExtractionSettings()
-duplicate_detection_settings = DuplicateDetectionSettings()
-storage_settings = StorageSettings()
+app_settings = AppSettings()                        # type: ignore[call-arg]
+database_settings = DatabaseSettings()              # type: ignore[call-arg]
+qdrant_settings = QdrantSettings()                  # type: ignore[call-arg]
+llm_settings = LLMSettings()                        # type: ignore[call-arg]
+embedding_settings = EmbeddingSettings()            # type: ignore[call-arg]
+ingestion_settings = IngestionSettings()            # type: ignore[call-arg]
+docling_settings = DoclingSettings()                # type: ignore[call-arg]
+retrieval_settings = RetrievalSettings()            # type: ignore[call-arg]
+guardrail_settings = GuardrailSettings()            # type: ignore[call-arg]
+classification_settings = ClassificationSettings()  # type: ignore[call-arg]
+chunking_settings = ChunkingSettings()              # type: ignore[call-arg]
+logging_settings = LoggingSettings()                # type: ignore[call-arg]
+agent_settings = AgentSettings()                    # type: ignore[call-arg]
+langgraph_settings = LangGraphSettings()            # type: ignore[call-arg]
+memory_settings = MemorySettings()                  # type: ignore[call-arg]
+ocr_settings = OCRSettings()                        # type: ignore[call-arg]
+extraction_settings = ExtractionSettings()                      # type: ignore[call-arg]
+duplicate_detection_settings = DuplicateDetectionSettings()     # type: ignore[call-arg]
+storage_settings = StorageSettings()                            # type: ignore[call-arg]
