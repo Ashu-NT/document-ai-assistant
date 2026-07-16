@@ -8,7 +8,7 @@ from src.infrastructure.db.orm_models.document_models import (
 )
 from src.infrastructure.db.orm_models.vector_models import ChunkVectorORM
 from src.infrastructure.db.orm_models.workflow_models import IngestionRunORM
-from src.infrastructure.db.orm_models.classification_models import ChunkClassificationORM, DocumentClassificationORM
+from src.infrastructure.db.orm_models.classification_models import DocumentClassificationORM
 from src.infrastructure.db.orm_models.extraction.contact_point_orm import ContactPointORM
 from src.infrastructure.db.orm_models.extraction.equipment_info_orm import EquipmentInfoORM
 from src.infrastructure.db.orm_models.extraction.extraction_result_orm import ExtractionResultORM
@@ -41,7 +41,6 @@ __all__ = [
     "IdentifierORM",
     "IngestionRunORM",
     "SectionORM",
-    "ChunkClassificationORM", 
     "DocumentClassificationORM",
     "ContactPointORM",
     "EquipmentInfoORM",

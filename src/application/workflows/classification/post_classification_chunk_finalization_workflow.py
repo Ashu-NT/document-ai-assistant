@@ -7,14 +7,10 @@ from src.application.services.document import (
     DocumentRegistrationService,
 )
 from src.application.services.question_generation import QuestionGenerationService
-from src.application.workflows.classification.chunk_classification_workflow import (
-    ChunkClassificationWorkflow,
-)
 from src.application.workflows.classification.chunk_type_classification_workflow import (
     ChunkTypeClassificationWorkflow,
 )
 from src.application.workflows.classification.classification_workflow_settings import (
-    default_enable_chunk_classification,
     default_enable_question_generation,
 )
 from src.application.workflows.classification.finalization.asset_fallback_chunk_recovery import (
@@ -61,12 +57,10 @@ class PostClassificationChunkFinalizationWorkflow:
         embedding_workflow: EmbeddingWorkflow,
         vector_store: VectorStore,
         graph_chunk_builder: GraphChunkBuilder,
-        chunk_classification_workflow: ChunkClassificationWorkflow | None = None,
         chunk_type_classification_workflow: ChunkTypeClassificationWorkflow | None = None,
         chunking_profile_inferer: ChunkingProfileInferer | None = None,
         chunking_policy_resolver: DocumentChunkingPolicyResolver | None = None,
         document_type_resolver: HybridDocumentTypeResolver | None = None,
-        enable_chunk_classification: bool | None = None,
         enable_question_generation: bool | None = None,
     ) -> None:
         self.document_lookup_service = document_lookup_service
@@ -76,7 +70,6 @@ class PostClassificationChunkFinalizationWorkflow:
         self.embedding_workflow = embedding_workflow
         self.vector_store = vector_store
         self.graph_chunk_builder = graph_chunk_builder
-        self.chunk_classification_workflow = chunk_classification_workflow
         self.chunk_type_classification_workflow = chunk_type_classification_workflow
         self.chunking_profile_inferer = (
             chunking_profile_inferer or ChunkingProfileInferer()
@@ -86,11 +79,6 @@ class PostClassificationChunkFinalizationWorkflow:
         )
         self.document_type_resolver = (
             document_type_resolver or HybridDocumentTypeResolver()
-        )
-        self.enable_chunk_classification = (
-            enable_chunk_classification
-            if enable_chunk_classification is not None
-            else default_enable_chunk_classification()
         )
         self.enable_question_generation = (
             enable_question_generation
@@ -107,9 +95,7 @@ class PostClassificationChunkFinalizationWorkflow:
         )
         self._chunk_classification_runner = FinalChunkClassificationRunner(
             classification_service=classification_service,
-            chunk_classification_workflow=chunk_classification_workflow,
             chunk_type_classification_workflow=chunk_type_classification_workflow,
-            enable_chunk_classification=self.enable_chunk_classification,
         )
         self._question_generation_runner = FinalQuestionGenerationRunner(
             question_generation_service=question_generation_service,
@@ -225,11 +211,6 @@ class PostClassificationChunkFinalizationWorkflow:
         graph.document.document_type = decision.effective_document_type
         graph.replace_chunks(final_chunks)
         graph.clear_chunk_dependents()
-        self._chunk_classification_runner.classify_chunks_if_enabled(
-            chunks=final_chunks,
-            activity_context=activity_context,
-            progress_callback=progress_callback,
-        )
         self._question_generation_runner.generate_if_enabled(
             graph=graph,
             max_questions_per_chunk=max_questions_per_chunk,

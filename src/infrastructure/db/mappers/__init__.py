@@ -10,7 +10,6 @@ from src.infrastructure.db.mappers.document import (
     GeneratedQuestionMapper,
     SectionMapper,
 )
-from src.infrastructure.db.mappers.classification import ChunkClassificationMapper
 from src.infrastructure.db.mappers.classification import ClassificationResultMapper
 from src.infrastructure.db.mappers.classification import DocumentClassificationMapper
 from src.infrastructure.db.mappers.extraction import ContactPointMapper
@@ -54,7 +53,6 @@ __all__ = [
     "GeneratedQuestionMapper",
     "SectionMapper",
     "IngestionRunMapper",
-    "ChunkClassificationMapper",
     "ClassificationResultMapper",
     "DocumentClassificationMapper",
     "ContactPointMapper",

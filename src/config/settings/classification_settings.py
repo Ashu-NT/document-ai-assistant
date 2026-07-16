@@ -44,11 +44,6 @@ class ClassificationSettings(AppBaseSettings):
         alias="DOCUMENT_TYPES"
     )
 
-    chunk_classification_enabled: bool = Field(
-        default=False,
-        alias="CHUNK_CLASSIFICATION_ENABLED"
-    )
-
     chunk_type_classification_enabled: bool = Field(
         default=False,
         alias="CHUNK_TYPE_CLASSIFICATION_ENABLED"
@@ -56,10 +51,6 @@ class ClassificationSettings(AppBaseSettings):
 
     chunk_classification_llm: str = Field(
         alias="CHUNK_CLASSIFICATION_LLM"
-    )
-
-    chunk_confidence_threshold: float = Field(
-        alias="CHUNK_CLASSIFICATION_CONFIDENCE_THRESHOLD"
     )
 
     strong_model_threshold: float = Field(

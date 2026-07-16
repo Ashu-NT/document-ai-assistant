@@ -1,13 +1,7 @@
 from sqlalchemy.orm import Session
 
 from src.application.contracts.classification import ClassificationRepository
-from src.domain.classification import ChunkClassification, DocumentClassification
-from src.infrastructure.db.repositories.classification.chunk_classification_reader import (
-    ChunkClassificationReader,
-)
-from src.infrastructure.db.repositories.classification.chunk_classification_writer import (
-    ChunkClassificationWriter,
-)
+from src.domain.classification import DocumentClassification
 from src.infrastructure.db.repositories.classification.document_classification_reader import (
     DocumentClassificationReader,
 )
@@ -20,8 +14,6 @@ class SqlAlchemyClassificationRepository(ClassificationRepository):
     def __init__(self, session: Session) -> None:
         self.document_reader = DocumentClassificationReader(session)
         self.document_writer = DocumentClassificationWriter(session)
-        self.chunk_reader = ChunkClassificationReader(session)
-        self.chunk_writer = ChunkClassificationWriter(session)
 
     def save_document_classification(
         self,
@@ -37,27 +29,3 @@ class SqlAlchemyClassificationRepository(ClassificationRepository):
 
     def delete_document_classification(self, document_id: str) -> None:
         self.document_writer.delete_by_document(document_id)
-
-    def save_chunk_classification(
-        self,
-        classification: ChunkClassification,
-    ) -> None:
-        self.chunk_writer.save(classification)
-
-    def save_chunk_classifications(
-        self,
-        classifications: list[ChunkClassification],
-    ) -> None:
-        self.chunk_writer.save_many(classifications)
-
-    def get_chunk_classification(
-        self,
-        chunk_id: str,
-    ) -> ChunkClassification | None:
-        return self.chunk_reader.get(chunk_id)
-    
-    def list_chunk_classifications(
-        self,
-        document_id: str,
-    ) -> list[ChunkClassification]:
-        return self.chunk_reader.list_by_document(document_id)

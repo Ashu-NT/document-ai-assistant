@@ -11,6 +11,8 @@ from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
     repair_docling_text,
 )
 
+TOC_PAGE_NUMBER_PATTERN = re.compile(r"\d{1,4}")
+
 
 @dataclass(frozen=True, slots=True)
 class _ParsedTocEntry:
@@ -185,7 +187,7 @@ class DoclingTocTableRowReconstructor:
     @staticmethod
     def _extract_row_page(cells: list[str]) -> tuple[int | None, int | None]:
         for index in range(len(cells) - 1, -1, -1):
-            if re.fullmatch(r"\d{1,4}", cells[index]):
+            if TOC_PAGE_NUMBER_PATTERN.fullmatch(cells[index]):
                 return index, int(cells[index])
         return None, None
 

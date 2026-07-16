@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from src.application.workflows.parsing.normalizers.docling_toc_table_row_reconstructor import (
+    TOC_PAGE_NUMBER_PATTERN,
     DoclingTocTableRowReconstructor,
 )
 from src.application.workflows.parsing.normalizers.table_layout.parallel_table_stream_clusterer import (
@@ -112,8 +113,11 @@ class DoclingParallelTocReconstructor:
     ) -> bool:
         if reconstructed == raw_rows or len(reconstructed) < 4:
             return False
-        header = reconstructed[0]
-        return bool(header) and header[-1] == "Page"
+        data_rows = reconstructed[1:]
+        return bool(data_rows) and all(
+            bool(row) and TOC_PAGE_NUMBER_PATTERN.fullmatch(str(row[-1]).strip())
+            for row in data_rows
+        )
 
     @staticmethod
     def _same_header(left: list[str], right: list[str]) -> bool:

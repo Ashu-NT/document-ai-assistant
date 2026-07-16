@@ -4,13 +4,9 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from typing import TypeVar
 
-# Concurrent-map-over-chunks skeleton -- previously reimplemented
-# identically in extraction_workflow.py::_build_prompt (mapping
-# `candidate_selector.select_for_chunk` over a batch's chunks) and
-# post_classification_chunk_finalization_workflow.py::
-# _classify_chunks_if_enabled (mapping `classify_chunk_without_saving`
-# over the final chunk set, followed by a sequential, non-thread-safe DB
-# write that stays at the call site since it isn't itself duplicated).
+# Concurrent-map-over-chunks skeleton -- used by
+# extraction_workflow.py::_build_prompt (mapping
+# `candidate_selector.select_for_chunk` over a batch's chunks).
 
 ItemT = TypeVar("ItemT")
 ResultT = TypeVar("ResultT")

@@ -23,7 +23,6 @@ def test_post_classification_finalization_skips_question_generation_when_disable
     (
         workflow,
         question_service,
-        _,
         registration_service,
         _,
         embedding_workflow,
@@ -54,64 +53,6 @@ def test_post_classification_finalization_skips_question_generation_when_disable
         for message in messages
     )
 
-def test_post_classification_finalization_classifies_chunks_when_enabled(
-    sample_document_graph,
-    sample_document_classification,
-    sample_chunk,
-) -> None:
-    graph = copy.deepcopy(sample_document_graph)
-    first_chunk = clone_chunk(
-        sample_chunk,
-        chunk_id="chunk_a",
-        content="Chunk A content.",
-        chunk_type=ChunkType.GENERAL,
-    )
-    second_chunk = clone_chunk(
-        sample_chunk,
-        chunk_id="chunk_b",
-        content="Chunk B content.",
-        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-    )
-    graph.replace_chunks([first_chunk, second_chunk])
-    decision = DocumentTypeDecision(
-        effective_document_type=DocumentType.MANUAL,
-        effective_chunking_profile=ChunkingProfile.MANUAL,
-        confidence=0.9,
-        reasons=["reused provisional chunks"],
-        should_rechunk=False,
-    )
-    chunk_workflow = FakeChunkClassificationWorkflow()
-    (
-        workflow,
-        _,
-        returned_chunk_workflow,
-        _,
-        _,
-        _,
-        _,
-        _,
-    ) = make_workflow(
-        graph=graph,
-        classification=sample_document_classification,
-        decision=decision,
-        rechunked_chunks=[first_chunk, second_chunk],
-        provisional_profile=ChunkingProfile.MANUAL,
-        chunk_classification_workflow=chunk_workflow,
-        enable_chunk_classification=True,
-        enable_question_generation=False,
-    )
-    messages: list[str] = []
-
-    workflow.finalize(
-        graph.document.document_id,
-        progress_callback=messages.append,
-    )
-
-    assert returned_chunk_workflow is chunk_workflow
-    assert sorted(chunk_workflow.calls) == ["chunk_a", "chunk_b"]
-    assert any("Classifying 2 final chunk(s)..." in message for message in messages)
-    assert any("Classified 2 final chunk(s)." in message for message in messages)
-
 def test_asset_heavy_datasheet_finalization_does_not_produce_zero_chunks(
     sample_document,
     sample_document_classification,
@@ -133,7 +74,6 @@ def test_asset_heavy_datasheet_finalization_does_not_produce_zero_chunks(
     )
     (
         workflow,
-        _,
         _,
         _,
         _,
@@ -184,7 +124,7 @@ def test_datasheet_policy_allows_asset_fallback_when_no_text_chunks_exist(
         id_generator=IdGenerator(),
         section_chunk_builder=SectionChunkBuilder(),
     )
-    workflow, _, _, _, _, _, _, _ = make_workflow(
+    workflow, _, _, _, _, _, _ = make_workflow(
         graph=graph,
         classification=classification,
         decision=decision,
@@ -249,7 +189,7 @@ def test_zero_chunk_finalization_raises_clear_error_when_no_asset_evidence_exist
         id_generator=IdGenerator(),
         section_chunk_builder=SectionChunkBuilder(),
     )
-    workflow, _, _, _, _, _, _, _ = make_workflow(
+    workflow, _, _, _, _, _, _ = make_workflow(
         graph=graph,
         classification=classification,
         decision=decision,

@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from src.domain.classification import ChunkClassification, DocumentClassification
+from src.domain.classification import DocumentClassification
 
 
 class ClassificationRepository(Protocol):
@@ -17,28 +17,4 @@ class ClassificationRepository(Protocol):
         ...
 
     def delete_document_classification(self, document_id: str) -> None:
-        ...
-
-    def save_chunk_classification(
-        self,
-        classification: ChunkClassification,
-    ) -> None:
-        ...
-
-    def save_chunk_classifications(
-        self,
-        classifications: list[ChunkClassification],
-    ) -> None:
-        ...
-
-    def get_chunk_classification(
-        self,
-        chunk_id: str,
-    ) -> ChunkClassification | None:
-        ...
-
-    def list_chunk_classifications(
-        self,
-        document_id: str,
-    ) -> list[ChunkClassification]:
         ...

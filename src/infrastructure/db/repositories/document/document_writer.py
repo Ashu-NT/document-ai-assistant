@@ -15,7 +15,6 @@ from src.infrastructure.db.mappers import (
 from src.infrastructure.db.repositories.common import bulk_merge
 from src.infrastructure.db.orm_models import (
     ChunkORM,
-    ChunkClassificationORM,
     DocumentORM,
     GeneratedQuestionORM,
     IdentifierORM,
@@ -121,11 +120,6 @@ class DocumentWriter:
         )
 
     def _delete_document_chunk_artifacts(self, document_id: str) -> None:
-        self.session.execute(
-            delete(ChunkClassificationORM).where(
-                ChunkClassificationORM.document_id == document_id
-            )
-        )
         self.session.execute(
             delete(GeneratedQuestionORM).where(
                 GeneratedQuestionORM.document_id == document_id

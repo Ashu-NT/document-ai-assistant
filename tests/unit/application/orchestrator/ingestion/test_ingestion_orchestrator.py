@@ -68,12 +68,10 @@ def patched(monkeypatch):
     for name in (
         "DocumentGraphValidator",
         "DocumentClassificationValidator",
-        "ChunkClassificationValidator",
         "DocumentLookupService",
         "DocumentRegistrationService",
         "DuplicateDetectionService",
         "ClassificationService",
-        "ChunkClassificationWorkflow",
         "DocumentClassificationWorkflow",
         "ChunkTypeClassificationWorkflow",
         "QuestionGenerationService",

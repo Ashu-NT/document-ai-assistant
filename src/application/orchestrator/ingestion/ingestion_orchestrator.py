@@ -20,15 +20,11 @@ from src.application.services.document import (
 )
 from src.application.services.extraction import ExtractionService
 from src.application.services.question_generation import QuestionGenerationService
-from src.application.validation.classification import (
-    ChunkClassificationValidator,
-    DocumentClassificationValidator,
-)
+from src.application.validation.classification import DocumentClassificationValidator
 from src.application.validation.document import DocumentGraphValidator
 from src.application.validation.extraction import ExtractionResultValidator
 from src.application.validation.ingestion import IngestionRequestValidator
 from src.application.workflows.classification import (
-    ChunkClassificationWorkflow,
     ChunkTypeClassificationWorkflow,
     DocumentClassificationWorkflow,
     PostClassificationChunkFinalizationWorkflow,
@@ -109,7 +105,6 @@ def build_ingestion_runtime(
     classification_repository = uow.classifications
     document_graph_validator = DocumentGraphValidator()
     document_validator = DocumentClassificationValidator()
-    chunk_validator = ChunkClassificationValidator()
     document_lookup_service = DocumentLookupService(document_repository)
     document_registration_service = DocumentRegistrationService(
         document_repository=document_repository,
@@ -120,13 +115,6 @@ def build_ingestion_runtime(
     classification_service = ClassificationService(
         classification_repository=classification_repository,
         document_classification_validator=document_validator,
-        chunk_classification_validator=chunk_validator,
-    )
-    chunk_classification_workflow = ChunkClassificationWorkflow(
-        llm_service=llm_service,
-        classification_service=classification_service,
-        chunk_classification_validator=chunk_validator,
-        id_generator=resolved_id_generator,
     )
     document_classification_workflow = DocumentClassificationWorkflow(
         llm_service=llm_service,
@@ -139,7 +127,6 @@ def build_ingestion_runtime(
             document_lookup_service=document_lookup_service,
             document_registration_service=document_registration_service,
             classification_service=classification_service,
-            chunk_classification_workflow=chunk_classification_workflow,
             chunk_type_classification_workflow=ChunkTypeClassificationWorkflow(
                 llm_service=llm_service,
             ),

@@ -1,11 +1,6 @@
-from src.domain.classification import (
-    ChunkClassification,
-    ClassificationResult,
-    DocumentClassification,
-)
-from src.domain.common import ChunkType, DocumentType, ModelProcessingMetadata
+from src.domain.classification import ClassificationResult, DocumentClassification
+from src.domain.common import DocumentType, ModelProcessingMetadata
 from src.infrastructure.db.mappers import (
-    ChunkClassificationMapper,
     ClassificationResultMapper,
     DocumentClassificationMapper,
 )
@@ -56,27 +51,3 @@ def test_document_classification_mapper_round_trip() -> None:
     assert domain.document_type == DocumentType.MANUAL
     assert domain.result is not None
     assert domain.result.predicted_label == "manual"
-
-
-def test_chunk_classification_mapper_round_trip() -> None:
-    result = ClassificationResult(
-        classification_id="class_chunk_001",
-        document_id="doc_001",
-        predicted_label="maintenance_interval",
-        confidence_score=0.82,
-    )
-
-    classification = ChunkClassification(
-        chunk_id="chunk_001",
-        document_id="doc_001",
-        chunk_type=ChunkType.MAINTENANCE_INTERVAL,
-        result=result,
-    )
-
-    orm = ChunkClassificationMapper.to_orm(classification)
-    domain = ChunkClassificationMapper.to_domain(orm)
-
-    assert domain.chunk_id == "chunk_001"
-    assert domain.document_id == "doc_001"
-    assert domain.chunk_type == ChunkType.MAINTENANCE_INTERVAL
-    assert domain.result is not None

@@ -1,7 +1,5 @@
 import copy
 
-import threading
-
 import pytest
 
 from src.application.workflows.classification import (
@@ -60,17 +58,10 @@ class FakeClassificationService:
     def __init__(self, classification) -> None:
         self.classification = classification
         self.calls: list[str] = []
-        self.saved_chunk_classifications: list = []
 
     def get_document_classification(self, document_id: str):
         self.calls.append(document_id)
         return self.classification
-
-    def save_chunk_classification(self, classification, activity_context=None):
-        self.saved_chunk_classifications.append(classification)
-
-    def save_chunk_classifications(self, classifications, activity_context=None):
-        self.saved_chunk_classifications.extend(classifications)
 
 class FakeQuestionGenerationService:
     def __init__(self) -> None:
@@ -97,16 +88,6 @@ class FakeQuestionGenerationService:
             )
             for index, chunk in enumerate(chunks, start=1)
         ]
-
-class FakeChunkClassificationWorkflow:
-    def __init__(self) -> None:
-        self.calls: list[str] = []
-        self._lock = threading.Lock()
-
-    def classify_chunk_without_saving(self, chunk: DocumentChunk, activity_context=None):
-        with self._lock:
-            self.calls.append(chunk.chunk_id)
-        return None
 
 class FakeDocumentRegistrationService:
     def __init__(self, operations: list[str]) -> None:

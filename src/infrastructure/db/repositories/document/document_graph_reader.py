@@ -4,10 +4,6 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
-    repair_docling_text,
-)
-from src.domain.assets import AssetMetadata, PictureAsset, TableAsset, TableCellSpan
 from src.domain.document import DocumentGraph, DocumentStatistics
 from src.infrastructure.db.mappers import (
     ChunkMapper,
@@ -24,6 +20,9 @@ from src.infrastructure.db.orm_models import (
     GeneratedQuestionORM,
     IdentifierORM,
     SectionORM,
+)
+from src.infrastructure.db.repositories.document.document_graph_asset_rehydrator import (
+    rehydrate_assets,
 )
 from src.shared.exceptions import DatabaseError
 
@@ -78,7 +77,7 @@ class DocumentGraphReader:
             for element_orm in elements:
                 graph.add_element(ElementMapper.to_domain(element_orm))
 
-            self._rehydrate_assets(graph)
+            rehydrate_assets(graph)
 
             for chunk_orm in chunks:
                 graph.add_chunk(ChunkMapper.to_domain(chunk_orm))
@@ -126,197 +125,3 @@ class DocumentGraphReader:
             grouped.setdefault(element.parent_section_id, []).append(element.id)
 
         return grouped
-
-    @staticmethod
-    def _rehydrate_assets(graph: DocumentGraph) -> None:
-        for element in graph.elements.values():
-            parser_metadata = element.parser_metadata
-            parser_extra = parser_metadata.extra if parser_metadata is not None else {}
-
-            if element.table_id is not None and element.table_id not in graph.tables:
-                graph.tables[element.table_id] = TableAsset(
-                    table_id=element.table_id,
-                    document_id=element.document_id,
-                    parent_section_id=element.parent_section_id,
-                    markdown=DocumentGraphReader._clean_multiline_text(
-                        parser_extra.get("markdown") or element.text or ""
-                    )
-                    or "",
-                    rows=DocumentGraphReader._clean_rows(
-                        parser_extra.get("table_rows")
-                    ),
-                    parallel_stream_rows=DocumentGraphReader._clean_parallel_stream_rows(
-                        parser_extra.get("table_parallel_stream_rows")
-                    ),
-                    row_ids=[
-                        str(row_id)
-                        for row_id in (parser_extra.get("table_row_ids") or [])
-                        if str(row_id).strip()
-                    ],
-                    cell_spans=TableCellSpan.list_from_data(
-                        parser_extra.get("table_cell_spans")
-                    ),
-                    row_count=parser_extra.get("row_count"),
-                    column_count=parser_extra.get("column_count"),
-                    local_reading_order=parser_extra.get("table_local_reading_order"),
-                    logical_table_family_id=parser_extra.get("logical_table_family_id"),
-                    family_index=parser_extra.get("family_index"),
-                    family_total=parser_extra.get("family_total"),
-                    continuation_role=parser_extra.get("continuation_role"),
-                    normalized_header_signature=parser_extra.get(
-                        "normalized_header_signature"
-                    ),
-                    table_category=parser_extra.get("table_category"),
-                    table_category_confidence=parser_extra.get(
-                        "table_category_confidence"
-                    ),
-                    table_shape=parser_extra.get("table_shape"),
-                    table_structure_quality=DocumentGraphReader._coerce_float(
-                        parser_extra.get("table_structure_quality")
-                    ),
-                    header_paths=DocumentGraphReader._clean_header_paths(
-                        parser_extra.get("table_header_paths_json")
-                    ),
-                    axis_summary=DocumentGraphReader._clean_axis_summary(
-                        parser_extra.get("table_axis_summary")
-                    ),
-                    metadata=AssetMetadata(
-                        source=element.source,
-                        caption=(
-                            DocumentGraphReader._clean_text(parser_extra.get("caption"))
-                            if parser_extra.get("caption") is not None
-                            else None
-                        ),
-                        nearby_text=(
-                            DocumentGraphReader._clean_text(
-                                parser_extra.get("nearby_text")
-                            )
-                            if parser_extra.get("nearby_text") is not None
-                            else None
-                        ),
-                    ),
-                )
-
-            if element.picture_id is not None and element.picture_id not in graph.pictures:
-                graph.pictures[element.picture_id] = PictureAsset(
-                    picture_id=element.picture_id,
-                    document_id=element.document_id,
-                    parent_section_id=element.parent_section_id,
-                    image_path=(
-                        str(parser_extra.get("image_path"))
-                        if parser_extra.get("image_path") is not None
-                        else None
-                    ),
-                    ocr_text=(
-                        str(parser_extra.get("ocr_text"))
-                        if parser_extra.get("ocr_text") is not None
-                        else None
-                    ),
-                    ocr_confidence=DocumentGraphReader._coerce_float(
-                        parser_extra.get("ocr_confidence")
-                    ),
-                    ocr_provider=(
-                        str(parser_extra.get("ocr_provider"))
-                        if parser_extra.get("ocr_provider") is not None
-                        else None
-                    ),
-                    ocr_mode=(
-                        str(
-                            parser_extra.get("ocr_mode")
-                            or parser_extra.get("ocr_target_type")
-                        )
-                        if (
-                            parser_extra.get("ocr_mode") is not None
-                            or parser_extra.get("ocr_target_type") is not None
-                        )
-                        else None
-                    ),
-                    metadata=AssetMetadata(
-                        source=element.source,
-                        caption=(
-                            str(parser_extra.get("caption") or element.text)
-                            if parser_extra.get("caption") is not None or element.text is not None
-                            else None
-                        ),
-                        nearby_text=(
-                            str(parser_extra.get("nearby_text"))
-                            if parser_extra.get("nearby_text") is not None
-                            else None
-                        ),
-                    ),
-                )
-
-    @staticmethod
-    def _clean_text(value: object) -> str | None:
-        text = repair_docling_text(str(value or "")).strip()
-        return text or None
-
-    @classmethod
-    def _clean_multiline_text(cls, value: object) -> str | None:
-        if value is None:
-            return None
-        lines = [
-            repair_docling_text(str(line)).rstrip()
-            for line in str(value).splitlines()
-        ]
-        text = "\n".join(lines).strip()
-        return text or None
-
-    @classmethod
-    def _clean_rows(cls, rows: object) -> list[list[str]]:
-        if not isinstance(rows, list):
-            return []
-        cleaned_rows: list[list[str]] = []
-        for row in rows:
-            if not isinstance(row, list):
-                continue
-            cleaned_rows.append(
-                [
-                    cls._clean_text(cell) or ""
-                    for cell in row
-                ]
-            )
-        return cleaned_rows
-
-    @classmethod
-    def _clean_parallel_stream_rows(cls, value: object) -> list[list[list[str]]]:
-        if not isinstance(value, list):
-            return []
-        cleaned_streams: list[list[list[str]]] = []
-        for stream_rows in value:
-            cleaned_rows = cls._clean_rows(stream_rows)
-            if cleaned_rows:
-                cleaned_streams.append(cleaned_rows)
-        return cleaned_streams
-
-    @staticmethod
-    def _coerce_float(value: object) -> float | None:
-        try:
-            return float(value) if value is not None else None
-        except (TypeError, ValueError):
-            return None
-
-    @classmethod
-    def _clean_header_paths(cls, value: object) -> list[list[str]]:
-        if not isinstance(value, list):
-            return []
-        cleaned_paths: list[list[str]] = []
-        for path in value:
-            if not isinstance(path, list):
-                continue
-            cleaned_path = [cls._clean_text(part) or "" for part in path]
-            cleaned_path = [part for part in cleaned_path if part]
-            cleaned_paths.append(cleaned_path)
-        return cleaned_paths
-
-    @classmethod
-    def _clean_axis_summary(cls, value: object) -> dict[str, str]:
-        if not isinstance(value, dict):
-            return {}
-        cleaned_summary: dict[str, str] = {}
-        for key, raw_value in value.items():
-            cleaned_key = cls._clean_text(key)
-            cleaned_value = cls._clean_text(raw_value)
-            if cleaned_key and cleaned_value:
-                cleaned_summary[cleaned_key] = cleaned_value
-        return cleaned_summary

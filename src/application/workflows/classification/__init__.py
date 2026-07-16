@@ -7,9 +7,6 @@ from src.application.workflows.classification.hybrid_document_type_resolver impo
 from src.application.workflows.classification.post_classification_chunk_finalization_workflow import (
     PostClassificationChunkFinalizationWorkflow,
 )
-from src.application.workflows.classification.chunk_classification_workflow import (
-    ChunkClassificationWorkflow,
-)
 from src.application.workflows.classification.chunk_type_classification_workflow import (
     ChunkTypeClassificationWorkflow,
 )
@@ -18,7 +15,6 @@ from src.application.workflows.classification.document_classification_workflow i
 )
 
 __all__ = [
-    "ChunkClassificationWorkflow",
     "ChunkTypeClassificationWorkflow",
     "DocumentTypeDecision",
     "DocumentClassificationWorkflow",

@@ -8,15 +8,6 @@ from src.application.workflows.common.settings_resolver import resolve_setting
 # instead of raising.
 
 
-def default_enable_chunk_classification() -> bool:
-    def _load() -> bool:
-        from src.config.settings import classification_settings
-
-        return classification_settings.chunk_classification_enabled
-
-    return resolve_setting(_load, False)
-
-
 def default_enable_question_generation() -> bool:
     def _load() -> bool:
         from src.config.settings import ingestion_settings

@@ -29,7 +29,6 @@ def test_post_classification_finalization_reuses_chunks_and_runs_questions_and_e
     (
         workflow,
         question_service,
-        _,
         registration_service,
         vector_store,
         embedding_workflow,
@@ -89,7 +88,6 @@ def test_post_classification_finalization_rechunks_before_questions_and_embeddin
     (
         workflow,
         question_service,
-        _,
         registration_service,
         vector_store,
         embedding_workflow,
@@ -154,7 +152,6 @@ def test_post_classification_finalization_refreshes_stale_chunk_set_when_builder
         question_service,
         _,
         _,
-        _,
         embedding_workflow,
         graph_chunk_builder,
         _,
@@ -194,7 +191,7 @@ def test_post_classification_finalization_rebuilds_when_stored_chunk_set_is_empt
         reasons=["stored chunk set missing"],
         should_rechunk=False,
     )
-    workflow, _, _, _, _, embedding_workflow, graph_chunk_builder, _ = make_workflow(
+    workflow, _, _, _, embedding_workflow, graph_chunk_builder, _ = make_workflow(
         graph=graph,
         classification=sample_document_classification,
         decision=decision,
@@ -229,7 +226,7 @@ def test_post_classification_finalization_emits_nested_progress_messages(
         reasons=["reused provisional chunks"],
         should_rechunk=False,
     )
-    workflow, _, _, _, _, _, _, _ = make_workflow(
+    workflow, _, _, _, _, _, _ = make_workflow(
         graph=graph,
         classification=sample_document_classification,
         decision=decision,

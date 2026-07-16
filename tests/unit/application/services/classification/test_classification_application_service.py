@@ -2,10 +2,7 @@ from src.application.services.classification import (
     ClassificationApplicationService,
     ClassificationService,
 )
-from src.application.validation.classification import (
-    ChunkClassificationValidator,
-    DocumentClassificationValidator,
-)
+from src.application.validation.classification import DocumentClassificationValidator
 
 
 class FakeClassificationRepository:
@@ -16,7 +13,6 @@ def test_classification_application_service_groups_services() -> None:
     classification_service = ClassificationService(
         FakeClassificationRepository(),
         DocumentClassificationValidator(),
-        ChunkClassificationValidator(),
     )
 
     app_service = ClassificationApplicationService(

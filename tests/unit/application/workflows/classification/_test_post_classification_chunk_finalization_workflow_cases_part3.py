@@ -52,7 +52,7 @@ def test_final_chunks_falls_back_to_stored_chunks_when_rebuild_and_asset_fallbac
         reasons=["rebuild produced nothing"],
         should_rechunk=False,
     )
-    workflow, _, _, _, _, _, _, _ = make_workflow(
+    workflow, _, _, _, _, _, _ = make_workflow(
         graph=graph,
         classification=classification,
         decision=decision,
