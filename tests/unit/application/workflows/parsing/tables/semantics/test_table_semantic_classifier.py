@@ -219,6 +219,28 @@ def test_classify_detects_identifier_table_from_order_code_section() -> None:
     assert confidence >= 0.75
 
 
+def test_classify_prefers_certification_over_operating_limits_for_atex_table() -> None:
+    # Regression guard for a real bug: an ATEX/IECEx certification table
+    # commonly lists environmental limits (temperature class, protection
+    # rating, ambient temperature) alongside its approval markers, which
+    # used to satisfy the generic operating-limits rule first (checked
+    # earlier) and steal the table away from CERTIFICATION_TABLE.
+    category, confidence = TableSemanticClassifier().classify(
+        table=_make_table(
+            [
+                ["Parameter", "Value"],
+                ["Certificate", "ATEX approval IECEx DEK 14.0052X"],
+                ["Temperature class", "T4"],
+                ["Ambient temperature", "-20C to +60C"],
+                ["Protection", "Ex d IIC"],
+            ]
+        ),
+    )
+
+    assert category == TableCategory.CERTIFICATION_TABLE
+    assert confidence >= 0.8
+
+
 def test_classify_detects_operating_limits_from_supply_voltage_and_protection() -> None:
     category, confidence = TableSemanticClassifier().classify(
         table=_make_table(

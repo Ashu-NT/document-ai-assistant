@@ -195,6 +195,21 @@ class TableSemanticClassifier:
             section_text,
         ):
             return TableCategory.OPERATION_REFERENCE_TABLE, 0.84
+        # Certification is checked ahead of operating-limits/technical-data:
+        # a real ATEX/IECEx certification table commonly lists environmental
+        # limits (temperature class, protection rating, ambient temperature)
+        # alongside its approval markers, which would otherwise satisfy the
+        # generic operating-limits/technical-data rules first and steal a
+        # genuine certification table. looks_like_certification_table's own
+        # vocabulary (atex/iecex/certificate/conformity/particulars) is
+        # distinctive enough that a real operating-limits or technical-data
+        # table (no certification content) won't trip it, so moving it
+        # earlier doesn't cost those categories any recall.
+        if self.specification_rule_evaluator.looks_like_certification_table(
+            direct_text,
+            section_text,
+        ):
+            return TableCategory.CERTIFICATION_TABLE, 0.82
         if self.specification_rule_evaluator.looks_like_operating_limits_table(
             headers,
             label_cells,
@@ -208,11 +223,6 @@ class TableSemanticClassifier:
             section_text,
         ):
             return TableCategory.TECHNICAL_DATA_TABLE, 0.88
-        if self.specification_rule_evaluator.looks_like_certification_table(
-            direct_text,
-            section_text,
-        ):
-            return TableCategory.CERTIFICATION_TABLE, 0.82
         if self.structured_list_classifier.looks_like_connection_table(
             headers=headers,
             direct_text=direct_text,
