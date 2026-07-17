@@ -94,7 +94,7 @@ These are meaningful enterprise foundations. The remaining work is mostly about 
 
 Largest current hotspots in `src/`:
 
-- `src/application/workflows/ingestion/ingestion_workflow.py` - 895 LOC
+- `src/application/workflows/ingestion/ingestion_workflow.py` - 290 LOC after Phase 0 refactor
 - `src/application/evaluation/retrieval/benchmarking/corpus/resolution/retrieval_benchmark_corpus_document_resolver.py` - 505 LOC
 - `src/application/workflows/extraction/extraction_workflow.py` - 418 LOC
 - `src/application/workflows/question_answering/answer_pipeline/answer_generation_pipeline.py` - 344 LOC
@@ -485,6 +485,12 @@ Status:
   - `IngestionWorkflow` now delegates finalization work to a dedicated finalization stage runner
   - `IngestionWorkflow` now delegates extraction/identifier/linking work to a dedicated extraction stage runner
   - `IngestionWorkflow` now delegates embedding/indexing work to a dedicated vector indexing stage runner
+  - `IngestionWorkflow` now delegates ingestion-run persistence, duplicate early exits, and failure finalization to dedicated pipeline helpers
+  - `IngestionWorkflow` now delegates run bootstrap concerns (path resolution, file hashing, context resolution, `IngestionRun` creation, started-event emission, and initial progress emission) to a dedicated bootstrap helper
+  - `IngestionWorkflow` now delegates duplicate-stage orchestration and success completion/final event emission to dedicated pipeline coordinators
+  - `IngestionWorkflow` now delegates stage status/start/completed lifecycle plumbing and stage event-payload assembly to dedicated ingestion pipeline collaborators
+  - `IngestionWorkflow` now delegates per-stage `IngestionRun` metadata/state mutation to a dedicated state applier
+  - `IngestionWorkflow` now delegates internal collaborator assembly to a dedicated pipeline builder and delegates the full parse/register/classify/finalize/extract/embed/index/quality stage sequence to a dedicated sequence executor
   - `AnswerGenerationService` now delegates settings resolution, prompt execution/retry, result assembly, and compound-question limitation handling to dedicated collaborators
   - `SqlKeywordScorer` now delegates morphology helpers, scoring config, penalties, and score-component assembly to grouped scoring modules
 
@@ -526,6 +532,34 @@ Implemented in this slice:
   - delegates parsing, registration, classification, finalization, extraction, and vector-indexing clusters to stage-owned collaborators
 - `src/application/workflows/ingestion/pipeline/extraction_retry_step.py`
   - uses the same resolved runtime capabilities during extraction retry
+- `src/application/workflows/ingestion/pipeline/`
+  - `ingestion_duplicate_coordinator.py`
+    - owns file-hash/content-hash duplicate gate orchestration and duplicate short-circuit coordination
+  - `ingestion_run_bootstrap.py`
+    - owns file-path resolution, hash computation, context resolution, `IngestionRun` creation, started-event emission, and initial progress emission
+  - `ingestion_run_store.py`
+    - owns ingestion-run create/update/status persistence
+  - `ingestion_stage_lifecycle_coordinator.py`
+    - owns stage session context plus repeated status/start/completed stage lifecycle coordination
+  - `ingestion_stage_payload_builder.py`
+    - owns stage-completed payload assembly for parsing, classification, finalization, extraction, and vector stages
+  - `ingestion_stage_sequence_executor.py`
+    - owns top-level stage-sequence orchestration and exception-to-failed-run routing
+  - `ingestion_stage_state_applier.py`
+    - owns `IngestionRun` field mutation after parsing, classification, finalization, and embedding stage results
+  - `ingestion_success_finalizer.py`
+    - owns run completion status persistence, success result assembly, completed-event emission, and terminal progress emission
+  - `ingestion_workflow_pipeline.py`
+    - owns internal ingestion pipeline collaborator assembly so `IngestionWorkflow` no longer constructs every helper inline
+  - `duplicate_ingestion_exit_handler.py`
+    - owns duplicate skip result assembly and skipped-duplicate event emission
+  - `sequence/`
+    - `document_structure_stage_sequence.py`
+      - owns registration, classification, and finalization stage sequencing
+    - `semantic_index_stage_sequence.py`
+      - owns extraction, embedding, indexing, and optional quality stage sequencing
+  - `ingestion_exception_handler.py`
+    - owns rollback, failed-run persistence, failed-event emission, and workflow-error wrapping
 - `src/application/services/answer_generation/`
   - `answer_generation_service.py`
     - reduced to orchestration-only ownership around request resolution, deterministic dispatch, and prompt execution handoff
@@ -560,7 +594,8 @@ Implemented in this slice:
 Still open inside Phase 0:
 
 - continue shrinking `IngestionWorkflow` itself
-  - ownership is improved, but the coordinator is still a large hotspot and should be reduced further in a later slice
+  - the primary workflow coordinator is now under the repo file-size target and no longer owns the full stage sequence inline
+  - the next safe ingestion-oriented cleanup is optional follow-up work around specialized retry paths such as `ExtractionRetryStep`, not the main happy-path workflow
 - continue removing broad fallback behavior from low-level parser/runtime defaults where silent drift still exists
 
 ### Phase 1 - Strengthen Parsing And Table Contracts
