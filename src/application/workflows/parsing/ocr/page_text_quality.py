@@ -14,5 +14,7 @@ class PageTextQuality:
     has_text: bool = False
     is_text_poor: bool = False
     is_probably_scanned: bool = False
+    replacement_char_count: int = 0
+    has_corrupted_text: bool = False
     reasons: list[str] = field(default_factory=list)
 

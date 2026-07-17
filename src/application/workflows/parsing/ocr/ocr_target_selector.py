@@ -70,7 +70,9 @@ class OCRTargetSelector:
             page_candidates = [
                 analysis
                 for analysis in page_analyses
-                if analysis.is_text_poor or analysis.is_probably_scanned
+                if analysis.is_text_poor
+                or analysis.is_probably_scanned
+                or analysis.has_corrupted_text
             ]
             page_candidates.sort(
                 key=lambda analysis: (
@@ -108,7 +110,11 @@ class OCRTargetSelector:
 
         if self.policy.region_fallback_enabled:
             for analysis in page_analyses:
-                if not (analysis.is_text_poor or analysis.is_probably_scanned):
+                if not (
+                    analysis.is_text_poor
+                    or analysis.is_probably_scanned
+                    or analysis.has_corrupted_text
+                ):
                     continue
                 if any(
                     target.target_type == OCRTargetType.PAGE

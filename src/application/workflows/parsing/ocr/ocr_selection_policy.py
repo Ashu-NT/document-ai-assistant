@@ -11,6 +11,7 @@ class OCRSelectionPolicy:
     min_text_chars_per_page: int = 120
     min_text_density: float = 0.0025
     min_image_area_ratio: float = 0.35
+    min_replacement_char_ratio: float = 0.01
     page_render_dpi: int = 150
     timeout_seconds: int = 30
 

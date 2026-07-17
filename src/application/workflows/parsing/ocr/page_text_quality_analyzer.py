@@ -52,6 +52,7 @@ class PageTextQualityAnalyzer:
         word_count = 0
         table_count = 0
         image_count = 0
+        replacement_char_count = 0
 
         for element in page_elements:
             if element.element_type == ElementType.TABLE:
@@ -62,6 +63,7 @@ class PageTextQualityAnalyzer:
                 normalized_text = element.text.strip()
                 text_char_count += len(normalized_text)
                 word_count += len(re.findall(r"\w+", normalized_text))
+                replacement_char_count += normalized_text.count("�")
 
         text_density = self._estimate_text_density(page_elements, text_char_count)
         image_area_ratio = self._estimate_image_area_ratio(page_elements, text_char_count)
@@ -84,6 +86,19 @@ class PageTextQualityAnalyzer:
         )
 
         is_probably_scanned = image_heavy and (not has_text or text_char_count < 40)
+        # The Unicode replacement character only ever appears when a byte or
+        # glyph could not be decoded to a real character -- it is never
+        # legitimate content, in any language. A page whose extracted text
+        # is dense with it (e.g. a PDF with a subset font missing ToUnicode
+        # entries for accented characters) has already lost real information
+        # that no downstream text repair can recover; OCR re-reads the
+        # rendered page image instead, bypassing the broken font mapping.
+        has_corrupted_text = (
+            replacement_char_count > 0
+            and text_char_count > 0
+            and (replacement_char_count / text_char_count)
+            >= self.policy.min_replacement_char_ratio
+        )
         if not has_text:
             reasons.append("no_extracted_text")
         if low_text:
@@ -94,6 +109,8 @@ class PageTextQualityAnalyzer:
             reasons.append("image_heavy_page")
         if is_probably_scanned:
             reasons.append("probable_scanned_page")
+        if has_corrupted_text:
+            reasons.append("corrupted_text_detected")
 
         is_text_poor = not has_text or (
             low_text and (image_heavy or sparse_density or len(page_elements) <= 2)
@@ -111,6 +128,8 @@ class PageTextQualityAnalyzer:
             has_text=has_text,
             is_text_poor=is_text_poor,
             is_probably_scanned=is_probably_scanned,
+            replacement_char_count=replacement_char_count,
+            has_corrupted_text=has_corrupted_text,
             reasons=reasons,
         )
 

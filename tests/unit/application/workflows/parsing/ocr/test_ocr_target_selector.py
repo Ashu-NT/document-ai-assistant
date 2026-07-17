@@ -99,3 +99,41 @@ def test_selects_page_target_only_for_text_poor_pages_and_respects_limit() -> No
     assert len(page_targets) == 1
     assert result.warnings == ["Reached OCR page fallback limit for this document."]
 
+
+def test_selects_page_target_for_text_rich_page_with_corrupted_characters() -> None:
+    # A page can have plenty of extracted text by volume (so it would never
+    # trip the low_text_volume/is_text_poor checks) while still being
+    # unusable because a chunk of that text decoded to the Unicode
+    # replacement character -- this must still be eligible for OCR fallback.
+    policy = OCRSelectionPolicy(
+        asset_enabled=False,
+        page_fallback_enabled=True,
+        min_text_chars_per_page=20,
+        min_replacement_char_ratio=0.03,
+    )
+    selector = OCRTargetSelector(
+        page_text_quality_analyzer=PageTextQualityAnalyzer(policy),
+        policy=policy,
+    )
+    elements = [
+        make_element(
+            element_id="txt_1",
+            element_type=ElementType.TEXT,
+            text="L�rssen-Kr�ger Werft GmbH & Co. KG, Bremen",
+            page_number=1,
+            bbox=BoundingBox(0.0, 0.0, 1.0, 1.0),
+        )
+    ]
+
+    result = selector.select(
+        document_path="certificate.pdf",
+        canonical_elements=elements,
+        page_count=1,
+    )
+
+    page_targets = [
+        target for target in result.targets if target.target_type == OCRTargetType.PAGE
+    ]
+    assert len(page_targets) == 1
+    assert "corrupted_text_detected" in page_targets[0].reason
+

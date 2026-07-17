@@ -479,9 +479,32 @@ Why this matters:
 - confirms this plan's own scope requirement (generalize across unseen manuals/certificates/drawings/
   reports/datasheets) is not yet met for non-English certificates
 
-### 16. Text encoding corruption reaches retrieved chunk content, and is not limited to one language
+### 16. PARTIALLY RESOLVED - Text encoding corruption reaches retrieved chunk content
 
-Evidence:
+This weakness turned out to be two distinct failure patterns with very different fixability, and only one
+is resolved:
+
+- **Resolved: Unicode replacement character (U+FFFD) corruption** - this only ever appears when a byte or
+  glyph could not be decoded at all (e.g. a subset PDF font missing ToUnicode entries for accented
+  characters). It is never legitimate content, in any language, so detecting it has zero false-positive
+  risk. `PageTextQualityAnalyzer` now counts replacement characters per page and flags
+  `has_corrupted_text` when the ratio exceeds a new configurable `OCRSelectionPolicy.min_replacement_char_ratio`
+  (default 1%) - reusing the existing (currently-disabled-by-default) page/region OCR-fallback selection
+  machinery in `OCRTargetSelector` rather than building new infrastructure. A single incidental replacement
+  character does not trigger it (tested); a page dense with them does, and becomes OCR-fallback-eligible the
+  same way a "too little text" page already was. The existing `repair_docling_text()` mojibake-repair
+  function was confirmed NOT to catch this pattern - it only fixes round-trippable double-encoding errors,
+  and U+FFFD represents information already lost, which no post-hoc text repair can recover. OCR
+  re-reads the rendered page image directly, bypassing the broken font mapping entirely.
+- **Still open, deliberately not attempted: missing-letter/missing-space corruption** (e.g.
+  `"Eswird bstii dasssPrfgebis..."`, no replacement-character marker at all). Detecting this generically is
+  much harder and was deliberately scoped out: real technical documents legitimately contain dense, unspaced
+  identifiers (`"6ES7131-6BF00-0CA0"`), so any word-length/vowel-ratio heuristic here risks false-positiving
+  on genuine content - exactly the kind of fragile, corpus-tuned heuristic this plan's own design rules warn
+  against. Needs a fundamentally different detection approach (or acceptance that it's not reliably
+  detectable pre-OCR) before attempting a fix.
+
+Evidence (original finding, kept for reference):
 
 - real extracted content includes replacement characters and spaceless garbled runs, e.g.
   `"Eswird bstii dasssPrfgebis ausPrfunnanderLifrung selst..."` (a mangled German/English test-certificate
@@ -795,9 +818,10 @@ Actions:
   certification vocabulary beyond English-only markers, or add a document-type/language-aware signal -
   real certificate documents in this corpus are frequently bilingual and are not being classified as
   certification tables at all
-- added from DB-verified evidence (weakness #16): root-cause text-encoding corruption in extracted
-  chunk content (replacement characters, spaceless garbled runs) - affects both bilingual and
-  English-only real documents, likely a font/glyph-mapping issue in Docling text extraction
+- DONE, weakness #16, replacement-character half: `PageTextQualityAnalyzer`/`OCRTargetSelector` now detect
+  and flag pages with dense Unicode replacement characters as OCR-fallback-eligible
+- still open, weakness #16, missing-letter/missing-space half: deliberately not attempted - no safe,
+  generic detection heuristic identified yet (see weakness #16 for why)
 - added from DB-verified evidence (weakness #17): track the `general_table` fallback rate as an explicit
   metric (currently 56% of all real classified tables) and treat reducing it as a concrete success
   criterion for table-contract hardening, not just qualitative improvement
