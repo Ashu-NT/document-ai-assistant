@@ -60,3 +60,22 @@ class TableAsset:
         parts.append(self.markdown)
 
         return "\n".join(parts)
+
+    def resolved_table_shape(self) -> str | None:
+        return self.table_shape
+
+    def to_structured_row_text(self) -> str:
+        """Generic per-row echo of the table's structured rows, treating the
+        first row as the header: "Row 1: Header=Value | Header=Value"."""
+        if len(self.rows) < 2:
+            return ""
+
+        header = self.rows[0]
+        lines = []
+        for index, row in enumerate(self.rows[1:], start=1):
+            pairs = [
+                f"{header[position] if position < len(header) else ''}={cell}"
+                for position, cell in enumerate(row)
+            ]
+            lines.append(f"Row {index}: " + " | ".join(pairs))
+        return "\n".join(lines)

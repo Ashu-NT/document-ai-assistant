@@ -79,3 +79,58 @@ def test_table_asset_has_structured_rows_true_when_rows_exist() -> None:
     )
 
     assert table.has_structured_rows() is True
+
+
+def test_table_asset_resolved_table_shape_returns_the_table_shape_field() -> None:
+    table = TableAsset(
+        table_id="table_014",
+        document_id="doc_001",
+        markdown="unused",
+        table_shape="record_table",
+    )
+
+    assert table.resolved_table_shape() == "record_table"
+
+
+def test_table_asset_resolved_table_shape_is_none_by_default() -> None:
+    table = TableAsset(
+        table_id="table_015",
+        document_id="doc_001",
+        markdown="unused",
+    )
+
+    assert table.resolved_table_shape() is None
+
+
+def test_table_asset_to_structured_row_text_echoes_rows_against_header() -> None:
+    table = TableAsset(
+        table_id="table_012",
+        document_id="doc_001",
+        markdown="unused",
+        rows=[
+            ["PROBLEM", "PROBABLE CAUSES", "POSSIBLE REMEDIES"],
+            ["(1) The motor does not start", "1a)", "Check the power supply."],
+            ["(2) Pump locked", "Prolonged inactivity", "Remove the cause of lockage."],
+        ],
+    )
+
+    text = table.to_structured_row_text()
+
+    assert text == (
+        "Row 1: PROBLEM=(1) The motor does not start | "
+        "PROBABLE CAUSES=1a) | POSSIBLE REMEDIES=Check the power supply.\n"
+        "Row 2: PROBLEM=(2) Pump locked | "
+        "PROBABLE CAUSES=Prolonged inactivity | "
+        "POSSIBLE REMEDIES=Remove the cause of lockage."
+    )
+
+
+def test_table_asset_to_structured_row_text_returns_empty_string_without_body_rows() -> None:
+    table = TableAsset(
+        table_id="table_013",
+        document_id="doc_001",
+        markdown="unused",
+        rows=[["Part Number", "Description"]],
+    )
+
+    assert table.to_structured_row_text() == ""
