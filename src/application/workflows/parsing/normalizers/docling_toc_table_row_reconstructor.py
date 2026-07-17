@@ -113,7 +113,9 @@ class DoclingTocTableRowReconstructor:
         strong_match_count = sum(
             1
             for entry in parsed_rows
-            if entry.numbering or entry.used_dot_leader
+            if entry.numbering
+            or entry.used_dot_leader
+            or self._is_roman_numeral_page(entry.page)
         )
         if strong_match_count < max(2, len(parsed_rows) // 2):
             return rows
@@ -255,6 +257,17 @@ class DoclingTocTableRowReconstructor:
             previous = current
             current = _SPACED_DECIMAL_PATTERN.sub(r"\1.\2", current)
         return current
+
+    @staticmethod
+    def _is_roman_numeral_page(page: str) -> bool:
+        # A front-matter TOC (e.g. "Foreword ... iii") commonly has no
+        # numbering column and no dot leader at all -- roman-numeral pages
+        # are otherwise excluded from the "strong match" signal used to
+        # guard against misreading an arbitrary two-column key/value table
+        # as a TOC. A roman-numeral page is itself just as strong a signal
+        # as numbering/dot-leaders, since ordinary key/value tables (e.g.
+        # "Voltage 400V") never have a roman-numeral-shaped value cell.
+        return not page.isdigit()
 
     @staticmethod
     def _extract_row_page(cells: list[str]) -> tuple[int | None, str | None]:
