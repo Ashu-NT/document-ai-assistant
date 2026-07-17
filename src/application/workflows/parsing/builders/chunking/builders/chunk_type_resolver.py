@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.builders.chunking.builders.semantic_signals.chunk_semantic_signal_extractor import (
     ChunkSemanticSignalExtractor,
 )
+from src.application.workflows.parsing.builders.chunking.builders.semantic_signals.chunk_type_markers import (
+    is_toc_remnant_text,
+)
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
@@ -57,6 +60,9 @@ class ChunkTypeResolver:
         preserved = self._preserved_special_type(fragments)
         if preserved is not None:
             return preserved
+
+        if self._looks_like_toc_remnant(fragments=fragments, content=content):
+            return ChunkType.GENERAL
 
         scores = self.signal_extractor.extract_from_fragments(
             fragments,
@@ -127,6 +133,16 @@ class ChunkTypeResolver:
         ):
             return 1
         return self.min_gap
+
+    @staticmethod
+    def _looks_like_toc_remnant(
+        *,
+        fragments: list[ChunkFragment],
+        content: str | None,
+    ) -> bool:
+        if content is not None:
+            return is_toc_remnant_text(content)
+        return all(is_toc_remnant_text(fragment.text) for fragment in fragments)
 
     @staticmethod
     def _preserved_special_type(

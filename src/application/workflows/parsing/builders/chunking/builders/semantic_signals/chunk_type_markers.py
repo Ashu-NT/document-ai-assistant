@@ -328,6 +328,58 @@ TABLE_SIGNAL_THRESHOLDS: dict[ChunkType, int] = {
     ChunkType.TROUBLESHOOTING: 2,
     ChunkType.OPERATION_INSTRUCTION: 3,
 }
+_TOC_REMNANT_DOT_LEADER_LINE_PATTERN = re.compile(r"^[.\s]{2,}$")
+_TOC_REMNANT_BARE_PAGE_NUMBER_LINE_PATTERN = re.compile(r"^\d{1,4}$")
+_TOC_REMNANT_NUMBERED_HEADING_LINE_PATTERN = re.compile(r"^\d+(?:\.\d+)*\s+\S")
+_TOC_REMNANT_MIN_LINES = 4
+_TOC_REMNANT_MIN_DOT_LEADER_FRACTION = 0.3
+_TOC_REMNANT_MIN_TOTAL_FRACTION = 0.6
+
+
+def is_toc_remnant_text(text: str | None) -> bool:
+    """Detects orphaned table-of-contents remnant text -- a TOC-shaped page
+    region (dot-leader-heavy lines, bare page numbers, numbered section
+    headings like "1.10 Automatic door lock and safety strip") that Docling
+    never recognized as a table at all, so it survives only as loose text.
+    This is incidental scaffolding, not genuine prose -- confirmed on a real
+    document where such a chunk was misclassified as `safety_warning`/
+    `certification_info` purely because it happened to CONTAIN a listed
+    section title matching one of those types' keyword markers (e.g.
+    "...and safety strip", "Passenger's safety"). Anchored primarily on
+    dot-leader-only lines, a shape that essentially never occurs in real
+    prose (a sentence-ending "." is one character at the end of a line with
+    words before it, never a whole line of nothing but dots), so this has
+    very low false-positive risk against genuine safety/certification text.
+    Must run on RAW text -- `normalize_comparable_text` strips dots before
+    marker matching, so this check cannot happen after that normalization.
+    """
+    if not text:
+        return False
+
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if len(lines) < _TOC_REMNANT_MIN_LINES:
+        return False
+
+    dot_leader_lines = sum(
+        1 for line in lines if _TOC_REMNANT_DOT_LEADER_LINE_PATTERN.fullmatch(line)
+    )
+    other_toc_shaped_lines = sum(
+        1
+        for line in lines
+        if not _TOC_REMNANT_DOT_LEADER_LINE_PATTERN.fullmatch(line)
+        and (
+            _TOC_REMNANT_BARE_PAGE_NUMBER_LINE_PATTERN.fullmatch(line)
+            or _TOC_REMNANT_NUMBERED_HEADING_LINE_PATTERN.match(line)
+        )
+    )
+    dot_leader_fraction = dot_leader_lines / len(lines)
+    total_fraction = (dot_leader_lines + other_toc_shaped_lines) / len(lines)
+    return (
+        dot_leader_fraction >= _TOC_REMNANT_MIN_DOT_LEADER_FRACTION
+        and total_fraction >= _TOC_REMNANT_MIN_TOTAL_FRACTION
+    )
+
+
 NORMALIZED_TITLE_MARKERS = _normalize_marker_map(TITLE_MARKERS)
 NORMALIZED_CONTENT_MARKERS = _normalize_marker_map(CONTENT_MARKERS)
 NORMALIZED_TABLE_CONTENT_MARKERS = _normalize_marker_map(TABLE_CONTENT_MARKERS)

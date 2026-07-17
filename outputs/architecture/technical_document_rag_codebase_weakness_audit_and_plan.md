@@ -699,7 +699,9 @@ loss happens upstream of anything this codebase's normalizer receives:
   through purely as scattered single-line text elements. This content is NOT silently dropped end-to-end -
   confirmed present in `chunks` - but it lands as three garbled, dot-leader-heavy text chunks, misclassified
   as `chunk_type='safety_warning'`/`'certification_info'` (a keyword-based classifier picking up incidental
-  words in the noise) instead of anything TOC-related, effectively useless for retrieval.
+  words in the noise) instead of anything TOC-related, effectively useless for retrieval. **The
+  misclassification half is now fixed - see #22 below**; the underlying text is still orphaned/unstructured
+  (not reconstructed into a table), which remains open.
 - The same "not detected as a table by Docling at all" gap also affected two of page 8's other blocks
   (`Door identification block`: pos/door-number/location; the `Option`/`System weight` column pair) - no
   raw Docling table object existed for either region (confirmed directly). Their content survived in
@@ -754,6 +756,40 @@ post-processing step, in `src/application/workflows/parsing/normalizers/table_la
 - **Scope note**: this only recovers REGULAR grids (consistent row/column alignment). It does not, and is
   not intended to, recover irregular orphaned text like page 2's dot-leader TOC remnant (see above) - that
   remains open.
+
+### 22. RESOLVED - Orphaned dot-leader TOC text was misclassified by incidental keyword matches
+
+Root cause: `ChunkTypeResolver`'s keyword-marker scoring (`ChunkSemanticSignalExtractor`) has no concept of
+"this chunk is scaffolding, not prose" - it scores whatever words appear in the chunk's text/section title/
+section path against `TITLE_MARKERS`/`CONTENT_MARKERS`. Page 2's orphaned right-hand TOC column (see #20)
+lists section titles like `"1.10 Automatic door lock and safety strip"` and `"Passenger's safety"` as plain
+listed text - these are TOC entries mentioning "safety" as part of what THEY point to, not actual
+safety-warning content, but the resolver has no way to tell the difference and confidently scored
+`SAFETY_WARNING`/`CERTIFICATION_INFO` from the bare word hit, with no competing signal to outweigh it since
+the chunk has no other real content.
+
+Fixed with a new, narrowly-scoped detector, `is_toc_remnant_text()` (in `chunk_type_markers.py`, wired as an
+early bypass in `ChunkTypeResolver.resolve()` before any keyword scoring runs): flags a chunk as TOC
+scaffolding when a high fraction of its non-empty lines are dot-leader-only runs (`"................................"`),
+bare page numbers, or numbered section headings (`"2 Options"`, `"3.1 General arrangement"`) - anchored
+primarily on the dot-leader-line shape, which essentially never occurs in genuine prose (a sentence-ending
+period is one character at the end of a longer line, never a whole line of nothing else). Deliberately runs
+on the RAW chunk text, since `normalize_comparable_text()` (used by the keyword scorer) strips punctuation
+including dot-leaders before marker matching - this check has to happen before that normalization or the
+signal it depends on is already gone. When it fires, the chunk resolves to `GENERAL` (the existing safe
+catch-all, not stripped from retrieval per the already-resolved `TableFocusedEvidencePruner` over-deletion
+fix) instead of a confidently-wrong specific type.
+
+Verified against the exact 3 real misclassified chunks from the KSB document as permanent regression
+fixtures (both at the `is_toc_remnant_text()` unit level and the full `ChunkTypeResolver.resolve()`
+integration level), plus a negative test confirming genuine safety-warning prose (real sentences, no
+dot-leader lines) still classifies as `SAFETY_WARNING` correctly - the fix only suppresses the specific
+scaffolding shape, not the keyword scoring itself. New unit tests: 7 for the detector function, 2 for the
+resolver integration. Full unit suite green (3088 passed), same one known pre-existing unrelated failure.
+
+**Not yet done**: this only stops the mislabeling - the underlying text is still unstructured, dot-leader-heavy
+orphaned content, not reconstructed into a proper TOC entry. Recovering the text itself (rather than just
+its classification) remains open, as noted in #20.
 
 ## Resolved This Session (Not Yet Reflected Elsewhere In This Document)
 
