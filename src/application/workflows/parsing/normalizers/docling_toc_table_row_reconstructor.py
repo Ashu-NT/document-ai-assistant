@@ -15,9 +15,29 @@ TOC_PAGE_NUMBER_PATTERN = re.compile(r"\d{1,4}")
 # A table's dotted leader ("......") between title and page number commonly
 # gets split across two adjacent cells at an arbitrary point, leaving a few
 # residual leader dots stuck to the page-number cell (e.g. "..18" instead of
-# a clean "18"). Dots are never part of a real page number in this context,
-# so they're safe to strip before checking whether a cell is a page number.
-_ROW_PAGE_CELL_PATTERN = re.compile(r"^\.*\s*(?P<page>\d{1,4})\s*\.*$")
+# a clean "18"). Real-world extraction can also break one leader into several
+# dot-runs with stray whitespace between them (e.g. "..... ..... 30"), so all
+# whitespace is stripped from the candidate cell (see _extract_row_page)
+# before this pattern is applied. Dots/whitespace are never part of a real
+# page number in this context, so both are always safe to strip.
+_ROW_PAGE_CELL_PATTERN = re.compile(r"^\.*(?P<page>\d{1,4})\.*$")
+# Numbering like "7.3" can come back from extraction with stray whitespace
+# around the decimal point (e.g. "7 . 3", likely a font-kerning/glyph-spacing
+# artifact) -- this never happens in real prose (a digit directly adjacent to
+# ". " followed by another digit is not a natural English/German sentence
+# shape), so collapsing it is safe and never affects genuine title text.
+_SPACED_DECIMAL_PATTERN = re.compile(r"(\d)\s*\.\s*(\d)")
+# TOC/section numbering isn't always purely numeric -- lettered appendices
+# and annexes ("A", "B.2", "7.A") are a common, generic convention, not a
+# one-off. A segment is either digits or a short (1-2 char) run of UPPERCASE
+# letters -- deliberately not lowercase or longer runs, so this never matches
+# an ordinary title word (e.g. "Overview"/"General" never fullmatch this,
+# since real words mix case or run longer); the one accepted, low-probability
+# false-positive case is a lone 1-2 letter all-caps abbreviation cell (e.g.
+# "US"), which is rare and, if misread, is no worse than this reconstructor's
+# existing numeric-only false-positive risk.
+_NUMBERING_SEGMENT = r"(?:\d+|[A-Z]{1,2})"
+_NUMBERING_PATTERN_TEXT = rf"{_NUMBERING_SEGMENT}(?:\.{_NUMBERING_SEGMENT})*"
 
 
 @dataclass(frozen=True, slots=True)
@@ -184,23 +204,31 @@ class DoclingTocTableRowReconstructor:
 
     @staticmethod
     def _clean_cell(value: object) -> str:
-        return re.sub(
-            r"\s+",
-            " ",
-            repair_docling_text(str(value or "")).strip().strip("|").strip(),
-        )
+        text = repair_docling_text(str(value or "")).strip().strip("|").strip()
+        text = DoclingTocTableRowReconstructor._collapse_spaced_numbering(text)
+        return re.sub(r"\s+", " ", text)
+
+    @staticmethod
+    def _collapse_spaced_numbering(value: str) -> str:
+        previous = None
+        current = value
+        while previous != current:
+            previous = current
+            current = _SPACED_DECIMAL_PATTERN.sub(r"\1.\2", current)
+        return current
 
     @staticmethod
     def _extract_row_page(cells: list[str]) -> tuple[int | None, int | None]:
         for index in range(len(cells) - 1, -1, -1):
-            match = _ROW_PAGE_CELL_PATTERN.fullmatch(cells[index])
+            compact = re.sub(r"\s+", "", cells[index])
+            match = _ROW_PAGE_CELL_PATTERN.fullmatch(compact)
             if match:
                 return index, int(match.group("page"))
         return None, None
 
     @staticmethod
     def _extract_exact_number(value: str) -> str | None:
-        match = re.fullmatch(r"(\d+(?:\.\d+)*)", value.strip())
+        match = re.fullmatch(rf"({_NUMBERING_PATTERN_TEXT})", value.strip())
         if match is None:
             return None
         return match.group(1)
@@ -208,7 +236,9 @@ class DoclingTocTableRowReconstructor:
     @staticmethod
     def _split_number_and_title(value: str) -> tuple[str | None, str | None]:
         stripped = value.strip()
-        match = re.match(r"^(?P<number>\d+(?:\.\d+)*)\s+(?P<title>.+)$", stripped)
+        match = re.match(
+            rf"^(?P<number>{_NUMBERING_PATTERN_TEXT})\s+(?P<title>.+)$", stripped
+        )
         if match is None:
             return None, stripped or None
         return match.group("number"), match.group("title").strip(" .")
