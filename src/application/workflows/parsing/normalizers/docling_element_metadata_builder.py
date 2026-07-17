@@ -134,6 +134,11 @@ class DoclingElementMetadataBuilder:
                     table_structure.local_reading_order
                 )
             metadata["table_structure_tier"] = "parallel_streams"
+        if table_structure is not None and table_structure.parallel_stream_descriptors:
+            metadata["table_parallel_stream_descriptors"] = [
+                descriptor.to_dict()
+                for descriptor in table_structure.parallel_stream_descriptors
+            ]
 
         row_count, column_count = self.table_extractor.extract_dimensions(item)
         if rows:

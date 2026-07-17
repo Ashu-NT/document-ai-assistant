@@ -1,7 +1,13 @@
 from src.application.workflows.parsing.builders.document_graph.asset_metadata_synchronizer import (
     AssetMetadataSynchronizer,
 )
-from src.domain.assets import AssetMetadata, PictureAsset, TableAsset, TableCellSpan
+from src.domain.assets import (
+    AssetMetadata,
+    PictureAsset,
+    TableAsset,
+    TableCellSpan,
+    TableParallelStream,
+)
 from src.domain.common import ElementType, ParserMetadata
 from src.domain.document import Document, DocumentGraph, DocumentHashes
 from src.domain.elements import CanonicalElement
@@ -105,6 +111,28 @@ def test_sync_forwards_parallel_stream_table_metadata() -> None:
             [["Parameter", "Value"], ["Voltage", "400V"]],
             [["Parameter", "Value"], ["Frequency", "50Hz"]],
         ],
+        parallel_stream_descriptors=[
+            TableParallelStream(
+                stream_index=1,
+                source_row_start=0,
+                source_row_end=1,
+                source_col_start=0,
+                source_col_end=1,
+                row_count=2,
+                column_count=2,
+                page_number=5,
+            ),
+            TableParallelStream(
+                stream_index=2,
+                source_row_start=0,
+                source_row_end=1,
+                source_col_start=2,
+                source_col_end=3,
+                row_count=2,
+                column_count=2,
+                page_number=5,
+            ),
+        ],
         local_reading_order="left_to_right_top_to_bottom",
     )
     graph.tables["table_001"] = table
@@ -126,6 +154,7 @@ def test_sync_forwards_parallel_stream_table_metadata() -> None:
         [["Parameter", "Value"], ["Voltage", "400V"]],
         [["Parameter", "Value"], ["Frequency", "50Hz"]],
     ]
+    assert extra["table_parallel_stream_descriptors"][0]["page_number"] == 5
 
 
 def test_sync_forwards_picture_ocr_and_caption_fields() -> None:

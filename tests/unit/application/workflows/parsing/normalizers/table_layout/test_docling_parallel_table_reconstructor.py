@@ -30,6 +30,19 @@ def _two_lane_spans() -> list[TableCellSpan]:
     ]
 
 
+def _vertically_misaligned_two_lane_spans() -> list[TableCellSpan]:
+    return [
+        _span(row=0, col=0, text="Task", x1=40, x2=250),
+        _span(row=0, col=1, text="Daily", x1=260, x2=330),
+        _span(row=1, col=0, text="Inspect pump", x1=40, x2=250),
+        _span(row=1, col=1, text="x", x1=260, x2=330),
+        _span(row=8, col=2, text="Task", x1=620, x2=830),
+        _span(row=8, col=3, text="Weekly", x1=840, x2=910),
+        _span(row=9, col=2, text="Replace seal", x1=620, x2=830),
+        _span(row=9, col=3, text="x", x1=840, x2=910),
+    ]
+
+
 def test_reconstruct_returns_identical_result_regardless_of_page_lane_count() -> None:
     reconstructor = DoclingParallelTableReconstructor()
     spans = _two_lane_spans()
@@ -45,6 +58,9 @@ def test_reconstruct_returns_identical_result_regardless_of_page_lane_count() ->
         [["Parameter", "Value"], ["Voltage", "400V"]],
         [["Parameter", "Value"], ["Frequency", "50Hz"]],
     ]
+    assert [item.stream_index for item in without_hint.parallel_stream_descriptors] == [1, 2]
+    assert [item.page_number for item in without_hint.parallel_stream_descriptors] == [1, 1]
+    assert [item.column_count for item in without_hint.parallel_stream_descriptors] == [2, 2]
 
 
 def test_reconstruct_logs_disagreement_when_page_lane_count_mismatches(caplog) -> None:
@@ -65,3 +81,11 @@ def test_reconstruct_does_not_log_when_page_lane_count_matches(caplog) -> None:
         reconstructor.reconstruct(spans, page_lane_count=2)
 
     assert "parallel_table_stream_lane_count_disagreement" not in caplog.text
+
+
+def test_reconstruct_rejects_x_parallel_clusters_when_vertical_bands_do_not_align() -> None:
+    reconstructor = DoclingParallelTableReconstructor()
+
+    reconstructed = reconstructor.reconstruct(_vertically_misaligned_two_lane_spans())
+
+    assert reconstructed is None

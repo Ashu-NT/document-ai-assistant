@@ -47,3 +47,29 @@ def test_table_row_semantic_normalizer_combines_parallel_streams_with_optional_n
         ["Inspect pump", "x", "", ""],
         ["Replace seal", "", "x", "Use OEM parts"],
     ]
+
+
+def test_combiner_merges_parallel_streams_with_shared_task_anchor_and_distinct_interval_columns() -> None:
+    combined = ParallelStreamRowCombiner().combine(
+        [
+            [["Task", "D", "W"], ["Inspect pump", "x", ""]],
+            [["Task", "Q", "A", "Notes"], ["Inspect pump", "", "x", "Use OEM parts"]],
+        ]
+    )
+
+    assert combined == [
+        ["Task", "D", "W", "Q", "A", "Notes"],
+        ["Inspect pump", "x", "", "", "", ""],
+        ["Inspect pump", "", "", "", "x", "Use OEM parts"],
+    ]
+
+
+def test_combiner_rejects_single_non_leading_anchor_match() -> None:
+    combined = ParallelStreamRowCombiner().combine(
+        [
+            [["Description", "Qty"], ["Filter", "1"]],
+            [["Part Number", "Description"], ["HP-001", "Filter"]],
+        ]
+    )
+
+    assert combined is None

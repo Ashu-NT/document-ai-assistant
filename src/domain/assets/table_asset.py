@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 from src.domain.assets.asset_metadata import AssetMetadata
 from src.domain.assets.table_cell_span import TableCellSpan
+from src.domain.assets.table_parallel_stream import TableParallelStream
 from src.domain.common import AuditMetadata
 
 
@@ -16,6 +17,7 @@ class TableAsset:
 
     rows: list[list[str]] = field(default_factory=list)
     parallel_stream_rows: list[list[list[str]]] = field(default_factory=list)
+    parallel_stream_descriptors: list[TableParallelStream] = field(default_factory=list)
     row_ids: list[str] = field(default_factory=list)
     cell_spans: list[TableCellSpan] = field(default_factory=list)
     row_count: int | None = None

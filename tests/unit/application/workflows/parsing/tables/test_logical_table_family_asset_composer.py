@@ -2,7 +2,7 @@ from src.application.workflows.parsing.tables.families import (
     LogicalTableFamilyAssetComposer,
     LogicalTableFamilyRowMerger,
 )
-from src.domain.assets import TableAsset
+from src.domain.assets import TableAsset, TableParallelStream
 
 
 def test_row_merger_drops_repeated_multi_row_header_block_for_compatible_family() -> None:
@@ -136,3 +136,131 @@ def test_asset_composer_builds_single_family_table_with_merged_rows_and_metadata
         ["manufacturer"],
         ["serial number"],
     ]
+
+
+def test_asset_composer_preserves_parallel_stream_rows_and_descriptors() -> None:
+    table = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="parallel table",
+        rows=[["Parameter", "Value"], ["Voltage", "400V"]],
+        parallel_stream_rows=[
+            [["Parameter", "Value"], ["Voltage", "400V"]],
+            [["Parameter", "Value"], ["Frequency", "50Hz"]],
+        ],
+        parallel_stream_descriptors=[
+            TableParallelStream(
+                stream_index=1,
+                source_row_start=0,
+                source_row_end=1,
+                source_col_start=0,
+                source_col_end=1,
+                row_count=2,
+                column_count=2,
+                page_number=4,
+            ),
+            TableParallelStream(
+                stream_index=2,
+                source_row_start=0,
+                source_row_end=1,
+                source_col_start=2,
+                source_col_end=3,
+                row_count=2,
+                column_count=2,
+                page_number=4,
+            ),
+        ],
+        logical_table_family_id="family_parallel",
+        local_reading_order="left_to_right_top_to_bottom",
+    )
+
+    composed = LogicalTableFamilyAssetComposer().compose([table])
+
+    assert composed is not None
+    assert composed.parallel_stream_rows == table.parallel_stream_rows
+    assert [item.page_number for item in composed.parallel_stream_descriptors] == [4, 4]
+    assert [item.stream_index for item in composed.parallel_stream_descriptors] == [1, 2]
+
+
+def test_asset_composer_merges_matching_parallel_streams_across_family_members() -> None:
+    first = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="page 1",
+        rows=[["Parameter", "Value"], ["Voltage", "400V"]],
+        parallel_stream_rows=[
+            [["Parameter", "Value"], ["Voltage", "400V"]],
+            [["Parameter", "Value"], ["Frequency", "50Hz"]],
+        ],
+        parallel_stream_descriptors=[
+            TableParallelStream(
+                stream_index=1,
+                source_row_start=0,
+                source_row_end=1,
+                source_col_start=0,
+                source_col_end=1,
+                row_count=2,
+                column_count=2,
+                page_number=10,
+            ),
+            TableParallelStream(
+                stream_index=2,
+                source_row_start=0,
+                source_row_end=1,
+                source_col_start=2,
+                source_col_end=3,
+                row_count=2,
+                column_count=2,
+                page_number=10,
+            ),
+        ],
+        logical_table_family_id="family_parallel",
+        family_index=1,
+        family_total=2,
+    )
+    second = TableAsset(
+        table_id="table_002",
+        document_id="doc_001",
+        markdown="page 2",
+        rows=[["Parameter", "Value"], ["Current", "12A"]],
+        parallel_stream_rows=[
+            [["Parameter", "Value"], ["Current", "12A"]],
+            [["Parameter", "Value"], ["Power", "5kW"]],
+        ],
+        parallel_stream_descriptors=[
+            TableParallelStream(
+                stream_index=1,
+                source_row_start=0,
+                source_row_end=1,
+                source_col_start=0,
+                source_col_end=1,
+                row_count=2,
+                column_count=2,
+                page_number=11,
+            ),
+            TableParallelStream(
+                stream_index=2,
+                source_row_start=0,
+                source_row_end=1,
+                source_col_start=2,
+                source_col_end=3,
+                row_count=2,
+                column_count=2,
+                page_number=11,
+            ),
+        ],
+        logical_table_family_id="family_parallel",
+        family_index=2,
+        family_total=2,
+    )
+
+    composed = LogicalTableFamilyAssetComposer().compose([first, second])
+
+    assert composed is not None
+    assert composed.parallel_stream_rows == [
+        [["Parameter", "Value"], ["Voltage", "400V"], ["Current", "12A"]],
+        [["Parameter", "Value"], ["Frequency", "50Hz"], ["Power", "5kW"]],
+    ]
+    assert [item.stream_index for item in composed.parallel_stream_descriptors] == [1, 2]
+    assert [item.page_number for item in composed.parallel_stream_descriptors] == [None, None]
+    assert [item.row_count for item in composed.parallel_stream_descriptors] == [3, 3]

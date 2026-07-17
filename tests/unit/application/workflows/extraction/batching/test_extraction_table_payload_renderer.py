@@ -1,7 +1,7 @@
 from src.application.workflows.extraction.batching.table_payload import (
     ExtractionTablePayloadRenderer,
 )
-from src.domain.assets import TableAsset
+from src.domain.assets import TableAsset, TableParallelStream
 
 
 def test_renderer_builds_structured_specification_payload() -> None:
@@ -146,6 +146,28 @@ def test_renderer_renders_parallel_stream_payloads_separately() -> None:
             [["Parameter", "Value"], ["Voltage", "400V"]],
             [["Parameter", "Value"], ["Frequency", "50Hz"]],
         ],
+        parallel_stream_descriptors=[
+            TableParallelStream(
+                stream_index=1,
+                source_row_start=0,
+                source_row_end=1,
+                source_col_start=0,
+                source_col_end=1,
+                row_count=2,
+                column_count=2,
+                page_number=3,
+            ),
+            TableParallelStream(
+                stream_index=2,
+                source_row_start=0,
+                source_row_end=1,
+                source_col_start=2,
+                source_col_end=3,
+                row_count=2,
+                column_count=2,
+                page_number=3,
+            ),
+        ],
         table_shape="specification_matrix",
         header_paths=[["Parameter"], ["Value"]],
     )
@@ -153,7 +175,7 @@ def test_renderer_renders_parallel_stream_payloads_separately() -> None:
     rendered = renderer.render(table)
 
     assert rendered is not None
-    assert "Parallel Table Stream 1:" in rendered
-    assert "Parallel Table Stream 2:" in rendered
+    assert "Parallel Table Stream 1 (Left):" in rendered
+    assert "Parallel Table Stream 2 (Right):" in rendered
     assert "Parameter=Voltage | Value=400V" in rendered
     assert "Parameter=Frequency | Value=50Hz" in rendered

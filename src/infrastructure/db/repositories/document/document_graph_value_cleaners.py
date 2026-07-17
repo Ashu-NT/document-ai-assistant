@@ -1,6 +1,7 @@
 from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
     repair_docling_text,
 )
+from src.domain.assets import TableParallelStream
 
 
 def clean_text(value: object) -> str | None:
@@ -44,6 +45,10 @@ def clean_parallel_stream_rows(value: object) -> list[list[list[str]]]:
         if cleaned_rows:
             cleaned_streams.append(cleaned_rows)
     return cleaned_streams
+
+
+def clean_parallel_stream_descriptors(value: object) -> list[TableParallelStream]:
+    return TableParallelStream.list_from_data(value)
 
 
 def coerce_float(value: object) -> float | None:

@@ -4,7 +4,7 @@ from src.application.workflows.parsing.normalizers.docling_element_metadata_buil
 from src.application.workflows.parsing.normalizers.table_layout.table_reconstruction_result import (
     TableReconstructionResult,
 )
-from src.domain.assets import TableCellSpan
+from src.domain.assets import TableCellSpan, TableParallelStream
 from src.domain.common import ElementType
 
 
@@ -132,6 +132,28 @@ def test_build_upgrades_tier_to_parallel_streams_when_present() -> None:
     table_structure = TableReconstructionResult(
         rows=[["A"]],
         parallel_stream_rows=[[["A"]], [["B"]]],
+        parallel_stream_descriptors=[
+            TableParallelStream(
+                stream_index=1,
+                source_row_start=0,
+                source_row_end=0,
+                source_col_start=0,
+                source_col_end=0,
+                row_count=1,
+                column_count=1,
+                page_number=2,
+            ),
+            TableParallelStream(
+                stream_index=2,
+                source_row_start=0,
+                source_row_end=0,
+                source_col_start=1,
+                source_col_end=1,
+                row_count=1,
+                column_count=1,
+                page_number=2,
+            ),
+        ],
         local_reading_order="left_to_right_top_to_bottom",
         reconstruction_version="2",
     )
@@ -150,6 +172,7 @@ def test_build_upgrades_tier_to_parallel_streams_when_present() -> None:
     assert metadata["table_parallel_stream_count"] == 2
     assert metadata["table_region_partition_version"] == "2"
     assert metadata["table_local_reading_order"] == "left_to_right_top_to_bottom"
+    assert metadata["table_parallel_stream_descriptors"][0]["page_number"] == 2
 
 
 def test_build_falls_back_to_markdown_only_tier_without_structure() -> None:

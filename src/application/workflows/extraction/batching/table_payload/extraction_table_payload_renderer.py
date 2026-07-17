@@ -20,6 +20,9 @@ from src.application.workflows.extraction.batching.table_payload.specification_m
 from src.application.workflows.extraction.batching.table_payload.troubleshooting_table_payload_builder import (
     TroubleshootingTablePayloadBuilder,
 )
+from src.application.workflows.shared.parallel_table_stream_view_resolver import (
+    ParallelTableStreamViewResolver,
+)
 from src.domain.assets import TableAsset
 
 
@@ -37,6 +40,7 @@ class ExtractionTablePayloadRenderer:
         ) = None,
         performance_curve_builder: PerformanceCurvePayloadBuilder | None = None,
         generic_builder: GenericTablePayloadBuilder | None = None,
+        stream_view_resolver: ParallelTableStreamViewResolver | None = None,
     ) -> None:
         self.spare_parts_builder = spare_parts_builder or SparePartsTablePayloadBuilder()
         self.troubleshooting_builder = (
@@ -52,6 +56,7 @@ class ExtractionTablePayloadRenderer:
             performance_curve_builder or PerformanceCurvePayloadBuilder()
         )
         self.generic_builder = generic_builder or GenericTablePayloadBuilder()
+        self.stream_view_resolver = stream_view_resolver or ParallelTableStreamViewResolver()
 
     def render(self, table: TableAsset, *, chunk_type: str | None = None) -> str | None:
         if table.parallel_stream_rows:
@@ -70,19 +75,29 @@ class ExtractionTablePayloadRenderer:
         chunk_type: str | None,
     ) -> str | None:
         rendered_streams: list[str] = []
-        for index, rows in enumerate(table.parallel_stream_rows, start=1):
+        for stream_view in self.stream_view_resolver.build(table):
+            descriptor = stream_view.descriptor
             stream_table = dataclass_replace(
                 table,
-                rows=[list(row) for row in rows],
+                rows=[list(row) for row in stream_view.rows],
                 parallel_stream_rows=[],
-                row_count=len(rows),
-                column_count=max((len(row) for row in rows), default=0),
+                parallel_stream_descriptors=[],
+                row_count=(
+                    descriptor.row_count
+                    if descriptor is not None
+                    else len(stream_view.rows)
+                ),
+                column_count=(
+                    descriptor.column_count
+                    if descriptor is not None
+                    else max((len(row) for row in stream_view.rows), default=0)
+                ),
             )
             rendered = self._render_single(stream_table, chunk_type=chunk_type)
             if not rendered:
                 continue
-            if len(table.parallel_stream_rows) > 1:
-                rendered_streams.append(f"Parallel Table Stream {index}:\n{rendered}")
+            if stream_view.stream_count > 1:
+                rendered_streams.append(f"{stream_view.title}:\n{rendered}")
             else:
                 rendered_streams.append(rendered)
         if not rendered_streams:

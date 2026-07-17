@@ -11,8 +11,14 @@ from src.application.workflows.parsing.normalizers.table_layout.parallel_table_q
 from src.application.workflows.parsing.normalizers.table_layout.parallel_table_stream_clusterer import (
     ParallelTableStreamClusterer,
 )
+from src.application.workflows.parsing.normalizers.table_layout.parallel_table_stream_descriptor_builder import (
+    ParallelTableStreamDescriptorBuilder,
+)
 from src.application.workflows.parsing.normalizers.table_layout.docling_table_raw_row_builder import (
     DoclingTableRawRowBuilder,
+)
+from src.application.workflows.parsing.normalizers.table_layout.parallel_table_vertical_alignment_checker import (
+    ParallelTableVerticalAlignmentChecker,
 )
 from src.application.workflows.parsing.normalizers.table_layout.table_reconstruction_result import (
     TableReconstructionResult,
@@ -28,11 +34,23 @@ class DoclingParallelTableReconstructor:
         quality_evaluator: ParallelTableQualityEvaluator | None = None,
         raw_row_builder: DoclingTableRawRowBuilder | None = None,
         row_repairer: DoclingTableRowRepairer | None = None,
+        vertical_alignment_checker: (
+            ParallelTableVerticalAlignmentChecker | None
+        ) = None,
+        stream_descriptor_builder: (
+            ParallelTableStreamDescriptorBuilder | None
+        ) = None,
     ) -> None:
         self.clusterer = clusterer or ParallelTableStreamClusterer()
         self.quality_evaluator = quality_evaluator or ParallelTableQualityEvaluator()
         self.raw_row_builder = raw_row_builder or DoclingTableRawRowBuilder()
         self.row_repairer = row_repairer or DoclingTableRowRepairer()
+        self.vertical_alignment_checker = (
+            vertical_alignment_checker or ParallelTableVerticalAlignmentChecker()
+        )
+        self.stream_descriptor_builder = (
+            stream_descriptor_builder or ParallelTableStreamDescriptorBuilder()
+        )
 
     def reconstruct(
         self,
@@ -42,6 +60,8 @@ class DoclingParallelTableReconstructor:
     ) -> TableReconstructionResult | None:
         lane_groups = self.clusterer.cluster(spans, page_lane_count=page_lane_count)
         if len(lane_groups) < 2:
+            return None
+        if not self.vertical_alignment_checker.are_compatible(lane_groups):
             return None
 
         combined_rows = self.row_repairer.repair_rows(
@@ -55,15 +75,16 @@ class DoclingParallelTableReconstructor:
         combined_density = self.quality_evaluator.density(combined_rows)
         average_density = sum(
             self.quality_evaluator.density(rows)
-            for _, rows, _ in reconstructed_groups
+            for _, _, rows, _ in reconstructed_groups
         ) / len(reconstructed_groups)
         combined_score = self.quality_evaluator.score(combined_rows)
-        average_score = sum(
-            score for _, _, score in reconstructed_groups
-        ) / len(reconstructed_groups)
+        average_score = sum(score for _, _, _, score in reconstructed_groups) / len(
+            reconstructed_groups
+        )
+        ordered_group_entries = sorted(reconstructed_groups, key=lambda item: item[0])
         ordered_groups = [
             rows
-            for _, rows, _ in sorted(reconstructed_groups, key=lambda item: item[0])
+            for _, _, rows, _ in ordered_group_entries
         ]
         if not self._should_use_parallel(
             combined_density=combined_density,
@@ -79,6 +100,9 @@ class DoclingParallelTableReconstructor:
             rows=primary_rows,
             cell_spans=spans,
             parallel_stream_rows=ordered_groups,
+            parallel_stream_descriptors=self.stream_descriptor_builder.build(
+                ordered_group_entries
+            ),
             local_reading_order="left_to_right_top_to_bottom",
             reconstruction_version="1",
         )
@@ -86,8 +110,8 @@ class DoclingParallelTableReconstructor:
     def _reconstruct_groups(
         self,
         lane_groups: list[list[TableCellSpan]],
-    ) -> list[tuple[float, list[list[str]], float]]:
-        groups: list[tuple[float, list[list[str]], float]] = []
+    ) -> list[tuple[float, list[TableCellSpan], list[list[str]], float]]:
+        groups: list[tuple[float, list[TableCellSpan], list[list[str]], float]] = []
         for lane_spans in lane_groups:
             normalized_lane_spans = self._normalize_lane_spans(lane_spans)
             repaired_rows = self.row_repairer.repair_rows(
@@ -100,6 +124,7 @@ class DoclingParallelTableReconstructor:
             groups.append(
                 (
                     self.clusterer.mean_center_x(lane_spans),
+                    lane_spans,
                     repaired_rows,
                     score,
                 )
@@ -147,7 +172,7 @@ class DoclingParallelTableReconstructor:
     def _resolve_primary_rows(
         self,
         ordered_groups: list[list[list[str]]],
-        scored_groups: list[tuple[float, list[list[str]], float]],
+        scored_groups: list[tuple[float, list[TableCellSpan], list[list[str]], float]],
     ) -> list[list[str]]:
         if self._headers_match(ordered_groups):
             header = list(ordered_groups[0][0])
@@ -155,7 +180,7 @@ class DoclingParallelTableReconstructor:
             for rows in ordered_groups:
                 merged.extend(rows[1:])
             return merged
-        best_rows = max(scored_groups, key=lambda item: item[2])[1]
+        best_rows = max(scored_groups, key=lambda item: item[3])[2]
         return [list(row) for row in best_rows]
 
     @staticmethod

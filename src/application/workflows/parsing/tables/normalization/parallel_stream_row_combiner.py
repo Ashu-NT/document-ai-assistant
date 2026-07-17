@@ -97,59 +97,12 @@ class ParallelStreamRowCombiner:
         merged_labels: list[str],
         stream: _PreparedStream,
     ) -> tuple[list[tuple[str, int]], list[str]] | None:
-        if self._is_subsequence(stream.header_keys, merged_keys):
-            return self._adopt_other_plan(
-                base_keys=list(merged_keys),
-                base_labels=list(merged_labels),
-                other_keys=list(stream.header_keys),
-                other_labels=list(stream.header_labels),
-            )
-        if self._is_subsequence(merged_keys, stream.header_keys):
-            return self._enrich_existing_labels(
-                base_keys=list(merged_keys),
-                base_labels=list(merged_labels),
-                other_keys=list(stream.header_keys),
-                other_labels=list(stream.header_labels),
-            )
-        return None
-
-    def _adopt_other_plan(
-        self,
-        *,
-        base_keys: list[tuple[str, int]],
-        base_labels: list[str],
-        other_keys: list[tuple[str, int]],
-        other_labels: list[str],
-    ) -> tuple[list[tuple[str, int]], list[str]]:
-        merged_labels_by_key = {
-            key: label
-            for key, label in zip(other_keys, other_labels, strict=False)
-        }
-        base_mapping = self._subsequence_positions(other_keys, tuple(base_keys)) or []
-        for base_index, target_index in enumerate(base_mapping):
-            merged_labels_by_key[other_keys[target_index]] = self._pick_better_label(
-                merged_labels_by_key[other_keys[target_index]],
-                base_labels[base_index],
-            )
-        merged_labels = [merged_labels_by_key[key] for key in other_keys]
-        return other_keys, merged_labels
-
-    def _enrich_existing_labels(
-        self,
-        *,
-        base_keys: list[tuple[str, int]],
-        base_labels: list[str],
-        other_keys: list[tuple[str, int]],
-        other_labels: list[str],
-    ) -> tuple[list[tuple[str, int]], list[str]]:
-        mapping = self._subsequence_positions(tuple(base_keys), tuple(other_keys)) or []
-        enriched = list(base_labels)
-        for other_index, target_index in enumerate(mapping):
-            enriched[target_index] = self._pick_better_label(
-                enriched[target_index],
-                other_labels[other_index],
-            )
-        return base_keys, enriched
+        return self._build_supersequence_plan(
+            left_keys=tuple(merged_keys),
+            left_labels=tuple(merged_labels),
+            right_keys=stream.header_keys,
+            right_labels=stream.header_labels,
+        )
 
     def _occurrence_keys(
         self,
@@ -163,12 +116,136 @@ class ParallelStreamRowCombiner:
             keys.append((canonical, counts[canonical]))
         return tuple(keys)
 
+    def _build_supersequence_plan(
+        self,
+        *,
+        left_keys: tuple[tuple[str, int], ...],
+        left_labels: tuple[str, ...],
+        right_keys: tuple[tuple[str, int], ...],
+        right_labels: tuple[str, ...],
+    ) -> tuple[list[tuple[str, int]], list[str]] | None:
+        common_keys = tuple(key for key in left_keys if key in set(right_keys))
+        lcs = self._longest_common_subsequence(left_keys, right_keys)
+        if not lcs:
+            return None
+        if len(lcs) != len(common_keys):
+            return None
+        if len(lcs) == 1 and not self._single_anchor_merge_allowed(
+            left_keys=left_keys,
+            right_keys=right_keys,
+            anchor=lcs[0],
+        ):
+            return None
+
+        left_labels_by_key = dict(zip(left_keys, left_labels, strict=False))
+        right_labels_by_key = dict(zip(right_keys, right_labels, strict=False))
+
+        merged_keys: list[tuple[str, int]] = []
+        merged_labels: list[str] = []
+        left_index = 0
+        right_index = 0
+        for anchor in lcs:
+            left_index = self._append_until_anchor(
+                keys=left_keys,
+                labels=left_labels_by_key,
+                start=left_index,
+                anchor=anchor,
+                merged_keys=merged_keys,
+                merged_labels=merged_labels,
+            )
+            right_index = self._append_until_anchor(
+                keys=right_keys,
+                labels=right_labels_by_key,
+                start=right_index,
+                anchor=anchor,
+                merged_keys=merged_keys,
+                merged_labels=merged_labels,
+            )
+            merged_keys.append(anchor)
+            merged_labels.append(
+                self._pick_better_label(
+                    left_labels_by_key[anchor],
+                    right_labels_by_key[anchor],
+                )
+            )
+            left_index += 1
+            right_index += 1
+
+        self._append_suffix(
+            keys=left_keys,
+            labels=left_labels_by_key,
+            start=left_index,
+            merged_keys=merged_keys,
+            merged_labels=merged_labels,
+        )
+        self._append_suffix(
+            keys=right_keys,
+            labels=right_labels_by_key,
+            start=right_index,
+            merged_keys=merged_keys,
+            merged_labels=merged_labels,
+        )
+        return merged_keys, merged_labels
+
     @staticmethod
-    def _is_subsequence(
-        longer: list[tuple[str, int]] | tuple[tuple[str, int], ...],
-        shorter: list[tuple[str, int]] | tuple[tuple[str, int], ...],
+    def _longest_common_subsequence(
+        left: tuple[tuple[str, int], ...],
+        right: tuple[tuple[str, int], ...],
+    ) -> tuple[tuple[str, int], ...]:
+        widths = len(right) + 1
+        table: list[list[tuple[tuple[str, int], ...]]] = [
+            [tuple() for _ in range(widths)] for _ in range(len(left) + 1)
+        ]
+        for left_index, left_key in enumerate(left, start=1):
+            for right_index, right_key in enumerate(right, start=1):
+                if left_key == right_key:
+                    table[left_index][right_index] = (
+                        table[left_index - 1][right_index - 1] + (left_key,)
+                    )
+                    continue
+                top = table[left_index - 1][right_index]
+                side = table[left_index][right_index - 1]
+                table[left_index][right_index] = top if len(top) >= len(side) else side
+        return table[-1][-1]
+
+    @staticmethod
+    def _single_anchor_merge_allowed(
+        *,
+        left_keys: tuple[tuple[str, int], ...],
+        right_keys: tuple[tuple[str, int], ...],
+        anchor: tuple[str, int],
     ) -> bool:
-        return ParallelStreamRowCombiner._subsequence_positions(longer, shorter) is not None
+        return bool(left_keys) and bool(right_keys) and left_keys[0] == right_keys[0] == anchor
+
+    @staticmethod
+    def _append_until_anchor(
+        *,
+        keys: tuple[tuple[str, int], ...],
+        labels: dict[tuple[str, int], str],
+        start: int,
+        anchor: tuple[str, int],
+        merged_keys: list[tuple[str, int]],
+        merged_labels: list[str],
+    ) -> int:
+        index = start
+        while index < len(keys) and keys[index] != anchor:
+            merged_keys.append(keys[index])
+            merged_labels.append(labels[keys[index]])
+            index += 1
+        return index
+
+    @staticmethod
+    def _append_suffix(
+        *,
+        keys: tuple[tuple[str, int], ...],
+        labels: dict[tuple[str, int], str],
+        start: int,
+        merged_keys: list[tuple[str, int]],
+        merged_labels: list[str],
+    ) -> None:
+        for index in range(start, len(keys)):
+            merged_keys.append(keys[index])
+            merged_labels.append(labels[keys[index]])
 
     @staticmethod
     def _subsequence_positions(

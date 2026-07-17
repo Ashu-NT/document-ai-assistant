@@ -10,7 +10,13 @@ from src.application.workflows.parsing.builders.document_graph.source_location_f
 from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
     repair_docling_text,
 )
-from src.domain.assets import AssetMetadata, PictureAsset, TableAsset, TableCellSpan
+from src.domain.assets import (
+    AssetMetadata,
+    PictureAsset,
+    TableAsset,
+    TableCellSpan,
+    TableParallelStream,
+)
 from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     compute_kept_column_indexes,
     drop_globally_empty_columns,
@@ -58,6 +64,9 @@ class ParsedAssetFactory:
                 rows=rows,
                 parallel_stream_rows=self._clean_parallel_stream_rows(
                     parsed_element.metadata.get("table_parallel_stream_rows")
+                ),
+                parallel_stream_descriptors=TableParallelStream.list_from_data(
+                    parsed_element.metadata.get("table_parallel_stream_descriptors")
                 ),
                 row_ids=self._build_row_ids(
                     table_id=table_id,

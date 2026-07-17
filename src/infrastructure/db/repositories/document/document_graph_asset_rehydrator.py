@@ -4,6 +4,7 @@ from src.infrastructure.db.repositories.document.document_graph_value_cleaners i
     clean_axis_summary,
     clean_header_paths,
     clean_multiline_text,
+    clean_parallel_stream_descriptors,
     clean_parallel_stream_rows,
     clean_rows,
     clean_table_signals,
@@ -30,6 +31,9 @@ def rehydrate_assets(graph: DocumentGraph) -> None:
                 rows=clean_rows(parser_extra.get("table_rows")),
                 parallel_stream_rows=clean_parallel_stream_rows(
                     parser_extra.get("table_parallel_stream_rows")
+                ),
+                parallel_stream_descriptors=clean_parallel_stream_descriptors(
+                    parser_extra.get("table_parallel_stream_descriptors")
                 ),
                 row_ids=[
                     str(row_id)

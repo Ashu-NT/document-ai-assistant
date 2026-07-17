@@ -143,9 +143,24 @@ Already present in the codebase before this update, but underrepresented in the 
   - `src/application/workflows/parsing/tables/normalization/parallel_stream_row_combiner.py`
   - `src/application/workflows/parsing/tables/structure/table_header_label_canonicalizer.py`
   - `src/application/workflows/parsing/tables/normalization/table_row_semantic_normalizer.py`
+- parallel same-page table streams can now also recombine through a shared leading row-identifier anchor even when sibling blocks expose different trailing column sets:
+  - safe union-header assembly now preserves both column orders
+  - merge is rejected when the only shared anchor is non-leading, to avoid accidental fusion of unrelated tables
+  - `src/application/workflows/parsing/tables/normalization/parallel_stream_row_combiner.py`
+  - `src/application/workflows/parsing/tables/normalization/table_row_semantic_normalizer.py`
+- upstream parallel-table reconstruction now rejects false left/right parallelization when X-separated stream clusters belong to different vertical zones on the page:
+  - parallel reconstruction now requires compatible vertical band overlap in addition to X-separated clustering
+  - this stops unrelated same-page table zones from entering downstream stream recombination as if they were one logical parallel table
+  - `src/application/workflows/parsing/normalizers/table_layout/parallel_table_vertical_alignment_checker.py`
+  - `src/application/workflows/parsing/normalizers/table_layout/docling_parallel_table_reconstructor.py`
 - generic wrapped-row reconstruction now supports hybrid continuation proof:
   - at least one changed column must have Docling span evidence
   - sibling changed columns may merge through normal continuation-text cues in the same row pair
+  - `src/application/workflows/parsing/tables/rows/span_aware_row_continuation_resolver.py`
+  - `src/application/workflows/parsing/tables/normalization/generic_wrapped_row_table_normalizer.py`
+- generic wrapped-row reconstruction now also accepts grouped broad-span evidence when Docling spans a multiline wrap across several changed sibling columns at once:
+  - grouped merge is allowed only when one broad span covers the unresolved changed columns
+  - grouped merge is rejected when the span does not cover the full unresolved change set
   - `src/application/workflows/parsing/tables/rows/span_aware_row_continuation_resolver.py`
   - `src/application/workflows/parsing/tables/normalization/generic_wrapped_row_table_normalizer.py`
 - regression coverage now also exists for:
@@ -155,7 +170,10 @@ Already present in the codebase before this update, but underrepresented in the 
   - span-backed key-value/specification continuation merges
   - span-backed maintenance-schedule continuation merges
   - parallel-stream recombination with optional columns and header-label aliases
+  - anchor-based union recombination for left/right sibling streams with different trailing columns
   - hybrid partial-span multiline continuation merges
+  - grouped broad-span multiline continuation merges and rejection of incomplete broad-span coverage
+  - rejection of false parallel-table reconstruction when sibling X-clusters do not share a compatible vertical band
   - `tests/unit/application/workflows/parsing/layout/test_layout_region_segmentation.py`
   - `tests/unit/application/workflows/parsing/tables/test_logical_table_family_resolver_same_page_subregions.py`
   - `tests/unit/application/workflows/parsing/tables/test_troubleshooting_table_normalizer_span_continuations.py`
@@ -163,14 +181,15 @@ Already present in the codebase before this update, but underrepresented in the 
   - `tests/unit/application/workflows/parsing/tables/test_maintenance_schedule_table_normalizer_span_continuations.py`
   - `tests/unit/application/workflows/parsing/tables/test_parallel_stream_row_combiner.py`
   - `tests/unit/application/workflows/parsing/tables/test_generic_wrapped_row_table_normalizer_partial_span.py`
+  - `tests/unit/application/workflows/parsing/tables/test_generic_wrapped_row_table_normalizer_broad_span.py`
+  - `tests/unit/application/workflows/parsing/normalizers/table_layout/test_docling_parallel_table_reconstructor.py`
 
 Current active next phase:
 
 - continue Phase 1 and Phase 2 as hardening/expansion of existing layout and table-reconstruction foundations, not as greenfield additions
 - deeper header/span reconstruction is now materially improved; the next enterprise table-reconstruction gaps are:
-  - richer multiline-cell reconstruction when wrap evidence is partial, ambiguous, or not aligned cleanly to one semantic field
-  - more formal page-layout ownership for multi-lane tables before logical-family assembly
-  - broader stream/header alignment when sibling blocks represent one logical table but differ by more than simple subsequence-style optional columns
+  - preserve parallel-stream ownership metadata deeper into the reconstructed table artifact so downstream renderers, extraction payloads, and answer-context assembly can reason about stream identity explicitly instead of rows alone
+  - richer multiline-cell reconstruction when wrap evidence is ambiguous at the region/lane level rather than the row-pair level
 - keep reducing remaining large orchestration hotspots after parsing/table boundaries are stable
 
 ## What Is Already Strong
@@ -755,7 +774,12 @@ Status:
 - repeated-label key-value/specification/certification rows now use shared span-backed continuation merging before semantic projection
 - maintenance schedule task/notes continuations now use the same Docling span evidence so wrapped schedule rows are repaired before interval-matrix projection
 - parallel stream recombination now tolerates optional sibling columns and generic header-label variants instead of requiring exact post-normalization header equality
+- parallel stream recombination now also handles shared leading-anchor splits where sibling streams contribute different trailing columns
+- upstream parallel-table reconstruction now uses vertical-band compatibility so unrelated same-page table zones are less likely to be mistaken for one logical parallel table
 - generic wrapped-row repair now accepts hybrid proof: one span-backed changed column plus ordinary continuation-text siblings in the same wrapped row
+- generic wrapped-row repair now accepts grouped broad-span proof when Docling exposes one multi-column span over the wrapped sibling cells
+- parallel-stream descriptors now survive normalization, metadata persistence, parsed-asset rehydration, logical-family composition, and downstream table renderers so extraction and QA no longer see anonymous stream row blocks only
+- logical table family composition now also preserves stream ownership across multi-page continuations when every family member exposes the same parallel stream count, merging stream 1 with stream 1, stream 2 with stream 2, and so on through the existing family row-merger rules
 
 Goals:
 
@@ -783,6 +807,10 @@ Important:
 
 - no document-specific header hacks
 - normalization must rely on generic structural and semantic cues, not current DB documents
+
+Remaining gap after the current slice:
+
+- mixed logical table families where some members expose parallel streams and others only a single repaired row grid still fall back to plain merged rows; the next hardening pass should add a safe bridge mode so stream-aware families can absorb non-stream continuation pages without losing ownership metadata
 
 ## Phase 3: Chunking As A Consumer Of Better Structure
 

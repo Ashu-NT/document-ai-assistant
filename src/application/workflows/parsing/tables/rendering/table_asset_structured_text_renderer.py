@@ -6,6 +6,9 @@ from src.application.workflows.parsing.tables.rendering.structured_row_renderer 
 from src.application.workflows.parsing.tables.structure.table_shape_resolver import (
     TableShapeResolver,
 )
+from src.application.workflows.shared.parallel_table_stream_view_resolver import (
+    ParallelTableStreamViewResolver,
+)
 from src.domain.assets import TableAsset
 
 
@@ -14,26 +17,27 @@ class TableAssetStructuredTextRenderer:
         self,
         structured_row_renderer: StructuredRowRenderer | None = None,
         table_shape_resolver: TableShapeResolver | None = None,
+        stream_view_resolver: ParallelTableStreamViewResolver | None = None,
     ) -> None:
         self.structured_row_renderer = structured_row_renderer or StructuredRowRenderer()
         self.table_shape_resolver = table_shape_resolver or TableShapeResolver()
+        self.stream_view_resolver = stream_view_resolver or ParallelTableStreamViewResolver()
 
     def render(self, table: TableAsset) -> str | None:
         table_shape = self.table_shape_resolver.resolve(table)
-        if table.parallel_stream_rows:
+        stream_views = self.stream_view_resolver.build(table)
+        if stream_views:
             stream_renderings: list[str] = []
-            for index, rows in enumerate(table.parallel_stream_rows, start=1):
+            for stream_view in stream_views:
                 rendered = self.structured_row_renderer.render(
-                    rows,
+                    [list(row) for row in stream_view.rows],
                     table_category=table.table_category,
                     table_shape=table_shape,
                 )
                 if not rendered:
                     continue
-                if len(table.parallel_stream_rows) > 1:
-                    stream_renderings.append(
-                        f"Parallel Table Stream {index}:\n{rendered}"
-                    )
+                if stream_view.stream_count > 1:
+                    stream_renderings.append(f"{stream_view.title}:\n{rendered}")
                 else:
                     stream_renderings.append(rendered)
             if stream_renderings:

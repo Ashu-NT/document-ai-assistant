@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Iterable, Sequence
 
 from src.application.workflows.parsing.tables.families.logical_table_family_row_merger import (
     LogicalTableFamilyRowMerger,
 )
-from src.domain.assets import AssetMetadata, TableAsset
+from src.domain.assets import AssetMetadata, TableAsset, TableParallelStream
 
 
 class LogicalTableFamilyAssetComposer:
@@ -30,6 +31,7 @@ class LogicalTableFamilyAssetComposer:
         merged_rows = self.row_merger.merge_tables(qualifying_tables) or [
             list(row) for row in lead_table.rows
         ]
+        parallel_stream_rows = self._merge_parallel_stream_rows(qualifying_tables)
         merged_markdown = self._merge_markdown(qualifying_tables) or lead_table.markdown
         metadata = AssetMetadata(
             caption=self._first_non_empty(table.metadata.caption for table in qualifying_tables),
@@ -48,6 +50,11 @@ class LogicalTableFamilyAssetComposer:
                 table.parent_section_id for table in qualifying_tables
             ),
             rows=merged_rows,
+            parallel_stream_rows=parallel_stream_rows,
+            parallel_stream_descriptors=self._merge_parallel_stream_descriptors(
+                qualifying_tables,
+                stream_rows=parallel_stream_rows,
+            ),
             row_count=len(merged_rows) or None,
             column_count=max((len(row) for row in merged_rows), default=0) or None,
             logical_table_family_id=resolved_family_id,
@@ -88,6 +95,109 @@ class LogicalTableFamilyAssetComposer:
                 table.page_orientation for table in qualifying_tables
             ),
             metadata=metadata,
+        )
+
+    def _merge_parallel_stream_rows(
+        self,
+        tables: Sequence[TableAsset],
+    ) -> list[list[list[str]]]:
+        if not tables or not all(table.parallel_stream_rows for table in tables):
+            return []
+        stream_count = len(tables[0].parallel_stream_rows)
+        if stream_count == 0:
+            return []
+        if all(len(table.parallel_stream_rows) == stream_count for table in tables):
+            merged: list[list[list[str]]] = []
+            for stream_index in range(stream_count):
+                merged_rows = self.row_merger.merge_row_groups(
+                    [table.parallel_stream_rows[stream_index] for table in tables]
+                )
+                if merged_rows:
+                    merged.append(merged_rows)
+            if merged:
+                return merged
+        return [
+            [list(row) for row in stream_rows]
+            for table in tables
+            for stream_rows in table.parallel_stream_rows
+        ]
+
+    def _merge_parallel_stream_descriptors(
+        self,
+        tables: Sequence[TableAsset],
+        *,
+        stream_rows: Sequence[Sequence[Sequence[str]]],
+    ) -> list[TableParallelStream]:
+        if not stream_rows:
+            return []
+        if not all(table.parallel_stream_descriptors for table in tables):
+            return []
+        expected_stream_count = len(tables[0].parallel_stream_descriptors)
+        if expected_stream_count == 0:
+            return []
+        if all(
+            len(table.parallel_stream_descriptors) == expected_stream_count
+            for table in tables
+        ) and expected_stream_count == len(stream_rows):
+            merged = [
+                self._merge_stream_descriptor_group(
+                    [
+                        table.parallel_stream_descriptors[stream_index]
+                        for table in tables
+                    ],
+                    stream_index=stream_index + 1,
+                    merged_rows=stream_rows[stream_index],
+                )
+                for stream_index in range(expected_stream_count)
+            ]
+            return [item for item in merged if item is not None]
+        flattened: list[TableParallelStream] = []
+        for descriptor in (
+            stream
+            for table in tables
+            for stream in table.parallel_stream_descriptors
+        ):
+            flattened.append(replace(descriptor, stream_index=len(flattened) + 1))
+        return flattened
+
+    @staticmethod
+    def _merge_stream_descriptor_group(
+        descriptors: Sequence[TableParallelStream],
+        *,
+        stream_index: int,
+        merged_rows: Sequence[Sequence[str]],
+    ) -> TableParallelStream | None:
+        if not descriptors:
+            return None
+        page_numbers = [item.page_number for item in descriptors if item.page_number is not None]
+        unique_page_numbers = set(page_numbers)
+        bboxes = [item.bbox for item in descriptors if item.bbox is not None]
+        centers = [item.center_x for item in descriptors if item.center_x is not None]
+        return TableParallelStream(
+            stream_index=stream_index,
+            source_row_start=min(item.source_row_start for item in descriptors),
+            source_row_end=max(item.source_row_end for item in descriptors),
+            source_col_start=min(item.source_col_start for item in descriptors),
+            source_col_end=max(item.source_col_end for item in descriptors),
+            row_count=len(merged_rows),
+            column_count=max((len(row) for row in merged_rows), default=0),
+            page_number=(
+                next(iter(unique_page_numbers))
+                if len(unique_page_numbers) == 1
+                else None
+            ),
+            center_x=(sum(centers) / len(centers)) if centers else None,
+            bbox=(
+                replace(
+                    bboxes[0],
+                    x1=min(item.x1 for item in bboxes),
+                    y1=min(item.y1 for item in bboxes),
+                    x2=max(item.x2 for item in bboxes),
+                    y2=max(item.y2 for item in bboxes),
+                )
+                if bboxes and len(unique_page_numbers) <= 1
+                else None
+            ),
         )
 
     @staticmethod

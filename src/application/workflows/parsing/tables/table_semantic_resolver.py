@@ -85,6 +85,11 @@ class TableSemanticResolver:
                     updated_extra["table_parallel_stream_count"] = len(
                         table.parallel_stream_rows
                     )
+                if table.parallel_stream_descriptors:
+                    updated_extra["table_parallel_stream_descriptors"] = [
+                        descriptor.to_dict()
+                        for descriptor in table.parallel_stream_descriptors
+                    ]
                 if rows_normalized:
                     updated_extra["table_row_normalization_version"] = "1"
                 if table.table_shape:

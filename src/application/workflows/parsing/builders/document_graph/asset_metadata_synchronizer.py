@@ -31,6 +31,11 @@ class AssetMetadataSynchronizer:
                     parser_extra["table_parallel_stream_count"] = len(
                         table_asset.parallel_stream_rows
                     )
+                if table_asset.parallel_stream_descriptors:
+                    parser_extra["table_parallel_stream_descriptors"] = [
+                        descriptor.to_dict()
+                        for descriptor in table_asset.parallel_stream_descriptors
+                    ]
                 if table_asset.local_reading_order:
                     parser_extra["table_local_reading_order"] = (
                         table_asset.local_reading_order

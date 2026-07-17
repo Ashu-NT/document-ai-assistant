@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.tables.rendering.table_asset_structured_text_renderer import (
     TableAssetStructuredTextRenderer,
 )
-from src.domain.assets import TableAsset
+from src.domain.assets import TableAsset, TableParallelStream
 
 
 def test_renderer_returns_none_for_empty_rows() -> None:
@@ -143,12 +143,34 @@ def test_renderer_renders_parallel_streams_separately() -> None:
             [["Part Number", "Description"], ["HP-001", "Filter"]],
             [["Part Number", "Description"], ["HP-002", "Gasket"]],
         ],
+        parallel_stream_descriptors=[
+            TableParallelStream(
+                stream_index=1,
+                source_row_start=0,
+                source_row_end=1,
+                source_col_start=0,
+                source_col_end=1,
+                row_count=2,
+                column_count=2,
+                page_number=8,
+            ),
+            TableParallelStream(
+                stream_index=2,
+                source_row_start=0,
+                source_row_end=1,
+                source_col_start=2,
+                source_col_end=3,
+                row_count=2,
+                column_count=2,
+                page_number=8,
+            ),
+        ],
         local_reading_order="left_to_right_top_to_bottom",
     )
 
     assert TableAssetStructuredTextRenderer().render(table) == (
-        "Parallel Table Stream 1:\n"
+        "Parallel Table Stream 1 (Left):\n"
         "Row 1: Part Number=HP-001 | Description=Filter\n\n"
-        "Parallel Table Stream 2:\n"
+        "Parallel Table Stream 2 (Right):\n"
         "Row 1: Part Number=HP-002 | Description=Gasket"
     )

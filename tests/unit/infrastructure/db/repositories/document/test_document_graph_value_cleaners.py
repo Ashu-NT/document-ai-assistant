@@ -2,6 +2,7 @@ from src.infrastructure.db.repositories.document.document_graph_value_cleaners i
     clean_axis_summary,
     clean_header_paths,
     clean_multiline_text,
+    clean_parallel_stream_descriptors,
     clean_parallel_stream_rows,
     clean_rows,
     clean_table_signals,
@@ -44,6 +45,28 @@ def test_clean_parallel_stream_rows_returns_empty_list_for_non_list_input() -> N
 
 def test_clean_parallel_stream_rows_drops_streams_with_no_real_rows() -> None:
     assert clean_parallel_stream_rows([[["A"]], [], "not a stream"]) == [[["A"]]]
+
+
+def test_clean_parallel_stream_descriptors_rehydrates_supported_items() -> None:
+    descriptors = clean_parallel_stream_descriptors(
+        [
+            {
+                "stream_index": 1,
+                "source_row_start": 0,
+                "source_row_end": 1,
+                "source_col_start": 0,
+                "source_col_end": 1,
+                "row_count": 2,
+                "column_count": 2,
+                "page_number": 9,
+            },
+            "not a descriptor",
+        ]
+    )
+
+    assert len(descriptors) == 1
+    assert descriptors[0].stream_index == 1
+    assert descriptors[0].page_number == 9
 
 
 def test_coerce_float_returns_none_for_none_and_invalid_input() -> None:
