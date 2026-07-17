@@ -504,13 +504,33 @@ is resolved:
   function was confirmed NOT to catch this pattern - it only fixes round-trippable double-encoding errors,
   and U+FFFD represents information already lost, which no post-hoc text repair can recover. OCR
   re-reads the rendered page image directly, bypassing the broken font mapping entirely.
-- **Still open, deliberately not attempted: missing-letter/missing-space corruption** (e.g.
-  `"Eswird bstii dasssPrfgebis..."`, no replacement-character marker at all). Detecting this generically is
-  much harder and was deliberately scoped out: real technical documents legitimately contain dense, unspaced
-  identifiers (`"6ES7131-6BF00-0CA0"`), so any word-length/vowel-ratio heuristic here risks false-positiving
-  on genuine content - exactly the kind of fragile, corpus-tuned heuristic this plan's own design rules warn
-  against. Needs a fundamentally different detection approach (or acceptance that it's not reliably
-  detectable pre-OCR) before attempting a fix.
+- **Investigated: missing-letter/missing-space corruption** (e.g. `"Eswird bstii dasssPrfgebis..."`, no
+  replacement-character marker at all). Same root-cause family as the U+FFFD case (a broken/incomplete
+  ToUnicode CMap in a subset font) but a different failure mode of the *same* defect: some glyph IDs -
+  including the space glyph and certain narrow letters - decode to an **empty string** instead of a
+  replacement character, so characters are silently dropped rather than replaced with a detectable marker.
+  Confirmed at real corpus scale: scanning all 14,208 real chunks in `data/maintenance_ai.db` for chunks
+  containing 3+ contiguous alphabetic runs (digits/hyphens excluded, so this never overlaps with dense
+  identifiers like `"6ES7131-6BF00-0CA0"`) of 20+ characters flags 313 chunks across 20 of ~36 real
+  documents - a materially bigger footprint than the U+FFFD case. However, this text-only heuristic has a
+  **confirmed, non-trivial false-positive rate**: single, correctly-spelled, long German compound nouns
+  (`"Isolationswiderstand"`, `"Kabelbefestigungspunkt"`, `"Versiegelungskehlnaht"`) are legitimate content
+  that can itself exceed the length threshold, and there is no reliable language-agnostic way (without a
+  multi-language dictionary, itself a fragile, corpus-tuned dependency) to distinguish that from several
+  real words merged together by the corruption. A geometry-based fix (comparing rendered glyph width/pitch
+  against character count, which would have near-zero false-positive risk since it never depends on
+  vocabulary) is possible in principle - Docling's PDF backend does produce fine-grained per-fragment
+  bounding boxes internally (`pypdfium2_backend.py`'s `_compute_text_cells()`) - but that data is merged away
+  into paragraph-level text before it reaches this codebase's `DoclingParser`/normalizer layer; exploiting it
+  would mean hooking into Docling's backend well below where this codebase currently integrates, a
+  substantially larger change than a normalizer-level fix.
+  **Decision: diagnostic-only, not wired into the pipeline.** Given the confirmed false-positive risk, a
+  standalone script (`scripts/report_text_corruption_candidates.py`) was added instead of extending
+  `has_corrupted_text`/the OCR-fallback pipeline - it flags candidate document/chunk pairs for human review
+  and explicitly documents both the true-positive and false-positive shapes in its own report output and
+  docstring, but takes no automatic action (no risk of mis-triggering OCR reprocessing on a legitimate
+  non-English document). Revisit only if the geometry-based approach is judged worth the deeper integration
+  effort.
 
 Evidence (original finding, kept for reference):
 
@@ -585,6 +605,50 @@ Why this matters:
 - the document exists in the `documents` table space but has no usable content and a failed ingestion run -
   worth confirming the retrieval/QA layer actually checks ingestion-run status before answering questions
   scoped to a document like this, rather than silently returning "no information found"
+
+### 19. RESOLVED - Multi-column page reading order and TOC-table row reconstruction, found on a real 2-column manual
+
+Found and fixed via a deep-dive on one real document
+(`KSB_FSD_A3000_E3000mini_DOCUMENTATION_rev5_MY COSOS.pdf`, `doc_5675fee786944e7186f1b4a8918280cd`) with a
+genuine 2-column page layout - not fixed for this document specifically, since both root causes are generic
+pipeline bugs that affect any document sharing the same shape (any 2-column layout; any multi-page TOC table):
+
+- **Multi-column reading order**: `LayoutRegionBuilder._sort_region_group` sorted lane groups by each
+  region's own incidental top-y position rather than by lane index, so a right-column region that happened
+  to start higher on the page than the left column's region sorted *before* it - readers would hit the
+  right column's text before the left column's, corrupting reading order on affected pages. Confirmed on
+  real pages 1 and 27 of the KSB document. Fixed with a shared `_shared_lane_top_y` anchor per lane group so
+  lane index (left-before-right), not incidental vertical position, decides order; single, full-width
+  regions are unaffected and still sort by their own real top-y.
+- **TOC table row-reconstruction data loss (the "half of it seems rejected" bug)**: `DoclingTocTableRowReconstructor`
+  (the multi-page TOC/contents-table repair path, reached via `DoclingTableRowRepairer.repair_rows`) had five
+  compounding gaps that together silently dropped or corrupted a large fraction of a real multi-page TOC's
+  rows: (1) a page-number cell with a stray dot-leader remnant (e.g. `"..18"`) failed a strict digits-only
+  check and the whole row was dropped; (2) a dot-leader broken into multiple dot-runs by extraction (e.g.
+  `"..... ..... 30"`) had the same failure; (3) numbering like `"7.3"` extracted with stray spaces around the
+  decimal point (`"7 . 3"`, a font-kerning artifact) was misread as just `"7"`, which then made two distinct
+  entries look identical and get silently merged by a later repair pass; (4) lettered appendix/annex
+  numbering (`"A"`, `"A.1"`, `"B"`) was not recognized as numbering at all, a common, generic TOC convention
+  and not a one-off; (5) page references that are roman numerals rather than Arabic digits (a book's
+  front-matter section - "i, ii, iii..." - commonly followed by an Arabic-numbered main body in the *same*
+  TOC table) were not recognized as page numbers at all, so a front-matter TOC table reconstructed to a
+  completely empty/degenerate 2-row table (`["Content", "Content"]`) with zero real entries recovered. All
+  five fixed generically (dot-leader/whitespace tolerance, spaced-decimal collapsing, an uppercase
+  1-2-letter numbering segment alternative to digits, and a strict case-insensitive roman-numeral pattern
+  alternated with the existing digit pattern for every page-reference regex) - roman and Arabic page
+  references are kept as their original matched text (not coerced to `int`) so a roman `"III"` is never
+  conflated with an Arabic `"3"` appearing elsewhere in the same table. A roman-numeral page reference is
+  also now itself treated as a "strong TOC match" signal (alongside numbering/dot-leaders) in the
+  reconstructor's misfire-guard threshold, since an ordinary non-TOC key/value table (e.g. "Voltage 400V")
+  never has a roman-numeral-shaped value cell - this was required to let a front-matter TOC with no numbering
+  column at all pass the existing safety net. Verified end-to-end on a fresh re-parse of the real KSB
+  document: its page-2 front-matter table now reconstructs all 12 roman-numeral-paged entries (`III`-`VI`)
+  plus the transition into Arabic-numbered body sections (`1`-`1.5`) in one unified, correctly-typed table;
+  page-3's TOC (the original `7.3`/`7.4` merge-bug repro) continues to reconstruct correctly. Full unit suite
+  green (3059 passed) aside from the one known, pre-existing, unrelated OCR-fallback-wiring test failure.
+- **Also fixed while here (not TOC-specific)**: `TableAsset` was missing `to_structured_row_text()` and
+  `resolved_table_shape()`, both referenced by `scripts/export_document_table_assets.py` but never
+  implemented - the script crashed on any real document with a table asset. Both added.
 
 ## Resolved This Session (Not Yet Reflected Elsewhere In This Document)
 
