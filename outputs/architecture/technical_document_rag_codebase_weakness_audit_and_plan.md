@@ -787,9 +787,48 @@ dot-leader lines) still classifies as `SAFETY_WARNING` correctly - the fix only 
 scaffolding shape, not the keyword scoring itself. New unit tests: 7 for the detector function, 2 for the
 resolver integration. Full unit suite green (3088 passed), same one known pre-existing unrelated failure.
 
-**Not yet done**: this only stops the mislabeling - the underlying text is still unstructured, dot-leader-heavy
-orphaned content, not reconstructed into a proper TOC entry. Recovering the text itself (rather than just
-its classification) remains open, as noted in #20.
+**Not yet done at the time**: this only stopped the mislabeling - the underlying text was still unstructured,
+dot-leader-heavy orphaned content, not reconstructed into a proper TOC entry. **This is now also fixed - see
+#23.**
+
+### 23. RESOLVED - Orphaned dot-leader TOC text itself is now reconstructed into a real table
+
+Closes the remaining half of #20/#22: the text was correctly stopped from being misclassified, but was still
+just scrambled dot-leader noise, not a usable TOC entry. New component,
+`OrphanedTocRowReconstructor` (`src/application/workflows/parsing/normalizers/table_layout/`), wired as a
+SECOND strategy into `TextGridTableFallbackApplier` - tried only when the first strategy
+(`TextGridTableDetector`, a regular record grid) finds nothing on a page, since this is a genuinely different,
+irregular failure shape:
+
+- **Why the regular grid detector doesn't apply here**: a dot-leader TOC list's row structure is irregular (2-4
+  populated elements per row, not a consistent column count), and a single title/number can itself arrive as
+  several separate tiny text runs (confirmed on the real document: `"2.7 E3000-C-500"` came through as 6
+  separate elements - `"2.7"`, `"E3000"`, `"-"`, `"C"`, `"-"`, `"500"`).
+- **Approach**: reuses the same Y-overlap row-clustering as the grid detector (factored out into a new shared
+  `GeometricRowClusterer` utility, used by both - confirmed behavior-unchanged via the existing detector test
+  suite after the refactor). Per row, each element is classified as a dot-leader run (discarded - matches
+  `"................................"`-shaped text, a pattern that essentially never occurs in real prose),
+  the row's page number (found via the PAGE's own dominant, consistently-positioned x-band of bare
+  digit/roman-shaped tokens - deliberately NOT "any digit-shaped token", since a row's own section numbering
+  can itself incidentally look page-number-shaped, e.g. a lone `"3"` from a character-split `"3.3"` - the true
+  page-number column is the position ~19 rows agree on, not a 1-2-element outlier elsewhere), or title/numbering
+  text (concatenated left to right). The resulting raw `[title_text, page_text]` rows are handed to the
+  existing `DoclingTocTableRowReconstructor` (unchanged) rather than duplicating its numbering-extraction/
+  dot-collapsing logic.
+- **Gated to avoid misfiring on ordinary prose**: only attempts this when a page's candidate elements contain
+  a meaningful fraction of genuinely dot-leader-shaped elements (mirrors the same-spirit chunk-level check in
+  #22's `is_toc_remnant_text`, at the element level instead of the line level).
+- **Verified against the exact real element geometry** (all 19 rows of the KSB document's page-2 right column,
+  captured as permanent regression fixtures) - the reconstructor recovers all 19 entries with correct
+  numbering/title/page, matching the source document exactly. Negative tests confirm it does not fire on
+  ordinary paragraph text or on too few dot-leader elements.
+- **End-to-end re-parse confirms**: page 2 now has TWO tables - the original left column (unchanged, still
+  subject to the separate, upstream, unfixable Docling data-loss gap from #20) plus a new second table with
+  all 19 right-column entries correctly reconstructed. Every other page's table count is unchanged from the
+  prior verification run - confirming no side effects elsewhere in the document.
+- New unit tests: 3 for the reconstructor (including the full 19-row real-data fixture), 1 for the
+  applier-level second-strategy wiring. Full unit suite green (3092 passed), same one known pre-existing
+  unrelated failure.
 
 ## Resolved This Session (Not Yet Reflected Elsewhere In This Document)
 

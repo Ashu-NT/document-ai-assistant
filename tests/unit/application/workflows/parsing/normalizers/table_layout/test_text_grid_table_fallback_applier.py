@@ -162,3 +162,71 @@ def test_apply_returns_input_unchanged_when_no_page_has_a_detectable_grid() -> N
     result = applier.apply(elements)
 
     assert result == elements
+
+
+def _toc_row_elements(
+    *,
+    start_index: int,
+    page: int,
+    title: str,
+    page_number: str,
+    y1: float,
+    y2: float,
+) -> list[CanonicalElement]:
+    return [
+        _text_element(
+            f"el_{start_index}", title, page=page, x1=50.0, x2=250.0, y1=y1, y2=y2,
+            order_index=start_index,
+        ),
+        _text_element(
+            f"el_{start_index + 1}", "................................", page=page,
+            x1=260.0, x2=340.0, y1=y1, y2=y2, order_index=start_index + 1,
+        ),
+        _text_element(
+            f"el_{start_index + 2}", page_number, page=page, x1=350.0, x2=360.0,
+            y1=y1, y2=y2, order_index=start_index + 2,
+        ),
+    ]
+
+
+def _orphaned_toc_elements(page: int = 1) -> list[CanonicalElement]:
+    rows = [
+        ("1.1 First topic", "1"),
+        ("1.2 Second topic", "2"),
+        ("1.3 Third topic", "3"),
+        ("1.4 Fourth topic", "4"),
+    ]
+    elements: list[CanonicalElement] = []
+    for row_index, (title, page_number) in enumerate(rows):
+        elements.extend(
+            _toc_row_elements(
+                start_index=row_index * 3,
+                page=page,
+                title=title,
+                page_number=page_number,
+                y1=400.0 - row_index * 20,
+                y2=392.0 - row_index * 20,
+            )
+        )
+    return elements
+
+
+def test_apply_falls_back_to_orphaned_toc_reconstruction_when_grid_detection_fails() -> None:
+    # A dot-leader TOC list is NOT a regular record grid (TextGridTableDetector
+    # correctly finds nothing here), so the applier must fall through to the
+    # second strategy rather than giving up on the page.
+    applier = TextGridTableFallbackApplier()
+
+    result = applier.apply(_orphaned_toc_elements())
+
+    tables = [element for element in result if element.element_type == ElementType.TABLE]
+    assert len(tables) == 1
+    table = tables[0]
+    assert table.metadata["table_structure_tier"] == "orphaned_toc_reconstruction"
+    assert table.metadata["table_rows"] == [
+        ["Number", "Title", "Page"],
+        ["1.1", "First topic", "1"],
+        ["1.2", "Second topic", "2"],
+        ["1.3", "Third topic", "3"],
+        ["1.4", "Fourth topic", "4"],
+    ]

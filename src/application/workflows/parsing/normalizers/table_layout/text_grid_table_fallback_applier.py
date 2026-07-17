@@ -3,6 +3,10 @@ from __future__ import annotations
 from collections import defaultdict
 
 from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.normalizers.table_layout.orphaned_toc_row_reconstructor import (
+    OrphanedTocResult,
+    OrphanedTocRowReconstructor,
+)
 from src.application.workflows.parsing.normalizers.table_layout.text_grid_table_detector import (
     GridElement,
     TextGridTableDetector,
@@ -13,15 +17,27 @@ from src.domain.common import BoundingBox, ElementType
 
 class TextGridTableFallbackApplier:
     """Synthesizes a TABLE canonical element from loose text elements that
-    Docling's own table-detection model never recognized as a table at all
-    (see `TextGridTableDetector` for the confirmed real-world failure
-    shape). Runs once per page, over that page's TEXT elements not already
-    covered by an existing TABLE element's bounding box, so it never
-    interferes with tables Docling already extracted correctly.
+    Docling's own table-detection model never recognized as a table at all.
+    Runs once per page, over that page's TEXT elements not already covered
+    by an existing TABLE element's bounding box, so it never interferes
+    with tables Docling already extracted correctly.
+
+    Tries two strategies per page, in order:
+    1. `TextGridTableDetector` -- a regular record grid (every row
+       populates the same set of column slots).
+    2. `OrphanedTocRowReconstructor` -- a dot-leader-heavy TOC list (an
+       irregular shape the grid detector correctly does not match), tried
+       only when the first strategy finds nothing for that page.
     """
 
-    def __init__(self, *, detector: TextGridTableDetector | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        detector: TextGridTableDetector | None = None,
+        toc_reconstructor: OrphanedTocRowReconstructor | None = None,
+    ) -> None:
         self.detector = detector or TextGridTableDetector()
+        self.toc_reconstructor = toc_reconstructor or OrphanedTocRowReconstructor()
 
     def apply(self, elements: list[CanonicalElement]) -> list[CanonicalElement]:
         elements_by_page: dict[int, list[int]] = defaultdict(list)
@@ -56,6 +72,10 @@ class TextGridTableFallbackApplier:
                 for position in candidate_positions
             ]
             result = self.detector.detect(grid_elements)
+            tier = "text_grid_fallback"
+            if result is None:
+                result = self.toc_reconstructor.reconstruct(grid_elements)
+                tier = "orphaned_toc_reconstruction"
             if result is None:
                 continue
 
@@ -64,6 +84,7 @@ class TextGridTableFallbackApplier:
                 anchor_element=elements[anchor_position],
                 page_number=page_number,
                 result=result,
+                tier=tier,
             )
             positions_to_remove.update(result.consumed_indices)
 
@@ -114,12 +135,13 @@ class TextGridTableFallbackApplier:
         *,
         anchor_element: CanonicalElement,
         page_number: int,
-        result: TextGridTableResult,
+        result: TextGridTableResult | OrphanedTocResult,
+        tier: str,
     ) -> CanonicalElement:
         markdown = self._rows_to_markdown(result.rows)
         metadata = {
             "table_rows": result.rows,
-            "table_structure_tier": "text_grid_fallback",
+            "table_structure_tier": tier,
             "row_count": len(result.rows),
             "column_count": max((len(row) for row in result.rows), default=0),
             "markdown": markdown,

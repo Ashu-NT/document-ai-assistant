@@ -4,21 +4,13 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Iterable
 
+from src.application.workflows.parsing.normalizers.table_layout.geometric_row_clusterer import (
+    GeometricRowClusterer,
+    GridElement,
+)
 from src.domain.common import BoundingBox
 
-
-@dataclass(frozen=True, slots=True)
-class GridElement:
-    """One loose, unstructured element considered as a candidate grid cell.
-
-    `index` is the caller's own identifier for the source element (e.g. its
-    position in a canonical-element list) so the caller can tell which
-    elements this detector consumed once a table is recovered.
-    """
-
-    index: int
-    text: str
-    bbox: BoundingBox
+__all__ = ["GridElement", "TextGridTableDetector", "TextGridTableResult"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,20 +46,12 @@ class TextGridTableDetector:
 
     MIN_ROWS = 3
     MIN_COLUMNS = 2
-    # Fraction of the smaller element's height that two elements' Y-ranges
-    # must overlap by to be considered part of the same visual row. Chosen
-    # low enough to tolerate a few points of baseline jitter between
-    # same-row cells (confirmed against real data: same-row cells commonly
-    # differ in height by a point or two) while still cleanly separating
-    # adjacent real rows, whose Y-ranges do not overlap at all on a normal,
-    # regularly-spaced grid.
-    ROW_OVERLAP_FRACTION = 0.3
 
     def detect(self, elements: list[GridElement]) -> TextGridTableResult | None:
         if len(elements) < self.MIN_ROWS * self.MIN_COLUMNS:
             return None
 
-        rows = self._cluster_rows(elements)
+        rows = GeometricRowClusterer.cluster_rows(elements)
         slots = self._cluster_columns(elements)
         if len(slots) < self.MIN_COLUMNS:
             return None
@@ -116,38 +100,16 @@ class TextGridTableDetector:
         )
 
     @classmethod
-    def _cluster_rows(
-        cls,
-        elements: list[GridElement],
-    ) -> list[list[GridElement]]:
-        ordered = sorted(elements, key=lambda element: -cls._y_center(element.bbox))
-        rows: list[list[GridElement]] = []
-        for element in ordered:
-            placed = False
-            for row in rows:
-                if (
-                    cls._y_overlap_fraction(row[0].bbox, element.bbox)
-                    >= cls.ROW_OVERLAP_FRACTION
-                ):
-                    row.append(element)
-                    placed = True
-                    break
-            if not placed:
-                rows.append([element])
-
-        for row in rows:
-            row.sort(key=lambda element: cls._x_center(element.bbox))
-        return rows
-
-    @classmethod
     def _cluster_columns(
         cls,
         elements: list[GridElement],
     ) -> list[list[GridElement]]:
-        ordered = sorted(elements, key=lambda element: cls._x_center(element.bbox))
+        ordered = sorted(elements, key=lambda element: GeometricRowClusterer.x_center(element.bbox))
         widths = sorted(element.bbox.x2 - element.bbox.x1 for element in ordered)
         median_width = widths[len(widths) // 2]
-        x_range = cls._x_center(ordered[-1].bbox) - cls._x_center(ordered[0].bbox)
+        x_range = GeometricRowClusterer.x_center(
+            ordered[-1].bbox
+        ) - GeometricRowClusterer.x_center(ordered[0].bbox)
         # Mirrors the gap-clustering approach already used for Docling's own
         # parallel-lane detection (`ParallelTableStreamClusterer`), scaled by
         # both the overall spread and the typical cell width so it adapts to
@@ -157,9 +119,9 @@ class TextGridTableDetector:
         gap_threshold = max(x_range * 0.06, median_width * 1.4, 18.0)
 
         slots: list[list[GridElement]] = [[ordered[0]]]
-        previous_center = cls._x_center(ordered[0].bbox)
+        previous_center = GeometricRowClusterer.x_center(ordered[0].bbox)
         for element in ordered[1:]:
-            center = cls._x_center(element.bbox)
+            center = GeometricRowClusterer.x_center(element.bbox)
             if center - previous_center > gap_threshold:
                 slots.append([element])
             else:
@@ -175,7 +137,7 @@ class TextGridTableDetector:
     ) -> dict[int, GridElement] | None:
         assignment: dict[int, GridElement] = {}
         for element in row:
-            center = cls._x_center(element.bbox)
+            center = GeometricRowClusterer.x_center(element.bbox)
             nearest_index = min(
                 range(len(slot_centers)),
                 key=lambda index: abs(slot_centers[index] - center),
@@ -207,28 +169,8 @@ class TextGridTableDetector:
 
     @staticmethod
     def _mean_x(elements: list[GridElement]) -> float:
-        centers = [TextGridTableDetector._x_center(element.bbox) for element in elements]
+        centers = [GeometricRowClusterer.x_center(element.bbox) for element in elements]
         return sum(centers) / len(centers)
-
-    @staticmethod
-    def _x_center(bbox: BoundingBox) -> float:
-        return (bbox.x1 + bbox.x2) / 2.0
-
-    @staticmethod
-    def _y_center(bbox: BoundingBox) -> float:
-        return (bbox.y1 + bbox.y2) / 2.0
-
-    @staticmethod
-    def _y_overlap_fraction(a: BoundingBox, b: BoundingBox) -> float:
-        top = min(a.y1, b.y1)
-        bottom = max(a.y2, b.y2)
-        intersection = top - bottom
-        if intersection <= 0:
-            return 0.0
-        smaller_height = min(a.y1 - a.y2, b.y1 - b.y2)
-        if smaller_height <= 0:
-            return 0.0
-        return intersection / smaller_height
 
     @staticmethod
     def _union_bbox(elements: Iterable[GridElement]) -> BoundingBox:
