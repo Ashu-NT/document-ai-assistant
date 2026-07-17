@@ -118,8 +118,13 @@ class TableSemanticRuleEvaluator:
             "corrective action",
         )
         return (
-            self.signal_matcher.count_unique(direct_text, troubleshooting_markers) >= 3
-            and self.signal_matcher.count_unique(header_text, troubleshooting_markers) >= 2
+            # A table whose actual header cells (not just body/nearby text)
+            # contain 2+ distinct troubleshooting markers is strong structural
+            # evidence on its own -- e.g. a minimal real "Cause | Corrective
+            # action" diagnostic table has only 2 distinct marker words total
+            # and can never satisfy a body-text corroboration requirement
+            # beyond what the headers already say.
+            self.signal_matcher.count_unique(header_text, troubleshooting_markers) >= 2
         ) or (
             (
                 self.signal_matcher.contains(section_text, "trouble shooting")

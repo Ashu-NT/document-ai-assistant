@@ -519,7 +519,7 @@ Why this matters:
 - likely a font-encoding/glyph-mapping issue in specific source PDFs rather than a single parsing bug; needs
   its own root-cause pass, likely in the Docling text-extraction/normalization layer
 
-### 17. Over half of all classified tables fall into the general_table catch-all
+### 17. IN PROGRESS - Over half of all classified tables fall into the general_table catch-all
 
 Evidence:
 
@@ -533,6 +533,28 @@ Why this matters:
   limits, troubleshooting, etc.) is meaningfully weaker in practice than the curated unit-test suite's
   examples suggest
 - this is exactly the kind of drift a purely code-level or unit-test-level review cannot see
+
+This is a broad, multi-cause recall problem - not one bug. One concrete, high-impact contributing cause has
+been found and fixed; the 56% figure itself has not been re-measured against a fresh reingest yet, so treat
+it as "one real gap closed", not "the number is now lower":
+
+- **Fixed: minimal 2-column "Cause | Corrective action" diagnostic tables** (e.g. SAE J1939 SPN/FMI fault
+  tables, common in engine/generator manuals). `looks_like_troubleshooting_table()` required 3 distinct
+  troubleshooting-marker hits in the table's full text AND 2 in the header text - but a minimal real
+  troubleshooting table with only 2 header columns has exactly 2 distinct markers total (the header words
+  themselves) and can never produce a 3rd unless the body coincidentally repeats a different marker word.
+  Confirmed via direct query: 127 of the 1,129 real `general_table` chunks (11.2%) match this exact
+  "Cause"+"Corrective action" header pattern with no "troubleshooting" section heading nearby. Fixed by
+  dropping the redundant direct-text requirement when the header cells alone already contain 2+ distinct
+  markers - verified live (before: `general_table`; after: `troubleshooting_table`, confidence 0.9) against
+  a table shaped exactly like the real corpus examples.
+- **Other candidate gaps observed while sampling real `general_table` content, not yet fixed**: a
+  "REFERENCE | CODE" part-lookup table under a "SPECIFICATIONS" section (candidate for
+  `identifier_table`/`spare_parts_table`); a risk-assessment matrix ("Probability | Consequences | Warning
+  level") that doesn't map to ANY existing `TableCategory` member at all - a genuine category-set gap, not a
+  rule-precision issue, and a larger, riskier change (new category needs its own `ChunkType`
+  mapping/`TableShape` consideration, same care as the July 16 domain-split work) than the other fixes in
+  this document. Not attempted this pass.
 
 ### 18. A real document is currently, actively failing ingestion - not a hypothetical OCR gap
 
