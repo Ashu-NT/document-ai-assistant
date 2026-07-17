@@ -4,7 +4,7 @@ from src.application.workflows.extraction.batching.table_payload.table_payload_s
     TablePayloadSupport,
 )
 from src.domain.assets import TableAsset
-from src.domain.assets.table_rows.table_row_patterns import (
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     active_interval_labels,
     looks_interval_header,
     normalize_cell,

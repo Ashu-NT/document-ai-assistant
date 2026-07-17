@@ -11,7 +11,7 @@ from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
     repair_docling_text,
 )
 from src.domain.assets import AssetMetadata, PictureAsset, TableAsset, TableCellSpan
-from src.domain.assets.table_rows.table_row_patterns import (
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     compute_kept_column_indexes,
     drop_globally_empty_columns,
 )

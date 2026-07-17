@@ -1,4 +1,4 @@
-from src.domain.assets.table_rows.performance_curve_matrix_detector import (
+from src.application.workflows.parsing.tables.rows.performance_curve_matrix_detector import (
     PerformanceCurveMatrixDetector,
 )
 

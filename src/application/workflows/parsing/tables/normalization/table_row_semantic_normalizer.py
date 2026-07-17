@@ -1,15 +1,29 @@
 from __future__ import annotations
 
+from src.application.workflows.parsing.tables.rows.normalized_table_rows import (
+    NormalizedTableRows,
+)
 from src.domain.assets import TableAsset
 from src.domain.assets.table_cell_span import TableCellSpan
-from src.domain.assets.table_rows import (
+from src.domain.assets.table_rows.certification_particulars_table_normalizer import (
     CertificationParticularsTableNormalizer,
+)
+from src.domain.assets.table_rows.generic_wrapped_row_table_normalizer import (
     GenericWrappedRowTableNormalizer,
+)
+from src.domain.assets.table_rows.maintenance_schedule_table_normalizer import (
     MaintenanceScheduleTableNormalizer,
-    NormalizedTableRows,
+)
+from src.domain.assets.table_rows.performance_curve_table_normalizer import (
     PerformanceCurveTableNormalizer,
+)
+from src.domain.assets.table_rows.spare_parts_table_normalizer import (
     SparePartsTableNormalizer,
+)
+from src.domain.assets.table_rows.specification_key_value_table_normalizer import (
     SpecificationKeyValueTableNormalizer,
+)
+from src.domain.assets.table_rows.troubleshooting_table_normalizer import (
     TroubleshootingTableNormalizer,
 )
 

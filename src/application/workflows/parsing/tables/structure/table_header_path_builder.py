@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from src.domain.assets import TableAsset
-from src.domain.assets.table_rows.table_row_patterns import (
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     looks_explicit_header_cell,
     looks_label_cell,
     looks_numeric,

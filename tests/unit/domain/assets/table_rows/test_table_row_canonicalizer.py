@@ -1,4 +1,4 @@
-from src.domain.assets.table_rows.table_row_canonicalizer import (
+from src.application.workflows.parsing.tables.rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
 

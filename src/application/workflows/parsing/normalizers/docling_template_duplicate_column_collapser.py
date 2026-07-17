@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from src.domain.assets.table_rows.table_row_patterns import normalize_cell
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
+    normalize_cell,
+)
 
 _MIN_SHARED_ROWS = 2
 _MIN_MATCH_RATIO = 0.75

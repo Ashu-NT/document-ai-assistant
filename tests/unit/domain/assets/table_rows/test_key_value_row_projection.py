@@ -1,7 +1,9 @@
-from src.domain.assets.table_rows.key_value_row_projection import (
+from src.application.workflows.parsing.tables.normalization.key_value_row_projection import (
     project_key_value_rows,
 )
-from src.domain.assets.table_rows.table_row_canonicalizer import TableRowCanonicalizer
+from src.application.workflows.parsing.tables.rows.table_row_canonicalizer import (
+    TableRowCanonicalizer,
+)
 
 
 def test_project_key_value_rows_projects_wrapped_multi_field_rows() -> None:

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from src.domain.assets.table_rows.row_continuation_patterns import (
+from src.application.workflows.parsing.tables.rows.row_continuation_patterns import (
     looks_like_continuation_pair,
 )
-from src.domain.assets.table_rows.table_row_patterns import (
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     merge_continuation_text,
     normalize_cell,
 )

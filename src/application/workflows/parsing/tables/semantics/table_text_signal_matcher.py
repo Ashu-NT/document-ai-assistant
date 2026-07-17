@@ -3,7 +3,9 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
-from src.domain.assets.table_rows.table_row_patterns import looks_interval_header
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
+    looks_interval_header,
+)
 
 _NORMALIZE_PATTERN = re.compile(r"[^\w]+")
 

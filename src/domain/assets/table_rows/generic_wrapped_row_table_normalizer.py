@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from src.domain.assets.table_cell_span import TableCellSpan
-from src.domain.assets.table_rows.normalized_table_rows import NormalizedTableRows
-from src.domain.assets.table_rows.row_continuation_patterns import (
+from src.application.workflows.parsing.tables.rows.normalized_table_rows import (
+    NormalizedTableRows,
+)
+from src.application.workflows.parsing.tables.rows.row_continuation_patterns import (
     merge_row_cells,
     resolve_sparse_continuation_indexes,
 )
-from src.domain.assets.table_rows.table_row_patterns import (
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     clean_rows,
 )
+from src.domain.assets.table_cell_span import TableCellSpan
 
 
 class GenericWrappedRowTableNormalizer:

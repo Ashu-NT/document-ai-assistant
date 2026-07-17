@@ -3,14 +3,16 @@ from __future__ import annotations
 from src.application.workflows.parsing.tables.structure.table_structure_summary import (
     TableStructureSummary,
 )
+from src.application.workflows.parsing.tables.rows.table_row_canonicalizer import (
+    TableRowCanonicalizer,
+)
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
+    normalize_cell,
+)
 from src.application.workflows.shared.table_shape import TableShape
 from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
 )
-from src.domain.assets.table_rows.table_row_canonicalizer import (
-    TableRowCanonicalizer,
-)
-from src.domain.assets.table_rows.table_row_patterns import normalize_cell
 
 
 class PerformanceCurveStructureSummarizer:

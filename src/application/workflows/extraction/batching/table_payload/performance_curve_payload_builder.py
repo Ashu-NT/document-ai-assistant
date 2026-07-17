@@ -4,7 +4,9 @@ from src.domain.assets import TableAsset
 from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
 )
-from src.domain.assets.table_rows.table_row_patterns import normalize_cell
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
+    normalize_cell,
+)
 
 
 class PerformanceCurvePayloadBuilder:

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import re
 
-from src.domain.assets.table_cell_span import TableCellSpan
-from src.domain.assets.table_rows.normalized_table_rows import NormalizedTableRows
-from src.domain.assets.table_rows.table_row_patterns import (
+from src.application.workflows.parsing.tables.rows.normalized_table_rows import (
+    NormalizedTableRows,
+)
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     looks_explicit_header_cell,
     normalize_cell,
 )
+from src.domain.assets.table_cell_span import TableCellSpan
 
 _FIELD_ORDER = (
     "position",

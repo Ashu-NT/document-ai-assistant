@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.domain.assets.table_rows.table_row_patterns import (
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     dedupe_headers,
     normalize_cell,
 )

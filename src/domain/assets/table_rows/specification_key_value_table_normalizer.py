@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from src.domain.assets.table_cell_span import TableCellSpan
-from src.domain.assets.table_rows.key_value_row_projection import (
+from src.application.workflows.parsing.tables.rows.normalized_table_rows import (
+    NormalizedTableRows,
+)
+from src.application.workflows.parsing.tables.rows.table_row_canonicalizer import (
+    TableRowCanonicalizer,
+)
+from src.application.workflows.parsing.tables.normalization.key_value_row_projection import (
     project_key_value_rows,
 )
-from src.domain.assets.table_rows.normalized_table_rows import NormalizedTableRows
-from src.domain.assets.table_rows.table_row_canonicalizer import TableRowCanonicalizer
+from src.domain.assets.table_cell_span import TableCellSpan
 
 _APPLICABLE_CATEGORIES = frozenset(
     {

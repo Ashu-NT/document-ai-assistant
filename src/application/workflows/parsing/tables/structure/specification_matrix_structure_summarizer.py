@@ -4,10 +4,10 @@ from src.application.workflows.parsing.tables.structure.table_structure_summary 
     TableStructureSummary,
 )
 from src.application.workflows.shared.table_shape import TableShape
-from src.domain.assets.table_rows.table_row_canonicalizer import (
+from src.application.workflows.parsing.tables.rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
-from src.domain.assets.table_rows.table_row_patterns import (
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     count_interval_columns,
     looks_explicit_header_cell,
     looks_label_cell,

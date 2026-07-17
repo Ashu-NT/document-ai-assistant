@@ -5,7 +5,9 @@ import re
 from src.application.workflows.shared.maintenance_text_cleaning import (
     MAINTENANCE_PLACEHOLDER_VALUES,
 )
-from src.domain.assets.table_rows.table_row_patterns import SCHEDULE_INTERVAL_LABELS
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
+    SCHEDULE_INTERVAL_LABELS,
+)
 
 _HEADER_ROLE_ALIASES: dict[str, tuple[str, ...]] = {
     "label": (

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from src.domain.assets.table_rows.performance_curve_matrix_detector import (
+from src.application.workflows.parsing.tables.rows.performance_curve_matrix_detector import (
     PerformanceCurveMatrixDetector,
     PerformanceCurveMatrixSpec,
     _looks_numericish,
 )
-from src.domain.assets.table_rows.table_row_patterns import normalize_cell
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
+    normalize_cell,
+)
 
 
 @dataclass(slots=True, frozen=True)

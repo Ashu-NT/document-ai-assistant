@@ -8,7 +8,9 @@ from src.application.workflows.parsing.tables.structure.table_structure_summary 
 )
 from src.application.workflows.shared.table_shape import TableShape
 from src.domain.assets import TableAsset
-from src.domain.assets.table_rows.table_row_patterns import normalize_cell
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
+    normalize_cell,
+)
 
 
 class GenericRecordStructureSummarizer:

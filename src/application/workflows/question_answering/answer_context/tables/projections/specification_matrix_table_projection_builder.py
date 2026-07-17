@@ -12,7 +12,9 @@ from src.application.workflows.question_answering.answer_context.tables.projecti
 from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
     TableQueryStrategy,
 )
-from src.domain.assets.table_rows.table_row_patterns import normalize_cell
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
+    normalize_cell,
+)
 
 
 class SpecificationMatrixTableProjectionBuilder:

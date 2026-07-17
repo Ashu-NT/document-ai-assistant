@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from src.domain.assets.table_rows.row_continuation_patterns import (
+from src.application.workflows.parsing.tables.rows.row_continuation_patterns import (
     merge_row_cells,
     resolve_sparse_continuation_indexes,
 )
-from src.domain.assets.table_rows.table_row_patterns import (
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     normalize_cell,
 )
 

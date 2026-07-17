@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from src.application.workflows.parsing.tables.rows.normalized_table_rows import (
+    NormalizedTableRows,
+)
 from src.domain.assets.table_cell_span import TableCellSpan
-from src.domain.assets.table_rows.normalized_table_rows import NormalizedTableRows
 from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
 )

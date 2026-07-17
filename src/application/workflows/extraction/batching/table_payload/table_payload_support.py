@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from src.domain.assets import TableAsset
-from src.domain.assets.table_rows.table_row_canonicalizer import (
+from src.application.workflows.parsing.tables.rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
-from src.domain.assets.table_rows.table_row_patterns import (
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     dedupe_headers,
     normalize_cell,
 )

@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
-    PerformanceCurveMatrixNormalizer,
-)
-from src.domain.assets.table_rows.spare_parts_table_normalizer import (
-    SparePartsTableNormalizer,
-)
-from src.domain.assets.table_rows.table_row_canonicalizer import (
+from src.application.workflows.parsing.tables.rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
-from src.domain.assets.table_rows.table_row_patterns import (
+from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     active_interval_labels,
     count_boolean_markers,
     count_interval_columns,
     dedupe_headers,
     looks_interval_header,
     normalize_cell,
+)
+from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
+    PerformanceCurveMatrixNormalizer,
+)
+from src.domain.assets.table_rows.spare_parts_table_normalizer import (
+    SparePartsTableNormalizer,
 )
 from src.domain.assets.table_rows.troubleshooting_table_normalizer import (
     TroubleshootingTableNormalizer,

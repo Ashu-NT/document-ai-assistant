@@ -21,7 +21,7 @@ from src.application.workflows.parsing.tables.semantics.table_structured_list_cl
 from src.application.workflows.parsing.tables.semantics.table_text_signal_matcher import (
     TableTextSignalMatcher,
 )
-from src.domain.assets.table_rows.table_row_canonicalizer import (
+from src.application.workflows.parsing.tables.rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
 from src.domain.assets import TableAsset
