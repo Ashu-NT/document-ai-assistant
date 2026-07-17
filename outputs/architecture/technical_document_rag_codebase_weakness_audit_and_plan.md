@@ -422,9 +422,25 @@ real data at scale. None of the corpus's specific documents are referenced as ta
 plan's own document-agnostic constraint, the failure classes below (not the sample documents) are what
 should drive the fix.
 
-### 14. Chunk-size enforcement fails on real documents - highest-priority item in this document
+### 14. RESOLVED - Chunk-size enforcement failed on real documents
 
-Evidence:
+Root cause found and fixed: `TableFragmentSplitter.split()`'s single-group branch (the case where the
+row-grouping loop decides all rows fit under the token budget) returned the fragment with its *original,
+pre-split* `text`/`token_count` completely untouched - only `table_rows`/`table_row_start`/`table_row_end`
+were replaced. The multi-group branch already re-rendered `text`/`token_count` from the actual grouped rows;
+the single-group branch did not. So whatever bloat existed in the original fragment's text (built upstream,
+before row-based cleanup/whitespace normalization) sailed through completely unbounded, regardless of what
+the size check determined about the cleaned rows. Reproduced directly (a fragment with a 100,000-token
+stale original text but small actual rows was returned with the full 100,000-token text intact) and fixed by
+re-rendering `text`/`token_count` from the grouped rows in the single-group branch too, mirroring the
+multi-group branch's existing pattern. New regression test added
+(`test_table_fragment_splitter_rerenders_text_when_all_rows_fit_in_one_group`) - the prior test suite only
+ever exercised the multi-group path, which is why this went unnoticed. Full unit suite verified green aside
+from 2 pre-existing, unrelated failures (confirmed via `git stash` that both fail identically without this
+fix applied: an OCR-fallback wiring test and a `TableAsset.to_structured_row_text` missing-attribute error in
+`scripts/export_document_table_assets.py`, both from unrelated in-progress work elsewhere in the repo).
+
+Evidence (original finding, kept for reference):
 
 - 25 chunks in the real corpus exceed 2,000 estimated tokens; the worst is 11,766 tokens in one chunk
   (`PURO 30-OWNERS MANUAL-HM13378-ROS213.pdf`), against a configured 200-1,000 token profile limit

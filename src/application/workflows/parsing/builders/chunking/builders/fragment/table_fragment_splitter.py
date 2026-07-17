@@ -56,9 +56,12 @@ class TableFragmentSplitter:
 
         if len(groups) == 1:
             start, end, rows = groups[0]
+            text = self._render_fragment_text(fragment=fragment, rows=[header, *rows])
             return [
                 dataclass_replace(
                     fragment,
+                    text=text,
+                    token_count=self.text_splitter.count_tokens(text),
                     table_rows=[header, *rows],
                     table_row_start=start,
                     table_row_end=end,
