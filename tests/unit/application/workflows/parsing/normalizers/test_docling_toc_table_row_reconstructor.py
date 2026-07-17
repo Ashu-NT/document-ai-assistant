@@ -178,6 +178,38 @@ def test_reconstruct_returns_original_rows_when_no_toc_pattern_matches() -> None
     assert reconstructor.reconstruct(rows) == rows
 
 
+def test_reconstruct_does_not_mangle_a_wide_technical_spec_table_as_a_toc() -> None:
+    # Regression guard for a real bug: a genuine multi-column spec table can
+    # have short numeric columns (here "c/o"/"c/h", up to 4 digits each) that
+    # coincidentally satisfy the page-number shape. Row-level TOC parsing
+    # used to only require >= 2 non-empty cells plus a trailing page-shaped
+    # cell, so every row here matched and the whole 5-column table silently
+    # collapsed into a bogus [Number, Title, Page] reconstruction, merging
+    # "door type"/"drive type"/"opening" into one garbled title string.
+    reconstructor = DoclingTocTableRowReconstructor()
+
+    rows = [
+        ["Basic parameter block", "", "", "", ""],
+        [
+            "door type  [single/double]",
+            "drive type  [E3000mini/L-400]",
+            "c/o  [mm]",
+            "c/h  [mm]",
+            "opening  [left/right]",
+        ],
+        ["single", "E3000mini", "1000", "2460", "right"],
+        ["single", "L-400", "3100", "2520", "right"],
+        ["single", "E3000mini", "1500", "2540", "right"],
+        ["single", "L-400", "3100", "2620", "right"],
+        ["single", "E3000mini", "1500", "2620", "right"],
+        ["single", "E3000mini", "1450", "2510", "right"],
+        ["single", "E3000mini", "1450", "2530", "left"],
+        ["single", "E3000mini", "950", "2620", "right"],
+    ]
+
+    assert reconstructor.reconstruct(rows) == rows
+
+
 def test_reconstruct_handles_roman_numeral_front_matter_pages() -> None:
     # A book's front matter commonly uses roman-numeral pages ("i, ii,
     # iii...") while the main body switches to Arabic digits -- these rows

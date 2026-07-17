@@ -148,9 +148,21 @@ class DoclingTocTableRowReconstructor:
                 parsed.append(entry)
         return parsed
 
+    # A genuine TOC entry only ever needs three semantic parts at most --
+    # numbering, title, page -- however ragged its raw cell layout gets.
+    # A row with more populated cells than that is a generic multi-column
+    # data table (e.g. a technical spec table like
+    # "door type | drive type | c/o | c/h | opening"), not a TOC: real-world
+    # confirmation is a 5-column spec table whose two short numeric columns
+    # (up to 4 digits each) coincidentally satisfied the page-number shape,
+    # silently mangling the whole table into a bogus [Number, Title, Page]
+    # reconstruction. Capping here is safe -- no legitimate TOC shape in
+    # this reconstructor's own test suite needs more than 3 non-empty cells.
+    _MAX_ROW_CELLS = 3
+
     def _parse_row(self, row: list[str]) -> _ParsedTocEntry | None:
         cells = [self._clean_cell(cell) for cell in row if self._clean_cell(cell)]
-        if len(cells) < 2:
+        if len(cells) < 2 or len(cells) > self._MAX_ROW_CELLS:
             return None
 
         page_index, page_number = self._extract_row_page(cells)

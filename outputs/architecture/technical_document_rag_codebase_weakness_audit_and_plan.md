@@ -650,6 +650,74 @@ pipeline bugs that affect any document sharing the same shape (any 2-column layo
   `resolved_table_shape()`, both referenced by `scripts/export_document_table_assets.py` but never
   implemented - the script crashed on any real document with a table asset. Both added.
 
+### 20. RESOLVED - TOC reconstructor false-positived on generic multi-column data tables, silently merging columns
+
+Found via a follow-up deep-dive on a second real 2-column KSB variant
+(`KSB_FSD_A3000_E3000-L-400_DOCUMENTATION_rev4_MY COSMOS.pdf`, `doc_934f8d43927b474189e30f040e954648`),
+reported as "three tables placed horizontally on page 8, only the middle one is found" - **a real,
+generic, corpus-wide bug, not specific to this document.** Root-cause was isolated by re-parsing and
+comparing Docling's own raw `table_cells` (row/col offsets) directly against what reached the stored table
+asset:
+
+- Docling itself correctly detected the page's "Basic parameter block" as a clean 5-column, 10-row table
+  (`door type | drive type | c/o | c/h | opening`) - confirmed by dumping the raw `table_cells` offsets
+  directly, so this was never a Docling-side detection failure.
+- `DoclingTocTableRowReconstructor._parse_row()` - the row-level TOC parser inside
+  `DoclingTableRowRepairer.repair_rows()`, which runs unconditionally on every table that falls through to
+  the raw-row fallback path, not just tables already suspected to be a TOC - only required >= 2 non-empty
+  cells plus a trailing cell shaped like a page number (1-4 digits, or a roman numeral after this session's
+  earlier fix). This table's two short numeric columns (`c/o`, `c/h`, both <= 4 digits) coincidentally
+  satisfied that shape on every single data row, so every row parsed as a false-positive TOC entry: the
+  numeric column became a bogus "Number", the OTHER numeric column became a bogus "Page", and `door
+  type`/`drive type`/`opening` got silently concatenated into one garbled "Title" string - collapsing a
+  clean 5-column spec table down to 3 mangled columns, with the header even relabeled `Number, Title, Page`.
+  Reproduced and confirmed in isolation (feeding the exact real 10-row grid straight into
+  `DoclingTocTableRowReconstructor().reconstruct()`, no clustering/layout code involved at all).
+- Fixed with a narrowly-scoped cap: `_parse_row` now rejects any row with more than 3 non-empty cells,
+  since a genuine TOC entry never needs more than three semantic parts (numbering, title, page), however
+  ragged its raw cell layout gets - confirmed no existing passing test in this reconstructor's suite needs
+  more than 3. Verified against the real 5-column table (now passes through completely untouched) and via
+  the full production `DoclingTableRowGridBuilder.build_reconstruction()` path. New regression test added.
+  Full unit suite green (3069 passed), same one known pre-existing unrelated failure.
+- **Why this matters beyond this one document**: any generic technical spec/data table with a column of
+  short numeric values (measurements, quantities, part counts - extremely common) was at risk of being
+  silently mangled this way, corpus-wide, with no error or warning of any kind. This was a pure false
+  positive with no upstream data-loss cause, unlike the two related findings below.
+
+Two further issues surfaced during the same investigation on this document, **not fixed** because the data
+loss happens upstream of anything this codebase's normalizer receives:
+
+- **A 2-column TOC page can have its LEFT column mis-modeled by Docling's own table-structure model**: on
+  this document's page 2, Docling represents the entire left-column front-matter+section-0/1 list as a
+  single defective table whose early rows are marked as genuine col-spanning cells (its own `table_cells`
+  data, not a re-derivation of ours) - and, for exactly the two rows spanning the transition into normal
+  numbered content (`"0 Project data"`, `"1 Product specification"`), the raw cell text Docling hands back
+  has **no page-number text at all**, confirmed directly from the raw `table_cells` dump. The information is
+  already gone by the time it reaches this codebase; nothing downstream can recover it.
+- **A second, physically separate column of TOC-shaped content on the same page is never detected as a
+  table by Docling at all** (no matching raw `table_cells` object exists for that page region) - it comes
+  through purely as scattered single-line text elements. This content is NOT silently dropped end-to-end -
+  confirmed present in `chunks` - but it lands as three garbled, dot-leader-heavy text chunks, misclassified
+  as `chunk_type='safety_warning'`/`'certification_info'` (a keyword-based classifier picking up incidental
+  words in the noise) instead of anything TOC-related, effectively useless for retrieval.
+- The same "not detected as a table by Docling at all" gap also affects two of page 8's other blocks
+  (`Door identification block`: pos/door-number/location; the `Option`/`System weight` column pair) - no
+  raw Docling table object exists for either region (confirmed directly). Their content also survives in
+  `chunks`, but as unstructured text with **row order reversed** (door 8 down to door 1) and **no
+  positional correlation preserved** between a row's pos/door-number/weight/hose-port values - the
+  record-per-door relationship that the visual table encodes is destroyed once flattened to loose text,
+  even though every individual token still exists somewhere in the store.
+- Checked `docling_settings` for a cheap fix first: `table_structure_mode` is already `"accurate"` (the
+  highest-quality TableFormer mode) with cell matching enabled - this isn't a structure-refinement
+  problem, it's the earlier layout/object-detection stage failing to flag these regions as tables at all,
+  which TableFormer never gets a chance to refine. No configuration lever fixes this.
+- **Not attempted**: recovering these two classes would mean building a NEW capability - either a
+  from-scratch fallback table-detector over plain text elements (grouping regularly-spaced short text/number
+  runs by geometry into a synthesized grid when Docling's own detector abstains), or improving
+  classification/chunking specifically for dot-leader-dense orphaned text - not a bug fix to existing
+  reconstruction code. Both are real, size-able engineering efforts in their own right, not attempted this
+  pass.
+
 ## Resolved This Session (Not Yet Reflected Elsewhere In This Document)
 
 The following were found and fixed in a parallel review session, working from the same principle this plan
