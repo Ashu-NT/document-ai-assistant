@@ -27,6 +27,16 @@ class PageLayoutCandidate:
             return None
         return abs(self.bbox.x2 - self.bbox.x1)
 
+    def height(self) -> float | None:
+        if self.bbox is None:
+            return None
+        return abs(self.bbox.y2 - self.bbox.y1)
+
+    def bottom_y(self) -> float | None:
+        if self.bbox is None:
+            return None
+        return max(self.bbox.y1, self.bbox.y2)
+
     def spans_split(self, split_x: float) -> bool:
         if self.bbox is None:
             return False

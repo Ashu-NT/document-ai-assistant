@@ -6,6 +6,9 @@ from src.application.workflows.parsing.layout.layout_lane_detector import (
 from src.application.workflows.parsing.layout.layout_reading_order_resolver import (
     LayoutReadingOrderResolver,
 )
+from src.application.workflows.parsing.layout.layout_region_segmenter import (
+    LayoutRegionSegmenter,
+)
 from src.application.workflows.parsing.layout.models.layout_region_role import (
     LayoutRegionRole,
 )
@@ -25,10 +28,12 @@ class LayoutRegionBuilder:
         self,
         *,
         reading_order_resolver: LayoutReadingOrderResolver | None = None,
+        region_segmenter: LayoutRegionSegmenter | None = None,
     ) -> None:
         self.reading_order_resolver = (
             reading_order_resolver or LayoutReadingOrderResolver()
         )
+        self.region_segmenter = region_segmenter or LayoutRegionSegmenter()
 
     def build(
         self,
@@ -40,7 +45,7 @@ class LayoutRegionBuilder:
         candidates: list[PageLayoutCandidate],
     ) -> tuple[PageLayoutRegion, ...]:
         grouped: dict[str, list[PageLayoutCandidate]] = defaultdict(list)
-        region_meta: dict[str, tuple[int | None, str]] = {}
+        lane_meta: dict[str, int | None] = {}
 
         for candidate in candidates:
             lane_index = self._resolve_lane_index(
@@ -50,36 +55,39 @@ class LayoutRegionBuilder:
             )
             region_key = "full" if lane_index is None else f"lane:{lane_index}"
             grouped[region_key].append(candidate)
-            region_meta[region_key] = (
-                lane_index,
-                self._resolve_role(
-                    candidate=candidate,
-                    lane_index=lane_index,
-                    lane_count=detection.lane_count,
-                    is_front_matter=is_front_matter,
-                ),
-            )
+            lane_meta[region_key] = lane_index
 
         regions: list[PageLayoutRegion] = []
         for region_key, items in sorted(grouped.items(), key=self._sort_region_group):
-            lane_index, role_value = region_meta[region_key]
             ordered_items = self.reading_order_resolver.sort_candidates(items)
-            reading_order = self.reading_order_resolver.build_reading_order(items)
-            regions.append(
-                PageLayoutRegion(
-                    region_id=self._build_region_id(
-                        page_number=page_number,
-                        lane_index=lane_index,
-                    ),
-                    page_number=page_number,
-                    role=LayoutRegionRole(role_value),
+            segments = self.region_segmenter.segment(ordered_items)
+            lane_index = lane_meta[region_key]
+            for segment_index, segment in enumerate(segments):
+                role_value = self._resolve_role(
+                    candidate=segment[0],
                     lane_index=lane_index,
                     lane_count=detection.lane_count,
-                    bbox=self._merge_bbox(ordered_items),
-                    element_refs=tuple(item.element_ref for item in ordered_items),
-                    reading_order_by_element_ref=reading_order,
+                    is_front_matter=is_front_matter,
                 )
-            )
+                region_items = list(segment)
+                reading_order = self.reading_order_resolver.build_reading_order(region_items)
+                regions.append(
+                    PageLayoutRegion(
+                        region_id=self._build_region_id(
+                            page_number=page_number,
+                            lane_index=lane_index,
+                            segment_index=segment_index,
+                            segment_total=len(segments),
+                        ),
+                        page_number=page_number,
+                        role=LayoutRegionRole(role_value),
+                        lane_index=lane_index,
+                        lane_count=detection.lane_count,
+                        bbox=self._merge_bbox(region_items),
+                        element_refs=tuple(item.element_ref for item in region_items),
+                        reading_order_by_element_ref=reading_order,
+                    )
+                )
         return tuple(regions)
 
     def _resolve_lane_index(
@@ -125,10 +133,21 @@ class LayoutRegionBuilder:
         return LayoutRegionRole.BODY_FLOW.value
 
     @staticmethod
-    def _build_region_id(*, page_number: int, lane_index: int | None) -> str:
-        if lane_index is None:
-            return f"page_{page_number}:full"
-        return f"page_{page_number}:lane_{lane_index + 1}"
+    def _build_region_id(
+        *,
+        page_number: int,
+        lane_index: int | None,
+        segment_index: int,
+        segment_total: int,
+    ) -> str:
+        base = (
+            f"page_{page_number}:full"
+            if lane_index is None
+            else f"page_{page_number}:lane_{lane_index + 1}"
+        )
+        if segment_total <= 1:
+            return base
+        return f"{base}:region_{segment_index + 1}"
 
     @staticmethod
     def _sort_region_group(item: tuple[str, list[PageLayoutCandidate]]) -> tuple[float, int]:

@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.tables.logical_table_family_assignment import (
     LogicalTableFamilyAssignment,
 )
+from src.application.workflows.parsing.tables.families.same_page_table_region_compatibility_checker import (
+    SamePageTableRegionCompatibilityChecker,
+)
 from src.application.workflows.parsing.tables.table_header_compatibility_matcher import (
     TableHeaderCompatibilityMatcher,
 )
@@ -18,6 +21,9 @@ class LogicalTableFamilyResolver:
         *,
         header_signature_builder: TableHeaderSignatureBuilder | None = None,
         header_compatibility_matcher: TableHeaderCompatibilityMatcher | None = None,
+        region_compatibility_checker: (
+            SamePageTableRegionCompatibilityChecker | None
+        ) = None,
         max_continuation_page_gap: int = 1,
     ) -> None:
         self.header_signature_builder = (
@@ -28,6 +34,9 @@ class LogicalTableFamilyResolver:
             or TableHeaderCompatibilityMatcher(
                 header_signature_builder=self.header_signature_builder
             )
+        )
+        self.region_compatibility_checker = (
+            region_compatibility_checker or SamePageTableRegionCompatibilityChecker()
         )
         self.max_continuation_page_gap = max_continuation_page_gap
 
@@ -169,18 +178,8 @@ class LogicalTableFamilyResolver:
 
         previous_region_id = previous_table.layout_region_id
         current_region_id = current_table.layout_region_id
-        if (
-            previous_region_id
-            and current_region_id
-            and previous_region_id != current_region_id
-        ):
-            return False
-
         previous_lane_count = previous_table.layout_lane_count
         current_lane_count = current_table.layout_lane_count
-        if max(previous_lane_count or 0, current_lane_count or 0) <= 1:
-            return True
-
         previous_lane_index = previous_table.layout_lane_index
         current_lane_index = current_table.layout_lane_index
         if (
@@ -189,7 +188,23 @@ class LogicalTableFamilyResolver:
             and previous_lane_index != current_lane_index
         ):
             return False
-        return True
+        if previous_region_id and current_region_id:
+            if previous_region_id == current_region_id:
+                return True
+            return self.region_compatibility_checker.are_compatible(
+                previous=previous,
+                current=current,
+                previous_table=previous_table,
+                current_table=current_table,
+            )
+        if max(previous_lane_count or 0, current_lane_count or 0) <= 1:
+            return True
+        return self.region_compatibility_checker.are_compatible(
+            previous=previous,
+            current=current,
+            previous_table=previous_table,
+            current_table=current_table,
+        )
 
     @staticmethod
     def _column_counts_are_compatible(previous_table, current_table) -> bool:
