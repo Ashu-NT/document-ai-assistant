@@ -204,14 +204,14 @@ def test_generate_merges_duplicate_maintenance_entries_before_prompt_building() 
 def test_default_answer_generation_model_logs_warning_on_settings_failure(
     monkeypatch, caplog
 ) -> None:
-    from src.application.services.answer_generation.answer_generation_service import (
-        _default_answer_generation_model,
+    from src.application.services.answer_generation.answer_generation_service_settings import (
+        default_answer_generation_model,
     )
 
     monkeypatch.setattr("src.config.settings.llm_settings", object())
 
     with caplog.at_level(logging.WARNING):
-        result = _default_answer_generation_model()
+        result = default_answer_generation_model()
 
     assert result is None
     assert any(
@@ -223,14 +223,14 @@ def test_default_answer_generation_model_logs_warning_on_settings_failure(
 def test_default_answer_generation_temperature_logs_warning_on_settings_failure(
     monkeypatch, caplog
 ) -> None:
-    from src.application.services.answer_generation.answer_generation_service import (
-        _default_answer_generation_temperature,
+    from src.application.services.answer_generation.answer_generation_service_settings import (
+        default_answer_generation_temperature,
     )
 
     monkeypatch.setattr("src.config.settings.llm_settings", object())
 
     with caplog.at_level(logging.WARNING):
-        result = _default_answer_generation_temperature()
+        result = default_answer_generation_temperature()
 
     assert result == 0.2
     assert any(

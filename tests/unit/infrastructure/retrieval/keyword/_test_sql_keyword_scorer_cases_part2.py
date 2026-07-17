@@ -235,9 +235,9 @@ def test_morphological_section_path_hit_variants(
     should_match: bool,
 ) -> None:
     """Morphological variant matching is applied specifically to section-path lookup."""
-    from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
-        _section_path_hit,
-        _MORPH_VARIANTS,
+    from src.infrastructure.retrieval.keyword.scoring.sql_keyword_morphology import (
+        MORPH_VARIANTS,
+        section_path_hit,
     )
     from src.infrastructure.retrieval.keyword.sql_keyword_query_terms import (
         normalize_query_text,
@@ -245,8 +245,8 @@ def test_morphological_section_path_hit_variants(
 
     normalized = normalize_query_text(section_path_variant)
     padded = f" {normalized} "
-    result = _section_path_hit(query_term, padded)
+    result = section_path_hit(query_term, padded)
     assert result == should_match, (
-        f"_section_path_hit('{query_term}', '...{section_path_variant}...') "
+        f"section_path_hit('{query_term}', '...{section_path_variant}...') "
         f"expected {should_match}, got {result}"
     )

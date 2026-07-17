@@ -162,7 +162,7 @@ def test_ancestor_tiebreaker_quantity_section_path() -> None:
 def test_expand_query_terms_includes_morph_variants() -> None:
     """expand_query_terms_with_morph_variants must return original terms plus
     all morphological variants not already present."""
-    from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
+    from src.infrastructure.retrieval.keyword.scoring.sql_keyword_morphology import (
         expand_query_terms_with_morph_variants,
     )
 
@@ -174,7 +174,7 @@ def test_expand_query_terms_includes_morph_variants() -> None:
 
 def test_expand_query_terms_no_duplicates() -> None:
     """When a variant is also an original term, it must not appear twice."""
-    from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
+    from src.infrastructure.retrieval.keyword.scoring.sql_keyword_morphology import (
         expand_query_terms_with_morph_variants,
     )
 
@@ -187,7 +187,7 @@ def test_expand_query_terms_no_duplicates() -> None:
 
 def test_expand_query_terms_unknown_term_returned_unchanged() -> None:
     """Terms with no morph family are returned unchanged."""
-    from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
+    from src.infrastructure.retrieval.keyword.scoring.sql_keyword_morphology import (
         expand_query_terms_with_morph_variants,
     )
 
@@ -197,7 +197,7 @@ def test_expand_query_terms_unknown_term_returned_unchanged() -> None:
 def test_expand_query_terms_covers_optimize_family() -> None:
     """Query term 'optimize' expands to include British spelling 'optimising',
     fixing M-013 where the section title uses British spelling."""
-    from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
+    from src.infrastructure.retrieval.keyword.scoring.sql_keyword_morphology import (
         expand_query_terms_with_morph_variants,
     )
 
@@ -209,7 +209,7 @@ def test_expand_query_terms_covers_optimize_family() -> None:
 
 def test_expand_query_terms_preserves_original_term_order() -> None:
     """Original terms appear first in the returned list, followed by new variants."""
-    from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
+    from src.infrastructure.retrieval.keyword.scoring.sql_keyword_morphology import (
         expand_query_terms_with_morph_variants,
     )
 

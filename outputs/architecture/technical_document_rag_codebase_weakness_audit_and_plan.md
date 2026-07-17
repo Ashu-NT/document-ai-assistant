@@ -95,12 +95,12 @@ These are meaningful enterprise foundations. The remaining work is mostly about 
 Largest current hotspots in `src/`:
 
 - `src/application/workflows/ingestion/ingestion_workflow.py` - 895 LOC
-- `src/application/services/answer_generation/answer_generation_service.py` - 546 LOC
 - `src/application/evaluation/retrieval/benchmarking/corpus/resolution/retrieval_benchmark_corpus_document_resolver.py` - 505 LOC
-- `src/infrastructure/retrieval/keyword/sql_keyword_scorer.py` - 488 LOC
 - `src/application/workflows/extraction/extraction_workflow.py` - 418 LOC
 - `src/application/workflows/question_answering/answer_pipeline/answer_generation_pipeline.py` - 344 LOC
 - `src/application/workflows/parsing/builders/document_graph_builder.py` - 343 LOC
+- `src/application/services/answer_generation/answer_generation_service.py` - 230 LOC after Phase 0 refactor
+- `src/infrastructure/retrieval/keyword/sql_keyword_scorer.py` - 178 LOC after Phase 0 refactor
 
 Why this matters:
 
@@ -485,6 +485,8 @@ Status:
   - `IngestionWorkflow` now delegates finalization work to a dedicated finalization stage runner
   - `IngestionWorkflow` now delegates extraction/identifier/linking work to a dedicated extraction stage runner
   - `IngestionWorkflow` now delegates embedding/indexing work to a dedicated vector indexing stage runner
+  - `AnswerGenerationService` now delegates settings resolution, prompt execution/retry, result assembly, and compound-question limitation handling to dedicated collaborators
+  - `SqlKeywordScorer` now delegates morphology helpers, scoring config, penalties, and score-component assembly to grouped scoring modules
 
 Actions:
 
@@ -524,15 +526,42 @@ Implemented in this slice:
   - delegates parsing, registration, classification, finalization, extraction, and vector-indexing clusters to stage-owned collaborators
 - `src/application/workflows/ingestion/pipeline/extraction_retry_step.py`
   - uses the same resolved runtime capabilities during extraction retry
+- `src/application/services/answer_generation/`
+  - `answer_generation_service.py`
+    - reduced to orchestration-only ownership around request resolution, deterministic dispatch, and prompt execution handoff
+  - `answer_generation_service_settings.py`
+    - owns answer-generation settings defaults and fallback logging
+  - `execution/answer_generation_prompt_executor.py`
+    - owns schema-aware LLM execution and one corrective retry
+  - `execution/answer_generation_result_assembler.py`
+    - owns `GeneratedAnswer` construction, citations, sections, and reference-note assembly
+  - `intent/compound_question_limitation_resolver.py`
+    - owns deterministic compound-question limitation detection
 - `src/shared/formatting/ingestion_result_formatter.py`
   - exposes runtime-profile diagnostics in human and JSON output
+- `src/infrastructure/retrieval/keyword/scoring/`
+  - `sql_keyword_scoring_config.py`
+    - owns scorer config loading and marker tables
+  - `sql_keyword_morphology.py`
+    - owns morphology expansion and section-path variant matching
+  - `sql_keyword_text_helpers.py`
+    - owns section-path parsing and ordered-query helper logic
+  - `sql_keyword_penalties.py`
+    - owns chunk-role and noise penalty rules
+  - `sql_keyword_score_components.py`
+    - owns identifier/section match state and scorer metadata assembly
+- `src/infrastructure/retrieval/keyword/sql_keyword_scorer.py`
+  - reduced to score orchestration and total-score assembly
+- `src/infrastructure/db/repositories/retrieval/sql_keyword_repository.py`
+  - now imports morphology expansion from the dedicated scoring module
+- `tests/unit/infrastructure/retrieval/keyword/`
+  - updated to import moved morphology helpers directly instead of through the scorer file
 
 Still open inside Phase 0:
 
-- split `AnswerGenerationService` into stage-owned collaborators
-- begin decomposing `SqlKeywordScorer` into explicit feature calculators
 - continue shrinking `IngestionWorkflow` itself
   - ownership is improved, but the coordinator is still a large hotspot and should be reduced further in a later slice
+- continue removing broad fallback behavior from low-level parser/runtime defaults where silent drift still exists
 
 ### Phase 1 - Strengthen Parsing And Table Contracts
 

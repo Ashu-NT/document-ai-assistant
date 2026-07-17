@@ -5,12 +5,14 @@ from sqlalchemy.orm import Session
 from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 from src.infrastructure.db.mappers import RetrievedChunkMapper
 from src.infrastructure.db.orm_models import ChunkORM, DocumentORM, IdentifierORM
+from src.infrastructure.retrieval.keyword.scoring.sql_keyword_morphology import (
+    expand_query_terms_with_morph_variants,
+)
 from src.infrastructure.retrieval.keyword.sql_keyword_query_terms import (
     extract_query_terms,
 )
 from src.infrastructure.retrieval.keyword.sql_keyword_scorer import (
     SqlKeywordScorer,
-    expand_query_terms_with_morph_variants,
 )
 from src.shared.exceptions import DatabaseError
 
