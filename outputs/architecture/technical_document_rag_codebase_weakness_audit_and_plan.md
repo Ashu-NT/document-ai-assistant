@@ -82,6 +82,32 @@ Implemented since the earlier audit draft:
   - parser-owned table-shape inference now lives in `src/application/workflows/parsing/tables/structure/table_shape_resolver.py`
   - parser-owned structured-row rendering now lives in `src/application/workflows/parsing/tables/rendering/table_asset_structured_text_renderer.py`
   - `src/domain/assets/table_asset.py` is back to stable asset/data behavior only
+- header/span reconstruction was hardened so row-specific child headers win over inherited umbrella spans:
+  - `src/application/workflows/parsing/tables/structure/table_header_path_builder.py`
+- logical-family row-group continuation merging now uses the same normalized header-compatibility logic as full table-family merging:
+  - `src/application/workflows/parsing/tables/families/logical_table_family_row_merger.py`
+- wrap-aware generic row repair now accepts broader multiline continuation rows when Docling provides real wrap evidence:
+  - `src/application/workflows/parsing/tables/normalization/generic_wrapped_row_table_normalizer.py`
+- row-continuation repair now has one shared continuation-index resolver that combines:
+  - the existing sparse text-pattern continuation checks
+  - new span-aware vertical continuation proof from Docling cell geometry
+  - `src/application/workflows/parsing/tables/rows/row_continuation_index_resolver.py`
+  - `src/application/workflows/parsing/tables/rows/span_aware_row_continuation_resolver.py`
+- Docling raw-row repair and semantic wrapped-row repair now both consume the same continuation-index logic:
+  - `src/application/workflows/parsing/normalizers/docling_sparse_continuation_row_merger.py`
+  - `src/application/workflows/parsing/normalizers/docling_table_row_repairer.py`
+  - `src/application/workflows/parsing/tables/normalization/generic_wrapped_row_table_normalizer.py`
+- continued/repeated table headers now normalize both generic continuation markers and trailing page-sequence suffixes:
+  - `src/application/workflows/parsing/tables/structure/table_header_text_normalizer.py`
+- regression coverage now exists for:
+  - inherited umbrella-span versus child-header precedence
+  - plain row-group continuation pages with minor umbrella-title variation
+  - wrap-aware wide-row continuation merging under real Docling span evidence
+  - span-aware continuation merges when text-only continuation signals are weak
+  - trailing header page-sequence normalization for continued tables
+  - `tests/unit/application/workflows/parsing/tables/test_table_header_signature_builder.py`
+  - `tests/unit/application/workflows/parsing/tables/test_logical_table_family_asset_composer.py`
+  - `tests/unit/application/workflows/parsing/tables/test_table_row_semantic_normalizer.py`
 
 Already present in the codebase before this update, but underrepresented in the original audit:
 
@@ -98,10 +124,10 @@ Already present in the codebase before this update, but underrepresented in the 
 Current active next phase:
 
 - continue Phase 1 and Phase 2 as hardening/expansion of existing layout and table-reconstruction foundations, not as greenfield additions
-- strengthen the next enterprise table-reconstruction gaps:
-  - deeper header/span reconstruction
-  - richer wrapped-row / multiline-cell repair
-  - stronger continued-table reconciliation across layouts/pages
+- deeper header/span reconstruction is now materially improved; the next enterprise table-reconstruction gaps are:
+  - broader logical-table reconciliation across same-page region splits and cross-page member stitching
+  - richer multiline-cell reconstruction when wrap evidence is noisy, incomplete, or not vertically aligned to a single column
+  - more formal page-layout ownership for multi-lane tables before logical-family assembly
 - keep reducing remaining large orchestration hotspots after parsing/table boundaries are stable
 
 ## What Is Already Strong
@@ -678,6 +704,9 @@ Status:
 - low-level row primitives were moved to the parsing layer
 - higher-level normalizers/renderers were moved to parsing-side normalization/rendering packages
 - domain `TableAsset` helper behavior was trimmed so parsing owns shape/rendering concerns again
+- header/span path reconstruction is now more faithful when umbrella spans overlap child header rows
+- plain row-group continuation merging now uses normalized compatibility rules instead of raw repeated-row comparison
+- generic wrapped-row repair now handles broader wrapped continuation rows when Docling exposes true wrap evidence
 
 Goals:
 

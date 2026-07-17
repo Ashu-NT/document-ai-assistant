@@ -18,6 +18,7 @@ from src.application.workflows.parsing.normalizers.docling_template_duplicate_co
 from src.application.workflows.parsing.normalizers.docling_toc_table_row_reconstructor import (
     DoclingTocTableRowReconstructor,
 )
+from src.domain.assets import TableCellSpan
 
 
 class DoclingTableRowRepairer:
@@ -52,10 +53,18 @@ class DoclingTableRowRepairer:
         )
         self.toc_reconstructor = toc_reconstructor or DoclingTocTableRowReconstructor()
 
-    def repair_rows(self, rows: list[list[str]]) -> list[list[str]]:
+    def repair_rows(
+        self,
+        rows: list[list[str]],
+        *,
+        cell_spans: list[TableCellSpan] | None = None,
+    ) -> list[list[str]]:
         reconstructed = self.toc_reconstructor.reconstruct(rows)
         reconstructed = self.single_column_reconstructor.reconstruct(reconstructed)
         reconstructed = self.repeated_cell_row_collapser.collapse(reconstructed)
         reconstructed = self.template_duplicate_column_collapser.collapse(reconstructed)
-        reconstructed = self.sparse_continuation_row_merger.merge(reconstructed)
+        reconstructed = self.sparse_continuation_row_merger.merge(
+            reconstructed,
+            cell_spans=cell_spans,
+        )
         return self.interval_repairer.repair(reconstructed)

@@ -119,6 +119,43 @@ def test_builder_prefers_child_header_cells_over_inherited_umbrella_spans() -> N
     assert signature == "technical data > parameter|technical data > value"
 
 
+def test_builder_strips_generic_continued_marker_from_header_cells() -> None:
+    builder = TableHeaderSignatureBuilder()
+    table = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="table",
+        rows=[
+            ["Task (continued)", "Interval"],
+            ["Replace filter", "Weekly"],
+        ],
+        column_count=2,
+    )
+
+    signature = builder.build(table)
+
+    assert signature == "task|interval"
+
+
+def test_builder_strips_trailing_page_sequence_marker_from_header_cells() -> None:
+    builder = TableHeaderSignatureBuilder()
+    table = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="table",
+        rows=[
+            ["Maintenance Schedule (1 of 2)", "Maintenance Schedule (1 of 2)"],
+            ["Task", "Notes"],
+            ["Check oil", "See annex"],
+        ],
+        column_count=2,
+    )
+
+    signature = builder.build(table)
+
+    assert signature == "maintenance schedule > task|maintenance schedule > notes"
+
+
 def test_builder_does_not_treat_a_textual_first_data_row_as_a_second_header_row() -> None:
     """Regression test: a maintenance/troubleshooting-style table whose
     first data row is a full text description (not a short label) reads

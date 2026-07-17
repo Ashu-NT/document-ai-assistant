@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import re
-
+from src.application.workflows.parsing.tables.structure.table_header_text_normalizer import (
+    normalize_table_header_text,
+)
 from src.application.workflows.parsing.tables.table_header_signature_builder import (
     TableHeaderSignatureBuilder,
 )
 from src.domain.assets import TableAsset
-
-_SEPARATOR_PATTERN = re.compile(r"[^\w]+")
 
 
 class TableHeaderCompatibilityMatcher:
@@ -86,8 +85,8 @@ class TableHeaderCompatibilityMatcher:
 
     @staticmethod
     def _tokens_overlap_enough(previous_text: str, current_text: str) -> bool:
-        previous_tokens = set(_normalize_token_text(previous_text).split())
-        current_tokens = set(_normalize_token_text(current_text).split())
+        previous_tokens = set(normalize_table_header_text(previous_text).split())
+        current_tokens = set(normalize_table_header_text(current_text).split())
         if not previous_tokens or not current_tokens:
             return False
         overlap = len(previous_tokens & current_tokens)
@@ -101,15 +100,12 @@ class TableHeaderCompatibilityMatcher:
         header_parts = []
         for path in header_paths:
             normalized_path = [
-                _normalize_token_text(part) for part in path if _normalize_token_text(part)
+                normalize_table_header_text(part)
+                for part in path
+                if normalize_table_header_text(part)
             ]
             if normalized_path:
                 header_parts.extend(normalized_path)
         if not header_parts:
             return None
         return " ".join(header_parts)
-
-
-def _normalize_token_text(value: str | None) -> str:
-    text = _SEPARATOR_PATTERN.sub(" ", str(value or "").casefold()).strip()
-    return " ".join(text.split())

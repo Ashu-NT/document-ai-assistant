@@ -251,3 +251,35 @@ def test_normalize_merges_wide_wrapped_rows_when_docling_wrap_evidence_exists() 
             "Recheck after startup in maintenance log",
         ],
     ]
+
+
+def test_normalize_merges_span_backed_rows_when_text_only_continuation_is_weak() -> None:
+    table = TableAsset(
+        table_id="table_9",
+        document_id="doc_1",
+        markdown="notes",
+        table_category="general_table",
+        rows=[
+            ["Item", "Notes"],
+            ["1", "Sensor fault"],
+            ["1", "Replace if necessary"],
+        ],
+        cell_spans=[
+            TableCellSpan(
+                row_start=1,
+                row_end=2,
+                col_start=1,
+                col_end=1,
+                text="Sensor fault Replace if necessary",
+                raw_lines=["Sensor fault", "Replace if necessary"],
+            )
+        ],
+    )
+
+    updated = TableRowSemanticNormalizer().normalize(table)
+
+    assert updated is True
+    assert table.rows == [
+        ["Item", "Notes"],
+        ["1", "Sensor fault Replace if necessary"],
+    ]

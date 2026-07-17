@@ -94,6 +94,48 @@ def test_continuation_pages_of_a_textual_maintenance_table_are_compatible() -> N
     assert TableHeaderCompatibilityMatcher().are_compatible(table_a, table_b) is True
 
 
+def test_continuation_pages_with_generic_continued_header_marker_are_compatible() -> None:
+    table_a = TableAsset(
+        table_id="t1",
+        document_id="d1",
+        markdown="x",
+        rows=[["Task", "Interval"], ["Check oil level", "Every 6 months"]],
+    )
+    table_b = TableAsset(
+        table_id="t2",
+        document_id="d1",
+        markdown="x",
+        rows=[["Task (continued)", "Interval"], ["Replace filter", "Every 12 months"]],
+    )
+
+    assert TableHeaderCompatibilityMatcher().are_compatible(table_a, table_b) is True
+
+
+def test_continuation_pages_with_explicit_page_suffix_are_compatible() -> None:
+    table_a = TableAsset(
+        table_id="t1",
+        document_id="d1",
+        markdown="x",
+        rows=[
+            ["Maintenance Schedule page 1", "Maintenance Schedule page 1"],
+            ["Task", "Notes"],
+            ["Check oil", "See annex"],
+        ],
+    )
+    table_b = TableAsset(
+        table_id="t2",
+        document_id="d1",
+        markdown="x",
+        rows=[
+            ["Maintenance Schedule page 2", "Maintenance Schedule page 2"],
+            ["Task", "Notes"],
+            ["Replace filter", "Use OEM part"],
+        ],
+    )
+
+    assert TableHeaderCompatibilityMatcher().are_compatible(table_a, table_b) is True
+
+
 def test_same_simple_header_without_umbrella_is_still_compatible() -> None:
     table_a = TableAsset(
         table_id="t1",

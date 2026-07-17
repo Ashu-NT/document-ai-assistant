@@ -44,7 +44,10 @@ class DoclingParallelTableReconstructor:
         if len(lane_groups) < 2:
             return None
 
-        combined_rows = self.row_repairer.repair_rows(self.raw_row_builder.build_rows(spans))
+        combined_rows = self.row_repairer.repair_rows(
+            self.raw_row_builder.build_rows(spans),
+            cell_spans=spans,
+        )
         reconstructed_groups = self._reconstruct_groups(lane_groups)
         if len(reconstructed_groups) < 2:
             return None
@@ -88,7 +91,8 @@ class DoclingParallelTableReconstructor:
         for lane_spans in lane_groups:
             normalized_lane_spans = self._normalize_lane_spans(lane_spans)
             repaired_rows = self.row_repairer.repair_rows(
-                self.raw_row_builder.build_rows(normalized_lane_spans)
+                self.raw_row_builder.build_rows(normalized_lane_spans),
+                cell_spans=normalized_lane_spans,
             )
             if len(repaired_rows) < 2:
                 continue

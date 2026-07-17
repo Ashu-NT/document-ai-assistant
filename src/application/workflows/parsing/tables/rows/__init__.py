@@ -14,6 +14,12 @@ from src.application.workflows.parsing.tables.rows.row_continuation_patterns imp
     non_empty_cell_indexes,
     resolve_sparse_continuation_indexes,
 )
+from src.application.workflows.parsing.tables.rows.row_continuation_index_resolver import (
+    RowContinuationIndexResolver,
+)
+from src.application.workflows.parsing.tables.rows.span_aware_row_continuation_resolver import (
+    SpanAwareRowContinuationResolver,
+)
 from src.application.workflows.parsing.tables.rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
@@ -43,7 +49,9 @@ __all__ = [
     "NormalizedTableRows",
     "PerformanceCurveMatrixDetector",
     "PerformanceCurveMatrixSpec",
+    "RowContinuationIndexResolver",
     "SCHEDULE_INTERVAL_LABELS",
+    "SpanAwareRowContinuationResolver",
     "TableRowCanonicalizer",
     "active_interval_labels",
     "clean_rows",

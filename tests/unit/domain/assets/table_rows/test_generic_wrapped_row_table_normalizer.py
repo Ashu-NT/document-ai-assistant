@@ -82,3 +82,31 @@ def test_normalize_merges_wrapped_row_with_repeated_anchor_when_span_evidence_ex
     assert normalized is not None
     assert normalized.headers == ["Task", "Description"]
     assert normalized.rows == [["1", "Inspect the pump housing and verify the shaft seal."]]
+
+
+def test_normalize_uses_vertical_span_evidence_when_text_pattern_is_weak() -> None:
+    rows = [
+        ["Item", "Notes"],
+        ["1", "Sensor fault"],
+        ["1", "Replace if necessary"],
+    ]
+
+    normalized = GenericWrappedRowTableNormalizer().normalize(
+        rows,
+        table_category=None,
+        chunk_type=None,
+        cell_spans=[
+            TableCellSpan(
+                row_start=1,
+                row_end=2,
+                col_start=1,
+                col_end=1,
+                text="Sensor fault Replace if necessary",
+                raw_lines=["Sensor fault", "Replace if necessary"],
+            )
+        ],
+    )
+
+    assert normalized is not None
+    assert normalized.headers == ["Item", "Notes"]
+    assert normalized.rows == [["1", "Sensor fault Replace if necessary"]]

@@ -76,7 +76,7 @@ class DoclingTableRowGridBuilder:
 
         raw_rows = self.raw_row_builder.build_rows(spans)
         return TableReconstructionResult(
-            rows=self.row_repairer.repair_rows(raw_rows),
+            rows=self.row_repairer.repair_rows(raw_rows, cell_spans=spans),
             cell_spans=spans,
         )
 

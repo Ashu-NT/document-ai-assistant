@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import re
-
 from src.domain.assets import TableAsset
+from src.application.workflows.parsing.tables.structure.table_header_text_normalizer import (
+    normalize_table_header_text,
+)
 from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     looks_explicit_header_cell,
     looks_label_cell,
@@ -259,10 +260,4 @@ class TableHeaderPathBuilder:
 
     @staticmethod
     def normalize_header_cell(value: str | None) -> str:
-        text = normalize_cell(value)
-        if not text:
-            return ""
-        text = text.casefold()
-        text = re.sub(r"\s+", " ", text)
-        text = re.sub(r"[^\w\s/%.-]", "", text)
-        return text.strip()
+        return normalize_table_header_text(value)
