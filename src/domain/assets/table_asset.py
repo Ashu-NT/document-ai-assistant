@@ -2,16 +2,7 @@ from dataclasses import dataclass, field
 
 from src.domain.assets.asset_metadata import AssetMetadata
 from src.domain.assets.table_cell_span import TableCellSpan
-from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
-    PerformanceCurveMatrixNormalizer,
-)
-from src.domain.assets.table_rows.structured_row_renderer import (
-    StructuredRowRenderer,
-)
 from src.domain.common import AuditMetadata
-
-_STRUCTURED_ROW_RENDERER = StructuredRowRenderer()
-_PERFORMANCE_CURVE_NORMALIZER = PerformanceCurveMatrixNormalizer()
 
 
 @dataclass(slots=True)
@@ -67,35 +58,3 @@ class TableAsset:
         parts.append(self.markdown)
 
         return "\n".join(parts)
-
-    def to_structured_row_text(self) -> str | None:
-        if self.parallel_stream_rows:
-            stream_renderings: list[str] = []
-            for index, rows in enumerate(self.parallel_stream_rows, start=1):
-                rendered = _STRUCTURED_ROW_RENDERER.render(
-                    rows,
-                    table_category=self.table_category,
-                    table_shape=self.resolved_table_shape(),
-                )
-                if not rendered:
-                    continue
-                if len(self.parallel_stream_rows) > 1:
-                    stream_renderings.append(
-                        f"Parallel Table Stream {index}:\n{rendered}"
-                    )
-                else:
-                    stream_renderings.append(rendered)
-            if stream_renderings:
-                return "\n\n".join(stream_renderings)
-        return _STRUCTURED_ROW_RENDERER.render(
-            self.rows,
-            table_category=self.table_category,
-            table_shape=self.resolved_table_shape(),
-        )
-
-    def resolved_table_shape(self) -> str | None:
-        if self.table_shape:
-            return self.table_shape
-        if _PERFORMANCE_CURVE_NORMALIZER.normalize(self.rows) is not None:
-            return "performance_curve_matrix"
-        return None

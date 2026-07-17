@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from src.domain.assets import TableAsset
-from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
+from src.application.workflows.parsing.tables.normalization.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
+)
+from src.application.workflows.parsing.tables.structure.table_shape_resolver import (
+    TableShapeResolver,
 )
 from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     normalize_cell,
 )
+from src.domain.assets import TableAsset
 
 
 class PerformanceCurvePayloadBuilder:
@@ -14,13 +17,21 @@ class PerformanceCurvePayloadBuilder:
         self,
         *,
         performance_curve_normalizer: PerformanceCurveMatrixNormalizer | None = None,
+        table_shape_resolver: TableShapeResolver | None = None,
     ) -> None:
         self.performance_curve_normalizer = (
             performance_curve_normalizer or PerformanceCurveMatrixNormalizer()
         )
+        self.table_shape_resolver = table_shape_resolver or TableShapeResolver(
+            self.performance_curve_normalizer
+        )
 
     def build(self, table: TableAsset, *, chunk_type: str | None = None) -> str | None:
-        if table.resolved_table_shape() not in {None, "", "performance_curve_matrix"}:
+        if self.table_shape_resolver.resolve(table) not in {
+            None,
+            "",
+            "performance_curve_matrix",
+        }:
             return None
 
         normalized = self.performance_curve_normalizer.normalize(table.rows)

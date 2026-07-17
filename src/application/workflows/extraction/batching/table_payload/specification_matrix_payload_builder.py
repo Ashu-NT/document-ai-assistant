@@ -3,6 +3,9 @@ from __future__ import annotations
 from src.application.workflows.extraction.batching.table_payload.table_payload_support import (
     TablePayloadSupport,
 )
+from src.application.workflows.parsing.tables.structure.table_shape_resolver import (
+    TableShapeResolver,
+)
 from src.domain.assets import TableAsset
 from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     normalize_cell,
@@ -13,12 +16,14 @@ class SpecificationMatrixPayloadBuilder:
     def __init__(
         self,
         *,
+        table_shape_resolver: TableShapeResolver | None = None,
         support: TablePayloadSupport | None = None,
     ) -> None:
+        self.table_shape_resolver = table_shape_resolver or TableShapeResolver()
         self.support = support or TablePayloadSupport()
 
     def build(self, table: TableAsset, *, chunk_type: str | None = None) -> str | None:
-        if table.resolved_table_shape() != "specification_matrix":
+        if self.table_shape_resolver.resolve(table) != "specification_matrix":
             return None
 
         cleaned_rows = self.support.cleaned_rows(table)

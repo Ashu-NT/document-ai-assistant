@@ -1,5 +1,5 @@
 from src.domain.assets.table_cell_span import TableCellSpan
-from src.domain.assets.table_rows.generic_wrapped_row_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.generic_wrapped_row_table_normalizer import (
     GenericWrappedRowTableNormalizer,
 )
 

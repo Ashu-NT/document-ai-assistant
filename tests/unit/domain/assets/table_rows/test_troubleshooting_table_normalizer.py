@@ -1,4 +1,4 @@
-from src.domain.assets.table_rows.troubleshooting_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.troubleshooting_table_normalizer import (
     TroubleshootingTableNormalizer,
 )
 

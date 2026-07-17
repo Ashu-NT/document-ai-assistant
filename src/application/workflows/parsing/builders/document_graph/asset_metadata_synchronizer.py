@@ -1,4 +1,9 @@
+from src.application.workflows.parsing.tables.structure.table_shape_resolver import (
+    TableShapeResolver,
+)
 from src.domain.document import DocumentGraph
+
+_TABLE_SHAPE_RESOLVER = TableShapeResolver()
 
 
 class AssetMetadataSynchronizer:
@@ -15,7 +20,7 @@ class AssetMetadataSynchronizer:
             parser_extra = element.parser_metadata.extra
             if element.table_id is not None and element.table_id in graph.tables:
                 table_asset = graph.tables[element.table_id]
-                table_shape = table_asset.resolved_table_shape()
+                table_shape = _TABLE_SHAPE_RESOLVER.resolve(table_asset)
                 parser_extra["markdown"] = table_asset.markdown
                 parser_extra["table_rows"] = [list(row) for row in table_asset.rows]
                 if table_asset.parallel_stream_rows:

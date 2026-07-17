@@ -11,13 +11,13 @@ from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     looks_interval_header,
     normalize_cell,
 )
-from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
+from src.application.workflows.parsing.tables.normalization.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
 )
-from src.domain.assets.table_rows.spare_parts_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.spare_parts_table_normalizer import (
     SparePartsTableNormalizer,
 )
-from src.domain.assets.table_rows.troubleshooting_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.troubleshooting_table_normalizer import (
     TroubleshootingTableNormalizer,
 )
 

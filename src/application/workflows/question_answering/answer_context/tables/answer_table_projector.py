@@ -25,13 +25,13 @@ from src.application.workflows.question_answering.answer_context.tables.projecti
 from src.application.workflows.parsing.tables.rows.table_row_canonicalizer import (
     TableRowCanonicalizer,
 )
-from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
+from src.application.workflows.parsing.tables.normalization.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
 )
-from src.domain.assets.table_rows.spare_parts_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.spare_parts_table_normalizer import (
     SparePartsTableNormalizer,
 )
-from src.domain.assets.table_rows.troubleshooting_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.troubleshooting_table_normalizer import (
     TroubleshootingTableNormalizer,
 )
 

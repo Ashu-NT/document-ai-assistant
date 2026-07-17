@@ -5,7 +5,11 @@ from src.application.workflows.parsing.tables.families import (
     LogicalTableFamilyAssetComposer,
     LogicalTableFamilyLookup,
 )
+from src.application.workflows.parsing.tables.rendering import (
+    TableAssetStructuredTextRenderer,
+)
 from src.application.workflows.parsing.tables.structure import (
+    TableShapeResolver,
     TableStructureContextRenderer,
 )
 from src.domain.assets import TableAsset
@@ -28,10 +32,16 @@ class TableEvidenceHydrator:
         self,
         *,
         table_structure_context_renderer: TableStructureContextRenderer | None = None,
+        table_shape_resolver: TableShapeResolver | None = None,
+        structured_text_renderer: TableAssetStructuredTextRenderer | None = None,
         family_asset_composer: LogicalTableFamilyAssetComposer | None = None,
     ) -> None:
         self.table_structure_context_renderer = (
             table_structure_context_renderer or TableStructureContextRenderer()
+        )
+        self.table_shape_resolver = table_shape_resolver or TableShapeResolver()
+        self.structured_text_renderer = (
+            structured_text_renderer or TableAssetStructuredTextRenderer()
         )
         self.family_asset_composer = (
             family_asset_composer or LogicalTableFamilyAssetComposer()
@@ -120,7 +130,7 @@ class TableEvidenceHydrator:
             )
             if table_category_confidence is not None:
                 metadata["table_category_confidence"] = str(table_category_confidence)
-            table_shape = composed_table.resolved_table_shape()
+            table_shape = self.table_shape_resolver.resolve(composed_table)
             if table_shape:
                 metadata["table_shape"] = table_shape
             table_structure_quality = composed_table.table_structure_quality
@@ -150,7 +160,7 @@ class TableEvidenceHydrator:
         if structure_context:
             parts.append(structure_context)
         parts.append(table.to_embedding_text())
-        structured_rows = table.to_structured_row_text()
+        structured_rows = self.structured_text_renderer.render(table)
         if structured_rows:
             parts.append(structured_rows)
         return "\n\n".join(parts)

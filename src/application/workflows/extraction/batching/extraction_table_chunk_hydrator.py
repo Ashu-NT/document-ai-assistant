@@ -6,6 +6,9 @@ from src.application.workflows.parsing.tables.families import (
     LogicalTableFamilyAssetComposer,
     LogicalTableFamilyLookup,
 )
+from src.application.workflows.parsing.tables.rendering import (
+    TableAssetStructuredTextRenderer,
+)
 from src.application.workflows.parsing.tables.structure import (
     TableStructureContextRenderer,
 )
@@ -18,6 +21,7 @@ from src.domain.document import DocumentChunk
 _STRUCTURE_CONTEXT_RENDERER = TableStructureContextRenderer()
 _TABLE_PAYLOAD_RENDERER = ExtractionTablePayloadRenderer()
 _FAMILY_ASSET_COMPOSER = LogicalTableFamilyAssetComposer()
+_STRUCTURED_TEXT_RENDERER = TableAssetStructuredTextRenderer()
 
 
 def _table_text_with_structured_rows(
@@ -33,7 +37,7 @@ def _table_text_with_structured_rows(
     if structured_payload:
         parts.append(structured_payload)
     parts.append(table.to_embedding_text())
-    structured_rows = table.to_structured_row_text()
+    structured_rows = _STRUCTURED_TEXT_RENDERER.render(table)
     if structured_rows and not structured_payload:
         parts.append(structured_rows)
     return "\n\n".join(parts)

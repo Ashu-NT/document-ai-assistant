@@ -4,7 +4,9 @@ from src.application.workflows.extraction.batching.table_payload.table_payload_s
     TablePayloadSupport,
 )
 from src.domain.assets import TableAsset
-from src.domain.assets.table_rows import TroubleshootingTableNormalizer
+from src.application.workflows.parsing.tables.normalization.troubleshooting_table_normalizer import (
+    TroubleshootingTableNormalizer,
+)
 
 
 class TroubleshootingTablePayloadBuilder:

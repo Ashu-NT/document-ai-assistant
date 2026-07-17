@@ -75,6 +75,13 @@ Implemented since the earlier audit draft:
   - the temporary compatibility facades were removed and direct imports were updated
 - the generic key-value row projection helper was also moved into the parsing normalization layer:
   - `src/application/workflows/parsing/tables/normalization/key_value_row_projection.py`
+- the remaining higher-level table normalizers/renderers were also moved out of the domain package:
+  - `src/application/workflows/parsing/tables/normalization/*.py`
+  - `src/application/workflows/parsing/tables/rendering/structured_row_renderer.py`
+- domain-level `TableAsset` helper behavior was reduced:
+  - parser-owned table-shape inference now lives in `src/application/workflows/parsing/tables/structure/table_shape_resolver.py`
+  - parser-owned structured-row rendering now lives in `src/application/workflows/parsing/tables/rendering/table_asset_structured_text_renderer.py`
+  - `src/domain/assets/table_asset.py` is back to stable asset/data behavior only
 
 Already present in the codebase before this update, but underrepresented in the original audit:
 
@@ -90,9 +97,12 @@ Already present in the codebase before this update, but underrepresented in the 
 
 Current active next phase:
 
-- finish relocating the remaining higher-level table normalizers/renderers out of `src/domain/assets/table_rows/`
-- reduce domain-level helper behavior in `src/domain/assets/table_asset.py`
 - continue Phase 1 and Phase 2 as hardening/expansion of existing layout and table-reconstruction foundations, not as greenfield additions
+- strengthen the next enterprise table-reconstruction gaps:
+  - deeper header/span reconstruction
+  - richer wrapped-row / multiline-cell repair
+  - stronger continued-table reconciliation across layouts/pages
+- keep reducing remaining large orchestration hotspots after parsing/table boundaries are stable
 
 ## What Is Already Strong
 
@@ -233,7 +243,7 @@ Fix direction:
   - no-ocr
 - keep `ParsingWorkflow` consuming one resolved OCR policy rather than many scattered booleans
 
-### 4. Core parsing/table heuristics are still too heuristic-heavy and partly misplaced in the domain layer
+### 4. Core parsing/table heuristics are still too heuristic-heavy, even though the domain-layer boundary has improved
 
 Primary evidence:
 
@@ -248,7 +258,7 @@ The current system does real table cleanup, but much of it is still based on:
 - transposed key-value heuristics
 - specialized normalizers per table family
 
-The low-level helper layer has now started moving out of `src/domain/assets/table_rows/`, but the relocation is not complete yet. Higher-level normalizers and renderers still live there, which keeps the architectural boundary only partially corrected.
+The low-level helper layer has now moved out of `src/domain/assets/table_rows/`, and the higher-level normalizers/renderers were moved in this implementation slice as well. The remaining issue is no longer package ownership; it is that the reconstruction logic itself is still heuristic-heavy and should become more formal and layout-aware over time.
 
 Why this is risky:
 
@@ -258,9 +268,10 @@ Why this is risky:
 
 Status update:
 
-- partially implemented
+- materially improved
 - low-level primitives are now in `src/application/workflows/parsing/tables/rows/`
-- remaining higher-level normalizers/renderers still need relocation
+- higher-level normalizers/renderers are now in parsing-side normalization/rendering packages
+- remaining work is algorithmic hardening, not boundary relocation
 
 Fix direction:
 
@@ -548,14 +559,18 @@ These are specific code-quality findings that should be addressed even if retrie
 
 Files:
 
-- `src/domain/assets/table_rows/spare_parts_table_normalizer.py`
-- `src/domain/assets/table_rows/structured_row_renderer.py`
 - `src/domain/assets/table_asset.py`
 
 Fix:
 
-- continue moving parser/table repair heuristics out of domain and into parsing/application-level table reconstruction packages
-- leave only stable asset concepts in the domain layer
+- keep parser/table repair heuristics in parsing/application-level table reconstruction packages
+- keep only stable asset concepts in the domain layer
+
+Status:
+
+- materially improved
+- the old `src/domain/assets/table_rows/` behavior layer was removed from active use
+- `TableAsset` no longer owns parser-side shape/rendering helpers
 
 ### B. Duplicate dedupe helpers
 
@@ -660,7 +675,9 @@ Actions:
 Status:
 
 - in progress
-- low-level row primitives were moved to the parsing layer in this implementation slice
+- low-level row primitives were moved to the parsing layer
+- higher-level normalizers/renderers were moved to parsing-side normalization/rendering packages
+- domain `TableAsset` helper behavior was trimmed so parsing owns shape/rendering concerns again
 
 Goals:
 

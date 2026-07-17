@@ -1,60 +1,24 @@
 from __future__ import annotations
 
-import re
-
 from src.application.workflows.parsing.tables.rows.normalized_table_rows import (
     NormalizedTableRows,
+)
+from src.application.workflows.parsing.tables.normalization.spare_parts_normalization_support import (
+    FIELD_LABELS,
+    POSITION_WITH_DOT_PATTERN,
+    QUANTITY_PATTERN,
+    UNIT_PATTERN,
+    apply_tail_code,
+    header_fields,
+    header_output_fields,
+    looks_part_code,
+    looks_position_token,
 )
 from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     looks_explicit_header_cell,
     normalize_cell,
 )
 from src.domain.assets.table_cell_span import TableCellSpan
-
-_FIELD_ORDER = (
-    "position",
-    "quantity",
-    "unit",
-    "description",
-    "part_no",
-    "service_package",
-)
-_FIELD_LABELS = {
-    "position": "Position",
-    "quantity": "Quantity",
-    "unit": "Unit",
-    "description": "Description",
-    "part_no": "Part No.",
-    "service_package": "Service package",
-}
-_FIELD_MARKERS = {
-    "position": ("position", "position no", "part pos", "pos.", "pos nr", "item no"),
-    "quantity": ("qty", "quantity"),
-    "unit": ("unit",),
-    "description": (
-        "designation",
-        "denomination",
-        "description",
-        "size / dimension",
-        "material / surface",
-    ),
-    "part_no": (
-        "part no",
-        "part number",
-        "spare part no",
-        "article no",
-        "material no",
-        "order no",
-    ),
-    "service_package": ("service package", "included in service package"),
-}
-_POSITION_WITH_DOT_PATTERN = re.compile(
-    r"(?P<position>[A-Za-z]?\d{1,4}\.\d{2})\s+(?P<description>.+?)(?=(?:\s+[A-Za-z]?\d{1,4}\.\d{2}\s+)|$)"
-)
-_POSITION_TOKEN_PATTERN = re.compile(r"^[A-Za-z]?\d{1,6}(?:\.\d{2})?$")
-_QUANTITY_PATTERN = re.compile(r"^\d{1,4}$")
-_UNIT_PATTERN = re.compile(r"^[A-Za-z]{2,12}$")
-_PART_CODE_PATTERN = re.compile(r"^-?[A-Za-z0-9]+(?:[./-][A-Za-z0-9]+)*$")
 
 
 class SparePartsTableNormalizer:
@@ -83,7 +47,7 @@ class SparePartsTableNormalizer:
             if self._looks_like_title_row(normalized_cells):
                 continue
             if self._looks_like_header_row(normalized_cells):
-                for field in self._header_fields(normalized_cells):
+                for field in header_fields(normalized_cells):
                     if field not in detected_header_fields:
                         detected_header_fields.append(field)
                 continue
@@ -96,7 +60,7 @@ class SparePartsTableNormalizer:
         if candidate_row_count > 1 and len(parsed_rows) < 2:
             return None
 
-        fields = self._header_output_fields(
+        fields = header_output_fields(
             detected_header_fields=detected_header_fields,
             parsed_rows=parsed_rows,
         )
@@ -105,7 +69,7 @@ class SparePartsTableNormalizer:
             for row in parsed_rows
         ]
         return NormalizedTableRows(
-            headers=[_FIELD_LABELS[field] for field in fields],
+            headers=[FIELD_LABELS[field] for field in fields],
             rows=normalized_rows,
         )
 
@@ -147,28 +111,6 @@ class SparePartsTableNormalizer:
         joined = " ".join(cells).casefold()
         return any(looks_explicit_header_cell(cell) for cell in cells) or "spare part" in joined
 
-    def _header_fields(self, cells: list[str]) -> list[str]:
-        joined = " ".join(cells).casefold()
-        detected: list[str] = []
-        for field in _FIELD_ORDER:
-            if any(marker in joined for marker in _FIELD_MARKERS[field]):
-                detected.append(field)
-        return detected
-
-    @staticmethod
-    def _header_output_fields(
-        *,
-        detected_header_fields: list[str],
-        parsed_rows: list[dict[str, str]],
-    ) -> list[str]:
-        detected = list(detected_header_fields)
-        for field in _FIELD_ORDER:
-            if field in detected:
-                continue
-            if any(row.get(field, "").strip() for row in parsed_rows):
-                detected.append(field)
-        return detected or ["description"]
-
     def _parse_row(self, cells: list[str]) -> list[dict[str, str]]:
         explicit_row = self._parse_explicit_row(cells)
         if explicit_row is not None:
@@ -205,9 +147,9 @@ class SparePartsTableNormalizer:
         description, code = cells[0].strip(), cells[1].strip()
         if not description or not code:
             return None
-        if self._looks_position_token(description):
+        if looks_position_token(description):
             return None
-        if not self._looks_part_code(code):
+        if not looks_part_code(code):
             return None
         return {"description": description, "part_no": code}
 
@@ -224,7 +166,7 @@ class SparePartsTableNormalizer:
         description_parts: list[str] = []
 
         remainder_start = 2
-        if len(tokens) > 2 and _UNIT_PATTERN.match(tokens[2]):
+        if len(tokens) > 2 and UNIT_PATTERN.match(tokens[2]):
             row["unit"] = tokens[2]
             remainder_start = 3
         if len(tokens) > remainder_start:
@@ -236,16 +178,16 @@ class SparePartsTableNormalizer:
             if (
                 "unit" not in row
                 and len(cell.split()) == 1
-                and _UNIT_PATTERN.match(cell)
+                and UNIT_PATTERN.match(cell)
             ):
                 row["unit"] = cell
                 continue
-            if offset == 1 and not self._looks_part_code(cell):
+            if offset == 1 and not looks_part_code(cell):
                 description_parts.append(cell)
                 continue
             snapshot = dict(row)
-            self._apply_tail_code(row, cell)
-            if row == snapshot and not self._looks_part_code(cell):
+            apply_tail_code(row, cell)
+            if row == snapshot and not looks_part_code(cell):
                 description_parts.append(cell)
         description = " ".join(part.strip() for part in description_parts if part.strip()).strip()
         if description:
@@ -260,35 +202,19 @@ class SparePartsTableNormalizer:
             tokens = cell.split()
             if len(tokens) < 2:
                 continue
-            if not self._looks_position_token(tokens[0]):
+            if not looks_position_token(tokens[0]):
                 continue
-            if not _QUANTITY_PATTERN.match(tokens[1]):
+            if not QUANTITY_PATTERN.match(tokens[1]):
                 continue
             return index, tokens
         return None
-
-    @staticmethod
-    def _apply_tail_code(row: dict[str, str], value: str) -> None:
-        normalized = normalize_cell(value)
-        if not normalized:
-            return
-        tokens = normalized.split()
-        if not tokens:
-            return
-        if len(tokens) >= 2 and tokens[-1].isdigit():
-            row["service_package"] = tokens[-1]
-            candidate = " ".join(tokens[:-1]).strip()
-        else:
-            candidate = normalized
-        if candidate and SparePartsTableNormalizer._looks_part_code(candidate):
-            row["part_no"] = candidate
 
     def _parse_free_form_row(self, cells: list[str]) -> dict[str, str] | None:
         joined = " ".join(cells).strip()
         tokens = joined.split()
         if len(tokens) < 3:
             return None
-        if not self._looks_position_token(tokens[0]) or not _QUANTITY_PATTERN.match(tokens[1]):
+        if not looks_position_token(tokens[0]) or not QUANTITY_PATTERN.match(tokens[1]):
             return None
 
         row: dict[str, str] = {
@@ -296,7 +222,7 @@ class SparePartsTableNormalizer:
             "quantity": tokens[1],
         }
         description_start = 2
-        if len(tokens) > 2 and _UNIT_PATTERN.match(tokens[2]):
+        if len(tokens) > 2 and UNIT_PATTERN.match(tokens[2]):
             row["unit"] = tokens[2]
             description_start = 3
 
@@ -304,7 +230,7 @@ class SparePartsTableNormalizer:
         trailing_cell = cells[-1].strip() if cells else ""
         if (
             len(description_tokens) >= 2
-            and self._looks_part_code(trailing_cell)
+            and looks_part_code(trailing_cell)
             and trailing_cell == description_tokens[-1]
         ):
             row["part_no"] = trailing_cell
@@ -318,7 +244,7 @@ class SparePartsTableNormalizer:
 
     def _parse_position_pairs(self, value: str) -> list[dict[str, str]]:
         rows: list[dict[str, str]] = []
-        for match in _POSITION_WITH_DOT_PATTERN.finditer(value):
+        for match in POSITION_WITH_DOT_PATTERN.finditer(value):
             description = match.group("description").strip(" ,;:-")
             if not description:
                 continue
@@ -329,13 +255,3 @@ class SparePartsTableNormalizer:
                 }
             )
         return rows
-
-    @staticmethod
-    def _looks_position_token(value: str) -> bool:
-        return bool(_POSITION_TOKEN_PATTERN.match(value))
-
-    @staticmethod
-    def _looks_part_code(value: str) -> bool:
-        if not value or not _PART_CODE_PATTERN.match(value):
-            return False
-        return any(character.isdigit() for character in value)

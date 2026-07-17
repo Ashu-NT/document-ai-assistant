@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+from src.application.workflows.parsing.tables.structure.table_shape_resolver import (
+    TableShapeResolver,
+)
 from src.domain.assets import TableAsset
 
 
 class TableStructureContextRenderer:
+    def __init__(self, table_shape_resolver: TableShapeResolver | None = None) -> None:
+        self.table_shape_resolver = table_shape_resolver or TableShapeResolver()
+
     def render(self, table: TableAsset) -> str | None:
         parts: list[str] = []
-        table_shape = table.resolved_table_shape()
+        table_shape = self.table_shape_resolver.resolve(table)
         if table_shape:
             parts.append(f"Table shape: {table_shape}")
         if table.header_paths:

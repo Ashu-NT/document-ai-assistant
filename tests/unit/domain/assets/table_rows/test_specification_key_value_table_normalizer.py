@@ -1,4 +1,4 @@
-from src.domain.assets.table_rows.specification_key_value_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.specification_key_value_table_normalizer import (
     SpecificationKeyValueTableNormalizer,
 )
 

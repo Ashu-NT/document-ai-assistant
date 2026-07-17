@@ -4,7 +4,7 @@ from src.application.workflows.parsing.tables.rows.normalized_table_rows import 
     NormalizedTableRows,
 )
 from src.domain.assets.table_cell_span import TableCellSpan
-from src.domain.assets.table_rows.performance_curve_matrix_normalizer import (
+from src.application.workflows.parsing.tables.normalization.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
 )
 

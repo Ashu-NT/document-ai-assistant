@@ -1,5 +1,6 @@
 __all__ = [
     "TableHeaderPathBuilder",
+    "TableShapeResolver",
     "TableStructureContextRenderer",
     "TableStructureSummary",
     "TableStructureSummaryBuilder",
@@ -13,6 +14,12 @@ def __getattr__(name: str):
         )
 
         return TableHeaderPathBuilder
+    if name == "TableShapeResolver":
+        from src.application.workflows.parsing.tables.structure.table_shape_resolver import (
+            TableShapeResolver,
+        )
+
+        return TableShapeResolver
     if name == "TableStructureContextRenderer":
         from src.application.workflows.parsing.tables.structure.table_structure_context_renderer import (
             TableStructureContextRenderer,

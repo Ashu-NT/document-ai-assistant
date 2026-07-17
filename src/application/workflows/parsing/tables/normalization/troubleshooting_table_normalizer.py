@@ -10,7 +10,7 @@ from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     normalize_cell,
 )
 from src.domain.assets.table_cell_span import TableCellSpan
-from src.domain.assets.table_rows.troubleshooting_row_continuation_merger import (
+from src.application.workflows.parsing.tables.normalization.troubleshooting_row_continuation_merger import (
     TroubleshootingRowContinuationMerger,
 )
 

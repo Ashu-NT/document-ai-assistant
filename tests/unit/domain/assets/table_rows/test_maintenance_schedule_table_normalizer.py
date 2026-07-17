@@ -1,4 +1,4 @@
-from src.domain.assets.table_rows.maintenance_schedule_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.maintenance_schedule_table_normalizer import (
     MaintenanceScheduleTableNormalizer,
 )
 
