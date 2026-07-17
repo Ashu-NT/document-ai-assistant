@@ -6,16 +6,24 @@ import json
 converter = DocumentConverter()
 
 pdf_path = Path(r"C:\Users\ashuf\Downloads\E6_DV-DP_Lab_SoSe26_en.pdf")
+converter = DocumentConverter()
 result = converter.convert(pdf_path)
 
-# Convert to Python dict
-doc_dict = result.document.export_to_dict()
+doc = result.document
 
-# Dump to Markdown file
-output_path = Path("docling_dump_E6_DV-DP_Lab_SoSe26_en.md")
-with open(output_path, "w", encoding="utf-8") as f:
-    f.write("```json\n")
-    json.dump(doc_dict, f, indent=2)
-    f.write("\n```")
+for item, level in doc.iterate_items():
+    if not item.prov:
+        continue
 
-print(f"Dumped JSON to {output_path.resolve()}")
+    for provenance in item.prov:
+        bbox = provenance.bbox
+
+        print("Type:", item.label)
+        print("Page:", provenance.page_no)
+        print("Text:", getattr(item, "text", ""))
+        print("Left:", bbox.l)
+        print("Top:", bbox.t)
+        print("Right:", bbox.r)
+        print("Bottom:", bbox.b)
+        print("Origin:", bbox.coord_origin)
+        print("-" * 50)
