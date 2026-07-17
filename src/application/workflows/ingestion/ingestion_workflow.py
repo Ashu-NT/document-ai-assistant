@@ -56,6 +56,14 @@ from src.application.workflows.ingestion.pipeline.reingestion_step import (
 from src.application.workflows.ingestion.reingestion_request import (
     ReingestionRequest,
 )
+from src.application.workflows.ingestion.runtime import (
+    IngestionRuntimeCapabilities,
+    IngestionRuntimeProfileResolver,
+)
+from src.application.workflows.ingestion.stages import (
+    ExtractionStageRunner,
+    VectorIndexStageRunner,
+)
 from src.application.workflows.parsing import ParsingWorkflow
 from src.domain.common import DocumentType
 from src.domain.document.value_objects import DocumentHashes
@@ -100,6 +108,7 @@ class IngestionWorkflow:
         extraction_workflow: ExtractionWorkflow,
         embedding_workflow: EmbeddingWorkflow,
         id_generator: IdGenerator,
+        runtime_capabilities: IngestionRuntimeCapabilities | None = None,
         extraction_enabled: bool = True,
         quality_gate: DocumentQualityGate | None = None,
         identifier_promotion_service: IdentifierPromotionService | None = None,
@@ -122,12 +131,29 @@ class IngestionWorkflow:
         self.extraction_workflow = extraction_workflow
         self.embedding_workflow = embedding_workflow
         self.id_generator = id_generator
-        self.extraction_enabled = extraction_enabled
+        self.runtime_capabilities = runtime_capabilities or IngestionRuntimeProfileResolver().resolve(
+            requested_profile=None,
+            extraction_enabled=extraction_enabled,
+            question_generation_enabled=False,
+            deterministic_identifier_scan_enabled=(
+                deterministic_identifier_scanner is not None
+            ),
+            semantic_linking_enabled=semantic_linking_workflow is not None,
+        )
+        self.extraction_enabled = self.runtime_capabilities.extraction_enabled
         self.quality_gate = quality_gate or DocumentQualityGate()
         self.identifier_promotion_service = identifier_promotion_service
-        self.deterministic_identifier_scanner = deterministic_identifier_scanner
+        self.deterministic_identifier_scanner = (
+            deterministic_identifier_scanner
+            if self.runtime_capabilities.deterministic_identifier_scan_enabled
+            else None
+        )
         self.document_lookup_service = document_lookup_service
-        self.semantic_linking_workflow = semantic_linking_workflow
+        self.semantic_linking_workflow = (
+            semantic_linking_workflow
+            if self.runtime_capabilities.semantic_linking_enabled
+            else None
+        )
         self.activity_service = activity_service
         self.audit_service = audit_service
         self.event_service = event_service
@@ -153,10 +179,24 @@ class IngestionWorkflow:
             document_registration_service=self.document_registration_service,
             id_generator=self.id_generator,
             unit_of_work=self.unit_of_work,
-            extraction_enabled=self.extraction_enabled,
+            runtime_capabilities=self.runtime_capabilities,
             identifier_promotion_service=self.identifier_promotion_service,
             deterministic_identifier_scanner=self.deterministic_identifier_scanner,
             semantic_linking_workflow=self.semantic_linking_workflow,
+        )
+        self._extraction_stage_runner = ExtractionStageRunner(
+            extraction_workflow=self.extraction_workflow,
+            document_registration_service=self.document_registration_service,
+            id_generator=self.id_generator,
+            extraction_enabled=self.extraction_enabled,
+            commit=self.unit_of_work.commit,
+            identifier_promotion_service=self.identifier_promotion_service,
+            deterministic_identifier_scanner=self.deterministic_identifier_scanner,
+            semantic_linking_workflow=self.semantic_linking_workflow,
+        )
+        self._vector_index_stage_runner = VectorIndexStageRunner(
+            embedding_workflow=self.embedding_workflow,
+            commit=self.unit_of_work.commit,
         )
 
     @tracked_action(
@@ -273,6 +313,7 @@ class IngestionWorkflow:
                     "file_hash": file_hash,
                     "content_hash": None,
                     "metadata": dict(request.metadata),
+                    **self._runtime_diagnostics(),
                 },
                 current_stage=IngestionStage.DUPLICATE_CHECK,
                 correlation_id=correlation_id,
@@ -383,6 +424,7 @@ class IngestionWorkflow:
                         "file_hash": file_hash,
                         "content_hash": content_hash,
                         "metadata": dict(request.metadata),
+                        **self._runtime_diagnostics(),
                     },
                     current_stage=IngestionStage.PARSING,
                     correlation_id=correlation_id,
@@ -501,6 +543,7 @@ class IngestionWorkflow:
                 document_id=final_graph.document.document_id,
                 file_name=file_name,
                 payload={
+                    **self._runtime_diagnostics(),
                     "chunk_count": len(final_graph.chunks),
                     "question_count": len(final_graph.questions),
                 },
@@ -517,67 +560,13 @@ class IngestionWorkflow:
                     progress_callback if self.extraction_enabled else None
                 ),
             )
-            semantic_relationships = None
-            scanned_identifier_count = 0
-            if self.extraction_enabled:
-                extraction_result = self.extraction_workflow.extract(
-                    final_graph.document.document_id,
-                    list(final_graph.chunks.values()),
-                    activity_context=resolved_activity_context,
-                    progress_callback=progress_callback,
-                    replace_existing=request.preserve_document_id is not None,
-                    tables=final_graph.tables,
-                    sections=final_graph.sections,
-                )
-                self.unit_of_work.commit()
-                if self.identifier_promotion_service is not None:
-                    promoted_identifiers = self.identifier_promotion_service.promote(
-                        extraction_result=extraction_result,
-                        document_graph=final_graph,
-                        id_generator=self.id_generator,
-                    )
-                    if promoted_identifiers:
-                        for identifier in promoted_identifiers:
-                            final_graph.identifiers[identifier.identifier_id] = identifier
-                        self.document_registration_service.register_document_identifiers(
-                            promoted_identifiers,
-                            activity_context=resolved_activity_context,
-                        )
-                        self.unit_of_work.commit()
-            else:
-                skip_message = "Extraction skipped by config."
-                if self.deterministic_identifier_scanner is not None:
-                    skip_message = (
-                        "Extraction skipped by config. Running deterministic "
-                        "identifier scan only."
-                    )
-                emit_progress(progress_callback, skip_message)
-
-            if self.deterministic_identifier_scanner is not None:
-                existing_normalized = {
-                    (i.normalized_value or "", i.identifier_type.value)
-                    for i in final_graph.identifiers.values()
-                }
-                scanned_identifiers = self.deterministic_identifier_scanner.scan(
-                    final_graph,
-                    self.id_generator,
-                    existing_normalized=existing_normalized,
-                )
-                scanned_identifier_count = len(scanned_identifiers)
-                if scanned_identifiers:
-                    for identifier in scanned_identifiers:
-                        final_graph.identifiers[identifier.identifier_id] = identifier
-                    self.document_registration_service.register_document_identifiers(
-                        scanned_identifiers,
-                        activity_context=resolved_activity_context,
-                    )
-                    self.unit_of_work.commit()
-
-            if self.semantic_linking_workflow is not None:
-                semantic_relationships = self.semantic_linking_workflow.link(
-                    final_graph.document.document_id
-                )
-                self.unit_of_work.commit()
+            extraction_stage_result = self._extraction_stage_runner.run(
+                final_graph=final_graph,
+                replace_existing=request.preserve_document_id is not None,
+                activity_context=resolved_activity_context,
+                progress_callback=progress_callback,
+            )
+            extraction_result = extraction_stage_result.extraction_result
 
             self._event_publisher.publish_stage_completed(
                 ingestion_run=ingestion_run,
@@ -587,6 +576,7 @@ class IngestionWorkflow:
                 document_id=final_graph.document.document_id,
                 file_name=file_name,
                 payload={
+                    **self._runtime_diagnostics(),
                     "skipped": not self.extraction_enabled,
                     "reason": (
                         "disabled_by_config"
@@ -613,11 +603,11 @@ class IngestionWorkflow:
                         if extraction_result is not None
                         else 0
                     ),
-                    "deterministic_identifier_count": scanned_identifier_count,
+                    "deterministic_identifier_count": (
+                        extraction_stage_result.deterministic_identifier_count
+                    ),
                     "semantic_relationship_count": (
-                        len(semantic_relationships)
-                        if semantic_relationships is not None
-                        else None
+                        extraction_stage_result.semantic_relationship_count
                     ),
                 },
             )
@@ -635,12 +625,13 @@ class IngestionWorkflow:
                 file_name=file_name,
                 progress_callback=progress_callback,
             )
-            embedded_chunks = self.embedding_workflow.embed_chunks(
-                list(final_graph.chunks.values()),
+            vector_stage_result = self._vector_index_stage_runner.embed(
+                final_graph=final_graph,
                 activity_context=resolved_activity_context,
                 progress_callback=progress_callback,
             )
-            ingestion_run.embedding_model = self.embedding_workflow.embedding_service.model_name
+            embedded_chunks = vector_stage_result.embedded_chunks
+            ingestion_run.embedding_model = vector_stage_result.embedding_model
             self._set_run_status(
                 ingestion_run,
                 IngestionStatus.EMBEDDED,
@@ -664,15 +655,12 @@ class IngestionWorkflow:
                 file_name=file_name,
                 progress_callback=progress_callback,
             )
-            if request.preserve_document_id is not None:
-                self.embedding_workflow.delete_document_vectors(
-                    final_graph.document.document_id
-                )
-            self.embedding_workflow.store_embedded_chunks(
-                embedded_chunks,
+            self._vector_index_stage_runner.index(
+                document_id=final_graph.document.document_id,
+                embedded_chunks=embedded_chunks,
+                replace_existing=request.preserve_document_id is not None,
                 progress_callback=progress_callback,
             )
-            self.unit_of_work.commit()
             self._set_run_status(
                 ingestion_run,
                 IngestionStatus.INDEXED,
@@ -726,6 +714,7 @@ class IngestionWorkflow:
                 quality_diagnostics=quality_diagnostics,
                 extraction_result=extraction_result,
                 extraction_skipped=not self.extraction_enabled,
+                runtime_diagnostics=self._runtime_diagnostics(),
             )
             self._event_publisher.publish_event(
                 IngestionEvent.completed(
@@ -865,6 +854,9 @@ class IngestionWorkflow:
             None,
         )
         return getattr(question_service, "question_generation_model", None)
+
+    def _runtime_diagnostics(self) -> dict[str, object]:
+        return self.runtime_capabilities.as_diagnostics()
 
     @staticmethod
     def _ensure_final_graph_has_chunks(

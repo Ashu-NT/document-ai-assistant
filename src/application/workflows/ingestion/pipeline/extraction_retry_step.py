@@ -21,6 +21,10 @@ from src.application.workflows.ingestion.ingestion_exceptions import (
 from src.application.workflows.ingestion.ingestion_result import IngestionResult
 from src.application.workflows.ingestion.ingestion_stage import IngestionStage
 from src.application.workflows.ingestion.ingestion_status import IngestionStatus
+from src.application.workflows.ingestion.runtime import (
+    IngestionRuntimeCapabilities,
+    IngestionRuntimeProfileResolver,
+)
 from src.application.workflows.linking import SemanticLinkingWorkflow
 from src.shared.activity import ActivityContext
 from src.shared.ids import IdGenerator
@@ -60,7 +64,7 @@ class ExtractionRetryStep:
         document_registration_service: DocumentRegistrationService,
         id_generator: IdGenerator,
         unit_of_work: UnitOfWork,
-        extraction_enabled: bool = True,
+        runtime_capabilities: IngestionRuntimeCapabilities | None = None,
         identifier_promotion_service: IdentifierPromotionService | None = None,
         deterministic_identifier_scanner: DeterministicIdentifierScanner | None = None,
         semantic_linking_workflow: SemanticLinkingWorkflow | None = None,
@@ -73,10 +77,27 @@ class ExtractionRetryStep:
         self.document_registration_service = document_registration_service
         self.id_generator = id_generator
         self.unit_of_work = unit_of_work
-        self.extraction_enabled = extraction_enabled
+        self.runtime_capabilities = runtime_capabilities or IngestionRuntimeProfileResolver().resolve(
+            requested_profile=None,
+            extraction_enabled=True,
+            question_generation_enabled=False,
+            deterministic_identifier_scan_enabled=(
+                deterministic_identifier_scanner is not None
+            ),
+            semantic_linking_enabled=semantic_linking_workflow is not None,
+        )
+        self.extraction_enabled = self.runtime_capabilities.extraction_enabled
         self.identifier_promotion_service = identifier_promotion_service
-        self.deterministic_identifier_scanner = deterministic_identifier_scanner
-        self.semantic_linking_workflow = semantic_linking_workflow
+        self.deterministic_identifier_scanner = (
+            deterministic_identifier_scanner
+            if self.runtime_capabilities.deterministic_identifier_scan_enabled
+            else None
+        )
+        self.semantic_linking_workflow = (
+            semantic_linking_workflow
+            if self.runtime_capabilities.semantic_linking_enabled
+            else None
+        )
 
     def run(
         self,
@@ -246,5 +267,6 @@ class ExtractionRetryStep:
                 "spare_part_count": len(extraction_result.spare_parts),
                 "unresolved_chunk_count": len(extraction_result.unresolved_chunk_ids),
                 "semantic_relationship_count": semantic_relationship_count,
+                **self.runtime_capabilities.as_diagnostics(),
             },
         )

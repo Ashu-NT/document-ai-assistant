@@ -20,6 +20,7 @@ def build_success_result(
     quality_diagnostics: dict[str, object],
     extraction_result,
     extraction_skipped: bool,
+    runtime_diagnostics: dict[str, object],
 ) -> IngestionResult:
     """Assemble the terminal `IngestionResult` for a fully completed run."""
     statistics = final_graph.document.statistics
@@ -28,6 +29,7 @@ def build_success_result(
         "file_hash": final_graph.document.hashes.file_hash,
         "content_hash": final_graph.document.hashes.content_hash,
         "metadata": dict(request.metadata),
+        **runtime_diagnostics,
         "quality": quality_diagnostics,
         "extraction_skipped": extraction_skipped,
         "vector_indexing_boundary": (

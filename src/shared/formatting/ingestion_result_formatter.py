@@ -4,6 +4,7 @@ from typing import Any
 
 
 def build_ingestion_json_payload(result) -> dict[str, Any]:
+    diagnostics = result.diagnostics
     return {
         "status": result.status.value,
         "ingestion_run_id": result.ingestion_run_id,
@@ -20,10 +21,12 @@ def build_ingestion_json_payload(result) -> dict[str, Any]:
         "identifier_count": result.identifier_count,
         "generated_question_count": result.generated_question_count,
         "vector_count": result.vector_count,
+        "runtime_profile": diagnostics.get("ingestion_runtime_profile"),
+        "requested_runtime_profile": diagnostics.get("requested_runtime_profile"),
         "duplicate_of_document_id": result.duplicate_of_document_id,
         "warnings": result.warnings,
         "errors": result.errors,
-        "diagnostics": result.diagnostics,
+        "diagnostics": diagnostics,
         "current_stage": (
             result.current_stage.value if result.current_stage is not None else None
         ),
@@ -46,7 +49,9 @@ def print_ingestion_result(result) -> None:
     print(f"Identifiers      : {_display(result.identifier_count)}")
     print(f"Generated Qs     : {_display(result.generated_question_count)}")
     print(f"Vectors          : {_display(result.vector_count)}")
+    runtime_profile = result.diagnostics.get("ingestion_runtime_profile")
     extraction_skipped = bool(result.diagnostics.get("extraction_skipped"))
+    print(f"Runtime Profile  : {_display(runtime_profile)}")
     print(f"Extraction       : {'skipped by config' if extraction_skipped else 'enabled'}")
 
     if result.duplicate_of_document_id:

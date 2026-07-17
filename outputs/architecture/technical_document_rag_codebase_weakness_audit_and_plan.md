@@ -1,902 +1,689 @@
 # Technical Document RAG Codebase Weakness Audit And Upgrade Plan
 
-## Scope
+## Audit Context
 
-This audit focuses on the technical-document path that matters most for enterprise RAG quality:
+Date:
 
-- manuals
-- certificates
-- drawings
-- reports
-- datasheets
+- 2026-07-17
 
-It specifically evaluates whether the current codebase is strong enough to answer the most common real user questions:
+Scope:
 
-- maintenance tasks, intervals, and procedures
-- spare-parts lists, often split by component
-- troubleshooting tables and remedy steps
-- manufacturer and supplier information
-- technical specifications and operating limits
-- certificate validity / reference / scope
-- drawing title-box and component references
+- full technical-document pipeline
+- ingestion
+- parsing
+- OCR
+- table reconstruction
+- chunking
+- extraction
+- embedding
+- retrieval
+- answer generation
+- guardrails
+- agent runtime and presentation
 
-This document now serves as both an audit and a living upgrade-status plan. It records current weaknesses, implemented progress, and the next recommended phases.
+Current runtime context:
+
+- documents were recently reingested into SQLite and Qdrant
+- extraction was intentionally skipped for the latest ingest pass because of cost/time
+- this means the live runtime currently reflects a parse/chunk/embed heavy mode more than a full semantic-extraction mode
+
+Important constraint:
+
+- this plan is intentionally document-agnostic
+- no recommendation below should depend on FWC12, Pressure transmitter, PURO 30, or any other currently ingested sample
+- the target system must generalize across thousands of unseen manuals, certificates, drawings, reports, and datasheets
 
 ## Executive Summary
 
-The codebase has a much better foundation than a basic RAG system. It already has:
+The codebase now has a strong architectural base:
 
-- a staged parsing workflow
-- a real document graph
-- section-aware chunking
-- table-family metadata
-- extraction schemas
-- structured evidence retrieval
+- a real staged ingestion pipeline
+- a graph-first parsing model
+- layout-aware and table-aware parsing foundations
+- hybrid retrieval
 - structured answer-context assembly
+- typed LLM response schemas for several major capabilities
+- run-state tracking through `IngestionRun`
 
-That said, the system is not yet at the level where it can be called fully enterprise-grade for technical-document QA across varied unseen document layouts.
+However, it is still not at a stable enterprise-grade level for large-scale heterogeneous technical-document QA.
 
-The biggest current issue is architectural imbalance:
+The main issue is no longer "missing features". The main issue is uneven maturity across layers:
 
-- document understanding still depends too heavily on heuristic text repair and format-specific row normalization
-- several core workflows are too large and own too many responsibilities directly
-- some “structured” evidence survives only until the prompt boundary, where it is still serialized back into text/JSON-in-a-string
-- retrieval and answer quality still compensate for parsing/chunking/table-structure gaps that should be solved earlier
+- upstream parsing and table understanding are improving quickly
+- downstream retrieval and answering still compensate for upstream ambiguity too often
+- structured evidence exists, but it is not consumed consistently across all answer paths
+- core orchestration is still concentrated in a few large files
+- runtime modes such as parse-only, parse+embed, and full semantic extraction are not yet explicit enough as first-class operating profiles
 
-The result is a system that can perform very well on some documents, but can still regress badly on new manuals, multi-column layouts, continuation tables, scanned certificates, and complex mixed-structure pages.
+The most important next step is not to add more document-specific heuristics. It is to tighten boundaries and make the system more generic:
 
-The correct next direction is not “more answer tricks.” It is:
-
-1. strengthen parsing and layout understanding
-2. formalize table reconstruction and table semantics
-3. reduce orchestration bloat and silent fallbacks
-4. preserve typed evidence deeper into retrieval and answer generation
-
-## Implementation Status Update (2026-07-17)
-
-This audit is now partially historical. Several items that were originally listed as open have since been implemented or partially implemented.
-
-Implemented since the earlier audit draft:
-
-- OCR runtime policy wiring now exists:
-  - `src/application/workflows/parsing/ocr/parsing_ocr_policy.py`
-  - `src/application/orchestrator/ingestion/parsing_runtime_builder.py`
-  - `src/application/workflows/parsing/parsing_workflow.py`
-- canonical OCR enrichment now uses one explicit OCR-service contract instead of dynamic method probing:
-  - `src/application/workflows/parsing/canonical_element_ocr_enricher.py`
-- ingestion now fails earlier when a non-empty finalized graph produces zero chunks:
-  - `src/application/workflows/ingestion/ingestion_workflow.py`
-- settings fallback handling was reduced and centralized further:
-  - `src/application/workflows/common/settings_resolver.py`
-  - `src/application/services/answer_generation/answer_generation_service.py`
-  - `src/application/workflows/parsing/builders/document_graph_builder.py`
-- low-level table-row parsing primitives were moved out of the domain package:
-  - `src/application/workflows/parsing/tables/rows/*`
-  - the temporary compatibility facades were removed and direct imports were updated
-- the generic key-value row projection helper was also moved into the parsing normalization layer:
-  - `src/application/workflows/parsing/tables/normalization/key_value_row_projection.py`
-- the remaining higher-level table normalizers/renderers were also moved out of the domain package:
-  - `src/application/workflows/parsing/tables/normalization/*.py`
-  - `src/application/workflows/parsing/tables/rendering/structured_row_renderer.py`
-- domain-level `TableAsset` helper behavior was reduced:
-  - parser-owned table-shape inference now lives in `src/application/workflows/parsing/tables/structure/table_shape_resolver.py`
-  - parser-owned structured-row rendering now lives in `src/application/workflows/parsing/tables/rendering/table_asset_structured_text_renderer.py`
-  - `src/domain/assets/table_asset.py` is back to stable asset/data behavior only
-- header/span reconstruction was hardened so row-specific child headers win over inherited umbrella spans:
-  - `src/application/workflows/parsing/tables/structure/table_header_path_builder.py`
-- logical-family row-group continuation merging now uses the same normalized header-compatibility logic as full table-family merging:
-  - `src/application/workflows/parsing/tables/families/logical_table_family_row_merger.py`
-- wrap-aware generic row repair now accepts broader multiline continuation rows when Docling provides real wrap evidence:
-  - `src/application/workflows/parsing/tables/normalization/generic_wrapped_row_table_normalizer.py`
-- row-continuation repair now has one shared continuation-index resolver that combines:
-  - the existing sparse text-pattern continuation checks
-  - new span-aware vertical continuation proof from Docling cell geometry
-  - `src/application/workflows/parsing/tables/rows/row_continuation_index_resolver.py`
-  - `src/application/workflows/parsing/tables/rows/span_aware_row_continuation_resolver.py`
-- Docling raw-row repair and semantic wrapped-row repair now both consume the same continuation-index logic:
-  - `src/application/workflows/parsing/normalizers/docling_sparse_continuation_row_merger.py`
-  - `src/application/workflows/parsing/normalizers/docling_table_row_repairer.py`
-  - `src/application/workflows/parsing/tables/normalization/generic_wrapped_row_table_normalizer.py`
-- continued/repeated table headers now normalize both generic continuation markers and trailing page-sequence suffixes:
-  - `src/application/workflows/parsing/tables/structure/table_header_text_normalizer.py`
-- regression coverage now exists for:
-  - inherited umbrella-span versus child-header precedence
-  - plain row-group continuation pages with minor umbrella-title variation
-  - wrap-aware wide-row continuation merging under real Docling span evidence
-  - span-aware continuation merges when text-only continuation signals are weak
-  - trailing header page-sequence normalization for continued tables
-  - `tests/unit/application/workflows/parsing/tables/test_table_header_signature_builder.py`
-  - `tests/unit/application/workflows/parsing/tables/test_logical_table_family_asset_composer.py`
-  - `tests/unit/application/workflows/parsing/tables/test_table_row_semantic_normalizer.py`
-
-Already present in the codebase before this update, but underrepresented in the original audit:
-
-- page layout analysis and lane-aware reading-order repair:
-  - `src/application/workflows/parsing/layout/page_layout_analyzer.py`
-  - `src/application/workflows/parsing/normalizers/docling_document_normalizer.py`
-- TOC-aware table reconstruction and hierarchy support:
-  - `src/application/workflows/parsing/normalizers/docling_toc_table_row_reconstructor.py`
-  - `src/application/workflows/parsing/normalizers/table_layout/docling_parallel_toc_reconstructor.py`
-  - `src/application/workflows/parsing/builders/section_hierarchy/toc/*`
-- logical table-family continuation already uses layout-aware signals:
-  - `src/application/workflows/parsing/tables/logical_table_family_resolver.py`
-- same-page layout-aware subregion segmentation is now implemented so disconnected blocks in one lane are no longer forced into one coarse region:
-  - `src/application/workflows/parsing/layout/layout_region_segmenter.py`
-  - `src/application/workflows/parsing/layout/layout_region_builder.py`
-- logical table-family continuation can now reconcile sequential same-page lane subregions without merging non-sequential blocks:
-  - `src/application/workflows/parsing/tables/families/same_page_table_region_compatibility_checker.py`
-  - `src/application/workflows/parsing/tables/logical_table_family_resolver.py`
-- troubleshooting table row merging can now use semantic field mapping plus Docling span evidence when text-only continuation cues are too weak:
-  - `src/application/workflows/parsing/tables/normalization/troubleshooting_row_continuation_evidence_builder.py`
-  - `src/application/workflows/parsing/tables/normalization/troubleshooting_row_continuation_merger.py`
-  - `src/application/workflows/parsing/tables/normalization/troubleshooting_table_normalizer.py`
-- key-value/specification/certification normalization can now merge repeated-label continuation rows through one shared span-backed continuation helper:
-  - `src/application/workflows/parsing/tables/normalization/key_value_continuation_row_merger.py`
-  - `src/application/workflows/parsing/tables/normalization/key_value_row_projection.py`
-  - `src/application/workflows/parsing/tables/normalization/specification_key_value_table_normalizer.py`
-  - `src/application/workflows/parsing/tables/normalization/certification_particulars_table_normalizer.py`
-- maintenance-schedule normalization can now repair wrapped task/notes rows from Docling span evidence even when the wrapped text lives in the first logical column:
-  - `src/application/workflows/parsing/tables/normalization/maintenance_schedule_continuation_row_merger.py`
-  - `src/application/workflows/parsing/tables/normalization/maintenance_schedule_table_normalizer.py`
-  - `src/application/workflows/parsing/tables/rows/span_aware_row_continuation_resolver.py`
-- parallel same-page table streams can now recombine when sibling blocks share a logical header sequence but one stream has optional columns or generic header-label variants:
-  - `src/application/workflows/parsing/tables/normalization/parallel_stream_row_combiner.py`
-  - `src/application/workflows/parsing/tables/structure/table_header_label_canonicalizer.py`
-  - `src/application/workflows/parsing/tables/normalization/table_row_semantic_normalizer.py`
-- parallel same-page table streams can now also recombine through a shared leading row-identifier anchor even when sibling blocks expose different trailing column sets:
-  - safe union-header assembly now preserves both column orders
-  - merge is rejected when the only shared anchor is non-leading, to avoid accidental fusion of unrelated tables
-  - `src/application/workflows/parsing/tables/normalization/parallel_stream_row_combiner.py`
-  - `src/application/workflows/parsing/tables/normalization/table_row_semantic_normalizer.py`
-- upstream parallel-table reconstruction now rejects false left/right parallelization when X-separated stream clusters belong to different vertical zones on the page:
-  - parallel reconstruction now requires compatible vertical band overlap in addition to X-separated clustering
-  - this stops unrelated same-page table zones from entering downstream stream recombination as if they were one logical parallel table
-  - `src/application/workflows/parsing/normalizers/table_layout/parallel_table_vertical_alignment_checker.py`
-  - `src/application/workflows/parsing/normalizers/table_layout/docling_parallel_table_reconstructor.py`
-- generic wrapped-row reconstruction now supports hybrid continuation proof:
-  - at least one changed column must have Docling span evidence
-  - sibling changed columns may merge through normal continuation-text cues in the same row pair
-  - `src/application/workflows/parsing/tables/rows/span_aware_row_continuation_resolver.py`
-  - `src/application/workflows/parsing/tables/normalization/generic_wrapped_row_table_normalizer.py`
-- generic wrapped-row reconstruction now also accepts grouped broad-span evidence when Docling spans a multiline wrap across several changed sibling columns at once:
-  - grouped merge is allowed only when one broad span covers the unresolved changed columns
-  - grouped merge is rejected when the span does not cover the full unresolved change set
-  - `src/application/workflows/parsing/tables/rows/span_aware_row_continuation_resolver.py`
-  - `src/application/workflows/parsing/tables/normalization/generic_wrapped_row_table_normalizer.py`
-- regression coverage now also exists for:
-  - same-page sequential table-subregion continuation
-  - non-sequential same-lane subregion separation
-  - span-backed troubleshooting continuation merges
-  - span-backed key-value/specification continuation merges
-  - span-backed maintenance-schedule continuation merges
-  - parallel-stream recombination with optional columns and header-label aliases
-  - anchor-based union recombination for left/right sibling streams with different trailing columns
-  - hybrid partial-span multiline continuation merges
-  - grouped broad-span multiline continuation merges and rejection of incomplete broad-span coverage
-  - rejection of false parallel-table reconstruction when sibling X-clusters do not share a compatible vertical band
-  - `tests/unit/application/workflows/parsing/layout/test_layout_region_segmentation.py`
-  - `tests/unit/application/workflows/parsing/tables/test_logical_table_family_resolver_same_page_subregions.py`
-  - `tests/unit/application/workflows/parsing/tables/test_troubleshooting_table_normalizer_span_continuations.py`
-  - `tests/unit/application/workflows/parsing/tables/test_key_value_row_projection_span_continuations.py`
-  - `tests/unit/application/workflows/parsing/tables/test_maintenance_schedule_table_normalizer_span_continuations.py`
-  - `tests/unit/application/workflows/parsing/tables/test_parallel_stream_row_combiner.py`
-  - `tests/unit/application/workflows/parsing/tables/test_generic_wrapped_row_table_normalizer_partial_span.py`
-  - `tests/unit/application/workflows/parsing/tables/test_generic_wrapped_row_table_normalizer_broad_span.py`
-  - `tests/unit/application/workflows/parsing/normalizers/table_layout/test_docling_parallel_table_reconstructor.py`
-
-Current active next phase:
-
-- continue Phase 1 and Phase 2 as hardening/expansion of existing layout and table-reconstruction foundations, not as greenfield additions
-- deeper header/span reconstruction is now materially improved; the next enterprise table-reconstruction gaps are:
-  - preserve parallel-stream ownership metadata deeper into the reconstructed table artifact so downstream renderers, extraction payloads, and answer-context assembly can reason about stream identity explicitly instead of rows alone
-  - richer multiline-cell reconstruction when wrap evidence is ambiguous at the region/lane level rather than the row-pair level
-- keep reducing remaining large orchestration hotspots after parsing/table boundaries are stable
+1. make parsing and table structure contracts stronger and clearer
+2. make retrieval intent and evidence-family selection stricter
+3. make identifier and table answers consume structured table evidence directly
+4. separate semantic-enrichment modes from structural ingestion modes
+5. split orchestration hotspots into smaller stage-owned coordinators
 
 ## What Is Already Strong
 
-The following parts of the codebase are moving in the right direction and should be preserved:
+The following parts are solid and should be preserved:
+
+- `src/application/workflows/ingestion/`
+  - explicit ingestion stages, `IngestionRun`, stage events, retry paths
+- `src/application/workflows/parsing/parsing_workflow.py`
+  - staged parsing with progress and timings
+- `src/application/workflows/parsing/builders/`
+  - graph-first document build instead of chunk-first parsing
+- `src/application/workflows/parsing/tables/`
+  - a large amount of table normalization, family composition, row repair, and semantic projection already exists
+- `src/application/workflows/retrieval/retrieval_workflow.py`
+  - real workflow boundary with query analysis, hybrid retrieval, deduplication, context expansion, and guardrail adapters
+- `src/application/workflows/retrieval/structured/`
+  - structured evidence retrieval exists as a first-class path
+- `src/application/workflows/question_answering/answer_context/`
+  - answer generation is no longer driven only by raw chunks
+- `src/application/services/answer_generation/`
+  - deterministic renderers exist for high-value answer families
+- `src/application/workflows/extraction/response/schemas/`
+  - extraction responses are now strongly typed instead of free-form dicts
+
+These are meaningful enterprise foundations. The remaining work is mostly about consistency, ownership, and genericity.
+
+## End-To-End Weaknesses
+
+### 1. Orchestration is still too concentrated in a few hotspot files
+
+Largest current hotspots in `src/`:
+
+- `src/application/workflows/ingestion/ingestion_workflow.py` - 895 LOC
+- `src/application/services/answer_generation/answer_generation_service.py` - 546 LOC
+- `src/application/evaluation/retrieval/benchmarking/corpus/resolution/retrieval_benchmark_corpus_document_resolver.py` - 505 LOC
+- `src/infrastructure/retrieval/keyword/sql_keyword_scorer.py` - 488 LOC
+- `src/application/workflows/extraction/extraction_workflow.py` - 418 LOC
+- `src/application/workflows/question_answering/answer_pipeline/answer_generation_pipeline.py` - 344 LOC
+- `src/application/workflows/parsing/builders/document_graph_builder.py` - 343 LOC
+
+Why this matters:
+
+- changes in one stage create large blast radii
+- testing becomes integration-heavy even for local behavior changes
+- fallback logic and business rules accumulate in the same file
+- enterprise maintainability drops as soon as rules become more numerous
+
+Root issue:
+
+- the architecture direction is correct
+- the code ownership boundaries are still not thin enough inside the orchestration layer
+
+### 2. Parsing owns too many adjacent concerns at runtime boundaries
+
+Relevant files:
 
 - `src/application/workflows/parsing/parsing_workflow.py`
-  - explicit staged parsing with timing/progress
-- `src/application/workflows/parsing/builders/section_builder.py`
-  - real hierarchy resolution and section-path relinking
-- `src/application/workflows/parsing/builders/document_graph_builder.py`
-  - graph-first architecture instead of direct chunk-only parsing
-- `src/application/workflows/parsing/builders/document_graph/graph_chunk_builder.py`
-  - chunk metadata already carries logical table family, category, header paths, axis summary, and table-row window data
-- `src/application/workflows/extraction/response/schemas/*`
-  - extraction payloads are already typed instead of free-form dicts
-- `src/application/workflows/retrieval/structured/structured_evidence_resolver.py`
-  - structured evidence is already part of retrieval, not just answer decoration
-- `src/application/workflows/question_answering/answer_context/*`
-  - answer context is no longer only raw chunks
-- `src/application/prompts/answer_generation/prompt_context/*`
-  - there is already an explicit projection layer between retrieved evidence and prompt generation
+- `src/infrastructure/parsing/docling/docling_parser.py`
+- `src/application/workflows/parsing/ocr/parsing_ocr_policy.py`
 
-That is a good base. The remaining weaknesses are about boundaries, ownership, and fidelity.
+Current strengths:
 
-## Core Weaknesses
+- parsing stages are explicit
+- OCR policy is centralized better than before
 
-### 1. Ingestion orchestration is too concentrated
+Remaining weaknesses:
 
-Primary evidence:
+- `ParsingWorkflow` still coordinates parsing, normalization, OCR enrichment, page fallback OCR, validation, and report writing directly
+- `DoclingParser` still contains broad fallback behavior around settings loading
+- parsing report writers are still wired into the production workflow path rather than being cleanly isolated as optional observers
 
-- `src/application/workflows/ingestion/ingestion_workflow.py:87`
-- `src/application/workflows/ingestion/ingestion_workflow.py:169`
+Why this matters:
 
-`IngestionWorkflow` is still an oversized end-to-end orchestrator at 800+ LOC. Its `run()` path owns:
+- production parsing and debug/reporting are closer than they should be
+- settings resolution can still degrade quietly in some lower-level parser defaults
+- adding a new OCR or parser strategy increases coupling across the same workflow
 
-- hash creation
-- duplicate detection
-- ingestion-run lifecycle
-- parsing
-- registration
-- classification
-- post-classification finalization
-- extraction
-- semantic linking
-- embedding/indexing
-- status/event updates
+### 3. OCR is improved, but the runtime model is still more complicated than it should be
 
-Why this is risky:
+Relevant files:
 
-- any stage change has a large blast radius
-- retry / partial-failure logic is harder to reason about
-- test isolation is weaker than it should be
-- production and debug/evaluation behaviors are more likely to drift
+- `src/application/workflows/parsing/ocr/parsing_ocr_policy.py`
+- `src/application/workflows/parsing/canonical_element_ocr_enricher.py`
+- `src/application/workflows/parsing/ocr/`
+- `src/infrastructure/ai/ocr/`
 
-Fix direction:
+Current shape:
 
-- split stage ownership into dedicated stage coordinators
-- keep `IngestionWorkflow` as a thin orchestration shell
-- move duplicate handling, run-state persistence, extraction/indexing coordination, and failure mapping into smaller collaborators
+- Docling OCR can be enabled/disabled
+- provider OCR can enrich canonical elements
+- page fallback OCR exists
+- region fallback OCR exists
 
-### 2. Extraction is decomposed, but still centers on a large workflow and a legacy-style combined prompt
+Weakness:
 
-Primary evidence:
+- this is still one conceptual "OCR capability" represented by several runtime paths
+- the system still needs one explicit document OCR strategy model that answers:
+  - structural OCR only?
+  - asset OCR only?
+  - sparse page fallback?
+  - full page fallback?
+  - region fallback?
 
-- `src/application/workflows/extraction/extraction_workflow.py:66`
-- `src/application/workflows/extraction/extraction_workflow.py:194`
-- `src/application/prompts/extraction/combined/combined_extraction_prompt_builder.py:6`
-- `src/application/prompts/extraction/compatibility/legacy_extraction_prompt_builder.py:8`
-- `src/application/workflows/extraction/candidates/extraction_prompt_narrowing_service.py:17`
+Why this matters:
 
-The extraction package has improved a lot. It now contains:
+- future scaling needs predictable cost/performance behavior
+- operations need one place to reason about OCR mode selection
+- enterprise ingestion should expose one explicit OCR decision, not just a collection of flags
 
-- batching
-- retry coordination
-- payload schemas
-- builders
-- response repair
-- merging
+### 4. Table understanding is strong at parsing time but not consumed consistently downstream
 
-But the active workflow still builds extraction prompts through `CombinedExtractionPromptBuilder`, which directly inherits the legacy combined schema prompt.
+Relevant files:
 
-Why this is risky:
+- `src/application/workflows/parsing/tables/`
+- `src/application/workflows/question_answering/evidence/table_evidence_hydrator.py`
+- `src/application/workflows/question_answering/answer_context/tables/answer_table_projector.py`
+- `src/application/prompts/answer_generation/prompt_context/serializers/structured_evidence_payload_serializer.py`
 
-- the active extraction path is still dominated by a very large combined JSON contract
-- prompt complexity remains high for small models
-- prompt narrowing happens after the existence of the combined prompt, not instead of it
-- future extraction families remain tightly coupled
+Current strengths:
 
-Fix direction:
+- logical table families exist
+- table category, shape, header paths, axis summary, and row projections exist
+- hydrated table evidence reaches QA
 
-- keep the current schema-based safety
-- replace the active “combined legacy-shaped prompt” as the primary extraction mode
-- move to family-planned extraction batches driven by deterministic candidate selection
-- keep compatibility prompt builders only as compatibility builders, not as the live default path
+Observed weakness:
 
-### 3. Parsing has good stage structure, but OCR control is fragmented
+- the same structured table evidence is not used equally by all answer classes
+- some answer paths still rely on key-value extraction or generic chunk prose even when typed table rows are available
+- the system has excellent table metadata, but downstream consumers do not yet exploit it uniformly
 
-Primary evidence:
+Why this matters:
 
-- `src/application/workflows/parsing/parsing_workflow.py:42`
-- `src/application/workflows/parsing/canonical_element_ocr_enricher.py:11`
-- `src/config/settings/docling_settings.py:6`
-- `src/config/settings/ocr_settings.py:6`
+- enterprise RAG quality in technical docs depends on tables more than on prose
+- if structured tables are available but ignored by some answer routes, answer quality will still look inconsistent and document-sensitive
 
-OCR behavior is currently spread across three separate paths:
+### 5. Retrieval intent and chunk-type preference rules are still too permissive
 
-- Docling OCR
-- canonical element OCR enrichment
-- page OCR fallback
+Relevant files:
 
-The settings are also split between:
+- `src/application/workflows/retrieval/retrieval_query_analyzer.py`
+- `src/application/workflows/retrieval/retrieval_query_intent_inferer.py`
+- `src/application/workflows/retrieval/retrieval_query_chunk_type_preference_mapper.py`
+- `src/infrastructure/retrieval/rerankers/deterministic/intent_chunk_type_scorer.py`
+- `src/infrastructure/retrieval/rerankers/deterministic/table_query_evidence_scorer.py`
+- `src/application/workflows/question_answering/evidence/table_focused_evidence_pruner.py`
 
-- `DOCLING_ENABLE_OCR`
-- `ENABLE_PROVIDER_OCR`
-- `OCR_PAGE_FALLBACK_ENABLED`
-- `OCR_REGION_FALLBACK_ENABLED`
+Current strengths:
 
-Why this is risky:
+- deterministic intent analysis exists
+- chunk-type preferences exist
+- reranking exists
+- table-focused pruning exists
 
-- users can disable one OCR path and still trigger another
-- operational behavior is harder to predict
-- debugging OCR cost/performance issues is harder than it should be
-- the runtime policy is defined across settings rather than through a single OCR strategy object
+Current weakness:
 
-Status update:
+- focused intents still admit too many weakly-related chunk families
+- table-focused pruning only removes low-value scaffolding companions
+- it does not fully suppress mismatched direct-evidence table families
 
-- partially implemented
-- a real OCR runtime policy now exists, but the remaining work is to simplify the settings surface area and remove overlapping flag semantics
+Consequence:
 
-Fix direction:
+- identifier, maintenance, specification, and table questions can still carry noisy evidence into answer generation
+- the system answers better than before, but still wastes context budget on evidence that should have been rejected earlier
 
-- keep one OCR runtime policy resolver for parsing as the single execution authority
-- simplify configuration around explicit OCR modes such as:
-  - docling-only
-  - provider-asset-only
-  - provider-page-fallback
-  - provider-region-fallback
-  - no-ocr
-- keep `ParsingWorkflow` consuming one resolved OCR policy rather than many scattered booleans
+### 6. Identifier answers do not yet fully consume structured table evidence
 
-### 4. Core parsing/table heuristics are still too heuristic-heavy, even though the domain-layer boundary has improved
+Relevant files:
 
-Primary evidence:
+- `src/application/services/answer_generation/formatting/identifier_answer_renderer.py`
+- `src/application/workflows/question_answering/answer_context/key_value_extractor.py`
+- `src/application/workflows/question_answering/answer_context/tables/answer_table_projector.py`
+- `src/application/workflows/question_answering/answer_pipeline/structured_fact_joiner.py`
 
-- `src/application/workflows/parsing/tables/rows/table_row_canonicalizer.py`
-- `src/domain/assets/table_rows/spare_parts_table_normalizer.py`
-- `src/application/workflows/parsing/tables/families/logical_table_family_row_merger.py:14`
+Current strength:
 
-The current system does real table cleanup, but much of it is still based on:
-
-- label heuristics
-- umbrella-header heuristics
-- transposed key-value heuristics
-- specialized normalizers per table family
-
-The low-level helper layer has now moved out of `src/domain/assets/table_rows/`, and the higher-level normalizers/renderers were moved in this implementation slice as well. The remaining issue is no longer package ownership; it is that the reconstruction logic itself is still heuristic-heavy and should become more formal and layout-aware over time.
-
-Why this is risky:
-
-- domain models become coupled to parser quirks
-- new document/table families are harder to support cleanly
-- table normalization logic becomes harder to reuse across parsing, extraction, retrieval, and answering
-
-Status update:
-
-- materially improved
-- low-level primitives are now in `src/application/workflows/parsing/tables/rows/`
-- higher-level normalizers/renderers are now in parsing-side normalization/rendering packages
-- remaining work is algorithmic hardening, not boundary relocation
-
-Fix direction:
-
-- finish moving row-canonicalization and table-structure repair logic fully into parsing/application infrastructure layers
-- reserve domain assets for stable document concepts, not parser cleanup heuristics
-- introduce a formal table-reconstruction pipeline:
-  - page-region segmentation
-  - column-band inference
-  - continuation detection
-  - header-span reconstruction
-  - row-wrap / multiline-cell repair
-  - table typing and semantic projection
-
-### 5. Chunking is metadata-rich, but still downstream of imperfect layout understanding
-
-Primary evidence:
-
-- `src/application/workflows/parsing/builders/document_graph/graph_chunk_builder.py:15`
-- `src/application/workflows/parsing/builders/chunking/*`
-- `src/application/workflows/parsing/builders/section_builder.py:20`
-
-The chunking layer already carries good metadata:
-
-- `logical_table_family_id`
-- `table_category`
-- `header_paths`
-- `axis_summary`
-- chunk part numbering
-
-That is strong.
-
-The weakness is upstream:
-
-- if page layout is misread
-- if a multi-column page is flattened badly
-- if a wrapped row is not reconstructed
-- if a continued table is split incorrectly
-
-then chunking only preserves already-degraded structure.
-
-Why this is risky:
-
-- retrieval can rank the “right” chunk but still deliver structurally broken evidence
-- answer generation receives semantically incomplete tables
-- table-heavy manuals degrade disproportionately
-
-Fix direction:
-
-- treat chunking as a consumer of layout-aware table and section structure
-- do not keep teaching chunking to fix problems that should have been fixed at page/layout/table-reconstruction stage
-
-### 6. Structured answer context exists, but the generic LLM path still consumes serialized text
-
-Primary evidence:
-
-- `src/application/workflows/question_answering/answer_context/answer_context_organizer.py:37`
-- `src/application/prompts/answer_generation/answer_prompt_builder.py:24`
-- `src/application/prompts/answer_generation/prompt_context/projectors/prompt_context_projector.py:26`
-- `src/application/prompts/answer_generation/prompt_context/serializers/structured_evidence_payload_serializer.py:10`
-- `src/config/settings/prompt_context_settings.py:6`
-
-The system now builds:
-
-- `StructuredAnswerContext`
-- projected prompt-context bundles
-- serialized structured evidence payloads
-
-This is a major improvement over raw chunk dumping.
-
-But the generic LLM still ultimately receives:
-
-- instruction text
-- schema text
-- serialized JSON payload text
-- raw-source appendix text
-
-Why this is risky:
-
-- structure is preserved in Python, then partially flattened at the prompt boundary
-- prompt caps can silently reduce coverage
-- `PROMPT_CONTEXT_INCLUDE_SOURCE_TABLE_ROWS=false` means rich row data may exist in memory but not reach the generic model path
-- multiple representations of the same fact can create prompt noise
-
-Fix direction:
-
-- keep deterministic renderers for stable answer classes
-- for the generic LLM path, move toward a true typed prompt context contract
-- reduce duplication between:
-  - source prose
+- identifier answers can use:
+  - persisted identifiers
   - key-values
-  - structured entities
-  - tables
-  - relationships
-- make raw appendix explicitly secondary, not co-equal with structured payload
+  - joined structured facts
 
-### 7. Retrieval quality logic is powerful but too monolithic and heuristic-dense
+Current weakness:
 
-Primary evidence:
+- the identifier renderer still does not consume `AnswerTable` directly
+- if part numbers or serial numbers live primarily inside hydrated table rows and were not persisted as identifiers during extraction, the renderer can still miss them
 
-- `src/application/workflows/retrieval/retrieval_workflow.py:49`
-- `src/infrastructure/retrieval/keyword/sql_keyword_scorer.py:118`
-- `src/infrastructure/retrieval/keyword/sql_keyword_scorer.py:428`
+Why this matters:
 
-The retrieval stack already has:
+- manuals and datasheets often expose identifiers in tables, not prose
+- this is a generic technical-document pattern, not a current corpus quirk
 
-- query analysis
-- structured evidence injection
-- hybrid retrieval
-- deduplication
+### 7. Structured evidence is still joined late and partly compensatory
+
+Relevant files:
+
+- `src/application/workflows/retrieval/structured/structured_evidence_resolver.py`
+- `src/application/workflows/question_answering/answer_pipeline/structured_evidence_merger.py`
+- `src/application/workflows/question_answering/answer_pipeline/structured_fact_joiner.py`
+
+Current strength:
+
+- structured evidence exists and can be merged into retrieval/QA
+
+Weakness:
+
+- the structured branch is still partly additive and late
+- when extraction is skipped, the structural retrieval path still works, but semantic retrieval becomes thin
+- the answer pipeline compensates by stitching semantic evidence back into chunk context later
+
+Why this matters:
+
+- the system needs two explicit and equally valid runtime modes:
+  - structural mode
+  - structural + semantic mode
+- right now those modes exist operationally, but not cleanly enough as first-class architecture concepts
+
+### 8. Extraction is modernized, but the default active prompt path is still too combined
+
+Relevant files:
+
+- `src/application/workflows/extraction/extraction_workflow.py`
+- `src/application/workflows/extraction/batching/extraction_batch_executor.py`
+- `src/application/prompts/extraction/CombinedExtractionPromptBuilder`
+- `src/application/prompts/extraction/narrowed/`
+
+Current strengths:
+
+- batch execution exists
+- partial progress exists
+- per-batch retry exists
+- typed response schemas exist
+- candidate narrowing exists
+
+Weakness:
+
+- the default extraction workflow still starts from a combined prompt-builder path
+- narrowing refines the prompt, but the capability is still conceptually centered on one large multi-family contract
+
+Why this matters:
+
+- small local models remain fragile under large mixed extraction prompts
+- future extraction families will be harder to evolve independently
+- semantic extraction should be more planner-like at the family level, not just prompt-reduced after the fact
+
+### 9. The prompt boundary still flattens too much evidence into one serialized payload
+
+Relevant files:
+
+- `src/application/prompts/answer_generation/prompt_context/projectors/`
+- `src/application/prompts/answer_generation/prompt_context/serializers/structured_evidence_payload_serializer.py`
+- `src/application/services/answer_generation/answer_generation_service.py`
+
+Current strengths:
+
+- structured context exists in Python
+- typed answer tables and maintenance entries exist
+- prompt bundles are explicit
+
+Weakness:
+
+- source content, key-values, tables, structured entities, and relationship views still end up coexisting in one serialized JSON-in-text prompt
+- the system preserves structure better than before, but it still does not enforce a truly typed LLM-facing contract end to end
+
+Why this matters:
+
+- the generic LLM still receives too much duplicated evidence
+- prompt noise increases as parsing quality and structured evidence richness improve
+
+### 10. Retrieval ranking is powerful but still concentrated in one scorer
+
+Relevant files:
+
+- `src/infrastructure/retrieval/keyword/sql_keyword_scorer.py`
+- `src/infrastructure/retrieval/rerankers/deterministic/`
+
+Current strength:
+
+- the ranking stack already includes many enterprise-relevant signals
+
+Weakness:
+
+- `sql_keyword_scorer.py` still owns too much feature logic in one place
+- feature calculation, weighting, and penalty logic are not yet decomposed cleanly enough
+
+Why this matters:
+
+- tuning becomes harder over time
+- regression diagnosis remains slower than necessary
+- feature observability is weaker than it should be for enterprise retrieval tuning
+
+### 11. Runtime modes and configuration are still too distributed
+
+Relevant files:
+
+- `src/config/settings/*.py`
+- `src/application/orchestrator/`
+- `src/application/workflows/common/settings_resolver.py`
+
+Current strength:
+
+- settings are typed and modularized
+
+Weakness:
+
+- there are still too many loosely-related flags across ingestion, OCR, extraction, prompt context, and retrieval
+- the system lacks a small set of explicit runtime profiles such as:
+  - parse_only
+  - parse_and_embed
+  - full_semantic_ingest
+  - benchmark_debug
+  - interactive_demo
+
+Why this matters:
+
+- enterprise operations need predictable deployment modes
+- performance and quality tradeoffs should be selectable intentionally, not inferred from a large flag surface
+
+### 12. Local-Qdrant operation is not a robust multi-process development mode
+
+Relevant files:
+
+- `src/infrastructure/retrieval/vector/qdrant_vector_store.py`
+- runtime builders under `src/application/orchestrator/`
+
+Current weakness:
+
+- local Qdrant storage is effectively single-process in practice for debug/audit tooling
+- sequential use is fine
+- parallel debug probes and multiple local runtimes are operationally fragile
+
+Why this matters:
+
+- this limits large-scale evaluation and developer tooling ergonomics
+- the codebase needs a cleaner distinction between:
+  - local single-process dev mode
+  - shared Qdrant server mode
+
+### 13. Maintainability debt remains in presentation and evaluation layers too
+
+Hotspots outside the core pipeline:
+
+- `src/application/agent_runtime/presenters/console/graph_result_renderer.py` - 359 LOC
+- `src/application/langgraph/reflection/validation/reflection_validator.py` - 381 LOC
+- `src/application/langgraph/nodes/question_answering/retry_retrieval_node.py` - 355 LOC
+- `src/application/evaluation/retrieval/benchmarking/corpus/resolution/retrieval_benchmark_corpus_document_resolver.py` - 505 LOC
+
+Why this matters:
+
+- even if the retrieval core improves, policy and presentation drift can reintroduce brittle behavior
+- enterprise polish depends on small, explicit formatting and validation units
+
+## Non-Document-Specific Design Rules
+
+All future upgrades should obey these rules:
+
+- do not hardcode current corpus values, labels, or identifiers
+- do not add logic that only works for one manual family
+- use structure before text heuristics whenever possible
+- treat tables, OCR, section paths, identifiers, and structured entities as generic evidence families
+- keep one file, one responsibility
+- keep active files below the repo threshold whenever possible
+- remove facades and compatibility shims once direct imports are safe
+- avoid parallel implementations of the same capability
+- make degraded modes explicit instead of silently falling back
+
+## Target End State
+
+The target system should have four clear operating layers:
+
+1. Structural ingestion
+- parse
+- normalize
+- reconstruct layout and tables
+- build graph
+- chunk
+- embed
+
+2. Semantic enrichment
+- classify
+- extract semantic entities
+- link semantic relationships
+- optionally generate questions
+
+3. Retrieval
+- structural retrieval
+- semantic retrieval
+- hybrid ranking
 - context expansion
 
-The weak point is the heuristic concentration in `SqlKeywordScorer`.
+4. Answering
+- typed answer context
+- deterministic answer paths for stable classes
+- generic LLM path with typed evidence contract
+- reflection and presentation as downstream policy layers
 
-Why this is risky:
+This should work in both modes:
 
-- scoring behavior is hard to reason about
-- tuning one retrieval problem can regress another
-- many concerns live in one scorer:
-  - identifier matching
-  - phrase matching
-  - section-path relevance
-  - chunk-type fit
-  - structured-fit bonuses
-  - TOC/revision/noise penalties
+- structural-only mode
+- structural-plus-semantic mode
 
-Fix direction:
+## Phased Upgrade Plan
 
-- split ranking into explicit feature calculators
-- emit feature vectors / scoring diagnostics per candidate
-- keep the final scorer compositional
-- let structured evidence ranking and table-specific ranking become first-class rather than additive heuristics
-
-### 8. Duplicate utility logic still exists in active layers
-
-Primary evidence:
-
-- `src/application/workflows/shared/structured_evidence_deduplication.py:13`
-- `src/application/workflows/shared/structured_evidence_deduplication.py:42`
-- `src/application/langgraph/nodes/node_utils.py:99`
-- `src/application/langgraph/nodes/node_utils.py:165`
-
-There is still live duplication of:
-
-- identifier deduplication
-- structured-entity deduplication
-
-The two versions are not exactly the same; they intentionally differ in strictness.
-
-Why this is risky:
-
-- behavior drift is easy
-- fixing one dedupe bug may not fix the other path
-- “same name, slightly different semantics” is hard to maintain
-
-Fix direction:
-
-- keep one canonical implementation
-- expose strict/lenient policy explicitly through a typed strategy or options object
-- stop re-defining the same helper names in different layers
-
-### 9. Dynamic interface checks and broad fallback patterns hide failures
-
-Primary evidence:
-
-- `src/application/workflows/parsing/canonical_element_ocr_enricher.py:58`
-- `src/application/workflows/parsing/builders/document_graph_builder.py` top-level settings fallback helpers
-- `src/application/services/answer_generation/answer_generation_service.py:122`
-- `src/application/workflows/retrieval/retrieval_context_expander.py`
-- `src/application/workflows/common/settings_resolver.py`
-
-Examples of risky patterns:
-
-- dynamic `getattr()` contract switching for OCR service methods
-- `except Exception` settings fallbacks in core runtime code
-- silent defaulting when configuration imports fail
-
-Why this is risky:
-
-- real configuration or contract errors can be masked
-- runtime behavior can degrade silently instead of failing loudly
-- debugging becomes slower
-
-Fix direction:
-
-- keep broad exception guards in scripts if needed
-- reduce them in core application/runtime paths
-- prefer explicit adapter contracts and explicit settings-resolution failures
-- when fallback is required, emit structured diagnostics, not only warnings
-
-### 10. File responsibility drift is still present in several important modules
-
-Large files currently include:
-
-- `src/application/workflows/ingestion/ingestion_workflow.py`
-- `src/application/workflows/extraction/extraction_workflow.py`
-- `src/application/services/answer_generation/answer_generation_service.py`
-- `src/infrastructure/retrieval/keyword/sql_keyword_scorer.py`
-- `src/application/langgraph/reflection/validation/reflection_validator.py`
-- `src/application/agent_runtime/presenters/console/graph_result_renderer.py`
-- `src/application/workflows/parsing/builders/document_graph_builder.py`
-
-Why this is risky:
-
-- responsibilities drift back into god-objects
-- test setup becomes heavier
-- review quality drops because too much logic changes in one file
-
-Fix direction:
-
-- keep the repo rule: one file, one responsibility
-- split remaining large files into grouped subpackages instead of flat growth
-
-### 11. Reflection and presentation logic are improving, but still policy-heavy and brittle
-
-Primary evidence:
-
-- `src/application/langgraph/reflection/validation/reflection_validator.py:23`
-- `src/application/agent_runtime/presenters/console/graph_result_renderer.py:23`
-
-Both modules clearly improved, but they still contain a lot of policy in one place:
-
-- maintenance special cases
-- spare-parts special cases
-- identifier inventory overrides
-- rendering notes / citations / sections / footers together
-
-Why this is risky:
-
-- every new answer class adds more branching
-- regressions become easy in interactive agent output
-- validation policy and presentation policy are not as compositional as they should be
-
-Fix direction:
-
-- split rule packs by answer family
-- keep the top-level validator/renderer as dispatch/orchestration only
-
-## Technical-Document Specific Gaps
-
-These are the gaps most directly blocking “96% accurate, well-structured technical-document understanding.”
-
-### Manuals
-
-Weak points:
-
-- maintenance matrices still rely on heuristic row repair
-- troubleshooting row continuation is not guaranteed
-- spare-parts tables can still degrade when headers/rows wrap badly
-- chunk retrieval may surface evidence, but answer formatting can still underuse exact table structure
-
-### Certificates
-
-Weak points:
-
-- scanned-document OCR policy is still fragmented
-- validity/approval/reference extraction depends too much on extraction prompt success instead of guaranteed structural cues
-- contact/manufacturer/certificate metadata relationships are present but not yet a first-class certificate reasoning model
-
-### Drawings
-
-Weak points:
-
-- title blocks and reference boxes depend heavily on parser/table/layout fidelity
-- multi-zone page layouts need stronger region-aware handling
-
-### Datasheets
-
-Weak points:
-
-- performance/specification matrices still depend on table normalization heuristics
-- ordering / technical data / operating limits should be governed by a reusable table typing layer, not document-specific repair
-
-### Reports
-
-Weak points:
-
-- mixed prose + table + checklist pages are still vulnerable to layout flattening
-- electrical / inspection / additional-info blocks need stronger typed evidence projection
-
-## Bad Coding / Architecture Findings To Fix
-
-These are specific code-quality findings that should be addressed even if retrieval quality were already acceptable.
-
-### A. Parsing heuristics in the domain layer
-
-Files:
-
-- `src/domain/assets/table_asset.py`
-
-Fix:
-
-- keep parser/table repair heuristics in parsing/application-level table reconstruction packages
-- keep only stable asset concepts in the domain layer
-
-Status:
-
-- materially improved
-- the old `src/domain/assets/table_rows/` behavior layer was removed from active use
-- `TableAsset` no longer owns parser-side shape/rendering helpers
-
-### B. Duplicate dedupe helpers
-
-Files:
-
-- `src/application/workflows/shared/structured_evidence_deduplication.py`
-- `src/application/langgraph/nodes/node_utils.py`
-
-Fix:
-
-- one canonical helper plus strictness policy
-
-### C. Dynamic OCR contract fallback
-
-File:
-
-- `src/application/workflows/parsing/canonical_element_ocr_enricher.py`
-
-Fix:
-
-- stop checking for method names dynamically
-- require one explicit OCR-service result contract
-
-Status:
-
-- implemented for the canonical OCR enricher path
-
-### D. Silent settings fallback in runtime code
-
-Files include:
-
-- `src/application/services/answer_generation/answer_generation_service.py`
-- `src/application/workflows/parsing/builders/document_graph_builder.py`
-- `src/application/workflows/common/settings_resolver.py`
-
-Fix:
-
-- centralize settings resolution
-- fail fast on invalid settings for production workflows
-- keep fallback logic only where truly necessary
-
-Status:
-
-- partially implemented
-
-### E. Active dependency on a legacy-shaped extraction prompt
-
-Files:
-
-- `src/application/prompts/extraction/combined/combined_extraction_prompt_builder.py`
-- `src/application/prompts/extraction/compatibility/legacy_extraction_prompt_builder.py`
-
-Fix:
-
-- fully separate compatibility prompt builders from the active extraction path
-
-## Recommended Implementation Plan
-
-## Phase 0: Correctness And Boundary Cleanup
-
-Status:
-
-- partially implemented
+### Phase 0 - Stabilize Boundaries And Reduce Silent Degradation
 
 Goals:
 
-- reduce silent failure risk
-- stabilize runtime behavior
-- remove obvious duplication
-
-Actions:
-
-- split `IngestionWorkflow` stage ownership into small coordinators
-- unify identifier/entity dedupe helpers
-- replace dynamic OCR service probing with one explicit OCR result contract
-- centralize OCR runtime policy resolution
-- continue moving parsing/table heuristics out of `src/domain/assets/table_rows/`
-- fail fast when a non-empty parsed document produces zero final chunks
-- reduce `except Exception` usage in core runtime code paths
-
-## Phase 1: Layout-Aware Document Understanding
-
-Status:
-
-- foundation already exists
-- the active work is hardening and expansion, not adding it from zero
-
-Goals:
-
-- make parsing stronger for unseen technical-document layouts
-
-Actions:
-
-- harden existing page-layout zone modeling before table/section interpretation
-- expand multi-column and left/right region awareness already present in normalization/layout analysis
-- formalize table continuation detection across pages more consistently
-- formalize row-wrap and multiline-cell reconstruction more deeply
-- preserve numbered section hierarchy consistently, including TOC-derived hints where reliable
-
-## Phase 2: Enterprise Table Reconstruction
+- reduce silent runtime drift
+- make modes explicit
+- shrink the largest blast-radius files
 
 Status:
 
 - in progress
-- low-level row primitives were moved to the parsing layer
-- higher-level normalizers/renderers were moved to parsing-side normalization/rendering packages
-- domain `TableAsset` helper behavior was trimmed so parsing owns shape/rendering concerns again
-- header/span path reconstruction is now more faithful when umbrella spans overlap child header rows
-- plain row-group continuation merging now uses normalized compatibility rules instead of raw repeated-row comparison
-- generic wrapped-row repair now handles broader wrapped continuation rows when Docling exposes true wrap evidence
-- same-page logical continuation now distinguishes sequential lane subregions from unrelated blocks in the same lane
-- troubleshooting semantic row repair now uses explicit span-backed continuation evidence when text heuristics alone are not strong enough
-- repeated-label key-value/specification/certification rows now use shared span-backed continuation merging before semantic projection
-- maintenance schedule task/notes continuations now use the same Docling span evidence so wrapped schedule rows are repaired before interval-matrix projection
-- parallel stream recombination now tolerates optional sibling columns and generic header-label variants instead of requiring exact post-normalization header equality
-- parallel stream recombination now also handles shared leading-anchor splits where sibling streams contribute different trailing columns
-- upstream parallel-table reconstruction now uses vertical-band compatibility so unrelated same-page table zones are less likely to be mistaken for one logical parallel table
-- generic wrapped-row repair now accepts hybrid proof: one span-backed changed column plus ordinary continuation-text siblings in the same wrapped row
-- generic wrapped-row repair now accepts grouped broad-span proof when Docling exposes one multi-column span over the wrapped sibling cells
-- parallel-stream descriptors now survive normalization, metadata persistence, parsed-asset rehydration, logical-family composition, and downstream table renderers so extraction and QA no longer see anonymous stream row blocks only
-- logical table family composition now also preserves stream ownership across multi-page continuations when every family member exposes the same parallel stream count, merging stream 1 with stream 1, stream 2 with stream 2, and so on through the existing family row-merger rules
-
-Goals:
-
-- make table understanding a first-class subsystem
+- implemented slice:
+  - explicit ingestion runtime profile resolution
+  - explicit structural-only versus semantic-enriched diagnostics
+  - workflow-level enforcement so semantic linking cannot run implicitly when extraction is disabled
+  - CLI/JSON ingestion output now surfaces runtime profile information
+  - `IngestionWorkflow` now delegates extraction/identifier/linking work to a dedicated extraction stage runner
+  - `IngestionWorkflow` now delegates embedding/indexing work to a dedicated vector indexing stage runner
 
 Actions:
 
-- create a reusable table reconstruction contract
-- separate:
-  - physical table extraction
-  - logical family merge
-  - header/span reconstruction
-  - semantic table typing
-  - typed row projection
-- keep table categorization generic:
-  - maintenance
-  - troubleshooting
-  - spare parts
-  - technical specification
-  - performance curve
-  - certificate / approval / validity
-  - generic structured table
+- split `IngestionWorkflow` into stage-owned coordinators
+- split `AnswerGenerationService` into:
+  - request resolution
+  - deterministic dispatch
+  - prompt execution
+  - schema repair/retry
+  - result assembly
+- split `SqlKeywordScorer` into feature calculators plus a final combiner
+- remove remaining broad fallback behavior from low-level parser defaults and core runtime code
+- introduce explicit ingestion/runtime profiles
 
-Important:
+Implemented in this slice:
 
-- no document-specific header hacks
-- normalization must rely on generic structural and semantic cues, not current DB documents
+- `src/application/workflows/ingestion/runtime/`
+  - `IngestionRuntimeProfile`
+  - `IngestionRuntimeCapabilities`
+  - `IngestionRuntimeProfileResolver`
+- `src/application/workflows/ingestion/stages/`
+  - `ExtractionStageRunner`
+  - `ExtractionStageResult`
+  - `VectorIndexStageRunner`
+  - `VectorIndexStageResult`
+- `src/application/orchestrator/ingestion/ingestion_orchestrator.py`
+  - resolves runtime capabilities from settings once at composition time
+- `src/application/workflows/ingestion/ingestion_workflow.py`
+  - consumes resolved capabilities and blocks implicit semantic-linking drift
+  - delegates extraction and vector-indexing clusters to stage-owned collaborators
+- `src/application/workflows/ingestion/pipeline/extraction_retry_step.py`
+  - uses the same resolved runtime capabilities during extraction retry
+- `src/shared/formatting/ingestion_result_formatter.py`
+  - exposes runtime-profile diagnostics in human and JSON output
 
-Remaining gap after the current slice:
+Still open inside Phase 0:
 
-- mixed logical table families where some members expose parallel streams and others only a single repaired row grid still fall back to plain merged rows; the next hardening pass should add a safe bridge mode so stream-aware families can absorb non-stream continuation pages without losing ownership metadata
+- split parsing/classification/finalization orchestration out of `IngestionWorkflow`
+- split `AnswerGenerationService` into stage-owned collaborators
+- begin decomposing `SqlKeywordScorer` into explicit feature calculators
 
-## Phase 3: Chunking As A Consumer Of Better Structure
-
-Goals:
-
-- stop asking chunking to repair layout failures
-
-Actions:
-
-- keep current metadata-rich chunk model
-- make chunk assembly consume reconstructed logical tables and richer section topology
-- ensure chunk types are driven by direct evidence first, inherited path second
-- keep numbering and section lineage as part of retrieval-friendly context
-
-## Phase 4: Extraction Modernization
-
-Goals:
-
-- reduce prompt overload and improve reliability on small/local models
-
-Actions:
-
-- replace active combined legacy-style prompt path with family-planned extraction batches
-- let candidate selection choose extraction families first
-- keep pydantic/typed payload validation strict
-- preserve batch isolation and partial progress
-- persist extraction diagnostics at family/batch level for review
-
-## Phase 5: Retrieval Simplification And Stronger Structured Ranking
+### Phase 1 - Strengthen Parsing And Table Contracts
 
 Goals:
 
-- make ranking easier to maintain and easier to debug
+- make upstream structure more trustworthy and easier for downstream layers to consume
 
 Actions:
 
-- decompose `SqlKeywordScorer` into feature calculators
-- treat structured evidence ranking as a first-class retrieval branch
-- create table-intent ranking features that use:
-  - table category
-  - logical table family
+- keep hardening table reconstruction in `src/application/workflows/parsing/tables/`
+- formalize one stable parsed-table contract for downstream consumers:
+  - family identity
+  - stream ownership
   - header paths
   - axis summary
-  - row window
-- keep hybrid retrieval, but make features auditable
+  - typed row projections
+  - structure quality
+- isolate report/debug observers from core parsing workflow execution
+- make OCR strategy an explicit resolved decision object per document run
 
-## Phase 6: Typed Answer Context At The Prompt Boundary
+### Phase 2 - Tighten Retrieval Intent And Evidence-Family Selection
 
 Goals:
 
-- stop degrading typed evidence into prompt noise
+- stop wrong evidence families from reaching answer generation
 
 Actions:
 
-- keep `StructuredAnswerContext`
-- keep deterministic renderers
-- redesign generic LLM prompt context so structured evidence remains the primary payload
-- keep raw appendix explicitly secondary
-- remove unnecessary duplication across:
+- refine `RetrievalQueryChunkTypePreferenceMapper`
+- refine `IntentChunkTypeScorer`
+- refine `TableFocusedEvidencePruner`
+- add explicit family rejection rules for focused table and identifier questions
+- surface ranking-feature diagnostics per candidate for auditing
+
+Success criterion:
+
+- focused questions should carry fewer but more relevant chunks
+- context budget should be spent on direct evidence first
+
+### Phase 3 - Bridge Identifier And Table Answers Properly
+
+Goals:
+
+- make identifier and list-style answers consume structured tables directly
+
+Actions:
+
+- extend `IdentifierAnswerRenderer` to consume `AnswerTable` when structured row evidence exists
+- add generic identifier extraction from typed table rows
+- avoid dependence on extraction persistence alone for identifier QA
+- unify table-driven answer logic across:
+  - spare parts
+  - maintenance schedules
+  - troubleshooting tables
+  - identifier tables
+  - specification tables
+
+Success criterion:
+
+- if a value exists only in a hydrated table row, the answer path can still use it deterministically
+
+### Phase 4 - Make Semantic Enrichment A First-Class Optional Layer
+
+Goals:
+
+- support clean structural-only and structural-plus-semantic runtimes
+
+Actions:
+
+- define explicit semantic-enrichment mode in ingestion and QA
+- keep structural ingestion fully valid without extraction
+- make semantic retrieval clearly degrade when extraction is unavailable, without pretending it is present
+- modernize extraction planning away from a combined-prompt-centered mental model
+- let extraction families evolve independently
+
+Success criterion:
+
+- operators can intentionally choose:
+  - fast structural ingest
+  - full semantic ingest
+- downstream services know which mode they are running in
+
+### Phase 5 - Rebuild The Prompt Boundary Around Typed Evidence
+
+Goals:
+
+- stop turning rich evidence back into prompt noise
+
+Actions:
+
+- preserve `StructuredAnswerContext` as the core answer evidence model
+- redesign generic answer prompting so structured evidence becomes primary
+- keep raw chunk prose and appendix evidence explicitly secondary
+- reduce duplication across:
   - sources
-  - key-values
   - tables
+  - key-values
   - structured entities
-  - relationship text
+  - relationship summaries
 
-## Phase 7: Answering / Reflection / Presentation Cleanup
+Success criterion:
+
+- better parsing and retrieval should produce cleaner prompts, not larger noisier prompts
+
+### Phase 6 - Simplify Retrieval Ranking And Observability
 
 Goals:
 
-- improve output quality without adding brittle special cases
+- make ranking more maintainable and tunable
 
 Actions:
 
-- split reflection rules by answer family
-- split console rendering into small presentation blocks
-- preserve enterprise-quality grounded output
-- ensure table answers prefer typed table evidence over generic prose summarization whenever structure is available
+- decompose keyword ranking into explicit feature modules
+- emit feature diagnostics for benchmark and debug tools
+- separate structural table signals from generic lexical signals
+- keep reranker behavior auditable
 
-## Non-Negotiable Design Rules For Future Work
+Success criterion:
 
-- do not tune logic to current database documents only
-- do not hardcode specific current-document values into structural detection
-- do not keep parsing heuristics inside domain packages
-- do not let retrieval/answering compensate forever for parsing/layout errors
-- do not grow remaining hotspot files past the single-responsibility threshold
-- do not reintroduce parallel legacy and active implementations for the same capability
+- retrieval regressions become traceable by feature, not just by final score
+
+### Phase 7 - Operational Profiles, Performance, And Concurrency
+
+Goals:
+
+- make the system predictable in dev, benchmark, and production modes
+
+Actions:
+
+- formalize Qdrant local versus server runtime profiles
+- make single-process limitations explicit in local mode
+- expose profile-level guidance for:
+  - OCR cost
+  - extraction cost
+  - embedding cost
+  - answer-generation cost
+- reduce mixed production/debug code paths
+
+Success criterion:
+
+- developers and operators can reason about cost, speed, and concurrency without hidden coupling
+
+### Phase 8 - Unified Evaluation Gates
+
+Goals:
+
+- make improvements measurable across unseen document families
+
+Actions:
+
+- unify parsing, retrieval, and answering quality gates
+- verify both structural-only and semantic-enriched modes
+- require generic test cases for:
+  - manuals
+  - certificates
+  - drawings
+  - reports
+  - datasheets
+- prefer family-level and structure-level assertions over current-document assertions
+
+Success criterion:
+
+- the system can be hardened against new document families without tuning only to the current database
 
 ## Priority Order
 
@@ -910,27 +697,45 @@ Recommended order:
 6. Phase 5
 7. Phase 6
 8. Phase 7
+9. Phase 8
 
-That order matters.
+Why this order:
 
-If parsing/layout/table structure is not strengthened first, later retrieval and answering improvements will continue to be brittle and document-sensitive.
+- parsing and structure quality must improve before retrieval can be simplified
+- retrieval family selection must tighten before answer generation can become cleaner
+- semantic enrichment should be formalized after structural paths are trustworthy
+- prompt-boundary cleanup is most valuable once upstream evidence is stable
+
+## Immediate High-Value Next Slice
+
+If the team wants the highest-impact generic slice next, the best order is:
+
+1. tighten table and identifier retrieval-family pruning
+2. make identifier answers consume `AnswerTable` directly
+3. split the biggest orchestration hotspots
+
+That slice is generic, high-impact, and does not depend on the current sample corpus.
 
 ## Final Verdict
 
 The system is no longer a weak prototype. It has many of the right enterprise building blocks.
 
-But it is not yet “top-notch enterprise technical-document RAG” across unseen manuals, certificates, drawings, reports, and datasheets.
+But it is still not yet a top-tier enterprise technical-document RAG system for unseen documents at scale.
 
-The main reason is not lack of features.
+The main remaining issue is not missing capability. It is uneven maturity between:
 
-The main reason is that too much downstream intelligence is still compensating for upstream document-understanding instability.
+- structure extraction
+- semantic enrichment
+- retrieval-family control
+- answer evidence consumption
+- orchestration ownership
 
-The path to excellence is clear:
+The path to excellence is now clear and generic:
 
-- make layout understanding stronger
-- make table reconstruction first-class
-- keep chunking downstream of better structure
-- modernize extraction away from the active legacy-shaped combined prompt
-- preserve typed evidence deeper into answer generation
+- make parsing and table contracts stronger
+- tighten retrieval evidence-family selection
+- let deterministic answer paths consume structured tables directly
+- separate structural mode from semantic-enrichment mode
+- split orchestration hotspots into real stage-owned units
 
-That is the upgrade path most likely to produce stable, scalable, document-agnostic quality.
+That is the most scalable, maintainable, and document-agnostic path forward.

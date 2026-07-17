@@ -31,11 +31,15 @@ from src.application.workflows.classification import (
 )
 from src.application.workflows.extraction import ExtractionWorkflow
 from src.application.workflows.ingestion import DeleteDocumentWorkflow, IngestionWorkflow
+from src.application.workflows.ingestion.runtime import (
+    IngestionRuntimeProfileResolver,
+)
 from src.application.workflows.linking import SemanticLinkingWorkflow
 from src.bootstrap.startup import bootstrap_application
 from src.config.settings import (
     embedding_settings,
     extraction_settings,
+    ingestion_settings,
     llm_settings,
     qdrant_settings,
 )
@@ -171,6 +175,18 @@ def build_ingestion_runtime(
             extraction_service=extraction_service,
             id_generator=resolved_id_generator,
         )
+    runtime_capabilities = IngestionRuntimeProfileResolver().resolve(
+        requested_profile=ingestion_settings.ingestion_runtime_profile,
+        extraction_enabled=extraction_settings.extraction_enabled,
+        question_generation_enabled=ingestion_settings.enable_question_generation,
+        deterministic_identifier_scan_enabled=(
+            extraction_settings.identifier_extraction_enabled
+        ),
+        semantic_linking_enabled=(
+            extraction_settings.extraction_enabled
+            and extraction_settings.semantic_linking_enabled
+        ),
+    )
 
     ingestion_workflow = IngestionWorkflow(
         unit_of_work=uow,
@@ -185,6 +201,7 @@ def build_ingestion_runtime(
         extraction_workflow=extraction_workflow,
         embedding_workflow=embedding_workflow,
         id_generator=resolved_id_generator,
+        runtime_capabilities=runtime_capabilities,
         extraction_enabled=extraction_settings.extraction_enabled,
         identifier_promotion_service=identifier_promotion_service,
         deterministic_identifier_scanner=deterministic_identifier_scanner,

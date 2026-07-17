@@ -3,6 +3,11 @@ from src.config.settings.base_settings import AppBaseSettings
 
 
 class IngestionSettings(AppBaseSettings):
+    ingestion_runtime_profile: str = Field(
+        default="auto",
+        alias="INGESTION_RUNTIME_PROFILE",
+    )
+
     max_file_size_mb: int = Field(alias="MAX_FILE_SIZE_MB")
 
     max_pdf_pages: int = Field(alias="MAX_PDF_PAGES")

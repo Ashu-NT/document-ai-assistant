@@ -116,6 +116,7 @@ def _build_workflow(
     semantic_linking_workflow=None,
     post_classification_chunk_finalization_workflow=None,
     extraction_enabled: bool = True,
+    runtime_capabilities=None,
 ):
     return IngestionWorkflow(
         unit_of_work=FakeUnitOfWork(),
@@ -138,6 +139,7 @@ def _build_workflow(
         ),
         embedding_workflow=embedding_workflow or FakeEmbeddingWorkflow(),
         id_generator=IdGenerator(),
+        runtime_capabilities=runtime_capabilities,
         extraction_enabled=extraction_enabled,
         event_service=event_service,
         document_lookup_service=document_lookup_service,

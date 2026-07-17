@@ -22,6 +22,11 @@ from src.application.workflows.ingestion.ingestion_workflow import IngestionWork
 from src.application.workflows.ingestion.reingestion_request import (
     ReingestionRequest,
 )
+from src.application.workflows.ingestion.runtime import (
+    IngestionRuntimeCapabilities,
+    IngestionRuntimeProfile,
+    IngestionRuntimeProfileResolver,
+)
 
 __all__ = [
     "CorpusStatisticsResult",
@@ -33,6 +38,9 @@ __all__ = [
     "IngestionIndexingError",
     "IngestionRequest",
     "IngestionResult",
+    "IngestionRuntimeCapabilities",
+    "IngestionRuntimeProfile",
+    "IngestionRuntimeProfileResolver",
     "IngestionStage",
     "IngestionStatus",
     "IngestionStorageError",
