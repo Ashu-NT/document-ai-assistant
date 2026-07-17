@@ -61,6 +61,30 @@ def test_row_merger_drops_repeated_multi_row_header_block_in_plain_row_groups() 
     ]
 
 
+def test_row_merger_matches_plain_row_group_continuations_with_minor_umbrella_variation() -> None:
+    merged = LogicalTableFamilyRowMerger().merge_row_groups(
+        [
+            [
+                ["Maintenance Schedule (1 of 2)", "Maintenance Schedule (1 of 2)"],
+                ["Task", "Notes"],
+                ["Check oil", "See annex"],
+            ],
+            [
+                ["Maintenance Schedule (2 of 2)", "Maintenance Schedule (2 of 2)"],
+                ["Task", "Notes"],
+                ["Replace filter", "Use OEM part"],
+            ],
+        ]
+    )
+
+    assert merged == [
+        ["Maintenance Schedule (1 of 2)", "Maintenance Schedule (1 of 2)"],
+        ["Task", "Notes"],
+        ["Check oil", "See annex"],
+        ["Replace filter", "Use OEM part"],
+    ]
+
+
 def test_asset_composer_builds_single_family_table_with_merged_rows_and_metadata() -> None:
     first = TableAsset(
         table_id="table_001",

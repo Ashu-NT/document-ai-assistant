@@ -206,3 +206,48 @@ def test_normalize_merges_generic_wrapped_rows_with_repeated_anchor() -> None:
         ["Task", "Description"],
         ["1", "Inspect the pump housing and verify the shaft seal."],
     ]
+
+
+def test_normalize_merges_wide_wrapped_rows_when_docling_wrap_evidence_exists() -> None:
+    table = TableAsset(
+        table_id="table_8",
+        document_id="doc_1",
+        markdown="tasks",
+        table_category="general_table",
+        rows=[
+            ["Item", "Cause", "Action", "Notes"],
+            ["1", "Filter housing is", "Tighten the cover and", "Recheck after"],
+            ["1", "damaged", "inspect the seal.", "startup in maintenance log"],
+        ],
+        cell_spans=[
+            TableCellSpan(
+                row_start=1,
+                row_end=2,
+                col_start=1,
+                col_end=3,
+                text=(
+                    "Filter housing is damaged | Tighten the cover and inspect the seal. "
+                    "| Recheck after startup in maintenance log"
+                ),
+                raw_lines=[
+                    "Filter housing is",
+                    "damaged",
+                    "Tighten the cover and",
+                    "inspect the seal.",
+                ],
+            )
+        ],
+    )
+
+    updated = TableRowSemanticNormalizer().normalize(table)
+
+    assert updated is True
+    assert table.rows == [
+        ["Item", "Cause", "Action", "Notes"],
+        [
+            "1",
+            "Filter housing is damaged",
+            "Tighten the cover and inspect the seal.",
+            "Recheck after startup in maintenance log",
+        ],
+    ]

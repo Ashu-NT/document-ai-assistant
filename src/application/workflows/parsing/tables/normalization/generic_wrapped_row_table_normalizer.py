@@ -70,6 +70,7 @@ class GenericWrappedRowTableNormalizer:
             resolve_sparse_continuation_indexes(
                 previous_row,
                 current_row,
+                max_non_empty_cells=None,
             )
         )
 

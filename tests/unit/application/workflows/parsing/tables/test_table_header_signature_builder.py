@@ -91,6 +91,34 @@ def test_builder_uses_multi_row_paths_when_spans_exist() -> None:
     assert signature == "motor power > kw|motor power > hp|flow > q l/min"
 
 
+def test_builder_prefers_child_header_cells_over_inherited_umbrella_spans() -> None:
+    builder = TableHeaderSignatureBuilder()
+    table = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="table",
+        rows=[
+            ["Technical data", "Technical data"],
+            ["Parameter", "Value"],
+            ["Voltage", "400V"],
+        ],
+        column_count=2,
+        cell_spans=[
+            TableCellSpan(
+                row_start=0,
+                row_end=1,
+                col_start=0,
+                col_end=1,
+                text="Technical data",
+            )
+        ],
+    )
+
+    signature = builder.build(table)
+
+    assert signature == "technical data > parameter|technical data > value"
+
+
 def test_builder_does_not_treat_a_textual_first_data_row_as_a_second_header_row() -> None:
     """Regression test: a maintenance/troubleshooting-style table whose
     first data row is a full text description (not a short label) reads

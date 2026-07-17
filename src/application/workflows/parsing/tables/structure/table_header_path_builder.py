@@ -94,23 +94,11 @@ class TableHeaderPathBuilder:
     ) -> tuple[str, ...]:
         segments: list[str] = []
         for row_index in range(header_row_count):
-            candidate = self._span_text_for_cell(
+            candidate = self._resolve_header_segment(
                 table=table,
                 row_index=row_index,
                 column_index=column_index,
             )
-            if (
-                not candidate
-                and row_index < len(table.rows)
-                and self._looks_uniform_umbrella_row(table.rows[row_index])
-            ):
-                candidate = self._uniform_row_label(table.rows[row_index])
-            if (
-                not candidate
-                and row_index < len(table.rows)
-                and column_index < len(table.rows[row_index])
-            ):
-                candidate = self.normalize_header_cell(table.rows[row_index][column_index])
             if not candidate:
                 continue
             if segments and segments[-1] == candidate:
@@ -118,24 +106,109 @@ class TableHeaderPathBuilder:
             segments.append(candidate)
         return tuple(segments)
 
-    def _span_text_for_cell(
+    def _resolve_header_segment(
         self,
         *,
         table: TableAsset,
         row_index: int,
         column_index: int,
     ) -> str:
-        for span in sorted(
-            table.cell_spans,
-            key=lambda item: (item.row_start, item.col_start, -item.col_span, -item.row_span),
+        if row_index < len(table.rows) and self._looks_uniform_umbrella_row(table.rows[row_index]):
+            return self._uniform_row_label(table.rows[row_index])
+
+        candidate = self._row_anchored_span_text(
+            table=table,
+            row_index=row_index,
+            column_index=column_index,
+        )
+        if candidate:
+            return candidate
+
+        candidate = self._direct_cell_text(
+            table=table,
+            row_index=row_index,
+            column_index=column_index,
+        )
+        if candidate:
+            return candidate
+
+        return self._inherited_span_text(
+            table=table,
+            row_index=row_index,
+            column_index=column_index,
+        )
+
+    def _row_anchored_span_text(
+        self,
+        *,
+        table: TableAsset,
+        row_index: int,
+        column_index: int,
+    ) -> str:
+        for span in self._covering_spans(
+            table=table,
+            row_index=row_index,
+            column_index=column_index,
         ):
-            if not (
-                span.row_start <= row_index <= span.row_end
-                and span.col_start <= column_index <= span.col_end
-            ):
+            if span.row_start != row_index:
                 continue
-            return self.normalize_header_cell(span.normalized_text or span.text)
+            text = self.normalize_header_cell(span.normalized_text or span.text)
+            if text:
+                return text
         return ""
+
+    def _inherited_span_text(
+        self,
+        *,
+        table: TableAsset,
+        row_index: int,
+        column_index: int,
+    ) -> str:
+        for span in self._covering_spans(
+            table=table,
+            row_index=row_index,
+            column_index=column_index,
+        ):
+            if span.row_start >= row_index:
+                continue
+            text = self.normalize_header_cell(span.normalized_text or span.text)
+            if text:
+                return text
+        return ""
+
+    def _direct_cell_text(
+        self,
+        *,
+        table: TableAsset,
+        row_index: int,
+        column_index: int,
+    ) -> str:
+        if row_index >= len(table.rows) or column_index >= len(table.rows[row_index]):
+            return ""
+        return self.normalize_header_cell(table.rows[row_index][column_index])
+
+    @staticmethod
+    def _covering_spans(
+        *,
+        table: TableAsset,
+        row_index: int,
+        column_index: int,
+    ):
+        return sorted(
+            (
+                span
+                for span in table.cell_spans
+                if span.row_start <= row_index <= span.row_end
+                and span.col_start <= column_index <= span.col_end
+            ),
+            key=lambda item: (
+                0 if item.row_start == row_index else 1,
+                item.row_start,
+                item.col_start,
+                item.col_span,
+                item.row_span,
+            ),
+        )
 
     def _looks_header_row(self, row: list[str]) -> bool:
         non_empty = [normalize_cell(cell) for cell in row if normalize_cell(cell)]
