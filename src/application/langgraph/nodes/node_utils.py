@@ -7,6 +7,10 @@ from src.application.langgraph.common import (
     serialize_graph_value,
 )
 from src.application.langgraph.common.value_coercion import optional_str
+from src.application.workflows.shared.structured_evidence_deduplication import (
+    deduplicate_identifiers as shared_deduplicate_identifiers,
+    deduplicate_structured_entities as shared_deduplicate_structured_entities,
+)
 from src.domain.common import IdentifierType
 from src.domain.document.entities.identifier import Identifier
 
@@ -97,19 +101,7 @@ def extract_identifiers_from_step_results(step_results: dict[str, Any]) -> list[
 
 
 def deduplicate_identifiers(identifiers: list[Identifier]) -> list[Identifier]:
-    deduplicated: list[Identifier] = []
-    seen: set[tuple[str, str, str]] = set()
-    for identifier in identifiers:
-        fingerprint = (
-            identifier.document_id,
-            identifier.identifier_type.value,
-            (identifier.normalized_value or identifier.raw_value).strip().lower(),
-        )
-        if fingerprint in seen:
-            continue
-        seen.add(fingerprint)
-        deduplicated.append(identifier)
-    return deduplicated
+    return shared_deduplicate_identifiers(identifiers, strict=True)
 
 
 def resolve_structured_entities(
@@ -165,20 +157,7 @@ def attach_entity_type(
 def deduplicate_structured_entities(
     entities: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    deduplicated: list[dict[str, Any]] = []
-    seen: set[tuple[str, str]] = set()
-    for entity in entities:
-        if not isinstance(entity, dict):
-            continue
-        fingerprint = (
-            str(entity.get("_entity_type") or ""),
-            str(entity.get("source_chunk_id") or entity),
-        )
-        if fingerprint in seen:
-            continue
-        seen.add(fingerprint)
-        deduplicated.append(entity)
-    return deduplicated
+    return shared_deduplicate_structured_entities(entities)
 
 
 def _deserialize_identifier(payload: Any) -> Identifier | None:

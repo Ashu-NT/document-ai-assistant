@@ -32,6 +32,7 @@ class _FakeDocumentGraphBuilder:
 
 @dataclass
 class _FakeOcrRuntime:
+    policy: object | None = None
     canonical_element_ocr_enricher: object | None = None
     page_ocr_fallback_workflow: object | None = None
 
@@ -55,6 +56,7 @@ def _patch_construction(monkeypatch, *, ocr_runtime: _FakeOcrRuntime) -> None:
 
 def test_build_parsing_runtime_wires_parsing_workflow(monkeypatch):
     fake_ocr_runtime = _FakeOcrRuntime(
+        policy="policy",
         canonical_element_ocr_enricher="enricher",
         page_ocr_fallback_workflow="fallback",
     )
@@ -74,6 +76,7 @@ def test_build_parsing_runtime_wires_parsing_workflow(monkeypatch):
     assert isinstance(parsing_workflow.document_graph_validator, _FakeGraphValidator)
     assert parsing_workflow.document_graph_builder is document_graph_builder
     assert parsing_workflow.id_generator is id_generator
+    assert parsing_workflow.ocr_policy == "policy"
     assert parsing_workflow.canonical_element_ocr_enricher == "enricher"
     assert parsing_workflow.page_ocr_fallback_workflow == "fallback"
 

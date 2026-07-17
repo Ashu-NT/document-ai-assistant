@@ -20,6 +20,29 @@ class ParsingOCRPolicy:
             or self.region_fallback_enabled
         )
 
+    @property
+    def canonical_enrichment_enabled(self) -> bool:
+        return self.asset_ocr_enabled
+
+    @property
+    def page_fallback_runtime_enabled(self) -> bool:
+        return self.page_fallback_enabled or self.region_fallback_enabled
+
+    def with_docling_ocr_override(
+        self,
+        enable_docling_ocr_override: bool | None,
+    ) -> "ParsingOCRPolicy":
+        if enable_docling_ocr_override is None:
+            return self
+        return ParsingOCRPolicy(
+            docling_ocr_enabled=enable_docling_ocr_override,
+            provider_requested=self.provider_requested,
+            provider_name=self.provider_name,
+            asset_ocr_enabled=self.asset_ocr_enabled,
+            page_fallback_enabled=self.page_fallback_enabled,
+            region_fallback_enabled=self.region_fallback_enabled,
+        )
+
 
 def resolve_parsing_ocr_policy(
     *,

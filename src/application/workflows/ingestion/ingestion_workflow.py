@@ -485,6 +485,10 @@ class IngestionWorkflow:
                 if self.extraction_enabled
                 else None
             )
+            self._ensure_final_graph_has_chunks(
+                final_graph=final_graph,
+                parsing_result=parsing_result,
+            )
             self._set_run_status(
                 ingestion_run,
                 IngestionStatus.FINALIZED,
@@ -501,13 +505,6 @@ class IngestionWorkflow:
                     "question_count": len(final_graph.questions),
                 },
             )
-
-            if not final_graph.chunks:
-                raise IngestionWorkflowError(
-                    "Finalized ingestion graph contains no chunks for extraction and embedding.",
-                    error_code="ingestion.final_graph.no_chunks",
-                    details={"document_id": final_graph.document.document_id},
-                )
 
             current_stage = IngestionStage.EXTRACTION
             self._event_publisher.publish_stage_started(
@@ -868,6 +865,28 @@ class IngestionWorkflow:
             None,
         )
         return getattr(question_service, "question_generation_model", None)
+
+    @staticmethod
+    def _ensure_final_graph_has_chunks(
+        *,
+        final_graph,
+        parsing_result,
+    ) -> None:
+        if final_graph.chunks:
+            return
+        raise IngestionWorkflowError(
+            "Finalized ingestion graph contains no chunks for extraction and embedding.",
+            error_code="ingestion.final_graph.no_chunks",
+            details={
+                "document_id": final_graph.document.document_id,
+                "final_section_count": len(final_graph.sections),
+                "final_element_count": len(final_graph.elements),
+                "final_chunk_count": len(final_graph.chunks),
+                "parsed_section_count": parsing_result.section_count,
+                "parsed_element_count": parsing_result.element_count,
+                "parsed_chunk_count": parsing_result.chunk_count,
+            },
+        )
 
     def _rollback(self) -> None:
         try:

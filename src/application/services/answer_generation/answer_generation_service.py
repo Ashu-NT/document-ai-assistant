@@ -55,6 +55,7 @@ from src.application.services.answer_generation.answer_generation_result import 
 from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
     AnswerContextOrganizer,
 )
+from src.application.workflows.common.settings_resolver import resolve_setting
 from src.config.logging import get_logger
 from src.domain.common.processing_metadata import ModelProcessingMetadata
 from src.domain.retrieval.citation import Citation
@@ -120,62 +121,73 @@ _RENDERER_LIMITATION_LABELS: dict[str, str] = {
 
 
 def _default_answer_generation_model() -> str | None:
-    try:
+    def _load() -> str | None:
         from src.config.settings import llm_settings
 
         return llm_settings.answer_generation_llm or llm_settings.general_llm
-    except Exception:
+
+    def _log_fallback(_fallback: str | None) -> None:
         _logger.warning(
             "answer_generation.settings_fallback setting=answer_generation_model "
             "fallback_value=%s",
             None,
         )
-        return None
+
+    return resolve_setting(_load, None, on_fallback=_log_fallback)
 
 
 def _default_answer_generation_temperature() -> float:
-    try:
+    fallback = 0.2
+
+    def _load() -> float:
         from src.config.settings import llm_settings
 
         return llm_settings.answer_generation_temperature
-    except Exception:
-        fallback = 0.2
+
+    def _log_fallback(resolved_fallback: float) -> None:
         _logger.warning(
             "answer_generation.settings_fallback setting=answer_generation_temperature "
             "fallback_value=%s",
-            fallback,
+            resolved_fallback,
         )
-        return fallback
+
+    return resolve_setting(_load, fallback, on_fallback=_log_fallback)
 
 
 def _default_answer_generation_num_ctx() -> int:
-    try:
+    fallback = 8192
+
+    def _load() -> int:
         from src.config.settings import llm_settings
 
         return llm_settings.answer_generation_num_ctx
-    except Exception:
-        fallback = 8192
+
+    def _log_fallback(resolved_fallback: int) -> None:
         _logger.warning(
             "answer_generation.settings_fallback setting=answer_generation_num_ctx "
             "fallback_value=%s",
-            fallback,
+            resolved_fallback,
         )
-        return fallback
+
+    return resolve_setting(_load, fallback, on_fallback=_log_fallback)
 
 
 def _default_capture_answer_prompt_text() -> bool:
-    try:
+    fallback = False
+
+    def _load() -> bool:
         from src.config.settings import llm_settings
 
         return llm_settings.capture_answer_prompt_text
-    except Exception:
-        fallback = False
+
+    def _log_fallback(resolved_fallback: bool) -> None:
         _logger.warning(
             "answer_generation.settings_fallback setting=capture_answer_prompt_text "
             "fallback_value=%s",
-            fallback,
+            resolved_fallback,
         )
-        return fallback
+
+    return resolve_setting(_load, fallback, on_fallback=_log_fallback)
 
 
 def _build_corrective_note(previous_error: str) -> str:

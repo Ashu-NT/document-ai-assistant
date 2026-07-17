@@ -17,8 +17,15 @@ from typing import TypeVar
 T = TypeVar("T")
 
 
-def resolve_setting(loader: Callable[[], T], default: T) -> T:
+def resolve_setting(
+    loader: Callable[[], T],
+    default: T,
+    *,
+    on_fallback: Callable[[T], None] | None = None,
+) -> T:
     try:
         return loader()
     except Exception:
+        if on_fallback is not None:
+            on_fallback(default)
         return default

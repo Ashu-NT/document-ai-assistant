@@ -33,6 +33,7 @@ def build_parsing_runtime(
         document_graph_builder=document_graph_builder,
         id_generator=id_generator,
         document_graph_validator=DocumentGraphValidator(),
+        ocr_policy=ocr_runtime.policy,
         canonical_element_ocr_enricher=ocr_runtime.canonical_element_ocr_enricher,
         page_ocr_fallback_workflow=ocr_runtime.page_ocr_fallback_workflow,
     )

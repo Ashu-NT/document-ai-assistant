@@ -2,6 +2,7 @@ from src.application.workflows.parsing import CanonicalElement as ParsedCanonica
 from src.application.workflows.parsing.canonical_element_ocr_enricher import (
     CanonicalElementOCREnricher,
 )
+from src.application.contracts.ai import OCRResult
 from src.domain.common import ElementType
 from src.shared.exceptions import OCRProviderError
 
@@ -11,21 +12,25 @@ class FakeOCRService:
         self.result = result
         self.calls: list[str] = []
 
-    def extract_text_from_image(
+    def extract_result_from_image(
         self,
         image_path: str,
         activity_context=None,
-    ) -> str:
+    ) -> OCRResult:
         self.calls.append(image_path)
-        return self.result
+        return OCRResult(
+            text=self.result,
+            provider_name="FakeOCRService",
+            source_image_path=image_path,
+        )
 
 
 class FailingOCRService:
-    def extract_text_from_image(
+    def extract_result_from_image(
         self,
         image_path: str,
         activity_context=None,
-    ) -> str:
+    ) -> OCRResult:
         raise OCRProviderError(
             "OCR provider failed.",
             details={"image_path": image_path},

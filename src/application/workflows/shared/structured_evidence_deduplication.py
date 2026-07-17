@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 # Canonical identifier/structured-entity fingerprint dedup, previously
 # reimplemented in both QuestionAnsweringWorkflow and
 # StructuredEvidenceResolver. The two identifier-dedup copies were not
@@ -47,24 +48,28 @@ def deduplicate_structured_entities(entities: list) -> list[dict]:
             continue
         fingerprint = (
             str(entity.get("_entity_type") or ""),
-            str(
-                entity.get("source_chunk_id")
-                or entity.get("manufacturer_id")
-                or entity.get("supplier_id")
-                or entity.get("contact_point_id")
-                or entity.get("spare_part_id")
-                or entity.get("equipment_id")
-                or entity.get("task_id")
-                or entity.get("procedure_id")
-                or entity.get("specification_id")
-                or entity.get("safety_warning_id")
-                or entity.get("maintenance_interval_id")
-                or entity.get("troubleshooting_id")
-                or entity
-            ),
+            str(_entity_identity_value(entity)),
         )
         if fingerprint in seen:
             continue
         seen.add(fingerprint)
         deduplicated.append(entity)
     return deduplicated
+
+
+def _entity_identity_value(entity: dict) -> object:
+    return (
+        entity.get("source_chunk_id")
+        or entity.get("manufacturer_id")
+        or entity.get("supplier_id")
+        or entity.get("contact_point_id")
+        or entity.get("spare_part_id")
+        or entity.get("equipment_id")
+        or entity.get("task_id")
+        or entity.get("procedure_id")
+        or entity.get("specification_id")
+        or entity.get("safety_warning_id")
+        or entity.get("maintenance_interval_id")
+        or entity.get("troubleshooting_id")
+        or entity
+    )

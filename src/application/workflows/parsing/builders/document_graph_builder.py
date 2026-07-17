@@ -23,6 +23,7 @@ from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,
 )
 from src.application.workflows.parsing.builders.section_builder import SectionBuilder
+from src.application.workflows.common.settings_resolver import resolve_setting
 from src.application.workflows.parsing.profiling import GraphBuildProfiler
 from src.application.workflows.parsing.tables import (
     LogicalTableFamilyResolver,
@@ -44,27 +45,30 @@ from src.shared.ids import IdGenerator
 
 
 def _default_max_chunk_tokens() -> int:
-    try:
+    def _load() -> int:
         from src.config.settings import ingestion_settings
+
         return ingestion_settings.max_chunk_tokens
-    except Exception:
-        return 1000
+
+    return resolve_setting(_load, 1000)
 
 
 def _default_chunk_overlap() -> int:
-    try:
+    def _load() -> int:
         from src.config.settings import ingestion_settings
+
         return ingestion_settings.chunk_overlap
-    except Exception:
-        return 150
+
+    return resolve_setting(_load, 150)
 
 
 def _default_min_section_text_length() -> int:
-    try:
+    def _load() -> int:
         from src.config.settings import ingestion_settings
+
         return ingestion_settings.min_section_text_length
-    except Exception:
-        return 150
+
+    return resolve_setting(_load, 150)
 
 
 class DocumentGraphBuilder:

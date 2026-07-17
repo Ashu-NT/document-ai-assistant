@@ -19,6 +19,10 @@ from src.application.workflows.parsing.canonical_element_ocr_enricher import (
 from src.application.workflows.parsing.builders.document_graph_builder import (
     DocumentGraphBuilder,
 )
+from src.application.workflows.parsing.ocr.parsing_ocr_policy import (
+    ParsingOCRPolicy,
+    resolve_parsing_ocr_policy,
+)
 from src.application.workflows.parsing.ocr import PageOCRFallbackWorkflow
 from src.application.workflows.parsing.normalizers.docling_document_normalizer import (
     DoclingDocumentNormalizer,
@@ -47,6 +51,7 @@ class ParsingWorkflow:
         document_graph_builder: DocumentGraphBuilder,
         id_generator: IdGenerator,
         document_graph_validator: DocumentGraphValidator | None = None,
+        ocr_policy: ParsingOCRPolicy | None = None,
         canonical_element_ocr_enricher: CanonicalElementOCREnricher | None = None,
         page_ocr_fallback_workflow: PageOCRFallbackWorkflow | None = None,
         parsing_report_writer: ParsingReportWriter | None = None,
@@ -59,6 +64,7 @@ class ParsingWorkflow:
         self.document_graph_builder = document_graph_builder
         self.id_generator = id_generator
         self.document_graph_validator = document_graph_validator
+        self.ocr_policy = ocr_policy
         self.canonical_element_ocr_enricher = canonical_element_ocr_enricher
         self.page_ocr_fallback_workflow = page_ocr_fallback_workflow
         self.parsing_report_writer = parsing_report_writer
@@ -88,6 +94,7 @@ class ParsingWorkflow:
         file_name = Path(file_path).name or file_path
         total_started_at = time.perf_counter()
         stage_durations: dict[str, float] = {}
+        resolved_ocr_policy = self._resolve_ocr_policy(enable_ocr_override)
 
         emit_progress(
             progress_callback,
@@ -132,7 +139,10 @@ class ParsingWorkflow:
             stage_durations=stage_durations,
         )
         ocr_trace = None
-        if self.canonical_element_ocr_enricher is not None:
+        if (
+            self.canonical_element_ocr_enricher is not None
+            and resolved_ocr_policy.canonical_enrichment_enabled
+        ):
             canonical_elements = run_stage(
                 progress_callback=progress_callback,
                 start_message=(
@@ -153,7 +163,10 @@ class ParsingWorkflow:
                 stage_name="canonical_element_ocr_enrichment",
                 stage_durations=stage_durations,
             )
-        if self.page_ocr_fallback_workflow is not None:
+        if (
+            self.page_ocr_fallback_workflow is not None
+            and resolved_ocr_policy.page_fallback_runtime_enabled
+        ):
             ocr_merge_result = run_stage(
                 progress_callback=progress_callback,
                 start_message=(
@@ -269,3 +282,13 @@ class ParsingWorkflow:
     def _validate_document_graph(self, document_graph: DocumentGraph) -> None:
         validation = self.document_graph_validator.validate(document_graph)
         validation.raise_if_invalid()
+
+    def _resolve_ocr_policy(
+        self,
+        enable_ocr_override: bool | None,
+    ) -> ParsingOCRPolicy:
+        if self.ocr_policy is None:
+            return resolve_parsing_ocr_policy(
+                enable_docling_ocr_override=enable_ocr_override
+            )
+        return self.ocr_policy.with_docling_ocr_override(enable_ocr_override)

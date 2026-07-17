@@ -174,12 +174,14 @@ def test_ingestion_workflow_rejects_zero_final_chunks_before_extraction_and_embe
     input_file.write_bytes(b"%PDF-1.4\nmanual")
     empty_final_graph = copy.deepcopy(sample_document_graph)
     empty_final_graph.replace_chunks([])
+    event_service = FakeEventService()
     extraction_workflow = FakeExtractionWorkflow(sample_extraction_result)
     embedding_workflow = FakeEmbeddingWorkflow()
     workflow = _build_workflow(
         sample_document_graph=sample_document_graph,
         sample_document_classification=sample_document_classification,
         sample_extraction_result=sample_extraction_result,
+        event_service=event_service,
         extraction_workflow=extraction_workflow,
         embedding_workflow=embedding_workflow,
         post_classification_chunk_finalization_workflow=(
@@ -199,3 +201,8 @@ def test_ingestion_workflow_rejects_zero_final_chunks_before_extraction_and_embe
     assert extraction_workflow.calls == []
     assert embedding_workflow.embed_calls == []
     assert embedding_workflow.store_calls == []
+    assert not any(
+        event.event_type == "ingestion.stage.completed"
+        and event.stage == IngestionStage.FINALIZATION.value
+        for event in event_service.events
+    )
