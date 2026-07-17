@@ -57,8 +57,28 @@ class LayoutRegionBuilder:
             grouped[region_key].append(candidate)
             lane_meta[region_key] = lane_index
 
+        # All lane groups on this page form one shared left-to-right column
+        # bank: they must never be reordered relative to EACH OTHER by raw
+        # vertical position, since that only reflects an incidental
+        # difference in exactly where each column's content happens to
+        # start (a picture above one column but not the other, etc.), not
+        # true reading order. Only lane_index should decide their relative
+        # order, so both lanes are anchored to one shared top_y (the
+        # earliest position across either lane) and lane_index breaks the
+        # tie. "full" (full-width) groups keep sorting by their own actual
+        # position, so headings/footers still interleave correctly before
+        # or after the column bank.
+        shared_lane_top_y = self._shared_lane_top_y(grouped)
+
         regions: list[PageLayoutRegion] = []
-        for region_key, items in sorted(grouped.items(), key=self._sort_region_group):
+        for region_key, items in sorted(
+            grouped.items(),
+            key=lambda entry: self._sort_region_group(
+                entry,
+                shared_lane_top_y=shared_lane_top_y,
+                lane_meta=lane_meta,
+            ),
+        ):
             ordered_items = self.reading_order_resolver.sort_candidates(items)
             segments = self.region_segmenter.segment(ordered_items)
             lane_index = lane_meta[region_key]
@@ -150,9 +170,17 @@ class LayoutRegionBuilder:
         return f"{base}:region_{segment_index + 1}"
 
     @staticmethod
-    def _sort_region_group(item: tuple[str, list[PageLayoutCandidate]]) -> tuple[float, int]:
-        key, candidates = item
-        top_y = min(
+    def _shared_lane_top_y(grouped: dict[str, list[PageLayoutCandidate]]) -> float:
+        lane_top_ys = [
+            LayoutRegionBuilder._group_top_y(items)
+            for key, items in grouped.items()
+            if key != "full"
+        ]
+        return min(lane_top_ys, default=0.0)
+
+    @staticmethod
+    def _group_top_y(candidates: list[PageLayoutCandidate]) -> float:
+        return min(
             (
                 candidate.top_y()
                 for candidate in candidates
@@ -160,8 +188,19 @@ class LayoutRegionBuilder:
             ),
             default=0.0,
         )
-        region_rank = 0 if key == "full" else 1
-        return (top_y, region_rank)
+
+    @staticmethod
+    def _sort_region_group(
+        item: tuple[str, list[PageLayoutCandidate]],
+        *,
+        shared_lane_top_y: float,
+        lane_meta: dict[str, int | None],
+    ) -> tuple[float, int, int]:
+        key, candidates = item
+        if key == "full":
+            return (LayoutRegionBuilder._group_top_y(candidates), 0, 0)
+        lane_index = lane_meta[key] or 0
+        return (shared_lane_top_y, 1, lane_index)
 
     @staticmethod
     def _merge_bbox(candidates: list[PageLayoutCandidate]) -> BoundingBox | None:

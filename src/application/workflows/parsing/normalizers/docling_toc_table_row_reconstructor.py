@@ -12,6 +12,12 @@ from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
 )
 
 TOC_PAGE_NUMBER_PATTERN = re.compile(r"\d{1,4}")
+# A table's dotted leader ("......") between title and page number commonly
+# gets split across two adjacent cells at an arbitrary point, leaving a few
+# residual leader dots stuck to the page-number cell (e.g. "..18" instead of
+# a clean "18"). Dots are never part of a real page number in this context,
+# so they're safe to strip before checking whether a cell is a page number.
+_ROW_PAGE_CELL_PATTERN = re.compile(r"^\.*\s*(?P<page>\d{1,4})\s*\.*$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -187,8 +193,9 @@ class DoclingTocTableRowReconstructor:
     @staticmethod
     def _extract_row_page(cells: list[str]) -> tuple[int | None, int | None]:
         for index in range(len(cells) - 1, -1, -1):
-            if TOC_PAGE_NUMBER_PATTERN.fullmatch(cells[index]):
-                return index, int(cells[index])
+            match = _ROW_PAGE_CELL_PATTERN.fullmatch(cells[index])
+            if match:
+                return index, int(match.group("page"))
         return None, None
 
     @staticmethod
