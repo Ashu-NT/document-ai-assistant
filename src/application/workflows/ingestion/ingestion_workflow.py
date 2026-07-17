@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from pathlib import Path
+from datetime import UTC
 from typing import Callable
 
 from src.application.contracts import UnitOfWork
@@ -18,39 +17,16 @@ from src.application.workflows.classification import (
     DocumentClassificationWorkflow,
     PostClassificationChunkFinalizationWorkflow,
 )
-from src.application.workflows.embedding import EmbeddedChunk, EmbeddingWorkflow
+from src.application.workflows.embedding import EmbeddingWorkflow
 from src.application.workflows.extraction import ExtractionWorkflow
-from src.application.workflows.ingestion.context.ingestion_execution_context_resolver import (
-    resolve_activity_context,
-    resolve_audit_context,
-    resolve_event_context,
-)
-from src.application.workflows.ingestion.events.ingestion_stage_event_publisher import (
-    IngestionStageEventPublisher,
-)
-from src.application.workflows.ingestion.hashing.file_hash_service import compute_file_hash
-from src.application.workflows.linking import SemanticLinkingWorkflow
 from src.application.workflows.ingestion.ingestion_exceptions import (
     IngestionWorkflowError,
 )
 from src.application.workflows.ingestion.ingestion_request import IngestionRequest
 from src.application.workflows.ingestion.ingestion_result import IngestionResult
 from src.application.workflows.ingestion.ingestion_stage import IngestionStage
-from src.application.workflows.ingestion.ingestion_status import IngestionStatus
-from src.application.workflows.ingestion.pipeline.duplicate_check_step import (
-    DuplicateCheckStep,
-)
-from src.application.workflows.ingestion.pipeline.extraction_retry_step import (
-    ExtractionRetryStep,
-)
-from src.application.workflows.ingestion.pipeline.ingestion_result_assembler import (
-    build_success_result,
-)
-from src.application.workflows.ingestion.pipeline.quality_check_step import (
-    QualityCheckStep,
-)
-from src.application.workflows.ingestion.pipeline.reingestion_step import (
-    ReingestionStep,
+from src.application.workflows.ingestion.pipeline import (
+    build_ingestion_workflow_pipeline,
 )
 from src.application.workflows.ingestion.reingestion_request import (
     ReingestionRequest,
@@ -59,40 +35,13 @@ from src.application.workflows.ingestion.runtime import (
     IngestionRuntimeCapabilities,
     IngestionRuntimeProfileResolver,
 )
-from src.application.workflows.ingestion.stages import (
-    ClassificationStageRunner,
-    ExtractionStageRunner,
-    FinalizationStageRunner,
-    ParsingStageRunner,
-    RegistrationStageRunner,
-    VectorIndexStageRunner,
-)
+from src.application.workflows.linking import SemanticLinkingWorkflow
 from src.application.workflows.parsing import ParsingWorkflow
-from src.domain.common import DocumentType
-from src.domain.events import IngestionEvent
-from src.domain.workflow import IngestionRun
 from src.shared.activity import ActivityContext
 from src.shared.audit import AuditContext
 from src.shared.events import EventContext
-from src.shared.exceptions import ApplicationError
 from src.shared.execution import tracked_action
-from src.shared.progress.progress_emitter import emit_progress
-from src.shared.ids import IdGenerator, IdPrefix
-
-
-def _file_name_from_path(file_path: str) -> str:
-    return Path(file_path).name or file_path
-
-
-def _coerce_document_type(value: str | None) -> DocumentType | None:
-    if value is None:
-        return None
-    normalized = value.strip().lower()
-    for document_type in DocumentType:
-        if normalized == document_type.value:
-            return document_type
-    return None
-
+from src.shared.ids import IdGenerator
 
 class IngestionWorkflow:
     def __init__(
@@ -160,63 +109,32 @@ class IngestionWorkflow:
         self.audit_service = audit_service
         self.event_service = event_service
 
-        self._event_publisher = IngestionStageEventPublisher(
+        self._pipeline = build_ingestion_workflow_pipeline(
+            unit_of_work=self.unit_of_work,
             id_generator=self.id_generator,
             event_service=self.event_service,
-            unit_of_work=self.unit_of_work,
-        )
-        self._duplicate_check_step = DuplicateCheckStep(
             duplicate_detection_service=self.duplicate_detection_service,
-        )
-        self._quality_check_step = QualityCheckStep(quality_gate=self.quality_gate)
-        self._reingestion_step = ReingestionStep(
-            document_lookup_service=self.document_lookup_service,
-        )
-        self._extraction_retry_step = ExtractionRetryStep(
+            quality_gate=self.quality_gate,
             document_lookup_service=self.document_lookup_service,
             post_classification_chunk_finalization_workflow=(
                 self.post_classification_chunk_finalization_workflow
             ),
             extraction_workflow=self.extraction_workflow,
             document_registration_service=self.document_registration_service,
-            id_generator=self.id_generator,
-            unit_of_work=self.unit_of_work,
-            runtime_capabilities=self.runtime_capabilities,
             identifier_promotion_service=self.identifier_promotion_service,
             deterministic_identifier_scanner=self.deterministic_identifier_scanner,
             semantic_linking_workflow=self.semantic_linking_workflow,
-        )
-        self._extraction_stage_runner = ExtractionStageRunner(
-            extraction_workflow=self.extraction_workflow,
-            document_registration_service=self.document_registration_service,
-            id_generator=self.id_generator,
-            extraction_enabled=self.extraction_enabled,
-            commit=self.unit_of_work.commit,
-            identifier_promotion_service=self.identifier_promotion_service,
-            deterministic_identifier_scanner=self.deterministic_identifier_scanner,
-            semantic_linking_workflow=self.semantic_linking_workflow,
-        )
-        self._vector_index_stage_runner = VectorIndexStageRunner(
-            embedding_workflow=self.embedding_workflow,
-            commit=self.unit_of_work.commit,
-        )
-        self._parsing_stage_runner = ParsingStageRunner(
             parsing_workflow=self.parsing_workflow,
-        )
-        self._registration_stage_runner = RegistrationStageRunner(
-            document_registration_service=self.document_registration_service,
-            commit=self.unit_of_work.commit,
-        )
-        self._classification_stage_runner = ClassificationStageRunner(
-            document_classification_workflow=self.document_classification_workflow,
-            commit=self.unit_of_work.commit,
-        )
-        self._finalization_stage_runner = FinalizationStageRunner(
-            post_classification_chunk_finalization_workflow=(
-                self.post_classification_chunk_finalization_workflow
+            document_classification_workflow=(
+                self.document_classification_workflow
             ),
+            embedding_workflow=self.embedding_workflow,
+            runtime_capabilities=self.runtime_capabilities,
+            extraction_enabled=self.extraction_enabled,
+            runtime_diagnostics_loader=self._runtime_diagnostics,
             question_generation_model_loader=self._question_generation_model,
-            commit=self.unit_of_work.commit,
+            extraction_model_loader=self._extraction_model,
+            ensure_final_graph_has_chunks=self._ensure_final_graph_has_chunks,
         )
 
     @tracked_action(
@@ -237,545 +155,58 @@ class IngestionWorkflow:
     ) -> IngestionResult:
         validation = self.ingestion_request_validator.validate(request)
         validation.raise_if_invalid()
+        pipeline = self._pipeline
 
-        file_path = str(Path(request.file_path).expanduser().resolve())
-        file_name = _file_name_from_path(file_path)
-        file_hash = compute_file_hash(Path(file_path))
-        content_hash: str | None = None
-        run_id = self.id_generator.new_id(IdPrefix.INGESTION_RUN)
-        correlation_id = request.correlation_id or run_id
-        resolved_activity_context = resolve_activity_context(
-            request=request,
-            correlation_id=correlation_id,
+        bootstrap = pipeline.run_bootstrapper.bootstrap(
+            request,
             activity_context=activity_context,
-        )
-        resolved_audit_context = resolve_audit_context(
-            request=request,
-            correlation_id=correlation_id,
             audit_context=audit_context,
-        )
-        resolved_event_context = resolve_event_context(
-            request=request,
-            correlation_id=correlation_id,
             event_context=event_context,
-        )
-
-        ingestion_run = IngestionRun(
-            run_id=run_id,
-            file_path=file_path,
-            file_hash=file_hash,
-            content_hash=content_hash,
-            status=IngestionStatus.PENDING,
-        )
-        self._persist_run(ingestion_run, create=True)
-        self._event_publisher.publish_event(
-            IngestionEvent.started(
-                event_id=self.id_generator.new_event_id(),
-                ingestion_run_id=run_id,
-                file_path=file_path,
-                file_name=file_name,
-            ),
-            event_context=resolved_event_context,
-        )
-
-        warnings: list[str] = []
-
-        emit_progress(progress_callback, f"Starting ingestion for {file_name}...")
-        self._event_publisher.publish_stage_started(
-            ingestion_run=ingestion_run,
-            stage=IngestionStage.DUPLICATE_CHECK,
-            event_context=resolved_event_context,
-            file_name=file_name,
             progress_callback=progress_callback,
         )
-        current_stage = IngestionStage.DUPLICATE_CHECK
-        file_duplicate_document_id = self._duplicate_check_step.check_file_hash_duplicate(
-            request=request,
-            file_hash=file_hash,
-            activity_context=resolved_activity_context,
-        )
-        if file_duplicate_document_id is not None:
-            duplicate_status = IngestionStatus.SKIPPED_FILE_DUPLICATE
-            ingestion_run.status = duplicate_status
-            self._event_publisher.publish_stage_completed(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.DUPLICATE_CHECK,
-                status=ingestion_run.status,
-                event_context=resolved_event_context,
-                file_name=file_name,
-                payload={"duplicate": True, "type": "file_hash"},
-            )
-            ingestion_run.document_id = file_duplicate_document_id
-            ingestion_run.finished_at = datetime.now(UTC)
-            self._persist_run(ingestion_run)
-            self._event_publisher.publish_event(
-                IngestionEvent.skipped_duplicate(
-                    event_id=self.id_generator.new_event_id(),
-                    ingestion_run_id=run_id,
-                    status=duplicate_status.value,
-                    duplicate_of_document_id=file_duplicate_document_id,
-                    duplicate_type="file_hash",
-                    document_id=file_duplicate_document_id,
-                    file_path=file_path,
-                    file_name=file_name,
-                ),
-                event_context=resolved_event_context,
-            )
-            return IngestionResult(
-                status=duplicate_status,
-                ingestion_run_id=run_id,
-                document_id=file_duplicate_document_id,
-                file_name=file_name,
-                duplicate_of_document_id=file_duplicate_document_id,
-                warnings=warnings,
-                diagnostics={
-                    "file_path": file_path,
-                    "file_hash": file_hash,
-                    "content_hash": None,
-                    "metadata": dict(request.metadata),
-                    **self._runtime_diagnostics(),
-                },
-                current_stage=IngestionStage.DUPLICATE_CHECK,
-                correlation_id=correlation_id,
-            )
-        self._event_publisher.publish_stage_completed(
+        file_path = bootstrap.file_path
+        file_name = bootstrap.file_name
+        file_hash = bootstrap.file_hash
+        content_hash = bootstrap.content_hash
+        correlation_id = bootstrap.correlation_id
+        ingestion_run = bootstrap.ingestion_run
+        resolved_activity_context = bootstrap.activity_context
+        resolved_event_context = bootstrap.event_context
+        warnings = bootstrap.warnings
+        stage_session = pipeline.stage_lifecycle.create_session(
             ingestion_run=ingestion_run,
-            stage=IngestionStage.DUPLICATE_CHECK,
-            status=ingestion_run.status,
-            event_context=resolved_event_context,
             file_name=file_name,
-            payload={"duplicate": False},
+            event_context=resolved_event_context,
+            progress_callback=progress_callback,
         )
 
-        parsing_result = None
-        final_graph = None
-        extraction_result = None
-        embedded_chunks: list[EmbeddedChunk] = []
-        quality_diagnostics: dict[str, object] = {}
-
-        try:
-            current_stage = IngestionStage.PARSING
-            self._set_run_status(
-                ingestion_run,
-                IngestionStatus.PARSING,
-            )
-            self._event_publisher.publish_stage_started(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.PARSING,
-                event_context=resolved_event_context,
-                file_name=file_name,
-                progress_callback=progress_callback,
-            )
-            requested_document_type = _coerce_document_type(request.document_type)
-            parsing_stage_result = self._parsing_stage_runner.run(
-                file_path=file_path,
-                file_hash=file_hash,
-                content_hash=content_hash,
-                document_id=request.preserve_document_id,
-                enable_ocr_override=request.enable_ocr,
-                requested_title=request.title,
-                requested_document_type=requested_document_type,
-                source_name=request.source_name,
-                activity_context=resolved_activity_context,
-                progress_callback=progress_callback,
-            )
-            parsing_result = parsing_stage_result.parsing_result
-            ingestion_run.document_id = parsing_result.document_id
-            ingestion_run.parser_name = parsing_stage_result.parser_name
-            ingestion_run.parser_version = parsing_stage_result.parser_version
-            self._event_publisher.publish_stage_completed(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.PARSING,
-                status=ingestion_run.status,
-                event_context=resolved_event_context,
-                file_name=file_name,
-                payload={
-                    "page_count": parsing_result.page_count,
-                    "section_count": parsing_result.section_count,
-                    "chunk_count": parsing_result.chunk_count,
-                },
-            )
-            warnings.extend(parsing_result.parse_warnings)
-            content_hash = parsing_stage_result.content_hash
-            ingestion_run.content_hash = content_hash
-
-            content_duplicate_document_id = (
-                self._duplicate_check_step.check_content_hash_duplicate(
-                    request=request,
-                    content_hash=content_hash,
-                    activity_context=resolved_activity_context,
-                )
-            )
-            if content_duplicate_document_id is not None:
-                duplicate_status = IngestionStatus.SKIPPED_CONTENT_DUPLICATE
-                ingestion_run.status = duplicate_status
-                ingestion_run.document_id = content_duplicate_document_id
-                ingestion_run.finished_at = datetime.now(UTC)
-                self._persist_run(ingestion_run)
-                self._event_publisher.publish_event(
-                    IngestionEvent.skipped_duplicate(
-                        event_id=self.id_generator.new_event_id(),
-                        ingestion_run_id=run_id,
-                        status=duplicate_status.value,
-                        duplicate_of_document_id=content_duplicate_document_id,
-                        duplicate_type="content_hash",
-                        document_id=content_duplicate_document_id,
-                        file_path=file_path,
-                        file_name=file_name,
-                    ),
-                    event_context=resolved_event_context,
-                )
-                return IngestionResult(
-                    status=duplicate_status,
-                    ingestion_run_id=run_id,
-                    document_id=content_duplicate_document_id,
-                    file_name=file_name,
-                    duplicate_of_document_id=content_duplicate_document_id,
-                    warnings=warnings,
-                    diagnostics={
-                        "file_path": file_path,
-                        "file_hash": file_hash,
-                        "content_hash": content_hash,
-                        "metadata": dict(request.metadata),
-                        **self._runtime_diagnostics(),
-                    },
-                    current_stage=IngestionStage.PARSING,
-                    correlation_id=correlation_id,
-                )
-
-            current_stage = IngestionStage.REGISTRATION
-            self._event_publisher.publish_stage_started(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.REGISTRATION,
-                event_context=resolved_event_context,
-                document_id=parsing_result.document_id,
-                file_name=file_name,
-                progress_callback=progress_callback,
-            )
-            self._registration_stage_runner.run(
-                document_graph=parsing_result.document_graph,
-                replace_existing=request.preserve_document_id is not None,
-                activity_context=resolved_activity_context,
-            )
-            self._set_run_status(
-                ingestion_run,
-                IngestionStatus.REGISTERED,
-            )
-            self._event_publisher.publish_stage_completed(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.REGISTRATION,
-                status=ingestion_run.status,
-                event_context=resolved_event_context,
-                document_id=parsing_result.document_id,
-                file_name=file_name,
-                payload={"document_id": parsing_result.document_id},
-            )
-
-            current_stage = IngestionStage.CLASSIFICATION
-            self._event_publisher.publish_stage_started(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.CLASSIFICATION,
-                event_context=resolved_event_context,
-                document_id=parsing_result.document_id,
-                file_name=file_name,
-                progress_callback=progress_callback,
-            )
-            classification_stage_result = self._classification_stage_runner.run(
-                document_graph=parsing_result.document_graph,
-                activity_context=resolved_activity_context,
-            )
-            classification = classification_stage_result.classification
-            ingestion_run.classification_model = (
-                classification_stage_result.classification_model
-            )
-            self._set_run_status(
-                ingestion_run,
-                IngestionStatus.CLASSIFIED,
-            )
-            self._event_publisher.publish_stage_completed(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.CLASSIFICATION,
-                status=ingestion_run.status,
-                event_context=resolved_event_context,
-                document_id=classification.document_id,
-                file_name=file_name,
-                payload={
-                    "document_type": classification.document_type.value,
-                    "confidence_score": (
-                        classification.result.confidence_score
-                        if classification.result is not None
-                        else None
-                    ),
-                },
-            )
-
-            current_stage = IngestionStage.FINALIZATION
-            self._event_publisher.publish_stage_started(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.FINALIZATION,
-                event_context=resolved_event_context,
-                document_id=parsing_result.document_id,
-                file_name=file_name,
-                progress_callback=progress_callback,
-            )
-            finalization_stage_result = self._finalization_stage_runner.run(
-                document_id=parsing_result.document_id,
-                enable_question_generation=request.generate_questions,
-                activity_context=resolved_activity_context,
-                progress_callback=progress_callback,
-            )
-            final_graph = finalization_stage_result.final_graph
-            ingestion_run.question_generation_model = (
-                finalization_stage_result.question_generation_model
-            )
-            ingestion_run.extraction_model = (
-                self.extraction_workflow.extraction_model
-                if self.extraction_enabled
-                else None
-            )
-            self._ensure_final_graph_has_chunks(
-                final_graph=final_graph,
-                parsing_result=parsing_result,
-            )
-            self._set_run_status(
-                ingestion_run,
-                IngestionStatus.FINALIZED,
-            )
-            self._event_publisher.publish_stage_completed(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.FINALIZATION,
-                status=ingestion_run.status,
-                event_context=resolved_event_context,
-                document_id=final_graph.document.document_id,
-                file_name=file_name,
-                payload={
-                    **self._runtime_diagnostics(),
-                    "chunk_count": len(final_graph.chunks),
-                    "question_count": len(final_graph.questions),
-                },
-            )
-
-            current_stage = IngestionStage.EXTRACTION
-            self._event_publisher.publish_stage_started(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.EXTRACTION,
-                event_context=resolved_event_context,
-                document_id=final_graph.document.document_id,
-                file_name=file_name,
-                progress_callback=(
-                    progress_callback if self.extraction_enabled else None
-                ),
-            )
-            extraction_stage_result = self._extraction_stage_runner.run(
-                final_graph=final_graph,
-                replace_existing=request.preserve_document_id is not None,
-                activity_context=resolved_activity_context,
-                progress_callback=progress_callback,
-            )
-            extraction_result = extraction_stage_result.extraction_result
-
-            self._event_publisher.publish_stage_completed(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.EXTRACTION,
-                status=ingestion_run.status,
-                event_context=resolved_event_context,
-                document_id=final_graph.document.document_id,
-                file_name=file_name,
-                payload={
-                    **self._runtime_diagnostics(),
-                    "skipped": not self.extraction_enabled,
-                    "reason": (
-                        "disabled_by_config"
-                        if not self.extraction_enabled
-                        else None
-                    ),
-                    "extraction_id": (
-                        extraction_result.extraction_id
-                        if extraction_result is not None
-                        else None
-                    ),
-                    "maintenance_task_count": (
-                        len(extraction_result.maintenance_tasks)
-                        if extraction_result is not None
-                        else 0
-                    ),
-                    "spare_part_count": (
-                        len(extraction_result.spare_parts)
-                        if extraction_result is not None
-                        else 0
-                    ),
-                    "unresolved_chunk_count": (
-                        len(extraction_result.unresolved_chunk_ids)
-                        if extraction_result is not None
-                        else 0
-                    ),
-                    "deterministic_identifier_count": (
-                        extraction_stage_result.deterministic_identifier_count
-                    ),
-                    "semantic_relationship_count": (
-                        extraction_stage_result.semantic_relationship_count
-                    ),
-                },
-            )
-            self._set_run_status(
-                ingestion_run,
-                IngestionStatus.EXTRACTED,
-            )
-
-            current_stage = IngestionStage.EMBEDDING
-            self._event_publisher.publish_stage_started(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.EMBEDDING,
-                event_context=resolved_event_context,
-                document_id=final_graph.document.document_id,
-                file_name=file_name,
-                progress_callback=progress_callback,
-            )
-            vector_stage_result = self._vector_index_stage_runner.embed(
-                final_graph=final_graph,
-                activity_context=resolved_activity_context,
-                progress_callback=progress_callback,
-            )
-            embedded_chunks = vector_stage_result.embedded_chunks
-            ingestion_run.embedding_model = vector_stage_result.embedding_model
-            self._set_run_status(
-                ingestion_run,
-                IngestionStatus.EMBEDDED,
-            )
-            self._event_publisher.publish_stage_completed(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.EMBEDDING,
-                status=ingestion_run.status,
-                event_context=resolved_event_context,
-                document_id=final_graph.document.document_id,
-                file_name=file_name,
-                payload={"vector_count": len(embedded_chunks)},
-            )
-
-            current_stage = IngestionStage.INDEXING
-            self._event_publisher.publish_stage_started(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.INDEXING,
-                event_context=resolved_event_context,
-                document_id=final_graph.document.document_id,
-                file_name=file_name,
-                progress_callback=progress_callback,
-            )
-            self._vector_index_stage_runner.index(
-                document_id=final_graph.document.document_id,
-                embedded_chunks=embedded_chunks,
-                replace_existing=request.preserve_document_id is not None,
-                progress_callback=progress_callback,
-            )
-            self._set_run_status(
-                ingestion_run,
-                IngestionStatus.INDEXED,
-            )
-            self._event_publisher.publish_stage_completed(
-                ingestion_run=ingestion_run,
-                stage=IngestionStage.INDEXING,
-                status=ingestion_run.status,
-                event_context=resolved_event_context,
-                document_id=final_graph.document.document_id,
-                file_name=file_name,
-                payload={"vector_count": len(embedded_chunks)},
-            )
-
-            if request.run_quality_checks:
-                current_stage = IngestionStage.QUALITY
-                self._event_publisher.publish_stage_started(
-                    ingestion_run=ingestion_run,
-                    stage=IngestionStage.QUALITY,
-                    event_context=resolved_event_context,
-                    document_id=final_graph.document.document_id,
-                    file_name=file_name,
-                    progress_callback=progress_callback,
-                )
-                quality_diagnostics = self._quality_check_step.run(
-                    parsing_result=parsing_result,
-                    final_graph=final_graph,
-                    warnings=warnings,
-                )
-                self._event_publisher.publish_stage_completed(
-                    ingestion_run=ingestion_run,
-                    stage=IngestionStage.QUALITY,
-                    status=ingestion_run.status,
-                    event_context=resolved_event_context,
-                    document_id=final_graph.document.document_id,
-                    file_name=file_name,
-                    payload=quality_diagnostics,
-                )
-
-            current_stage = IngestionStage.COMPLETE
-            ingestion_run.mark_complete(datetime.now(UTC))
-            self._persist_run(ingestion_run)
-            result = build_success_result(
-                request=request,
-                ingestion_run=ingestion_run,
-                final_graph=final_graph,
-                embedded_chunks=embedded_chunks,
-                file_name=file_name,
-                warnings=warnings,
-                correlation_id=correlation_id,
-                quality_diagnostics=quality_diagnostics,
-                extraction_result=extraction_result,
-                extraction_skipped=not self.extraction_enabled,
-                runtime_diagnostics=self._runtime_diagnostics(),
-            )
-            self._event_publisher.publish_event(
-                IngestionEvent.completed(
-                    event_id=self.id_generator.new_event_id(),
-                    ingestion_run_id=run_id,
-                    document_id=final_graph.document.document_id,
-                    file_path=file_path,
-                    file_name=file_name,
-                    payload={
-                        "status": ingestion_run.status.value,
-                        "chunk_count": result.chunk_count,
-                        "vector_count": result.vector_count,
-                    },
-                ),
-                event_context=resolved_event_context,
-            )
-            emit_progress(progress_callback, f"Ingestion completed for {file_name}.")
-            return result
-
-        except Exception as exc:
-            self._rollback()
-            ingestion_run.mark_status(
-                IngestionStatus.FAILED,
-                finished_at=datetime.now(UTC),
-                error_message=str(exc),
-            )
-            self._persist_run(ingestion_run)
-            self._event_publisher.publish_event(
-                IngestionEvent.failed(
-                    event_id=self.id_generator.new_event_id(),
-                    ingestion_run_id=run_id,
-                    error_message=str(exc),
-                    document_id=ingestion_run.document_id,
-                    stage=current_stage.value if current_stage is not None else None,
-                    file_path=file_path,
-                    file_name=file_name,
-                    details={"error_code": getattr(exc, "error_code", None)},
-                ),
-                event_context=resolved_event_context,
-            )
-            emit_progress(
-                progress_callback,
-                f"Ingestion failed for {file_name}: {exc}",
-            )
-            if isinstance(exc, ApplicationError):
-                raise
-            raise IngestionWorkflowError(
-                "Document ingestion failed unexpectedly.",
-                error_code="ingestion.workflow.failed",
-                details={
-                    "document_id": ingestion_run.document_id,
-                    "file_path": file_path,
-                    "run_id": run_id,
-                },
-            ) from exc
+        current_stage = IngestionStage.DUPLICATE_CHECK
+        duplicate_result = pipeline.duplicate_coordinator.check_file_hash_duplicate(
+            request=request,
+            ingestion_run=ingestion_run,
+            file_name=file_name,
+            file_path=file_path,
+            file_hash=file_hash,
+            correlation_id=correlation_id,
+            warnings=warnings,
+            activity_context=resolved_activity_context,
+            event_context=resolved_event_context,
+            progress_callback=progress_callback,
+        )
+        if duplicate_result is not None:
+            return duplicate_result
+        return pipeline.stage_sequence_executor.run(
+            request=request,
+            file_path=file_path,
+            file_name=file_name,
+            file_hash=file_hash,
+            content_hash=content_hash,
+            correlation_id=correlation_id,
+            ingestion_run=ingestion_run,
+            stage_session=stage_session,
+            activity_context=resolved_activity_context,
+            warnings=warnings,
+        )
 
     @tracked_action(
         action="document.reingestion.requested",
@@ -792,7 +223,7 @@ class IngestionWorkflow:
         audit_context: AuditContext | None = None,
         progress_callback: Callable[[str], None] | None = None,
     ) -> IngestionResult:
-        ingestion_request = self._reingestion_step.prepare_request(
+        ingestion_request = self._pipeline.reingestion_step.prepare_request(
             request,
             activity_context=activity_context,
         )
@@ -832,26 +263,11 @@ class IngestionWorkflow:
 
         See `ExtractionRetryStep.run` for the full implementation.
         """
-        return self._extraction_retry_step.run(
+        return self._pipeline.extraction_retry_step.run(
             document_id,
             activity_context=activity_context,
             progress_callback=progress_callback,
         )
-
-    def _persist_run(self, ingestion_run: IngestionRun, *, create: bool = False) -> None:
-        if create:
-            self.unit_of_work.ingestion_runs.create(ingestion_run)
-        else:
-            self.unit_of_work.ingestion_runs.update(ingestion_run)
-        self.unit_of_work.commit()
-
-    def _set_run_status(
-        self,
-        ingestion_run: IngestionRun,
-        status: IngestionStatus,
-    ) -> None:
-        ingestion_run.mark_status(status, error_message=None)
-        self._persist_run(ingestion_run)
 
     def _question_generation_model(self) -> str | None:
         question_service = getattr(
@@ -860,6 +276,9 @@ class IngestionWorkflow:
             None,
         )
         return getattr(question_service, "question_generation_model", None)
+
+    def _extraction_model(self) -> str | None:
+        return getattr(self.extraction_workflow, "extraction_model", None)
 
     def _runtime_diagnostics(self) -> dict[str, object]:
         return self.runtime_capabilities.as_diagnostics()
@@ -885,9 +304,3 @@ class IngestionWorkflow:
                 "parsed_chunk_count": parsing_result.chunk_count,
             },
         )
-
-    def _rollback(self) -> None:
-        try:
-            self.unit_of_work.rollback()
-        except Exception:
-            return

@@ -2,13 +2,12 @@ from pathlib import Path
 
 from src.application.workflows.ingestion.ingestion_stage import IngestionStage
 
-_WORKFLOW_SOURCE_PATH = (
+_INGESTION_SOURCE_DIR = (
     Path(__file__).resolve().parents[5]
     / "src"
     / "application"
     / "workflows"
     / "ingestion"
-    / "ingestion_workflow.py"
 )
 
 
@@ -23,7 +22,12 @@ def test_every_declared_stage_is_actually_reached_by_the_workflow() -> None:
     into the workflow (or vice versa - removed from the workflow but left in
     the enum).
     """
-    source = _WORKFLOW_SOURCE_PATH.read_text(encoding="utf-8")
+    source_parts = []
+    for path in _INGESTION_SOURCE_DIR.rglob("*.py"):
+        if path.name == "ingestion_stage.py":
+            continue
+        source_parts.append(path.read_text(encoding="utf-8"))
+    source = "\n".join(source_parts)
 
     unreachable = [
         stage.name
@@ -33,5 +37,5 @@ def test_every_declared_stage_is_actually_reached_by_the_workflow() -> None:
 
     assert unreachable == [], (
         f"IngestionStage member(s) {unreachable} are declared but never "
-        "referenced in ingestion_workflow.py."
+        "referenced in the ingestion workflow source tree."
     )
