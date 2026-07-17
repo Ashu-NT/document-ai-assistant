@@ -173,6 +173,72 @@ def test_prepare_keeps_general_chunk_without_scaffolding_prefix_for_table_querie
     ]
 
 
+def test_prepare_rejects_mismatched_table_family_for_maintenance_focused_query() -> None:
+    # Regression guard for the other half of weakness #5: a maintenance-
+    # interval-focused query should not carry an unrelated spare-parts table
+    # into answer generation just because it also counts as "direct table
+    # evidence" -- it's a real table, just not the one this query is about.
+    query = _make_query(
+        query_text="What are the maintenance intervals for this pump?",
+        detected_intent="maintenance",
+        chunk_types=[ChunkType.MAINTENANCE_INTERVAL],
+    )
+    chunks = [
+        _make_chunk(
+            chunk_id="chunk_maintenance_table",
+            chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+            content="| Task | Interval |\n| Inspect filter | Monthly |",
+            metadata={
+                "table_evidence_hydrated": "true",
+                "logical_table_family_id": "table_family_maintenance",
+            },
+        ),
+        _make_chunk(
+            chunk_id="chunk_spare_parts_table",
+            chunk_type=ChunkType.SPARE_PARTS_TABLE,
+            content="| Pos | Description |\n| 10 | Filter |",
+            metadata={
+                "table_evidence_hydrated": "true",
+                "logical_table_family_id": "table_family_spares",
+            },
+        ),
+    ]
+
+    prepared = _make_preparer().prepare(query=query, chunks=chunks)
+
+    assert [chunk.chunk_id for chunk in prepared] == ["chunk_maintenance_table"]
+
+
+def test_prepare_keeps_mismatched_table_family_when_it_is_the_only_table_evidence() -> None:
+    # The safety net: never discard the ONLY table evidence available just
+    # because it isn't the exact expected family for the detected intent.
+    query = _make_query(
+        query_text="What are the maintenance intervals for this pump?",
+        detected_intent="maintenance",
+        chunk_types=[ChunkType.MAINTENANCE_INTERVAL],
+    )
+    chunks = [
+        _make_chunk(
+            chunk_id="chunk_spare_parts_table",
+            chunk_type=ChunkType.SPARE_PARTS_TABLE,
+            content="| Pos | Description |\n| 10 | Filter |",
+            metadata={
+                "table_evidence_hydrated": "true",
+                "logical_table_family_id": "table_family_spares",
+            },
+        ),
+        _make_chunk(
+            chunk_id="chunk_overview",
+            chunk_type=ChunkType.OVERVIEW,
+            content="Section overview: pump maintenance.",
+        ),
+    ]
+
+    prepared = _make_preparer().prepare(query=query, chunks=chunks)
+
+    assert [chunk.chunk_id for chunk in prepared] == ["chunk_spare_parts_table"]
+
+
 def test_prepare_does_not_prune_non_table_focused_queries() -> None:
     query = _make_query(
         query_text="What is the purpose of the pump?",
