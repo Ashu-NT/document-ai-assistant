@@ -6,6 +6,9 @@ from src.application.workflows.parsing.tables.rows.compact_schedule_matrix_canon
 from src.application.workflows.parsing.tables.rows.normalized_table_rows import (
     NormalizedTableRows,
 )
+from src.application.workflows.parsing.tables.normalization.maintenance_schedule_continuation_row_merger import (
+    MaintenanceScheduleContinuationRowMerger,
+)
 from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     clean_rows,
 )
@@ -19,9 +22,15 @@ class MaintenanceScheduleTableNormalizer:
         compact_schedule_canonicalizer: (
             CompactScheduleMatrixCanonicalizer | None
         ) = None,
+        continuation_row_merger: (
+            MaintenanceScheduleContinuationRowMerger | None
+        ) = None,
     ) -> None:
         self.compact_schedule_canonicalizer = (
             compact_schedule_canonicalizer or CompactScheduleMatrixCanonicalizer()
+        )
+        self.continuation_row_merger = (
+            continuation_row_merger or MaintenanceScheduleContinuationRowMerger()
         )
 
     def normalize(
@@ -36,6 +45,10 @@ class MaintenanceScheduleTableNormalizer:
             return None
 
         cleaned_rows = clean_rows(rows)
+        cleaned_rows = self.continuation_row_merger.merge(
+            cleaned_rows,
+            cell_spans=cell_spans,
+        )
         canonical = self.compact_schedule_canonicalizer.canonicalize(cleaned_rows)
         if canonical is None or len(canonical) < 2:
             return None

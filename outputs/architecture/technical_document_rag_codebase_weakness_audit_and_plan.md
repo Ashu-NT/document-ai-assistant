@@ -120,14 +120,57 @@ Already present in the codebase before this update, but underrepresented in the 
   - `src/application/workflows/parsing/builders/section_hierarchy/toc/*`
 - logical table-family continuation already uses layout-aware signals:
   - `src/application/workflows/parsing/tables/logical_table_family_resolver.py`
+- same-page layout-aware subregion segmentation is now implemented so disconnected blocks in one lane are no longer forced into one coarse region:
+  - `src/application/workflows/parsing/layout/layout_region_segmenter.py`
+  - `src/application/workflows/parsing/layout/layout_region_builder.py`
+- logical table-family continuation can now reconcile sequential same-page lane subregions without merging non-sequential blocks:
+  - `src/application/workflows/parsing/tables/families/same_page_table_region_compatibility_checker.py`
+  - `src/application/workflows/parsing/tables/logical_table_family_resolver.py`
+- troubleshooting table row merging can now use semantic field mapping plus Docling span evidence when text-only continuation cues are too weak:
+  - `src/application/workflows/parsing/tables/normalization/troubleshooting_row_continuation_evidence_builder.py`
+  - `src/application/workflows/parsing/tables/normalization/troubleshooting_row_continuation_merger.py`
+  - `src/application/workflows/parsing/tables/normalization/troubleshooting_table_normalizer.py`
+- key-value/specification/certification normalization can now merge repeated-label continuation rows through one shared span-backed continuation helper:
+  - `src/application/workflows/parsing/tables/normalization/key_value_continuation_row_merger.py`
+  - `src/application/workflows/parsing/tables/normalization/key_value_row_projection.py`
+  - `src/application/workflows/parsing/tables/normalization/specification_key_value_table_normalizer.py`
+  - `src/application/workflows/parsing/tables/normalization/certification_particulars_table_normalizer.py`
+- maintenance-schedule normalization can now repair wrapped task/notes rows from Docling span evidence even when the wrapped text lives in the first logical column:
+  - `src/application/workflows/parsing/tables/normalization/maintenance_schedule_continuation_row_merger.py`
+  - `src/application/workflows/parsing/tables/normalization/maintenance_schedule_table_normalizer.py`
+  - `src/application/workflows/parsing/tables/rows/span_aware_row_continuation_resolver.py`
+- parallel same-page table streams can now recombine when sibling blocks share a logical header sequence but one stream has optional columns or generic header-label variants:
+  - `src/application/workflows/parsing/tables/normalization/parallel_stream_row_combiner.py`
+  - `src/application/workflows/parsing/tables/structure/table_header_label_canonicalizer.py`
+  - `src/application/workflows/parsing/tables/normalization/table_row_semantic_normalizer.py`
+- generic wrapped-row reconstruction now supports hybrid continuation proof:
+  - at least one changed column must have Docling span evidence
+  - sibling changed columns may merge through normal continuation-text cues in the same row pair
+  - `src/application/workflows/parsing/tables/rows/span_aware_row_continuation_resolver.py`
+  - `src/application/workflows/parsing/tables/normalization/generic_wrapped_row_table_normalizer.py`
+- regression coverage now also exists for:
+  - same-page sequential table-subregion continuation
+  - non-sequential same-lane subregion separation
+  - span-backed troubleshooting continuation merges
+  - span-backed key-value/specification continuation merges
+  - span-backed maintenance-schedule continuation merges
+  - parallel-stream recombination with optional columns and header-label aliases
+  - hybrid partial-span multiline continuation merges
+  - `tests/unit/application/workflows/parsing/layout/test_layout_region_segmentation.py`
+  - `tests/unit/application/workflows/parsing/tables/test_logical_table_family_resolver_same_page_subregions.py`
+  - `tests/unit/application/workflows/parsing/tables/test_troubleshooting_table_normalizer_span_continuations.py`
+  - `tests/unit/application/workflows/parsing/tables/test_key_value_row_projection_span_continuations.py`
+  - `tests/unit/application/workflows/parsing/tables/test_maintenance_schedule_table_normalizer_span_continuations.py`
+  - `tests/unit/application/workflows/parsing/tables/test_parallel_stream_row_combiner.py`
+  - `tests/unit/application/workflows/parsing/tables/test_generic_wrapped_row_table_normalizer_partial_span.py`
 
 Current active next phase:
 
 - continue Phase 1 and Phase 2 as hardening/expansion of existing layout and table-reconstruction foundations, not as greenfield additions
 - deeper header/span reconstruction is now materially improved; the next enterprise table-reconstruction gaps are:
-  - broader logical-table reconciliation across same-page region splits and cross-page member stitching
-  - richer multiline-cell reconstruction when wrap evidence is noisy, incomplete, or not vertically aligned to a single column
+  - richer multiline-cell reconstruction when wrap evidence is partial, ambiguous, or not aligned cleanly to one semantic field
   - more formal page-layout ownership for multi-lane tables before logical-family assembly
+  - broader stream/header alignment when sibling blocks represent one logical table but differ by more than simple subsequence-style optional columns
 - keep reducing remaining large orchestration hotspots after parsing/table boundaries are stable
 
 ## What Is Already Strong
@@ -707,6 +750,12 @@ Status:
 - header/span path reconstruction is now more faithful when umbrella spans overlap child header rows
 - plain row-group continuation merging now uses normalized compatibility rules instead of raw repeated-row comparison
 - generic wrapped-row repair now handles broader wrapped continuation rows when Docling exposes true wrap evidence
+- same-page logical continuation now distinguishes sequential lane subregions from unrelated blocks in the same lane
+- troubleshooting semantic row repair now uses explicit span-backed continuation evidence when text heuristics alone are not strong enough
+- repeated-label key-value/specification/certification rows now use shared span-backed continuation merging before semantic projection
+- maintenance schedule task/notes continuations now use the same Docling span evidence so wrapped schedule rows are repaired before interval-matrix projection
+- parallel stream recombination now tolerates optional sibling columns and generic header-label variants instead of requiring exact post-normalization header equality
+- generic wrapped-row repair now accepts hybrid proof: one span-backed changed column plus ordinary continuation-text siblings in the same wrapped row
 
 Goals:
 

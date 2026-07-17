@@ -14,6 +14,9 @@ from src.application.workflows.parsing.tables.normalization.generic_wrapped_row_
 from src.application.workflows.parsing.tables.normalization.maintenance_schedule_table_normalizer import (
     MaintenanceScheduleTableNormalizer,
 )
+from src.application.workflows.parsing.tables.normalization.parallel_stream_row_combiner import (
+    ParallelStreamRowCombiner,
+)
 from src.application.workflows.parsing.tables.normalization.performance_curve_table_normalizer import (
     PerformanceCurveTableNormalizer,
 )
@@ -44,6 +47,7 @@ class TableRowSemanticNormalizer:
         certification_particulars_normalizer: (
             CertificationParticularsTableNormalizer | None
         ) = None,
+        parallel_stream_row_combiner: ParallelStreamRowCombiner | None = None,
         generic_wrapped_row_normalizer: (
             GenericWrappedRowTableNormalizer | None
         ) = None,
@@ -67,6 +71,9 @@ class TableRowSemanticNormalizer:
         self.certification_particulars_normalizer = (
             certification_particulars_normalizer
             or CertificationParticularsTableNormalizer()
+        )
+        self.parallel_stream_row_combiner = (
+            parallel_stream_row_combiner or ParallelStreamRowCombiner()
         )
         self.generic_wrapped_row_normalizer = (
             generic_wrapped_row_normalizer or GenericWrappedRowTableNormalizer()
@@ -109,7 +116,7 @@ class TableRowSemanticNormalizer:
             return False
 
         table.parallel_stream_rows = normalized_streams
-        combined_rows = self._combine_parallel_stream_rows(normalized_streams)
+        combined_rows = self.parallel_stream_row_combiner.combine(normalized_streams)
         if combined_rows is not None:
             table.rows = combined_rows
         return True
@@ -166,31 +173,3 @@ class TableRowSemanticNormalizer:
         table.rows = normalized_rows
         return True
 
-    @staticmethod
-    def _combine_parallel_stream_rows(
-        streams: list[list[list[str]]],
-    ) -> list[list[str]] | None:
-        if not streams:
-            return None
-
-        headers = [stream[0] for stream in streams if stream]
-        if len(headers) != len(streams) or not headers:
-            return None
-
-        first_signature = TableRowSemanticNormalizer._header_signature(headers[0])
-        if not first_signature:
-            return None
-        if any(
-            TableRowSemanticNormalizer._header_signature(header) != first_signature
-            for header in headers[1:]
-        ):
-            return None
-
-        combined = [list(headers[0])]
-        for stream in streams:
-            combined.extend([list(row) for row in stream[1:]])
-        return combined
-
-    @staticmethod
-    def _header_signature(header: list[str]) -> tuple[str, ...]:
-        return tuple(str(cell).strip().casefold() for cell in header if str(cell).strip())

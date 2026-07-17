@@ -30,4 +30,8 @@ class CertificationParticularsTableNormalizer:
     ) -> NormalizedTableRows | None:
         if (table_category or "").strip().lower() != "certification_table":
             return None
-        return project_key_value_rows(rows, row_canonicalizer=self.row_canonicalizer)
+        return project_key_value_rows(
+            rows,
+            row_canonicalizer=self.row_canonicalizer,
+            cell_spans=cell_spans,
+        )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from src.application.workflows.parsing.tables.rows.row_continuation_patterns import (
+    looks_like_continuation_pair,
     non_empty_cell_indexes,
 )
 from src.application.workflows.parsing.tables.rows.table_row_patterns import (
@@ -31,9 +32,13 @@ class SpanAwareRowContinuationResolver:
         previous_row_index: int,
         current_row_index: int,
         cell_spans: list[TableCellSpan] | None,
+        anchor_indexes: frozenset[int] | None = None,
     ) -> list[int]:
         if not cell_spans or current_row_index <= previous_row_index:
             return []
+        resolved_anchor_indexes = anchor_indexes
+        if resolved_anchor_indexes is None:
+            resolved_anchor_indexes = frozenset({0})
 
         current_indexes = non_empty_cell_indexes(current_row)
         if not current_indexes:
@@ -53,7 +58,7 @@ class SpanAwareRowContinuationResolver:
             current_value = self._value_at(current_row, index)
             if not previous_value or not current_value:
                 return []
-            if index == 0:
+            if index in resolved_anchor_indexes:
                 if previous_value.casefold() != current_value.casefold():
                     return []
                 continue
@@ -61,6 +66,8 @@ class SpanAwareRowContinuationResolver:
             evidence = evidence_by_column.get(index)
             if evidence is None:
                 if previous_value.casefold() == current_value.casefold():
+                    continue
+                if looks_like_continuation_pair(previous_value, current_value):
                     continue
                 return []
             if previous_value.casefold() == current_value.casefold():
