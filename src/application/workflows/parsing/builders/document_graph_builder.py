@@ -23,7 +23,6 @@ from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,
 )
 from src.application.workflows.parsing.builders.section_builder import SectionBuilder
-from src.application.workflows.common.settings_resolver import resolve_setting
 from src.application.workflows.parsing.profiling import GraphBuildProfiler
 from src.application.workflows.parsing.tables import (
     LogicalTableFamilyResolver,
@@ -43,32 +42,9 @@ from src.domain.document import (
 from src.shared.exceptions import ChunkingError
 from src.shared.ids import IdGenerator
 
-
-def _default_max_chunk_tokens() -> int:
-    def _load() -> int:
-        from src.config.settings import ingestion_settings
-
-        return ingestion_settings.max_chunk_tokens
-
-    return resolve_setting(_load, 1000)
-
-
-def _default_chunk_overlap() -> int:
-    def _load() -> int:
-        from src.config.settings import ingestion_settings
-
-        return ingestion_settings.chunk_overlap
-
-    return resolve_setting(_load, 150)
-
-
-def _default_min_section_text_length() -> int:
-    def _load() -> int:
-        from src.config.settings import ingestion_settings
-
-        return ingestion_settings.min_section_text_length
-
-    return resolve_setting(_load, 150)
+_DEFAULT_MAX_CHUNK_TOKENS = 1000
+_DEFAULT_CHUNK_OVERLAP = 150
+_DEFAULT_MIN_SECTION_TEXT_LENGTH = 150
 
 
 class DocumentGraphBuilder:
@@ -86,6 +62,21 @@ class DocumentGraphBuilder:
         self.id_generator = id_generator
         self.section_builder = section_builder
         self.profiler = profiler or GraphBuildProfiler.disabled()
+        resolved_max_chunk_tokens = (
+            max_chunk_tokens
+            if max_chunk_tokens is not None
+            else _DEFAULT_MAX_CHUNK_TOKENS
+        )
+        resolved_chunk_overlap = (
+            chunk_overlap
+            if chunk_overlap is not None
+            else _DEFAULT_CHUNK_OVERLAP
+        )
+        resolved_min_section_text_length = (
+            min_section_text_length
+            if min_section_text_length is not None
+            else _DEFAULT_MIN_SECTION_TEXT_LENGTH
+        )
         token_counter_factory = ChunkTokenCounterFactory()
         if section_chunk_builder is not None:
             self.section_chunk_builder = section_chunk_builder
@@ -93,37 +84,15 @@ class DocumentGraphBuilder:
             self.section_chunk_builder = SectionChunkBuilder(
                 runtime_factory=ChunkingRuntimeFactory(
                     token_counter_factory=token_counter_factory,
-                    max_chunk_tokens_override=(
-                        max_chunk_tokens
-                        if max_chunk_tokens is not None
-                        else _default_max_chunk_tokens()
-                    ),
-                    chunk_overlap_override=(
-                        chunk_overlap
-                        if chunk_overlap is not None
-                        else _default_chunk_overlap()
-                    ),
+                    max_chunk_tokens_override=resolved_max_chunk_tokens,
+                    chunk_overlap_override=resolved_chunk_overlap,
                     min_section_text_length_override=(
-                        min_section_text_length
-                        if min_section_text_length is not None
-                        else _default_min_section_text_length()
+                        resolved_min_section_text_length
                     ),
                 ),
-                max_chunk_tokens=(
-                    max_chunk_tokens
-                    if max_chunk_tokens is not None
-                    else _default_max_chunk_tokens()
-                ),
-                chunk_overlap=(
-                    chunk_overlap
-                    if chunk_overlap is not None
-                    else _default_chunk_overlap()
-                ),
-                min_section_text_length=(
-                    min_section_text_length
-                    if min_section_text_length is not None
-                    else _default_min_section_text_length()
-                ),
+                max_chunk_tokens=resolved_max_chunk_tokens,
+                chunk_overlap=resolved_chunk_overlap,
+                min_section_text_length=resolved_min_section_text_length,
                 profiler=self.profiler,
             )
         self.asset_factory = ParsedAssetFactory(id_generator)

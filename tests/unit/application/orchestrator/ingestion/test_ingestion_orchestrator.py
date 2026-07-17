@@ -5,6 +5,9 @@ from types import SimpleNamespace
 import pytest
 
 from src.application.orchestrator.ingestion import ingestion_orchestrator
+from src.application.orchestrator.ingestion.ingestion_input_limits import (
+    IngestionInputLimits,
+)
 from src.application.orchestrator.ingestion.ingestion_orchestrator import (
     build_ingestion_runtime,
 )
@@ -45,6 +48,11 @@ def patched(monkeypatch):
     monkeypatch.setattr(ingestion_orchestrator, "engine", "fake_engine")
     monkeypatch.setattr(ingestion_orchestrator, "SessionLocal", lambda: "fake_session")
     monkeypatch.setattr(ingestion_orchestrator, "SqlAlchemyUnitOfWork", lambda session: _fake_uow())
+    monkeypatch.setattr(
+        ingestion_orchestrator,
+        "resolve_ingestion_input_limits",
+        lambda: IngestionInputLimits(max_file_size_bytes=4096, max_pdf_pages=12),
+    )
 
     monkeypatch.setattr(
         ingestion_orchestrator,
@@ -267,6 +275,14 @@ def test_runtime_fields_are_populated(patched):
     assert runtime.embedding_model == "bge-small"
     assert runtime.vector_collection == "document_chunks"
     assert runtime.qdrant_client == "fake_qdrant_client"
+
+
+def test_ingestion_request_validator_receives_explicit_file_size_limit(patched):
+    runtime = build_ingestion_runtime()
+
+    validator = runtime.ingestion_workflow.kwargs["ingestion_request_validator"]
+    assert isinstance(validator, _Recorder)
+    assert validator.kwargs == {"max_file_size_bytes": 4096}
 
 
 def test_ingestion_workflow_reuses_the_same_extraction_workflow(patched):

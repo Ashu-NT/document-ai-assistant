@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from src.application.contracts import UnitOfWork
+from src.application.orchestrator.ingestion.ingestion_input_limits import (
+    resolve_ingestion_input_limits,
+)
 from src.application.orchestrator.ingestion.ingestion_runtime import IngestionRuntime
 from src.application.orchestrator.ingestion.parsing_runtime_builder import (
     build_parsing_runtime,
@@ -80,6 +83,7 @@ def build_ingestion_runtime(
 
     uow = unit_of_work or SqlAlchemyUnitOfWork(SessionLocal())
     resolved_id_generator = id_generator or IdGenerator()
+    ingestion_input_limits = resolve_ingestion_input_limits()
 
     parsing_workflow, document_graph_builder = build_parsing_runtime(
         id_generator=resolved_id_generator,
@@ -190,7 +194,9 @@ def build_ingestion_runtime(
 
     ingestion_workflow = IngestionWorkflow(
         unit_of_work=uow,
-        ingestion_request_validator=IngestionRequestValidator(),
+        ingestion_request_validator=IngestionRequestValidator(
+            max_file_size_bytes=ingestion_input_limits.max_file_size_bytes,
+        ),
         duplicate_detection_service=duplicate_detection_service,
         parsing_workflow=parsing_workflow,
         document_registration_service=document_registration_service,

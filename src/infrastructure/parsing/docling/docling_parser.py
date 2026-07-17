@@ -8,24 +8,6 @@ from src.infrastructure.parsing.docling.docling_converter_factory import (
 from src.shared.exceptions import DocumentParsingError
 
 
-def _default_max_num_pages() -> int:
-    try:
-        from src.config.settings import ingestion_settings
-
-        return ingestion_settings.max_pdf_pages
-    except Exception:
-        return 2**31 - 1
-
-
-def _default_max_file_size_bytes() -> int:
-    try:
-        from src.config.settings import ingestion_settings
-
-        return ingestion_settings.max_file_size_mb * 1024 * 1024
-    except Exception:
-        return 2**63 - 1
-
-
 class DoclingParser:
     def __init__(
         self,
@@ -37,16 +19,8 @@ class DoclingParser:
         parser_version: str | None = None,
     ) -> None:
         self.converter = converter or self._build_default_converter()
-        self.max_num_pages = (
-            max_num_pages
-            if max_num_pages is not None
-            else _default_max_num_pages()
-        )
-        self.max_file_size_bytes = (
-            max_file_size_bytes
-            if max_file_size_bytes is not None
-            else _default_max_file_size_bytes()
-        )
+        self.max_num_pages = max_num_pages
+        self.max_file_size_bytes = max_file_size_bytes
         self.parser_name = parser_name
         self.parser_version = parser_version or self._resolve_parser_version()
 
@@ -62,12 +36,13 @@ class DoclingParser:
                 if enable_ocr_override is None
                 else self._build_default_converter(enable_ocr_override=enable_ocr_override)
             )
-            conversion_result = converter.convert(
-                file_path,
-                raises_on_error=True,
-                max_num_pages=self.max_num_pages,
-                max_file_size=self.max_file_size_bytes,
-            )
+            conversion_kwargs: dict[str, Any] = {"raises_on_error": True}
+            if self.max_num_pages is not None:
+                conversion_kwargs["max_num_pages"] = self.max_num_pages
+            if self.max_file_size_bytes is not None:
+                conversion_kwargs["max_file_size"] = self.max_file_size_bytes
+
+            conversion_result = converter.convert(file_path, **conversion_kwargs)
 
             raw_document = getattr(conversion_result, "document", None)
             if raw_document is None:

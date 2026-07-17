@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+from src.application.orchestrator.ingestion.ingestion_input_limits import (
+    resolve_ingestion_input_limits,
+)
+from src.application.orchestrator.ingestion.parsing_chunking_settings import (
+    resolve_parsing_chunking_settings,
+)
 from src.application.validation.document import DocumentGraphValidator
 from src.application.workflows.parsing import ParsingWorkflow
 from src.application.workflows.parsing.builders import (
@@ -21,14 +27,22 @@ def build_parsing_runtime(
     Shared by every ingestion entrypoint so Docling/OCR/graph-build wiring
     lives in exactly one place.
     """
+    ingestion_input_limits = resolve_ingestion_input_limits()
+    parsing_chunking_settings = resolve_parsing_chunking_settings()
     ocr_runtime = build_parsing_ocr_runtime(id_generator=id_generator)
     section_builder = SectionBuilder(id_generator)
     document_graph_builder = DocumentGraphBuilder(
         id_generator=id_generator,
         section_builder=section_builder,
+        max_chunk_tokens=parsing_chunking_settings.max_chunk_tokens,
+        chunk_overlap=parsing_chunking_settings.chunk_overlap,
+        min_section_text_length=parsing_chunking_settings.min_section_text_length,
     )
     parsing_workflow = ParsingWorkflow(
-        parser=DoclingParser(),
+        parser=DoclingParser(
+            max_num_pages=ingestion_input_limits.max_pdf_pages,
+            max_file_size_bytes=ingestion_input_limits.max_file_size_bytes,
+        ),
         normalizer=DoclingDocumentNormalizer(),
         document_graph_builder=document_graph_builder,
         id_generator=id_generator,

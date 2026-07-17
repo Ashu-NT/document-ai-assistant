@@ -28,6 +28,12 @@ from src.application.workflows.parsing.normalizers.docling_document_normalizer i
 from src.application.reporting.document_parsing.graph_build_profiling import (
     GraphBuildReportWriter,
 )
+from src.application.orchestrator.ingestion.ingestion_input_limits import (
+    resolve_ingestion_input_limits,
+)
+from src.application.orchestrator.ingestion.parsing_chunking_settings import (
+    resolve_parsing_chunking_settings,
+)
 from src.application.workflows.parsing.profiling import (
     GraphBuildProfiler,
     build_graph_stage_catalog,
@@ -395,7 +401,12 @@ def main() -> int:
     _emit(f"[graph] Input file: {input_path}")
     _emit(f"[graph] Output directory: {output_dir.resolve()}")
 
-    parser = DoclingParser()
+    ingestion_input_limits = resolve_ingestion_input_limits()
+    parsing_chunking_settings = resolve_parsing_chunking_settings()
+    parser = DoclingParser(
+        max_num_pages=ingestion_input_limits.max_pdf_pages,
+        max_file_size_bytes=ingestion_input_limits.max_file_size_bytes,
+    )
     normalizer = DoclingDocumentNormalizer()
 
     raw_parsed_document, docling_conversion_profile = _profile_operation(
@@ -430,6 +441,11 @@ def main() -> int:
     measurement_builder = DocumentGraphBuilder(
         id_generator=measurement_id_generator,
         section_builder=SectionBuilder(measurement_id_generator),
+        max_chunk_tokens=parsing_chunking_settings.max_chunk_tokens,
+        chunk_overlap=parsing_chunking_settings.chunk_overlap,
+        min_section_text_length=(
+            parsing_chunking_settings.min_section_text_length
+        ),
     )
     measured_document_graph, graph_build_seconds = _run_operation_with_heartbeat(
         start_message=(
@@ -461,6 +477,11 @@ def main() -> int:
     profiled_builder = DocumentGraphBuilder(
         id_generator=profiled_id_generator,
         section_builder=SectionBuilder(profiled_id_generator),
+        max_chunk_tokens=parsing_chunking_settings.max_chunk_tokens,
+        chunk_overlap=parsing_chunking_settings.chunk_overlap,
+        min_section_text_length=(
+            parsing_chunking_settings.min_section_text_length
+        ),
         profiler=graph_profiler,
     )
     profiled_document_graph, graph_build_profile = _profile_operation(

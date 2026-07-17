@@ -1,28 +1,23 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from src.application.validation.common import ValidationResult, Validator
 from src.domain.common import DocumentType
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.application.workflows.ingestion.ingestion_request import (
         IngestionRequest,
-     )
+    )
+
 _SUPPORTED_INGESTION_EXTENSIONS = frozenset({".pdf"})
 
 
-def _default_max_file_size_bytes() -> int:
-    try:
-        from src.config.settings import ingestion_settings
-
-        return ingestion_settings.max_file_size_mb * 1024 * 1024
-    except Exception:
-        return 2**63 - 1
-
-
 class IngestionRequestValidator(Validator["IngestionRequest"]):
+    def __init__(self, *, max_file_size_bytes: int | None = None) -> None:
+        self.max_file_size_bytes = max_file_size_bytes
+
     def validate(self, value: "IngestionRequest") -> ValidationResult:
         from src.application.workflows.ingestion.ingestion_request import (
             IngestionRequest,
@@ -77,10 +72,10 @@ class IngestionRequestValidator(Validator["IngestionRequest"]):
             )
             file_size_bytes = None
 
-        max_file_size_bytes = _default_max_file_size_bytes()
         if (
-            file_size_bytes is not None
-            and file_size_bytes > max_file_size_bytes
+            self.max_file_size_bytes is not None
+            and file_size_bytes is not None
+            and file_size_bytes > self.max_file_size_bytes
         ):
             result.add_issue(
                 "file_path",

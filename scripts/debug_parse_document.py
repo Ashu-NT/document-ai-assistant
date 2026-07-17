@@ -65,6 +65,12 @@ from src.application.reporting.document_parsing.parsing import (  # noqa: E402
 from src.application.reporting.document_parsing.quality import (  # noqa: E402
     QualityReportWriter,
 )
+from src.application.orchestrator.ingestion.ingestion_input_limits import (  # noqa: E402
+    resolve_ingestion_input_limits,
+)
+from src.application.orchestrator.ingestion.parsing_chunking_settings import (  # noqa: E402
+    resolve_parsing_chunking_settings,
+)
 from src.application.validation.document_quality import DocumentQualityGate  # noqa: E402
 from src.config.paths import ensure_directory, resolve_project_path  # noqa: E402
 from src.config.settings import docling_settings, ocr_settings  # noqa: E402
@@ -1526,12 +1532,22 @@ def main() -> int:
 
         id_generator = IdGenerator()
         document_id = id_generator.new_id(IdPrefix.DOCUMENT)
+        ingestion_input_limits = resolve_ingestion_input_limits()
+        parsing_chunking_settings = resolve_parsing_chunking_settings()
         ocr_runtime = build_parsing_ocr_runtime(id_generator=id_generator)
-        parser = DoclingParser()
+        parser = DoclingParser(
+            max_num_pages=ingestion_input_limits.max_pdf_pages,
+            max_file_size_bytes=ingestion_input_limits.max_file_size_bytes,
+        )
         normalizer = DoclingDocumentNormalizer()
         graph_builder = DocumentGraphBuilder(
             id_generator=id_generator,
             section_builder=SectionBuilder(id_generator),
+            max_chunk_tokens=parsing_chunking_settings.max_chunk_tokens,
+            chunk_overlap=parsing_chunking_settings.chunk_overlap,
+            min_section_text_length=(
+                parsing_chunking_settings.min_section_text_length
+            ),
         )
         ocr_trace = None
 
