@@ -830,6 +830,39 @@ irregular failure shape:
   applier-level second-strategy wiring. Full unit suite green (3092 passed), same one known pre-existing
   unrelated failure.
 
+### 24. RESOLVED - A real 4-column technical-data table's structured-rows/row_count silently diverged from its correct markdown
+
+Found on a real document's page-7 table (`Material | Life cycle | Component | Recycling`), reported as
+"markdown is correct but Structured Rows cuts off the last two columns." Root cause: two independent code
+paths build a persisted `TableAsset`'s different views of the same table, and only one of them is correct -
+
+- `markdown` is rendered once, early, straight from the original correctly-parsed 4-column grid, and never
+  touched again.
+- `table.rows` (which drives `row_count`, `column_count`, and `to_structured_row_text()` -"Structured
+  Rows"") is mutated AFTER the fact by `TableRowSemanticNormalizer`, which does not update `markdown` to
+  match. For this table's category (`technical_data_table`), that chain reaches
+  `SpecificationKeyValueTableNormalizer` -> `TableRowCanonicalizer.canonicalize()`.
+- `canonicalize()` first checks `has_explicit_header_row()` to bail out safely on well-formed tables - but
+  that check only recognizes a header via a hardcoded keyword list, and none of `"Material"`/`"Life
+  cycle"`/`"Component"`/`"Recycling"` were in it, so it incorrectly returned `False` for a genuine header row.
+- Falling through, `_canonicalize_key_value_rows()` (designed for a real, different, legitimate shape - a
+  print-layout trick that "wraps" two unrelated label:value facts onto one physical row with no header at
+  all, e.g. `["Model", "XV2000", "Speed", "1450 RPM"]`) blindly pairs up every row's cells including the
+  header's own, since its "looks like a label" check is intentionally permissive (any short non-numeric
+  word passes). The header row's own two cell-pairs became the first two synthetic rows, and each real
+  4-attribute record was split into two disconnected, mismatched `[Label, Value]` lines.
+- Investigated several structural (non-keyword) discriminators to distinguish "real record table with an
+  unrecognized-vocabulary header" from "no-header wrapped label/value facts" generically - none held up
+  without breaking the existing, legitimate wrapped-row test fixture, since both shapes can independently
+  satisfy the same per-row pairing check. Given that, and per explicit user decision, fixed by extending
+  `_EXPLICIT_HEADER_KEYWORDS` (`table_row_patterns.py`) with `"material"`, `"component"`, `"life cycle"`,
+  `"recycling"` - consistent with the existing pattern for this list, narrowly scoped to the confirmed real
+  case, not a general guarantee against a different unrecognized header word misfiring the same way on some
+  other table later.
+- Verified the exact real row data now passes through `canonicalize()`/`SpecificationKeyValueTableNormalizer`
+  unchanged. New regression test added. Full unit suite green (3093 passed), same one known pre-existing
+  unrelated failure.
+
 ## Resolved This Session (Not Yet Reflected Elsewhere In This Document)
 
 The following were found and fixed in a parallel review session, working from the same principle this plan

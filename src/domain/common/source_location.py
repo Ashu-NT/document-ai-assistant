@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass(slots=True, frozen=True)
-class BoundingBox:
+class  BoundingBox:
     x1: float
     y1: float
     x2: float
