@@ -67,6 +67,33 @@ def test_classify_prefers_maintenance_interval_direct_evidence_over_spare_parts_
     assert confidence >= 0.85
 
 
+def test_classify_detects_minimal_cause_corrective_action_troubleshooting_table() -> None:
+    # Regression guard for a real, high-frequency gap: a minimal 2-column
+    # SPN/FMI-style diagnostic table with only "Cause"/"Corrective action" as
+    # headers has just 2 distinct troubleshooting markers total and no
+    # "troubleshooting" section heading -- it used to require a 3rd marker
+    # hit in the body text that a table this minimal can never produce.
+    category, confidence = TableSemanticClassifier().classify(
+        table=_make_table(
+            [
+                ["Cause", "Corrective action"],
+                [
+                    "Fuel temperature is too high.",
+                    "1. Reduce power. 2. Check fuel cooling system. 3. Contact Service.",
+                ],
+            ]
+        ),
+        nearby_text=(
+            "SPN: 174 - FMI: 0\n"
+            "The fuel temperature measured at sensor B33 has exceeded limit value 2."
+        ),
+        section_path=["Technical Data / Specification"],
+    )
+
+    assert category == TableCategory.TROUBLESHOOTING_TABLE
+    assert confidence >= 0.8
+
+
 def test_classify_detects_troubleshooting_table() -> None:
     category, confidence = TableSemanticClassifier().classify(
         table=_make_table(

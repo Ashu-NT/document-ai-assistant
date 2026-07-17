@@ -1,3 +1,6 @@
+from src.application.workflows.retrieval.retrieval_query_intent import (
+    RetrievalQueryIntent,
+)
 from src.application.workflows.retrieval.table_focus import is_table_focused_query
 from src.application.workflows.shared.text_signature_utils import detect_scaffolding_role
 from src.domain.common import ChunkType
@@ -11,6 +14,16 @@ _TABLE_LIKE_CHUNK_TYPES = {
     ChunkType.MAINTENANCE_INTERVAL,
     ChunkType.MAINTENANCE_PROCEDURE,
     ChunkType.TROUBLESHOOTING,
+}
+# Only the intents with an unambiguous single expected table family --
+# TABLE/IDENTIFIER are deliberately excluded since "show me the table" or an
+# identifier lookup can legitimately want any table type, not one family.
+_FAMILY_EXPECTED_CHUNK_TYPES: dict[RetrievalQueryIntent, frozenset[ChunkType]] = {
+    RetrievalQueryIntent.MAINTENANCE: frozenset({ChunkType.MAINTENANCE_INTERVAL}),
+    RetrievalQueryIntent.SPECIFICATION: frozenset(
+        {ChunkType.TECHNICAL_SPECIFICATION, ChunkType.CERTIFICATION_INFO}
+    ),
+    RetrievalQueryIntent.TROUBLESHOOTING: frozenset({ChunkType.TROUBLESHOOTING}),
 }
 
 
@@ -32,10 +45,43 @@ class TableFocusedEvidencePruner:
         if not direct_table_chunks:
             return list(chunks)
 
-        pruned = [
-            chunk for chunk in chunks if not self._is_low_value_companion(chunk)
+        expected_types = self._expected_table_types(query)
+        matching_direct_chunks = [
+            chunk
+            for chunk in direct_table_chunks
+            if not expected_types or chunk.chunk_type in expected_types
         ]
-        return pruned or list(direct_table_chunks)
+        # Only reject a mismatched table family once at least one matching
+        # chunk survives -- never discard the only table evidence available
+        # just because it isn't the exact expected family.
+        mismatched_chunk_ids = (
+            {
+                chunk.chunk_id
+                for chunk in direct_table_chunks
+                if chunk.chunk_type not in expected_types
+            }
+            if expected_types and matching_direct_chunks
+            else set()
+        )
+
+        pruned = [
+            chunk
+            for chunk in chunks
+            if not self._is_low_value_companion(chunk)
+            and chunk.chunk_id not in mismatched_chunk_ids
+        ]
+        return pruned or matching_direct_chunks or direct_table_chunks
+
+    @staticmethod
+    def _expected_table_types(query: RetrievalQuery) -> frozenset[ChunkType]:
+        raw_intent = query.detected_intent
+        if not raw_intent:
+            return frozenset()
+        try:
+            intent = RetrievalQueryIntent(raw_intent)
+        except ValueError:
+            return frozenset()
+        return _FAMILY_EXPECTED_CHUNK_TYPES.get(intent, frozenset())
 
     @staticmethod
     def _is_direct_table_evidence(chunk: RetrievedChunk) -> bool:

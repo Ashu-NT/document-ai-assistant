@@ -200,7 +200,7 @@ Why this matters:
 - enterprise RAG quality in technical docs depends on tables more than on prose
 - if structured tables are available but ignored by some answer routes, answer quality will still look inconsistent and document-sensitive
 
-### 5. Retrieval intent and chunk-type preference rules are still too permissive
+### 5. RESOLVED (table-focus pruner half) - Retrieval intent and chunk-type preference rules were too permissive
 
 Relevant files:
 
@@ -218,16 +218,24 @@ Current strengths:
 - reranking exists
 - table-focused pruning exists
 
-Current weakness:
+Status update: both halves of this weakness's `TableFocusedEvidencePruner` complaint are now resolved (see
+"Resolved This Session" for the over-deletion half, fixed earlier). The remaining half - "does not fully
+suppress mismatched direct-evidence table families" - is fixed too: `TableFocusedEvidencePruner` now maps
+the query's detected intent (MAINTENANCE/SPECIFICATION/TROUBLESHOOTING only - TABLE/IDENTIFIER are
+deliberately excluded since those legitimately want any table type) to its expected `ChunkType` family, and
+rejects direct-table-evidence chunks from a different family once at least one matching chunk survives. A
+maintenance-interval-focused query no longer carries an unrelated spare-parts table into answer generation.
+Verified with a test proving the safety net too: the only table evidence available is never discarded just
+because it isn't the exact expected family. This directly re-uses the existing `RetrievalQueryIntent` enum
+rather than inventing a parallel taxonomy.
 
-- focused intents still admit too many weakly-related chunk families
-- table-focused pruning only removes low-value scaffolding companions
-- it does not fully suppress mismatched direct-evidence table families
+Consequence (now narrower - see remaining weakness below):
 
-Consequence:
-
-- identifier, maintenance, specification, and table questions can still carry noisy evidence into answer generation
-- the system answers better than before, but still wastes context budget on evidence that should have been rejected earlier
+- the broader claim ("focused intents still admit too many weakly-related chunk families") is a
+  reranking/scoring-stage concern (`IntentChunkTypeScorer`/`RetrievalQueryChunkTypePreferenceMapper`), not
+  the pruner - those are soft preference-ordering signals by design, not hard filters, and are intentionally
+  more permissive since they also serve non-table-focused queries where secondary evidence has real value.
+  Whether that soft-preference design itself needs tightening is still open and unattempted this pass.
 
 ### 6. Identifier answers do not yet fully consume structured table evidence
 
@@ -519,7 +527,7 @@ Why this matters:
 - likely a font-encoding/glyph-mapping issue in specific source PDFs rather than a single parsing bug; needs
   its own root-cause pass, likely in the Docling text-extraction/normalization layer
 
-### 17. Over half of all classified tables fall into the general_table catch-all
+### 17. IN PROGRESS - Over half of all classified tables fall into the general_table catch-all
 
 Evidence:
 
@@ -533,6 +541,28 @@ Why this matters:
   limits, troubleshooting, etc.) is meaningfully weaker in practice than the curated unit-test suite's
   examples suggest
 - this is exactly the kind of drift a purely code-level or unit-test-level review cannot see
+
+This is a broad, multi-cause recall problem - not one bug. One concrete, high-impact contributing cause has
+been found and fixed; the 56% figure itself has not been re-measured against a fresh reingest yet, so treat
+it as "one real gap closed", not "the number is now lower":
+
+- **Fixed: minimal 2-column "Cause | Corrective action" diagnostic tables** (e.g. SAE J1939 SPN/FMI fault
+  tables, common in engine/generator manuals). `looks_like_troubleshooting_table()` required 3 distinct
+  troubleshooting-marker hits in the table's full text AND 2 in the header text - but a minimal real
+  troubleshooting table with only 2 header columns has exactly 2 distinct markers total (the header words
+  themselves) and can never produce a 3rd unless the body coincidentally repeats a different marker word.
+  Confirmed via direct query: 127 of the 1,129 real `general_table` chunks (11.2%) match this exact
+  "Cause"+"Corrective action" header pattern with no "troubleshooting" section heading nearby. Fixed by
+  dropping the redundant direct-text requirement when the header cells alone already contain 2+ distinct
+  markers - verified live (before: `general_table`; after: `troubleshooting_table`, confidence 0.9) against
+  a table shaped exactly like the real corpus examples.
+- **Other candidate gaps observed while sampling real `general_table` content, not yet fixed**: a
+  "REFERENCE | CODE" part-lookup table under a "SPECIFICATIONS" section (candidate for
+  `identifier_table`/`spare_parts_table`); a risk-assessment matrix ("Probability | Consequences | Warning
+  level") that doesn't map to ANY existing `TableCategory` member at all - a genuine category-set gap, not a
+  rule-precision issue, and a larger, riskier change (new category needs its own `ChunkType`
+  mapping/`TableShape` consideration, same care as the July 16 domain-split work) than the other fixes in
+  this document. Not attempted this pass.
 
 ### 18. A real document is currently, actively failing ingestion - not a hypothetical OCR gap
 
@@ -843,12 +873,16 @@ Actions:
 
 Status update:
 
-- `TableFocusedEvidencePruner`'s over-deletion half is resolved (see "Resolved This Session" above) - it no
-  longer discards real `GENERAL`/`OVERVIEW` content based on chunk_type alone, only on the recognized
-  auto-generated-scaffolding-prefix signal
-- the other half of the original weakness (#5) is still fully open: the pruner does not yet suppress
-  mismatched-but-still-"direct evidence" table families (e.g. an unrelated maintenance-interval table
-  surviving alongside the correct spare-parts table for a spare-parts-focused query)
+- `TableFocusedEvidencePruner` is now fully resolved on both halves (see "Resolved This Session" above and
+  weakness #5): it no longer discards real `GENERAL`/`OVERVIEW` content based on chunk_type alone, and it
+  now rejects a mismatched table family (e.g. a spare-parts table surviving alongside the correct
+  maintenance-interval table for a maintenance-focused query) via a new intent-to-expected-`ChunkType`
+  mapping, with a safety net that never discards the only table evidence available
+- what's left in this phase is the broader, reranking-stage question: whether
+  `RetrievalQueryChunkTypePreferenceMapper`/`IntentChunkTypeScorer`'s soft preference-ordering (not a hard
+  filter, by design) needs tightening too - unattempted, and a separate design question from the pruner fix
+  above since those two components serve non-table-focused queries as well, where secondary evidence has
+  real value
 
 Goals:
 
@@ -858,9 +892,8 @@ Actions:
 
 - refine `RetrievalQueryChunkTypePreferenceMapper`
 - refine `IntentChunkTypeScorer`
-- extend `TableFocusedEvidencePruner` with family-mismatch rejection (the still-open half above) - do not
-  revert or bypass the scaffolding-prefix-only logic already landed this session
-- add explicit family rejection rules for focused table and identifier questions
+- add explicit family rejection rules for focused identifier questions (table questions now handled by
+  `TableFocusedEvidencePruner`, see status update above)
 - surface ranking-feature diagnostics per candidate for auditing
 
 Success criterion:
