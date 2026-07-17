@@ -21,6 +21,9 @@ from src.application.workflows.parsing.normalizers.docling_provenance_extractor 
 from src.application.workflows.parsing.normalizers.docling_table_extractor import (
     DoclingTableExtractor,
 )
+from src.application.workflows.parsing.normalizers.table_layout.text_grid_table_fallback_applier import (
+    TextGridTableFallbackApplier,
+)
 from src.application.workflows.parsing.canonical_element import CanonicalElement
 from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
 from src.shared.exceptions import DocumentNormalizationError
@@ -32,6 +35,7 @@ class DoclingDocumentNormalizer:
         *,
         text_resolver: DoclingElementTextResolver | None = None,
         metadata_builder: DoclingElementMetadataBuilder | None = None,
+        text_grid_table_fallback_applier: TextGridTableFallbackApplier | None = None,
     ) -> None:
         self.layout_metadata_builder = DoclingLayoutMetadataBuilder()
         self.table_extractor = DoclingTableExtractor()
@@ -43,6 +47,9 @@ class DoclingDocumentNormalizer:
         self.metadata_builder = metadata_builder or DoclingElementMetadataBuilder(
             item_extractor=self.item_extractor,
             table_extractor=self.table_extractor,
+        )
+        self.text_grid_table_fallback_applier = (
+            text_grid_table_fallback_applier or TextGridTableFallbackApplier()
         )
 
     def normalize(
@@ -132,7 +139,8 @@ class DoclingDocumentNormalizer:
                     )
                 )
 
-            return self._apply_multi_column_reading_order(normalized)
+            reordered = self._apply_multi_column_reading_order(normalized)
+            return self.text_grid_table_fallback_applier.apply(reordered)
         except DocumentNormalizationError:
             raise
         except Exception as exc:

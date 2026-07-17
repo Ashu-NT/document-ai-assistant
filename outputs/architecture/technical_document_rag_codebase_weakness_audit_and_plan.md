@@ -700,23 +700,60 @@ loss happens upstream of anything this codebase's normalizer receives:
   confirmed present in `chunks` - but it lands as three garbled, dot-leader-heavy text chunks, misclassified
   as `chunk_type='safety_warning'`/`'certification_info'` (a keyword-based classifier picking up incidental
   words in the noise) instead of anything TOC-related, effectively useless for retrieval.
-- The same "not detected as a table by Docling at all" gap also affects two of page 8's other blocks
+- The same "not detected as a table by Docling at all" gap also affected two of page 8's other blocks
   (`Door identification block`: pos/door-number/location; the `Option`/`System weight` column pair) - no
-  raw Docling table object exists for either region (confirmed directly). Their content also survives in
-  `chunks`, but as unstructured text with **row order reversed** (door 8 down to door 1) and **no
-  positional correlation preserved** between a row's pos/door-number/weight/hose-port values - the
-  record-per-door relationship that the visual table encodes is destroyed once flattened to loose text,
-  even though every individual token still exists somewhere in the store.
+  raw Docling table object existed for either region (confirmed directly). Their content survived in
+  `chunks`, but as unstructured text with row order reversed (door 8 down to door 1) and no positional
+  correlation preserved between a row's pos/door-number/weight/hose-port values - the record-per-door
+  relationship the visual table encodes was destroyed once flattened to loose text, even though every
+  individual token still existed somewhere in the store. **This class is now fixed - see #21 below.**
 - Checked `docling_settings` for a cheap fix first: `table_structure_mode` is already `"accurate"` (the
   highest-quality TableFormer mode) with cell matching enabled - this isn't a structure-refinement
   problem, it's the earlier layout/object-detection stage failing to flag these regions as tables at all,
   which TableFormer never gets a chance to refine. No configuration lever fixes this.
-- **Not attempted**: recovering these two classes would mean building a NEW capability - either a
-  from-scratch fallback table-detector over plain text elements (grouping regularly-spaced short text/number
-  runs by geometry into a synthesized grid when Docling's own detector abstains), or improving
-  classification/chunking specifically for dot-leader-dense orphaned text - not a bug fix to existing
-  reconstruction code. Both are real, size-able engineering efforts in their own right, not attempted this
-  pass.
+- **Still not attempted**: page 2's right-hand column of dot-leader-heavy orphaned TOC text (the
+  misclassification half described above) is a DIFFERENT failure shape than the Door-ID/Option-weight
+  blocks - its rows are irregular in both height and column x-position (titles vary in length, dot-leaders
+  vary in run length), so the new geometric grid detector in #21 correctly does not fire on it (confirmed:
+  re-parsing this exact document after adding the detector still shows page 2 with exactly one table,
+  unchanged). Recovering that content would mean improving classification/chunking specifically for
+  dot-leader-dense orphaned text, a different, not-yet-attempted effort.
+
+### 21. RESOLVED - New fallback table detector recovers grids Docling's own model never flags as tables at all
+
+Built in response to the `Door identification block`/`Option`/`System weight` gap above, generalized as a
+new, permanent capability rather than a one-off fix (`TextGridTableDetector` +
+`TextGridTableFallbackApplier`, wired into `DoclingDocumentNormalizer.normalize()` as a page-scoped
+post-processing step, in `src/application/workflows/parsing/normalizers/table_layout/`):
+
+- **Detection is purely geometric** - clusters a page's loose `TEXT`-type elements (excluding anything
+  already covered by an existing Docling-detected table's bounding box) into visual rows via Y-range
+  overlap, then into column slots via X-gap clustering (the same style of adaptive, scale-relative gap
+  threshold already used for Docling's own parallel-lane reconstruction). A row only counts as a genuine
+  data row if it populates the SAME set of column slots as the page's dominant row signature (>= 3 rows,
+  >= 2 columns required) - this is deliberately vocabulary-free and language-agnostic, consistent with this
+  plan's document-agnostic design constraint, and requires no configuration or per-document tuning.
+- **Verified against exact real coordinates+text** captured from the KSB document's page 8 (both the
+  `Door identification block` and `Option`/`System weight` regions) as permanent regression fixtures, plus
+  negative tests (ordinary reflowed paragraph text, too-few-elements, a colliding row) confirming it does
+  not misfire on non-tabular content.
+- **End-to-end re-parse result exceeded the original scope**: rather than recovering two separate small
+  tables, the detector correctly recognized that `pos`/`door-number`/`location` (previously "Door
+  identification block") and `hose port`/`system weight` (previously "Option"/"System weight") share the
+  exact same row bands across the full page width, and merged them into ONE fully-correlated 8-row, 5-column
+  table (`pos, door-number, location, hose-port, weight`) in correct top-to-bottom order - fixing the
+  reversed-row-order problem as a side effect of reconstructing correct reading order geometrically. Page 8
+  now has all 4 of its real tables correctly structured (confirmed via fresh re-parse); page 2 (a different,
+  irregular failure shape) is confirmed unaffected - still exactly one table, unchanged.
+- A header row is deliberately NOT synthesized (best-effort label matching for scattered header text was
+  judged fragile and low-value relative to the actual data-row recovery, which is the real RAG-usefulness
+  win) - synthesized tables get a blank header row, consistent with how downstream code already expects
+  `table_rows[0]` to be a header.
+- New unit tests: 6 for the detector, 4 for the wiring/normalizer-level applier. Full unit suite green (3079
+  passed), same one known pre-existing unrelated failure.
+- **Scope note**: this only recovers REGULAR grids (consistent row/column alignment). It does not, and is
+  not intended to, recover irregular orphaned text like page 2's dot-leader TOC remnant (see above) - that
+  remains open.
 
 ## Resolved This Session (Not Yet Reflected Elsewhere In This Document)
 
