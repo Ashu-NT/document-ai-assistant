@@ -26,6 +26,9 @@ Current runtime context:
 - documents were recently reingested into SQLite and Qdrant
 - extraction was intentionally skipped for the latest ingest pass because of cost/time
 - this means the live runtime currently reflects a parse/chunk/embed heavy mode more than a full semantic-extraction mode
+- this document was cross-checked directly against the real database (`data/maintenance_ai.db`, 36
+  documents, no LLM calls) as of the "Empirically-Verified Weaknesses" section below - several findings
+  there were only visible in real data, not in code review or the existing unit-test suite
 
 Important constraint:
 
@@ -329,27 +332,24 @@ Why this matters:
 - the generic LLM still receives too much duplicated evidence
 - prompt noise increases as parsing quality and structured evidence richness improve
 
-### 10. Retrieval ranking is powerful but still concentrated in one scorer
+### 10. RESOLVED - Retrieval ranking was concentrated in one scorer
 
 Relevant files:
 
 - `src/infrastructure/retrieval/keyword/sql_keyword_scorer.py`
+- `src/infrastructure/retrieval/keyword/scoring/`
 - `src/infrastructure/retrieval/rerankers/deterministic/`
 
-Current strength:
+Status update (verified directly against current code, not just the Phase 0 status list below):
 
-- the ranking stack already includes many enterprise-relevant signals
+- `sql_keyword_scorer.py` is now 195 LOC and reduced to score orchestration and total-score assembly only
+- feature calculation, weighting, and penalty logic have been decomposed into `scoring/sql_keyword_scoring_config.py`, `sql_keyword_morphology.py`, `sql_keyword_text_helpers.py`, `sql_keyword_penalties.py`, and `sql_keyword_score_components.py`
+- this item was stale relative to this document's own Phase 0 "implemented slice" list - it described a problem the same work session had already fixed
 
-Weakness:
+Remaining, narrower gap (this is now a Phase 6 concern, not a Phase 0/architecture one):
 
-- `sql_keyword_scorer.py` still owns too much feature logic in one place
-- feature calculation, weighting, and penalty logic are not yet decomposed cleanly enough
-
-Why this matters:
-
-- tuning becomes harder over time
-- regression diagnosis remains slower than necessary
-- feature observability is weaker than it should be for enterprise retrieval tuning
+- feature diagnostics are not yet surfaced per-candidate for benchmark/debug tooling, so regression diagnosis is still slower than it should be
+- see Phase 6
 
 ### 11. Runtime modes and configuration are still too distributed
 
@@ -411,6 +411,149 @@ Why this matters:
 
 - even if the retrieval core improves, policy and presentation drift can reintroduce brittle behavior
 - enterprise polish depends on small, explicit formatting and validation units
+
+## Empirically-Verified Weaknesses (Real Corpus, DB-Verified)
+
+Everything above this section was found by reading code and architecture. The items below were found a
+different way: querying `data/maintenance_ai.db` directly with SQL, against the real ingested corpus (36
+documents - manuals, certificates, datasheets, reports, drawings - spanning multiple languages), with no
+LLM calls involved. This matters because code-level review can miss failure modes that only show up in
+real data at scale. None of the corpus's specific documents are referenced as targets to fix for - per this
+plan's own document-agnostic constraint, the failure classes below (not the sample documents) are what
+should drive the fix.
+
+### 14. Chunk-size enforcement fails on real documents - highest-priority item in this document
+
+Evidence:
+
+- 25 chunks in the real corpus exceed 2,000 estimated tokens; the worst is 11,766 tokens in one chunk
+  (`PURO 30-OWNERS MANUAL-HM13378-ROS213.pdf`), against a configured 200-1,000 token profile limit
+- affects 4 distinct real documents (`PURO 30`, `002878 - MY Cosmos - Full System Manual`,
+  `SOFTENER 9500`, `System Manual PB-06175`)
+- every oversized chunk found has a `table_category` set - all are table-derived, and the largest come
+  from complex engineering-drawing BOM/wiring tables
+- confirmed this is not accidentally fixed by the newest `ingestion_input_limits.py` work: that module only
+  resolves file-size/page-count acceptance limits, not chunk-token limits, and is a completely separate
+  concern from `TableFragmentSplitter`/`ChunkTextSplitter`
+
+Why this matters:
+
+- an 11,766-token chunk either gets truncated by the LLM's context window or crowds out every other piece
+  of retrieved evidence for that query - this directly destroys answer quality for whatever document it
+  belongs to
+- root cause is still unconfirmed - needs to be traced through `TableFragmentSplitter`/logical-table-family
+  composition to find why row-level splitting isn't firing for these specific tables
+
+### 15. Certification-table classification has near-zero recall on real certificate documents
+
+Evidence:
+
+- of the 7 real `document_type='certificate'` documents in the corpus, zero of their 49 real table chunks
+  are classified `certification_table` - all 19 real `certification_table` hits corpus-wide come from
+  `manual`-type documents' embedded appendices, not from standalone certificates
+- real certificate content pulled directly from the DB is often bilingual German/English ("Zertifikat",
+  "Kalibriernummer", "Spezifikation/specification | Soll/nominal | Ist/result") - the classifier's
+  certification vocabulary (`approval, atex, certificate, class, conformity, iecex, particulars`) is
+  English-only
+
+Why this matters:
+
+- this is a sharper, quantified version of weakness #4 (table understanding not consumed consistently) -
+  the classifier is not even reaching the right category for an entire, common, non-English document family
+- confirms this plan's own scope requirement (generalize across unseen manuals/certificates/drawings/
+  reports/datasheets) is not yet met for non-English certificates
+
+### 16. Text encoding corruption reaches retrieved chunk content, and is not limited to one language
+
+Evidence:
+
+- real extracted content includes replacement characters and spaceless garbled runs, e.g.
+  `"Eswird bstii dasssPrfgebis ausPrfunnanderLifrung selst..."` (a mangled German/English test-certificate
+  sentence) and encoding artifacts like `"L�rssen-Kr�ger"` (should be "Lürssen-Krüger")
+- not isolated to the bilingual certificates above - the same corruption pattern appears in English-language
+  manuals too (`SOFTENER 9500-OWNERS MANUAL`, `PURO 30-OWNERS MANUAL`, `TD_28022101_Rev-A.pdf`)
+
+Why this matters:
+
+- a chunk this garbled is close to useless if retrieved - an LLM cannot reliably extract meaning from it -
+  and it can still score well enough on keyword/identifier matches to be retrieved anyway
+- likely a font-encoding/glyph-mapping issue in specific source PDFs rather than a single parsing bug; needs
+  its own root-cause pass, likely in the Docling text-extraction/normalization layer
+
+### 17. Over half of all classified tables fall into the general_table catch-all
+
+Evidence:
+
+- 1,129 of 2,012 real table chunks with a `table_category` set (56%) are `general_table`
+- this is a corpus-wide number, not a cherry-picked example, and quantifies what weakness #4 only stated
+  qualitatively
+
+Why this matters:
+
+- real-world classifier recall across the specific categories (spare parts, technical data, operating
+  limits, troubleshooting, etc.) is meaningfully weaker in practice than the curated unit-test suite's
+  examples suggest
+- this is exactly the kind of drift a purely code-level or unit-test-level review cannot see
+
+### 18. A real document is currently, actively failing ingestion - not a hypothetical OCR gap
+
+Evidence:
+
+- `Reg - 11 Rolls_Royce_Auxiliary_Marine_Diesel_HAM_2140110_SN_536113910.pdf` has 3 failed ingestion runs in
+  `ingestion_runs`, the most recent from the day this finding was made, all with the identical error
+  `"Post-classification chunk finalization produced zero chunks for a non-empty parsed document."`
+- its 4 parsed elements are all `picture` type with `text=None` - a scanned document where OCR extracted
+  nothing usable
+- the failure is not silent at the ingestion-run level - `IngestionWorkflow._ensure_final_graph_has_chunks`
+  raises a structured `IngestionWorkflowError` (`error_code="ingestion.final_graph.no_chunks"`) and the run
+  is correctly marked `status='failed'` - but retrying 3 times produced the identical failure each time, so
+  the underlying OCR gap is not self-healing
+- this is the same failure class weakness #3 (OCR runtime model) describes, now confirmed as a live,
+  reproducible, currently-unresolved case rather than a theoretical one
+
+Why this matters:
+
+- the document exists in the `documents` table space but has no usable content and a failed ingestion run -
+  worth confirming the retrieval/QA layer actually checks ingestion-run status before answering questions
+  scoped to a document like this, rather than silently returning "no information found"
+
+## Resolved This Session (Not Yet Reflected Elsewhere In This Document)
+
+The following were found and fixed in a parallel review session, working from the same principle this plan
+states directly: RAG quality is capped by parse and retrieved-chunk quality. Listed here so this document
+stays the single source of truth and this work is not accidentally redone or reverted:
+
+- **TOC misclassification**: `TableSemanticClassifier`'s bare `"contents"` substring check was scoped from
+  the table's full body/caption text down to the section-heading path only - a spec table mentioning
+  "oil contents"/"tank contents" no longer misfiles as `TOC_TABLE`
+- **Certification-vs-operating-limits ordering**: `looks_like_certification_table` is now checked before
+  `looks_like_operating_limits_table`/`looks_like_technical_data_table` in `classify()` - a real ATEX/IECEx
+  certification table with environmental-limit rows no longer gets stolen by the generic operating-limits
+  rule (verified live against a realistic repro before and after)
+- **Chunk-type preservation gap**: `ChunkTypeResolver`'s standalone-preserved-type set now includes
+  `MAINTENANCE_INTERVAL`, `TROUBLESHOOTING`, and `OPERATION_INSTRUCTION` alongside the pre-existing
+  `TECHNICAL_SPECIFICATION`/`CERTIFICATION_INFO` - table-category-derived chunks in these three families
+  can no longer be silently re-scored down to `GENERAL` by keyword-signal scoring
+- **Structured-entity fallback gap**: `StructuredEvidenceResolver`/`RetrieveStructuredEntitiesTool` now fall
+  back to a full document-scoped list for `SPARE_PART`/`SPECIFICATION` when free-text search matches
+  nothing (previously only troubleshooting/maintenance/procedure/safety had this) - directly improves
+  "list the spare parts"/"what is the specification of X" style questions
+- **Multi-column reading-order gap**: `DoclingDocumentNormalizer` now reorders same-page elements into
+  correct left-column-then-right-column order when the page layout analyzer detects genuine 2-column
+  content, using the previously-computed-but-unused `layout_page_order` metadata - single-column pages
+  (the large majority) are untouched
+- **`TableFocusedEvidencePruner` over-deletion**: this is the *other* half of weakness #5 (not the "doesn't
+  suppress mismatched families" half, which is still open) - the pruner no longer treats
+  `chunk_type in {OVERVIEW, GENERAL}` alone as a low-value signal; it now relies solely on the
+  auto-generated-scaffolding-prefix check (`"Context: "`/`"Section overview: "`), so real content that
+  merely fell into the `GENERAL` catch-all (a caveat, a safety note) is no longer discarded on
+  table-focused queries
+
+Still open and not yet touched by this parallel session: `TableSignalCollector`'s `detect_signals()` does
+not apply the same spare-parts/spec-matrix disambiguation `classify()` gained above - a table `classify()`
+correctly demotes to `TECHNICAL_DATA_TABLE` can still carry a stale `spare_parts` signal tag in persisted
+metadata. No downstream consumer reads `TableSignal` for routing yet, so this has no live user-facing
+impact today, but it is incorrect persisted metadata.
 
 ## Non-Document-Specific Design Rules
 
@@ -628,6 +771,20 @@ Goals:
 
 Actions:
 
+- highest priority, added from DB-verified evidence (weakness #14): find and fix why some tables
+  (confirmed: complex engineering-drawing BOM/wiring tables) bypass `TableFragmentSplitter`/
+  `ChunkTextSplitter` token limits entirely - real chunks up to 11,766 tokens exist against a
+  200-1,000 token configured limit
+- added from DB-verified evidence (weakness #15): broaden `TableSpecificationRuleEvaluator`'s
+  certification vocabulary beyond English-only markers, or add a document-type/language-aware signal -
+  real certificate documents in this corpus are frequently bilingual and are not being classified as
+  certification tables at all
+- added from DB-verified evidence (weakness #16): root-cause text-encoding corruption in extracted
+  chunk content (replacement characters, spaceless garbled runs) - affects both bilingual and
+  English-only real documents, likely a font/glyph-mapping issue in Docling text extraction
+- added from DB-verified evidence (weakness #17): track the `general_table` fallback rate as an explicit
+  metric (currently 56% of all real classified tables) and treat reducing it as a concrete success
+  criterion for table-contract hardening, not just qualitative improvement
 - keep hardening table reconstruction in `src/application/workflows/parsing/tables/`
 - formalize one stable parsed-table contract for downstream consumers:
   - family identity
@@ -638,8 +795,20 @@ Actions:
   - structure quality
 - isolate report/debug observers from core parsing workflow execution
 - make OCR strategy an explicit resolved decision object per document run
+- added from DB-verified evidence (weakness #18): confirm the retrieval/QA layer checks ingestion-run
+  status before answering questions scoped to a document with a `status='failed'` run, rather than
+  silently returning "no information found"
 
 ### Phase 2 - Tighten Retrieval Intent And Evidence-Family Selection
+
+Status update:
+
+- `TableFocusedEvidencePruner`'s over-deletion half is resolved (see "Resolved This Session" above) - it no
+  longer discards real `GENERAL`/`OVERVIEW` content based on chunk_type alone, only on the recognized
+  auto-generated-scaffolding-prefix signal
+- the other half of the original weakness (#5) is still fully open: the pruner does not yet suppress
+  mismatched-but-still-"direct evidence" table families (e.g. an unrelated maintenance-interval table
+  surviving alongside the correct spare-parts table for a spare-parts-focused query)
 
 Goals:
 
@@ -649,7 +818,8 @@ Actions:
 
 - refine `RetrievalQueryChunkTypePreferenceMapper`
 - refine `IntentChunkTypeScorer`
-- refine `TableFocusedEvidencePruner`
+- extend `TableFocusedEvidencePruner` with family-mismatch rejection (the still-open half above) - do not
+  revert or bypass the scaffolding-prefix-only logic already landed this session
 - add explicit family rejection rules for focused table and identifier questions
 - surface ranking-feature diagnostics per candidate for auditing
 
@@ -806,13 +976,16 @@ Why this order:
 
 ## Immediate High-Value Next Slice
 
-If the team wants the highest-impact generic slice next, the best order is:
+Updated after DB-verified evidence (weakness #14): the highest-impact generic slice next is
 
-1. tighten table and identifier retrieval-family pruning
-2. make identifier answers consume `AnswerTable` directly
-3. split the biggest orchestration hotspots
+1. fix chunk-size enforcement for table-derived chunks (weakness #14) - this is actively producing
+   multi-thousand-token chunks in the real corpus right now, ahead of anything else in this list
+2. tighten table and identifier retrieval-family pruning (remaining half of weakness #5)
+3. make identifier answers consume `AnswerTable` directly
+4. split the biggest orchestration hotspots
 
-That slice is generic, high-impact, and does not depend on the current sample corpus.
+That slice is generic, high-impact, and does not depend on the current sample corpus - item 1 is a defect
+class (oversized chunks from complex tables), not a fix tailored to any one document.
 
 ## Final Verdict
 
