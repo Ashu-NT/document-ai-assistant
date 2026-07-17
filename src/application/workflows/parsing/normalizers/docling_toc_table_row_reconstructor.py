@@ -76,13 +76,20 @@ _BARE_NUMBERING_PATTERN_TEXT = (
 class _ParsedTocEntry:
     numbering: str
     title: str
-    page: int
+    # Kept as the original matched text (not int) so a roman-numeral page
+    # reference (e.g. front-matter "iii") is never conflated with an Arabic
+    # page sharing the same value elsewhere in the same document.
+    page: str
     used_dot_leader: bool
 
 
 class DoclingTocTableRowReconstructor:
-    _DOT_LEADER_PATTERN = re.compile(r"^(?P<title>.+?)\.{2,}\s*(?P<page>\d+)$")
-    _SPACE_PAGE_PATTERN = re.compile(r"^(?P<title>.+?)\s+(?P<page>\d+)$")
+    _DOT_LEADER_PATTERN = re.compile(
+        rf"^(?P<title>.+?)\.{{2,}}\s*(?P<page>{_PAGE_REFERENCE_TEXT})$"
+    )
+    _SPACE_PAGE_PATTERN = re.compile(
+        rf"^(?P<title>.+?)\s+(?P<page>{_PAGE_REFERENCE_TEXT})$"
+    )
     _ALPHA_TOKEN_PATTERN = re.compile(r"[A-Za-z]+")
 
     def reconstruct(self, rows: list[list[str]]) -> list[list[str]]:
@@ -195,7 +202,7 @@ class DoclingTocTableRowReconstructor:
             return None
 
         title = match.group("title").strip()
-        page = int(match.group("page"))
+        page = match.group("page")
         numbering = extract_heading_number(title) or ""
         clean_title = strip_heading_number(title).strip(" .|-")
         if not clean_title:
@@ -216,7 +223,7 @@ class DoclingTocTableRowReconstructor:
         entries: list[_ParsedTocEntry],
     ) -> list[_ParsedTocEntry]:
         deduped: list[_ParsedTocEntry] = []
-        seen: set[tuple[str, str, int]] = set()
+        seen: set[tuple[str, str, str]] = set()
         for entry in entries:
             key = (entry.numbering, entry.title, entry.page)
             if key in seen:
@@ -250,17 +257,17 @@ class DoclingTocTableRowReconstructor:
         return current
 
     @staticmethod
-    def _extract_row_page(cells: list[str]) -> tuple[int | None, int | None]:
+    def _extract_row_page(cells: list[str]) -> tuple[int | None, str | None]:
         for index in range(len(cells) - 1, -1, -1):
             compact = re.sub(r"\s+", "", cells[index])
             match = _ROW_PAGE_CELL_PATTERN.fullmatch(compact)
             if match:
-                return index, int(match.group("page"))
+                return index, match.group("page")
         return None, None
 
     @staticmethod
     def _extract_exact_number(value: str) -> str | None:
-        match = re.fullmatch(rf"({_NUMBERING_PATTERN_TEXT})", value.strip())
+        match = re.fullmatch(rf"({_BARE_NUMBERING_PATTERN_TEXT})", value.strip())
         if match is None:
             return None
         return match.group(1)

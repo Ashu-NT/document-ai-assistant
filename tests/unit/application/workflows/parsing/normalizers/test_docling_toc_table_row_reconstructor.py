@@ -176,3 +176,102 @@ def test_reconstruct_returns_original_rows_when_no_toc_pattern_matches() -> None
     rows = [["Voltage", "400V"], ["Weight", "120 kg"]]
 
     assert reconstructor.reconstruct(rows) == rows
+
+
+def test_reconstruct_handles_roman_numeral_front_matter_pages() -> None:
+    # A book's front matter commonly uses roman-numeral pages ("i, ii,
+    # iii...") while the main body switches to Arabic digits -- these rows
+    # have no numbering column at all (a common front-matter TOC shape), so
+    # this also exercises the root-TOC-title fallback gate.
+    reconstructor = DoclingTocTableRowReconstructor()
+
+    rows = reconstructor.reconstruct(
+        [
+            ["Foreword", "iii"],
+            ["Contents", "iv"],
+            ["Figures", "vi"],
+            ["Abbreviations", "vii"],
+        ]
+    )
+
+    assert rows == [
+        ["Title", "Page"],
+        ["Foreword", "iii"],
+        ["Contents", "iv"],
+        ["Figures", "vi"],
+        ["Abbreviations", "vii"],
+    ]
+
+
+def test_reconstruct_preserves_roman_and_arabic_pages_in_the_same_table_without_conflating_them() -> (
+    None
+):
+    # A single TOC can mix a roman-numeral front matter section with an
+    # Arabic-numbered main body -- these must never collapse to the same
+    # value (e.g. roman "III" and Arabic "3" are visually similar but are
+    # NOT the same page), so the original page text must survive verbatim.
+    reconstructor = DoclingTocTableRowReconstructor()
+
+    rows = reconstructor.reconstruct(
+        [
+            ["1 Preface", "III"],
+            ["1.1 Introduction", "IV"],
+            ["2 Safety", "3"],
+        ]
+    )
+
+    assert rows == [
+        ["Number", "Title", "Page"],
+        ["1", "Preface", "III"],
+        ["1.1", "Introduction", "IV"],
+        ["2", "Safety", "3"],
+    ]
+
+
+def test_reconstruct_handles_lowercase_bare_cell_numbering() -> None:
+    # An isolated cell containing ONLY a lowercase letter (e.g. "a", with no
+    # other text in that cell) is overwhelmingly likely to be genuine
+    # lettered numbering, not a coincidental lone word -- unlike a
+    # lowercase-led combined cell, which stays excluded (see the negative
+    # test below).
+    reconstructor = DoclingTocTableRowReconstructor()
+
+    rows = reconstructor.reconstruct(
+        [
+            ["1 Preface", "11"],
+            ["a", "First appendix topic", "12"],
+            ["b", "Second appendix topic", "13"],
+        ]
+    )
+
+    assert rows == [
+        ["Number", "Title", "Page"],
+        ["1", "Preface", "11"],
+        ["a", "First appendix topic", "12"],
+        ["b", "Second appendix topic", "13"],
+    ]
+
+
+def test_reconstruct_does_not_split_a_lowercase_led_combined_cell_as_numbering() -> (
+    None
+):
+    # Unlike the isolated-cell case above, a combined "numbering + title" cell
+    # must stay upper-case/digit-only -- otherwise ordinary two-word phrases
+    # led by a short lowercase word ("of course", "to install") would be
+    # misread as "numbering + title" and incorrectly split.
+    reconstructor = DoclingTocTableRowReconstructor()
+
+    rows = reconstructor.reconstruct(
+        [
+            ["1 Preface", "11"],
+            ["of course this works", "12"],
+            ["2 Safety", "15"],
+        ]
+    )
+
+    assert rows == [
+        ["Number", "Title", "Page"],
+        ["1", "Preface", "11"],
+        ["", "of course this works", "12"],
+        ["2", "Safety", "15"],
+    ]
