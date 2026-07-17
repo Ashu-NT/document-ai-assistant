@@ -129,9 +129,9 @@ Current strengths:
 
 Remaining weaknesses:
 
-- `ParsingWorkflow` still coordinates parsing, normalization, OCR enrichment, page fallback OCR, validation, and report writing directly
-- `DoclingParser` still contains broad fallback behavior around settings loading
-- parsing report writers are still wired into the production workflow path rather than being cleanly isolated as optional observers
+- `ParsingWorkflow` still coordinates parsing, normalization, OCR enrichment, page fallback OCR, and validation directly
+- parser input limits are now resolved explicitly at composition time, but OCR strategy is still split across policy and runtime-factory layers
+- debug/report generation is now outside the active production parsing workflow path, but there is not yet one explicit optional observer contract for parse-time diagnostics
 
 Why this matters:
 
@@ -489,10 +489,13 @@ Status:
   - `IngestionWorkflow` now delegates run bootstrap concerns (path resolution, file hashing, context resolution, `IngestionRun` creation, started-event emission, and initial progress emission) to a dedicated bootstrap helper
   - `IngestionWorkflow` now delegates duplicate-stage orchestration and success completion/final event emission to dedicated pipeline coordinators
   - `IngestionWorkflow` now delegates stage status/start/completed lifecycle plumbing and stage event-payload assembly to dedicated ingestion pipeline collaborators
-  - `IngestionWorkflow` now delegates per-stage `IngestionRun` metadata/state mutation to a dedicated state applier
-  - `IngestionWorkflow` now delegates internal collaborator assembly to a dedicated pipeline builder and delegates the full parse/register/classify/finalize/extract/embed/index/quality stage sequence to a dedicated sequence executor
-  - `AnswerGenerationService` now delegates settings resolution, prompt execution/retry, result assembly, and compound-question limitation handling to dedicated collaborators
-  - `SqlKeywordScorer` now delegates morphology helpers, scoring config, penalties, and score-component assembly to grouped scoring modules
+- `IngestionWorkflow` now delegates per-stage `IngestionRun` metadata/state mutation to a dedicated state applier
+- `IngestionWorkflow` now delegates internal collaborator assembly to a dedicated pipeline builder and delegates the full parse/register/classify/finalize/extract/embed/index/quality stage sequence to a dedicated sequence executor
+- `AnswerGenerationService` now delegates settings resolution, prompt execution/retry, result assembly, and compound-question limitation handling to dedicated collaborators
+- `SqlKeywordScorer` now delegates morphology helpers, scoring config, penalties, and score-component assembly to grouped scoring modules
+- parser file-size and page-count limits are now resolved explicitly in the orchestrator layer instead of failing open inside `DoclingParser` or `IngestionRequestValidator`
+- parsing chunking settings are now resolved explicitly in the orchestrator layer instead of failing open inside `DocumentGraphBuilder`
+- debug/profile parser entrypoints now consume the same shared input-limit resolver as the production parsing runtime
 
 Actions:
 
@@ -527,6 +530,11 @@ Implemented in this slice:
   - `VectorIndexStageResult`
 - `src/application/orchestrator/ingestion/ingestion_orchestrator.py`
   - resolves runtime capabilities from settings once at composition time
+  - resolves explicit ingestion input limits for request validation
+- `src/application/orchestrator/ingestion/ingestion_input_limits.py`
+  - owns explicit file-size and page-count limit resolution for parsing and ingestion validation
+- `src/application/orchestrator/ingestion/parsing_chunking_settings.py`
+  - owns explicit chunk-size, overlap, and minimum-section-text resolution for production and debug parsing entrypoints
 - `src/application/workflows/ingestion/ingestion_workflow.py`
   - consumes resolved capabilities and blocks implicit semantic-linking drift
   - delegates parsing, registration, classification, finalization, extraction, and vector-indexing clusters to stage-owned collaborators
@@ -573,6 +581,12 @@ Implemented in this slice:
     - owns deterministic compound-question limitation detection
 - `src/shared/formatting/ingestion_result_formatter.py`
   - exposes runtime-profile diagnostics in human and JSON output
+- `src/infrastructure/parsing/docling/docling_parser.py`
+  - no longer loads ingestion settings or silently falls back to effectively-unbounded parser limits
+- `src/application/workflows/parsing/builders/document_graph_builder.py`
+  - no longer loads ingestion settings or silently falls back while resolving chunk-size/overlap thresholds
+- `src/application/validation/ingestion/ingestion_request_validator.py`
+  - no longer fails open to an effectively-unbounded file-size limit when settings resolution drifts
 - `src/infrastructure/retrieval/keyword/scoring/`
   - `sql_keyword_scoring_config.py`
     - owns scorer config loading and marker tables
@@ -596,9 +610,17 @@ Still open inside Phase 0:
 - continue shrinking `IngestionWorkflow` itself
   - the primary workflow coordinator is now under the repo file-size target and no longer owns the full stage sequence inline
   - the next safe ingestion-oriented cleanup is optional follow-up work around specialized retry paths such as `ExtractionRetryStep`, not the main happy-path workflow
-- continue removing broad fallback behavior from low-level parser/runtime defaults where silent drift still exists
+- audit remaining generic `resolve_setting()` fail-open usages in non-ingestion runtime code and decide which ones should become explicit composition-time failures instead of permissive defaults
 
 ### Phase 1 - Strengthen Parsing And Table Contracts
+
+Status:
+
+- in progress
+- implemented slice:
+  - `ParsingWorkflow` no longer imports parsing/chunking/quality report writers or performs workflow-level debug report side effects
+  - active debug parsing/report generation remains script-owned, which is a cleaner separation than production-workflow-owned report writing
+  - production, debug, and profiling parsing entrypoints now share the same explicit parser/chunking settings resolution instead of each low-level component importing settings on its own
 
 Goals:
 
