@@ -20,7 +20,6 @@ from src.application.workflows.classification import (
 )
 from src.application.workflows.embedding import EmbeddedChunk, EmbeddingWorkflow
 from src.application.workflows.extraction import ExtractionWorkflow
-from src.application.workflows.ingestion.content_hash import compute_content_hash_from_graph
 from src.application.workflows.ingestion.context.ingestion_execution_context_resolver import (
     resolve_activity_context,
     resolve_audit_context,
@@ -61,12 +60,15 @@ from src.application.workflows.ingestion.runtime import (
     IngestionRuntimeProfileResolver,
 )
 from src.application.workflows.ingestion.stages import (
+    ClassificationStageRunner,
     ExtractionStageRunner,
+    FinalizationStageRunner,
+    ParsingStageRunner,
+    RegistrationStageRunner,
     VectorIndexStageRunner,
 )
 from src.application.workflows.parsing import ParsingWorkflow
 from src.domain.common import DocumentType
-from src.domain.document.value_objects import DocumentHashes
 from src.domain.events import IngestionEvent
 from src.domain.workflow import IngestionRun
 from src.shared.activity import ActivityContext
@@ -196,6 +198,24 @@ class IngestionWorkflow:
         )
         self._vector_index_stage_runner = VectorIndexStageRunner(
             embedding_workflow=self.embedding_workflow,
+            commit=self.unit_of_work.commit,
+        )
+        self._parsing_stage_runner = ParsingStageRunner(
+            parsing_workflow=self.parsing_workflow,
+        )
+        self._registration_stage_runner = RegistrationStageRunner(
+            document_registration_service=self.document_registration_service,
+            commit=self.unit_of_work.commit,
+        )
+        self._classification_stage_runner = ClassificationStageRunner(
+            document_classification_workflow=self.document_classification_workflow,
+            commit=self.unit_of_work.commit,
+        )
+        self._finalization_stage_runner = FinalizationStageRunner(
+            post_classification_chunk_finalization_workflow=(
+                self.post_classification_chunk_finalization_workflow
+            ),
+            question_generation_model_loader=self._question_generation_model,
             commit=self.unit_of_work.commit,
         )
 
@@ -346,26 +366,23 @@ class IngestionWorkflow:
                 file_name=file_name,
                 progress_callback=progress_callback,
             )
-            parsing_result = self.parsing_workflow.parse(
+            requested_document_type = _coerce_document_type(request.document_type)
+            parsing_stage_result = self._parsing_stage_runner.run(
                 file_path=file_path,
                 file_hash=file_hash,
                 content_hash=content_hash,
                 document_id=request.preserve_document_id,
                 enable_ocr_override=request.enable_ocr,
+                requested_title=request.title,
+                requested_document_type=requested_document_type,
+                source_name=request.source_name,
                 activity_context=resolved_activity_context,
                 progress_callback=progress_callback,
             )
-            if request.title:
-                parsing_result.document_graph.document.title = request.title
-            requested_document_type = _coerce_document_type(request.document_type)
-            if requested_document_type is not None:
-                parsing_result.document_graph.document.document_type = requested_document_type
-            if request.source_name:
-                parsing_result.document_graph.document.source_name = request.source_name
+            parsing_result = parsing_stage_result.parsing_result
             ingestion_run.document_id = parsing_result.document_id
-            parser = getattr(self.parsing_workflow, "parser", None)
-            ingestion_run.parser_name = getattr(parser, "parser_name", None)
-            ingestion_run.parser_version = getattr(parser, "parser_version", None)
+            ingestion_run.parser_name = parsing_stage_result.parser_name
+            ingestion_run.parser_version = parsing_stage_result.parser_version
             self._event_publisher.publish_stage_completed(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.PARSING,
@@ -379,12 +396,8 @@ class IngestionWorkflow:
                 },
             )
             warnings.extend(parsing_result.parse_warnings)
-            content_hash = compute_content_hash_from_graph(parsing_result.document_graph)
+            content_hash = parsing_stage_result.content_hash
             ingestion_run.content_hash = content_hash
-            parsing_result.document_graph.document.hashes = DocumentHashes(
-                file_hash=file_hash,
-                content_hash=content_hash,
-            )
 
             content_duplicate_document_id = (
                 self._duplicate_check_step.check_content_hash_duplicate(
@@ -439,17 +452,11 @@ class IngestionWorkflow:
                 file_name=file_name,
                 progress_callback=progress_callback,
             )
-            if request.preserve_document_id is not None:
-                self.document_registration_service.replace_document_graph(
-                    parsing_result.document_graph,
-                    activity_context=resolved_activity_context,
-                )
-            else:
-                self.document_registration_service.register_document_graph(
-                    parsing_result.document_graph,
-                    activity_context=resolved_activity_context,
-                )
-            self.unit_of_work.commit()
+            self._registration_stage_runner.run(
+                document_graph=parsing_result.document_graph,
+                replace_existing=request.preserve_document_id is not None,
+                activity_context=resolved_activity_context,
+            )
             self._set_run_status(
                 ingestion_run,
                 IngestionStatus.REGISTERED,
@@ -473,15 +480,13 @@ class IngestionWorkflow:
                 file_name=file_name,
                 progress_callback=progress_callback,
             )
-            classification = self.document_classification_workflow.classify_document(
-                parsing_result.document_graph,
+            classification_stage_result = self._classification_stage_runner.run(
+                document_graph=parsing_result.document_graph,
                 activity_context=resolved_activity_context,
             )
-            self.unit_of_work.commit()
+            classification = classification_stage_result.classification
             ingestion_run.classification_model = (
-                classification.result.processing_metadata.model_name
-                if classification.result is not None
-                else None
+                classification_stage_result.classification_model
             )
             self._set_run_status(
                 ingestion_run,
@@ -513,15 +518,16 @@ class IngestionWorkflow:
                 file_name=file_name,
                 progress_callback=progress_callback,
             )
-            final_graph = self.post_classification_chunk_finalization_workflow.finalize(
-                parsing_result.document_id,
+            finalization_stage_result = self._finalization_stage_runner.run(
+                document_id=parsing_result.document_id,
+                enable_question_generation=request.generate_questions,
                 activity_context=resolved_activity_context,
                 progress_callback=progress_callback,
-                embed_final_chunks=False,
-                enable_question_generation=request.generate_questions,
             )
-            self.unit_of_work.commit()
-            ingestion_run.question_generation_model = self._question_generation_model()
+            final_graph = finalization_stage_result.final_graph
+            ingestion_run.question_generation_model = (
+                finalization_stage_result.question_generation_model
+            )
             ingestion_run.extraction_model = (
                 self.extraction_workflow.extraction_model
                 if self.extraction_enabled

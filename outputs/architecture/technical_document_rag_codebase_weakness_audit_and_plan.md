@@ -479,6 +479,10 @@ Status:
   - explicit structural-only versus semantic-enriched diagnostics
   - workflow-level enforcement so semantic linking cannot run implicitly when extraction is disabled
   - CLI/JSON ingestion output now surfaces runtime profile information
+  - `IngestionWorkflow` now delegates parsing work to a dedicated parsing stage runner
+  - `IngestionWorkflow` now delegates registration work to a dedicated registration stage runner
+  - `IngestionWorkflow` now delegates classification work to a dedicated classification stage runner
+  - `IngestionWorkflow` now delegates finalization work to a dedicated finalization stage runner
   - `IngestionWorkflow` now delegates extraction/identifier/linking work to a dedicated extraction stage runner
   - `IngestionWorkflow` now delegates embedding/indexing work to a dedicated vector indexing stage runner
 
@@ -502,6 +506,13 @@ Implemented in this slice:
   - `IngestionRuntimeCapabilities`
   - `IngestionRuntimeProfileResolver`
 - `src/application/workflows/ingestion/stages/`
+  - `ParsingStageRunner`
+  - `ParsingStageResult`
+  - `RegistrationStageRunner`
+  - `ClassificationStageRunner`
+  - `ClassificationStageResult`
+  - `FinalizationStageRunner`
+  - `FinalizationStageResult`
   - `ExtractionStageRunner`
   - `ExtractionStageResult`
   - `VectorIndexStageRunner`
@@ -510,7 +521,7 @@ Implemented in this slice:
   - resolves runtime capabilities from settings once at composition time
 - `src/application/workflows/ingestion/ingestion_workflow.py`
   - consumes resolved capabilities and blocks implicit semantic-linking drift
-  - delegates extraction and vector-indexing clusters to stage-owned collaborators
+  - delegates parsing, registration, classification, finalization, extraction, and vector-indexing clusters to stage-owned collaborators
 - `src/application/workflows/ingestion/pipeline/extraction_retry_step.py`
   - uses the same resolved runtime capabilities during extraction retry
 - `src/shared/formatting/ingestion_result_formatter.py`
@@ -518,9 +529,10 @@ Implemented in this slice:
 
 Still open inside Phase 0:
 
-- split parsing/classification/finalization orchestration out of `IngestionWorkflow`
 - split `AnswerGenerationService` into stage-owned collaborators
 - begin decomposing `SqlKeywordScorer` into explicit feature calculators
+- continue shrinking `IngestionWorkflow` itself
+  - ownership is improved, but the coordinator is still a large hotspot and should be reduced further in a later slice
 
 ### Phase 1 - Strengthen Parsing And Table Contracts
 
