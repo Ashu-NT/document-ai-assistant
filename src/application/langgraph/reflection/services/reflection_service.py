@@ -30,6 +30,10 @@ from src.application.langgraph.reflection.services.reflection_json_parser import
 from src.application.langgraph.reflection.services.reflection_response_schema import (
     build_reflection_response_json_schema,
 )
+from src.application.langgraph.reflection.strategies.evidence_sufficiency import (
+    EvidenceSufficiencyContext,
+    EvidenceSufficiencyStrategyRegistry,
+)
 from src.application.langgraph.reflection.validation import ReflectionValidator
 from src.application.prompts.reflection import (
     REFLECTION_PROMPT_VERSION,
@@ -52,6 +56,7 @@ class ReflectionService:
         validator: ReflectionValidator | None = None,
         policy: ReflectionPolicy | None = None,
         model: str | None = None,
+        evidence_sufficiency_registry: EvidenceSufficiencyStrategyRegistry | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.prompt_builder = prompt_builder or ReflectionPromptBuilder()
@@ -59,6 +64,9 @@ class ReflectionService:
         self.validator = validator or ReflectionValidator()
         self.policy = policy or ReflectionPolicy()
         self.model = model
+        self.evidence_sufficiency_registry = (
+            evidence_sufficiency_registry or EvidenceSufficiencyStrategyRegistry()
+        )
 
     def review(
         self,
@@ -74,6 +82,7 @@ class ReflectionService:
         reflection_attempts: int,
         retrieval_retry_count: int,
         reference_notes: list[Any] | None = None,
+        retrieval_query_intent: str | None = None,
     ) -> ReflectionResult:
         has_relevant_maintenance_evidence = (
             MaintenanceEvidenceRelevanceDetector.has_relevant_evidence(
@@ -116,6 +125,19 @@ class ReflectionService:
                 for chunk in approved_chunks
                 if chunk.get("document_id")
             }
+        )
+        generic_sufficiency_verdict = self.evidence_sufficiency_registry.evaluate(
+            retrieval_query_intent=retrieval_query_intent,
+            context=EvidenceSufficiencyContext(
+                question=original_user_question,
+                answer_text=generated_answer,
+                answer_intent=answer_intent,
+                selected_document_id=selected_document_id,
+                approved_chunks=approved_chunks,
+                rejected_chunks=rejected_chunks,
+                evidence_quality=evidence_quality,
+                answer_quality=answer_quality,
+            ),
         )
         deterministic = DeterministicReflectionDecider.decide(
             policy=self.policy,
@@ -173,6 +195,7 @@ class ReflectionService:
             has_relevant_spare_parts_evidence=has_relevant_spare_parts_evidence,
             has_unexpected_page_references=bool(answer_quality.unexpected_pages),
             has_duplicate_answer_content=answer_quality.has_duplicate_content,
+            generic_sufficiency_verdict=generic_sufficiency_verdict,
         )
         grounding_score = min(
             answer_quality.score,
@@ -223,5 +246,7 @@ class ReflectionService:
                 "answer_quality": asdict(answer_quality),
                 "evidence_quality": asdict(evidence_quality),
                 "validator_decision": effective_decision.decision.value,
+                "retrieval_query_intent": retrieval_query_intent,
+                "evidence_sufficiency_verdict": generic_sufficiency_verdict.verdict.value,
             },
         )

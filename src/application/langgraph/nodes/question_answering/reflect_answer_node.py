@@ -93,6 +93,7 @@ class ReflectAnswerNode:
                 selected_document_title=state.get("selected_document_title")
                 or state.get("document_title"),
                 answer_intent=resolve_answer_intent(answer_payload),
+                retrieval_query_intent=_extract_retrieval_query_intent(retrieval_result),
                 approved_chunks=approved_chunks,
                 rejected_chunks=rejected_chunks,
                 citations=answer_payload.get("citations", []),
@@ -204,3 +205,24 @@ def _tool_payload(state: AgentState, tool_name: str) -> Any | None:
     if not tool_result.get("success", False):
         return None
     return tool_result.get("data")
+
+
+def _extract_retrieval_query_intent(retrieval_result: Any) -> str | None:
+    """The generic `RetrievalQueryIntent` (TABLE/MAINTENANCE/IDENTIFIER/...)
+    resolved during query analysis, already present in the serialized
+    `QuestionAnsweringResult.retrieval_result.retrieval_result.query
+    .detected_intent` path -- no new plumbing needed, it's the same value
+    `RetrievalQueryAnalyzer.analyze()` already computes and stores. This is
+    a distinct, broader classification than `answer_intent`
+    (`AnswerIntent`, resolved separately above), and is what
+    `EvidenceSufficiencyStrategyRegistry` dispatches on."""
+    if not isinstance(retrieval_result, dict):
+        return None
+    inner_result = retrieval_result.get("retrieval_result")
+    if not isinstance(inner_result, dict):
+        return None
+    query = inner_result.get("query")
+    if not isinstance(query, dict):
+        return None
+    detected_intent = query.get("detected_intent")
+    return str(detected_intent) if detected_intent else None

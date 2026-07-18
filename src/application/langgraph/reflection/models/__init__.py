@@ -11,6 +11,10 @@ from src.application.langgraph.reflection.models.reflection_result import (
     ReflectionResult,
 )
 from src.application.langgraph.reflection.models.retry_plan import RetryPlan
+from src.application.langgraph.reflection.models.sufficiency_verdict import (
+    SufficiencyVerdict,
+    SufficiencyVerdictType,
+)
 
 __all__ = [
     "AnswerQuality",
@@ -20,4 +24,6 @@ __all__ = [
     "ReflectionDecisionType",
     "ReflectionResult",
     "RetryPlan",
+    "SufficiencyVerdict",
+    "SufficiencyVerdictType",
 ]

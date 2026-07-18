@@ -3,9 +3,57 @@
 ## Phase 0 status: implemented (2026-07-19)
 
 All four Phase 0 items (§5) are done and verified — full unit suite 3211 passed, 1 pre-existing unrelated
-failure, zero new regressions. Details in `reflection_flow_audit.md`'s own updated status section. Phases 1-4
-(the strategy-registry redesign itself) are not started — this remains a design plan for that work, with the
-three decisions in §6 resolved.
+failure, zero new regressions. Details in `reflection_flow_audit.md`'s own updated status section.
+
+## Phase 1 status: implemented (2026-07-19)
+
+The `EvidenceSufficiencyStrategy` registry (§3.1) is built and wired in, verified with the full unit suite:
+3241 passed, same 1 pre-existing unrelated failure, zero new regressions (30 new tests added for this phase
+alone). Two implementation decisions made along the way, not fully specified in the original §3.1 sketch:
+
+- **Dispatch-key plumbing landed in Phase 1, not deferred to Phase 3 as originally sketched.** The registry
+  needs *some* intent value to dispatch on from day one; building it against the interim `AnswerIntent` string
+  and re-keying later would have meant re-registering every strategy twice. Investigated first rather than
+  assumed: `RetrievalQueryIntent` turned out to already be present, for free, in the serialized
+  `QuestionAnsweringResult.retrieval_result.retrieval_result.query.detected_intent` path (confirmed by direct
+  construction/serialization test) — no new plumbing through `answer_question_node.py`/`QuestionAnsweringResult`
+  was needed at all, just a small extraction helper in `reflect_answer_node.py`
+  (`_extract_retrieval_query_intent`) and a new `retrieval_query_intent` parameter threaded through
+  `ReflectionService.review()`. Phase 3's remaining plumbing task is now narrower: only the *confidence/gap*
+  fields of `RetrievalQueryIntentClassification` (needed for the ambiguity-clarify trigger specifically) still
+  require new threading — the resolved intent value itself does not.
+- **`ReflectionValidator`'s internals were extended additively, not replaced.** The original §3.1 framing
+  ("replaces the 5 hardcoded detector/relevance files") suggested the registry would supersede the validator's
+  branching. In practice the validator's 5 pure-context downgrade gates (`if maintenance_interval_context and
+  not hard_grounding_violation:`, appearing at the retry-disabled, retry-limit, CLARIFY, FAIL, and
+  reflection-attempt-limit choke points) already had zero regression tolerance (16+ existing tests pin their
+  exact outputs), and the spare-parts/identifier gates are entangled with their own domain-specific content
+  checks (`is_legitimate_partial_spare_parts_answer`, `answer_contains_identifier_inventory`) that don't
+  generalize the same way. Rather than risk that surface, each of the 5 pure-context gates became `if
+  (maintenance_interval_context or generic_context_applies) and not hard_grounding_violation:`, where
+  `generic_context_applies` is `True` only when a NEW `generic_sufficiency_verdict` parameter (sourced from the
+  registry, always computed) says SUFFICIENT *and* none of the 3 existing domain contexts already matched. This
+  is provably behavior-preserving for every existing caller (the parameter defaults to `None`, under which
+  `generic_context_applies` is always `False`) while genuinely closing the gap the plan set out to close: a
+  troubleshooting/safety/procedure/specification/overview/figure/general/document-exploration question — any
+  intent without a registered specialization — now gets the same "don't discard a legitimate, well-grounded
+  answer" protection the 3 hardcoded domains already had, proven end-to-end in
+  `test_review_downgrades_fail_for_a_non_domain_intent_with_good_generic_evidence`. The 5 detector/relevance
+  files themselves are wrapped, not deleted (Section 3.1's "replaces" is realized as "migrates behind a common
+  interface, migrating the call sites' *sourcing*" rather than deleting the underlying logic, which is still
+  correct and still exercised).
+
+New code: `reflection/models/sufficiency_verdict.py`; `reflection/strategies/evidence_sufficiency/` (context
+bundle, Protocol, generic default, 3 migrated strategies, registry) — exactly the folder layout proposed in
+§4. `reflection/detectors/` and the 2 `evaluators/*_relevance_detector.py` files are unchanged and now
+consumed *through* the strategies rather than called directly by `reflection_service.py`/
+`reflection_validator.py` for the 3 domain cases; `reflection_service.py` still also computes
+`has_relevant_maintenance_evidence`/`has_relevant_spare_parts_evidence` directly (unchanged) since the
+existing validator parameters of those exact names couldn't be removed without touching the entangled
+domain-content-check branches described above.
+
+Not yet done: `RetryReformulationStrategy` (Phase 2), `ClarificationStrategy` + ambiguity trigger (Phase 3),
+query decomposition (Phase 4).
 
 Date: 2026-07-18. This is a design plan, not yet implemented. It follows `reflection_flow_audit.md` (bug audit)
 and answers a different question: assuming the bugs get fixed, **is the adaptive-retry/clarify/fail design
