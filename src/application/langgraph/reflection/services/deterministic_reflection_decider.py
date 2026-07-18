@@ -101,8 +101,8 @@ class DeterministicReflectionDecider:
                 reason="The answer did not have enough approved evidence.",
                 # No real reformulation signal exists here -- pin retry_query
                 # to the original question itself (rather than leaving it
-                # unset) so RetryQueryBuilder uses it verbatim instead of
-                # falling back to appending "additional grounded evidence"
+                # unset) so the retry reformulation strategy uses it verbatim
+                # instead of falling back to appending "additional grounded evidence"
                 # boilerplate that adds no real search signal and can dilute
                 # keyword/BM25 relevance. The existing top_k increase on
                 # retry is what actually broadens recall here.

@@ -1,7 +1,7 @@
 from src.application.langgraph.factories import ToolRegistry
+from src.application.langgraph.nodes.node_utils import extract_retrieval_query_intent
 from src.application.langgraph.nodes.question_answering.reflect_answer_node import (
     ReflectAnswerNode,
-    _extract_retrieval_query_intent,
 )
 from src.application.langgraph.reflection.models import (
     ReflectionDecision,
@@ -23,15 +23,15 @@ def _retrieval_result_payload(detected_intent: str | None) -> dict:
 def test_extract_retrieval_query_intent_reads_the_nested_path() -> None:
     payload = _retrieval_result_payload("maintenance")
 
-    assert _extract_retrieval_query_intent(payload) == "maintenance"
+    assert extract_retrieval_query_intent(payload) == "maintenance"
 
 
 def test_extract_retrieval_query_intent_returns_none_for_missing_shape() -> None:
-    assert _extract_retrieval_query_intent({}) is None
-    assert _extract_retrieval_query_intent(None) is None
-    assert _extract_retrieval_query_intent({"retrieval_result": "not-a-dict"}) is None
+    assert extract_retrieval_query_intent({}) is None
+    assert extract_retrieval_query_intent(None) is None
+    assert extract_retrieval_query_intent({"retrieval_result": "not-a-dict"}) is None
     assert (
-        _extract_retrieval_query_intent({"retrieval_result": {"query": "not-a-dict"}})
+        extract_retrieval_query_intent({"retrieval_result": {"query": "not-a-dict"}})
         is None
     )
 

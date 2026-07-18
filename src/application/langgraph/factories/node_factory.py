@@ -34,7 +34,6 @@ from src.application.langgraph.retrieval_strategy import (
     RetrievalPlanExecutor,
     RetrievalStrategyPolicy,
     RetrievalStrategyService,
-    StrategyRetryPolicy,
 )
 from src.application.langgraph.research import (
     LLMResearchPlanner,
@@ -47,8 +46,10 @@ from src.application.langgraph.reflection import (
     ClarificationBuilder,
     EvidenceMerger,
     ReflectionService,
-    RetryQueryBuilder,
     RetrievalRetryPolicy,
+)
+from src.application.langgraph.reflection.strategies.retry_reformulation import (
+    RetryReformulationStrategyRegistry,
 )
 from src.application.langgraph.planning import (
     DeterministicPlanner,
@@ -77,13 +78,12 @@ class NodeFactory:
         plan_repair: PlanRepair | None = None,
         reflection_service: ReflectionService | None = None,
         evidence_merger: EvidenceMerger | None = None,
-        retry_query_builder: RetryQueryBuilder | None = None,
+        retry_reformulation_registry: RetryReformulationStrategyRegistry | None = None,
         clarification_builder: ClarificationBuilder | None = None,
         retrieval_retry_policy: RetrievalRetryPolicy | None = None,
         retrieval_strategy_service: RetrievalStrategyService | None = None,
         retrieval_plan_executor: RetrievalPlanExecutor | None = None,
         retrieval_strategy_policy: RetrievalStrategyPolicy | None = None,
-        strategy_retry_policy: StrategyRetryPolicy | None = None,
         strategy_advisor: StrategyAdvisor | None = None,
         research_service: ResearchService | None = None,
         llm_research_planner: LLMResearchPlanner | None = None,
@@ -98,7 +98,9 @@ class NodeFactory:
         self.plan_repair = plan_repair or PlanRepair()
         self.reflection_service = reflection_service
         self.evidence_merger = evidence_merger or EvidenceMerger()
-        self.retry_query_builder = retry_query_builder or RetryQueryBuilder()
+        self.retry_reformulation_registry = (
+            retry_reformulation_registry or RetryReformulationStrategyRegistry()
+        )
         self.clarification_builder = clarification_builder or ClarificationBuilder()
         self.retrieval_retry_policy = (
             retrieval_retry_policy or RetrievalRetryPolicy()
@@ -114,7 +116,6 @@ class NodeFactory:
         self.retrieval_strategy_policy = (
             retrieval_strategy_policy or RetrievalStrategyPolicy()
         )
-        self.strategy_retry_policy = strategy_retry_policy or StrategyRetryPolicy()
         self.llm_research_planner = llm_research_planner
         self.research_policy = research_policy or ResearchPolicy()
         self.research_service = research_service or ResearchService(
@@ -184,12 +185,11 @@ class NodeFactory:
             "retry_retrieval": RetryRetrievalNode(
                 tool_registry,
                 evidence_merger=self.evidence_merger,
-                retry_query_builder=self.retry_query_builder,
+                retry_reformulation_registry=self.retry_reformulation_registry,
                 retry_policy=self.retrieval_retry_policy,
                 retrieval_strategy_service=self.retrieval_strategy_service,
                 retrieval_plan_executor=self.retrieval_plan_executor,
                 retrieval_strategy_policy=self.retrieval_strategy_policy,
-                strategy_retry_policy=self.strategy_retry_policy,
             ),
             "run_quality_gate": RunQualityGateNode(tool_registry),
             "retrieval_trace": RetrievalTraceNode(tool_registry),

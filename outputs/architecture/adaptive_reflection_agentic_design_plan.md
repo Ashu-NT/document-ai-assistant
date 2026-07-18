@@ -5,6 +5,47 @@
 All four Phase 0 items (§5) are done and verified — full unit suite 3211 passed, 1 pre-existing unrelated
 failure, zero new regressions. Details in `reflection_flow_audit.md`'s own updated status section.
 
+## Phase 2 status: implemented (2026-07-19)
+
+The `RetryReformulationStrategy` registry (§3.2) is built and wired in, verified with the full unit suite:
+3248 passed, same 1 pre-existing unrelated failure, zero new regressions (15 new tests). Per explicit
+instruction for this phase, no new/edited file exceeds 300 lines and no dumping-ground file was created —
+the largest new file is 118 lines; `retry_retrieval_node.py` (381 lines before this phase, already over the
+limit) was refactored down to 281 lines by extracting two focused companion modules, not left to grow further.
+
+- **One shared strategy class, not five near-duplicate ones.** The plan's folder sketch implied a dedicated
+  file per migrated `_INTENT_EXPANSIONS` bucket. Since all 5 buckets (and the generic default) differ only in
+  which expansion terms they append on the fallback path, they're realized as one
+  `KeywordExpansionRetryReformulationStrategy` class parametrized by `expansion_terms` — registered 6 times
+  (5 domain intents + the generic default with empty terms) rather than duplicated 6 times. Query-text
+  behavior (a real, related `reflection_decision.retry_query` used verbatim; only the fallback path gets
+  expansions appended) is unchanged from the retired `RetryQueryBuilder`; the strategy hint is new, sourced
+  from the existing (already-fixed-in-Phase-0) `StrategyRetryPolicy` internally rather than a second,
+  separately-triggered call.
+- **Dispatch changed from "any marker that happens to appear" to single-intent dispatch.** The old
+  `_INTENT_EXPANSIONS` matched via substring against `answer_intent`/question text, so multiple buckets could
+  stack in one fallback query. The registry dispatches on exactly one `RetrievalQueryIntent` per call, matching
+  the Phase 1 registry's pattern. No existing test asserted the old stacking behavior, so this is a safe,
+  deliberate simplification, not a silent behavior change — noted here for transparency.
+- **`RetryQueryBuilder` and `StrategyRetryPolicy`'s direct call site were retired, not kept alongside the new
+  registry.** `retry_query_builder.py` and its test file are deleted; `RetryRetrievalNode`'s constructor now
+  takes `retry_reformulation_registry` instead of `retry_query_builder`/`strategy_retry_policy` (updated at
+  all 3 real call sites: `RetryRetrievalNode`, `NodeFactory`, `agent_node_factory_builder.py`). `StrategyRetryPolicy`
+  itself is unchanged and still used -- internally, by the new strategy class, not by callers directly.
+- **Precedence for an already-set `state["retry_query"]`** (set by `reflect_answer_node.py` from the LLM/
+  decider's own suggested retry_query) is preserved by feeding it into the SAME reformulation call — as the
+  `reflection_decision.retry_query` the registry's relatedness check evaluates — rather than a separate
+  bypass branch, so the retry_query text and the strategy hint are always derived from one consistent source
+  instead of two independently-triggered mechanisms.
+
+New code: `reflection/strategies/retry_reformulation/` (context bundle, Protocol, the one shared strategy
+class, registry); `RetryPlan` extended with `retrieval_strategy_hint`/`secondary_strategy_hints`;
+`node_utils.extract_retrieval_query_intent()` (promoted from a private helper in `reflect_answer_node.py` to a
+shared utility, now used by both reflection nodes); `retry_retrieval_node_helpers.py` and
+`retry_retrieval_strategy_executor.py` (extracted from `retry_retrieval_node.py` to keep it under 300 lines).
+
+Not yet done: `ClarificationStrategy` + ambiguity trigger (Phase 3), query decomposition (Phase 4).
+
 ## Phase 1 status: implemented (2026-07-19)
 
 The `EvidenceSufficiencyStrategy` registry (§3.1) is built and wired in, verified with the full unit suite:
@@ -52,8 +93,8 @@ consumed *through* the strategies rather than called directly by `reflection_ser
 existing validator parameters of those exact names couldn't be removed without touching the entangled
 domain-content-check branches described above.
 
-Not yet done: `RetryReformulationStrategy` (Phase 2), `ClarificationStrategy` + ambiguity trigger (Phase 3),
-query decomposition (Phase 4).
+Not yet done at the time this phase shipped: `RetryReformulationStrategy` (Phase 2, now also done -- see its
+own status section above), `ClarificationStrategy` + ambiguity trigger (Phase 3), query decomposition (Phase 4).
 
 Date: 2026-07-18. This is a design plan, not yet implemented. It follows `reflection_flow_audit.md` (bug audit)
 and answers a different question: assuming the bugs get fixed, **is the adaptive-retry/clarify/fail design

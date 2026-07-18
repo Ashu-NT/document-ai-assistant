@@ -28,6 +28,27 @@ def serialize_tool_result(tool_result: Any) -> dict[str, Any]:
     }
 
 
+def extract_retrieval_query_intent(retrieval_result: Any) -> str | None:
+    """The generic `RetrievalQueryIntent` (TABLE/MAINTENANCE/IDENTIFIER/...)
+    resolved during query analysis, already present in the serialized
+    `QuestionAnsweringResult.retrieval_result.retrieval_result.query
+    .detected_intent` path -- no new plumbing needed, it's the same value
+    `RetrievalQueryAnalyzer.analyze()` already computes and stores. This is
+    a distinct, broader classification than `answer_intent`
+    (`AnswerIntent`), and is what the reflection strategy registries
+    dispatch on. Shared by `ReflectAnswerNode` and `RetryRetrievalNode`."""
+    if not isinstance(retrieval_result, dict):
+        return None
+    inner_result = retrieval_result.get("retrieval_result")
+    if not isinstance(inner_result, dict):
+        return None
+    query = inner_result.get("query")
+    if not isinstance(query, dict):
+        return None
+    detected_intent = query.get("detected_intent")
+    return str(detected_intent) if detected_intent else None
+
+
 def extend_trace(
     existing_trace: list[dict[str, Any]],
     trace_entry: dict[str, Any],

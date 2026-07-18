@@ -20,7 +20,6 @@ def build_agent_node_factory(
         ReflectionService,
         ReflectionValidator,
         ResearchPolicy,
-        RetryQueryBuilder,
         RetrievalRetryPolicy,
     )
     from src.application.langgraph.planning import (
@@ -30,11 +29,13 @@ def build_agent_node_factory(
         PlanRepair,
         PlanValidator,
     )
+    from src.application.langgraph.reflection.strategies.retry_reformulation import (
+        RetryReformulationStrategyRegistry,
+    )
     from src.application.langgraph.retrieval_strategy import (
         RetrievalPlanExecutor,
         RetrievalStrategyPolicy,
         RetrievalStrategyService,
-        StrategyRetryPolicy,
     )
     from src.application.prompts.reflection import ReflectionPromptBuilder
     from src.config.settings import langgraph_settings, llm_settings
@@ -66,7 +67,7 @@ def build_agent_node_factory(
             model=services.reflection_model,
         ),
         evidence_merger=EvidenceMerger(),
-        retry_query_builder=RetryQueryBuilder(),
+        retry_reformulation_registry=RetryReformulationStrategyRegistry(),
         clarification_builder=ClarificationBuilder(),
         retrieval_retry_policy=RetrievalRetryPolicy(),
         retrieval_strategy_service=RetrievalStrategyService(
@@ -75,7 +76,6 @@ def build_agent_node_factory(
         ),
         retrieval_plan_executor=RetrievalPlanExecutor(),
         retrieval_strategy_policy=retrieval_strategy_policy,
-        strategy_retry_policy=StrategyRetryPolicy(),
         strategy_advisor=services.strategy_advisor,
         llm_research_planner=(
             LLMResearchPlanner(

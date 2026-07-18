@@ -16,7 +16,6 @@ from src.application.langgraph.reflection.services import (
     EvidenceMerger,
     ReflectionJsonParser,
     ReflectionService,
-    RetryQueryBuilder,
 )
 from src.application.langgraph.reflection.tracing import ReflectionTrace
 from src.application.langgraph.reflection.validation import ReflectionValidator
@@ -37,5 +36,4 @@ __all__ = [
     "ReflectionValidator",
     "RetrievalRetryPolicy",
     "RetryPlan",
-    "RetryQueryBuilder",
 ]

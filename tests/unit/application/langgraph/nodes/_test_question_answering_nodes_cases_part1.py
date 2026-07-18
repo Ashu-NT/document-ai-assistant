@@ -1,5 +1,9 @@
 from tests.unit.application.langgraph.nodes._test_question_answering_nodes_support import *  # noqa: F401,F403
 
+from src.application.langgraph.reflection.strategies.retry_reformulation import (
+    RetryReformulationStrategyRegistry,
+)
+
 def test_answer_question_node_calls_tool_with_document_id() -> None:
     tool = FakeAnswerQuestionTool()
     node = AnswerQuestionNode(ToolRegistry(answer_question_tool=tool))
@@ -345,25 +349,33 @@ def test_retry_retrieval_node_clears_stale_reflection_result_when_regeneration_f
     assert patch["reflection_score"] is None
 
 
-class FakeMultiStrategyRetryPolicy:
-    """Returns a fixed multi-strategy recommendation regardless of input,
-    standing in for StrategyRetryPolicy's keyword matching so the test
-    doesn't depend on exact wording."""
+class _FixedMultiStrategyReformulationStrategy:
+    """Returns a fixed multi-strategy retry plan regardless of input,
+    standing in for the real keyword-driven registry so the test doesn't
+    depend on exact wording."""
 
-    def recommend(self, *, retry_reason, retry_query, initial_primary_strategy):
+    def build_retry_plan(self, context):
+        from src.application.langgraph.reflection.models import RetryPlan
         from src.application.langgraph.retrieval_strategy import RetrievalStrategy
 
-        return [RetrievalStrategy.MAINTENANCE_LOOKUP, RetrievalStrategy.TABLE_LOOKUP]
+        return RetryPlan(
+            retry_query=context.original_user_question,
+            document_id=context.selected_document_id,
+            top_k=context.top_k,
+            reason=context.reflection_decision.reason,
+            retrieval_strategy_hint=RetrievalStrategy.MAINTENANCE_LOOKUP,
+            secondary_strategy_hints=[RetrievalStrategy.TABLE_LOOKUP],
+        )
 
 
 def test_retry_retrieval_node_honors_a_multi_strategy_recommendation() -> None:
-    # Regression guard: StrategyRetryPolicy.recommend() returning more than
-    # one strategy (its actual "diversify on retry" signal) previously fell
-    # through to the same deterministic scoring as a non-retry request,
-    # silently discarding the recommendation -- only a single-strategy
-    # recommendation was ever honored. Both the maintenance and table tools
-    # must be invoked here, proving the secondary strategy actually executed
-    # a retrieval step, not just that a decision object recorded it.
+    # Regression guard: a retry recommendation naming more than one strategy
+    # (the actual "diversify on retry" signal) previously fell through to
+    # the same deterministic scoring as a non-retry request, silently
+    # discarding the recommendation -- only a single-strategy recommendation
+    # was ever honored. Both the maintenance and table tools must be invoked
+    # here, proving the secondary strategy actually executed a retrieval
+    # step, not just that a decision object recorded it.
     chunk_tool = FakeRetrieveChunksTool()
     table_tool = FakeRetrieveTablesTool()
     answer_tool = FakeAnswerQuestionTool()
@@ -376,7 +388,9 @@ def test_retry_retrieval_node_honors_a_multi_strategy_recommendation() -> None:
         retrieval_strategy_service=RetrievalStrategyService(),
         retrieval_plan_executor=RetrievalPlanExecutor(),
         retrieval_strategy_policy=RetrievalStrategyPolicy(enabled=True),
-        strategy_retry_policy=FakeMultiStrategyRetryPolicy(),
+        retry_reformulation_registry=RetryReformulationStrategyRegistry(
+            default_strategy=_FixedMultiStrategyReformulationStrategy()
+        ),
     )
 
     state = build_agent_state(
