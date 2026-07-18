@@ -130,6 +130,12 @@ class ReflectionPromptBuilder:
                 "Do not discard existing useful evidence.",
                 "If clarification is needed, write one clear clarification question.",
                 "",
+                "grounding_violation must be true only for a HARD grounding failure: the "
+                "answer states something not supported by the approved evidence, cites a "
+                "page or fact not present in it, or contradicts it. Do not set it to true "
+                "just because evidence is incomplete or the answer could be more thorough "
+                "-- that is what RETRIEVE_AGAIN/ACCEPT_WITH_LIMITATIONS are for.",
+                "",
                 *extra_rules,
                 "JSON schema:",
                 '{',
@@ -138,7 +144,8 @@ class ReflectionPromptBuilder:
                 '  "reason": "string",',
                 '  "retry_query": "string or null",',
                 '  "clarification_question": "string or null",',
-                '  "missing_information": ["string"]',
+                '  "missing_information": ["string"],',
+                '  "grounding_violation": false',
                 '}',
                 "",
                 f"Original user question: {original_user_question}",

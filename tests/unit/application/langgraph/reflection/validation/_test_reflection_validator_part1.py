@@ -52,6 +52,37 @@ def test_validator_downgrades_maintenance_clarify_without_question() -> None:
 
     assert result.decision == ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS
 
+def test_validator_does_not_downgrade_maintenance_clarify_when_a_hard_grounding_violation_is_flagged() -> None:
+    # Regression guard: this is the fix for the confirmed P0 -- a real hard
+    # grounding violation (now reachable from an LLM decision via
+    # ReflectionJsonParser populating diagnostics["hard_grounding_violation"])
+    # must block the maintenance-interval downgrade instead of being
+    # silently overridden to ACCEPT_WITH_LIMITATIONS.
+    validator = ReflectionValidator()
+
+    result = validator.validate(
+        decision=ReflectionDecision(
+            decision=ReflectionDecisionType.CLARIFY,
+            confidence=0.7,
+            reason="The answer contradicts the retrieved evidence.",
+            clarification_question="Do you mean the daily or the weekly interval?",
+            diagnostics={"hard_grounding_violation": "llm_reported_grounding_violation"},
+        ),
+        policy=ReflectionPolicy(enabled=True),
+        reflection_attempts=0,
+        retrieval_retry_count=0,
+        selected_document_id="doc_1",
+        context_document_ids=["doc_1"],
+        question="What are the maintenance intervals?",
+        answer_intent="maintenance_summary",
+        answer_text="Weekly maintenance latest after 100 operating hours.",
+        has_useful_evidence=True,
+        has_relevant_maintenance_evidence=True,
+    )
+
+    assert result.decision == ReflectionDecisionType.CLARIFY
+    assert result.clarification_question == "Do you mean the daily or the weekly interval?"
+
 def test_validator_retry_limit_with_maintenance_evidence_downgrades_to_accept_with_limitations() -> None:
     validator = ReflectionValidator()
 

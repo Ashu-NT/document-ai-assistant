@@ -34,6 +34,8 @@ def test_reflection_prompt_builder_includes_required_review_inputs() -> None:
         '"decision": "ACCEPT | ACCEPT_WITH_LIMITATIONS | RETRIEVE_AGAIN | CLARIFY | FAIL"'
         in prompt
     )
+    assert '"grounding_violation": false' in prompt
+    assert "grounding_violation must be true only for a HARD grounding failure" in prompt
 
 
 def test_reflection_prompt_builder_adds_maintenance_interval_rules_and_hides_context_ids() -> None:

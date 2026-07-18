@@ -52,6 +52,20 @@ def test_demo_agent_cli_parses_interactive_runtime_flags() -> None:
     assert args.debug is True
 
 
+def test_demo_agent_cli_reflection_flag_defaults_to_none_not_false() -> None:
+    # Regression guard: a plain store_true default of False (rather than
+    # None) made it impossible to distinguish "not specified" from an
+    # explicit disable, so LANGGRAPH_REFLECTION_ENABLED could never take
+    # effect here -- this is the enterprise interactive terminal runtime's
+    # own docstring claim, and reflection was silently always off unless
+    # --reflection was passed on every single invocation.
+    mod = _load_script("demo_agent_cli")
+
+    args = mod.parse_args(["question"])
+
+    assert args.reflection is None
+
+
 def test_build_visibility_policy_reveals_internal_ids_only_in_debug_mode() -> None:
     mod = _load_script("demo_agent_cli")
 

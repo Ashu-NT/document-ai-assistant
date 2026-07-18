@@ -140,6 +140,21 @@ class RetryRetrievalNode:
                 retry_query=retry_query,
                 initial_primary_strategy=_current_primary_strategy(state),
             )
+            # An explicit caller-forced strategy (e.g. a CLI override) always
+            # wins over the retry policy's keyword-driven recommendation.
+            # Otherwise, use the FULL recommendation -- previously, whenever
+            # recommend() returned more than one strategy (its actual
+            # "diversify on retry" signal), only a single-element list was
+            # ever honored and the multi-strategy case silently fell through
+            # to the same deterministic scoring as a non-retry request,
+            # discarding the recommendation entirely.
+            state_forced_strategy = requested_strategy_from_state(state)
+            if state_forced_strategy is not None:
+                requested_strategy = state_forced_strategy
+                requested_secondary_strategies: list = []
+            else:
+                requested_strategy = recommended_strategies[0]
+                requested_secondary_strategies = recommended_strategies[1:]
             strategy_context = RetrievalContext(
                 query_text=retry_query,
                 route=state.get("route"),
@@ -151,9 +166,8 @@ class RetryRetrievalNode:
                 answer_intent=_extract_answer_intent(state),
                 retry_reason=reason,
                 retry_query=retry_query,
-                requested_strategy=recommended_strategies[0]
-                if len(recommended_strategies) == 1
-                else requested_strategy_from_state(state),
+                requested_strategy=requested_strategy,
+                requested_secondary_strategies=requested_secondary_strategies,
                 use_llm_selector=bool(state.get("llm_retrieval_strategy_enabled")),
                 strategy_advisor_proposal=advisor_proposal_from_state(state),
             )
@@ -208,6 +222,13 @@ class RetryRetrievalNode:
             )
             return {
                 "reflection_decision": "FAIL",
+                # Cleared alongside the decision (mirrors the success-path
+                # clearing below) -- otherwise the PREVIOUS reflection
+                # pass's score/reason (the one whose RETRIEVE_AGAIN
+                # triggered this retry) would still be in state and get
+                # rendered to the user as if it described this failure.
+                "reflection_result": None,
+                "reflection_score": None,
                 "response_text": "I could not gather better evidence on retry.",
                 "trace": extend_trace(state["trace"], trace_entry),
             }
@@ -298,6 +319,11 @@ class RetryRetrievalNode:
 
         patch["response_text"] = "I could not regenerate a grounded answer after retry."
         patch["reflection_decision"] = "FAIL"
+        # Same staleness fix as the retrieve-tool-failure path above: the
+        # previous reflection pass's score/reason must not survive to be
+        # rendered alongside this failure.
+        patch["reflection_result"] = None
+        patch["reflection_score"] = None
         return patch
 
     def _retry_top_k(self, current_top_k: int | None) -> int:

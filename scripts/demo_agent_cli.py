@@ -60,7 +60,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Show raw fallback evidence rows in deterministic table answers.",
     )
     parser.add_argument("--deep-research", action="store_true")
-    parser.add_argument("--reflection", action="store_true")
+    # default=None (not the store_true default of False) lets the caller
+    # distinguish "not specified" from an explicit False, so it can fall
+    # back to LANGGRAPH_REFLECTION_ENABLED when the flag isn't passed --
+    # without this, setting that env var had no effect on this runtime.
+    parser.add_argument("--reflection", action="store_true", default=None)
     parser.add_argument("--llm-planning", action="store_true")
     parser.add_argument("--retrieval-strategy", action="store_true")
     parser.add_argument("--write-trace", action="store_true")
@@ -113,7 +117,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         from src.application.agent_runtime.session import RuntimeOptions, SessionManager
         from src.application.agent_runtime.tracing import DemoTraceWriter
         from src.bootstrap.startup import bootstrap_application
-        from src.config.settings import ingestion_settings
+        from src.config.settings import ingestion_settings, langgraph_settings
         from src.infrastructure.db.base import Base
         from src.infrastructure.db.schema_management import ensure_database_schema
         from src.infrastructure.db.orm_models import __all__ as _orm_models_loaded
@@ -122,6 +126,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         bootstrap_application()
         ensure_database_schema(engine)
         app_session = SessionLocal()
+
+        effective_reflection = (
+            args.reflection
+            if args.reflection is not None
+            else langgraph_settings.reflection_enabled
+        )
 
         runtime = build_agent_runtime(
             app_session,
@@ -136,7 +146,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             show_react=args.show_react,
             show_raw_evidence=args.show_raw_evidence,
             deep_research=args.deep_research,
-            reflection=args.reflection,
+            reflection=effective_reflection,
             llm_planning=args.llm_planning,
             retrieval_strategy=args.retrieval_strategy,
             write_trace=args.write_trace,

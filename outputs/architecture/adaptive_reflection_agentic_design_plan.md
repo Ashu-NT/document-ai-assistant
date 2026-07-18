@@ -1,0 +1,308 @@
+# Adaptive Reflection Agentic Design — Findings and Implementation Plan
+
+## Phase 0 status: implemented (2026-07-19)
+
+All four Phase 0 items (§5) are done and verified — full unit suite 3211 passed, 1 pre-existing unrelated
+failure, zero new regressions. Details in `reflection_flow_audit.md`'s own updated status section. Phases 1-4
+(the strategy-registry redesign itself) are not started — this remains a design plan for that work, with the
+three decisions in §6 resolved.
+
+Date: 2026-07-18. This is a design plan, not yet implemented. It follows `reflection_flow_audit.md` (bug audit)
+and answers a different question: assuming the bugs get fixed, **is the adaptive-retry/clarify/fail design
+itself general enough for an enterprise agentic system**, or is it secretly a pile of special cases for three
+question categories (maintenance intervals, spare parts, identifier inventory) wearing a general-looking
+interface? Conclusion up front: **the latter.** A large amount of real machinery already exists — this is not a
+green-field build — but almost every adaptive decision point re-derives "what kind of question is this" via
+ad-hoc keyword substring matching, scattered across 7+ files, instead of dispatching on a typed classification
+the system has already computed. That is the one structural problem this plan exists to fix.
+
+## 1. What already exists (verified by direct codebase research, not assumed)
+
+### 1.1 The reflection loop itself — real and working end-to-end
+
+`answer_question → reflect_answer → (RETRIEVE_AGAIN → retry_retrieval → reflect_answer)* → (CLARIFY →
+clarify_request | FAIL/ACCEPT → final_response)`, bounded at 2 reflection passes. `ReflectionService.review()`
+computes two **fully generic** composite scores before any domain logic runs:
+
+- `AnswerQualityScorer` (`reflection/evaluators/answer_quality_scorer.py`): `answered_question`,
+  `contains_page_reference`, `contains_grounding` (citations present), `concise_enough`, `page_coverage_ratio`,
+  `unexpected_pages`/`missing_pages`/`referenced_pages` (from `answer_page_reference_analyzer.py`, a fully
+  generic page-citation cross-check), `has_duplicate_content` (from `answer_duplicate_content_detector.py`,
+  generic repeated-line detector), and a hallucinated-citation check via `reference_notes` resolution.
+- `EvidenceQualityScorer` (`reflection/evaluators/evidence_quality_scorer.py`): `approved_chunk_count`,
+  `document_ids`, `page_numbers`, `has_document_leakage`, `has_sufficient_evidence`, `citation_resolution_rate`,
+  `page_coverage_ratio`, `missing_pages` — all intent-agnostic.
+
+This is a genuinely solid, reusable foundation — the problem is not "no generic signals exist," it's that the
+**decision layer built on top of them abandons genericity immediately.**
+
+### 1.2 The retrieval-strategy subsystem — a second, mostly-independent adaptive mechanism
+
+`src/application/langgraph/retrieval_strategy/` + `strategy_advisor/` implement 13 "lookup profiles"
+(`RetrievalStrategy` enum: `GENERAL_HYBRID, IDENTIFIER_LOOKUP, TECHNICAL_SPECIFICATION, TABLE_LOOKUP,
+SECTION_LOOKUP, MAINTENANCE_LOOKUP, PROCEDURE_LOOKUP, TROUBLESHOOTING_LOOKUP, CERTIFICATION_LOOKUP,
+DRAWING_LOOKUP, FIGURE_LOOKUP, DOCUMENT_EXPLORATION, MULTI_STRATEGY`) — each a (tool choice, chunk-type
+allow-list, query-expansion string) bundle, selected deterministically by keyword-signal scoring
+(`retrieval_signal_extractor.py`) with an optional LLM advisor fallback for ambiguous/low-confidence cases
+(`strategy_advisor/advisor.py`, real and wired, triggers on deep-research route, confidence <0.8, or
+compare/versus phrasing). `StrategyRetryPolicy.recommend()` can request a *different* strategy on retry, keyed
+off the same kind of keyword markers.
+
+This is a completely separate adaptive-retry mechanism from reflection's own `RetryQueryBuilder` — **the two
+don't talk to each other.** Reflection decides "retry, and here's a reformulated query text"; retrieval-strategy
+independently decides "retry, and here's maybe a different strategy" from re-scanning the same retry reason
+text. Two keyword scanners solving overlapping problems from two different packages.
+
+### 1.3 What's real but currently miswired (from this session's two audits, not re-derived here)
+
+From `reflection_flow_audit.md`: the maintenance-interval downgrade path is unconditional because
+`hard_grounding_violation` can never be true for an LLM-sourced decision (`reflection_json_parser.py` never
+populates `diagnostics`); stale reflection state survives a failed retry and is shown to the user;
+`demo_agent_cli.py` never reads `LANGGRAPH_REFLECTION_ENABLED`. From this design research: `StrategyRetryPolicy
+.recommend()`'s multi-strategy recommendations are silently discarded on retry (`retry_retrieval_node.py:154-156`
+only honors a single-element recommendation list; a genuine "try TABLE_LOOKUP or MAINTENANCE_LOOKUP" ambiguous
+recommendation falls through to the same deterministic scoring as if no retry had happened).
+
+## 2. The structural gap: intent is computed once, generically, then thrown away and re-derived by keyword-matching seven more times
+
+This is the finding that should drive the redesign. Trace the actual data flow:
+
+1. `RetrievalQueryIntent` (11 values: TABLE, TROUBLESHOOTING, SAFETY, PROCEDURE, SPECIFICATION, IDENTIFIER,
+   MAINTENANCE, OVERVIEW, FIGURE, GENERAL, DOCUMENT_EXPLORATION) is computed generically by
+   `RetrievalQueryIntentInferer` from the query text, with a real confidence/gap signal
+   (`RetrievalQueryIntentClassification.confidence`/`.gap`/`.top_intents_within()`) **already built and
+   documented in its own docstring as intended for "a future LLM-clarification trigger."** It is never used for
+   that. It never reaches the reflection package at all — confirmed by grep, zero hits.
+2. `AnswerIntent` (a second, narrower 10-value enum: GENERAL, SPECIFICATION_SUMMARY, MAINTENANCE_SUMMARY,
+   PROCEDURE_STEPS, SAFETY_WARNINGS, TROUBLESHOOTING, CERTIFICATION_SUMMARY, IDENTIFIER_LOOKUP, TABLE_SUMMARY,
+   DOCUMENT_SUMMARY) is computed generically by `AnswerIntentAnalyzer` and **does** reach reflection — but only
+   as a bare `str`, and every single consumer throws away its enum-ness and re-parses it with `.lower()`
+   substring checks:
+   - `deterministic_reflection_decider.py` — `"maintenance" in lower_question`
+   - `reflection_validator.py` (5 separate downgrade sites) — via the 3 "context detector" files, each with its
+     own keyword list
+   - `retry_query_builder.py`'s `_INTENT_EXPANSIONS` — 5 more hardcoded domain buckets
+   - `clarification_builder.py`'s `_resolve_options` — 2 more hardcoded substring branches
+3. Net result: **7+ files independently re-implement "what category is this question" via keyword lists**,
+   none of them agreeing with each other or with the enum the system already computed twice upstream. A
+   question that doesn't match any of these keyword lists (the overwhelming majority of real questions, in a
+   general enterprise document set covering more than pumps/valves/generators) gets no specialized handling at
+   all — it silently falls through every domain-specific branch to whatever the generic path does, which is
+   fine for `ACCEPT`, but means retry reformulation, clarification options, and the maintenance/spare-parts
+   "don't discard a legitimate partial answer" protections **only work for the ~3-5 hand-picked categories**,
+   not for the general case the system is nominally designed to handle.
+
+This is exactly the shape of the user's concern: strategies for "retrieval was wrong → reformulate query, or
+ask for clarification" exist, but they were built one keyword list at a time for specific observed failure
+cases, not as a general mechanism that happens to also handle those cases.
+
+## 3. Target design: a strategy-registry pattern keyed on the already-computed intent, with a mandatory generic default
+
+The fix is not "add more keyword lists for more categories" — it's inverting the dependency: **every adaptive
+decision point becomes a registry lookup keyed on `RetrievalQueryIntent` (broadened to include intents not yet
+represented, e.g. a `MULTI_CLAUSE` intent — see §3.4), with a mandatory generic implementation that runs for
+every intent that has no specialized override, including intents nobody has thought of yet.** The 3 existing
+domain detectors become *optional, explicit specializations registered against specific intents* — not the only
+path through the system.
+
+```
+                     ┌─────────────────────────────┐
+                     │  RetrievalQueryIntent        │   already computed, generic,
+                     │  (+ confidence/gap)          │   available at query-analysis time
+                     └──────────────┬──────────────┘
+                                    │ threaded through, not re-derived
+                                    ▼
+              ┌─────────────────────────────────────────────┐
+              │            Strategy Registries               │
+              │  (one lookup per adaptive decision point)     │
+              ├───────────────────────────────────────────────┤
+              │ EvidenceSufficiencyStrategy   (per intent)     │──▶ generic default: MUST run for any intent
+              │ RetryReformulationStrategy    (per intent)     │──▶ generic default: term-overlap + missing_info
+              │ ClarificationStrategy         (per intent)     │──▶ generic default: from missing_information
+              └───────────────────────────────────────────────┘
+```
+
+### 3.1 `EvidenceSufficiencyStrategy` — replaces the 5 hardcoded detector/relevance files
+
+New interface, one method: `is_answer_sufficient(question, answer_text, approved_chunks, evidence_quality,
+answer_quality) -> SufficiencyVerdict` (verdict = sufficient / insufficient-retry / insufficient-clarify, plus a
+`reason` string and an optional `missing_information` list — replacing the ad-hoc booleans
+`has_relevant_maintenance_evidence`/`has_relevant_spare_parts_evidence` that currently get computed unconditionally
+for every request regardless of intent, at the top of `reflection_service.py`).
+
+- **`GenericEvidenceSufficiencyStrategy`** (the mandatory default): built entirely from the signals already
+  computed in §1.1 — no keyword lists. Sufficient if `evidence_quality.has_sufficient_evidence`,
+  `answer_quality.contains_requested_information` (already generic term-overlap — see §3.5 for the one
+  hardcoded leak found here), `not answer_quality.has_duplicate_content`, and `not
+  answer_quality.unexpected_pages`. This one function, on its own, already covers every question the current
+  code covers *except* the specific "don't discard a legitimately-partial spare-parts/identifier-inventory
+  answer" protections — which become opt-in specializations, not the only path.
+- **`MaintenanceIntervalEvidenceSufficiencyStrategy`**, **`SparePartsListEvidenceSufficiencyStrategy`**,
+  **`IdentifierInventoryEvidenceSufficiencyStrategy`**: the *existing* logic, migrated as-is into this interface,
+  registered against `RetrievalQueryIntent.MAINTENANCE`, `RetrievalQueryIntent.TABLE` (spare parts tables are a
+  TABLE-intent subcase — see open question in §5), and `RetrievalQueryIntent.IDENTIFIER` respectively. No
+  behavior change for these three categories; every other intent now gets a real, working generic evaluation
+  instead of silently falling through to nothing.
+
+### 3.2 `RetryReformulationStrategy` — unifies `RetryQueryBuilder` and `StrategyRetryPolicy` into one decision
+
+Today these are two uncoordinated keyword scanners in two different packages. New design: one call produces a
+`RetryPlan` carrying **both** a reformulated query string and a recommended `RetrievalStrategy` hint (nullable —
+generic case doesn't need to force a strategy), consumed by `retry_retrieval_node.py` for both purposes instead
+of calling `RetryQueryBuilder` and `StrategyRetryPolicy.recommend()` separately.
+
+- **`GenericRetryReformulationStrategy`** (mandatory default): current `RetryQueryBuilder`'s already-generic
+  parts — reuse `reflection_decision.retry_query` if related to the original question (term-overlap check,
+  already generic), else fall back to `original_question + missing_information` (already generic) — **with the
+  hardcoded `_INTENT_EXPANSIONS` dict removed**. No behavior loss for the generic path; every intent not in the
+  5-bucket dict currently gets zero query expansion on retry — this fixes that silently-degraded case.
+- Per-intent specializations (optional, only where a real behavioral improvement is known, e.g. keeping
+  `_INTENT_EXPANSIONS`'s maintenance/specification/procedure/safety/troubleshooting buckets as registered
+  overrides rather than deleting proven expansions) layer on top.
+- Also fixes the confirmed `StrategyRetryPolicy` bug from §1.3: when strategy diversification recommends more
+  than one strategy, the plan should carry them as `primary_strategy` + `secondary_strategies` (the
+  `RetrievalStrategyDecision` model already has this shape — see `deterministic_strategy_selector.py`) instead
+  of being discarded.
+
+### 3.3 `ClarificationStrategy` — replaces `clarification_builder.py`'s 2 hardcoded branches
+
+- **`GenericClarificationStrategy`** (mandatory default): options from `missing_information` (already the
+  fallback today) — always populated, never empty, by construction from `EvidenceSufficiencyStrategy`'s verdict.
+- Per-intent specializations for maintenance/specification (the two existing branches) migrate over unchanged.
+- **New, generic ambiguity-driven trigger** (currently entirely absent — see §1, point 1): when
+  `RetrievalQueryIntentClassification.gap` is small (the classification was a near-tie between two intents —
+  the exact signal this session's retrieval audit already used to fix a different bug), that alone can drive a
+  CLARIFY with the two candidate intents' typical question shapes as the options, **independent of evidence
+  quality** — a query-ambiguity clarification, not just an evidence-insufficiency one. This requires threading
+  `RetrievalQueryIntentClassification` (not just its resolved `.intent`) from `analyzed_query` through
+  `answer_question`'s result into `reflect_answer_node.py` → `ReflectionService.review()` — currently not
+  passed at all.
+
+### 3.4 Query decomposition — a genuinely new capability, not a refactor of an existing one
+
+Confirmed absent: no code splits one question into multiple sub-questions or scores per-clause coverage.
+`MULTI_STRATEGY` runs multiple *strategies* against the *same* query text, which is a different problem
+(coverage across chunk types, not coverage across question clauses).
+
+New capability: `MultiClauseQuestionSplitter` — split on coordinating conjunctions ("and", "as well as") and
+question-mark-delimited multi-part questions ("What are the maintenance intervals, and what safety warnings
+apply?") into clauses; a companion `MultiClauseCoverageScorer` checks whether the answer addresses each clause
+(reusing the generic term-overlap approach `answer_quality_scorer.py` already has, applied per-clause instead of
+to the whole question). When multiple clauses are detected, tag the intent as needing per-clause coverage
+(exposed as a boolean on the existing classification, not a new intent value, to avoid combinatorial explosion
+of the intent enum) rather than introducing a `MULTI_CLAUSE` intent as originally sketched above — simpler and
+composes with any underlying intent. Insufficient per-clause coverage becomes an `EvidenceSufficiencyStrategy`
+verdict input like any other signal, and the retry plan can optionally retrieve per-clause (reusing
+`MULTI_STRATEGY`'s existing multi-step retrieval-and-merge machinery, one step per clause, instead of one step
+per strategy) — this reuses real existing infrastructure rather than inventing a parallel retrieval mechanism.
+
+### 3.5 One more hardcoded leak worth closing while touching this code
+
+`answer_quality_scorer.py`'s otherwise-generic `contains_requested_information` computation directly calls
+`MaintenanceEvidenceRelevanceDetector` as a fallback (confirmed by this session's research) — a domain-specific
+detector reaching *into* the generic scorer, not just layered on top of it in the decider/validator. This should
+move to the `EvidenceSufficiencyStrategy` layer (§3.1) so the base scorer stays fully generic and the
+specialization is visible in one place (the registry), not smuggled into a "generic" component.
+
+## 4. Proposed repo structure
+
+```
+src/application/langgraph/reflection/
+├── constants/                              (existing, unchanged)
+├── models/                                 (existing; + new files below)
+│   ├── sufficiency_verdict.py              NEW — SufficiencyVerdict dataclass (§3.1)
+│   └── retry_reformulation_plan.py         NEW — replaces/extends retry_plan.py to carry a RetrievalStrategy hint
+├── evaluators/                             (existing generic scorers — unchanged, minus the §3.5 fix)
+├── strategies/                             NEW package — the registry pattern, replaces detectors/
+│   ├── __init__.py
+│   ├── evidence_sufficiency/
+│   │   ├── evidence_sufficiency_strategy.py            (Protocol/ABC)
+│   │   ├── generic_evidence_sufficiency_strategy.py    (mandatory default, §3.1)
+│   │   ├── maintenance_interval_sufficiency_strategy.py    (migrated from detectors/, unchanged logic)
+│   │   ├── spare_parts_list_sufficiency_strategy.py        (migrated, unchanged logic)
+│   │   ├── identifier_inventory_sufficiency_strategy.py    (migrated, unchanged logic)
+│   │   └── evidence_sufficiency_strategy_registry.py   (dispatch on RetrievalQueryIntent, falls back to generic)
+│   ├── retry_reformulation/
+│   │   ├── retry_reformulation_strategy.py             (Protocol/ABC)
+│   │   ├── generic_retry_reformulation_strategy.py     (mandatory default, §3.2 — supersedes retry_query_builder.py)
+│   │   ├── maintenance_retry_reformulation_strategy.py     (the 5 _INTENT_EXPANSIONS buckets, migrated 1:1)
+│   │   └── retry_reformulation_strategy_registry.py
+│   └── clarification/
+│       ├── clarification_strategy.py                   (Protocol/ABC)
+│       ├── generic_clarification_strategy.py            (mandatory default, §3.3 — supersedes clarification_builder.py)
+│       ├── ambiguity_clarification_strategy.py          NEW — the query-ambiguity trigger from §3.3
+│       ├── maintenance_clarification_strategy.py        (migrated branch)
+│       ├── specification_clarification_strategy.py      (migrated branch)
+│       └── clarification_strategy_registry.py
+├── decomposition/                          NEW package (§3.4)
+│   ├── question_clause_splitter.py
+│   └── multi_clause_coverage_scorer.py
+├── policies/                               (existing, unchanged)
+├── services/
+│   ├── reflection_service.py               (modified: calls registries instead of detector files directly)
+│   ├── evidence_merger.py                  (existing, unchanged)
+│   ├── reflection_json_parser.py           (modified: populate diagnostics.hard_grounding_violation from a
+│   │                                         real LLM-emitted field — see §5 fix-bugs-first note)
+│   └── reflection_response_schema.py       (modified: add grounding_violation/unsupported_claims fields)
+├── validation/                             (reflection_validator.py simplified: downgrade gates now call
+│                                             registries instead of importing detector files directly)
+└── tracing/                                (existing, unchanged — or finally wire up the dead ReflectionTrace
+                                              dataclass found in the bug audit, while touching this area)
+
+src/application/langgraph/retrieval_strategy/
+└── policies/
+    └── strategy_retry_policy.py            (modified: fix the multi-strategy-recommendation discard bug — §1.3)
+```
+
+Old `reflection/detectors/` package retired once its 3 files are migrated into `strategies/evidence_sufficiency/`
+(their logic is unchanged, only their location and interface). `retry_query_builder.py` and
+`clarification_builder.py` retired once superseded by the registries above — a straight lift-and-shift of their
+proven per-domain branches, not a rewrite of them.
+
+## 5. Phasing
+
+**Phase 0 — fix the confirmed bugs first** (from `reflection_flow_audit.md` + §1.3 here), independent of the
+redesign, so the redesign isn't built on top of known-broken gates:
+- Populate a real `hard_grounding_violation`-equivalent signal from the LLM response (requires the schema change
+  in §3.5/services list above) so the validator's downgrade gates can ever actually block a downgrade.
+- Clear `reflection_result`/`reflection_score` on both `retry_retrieval` failure paths.
+- Wire `demo_agent_cli.py`'s `--reflection` default to `langgraph_settings.reflection_enabled`.
+- Fix `StrategyRetryPolicy`'s multi-strategy discard.
+
+**Phase 1 — `EvidenceSufficiencyStrategy` registry**, migrating the 3 existing detectors unchanged and adding the
+generic default. This is the highest-value phase: it's the one that makes the system work for questions outside
+the 3 hand-picked categories, and it's a pure migration for the existing categories (no regression risk to
+today's behavior for maintenance/spare-parts/identifier questions).
+
+**Phase 2 — `RetryReformulationStrategy` registry**, unifying `RetryQueryBuilder` + `StrategyRetryPolicy` behind
+one `RetryPlan`.
+
+**Phase 3 — `ClarificationStrategy` registry** + the ambiguity-driven clarification trigger (requires threading
+`RetrievalQueryIntentClassification` into reflection, a small plumbing change through `answer_question_node.py`
+→ `reflect_answer_node.py`).
+
+**Phase 4 — query decomposition** (`decomposition/` package) — the one genuinely new capability, highest
+implementation cost, lowest regression risk since nothing today depends on it existing.
+
+## 6. Decisions (resolved 2026-07-18)
+
+1. **Spare-parts specialization dispatches on coarse `RetrievalQueryIntent.TABLE`, with an internal content
+   sniff — no new `SPARE_PARTS_TABLE` intent.** Explicit rationale from the decision-maker: `TABLE` describes
+   *what operation the user wants* (they're asking a table-shaped question); "spare parts" describes *what kind
+   of table was retrieved* (a property of the evidence, not of the question). These are different concerns and
+   the intent enum should only encode the former. `SparePartsListEvidenceSufficiencyStrategy` therefore stays
+   registered against the plain `TABLE` intent and keeps its existing internal content/shape check
+   (`is_legitimate_partial_spare_parts_answer` and friends) to no-op on non-spare-parts tables — this is a
+   direct continuation of today's actual behavior, not a new mechanism, and it generalizes cleanly: any other
+   table-content specialization (e.g. a future maintenance-schedule-table check) would follow the identical
+   pattern — dispatch on `TABLE`, distinguish content internally — rather than growing the intent enum per
+   content type.
+2. **`RetrievalQueryIntent` is the one true dispatch key for all three new registries**, not `AnswerIntent`.
+   Requires threading `RetrievalQueryIntentClassification` (not just the resolved `AnswerIntent` string) from
+   `analyzed_query` through `answer_question`'s result into `reflect_answer_node.py` →
+   `ReflectionService.review()` — a plumbing change (§3.3, §5 Phase 3), not a redesign. Merging `AnswerIntent`
+   and `RetrievalQueryIntent` into one canonical taxonomy is explicitly out of scope for this plan.
+3. **`retrieval_strategy`'s own keyword-driven strategy selection (`retrieval_signal_terms.py`'s 8 domain-term
+   lists) is explicitly out of scope here.** This plan fixes only its confirmed retry-diversification bug
+   (§1.3, Phase 0). Generalizing the retrieval-strategy selector itself is a comparable-sized, separate effort
+   to be scoped independently after this plan lands.
