@@ -59,10 +59,12 @@ class RetrievalQueryIdentifierExtractor:
         are still included, tagged "unknown" -- the generic pattern remains
         the safety net for anything the format-specific patterns miss.
 
-        No caller consumes this yet; it exists for IdentifierEvidenceGuardrail,
-        chunk-type preference mapping, and the future LLM-clarification
-        prompt to adopt when useful, without changing extract()'s existing
-        list[str] contract that RetrievalQuery.detected_identifiers relies on.
+        Consumed by RetrievalQueryChunkTypePreferenceMapper to promote the
+        chunk type matching a specifically-typed identifier format (e.g. a
+        drawing number promotes DRAWING_REFERENCE) ahead of the IDENTIFIER
+        intent's generic preference order. Kept separate from extract()'s
+        list[str] contract, which RetrievalQuery.detected_identifiers relies
+        on and callers like IdentifierEvidenceGuardrail don't need typing for.
         """
         if not query_text:
             return []

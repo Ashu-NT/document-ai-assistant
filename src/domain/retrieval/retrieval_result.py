@@ -17,6 +17,11 @@ class RetrievalResult:
     used_keyword: bool = False
     used_sql: bool = False
 
+    # Semantics differ by producer, deliberately -- not a bug, but worth
+    # noting for anyone instrumenting retrieval quality:
+    # `HybridRetrievalService` sets this to the pre-dedup fused candidate
+    # count; `RetrievalWorkflow` later overwrites it with the post-dedup
+    # representative count on the result it returns.
     total_candidates: int = 0
 
     def has_results(self) -> bool:

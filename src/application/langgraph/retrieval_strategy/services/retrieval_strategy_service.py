@@ -34,6 +34,7 @@ from src.application.langgraph.retrieval_strategy.validation import (
     RetrievalStrategyValidator,
 )
 from src.application.workflows.retrieval import RetrievalQueryAnalyzer
+from src.config.settings import retrieval_settings
 from src.domain.common import new_id
 from src.domain.retrieval import RetrievalQuery
 
@@ -185,6 +186,9 @@ class RetrievalStrategyService:
             query_text=context.retry_query or context.query_text,
             document_id=context.effective_document_id,
             top_k=context.top_k or self.policy.default_top_k,
+            use_dense=retrieval_settings.enable_dense_retrieval,
+            use_keyword=retrieval_settings.enable_keyword_retrieval,
+            use_sql=retrieval_settings.enable_sql_retrieval,
         )
         return self.query_analyzer.analyze(raw_query)
 

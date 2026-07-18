@@ -4,14 +4,40 @@ from src.application.workflows.retrieval.intent.retrieval_query_focus_predicates
     requests_maintenance_interval_evidence,
     requests_specification_setting_instructions,
 )
+from src.application.workflows.retrieval.retrieval_query_identifier_extractor import (
+    RetrievalQueryIdentifierExtractor,
+)
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )
 from src.domain.common import ChunkType
 from src.domain.retrieval import RetrievalQuery
 
+# Maps extract_typed()'s identifier-format labels to the chunk type most
+# likely to hold that specific format's evidence -- narrower and more
+# reliable than the IDENTIFIER intent's generic preference order below when
+# the query names a specific identifier format (e.g. "drawing no. 4471").
+_IDENTIFIER_TYPE_CHUNK_TYPE_PREFERENCE: dict[str, ChunkType] = {
+    "part_number": ChunkType.SPARE_PARTS_TABLE,
+    "order_code": ChunkType.SPARE_PARTS_TABLE,
+    "serial_number": ChunkType.TECHNICAL_SPECIFICATION,
+    "model_number": ChunkType.TECHNICAL_SPECIFICATION,
+    "tag_number": ChunkType.TECHNICAL_SPECIFICATION,
+    "drawing_number": ChunkType.DRAWING_REFERENCE,
+    "certificate_number": ChunkType.CERTIFICATION_INFO,
+}
+
 
 class RetrievalQueryChunkTypePreferenceMapper:
+    def __init__(
+        self,
+        *,
+        identifier_extractor: RetrievalQueryIdentifierExtractor | None = None,
+    ) -> None:
+        self._identifier_extractor = (
+            identifier_extractor or RetrievalQueryIdentifierExtractor()
+        )
+
     def map(
         self,
         *,
@@ -28,6 +54,12 @@ class RetrievalQueryChunkTypePreferenceMapper:
                 ChunkType.DRAWING_REFERENCE,
                 ChunkType.GENERAL,
             ]
+            for match in self._identifier_extractor.extract_typed(query_text):
+                preferred_type = _IDENTIFIER_TYPE_CHUNK_TYPE_PREFERENCE.get(
+                    match.identifier_type
+                )
+                if preferred_type is not None:
+                    preferences.insert(0, preferred_type)
             if requests_certification_evidence(query_text):
                 preferences.insert(0, ChunkType.CERTIFICATION_INFO)
             return self._unique(preferences)

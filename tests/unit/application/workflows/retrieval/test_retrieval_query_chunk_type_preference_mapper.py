@@ -121,6 +121,33 @@ def test_identifier_intent_promotes_certification_for_atex_wording():
     assert preferences[0] == ChunkType.CERTIFICATION_INFO
 
 
+def test_identifier_intent_promotes_drawing_reference_for_a_typed_drawing_number():
+    # extract_typed() requires a value matching its generic identifier
+    # pattern (a digit group needs a separator, or a leading letter) --
+    # "4471-2" qualifies, a bare "4471" would not.
+    preferences = _map(
+        "What is drawing no. 4471-2 for?", RetrievalQueryIntent.IDENTIFIER
+    )
+
+    assert preferences[0] == ChunkType.DRAWING_REFERENCE
+    assert preferences.count(ChunkType.DRAWING_REFERENCE) == 1
+
+
+def test_identifier_intent_promotes_technical_specification_for_a_typed_serial_number():
+    preferences = _map("What is serial no. HP-001?", RetrievalQueryIntent.IDENTIFIER)
+
+    assert preferences[0] == ChunkType.TECHNICAL_SPECIFICATION
+
+
+def test_identifier_intent_typed_certificate_number_combines_with_certification_wording_promotion():
+    preferences = _map(
+        "What is cert no. 4471-2?", RetrievalQueryIntent.IDENTIFIER
+    )
+
+    assert preferences[0] == ChunkType.CERTIFICATION_INFO
+    assert preferences.count(ChunkType.CERTIFICATION_INFO) == 1
+
+
 # --- TABLE intent ------------------------------------------------------------------
 
 def test_table_intent_preference_order():

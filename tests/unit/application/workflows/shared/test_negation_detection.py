@@ -43,3 +43,19 @@ def test_has_non_negated_occurrence_true_when_a_later_occurrence_is_not_negated(
 
 def test_has_non_negated_occurrence_false_when_marker_never_appears() -> None:
     assert has_non_negated_occurrence("this is a safety concern", "hazard") is False
+
+
+def test_is_negated_false_when_cue_is_only_a_substring_of_a_preceding_word() -> None:
+    # Regression guard: "not" is a substring of "note" -- a plain
+    # `cue in preceding_text` check incorrectly treated "please note the
+    # safety warning" as negated.
+    text = "please note the safety warning"
+    marker_start = text.index("safety")
+    assert is_negated(text, marker_start) is False
+
+
+def test_has_non_negated_occurrence_true_when_cue_is_only_a_substring_of_a_preceding_word() -> None:
+    assert (
+        has_non_negated_occurrence("please note the safety warning", "safety")
+        is True
+    )

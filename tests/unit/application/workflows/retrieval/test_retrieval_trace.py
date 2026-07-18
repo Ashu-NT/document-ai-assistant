@@ -73,7 +73,7 @@ class TestRetrievalTraceRecorder:
         assert trace.query_id == query.query_id
         assert trace.candidate_count == 2
         assert trace.dedup_removed_count == 1
-        assert trace.final_chunk_count == 1
+        assert trace.pre_expansion_chunk_count == 1
         assert trace.context_chunk_count == 1
         assert trace.context_chunk_ids == ["c1"]
         assert trace.duration_ms >= 0
@@ -170,23 +170,36 @@ class TestRetrievalWorkflowTracing:
     def test_run_accepts_trace_recorder_param(self):
         from src.application.validation.retrieval import RetrievalQueryValidator
         from src.application.workflows.retrieval import RetrievalWorkflow
-        from src.domain.common import new_id
-        from src.domain.retrieval import RetrievalQuery, RetrievalResult
+        from src.domain.common import ChunkType, new_id
+        from src.domain.retrieval import RetrievalQuery, RetrievalResult, RetrievedChunk
 
+        query = RetrievalQuery(query_id=new_id("q"), query_text="oil change", top_k=5)
+        retrieved_chunk = RetrievedChunk(
+            chunk_id="chunk_001",
+            document_id="doc_001",
+            content="Change the oil every 500 hours.",
+            score=0.9,
+            retrieval_source="dense",
+            chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+        )
         fake_result = RetrievalResult(
             result_id=new_id("r"),
-            query=RetrievalQuery(query_id=new_id("q"), query_text="test", top_k=5),
-            chunks=[],
+            query=query,
+            chunks=[retrieved_chunk],
             citations=[],
         )
         fake_service = MagicMock()
-        fake_service.retrieve.return_value = fake_result
+        # RetrievalWorkflow._retrieve_candidates() always calls
+        # retrieve_with_additional_candidates(), never retrieve() directly --
+        # configuring only `.retrieve` left this test exercising an
+        # unconfigured MagicMock return value instead of real data flowing
+        # through record_candidates()/record_dedup().
+        fake_service.retrieve_with_additional_candidates.return_value = fake_result
 
         workflow = RetrievalWorkflow(
             retrieval_service=fake_service,
             query_validator=RetrievalQueryValidator(),
         )
-        query = RetrievalQuery(query_id=new_id("q"), query_text="oil change", top_k=5)
         recorder = RetrievalTraceRecorder()
 
         result = workflow.run(query, trace_recorder=recorder)
@@ -194,3 +207,7 @@ class TestRetrievalWorkflowTracing:
         assert result is not None
         trace = recorder.build(query_id=query.query_id, timestamp_iso="2026-01-01T00:00:00")
         assert trace.query_analysis is not None
+        assert trace.candidate_count == 1
+        assert trace.pre_expansion_chunk_count == 1
+        assert trace.context_chunk_count == 1
+        assert [chunk.chunk_id for chunk in trace.retrieved_chunks] == ["chunk_001"]
