@@ -1,4 +1,8 @@
+from src.application.services.document import DocumentLookupService
 from src.application.services.extraction import ExtractionService
+from src.application.workflows.linking.chunk_cross_reference_relationship_candidate_builder import (
+    ChunkCrossReferenceRelationshipCandidateBuilder,
+)
 from src.application.workflows.linking.contact_point_relationship_candidate_builder import (
     ContactPointRelationshipCandidateBuilder,
 )
@@ -33,6 +37,18 @@ class SemanticLinkingWorkflow:
 
     Re-running `link()` for the same document is idempotent: relationships
     are replaced wholesale for that `document_id`.
+
+    `document_lookup_service`, when provided, fuses in a fourth candidate
+    source alongside FK passthrough/proximity/ownership: resolved
+    `ChunkCrossReference` rows (same-document inline references like "(->
+    Page 1062)", detected at ingestion time by `ChunkCrossReferenceLinker`,
+    independent of extraction). This lets an explicit, authored reference
+    from one entity's chunk to another's produce a much higher-confidence
+    relationship than proximity discovery could ever assign — proximity
+    caps out at a 1-page window and can never reach an intentionally
+    distant reference. Omit it (the default) to run exactly as before, with
+    no dependency on the `chunk_cross_references` table existing/being
+    populated.
     """
 
     def __init__(
@@ -40,12 +56,21 @@ class SemanticLinkingWorkflow:
         *,
         extraction_service: ExtractionService,
         id_generator: IdGenerator,
+        document_lookup_service: DocumentLookupService | None = None,
+        chunk_cross_reference_candidate_builder: (
+            ChunkCrossReferenceRelationshipCandidateBuilder | None
+        ) = None,
     ) -> None:
         self.extraction_service = extraction_service
         self.id_generator = id_generator
+        self.document_lookup_service = document_lookup_service
         self.candidate_generator = SemanticRelationshipCandidateGenerator()
         self.contact_point_candidate_builder = (
             ContactPointRelationshipCandidateBuilder()
+        )
+        self.chunk_cross_reference_candidate_builder = (
+            chunk_cross_reference_candidate_builder
+            or ChunkCrossReferenceRelationshipCandidateBuilder()
         )
 
     def link(self, document_id: str) -> list[SemanticRelationship]:
@@ -81,18 +106,24 @@ class SemanticLinkingWorkflow:
             equipment=equipment,
             specifications=specifications,
         )
-        proximity_candidates = self.candidate_generator.generate(
-            SemanticEntityIndex(indexed_entities)
-        )
+        entity_index = SemanticEntityIndex(indexed_entities)
+        proximity_candidates = self.candidate_generator.generate(entity_index)
         ownership_candidates = self.contact_point_candidate_builder.build(
             contact_points=contact_points,
             manufacturers=manufacturers,
             suppliers=suppliers,
         )
+        cross_reference_candidates = self._generate_chunk_cross_reference_candidates(
+            document_id=document_id,
+            entity_index=entity_index,
+        )
 
         relationships = self._resolve_relationships(
             document_id,
-            fk_candidates + proximity_candidates + ownership_candidates,
+            fk_candidates
+            + proximity_candidates
+            + ownership_candidates
+            + cross_reference_candidates,
         )
 
         self.extraction_service.replace_semantic_relationships(
@@ -100,6 +131,24 @@ class SemanticLinkingWorkflow:
         )
 
         return relationships
+
+    def _generate_chunk_cross_reference_candidates(
+        self,
+        *,
+        document_id: str,
+        entity_index: SemanticEntityIndex,
+    ) -> list[RelationshipCandidate]:
+        if self.document_lookup_service is None:
+            return []
+
+        graph = self.document_lookup_service.get_document_graph(document_id)
+        if graph is None or not graph.cross_references:
+            return []
+
+        return self.chunk_cross_reference_candidate_builder.build(
+            cross_references=list(graph.cross_references.values()),
+            index=entity_index,
+        )
 
     @staticmethod
     def _build_index(

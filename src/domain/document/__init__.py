@@ -1,5 +1,8 @@
 from src.domain.document.aggregates import DocumentGraph
 from src.domain.document.entities import (
+    ChunkCrossReference,
+    ChunkCrossReferenceResolutionStatus,
+    ChunkCrossReferenceType,
     Document,
     DocumentChunk,
     DocumentSection,
@@ -13,6 +16,9 @@ from src.domain.document.value_objects import (
 )
 
 __all__ = [
+    "ChunkCrossReference",
+    "ChunkCrossReferenceResolutionStatus",
+    "ChunkCrossReferenceType",
     "ChunkStatistics",
     "Document",
     "DocumentChunk",

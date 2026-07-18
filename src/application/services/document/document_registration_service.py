@@ -46,6 +46,7 @@ class DocumentRegistrationService:
                 "element_count": len(document_graph.elements),
                 "chunk_count": len(document_graph.chunks),
                 "identifier_count": len(document_graph.identifiers),
+                "cross_reference_count": len(document_graph.cross_references),
             },
         )
 
@@ -79,6 +80,7 @@ class DocumentRegistrationService:
                 "element_count": len(document_graph.elements),
                 "chunk_count": len(document_graph.chunks),
                 "identifier_count": len(document_graph.identifiers),
+                "cross_reference_count": len(document_graph.cross_references),
             },
         )
 
@@ -109,6 +111,7 @@ class DocumentRegistrationService:
                 "chunk_count": len(document_graph.chunks),
                 "question_count": len(document_graph.questions),
                 "identifier_count": len(document_graph.identifiers),
+                "cross_reference_count": len(document_graph.cross_references),
             },
         )
 

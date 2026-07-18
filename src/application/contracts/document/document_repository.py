@@ -1,7 +1,7 @@
 from typing import Protocol
 
 from src.domain.document import DocumentGraph
-from src.domain.document.entities import DocumentChunk, Identifier
+from src.domain.document.entities import ChunkCrossReference, DocumentChunk, Identifier
 from src.application.contracts.document.document_catalog_entry import DocumentCatalogEntry
 
 
@@ -58,4 +58,12 @@ class DocumentRepository(Protocol):
         ...
 
     def write_document_identifiers(self, identifiers: list[Identifier]) -> None:
+        ...
+
+    def replace_chunk_cross_references(
+        self,
+        *,
+        document_id: str,
+        cross_references: list[ChunkCrossReference],
+    ) -> None:
         ...

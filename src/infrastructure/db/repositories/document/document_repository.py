@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from src.application.contracts.document import DocumentCatalogEntry, DocumentRepository
 from src.domain.document import DocumentGraph
-from src.domain.document.entities import DocumentChunk, Identifier
+from src.domain.document.entities import ChunkCrossReference, DocumentChunk, Identifier
 from src.infrastructure.db.repositories.document.chunk_reader import ChunkReader
 from src.infrastructure.db.repositories.document.document_duplicate_checker import (
     DocumentDuplicateChecker,
@@ -84,3 +84,14 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
 
     def write_document_identifiers(self, identifiers: list[Identifier]) -> None:
         self.writer.write_identifiers(identifiers)
+
+    def replace_chunk_cross_references(
+        self,
+        *,
+        document_id: str,
+        cross_references: list[ChunkCrossReference],
+    ) -> None:
+        self.writer.replace_chunk_cross_references(
+            document_id=document_id,
+            cross_references=cross_references,
+        )

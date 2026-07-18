@@ -94,6 +94,11 @@ class RetrievalSettings(AppBaseSettings):
         alias="RETRIEVAL_MIN_SCORE"
     )
 
+    cross_reference_expansion_enabled: bool = Field(
+        default=False,
+        alias="RETRIEVAL_CROSS_REFERENCE_EXPANSION_ENABLED"
+    )
+
     relevance_score_threshold: float = Field(
         default=0.40,
         alias="RETRIEVAL_RELEVANCE_SCORE_THRESHOLD"

@@ -24,6 +24,9 @@ from src.application.workflows.retrieval.retrieval_workflow_result import (
 from src.application.workflows.retrieval.retrieval_context_expander import (
     RetrievalContextExpander,
 )
+from src.application.workflows.retrieval.cross_reference_context_expander import (
+    CrossReferenceContextExpander,
+)
 from src.application.workflows.retrieval.retrieval_query_analyzer import (
     RetrievalQueryAnalyzer,
 )
@@ -54,6 +57,7 @@ class RetrievalWorkflow:
         min_evidence_chunks: int = 1,
         strict_evidence: bool = False,
         context_expander: RetrievalContextExpander | None = None,
+        cross_reference_context_expander: CrossReferenceContextExpander | None = None,
         retrieved_chunk_deduplicator: RetrievedChunkDeduplicator | None = None,
         candidate_pool_top_k: int | None = None,
         query_analyzer: RetrievalQueryAnalyzer | None = None,
@@ -66,6 +70,7 @@ class RetrievalWorkflow:
         self.min_evidence_chunks = min_evidence_chunks
         self.strict_evidence = strict_evidence
         self.context_expander = context_expander
+        self.cross_reference_context_expander = cross_reference_context_expander
         self.retrieved_chunk_deduplicator = (
             retrieved_chunk_deduplicator
             or RetrievedChunkDeduplicator(
@@ -233,6 +238,11 @@ class RetrievalWorkflow:
             if self.context_expander is not None
             else list(retrieval_result.chunks)
         )
+        if self.cross_reference_context_expander is not None:
+            context_chunks = self.cross_reference_context_expander.expand(
+                context_chunks,
+                query=working_query,
+            )
         context_chunks, discarded_context_chunks = partition_chunks_by_document_scope(
             chunks=context_chunks,
             document_id=working_query.document_id,

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from src.domain.document import DocumentGraph, DocumentStatistics
 from src.infrastructure.db.mappers import (
+    ChunkCrossReferenceMapper,
     ChunkMapper,
     DocumentMapper,
     ElementMapper,
@@ -14,6 +15,7 @@ from src.infrastructure.db.mappers import (
     SectionMapper,
 )
 from src.infrastructure.db.orm_models import (
+    ChunkCrossReferenceORM,
     ChunkORM,
     DocumentORM,
     ElementORM,
@@ -64,6 +66,12 @@ class DocumentGraphReader:
                 select(IdentifierORM).where(IdentifierORM.document_id == document_id)
             ).scalars().all()
 
+            cross_references = self.session.execute(
+                select(ChunkCrossReferenceORM).where(
+                    ChunkCrossReferenceORM.document_id == document_id
+                )
+            ).scalars().all()
+
             element_ids_by_section = self._group_element_ids_by_section(elements)
 
             for section_orm in sections:
@@ -90,6 +98,11 @@ class DocumentGraphReader:
                 identifier = IdentifierMapper.to_domain(identifier_orm)
                 graph.identifiers[identifier.identifier_id] = identifier
 
+            for cross_reference_orm in cross_references:
+                graph.add_cross_reference(
+                    ChunkCrossReferenceMapper.to_domain(cross_reference_orm)
+                )
+
             chunk_type_counts = dict(
                 Counter(str(c.chunk_type) for c in graph.chunks.values())
             )
@@ -101,6 +114,7 @@ class DocumentGraphReader:
                 table_count=len(graph.tables),
                 picture_count=len(graph.pictures),
                 identifier_count=len(graph.identifiers),
+                cross_reference_count=len(graph.cross_references),
                 chunk_type_counts=chunk_type_counts,
             )
 

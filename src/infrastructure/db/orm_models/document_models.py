@@ -249,3 +249,38 @@ class IdentifierORM(Base):
     page_end: Mapped[int | None] = mapped_column(nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class ChunkCrossReferenceORM(Base):
+    __tablename__ = "chunk_cross_references"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("documents.id"),
+        index=True,
+        nullable=False,
+    )
+
+    source_chunk_id: Mapped[str] = mapped_column(
+        ForeignKey("chunks.id"),
+        index=True,
+        nullable=False,
+    )
+    target_chunk_id: Mapped[str | None] = mapped_column(
+        ForeignKey("chunks.id"),
+        nullable=True,
+        index=True,
+    )
+
+    reference_type: Mapped[str] = mapped_column(String, nullable=False)
+    matched_text: Mapped[str] = mapped_column(String, nullable=False)
+    target_page: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    target_section_label: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    resolution_status: Mapped[str] = mapped_column(
+        String, nullable=False, index=True
+    )
+    confidence_score: Mapped[float] = mapped_column(nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

@@ -10,4 +10,5 @@ class DocumentStatistics:
     table_count: int = 0
     picture_count: int = 0
     identifier_count: int = 0
+    cross_reference_count: int = 0
     chunk_type_counts: dict[str, int] = field(default_factory=dict)

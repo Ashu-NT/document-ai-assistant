@@ -178,6 +178,7 @@ def build_ingestion_runtime(
         semantic_linking_workflow = SemanticLinkingWorkflow(
             extraction_service=extraction_service,
             id_generator=resolved_id_generator,
+            document_lookup_service=document_lookup_service,
         )
     runtime_capabilities = IngestionRuntimeProfileResolver().resolve(
         requested_profile=ingestion_settings.ingestion_runtime_profile,

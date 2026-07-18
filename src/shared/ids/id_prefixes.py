@@ -10,6 +10,7 @@ class IdPrefix(str, Enum):
     CHUNK = "chunk"
     QUESTION = "question"
     IDENTIFIER = "identifier"
+    CROSS_REFERENCE = "xref"
 
     INGESTION_RUN = "run"
     CLASSIFICATION = "classification"

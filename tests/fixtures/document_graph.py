@@ -5,6 +5,9 @@ from src.domain.assets.asset_metadata import AssetMetadata
 from src.domain.common import ChunkType, DocumentType, ElementType, IdentifierType
 from src.domain.common.source_location import SourceLocation
 from src.domain.document import (
+    ChunkCrossReference,
+    ChunkCrossReferenceResolutionStatus,
+    ChunkCrossReferenceType,
     Document,
     DocumentChunk,
     DocumentGraph,
@@ -113,6 +116,21 @@ def sample_identifier(document_id: str, chunk_id: str) -> Identifier:
         chunk_id=chunk_id,
         raw_value=" HP-001 ",
         identifier_type=IdentifierType.PART_NUMBER,
+    )
+
+
+@pytest.fixture
+def sample_chunk_cross_reference(document_id: str, chunk_id: str) -> ChunkCrossReference:
+    return ChunkCrossReference(
+        cross_reference_id="xref_001",
+        document_id=document_id,
+        source_chunk_id=chunk_id,
+        reference_type=ChunkCrossReferenceType.PAGE_REFERENCE,
+        matched_text="(→ Page 42)",
+        target_page=42,
+        target_chunk_id="chunk_002",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+        confidence_score=0.9,
     )
 
 

@@ -3,6 +3,7 @@ from src.infrastructure.db.mappers.workflow import IngestionRunMapper
 
 from src.infrastructure.db.mappers.document import (
     DocumentGraph,
+    ChunkCrossReferenceMapper,
     ChunkMapper,
     DocumentMapper,
     ElementMapper,
@@ -46,6 +47,7 @@ __all__ = [
     "columns_to_source_location",
     "bbox_to_columns",
     "DocumentGraph",
+    "ChunkCrossReferenceMapper",
     "ChunkMapper",
     "DocumentMapper",
     "ElementMapper",

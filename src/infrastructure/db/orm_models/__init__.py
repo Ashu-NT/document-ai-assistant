@@ -1,4 +1,5 @@
 from src.infrastructure.db.orm_models.document_models import (
+    ChunkCrossReferenceORM,
     ChunkORM,
     DocumentORM,
     ElementORM,
@@ -33,6 +34,7 @@ from src.infrastructure.db.orm_models.audit_models import AuditRecordORM
 from src.infrastructure.db.orm_models.event_models import EventEnvelopeORM
 
 __all__ = [
+    "ChunkCrossReferenceORM",
     "ChunkORM",
     "ChunkVectorORM",
     "DocumentORM",

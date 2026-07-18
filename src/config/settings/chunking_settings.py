@@ -23,3 +23,8 @@ class ChunkingSettings(AppBaseSettings):
         default=False,
         alias="CHUNK_USE_LAYOUT_FRONT_MATTER_SIGNAL",
     )
+
+    chunk_cross_reference_detection_enabled: bool = Field(
+        default=False,
+        alias="CHUNK_CROSS_REFERENCE_DETECTION_ENABLED",
+    )

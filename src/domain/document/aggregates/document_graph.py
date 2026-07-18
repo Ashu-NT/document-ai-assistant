@@ -2,7 +2,8 @@ from dataclasses import dataclass, field
 
 from src.domain.assets import PictureAsset, TableAsset
 from src.domain.document.entities import (
-    DocumentChunk, 
+    ChunkCrossReference,
+    DocumentChunk,
     Document,
     Identifier,
     GeneratedQuestion,
@@ -24,6 +25,7 @@ class DocumentGraph:
 
     questions: dict[str, GeneratedQuestion] = field(default_factory=dict)
     identifiers: dict[str, Identifier] = field(default_factory=dict)
+    cross_references: dict[str, ChunkCrossReference] = field(default_factory=dict)
 
     def add_element(self, element: CanonicalElement) -> None:
         self.elements[element.element_id] = element
@@ -33,6 +35,9 @@ class DocumentGraph:
 
     def add_chunk(self, chunk: DocumentChunk) -> None:
         self.chunks[chunk.chunk_id] = chunk
+
+    def add_cross_reference(self, cross_reference: ChunkCrossReference) -> None:
+        self.cross_references[cross_reference.cross_reference_id] = cross_reference
 
     def replace_chunks(self, chunks: list[DocumentChunk]) -> None:
         self.chunks = {chunk.chunk_id: chunk for chunk in chunks}
@@ -67,4 +72,11 @@ class DocumentGraph:
             identifier
             for identifier in self.identifiers.values()
             if identifier.chunk_id == chunk_id
+        ]
+
+    def get_chunk_cross_references(self, chunk_id: str) -> list[ChunkCrossReference]:
+        return [
+            cross_reference
+            for cross_reference in self.cross_references.values()
+            if cross_reference.source_chunk_id == chunk_id
         ]

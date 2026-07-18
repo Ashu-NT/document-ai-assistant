@@ -17,10 +17,14 @@ from src.application.workflows.retrieval import (
     RetrievalContextExpander,
     RetrievalWorkflow,
 )
+from src.application.workflows.retrieval.cross_reference_context_expander import (
+    CrossReferenceContextExpander,
+)
 from src.application.workflows.retrieval.structured import (
     StructuredEntityResolver,
     StructuredEvidenceResolver,
 )
+from src.config.settings import retrieval_settings
 from src.infrastructure.ai.embeddings import create_embedding_provider
 from src.infrastructure.retrieval.keyword import SqlKeywordIndex
 from src.infrastructure.retrieval.rerankers import DeterministicHybridReranker
@@ -74,12 +78,18 @@ def build_retrieval_runtime(
         vector_store=vector_store,
         reranker=DeterministicHybridReranker(),
     )
+    cross_reference_context_expander = (
+        CrossReferenceContextExpander(document_lookup_service=document_lookup_service)
+        if retrieval_settings.cross_reference_expansion_enabled
+        else None
+    )
     retrieval_workflow = RetrievalWorkflow(
         retrieval_service=retrieval_service,
         query_validator=query_validator,
         context_expander=RetrievalContextExpander(
             document_lookup_service=document_lookup_service,
         ),
+        cross_reference_context_expander=cross_reference_context_expander,
         structured_evidence_resolver=structured_evidence_resolver,
         pre_retrieval_guardrails=list(pre_retrieval_guardrails or []),
         post_retrieval_guardrails=list(post_retrieval_guardrails or []),

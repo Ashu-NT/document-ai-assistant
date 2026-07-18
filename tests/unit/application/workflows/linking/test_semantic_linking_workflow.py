@@ -1,4 +1,12 @@
 from src.application.workflows.linking import SemanticLinkingWorkflow
+from src.domain.document import (
+    ChunkCrossReference,
+    ChunkCrossReferenceResolutionStatus,
+    ChunkCrossReferenceType,
+    Document,
+    DocumentGraph,
+    DocumentHashes,
+)
 from src.domain.extraction import (
     ContactPoint,
     ContactPointType,
@@ -80,6 +88,43 @@ def _metadata(chunk_id: str, **overrides) -> SemanticSourceMetadata:
     defaults = {"document_id": "document_001", "chunk_id": chunk_id}
     defaults.update(overrides)
     return SemanticSourceMetadata(**defaults)
+
+
+class FakeDocumentLookupService:
+    def __init__(self, graph: DocumentGraph | None) -> None:
+        self.graph = graph
+        self.calls: list[str] = []
+
+    def get_document_graph(self, document_id: str):
+        self.calls.append(document_id)
+        return self.graph
+
+
+def _graph_with_cross_reference(
+    *, source_chunk_id: str, target_chunk_id: str
+) -> DocumentGraph:
+    graph = DocumentGraph(
+        document=Document(
+            document_id="document_001",
+            file_name="f.pdf",
+            file_path="f.pdf",
+            hashes=DocumentHashes(file_hash="h", content_hash="c"),
+        )
+    )
+    graph.add_cross_reference(
+        ChunkCrossReference(
+            cross_reference_id="xref_1",
+            document_id="document_001",
+            source_chunk_id=source_chunk_id,
+            reference_type=ChunkCrossReferenceType.PAGE_REFERENCE,
+            matched_text="(→ Page 42)",
+            target_page=42,
+            target_chunk_id=target_chunk_id,
+            resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+            confidence_score=0.9,
+        )
+    )
+    return graph
 
 
 def test_link_persists_fk_passthrough_and_proximity_relationships() -> None:
@@ -295,3 +340,106 @@ def test_link_attaches_contact_points_to_manufacturer_by_owner_reference() -> No
     assert relationship.target_entity_id == "contact_point_001"
     assert relationship.status == SemanticRelationshipStatus.ACCEPTED
     assert relationship.evidence == "owner_reference_exact"
+
+
+def test_link_fuses_a_resolved_chunk_cross_reference_into_a_relationship() -> None:
+    # A task and procedure whose chunks are FAR apart (no shared table,
+    # chunk, section, parent section, or page-adjacency window) would
+    # produce zero relationships via proximity alone -- this is exactly the
+    # gap an explicit chunk cross-reference is meant to close.
+    task = MaintenanceTask(
+        task_id="task_001",
+        document_id="document_001",
+        title="Replace hydraulic filter",
+        source_metadata=_metadata("chunk_source", page_start=5),
+    )
+    procedure = Procedure(
+        procedure_id="procedure_001",
+        document_id="document_001",
+        title="Filter replacement procedure",
+        source_metadata=_metadata("chunk_target", page_start=500),
+    )
+    service = FakeExtractionService(
+        document_id="document_001",
+        maintenance_tasks=[task],
+        procedures=[procedure],
+    )
+    lookup_service = FakeDocumentLookupService(
+        _graph_with_cross_reference(
+            source_chunk_id="chunk_source", target_chunk_id="chunk_target"
+        )
+    )
+    workflow = SemanticLinkingWorkflow(
+        extraction_service=service,
+        id_generator=IdGenerator(),
+        document_lookup_service=lookup_service,
+    )
+
+    relationships = workflow.link("document_001")
+
+    assert len(relationships) == 1
+    relationship = relationships[0]
+    assert relationship.relationship_type == SemanticRelationshipType.TASK_USES_PROCEDURE
+    assert relationship.source_entity_id == "task_001"
+    assert relationship.target_entity_id == "procedure_001"
+    assert relationship.evidence == "explicit_chunk_cross_reference"
+    assert relationship.status == SemanticRelationshipStatus.ACCEPTED
+    assert lookup_service.calls == ["document_001"]
+
+
+def test_link_works_unchanged_when_no_document_lookup_service_is_provided() -> None:
+    # Backward compatibility: every pre-existing caller constructs
+    # SemanticLinkingWorkflow without document_lookup_service.
+    task = MaintenanceTask(
+        task_id="task_001",
+        document_id="document_001",
+        title="Replace hydraulic filter",
+        source_metadata=_metadata("chunk_source", page_start=5),
+    )
+    procedure = Procedure(
+        procedure_id="procedure_001",
+        document_id="document_001",
+        title="Filter replacement procedure",
+        source_metadata=_metadata("chunk_target", page_start=500),
+    )
+    service = FakeExtractionService(
+        document_id="document_001",
+        maintenance_tasks=[task],
+        procedures=[procedure],
+    )
+    workflow = SemanticLinkingWorkflow(
+        extraction_service=service, id_generator=IdGenerator()
+    )
+
+    relationships = workflow.link("document_001")
+
+    assert relationships == []
+
+
+def test_link_ignores_cross_references_when_document_graph_is_missing() -> None:
+    task = MaintenanceTask(
+        task_id="task_001",
+        document_id="document_001",
+        title="Replace hydraulic filter",
+        source_metadata=_metadata("chunk_source", page_start=5),
+    )
+    procedure = Procedure(
+        procedure_id="procedure_001",
+        document_id="document_001",
+        title="Filter replacement procedure",
+        source_metadata=_metadata("chunk_target", page_start=500),
+    )
+    service = FakeExtractionService(
+        document_id="document_001",
+        maintenance_tasks=[task],
+        procedures=[procedure],
+    )
+    workflow = SemanticLinkingWorkflow(
+        extraction_service=service,
+        id_generator=IdGenerator(),
+        document_lookup_service=FakeDocumentLookupService(None),
+    )
+
+    relationships = workflow.link("document_001")
+
+    assert relationships == []

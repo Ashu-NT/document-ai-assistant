@@ -3,8 +3,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.domain.document import DocumentGraph
+from src.domain.document.entities.chunk_cross_reference import ChunkCrossReference
 from src.domain.document.entities.identifier import Identifier
 from src.infrastructure.db.mappers import (
+    ChunkCrossReferenceMapper,
     ChunkMapper,
     DocumentMapper,
     ElementMapper,
@@ -14,6 +16,7 @@ from src.infrastructure.db.mappers import (
 )
 from src.infrastructure.db.repositories.common import bulk_merge
 from src.infrastructure.db.orm_models import (
+    ChunkCrossReferenceORM,
     ChunkORM,
     DocumentORM,
     GeneratedQuestionORM,
@@ -75,6 +78,7 @@ class DocumentWriter:
                     "chunk_count": len(document_graph.chunks),
                     "question_count": len(document_graph.questions),
                     "identifier_count": len(document_graph.identifiers),
+                    "cross_reference_count": len(document_graph.cross_references),
                 },
             ) from exc
 
@@ -118,6 +122,14 @@ class DocumentWriter:
                 for identifier in document_graph.identifiers.values()
             ],
         )
+        bulk_merge(
+            self.session,
+            ChunkCrossReferenceORM,
+            [
+                ChunkCrossReferenceMapper.to_orm(cross_reference)
+                for cross_reference in document_graph.cross_references.values()
+            ],
+        )
 
     def _delete_document_chunk_artifacts(self, document_id: str) -> None:
         self.session.execute(
@@ -128,6 +140,11 @@ class DocumentWriter:
         self.session.execute(
             delete(IdentifierORM).where(
                 IdentifierORM.document_id == document_id
+            )
+        )
+        self.session.execute(
+            delete(ChunkCrossReferenceORM).where(
+                ChunkCrossReferenceORM.document_id == document_id
             )
         )
         self.session.execute(
@@ -167,6 +184,35 @@ class DocumentWriter:
             raise DatabaseError(
                 "Failed to write identifiers.",
                 details={"identifier_count": len(identifiers)},
+            ) from exc
+
+    def replace_chunk_cross_references(
+        self,
+        *,
+        document_id: str,
+        cross_references: list[ChunkCrossReference],
+    ) -> None:
+        try:
+            self.session.execute(
+                delete(ChunkCrossReferenceORM).where(
+                    ChunkCrossReferenceORM.document_id == document_id
+                )
+            )
+            bulk_merge(
+                self.session,
+                ChunkCrossReferenceORM,
+                [
+                    ChunkCrossReferenceMapper.to_orm(cross_reference)
+                    for cross_reference in cross_references
+                ],
+            )
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to replace chunk cross references.",
+                details={
+                    "document_id": document_id,
+                    "cross_reference_count": len(cross_references),
+                },
             ) from exc
 
     def _delete_document_structure(self, document_id: str) -> None:

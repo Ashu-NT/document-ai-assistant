@@ -54,7 +54,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     session = None
 
     try:
-        from src.application.services.document import DocumentCatalogService  # noqa: WPS433
+        from src.application.services.document import (  # noqa: WPS433
+            DocumentCatalogService,
+            DocumentLookupService,
+        )
         from src.application.services.extraction import ExtractionService  # noqa: WPS433
         from src.application.validation.extraction import (  # noqa: WPS433
             ExtractionResultValidator,
@@ -95,6 +98,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         linking_workflow = SemanticLinkingWorkflow(
             extraction_service=extraction_service,
             id_generator=IdGenerator(),
+            document_lookup_service=DocumentLookupService(uow.documents),
         )
 
         linked_count = 0

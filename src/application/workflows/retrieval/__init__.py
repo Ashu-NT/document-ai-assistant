@@ -19,6 +19,9 @@ from src.application.workflows.retrieval.retrieval_context_assembler import (
 from src.application.workflows.retrieval.retrieval_context_expander import (
     RetrievalContextExpander,
 )
+from src.application.workflows.retrieval.cross_reference_context_expander import (
+    CrossReferenceContextExpander,
+)
 from src.application.workflows.retrieval.deduplication import (
     DuplicateGroup,
     RetrievalDeduplicationPolicy,
@@ -28,6 +31,7 @@ from src.application.workflows.retrieval.deduplication import (
 )
 
 __all__ = [
+    "CrossReferenceContextExpander",
     "DuplicateGroup",
     "RetrievalContextAssembler",
     "RetrievalDeduplicationPolicy",

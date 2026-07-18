@@ -19,6 +19,9 @@ from src.application.workflows.parsing.builders.document_graph import (
     ParsedElementFactory,
     SectionBoundaryUpdater,
 )
+from src.application.workflows.parsing.builders.document_graph.chunk_cross_reference_linker import (
+    ChunkCrossReferenceLinker,
+)
 from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,
 )
@@ -58,10 +61,12 @@ class DocumentGraphBuilder:
         min_section_text_length: int | None = None,
         section_chunk_builder: SectionChunkBuilder | None = None,
         profiler: GraphBuildProfiler | None = None,
+        chunk_cross_reference_linker: ChunkCrossReferenceLinker | None = None,
     ) -> None:
         self.id_generator = id_generator
         self.section_builder = section_builder
         self.profiler = profiler or GraphBuildProfiler.disabled()
+        self.chunk_cross_reference_linker = chunk_cross_reference_linker
         resolved_max_chunk_tokens = (
             max_chunk_tokens
             if max_chunk_tokens is not None
@@ -264,6 +269,15 @@ class DocumentGraphBuilder:
                     graph.add_chunk(chunk)
                 stage.output_counts["graph_chunks"] = len(graph.chunks)
 
+            if self.chunk_cross_reference_linker is not None:
+                with self.profiler.measure(
+                    name="document_graph_builder.link_chunk_cross_references",
+                    input_counts={"chunks": len(graph.chunks)},
+                ) as stage:
+                    for cross_reference in self.chunk_cross_reference_linker.link(graph):
+                        graph.add_cross_reference(cross_reference)
+                    stage.output_counts["cross_references"] = len(graph.cross_references)
+
             with self.profiler.measure(
                 name="document_graph_builder.aggregate_chunk_signals",
                 input_counts={"chunks": len(graph.chunks)},
@@ -289,6 +303,7 @@ class DocumentGraphBuilder:
                     table_count=len(graph.tables),
                     picture_count=len(graph.pictures),
                     identifier_count=len(graph.identifiers),
+                    cross_reference_count=len(graph.cross_references),
                     chunk_type_counts=dict(chunk_type_counts),
                 )
                 stage.output_counts["chunk_type_counts"] = len(chunk_type_counts)

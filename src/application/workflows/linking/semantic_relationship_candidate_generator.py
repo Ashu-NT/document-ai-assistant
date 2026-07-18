@@ -5,6 +5,9 @@ from src.application.workflows.linking.semantic_entity_index import (
     IndexedEntity,
     SemanticEntityIndex,
 )
+from src.application.workflows.linking.semantic_relationship_type_pairs import (
+    match_entity_pair,
+)
 from src.domain.extraction import (
     EquipmentInfo,
     MaintenanceInterval,
@@ -13,40 +16,6 @@ from src.domain.extraction import (
     SemanticEntityType,
     SemanticRelationshipType,
     TroubleshootingEntry,
-)
-
-# The 5 relationship types with no existing foreign-key mechanism: these are
-# discovered purely from proximity between already-extracted entities.
-# Order is (source_type, target_type, relationship_type); direction is fixed
-# by this definition, not by which side a window match is found on.
-_CANDIDATE_TYPE_PAIRS: tuple[
-    tuple[SemanticEntityType, SemanticEntityType, SemanticRelationshipType], ...
-] = (
-    (
-        SemanticEntityType.MAINTENANCE_TASK,
-        SemanticEntityType.PROCEDURE,
-        SemanticRelationshipType.TASK_USES_PROCEDURE,
-    ),
-    (
-        SemanticEntityType.MAINTENANCE_TASK,
-        SemanticEntityType.SPARE_PART,
-        SemanticRelationshipType.TASK_REQUIRES_SPARE_PART,
-    ),
-    (
-        SemanticEntityType.MAINTENANCE_TASK,
-        SemanticEntityType.SAFETY_WARNING,
-        SemanticRelationshipType.TASK_REQUIRES_SAFETY_WARNING,
-    ),
-    (
-        SemanticEntityType.EQUIPMENT,
-        SemanticEntityType.SPARE_PART,
-        SemanticRelationshipType.EQUIPMENT_HAS_SPARE_PART,
-    ),
-    (
-        SemanticEntityType.EQUIPMENT,
-        SemanticEntityType.SPECIFICATION,
-        SemanticRelationshipType.EQUIPMENT_HAS_SPECIFICATION,
-    ),
 )
 
 # A page-adjacency window of 1 means entities on the same page or on
@@ -99,7 +68,7 @@ class SemanticRelationshipCandidateGenerator:
         best: dict[tuple[str, str], RelationshipCandidate] = {}
 
         def consider(a: IndexedEntity, b: IndexedEntity, evidence: str) -> None:
-            match = self._match_pair(a, b)
+            match = match_entity_pair(a, b)
             if match is None:
                 return
             source, target, relationship_type = match
@@ -157,17 +126,6 @@ class SemanticRelationshipCandidateGenerator:
                 consider(a, b, EVIDENCE_NEARBY_PAGE)
 
         return list(best.values())
-
-    @staticmethod
-    def _match_pair(
-        a: IndexedEntity, b: IndexedEntity
-    ) -> tuple[IndexedEntity, IndexedEntity, SemanticRelationshipType] | None:
-        for source_type, target_type, relationship_type in _CANDIDATE_TYPE_PAIRS:
-            if a.entity_type == source_type and b.entity_type == target_type:
-                return a, b, relationship_type
-            if b.entity_type == source_type and a.entity_type == target_type:
-                return b, a, relationship_type
-        return None
 
 
 def generate_fk_passthrough_candidates(
