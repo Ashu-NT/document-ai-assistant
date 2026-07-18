@@ -33,6 +33,7 @@ class TableStructuredListClassifier:
         label_text = self.signal_matcher.normalized_text(*labels)
         primary_markers = (
             "spare part",
+            "spare parts",
             "qty",
             "quantity",
             "denomination",
@@ -53,7 +54,7 @@ class TableStructuredListClassifier:
         header_primary_hits = self.signal_matcher.count_unique(header_text, primary_markers)
         label_hits = self.signal_matcher.count_unique(
             label_text,
-            ("spare part", "position", "service package"),
+            ("spare part", "spare parts", "position", "service package"),
         )
         code_rows = self.count_identifier_like_rows(body_rows)
         return (
@@ -85,7 +86,7 @@ class TableStructuredListClassifier:
         )
         if self.signal_matcher.count_unique(
             anchor_text,
-            ("spare part", "denomination", "service package"),
+            ("spare part", "spare parts", "denomination", "service package"),
         ) >= 1:
             return True
         primary_header_hits = self.signal_matcher.count_unique(

@@ -863,6 +863,226 @@ paths build a persisted `TableAsset`'s different views of the same table, and on
   unchanged. New regression test added. Full unit suite green (3093 passed), same one known pre-existing
   unrelated failure.
 
+### 25. RESOLVED (mostly) - `maintenance_interval_table` had a real recall gap, and investigating it surfaced two deeper, generic row-canonicalization bugs causing actual data loss
+
+Prompted by a user report ("many tables labelled as maintenance_interval are wrong") and investigated at
+full corpus scale (all 2,122 real table elements re-classified live via `TableSemanticClassifier`, not a
+sample) - the 25 tables ALREADY labeled `maintenance_interval_table` were all manually confirmed genuinely
+correct on full read-through; the real problem was the opposite direction: **9 confirmed real
+maintenance-interval tables were falling through to `general_table`/`technical_data_table`**, each for a
+distinct, precisely-diagnosed root cause:
+
+- **Missing frequency vocabulary**: "Cycles" as a frequency-column header synonym, and "Regular"/
+  "Intermittent" as frequency-descriptor adjectives, had no equivalent in the existing keyword lists.
+- **A collapsed multi-word header cell mistaken for "no header at all"**: a real table's header was
+  `["", "", "TASK INTERVAL DONE COMMENTS"]` (three words concatenated into one cell, two siblings blank) -
+  `has_explicit_header_row()`'s "at least 2 non-empty cells" minimum concluded there was no header,
+  discarding the table's only interval signal.
+- **A single-column narrative maintenance list** ("Every 5 years: replace bearing components...", one full
+  sentence per row) has no column/header structure of any kind to anchor on.
+
+Fixed `TableSemanticRuleEvaluator.looks_like_maintenance_interval_table` with: expanded vocabulary (cycle(s),
+regular(ly), intermittent, periodic(ally), semi/bi-annual, plus a `years`-plural gap the existing "year"
+entry silently never matched due to this codebase's whole-word marker matching); a structural "every N
+<unit>" regex fallback for headerless narrative lists (**not** loose keyword-presence, which an initial,
+looser version of this fallback proved corpus-wide to unsafely steal real troubleshooting/TOC tables that
+happen to mention a maintenance verb and a stray temporal word - reverted in favor of the precise pattern
+after that regression was caught and fixed within this same pass).
+
+That investigation surfaced two **separate, more severe, pre-existing bugs** in
+`TableRowCanonicalizer` - not classification bugs, actual silent **data loss** regardless of category:
+
+- `_canonicalize_umbrella_header_rows`'s `_looks_umbrella_header` treated ANY single non-empty header cell
+  as an automatic "banner row to discard," even when that one cell was actually several real header words
+  collapsed together (the "TASK INTERVAL DONE COMMENTS" case above) - silently promoting the first genuine
+  DATA row into its place as the "header" and deleting the row that carried the table's real header text
+  entirely. Fixed by checking whether the lone cell itself splits into 2+ recognizable header tokens before
+  calling it an umbrella.
+- `_canonicalize_key_value_rows` silently **dropped** any row with a real, non-empty, but oddly-shaped
+  (non-even) cell count while reshaping the rest into synthetic `[Label, Value]` pairs - confirmed deleting
+  2 genuine maintenance-task rows outright from a real table. Fixed to bail out of the whole reshape (return
+  None, falling back to the untouched original rows) rather than silently drop content it can't cleanly
+  pair.
+- Also fixed `has_explicit_header_row` itself to recognize a genuinely-collapsed multi-word header cell as
+  an explicit header (reusing the same token-check), which let the classifier find "interval" specifically
+  in header position again - deliberately NOT by loosening the classifier's own header-vs-body-text check to
+  scan all body text for interval words, since a real corpus-wide regression during this same investigation
+  showed that direction unsafely matches "frequency" in unrelated senses (e.g. "check that the mains
+  frequency and voltage correspond..." in a troubleshooting remedy, not a maintenance schedule).
+
+**Net result**: 6 of the 9 confirmed misses are fully fixed and verified with zero regressions (checked
+twice: a full 2,122-table corpus re-classification sweep, and the full unit suite, both after every
+iteration of the fix - an initial looser version of the fallback was caught stealing real troubleshooting/
+TOC tables and reverted before being finalized). 3 remain open, deliberately not forced: 1 case where interval
+information is embedded in regulatory citations (IMO MSC.1-Circ. references) rather than plain frequency
+words, and 2 cases needing a further, riskier change to the shared umbrella-header-detection logic (a banner
+row with 2 *different* non-keyword texts, e.g. `"Maintenance" | "Fire Sliding Door A-60..."`, rather than
+one collapsed cell or 2 identical repeated cells) - not attempted this pass to avoid a third round of
+regression risk in code already touched twice today.
+
+New unit tests: 7 for the rule evaluator (including a dedicated regression test for the troubleshooting-table
+false positive caught and reverted), 4 for the canonicalizer fixes. Full unit suite green (3105 passed), same
+one known pre-existing unrelated failure.
+
+### 26. RESOLVED - Extended the same rigor to `chunk_type`: one stale-data false alarm, one real title-anchor bug fixed
+
+Following the user's request to apply the same corpus-scale rigor to `chunk_type` as was just applied to
+`table_category`, investigated a specific worrying symptom: the SAME underlying table (same `table_id`),
+split across multiple chunks for token-budget reasons, showed DIFFERENT `chunk_type` values across sibling
+chunks in the persisted DB (e.g. one `maintenance_interval`, another `troubleshooting`, for the identical
+table). Tracing `TableFragmentSplitter`/`ChunkFragmentPacker`/`ChunkTypeResolver` confirmed this is
+**structurally impossible under the current code**: `chunk_type`/`standalone` are set once before splitting
+and preserved verbatim across every split fragment via `dataclasses.replace`, and
+`ChunkTypeResolver._preserved_special_type` unconditionally locks any `standalone=True` fragment whose
+`chunk_type` derives from `table_category` (`_STANDALONE_PRESERVED_TABLE_TYPES`) before any keyword scoring
+can run. Recomputing `ChunkTypeResolver.resolve()` live against the exact persisted content of the two
+"broken" sibling chunks confirmed both now resolve correctly to `maintenance_interval`. A corpus-wide check
+(chunks with `table_category` set vs. the deterministic `TableFragmentBuilder._chunk_type_from_table_category`
+mapping) found 360 mismatches across 21 of 37 documents - every one ingested **before** the
+`chunk_type_resolver.py` edit that added this preserve-gate. **Conclusion: this is 100% stale ingestion data,
+not a live bug; a full corpus re-ingestion (not a code change) is what would clear it** - flagged to the user
+as a separate, explicit decision given its cost across the whole corpus, not bundled into this fix.
+
+Separately audited free-text (non-table) chunks for the same class of vocabulary-gap false negatives found at
+the table level (e.g. missing "years"/"cycle"/"regular"/"intermittent"). Result: largely a non-issue at the
+narrative level, because `chunk_type_markers.py`'s `INTERVAL_PATTERN` regex already independently covers
+"every N `<unit>`" and the common daily/weekly/monthly/yearly adverbs, unlike the table-level marker lists
+which required the same fix. Of 12,124 narrative chunks scanned, only 3 candidates surfaced; 2 were false
+positives of the audit's own broad search regex (a pump's "intermittent operating cycles" is a machine
+operating mode, not a maintenance interval; a troubleshooting FAQ mentioning "periodically" in passing). The
+third was real: **`ManualStructuredFamilyBuilder`'s MANUAL_SPARE_PARTS window matches the anchor marker
+"spare parts" as a plain substring, with no regard for negation** - a real document's safety section for
+pressure vessels contains "Pressurised vessel components cannot be obtained as spare parts because the
+vessels are only ever tested and documented as a unit," which matched the anchor and pulled an entire
+periodic-inspection/replacement-interval passage into a chunk hard-locked to `chunk_type=SPARE_PARTS_TABLE` -
+one of the few chunk types (`_SPECIAL_CHUNK_TYPES`) `ChunkTypeResolver` can never override once assigned.
+
+Fixed by adding a negation guard to `StructuredSectionFragmentBuilder._matches_markers`: a marker match
+immediately preceded by a phrase describing unavailability ("cannot be obtained as", "not available as", "no
+longer available as", etc.) is rejected as an anchor. Deliberately generic (not scoped to the spare-parts
+family specifically, nor to this document's exact wording) since the same false-anchor risk applies to any
+marker family. 3 new unit tests (direct `_matches_markers` regression for both the negated and genuine cases,
+plus an end-to-end `StructuredSectionFragmentBuilder.build()` reproduction of the real failure shape). Full
+unit suite green, same one known pre-existing unrelated failure
+(`test_parse_runs_optional_page_ocr_fallback_before_graph_build`, confirmed failing on a clean checkout prior
+to any of this session's changes).
+
+### 27. RESOLVED - Full-corpus audit of the remaining 11 `table_category` rules, live-classification methodology hardened
+
+Continued the corpus-scale rigor into the remaining rules (troubleshooting, spare_parts, technical_data,
+operating_limits, certification, toc, connection, sensor_instrument, identifier, operation_reference).
+**Methodology fix first**: the initial re-run of the existing live-reclassification audit script showed a huge,
+alarming 30% live-vs-persisted disagreement rate. Root cause: the script only reconstructed `table.rows` and
+`section_path` from `chunks`, omitting `markdown`, `nearby_text`, and `structure_summary` (table_shape) that
+`TableSemanticClassifier.classify()` actually depends on (TOC detection, the specification-matrix shape
+fallback, etc.) - once the audit script reconstructed these from `elements.parser_extra_json` properly
+(`resolved_section_path`, `nearby_text`, `markdown`, `table_shape`), agreement rose to ~89%, consistent with the
+rest of the investigation. **Second methodology finding**: many of the remaining "disagreements" are not live
+bugs at all but stale ingestion data - confirmed via git-blame that specific vocabulary fixes (e.g. "action"/
+"cause" added to `_EXPLICIT_HEADER_KEYWORDS`) landed *after* the affected document's ingestion timestamp,
+meaning the live classifier already produces the correct answer today; only a re-ingestion (not a code
+change) would surface it in the DB. This reframes "live vs. persisted" as a *candidate generator*, not a
+correctness oracle - every candidate still needs independent content verification.
+
+Real bugs found and fixed, in priority order by corpus impact:
+
+- **`looks_like_technical_data_table`'s `has_explicit_header` shortcut treated the row canonicalizer's own
+  synthetic `["Label", "Value"]` placeholder header as genuine author-written header evidence.** `TableRowCanonicalizer`
+  emits that literal placeholder for *any* headerless table it reshapes into key-value pairs, regardless of
+  content - so any unrelated table with just 2 incidental technical-sounding words anywhere in its body (a
+  glossary, a TOC remnant, an order/customer-info block, a safety note, a troubleshooting continuation) was
+  being swept into `technical_data_table`. Corpus-wide: 96 of 442 (~22%) `technical_data_table` calls relied
+  *solely* on this shortcut with no other corroborating signal. Fixed by excluding the case where `headers ==
+  ("label", "value")` exactly (the only way this exact 2-cell placeholder ever appears); genuine
+  "Parameter"/"Value" or "Description"/"Value" author-written headers are unaffected, and genuine key-value
+  spec tables still resolve correctly via the existing `label_hits >= 2` path. Verified via full-corpus
+  re-classification that all 7 confirmed-bad sample tables (a Number/Title/Page catalog fragment, a glossary,
+  an order-info block, an abbreviations table, a safety note, a troubleshooting continuation) now correctly
+  fall through instead, while genuine spec tables (confirmed via the `SPECIFICATION_MATRIX` shape fallback and
+  `label_hits`) are unaffected. 3 new unit tests; one pre-existing test's fixture was strengthened (added a
+  second genuine technical marker) rather than weakening its assertion, since it had unknowingly depended on
+  this exact loophole.
+- **Troubleshooting vocabulary gaps**, found via full-corpus false-negative scans (same method as the
+  maintenance-interval work): "Incident/Cause/Solution" (2 tables, 1 document - "incident"/"solution" verified
+  to appear nowhere else in the corpus as header words) and "Alarm details/Possible cause/What to do?" (26
+  tables in one document's alarm list - "alarm" verified to appear as a header word in exactly that one
+  document). Both added to `troubleshooting_markers`; re-verified corpus-wide that only the intended tables
+  flipped, nothing else moved.
+- **`looks_like_spare_parts_table`'s "spare part" marker had the same singular/plural whole-word-matching gap**
+  fixed earlier for "year"/"years" - text containing only "spare parts" (plural) never matched. Added "spare
+  parts" as an explicit second marker (matching the established fix pattern of adding the missing form rather
+  than changing the matcher). Note: this closes the *general* gap, but the one real-world document that
+  motivated it ("Rule Pump cut-sheet.pdf") still doesn't flip, because the rule correctly requires a second
+  corroborating marker beyond the bare phrase match and this table has none - left as-is rather than loosening
+  the corroboration requirement for one document.
+
+Deliberately deferred (documented, not fixed, to avoid a third risky touch to already-twice-modified shared
+code in one session):
+- A single-document "Item/Findings/Action" inspection-checklist pattern (12 tables, `SA18000434_00E.pdf`) that
+  should arguably be `troubleshooting_table` - blocked on finding a second safe corroborating marker alongside
+  "findings" that doesn't also sweep in ~55 unrelated tables elsewhere that use the generic word "action".
+  "findings"/"finding" alone was verified corpus-wide to appear only in this one document, so it's a safe
+  *partial* addition, but insufficient alone to cross the 2-marker header threshold; not added on its own since
+  it would be dead code (a marker that can never contribute the deciding vote given current corroboration
+  requirements) without also solving the second-marker problem.
+- A `sensor_instrument_table` false positive (a software parameter/configuration list wrongly classified due to
+  "switch"/"transmitter" appearing only as *enum value descriptions*, not real device identification) traces
+  back to the same already-deferred `_looks_umbrella_header` banner-row limitation from section 25 (a 2
+  *different*-text banner row, e.g. "CABINET: +CMPU" / "SOFTWARE VERSION: v1.4.1", swallows the real header on
+  the next row). Single occurrence; not worth a third pass on that shared canonicalizer logic this session.
+- Several other single-table, ambiguous edge cases surfaced during sampling (a QA test-procedure table
+  incidentally matching `operating_limits_table` via "Pressure test"/"High voltage test" *names* rather than
+  actual limit values; an LED-status table that would fit `operation_reference_table` better) - each affects
+  exactly one table with no clear better category and no safe generalizable fix, so left alone.
+
+New/updated tests: `test_table_specification_rule_evaluator.py` (new, 3 tests), `test_table_structured_list_classifier.py`
+(new, 2 tests), 2 new tests added to `test_table_semantic_rule_evaluator.py`, 1 existing fixture strengthened in
+`test_table_semantic_classifier.py`. Full unit suite green, same one known pre-existing unrelated failure.
+
+### 28. RESOLVED - The 3 deferred `maintenance_interval_table` edge cases from section 25
+
+Revisited all 3 cases deliberately left open earlier.
+
+**The 2 banner-row cases** (`"Maintenance" | "Fire Sliding Door A-60, door type A3000..."` on row 0, with the
+real header - `"Maintenance Description" | "" | "Frequency" | "Interval Period"` - on row 1): the risk flagged
+earlier was that `_looks_umbrella_header`'s existing "identical repeated text" rule doesn't fit a banner with 2
+*different* texts, and loosening it naively would repeat the exact silent-data-loss bug fixed in section 25 (a
+genuine data row wrongly discarded as a fake "umbrella"). Resolved by adding a distinct third path to
+`_canonicalize_umbrella_header_rows`: when row 0 doesn't look like a real header itself (no cell matches an
+explicit header keyword) but also isn't a pure identical-repeated umbrella, it is *reordered to become an
+ordinary body row directly under the promoted real header* rather than discarded - preserving the banner's
+information (which asset/door this table covers) while still letting the classifier see the real header.
+Verified via full-corpus re-classification: both target tables now correctly resolve to
+`maintenance_interval_table`, and - as an unrelated but welcome side effect, since it shares the same root
+cause - a previously-misclassified `sensor_instrument_table` false positive (a software parameter/configuration
+list with an identical "Label: X | Value: Y" banner-then-real-header shape) also self-corrected to
+`technical_data_table`. New regression test added; existing "pure repeated-text umbrella" test (a different,
+still-valid discard-worthy shape) still passes unchanged.
+
+**The regulatory-citation case** (header `"Action | IMO MSC.1-Circ.1432 & MSC.1-Circ.1516 | Marioff
+recommendations"`, no frequency vocabulary anywhere in the table's own header or body) turned out to be one of
+**10 sibling tables** in the same document, discovered while investigating it, all sharing the identical header
+and all still misclassified. Their common trait: the table's own text carries zero temporal vocabulary, but the
+document nests each one under its own dedicated section heading named for a testing frequency ("Weekly Testing
+and Inspections", "Monthly Testing and Inspections", ..., "Five-Year Testing, Inspections and Service") - the
+interval information lives entirely in the section-path structure, not the table. `looks_like_maintenance_interval_table`
+had no section-path awareness at all before this fix. Added a new, narrowly-gated fallback requiring 3+
+*distinct* temporal words in the section path (verified corpus-wide before implementing: only this one
+document's section family ever reaches that count - every other table in the corpus has 0-2) plus at least one
+maintenance-verb hit in the table's own content. Initially only 5 of the 10 tables flipped even with the gate
+open, because several use maintenance verbs only in inflected forms the marker list's whole-word matching
+doesn't catch as stems ("overhauled", "tested" vs. "overhaul", "test" - the same class of gap fixed earlier for
+"year"/"years"); rather than broadening the shared `maintenance_markers` list (which feeds two other conditions
+used corpus-wide), the corroboration threshold was lowered to 1 hit *specifically for this new, already
+narrowly-isolated condition* - safe because the section-path gate alone already restricts every candidate to
+this one section family, so a weaker second signal doesn't widen exposure anywhere else. All 10 tables now
+correctly resolve to `maintenance_interval_table`; corpus-wide re-verification confirmed no other table's
+category changed as a side effect.
+
+2 new tests (`table_row_canonicalizer`, `table_semantic_rule_evaluator`). Full unit suite green, same one known
+pre-existing unrelated failure. All 3 originally-deferred cases are now closed - no maintenance_interval_table
+gaps remain open from this investigation.
+
 ## Resolved This Session (Not Yet Reflected Elsewhere In This Document)
 
 The following were found and fixed in a parallel review session, working from the same principle this plan

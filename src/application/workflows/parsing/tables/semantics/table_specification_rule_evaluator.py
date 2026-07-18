@@ -162,7 +162,17 @@ class TableSpecificationRuleEvaluator:
         )
         direct_hits = self.signal_matcher.count_unique(direct_text, technical_markers)
         label_hits = self.signal_matcher.count_unique(label_text, technical_markers)
-        has_explicit_header = any(
+        # `TableRowCanonicalizer` emits the literal placeholder header
+        # ["Label", "Value"] for ANY headerless table it reshapes into
+        # key-value pairs, regardless of what the table is actually about --
+        # it is never a real author-written header. Treating it as genuine
+        # header evidence let 2+ incidental technical-sounding words
+        # anywhere in an unrelated table's body (a glossary, a TOC remnant,
+        # an order/customer-info block, a safety note) sweep that table into
+        # technical_data_table. A real "Parameter"/"Value" or
+        # "Description"/"Value" header is unaffected by this exclusion.
+        is_synthetic_key_value_header = tuple(headers) == ("label", "value")
+        has_explicit_header = not is_synthetic_key_value_header and any(
             header in {"parameter", "value", "description", "specification"}
             for header in headers
         )

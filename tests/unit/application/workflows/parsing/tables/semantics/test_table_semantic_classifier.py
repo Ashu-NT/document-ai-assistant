@@ -147,12 +147,18 @@ def test_classify_does_not_misclassify_spec_table_mentioning_contents_as_toc() -
     # Regression guard for a real bug: bare "contents" used to be checked
     # against the table's own body/header/caption text too, so a spec table
     # with a "Tank Contents"/"Oil Contents" row would misfile as TOC_TABLE.
+    # The extra "Weight" row gives this headerless key-value table 2 genuine
+    # technical_markers hits ("voltage", "weight") of its own -- needed since
+    # a separate fix stopped the canonicalizer's synthetic ["Label", "Value"]
+    # placeholder header from counting as technical-data header evidence on
+    # its own (see test_table_specification_rule_evaluator.py).
     category, confidence = TableSemanticClassifier().classify(
         table=_make_table(
             [
                 ["Tank Contents", "1,200L"],
                 ["Oil Contents", "5L"],
                 ["Voltage", "400V 50Hz"],
+                ["Weight", "120 kg"],
             ]
         ),
         section_path=["Safety", "Warnings"],

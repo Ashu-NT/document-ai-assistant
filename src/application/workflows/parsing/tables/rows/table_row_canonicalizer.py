@@ -58,6 +58,13 @@ class TableRowCanonicalizer:
         header = rows[0]
         non_empty = [normalize_cell(cell) for cell in header if normalize_cell(cell)]
         if len(non_empty) < 2:
+
+            if len(non_empty) == 1:
+                tokens = non_empty[0].split()
+                header_like_token_count = sum(
+                    1 for token in tokens if looks_explicit_header_cell(token)
+                )
+                return header_like_token_count >= 2
             return False
         numeric_like = sum(1 for cell in non_empty if looks_numeric(cell))
         if numeric_like >= max(1, len(non_empty) // 2):
@@ -70,8 +77,12 @@ class TableRowCanonicalizer:
 
         for row in rows:
             non_empty = [normalize_cell(cell) for cell in row if normalize_cell(cell)]
-            if len(non_empty) < 2 or len(non_empty) % 2 != 0:
+            if not non_empty:
+                # A genuinely blank row carries nothing to lose either way.
                 continue
+            if len(non_empty) < 2 or len(non_empty) % 2 != 0:
+
+                return None
 
             row_pairs: list[list[str]] = []
             for index in range(0, len(non_empty), 2):
@@ -83,7 +94,7 @@ class TableRowCanonicalizer:
                 row_pairs.append([label, value])
 
             if not row_pairs:
-                continue
+                return None
 
             pair_row_count += 1
             canonical_pairs.extend(row_pairs)
@@ -132,16 +143,34 @@ class TableRowCanonicalizer:
             return None
         if not any(looks_explicit_header_cell(cell) for cell in second_non_empty):
             return None
-        if not self._looks_umbrella_header(first_non_empty):
-            return None
-        return [second_row, *rows[2:]]
+        if self._looks_umbrella_header(first_non_empty):
+            return [second_row, *rows[2:]]
+        if first_non_empty and self._looks_like_non_header_banner_row(first_non_empty):
+            # A distinct (non-repeated) banner row -- e.g. "Maintenance |
+            # Fire Sliding Door A-60, door type A3000..." -- that isn't
+            # itself a real column header but, unlike the umbrella case
+            # above, carries real information (which asset this table
+            # covers) that may not appear anywhere else in the document.
+            # Unlike the umbrella path, this is kept as an ordinary body row
+            # directly under the real header rather than discarded outright.
+            return [second_row, first_row, *rows[2:]]
+        return None
+
+    @staticmethod
+    def _looks_like_non_header_banner_row(non_empty_cells: list[str]) -> bool:
+        return not any(looks_explicit_header_cell(cell) for cell in non_empty_cells)
 
     @staticmethod
     def _looks_umbrella_header(non_empty_cells: list[str]) -> bool:
         if not non_empty_cells:
             return False
         if len(non_empty_cells) == 1:
-            return True
+
+            tokens = non_empty_cells[0].split()
+            header_like_token_count = sum(
+                1 for token in tokens if looks_explicit_header_cell(token)
+            )
+            return header_like_token_count < 2
         normalized = {cell.casefold() for cell in non_empty_cells if cell}
         return len(normalized) == 1
 

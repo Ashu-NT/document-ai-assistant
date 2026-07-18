@@ -20,6 +20,27 @@ from src.domain.common import ChunkType, DocumentType, ElementType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 
+# A marker match preceded by one of these cues describes the ABSENCE of the
+# matched thing (e.g. "cannot be obtained as spare parts"), not a genuine
+# instance of it -- real document: a "Spare Parts" family anchor matched
+# "spare parts" inside "components cannot be obtained as spare parts because
+# the vessels are only ever tested and documented as a unit", which then
+# swept an entire unrelated safety/replacement-interval passage into a
+# hard-locked SPARE_PARTS_TABLE chunk (chunk_type=SPARE_PARTS_TABLE is one of
+# the few types ChunkTypeResolver can never override). Not scoped to any one
+# marker family since the same negated-availability phrasing can precede any
+# anchor term.
+_NEGATED_AVAILABILITY_CUES = (
+    "cannot be obtained as",
+    "can not be obtained as",
+    "not available as",
+    "not obtainable as",
+    "no longer available as",
+    "not sold as",
+    "not supplied as",
+    "not offered as",
+)
+
 
 class StructuredSectionFragmentBuilder:
     def __init__(
@@ -223,7 +244,15 @@ class StructuredSectionFragmentBuilder:
 
     @staticmethod
     def _matches_markers(text: str, markers: tuple[str, ...]) -> bool:
-        return any(marker in text for marker in markers)
+        for marker in markers:
+            marker_index = text.find(marker)
+            if marker_index == -1:
+                continue
+            preceding_text = text[:marker_index]
+            if any(cue in preceding_text for cue in _NEGATED_AVAILABILITY_CUES):
+                continue
+            return True
+        return False
 
     @staticmethod
     def _enrich_section_path(

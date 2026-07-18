@@ -152,6 +152,7 @@ class TableSemanticClassifier:
             headers,
             label_cells,
             direct_text,
+            section_text,
         ):
             return TableCategory.MAINTENANCE_INTERVAL_TABLE, 0.89
         if self.rule_evaluator.looks_like_lubrication_schedule_table(
