@@ -1,8 +1,14 @@
 import logging
 
+from src.application.langgraph.nodes.retrieval_intent_decision import (
+    RetrievalIntentDecision,
+)
 from src.application.langgraph.reflection.models import ReflectionDecisionType
 from src.application.langgraph.reflection.policies import ReflectionPolicy
 from src.application.langgraph.reflection.services import ReflectionService
+from src.application.langgraph.reflection.services.query_ambiguity_detector import (
+    QueryAmbiguityDetector,
+)
 
 
 class _FakeLLMService:
@@ -212,6 +218,66 @@ def test_reflection_service_synthesizes_clarify_for_a_genuinely_ambiguous_questi
         == "Are you asking about table or troubleshooting?"
     )
     assert result.requires_clarification is True
+    assert result.diagnostics["ambiguous_intent_tie"] == {
+        "intent_label": "table",
+        "runner_up_label": "troubleshooting",
+    }
+
+
+def test_reflection_service_uses_persisted_retrieval_intent_decision_without_reclassifying() -> None:
+    """PR 2/3 (answering_flow_weakness_remediation_plan.md): reflection must
+    read the SAME classification that already drove retrieval instead of
+    calling RetrievalQueryIntentInferer.classify() a second, independent
+    time. Reuses the exact tie scenario from the test above, but supplies
+    the persisted decision and asserts the underlying inferer is never
+    invoked at all -- the fix for the real duplicate-classification bug."""
+
+    class _ExplodingIntentInferer:
+        def classify(self, query):
+            raise AssertionError(
+                "QueryAmbiguityDetector reclassified instead of using the "
+                "persisted retrieval_intent_decision"
+            )
+
+    llm_service = _FakeLLMService(
+        '{"decision":"CLARIFY","confidence":0.6,"reason":"Ambiguous.","retry_query":null,'
+        '"clarification_question":null,"missing_information":[]}'
+    )
+    service = ReflectionService(
+        llm_service=llm_service,
+        policy=ReflectionPolicy(enabled=True),
+        query_ambiguity_detector=QueryAmbiguityDetector(
+            intent_inferer=_ExplodingIntentInferer()
+        ),
+    )
+
+    result = service.review(
+        original_user_question="Show me the fault code table",
+        generated_answer="The document lists several fault codes in a table.",
+        selected_document_id="doc_1",
+        selected_document_title="FWC12 Manual",
+        answer_intent=None,
+        approved_chunks=[],
+        rejected_chunks=[],
+        citations=[],
+        reflection_attempts=0,
+        retrieval_retry_count=0,
+        retrieval_query_intent="table",
+        retrieval_intent_decision=RetrievalIntentDecision(
+            intent="table",
+            best_score=4,
+            runner_up_intent="troubleshooting",
+            runner_up_score=4,
+            gap=0,
+            confidence=0.62,
+        ),
+    )
+
+    assert result.decision.decision == ReflectionDecisionType.CLARIFY
+    assert (
+        result.decision.clarification_question
+        == "Are you asking about table or troubleshooting?"
+    )
     assert result.diagnostics["ambiguous_intent_tie"] == {
         "intent_label": "table",
         "runner_up_label": "troubleshooting",

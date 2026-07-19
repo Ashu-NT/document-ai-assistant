@@ -7,6 +7,9 @@ from src.application.langgraph.common import (
     serialize_graph_value,
 )
 from src.application.langgraph.common.value_coercion import optional_str
+from src.application.langgraph.nodes.retrieval_intent_decision import (
+    RetrievalIntentDecision,
+)
 from src.application.workflows.shared.structured_evidence_deduplication import (
     deduplicate_identifiers as shared_deduplicate_identifiers,
     deduplicate_structured_entities as shared_deduplicate_structured_entities,
@@ -28,25 +31,53 @@ def serialize_tool_result(tool_result: Any) -> dict[str, Any]:
     }
 
 
+def extract_retrieval_intent_decision(
+    retrieval_result: Any,
+) -> RetrievalIntentDecision | None:
+    """The full retrieval-side intent classification -- winner, runner-up,
+    scores, gap, confidence -- read from the serialized
+    `QuestionAnsweringResult.retrieval_result.retrieval_result.query`
+    fields that `RetrievalQueryAnalyzer.analyze()` persists onto
+    `RetrievalQuery` (see PR 1, answering_flow_weakness_remediation_plan.md).
+    One extraction, reused by every consumer that needs more than the bare
+    intent string (e.g. `QueryAmbiguityDetector`, PR 3) instead of each
+    reclassifying the question independently."""
+    query = _extract_retrieval_query_dict(retrieval_result)
+    if query is None:
+        return None
+    detected_intent = query.get("detected_intent")
+    if not detected_intent:
+        return None
+    return RetrievalIntentDecision(
+        intent=str(detected_intent),
+        best_score=_optional_int(query.get("intent_best_score")),
+        runner_up_intent=optional_str(query.get("intent_runner_up")),
+        runner_up_score=_optional_int(query.get("intent_runner_up_score")),
+        gap=_optional_int(query.get("intent_score_gap")),
+        confidence=_optional_float(query.get("intent_confidence")),
+    )
+
+
 def extract_retrieval_query_intent(retrieval_result: Any) -> str | None:
     """The generic `RetrievalQueryIntent` (TABLE/MAINTENANCE/IDENTIFIER/...)
-    resolved during query analysis, already present in the serialized
-    `QuestionAnsweringResult.retrieval_result.retrieval_result.query
-    .detected_intent` path -- no new plumbing needed, it's the same value
-    `RetrievalQueryAnalyzer.analyze()` already computes and stores. This is
-    a distinct, broader classification than `answer_intent`
-    (`AnswerIntent`), and is what the reflection strategy registries
-    dispatch on. Shared by `ReflectAnswerNode` and `RetryRetrievalNode`."""
+    resolved during query analysis -- a thin compatibility wrapper over
+    `extract_retrieval_intent_decision()` for callers that only need the
+    winner, not the full decision. This is a distinct, broader
+    classification than `answer_intent` (`AnswerIntent`), and is what the
+    reflection strategy registries dispatch on. Shared by
+    `ReflectAnswerNode` and `RetryRetrievalNode`."""
+    decision = extract_retrieval_intent_decision(retrieval_result)
+    return decision.intent if decision is not None else None
+
+
+def _extract_retrieval_query_dict(retrieval_result: Any) -> dict[str, Any] | None:
     if not isinstance(retrieval_result, dict):
         return None
     inner_result = retrieval_result.get("retrieval_result")
     if not isinstance(inner_result, dict):
         return None
     query = inner_result.get("query")
-    if not isinstance(query, dict):
-        return None
-    detected_intent = query.get("detected_intent")
-    return str(detected_intent) if detected_intent else None
+    return query if isinstance(query, dict) else None
 
 
 def extend_trace(

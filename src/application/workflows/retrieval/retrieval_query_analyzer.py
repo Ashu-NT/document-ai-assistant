@@ -62,6 +62,15 @@ class RetrievalQueryAnalyzer:
             RETRIEVAL_INTENT_RULES_VERSION,
         )
         query.detected_intent = intent.value
+        query.intent_best_score = classification.score
+        query.intent_runner_up_score = classification.runner_up_score
+        query.intent_score_gap = classification.gap
+        query.intent_confidence = classification.confidence
+        query.intent_runner_up = (
+            classification.runner_up_intent.value
+            if classification.runner_up_intent is not None
+            else None
+        )
         preferred_chunk_types = self.chunk_type_preference_mapper.map(
             query=query,
             intent=intent,

@@ -1,7 +1,13 @@
 from src.application.langgraph.factories import ToolRegistry
-from src.application.langgraph.nodes.node_utils import extract_retrieval_query_intent
+from src.application.langgraph.nodes.node_utils import (
+    extract_retrieval_intent_decision,
+    extract_retrieval_query_intent,
+)
 from src.application.langgraph.nodes.question_answering.reflect_answer_node import (
     ReflectAnswerNode,
+)
+from src.application.langgraph.nodes.retrieval_intent_decision import (
+    RetrievalIntentDecision,
 )
 from src.application.langgraph.reflection.models import (
     ReflectionDecision,
@@ -20,6 +26,22 @@ def _retrieval_result_payload(detected_intent: str | None) -> dict:
     }
 
 
+def _full_retrieval_result_payload() -> dict:
+    return {
+        "context_chunks": [{"chunk_id": "chunk_1"}],
+        "retrieval_result": {
+            "query": {
+                "detected_intent": "table",
+                "intent_best_score": 4,
+                "intent_runner_up_score": 4,
+                "intent_score_gap": 0,
+                "intent_confidence": 0.62,
+                "intent_runner_up": "troubleshooting",
+            },
+        },
+    }
+
+
 def test_extract_retrieval_query_intent_reads_the_nested_path() -> None:
     payload = _retrieval_result_payload("maintenance")
 
@@ -34,6 +56,34 @@ def test_extract_retrieval_query_intent_returns_none_for_missing_shape() -> None
         extract_retrieval_query_intent({"retrieval_result": {"query": "not-a-dict"}})
         is None
     )
+
+
+def test_extract_retrieval_intent_decision_reads_all_persisted_fields() -> None:
+    """PR 2 (answering_flow_weakness_remediation_plan.md): the full decision
+    -- not just the bare intent string -- must survive the same nested-path
+    extraction, so a consumer like QueryAmbiguityDetector (PR 3) can read
+    the SAME classification that already drove retrieval."""
+    decision = extract_retrieval_intent_decision(_full_retrieval_result_payload())
+
+    assert decision == RetrievalIntentDecision(
+        intent="table",
+        best_score=4,
+        runner_up_intent="troubleshooting",
+        runner_up_score=4,
+        gap=0,
+        confidence=0.62,
+    )
+    assert decision.is_contested is True
+
+
+def test_extract_retrieval_intent_decision_returns_none_for_missing_shape() -> None:
+    assert extract_retrieval_intent_decision({}) is None
+    assert extract_retrieval_intent_decision(None) is None
+    assert extract_retrieval_intent_decision({"retrieval_result": "not-a-dict"}) is None
+
+
+def test_extract_retrieval_query_intent_delegates_to_the_full_decision() -> None:
+    assert extract_retrieval_query_intent(_full_retrieval_result_payload()) == "table"
 
 
 class _FakeReflectionService:
@@ -95,6 +145,49 @@ def test_reflect_answer_node_passes_the_retrieval_query_intent_to_the_service() 
 
     assert reflection_service.calls
     assert reflection_service.calls[0]["retrieval_query_intent"] == "maintenance"
+
+
+def test_reflect_answer_node_passes_the_retrieval_intent_decision_to_the_service() -> None:
+    """PR 2/3: the node must extract the full decision once and hand it to
+    ReflectionService.review() so reflection's ambiguity check can read it
+    instead of reclassifying the question independently."""
+    reflection_service = _FakeReflectionService(_accept_result())
+    node = ReflectAnswerNode(
+        ToolRegistry(),
+        reflection_service=reflection_service,
+    )
+    state = build_agent_state(
+        user_input="Show me the fault code table",
+        document_id="doc_1",
+        reflection_enabled=True,
+    )
+    state["question"] = "Show me the fault code table"
+    state["tool_results"] = {
+        "answer_question": {
+            "success": True,
+            "data": {
+                "route": "retrieval_qa",
+                "answer_text": "The document lists several fault codes in a table.",
+                "approved_chunk_ids": ["chunk_1"],
+                "rejected_chunk_ids": [],
+                "retrieval_result": _full_retrieval_result_payload(),
+            },
+        }
+    }
+
+    node(state)
+
+    assert reflection_service.calls
+    decision = reflection_service.calls[0]["retrieval_intent_decision"]
+    assert decision == RetrievalIntentDecision(
+        intent="table",
+        best_score=4,
+        runner_up_intent="troubleshooting",
+        runner_up_score=4,
+        gap=0,
+        confidence=0.62,
+    )
+    assert reflection_service.calls[0]["retrieval_query_intent"] == "table"
 
 
 def test_reflect_answer_node_passes_none_when_intent_is_unavailable() -> None:

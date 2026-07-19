@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.application.langgraph.reflection.evaluators.answer_quality_scorer import (
     AnswerQualityScorer,
@@ -49,6 +49,14 @@ from src.application.prompts.reflection import (
 from src.application.services.ai import LLMService
 from src.config.logging import get_logger
 from src.shared.exceptions import ApplicationError
+
+if TYPE_CHECKING:
+    # Deferred: see query_ambiguity_detector.py -- a module-level import
+    # here re-enters src.application.langgraph.nodes's __init__ chain,
+    # which imports back into this reflection package.
+    from src.application.langgraph.nodes.retrieval_intent_decision import (
+        RetrievalIntentDecision,
+    )
 
 _logger = get_logger(__name__)
 
@@ -100,6 +108,7 @@ class ReflectionService:
         retrieval_retry_count: int,
         reference_notes: list[Any] | None = None,
         retrieval_query_intent: str | None = None,
+        retrieval_intent_decision: RetrievalIntentDecision | None = None,
     ) -> ReflectionResult:
         has_relevant_maintenance_evidence = (
             MaintenanceEvidenceRelevanceDetector.has_relevant_evidence(
@@ -165,7 +174,10 @@ class ReflectionService:
                 clause_coverage=clause_coverage,
             ),
         )
-        ambiguous_intent_tie = self.query_ambiguity_detector.detect(original_user_question)
+        ambiguous_intent_tie = self.query_ambiguity_detector.detect(
+            original_user_question,
+            retrieval_intent_decision=retrieval_intent_decision,
+        )
         deterministic = DeterministicReflectionDecider.decide(
             policy=self.policy,
             answer_quality=answer_quality,

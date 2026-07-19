@@ -26,3 +26,19 @@ def test_retrieval_query_detects_identifiers() -> None:
     )
 
     assert query.has_identifiers()
+
+
+def test_retrieval_query_intent_classification_fields_default_to_none() -> None:
+    """Before RetrievalQueryAnalyzer.analyze() has run, the classification
+    fields must be inert -- these are new, optional fields (PR 1,
+    answering_flow_weakness_remediation_plan.md), not a required part of
+    constructing a RetrievalQuery."""
+    from src.domain.retrieval import RetrievalQuery
+
+    query = RetrievalQuery(query_id="query_001", query_text="Find HP-001")
+
+    assert query.intent_best_score is None
+    assert query.intent_runner_up_score is None
+    assert query.intent_score_gap is None
+    assert query.intent_confidence is None
+    assert query.intent_runner_up is None

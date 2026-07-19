@@ -11,7 +11,7 @@ from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
     build_error,
     extend_trace,
-    extract_retrieval_query_intent,
+    extract_retrieval_intent_decision,
 )
 from src.application.langgraph.reflection import ClarificationBuilder, ReflectionService
 from src.application.langgraph.reflection.constants import (
@@ -88,6 +88,16 @@ class ReflectAnswerNode:
         if not approved_chunks and isinstance(context_chunks, list):
             approved_chunks = [chunk for chunk in context_chunks if isinstance(chunk, dict)]
 
+        # Extracted once and reused below instead of re-parsing
+        # retrieval_result twice -- see PR 2/3,
+        # answering_flow_weakness_remediation_plan.md.
+        retrieval_intent_decision = extract_retrieval_intent_decision(retrieval_result)
+        retrieval_query_intent = (
+            retrieval_intent_decision.intent
+            if retrieval_intent_decision is not None
+            else None
+        )
+
         try:
             result = self.reflection_service.review(
                 original_user_question=state.get("question") or state["user_input"],
@@ -97,7 +107,8 @@ class ReflectAnswerNode:
                 selected_document_title=state.get("selected_document_title")
                 or state.get("document_title"),
                 answer_intent=resolve_answer_intent(answer_payload),
-                retrieval_query_intent=extract_retrieval_query_intent(retrieval_result),
+                retrieval_query_intent=retrieval_query_intent,
+                retrieval_intent_decision=retrieval_intent_decision,
                 approved_chunks=approved_chunks,
                 rejected_chunks=rejected_chunks,
                 citations=answer_payload.get("citations", []),
@@ -147,7 +158,7 @@ class ReflectAnswerNode:
             **self._decision_patch(
                 state=state,
                 result=result,
-                retrieval_query_intent=extract_retrieval_query_intent(retrieval_result),
+                retrieval_query_intent=retrieval_query_intent,
             ),
         }
 

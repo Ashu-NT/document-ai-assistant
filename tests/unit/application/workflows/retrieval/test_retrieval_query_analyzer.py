@@ -79,6 +79,42 @@ def test_retrieval_query_analyzer_widens_chunk_types_on_an_unresolved_intent_tie
     assert ChunkType.TROUBLESHOOTING in analyzed.chunk_types
 
 
+def test_retrieval_query_analyzer_persists_classification_scores_on_a_tie() -> None:
+    """PR 1 (answering_flow_weakness_remediation_plan.md): the classification
+    behind detected_intent used to be discarded the moment analyze()
+    returned. It must now survive on the query object -- reusing the exact
+    scenario from the tie test above, which independently confirms this is
+    a genuine gap==0 tie, not a guessed fixture."""
+    analyzer = RetrievalQueryAnalyzer()
+    query = RetrievalQuery(
+        query_id="query_007",
+        query_text="Show me the fault code table",
+    )
+
+    analyzed = analyzer.analyze(query)
+
+    assert analyzed.intent_best_score is not None
+    assert analyzed.intent_runner_up_score is not None
+    assert analyzed.intent_best_score == analyzed.intent_runner_up_score
+    assert analyzed.intent_score_gap == 0
+    assert analyzed.intent_runner_up == "troubleshooting"
+    assert analyzed.intent_confidence is not None
+
+
+def test_retrieval_query_analyzer_persists_a_clear_winners_score_and_gap() -> None:
+    analyzer = RetrievalQueryAnalyzer()
+    query = RetrievalQuery(
+        query_id="query_008",
+        query_text="How do I start and run the macerator?",
+    )
+
+    analyzed = analyzer.analyze(query)
+
+    assert analyzed.intent_best_score is not None
+    assert analyzed.intent_score_gap is not None
+    assert analyzed.intent_score_gap > 0
+
+
 def test_retrieval_query_analyzer_does_not_force_identifier_for_commissioning_objective() -> None:
     analyzer = RetrievalQueryAnalyzer()
     query = RetrievalQuery(
