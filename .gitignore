@@ -8,6 +8,7 @@ outputs/debug_answer_generation/
 outputs/debug_ocr
 outputs/debug_tables
 outputs/debug_answering
+data/maintenance_ai.db
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
