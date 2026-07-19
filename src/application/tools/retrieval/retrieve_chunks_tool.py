@@ -15,6 +15,7 @@ from src.application.workflows.retrieval.tracing import (
     RetrievalTraceRecorder,
     RetrievalTraceWriter,
 )
+from src.config.settings import retrieval_settings
 from src.domain.common import ChunkType, DocumentType, new_id
 from src.domain.retrieval import RetrievalQuery
 from src.shared.exceptions import ApplicationError
@@ -27,9 +28,13 @@ class RetrieveChunksRequest(ToolRequest):
     top_k: int = 5
     document_types: list[DocumentType] = field(default_factory=list)
     chunk_types: list[ChunkType] = field(default_factory=list)
-    use_dense: bool = True
-    use_keyword: bool = True
-    use_sql: bool = True
+    # Defaults follow the global enable flags rather than a hardcoded True,
+    # so an operator disabling a search source (e.g. ENABLE_SQL_RETRIEVAL=
+    # false) is respected here too unless a caller explicitly overrides it
+    # per-request.
+    use_dense: bool = field(default_factory=lambda: retrieval_settings.enable_dense_retrieval)
+    use_keyword: bool = field(default_factory=lambda: retrieval_settings.enable_keyword_retrieval)
+    use_sql: bool = field(default_factory=lambda: retrieval_settings.enable_sql_retrieval)
     include_rejected: bool = False
     trace: bool = False
 

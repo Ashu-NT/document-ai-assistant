@@ -8,7 +8,11 @@ from src.application.langgraph.common.answer_intent_resolver import (
     resolve_answer_intent,
 )
 from src.application.langgraph.factories.tool_registry import ToolRegistry
-from src.application.langgraph.nodes.node_utils import build_error, extend_trace
+from src.application.langgraph.nodes.node_utils import (
+    build_error,
+    extend_trace,
+    extract_retrieval_query_intent,
+)
 from src.application.langgraph.reflection import ClarificationBuilder, ReflectionService
 from src.application.langgraph.reflection.constants import (
     REFLECTION_CLARIFICATION_KIND,
@@ -93,6 +97,7 @@ class ReflectAnswerNode:
                 selected_document_title=state.get("selected_document_title")
                 or state.get("document_title"),
                 answer_intent=resolve_answer_intent(answer_payload),
+                retrieval_query_intent=extract_retrieval_query_intent(retrieval_result),
                 approved_chunks=approved_chunks,
                 rejected_chunks=rejected_chunks,
                 citations=answer_payload.get("citations", []),

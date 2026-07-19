@@ -187,6 +187,42 @@ def test_workflow_expands_context_chunks_when_expander_is_available(
     ]
     assert result.context_result_count == 2
 
+def test_workflow_deduplicates_context_expansion_injected_duplicates(
+    sample_retrieval_query,
+    sample_retrieval_result,
+    sample_retrieved_chunk,
+) -> None:
+    # Regression guard: dedup previously ran only once, before context
+    # expansion -- a duplicate-content chunk injected by the expander (a
+    # different chunk_id containing the same content, e.g. a table repeated
+    # under two section ids) never passed through the real containment/
+    # exact-content dedup policy, only a same-chunk_id check inside the
+    # expander itself.
+    retrieval_service = FakeHybridRetrievalService(sample_retrieval_result)
+    duplicate_context_chunk = sample_retrieved_chunk.__class__(
+        chunk_id="chunk_context_duplicate",
+        document_id=sample_retrieved_chunk.document_id,
+        content=f"Context: {sample_retrieved_chunk.content}",
+        score=0.5,
+        retrieval_source="context_expansion",
+        chunk_type=sample_retrieved_chunk.chunk_type,
+        section_id=sample_retrieved_chunk.section_id,
+        section_path=sample_retrieved_chunk.section_path,
+        source=sample_retrieved_chunk.source,
+    )
+    context_expander = FakeContextExpander(
+        [sample_retrieved_chunk, duplicate_context_chunk]
+    )
+    workflow = make_workflow(
+        retrieval_service,
+        context_expander=context_expander,
+    )
+
+    result = workflow.run(sample_retrieval_query)
+
+    assert len(result.final_chunks) == 1
+    assert result.final_chunks[0].chunk_id == sample_retrieved_chunk.chunk_id
+
 def test_workflow_deduplicates_retrieval_candidates_before_final_results(
     sample_retrieval_query,
     sample_retrieved_chunk,

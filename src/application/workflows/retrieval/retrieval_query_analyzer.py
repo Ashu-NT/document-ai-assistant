@@ -5,13 +5,17 @@ from src.application.workflows.retrieval.retrieval_query_identifier_extractor im
     RetrievalQueryIdentifierExtractor,
 )
 from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+    RETRIEVAL_INTENT_RULES_VERSION,
     RetrievalQueryIntentInferer,
 )
 from src.application.workflows.retrieval.retrieval_query_rewriter import (
     RetrievalQueryRewriter,
 )
+from src.config.logging import get_logger
 from src.domain.common import ChunkType
 from src.domain.retrieval import RetrievalQuery
+
+_logger = get_logger(__name__)
 
 
 class RetrievalQueryAnalyzer:
@@ -49,12 +53,33 @@ class RetrievalQueryAnalyzer:
         if rewritten_query is not None:
             query.rewritten_query = rewritten_query
 
-        intent = self.intent_inferer.infer(query)
+        classification = self.intent_inferer.classify(query)
+        intent = classification.intent
+        _logger.info(
+            "retrieval_intent_resolved intent=%s query_id=%s rules_version=%s",
+            intent.value,
+            query.query_id,
+            RETRIEVAL_INTENT_RULES_VERSION,
+        )
         query.detected_intent = intent.value
         preferred_chunk_types = self.chunk_type_preference_mapper.map(
             query=query,
             intent=intent,
         )
+        if classification.runner_up_intent is not None and classification.gap == 0:
+            # An unresolved scoring tie (see retrieval_query_intent_scorer.py's
+            # resolve_scores()): narrowing chunk_types to only the
+            # (arbitrarily priority-ranked) winner's list would hard-exclude
+            # the tied alternative intent's chunk types from both the dense
+            # and SQL candidate pools before scoring ever runs. Widen instead
+            # of narrowing when the classification itself is this ambiguous.
+            preferred_chunk_types = [
+                *preferred_chunk_types,
+                *self.chunk_type_preference_mapper.map(
+                    query=query,
+                    intent=classification.runner_up_intent,
+                ),
+            ]
         query.chunk_types = self._merge_chunk_types(
             existing=query.chunk_types,
             preferred=preferred_chunk_types,

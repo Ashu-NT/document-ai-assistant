@@ -354,3 +354,37 @@ def test_review_logs_reflection_score_recorded_with_expected_fields(caplog) -> N
     assert isinstance(record.grounding_score, float)
     assert isinstance(record.overall_score, float)
     assert record.intent == "specification"
+
+
+def test_review_downgrades_fail_for_a_non_domain_intent_with_good_generic_evidence() -> None:
+    # End-to-end proof of the Phase 1 adaptive-reflection registry: a
+    # "troubleshooting" retrieval_query_intent has no hardcoded domain
+    # detector (unlike maintenance/table/identifier) -- before this
+    # feature, a FAIL decision here had no fallback leniency at all.
+    # EvidenceSufficiencyStrategyRegistry now falls back to
+    # GenericEvidenceSufficiencyStrategy for this intent, and its SUFFICIENT
+    # verdict (built from the same generic signals _review_kwargs()'s
+    # grounded scenario already satisfies) downgrades the FAIL.
+    llm_service = _FakeLLMService(
+        '{"decision":"FAIL","confidence":0.6,"reason":"Evidence seemed thin.",'
+        '"retry_query":null,"clarification_question":null,"missing_information":[]}'
+    )
+    service = ReflectionService(
+        llm_service=llm_service,
+        policy=ReflectionPolicy(enabled=True),
+    )
+
+    result = service.review(
+        **_review_kwargs(
+            answer_intent="troubleshooting",
+            retrieval_query_intent="troubleshooting",
+        )
+    )
+
+    assert result.decision.decision == ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS
+    assert result.decision.diagnostics.get("validator") == "fail_downgraded"
+    assert (
+        result.diagnostics["evidence_sufficiency_verdict"]
+        == "SUFFICIENT"
+    )
+    assert result.diagnostics["retrieval_query_intent"] == "troubleshooting"

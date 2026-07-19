@@ -81,6 +81,55 @@ def test_retrieval_context_expander_adds_neighboring_chunks() -> None:
     assert expanded[1].metadata["anchor_chunk_id"] == "chunk_002"
     assert expanded[1].metadata["context_distance"] == "1"
 
+def test_retrieval_context_expander_still_expands_when_anchor_count_reaches_max_context_chunks() -> None:
+    # Regression guard: `max_context_chunks` must be a budget for
+    # *additional* chunks beyond the anchors, not a total cap shared with
+    # the anchor count -- otherwise expansion silently added zero chunks
+    # whenever len(anchors) >= max_context_chunks (a plausible top_k
+    # configuration), with no warning.
+    document_chunks = [
+        make_document_chunk(chunk_id="chunk_001", sequence_number=1),
+        make_document_chunk(chunk_id="chunk_002", sequence_number=2),
+        make_document_chunk(chunk_id="chunk_003", sequence_number=3),
+        make_document_chunk(chunk_id="chunk_004", sequence_number=4),
+    ]
+    lookup_service = FakeDocumentLookupService({"doc_001": document_chunks})
+    expander = RetrievalContextExpander(
+        document_lookup_service=lookup_service,
+        neighbor_window=1,
+        max_context_chunks=1,
+    )
+    anchors = [
+        RetrievedChunk(
+            chunk_id="chunk_001",
+            document_id="doc_001",
+            content="Chunk 1 content",
+            score=0.9,
+            retrieval_source="dense",
+            chunk_type=ChunkType.GENERAL,
+            section_id="sec_001",
+            section_path=["Procedure"],
+            source=SourceLocation(page_start=1, page_end=1),
+        ),
+        RetrievedChunk(
+            chunk_id="chunk_003",
+            document_id="doc_001",
+            content="Chunk 3 content",
+            score=0.85,
+            retrieval_source="dense",
+            chunk_type=ChunkType.GENERAL,
+            section_id="sec_001",
+            section_path=["Procedure"],
+            source=SourceLocation(page_start=3, page_end=3),
+        ),
+    ]
+
+    expanded = expander.expand(anchors)
+
+    expanded_ids = {chunk.chunk_id for chunk in expanded}
+    assert {"chunk_001", "chunk_003"} <= expanded_ids
+    assert len(expanded_ids) > len(anchors)
+
 def test_retrieval_context_expander_returns_original_chunks_when_disabled() -> None:
     anchor = RetrievedChunk(
         chunk_id="chunk_002",

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 # Deterministic, lightweight negation handling: a keyword marker match is
 # ignored if a negation cue appears shortly before it (e.g. "not related to
 # safety" no longer contributes a SAFETY hit). Extracted from
@@ -16,11 +18,20 @@ NEGATION_CUES: tuple[str, ...] = (
 )
 NEGATION_LOOKBACK_TOKENS = 4
 
+# Word-boundary anchored so a cue must appear as its own word/phrase -- a
+# plain substring check matches "not" inside "note", silently treating
+# "Please note the safety warning" as negated.
+_NEGATION_CUE_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
+    re.compile(rf"\b{re.escape(cue)}\b", re.IGNORECASE) for cue in NEGATION_CUES
+)
+
 
 def is_negated(text: str, marker_start: int) -> bool:
     preceding_tokens = text[:marker_start].split()[-NEGATION_LOOKBACK_TOKENS:]
     preceding_text = " ".join(preceding_tokens)
-    return any(cue in preceding_text for cue in NEGATION_CUES)
+    return any(
+        pattern.search(preceding_text) for pattern in _NEGATION_CUE_PATTERNS
+    )
 
 
 def has_non_negated_occurrence(text: str, marker: str) -> bool:

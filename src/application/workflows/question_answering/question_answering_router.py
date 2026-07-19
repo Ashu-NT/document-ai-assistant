@@ -7,6 +7,7 @@ from src.application.workflows.retrieval.retrieval_query_analyzer import (
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )
+from src.config.settings import retrieval_settings
 from src.domain.common import new_id
 from src.domain.retrieval import RetrievalQuery
 
@@ -41,6 +42,9 @@ class QuestionAnsweringRouter:
             query_text=question,
             top_k=top_k,
             document_id=document_id,
+            use_dense=retrieval_settings.enable_dense_retrieval,
+            use_keyword=retrieval_settings.enable_keyword_retrieval,
+            use_sql=retrieval_settings.enable_sql_retrieval,
         )
         analyzed = self._query_analyzer.analyze(raw_query)
         intent = self._query_analyzer.intent_inferer.resolve(analyzed)

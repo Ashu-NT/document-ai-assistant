@@ -3,8 +3,11 @@ from dataclasses import dataclass
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )
+from src.config.logging import get_logger
 from src.domain.document import DocumentChunk
 from src.domain.retrieval import RetrievedChunk
+
+_logger = get_logger(__name__)
 
 
 @dataclass(slots=True, frozen=True)
@@ -40,7 +43,13 @@ class RetrievalContextAssembler:
         query_intent: RetrievalQueryIntent,
         to_retrieved_chunk,
     ) -> list[RetrievedChunk]:
-        max_result_count = max(len(anchors), max_context_chunks)
+        # `max_context_chunks` is the budget for *additional* chunks beyond
+        # the anchors -- not a total cap shared with the anchor count.
+        # Sharing the budget (the previous `max(len(anchors),
+        # max_context_chunks)`) meant expansion silently added zero chunks
+        # whenever the anchor count alone reached `max_context_chunks`
+        # (e.g. top_k >= 8 with the default budget of 8), with no warning.
+        max_result_count = len(anchors) + max_context_chunks
         expanded: list[RetrievedChunk] = []
         seen: set[str] = set()
         token_total = 0
@@ -51,6 +60,11 @@ class RetrievalContextAssembler:
             expanded.append(anchor)
             seen.add(anchor.chunk_id)
             token_total += self._estimate_retrieved_chunk_tokens(anchor)
+
+        anchor_count = len(expanded)
+        has_candidates = any(
+            candidates_by_anchor_id.get(anchor.chunk_id) for anchor in anchors
+        )
 
         for anchor in anchors:
             if len(expanded) >= max_result_count:
@@ -79,6 +93,15 @@ class RetrievalContextAssembler:
 
                 if len(expanded) >= max_result_count:
                     break
+
+        if has_candidates and len(expanded) == anchor_count:
+            _logger.warning(
+                "context_expansion_added_nothing anchor_count=%s "
+                "max_context_chunks=%s token_budget=%s",
+                anchor_count,
+                max_context_chunks,
+                self.token_budget,
+            )
 
         return expanded
 

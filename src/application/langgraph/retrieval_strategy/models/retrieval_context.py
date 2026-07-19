@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from src.application.langgraph.retrieval_strategy.models.retrieval_strategy import (
@@ -27,6 +27,12 @@ class RetrievalContext:
     retry_reason: str | None = None
     retry_query: str | None = None
     requested_strategy: RetrievalStrategy | None = None
+    # Populated alongside `requested_strategy` when a caller (e.g. a retry
+    # recommending more than one plausible strategy) wants secondary
+    # strategies forced too, not just the primary -- without this,
+    # DeterministicStrategySelector.select()'s forced branch had no way to
+    # carry anything beyond a single strategy.
+    requested_secondary_strategies: list[RetrievalStrategy] = field(default_factory=list)
     use_llm_selector: bool = False
     analyzed_query: RetrievalQuery | None = None
     strategy_advisor_proposal: StrategyAdvisorProposal | None = None

@@ -1,43 +1,37 @@
 from __future__ import annotations
 
-from typing import Any
-
 from src.application.langgraph.common import (
     GraphError,
     resolve_state_response_text,
     serialize_graph_value,
 )
-from src.application.langgraph.common.answer_intent_resolver import (
-    resolve_answer_intent,
-)
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
     build_error,
-    deduplicate_identifiers,
     deserialize_identifiers,
     extend_trace,
-    extract_identifiers_from_step_results,
+    extract_retrieval_query_intent,
 )
 from src.application.langgraph.nodes.question_answering.mappers.retrieved_chunk_state_mapper import (
     dict_to_chunk,
 )
+from src.application.langgraph.nodes.question_answering.retry_retrieval_node_helpers import (
+    current_primary_strategy,
+    decision_from_state,
+    extract_answer_intent,
+)
+from src.application.langgraph.nodes.question_answering.retry_retrieval_strategy_executor import (
+    execute_retry_strategy_plan,
+)
 from src.application.langgraph.retrieval_strategy import (
-    RetrievalContext,
     RetrievalPlanExecutor,
     RetrievalStrategyPolicy,
     RetrievalStrategyService,
-    StrategyRetryPolicy,
 )
-from src.application.langgraph.retrieval_strategy.services.retrieval_strategy_state_adapter import (
-    advisor_proposal_from_state,
-    execution_result_to_tool_result,
-    requested_strategy_from_state,
-    strategy_patch as build_strategy_patch,
-)
-from src.application.langgraph.reflection import (
-    EvidenceMerger,
-    RetryQueryBuilder,
-    RetrievalRetryPolicy,
+from src.application.langgraph.reflection import EvidenceMerger, RetrievalRetryPolicy
+from src.application.langgraph.reflection.strategies.retry_reformulation import (
+    RetryReformulationContext,
+    RetryReformulationStrategyRegistry,
 )
 from src.application.langgraph.routing import RouteType
 from src.application.langgraph.state import AgentState
@@ -52,24 +46,24 @@ class RetryRetrievalNode:
         tool_registry: ToolRegistry,
         *,
         evidence_merger: EvidenceMerger | None = None,
-        retry_query_builder: RetryQueryBuilder | None = None,
+        retry_reformulation_registry: RetryReformulationStrategyRegistry | None = None,
         retry_policy: RetrievalRetryPolicy | None = None,
         retrieval_strategy_service: RetrievalStrategyService | None = None,
         retrieval_plan_executor: RetrievalPlanExecutor | None = None,
         retrieval_strategy_policy: RetrievalStrategyPolicy | None = None,
-        strategy_retry_policy: StrategyRetryPolicy | None = None,
         recorder: GraphRunRecorder | None = None,
     ) -> None:
         self.tool_registry = tool_registry
         self.evidence_merger = evidence_merger or EvidenceMerger()
-        self.retry_query_builder = retry_query_builder or RetryQueryBuilder()
+        self.retry_reformulation_registry = (
+            retry_reformulation_registry or RetryReformulationStrategyRegistry()
+        )
         self.retry_policy = retry_policy or RetrievalRetryPolicy()
         self.retrieval_strategy_service = retrieval_strategy_service
         self.retrieval_plan_executor = retrieval_plan_executor
         self.retrieval_strategy_policy = (
             retrieval_strategy_policy or RetrievalStrategyPolicy()
         )
-        self.strategy_retry_policy = strategy_retry_policy or StrategyRetryPolicy()
         self.recorder = recorder or GraphRunRecorder()
 
     def __call__(self, state: AgentState) -> dict:
@@ -110,86 +104,54 @@ class RetryRetrievalNode:
         reflection_result = state.get("reflection_result") or {}
         decision = (reflection_result.get("decision") or {}) if isinstance(reflection_result, dict) else {}
         reason = str(decision.get("reason") or "Reflection requested a retrieval retry.")
-        retry_query = state.get("retry_query")
-        if not retry_query:
-            retry_plan = self.retry_query_builder.build(
+        retry_top_k = self._retry_top_k(state.get("top_k"))
+        # An already-set state["retry_query"] (reflect_answer_node stashes
+        # the LLM/decider's own suggested retry_query there) takes
+        # precedence over anything the decision dict itself carries -- fed
+        # into the SAME reformulation call so its relatedness check and the
+        # retrieval-strategy hint are both derived from one consistent
+        # source, instead of two separately-triggered keyword scanners.
+        decision_payload = dict(decision)
+        if not decision_payload.get("retry_query") and state.get("retry_query"):
+            decision_payload["retry_query"] = state.get("retry_query")
+        retry_plan = self.retry_reformulation_registry.build_retry_plan(
+            retrieval_query_intent=extract_retrieval_query_intent(
+                (state.get("tool_results", {}).get("answer_question") or {})
+                .get("data", {})
+                .get("retrieval_result")
+            ),
+            context=RetryReformulationContext(
                 original_user_question=state.get("question") or state["user_input"],
-                answer_intent=_extract_answer_intent(state),
+                answer_intent=extract_answer_intent(state),
                 selected_document_id=state.get("selected_document_id")
                 or state.get("document_id"),
-                reflection_decision=_decision_from_state(decision, reason),
-                top_k=self._retry_top_k(state.get("top_k")),
-            )
-            retry_query = retry_plan.retry_query
-        retry_top_k = self._retry_top_k(state.get("top_k"))
-        retry_result = None
+                reflection_decision=decision_from_state(decision_payload, reason),
+                top_k=retry_top_k,
+                current_primary_strategy=current_primary_strategy(state),
+            ),
+        )
+        retry_query = retry_plan.retry_query
         resolved_identifiers = deserialize_identifiers(state.get("resolved_identifiers"))
         existing_structured_entities = state.get("resolved_structured_entities")
         resolved_structured_entities = list(existing_structured_entities) if isinstance(
             existing_structured_entities, list
         ) else []
-        strategy_patch: dict[str, object] = {}
-        if (
-            state.get("retrieval_strategy_enabled")
-            and self.retrieval_strategy_policy.enabled
-            and self.retrieval_strategy_service is not None
-            and self.retrieval_plan_executor is not None
-        ):
-            recommended_strategies = self.strategy_retry_policy.recommend(
-                retry_reason=reason,
-                retry_query=retry_query,
-                initial_primary_strategy=_current_primary_strategy(state),
-            )
-            strategy_context = RetrievalContext(
-                query_text=retry_query,
-                route=state.get("route"),
-                document_id=state.get("selected_document_id") or state.get("document_id"),
-                selected_document_id=state.get("selected_document_id"),
-                document_title=state.get("document_title"),
-                selected_document_title=state.get("selected_document_title"),
-                top_k=retry_top_k,
-                answer_intent=_extract_answer_intent(state),
-                retry_reason=reason,
-                retry_query=retry_query,
-                requested_strategy=recommended_strategies[0]
-                if len(recommended_strategies) == 1
-                else requested_strategy_from_state(state),
-                use_llm_selector=bool(state.get("llm_retrieval_strategy_enabled")),
-                strategy_advisor_proposal=advisor_proposal_from_state(state),
-            )
-            try:
-                strategy_result = self.retrieval_strategy_service.select_and_plan(
-                    strategy_context,
-                    tool_registry=self.tool_registry,
-                )
-                execution_result = self.retrieval_plan_executor.execute(
-                    strategy_result.plan,
-                    tool_registry=self.tool_registry,
-                    max_chunks=self.retrieval_strategy_policy.max_merged_chunks,
-                )
-                strategy_patch = build_strategy_patch(
-                    strategy_result=strategy_result,
-                    execution_result=execution_result,
-                )
-                resolved_identifiers = deduplicate_identifiers(
-                    [
-                        *resolved_identifiers,
-                        *extract_identifiers_from_step_results(
-                            execution_result.step_results
-                        ),
-                    ]
-                )
-                retry_result = execution_result_to_tool_result(
-                    execution_result,
-                    tool_name="retry_retrieval",
-                    description="LangGraph retrieval-strategy retry execution result.",
-                    success_message="Retry evidence retrieved successfully.",
-                    failure_message="Retry retrieval strategy execution failed.",
-                )
-            except Exception as exc:
-                strategy_patch = {
-                    "retrieval_strategy_errors": [str(exc)],
-                }
+
+        strategy_outcome = execute_retry_strategy_plan(
+            state=state,
+            retry_query=retry_query,
+            retry_top_k=retry_top_k,
+            reason=reason,
+            retry_plan=retry_plan,
+            resolved_identifiers=resolved_identifiers,
+            tool_registry=self.tool_registry,
+            retrieval_strategy_policy=self.retrieval_strategy_policy,
+            retrieval_strategy_service=self.retrieval_strategy_service,
+            retrieval_plan_executor=self.retrieval_plan_executor,
+        )
+        retry_result = strategy_outcome.retry_result
+        resolved_identifiers = strategy_outcome.resolved_identifiers
+        strategy_patch = strategy_outcome.strategy_patch
 
         if retry_result is None:
             retry_result = retrieve_tool.run(
@@ -208,6 +170,13 @@ class RetryRetrievalNode:
             )
             return {
                 "reflection_decision": "FAIL",
+                # Cleared alongside the decision (mirrors the success-path
+                # clearing below) -- otherwise the PREVIOUS reflection
+                # pass's score/reason (the one whose RETRIEVE_AGAIN
+                # triggered this retry) would still be in state and get
+                # rendered to the user as if it described this failure.
+                "reflection_result": None,
+                "reflection_score": None,
                 "response_text": "I could not gather better evidence on retry.",
                 "trace": extend_trace(state["trace"], trace_entry),
             }
@@ -298,6 +267,11 @@ class RetryRetrievalNode:
 
         patch["response_text"] = "I could not regenerate a grounded answer after retry."
         patch["reflection_decision"] = "FAIL"
+        # Same staleness fix as the retrieve-tool-failure path above: the
+        # previous reflection pass's score/reason must not survive to be
+        # rendered alongside this failure.
+        patch["reflection_result"] = None
+        patch["reflection_score"] = None
         return patch
 
     def _retry_top_k(self, current_top_k: int | None) -> int:
@@ -305,51 +279,3 @@ class RetryRetrievalNode:
         if self.retry_policy.increase_top_k_on_retry:
             return base + self.retry_policy.retry_top_k_increment
         return base
-
-
-def _decision_from_state(
-    payload: dict[str, Any],
-    reason: str,
-):
-    from src.application.langgraph.reflection.models import (
-        ReflectionDecision,
-        ReflectionDecisionType,
-    )
-
-    decision_value = str(payload.get("decision") or "RETRIEVE_AGAIN").upper()
-    try:
-        decision_type = ReflectionDecisionType(decision_value)
-    except ValueError:
-        decision_type = ReflectionDecisionType.RETRIEVE_AGAIN
-    return ReflectionDecision(
-        decision=decision_type,
-        confidence=float(payload.get("confidence") or 0.0),
-        reason=reason,
-        retry_query=str(payload.get("retry_query") or "").strip() or None,
-        clarification_question=str(payload.get("clarification_question") or "").strip()
-        or None,
-        missing_information=[
-            str(item).strip()
-            for item in (payload.get("missing_information") or [])
-            if str(item).strip()
-        ],
-    )
-
-
-def _extract_answer_intent(state: AgentState) -> str | None:
-    return resolve_answer_intent(
-        (state.get("tool_results", {}).get("answer_question") or {}).get("data")
-    )
-
-
-def _current_primary_strategy(state: AgentState):
-    decision = state.get("retrieval_strategy_decision")
-    if not isinstance(decision, dict):
-        return None
-    value = decision.get("primary_strategy")
-    try:
-        from src.application.langgraph.retrieval_strategy.models import RetrievalStrategy
-
-        return RetrievalStrategy(str(value))
-    except Exception:
-        return None

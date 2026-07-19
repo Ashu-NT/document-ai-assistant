@@ -23,6 +23,15 @@ class ReflectionResponsePayload(BaseModel):
     retry_query: str | None = None
     clarification_question: str | None = None
     missing_information: list[str] = Field(default_factory=list)
+    # True only for a HARD grounding failure (the answer states something
+    # not supported by, or contradicted by, the approved evidence) -- not
+    # for merely incomplete evidence. This is the signal
+    # ReflectionValidator's domain-specific downgrade paths (e.g. "grounded
+    # maintenance interval evidence exists, so accept anyway") gate on, so a
+    # false positive here would block a legitimate downgrade and a false
+    # negative would let a genuinely wrong answer through. Previously this
+    # signal never reached the validator for any LLM-sourced decision.
+    grounding_violation: bool = Field(default=False)
 
     @field_validator("decision", mode="before")
     @classmethod

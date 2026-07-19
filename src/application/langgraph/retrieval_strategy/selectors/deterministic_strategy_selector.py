@@ -40,6 +40,7 @@ class DeterministicStrategySelector:
         if context.requested_strategy is not None:
             return RetrievalStrategyDecision(
                 primary_strategy=context.requested_strategy,
+                secondary_strategies=list(context.requested_secondary_strategies),
                 confidence=1.0,
                 reason="Retrieval strategy was explicitly requested by the caller.",
                 signals=signals,

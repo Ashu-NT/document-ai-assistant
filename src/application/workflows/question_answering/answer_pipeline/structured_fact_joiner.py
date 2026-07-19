@@ -102,8 +102,15 @@ class StructuredFactJoiner:
             query=analyzed_query,
             chunks=joined_chunks,
         )
+        # `approved_chunk_ids` alone would strip back out every chunk this
+        # method just fetched for `needed_chunk_ids` (a resolved
+        # identifier/entity whose source chunk normal retrieval didn't
+        # surface) -- allowlisting both keeps the guardrail's protection
+        # against FinalEvidencePreparer introducing some *other* unrelated
+        # chunk_id, while letting through what was deliberately joined here.
+        allowed_chunk_ids = approved_chunk_ids | needed_chunk_ids
         approved_prepared_chunks = [
-            chunk for chunk in prepared_chunks if chunk.chunk_id in approved_chunk_ids
+            chunk for chunk in prepared_chunks if chunk.chunk_id in allowed_chunk_ids
         ]
         scope_filter = StructuredEvidenceScopeFilter(
             StructuredEvidenceScope.from_chunks(approved_prepared_chunks)

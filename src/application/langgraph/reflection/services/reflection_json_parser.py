@@ -36,4 +36,14 @@ class ReflectionJsonParser:
             retry_query=data.retry_query,
             clarification_question=data.clarification_question,
             missing_information=list(data.missing_information),
+            # Matches the deterministic decider's own convention (a truthy
+            # string reason code, falsy/absent when there's no violation) so
+            # ReflectionValidator's `not hard_grounding_violation` checks
+            # work identically regardless of which decider produced the
+            # decision.
+            diagnostics=(
+                {"hard_grounding_violation": "llm_reported_grounding_violation"}
+                if data.grounding_violation
+                else {}
+            ),
         )

@@ -131,5 +131,5 @@ class RetrievalTraceRecorder:
             context_chunk_count=len(self._context_chunk_ids),
             context_chunk_ids=self._context_chunk_ids,
             post_guardrail=self._post_guardrail,
-            final_chunk_count=len(self._retrieved_chunks),
+            pre_expansion_chunk_count=len(self._retrieved_chunks),
         )

@@ -16,6 +16,7 @@ from src.application.langgraph.reflection.detectors.spare_parts_list_context_det
 from src.application.langgraph.reflection.models import (
     ReflectionDecision,
     ReflectionDecisionType,
+    SufficiencyVerdict,
 )
 from src.application.langgraph.reflection.policies import ReflectionPolicy
 
@@ -38,6 +39,7 @@ class ReflectionValidator:
         has_relevant_spare_parts_evidence: bool = False,
         has_unexpected_page_references: bool = False,
         has_duplicate_answer_content: bool = False,
+        generic_sufficiency_verdict: SufficiencyVerdict | None = None,
     ) -> ReflectionDecision:
         diagnostics = dict(decision.diagnostics)
         normalized_confidence = min(max(float(decision.confidence), 0.0), 1.0)
@@ -58,6 +60,25 @@ class ReflectionValidator:
         spare_parts_list_context = is_selected_document_spare_parts_list_context(
             question=question,
             has_relevant_spare_parts_evidence=has_relevant_spare_parts_evidence,
+        )
+        # Additive, intent-agnostic fallback for the 5 pure-context downgrade
+        # gates below (none of which have their own domain content check --
+        # unlike the spare-parts/identifier branches, which already inspect
+        # answer_text and are left untouched). Only ever true when NONE of
+        # the 3 keyword-driven domain contexts matched, so it can only ever
+        # add new leniency for questions those 3 don't cover -- it can never
+        # change behavior for an already-matched domain context, and is
+        # `None`/inert for any caller that doesn't pass it (every existing
+        # test).
+        generic_context_applies = (
+            generic_sufficiency_verdict is not None
+            and generic_sufficiency_verdict.is_sufficient
+            and not maintenance_interval_context
+            and not identifier_inventory_context
+            and not spare_parts_list_context
+        )
+        downgrade_evidence_description = (
+            "maintenance interval evidence" if maintenance_interval_context else "evidence"
         )
 
         if (
@@ -136,15 +157,17 @@ class ReflectionValidator:
                     },
                 )
             if not policy.allow_retrieval_retry:
-                if maintenance_interval_context and not hard_grounding_violation:
+                if (
+                    maintenance_interval_context or generic_context_applies
+                ) and not hard_grounding_violation:
                     return _accept_with_limitations(
                         confidence=normalized_confidence,
                         reason=(
-                            "Reflection requested another retrieval attempt, but grounded "
-                            "maintenance interval evidence already exists in the selected document."
+                            f"Reflection requested another retrieval attempt, but grounded "
+                            f"{downgrade_evidence_description} already exists in the selected document."
                         ),
                         diagnostics={**diagnostics, "validator": "retry_disabled_downgraded"},
-                )
+                    )
                 return ReflectionDecision(
                     decision=ReflectionDecisionType.FAIL,
                     confidence=normalized_confidence,
@@ -152,12 +175,14 @@ class ReflectionValidator:
                     diagnostics={**diagnostics, "validator": "retry_disabled"},
                 )
             if retrieval_retry_count >= policy.max_retrieval_retries:
-                if maintenance_interval_context and not hard_grounding_violation:
+                if (
+                    maintenance_interval_context or generic_context_applies
+                ) and not hard_grounding_violation:
                     return _accept_with_limitations(
                         confidence=normalized_confidence,
                         reason=(
-                            "Reflection retry limit was reached, but grounded maintenance "
-                            "interval evidence is already available."
+                            f"Reflection retry limit was reached, but grounded "
+                            f"{downgrade_evidence_description} is already available."
                         ),
                         diagnostics={**diagnostics, "validator": "retry_limit_downgraded"},
                     )
@@ -276,12 +301,15 @@ class ReflectionValidator:
                 )
 
         if decision.decision == ReflectionDecisionType.CLARIFY:
-            if maintenance_interval_context and not hard_grounding_violation:
+            if (
+                maintenance_interval_context or generic_context_applies
+            ) and not hard_grounding_violation:
                 return _accept_with_limitations(
                     confidence=normalized_confidence,
                     reason=(
-                        "The question is clear enough to answer from the selected "
-                        "document, but the grounded maintenance interval answer may be incomplete."
+                        f"The question is clear enough to answer from the selected "
+                        f"document, but the grounded {downgrade_evidence_description} "
+                        f"answer may be incomplete."
                     ),
                     diagnostics={**diagnostics, "validator": "clarify_downgraded"},
                 )
@@ -307,12 +335,14 @@ class ReflectionValidator:
                 )
 
         if decision.decision == ReflectionDecisionType.FAIL:
-            if maintenance_interval_context and not hard_grounding_violation:
+            if (
+                maintenance_interval_context or generic_context_applies
+            ) and not hard_grounding_violation:
                 return _accept_with_limitations(
                     confidence=normalized_confidence,
                     reason=(
-                        "Reflection marked the answer as failed, but grounded maintenance "
-                        "interval evidence exists in the selected document."
+                        f"Reflection marked the answer as failed, but grounded "
+                        f"{downgrade_evidence_description} exists in the selected document."
                     ),
                     diagnostics={**diagnostics, "validator": "fail_downgraded"},
                 )
@@ -333,12 +363,14 @@ class ReflectionValidator:
                 )
 
         if reflection_attempts > policy.max_reflection_attempts:
-            if maintenance_interval_context and not hard_grounding_violation:
+            if (
+                maintenance_interval_context or generic_context_applies
+            ) and not hard_grounding_violation:
                 return _accept_with_limitations(
                     confidence=normalized_confidence,
                     reason=(
-                        "Reflection attempt limit was exceeded, but grounded maintenance "
-                        "interval evidence is already available."
+                        f"Reflection attempt limit was exceeded, but grounded "
+                        f"{downgrade_evidence_description} is already available."
                     ),
                     diagnostics={**diagnostics, "validator": "reflection_limit_downgraded"},
                 )

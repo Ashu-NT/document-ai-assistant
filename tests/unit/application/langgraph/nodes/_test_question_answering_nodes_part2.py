@@ -244,3 +244,76 @@ def test_retry_retrieval_node_preserves_existing_structured_entities_for_regener
 
     assert len(answer_tool.requests[0].resolved_structured_entities) == 1
     assert patch["resolved_structured_entities"][0]["website"] == "https://acme.example"
+
+
+def _retry_state_with_stale_reflection_result() -> dict:
+    state = build_agent_state(
+        user_input="what is the manufacturer website",
+        document_id="doc-42",
+        selected_document_id="doc-42",
+        allow_answer_generation=True,
+        include_context=True,
+    )
+    state["question"] = "what is the manufacturer website"
+    state["route"] = "answer_question"
+    state["tool_results"] = {
+        "answer_question": {
+            "success": True,
+            "data": {"route": "retrieval_qa", "answer_text": "Generic answer."},
+        }
+    }
+    # The PREVIOUS reflection pass's result -- this must not survive a
+    # failed retry to be shown to the user as if it described the retry.
+    state["reflection_result"] = {
+        "decision": {"decision": "RETRIEVE_AGAIN", "reason": "Need the manufacturer website."},
+        "overall_score": 0.4,
+    }
+    state["reflection_score"] = 0.4
+    state["retry_query"] = "manufacturer website"
+    state["initial_context_chunks"] = []
+    return state
+
+
+class FakeFailingRetrieveChunksTool:
+    def run(self, request):
+        return ToolResult.fail("Retrieval backend unavailable.", error_code="retrieval_failed")
+
+
+def test_retry_retrieval_node_clears_stale_reflection_result_when_retrieve_tool_fails() -> None:
+    answer_tool = FakeAnswerQuestionTool()
+    node = RetryRetrievalNode(
+        ToolRegistry(
+            answer_question_tool=answer_tool,
+            retrieve_chunks_tool=FakeFailingRetrieveChunksTool(),
+        )
+    )
+
+    patch = node(_retry_state_with_stale_reflection_result())
+
+    assert patch["reflection_decision"] == "FAIL"
+    assert patch["reflection_result"] is None
+    assert patch["reflection_score"] is None
+
+
+class FakeFailingAnswerQuestionTool:
+    def __init__(self) -> None:
+        self.requests = []
+
+    def run(self, request):
+        self.requests.append(request)
+        return ToolResult.fail("Answer generation failed.", error_code="generation_failed")
+
+
+def test_retry_retrieval_node_clears_stale_reflection_result_when_regeneration_fails() -> None:
+    node = RetryRetrievalNode(
+        ToolRegistry(
+            answer_question_tool=FakeFailingAnswerQuestionTool(),
+            retrieve_chunks_tool=FakeRetryRetrieveChunksTool(),
+        )
+    )
+
+    patch = node(_retry_state_with_stale_reflection_result())
+
+    assert patch["reflection_decision"] == "FAIL"
+    assert patch["reflection_result"] is None
+    assert patch["reflection_score"] is None

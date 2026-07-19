@@ -3,14 +3,6 @@ from src.config.settings.base_settings import AppBaseSettings
 
 
 class RetrievalSettings(AppBaseSettings):
-    top_k_retrieval: int = Field(alias="TOP_K_RETRIEVAL")
-
-    retrieval_score_threshold: float = Field(
-        alias="RETRIEVAL_SCORE_THRESHOLD"
-    )
-
-    rerank_top_k: int = Field(alias="RERANK_TOP_K")
-
     enable_dense_retrieval: bool = Field(
         alias="ENABLE_DENSE_RETRIEVAL"
     )

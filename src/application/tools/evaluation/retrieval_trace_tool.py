@@ -18,6 +18,7 @@ from src.application.workflows.retrieval.tracing import (
     RetrievalTraceRecorder,
     RetrievalTraceWriter,
 )
+from src.config.settings import retrieval_settings
 from src.domain.common import new_id
 from src.domain.retrieval import RetrievalQuery
 from src.shared.exceptions import ApplicationError
@@ -75,6 +76,9 @@ class RetrievalTraceTool:
             query_text=request.query_text.strip(),
             document_id=request.document_id,
             top_k=request.top_k,
+            use_dense=retrieval_settings.enable_dense_retrieval,
+            use_keyword=retrieval_settings.enable_keyword_retrieval,
+            use_sql=retrieval_settings.enable_sql_retrieval,
         )
         recorder = RetrievalTraceRecorder()
         try:

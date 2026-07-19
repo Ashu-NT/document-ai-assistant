@@ -205,6 +205,17 @@ class AnswerGenerationPipeline:
         intent_decision = join_result.intent_decision
         resolved_identifiers = join_result.resolved_identifiers
         resolved_structured_entities = join_result.resolved_structured_entities
+        # Recomputed from the chunks actually sent to generation, not the
+        # pre-join/pre-prepare `approved_chunks` above: `join()` can both add
+        # chunks (a resolved identifier/entity's source chunk that normal
+        # retrieval missed) and remove them (FinalEvidencePreparer's own
+        # dedup/pruning) -- reporting the earlier, stale set as "approved"
+        # would misrepresent what a caller sees reflected in the answer.
+        approved_ids = [chunk.chunk_id for chunk in joined_chunks]
+        approved_id_set = set(approved_ids)
+        rejected_chunk_ids = [
+            cid for cid in all_chunk_ids if cid not in approved_id_set
+        ]
         gen_request = AnswerGenerationRequest(
             question=request.question,
             context_chunks=joined_chunks,

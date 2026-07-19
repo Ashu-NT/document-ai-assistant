@@ -370,3 +370,57 @@ resolution, and extraction-linking fusion).
   `scripts/report_chunk_cross_reference_candidates.py`. Full unit suite green (3151 passed) after fixing one
   incidental break (a test double for `DocumentGraphBuilder` needed the new constructor parameter) — same one
   pre-existing, unrelated OCR-fallback failure confirmed present before this work started.
+
+## 13. Follow-up: real extraction run, stale-data bug, and fusion validation attempt
+
+First real extraction run against this corpus, performed manually by the user on a second machine
+(`doc_9522163ab6ef4f77a9330be48924284d`), after which `semantic_relationships` showed 101 rows but **zero**
+`explicit_chunk_cross_reference` evidence entries. Investigated directly against the live DB rather than
+guessing.
+
+### 13.1 Stale `chunk_cross_references` bug (found and fixed)
+
+Root cause, confirmed via direct SQL: `ReingestionStep.prepare_request()`
+(`src/application/workflows/ingestion/pipeline/reingestion_step.py`) rebuilds the `IngestionRequest` from the
+document's *originally stored* `file_path`, and reingestion (`force=True`) regenerates every chunk's id from
+scratch (fresh `id_generator.new_id(IdPrefix.CHUNK)` calls per chunk). The user reingested this document after
+my earlier backfill had already written `chunk_cross_references` rows against the *old* chunk_ids — orphaning
+all 116 of them (confirmed: 116/116 rows had a `source_chunk_id` that no longer existed in `chunks`). This is
+the same "stale data after a pipeline step reruns" pattern flagged earlier this session for `chunk_type`/
+`table_category`.
+
+**Fix applied**: re-ran `scripts/backfill_chunk_cross_references.py --document-id
+doc_9522163ab6ef4f77a9330be48924284d` then `scripts/link_existing_documents.py --document-id
+doc_9522163ab6ef4f77a9330be48924284d`. Confirmed clean afterward: 0 of 109 rows stale.
+
+Separately, while diagnosing a *different* reingestion failure on the user's second machine
+("Validation failed." with no visible detail), traced it to `IngestionRequestValidator`'s `file_path.not_found`
+check firing because the new `--input-dir` didn't match the document's originally-stored path. Also flagged (not
+fixed): `scripts/ingest_document_batch_support.py`'s failure handler does `message = str(exc)`, which drops
+`SchemaValidationError.details` (the actual issues list) and shows only a generic "Validation failed." — a real
+diagnostics gap, still open.
+
+### 13.2 Fusion validation attempt: zero live relationships, explained (not a code defect)
+
+Even after the stale-data fix, the fusion produced zero `explicit_chunk_cross_reference` relationships for this
+document. Traced to data sparsity, not a bug: extraction yielded entities for only 23 of this document's 323
+chunks (~7%). Of 90 resolved cross-reference pairs, none had an extracted entity on *both* ends (7 had one only
+on the source side, 3 only on the target side, 80 on neither) — consistent with the low base rate
+(back-of-envelope expected hits ≈ 90 × (23/323)² ≈ 0.5).
+
+Inspected the actual near-miss chunk content to characterize this properly:
+- Several cross-references point at chunks that are clearly troubleshooting/procedure-shaped (`Symptom | Cause
+  | Remedy` tables, step-by-step maintenance procedures for draining a fuel filter, removing an air filter) —
+  content that should extract into `troubleshooting_entries`/`procedures` under fuller coverage, but wasn't
+  picked up in this low-yield pass.
+- A few others (display-page UI descriptions, "Test mode" switching-state prose) are genuinely non-extractable
+  narrative content on both ends, correctly skipped by all 6 extraction schemas.
+
+Conclusion: the fusion mechanism itself (`ChunkCrossReferenceRelationshipCandidateBuilder`, section 11.3) is
+implemented and wired correctly — it would fire the instant both ends of a resolved cross-reference have an
+extracted entity. This document's extraction pass was simply too sparse to exercise it live. Not yet
+re-validated with denser extraction coverage.
+
+**Status as of 2026-07-18**: user is running extraction against additional corpus documents on a second
+machine now, specifically to get a document with denser coverage to validate the fusion live. Re-check once
+that run completes.

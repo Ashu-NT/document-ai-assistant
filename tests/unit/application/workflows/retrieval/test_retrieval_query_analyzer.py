@@ -61,6 +61,24 @@ def test_retrieval_query_analyzer_prefers_overview_for_conceptual_system_questio
     ]
 
 
+def test_retrieval_query_analyzer_widens_chunk_types_on_an_unresolved_intent_tie() -> None:
+    # "table" and "fault" markers tie TABLE and TROUBLESHOOTING at an equal
+    # score -- narrowing chunk_types to only the (arbitrarily
+    # priority-ranked) winner would hard-exclude the tied alternative's
+    # chunk types from both the dense and SQL candidate pools.
+    analyzer = RetrievalQueryAnalyzer()
+    query = RetrievalQuery(
+        query_id="query_006",
+        query_text="Show me the fault code table",
+    )
+
+    analyzed = analyzer.analyze(query)
+
+    assert analyzed.detected_intent == "table"
+    assert ChunkType.SPARE_PARTS_TABLE in analyzed.chunk_types
+    assert ChunkType.TROUBLESHOOTING in analyzed.chunk_types
+
+
 def test_retrieval_query_analyzer_does_not_force_identifier_for_commissioning_objective() -> None:
     analyzer = RetrievalQueryAnalyzer()
     query = RetrievalQuery(

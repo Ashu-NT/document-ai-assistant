@@ -34,3 +34,41 @@ def test_reflection_json_parser_accepts_accept_with_limitations() -> None:
 
     assert decision.decision == ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS
     assert decision.missing_information == ["annual interval"]
+
+
+def test_reflection_json_parser_populates_hard_grounding_violation_when_flagged() -> None:
+    # Regression guard: an LLM-sourced decision previously had no way to
+    # populate diagnostics["hard_grounding_violation"] at all, so
+    # ReflectionValidator's downgrade gates (`not hard_grounding_violation`)
+    # were unconditionally true for every real LLM decision.
+    parser = ReflectionJsonParser()
+
+    decision = parser.parse(
+        '{"decision":"CLARIFY","confidence":0.7,"reason":"Answer contradicts evidence.",'
+        '"retry_query":null,"clarification_question":"Which interval do you mean?",'
+        '"missing_information":[],"grounding_violation":true}'
+    )
+
+    assert decision.diagnostics.get("hard_grounding_violation")
+
+
+def test_reflection_json_parser_omits_hard_grounding_violation_when_not_flagged() -> None:
+    parser = ReflectionJsonParser()
+
+    decision = parser.parse(
+        '{"decision":"ACCEPT","confidence":0.9,"reason":"Grounded.","retry_query":null,'
+        '"clarification_question":null,"missing_information":[],"grounding_violation":false}'
+    )
+
+    assert not decision.diagnostics.get("hard_grounding_violation")
+
+
+def test_reflection_json_parser_defaults_grounding_violation_to_false_when_omitted() -> None:
+    parser = ReflectionJsonParser()
+
+    decision = parser.parse(
+        '{"decision":"ACCEPT","confidence":0.9,"reason":"Grounded.","retry_query":null,'
+        '"clarification_question":null,"missing_information":[]}'
+    )
+
+    assert not decision.diagnostics.get("hard_grounding_violation")

@@ -1,4 +1,7 @@
-from src.application.langgraph.retrieval_strategy.models import RetrievalContext
+from src.application.langgraph.retrieval_strategy.models import (
+    RetrievalContext,
+    RetrievalStrategy,
+)
 from src.application.langgraph.retrieval_strategy.policies import RetrievalStrategyPolicy
 from src.application.langgraph.retrieval_strategy.selectors import (
     DeterministicStrategySelector,
@@ -173,4 +176,47 @@ def test_full_chain_compare_query_still_allows_technical_specification_when_expl
     assert "MAINTENANCE_LOOKUP" in [item.value for item in decision.secondary_strategies]
     assert "TECHNICAL_SPECIFICATION" in [
         item.value for item in decision.secondary_strategies
+    ]
+
+
+def test_requested_strategy_is_forced_with_full_confidence() -> None:
+    context = RetrievalContext(
+        query_text="anything",
+        top_k=5,
+        requested_strategy=RetrievalStrategy.TABLE_LOOKUP,
+    )
+    decision = DeterministicStrategySelector().select(
+        context=context,
+        signals=[],
+        policy=RetrievalStrategyPolicy(),
+    )
+
+    assert decision.primary_strategy == RetrievalStrategy.TABLE_LOOKUP
+    assert decision.confidence == 1.0
+    assert decision.secondary_strategies == []
+
+
+def test_requested_secondary_strategies_are_forced_alongside_the_primary() -> None:
+    # Regression guard: a retry recommendation naming more than one
+    # plausible strategy (e.g. "could be TABLE_LOOKUP or MAINTENANCE_LOOKUP")
+    # previously had no way to carry the second candidate through the
+    # forced-strategy branch -- only a single strategy could ever be forced,
+    # silently dropping genuine retry-diversification recommendations.
+    context = RetrievalContext(
+        query_text="anything",
+        top_k=5,
+        requested_strategy=RetrievalStrategy.TABLE_LOOKUP,
+        requested_secondary_strategies=[RetrievalStrategy.MAINTENANCE_LOOKUP],
+    )
+    decision = DeterministicStrategySelector().select(
+        context=context,
+        signals=[],
+        policy=RetrievalStrategyPolicy(),
+    )
+
+    assert decision.primary_strategy == RetrievalStrategy.TABLE_LOOKUP
+    assert decision.secondary_strategies == [RetrievalStrategy.MAINTENANCE_LOOKUP]
+    assert decision.selected_strategies == [
+        RetrievalStrategy.TABLE_LOOKUP,
+        RetrievalStrategy.MAINTENANCE_LOOKUP,
     ]

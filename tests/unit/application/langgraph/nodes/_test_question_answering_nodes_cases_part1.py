@@ -1,5 +1,9 @@
 from tests.unit.application.langgraph.nodes._test_question_answering_nodes_support import *  # noqa: F401,F403
 
+from src.application.langgraph.reflection.strategies.retry_reformulation import (
+    RetryReformulationStrategyRegistry,
+)
+
 def test_answer_question_node_calls_tool_with_document_id() -> None:
     tool = FakeAnswerQuestionTool()
     node = AnswerQuestionNode(ToolRegistry(answer_question_tool=tool))
@@ -270,3 +274,151 @@ def test_retry_retrieval_node_preserves_resolved_identifiers_for_regeneration() 
     assert len(answer_tool.requests[0].resolved_identifiers) == 1
     assert answer_tool.requests[0].resolved_identifiers[0].raw_value == "PN-001"
     assert patch["resolved_identifiers"][0]["raw_value"] == "PN-001"
+
+
+def _retry_state_with_stale_reflection_result() -> dict:
+    state = build_agent_state(
+        user_input="what is the manufacturer website",
+        document_id="doc-42",
+        selected_document_id="doc-42",
+        allow_answer_generation=True,
+        include_context=True,
+    )
+    state["question"] = "what is the manufacturer website"
+    state["route"] = "answer_question"
+    state["tool_results"] = {
+        "answer_question": {
+            "success": True,
+            "data": {"route": "retrieval_qa", "answer_text": "Generic answer."},
+        }
+    }
+    # The PREVIOUS reflection pass's result -- this must not survive a
+    # failed retry to be shown to the user as if it described the retry.
+    state["reflection_result"] = {
+        "decision": {"decision": "RETRIEVE_AGAIN", "reason": "Need the manufacturer website."},
+        "overall_score": 0.4,
+    }
+    state["reflection_score"] = 0.4
+    state["retry_query"] = "manufacturer website"
+    state["initial_context_chunks"] = []
+    return state
+
+
+class FakeFailingRetrieveChunksTool:
+    def run(self, request):
+        return ToolResult.fail("Retrieval backend unavailable.", error_code="retrieval_failed")
+
+
+def test_retry_retrieval_node_clears_stale_reflection_result_when_retrieve_tool_fails() -> None:
+    answer_tool = FakeAnswerQuestionTool()
+    node = RetryRetrievalNode(
+        ToolRegistry(
+            answer_question_tool=answer_tool,
+            retrieve_chunks_tool=FakeFailingRetrieveChunksTool(),
+        )
+    )
+
+    patch = node(_retry_state_with_stale_reflection_result())
+
+    assert patch["reflection_decision"] == "FAIL"
+    assert patch["reflection_result"] is None
+    assert patch["reflection_score"] is None
+
+
+class FakeFailingAnswerQuestionTool:
+    def __init__(self) -> None:
+        self.requests = []
+
+    def run(self, request):
+        self.requests.append(request)
+        return ToolResult.fail("Answer generation failed.", error_code="generation_failed")
+
+
+def test_retry_retrieval_node_clears_stale_reflection_result_when_regeneration_fails() -> None:
+    node = RetryRetrievalNode(
+        ToolRegistry(
+            answer_question_tool=FakeFailingAnswerQuestionTool(),
+            retrieve_chunks_tool=FakeRetryRetrieveChunksTool(),
+        )
+    )
+
+    patch = node(_retry_state_with_stale_reflection_result())
+
+    assert patch["reflection_decision"] == "FAIL"
+    assert patch["reflection_result"] is None
+    assert patch["reflection_score"] is None
+
+
+class _FixedMultiStrategyReformulationStrategy:
+    """Returns a fixed multi-strategy retry plan regardless of input,
+    standing in for the real keyword-driven registry so the test doesn't
+    depend on exact wording."""
+
+    def build_retry_plan(self, context):
+        from src.application.langgraph.reflection.models import RetryPlan
+        from src.application.langgraph.retrieval_strategy import RetrievalStrategy
+
+        return RetryPlan(
+            retry_query=context.original_user_question,
+            document_id=context.selected_document_id,
+            top_k=context.top_k,
+            reason=context.reflection_decision.reason,
+            retrieval_strategy_hint=RetrievalStrategy.MAINTENANCE_LOOKUP,
+            secondary_strategy_hints=[RetrievalStrategy.TABLE_LOOKUP],
+        )
+
+
+def test_retry_retrieval_node_honors_a_multi_strategy_recommendation() -> None:
+    # Regression guard: a retry recommendation naming more than one strategy
+    # (the actual "diversify on retry" signal) previously fell through to
+    # the same deterministic scoring as a non-retry request, silently
+    # discarding the recommendation -- only a single-strategy recommendation
+    # was ever honored. Both the maintenance and table tools must be invoked
+    # here, proving the secondary strategy actually executed a retrieval
+    # step, not just that a decision object recorded it.
+    chunk_tool = FakeRetrieveChunksTool()
+    table_tool = FakeRetrieveTablesTool()
+    answer_tool = FakeAnswerQuestionTool()
+    node = RetryRetrievalNode(
+        ToolRegistry(
+            answer_question_tool=answer_tool,
+            retrieve_chunks_tool=chunk_tool,
+            retrieve_tables_tool=table_tool,
+        ),
+        retrieval_strategy_service=RetrievalStrategyService(),
+        retrieval_plan_executor=RetrievalPlanExecutor(),
+        retrieval_strategy_policy=RetrievalStrategyPolicy(enabled=True),
+        retry_reformulation_registry=RetryReformulationStrategyRegistry(
+            default_strategy=_FixedMultiStrategyReformulationStrategy()
+        ),
+    )
+
+    state = build_agent_state(
+        user_input="What are the maintenance intervals?",
+        document_id="doc-42",
+        selected_document_id="doc-42",
+        allow_answer_generation=True,
+        include_context=True,
+        retrieval_strategy_enabled=True,
+    )
+    state["question"] = "What are the maintenance intervals?"
+    state["route"] = "answer_question"
+    state["tool_results"] = {
+        "answer_question": {
+            "success": True,
+            "data": {"route": "retrieval_qa", "answer_text": "Generic answer."},
+        }
+    }
+    state["reflection_result"] = {
+        "decision": {"decision": "RETRIEVE_AGAIN", "reason": "insufficient evidence"},
+    }
+    state["retry_query"] = "maintenance intervals table"
+    state["initial_context_chunks"] = []
+
+    patch = node(state)
+
+    assert table_tool.requests
+    assert chunk_tool.requests
+    decision = patch["retrieval_strategy_decision"]
+    assert decision["primary_strategy"] == "MAINTENANCE_LOOKUP"
+    assert "TABLE_LOOKUP" in decision["secondary_strategies"]

@@ -243,6 +243,18 @@ class RetrievalWorkflow:
                 context_chunks,
                 query=working_query,
             )
+        if self.context_expander is not None or self.cross_reference_context_expander is not None:
+            # The dedup pass above (before expansion) only guards against
+            # exact chunk_id repeats within the expanders themselves --
+            # containment/exact-content/companion-collapse never re-runs on
+            # expansion-injected chunks without this second pass, so a
+            # cross-reference target or context chunk that duplicates
+            # already-selected content (under a different chunk_id) would
+            # otherwise reach the LLM un-deduplicated.
+            context_chunks = self.retrieved_chunk_deduplicator.deduplicate(
+                query=working_query,
+                chunks=context_chunks,
+            ).chunks
         context_chunks, discarded_context_chunks = partition_chunks_by_document_scope(
             chunks=context_chunks,
             document_id=working_query.document_id,

@@ -211,9 +211,10 @@ def test_resolved_structured_entity_fetches_related_contact_point_chunks(
     assert set(lookup_service.requested_ids) == {"chunk_manufacturer", "chunk_contact"}
     assert fake_gen.called_with is not None
     context_chunk_ids = {c.chunk_id for c in fake_gen.called_with.context_chunks}
-    assert "chunk_contact" not in context_chunk_ids
-    assert fake_gen.called_with.structured_context is None
-    assert fake_gen.called_with.resolved_structured_entities == []
+    assert "chunk_manufacturer" in context_chunk_ids
+    assert "chunk_contact" in context_chunk_ids
+    assert fake_gen.called_with.structured_context is not None
+    assert len(fake_gen.called_with.resolved_structured_entities) == 1
 
 def test_answer_generation_hydrates_full_table_evidence_before_generation(
     fake_exploration_service: FakeDocumentExplorationService,
