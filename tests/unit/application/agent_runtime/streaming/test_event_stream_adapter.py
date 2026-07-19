@@ -231,14 +231,20 @@ def test_adapter_synthesize_research_emits_observation_kind():
     assert obs_events[0].payload.get("kind") == "observation"
 
 
-def test_adapter_research_summary_node_is_silent():
+def test_adapter_research_summary_node_emits_an_observation():
+    # query-to-retrieval flow follow-up: every graph node should produce a
+    # visible live event ("all steps," not just the answer-generation
+    # path) -- research_summary previously had no mapping at all.
     graph = _FakeCompiledGraph([
         {"research_summary": {"response_text": "Final report."}},
     ])
     sink = _CollectingSink()
     adapter = EventStreamAdapter(sink)
     adapter.run(graph, {})
-    assert len(sink.events) == 0
+    assert len(sink.events) == 1
+    event = sink.events[0]
+    assert event.event_type == LiveAgentEventType.OBSERVATION
+    assert event.payload["detail"] == "Final report."
 
 
 def test_adapter_answer_question_emits_retrieve_and_observation_for_maintenance_interval_query():
@@ -293,3 +299,80 @@ def test_adapter_answer_question_emits_retrieve_and_observation_for_maintenance_
     assert observation_events[0].payload["detail"] == (
         "Found maintenance interval evidence on p.58."
     )
+
+
+# -- Coverage for the previously-silent nodes (query-to-retrieval flow
+# follow-up: every node the graph can route through must produce a live
+# event, not just the answer-generation path).
+
+
+def test_adapter_emits_action_completed_for_generic_tool_nodes():
+    for node_name in (
+        "find_document",
+        "list_documents",
+        "document_details",
+        "explore_document",
+        "run_quality_gate",
+        "retrieval_trace",
+    ):
+        graph = _FakeCompiledGraph([
+            {
+                node_name: {
+                    "tool_results": {
+                        node_name: {"success": True, "message": "Done."}
+                    }
+                }
+            }
+        ])
+        sink = _CollectingSink()
+        adapter = EventStreamAdapter(sink)
+        adapter.run(graph, {})
+        action_events = [
+            e for e in sink.events if e.event_type == LiveAgentEventType.ACTION_COMPLETED
+        ]
+        assert len(action_events) == 1, node_name
+        assert action_events[0].payload["description"] == "Done.", node_name
+
+
+def test_adapter_emits_action_completed_for_session_command():
+    graph = _FakeCompiledGraph([
+        {"session_command": {"response_text": "Cleared selected document."}},
+    ])
+    sink = _CollectingSink()
+    adapter = EventStreamAdapter(sink)
+    adapter.run(graph, {})
+    action_events = [
+        e for e in sink.events if e.event_type == LiveAgentEventType.ACTION_COMPLETED
+    ]
+    assert len(action_events) == 1
+    assert action_events[0].payload["description"] == "Cleared selected document."
+
+
+def test_adapter_emits_action_completed_for_retry_retrieval_with_query():
+    graph = _FakeCompiledGraph([
+        {"retry_retrieval": {}},
+    ])
+    sink = _CollectingSink()
+    adapter = EventStreamAdapter(sink)
+    adapter.run(graph, {"retry_query": "maintenance schedule interval"})
+    action_events = [
+        e for e in sink.events if e.event_type == LiveAgentEventType.ACTION_COMPLETED
+    ]
+    assert len(action_events) == 1
+    assert action_events[0].payload["description"] == (
+        "Retrying retrieval: maintenance schedule interval"
+    )
+
+
+def test_adapter_emits_clarify_for_clarify_request_node():
+    graph = _FakeCompiledGraph([
+        {"clarify_request": {"clarification_question": "Which document do you mean?"}},
+    ])
+    sink = _CollectingSink()
+    adapter = EventStreamAdapter(sink)
+    adapter.run(graph, {})
+    clarify_events = [
+        e for e in sink.events if e.event_type == LiveAgentEventType.CLARIFY
+    ]
+    assert len(clarify_events) == 1
+    assert clarify_events[0].payload["question"] == "Which document do you mean?"

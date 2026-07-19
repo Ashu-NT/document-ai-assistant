@@ -64,6 +64,7 @@ class RetrievalWorkflow:
         structured_evidence_resolver: StructuredEvidenceResolver | None = None,
         pre_retrieval_guardrails: list[Guardrail] | None = None,
         post_retrieval_guardrails: list[Guardrail] | None = None,
+        seed_guardrails: list[Guardrail] | None = None,
     ) -> None:
         self.retrieval_service = retrieval_service
         self.query_validator = query_validator
@@ -82,6 +83,16 @@ class RetrievalWorkflow:
         self.structured_evidence_resolver = structured_evidence_resolver
         self.pre_retrieval_guardrails = pre_retrieval_guardrails or []
         self.post_retrieval_guardrails = post_retrieval_guardrails or []
+        # Evaluated right after raw retrieval, before context/cross-reference
+        # expansion -- a cheap fail-fast for "nothing to expand from at all"
+        # (e.g. SeedEvidenceGuardrail). Deliberately separate from
+        # post_retrieval_guardrails, which now runs AFTER expansion against
+        # the final chunk set: evaluating evidence-sufficiency/relevance
+        # before expansion could block a query expansion would otherwise
+        # have supplied enough evidence for (query-to-retrieval flow
+        # follow-up). Optional/empty by default, same as the other two
+        # guardrail lists, so omitting it is a no-op.
+        self.seed_guardrails = seed_guardrails or []
         self._guardrail_adapter = RetrievalWorkflowGuardrailAdapter(
             min_evidence_chunks=min_evidence_chunks
         )
@@ -194,38 +205,34 @@ class RetrievalWorkflow:
                 used_sql=retrieval_result.used_sql,
                 total_candidates=retrieval_result.total_candidates,
             )
-        enough_evidence = retrieval_result.has_enough_evidence(
-            self.min_evidence_chunks
-        )
-
-        post_guardrail_result: GuardrailResult | None = None
-        if self.post_retrieval_guardrails:
-            post_context = self._guardrail_adapter.build_guardrail_context(
+        seed_guardrail_result: GuardrailResult | None = None
+        if self.seed_guardrails:
+            seed_context = self._guardrail_adapter.build_guardrail_context(
                 working_query,
                 intent=intent,
                 retrieved_chunks=retrieval_result.chunks,
             )
-            post_guardrail_result = self._guardrail_adapter.run_guardrail_chain(
-                self.post_retrieval_guardrails, post_context
+            seed_guardrail_result = self._guardrail_adapter.run_guardrail_chain(
+                self.seed_guardrails, seed_context
             )
             if trace_recorder is not None:
-                trace_recorder.record_post_guardrail(post_guardrail_result)
+                trace_recorder.record_seed_guardrail(seed_guardrail_result)
+            if seed_guardrail_result is not None and not seed_guardrail_result.allowed:
+                return RetrievalWorkflowResult(
+                    retrieval_result=retrieval_result,
+                    enough_evidence=False,
+                    min_evidence_chunks=self.min_evidence_chunks,
+                    context_chunks=[],
+                    guardrail_result=seed_guardrail_result,
+                    structured_evidence=structured_evidence,
+                    diagnostics=diagnostics,
+                )
 
         if self.strict_evidence and not retrieval_result.has_results():
             raise NoEvidenceFoundError(
                 "No retrieval evidence found.",
                 details={
                     "query_id": query.query_id,
-                    "min_evidence_chunks": self.min_evidence_chunks,
-                },
-            )
-
-        if self.strict_evidence and not enough_evidence:
-            raise NoEvidenceFoundError(
-                "Not enough retrieval evidence found.",
-                details={
-                    "query_id": query.query_id,
-                    "result_count": len(retrieval_result.chunks),
                     "min_evidence_chunks": self.min_evidence_chunks,
                 },
             )
@@ -269,6 +276,39 @@ class RetrievalWorkflow:
 
         if trace_recorder is not None:
             trace_recorder.record_context_expansion(context_chunks)
+
+        # Final evidence sufficiency/relevance, evaluated against
+        # context_chunks (the actual final set handed to generation) rather
+        # than the pre-expansion retrieval_result.chunks -- expansion may
+        # have supplied the evidence that clears min_evidence_chunks or
+        # satisfies a chunk-type relevance check (query-to-retrieval flow
+        # follow-up; previously computed pre-expansion, so a query
+        # expansion would have rescued could still report insufficient/
+        # irrelevant evidence).
+        enough_evidence = len(context_chunks) >= self.min_evidence_chunks
+
+        post_guardrail_result: GuardrailResult | None = None
+        if self.post_retrieval_guardrails:
+            post_context = self._guardrail_adapter.build_guardrail_context(
+                working_query,
+                intent=intent,
+                retrieved_chunks=context_chunks,
+            )
+            post_guardrail_result = self._guardrail_adapter.run_guardrail_chain(
+                self.post_retrieval_guardrails, post_context
+            )
+            if trace_recorder is not None:
+                trace_recorder.record_post_guardrail(post_guardrail_result)
+
+        if self.strict_evidence and not enough_evidence:
+            raise NoEvidenceFoundError(
+                "Not enough retrieval evidence found.",
+                details={
+                    "query_id": query.query_id,
+                    "result_count": len(context_chunks),
+                    "min_evidence_chunks": self.min_evidence_chunks,
+                },
+            )
 
         return RetrievalWorkflowResult(
             retrieval_result=retrieval_result,

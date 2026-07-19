@@ -47,6 +47,7 @@ def build_agent_services(
         DocumentRelevanceGuardrail,
         QueryScopeGuardrail,
         RetrievalEvidenceGuardrail,
+        SeedEvidenceGuardrail,
     )
     from src.application.langgraph.strategy_advisor.advisor import StrategyAdvisor
     from src.application.orchestrator.retrieval import build_retrieval_runtime
@@ -67,6 +68,7 @@ def build_agent_services(
     retrieval_runtime = build_retrieval_runtime(
         unit_of_work=uow,
         pre_retrieval_guardrails=[QueryScopeGuardrail()],
+        seed_guardrails=[SeedEvidenceGuardrail()],
         post_retrieval_guardrails=[
             DocumentRelevanceGuardrail(),
             RetrievalEvidenceGuardrail(),

@@ -89,6 +89,15 @@ class ConsoleLiveEventSink:
                 self._println(f"    {reason}")
             return
 
+        if t == LiveAgentEventType.CLARIFY:
+            self._ensure_header()
+            n = self._next_step()
+            question = str(p.get("question") or "").strip()
+            self._println(f"\n[{n}] Clarify")
+            if question:
+                self._println(f"    {question}")
+            return
+
         if t == LiveAgentEventType.BLOCKED:
             self._ensure_header()
             n = self._next_step()

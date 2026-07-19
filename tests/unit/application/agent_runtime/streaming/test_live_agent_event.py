@@ -32,4 +32,4 @@ def test_event_type_values_are_snake_case():
 
 
 def test_event_type_count():
-    assert len(LiveAgentEventType) == 16
+    assert len(LiveAgentEventType) == 17

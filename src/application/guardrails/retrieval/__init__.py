@@ -3,6 +3,7 @@ from src.application.guardrails.retrieval.identifier_evidence_guardrail import I
 from src.application.guardrails.retrieval.query_scope_guardrail import QueryScopeGuardrail
 from src.application.guardrails.retrieval.retrieval_confidence_guardrail import RetrievalConfidenceGuardrail
 from src.application.guardrails.retrieval.retrieval_evidence_guardrail import RetrievalEvidenceGuardrail
+from src.application.guardrails.retrieval.seed_evidence_guardrail import SeedEvidenceGuardrail
 
 __all__ = [
     "DocumentRelevanceGuardrail",
@@ -10,4 +11,5 @@ __all__ = [
     "QueryScopeGuardrail",
     "RetrievalConfidenceGuardrail",
     "RetrievalEvidenceGuardrail",
+    "SeedEvidenceGuardrail",
 ]

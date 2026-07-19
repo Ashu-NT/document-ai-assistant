@@ -37,6 +37,7 @@ def build_retrieval_runtime(
     embedding_provider: EmbeddingProvider | None = None,
     pre_retrieval_guardrails: list[Guardrail] | None = None,
     post_retrieval_guardrails: list[Guardrail] | None = None,
+    seed_guardrails: list[Guardrail] | None = None,
 ) -> RetrievalRuntime:
     """Build the SQL+dense hybrid retrieval stack.
 
@@ -45,11 +46,15 @@ def build_retrieval_runtime(
     `run_retrieval_benchmark.py::build_benchmark_runtime`) — this is now the
     single place it's assembled.
 
-    `pre_retrieval_guardrails`/`post_retrieval_guardrails` have no built-in
-    default and are passed straight through to `RetrievalWorkflow`, since
-    callers genuinely differ here: interactive/CLI callers want guardrails
-    applied, but the retrieval benchmark deliberately runs without them so
-    it scores raw retrieval quality rather than guardrail-filtered results.
+    `pre_retrieval_guardrails`/`post_retrieval_guardrails`/`seed_guardrails`
+    have no built-in default and are passed straight through to
+    `RetrievalWorkflow`, since callers genuinely differ here:
+    interactive/CLI callers want guardrails applied, but the retrieval
+    benchmark deliberately runs without them so it scores raw retrieval
+    quality rather than guardrail-filtered results. `seed_guardrails` runs
+    right after raw retrieval, before context/cross-reference expansion;
+    `post_retrieval_guardrails` runs after expansion, against the final
+    evidence set (query-to-retrieval flow follow-up).
 
     `embedding_provider` is an optional escape hatch for a caller that
     already has one open (mirrors `build_ingestion_runtime`'s equivalent
@@ -93,6 +98,7 @@ def build_retrieval_runtime(
         structured_evidence_resolver=structured_evidence_resolver,
         pre_retrieval_guardrails=list(pre_retrieval_guardrails or []),
         post_retrieval_guardrails=list(post_retrieval_guardrails or []),
+        seed_guardrails=list(seed_guardrails or []),
     )
     return RetrievalRuntime(
         retrieval_workflow=retrieval_workflow,

@@ -31,7 +31,36 @@ _NODE_EVENT_MAP: dict[str, LiveAgentEventType] = {
     "blocked_action": LiveAgentEventType.BLOCKED,
     "out_of_scope": LiveAgentEventType.BLOCKED,
     "error_handler": LiveAgentEventType.ERROR,
+    # Every remaining node the graph can actually route through (query-to-
+    # retrieval flow follow-up: "all steps," not just the answer-generation
+    # path, must produce a visible live event) -- previously silent, so
+    # these steps printed nothing at all when they ran.
+    "find_document": LiveAgentEventType.ACTION_COMPLETED,
+    "list_documents": LiveAgentEventType.ACTION_COMPLETED,
+    "document_details": LiveAgentEventType.ACTION_COMPLETED,
+    "explore_document": LiveAgentEventType.ACTION_COMPLETED,
+    "run_quality_gate": LiveAgentEventType.ACTION_COMPLETED,
+    "retrieval_trace": LiveAgentEventType.ACTION_COMPLETED,
+    "session_command": LiveAgentEventType.ACTION_COMPLETED,
+    "retry_retrieval": LiveAgentEventType.ACTION_COMPLETED,
+    "research_summary": LiveAgentEventType.OBSERVATION,
+    "clarify_request": LiveAgentEventType.CLARIFY,
 }
+
+# Nodes whose only job is "call a tool, stash the result under
+# tool_results[node_name]" (serialize_tool_result()'s uniform
+# success/message/error_code/diagnostics/metadata/data shape) -- one
+# generic extraction path instead of one bespoke branch per node.
+_GENERIC_TOOL_ACTION_NODES = frozenset(
+    {
+        "find_document",
+        "list_documents",
+        "document_details",
+        "explore_document",
+        "run_quality_gate",
+        "retrieval_trace",
+    }
+)
 
 
 class EventStreamAdapter:
@@ -100,6 +129,25 @@ class EventStreamAdapter:
             ]
             return {"task_count": len(tasks), "task_titles": titles}
         if event_type == LiveAgentEventType.ACTION_COMPLETED:
+            if node_name in _GENERIC_TOOL_ACTION_NODES:
+                tool_result = (state.get("tool_results") or {}).get(node_name) or {}
+                description = str(tool_result.get("message") or "").strip() or (
+                    f"Ran {node_name.replace('_', ' ')}."
+                )
+                return {"description": description}
+            if node_name == "session_command":
+                description = str(patch.get("response_text") or "").strip() or (
+                    "Session command completed."
+                )
+                return {"description": description}
+            if node_name == "retry_retrieval":
+                retry_query = str(state.get("retry_query") or "").strip()
+                description = (
+                    f"Retrying retrieval: {retry_query}"
+                    if retry_query
+                    else "Retrying retrieval with a refined query."
+                )
+                return {"description": description}
             chunks = state.get("context_chunks") or []
             count = len(chunks) if isinstance(chunks, list) else 0
             description = _build_retrieve_description(chunks)
@@ -107,6 +155,12 @@ class EventStreamAdapter:
         if event_type == LiveAgentEventType.OBSERVATION:
             if node_name == "evaluate_research":
                 return build_evaluate_payload(state)
+            if node_name == "research_summary":
+                detail = str(patch.get("response_text") or "").strip()
+                return {
+                    "kind": "observation",
+                    "detail": detail[:300] if detail else "Research summary prepared.",
+                }
             detail = (
                 str(patch.get("synthesis") or "").strip()
                 or str(patch.get("summary") or "").strip()
@@ -117,6 +171,13 @@ class EventStreamAdapter:
                 count = len(chunks) if isinstance(chunks, list) else 0
                 detail = f"Processed {count} evidence group(s)." if count else "Evidence gathered."
             return {"kind": "observation", "detail": detail[:300]}
+        if event_type == LiveAgentEventType.CLARIFY:
+            question = str(
+                patch.get("clarification_question")
+                or state.get("clarification_question")
+                or ""
+            ).strip()
+            return {"question": question}
         if event_type == LiveAgentEventType.REFLECTION_COMPLETED:
             reflection_result = state.get("reflection_result") or {}
             decision_obj = (

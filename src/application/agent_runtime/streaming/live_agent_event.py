@@ -22,6 +22,7 @@ class LiveAgentEventType(str, Enum):
     RUN_COMPLETED = "run_completed"
     ERROR = "error"
     BLOCKED = "blocked"
+    CLARIFY = "clarify"
 
 
 @dataclass(slots=True)

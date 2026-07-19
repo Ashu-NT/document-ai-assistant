@@ -50,10 +50,8 @@ class RetrievalTrace:
     dedup_removed_count: int
     context_chunk_count: int
     context_chunk_ids: list[str]
-    # Post-dedup, *pre*-context-expansion count -- NOT the count actually
-    # handed to the LLM (that's context_chunk_count). Named for what it
-    # measures after being found mislabeled as "final_chunk_count".
     pre_expansion_chunk_count: int
     pre_guardrail: TracedGuardrailOutcome | None = None
     post_guardrail: TracedGuardrailOutcome | None = None
+    seed_guardrail: TracedGuardrailOutcome | None = None
     metadata: dict[str, object] = field(default_factory=dict)

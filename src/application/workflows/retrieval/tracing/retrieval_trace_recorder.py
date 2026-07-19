@@ -55,6 +55,7 @@ class RetrievalTraceRecorder:
         self._start_time = time.monotonic()
         self._query_analysis: TracedQueryAnalysis | None = None
         self._pre_guardrail: TracedGuardrailOutcome | None = None
+        self._seed_guardrail: TracedGuardrailOutcome | None = None
         self._post_guardrail: TracedGuardrailOutcome | None = None
         self._candidate_count: int = 0
         self._retrieved_chunks: list[TracedChunk] = []
@@ -80,6 +81,16 @@ class RetrievalTraceRecorder:
             return
         self._pre_guardrail = TracedGuardrailOutcome(
             phase="pre_retrieval",
+            allowed=result.allowed,
+            decision=str(result.decision) if result.decision else None,
+            safe_user_message=getattr(result, "safe_user_message", None),
+        )
+
+    def record_seed_guardrail(self, result: GuardrailResult | None) -> None:
+        if result is None:
+            return
+        self._seed_guardrail = TracedGuardrailOutcome(
+            phase="seed",
             allowed=result.allowed,
             decision=str(result.decision) if result.decision else None,
             safe_user_message=getattr(result, "safe_user_message", None),
@@ -125,6 +136,7 @@ class RetrievalTraceRecorder:
             duration_ms=round(duration_ms, 2),
             query_analysis=analysis,
             pre_guardrail=self._pre_guardrail,
+            seed_guardrail=self._seed_guardrail,
             candidate_count=self._candidate_count,
             retrieved_chunks=self._retrieved_chunks,
             dedup_removed_count=self._dedup_removed_count,

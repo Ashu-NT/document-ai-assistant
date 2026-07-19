@@ -1,5 +1,55 @@
 # Query Understanding → Retrieval → Evidence Assembly Pipeline Audit
 
+## Follow-up: seed vs. final evidence guardrail ordering (2026-07-19)
+
+Re-verified this entire audit against current code before starting new work — every P0/P1/P2 fix below is
+still genuinely in place (none reverted), confirmed by direct file reads plus a clean run of
+`tests/unit/application/workflows/retrieval/` and `tests/unit/application/validation/retrieval/` (226 passed).
+That re-verification surfaced one ordering issue not in the original audit: `RetrievalWorkflow.run()`'s
+`post_retrieval_guardrails` (`DocumentRelevanceGuardrail`, `RetrievalEvidenceGuardrail`) and its `enough_evidence`
+computation both ran against `retrieval_result.chunks` — the **pre-context-expansion** set — even though the
+chunks actually handed to generation are `context_chunks` (post-expansion). In practice this was low-severity
+today (`RetrievalGuardrailPolicy.min_evidence_chunks` defaults to `1`, so it only ever mattered for genuinely
+zero-chunk cases, and `post_retrieval_guardrails`'s result was never even enforced — `RetrievalWorkflow.run()`
+computed it but never checked `.allowed` to short-circuit), but it meant a future config change (e.g. raising
+`min_evidence_chunks`) would silently make this evaluate against stale data, with no test in either direction
+to catch it.
+
+**Fix** (small, additive, no new retry/clarify/abstain decision engine — that already exists via reflection's
+RETRIEVE_AGAIN/CLARIFY/FAIL, and duplicating it here would be a materially larger, separate feature):
+
+- **New `SeedEvidenceGuardrail`** (`src/application/guardrails/retrieval/seed_evidence_guardrail.py`) —
+  deliberately narrower than `RetrievalEvidenceGuardrail`: blocks only on truly zero chunks (`NO_EVIDENCE`), not
+  on a nonzero-but-below-threshold count, since that count might still clear the threshold once expansion runs.
+- **`RetrievalWorkflow`** gained a new, optional `seed_guardrails: list[Guardrail] | None = None` constructor
+  param (empty by default, so omitting it is a no-op — every existing caller/test is unaffected), evaluated
+  right after raw retrieval (same point the old pre-expansion check used to sit), genuinely enforced: a block
+  here now returns early with an empty `context_chunks`, mirroring `pre_retrieval_guardrails`'s existing
+  early-return shape — expansion never even runs when there's no seed to expand from.
+- **`post_retrieval_guardrails`/`enough_evidence`** now evaluate `context_chunks` (post-expansion, post-second-
+  dedup, post-scope-partition) instead of the pre-expansion set — same semantics as before (computed and
+  attached to `RetrievalWorkflowResult.guardrail_result`, still not itself enforced — that stays a deliberate,
+  separate future decision, not bundled into this fix), just correctly timed. The dormant `strict_evidence`
+  "not enough evidence" hard-raise moved to the same post-expansion point for the same reason (its "zero
+  results" raise stays pre-expansion, alongside the new seed check, since a genuinely empty seed is exactly
+  what it already meant to catch).
+- **`RetrievalTraceRecorder`**/`RetrievalTrace` gained a `seed_guardrail`/`record_seed_guardrail()` slot,
+  mirroring the existing `pre_guardrail`/`post_guardrail` trace fields, so the new phase is independently
+  traceable.
+- **Wiring**: `agent_service_builder.py` (the sole production construction site) now passes
+  `seed_guardrails=[SeedEvidenceGuardrail()]` alongside the existing `post_retrieval_guardrails=[
+  DocumentRelevanceGuardrail(), RetrievalEvidenceGuardrail()]`, threaded through `build_retrieval_runtime()`'s
+  new `seed_guardrails` parameter.
+
+**Tests**: `test_seed_evidence_guardrail.py` (new, 2 tests). `test_retrieval_workflow_guardrail_integration.py`
+(+4 ordering regression tests, the explicit ask here): a below-threshold pre-expansion count that expansion
+supplements to sufficiency now correctly `ALLOW`s (the core bug, proven directly — asserts expansion ran AND
+the final guardrail saw the expanded count); a zero-chunk seed blocks before expansion is ever attempted
+(asserts the expander's `.calls` stayed empty); a nonzero-but-below-threshold seed does NOT block, letting
+expansion run; omitting `seed_guardrails` entirely is a byte-for-byte no-op (backward compatibility). Full
+suite: 3517 passed, only the known pre-existing OCR failure
+(`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
+
 ## Implementation status (updated 2026-07-18)
 
 All phases, including the three items that needed an explicit decision, are implemented and verified (full unit
