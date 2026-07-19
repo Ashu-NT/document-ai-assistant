@@ -133,6 +133,70 @@ def test_generate_real_prompt_builder_emits_topology_tables_and_budgeted_appendi
     assert "SOURCE 3" not in prompt
 
 
+def test_generate_surfaces_canonicalizer_diagnostics_on_the_llm_path() -> None:
+    """Finding F6: the canonicalizer's own truncation/omission counters used
+    to be computed onto the prompt-context bundle and then never read by
+    anything -- they must now actually reach GeneratedAnswer.diagnostics."""
+    llm = FakeLLMService(response='{"answer_text":"Table answer"}')
+    service, _ = make_service(llm)
+
+    result = service.generate(
+        AnswerGenerationRequest(
+            question="Show the specification table",
+            context_chunks=[
+                _make_table_chunk(
+                    chunk_id="chunk_table",
+                    chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                    content="Test pressure and design pressure values.",
+                    section_path=["Certificate", "Particulars"],
+                    page_start=5,
+                    page_end=5,
+                    metadata={
+                        "table_rows_json": '[["Parameter","Value"],["Test pressure","700 bar"]]'
+                    },
+                ),
+            ],
+            answer_intent=AnswerIntent.TABLE_SUMMARY,
+        )
+    )
+
+    # The table's raw rows are promoted into the top-level `tables` array,
+    # so the per-source duplicate copy is deduplicated away -- a real,
+    # non-zero count proving these diagnostics reflect what actually
+    # happened, not just present-but-always-zero keys.
+    assert result.diagnostics["prompt_payload_table_rows_removed"] > 0
+    assert "prompt_canonicalized_key_values_removed" in result.diagnostics
+    assert "prompt_payload_sources_content_omitted" in result.diagnostics
+
+
+def test_generate_logs_answer_generation_recorded_with_expected_fields(caplog) -> None:
+    llm = FakeLLMService(response='{"answer_text":"Table answer"}')
+    service, _ = make_service(llm)
+
+    with caplog.at_level(logging.INFO):
+        service.generate(
+            AnswerGenerationRequest(
+                question="Show the specification table",
+                context_chunks=[
+                    _make_table_chunk(
+                        chunk_id="chunk_table",
+                        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+                        content="Test pressure and design pressure values.",
+                        section_path=["Certificate", "Particulars"],
+                        page_start=5,
+                        page_end=5,
+                        metadata={
+                            "table_rows_json": '[["Parameter","Value"],["Test pressure","700 bar"]]'
+                        },
+                    ),
+                ],
+                answer_intent=AnswerIntent.TABLE_SUMMARY,
+            )
+        )
+
+    assert "answer_generation_recorded" in caplog.text
+
+
 def test_generate_uses_maintenance_summary_path_and_reports_diagnostics() -> None:
     llm = FakeLLMService(response='{"answer_text":"Maintenance Tasks"}')
     prompt_builder = FakePromptBuilder()

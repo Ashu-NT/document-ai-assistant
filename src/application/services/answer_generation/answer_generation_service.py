@@ -3,6 +3,7 @@ from src.application.services.ai.llm_service import LLMService
 from src.application.services.answer_generation.answer_generation_diagnostics_builder import (
     build_generation_diagnostics,
     build_maintenance_diagnostics,
+    log_answer_generation_recorded,
 )
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
@@ -201,8 +202,21 @@ class AnswerGenerationService:
         prompt = self.prompt_builder.build(resolved_request)
         if self.capture_answer_prompt_text:
             diagnostics["prompt_text"] = prompt
+        # Surface the canonicalizer's own truncation/omission counters --
+        # previously computed onto the prompt-context bundle and then never
+        # read by anything (finding F6, outputs/architecture/
+        # answering_and_prompt_fresh_audit.md). `last_context_bundle` is set
+        # by the `build()` call directly above, so it reflects this exact
+        # request.
+        last_context_bundle = getattr(self.prompt_builder, "last_context_bundle", None)
+        if last_context_bundle is not None:
+            diagnostics.update(last_context_bundle.diagnostics)
         execution_result = self.prompt_executor.execute(prompt)
         sources = structured_context.sources if structured_context is not None else ()
+        log_answer_generation_recorded(
+            answer_intent=resolved_request.answer_intent,
+            diagnostics=diagnostics,
+        )
         return self.result_assembler.build(
             answer_text=execution_result.parsed_output.answer_text,
             context_chunks=resolved_request.context_chunks,
@@ -231,6 +245,15 @@ class AnswerGenerationService:
         # question isn't compound (finding F3) -- a renderer answer is
         # always the full answer now, not a partial one needing a
         # disclaimer.
+        merged_diagnostics = {
+            **diagnostics,
+            "deterministic_renderer": deterministic_result.renderer_name,
+            **deterministic_result.diagnostics,
+        }
+        log_answer_generation_recorded(
+            answer_intent=resolved_request.answer_intent,
+            diagnostics=merged_diagnostics,
+        )
         return self.result_assembler.build(
             answer_text=deterministic_result.answer_text,
             context_chunks=resolved_request.context_chunks,
@@ -238,10 +261,6 @@ class AnswerGenerationService:
             model_name=deterministic_result.model_name,
             answer_intent=resolved_request.answer_intent,
             confidence=confidence,
-            diagnostics={
-                **diagnostics,
-                "deterministic_renderer": deterministic_result.renderer_name,
-                **deterministic_result.diagnostics,
-            },
+            diagnostics=merged_diagnostics,
             raw_model_output=deterministic_result.answer_text,
         )

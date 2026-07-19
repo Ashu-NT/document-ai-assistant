@@ -253,21 +253,73 @@ New code: `compound_question_detector.py`, `deterministic_dispatch_gate.py`. Del
 `answer_intent_decision.py`, `answer_intent_analyzer.py`, `answer_generation_service.py`,
 `answer_intent_vocabulary.py`.
 
-**Phase 3 — Make observability real** (F6)
-- Wire the canonicalizer's 3 counters into `GeneratedAnswer.diagnostics` (not just the discarded bundle), and
-  add a structured log line per generation call (mirroring reflection's `reflection_score_recorded`) so this is
-  aggregable the same way `scripts/report_reflection_quality_trend.py` already aggregates reflection.
+### Phase 3 status: implemented (2026-07-19)
 
-**Phase 4 — Single source of truth for result presentation** (F11, F12, F13, F14, 6.7-partial)
-- Define one canonical "presentable result" extraction step that console, JSON, Markdown, and `agent_cli.py`'s
-  JSON all route through, so a field added in one place (e.g. `post_answer_guardrail_warnings`) can't be
-  forgotten in the other three.
-- Add a cross-format parity test ("every safety-relevant field present in console output is present in JSON and
-  Markdown") so this class of gap fails CI instead of shipping silently.
-- Align `agent_cli.py`'s reflection-visibility default with `demo_agent_cli.py`'s (always show the reason), or
-  make the divergence an explicit, documented product decision if it's meant to stay.
+All items are done, verified via 2 new tests plus a full unit-suite run: **3300 passed, 0 failed except the 1
+known pre-existing OCR failure** (up from 3298 at the end of Phase 2).
 
-**Phase 5 — Concurrency-readiness** (F10, defer until actually needed)
+- The canonicalizer's 3 counters (`prompt_canonicalized_key_values_removed`, `prompt_payload_sources_content_
+  omitted`, `prompt_payload_table_rows_removed`) now reach `GeneratedAnswer.diagnostics` on the LLM path, read
+  from `AnswerPromptBuilder.last_context_bundle.diagnostics` right after `build()` runs (the exact point that
+  bundle reflects the current request).
+- A new `answer_generation_recorded` structured log line (mirroring `reflection_score_recorded`) fires on
+  *both* the LLM and deterministic-renderer paths, carrying the intent, the Phase 2 dispatch-bypass
+  reason, and the 3 canonicalizer counters (naturally `None` on the deterministic path, where no prompt was
+  built) -- the telemetry surface for a future report script, not built here.
+- `_log_answer_generation_recorded` was extracted into `answer_generation_diagnostics_builder.py` (a thin
+  `log_answer_generation_recorded` function) rather than left as a method on `AnswerGenerationService`, since
+  adding it in-place pushed that file to 302 lines -- over the standing 300-LOC convention. The extraction
+  target already existed and is thematically exact (the file that builds the OTHER diagnostics this service
+  emits), so no new file was needed.
+
+New code: none. Modified: `answer_generation_service.py`, `answer_generation_diagnostics_builder.py`.
+
+### Phase 4 status: implemented (2026-07-19) (F11, F12, F13, F14, 6.7-partial)
+
+All items are done, verified via 10 new/extended tests (including a dedicated cross-format parity suite) plus a
+full unit-suite run: **3311 passed, 0 failed except the 1 known pre-existing OCR failure** (up from 3300 at the
+end of Phase 3).
+
+- **Single source of truth, not a big new abstraction.** Rather than a wholesale "PresentableResult" dataclass
+  rewriting all 4 already-tested output paths (a materially larger, higher-regression-risk change), each
+  per-item formatting decision was extracted into one small, reusable function and each presenter now calls it:
+  `format_citation_line()` and `format_guardrail_warning_lines()` (new, in `graph_result_blocks.py`) and
+  `resolve_reflection_status()` (new, in `graph_result_reflection_status.py`) are each called from the console
+  renderer, `JsonPresenter`, `MarkdownPresenter`, and (for reflection) `agent_cli.py` -- so a field or format
+  change in one of these functions can't drift between output paths, without forcing every presenter through a
+  single monolithic extraction step.
+- **F11**: `agent_cli.py`'s hand-rolled `build_json_output` gained `sections`, `reference_notes`,
+  `limitation_note`, `post_answer_guardrail_warnings` -- previously present in its console output but absent
+  from `--json`.
+- **F12**: `MarkdownPresenter` replaced `- Citations: N` with a real `## Citations` section using
+  `format_citation_line()` -- the same document/page/section detail the console shows.
+- **F13**: both `JsonPresenter` and `MarkdownPresenter` gained `post_answer_guardrail_warnings` (as
+  `## Guardrail Notes` in Markdown), closing the "visible in console, absent from every exported artifact" gap;
+  `--write-trace` inherits this for free since it reuses these same two presenters.
+- **F14 / 6.7-partial**: `agent_cli.py` now prints a quiet, always-on `Reflection: DECISION - reason` line by
+  default (via `resolve_reflection_status()`, the same function the console footer uses), matching
+  `demo_agent_cli.py`'s always-visible behavior. Design decision: this quiet line is suppressed specifically
+  when `--show-reflection` is passed, since that flag's existing fuller verbose block (decision, scores, retry
+  query, merged chunk count) already covers the same information -- printing both would be redundant, not
+  more informative. Verified with a dedicated test asserting no duplication.
+- **Correctness detail found and fixed during implementation** (not part of the original plan): adding
+  `resolve_reflection_status()` and the two new formatting functions pushed `graph_result_renderer.py` to 407
+  lines -- well over the standing 300-LOC convention. Split into three files: `graph_result_renderer.py`
+  (orchestration: `render_graph_result`, the status footer, route/strategy labels -- 214 lines),
+  `graph_result_blocks.py` (the `render_*_block`/`format_*_line` functions -- 181 lines), and
+  `graph_result_reflection_status.py` (`resolve_reflection_status` -- 49 lines). The main module re-exports
+  every moved name via `__all__`, so all 3 existing external importers (`console_presenter.py`,
+  `json_presenter.py`, `markdown_presenter.py`) needed no changes -- confirmed by grepping for every import of
+  `graph_result_renderer` before finalizing.
+- A new `test_presentation_format_parity.py` proves, for one result populated with all four safety-relevant
+  fields, that limitation notes, guardrail warnings, reflection status, and full citation detail each reach
+  console, JSON, *and* Markdown -- this is the regression guard for the whole phase, not just a point-in-time
+  fix.
+
+New code: `graph_result_blocks.py`, `graph_result_reflection_status.py`, `test_presentation_format_parity.py`.
+Modified: `graph_result_renderer.py` (split), `json_presenter.py`, `markdown_presenter.py`, `agent_cli.py`.
+
+## Phase 5 — Concurrency-readiness (deferred) (F10, defer until actually needed)
 - Scope `AnswerPromptBuilder.last_context_bundle` per-request (return it from `build()` instead of storing on
   `self`) before this pipeline is ever placed behind a concurrent API/UI backend. No urgency under the current
   CLI-only, single-threaded usage — flagged so it isn't rediscovered under load in production later.

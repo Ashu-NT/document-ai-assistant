@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.application.agent_runtime.presenters.console.graph_result_renderer import (
+    resolve_reflection_status,
+)
 from src.application.agent_runtime.presenters.final_answer_resolver import (
     resolve_presented_answer_text,
 )
@@ -30,6 +33,15 @@ class JsonPresenter:
             "sections": data.get("sections", []),
             "reference_notes": data.get("reference_notes", []),
             "limitation_note": data.get("limitation_note"),
+            # finding F13: guardrail warnings were visible in the console
+            # only, never in an exported artifact.
+            "post_answer_guardrail_warnings": data.get(
+                "post_answer_guardrail_warnings", []
+            ),
+            # finding F14: reflection visibility now goes through the same
+            # extraction the console footer uses, instead of being absent
+            # from this payload entirely.
+            "reflection": resolve_reflection_status(result),
             "diagnostics": result.diagnostics or {},
         }
         if include_trace:

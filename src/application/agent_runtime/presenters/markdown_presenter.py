@@ -3,7 +3,10 @@ from __future__ import annotations
 from typing import Any
 
 from src.application.agent_runtime.presenters.console.graph_result_renderer import (
+    format_citation_line,
+    format_guardrail_warning_lines,
     format_reference_note_line,
+    resolve_reflection_status,
 )
 from src.application.agent_runtime.presenters.final_answer_resolver import (
     resolve_presented_answer_text,
@@ -81,11 +84,47 @@ class MarkdownPresenter:
                 if isinstance(note, dict):
                     lines.append(f"- {format_reference_note_line(note)}")
             lines.append("")
+        reflection_status = resolve_reflection_status(result)
+        if reflection_status is not None:
+            decision = reflection_status["decision"]
+            reason = reflection_status["reason"]
+            lines.extend(["## Reflection", ""])
+            if decision:
+                lines.append(f"- Decision: {decision}")
+            if reason:
+                lines.append(f"- Reason: {reason}")
+            lines.append("")
+        guardrail_warnings = data.get("post_answer_guardrail_warnings") or []
+        if guardrail_warnings:
+            # finding F13: guardrail warnings used to reach the console only,
+            # never any exported artifact.
+            lines.extend(["## Guardrail Notes", ""])
+            for warning in guardrail_warnings:
+                warning_lines = format_guardrail_warning_lines(warning)
+                if not warning_lines:
+                    continue
+                lines.append(f"- {warning_lines[0]}")
+                for violation in warning_lines[1:]:
+                    lines.append(f"    - {violation}")
+            lines.append("")
+        citations = data.get("citations") or []
+        lines.extend(["## Citations", ""])
+        # finding F12: this used to be a bare `- Citations: N` count --
+        # real, checkable detail (document/page/section), same source of
+        # truth the console uses.
+        citation_lines = [
+            format_citation_line(citation) for citation in citations
+        ]
+        citation_lines = [line for line in citation_lines if line is not None]
+        if citation_lines:
+            lines.extend(f"- {line}" for line in citation_lines)
+        else:
+            lines.append("- None")
         lines.extend(
             [
+                "",
                 "## Sources Summary",
                 "",
-                f"- Citations: {len(data.get('citations', []) or [])}",
                 f"- Context Chunks: {len(data.get('context_chunks', []) or [])}",
                 "",
                 "## Trace Metadata",

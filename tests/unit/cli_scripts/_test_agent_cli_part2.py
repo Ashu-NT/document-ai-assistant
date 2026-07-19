@@ -163,6 +163,47 @@ def test_agent_cli_build_json_output_includes_trace_only_when_requested() -> Non
     assert with_trace["trace"] == [{"node_name": "answer_question"}]
     assert with_trace["raw_llm_plan"] == '{"goal":"Answer"}'
 
+def test_agent_cli_build_json_output_includes_sections_notes_limitation_and_guardrails() -> None:
+    """Finding F11: build_json_output used to omit sections/reference_notes/
+    limitation_note/guardrail warnings entirely, even though this file's own
+    console output (print_graph_result) shows all four."""
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="Replace the filter every 1000 hours.",
+        route="answer_question",
+        data={
+            "answer": "Replace the filter every 1000 hours.",
+            "limitation_note": "Only the primary interval was found.",
+            "sections": [
+                {
+                    "heading": "Interval",
+                    "body": "Every 1000 hours.",
+                    "reference_note_ids": ["r1"],
+                }
+            ],
+            "reference_notes": [
+                {
+                    "note_id": "r1",
+                    "claim_text": "Every 1000 operating hours.",
+                    "source_number": 1,
+                    "chunk_id": "chunk_1",
+                }
+            ],
+            "post_answer_guardrail_warnings": [
+                {"decision": "WARN", "reason": "Unresolved citation.", "violations": []}
+            ],
+        },
+    )
+
+    payload = mod.build_json_output(result, include_trace=False)
+
+    assert payload["limitation_note"] == "Only the primary interval was found."
+    assert payload["sections"][0]["heading"] == "Interval"
+    assert payload["reference_notes"][0]["note_id"] == "r1"
+    assert payload["post_answer_guardrail_warnings"] == [
+        {"decision": "WARN", "reason": "Unresolved citation.", "violations": []}
+    ]
+
 def test_agent_cli_show_plan_output_includes_plan_text(capsys) -> None:
     mod = _load_script("agent_cli")
     result = GraphResult.ok(
@@ -360,3 +401,69 @@ def test_agent_cli_print_graph_result_stays_quiet_when_new_fields_absent(capsys)
     assert "Limitation" not in output
     assert "Citations" not in output
     assert "Guardrail Notes" not in output
+
+def test_agent_cli_shows_a_quiet_reflection_line_by_default(capsys) -> None:
+    """Finding F14: agent_cli.py used to require --show-reflection for any
+    reflection visibility at all, while demo_agent_cli.py always shows a
+    quiet decision+reason line. Must now match without needing the flag."""
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="Weekly maintenance is required every 100 operating hours.",
+        route="answer_question",
+        data={
+            "answer": "Weekly maintenance is required every 100 operating hours.",
+            "reflection_decision": "ACCEPT_WITH_LIMITATIONS",
+            "reflection_result": {
+                "decision": {
+                    "decision": "ACCEPT_WITH_LIMITATIONS",
+                    "reason": "Evidence only partially covers the interval.",
+                }
+            },
+        },
+    )
+
+    mod.print_graph_result(result, show_context=False, show_trace=False)
+
+    output = capsys.readouterr().out
+    assert "Reflection: ACCEPT_WITH_LIMITATIONS - Evidence only partially covers the interval." in output
+
+
+def test_agent_cli_show_reflection_flag_does_not_duplicate_the_quiet_line(capsys) -> None:
+    """--show-reflection's fuller block already covers this turn's
+    reflection status -- the quiet default line must not also print,
+    avoiding a redundant double display."""
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="Weekly maintenance is required every 100 operating hours.",
+        route="answer_question",
+        data={
+            "answer": "Weekly maintenance is required every 100 operating hours.",
+            "reflection_decision": "ACCEPT_WITH_LIMITATIONS",
+            "reflection_result": {
+                "decision": {
+                    "decision": "ACCEPT_WITH_LIMITATIONS",
+                    "reason": "Evidence only partially covers the interval.",
+                }
+            },
+        },
+    )
+
+    mod.print_graph_result(
+        result, show_context=False, show_trace=False, show_reflection=True
+    )
+
+    output = capsys.readouterr().out
+    assert output.count("ACCEPT_WITH_LIMITATIONS") == 1
+
+def test_agent_cli_reflection_line_is_absent_when_no_signal_exists(capsys) -> None:
+    mod = _load_script("agent_cli")
+    result = GraphResult.ok(
+        response_text="Answer text.",
+        route="answer_question",
+        data={"answer": "Answer text."},
+    )
+
+    mod.print_graph_result(result, show_context=False, show_trace=False)
+
+    output = capsys.readouterr().out
+    assert "Reflection" not in output

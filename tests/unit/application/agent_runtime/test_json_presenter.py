@@ -118,6 +118,55 @@ def test_json_presenter_includes_sections_reference_notes_and_limitation_note() 
     assert payload["limitation_note"] == "Only the primary interval was found."
 
 
+def test_json_presenter_includes_guardrail_warnings_and_reflection_status() -> None:
+    """Finding F13/F14: guardrail warnings and reflection status used to be
+    visible only in the console, absent from JSON export entirely."""
+    session = SessionManager().create_session(
+        session_id="demo-session",
+        runtime_options=RuntimeOptions(),
+    )
+    result = GraphResult.ok(
+        response_text="Replace the filter every 1000 hours.",
+        route="answer_question",
+        data={
+            "answer": "Replace the filter every 1000 hours.",
+            "reflection_decision": "ACCEPT_WITH_LIMITATIONS",
+            "reflection_result": {
+                "decision": {
+                    "decision": "ACCEPT_WITH_LIMITATIONS",
+                    "reason": "Evidence only partially covers the interval.",
+                }
+            },
+            "post_answer_guardrail_warnings": [
+                {
+                    "decision": "WARN",
+                    "reason": "Unresolved citation detected.",
+                    "violations": ["Citation r2 has no matching source."],
+                }
+            ],
+        },
+    )
+
+    payload = JsonPresenter().render(
+        session=session,
+        result=result,
+        react_trace=ReactTrace(route="answer_question"),
+        include_trace=False,
+    )
+
+    assert payload["post_answer_guardrail_warnings"] == [
+        {
+            "decision": "WARN",
+            "reason": "Unresolved citation detected.",
+            "violations": ["Citation r2 has no matching source."],
+        }
+    ]
+    assert payload["reflection"] == {
+        "decision": "ACCEPT_WITH_LIMITATIONS",
+        "reason": "Evidence only partially covers the interval.",
+    }
+
+
 def test_json_presenter_uses_resolved_final_answer_for_accept_with_limitations() -> None:
     session = SessionManager().create_session(
         session_id="demo-session",

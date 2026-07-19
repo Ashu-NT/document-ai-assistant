@@ -35,6 +35,7 @@ from src.application.agent_runtime.presenters.console.graph_result_renderer impo
     render_limitation_block,
     render_reference_notes_block,
     render_sections_block,
+    resolve_reflection_status,
 )
 from src.shared.text.text_preview import console_safe_text, preview_text
 
@@ -549,6 +550,16 @@ def build_json_output(
         "should_exit": data.get("should_exit", False),
         "context_chunks": data.get("context_chunks", []),
         "citations": data.get("citations", []),
+        # finding F11: this hand-rolled JSON payload used to omit all of
+        # sections/reference_notes/limitation_note/guardrail warnings, even
+        # though this same file's console output (print_graph_result) shows
+        # all four -- a technician scripting `--json` never saw them.
+        "sections": data.get("sections", []),
+        "reference_notes": data.get("reference_notes", []),
+        "limitation_note": data.get("limitation_note"),
+        "post_answer_guardrail_warnings": data.get(
+            "post_answer_guardrail_warnings", []
+        ),
         "execution_plan": data.get("execution_plan"),
         "validated_plan": data.get("validated_plan"),
         "plan_steps": data.get("plan_steps", []),
@@ -612,6 +623,22 @@ def print_graph_result(
         if block:
             print()
             print(console_safe_text(block))
+    if not show_reflection:
+        # finding F14: demo_agent_cli.py always shows a quiet reflection
+        # status line; agent_cli.py used to show reflection info only
+        # behind --show-reflection, an inconsistency between the two CLIs
+        # on exactly the axis finding 6.5 fixed for the console renderer.
+        # --show-reflection's own fuller block (below) already covers this
+        # when explicitly requested, so this quiet line only fires when it
+        # wasn't.
+        reflection_status = resolve_reflection_status(result)
+        if reflection_status is not None:
+            decision = reflection_status["decision"]
+            reason = reflection_status["reason"]
+            if decision and reason:
+                print(f"\nReflection: {decision} - {reason}")
+            else:
+                print(f"\nReflection: {decision or reason}")
     answer_intent = (result.data or {}).get("answer_intent")
     if answer_intent and show_debug:
         print(f"\nAnswer intent: {answer_intent}")

@@ -13,6 +13,9 @@ from src.application.workflows.question_answering.answer_context.key_value_extra
 from src.application.workflows.question_answering.answer_context.maintenance_entry_merger import (
     MAINTENANCE_ENTRY_MERGER_RULES_VERSION,
 )
+from src.config.logging import get_logger
+
+_logger = get_logger(__name__)
 
 
 def build_maintenance_diagnostics(structured_context) -> dict[str, int]:
@@ -74,3 +77,38 @@ def build_generation_diagnostics(
         ),
         **maintenance_diagnostics,
     }
+
+
+def log_answer_generation_recorded(
+    *,
+    answer_intent,
+    diagnostics: dict[str, object],
+) -> None:
+    """Mirrors reflection's `reflection_score_recorded` log line
+    (`ReflectionService.review()`) -- a per-turn structured record of
+    signals this pipeline already computes but previously discarded
+    (finding F6, outputs/architecture/answering_and_prompt_fresh_audit.md),
+    aggregable by a future report script the same way
+    `scripts/report_reflection_quality_trend.py` already aggregates
+    reflection's line."""
+    _logger.info(
+        "answer_generation_recorded",
+        extra={
+            "answer_intent": answer_intent.value if answer_intent is not None else None,
+            "deterministic_dispatch_bypassed": diagnostics.get(
+                "deterministic_dispatch_bypassed"
+            ),
+            "deterministic_dispatch_bypass_reason": diagnostics.get(
+                "deterministic_dispatch_bypass_reason"
+            ),
+            "prompt_canonicalized_key_values_removed": diagnostics.get(
+                "prompt_canonicalized_key_values_removed"
+            ),
+            "prompt_payload_sources_content_omitted": diagnostics.get(
+                "prompt_payload_sources_content_omitted"
+            ),
+            "prompt_payload_table_rows_removed": diagnostics.get(
+                "prompt_payload_table_rows_removed"
+            ),
+        },
+    )
