@@ -24,6 +24,14 @@ class RawSourceInclusionPolicy:
         if context is None:
             return []
         sources = list(context.appendix_sources or context.sources)
+        # A source with no narrative content would occupy one of the very
+        # few raw-appendix slots while printing nothing but a bare header,
+        # AND its source_number would still land in appendix_source_numbers
+        # -- incorrectly counting as "content was shown as raw text" for
+        # citation resolution even though the model saw no actual
+        # evidentiary text for it (finding F9,
+        # outputs/architecture/answering_and_prompt_fresh_audit.md).
+        sources = [source for source in sources if (source.content or "").strip()]
         if not sources:
             return []
         budget = self.prompt_budget_allocator.allocate(context)

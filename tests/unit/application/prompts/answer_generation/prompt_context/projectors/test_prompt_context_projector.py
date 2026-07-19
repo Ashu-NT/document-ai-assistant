@@ -162,3 +162,85 @@ def test_projector_prefers_prebuilt_answer_tables_when_available() -> None:
     assert bundle.tables[0].table_type == "maintenance_table"
     assert bundle.tables[0].headers == ["Task", "Interval"]
     assert bundle.tables[0].rows[0].cells == ["Inspect basket", "Monthly"]
+
+
+def test_projector_rescues_a_source_whose_prebuilt_table_projection_failed() -> None:
+    """Finding F8: when one source's AnswerTable comes out empty (dropped by
+    build_from_answer_tables) while a DIFFERENT source's table projects
+    fine, the failed source's raw table_rows must still get a fallback
+    chance via build() -- not silently vanish just because `tables` overall
+    isn't empty."""
+    context = StructuredAnswerContext(
+        answer_intent=AnswerIntent.TABLE_SUMMARY,
+        sources=[
+            AnswerSource(
+                source_number=1,
+                chunk_id="chunk_failed",
+                document_id="doc_001",
+                document_title="FWC12 Manual",
+                section_path="Spare Parts",
+                page_start=10,
+                page_end=10,
+                table_rows=[["Part No", "Description"], ["HP-001", "Seal kit"]],
+            ),
+            AnswerSource(
+                source_number=2,
+                chunk_id="chunk_ok",
+                document_id="doc_001",
+                document_title="FWC12 Manual",
+                section_path="Maintenance > Schedule",
+                page_start=58,
+                page_end=59,
+            ),
+        ],
+        tables=[
+            # Simulates AnswerTableProjector._build_table() failing for this
+            # source: an AnswerTable placeholder with no headers/rows at all,
+            # which build_from_answer_tables() silently drops.
+            AnswerTable(
+                source_number=1,
+                chunk_id="chunk_failed",
+                chunk_type="spare_parts_table",
+                document_title="FWC12 Manual",
+                section_path="Spare Parts",
+                page_start=10,
+                page_end=10,
+                headers=[],
+                rows=[],
+                table_kind=TableQueryStrategy.SPARE_PARTS_TABLE,
+                table_category="spare_parts_table",
+            ),
+            AnswerTable(
+                source_number=2,
+                chunk_id="chunk_ok",
+                chunk_type="maintenance_interval",
+                document_title="FWC12 Manual",
+                section_path="Maintenance > Schedule",
+                page_start=58,
+                page_end=59,
+                headers=["Task", "Interval"],
+                rows=[
+                    AnswerTableRow(
+                        source_row_index=1,
+                        cells=["Inspect basket", "Monthly"],
+                        cells_by_header={
+                            "Task": "Inspect basket",
+                            "Interval": "Monthly",
+                        },
+                    )
+                ],
+                table_kind=TableQueryStrategy.MAINTENANCE_SCHEDULE_TABLE,
+                table_category="maintenance_interval_table",
+            ),
+        ],
+        source_count=2,
+    )
+
+    bundle = PromptContextProjector().project(context)
+
+    assert bundle is not None
+    table_chunk_ids = {table.chunk_id for table in bundle.tables}
+    assert table_chunk_ids == {"chunk_failed", "chunk_ok"}
+    rescued = next(t for t in bundle.tables if t.chunk_id == "chunk_failed")
+    assert rescued.headers == ["Part No", "Description"]
+    assert rescued.rows[0].cells == ["HP-001", "Seal kit"]

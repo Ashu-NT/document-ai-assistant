@@ -92,18 +92,28 @@ class AnswerIntentAnalyzer:
             )
 
         runner_up_intent, runner_up_score = runner_up(scores, best_intent)
+        best_score = scores[best_intent]
         confidence = compute_confidence(
-            best_score=scores[best_intent],
+            best_score=best_score,
             runner_up_score=runner_up_score,
         )
         matched_signals = matched[best_intent]
         signal_origin = "question" if any(
             signal.startswith("question:") for signal in matched_signals
         ) else "retrieval/context"
+        # margin/runner_up_intent logged unconditionally (not just when
+        # contested) so a future report script can aggregate the real
+        # margin distribution the same way report_retrieval_intent_fallback_
+        # rate.py already aggregates retrieval-intent fallbacks -- collecting
+        # this telemetry is the intended prerequisite before ever widening
+        # AnswerIntentDecision.is_contested's threshold past an exact tie.
         _logger.info(
-            "answer_intent_resolved intent=%s confidence=%s rules_version=%s",
+            "answer_intent_resolved intent=%s confidence=%s margin=%s "
+            "runner_up_intent=%s rules_version=%s",
             best_intent.value,
             confidence,
+            best_score - runner_up_score if runner_up_intent is not None else None,
+            runner_up_intent.value if runner_up_intent is not None else None,
             ANSWER_INTENT_RULES_VERSION,
         )
         return AnswerIntentDecision(
@@ -115,4 +125,5 @@ class AnswerIntentAnalyzer:
             matched_signals=matched_signals,
             runner_up_intent=runner_up_intent,
             runner_up_score=runner_up_score,
+            best_score=best_score,
         )

@@ -53,6 +53,21 @@ def test_agent_cli_parses_raw_plan_flags() -> None:
     assert args.show_raw_plan is True
     assert args.trace is True
 
+def test_agent_cli_show_raw_plan_help_documents_its_trace_dependency(capsys) -> None:
+    """finding F15: --show-raw-plan silently requires --trace (an explicit
+    runtime error if missing) but --help didn't say so -- it must now."""
+    mod = _load_script("agent_cli")
+
+    try:
+        mod.parse_args(["--help"])
+    except SystemExit:
+        pass
+
+    help_output = capsys.readouterr().out
+    show_raw_plan_index = help_output.index("--show-raw-plan")
+    following_text = help_output[show_raw_plan_index : show_raw_plan_index + 200]
+    assert "--trace" in following_text
+
 def test_agent_cli_parses_reflection_flags() -> None:
     mod = _load_script("agent_cli")
 

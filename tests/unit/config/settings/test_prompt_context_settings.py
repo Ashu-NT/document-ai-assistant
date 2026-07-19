@@ -7,6 +7,7 @@ def test_prompt_context_settings_defaults() -> None:
     assert settings.max_items_per_array == 20
     assert settings.include_source_table_rows is False
     assert settings.max_table_rows_per_source == 20
+    assert settings.max_rows_per_table == 20
 
 
 def test_prompt_context_settings_max_items_per_array_overridable_via_env(
@@ -37,3 +38,13 @@ def test_prompt_context_settings_max_table_rows_per_source_overridable_via_env(
     settings = PromptContextSettings()
 
     assert settings.max_table_rows_per_source == 7
+
+
+def test_prompt_context_settings_max_rows_per_table_overridable_via_env(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PROMPT_CONTEXT_MAX_ROWS_PER_TABLE", "3")
+
+    settings = PromptContextSettings()
+
+    assert settings.max_rows_per_table == 3

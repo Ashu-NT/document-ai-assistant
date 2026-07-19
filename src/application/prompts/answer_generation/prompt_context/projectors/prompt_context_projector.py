@@ -64,8 +64,28 @@ class PromptContextProjector:
             )
         )
         tables = self.prompt_table_projector.build_from_answer_tables(context.tables)
-        if not tables:
-            tables = self.prompt_table_projector.build(projected_sources)
+        # Per-source fallback, not all-or-nothing: `build_from_answer_tables`
+        # silently drops any AnswerTable whose projection came out empty
+        # (canonicalization stripped every row, no headers/rows survived,
+        # etc.) -- if that happens for one source while a DIFFERENT source's
+        # table projects fine, `tables` is non-empty overall, so the old
+        # `if not tables:` guard never gave the failed source a second
+        # chance. Building the raw-row fallback only for sources not already
+        # covered by a projected table closes that gap (finding F8,
+        # outputs/architecture/answering_and_prompt_fresh_audit.md) while
+        # leaving the fully-empty case (every source falls through) with the
+        # exact same practical outcome as before.
+        covered_chunk_ids = {table.chunk_id for table in tables}
+        uncovered_sources = [
+            source
+            for source in projected_sources
+            if source.chunk_id not in covered_chunk_ids
+        ]
+        if uncovered_sources:
+            tables = [
+                *tables,
+                *self.prompt_table_projector.build(uncovered_sources),
+            ]
         source_families, section_topology = self.prompt_evidence_topology_builder.build(
             answer_intent_value=context.answer_intent.value,
             sources=projected_sources,

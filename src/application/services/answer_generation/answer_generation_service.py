@@ -42,8 +42,8 @@ from src.application.services.answer_generation.formatting.spare_parts_list_rend
 from src.application.services.answer_generation.intent.answer_intent_analyzer import (
     AnswerIntentAnalyzer,
 )
-from src.application.services.answer_generation.intent.compound_question_limitation_resolver import (
-    CompoundQuestionLimitationResolver,
+from src.application.services.answer_generation.intent.deterministic_dispatch_gate import (
+    DeterministicDispatchGate,
 )
 from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
     AnswerContextOrganizer,
@@ -70,6 +70,7 @@ class AnswerGenerationService:
         answer_generation_temperature: float | None = None,
         answer_generation_num_ctx: int | None = None,
         capture_answer_prompt_text: bool | None = None,
+        deterministic_dispatch_gate: DeterministicDispatchGate | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.prompt_builder = prompt_builder or AnswerPromptBuilder()
@@ -128,8 +129,8 @@ class AnswerGenerationService:
                 key_value_fact_sheet_renderer=self.key_value_fact_sheet_renderer,
             )
         )
-        self.compound_question_limitation_resolver = (
-            CompoundQuestionLimitationResolver()
+        self.deterministic_dispatch_gate = (
+            deterministic_dispatch_gate or DeterministicDispatchGate()
         )
         self.prompt_executor = AnswerGenerationPromptExecutor(
             llm_service=self.llm_service,
@@ -168,22 +169,34 @@ class AnswerGenerationService:
             structured_context=structured_context,
             maintenance_diagnostics=maintenance_diagnostics,
         )
-        deterministic_result = self.deterministic_renderer_dispatcher.render(
+        dispatch_gate_decision = self.deterministic_dispatch_gate.evaluate(
             question=resolved_request.question,
-            answer_intent=resolved_request.answer_intent,
-            show_raw_evidence=resolved_request.show_raw_evidence,
-            structured_context=structured_context,
-            resolved_identifiers=resolved_request.resolved_identifiers,
-            resolved_structured_entities=resolved_request.resolved_structured_entities,
+            effective_intent=resolved_request.answer_intent,
+            intent_decision=intent_decision,
         )
-        if deterministic_result is not None:
-            return self._build_deterministic_answer(
-                resolved_request=resolved_request,
-                prompt_version=prompt_version,
-                confidence=intent_decision.confidence,
-                diagnostics=diagnostics,
-                deterministic_result=deterministic_result,
+        diagnostics["deterministic_dispatch_bypassed"] = (
+            dispatch_gate_decision.should_bypass
+        )
+        diagnostics["deterministic_dispatch_bypass_reason"] = (
+            dispatch_gate_decision.reason
+        )
+        if not dispatch_gate_decision.should_bypass:
+            deterministic_result = self.deterministic_renderer_dispatcher.render(
+                question=resolved_request.question,
+                answer_intent=resolved_request.answer_intent,
+                show_raw_evidence=resolved_request.show_raw_evidence,
+                structured_context=structured_context,
+                resolved_identifiers=resolved_request.resolved_identifiers,
+                resolved_structured_entities=resolved_request.resolved_structured_entities,
             )
+            if deterministic_result is not None:
+                return self._build_deterministic_answer(
+                    resolved_request=resolved_request,
+                    prompt_version=prompt_version,
+                    confidence=intent_decision.confidence,
+                    diagnostics=diagnostics,
+                    deterministic_result=deterministic_result,
+                )
 
         prompt = self.prompt_builder.build(resolved_request)
         if self.capture_answer_prompt_text:
@@ -213,11 +226,11 @@ class AnswerGenerationService:
         diagnostics: dict[str, object],
         deterministic_result,
     ) -> GeneratedAnswer:
-        limitation_note = self.compound_question_limitation_resolver.limitation_note(
-            question=resolved_request.question,
-            driving_intent=resolved_request.answer_intent,
-            renderer_name=deterministic_result.renderer_name,
-        )
+        # No compound-question limitation_note here anymore: this method is
+        # only reached when DeterministicDispatchGate already confirmed the
+        # question isn't compound (finding F3) -- a renderer answer is
+        # always the full answer now, not a partial one needing a
+        # disclaimer.
         return self.result_assembler.build(
             answer_text=deterministic_result.answer_text,
             context_chunks=resolved_request.context_chunks,
@@ -231,5 +244,4 @@ class AnswerGenerationService:
                 **deterministic_result.diagnostics,
             },
             raw_model_output=deterministic_result.answer_text,
-            limitation_note=limitation_note,
         )

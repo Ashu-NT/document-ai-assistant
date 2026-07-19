@@ -100,13 +100,19 @@ TROUBLESHOOTING_TERMS = (
 CERTIFICATION_TERMS = (
     "certificate",
     "approval",
-    "inspection",
     "surveyor",
     "compliance",
     "lr",
     "atex",
     "iecex",
 )
+# NOTE: bare "inspection" deliberately excluded (finding F5,
+# outputs/architecture/answering_and_prompt_fresh_audit.md) -- it also
+# appears in MAINTENANCE_TERMS, and that bucket already documents itself as
+# intentionally broader/more false-positive-tolerant. A maintenance
+# "inspection" is far more common in these documents than a certification
+# one, so the ambiguous bare word belongs in the broader bucket; this one
+# keeps only its unambiguous, certification-specific anchors.
 IDENTIFIER_TERMS = (
     "part number",
     "serial number",

@@ -25,7 +25,9 @@ class StructuredEvidencePayloadSerializer:
                 self._maintenance_entry_payload(entry)
                 for entry in self._capped(context.maintenance_entries)
             ],
-            "tables": [asdict(table) for table in self._capped(context.tables)],
+            "tables": [
+                self._table_payload(table) for table in self._capped(context.tables)
+            ],
             "structured_entities": [
                 self._entity_payload(entity)
                 for entity in self._capped(context.entities)
@@ -80,6 +82,12 @@ class StructuredEvidencePayloadSerializer:
         return payload
 
     @staticmethod
+    def _table_payload(table) -> dict[str, object]:
+        payload = asdict(table)
+        payload["rows"] = payload["rows"][: prompt_context_settings.max_rows_per_table]
+        return payload
+
+    @staticmethod
     def _entity_payload(entity) -> dict[str, object]:
         return {
             "entity_type": entity.entity_type,
@@ -97,5 +105,10 @@ class StructuredEvidencePayloadSerializer:
             "notes": entry.notes,
             "source_number": entry.source_number,
             "description": entry.description,
-            "references": [asdict(reference) for reference in entry.references],
+            "references": [
+                asdict(reference)
+                for reference in StructuredEvidencePayloadSerializer._capped(
+                    entry.references
+                )
+            ],
         }

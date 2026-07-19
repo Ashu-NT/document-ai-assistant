@@ -146,6 +146,19 @@ def test_fault_cause_remedy_maps_to_troubleshooting() -> None:
 
     assert decision.intent == AnswerIntent.TROUBLESHOOTING
 
+def test_maintenance_inspection_schedule_does_not_contest_certification_summary() -> None:
+    """Finding F5: bare "inspection" used to appear in both
+    MAINTENANCE_TERMS and CERTIFICATION_TERMS, so a routine
+    maintenance-inspection question could tie against certification purely
+    on that one ambiguous shared word. Removed from CERTIFICATION_TERMS
+    (kept in MAINTENANCE_TERMS, which already documents itself as
+    intentionally broader) -- this phrase must now resolve cleanly to
+    maintenance with no certification contest at all."""
+    decision = AnswerIntentAnalyzer().analyze(question="What is the inspection schedule?")
+
+    assert decision.intent == AnswerIntent.MAINTENANCE_SUMMARY
+    assert decision.runner_up_intent != AnswerIntent.CERTIFICATION_SUMMARY
+
 def test_certificate_question_maps_to_certification_summary() -> None:
     decision = AnswerIntentAnalyzer().analyze(
         question="certificate inspection",
@@ -280,3 +293,6 @@ def test_exact_tie_exposes_the_runner_up_intent_and_score() -> None:
     assert decision.intent == AnswerIntent.SPECIFICATION_SUMMARY
     assert decision.runner_up_intent == AnswerIntent.PROCEDURE_STEPS
     assert decision.runner_up_score == 12
+    assert decision.best_score == 12
+    assert decision.margin == 0
+    assert decision.is_contested is True

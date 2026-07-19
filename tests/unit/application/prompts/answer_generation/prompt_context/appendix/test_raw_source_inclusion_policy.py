@@ -173,3 +173,47 @@ def test_select_prefers_higher_score_among_same_role_when_budget_is_tight() -> N
     # source (source 1, score 0.4) must lose its slot to source 3 (0.7)
     # even though source 1 has the lowest source_number.
     assert [source.source_number for source in selected] == [2, 3]
+
+
+def test_select_excludes_empty_content_sources_from_the_appendix() -> None:
+    """Finding F9: a table-only source with blank narrative content used to
+    still be selectable, wasting one of the very few appendix slots on a
+    bare header with nothing after it, while its source_number incorrectly
+    landed in appendix_source_numbers as "shown as text" for citation
+    resolution."""
+    long_context = " ".join(["evidence"] * 120)
+    context = PromptContextBundle(
+        answer_intent_value="specification_summary",
+        source_count=2,
+        sources=[
+            PromptSourceView(source_number=1, chunk_id="chunk_001", content=""),
+            PromptSourceView(source_number=2, chunk_id="chunk_002", content=long_context),
+        ],
+        appendix_sources=[
+            PromptSourceView(source_number=1, chunk_id="chunk_001", content=""),
+            PromptSourceView(source_number=2, chunk_id="chunk_002", content=long_context),
+        ],
+        key_values=[],
+    )
+
+    selected = RawSourceInclusionPolicy().select(context)
+
+    assert [source.source_number for source in selected] == [2]
+
+
+def test_select_excludes_whitespace_only_content_sources() -> None:
+    context = PromptContextBundle(
+        answer_intent_value="specification_summary",
+        source_count=1,
+        sources=[
+            PromptSourceView(source_number=1, chunk_id="chunk_001", content="   \n  "),
+        ],
+        appendix_sources=[
+            PromptSourceView(source_number=1, chunk_id="chunk_001", content="   \n  "),
+        ],
+        key_values=[],
+    )
+
+    selected = RawSourceInclusionPolicy().select(context)
+
+    assert selected == []

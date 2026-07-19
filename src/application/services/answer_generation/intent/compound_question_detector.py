@@ -31,38 +31,20 @@ _COMPOUND_EXCLUDED_INTENTS_BY_DRIVING: dict[AnswerIntent, frozenset[AnswerIntent
         {AnswerIntent.IDENTIFIER_LOOKUP, AnswerIntent.TABLE_SUMMARY}
     ),
 }
-_RENDERER_LIMITATION_LABELS: dict[str, str] = {
-    "identifier_answer_renderer": "identifier",
-    "spare_parts_list_renderer": "spare parts",
-    "maintenance_schedule_renderer": "maintenance schedule",
-    "procedure_steps_renderer": "procedure steps",
-    "troubleshooting_renderer": "troubleshooting guidance",
-    "key_value_fact_sheet_renderer": "structured facts",
-}
 
 
-class CompoundQuestionLimitationResolver:
-    def limitation_note(
+class CompoundQuestionDetector:
+    """Detects a coordinating-conjunction question that mixes two distinct
+    answer intents (e.g. "what are the spare parts, and how do I replace
+    the seal?"). Used as a pre-dispatch gate: a compound signal means the
+    deterministic renderer for the driving intent would only ever answer
+    half the question, so generation should route to the LLM instead of
+    firing that renderer and disclaiming the rest after the fact (finding
+    F3, outputs/architecture/answering_and_prompt_fresh_audit.md)."""
+
+    def detect(
         self,
         *,
-        question: str,
-        driving_intent: AnswerIntent | None,
-        renderer_name: str,
-    ) -> str | None:
-        unrelated_intent = self._detect_unrelated_intent_signal(
-            question,
-            driving_intent,
-        )
-        if unrelated_intent is None:
-            return None
-        label = _RENDERER_LIMITATION_LABELS.get(renderer_name, "requested")
-        return (
-            f"This answer only addresses the {label} portion of your question "
-            "â€” ask a follow-up for the rest."
-        )
-
-    def _detect_unrelated_intent_signal(
-        self,
         question: str,
         driving_intent: AnswerIntent | None,
     ) -> AnswerIntent | None:

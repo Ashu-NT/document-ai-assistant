@@ -38,6 +38,8 @@ def test_unambiguous_question_has_no_runner_up() -> None:
 
     assert decision.runner_up_intent is None
     assert decision.runner_up_score == 0
+    assert decision.margin is None
+    assert decision.is_contested is False
 
 def test_empty_question_falls_back_to_general_with_no_runner_up() -> None:
     decision = AnswerIntentAnalyzer().analyze(question="")
@@ -67,3 +69,16 @@ def test_general_fallback_is_logged_with_reason(caplog) -> None:
 
     assert "answer_intent_fallback_general" in caplog.text
     assert "reason=no_strong_signal" in caplog.text
+
+def test_resolved_intent_log_line_carries_margin_and_runner_up_telemetry(caplog) -> None:
+    """Prerequisite for ever widening AnswerIntentDecision.is_contested past
+    an exact tie: the margin must actually be observable, not just computed
+    and discarded (the same "make observability real" gap this session's
+    audit flagged elsewhere in this pipeline)."""
+    with caplog.at_level(logging.INFO):
+        AnswerIntentAnalyzer().analyze(
+            question="What is the specification and what is the procedure to install it?"
+        )
+
+    assert "margin=0" in caplog.text
+    assert "runner_up_intent=procedure_steps" in caplog.text

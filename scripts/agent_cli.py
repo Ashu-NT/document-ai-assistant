@@ -212,7 +212,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--show-raw-plan",
         action="store_true",
-        help="Display the raw LLM planning output when tracing is enabled.",
+        help=(
+            "Display the raw LLM planning output. Requires --trace; running "
+            "without --trace exits with an error."
+        ),
     )
     parser.add_argument(
         "--show-reflection",

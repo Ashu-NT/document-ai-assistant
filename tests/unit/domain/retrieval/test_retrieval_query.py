@@ -5,7 +5,7 @@ def test_retrieval_query_uses_original_query_when_not_rewritten(
 
 
 def test_retrieval_query_uses_rewritten_query() -> None:
-    from domain.retrieval import RetrievalQuery
+    from src.domain.retrieval import RetrievalQuery
 
     query = RetrievalQuery(
         query_id="query_001",
@@ -17,7 +17,7 @@ def test_retrieval_query_uses_rewritten_query() -> None:
 
 
 def test_retrieval_query_detects_identifiers() -> None:
-    from domain.retrieval import RetrievalQuery
+    from src.domain.retrieval import RetrievalQuery
 
     query = RetrievalQuery(
         query_id="query_001",

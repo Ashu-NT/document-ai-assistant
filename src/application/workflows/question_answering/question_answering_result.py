@@ -43,6 +43,13 @@ class QuestionAnsweringResult:
     resolved_identifiers: list = field(default_factory=list)
     resolved_structured_entities: list = field(default_factory=list)
 
+    # This is the top retrieval relevance score
+    # (RetrievalWorkflowResult.best_score(), set by AnswerGenerationPipeline
+    # before generation runs), NOT a measure of how confident the generated
+    # answer itself is -- do not confuse with
+    # GeneratedAnswer.confidence, an unrelated answer-intent classification
+    # margin computed one layer down, inside generation (finding F4,
+    # outputs/architecture/answering_and_prompt_fresh_audit.md).
     confidence: str | None = None
     answer_intent: AnswerIntent | None = None
     limitation_note: str | None = None

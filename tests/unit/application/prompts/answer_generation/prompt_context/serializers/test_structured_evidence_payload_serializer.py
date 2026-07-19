@@ -4,6 +4,14 @@ from datetime import datetime
 from src.application.prompts.answer_generation.prompt_context.models import (
     PromptContextBundle,
     PromptSourceView,
+    PromptTableView,
+)
+from src.application.prompts.answer_generation.prompt_context.models.prompt_table_row_view import (
+    PromptTableRowView,
+)
+from src.application.workflows.question_answering.answer_context.models.answer_maintenance_entry import (
+    AnswerMaintenanceEntry,
+    AnswerMaintenanceReference,
 )
 from src.application.prompts.answer_generation.prompt_context.projectors import (
     PromptContextProjector,
@@ -206,6 +214,60 @@ def test_serializer_caps_table_rows_at_the_configured_limit(monkeypatch) -> None
     payload = json.loads(StructuredEvidencePayloadSerializer().serialize(bundle))
 
     assert payload["sources"][0]["table_rows"] == [["A", "B"], ["1", "2"]]
+
+
+def test_serializer_caps_table_rows_at_the_configured_per_table_limit(monkeypatch) -> None:
+    """Finding F7: a table's own `.rows` inside the top-level `tables` array
+    used to serialize in full regardless of `max_items_per_array` (which
+    only bounds how many tables appear, not how many rows each one has)."""
+    monkeypatch.setattr(prompt_context_settings, "max_rows_per_table", 2)
+    table = PromptTableView(
+        table_id="table_1",
+        table_type="spare_parts",
+        source_number=1,
+        chunk_id="chunk_001",
+        rows=[
+            PromptTableRowView(source_row_index=i, cells=[str(i)]) for i in range(5)
+        ],
+    )
+    bundle = PromptContextBundle(
+        answer_intent_value=AnswerIntent.GENERAL.value,
+        source_count=1,
+        sources=[PromptSourceView(source_number=1, chunk_id="chunk_001", content="")],
+        tables=[table],
+    )
+
+    payload = json.loads(StructuredEvidencePayloadSerializer().serialize(bundle))
+
+    assert len(payload["tables"][0]["rows"]) == 2
+
+
+def test_serializer_caps_maintenance_entry_references_at_the_general_array_limit(
+    monkeypatch,
+) -> None:
+    """Finding F7: `maintenance_entries[*].references` used to serialize in
+    full regardless of the general array cap."""
+    monkeypatch.setattr(prompt_context_settings, "max_items_per_array", 2)
+    entry = AnswerMaintenanceEntry(
+        task="Replace filter",
+        interval="500 hours",
+        component="Filter",
+        notes=None,
+        source_number=1,
+        references=[
+            AnswerMaintenanceReference(source_number=i) for i in range(1, 6)
+        ],
+    )
+    bundle = PromptContextBundle(
+        answer_intent_value=AnswerIntent.GENERAL.value,
+        source_count=1,
+        sources=[PromptSourceView(source_number=1, chunk_id="chunk_001", content="")],
+        maintenance_entries=[entry],
+    )
+
+    payload = json.loads(StructuredEvidencePayloadSerializer().serialize(bundle))
+
+    assert len(payload["maintenance_entries"][0]["references"]) == 2
 
 
 def test_serializer_emits_compact_json_with_no_indentation() -> None:

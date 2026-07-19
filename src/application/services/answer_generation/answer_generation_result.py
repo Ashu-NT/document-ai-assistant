@@ -42,6 +42,14 @@ class GeneratedAnswer:
     prompt_version: str
 
     model_name: str | None = None
+    # This is the AnswerIntentAnalyzer's classification margin (how clearly
+    # the winning AnswerIntent beat its runner-up), NOT a measure of whether
+    # the generated answer text is itself correct or well-grounded -- no
+    # downstream consumer currently reads this field (finding F2/F4,
+    # outputs/architecture/answering_and_prompt_fresh_audit.md). Do not
+    # confuse with QuestionAnsweringResult.confidence, which is an unrelated
+    # retrieval relevance score computed one layer up, before generation
+    # even runs.
     confidence: float | None = None
     raw_model_output: str | None = None
     metadata: ModelProcessingMetadata | None = None

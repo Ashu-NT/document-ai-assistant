@@ -242,8 +242,14 @@ def test_generate_deterministic_identifier_renderer_sets_no_limitation_note_for_
     assert result.limitation_note is None
 
 
-def test_generate_deterministic_identifier_renderer_sets_limitation_note_for_compound_question() -> None:
-    llm = FakeLLMService(response="This answer should not be used.")
+def test_generate_bypasses_deterministic_identifier_renderer_for_a_compound_question() -> None:
+    """Finding F3 (post-Phase-2 design): a compound question is no longer
+    answered by the single-purpose deterministic renderer plus an
+    after-the-fact disclaimer -- it routes to the full grounded LLM call
+    instead, which can actually address both parts of the question."""
+    llm = FakeLLMService(
+        response='{"answer_text":"Part numbers: PN-001. To replace the pump, shut off power first."}'
+    )
     service, _ = make_service(llm)
     result = service.generate(
         AnswerGenerationRequest(
@@ -260,9 +266,12 @@ def test_generate_deterministic_identifier_renderer_sets_limitation_note_for_com
             ],
         )
     )
-    assert result.limitation_note is not None
-    assert "identifier" in result.limitation_note
-    assert "follow-up" in result.limitation_note
+
+    assert llm.calls
+    assert result.model_name != "deterministic_identifier_renderer"
+    assert result.limitation_note is None
+    assert result.diagnostics["deterministic_dispatch_bypassed"] is True
+    assert result.diagnostics["deterministic_dispatch_bypass_reason"] == "compound_question"
 
 
 def test_generate_deterministic_spare_parts_renderer_sets_no_limitation_note_for_non_compound_question() -> None:
@@ -285,8 +294,12 @@ def test_generate_deterministic_spare_parts_renderer_sets_no_limitation_note_for
     assert result.limitation_note is None
 
 
-def test_generate_deterministic_spare_parts_renderer_sets_limitation_note_for_compound_question() -> None:
-    llm = FakeLLMService(response="No specific spare part list table was found.")
+def test_generate_bypasses_deterministic_spare_parts_renderer_for_a_compound_question() -> None:
+    """Same rationale as the identifier-renderer case above, for the
+    spare-parts renderer."""
+    llm = FakeLLMService(
+        response='{"answer_text":"Spare part A00103 (Filter). To replace the seal, drain the housing first."}'
+    )
     service, _ = make_service(llm)
     chunk = RetrievedChunk(
         chunk_id="chunk_spare",
@@ -299,12 +312,16 @@ def test_generate_deterministic_spare_parts_renderer_sets_limitation_note_for_co
         source=SourceLocation(page_start=45, page_end=46),
         citation=_make_citation("chunk_spare"),
     )
+
     result = service.generate(
         AnswerGenerationRequest(
             question="table of spare part list and how do i replace the seal",
             context_chunks=[chunk],
         )
     )
-    assert result.limitation_note is not None
-    assert "spare parts" in result.limitation_note
-    assert "follow-up" in result.limitation_note
+
+    assert llm.calls
+    assert result.model_name != "deterministic_spare_parts_renderer"
+    assert result.limitation_note is None
+    assert result.diagnostics["deterministic_dispatch_bypassed"] is True
+    assert result.diagnostics["deterministic_dispatch_bypass_reason"] == "compound_question"
