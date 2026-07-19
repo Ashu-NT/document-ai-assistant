@@ -7,18 +7,28 @@ from src.application.prompts.answer_generation.prompt_context.models.prompt_cont
     PromptContextBundle,
 )
 
+_REFERENCE_NUM_CTX = 8192
+_MAX_SCALE = 4.0
+
 
 class PromptBudgetAllocator:
+    def __init__(self, *, num_ctx: int | None = None) -> None:
+        self._scale = _scale_factor(num_ctx)
+
     def allocate(self, context: PromptContextBundle | None) -> RawSourceBudget:
+        return _scaled(self._base_budget(context), self._scale)
+
+    @staticmethod
+    def _base_budget(context: PromptContextBundle | None) -> RawSourceBudget:
         if context is None:
             return RawSourceBudget(max_sources=0, max_chars_per_source=0)
-        if self._is_sparse(context):
+        if PromptBudgetAllocator._is_sparse(context):
             return RawSourceBudget(max_sources=4, max_chars_per_source=1200)
-        if self._is_table_heavy(context):
+        if PromptBudgetAllocator._is_table_heavy(context):
             return RawSourceBudget(max_sources=2, max_chars_per_source=350)
-        if self._is_maintenance_heavy(context):
+        if PromptBudgetAllocator._is_maintenance_heavy(context):
             return RawSourceBudget(max_sources=3, max_chars_per_source=500)
-        if self._is_rich(context):
+        if PromptBudgetAllocator._is_rich(context):
             return RawSourceBudget(max_sources=2, max_chars_per_source=450)
         return RawSourceBudget(max_sources=3, max_chars_per_source=700)
 
@@ -56,3 +66,20 @@ class PromptBudgetAllocator:
         richness_score += int(len(context.key_values) >= 4)
         richness_score += int(len(context.maintenance_entries) >= 2)
         return richness_score >= 2
+
+
+def _scale_factor(num_ctx: int | None) -> float:
+    if num_ctx is None or num_ctx <= _REFERENCE_NUM_CTX:
+        return 1.0
+    return min(_MAX_SCALE, num_ctx / _REFERENCE_NUM_CTX)
+
+
+def _scaled(budget: RawSourceBudget, scale: float) -> RawSourceBudget:
+    if scale == 1.0:
+        return budget
+    return RawSourceBudget(
+        max_sources=max(budget.max_sources, round(budget.max_sources * scale)),
+        max_chars_per_source=max(
+            budget.max_chars_per_source, round(budget.max_chars_per_source * scale)
+        ),
+    )

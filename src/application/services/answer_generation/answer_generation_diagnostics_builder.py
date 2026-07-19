@@ -128,5 +128,9 @@ def log_answer_generation_recorded(
             "prompt_payload_table_rows_removed": diagnostics.get(
                 "prompt_payload_table_rows_removed"
             ),
+            "format_policy_violation": diagnostics.get("format_policy_violation"),
+            "format_policy_violation_reasons": diagnostics.get(
+                "format_policy_violation_reasons"
+            ),
         },
     )

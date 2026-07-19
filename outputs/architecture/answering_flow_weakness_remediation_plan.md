@@ -658,6 +658,115 @@ skip when disabled and not risky, scoped-opt-in run when disabled but risky, exp
 risk). Full suite: 3436 passed, only the known pre-existing OCR failure
 (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
+### PR 13 status: implemented (2026-07-19) — Raw-source prompt budget scales with model context window (closes W5)
+
+The 12 PRs above were delivered scope, not proof every catalogued weakness was closed. This is the first of a
+follow-up pass (W5, then W7, then W10) explicitly re-opened against the original W1-W11 catalog, under three
+constraints: preserve backward compatibility, build on existing evidence-selection/guardrail-disposition/
+answer-validation infrastructure rather than parallel abstractions, and leave W1's near-miss margin untouched
+pending real telemetry.
+
+**Root cause**: `answer_generation_num_ctx` was already resolved and threaded to the actual LLM call
+(`AnswerGenerationPromptExecutor(..., num_ctx=self.answer_generation_num_ctx)`), but never reached
+`PromptBudgetAllocator` — `AnswerGenerationService.__init__` built `self.prompt_builder = prompt_builder or
+AnswerPromptBuilder()` *before* `self.answer_generation_num_ctx` was even resolved, so the raw-source appendix
+budget stayed at its fixed reference-size constants regardless of the model's actual context window.
+
+**Fix**:
+- `PromptBudgetAllocator.__init__` gained `num_ctx: int | None = None`. A `_scale_factor(num_ctx)` helper
+  returns exactly `1.0` for `num_ctx is None` or `num_ctx <= 8192` (the existing
+  `default_answer_generation_num_ctx()` fallback) — every caller that doesn't explicitly pass a larger `num_ctx`
+  gets byte-identical budgets to before. Only `num_ctx > 8192` scales `max_sources`/`max_chars_per_source` up
+  proportionally, capped at 4x so a very large context window can't let the raw-source appendix crowd out the
+  structured payload and grounding rules sharing the same prompt. The 5 intent-based budget tiers
+  (sparse/table-heavy/maintenance-heavy/rich/default) are unchanged — scaling applies uniformly on top of
+  whichever tier is selected.
+- `AnswerGenerationService.__init__` now resolves `self.answer_generation_num_ctx` before constructing the
+  default `prompt_builder`, and wires it through the existing constructor-injection points — `AnswerPromptBuilder
+  (raw_source_appendix_formatter=RawSourceAppendixFormatter(raw_source_inclusion_policy=RawSourceInclusionPolicy
+  (prompt_budget_allocator=PromptBudgetAllocator(num_ctx=...))))` — the exact chain of collaborators these three
+  classes already supported injecting. **Zero signature changes** to `RawSourceInclusionPolicy`,
+  `RawSourceAppendixFormatter`, or `AnswerPromptBuilder`; an explicitly injected `prompt_builder` is used as-is
+  and this wiring never runs for it.
+
+**Tests**: `test_prompt_budget_allocator.py` (+4 — matches default at and below the 8192 reference, scales up
+for a larger `num_ctx`, caps at 4x for a very large one), `_answer_generation_service_response_cases.py` (+2 —
+the default prompt builder's resolved allocator produces a larger budget when constructed with
+`answer_generation_num_ctx=32768` than with no override, and an explicitly injected `prompt_builder` is used
+untouched regardless of `num_ctx`). Full suite: 3442 passed, only the known pre-existing OCR failure
+(`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
+
+### PR 14 status: implemented (2026-07-19) — Format-policy violation observability (closes W7)
+
+Per the plan's exact direction: "start with observability only... whether to add a corrective retry afterward
+is a follow-up decision once real violation-rate data exists." No corrective retry, no change to what gets
+returned to the caller — this only adds a signal.
+
+**`detect_format_policy_violations(*, format_policy, answer_text) -> list[str]`** (new,
+`formatting/format_policy_violation_detector.py`) — three cheap, regex-only structural checks matched 1:1
+against the `AnswerFormatPolicy` fields that already drive the LLM's own instructions: `include_steps` without a
+numbered-list line → `"missing_numbered_steps"`; `include_bullets` without a bullet-marker line →
+`"missing_bullets"`; `include_table` without a `|`-delimited row → `"missing_table"`. Returns `[]` (no
+violation) whenever `format_policy` is `None`, `answer_text` is empty, or none of the three fields are set —
+mirroring `RawSourceInclusionPolicy`'s "nothing to check, return the empty/default shape" convention rather than
+raising. Says nothing about answer *content* correctness, only its cheap structural shape.
+
+**Wiring**: `AnswerGenerationService.generate()` calls the detector right after `self.prompt_executor.execute
+(prompt)` — the first point the LLM's actual `answer_text` exists — using `resolved_request.format_policy`,
+which every request already carries (resolved by `AnswerGenerationRequestResolver`, the same field
+`build_generation_diagnostics()` already reads for `format_policy`/`format_policy_context_signals`). Result
+lands in `diagnostics["format_policy_violation"]` (bool) / `diagnostics["format_policy_violation_reasons"]`
+(list), the same dict every other PR 8-12 diagnostic already merges into. Scoped to the LLM-generation path only
+— a deterministic-rendered answer only ever formats already-verified structured facts (the same exclusion PR
+12's `ReflectionRiskSignal` already applies), so there's no LLM instruction-following question to check there.
+`log_answer_generation_recorded()` (the existing per-turn structured log line PR 7-12 already extend) gained the
+same two fields read via `.get()`, so a violation is queryable from that log the same way
+`compound_question_coverage_plausible` already is — no new logging call site.
+
+**Tests**: `test_format_policy_violation_detector.py` (new, 10 tests — no policy, empty text, no requirements
+set, each of the 3 checks failing/passing in isolation, all 3 failing together).
+`_answer_generation_service_response_cases.py` (+2 — an LLM answer without a numbered list against a
+`PROCEDURE_STEPS` request records the violation and its reason; one with numbered steps records no violation).
+Full suite: 3454 passed, only the known pre-existing OCR failure
+(`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
+
+### PR 15 status: implemented (2026-07-19) — Answer-quality regression gate (closes W10)
+
+**`scripts/check_answer_quality_regression.py`** (new) — runs the golden answer set through the *exact same*
+measurement path as `scripts/run_answer_quality_judge.py` (real pipeline generation + independent LLM-as-judge
+scoring), reused via the identical dynamic-module-load technique that script already uses on itself for
+`ask_document.py` (`_load_ask_document_module()`), rather than re-implementing any of `build_judge_runtime()`/
+`run_golden_set()`/scoring. The only new logic is the baseline itself:
+
+- `load_baseline(path)` / `write_baseline(path, ...)` — a small JSON file (`average_score`/`case_count`/
+  `judged_count`), default location `outputs/evaluation/answer_quality/baseline_score.json`. No baseline exists
+  yet in this repo (first `--update-baseline` run creates it) — establishing one requires a reachable Ollama
+  instance, so it wasn't created as part of this change.
+- `evaluate_regression(*, current_average, baseline, threshold)` — pure decision logic, isolated from
+  measurement the same way `judge_answer()`/`_parse_judge_response()` already isolate LLM-judging from
+  orchestration. Three outcomes: no baseline yet → pass with a message pointing at `--update-baseline`; drop
+  beyond `--threshold` (default `0.05`) → fail; **nothing successfully judged this run** (e.g. Ollama
+  unreachable) → **fail**, not a silent pass — reporting "no regression" when quality couldn't actually be
+  measured would defeat the point of the gate (W10's own "Why it matters": regressions surfacing only via
+  indefinite manual spot-check).
+- `main()` returns `0`/`1` accordingly, so it's usable as a real pre-merge gate: `python scripts/
+  check_answer_quality_regression.py`.
+
+**Deliberately not wired into `pytest tests/unit/`**, unlike the mojibake check the plan's Direction cites as
+the precedent "de facto CI" pattern — that check is pure/offline (static text scan), so it doubles as a fast
+regression test; this one needs a live Ollama instance and a real judge pass per run, which would make the fast
+unit suite flaky/slow/non-deterministic, contradicting this session's established fast-unit-test convention. It
+stays a standalone, manually-invoked local gate, exactly as the Direction specifies ("usable as a local
+pre-merge gate").
+
+**Tests**: `test_check_answer_quality_regression.py` (new, 15 tests, all using a fake judge module injected via
+monkeypatch — no live Ollama needed) — argparse defaults/overrides, baseline load/write round-trip, all 5
+`evaluate_regression` outcomes (no-baseline pass, beyond-threshold fail, within-threshold pass, improvement
+pass, nothing-judged fail), and `main()` end-to-end (first-run no-baseline pass, regression fail, in-threshold
+pass, nothing-judged fail, `--update-baseline` writes the file, `--limit` slices the case list). Full suite:
+3469 passed, only the known pre-existing OCR failure
+(`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
+
 ### Deferred to a separate workstream (explicitly not part of this plan)
 
 - **Retrieval keyword-strategy redesign** (the 8 domain-term lists in `retrieval_signal_terms.py`) — out of

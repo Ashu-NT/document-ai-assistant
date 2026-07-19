@@ -1,4 +1,9 @@
 from src.application.prompts.answer_generation import ANSWER_PROMPT_VERSION, AnswerPromptBuilder
+from src.application.prompts.answer_generation.prompt_context.appendix import (
+    PromptBudgetAllocator,
+    RawSourceAppendixFormatter,
+    RawSourceInclusionPolicy,
+)
 from src.application.services.ai.llm_service import LLMService
 from src.application.services.answer_generation.answer_generation_diagnostics_builder import (
     build_generation_diagnostics,
@@ -26,6 +31,9 @@ from src.application.services.answer_generation.answer_generation_service_settin
 from src.application.services.answer_generation.execution import (
     AnswerGenerationPromptExecutor,
     AnswerGenerationResultAssembler,
+)
+from src.application.services.answer_generation.formatting.format_policy_violation_detector import (
+    detect_format_policy_violations,
 )
 from src.application.services.answer_generation.formatting.identifier_answer_renderer import (
     IdentifierAnswerRenderer,
@@ -81,7 +89,24 @@ class AnswerGenerationService:
         deterministic_dispatch_gate: DeterministicDispatchGate | None = None,
     ) -> None:
         self.llm_service = llm_service
-        self.prompt_builder = prompt_builder or AnswerPromptBuilder()
+        # Resolved before self.prompt_builder below so the default builder's
+        # raw-source budget can scale with it (W5,
+        # answering_flow_weakness_remediation_plan.md) -- an explicitly
+        # injected prompt_builder is used as-is and is unaffected.
+        self.answer_generation_num_ctx = (
+            answer_generation_num_ctx
+            if answer_generation_num_ctx is not None
+            else default_answer_generation_num_ctx()
+        )
+        self.prompt_builder = prompt_builder or AnswerPromptBuilder(
+            raw_source_appendix_formatter=RawSourceAppendixFormatter(
+                raw_source_inclusion_policy=RawSourceInclusionPolicy(
+                    prompt_budget_allocator=PromptBudgetAllocator(
+                        num_ctx=self.answer_generation_num_ctx
+                    )
+                )
+            )
+        )
         self.answer_intent_analyzer = answer_intent_analyzer or AnswerIntentAnalyzer()
         self.answer_context_organizer = (
             answer_context_organizer or AnswerContextOrganizer()
@@ -243,6 +268,12 @@ class AnswerGenerationService:
             diagnostics.update(context_bundle.diagnostics)
             appendix_source_numbers = set(context_bundle.appendix_source_numbers)
         execution_result = self.prompt_executor.execute(prompt)
+        format_policy_violations = detect_format_policy_violations(
+            format_policy=resolved_request.format_policy,
+            answer_text=execution_result.parsed_output.answer_text,
+        )
+        diagnostics["format_policy_violation"] = bool(format_policy_violations)
+        diagnostics["format_policy_violation_reasons"] = format_policy_violations
         sources = structured_context.sources if structured_context is not None else ()
         log_answer_generation_recorded(
             answer_intent=resolved_request.answer_intent,

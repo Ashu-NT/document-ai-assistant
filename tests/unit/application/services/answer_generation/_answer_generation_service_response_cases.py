@@ -1,7 +1,14 @@
 import pytest
 
+from src.application.prompts.answer_generation.prompt_context.models import (
+    PromptContextBundle,
+    PromptSourceView,
+)
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
+)
+from src.application.services.answer_generation.answer_generation_service import (
+    AnswerGenerationService,
 )
 from src.application.services.answer_generation import AnswerIntent
 from src.domain.common import ChunkType, IdentifierType
@@ -9,6 +16,7 @@ from src.domain.document.entities.identifier import Identifier
 
 from tests.unit.application.services.answer_generation._answer_generation_service_support import (
     FakeLLMService,
+    FakePromptBuilder,
     _make_chunk,
     _make_table_chunk,
     make_service,
@@ -115,12 +123,7 @@ def test_generate_leaves_chunk_id_none_for_unresolvable_source_number() -> None:
 
 
 def test_generate_leaves_chunk_id_none_when_source_was_excluded_from_raw_appendix() -> None:
-    """Finding 2.3: the structured JSON payload lists every retrieved
-    source's source_number regardless of whether the raw-prose appendix
-    budget actually included it as readable text. A citation naming a
-    source_number that exists in the retrieval set, but was truncated away
-    by RawSourceInclusionPolicy's budget, must resolve to chunk_id=None
-    (unresolved) rather than a chunk_id the model never actually saw."""
+
     llm = FakeLLMService(
         response=(
             '{"answer_text":"Answer.","reference_notes":'
@@ -284,6 +287,98 @@ def test_generate_uses_custom_temperature_and_num_ctx_from_constructor() -> None
     )
     assert llm.calls[0]["temperature"] == 0.7
     assert llm.calls[0]["num_ctx"] == 4096
+
+
+def test_default_prompt_builder_raw_source_budget_scales_with_configured_num_ctx() -> None:
+    # W5, answering_flow_weakness_remediation_plan.md: the raw-source
+    # appendix budget should scale with the model's actual context window
+    # instead of always using the fixed reference-size budget.
+    default_service = AnswerGenerationService(
+        llm_service=FakeLLMService(), answer_generation_model="qwen3:8b"
+    )
+    large_ctx_service = AnswerGenerationService(
+        llm_service=FakeLLMService(),
+        answer_generation_model="qwen3:8b",
+        answer_generation_num_ctx=32768,
+    )
+
+    default_allocator = (
+        default_service.prompt_builder.raw_source_appendix_formatter
+        .raw_source_inclusion_policy.prompt_budget_allocator
+    )
+    large_ctx_allocator = (
+        large_ctx_service.prompt_builder.raw_source_appendix_formatter
+        .raw_source_inclusion_policy.prompt_budget_allocator
+    )
+
+    sparse_context = PromptContextBundle(
+        answer_intent_value="general",
+        source_count=1,
+        sources=[PromptSourceView(source_number=1, chunk_id="chunk_001")],
+    )
+    default_budget = default_allocator.allocate(sparse_context)
+    large_ctx_budget = large_ctx_allocator.allocate(sparse_context)
+
+    assert large_ctx_budget.max_sources > default_budget.max_sources
+    assert large_ctx_budget.max_chars_per_source > default_budget.max_chars_per_source
+
+
+def test_explicit_prompt_builder_is_used_as_is_regardless_of_num_ctx() -> None:
+    fake_builder = FakePromptBuilder()
+    service = AnswerGenerationService(
+        llm_service=FakeLLMService(),
+        answer_generation_model="qwen3:8b",
+        answer_generation_num_ctx=32768,
+        prompt_builder=fake_builder,
+    )
+
+    assert service.prompt_builder is fake_builder
+
+
+# -- W7: format-policy violation observability ------------------------------
+
+
+def test_generate_records_format_policy_violation_when_llm_answer_lacks_required_structure() -> (
+    None
+):
+    llm = FakeLLMService(
+        response='{"answer_text":"First remove the cover. Then replace the filter."}'
+    )
+    service, _ = make_service(llm)
+    result = service.generate(
+        AnswerGenerationRequest(
+            question="How do I replace the filter?",
+            context_chunks=[_make_chunk()],
+            answer_intent=AnswerIntent.PROCEDURE_STEPS,
+        )
+    )
+
+    assert result.diagnostics["format_policy_violation"] is True
+    assert result.diagnostics["format_policy_violation_reasons"] == [
+        "missing_numbered_steps"
+    ]
+
+
+def test_generate_does_not_record_format_policy_violation_when_llm_answer_matches_required_structure() -> (
+    None
+):
+    llm = FakeLLMService(
+        response=(
+            '{"answer_text":"1. Remove the cover.\\n2. Replace the filter.'
+            '\\n3. Reinstall the cover."}'
+        )
+    )
+    service, _ = make_service(llm)
+    result = service.generate(
+        AnswerGenerationRequest(
+            question="How do I replace the filter?",
+            context_chunks=[_make_chunk()],
+            answer_intent=AnswerIntent.PROCEDURE_STEPS,
+        )
+    )
+
+    assert result.diagnostics["format_policy_violation"] is False
+    assert result.diagnostics["format_policy_violation_reasons"] == []
 
 
 # -- finding 3.5: optional prompt-text capture in diagnostics ---------------
