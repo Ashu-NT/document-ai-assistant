@@ -125,14 +125,15 @@ def test_answer_prompt_builder_omits_structured_sections_without_structured_cont
     assert "Raw source appendix:" not in prompt
 
 
-def test_answer_prompt_builder_exposes_last_context_bundle_with_diagnostics_and_appendix_selection() -> None:
+def test_answer_prompt_builder_with_context_exposes_diagnostics_and_appendix_selection() -> None:
     """Finding 2.3/2.8: appendix_source_numbers (which sources were actually
     shown as raw prose) and the canonicalizer's diagnostics counters are
     computed during build() but were previously discarded once build() only
-    returned the prompt string. They must be recoverable afterward via
-    `last_context_bundle`."""
+    returned the prompt string. `build_with_context()` returns the bundle
+    carrying both directly, per call -- not cached on a `last_context_bundle`
+    instance attribute (finding F10: that design was unscoped mutable state,
+    a latent concurrency hazard under any future concurrent caller)."""
     builder = AnswerPromptBuilder()
-    assert builder.last_context_bundle is None
 
     chunks = [
         _make_chunk(chunk_id="c1", content="Content A"),
@@ -150,14 +151,27 @@ def test_answer_prompt_builder_exposes_last_context_bundle_with_diagnostics_and_
         format_policy=AnswerFormatPolicy.for_intent(AnswerIntent.GENERAL),
     )
 
-    builder.build(request)
+    prompt, bundle = builder.build_with_context(request)
 
-    bundle = builder.last_context_bundle
+    assert prompt
     assert bundle is not None
     assert bundle.appendix_source_numbers == [1, 2]
     assert "prompt_canonicalized_key_values_removed" in bundle.diagnostics
     assert "prompt_payload_sources_content_omitted" in bundle.diagnostics
     assert "prompt_payload_table_rows_removed" in bundle.diagnostics
+
+
+def test_answer_prompt_builder_build_returns_only_the_prompt_string() -> None:
+    """`build()` keeps its original, narrower contract (just the prompt
+    text) for the many callers that only ever needed that -- `build_with_
+    context()` is the opt-in for callers that also need the bundle."""
+    builder = AnswerPromptBuilder()
+    request = AnswerGenerationRequest(question="Test?", context_chunks=[])
+
+    prompt = builder.build(request)
+
+    assert isinstance(prompt, str)
+    assert "Test?" in prompt
 
 
 def test_answer_prompt_builder_includes_provided_sources_in_appendix() -> None:

@@ -319,10 +319,26 @@ end of Phase 3).
 New code: `graph_result_blocks.py`, `graph_result_reflection_status.py`, `test_presentation_format_parity.py`.
 Modified: `graph_result_renderer.py` (split), `json_presenter.py`, `markdown_presenter.py`, `agent_cli.py`.
 
-## Phase 5 — Concurrency-readiness (deferred) (F10, defer until actually needed)
-- Scope `AnswerPromptBuilder.last_context_bundle` per-request (return it from `build()` instead of storing on
-  `self`) before this pipeline is ever placed behind a concurrent API/UI backend. No urgency under the current
-  CLI-only, single-threaded usage — flagged so it isn't rediscovered under load in production later.
+### Phase 5 status: implemented (2026-07-19) (F10)
+
+**All 5 phases of this plan are now complete.** Verified via 4 new/rewritten tests plus a full unit-suite run:
+**3312 passed, 0 failed except the 1 known pre-existing OCR failure** (up from 3311 at the end of Phase 4).
+
+- `AnswerPromptBuilder.last_context_bundle` (unscoped mutable instance state, harmless under today's
+  single-threaded CLI callers but a latent hazard for any future concurrent caller) is gone entirely. `build()`
+  keeps its original narrow contract (`request -> str`, zero changes for its many existing callers/tests); a new
+  `build_with_context()` returns `(prompt, context_bundle)` per call instead, with no state stored on `self`.
+- `AnswerGenerationResultAssembler` no longer takes a `prompt_builder` constructor dependency at all -- it now
+  takes `appendix_source_numbers` as an explicit `build()` parameter, computed by `AnswerGenerationService` from
+  the bundle `build_with_context()` just returned. The assembler is now a genuinely stateless, parameter-only
+  class.
+- The one existing test that asserted directly on `builder.last_context_bundle` was rewritten to call
+  `build_with_context()` instead (a deliberate test change reflecting the retired design, not a regression); a
+  companion test confirms `build()` still returns a plain string. `FakePromptBuilder` (the test double used
+  across the `AnswerGenerationService` test suite) gained a matching `build_with_context()`.
+
+New code: none. Modified: `answer_prompt_builder.py`, `answer_generation_result_assembler.py`,
+`answer_generation_service.py`, `_answer_generation_service_support.py` (test fake).
 
 ## Explicitly out of scope for this audit
 

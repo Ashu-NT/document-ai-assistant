@@ -140,9 +140,7 @@ class AnswerGenerationService:
             temperature=self.answer_generation_temperature,
             num_ctx=self.answer_generation_num_ctx,
         )
-        self.result_assembler = AnswerGenerationResultAssembler(
-            prompt_builder=self.prompt_builder
-        )
+        self.result_assembler = AnswerGenerationResultAssembler()
 
     @tracked_action(
         action="answer_generation.generated",
@@ -199,18 +197,24 @@ class AnswerGenerationService:
                     deterministic_result=deterministic_result,
                 )
 
-        prompt = self.prompt_builder.build(resolved_request)
+        # `build_with_context()` (not `build()`) returns the prompt-context
+        # bundle directly, per this call, instead of the previous design of
+        # caching it on `self.prompt_builder.last_context_bundle` --
+        # unscoped mutable instance state that would have been a real
+        # concurrency hazard under any future concurrent caller (finding
+        # F10, outputs/architecture/answering_and_prompt_fresh_audit.md).
+        prompt, context_bundle = self.prompt_builder.build_with_context(
+            resolved_request
+        )
         if self.capture_answer_prompt_text:
             diagnostics["prompt_text"] = prompt
         # Surface the canonicalizer's own truncation/omission counters --
         # previously computed onto the prompt-context bundle and then never
-        # read by anything (finding F6, outputs/architecture/
-        # answering_and_prompt_fresh_audit.md). `last_context_bundle` is set
-        # by the `build()` call directly above, so it reflects this exact
-        # request.
-        last_context_bundle = getattr(self.prompt_builder, "last_context_bundle", None)
-        if last_context_bundle is not None:
-            diagnostics.update(last_context_bundle.diagnostics)
+        # read by anything (finding F6).
+        appendix_source_numbers = None
+        if context_bundle is not None:
+            diagnostics.update(context_bundle.diagnostics)
+            appendix_source_numbers = set(context_bundle.appendix_source_numbers)
         execution_result = self.prompt_executor.execute(prompt)
         sources = structured_context.sources if structured_context is not None else ()
         log_answer_generation_recorded(
@@ -227,6 +231,7 @@ class AnswerGenerationService:
             diagnostics=diagnostics,
             raw_model_output=execution_result.raw_output,
             limitation_note=execution_result.parsed_output.limitation_note,
+            appendix_source_numbers=appendix_source_numbers,
             payload=execution_result.parsed_output,
             sources=sources,
         )

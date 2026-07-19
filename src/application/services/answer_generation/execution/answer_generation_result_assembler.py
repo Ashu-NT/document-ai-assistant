@@ -15,9 +15,6 @@ from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
 
 class AnswerGenerationResultAssembler:
-    def __init__(self, *, prompt_builder) -> None:
-        self.prompt_builder = prompt_builder
-
     def build(
         self,
         *,
@@ -32,6 +29,7 @@ class AnswerGenerationResultAssembler:
         limitation_note: str | None = None,
         payload: AnswerGenerationResponsePayload | None = None,
         sources=(),
+        appendix_source_numbers: set[int] | None = None,
     ) -> GeneratedAnswer:
         citations, cited_chunk_ids = self._build_citations(context_chunks)
         sections = self._resolve_sections(payload.sections) if payload is not None else []
@@ -39,7 +37,7 @@ class AnswerGenerationResultAssembler:
             self._resolve_reference_notes(
                 payload.reference_notes,
                 sources,
-                appendix_source_numbers=self._appendix_source_numbers(),
+                appendix_source_numbers=appendix_source_numbers,
             )
             if payload is not None
             else []
@@ -64,12 +62,6 @@ class AnswerGenerationResultAssembler:
             sections=sections,
             reference_notes=reference_notes,
         )
-
-    def _appendix_source_numbers(self) -> set[int] | None:
-        bundle = getattr(self.prompt_builder, "last_context_bundle", None)
-        if bundle is None:
-            return None
-        return set(bundle.appendix_source_numbers)
 
     @staticmethod
     def _resolve_sections(

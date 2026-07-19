@@ -58,8 +58,12 @@ class FakePromptBuilder:
         self.requests: list[AnswerGenerationRequest] = []
 
     def build(self, request: AnswerGenerationRequest) -> str:
+        prompt, _context_bundle = self.build_with_context(request)
+        return prompt
+
+    def build_with_context(self, request: AnswerGenerationRequest):
         self.requests.append(request)
-        return "PROMPT"
+        return "PROMPT", None
 
 
 def _make_chunk(

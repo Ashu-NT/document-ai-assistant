@@ -7,6 +7,9 @@ from src.application.prompts.answer_generation.prompt_context import (
     RawSourceAppendixFormatter,
     StructuredEvidencePayloadSerializer,
 )
+from src.application.prompts.answer_generation.prompt_context.models import (
+    PromptContextBundle,
+)
 from src.application.prompts.answer_generation.answer_prompt_version import (
     ANSWER_PROMPT_VERSION,
 )
@@ -52,15 +55,25 @@ class AnswerPromptBuilder:
         self.raw_source_appendix_formatter = (
             raw_source_appendix_formatter or RawSourceAppendixFormatter()
         )
-        # Captured by build() below so callers (e.g. AnswerGenerationService)
-        # can access, after the fact, which source_numbers were actually
-        # shown as raw prose (appendix_source_numbers) and the
-        # canonicalizer's own diagnostics counters (bundle.diagnostics) --
-        # both are otherwise computed and then discarded once build() only
-        # returns the formatted prompt string. None until build() has run.
-        self.last_context_bundle = None
 
     def build(self, request: "AnswerGenerationRequest") -> str:
+        prompt, _context_bundle = self.build_with_context(request)
+        return prompt
+
+    def build_with_context(
+        self, request: "AnswerGenerationRequest"
+    ) -> tuple[str, PromptContextBundle | None]:
+        """Same as `build()`, but also returns the `PromptContextBundle`
+        this call produced -- which source_numbers were actually shown as
+        raw prose (`appendix_source_numbers`) and the canonicalizer's own
+        diagnostics counters (`.diagnostics`). Returning this per-call,
+        rather than caching it on `self.last_context_bundle` (the previous
+        design), removes unscoped mutable instance state that would have
+        been a real concurrency hazard if this service were ever called
+        from overlapping requests (finding F10,
+        outputs/architecture/answering_and_prompt_fresh_audit.md) -- not an
+        active bug under today's single-threaded CLI callers, but worth
+        closing before, not after, any future concurrent API/UI backend."""
         prompt_context = self.prompt_context_projector.project(
             request.structured_context
         )
@@ -75,7 +88,6 @@ class AnswerPromptBuilder:
             prompt_context = replace(
                 prompt_context, appendix_source_numbers=appendix_source_numbers
             )
-        self.last_context_bundle = prompt_context
         prompt = (
             f"{ANSWER_GROUNDING_RULES}\n\n"
             "Return JSON only with this shape:\n"
@@ -116,7 +128,7 @@ class AnswerPromptBuilder:
             "Answer the question above using only the evidence shown: "
             f"{request.question}\n"
         )
-        return prompt
+        return prompt, prompt_context
 
     @staticmethod
     def _identifier_block(request: "AnswerGenerationRequest") -> str:
