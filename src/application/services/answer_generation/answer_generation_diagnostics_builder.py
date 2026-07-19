@@ -59,6 +59,14 @@ def build_generation_diagnostics(
         "answer_intent_confidence": intent_decision.confidence,
         "answer_intent_reason": intent_decision.reason,
         "answer_intent_signals": intent_decision.matched_signals,
+        "answer_intent_best_score": intent_decision.best_score,
+        "answer_intent_runner_up": (
+            intent_decision.runner_up_intent.value
+            if intent_decision.runner_up_intent is not None
+            else None
+        ),
+        "answer_intent_runner_up_score": intent_decision.runner_up_score,
+        "answer_intent_margin": intent_decision.margin,
         "format_policy": (
             resolved_request.format_policy.preferred_format
             if resolved_request.format_policy is not None

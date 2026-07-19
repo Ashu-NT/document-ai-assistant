@@ -12,6 +12,9 @@ from src.application.services.answer_generation.answer_generation_request import
 from src.application.services.answer_generation.answer_generation_service import (
     AnswerGenerationService,
 )
+from src.application.workflows.question_answering.answer_pipeline.decision_trace_builder import (
+    build_decision_trace,
+)
 from src.application.workflows.question_answering.answer_pipeline.structured_evidence_merger import (
     StructuredEvidenceMerger,
 )
@@ -326,6 +329,10 @@ class AnswerGenerationPipeline:
                     {"post_answer_guardrail_warnings": post_answer_guardrail_warnings}
                     if post_answer_guardrail_warnings
                     else {}
+                ),
+                "decision_trace": build_decision_trace(
+                    analyzed_query=analyzed_query,
+                    generated=generated,
                 ),
             },
         )

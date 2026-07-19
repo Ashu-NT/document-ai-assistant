@@ -388,15 +388,37 @@ assertion (one `True` case, one `False` case, both derived from the actual fixtu
 Full suite: 3333 passed, only the known pre-existing OCR failure
 (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
-### PR 7 — Decision trace on the answer result, not top-level `AgentState`
+### PR 7 status: implemented (2026-07-19) — Decision trace on the answer result, not top-level `AgentState`
 
-Add a `decision_trace` dict under the existing answer result's diagnostics/metadata container (not a new
-top-level `AgentState` field) carrying: retrieval intent + best/runner-up/gap, answer intent + best/runner-up/
-margin, `deterministic_bypassed`/`bypass_reason`, `renderer_used`/`llm_used`. Per the Phase 0 map's own finding,
-a new top-level `AgentState` structure is only justified once a graph *node* needs to route on this
-information — today, dispatch happens inside `AnswerGenerationService`, ambiguity is available through the
-nested retrieval result, and reflection can already read the answer payload, so none of the current consumers
-need graph-level state.
+Added `build_decision_trace()` (new file, `answer_pipeline/decision_trace_builder.py`) and wired it into
+`AnswerGenerationPipeline.run()`'s final success-path `QuestionAnsweringResult(diagnostics={...,
+"decision_trace": build_decision_trace(...)})` — under the existing diagnostics container, not a new top-level
+`AgentState` field, per the plan. Combines two sides that live in different layers and were never joined
+before: the retrieval-side classification (read directly off the `analyzed_query: RetrievalQuery` the pipeline
+already receives — `detected_intent`/`intent_best_score`/`intent_runner_up`/`intent_runner_up_score`/
+`intent_score_gap`, all persisted by PR 1) and the answer-side classification (read off `generated.diagnostics`,
+which `build_generation_diagnostics()` was extended to also carry `answer_intent_best_score`/
+`answer_intent_runner_up`/`answer_intent_runner_up_score`/`answer_intent_margin`, mirroring PR 1's retrieval-side
+naming — previously only `answer_intent_confidence`/`_reason`/`_signals` were exposed there).
+
+`renderer_used`/`llm_used` are derived from `diagnostics.get("deterministic_renderer")`'s presence, not from
+`deterministic_dispatch_bypassed` — the two can disagree: `AnswerGenerationService.generate()` can decide not to
+bypass and *still* fall through to the LLM if the dispatcher finds no renderer matching the resolved intent, so
+the renderer-name key is the only authoritative signal for which path actually executed.
+
+No new `AgentState` field, confirming the Phase 0 map's own finding still holds: dispatch already happens
+inside `AnswerGenerationService`, ambiguity is available through the nested retrieval result, and reflection
+already reads the answer payload directly — nothing here needed to route a graph *node* on this information,
+only to read it after the fact.
+
+**Tests**: new `test_decision_trace_builder.py` (5 tests, direct unit coverage of the builder: retrieval-side
+fields, answer-side fields, LLM-path vs. renderer-path derivation, and the no-runner-up case). One new
+integration test, `test_result_diagnostics_includes_a_decision_trace` (`test_question_answering_workflow.py`),
+running the REAL `QuestionAnsweringRouter`/`RetrievalQueryAnalyzer` (not mocked) against the established
+"Show me the fault code table" exact-tie fixture from PR 1's own tests, confirming the trace's retrieval-side
+values match that already-verified classification end to end, not just that the key exists. Full suite: 3339
+passed, only the known pre-existing OCR failure
+(`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
 ### PR 8 — Evidence truncation metadata (closes W6)
 

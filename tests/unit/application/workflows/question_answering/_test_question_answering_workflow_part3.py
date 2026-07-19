@@ -172,6 +172,49 @@ def test_answer_generation_answer_text_returned_in_result(
     assert result.route == QuestionAnsweringRoute.RETRIEVAL_QA
     assert result.answer_text == "The answer is 1000 hours."
 
+def test_result_diagnostics_includes_a_decision_trace(
+    fake_exploration_service: FakeDocumentExplorationService,
+) -> None:
+    """PR 7 (answering_flow_weakness_remediation_plan.md): the final
+    QuestionAnsweringResult.diagnostics must carry a single decision_trace
+    combining the retrieval-side classification (computed by the REAL
+    QuestionAnsweringRouter/RetrievalQueryAnalyzer here, not mocked) with
+    the answer-side outcome from AnswerGenerationService -- not a new
+    top-level AgentState field. Reuses the exact "Show me the fault code
+    table" exact-tie fixture already established for PR 1's
+    RetrievalQueryAnalyzer tests, so the expected retrieval-side values are
+    known-good, not guessed."""
+    chunk = _make_chunk()
+    wf_result = _make_retrieval_result_with_chunks([chunk])
+    fake_retrieval = FakeRetrievalWorkflow(result=wf_result)
+    fake_gen = FakeAnswerGenerationService(
+        answer_text="It could be either.",
+        answer_intent=AnswerIntent.MAINTENANCE_SUMMARY,
+    )
+    workflow = make_workflow(
+        fake_retrieval,
+        fake_exploration_service,
+        answer_generation_service=fake_gen,
+    )
+    request = QuestionAnsweringRequest(
+        question="Show me the fault code table",
+        allow_answer_generation=True,
+    )
+
+    result = workflow.run(request)
+
+    trace = result.diagnostics["decision_trace"]
+    assert trace["retrieval_intent"] == "table"
+    assert trace["retrieval_intent_runner_up"] == "troubleshooting"
+    assert trace["retrieval_intent_gap"] == 0
+    assert (
+        trace["retrieval_intent_best_score"]
+        == trace["retrieval_intent_runner_up_score"]
+    )
+    assert trace["answer_intent"] == "maintenance_summary"
+    assert trace["renderer_used"] is None
+    assert trace["llm_used"] is True
+
 def test_progress_callback_receives_stage_messages_for_full_generation_path(
     fake_exploration_service: FakeDocumentExplorationService,
 ) -> None:
