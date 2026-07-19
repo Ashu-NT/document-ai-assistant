@@ -175,10 +175,14 @@ class AnswerGenerationService:
             structured_context=structured_context,
             maintenance_diagnostics=maintenance_diagnostics,
         )
+        has_conflicting_evidence = bool(
+            structured_context.diagnostics.get("has_critical_evidence_conflict")
+        ) if structured_context is not None else False
         dispatch_gate_decision = self.deterministic_dispatch_gate.evaluate(
             question=resolved_request.question,
             effective_intent=resolved_request.answer_intent,
             intent_decision=intent_decision,
+            has_conflicting_evidence=has_conflicting_evidence,
         )
         diagnostics["deterministic_dispatch_bypassed"] = (
             dispatch_gate_decision.should_bypass
@@ -186,6 +190,10 @@ class AnswerGenerationService:
         diagnostics["deterministic_dispatch_bypass_reason"] = (
             dispatch_gate_decision.reason
         )
+        if structured_context is not None:
+            diagnostics["evidence_conflicts"] = structured_context.diagnostics.get(
+                "evidence_conflicts", []
+            )
         if dispatch_gate_decision.reason == DispatchBypassReason.COMPOUND_QUESTION:
             unrelated_intent = (
                 AnswerIntent(dispatch_gate_decision.compound_intent_value)

@@ -7,6 +7,9 @@ from typing import Sequence
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
+from src.application.workflows.question_answering.answer_context.evidence_contradiction_detector import (
+    EvidenceContradictionDetector,
+)
 from src.application.workflows.question_answering.answer_context.key_value_extractor import (
     KeyValueExtractor,
 )
@@ -45,6 +48,7 @@ class AnswerContextOrganizer:
         section_group_builder: SectionGroupBuilder | None = None,
         structured_source_builder: StructuredSourceBuilder | None = None,
         answer_table_projector: AnswerTableProjector | None = None,
+        evidence_contradiction_detector: EvidenceContradictionDetector | None = None,
     ) -> None:
         self.key_value_extractor = key_value_extractor or KeyValueExtractor()
         self.maintenance_task_extractor = (
@@ -59,6 +63,9 @@ class AnswerContextOrganizer:
             structured_source_builder or StructuredSourceBuilder()
         )
         self.answer_table_projector = answer_table_projector or AnswerTableProjector()
+        self.evidence_contradiction_detector = (
+            evidence_contradiction_detector or EvidenceContradictionDetector()
+        )
 
     def organize(
         self,
@@ -93,6 +100,10 @@ class AnswerContextOrganizer:
             for entry in maintenance_entries
             if entry.interval.strip().lower() != "not specified"
         )
+        evidence_conflicts = self.evidence_contradiction_detector.detect(
+            key_values=key_values,
+            maintenance_entries=maintenance_entries,
+        )
         diagnostics = {
             "chunk_type_counts": dict(
                 Counter(source.chunk_type or "unknown" for source in sources)
@@ -113,6 +124,19 @@ class AnswerContextOrganizer:
             ),
             "maintenance_items_merged": (
                 extracted_maintenance_entry_count - len(maintenance_entries)
+            ),
+            "evidence_conflicts": [
+                {
+                    "key": conflict.key,
+                    "field_kind": conflict.field_kind,
+                    "values": list(conflict.values),
+                    "source_numbers": list(conflict.source_numbers),
+                    "is_critical": conflict.is_critical,
+                }
+                for conflict in evidence_conflicts
+            ],
+            "has_critical_evidence_conflict": any(
+                conflict.is_critical for conflict in evidence_conflicts
             ),
         }
         return StructuredAnswerContext(

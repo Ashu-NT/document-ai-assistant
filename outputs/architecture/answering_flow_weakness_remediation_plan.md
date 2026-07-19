@@ -502,16 +502,56 @@ proving the signal actually reaches the validator through `review()`, not just i
 (+1 confirming `coverage_requirement` lands in `GeneratedAnswer.diagnostics`). Full suite: 3374 passed, only the
 known pre-existing OCR failure (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
-### PR 10 — Shared contradiction metadata (closes W4)
+### PR 10 status: implemented (2026-07-19) — Shared contradiction metadata (closes W4)
 
-Detect contradictions once, during evidence assembly (reusing `EntityKeyValueFingerprintBuilder`'s existing
-per-key value grouping), not independently inside every renderer. Start narrow: part number, maintenance
-interval, specification value, identifier, procedure-step order. Normalize units/whitespace/decimal
-formatting/identifier punctuation/equipment variant/document revision *before* declaring a conflict (`"1000 h"`,
-`"1,000 hours"`, `"1000 operating hours"` must not look like three disagreeing values). Attach the result to the
-existing generation request/context, then extend `DeterministicDispatchGate` (PR 5's enum) with
-`CONFLICTING_EVIDENCE`: a critical conflict bypasses the renderer entirely; a non-critical one still reaches the
-LLM path, which already knows to flag disagreement (grounding rules, prior audit).
+Added `EvidenceContradictionDetector` (new module, `answer_context/evidence_contradiction_detector.py`) —
+reuses the same "group values by normalized key, flag 2+ distinct values across sources" pattern
+`EntityKeyValueFingerprintBuilder` already established, applied to `AnswerKeyValue`/`AnswerMaintenanceEntry`
+instead of `PromptEntityView` (the latter is a prompt-projection-layer type built for canonicalization/dedup,
+not naturally reusable for this). Scope, narrowed exactly as planned:
+- **Specification value** and **identifier** (which already covers **part number** — `KeyValueExtractor
+  ._field_kind()` classifies part/serial/order/model numbers as `"identifier"`) via `AnswerKeyValue.field_kind`.
+- **Maintenance interval** via `AnswerMaintenanceEntry` — confirmed by reading `MaintenanceEntryMerger
+  ._intervals_compatible()` that a genuine interval disagreement on the same task is NOT silently merged away
+  (merge is blocked when intervals differ and neither is "not specified"), so both entries survive into the
+  list this detector groups, exactly the case worth flagging.
+- **Procedure-step order** is explicitly deferred — no step-sequence parser built for this pass (PR 9's
+  `has_step_sequence_gap()` is a narrower, answer-text-only heuristic for a related but different problem).
+- **Equipment variant/document revision** normalization (avoiding a false conflict between two genuinely
+  different equipment models or document revisions) is a known, documented gap, not silently ignored — this
+  pass has no signal at this layer to distinguish "same equipment, disagreeing sources" from "different
+  equipment, correctly different values," so it's left for a future pass once that context is available here.
+
+Normalization before declaring a conflict: whitespace collapsing, decimal/thousands-separator stripping, a
+small unit-alias table (hour aliases — `"1000 h"`/`"1,000 hours"`/`"1000 operating hours"` all normalize to
+`"1000 hours"`, the plan's own example, verified directly; pressure aliases — `"bar"`/`"bars"`) for
+specification/maintenance values, and punctuation stripping (`"PN-001"` == `"PN 001"` == `"PN001"`) for
+identifiers. A conflict also requires the disagreeing normalized values to trace back to 2+ *different*
+source_numbers — two values from the same single source is an extraction quirk, not a cross-source
+disagreement.
+
+**Wiring**: runs once inside `AnswerContextOrganizer.organize()` (the single shared construction point for
+`StructuredAnswerContext` across every caller — `AnswerGenerationRequestResolver`'s fallback path and
+`StructuredFactJoiner`'s structured-intent path both go through it), attached to the *existing*
+`StructuredAnswerContext.diagnostics` dict (`evidence_conflicts`, `has_critical_evidence_conflict`) — no new
+field invented, per the plan's "attach the result to the existing generation request/context." `DeterministicDispatchGate`
+gained `CONFLICTING_EVIDENCE` in PR 5's `DispatchBypassReason` enum, checked in `AnswerGenerationService.generate()`
+via a new `has_conflicting_evidence` param read straight off `structured_context.diagnostics`. Severity is a
+single tier for now (`is_critical` always `True` on every conflict this pass actually detects) — every detected
+conflict bypasses the renderer; a genuine critical-vs-non-critical severity split is PR 11's guardrail-severity
+model, not invented ahead of it here. Also surfaced `evidence_conflicts` directly into
+`GeneratedAnswer.diagnostics` for observability (previously only reachable by digging into
+`structured_context.diagnostics`).
+
+**Tests**: `test_evidence_contradiction_detector.py` (new, 9 tests — genuine conflict, both unit-alias
+false-positive guards from the plan's own example, identifier punctuation, out-of-scope field_kind, single-source
+multi-value non-conflict, maintenance interval conflict, "not specified" non-conflict, task-wording-variance
+matching), `test_answer_context_organizer_contradictions.py` (new, 3 tests — wiring via an injected fake
+detector, plus the real detector's default no-conflict case), `test_deterministic_dispatch_gate.py` (+3 —
+bypass/no-bypass/priority-ordering), `_answer_generation_service_renderer_cases.py` (+1 end-to-end: a request
+that would otherwise fire the deterministic identifier renderer instead bypasses to the LLM when
+`structured_context` carries a critical conflict). Full suite: 3390 passed, only the known pre-existing OCR
+failure (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
 ### PR 11 — Graduated guardrail enforcement (closes W8 — requires sign-off before implementation)
 

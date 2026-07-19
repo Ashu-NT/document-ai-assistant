@@ -151,6 +151,50 @@ def test_contested_check_runs_before_the_no_signal_check() -> None:
     assert result.reason == "contested_intent"
 
 
+def test_bypasses_for_conflicting_evidence() -> None:
+ 
+    gate = DeterministicDispatchGate()
+    decision = _decision(intent=AnswerIntent.SPECIFICATION_SUMMARY)
+
+    result = gate.evaluate(
+        question="What is the operating pressure?",
+        effective_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        intent_decision=decision,
+        has_conflicting_evidence=True,
+    )
+
+    assert result.should_bypass is True
+    assert result.reason == "conflicting_evidence"
+
+
+def test_does_not_bypass_when_there_is_no_conflicting_evidence() -> None:
+    gate = DeterministicDispatchGate()
+    decision = _decision(intent=AnswerIntent.SPECIFICATION_SUMMARY)
+
+    result = gate.evaluate(
+        question="What is the operating pressure?",
+        effective_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        intent_decision=decision,
+        has_conflicting_evidence=False,
+    )
+
+    assert result.should_bypass is False
+
+
+def test_conflicting_evidence_check_runs_before_the_compound_check() -> None:
+    gate = DeterministicDispatchGate()
+    decision = _decision(intent=AnswerIntent.IDENTIFIER_LOOKUP)
+
+    result = gate.evaluate(
+        question="What are the spare parts and how do I replace the seal?",
+        effective_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        intent_decision=decision,
+        has_conflicting_evidence=True,
+    )
+
+    assert result.reason == "conflicting_evidence"
+
+
 def test_ignores_a_contested_tie_about_an_intent_that_was_overridden_away() -> None:
     """Regression test: a caller can force `effective_intent` to something
     other than what AnswerIntentAnalyzer.analyze() would pick on its own

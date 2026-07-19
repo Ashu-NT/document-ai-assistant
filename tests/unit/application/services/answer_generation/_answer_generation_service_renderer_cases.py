@@ -7,6 +7,9 @@ from src.application.services.answer_generation.answer_generation_request import
 from src.application.services.answer_generation.answer_generation_service import (
     AnswerGenerationService,
 )
+from src.application.workflows.question_answering.answer_context import (
+    StructuredAnswerContext,
+)
 from src.application.services.answer_generation.intent.answer_intent_analyzer import (
     AnswerIntentAnalyzer,
     AnswerIntentDecision,
@@ -75,6 +78,36 @@ def test_generate_uses_deterministic_identifier_renderer_and_skips_llm() -> None
     assert "- SN-9001" in result.answer_text
     assert result.model_name == "deterministic_identifier_renderer"
     assert llm.calls == []
+
+
+def test_generate_bypasses_the_identifier_renderer_for_conflicting_evidence() -> None:
+    """PR 10 (answering_flow_weakness_remediation_plan.md, W4): a critical
+    cross-source contradiction must route to the LLM path instead of
+    letting the deterministic renderer format disagreeing values with no
+    way to flag the disagreement -- same request as the renderer-fires
+    test above, except the structured_context now carries a conflict."""
+    llm = FakeLLMService(
+        response='{"answer_text":"Sources disagree on the part number; flagging for review."}'
+    )
+    service, _ = make_service(llm)
+    result = service.generate(
+        AnswerGenerationRequest(
+            question="list all serial and part nmubers",
+            context_chunks=[_make_chunk()],
+            answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+            resolved_identifiers=[
+                Identifier("id_part", "doc_001", raw_value="PN-001", identifier_type=IdentifierType.PART_NUMBER),
+            ],
+            structured_context=StructuredAnswerContext(
+                answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+                diagnostics={"has_critical_evidence_conflict": True},
+            ),
+        )
+    )
+    assert llm.calls
+    assert result.model_name != "deterministic_identifier_renderer"
+    assert result.diagnostics["deterministic_dispatch_bypassed"] is True
+    assert result.diagnostics["deterministic_dispatch_bypass_reason"] == "conflicting_evidence"
 
 
 def test_generate_uses_deterministic_spare_parts_renderer_and_skips_llm() -> None:
