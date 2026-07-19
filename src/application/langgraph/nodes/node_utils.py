@@ -58,6 +58,26 @@ def extract_retrieval_intent_decision(
     )
 
 
+def extract_coverage_signal(answer_payload: Any) -> tuple[str | None, bool]:
+    """`(coverage_requirement, evidence_truncated)`, read from the answer
+    result's own `diagnostics` -- `coverage_requirement` set by
+    `resolve_coverage_requirement()` during generation, `evidence_truncated`
+    from PR 8's truncation flags (`prompt_payload_truncated` and/or the raw
+    appendix's own `truncated` flag). Feeds PR 9's coverage-requirement
+    enforcement in `ReflectionValidator` (answering_flow_weakness_
+    remediation_plan.md) without reflection needing to recompute anything
+    generation already determined."""
+    diagnostics = answer_payload.get("diagnostics") if isinstance(answer_payload, dict) else None
+    if not isinstance(diagnostics, dict):
+        return None, False
+    coverage_requirement = optional_str(diagnostics.get("coverage_requirement"))
+    appendix_truncation = diagnostics.get("raw_source_appendix_truncation")
+    evidence_truncated = bool(diagnostics.get("prompt_payload_truncated")) or bool(
+        appendix_truncation.get("truncated") if isinstance(appendix_truncation, dict) else False
+    )
+    return coverage_requirement, evidence_truncated
+
+
 def extract_retrieval_query_intent(retrieval_result: Any) -> str | None:
     """The generic `RetrievalQueryIntent` (TABLE/MAINTENANCE/IDENTIFIER/...)
     resolved during query analysis -- a thin compatibility wrapper over

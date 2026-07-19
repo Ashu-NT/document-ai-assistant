@@ -1,6 +1,9 @@
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
 )
+from src.application.services.answer_generation.coverage import (
+    resolve_coverage_requirement,
+)
 from src.application.services.answer_generation.formatting.answer_format_policy import (
     ANSWER_FORMAT_POLICY_RULES_VERSION,
 )
@@ -67,6 +70,10 @@ def build_generation_diagnostics(
         ),
         "answer_intent_runner_up_score": intent_decision.runner_up_score,
         "answer_intent_margin": intent_decision.margin,
+        "coverage_requirement": resolve_coverage_requirement(
+            answer_intent=resolved_request.answer_intent,
+            question=resolved_request.question,
+        ),
         "format_policy": (
             resolved_request.format_policy.preferred_format
             if resolved_request.format_policy is not None

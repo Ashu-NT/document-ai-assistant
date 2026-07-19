@@ -1,5 +1,6 @@
 from src.application.langgraph.factories import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
+    extract_coverage_signal,
     extract_retrieval_intent_decision,
     extract_retrieval_query_intent,
 )
@@ -84,6 +85,40 @@ def test_extract_retrieval_intent_decision_returns_none_for_missing_shape() -> N
 
 def test_extract_retrieval_query_intent_delegates_to_the_full_decision() -> None:
     assert extract_retrieval_query_intent(_full_retrieval_result_payload()) == "table"
+
+
+def test_extract_coverage_signal_reads_coverage_requirement_and_truncation() -> None:
+    payload = {
+        "diagnostics": {
+            "coverage_requirement": "exhaustive_list",
+            "prompt_payload_truncated": True,
+        }
+    }
+
+    coverage_requirement, evidence_truncated = extract_coverage_signal(payload)
+
+    assert coverage_requirement == "exhaustive_list"
+    assert evidence_truncated is True
+
+
+def test_extract_coverage_signal_reads_truncation_from_the_raw_appendix() -> None:
+    payload = {
+        "diagnostics": {
+            "coverage_requirement": "ordered_procedure",
+            "prompt_payload_truncated": False,
+            "raw_source_appendix_truncation": {"truncated": True},
+        }
+    }
+
+    coverage_requirement, evidence_truncated = extract_coverage_signal(payload)
+
+    assert coverage_requirement == "ordered_procedure"
+    assert evidence_truncated is True
+
+
+def test_extract_coverage_signal_returns_defaults_for_missing_diagnostics() -> None:
+    assert extract_coverage_signal({}) == (None, False)
+    assert extract_coverage_signal({"diagnostics": "not-a-dict"}) == (None, False)
 
 
 class _FakeReflectionService:

@@ -118,6 +118,21 @@ def test_generate_diagnostics_include_formatting_layer_rules_versions() -> None:
     assert "maintenance_entry_merger_rules_version" in result.diagnostics
 
 
+def test_generate_diagnostics_include_the_resolved_coverage_requirement() -> None:
+    """PR 9 (answering_flow_weakness_remediation_plan.md): coverage_requirement
+    must be computed during generation and surfaced through diagnostics, the
+    same path reflection already reads answer_intent/dispatch info from."""
+    service, _ = make_service()
+    result = service.generate(
+        AnswerGenerationRequest(
+            question="How do I replace the hydraulic filter?",
+            context_chunks=[_make_chunk()],
+            answer_intent=AnswerIntent.PROCEDURE_STEPS,
+        )
+    )
+    assert result.diagnostics["coverage_requirement"] == "ordered_procedure"
+
+
 def test_generate_diagnostics_surface_format_policy_context_signals() -> None:
     service, _ = make_service()
     result = service.generate(

@@ -11,6 +11,7 @@ from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import (
     build_error,
     extend_trace,
+    extract_coverage_signal,
     extract_retrieval_intent_decision,
 )
 from src.application.langgraph.reflection import ClarificationBuilder, ReflectionService
@@ -97,6 +98,7 @@ class ReflectAnswerNode:
             if retrieval_intent_decision is not None
             else None
         )
+        coverage_requirement, evidence_truncated = extract_coverage_signal(answer_payload)
 
         try:
             result = self.reflection_service.review(
@@ -109,6 +111,8 @@ class ReflectAnswerNode:
                 answer_intent=resolve_answer_intent(answer_payload),
                 retrieval_query_intent=retrieval_query_intent,
                 retrieval_intent_decision=retrieval_intent_decision,
+                coverage_requirement=coverage_requirement,
+                evidence_truncated=evidence_truncated,
                 approved_chunks=approved_chunks,
                 rejected_chunks=rejected_chunks,
                 citations=answer_payload.get("citations", []),

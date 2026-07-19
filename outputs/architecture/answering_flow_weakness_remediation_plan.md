@@ -457,14 +457,50 @@ truncation, table-row truncation, nothing-truncated shape, `None` context), `tes
 `max_items_per_array=1`). Full suite: 3347 passed, only the known pre-existing OCR failure
 (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
-### PR 9 — Coverage requirements (closes part of W5's completeness gap)
+### PR 9 status: implemented (2026-07-19) — Coverage requirements (closes part of W5's completeness gap)
 
-Derive a coverage-requirement signal from existing intent + question wording — `SINGLE_FACT` /
-`BEST_EFFORT_SUMMARY` / `EXHAUSTIVE_LIST` / `ORDERED_PROCEDURE` / `COMPARISON`. A plain string in workflow state
-is sufficient; no new enum hierarchy yet. Then enforce the combination with PR 8's truncation flag: an
-`EXHAUSTIVE_LIST` answer must never claim completeness while `truncated=True`; an `ORDERED_PROCEDURE` with a
-detected gap in step sequence should abstain or explicitly flag incomplete evidence rather than presenting a
-confident-looking partial procedure.
+Added `resolve_coverage_requirement(*, answer_intent, question) -> str` (new `answer_generation/coverage/`
+subpackage) returning one of 5 plain strings — `single_fact` / `best_effort_summary` / `exhaustive_list` /
+`ordered_procedure` / `comparison` — not a new enum hierarchy, per the plan. Question wording is checked first
+(`"compare"`/`"vs"`/... → comparison; `"list all"`/`"every"`/... → exhaustive_list) since wording can only ever
+demand *more* completeness than the intent's own default, never less; the intent-based default only applies
+when no such wording is present (`PROCEDURE_STEPS` → ordered_procedure, `IDENTIFIER_LOOKUP`/`TABLE_SUMMARY`/
+`SAFETY_WARNINGS` → exhaustive_list, `SPECIFICATION_SUMMARY` → single_fact, everything else — maintenance,
+troubleshooting, certification, document summary, general — defaults to best_effort_summary, the least
+demanding requirement).
+
+Computed once, inside `build_generation_diagnostics()` (`diagnostics["coverage_requirement"]`), so it rides the
+exact same `GeneratedAnswer.diagnostics` → `QuestionAnsweringResult.diagnostics` → `answer_payload["diagnostics"]`
+path PR 7/8 already established — no new plumbing layer invented for this signal specifically.
+
+**Enforcement** — two new `ReflectionValidator` checks
+(`reflection_validator_coverage_checks.py`, following the existing `check_*` extraction-function convention in
+`reflection_validator.py`'s check tuple), both gated on the decision still being a bare `ACCEPT` (never escalated
+to a harder `FAIL`/abstain — a flag, not a block, matching the plan's "explicitly flag incomplete evidence"
+branch):
+- `check_exhaustive_list_completeness_claim`: `coverage_requirement == "exhaustive_list"` AND PR 8's
+  `evidence_truncated` flag AND the answer text itself claims completeness (new
+  `claims_completeness()` detector, `reflection/detectors/coverage_requirement_context_detector.py`) → downgrades
+  to `ACCEPT_WITH_LIMITATIONS`.
+- `check_ordered_procedure_step_gap`: `coverage_requirement == "ordered_procedure"` AND a detected gap in the
+  answer's own step numbering (new `has_step_sequence_gap()` detector — a pragmatic v1 heuristic reading
+  "Step N"/`"N. "` markers and checking for a non-contiguous jump, deliberately erring toward under-detecting
+  rather than flagging a well-formed procedure as broken) → downgrades to `ACCEPT_WITH_LIMITATIONS`.
+
+`ReflectAnswerNode` gained `extract_coverage_signal(answer_payload) -> (coverage_requirement, evidence_truncated)`
+in `node_utils.py`, reading straight off `answer_payload["diagnostics"]` (the same dict PR 8's truncation flags
+already live in — `prompt_payload_truncated` and/or `raw_source_appendix_truncation.truncated`), threaded into
+`ReflectionService.review()` and on into `ReflectionValidator.validate()`.
+
+**Tests**: `test_coverage_requirement_resolver.py` (new, 7 tests — per-intent defaults, both wording overrides,
+missing-question handling), `test_coverage_requirement_context_detector.py` (new, 8 tests — both detectors),
+`test_reflection_validator_coverage_checks.py` (new, 7 tests — both checks' trigger/no-trigger paths, plus
+cross-requirement isolation: an exhaustive_list-shaped claim under a `single_fact` requirement, and a step-gap
+under a non-ordered_procedure requirement, must NOT downgrade), `test_reflection_service.py` (+1 end-to-end test
+proving the signal actually reaches the validator through `review()`, not just in validator-level isolation),
+`test_reflect_answer_node.py` (+3 for `extract_coverage_signal()`), `_answer_generation_service_renderer_cases.py`
+(+1 confirming `coverage_requirement` lands in `GeneratedAnswer.diagnostics`). Full suite: 3374 passed, only the
+known pre-existing OCR failure (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
 ### PR 10 — Shared contradiction metadata (closes W4)
 

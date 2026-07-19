@@ -12,6 +12,10 @@ from src.application.langgraph.reflection.services.query_ambiguity_detector impo
 from src.application.langgraph.reflection.validation.reflection_validator_context import (
     build_downgrade_context,
 )
+from src.application.langgraph.reflection.validation.reflection_validator_coverage_checks import (
+    check_exhaustive_list_completeness_claim,
+    check_ordered_procedure_step_gap,
+)
 from src.application.langgraph.reflection.validation.reflection_validator_domain_checks import (
     check_identifier_inventory,
     check_spare_parts_list,
@@ -47,6 +51,8 @@ class ReflectionValidator:
         has_duplicate_answer_content: bool = False,
         generic_sufficiency_verdict: SufficiencyVerdict | None = None,
         ambiguous_intent_tie: AmbiguousIntentTie | None = None,
+        coverage_requirement: str | None = None,
+        evidence_truncated: bool = False,
     ) -> ReflectionDecision:
         normalized_confidence = min(max(float(decision.confidence), 0.0), 1.0)
         decision.confidence = normalized_confidence
@@ -93,6 +99,21 @@ class ReflectionValidator:
                 question=question,
                 policy=policy,
                 retrieval_retry_count=retrieval_retry_count,
+                normalized_confidence=normalized_confidence,
+                ctx=ctx,
+            ),
+            lambda: check_exhaustive_list_completeness_claim(
+                decision=decision,
+                coverage_requirement=coverage_requirement,
+                evidence_truncated=evidence_truncated,
+                answer_text=answer_text,
+                normalized_confidence=normalized_confidence,
+                ctx=ctx,
+            ),
+            lambda: check_ordered_procedure_step_gap(
+                decision=decision,
+                coverage_requirement=coverage_requirement,
+                answer_text=answer_text,
                 normalized_confidence=normalized_confidence,
                 ctx=ctx,
             ),

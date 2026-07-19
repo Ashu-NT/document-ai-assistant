@@ -561,3 +561,27 @@ def test_review_downgrades_fail_for_a_non_domain_intent_with_good_generic_eviden
         == "SUFFICIENT"
     )
     assert result.diagnostics["retrieval_query_intent"] == "troubleshooting"
+
+
+def test_review_downgrades_an_exhaustive_list_claim_over_truncated_evidence_end_to_end() -> None:
+    """PR 9 (answering_flow_weakness_remediation_plan.md): end-to-end
+    through ReflectionService.review() (not just the validator in
+    isolation) -- coverage_requirement/evidence_truncated must actually
+    reach ReflectionValidator and downgrade the decision."""
+    service = ReflectionService(policy=ReflectionPolicy(enabled=False))
+
+    result = service.review(
+        **_review_kwargs(
+            generated_answer=(
+                "Here is the complete list: the pump flow rate is 120 m3/h, "
+                "as shown on page 4."
+            ),
+            coverage_requirement="exhaustive_list",
+            evidence_truncated=True,
+        )
+    )
+
+    assert result.decision.decision == ReflectionDecisionType.ACCEPT_WITH_LIMITATIONS
+    assert result.decision.diagnostics.get("validator") == "exhaustive_list_truncated"
+    assert result.diagnostics["coverage_requirement"] == "exhaustive_list"
+    assert result.diagnostics["evidence_truncated"] is True

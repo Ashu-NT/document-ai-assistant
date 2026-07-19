@@ -109,6 +109,8 @@ class ReflectionService:
         reference_notes: list[Any] | None = None,
         retrieval_query_intent: str | None = None,
         retrieval_intent_decision: RetrievalIntentDecision | None = None,
+        coverage_requirement: str | None = None,
+        evidence_truncated: bool = False,
     ) -> ReflectionResult:
         has_relevant_maintenance_evidence = (
             MaintenanceEvidenceRelevanceDetector.has_relevant_evidence(
@@ -237,6 +239,8 @@ class ReflectionService:
             has_duplicate_answer_content=answer_quality.has_duplicate_content,
             generic_sufficiency_verdict=generic_sufficiency_verdict,
             ambiguous_intent_tie=ambiguous_intent_tie,
+            coverage_requirement=coverage_requirement,
+            evidence_truncated=evidence_truncated,
         )
         grounding_score = min(
             answer_quality.score,
@@ -288,6 +292,8 @@ class ReflectionService:
                 "evidence_quality": asdict(evidence_quality),
                 "validator_decision": effective_decision.decision.value,
                 "retrieval_query_intent": retrieval_query_intent,
+                "coverage_requirement": coverage_requirement,
+                "evidence_truncated": evidence_truncated,
                 "evidence_sufficiency_verdict": generic_sufficiency_verdict.verdict.value,
                 "ambiguous_intent_tie": (
                     {
