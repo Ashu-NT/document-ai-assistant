@@ -7,10 +7,36 @@ from src.application.prompts.answer_generation.prompt_context.models import (
 from src.config.settings import prompt_context_settings
 
 
+def _truncation_entry(
+    *, total_count: int, selected_count: int, reason: str
+) -> dict[str, object]:
+    return {
+        "total_count": total_count,
+        "selected_count": selected_count,
+        "omitted_count": total_count - selected_count,
+        "truncated": True,
+        "truncation_reason": reason,
+    }
+
+
 class StructuredEvidencePayloadSerializer:
     def serialize(self, context: PromptContextBundle | None) -> str:
+        payload_json, _diagnostics = self.serialize_with_diagnostics(context)
+        return payload_json
+
+    def serialize_with_diagnostics(
+        self, context: PromptContextBundle | None
+    ) -> tuple[str, dict[str, object]]:
+        """Same as `serialize()`, but also returns truncation diagnostics
+        for every array this method silently caps via `_capped()`, plus
+        each table's row cap -- PR 8, W6,
+        answering_flow_weakness_remediation_plan.md. `serialize()` stays a
+        thin wrapper so its existing callers/tests don't need to change."""
         if context is None:
-            return ""
+            return "", {}
+        return self._serialize(context), self._truncation_diagnostics(context)
+
+    def _serialize(self, context: PromptContextBundle) -> str:
         payload = {
             "answer_intent": context.answer_intent_value,
             "source_count": context.source_count,
@@ -53,6 +79,45 @@ class StructuredEvidencePayloadSerializer:
     def _capped(items: list, *, limit: int | None = None) -> list:
         cap = limit if limit is not None else prompt_context_settings.max_items_per_array
         return items[:cap]
+
+    @staticmethod
+    def _truncation_diagnostics(context: PromptContextBundle) -> dict[str, object]:
+        max_items = prompt_context_settings.max_items_per_array
+        array_fields = {
+            "sources": context.sources,
+            "key_values": context.key_values,
+            "maintenance_entries": context.maintenance_entries,
+            "tables": context.tables,
+            "structured_entities": context.entities,
+            "relationship_edges": context.relationship_edges,
+            "relationship_families": context.relationship_families,
+            "source_families": context.source_families,
+            "section_topology": context.section_topology,
+        }
+        array_truncation = {
+            name: _truncation_entry(
+                total_count=len(items),
+                selected_count=max_items,
+                reason="max_items_per_array",
+            )
+            for name, items in array_fields.items()
+            if len(items) > max_items
+        }
+        table_row_truncation = {
+            table.table_id: _truncation_entry(
+                total_count=len(table.rows),
+                selected_count=prompt_context_settings.max_rows_per_table,
+                reason="max_rows_per_table",
+            )
+            for table in context.tables
+            if len(table.rows) > prompt_context_settings.max_rows_per_table
+        }
+        return {
+            "prompt_payload_array_truncation": array_truncation,
+            "prompt_payload_table_row_truncation": table_row_truncation,
+            "prompt_payload_truncated": bool(array_truncation)
+            or bool(table_row_truncation),
+        }
 
     @staticmethod
     def _source_payload(source) -> dict[str, object]:

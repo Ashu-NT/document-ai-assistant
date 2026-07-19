@@ -78,15 +78,23 @@ class AnswerPromptBuilder:
             request.structured_context
         )
         evidence_schema = self.evidence_schema_formatter.format(prompt_context)
-        structured_payload = self.structured_evidence_payload_serializer.serialize(
-            prompt_context
+        structured_payload, payload_truncation_diagnostics = (
+            self.structured_evidence_payload_serializer.serialize_with_diagnostics(
+                prompt_context
+            )
         )
-        source_blocks, appendix_source_numbers = (
-            self.raw_source_appendix_formatter.format_with_selection(prompt_context)
+        source_blocks, appendix_source_numbers, appendix_truncation_diagnostics = (
+            self.raw_source_appendix_formatter.format_with_diagnostics(prompt_context)
         )
         if prompt_context is not None:
             prompt_context = replace(
-                prompt_context, appendix_source_numbers=appendix_source_numbers
+                prompt_context,
+                appendix_source_numbers=appendix_source_numbers,
+                diagnostics={
+                    **prompt_context.diagnostics,
+                    **payload_truncation_diagnostics,
+                    "raw_source_appendix_truncation": appendix_truncation_diagnostics,
+                },
             )
         prompt = (
             f"{ANSWER_GROUNDING_RULES}\n\n"

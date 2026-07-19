@@ -217,3 +217,101 @@ def test_select_excludes_whitespace_only_content_sources() -> None:
     selected = RawSourceInclusionPolicy().select(context)
 
     assert selected == []
+
+
+def test_select_with_diagnostics_reports_omitted_sources_under_a_tight_budget() -> None:
+    """PR 8 (answering_flow_weakness_remediation_plan.md, W6): the same
+    "3 sources chosen from a table-heavy context that limits to 2" scenario
+    as test_select_limits_rich_context_and_skips_contextual_tail above,
+    but asserting the truncation diagnostics this time."""
+    long_context = " ".join(["evidence"] * 120)
+    context = PromptContextBundle(
+        answer_intent_value="table_summary",
+        source_count=3,
+        sources=[
+            PromptSourceView(source_number=1, chunk_id="chunk_001", content=long_context),
+            PromptSourceView(source_number=2, chunk_id="chunk_002", content=long_context),
+            PromptSourceView(source_number=3, chunk_id="chunk_003", content=long_context),
+        ],
+        appendix_sources=[
+            PromptSourceView(source_number=1, chunk_id="chunk_001", content=long_context),
+            PromptSourceView(source_number=2, chunk_id="chunk_002", content=long_context),
+            PromptSourceView(source_number=3, chunk_id="chunk_003", content=long_context),
+        ],
+        source_families=[
+            PromptSourceFamilyView(
+                family_id="family_001",
+                family_label="Specs",
+                anchor_source_number=1,
+                direct_source_numbers=[1],
+                supporting_source_numbers=[2],
+                contextual_source_numbers=[3],
+                table_source_numbers=[1],
+            )
+        ],
+        tables=[
+            PromptTableView(
+                table_id="chunk_001:table",
+                table_type="specification_table",
+                source_number=1,
+                chunk_id="chunk_001",
+                headers=["Parameter", "Value"],
+                rows=[
+                    PromptTableRowView(
+                        source_row_index=1,
+                        cells=["Test pressure", "700 bar"],
+                    )
+                ],
+            )
+        ],
+        entities=[],
+        relationship_edges=[],
+        key_values=[
+            AnswerKeyValue(key="A", value="1", unit=None, source_number=1),
+            AnswerKeyValue(key="B", value="2", unit=None, source_number=1),
+            AnswerKeyValue(key="C", value="3", unit=None, source_number=1),
+            AnswerKeyValue(key="D", value="4", unit=None, source_number=1),
+        ],
+    )
+
+    selected, diagnostics = RawSourceInclusionPolicy().select_with_diagnostics(context)
+
+    assert [source.source_number for source in selected] == [1, 2]
+    assert diagnostics["total_count"] == 3
+    assert diagnostics["selected_count"] == 2
+    assert diagnostics["omitted_count"] == 1
+    assert diagnostics["truncated"] is True
+    assert diagnostics["truncation_reason"] == "raw_source_budget"
+    assert diagnostics["char_truncated_source_numbers"] == [1, 2]
+
+
+def test_select_with_diagnostics_reports_no_truncation_when_everything_fits() -> None:
+    context = PromptContextBundle(
+        answer_intent_value="specification_summary",
+        source_count=1,
+        sources=[
+            PromptSourceView(source_number=1, chunk_id="chunk_001", content="short"),
+        ],
+        appendix_sources=[
+            PromptSourceView(source_number=1, chunk_id="chunk_001", content="short"),
+        ],
+        key_values=[],
+    )
+
+    selected, diagnostics = RawSourceInclusionPolicy().select_with_diagnostics(context)
+
+    assert len(selected) == 1
+    assert diagnostics["total_count"] == 1
+    assert diagnostics["selected_count"] == 1
+    assert diagnostics["omitted_count"] == 0
+    assert diagnostics["truncated"] is False
+    assert diagnostics["truncation_reason"] is None
+    assert diagnostics["char_truncated_source_numbers"] == []
+
+
+def test_select_with_diagnostics_returns_empty_diagnostics_for_none_context() -> None:
+    selected, diagnostics = RawSourceInclusionPolicy().select_with_diagnostics(None)
+
+    assert selected == []
+    assert diagnostics["truncated"] is False
+    assert diagnostics["total_count"] == 0

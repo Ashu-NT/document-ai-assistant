@@ -420,13 +420,42 @@ values match that already-verified classification end to end, not just that the 
 passed, only the known pre-existing OCR failure
 (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
-### PR 8 — Evidence truncation metadata (closes W6)
+### PR 8 status: implemented (2026-07-19) — Evidence truncation metadata (closes W6)
 
-Locate every truncating operation (`PromptBudgetAllocator`'s 2-source/350-char budget, `max_rows_per_table`,
-`max_items_per_array`) and have each return `selected_count`/`total_count`/`omitted_count`/`truncated`/
-`truncation_reason` alongside the truncated data, surfaced through `GeneratedAnswer.diagnostics` (the same path
-Phase 3 of the prior plan already wired for the canonicalizer's counters). Do not change cap *values* in this
-PR — observability first.
+Every truncating operation the plan named now reports `selected_count`/`total_count`/`omitted_count`/
+`truncated`/`truncation_reason` (plus, for the raw appendix, which source_numbers had their *content*
+char-truncated) alongside the truncated data — no cap values changed, observability only, per the plan:
+
+- **`RawSourceInclusionPolicy`** (`PromptBudgetAllocator`'s source-count/char budget) — `select()` gained a
+  twin `select_with_diagnostics()` returning `(sources, diagnostics)`; `select()` itself is now a one-line
+  wrapper that discards the diagnostics, so its 5 existing tests needed zero changes. `RawSourceAppendixFormatter`
+  got the same treatment: a new `format_with_diagnostics()` alongside the existing `format()`/
+  `format_with_selection()`, all three now composing down to one real implementation.
+- **`StructuredEvidencePayloadSerializer`** (`max_items_per_array`, `max_rows_per_table`) — same twin-method
+  pattern: `serialize()` kept its exact signature/behavior (9 existing tests unchanged), `serialize_with_
+  diagnostics()` added alongside it, reporting a per-array-field truncation entry (`sources`/`key_values`/
+  `maintenance_entries`/`tables`/`structured_entities`/`relationship_edges`/`relationship_families`/
+  `source_families`/`section_topology`) and a per-table-id row-truncation entry, only for fields that actually
+  exceeded their cap (an under-cap field doesn't appear in the dict at all, rather than reporting a trivially
+  `truncated: false` entry for everything).
+- **Wiring**: `AnswerPromptBuilder.build_with_context()` now calls both diagnostics-returning variants and
+  merges their output into the returned `PromptContextBundle.diagnostics` (`prompt_payload_array_truncation`,
+  `prompt_payload_table_row_truncation`, `prompt_payload_truncated`, `raw_source_appendix_truncation`) — no new
+  wiring needed downstream at all, since `AnswerGenerationService.generate()` already does
+  `diagnostics.update(context_bundle.diagnostics)` (the exact "same path Phase 3 already wired for the
+  canonicalizer's counters" the plan pointed at).
+
+This twin-method pattern (`select()`/`select_with_diagnostics()`, `serialize()`/`serialize_with_diagnostics()`)
+deliberately mirrors `RawSourceAppendixFormatter`'s own pre-existing `format()`/`format_with_selection()` split
+already in this file — the established convention here for "richer optional return, unchanged default," not a
+new idiom invented for this PR.
+
+**Tests**: `test_raw_source_inclusion_policy.py` (+3: tight-budget omission with char-truncation flags,
+everything-fits/no-truncation, `None` context), `test_structured_evidence_payload_serializer.py` (+4: array
+truncation, table-row truncation, nothing-truncated shape, `None` context), `test_answer_prompt_builder_core.py`
+(+1: end-to-end diagnostics merge into the bundle, forcing truncation via a monkeypatched
+`max_items_per_array=1`). Full suite: 3347 passed, only the known pre-existing OCR failure
+(`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
 ### PR 9 — Coverage requirements (closes part of W5's completeness gap)
 

@@ -270,6 +270,100 @@ def test_serializer_caps_maintenance_entry_references_at_the_general_array_limit
     assert len(payload["maintenance_entries"][0]["references"]) == 2
 
 
+def test_serialize_with_diagnostics_reports_array_truncation() -> None:
+    """PR 8 (answering_flow_weakness_remediation_plan.md, W6): a capped
+    array must now say so -- selected_count/total_count/omitted_count/
+    truncated/truncation_reason -- instead of silently dropping items with
+    no diagnostic trace at all."""
+    key_values = [
+        AnswerKeyValue(key=f"Key {i}", value=f"Value {i}", unit=None, source_number=1)
+        for i in range(25)
+    ]
+    bundle = PromptContextBundle(
+        answer_intent_value=AnswerIntent.GENERAL.value,
+        source_count=1,
+        sources=[PromptSourceView(source_number=1, chunk_id="chunk_001", content="")],
+        key_values=key_values,
+    )
+
+    _payload, diagnostics = StructuredEvidencePayloadSerializer().serialize_with_diagnostics(
+        bundle
+    )
+
+    assert diagnostics["prompt_payload_truncated"] is True
+    key_value_truncation = diagnostics["prompt_payload_array_truncation"]["key_values"]
+    assert key_value_truncation == {
+        "total_count": 25,
+        "selected_count": 20,
+        "omitted_count": 5,
+        "truncated": True,
+        "truncation_reason": "max_items_per_array",
+    }
+    assert "sources" not in diagnostics["prompt_payload_array_truncation"]
+
+
+def test_serialize_with_diagnostics_reports_table_row_truncation(monkeypatch) -> None:
+    monkeypatch.setattr(prompt_context_settings, "max_rows_per_table", 2)
+    table = PromptTableView(
+        table_id="table_1",
+        table_type="spare_parts",
+        source_number=1,
+        chunk_id="chunk_001",
+        rows=[
+            PromptTableRowView(source_row_index=i, cells=[str(i)]) for i in range(5)
+        ],
+    )
+    bundle = PromptContextBundle(
+        answer_intent_value=AnswerIntent.GENERAL.value,
+        source_count=1,
+        sources=[PromptSourceView(source_number=1, chunk_id="chunk_001", content="")],
+        tables=[table],
+    )
+
+    _payload, diagnostics = StructuredEvidencePayloadSerializer().serialize_with_diagnostics(
+        bundle
+    )
+
+    assert diagnostics["prompt_payload_truncated"] is True
+    assert diagnostics["prompt_payload_table_row_truncation"]["table_1"] == {
+        "total_count": 5,
+        "selected_count": 2,
+        "omitted_count": 3,
+        "truncated": True,
+        "truncation_reason": "max_rows_per_table",
+    }
+
+
+def test_serialize_with_diagnostics_reports_nothing_truncated_when_under_the_caps() -> None:
+    bundle = PromptContextBundle(
+        answer_intent_value=AnswerIntent.GENERAL.value,
+        source_count=1,
+        sources=[PromptSourceView(source_number=1, chunk_id="chunk_001", content="")],
+        key_values=[
+            AnswerKeyValue(key="Key", value="Value", unit=None, source_number=1)
+        ],
+    )
+
+    _payload, diagnostics = StructuredEvidencePayloadSerializer().serialize_with_diagnostics(
+        bundle
+    )
+
+    assert diagnostics == {
+        "prompt_payload_array_truncation": {},
+        "prompt_payload_table_row_truncation": {},
+        "prompt_payload_truncated": False,
+    }
+
+
+def test_serialize_with_diagnostics_returns_empty_for_none_context() -> None:
+    payload, diagnostics = StructuredEvidencePayloadSerializer().serialize_with_diagnostics(
+        None
+    )
+
+    assert payload == ""
+    assert diagnostics == {}
+
+
 def test_serializer_emits_compact_json_with_no_indentation() -> None:
     bundle = PromptContextProjector().project(
         AnswerContextOrganizer().organize(

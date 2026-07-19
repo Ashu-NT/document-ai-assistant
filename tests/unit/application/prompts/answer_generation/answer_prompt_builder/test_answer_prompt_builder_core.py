@@ -13,6 +13,7 @@ from src.application.workflows.question_answering.answer_context import (
     AnswerRelationship,
     AnswerStructuredEntity,
 )
+from src.config.settings import prompt_context_settings
 from src.domain.common import ChunkType
 from src.domain.common.source_location import SourceLocation
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
@@ -159,6 +160,44 @@ def test_answer_prompt_builder_with_context_exposes_diagnostics_and_appendix_sel
     assert "prompt_canonicalized_key_values_removed" in bundle.diagnostics
     assert "prompt_payload_sources_content_omitted" in bundle.diagnostics
     assert "prompt_payload_table_rows_removed" in bundle.diagnostics
+
+
+def test_answer_prompt_builder_with_context_surfaces_truncation_diagnostics(
+    monkeypatch,
+) -> None:
+    """PR 8 (answering_flow_weakness_remediation_plan.md, W6): the bundle's
+    diagnostics must now say WHEN something was silently capped, not just
+    run the canonicalizer. Forcing max_items_per_array down to 1 makes a
+    normal 2-chunk request exceed the structured-payload's `sources` cap
+    deterministically, without needing a large hand-built fixture."""
+    monkeypatch.setattr(prompt_context_settings, "max_items_per_array", 1)
+    builder = AnswerPromptBuilder()
+    chunks = [
+        _make_chunk(chunk_id="c1", content="Content A"),
+        _make_chunk(chunk_id="c2", content="Content B"),
+    ]
+    structured_context = AnswerContextOrganizer().organize(
+        answer_intent=AnswerIntent.GENERAL,
+        chunks=chunks,
+    )
+    request = AnswerGenerationRequest(
+        question="Test?",
+        context_chunks=chunks,
+        answer_intent=AnswerIntent.GENERAL,
+        structured_context=structured_context,
+        format_policy=AnswerFormatPolicy.for_intent(AnswerIntent.GENERAL),
+    )
+
+    _prompt, bundle = builder.build_with_context(request)
+
+    assert bundle is not None
+    assert bundle.diagnostics["prompt_payload_truncated"] is True
+    sources_truncation = bundle.diagnostics["prompt_payload_array_truncation"]["sources"]
+    assert sources_truncation["total_count"] == 2
+    assert sources_truncation["selected_count"] == 1
+    assert sources_truncation["truncation_reason"] == "max_items_per_array"
+    assert "raw_source_appendix_truncation" in bundle.diagnostics
+    assert "total_count" in bundle.diagnostics["raw_source_appendix_truncation"]
 
 
 def test_answer_prompt_builder_build_returns_only_the_prompt_string() -> None:

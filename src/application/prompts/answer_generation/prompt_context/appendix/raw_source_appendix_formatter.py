@@ -29,13 +29,24 @@ class RawSourceAppendixFormatter:
         "merely listed in the structured JSON payload" (see
         RawSourceInclusionPolicy.select()).
         """
+        text, source_numbers, _diagnostics = self.format_with_diagnostics(context)
+        return text, source_numbers
+
+    def format_with_diagnostics(
+        self, context: PromptContextBundle | None
+    ) -> tuple[str, list[int], dict[str, object]]:
+        """Same as `format_with_selection()`, but also returns the raw
+        appendix's truncation diagnostics (PR 8, W6,
+        answering_flow_weakness_remediation_plan.md)."""
         if context is None:
-            return "", []
-        sources = self.raw_source_inclusion_policy.select(context)
+            return "", [], {}
+        sources, diagnostics = self.raw_source_inclusion_policy.select_with_diagnostics(
+            context
+        )
         if not sources:
-            return "", []
+            return "", [], diagnostics
         text = "\n\n".join(self._format_source_block(source) for source in sources)
-        return text, [source.source_number for source in sources]
+        return text, [source.source_number for source in sources], diagnostics
 
     def _format_source_block(self, source: PromptSourceView) -> str:
         page_range = self._format_page_bounds(source.page_start, source.page_end)
