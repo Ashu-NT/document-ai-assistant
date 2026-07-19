@@ -41,9 +41,16 @@ class ReflectionJsonParser:
             # ReflectionValidator's `not hard_grounding_violation` checks
             # work identically regardless of which decider produced the
             # decision.
-            diagnostics=(
-                {"hard_grounding_violation": "llm_reported_grounding_violation"}
-                if data.grounding_violation
-                else {}
-            ),
+            diagnostics={
+                **(
+                    {"hard_grounding_violation": "llm_reported_grounding_violation"}
+                    if data.grounding_violation
+                    else {}
+                ),
+                # Always present (unlike hard_grounding_violation, a graded
+                # score is informative even at its 1.0 baseline) -- W9,
+                # answering_flow_weakness_remediation_plan.md.
+                "entailment_score": data.entailment_score,
+                "unsupported_claims": list(data.unsupported_claims),
+            },
         )

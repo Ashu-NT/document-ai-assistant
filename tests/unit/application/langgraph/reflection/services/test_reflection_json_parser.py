@@ -72,3 +72,41 @@ def test_reflection_json_parser_defaults_grounding_violation_to_false_when_omitt
     )
 
     assert not decision.diagnostics.get("hard_grounding_violation")
+
+
+def test_reflection_json_parser_populates_entailment_score_and_unsupported_claims() -> None:
+    parser = ReflectionJsonParser()
+
+    decision = parser.parse(
+        '{"decision":"ACCEPT_WITH_LIMITATIONS","confidence":0.7,'
+        '"reason":"Partially unsupported.","retry_query":null,'
+        '"clarification_question":null,"missing_information":[],'
+        '"entailment_score":0.5,"unsupported_claims":["The tank capacity is 2000 L."]}'
+    )
+
+    assert decision.diagnostics["entailment_score"] == 0.5
+    assert decision.diagnostics["unsupported_claims"] == [
+        "The tank capacity is 2000 L."
+    ]
+
+
+def test_reflection_json_parser_defaults_entailment_score_to_one_when_omitted() -> None:
+    parser = ReflectionJsonParser()
+
+    decision = parser.parse(
+        '{"decision":"ACCEPT","confidence":0.9,"reason":"Grounded.","retry_query":null,'
+        '"clarification_question":null,"missing_information":[]}'
+    )
+
+    assert decision.diagnostics["entailment_score"] == 1.0
+    assert decision.diagnostics["unsupported_claims"] == []
+
+
+def test_reflection_json_parser_rejects_entailment_score_out_of_range() -> None:
+    parser = ReflectionJsonParser()
+
+    with pytest.raises(SchemaValidationError):
+        parser.parse(
+            '{"decision":"ACCEPT","confidence":0.9,"reason":"Grounded.","retry_query":null,'
+            '"clarification_question":null,"missing_information":[],"entailment_score":1.5}'
+        )

@@ -585,3 +585,59 @@ def test_review_downgrades_an_exhaustive_list_claim_over_truncated_evidence_end_
     assert result.decision.diagnostics.get("validator") == "exhaustive_list_truncated"
     assert result.diagnostics["coverage_requirement"] == "exhaustive_list"
     assert result.diagnostics["evidence_truncated"] is True
+
+
+# -- W9: claim-to-evidence entailment replaces the lexical answer-quality proxy
+
+
+def test_review_uses_llm_entailment_score_over_lexical_proxy_when_available() -> None:
+    llm_service = _FakeLLMService(
+        '{"decision":"ACCEPT_WITH_LIMITATIONS","confidence":0.6,'
+        '"reason":"One claim is unsupported.","retry_query":null,'
+        '"clarification_question":null,"missing_information":[],'
+        '"entailment_score":0.4,"unsupported_claims":["Pump flow rate is 120 m3/h."]}'
+    )
+    service = ReflectionService(
+        llm_service=llm_service,
+        policy=ReflectionPolicy(enabled=True),
+    )
+
+    result = service.review(**_review_kwargs())
+
+    assert result.answer_quality_score == 0.4
+    assert result.diagnostics["entailment_used"] is True
+    assert result.diagnostics["unsupported_claims"] == ["Pump flow rate is 120 m3/h."]
+    assert "unsupported_claims" in result.diagnostics["answer_quality"]["issues"]
+    # grounding_score/overall_score derive from answer_quality_score, so the
+    # entailment override must flow through to them too, not just the raw
+    # answer_quality_score field.
+    assert result.grounding_score == min(0.4, result.evidence_quality_score)
+
+
+def test_review_does_not_use_entailment_when_the_llm_call_is_disabled() -> None:
+    service = ReflectionService(policy=ReflectionPolicy(enabled=False))
+
+    result = service.review(**_review_kwargs())
+
+    assert result.diagnostics["entailment_used"] is False
+    assert result.diagnostics["unsupported_claims"] == []
+
+
+def test_review_defaults_entailment_score_to_one_when_the_llm_response_omits_it() -> None:
+    """Backward-compatible default: an LLM response with no entailment_score
+    field at all still counts as "used" (the schema defaults it to 1.0, a
+    fully-supported baseline), not silently ignored."""
+    llm_service = _FakeLLMService(
+        '{"decision":"ACCEPT","confidence":0.9,"reason":"Grounded.",'
+        '"retry_query":null,"clarification_question":null,"missing_information":[]}'
+    )
+    service = ReflectionService(
+        llm_service=llm_service,
+        policy=ReflectionPolicy(enabled=True),
+    )
+
+    result = service.review(**_review_kwargs())
+
+    assert result.diagnostics["entailment_used"] is True
+    assert result.answer_quality_score == 1.0
+    assert result.diagnostics["unsupported_claims"] == []

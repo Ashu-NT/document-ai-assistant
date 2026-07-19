@@ -136,6 +136,16 @@ class ReflectionPromptBuilder:
                 "just because evidence is incomplete or the answer could be more thorough "
                 "-- that is what RETRIEVE_AGAIN/ACCEPT_WITH_LIMITATIONS are for.",
                 "",
+                "entailment_score rates, from 0.0 to 1.0, how well every factual claim in "
+                "the answer is directly supported by the approved evidence -- 1.0 means "
+                "every claim is supported, 0.0 means the answer is unsupported or "
+                "contradicted throughout. This is graded, not binary: an answer with one "
+                "unsupported detail among several supported claims should score partway "
+                "down, not 0.0. List each unsupported claim in unsupported_claims (empty "
+                "if entailment_score is 1.0). Judge only whether claims follow from the "
+                "evidence -- do not penalize entailment_score for incompleteness, that is "
+                "still what missing_information/RETRIEVE_AGAIN are for.",
+                "",
                 *extra_rules,
                 "JSON schema:",
                 '{',
@@ -145,7 +155,9 @@ class ReflectionPromptBuilder:
                 '  "retry_query": "string or null",',
                 '  "clarification_question": "string or null",',
                 '  "missing_information": ["string"],',
-                '  "grounding_violation": false',
+                '  "grounding_violation": false,',
+                '  "entailment_score": 1.0,',
+                '  "unsupported_claims": ["string"]',
                 '}',
                 "",
                 f"Original user question: {original_user_question}",

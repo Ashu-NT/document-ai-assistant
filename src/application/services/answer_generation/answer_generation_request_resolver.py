@@ -47,6 +47,7 @@ class AnswerGenerationRequestResolver:
             structured_context = self.answer_context_organizer.organize(
                 answer_intent=answer_intent,
                 chunks=context_chunks,
+                resolved_identifiers=request.resolved_identifiers,
             )
         elif structured_context.answer_intent != answer_intent:
             structured_context = replace(

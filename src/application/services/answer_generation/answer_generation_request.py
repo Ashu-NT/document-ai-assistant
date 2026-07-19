@@ -37,6 +37,13 @@ class AnswerGenerationRequest:
     # to be reachable via a since-removed max_context_chunks field that let
     # this service truncate context_chunks before its own recompute).
     answer_intent_decision: AnswerIntentDecision | None = None
+    # An exact scoring tie in the retrieval-side classification that
+    # selected this turn's evidence (RetrievalQuery.is_intent_contested()) --
+    # threaded through so DeterministicDispatchGate can bypass to the LLM
+    # even when the answer-side intent decision looks confident (W2,
+    # answering_flow_weakness_remediation_plan.md). Additive to, not a
+    # merge with, AnswerIntentDecision's own contested signal.
+    retrieval_intent_contested: bool = False
     structured_context: StructuredAnswerContext | None = None
     format_policy: AnswerFormatPolicy | None = None
     route: str | None = None

@@ -195,6 +195,85 @@ def test_conflicting_evidence_check_runs_before_the_compound_check() -> None:
     assert result.reason == "conflicting_evidence"
 
 
+def test_bypasses_for_a_contested_retrieval_intent() -> None:
+    gate = DeterministicDispatchGate()
+    decision = _decision(intent=AnswerIntent.SPECIFICATION_SUMMARY)
+
+    result = gate.evaluate(
+        question="What is the operating pressure?",
+        effective_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        intent_decision=decision,
+        retrieval_intent_contested=True,
+    )
+
+    assert result.should_bypass is True
+    assert result.reason == "retrieval_contested"
+
+
+def test_does_not_bypass_when_retrieval_intent_is_not_contested() -> None:
+    gate = DeterministicDispatchGate()
+    decision = _decision(intent=AnswerIntent.SPECIFICATION_SUMMARY)
+
+    result = gate.evaluate(
+        question="What is the operating pressure?",
+        effective_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        intent_decision=decision,
+        retrieval_intent_contested=False,
+    )
+
+    assert result.should_bypass is False
+
+
+def test_retrieval_contested_check_runs_before_the_conflicting_evidence_check() -> None:
+    gate = DeterministicDispatchGate()
+    decision = _decision(intent=AnswerIntent.SPECIFICATION_SUMMARY)
+
+    result = gate.evaluate(
+        question="What is the operating pressure?",
+        effective_intent=AnswerIntent.SPECIFICATION_SUMMARY,
+        intent_decision=decision,
+        has_conflicting_evidence=True,
+        retrieval_intent_contested=True,
+    )
+
+    assert result.reason == "retrieval_contested"
+
+
+def test_retrieval_contested_check_runs_before_the_compound_check() -> None:
+    gate = DeterministicDispatchGate()
+    decision = _decision(intent=AnswerIntent.IDENTIFIER_LOOKUP)
+
+    result = gate.evaluate(
+        question="What are the spare parts and how do I replace the seal?",
+        effective_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        intent_decision=decision,
+        retrieval_intent_contested=True,
+    )
+
+    assert result.reason == "retrieval_contested"
+
+
+def test_contested_intent_check_runs_before_the_retrieval_contested_check() -> None:
+    """The answer-side decision's own contested tie is cheaper to compute
+    and already available -- it must still win when both signals fire."""
+    gate = DeterministicDispatchGate()
+    decision = _decision(
+        intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        best_score=6,
+        runner_up_intent=AnswerIntent.TABLE_SUMMARY,
+        runner_up_score=6,
+    )
+
+    result = gate.evaluate(
+        question="List all part numbers",
+        effective_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        intent_decision=decision,
+        retrieval_intent_contested=True,
+    )
+
+    assert result.reason == "contested_intent"
+
+
 def test_ignores_a_contested_tie_about_an_intent_that_was_overridden_away() -> None:
     """Regression test: a caller can force `effective_intent` to something
     other than what AnswerIntentAnalyzer.analyze() would pick on its own

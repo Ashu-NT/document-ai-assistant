@@ -33,6 +33,7 @@ from src.application.services.answer_generation.execution import (
     AnswerGenerationResultAssembler,
 )
 from src.application.services.answer_generation.formatting.format_policy_violation_detector import (
+    build_format_policy_corrective_note,
     detect_format_policy_violations,
 )
 from src.application.services.answer_generation.formatting.identifier_answer_renderer import (
@@ -208,6 +209,7 @@ class AnswerGenerationService:
             effective_intent=resolved_request.answer_intent,
             intent_decision=intent_decision,
             has_conflicting_evidence=has_conflicting_evidence,
+            retrieval_intent_contested=resolved_request.retrieval_intent_contested,
         )
         diagnostics["deterministic_dispatch_bypassed"] = (
             dispatch_gate_decision.should_bypass
@@ -272,8 +274,30 @@ class AnswerGenerationService:
             format_policy=resolved_request.format_policy,
             answer_text=execution_result.parsed_output.answer_text,
         )
+        format_policy_violation_regenerated = False
+        if format_policy_violations:
+            # Single corrective retry, structural violations only -- never
+            # re-judges answer *content* (W7b,
+            # answering_flow_weakness_remediation_plan.md). Mirrors
+            # AnswerGenerationPromptExecutor's own schema-validation retry
+            # shape: append a note describing exactly what was missing, ask
+            # for one corrected attempt, accept whatever comes back
+            # (a still-imperfect retry is still used -- this is a best
+            # effort nudge, not a hard block).
+            corrective_prompt = prompt + build_format_policy_corrective_note(
+                format_policy_violations
+            )
+            execution_result = self.prompt_executor.execute(corrective_prompt)
+            format_policy_violations = detect_format_policy_violations(
+                format_policy=resolved_request.format_policy,
+                answer_text=execution_result.parsed_output.answer_text,
+            )
+            format_policy_violation_regenerated = True
         diagnostics["format_policy_violation"] = bool(format_policy_violations)
         diagnostics["format_policy_violation_reasons"] = format_policy_violations
+        diagnostics["format_policy_violation_regenerated"] = (
+            format_policy_violation_regenerated
+        )
         sources = structured_context.sources if structured_context is not None else ()
         log_answer_generation_recorded(
             answer_intent=resolved_request.answer_intent,

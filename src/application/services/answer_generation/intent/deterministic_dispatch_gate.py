@@ -16,6 +16,7 @@ class DispatchBypassReason(StrEnum):
     NO_SIGNAL = "no_signal"
     COMPOUND_QUESTION = "compound_question"
     CONFLICTING_EVIDENCE = "conflicting_evidence"
+    RETRIEVAL_CONTESTED = "retrieval_contested"
 
 
 @dataclass(slots=True, frozen=True)
@@ -45,8 +46,9 @@ class DeterministicDispatchGate:
         effective_intent,
         intent_decision: AnswerIntentDecision,
         has_conflicting_evidence: bool = False,
+        retrieval_intent_contested: bool = False,
     ) -> DispatchGateDecision:
- 
+
         intent_decision_is_in_effect = intent_decision.intent == effective_intent
         if intent_decision_is_in_effect and intent_decision.is_contested:
             return DispatchGateDecision(
@@ -58,6 +60,16 @@ class DeterministicDispatchGate:
             return DispatchGateDecision(
                 should_bypass=True,
                 reason=DispatchBypassReason.NO_SIGNAL,
+            )
+        # W2, answering_flow_weakness_remediation_plan.md: the answer-side
+        # decision above can look confident even when the *retrieval-side*
+        # classification that actually selected this turn's evidence was
+        # itself an exact tie -- a third, independent bypass condition, not
+        # a merge of the two taxonomies.
+        if retrieval_intent_contested:
+            return DispatchGateDecision(
+                should_bypass=True,
+                reason=DispatchBypassReason.RETRIEVAL_CONTESTED,
             )
         if has_conflicting_evidence:
             return DispatchGateDecision(

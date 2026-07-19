@@ -7,13 +7,38 @@ from src.application.workflows.question_answering.answer_context.models import (
     AnswerMaintenanceReference,
     AnswerSource,
 )
+from src.domain.common import IdentifierType
+from src.domain.document.entities.identifier import Identifier
 
 
-def _source(source_number: int, document_id: str) -> AnswerSource:
+def _source(
+    source_number: int,
+    document_id: str,
+    *,
+    chunk_type: str | None = None,
+    section_path: str | None = None,
+    content: str = "",
+) -> AnswerSource:
     return AnswerSource(
         source_number=source_number,
         chunk_id=f"chunk_{source_number}",
         document_id=document_id,
+        chunk_type=chunk_type,
+        section_path=section_path,
+        content=content,
+    )
+
+
+def _identifier(
+    document_id: str,
+    raw_value: str,
+    identifier_type: IdentifierType = IdentifierType.MODEL_NUMBER,
+) -> Identifier:
+    return Identifier(
+        identifier_id=f"id_{document_id}_{raw_value}",
+        document_id=document_id,
+        raw_value=raw_value,
+        identifier_type=identifier_type,
     )
 
 
@@ -234,3 +259,265 @@ def test_document_ids_defaults_to_empty_when_sources_are_not_provided() -> None:
     )
 
     assert conflicts[0].document_ids == ()
+
+
+# -- equipment-variant/document-revision normalization (W4 follow-up) -----
+
+
+def test_suppresses_a_conflict_between_disjoint_equipment_variants() -> None:
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[
+            _kv("Operating pressure", "6 bar", source_number=1),
+            _kv("Operating pressure", "8 bar", source_number=2),
+        ],
+        maintenance_entries=[],
+        sources=[_source(1, "doc_a"), _source(2, "doc_b")],
+        resolved_identifiers=[
+            _identifier("doc_a", "HP-100"),
+            _identifier("doc_b", "HP-200"),
+        ],
+    )
+
+    assert conflicts == []
+
+
+def test_still_flags_a_conflict_when_documents_share_a_model_number() -> None:
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[
+            _kv("Operating pressure", "6 bar", source_number=1),
+            _kv("Operating pressure", "8 bar", source_number=2),
+        ],
+        maintenance_entries=[],
+        sources=[_source(1, "doc_a"), _source(2, "doc_b")],
+        resolved_identifiers=[
+            _identifier("doc_a", "HP-100"),
+            _identifier("doc_b", "HP-100"),
+        ],
+    )
+
+    assert len(conflicts) == 1
+
+
+def test_still_flags_a_conflict_when_model_numbers_are_not_resolved() -> None:
+    """Backward compatibility: with no resolved_identifiers passed at all
+    (every caller before this feature existed), behavior is unchanged."""
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[
+            _kv("Operating pressure", "6 bar", source_number=1),
+            _kv("Operating pressure", "8 bar", source_number=2),
+        ],
+        maintenance_entries=[],
+        sources=[_source(1, "doc_a"), _source(2, "doc_b")],
+    )
+
+    assert len(conflicts) == 1
+
+
+def test_ignores_non_model_number_identifiers_for_variant_suppression() -> None:
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[
+            _kv("Operating pressure", "6 bar", source_number=1),
+            _kv("Operating pressure", "8 bar", source_number=2),
+        ],
+        maintenance_entries=[],
+        sources=[_source(1, "doc_a"), _source(2, "doc_b")],
+        resolved_identifiers=[
+            _identifier("doc_a", "PN-100", identifier_type=IdentifierType.PART_NUMBER),
+            _identifier("doc_b", "PN-200", identifier_type=IdentifierType.PART_NUMBER),
+        ],
+    )
+
+    assert len(conflicts) == 1
+
+
+# -- procedure-step order conflicts (W4 follow-up) -------------------------
+
+_PROCEDURE_STEPS = """1. Turn off the pump.
+2. Drain the tank.
+3. Replace the filter."""
+
+_PROCEDURE_STEPS_REORDERED = """1. Drain the tank.
+2. Turn off the pump.
+3. Replace the filter."""
+
+_PROCEDURE_STEPS_SHORTER = """1. Turn off the pump.
+2. Drain the tank."""
+
+
+def test_detects_a_procedure_step_order_conflict_across_sources() -> None:
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[],
+        maintenance_entries=[],
+        sources=[
+            _source(
+                1,
+                "doc_a",
+                chunk_type="maintenance_procedure",
+                section_path="Filter Replacement",
+                content=_PROCEDURE_STEPS,
+            ),
+            _source(
+                2,
+                "doc_a",
+                chunk_type="maintenance_procedure",
+                section_path="Filter Replacement",
+                content=_PROCEDURE_STEPS_REORDERED,
+            ),
+        ],
+    )
+
+    assert len(conflicts) == 1
+    conflict = conflicts[0]
+    assert conflict.field_kind == "procedure_step_order"
+    assert conflict.source_numbers == (1, 2)
+
+
+def test_does_not_flag_identical_step_order_as_a_conflict() -> None:
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[],
+        maintenance_entries=[],
+        sources=[
+            _source(
+                1,
+                "doc_a",
+                chunk_type="maintenance_procedure",
+                section_path="Filter Replacement",
+                content=_PROCEDURE_STEPS,
+            ),
+            _source(
+                2,
+                "doc_a",
+                chunk_type="maintenance_procedure",
+                section_path="Filter Replacement",
+                content=_PROCEDURE_STEPS,
+            ),
+        ],
+    )
+
+    assert conflicts == []
+
+
+def test_does_not_flag_procedures_with_different_step_counts() -> None:
+    """A shorter/longer step list is a completeness gap, not a genuine
+    order disagreement."""
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[],
+        maintenance_entries=[],
+        sources=[
+            _source(
+                1,
+                "doc_a",
+                chunk_type="maintenance_procedure",
+                section_path="Filter Replacement",
+                content=_PROCEDURE_STEPS,
+            ),
+            _source(
+                2,
+                "doc_a",
+                chunk_type="maintenance_procedure",
+                section_path="Filter Replacement",
+                content=_PROCEDURE_STEPS_SHORTER,
+            ),
+        ],
+    )
+
+    assert conflicts == []
+
+
+def test_ignores_non_procedure_chunk_types_for_order_conflicts() -> None:
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[],
+        maintenance_entries=[],
+        sources=[
+            _source(
+                1,
+                "doc_a",
+                chunk_type="specification_table",
+                section_path="Filter Replacement",
+                content=_PROCEDURE_STEPS,
+            ),
+            _source(
+                2,
+                "doc_a",
+                chunk_type="specification_table",
+                section_path="Filter Replacement",
+                content=_PROCEDURE_STEPS_REORDERED,
+            ),
+        ],
+    )
+
+    assert conflicts == []
+
+
+def test_ignores_different_sections_for_order_conflicts() -> None:
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[],
+        maintenance_entries=[],
+        sources=[
+            _source(
+                1,
+                "doc_a",
+                chunk_type="maintenance_procedure",
+                section_path="Filter Replacement",
+                content=_PROCEDURE_STEPS,
+            ),
+            _source(
+                2,
+                "doc_a",
+                chunk_type="maintenance_procedure",
+                section_path="Oil Change",
+                content=_PROCEDURE_STEPS_REORDERED,
+            ),
+        ],
+    )
+
+    assert conflicts == []
+
+
+def test_suppresses_a_procedure_order_conflict_between_different_equipment_variants() -> None:
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[],
+        maintenance_entries=[],
+        sources=[
+            _source(
+                1,
+                "doc_a",
+                chunk_type="maintenance_procedure",
+                section_path="Filter Replacement",
+                content=_PROCEDURE_STEPS,
+            ),
+            _source(
+                2,
+                "doc_b",
+                chunk_type="maintenance_procedure",
+                section_path="Filter Replacement",
+                content=_PROCEDURE_STEPS_REORDERED,
+            ),
+        ],
+        resolved_identifiers=[
+            _identifier("doc_a", "HP-100"),
+            _identifier("doc_b", "HP-200"),
+        ],
+    )
+
+    assert conflicts == []

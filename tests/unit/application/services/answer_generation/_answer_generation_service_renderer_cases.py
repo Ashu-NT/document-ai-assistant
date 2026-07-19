@@ -110,6 +110,33 @@ def test_generate_bypasses_the_identifier_renderer_for_conflicting_evidence() ->
     assert result.diagnostics["deterministic_dispatch_bypass_reason"] == "conflicting_evidence"
 
 
+def test_generate_bypasses_the_identifier_renderer_for_a_contested_retrieval_intent() -> None:
+    """W2 (answering_flow_weakness_remediation_plan.md): the retrieval-side
+    classification that selected this turn's evidence being an exact tie
+    must route to the LLM even though the answer-side intent decision
+    looks confident -- same request as the renderer-fires test above,
+    except retrieval_intent_contested is now set."""
+    llm = FakeLLMService(
+        response='{"answer_text":"The retrieval intent for this question was ambiguous."}'
+    )
+    service, _ = make_service(llm)
+    result = service.generate(
+        AnswerGenerationRequest(
+            question="list all serial and part nmubers",
+            context_chunks=[_make_chunk()],
+            answer_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+            resolved_identifiers=[
+                Identifier("id_part", "doc_001", raw_value="PN-001", identifier_type=IdentifierType.PART_NUMBER),
+            ],
+            retrieval_intent_contested=True,
+        )
+    )
+    assert llm.calls
+    assert result.model_name != "deterministic_identifier_renderer"
+    assert result.diagnostics["deterministic_dispatch_bypassed"] is True
+    assert result.diagnostics["deterministic_dispatch_bypass_reason"] == "retrieval_contested"
+
+
 def test_generate_uses_deterministic_spare_parts_renderer_and_skips_llm() -> None:
     llm = FakeLLMService(response="No specific spare part list table was found.")
     service, _ = make_service(llm)

@@ -49,6 +49,10 @@ if TYPE_CHECKING:
 # split happened for diagnostics, never to decide whether to split at all;
 # the splitter itself remains the single source of truth for that.
 _QUESTION_MARK = re.compile(r"\?+")
+# Mirrors QuestionClauseSplitter's own enumerated-list-marker check, same
+# "duplicated for labeling only" reasoning as _QUESTION_MARK above (W3,
+# answering_flow_weakness_remediation_plan.md).
+_ENUMERATED_MARKER = re.compile(r"(?:^|(?<=\s))([1-9])[).:]\s+")
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,11 +127,12 @@ class CompoundQuestionDetector:
         if unrelated_intent is None:
             return CompoundQuestionSignal(is_compound=False)
 
-        reason = (
-            "multi_question_mark"
-            if _has_multiple_question_marks(question)
-            else "conjunction"
-        )
+        if _has_multiple_question_marks(question):
+            reason = "multi_question_mark"
+        elif _has_enumerated_markers(question):
+            reason = "enumerated_list"
+        else:
+            reason = "conjunction"
         return CompoundQuestionSignal(
             is_compound=True,
             reason=reason,
@@ -148,6 +153,16 @@ def _find_unrelated_intent(
             if any(term in normalized_clause for term in terms):
                 return intent
     return None
+
+
+def _has_enumerated_markers(question: str) -> bool:
+    matches = list(_ENUMERATED_MARKER.finditer(question))
+    if len(matches) < 2:
+        return False
+    numbers = [int(match.group(1)) for match in matches]
+    if numbers[0] != 1:
+        return False
+    return all(numbers[i] > numbers[i - 1] for i in range(1, len(numbers)))
 
 
 def _has_multiple_question_marks(question: str) -> bool:

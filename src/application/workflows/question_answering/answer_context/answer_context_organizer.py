@@ -34,6 +34,7 @@ from src.application.workflows.question_answering.answer_context.tables.answer_t
 from src.application.workflows.question_answering.answer_context.models import (
     StructuredAnswerContext,
 )
+from src.domain.document.entities.identifier import Identifier
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
 
 
@@ -72,6 +73,7 @@ class AnswerContextOrganizer:
         *,
         answer_intent: AnswerIntent,
         chunks: Sequence[RetrievedChunk],
+        resolved_identifiers: Sequence[Identifier] = (),
     ) -> StructuredAnswerContext:
         sources = self.structured_source_builder.build_sources(chunks)
         tables = self.answer_table_projector.build(sources)
@@ -104,6 +106,7 @@ class AnswerContextOrganizer:
             key_values=key_values,
             maintenance_entries=maintenance_entries,
             sources=sources,
+            resolved_identifiers=resolved_identifiers,
         )
         diagnostics = {
             "chunk_type_counts": dict(

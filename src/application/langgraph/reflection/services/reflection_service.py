@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from typing import TYPE_CHECKING, Any
 
 from src.application.langgraph.reflection.evaluators.answer_quality_scorer import (
@@ -221,6 +221,31 @@ class ReflectionService:
                 raw_llm_decision = None
             except Exception:
                 raw_llm_decision = None
+        entailment_used = False
+        unsupported_claims: list[str] = []
+        if used_llm and raw_llm_decision is not None:
+            # W9 (answering_flow_weakness_remediation_plan.md): once a real
+            # LLM verdict on claim-to-evidence faithfulness exists, prefer
+            # it over AnswerQualityScorer's lexical-overlap proxy for the
+            # *score* -- deterministic's own decision-making above already
+            # ran on the lexical score by design (cheap-before-expensive,
+            # PR 12's established interpretation), so this only affects
+            # grounding_score/overall_score and downstream reporting, never
+            # which decision was reached.
+            entailment_score = raw_llm_decision.diagnostics.get("entailment_score")
+            unsupported_claims = raw_llm_decision.diagnostics.get(
+                "unsupported_claims", []
+            )
+            if entailment_score is not None:
+                issues = list(answer_quality.issues)
+                if unsupported_claims and "unsupported_claims" not in issues:
+                    issues.append("unsupported_claims")
+                answer_quality = replace(
+                    answer_quality,
+                    score=entailment_score,
+                    issues=issues,
+                )
+                entailment_used = True
         effective_decision = raw_llm_decision or deterministic
         effective_decision = self.validator.validate(
             decision=effective_decision,
@@ -311,5 +336,7 @@ class ReflectionService:
                     if clause_coverage is not None
                     else None
                 ),
+                "entailment_used": entailment_used,
+                "unsupported_claims": list(unsupported_claims),
             },
         )

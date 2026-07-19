@@ -19,14 +19,22 @@ _QUESTION_TRIGGER_WORDS = frozenset(
 
 _CONJUNCTION_SPLIT = re.compile(r",?\s+(?:and|as well as)\s+", re.IGNORECASE)
 _QUESTION_MARK = re.compile(r"\?+")
+# A numbered-list marker ("1)", "2.", "3:") -- single digit only (a
+# technical question enumerating 10+ sub-items is not a realistic case
+# worth supporting) and required to be preceded by start-of-string/
+# whitespace and followed by whitespace, so a plain number in prose
+# ("1000 hours", "at 9 am") can't match: both need a digit run longer than
+# one character or no punctuation immediately after the digit.
+_ENUMERATED_MARKER = re.compile(r"(?:^|(?<=\s))([1-9])[).:]\s+")
 
 
 class QuestionClauseSplitter:
     """Splits a question into independent clauses on coordinating
-    conjunctions and multi-part question marks (§3.4). A pragmatic v1
-    heuristic, not full NLP -- it deliberately errs toward under-splitting
-    (leaving an ambiguous case as one clause) rather than over-splitting a
-    plain noun-phrase conjunction into a false multi-clause question."""
+    conjunctions, multi-part question marks, and enumerated-list markers
+    (§3.4). A pragmatic v1 heuristic, not full NLP -- it deliberately errs
+    toward under-splitting (leaving an ambiguous case as one clause) rather
+    than over-splitting a plain noun-phrase conjunction into a false
+    multi-clause question."""
 
     def split(self, question: str | None) -> QuestionClauses:
         normalized = (question or "").strip()
@@ -36,6 +44,10 @@ class QuestionClauseSplitter:
         question_mark_clauses = self._split_on_question_marks(normalized)
         if question_mark_clauses is not None:
             return QuestionClauses(clauses=question_mark_clauses)
+
+        enumerated_clauses = self._split_on_enumerated_markers(normalized)
+        if enumerated_clauses is not None:
+            return QuestionClauses(clauses=enumerated_clauses)
 
         conjunction_clauses = self._split_on_conjunctions(normalized)
         return QuestionClauses(clauses=conjunction_clauses or (normalized,))
@@ -59,6 +71,29 @@ class QuestionClauseSplitter:
         if trailing:
             parts.append(trailing)
         return tuple(parts) if len(parts) > 1 else None
+
+    @staticmethod
+    def _split_on_enumerated_markers(question: str) -> tuple[str, ...] | None:
+        matches = list(_ENUMERATED_MARKER.finditer(question))
+        if len(matches) < 2:
+            return None
+        numbers = [int(match.group(1)) for match in matches]
+        if numbers[0] != 1:
+            return None
+        if any(numbers[i] <= numbers[i - 1] for i in range(1, len(numbers))):
+            return None
+
+        preamble = question[: matches[0].start()].strip()
+        clauses: list[str] = []
+        for index, match in enumerate(matches):
+            start = match.end()
+            end = matches[index + 1].start() if index + 1 < len(matches) else len(question)
+            segment = question[start:end].strip().rstrip(",;")
+            if index == 0 and preamble:
+                segment = f"{preamble} {segment}".strip()
+            if segment:
+                clauses.append(segment)
+        return tuple(clauses) if len(clauses) > 1 else None
 
     @staticmethod
     def _split_on_conjunctions(question: str) -> tuple[str, ...] | None:

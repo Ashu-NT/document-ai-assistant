@@ -32,6 +32,19 @@ class ReflectionResponsePayload(BaseModel):
     # negative would let a genuinely wrong answer through. Previously this
     # signal never reached the validator for any LLM-sourced decision.
     grounding_violation: bool = Field(default=False)
+    # Graded claim-to-evidence faithfulness (W9,
+    # answering_flow_weakness_remediation_plan.md): 1.0 = every claim in the
+    # answer is directly supported by the approved evidence, 0.0 = the
+    # answer is unsupported/contradicted throughout. Unlike
+    # `grounding_violation` (a binary hard-failure flag used to gate
+    # decisions), this is a graded signal that replaces AnswerQualityScorer's
+    # lexical-proxy score with a real entailment judgment whenever the
+    # reflection LLM call succeeds.
+    entailment_score: float = Field(default=1.0, ge=0.0, le=1.0)
+    # Specific claims the LLM judged unsupported -- empty when
+    # entailment_score is 1.0. Surfaced for diagnostics/observability, not
+    # used to gate any decision by itself.
+    unsupported_claims: list[str] = Field(default_factory=list)
 
     @field_validator("decision", mode="before")
     @classmethod
@@ -58,6 +71,19 @@ class ReflectionResponsePayload(BaseModel):
             return []
         if not isinstance(value, list):
             raise TypeError("missing_information must be an array")
+        return [
+            item
+            for item in (_optional_text(entry) for entry in value)
+            if item is not None
+        ]
+
+    @field_validator("unsupported_claims", mode="before")
+    @classmethod
+    def _validate_unsupported_claims(cls, value: Any) -> Any:
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            raise TypeError("unsupported_claims must be an array")
         return [
             item
             for item in (_optional_text(entry) for entry in value)

@@ -201,12 +201,16 @@ def test_generate_deterministic_renderer_paths_have_empty_sections_and_reference
 
 
 def test_generate_repairs_trailing_comma_json_without_a_second_llm_call() -> None:
+    # answer_intent=GENERAL has no structural (bullets/steps/table)
+    # requirement, so this stays focused on JSON-repair behavior rather
+    # than incidentally tripping the unrelated W7b format-policy retry.
     llm = FakeLLMService(response='{"answer_text": "Fixed answer.",}')
     service, _ = make_service(llm)
     result = service.generate(
         AnswerGenerationRequest(
             question="When to replace the filter?",
             context_chunks=[_make_chunk()],
+            answer_intent=AnswerIntent.GENERAL,
         )
     )
     assert result.answer_text == "Fixed answer."
@@ -225,6 +229,7 @@ def test_generate_retries_once_with_corrective_note_and_succeeds() -> None:
         AnswerGenerationRequest(
             question="When to replace the filter?",
             context_chunks=[_make_chunk()],
+            answer_intent=AnswerIntent.GENERAL,
         )
     )
     assert result.answer_text == "Recovered answer."
@@ -379,6 +384,62 @@ def test_generate_does_not_record_format_policy_violation_when_llm_answer_matche
 
     assert result.diagnostics["format_policy_violation"] is False
     assert result.diagnostics["format_policy_violation_reasons"] == []
+    assert result.diagnostics["format_policy_violation_regenerated"] is False
+    assert len(llm.calls) == 1
+
+
+# -- W7b: corrective retry on a structural format-policy violation ----------
+
+
+def test_generate_regenerates_once_and_succeeds_when_the_retry_fixes_the_violation() -> (
+    None
+):
+    llm = FakeLLMService(
+        responses=[
+            '{"answer_text":"First remove the cover. Then replace the filter."}',
+            (
+                '{"answer_text":"1. Remove the cover.\\n2. Replace the filter.'
+                '\\n3. Reinstall the cover."}'
+            ),
+        ]
+    )
+    service, _ = make_service(llm)
+    result = service.generate(
+        AnswerGenerationRequest(
+            question="How do I replace the filter?",
+            context_chunks=[_make_chunk()],
+            answer_intent=AnswerIntent.PROCEDURE_STEPS,
+        )
+    )
+
+    assert len(llm.calls) == 2
+    assert "did not follow the required format" in llm.calls[1]["prompt"]
+    assert llm.calls[0]["prompt"] in llm.calls[1]["prompt"]
+    assert result.diagnostics["format_policy_violation"] is False
+    assert result.diagnostics["format_policy_violation_reasons"] == []
+    assert result.diagnostics["format_policy_violation_regenerated"] is True
+    assert result.answer_text.startswith("1. Remove the cover.")
+
+
+def test_generate_still_records_violation_when_the_retry_does_not_fix_it() -> None:
+    llm = FakeLLMService(
+        response='{"answer_text":"First remove the cover. Then replace the filter."}'
+    )
+    service, _ = make_service(llm)
+    result = service.generate(
+        AnswerGenerationRequest(
+            question="How do I replace the filter?",
+            context_chunks=[_make_chunk()],
+            answer_intent=AnswerIntent.PROCEDURE_STEPS,
+        )
+    )
+
+    assert len(llm.calls) == 2
+    assert result.diagnostics["format_policy_violation"] is True
+    assert result.diagnostics["format_policy_violation_reasons"] == [
+        "missing_numbered_steps"
+    ]
+    assert result.diagnostics["format_policy_violation_regenerated"] is True
 
 
 # -- finding 3.5: optional prompt-text capture in diagnostics ---------------

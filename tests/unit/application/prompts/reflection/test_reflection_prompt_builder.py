@@ -36,6 +36,9 @@ def test_reflection_prompt_builder_includes_required_review_inputs() -> None:
     )
     assert '"grounding_violation": false' in prompt
     assert "grounding_violation must be true only for a HARD grounding failure" in prompt
+    assert '"entailment_score": 1.0' in prompt
+    assert '"unsupported_claims": ["string"]' in prompt
+    assert "entailment_score rates, from 0.0 to 1.0" in prompt
 
 
 def test_reflection_prompt_builder_adds_maintenance_interval_rules_and_hides_context_ids() -> None:

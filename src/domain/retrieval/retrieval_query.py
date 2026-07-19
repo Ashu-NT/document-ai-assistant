@@ -53,3 +53,12 @@ class RetrievalQuery:
 
     def has_identifiers(self) -> bool:
         return bool(self.detected_identifiers)
+
+    def is_intent_contested(self) -> bool:
+        """An exact scoring tie between this query's winning intent and its
+        runner-up (mirrors RetrievalIntentDecision.is_contested /
+        AnswerIntentDecision.is_contested -- the same "gap == 0" signal,
+        computed here instead of duplicated wherever a RetrievalQuery is
+        available, e.g. AnswerGenerationPipeline (W2,
+        answering_flow_weakness_remediation_plan.md))."""
+        return self.intent_runner_up is not None and self.intent_score_gap == 0

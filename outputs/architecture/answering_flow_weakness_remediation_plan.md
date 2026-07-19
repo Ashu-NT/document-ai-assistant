@@ -767,6 +767,329 @@ pass, nothing-judged fail, `--update-baseline` writes the file, `--limit` slices
 3469 passed, only the known pre-existing OCR failure
 (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
+### PR 16 status: implemented (2026-07-19) — Automate the quality gate as a slow workflow (W10b)
+
+PR 15 deliberately left `check_answer_quality_regression.py` a standalone, manually-invoked script. This makes
+it a real, discoverable pytest workflow instead, using infrastructure this repo already declared but never
+used: `pyproject.toml`'s `slow`/`e2e` pytest markers (`"slow: slow tests"`, `"e2e: full workflow tests"`) had
+zero call sites anywhere in the suite before this change.
+
+**`tests/e2e/test_answer_quality_regression_gate.py`** (new) — a single test, marked both `@pytest.mark.slow`
+and `@pytest.mark.e2e` (it genuinely exercises the full retrieval/answer-generation pipeline against a live
+Ollama instance, matching `e2e`'s declared meaning, and it is genuinely slow), that loads
+`check_answer_quality_regression.py` via the same `_load_script()` helper `tests/unit/cli_scripts/` already
+uses for every other CLI-script test, calls `main([])`, and asserts exit code `0`. Runnable on demand via
+`pytest -m slow` or by path — "automated" in the sense of being a real, repeatable command rather than a script
+a developer has to remember exists — while staying **completely excluded** from `tests/unit/` (a different
+directory, never collected by the fast-suite invocation this session has run after every change) and from a
+bare `pytest tests/` unless `-m slow` is explicitly passed, since `--strict-markers`/`-ra` don't auto-select
+marked tests. Verified via `pytest -m slow --collect-only` that it is the only test selected across the entire
+`tests/` tree, and via `pytest tests/e2e/ --collect-only` that it collects cleanly with no import-time side
+effects (no bootstrap/DB/Ollama connection happens until `main()` actually runs).
+
+No changes to `check_answer_quality_regression.py` itself — this PR only adds an automated way to invoke it.
+Full unit suite (`tests/unit/`, unaffected by definition since this test lives outside that tree): 3469 passed,
+only the known pre-existing OCR failure (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
+
+### PR 17 status: implemented (2026-07-19) — Retrieval-contested dispatch bypass (closes W2)
+
+Per the plan's Direction: don't merge `AnswerIntent`/`RetrievalQueryIntent` (that decision stands) — instead
+thread the already-computed retrieval-side tie signal into `AnswerGenerationRequest` as a third, independent
+`DeterministicDispatchGate` bypass condition.
+
+- **`RetrievalQuery.is_intent_contested()`** (new domain method, `retrieval_query.py`) — `intent_runner_up is
+  not None and intent_score_gap == 0`, the exact same "gap == 0" signal `RetrievalIntentDecision.is_contested`/
+  `AnswerIntentDecision.is_contested` already use for the same concept elsewhere, computed directly on the
+  domain object (mirrors `has_identifiers()`) instead of being duplicated at every call site that has a
+  `RetrievalQuery` in hand.
+- **`DispatchBypassReason.RETRIEVAL_CONTESTED`** (new enum member) + a new `retrieval_intent_contested: bool =
+  False` parameter on `DeterministicDispatchGate.evaluate()`. Checked after the two answer-side checks
+  (`CONTESTED_INTENT`/`NO_SIGNAL` — the cheaper, already-available answer-side signal wins if both fire) and
+  before `CONFLICTING_EVIDENCE`/`COMPOUND_QUESTION`.
+- **`AnswerGenerationRequest.retrieval_intent_contested: bool = False`** (new field) — flows through
+  `AnswerGenerationRequestResolver.resolve()`'s existing `replace()` call with no resolver change needed.
+  `AnswerGenerationService.generate()` passes it straight through to the gate.
+- **Wiring**: `AnswerGenerationPipeline.run()` (the one production call site that builds `AnswerGenerationRequest`)
+  now passes `retrieval_intent_contested=analyzed_query.is_intent_contested()` — `analyzed_query` is the exact
+  `RetrievalQuery` PR 1 already persists the classification onto, so this required no new extraction/threading
+  machinery beyond the one new domain method above.
+
+**Tests**: `test_retrieval_query.py` (+3 — no runner-up, nonzero gap, exact-tie true),
+`test_deterministic_dispatch_gate.py` (+4 — bypasses/doesn't bypass on the new flag, runs before
+conflicting-evidence, runs before compound-question, contested-intent still wins priority over it),
+`_answer_generation_service_renderer_cases.py` (+1 end-to-end: a request that would otherwise fire the
+deterministic identifier renderer instead bypasses to the LLM when `retrieval_intent_contested=True`). No new
+test at the `AnswerGenerationPipeline` layer itself — that class has no existing unit-test file of its own
+(exercised only indirectly through heavier `QuestionAnsweringWorkflow`-level tests today), and the one-line
+wiring addition calls only the already-fully-tested `is_intent_contested()`. Full suite: 3478 passed, only the
+known pre-existing OCR failure (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
+
+### PR 18 status: implemented (2026-07-19) — Enumerated compound-query detection (closes W3)
+
+PR 6 already retired `CompoundQuestionDetector`'s narrow conjunction-only regex in favor of `QuestionClauseSplitter`
+and closed the multi-question-mark gap, but explicitly deferred one tier: "Enumerated-request detection (`1)
+... 2) ...`) ... left for a follow-up since `QuestionClauseSplitter` has no equivalent splitting strategy for it
+yet." This closes that specific, named gap.
+
+- **`QuestionClauseSplitter._split_on_enumerated_markers()`** (new) — added as a new split strategy inside the
+  shared splitter itself (not duplicated into `CompoundQuestionDetector`), so reflection's multi-clause coverage
+  scoring inherits it for free, the same benefit PR 6 got from the question-mark expansion. Checked after the
+  question-mark split (still the strongest signal) and before the conjunction split (still the fuzziest,
+  noun-phrase-guarded one). Marker regex requires a *single* digit immediately followed by `)`/`.`/`:` and
+  whitespace, preceded by start-of-string or whitespace — a multi-digit number like "1000." (a maintenance
+  interval) can't match at all. A false-positive stray digit-plus-punctuation (`"The coefficient is 9. Then..."`)
+  is further guarded against by requiring **at least 2 markers, starting at 1, strictly ascending** before
+  treating it as a genuine list; anything less returns `None` (no split), matching the splitter's own stated
+  "err toward under-splitting" philosophy.
+- **`CompoundQuestionDetector`**'s reason-labeling gained `_has_enumerated_markers()`, mirroring the file's own
+  pre-existing convention (a cheap, duplicated-on-purpose regex check used only to label *why* a split
+  happened, never to decide *whether* — the splitter remains the single source of truth for that), so
+  `CompoundQuestionSignal.reason` now reports `"enumerated_list"` instead of mislabeling it `"conjunction"`.
+
+**Tests**: `test_question_clause_splitter.py` (+6 — parenthesis-style and period-style enumerations split
+correctly, a single stray marker doesn't split, a multi-digit number followed by "." doesn't split, out-of-order/
+non-ascending markers don't split), `test_compound_question_detector.py` (+1 — an enumerated two-item request
+across driving/unrelated intents reports `is_compound=True`, `reason="enumerated_list"`). Full `tests/unit/
+application/langgraph/` suite re-run in full (440 passed) to confirm the shared splitter change doesn't regress
+reflection's existing multi-clause coverage scoring. Full suite: 3484 passed, only the known pre-existing OCR
+failure (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
+
+### PR 19 status: researched, no code changes made (2026-07-19) — Concurrency/state-isolation sweep (W11)
+
+Per the plan's Direction, this is explicitly a research sweep, not a fix: "a dedicated grep/read sweep... across
+`src/application/services/`, `src/application/workflows/`, and `src/application/prompts/` for constructor-scoped
+mutable attributes written inside a per-request method — producing a findings list, not assuming there are
+none." Delegated to a dedicated sweep (roughly 700 `self.x = ...` assignments reviewed across the three trees,
+each non-`__init__` write traced to its read site and its owning class's construction lifetime). Findings,
+most-confident/most-dangerous first:
+
+1. **`ExtractionBuilderSupport.semantic_contexts`** (`extraction_builder_support.py:40,44-46`, read at `:178`) —
+   the file's own header comment already documents the tradeoff ("`semantic_contexts` is (re)populated once per
+   `extract()` call... mirroring the mutable instance state `ExtractionWorkflow` used to hold directly before
+   this split"). `ExtractionBuilderSupport` is constructed once per `ExtractionWorkflow`, which is itself built
+   once at the ingestion composition root (`ingestion_orchestrator.py`) and reused across every document a run
+   processes. Two overlapping `extract()` calls would let one document's `semantic_contexts` overwrite another's
+   mid-flight — a correctness bug in extracted *data*, not just stale diagnostics.
+2. **`ExtractionBuilderSupport.invalid_source_chunk_id_events`** (same file, `:41,48-49,135`) — same shared
+   instance as #1, read externally via `ExtractionResultAssembler.invalid_source_chunk_id_events`
+   (`extraction_result_assembler.py:79-81`) and consumed by `ExtractionBatchExecutor` right after a `build()`
+   call returns — the same "cache then read separately" shape as the already-fixed
+   `AnswerPromptBuilder.last_context_bundle` bug.
+3. **`ExtractionWorkflow.last_batch_diagnostics`** (`extraction_workflow.py:154,211,240,254`) — a confirmed
+   external read-after-call precedent exists in `_test_extraction_workflow_cases_part5.py:182-185`, reading it
+   off the shared instance after `extract()` returns rather than from a return value. Same shared/reused
+   construction chain as #1.
+4. **`DocumentGraphBuilder.last_section_build_result`** (`document_graph_builder.py:116,174`) — built once at
+   `parsing_runtime_builder.py:43` ("shared by every ingestion entrypoint"), read back externally by
+   `scripts/debug_parse_document.py:1645` and its tests, never part of `build()`'s own return type.
+5. **`SparePartsListRenderer._last_dropped_row_count`/`_last_hidden_raw_row_count`/`_last_partial`**
+   (`spare_parts_list_renderer.py:78-80,92-94,159-160,264`, read via `last_diagnostics()` at `:169-184`) — the
+   closest sibling to the already-fixed `AnswerPromptBuilder` bug: same package family
+   (`answer_generation/formatting`), same reset-then-compute-then-separate-accessor shape.
+   `DeterministicAnswerRendererDispatcher.render()` calls `render()` then `last_diagnostics()` as two separate
+   calls. `AnswerGenerationService` (which owns this renderer by default) is built once at agent-runtime
+   bootstrap (`agent_service_builder.py:104`) and reused for every turn for the life of the process.
+6. **`GraphBuildProfiler.stage_metrics`/`_started_at`** (`graph_build_profiler.py:22-23,48-49,65`) — lower
+   confidence: inert in production today (`GraphBuildProfiler.disabled()` no-ops `measure()`), only exercised
+   enabled by the standalone single-document `scripts/profile_graph_build.py`. Flagged as a latent trap, not a
+   live hazard, since nothing enforces a reset if profiling were ever wired to run enabled against the shared,
+   multi-document `DocumentGraphBuilder` from finding #4.
+
+**Investigated and ruled out** (confirmed safe — either constructed fresh per call, or genuinely invariant
+per-instance memoization): `RetrievalTraceRecorder` (fresh per call at both use sites), `AssetNearbyTextEnricher`/
+`ChunkStatisticsBuilder`'s `_token_counter` lazy-init (invariant config, not per-call data),
+`ChunkTypeLLMClassifier`'s `_WorkflowLocalChunk` (constructed fresh inline and discarded), `StageHeartbeat`
+(fresh per parsing stage), `AnswerMaintenanceEntry.__post_init__` (a value object, not a shared service), all
+`profiler`/`set_profiler` reassignments (config propagation of one shared profiler instance, not per-request
+data). Every other `self.x = ...` match across the three trees was one-time `__init__`/`__post_init__`
+collaborator/config wiring.
+
+**Peripheral, explicitly out-of-scope observation**: the same `last_*`/cached-diagnostics naming smell also
+appears in `src/application/agent_runtime/session/session.py` (`last_route`/`last_trace`/`last_research_plan` —
+likely fine since `Session` is meant to be per-conversation state, but not verified against the session store's
+keying) and `src/application/langgraph/planning/llm_plan_proposer.py` (`_last_diagnostics`, same
+write-then-read-via-accessor shape as finding #5). Both are outside the three directories this sweep was scoped
+to and were left unverified — worth a follow-up sweep of `src/application/langgraph/` and
+`src/application/agent_runtime/` if full coverage is wanted later.
+
+**No fixes applied in this PR**, per the plan's explicit "research, not a fix" scope. Findings 1-5 are real,
+confirmed hazards specifically *if* this system is ever served concurrently (today's CLI/single-process usage
+means they're latent, not exploited) and are natural candidates for a follow-up PR applying the same
+"return it, don't cache it on self" fix already proven on `AnswerPromptBuilder`.
+
+### PR 20 status: implemented (2026-07-19) — Procedure-order and equipment-variant conflict handling (closes W4's remaining gaps)
+
+PR 10 (`EvidenceContradictionDetector`) explicitly deferred two named gaps. Both closed here, reusing the exact
+same detector/dispatch-gate/diagnostics infrastructure PR 10 already built — no parallel contradiction
+mechanism.
+
+**Procedure-step order conflicts** — new `_detect_procedure_order_conflicts()` on `EvidenceContradictionDetector`:
+- Groups `AnswerSource`s by normalized `section_path`, restricted to procedure-like `chunk_type`s
+  (`maintenance_procedure`/`operation_instruction`/`installation_instruction`/`troubleshooting` — the same set
+  used for cross-reference resolution elsewhere in this codebase).
+- Extracts each source's step sequence via `_extract_step_sequence()`, mirroring reflection's
+  `has_step_sequence_gap()` pattern/patterns exactly (`"Step N: ..."` tried first, falling back to a bare
+  numbered line `"N. ..."`/`"N) ..."`) but capturing each step's description text, not just its number, since
+  this needs to compare step *content* across sources rather than check one source's own numbering for gaps.
+- Flags a conflict only when two sources in the same group have the same step **count**, the same **set** of
+  normalized step descriptions, but a **different order** — deliberately conservative: a source with more/fewer
+  steps than another is a completeness gap, not an ordering contradiction, and is left alone.
+- New `EvidenceConflict(field_kind="procedure_step_order", ...)`.
+
+**Equipment-variant/document-revision normalization** — `detect()` gained an optional `resolved_identifiers:
+Sequence[Identifier] = ()` parameter (empty-tuple default, so every existing caller is unaffected). A new
+`_model_numbers_by_document_id()` groups `IdentifierType.MODEL_NUMBER` identifiers by `document_id` (punctuation/
+case-normalized, reusing the same `_IDENTIFIER_PUNCTUATION_PATTERN` this file already uses for identifier
+matching), and `_are_different_equipment_variants()` checks whether a conflict's `document_ids` include two
+documents with **disjoint, non-empty** model-number sets — if so, the conflict is suppressed as an expected
+equipment-variant difference rather than a genuine contradiction. Applied uniformly to all three detection
+paths (`_conflicting_groups()` for key-value/maintenance-interval conflicts, and the new procedure-order path).
+Deliberately conservative in the other direction too: absent a resolved model number for one or both documents
+(today's common case, since most callers don't resolve identifiers ahead of contradiction detection), or when
+the sets overlap, behavior is unchanged — a conflict still fires. Document-*revision* normalization specifically
+(as opposed to equipment *model*) remains an open, narrower gap: no revision/version identifier type exists
+anywhere in this system to ground it in, and inventing one without real corpus data would be exactly the kind
+of ungrounded signal this session has consistently avoided.
+
+**Wiring**: `AnswerContextOrganizer.organize()` gained the same optional `resolved_identifiers: Sequence[Identifier]
+= ()` parameter, passed straight through to the detector. Both production callers now pass it: `AnswerGenerationRequestResolver
+.resolve()`'s fallback path passes `request.resolved_identifiers` (already a field on `AnswerGenerationRequest`);
+`StructuredFactJoiner.join()` passes `scoped_identifiers` (already computed at that point). No signature changes
+needed to `AnswerFormatPolicy`/`DeterministicDispatchGate`/anything downstream — conflicts still flow through the
+exact same `evidence_conflicts`/`has_critical_evidence_conflict` diagnostics keys and `CONFLICTING_EVIDENCE`
+bypass reason PR 10 already wired end to end.
+
+**Tests**: `test_evidence_contradiction_detector.py` (+10 — 6 procedure-order cases: genuine reorder conflict,
+identical order no-conflict, mismatched step count no-conflict, non-procedure chunk type ignored, different
+section ignored, equipment-variant suppression on a procedure conflict; 4 equipment-variant cases: disjoint
+variants suppress a key-value conflict, shared model number still flags it, no resolved identifiers at all still
+flags it (backward compatibility), non-model-number identifiers are ignored for suppression purposes). Existing
+`_FakeContradictionDetector` test double in `test_answer_context_organizer_contradictions.py` updated to accept
+the new keyword argument. Full suite: 3494 passed, only the known pre-existing OCR failure
+(`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
+
+### PR 21 status: implemented (2026-07-19) — Structural format-policy enforcement (closes W7b)
+
+W7's original scope was deliberately observability-only. Enabling real enforcement is a genuine behavior change
+(an extra LLM call whenever a structural violation fires) — the same category of decision PR 11/PR 12 paused
+for explicit sign-off on earlier this session. Asked and confirmed: enable by default now, rather than gate
+behind a flag pending real violation-rate data.
+
+**`build_format_policy_corrective_note(violations)`** (new, same module as W7's detector,
+`format_policy_violation_detector.py`) — mirrors `AnswerGenerationPromptExecutor`'s own schema-validation
+corrective-note shape (`_build_corrective_note()`, `execution/answer_generation_prompt_executor.py`): names
+exactly what was missing, asks for one corrected attempt, nothing else.
+
+**`AnswerGenerationService.generate()`**: when `detect_format_policy_violations()` (from W7) finds a violation
+on the first LLM attempt, the service now calls `self.prompt_executor.execute()` a **second** time with the
+corrective note appended to the original prompt, re-checks the retry's answer_text, and uses whatever comes
+back — a best-effort nudge, not a hard block; a retry that still doesn't fix the structure is still returned as
+the final answer, just with `format_policy_violation` still `True` in diagnostics. Exactly one retry, structural
+violations only (content correctness is untouched), scoped to the LLM-generation path only (unchanged from W7 —
+deterministic renderers never reach this code). New `diagnostics["format_policy_violation_regenerated"]: bool`
+records whether a retry happened at all, surfaced through the same per-turn log line
+(`log_answer_generation_recorded()`) that already carries `format_policy_violation`/`format_policy_violation_reasons`.
+
+**Collateral test fix**: two pre-existing JSON-repair-focused tests (`test_generate_repairs_trailing_comma_json_
+without_a_second_llm_call`, `test_generate_retries_once_with_corrective_note_and_succeeds`) used a bare question
+("When to replace the filter?") that resolves to `PROCEDURE_STEPS` by default, whose format policy requires
+`include_steps=True` — their canned fake answers have no numbered list, so they started incidentally tripping
+the new retry and failing on `len(llm.calls)` assertions unrelated to what they're actually testing. Fixed by
+pinning them to `answer_intent=AnswerIntent.GENERAL` (no structural requirements at all), keeping their scope on
+JSON-repair behavior, decoupled from this unrelated feature.
+
+**Tests**: `_answer_generation_service_response_cases.py` (+2 — a violation on the first attempt that the retry
+fixes ends with `format_policy_violation=False`/`format_policy_violation_regenerated=True` and 2 LLM calls, with
+the corrective note text confirmed present in the second prompt; a violation the retry does NOT fix still
+reports `format_policy_violation=True` with `format_policy_violation_regenerated=True`). Full suite: 3496
+passed, only the known pre-existing OCR failure (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
+
+### PR 22 status: implemented (2026-07-19) — Claim-to-evidence entailment replaces the lexical answer-quality proxy (closes W9's remaining gap)
+
+PR 12 already closed W9's scoped-opt-in gap (reflection runs for high-stakes intents even when the global flag
+is off). The plan's own remaining item — "moving the scorers from lexical proxies to real entailment/
+faithfulness checks" — is closed here, reusing the reflection LLM call `ReflectionService.review()` **already**
+makes (its own decision-making pass), rather than adding a third LLM round-trip per turn.
+
+**Why no new LLM call was needed**: `ReflectionService.review()` already calls the LLM once (when reflection is
+enabled and available) to decide ACCEPT/ACCEPT_WITH_LIMITATIONS/RETRIEVE_AGAIN/CLARIFY/FAIL, and that response
+already carried a binary `grounding_violation` flag (a prior addition). Extending that **same** call's prompt
+and schema to also return a graded entailment verdict is the "second independent LLM call as judge" pattern the
+plan pointed at — `run_answer_quality_judge.py`'s judge call is architecturally the same shape (an LLM asked to
+grade a generated answer against evidence), and reflection's own review call already *is* that second call for
+every turn reflection runs on.
+
+- **`ReflectionResponsePayload`** (`reflection_response_schema.py`) gained `entailment_score: float` (0.0-1.0,
+  `ge`/`le` enforced by pydantic, default `1.0`) and `unsupported_claims: list[str]` (same text-array validator
+  pattern as `missing_information`). Graded, not binary, deliberately: "an answer with one unsupported detail
+  among several supported claims should score partway down, not 0.0" (new prompt instruction).
+- **`ReflectionPromptBuilder.build()`** — new instruction block explaining the graded rubric and explicitly
+  telling the LLM not to penalize entailment for mere incompleteness (that's still `missing_information`/
+  `RETRIEVE_AGAIN`'s job) — keeps entailment scoped to faithfulness only, not a duplicate completeness check.
+  `REFLECTION_PROMPT_VERSION` bumped `v2` -> `v3`.
+- **`ReflectionJsonParser`** — `entailment_score`/`unsupported_claims` now always land in `ReflectionDecision
+  .diagnostics` (unlike `hard_grounding_violation`, which is only added when true, a graded score is
+  informative even at its 1.0 baseline).
+- **`ReflectionService.review()`** — after the LLM call succeeds, `answer_quality` (until now purely
+  `AnswerQualityScorer`'s lexical-overlap proxy) is replaced via `dataclasses.replace()` with the LLM's
+  `entailment_score` as its `.score`, and an `"unsupported_claims"` marker appended to `.issues` when any were
+  reported. Deliberately scoped to **`answer_quality` only**, not `evidence_quality`: entailment measures
+  claim-to-evidence faithfulness, a property of the generated *answer*, not of the retrieved evidence set's own
+  structural completeness/leakage (a genuinely different concern `EvidenceQualityScorer` still measures
+  correctly with lexical/structural signals) — forcing entailment onto evidence_quality too would conflate two
+  different things rather than closing a real gap. `DeterministicReflectionDecider.decide()` (which runs
+  *before* the LLM call, on the lexical score, by the "cheap-before-expensive" design PR 12 already established)
+  is deliberately **not** re-run with the entailment-adjusted score — only which decision was reached stays
+  unaffected; `grounding_score`/`overall_score`/the per-turn `reflection_score_recorded` log line/`
+  scripts/report_reflection_quality_trend.py`'s existing field names all pick up the new value automatically
+  since they read `answer_quality.score` downstream of the replacement. New `diagnostics["entailment_used"]`/
+  `diagnostics["unsupported_claims"]` fields for observability of whether/how this fired.
+- **Backward compatibility**: reflection is still off by default globally (`reflection_enabled=False`,
+  unchanged); this enhancement only ever fires on turns that already reach the LLM branch (global flag on, or
+  PR 12's scoped high-stakes opt-in) — every other turn's `answer_quality` stays the exact same lexical
+  computation as before this PR. Confirmed via the full existing reflection/langgraph test suite (448 tests)
+  passing unmodified.
+
+**Tests**: `test_reflection_json_parser.py` (+3 — entailment_score/unsupported_claims populate diagnostics,
+default to the 1.0/empty baseline when omitted, out-of-range score rejected by pydantic's `ge`/`le`),
+`test_reflection_prompt_builder.py` (existing test extended with 3 new assertions for the new instruction/schema
+text), `test_reflection_service.py` (+3 — an LLM entailment score of 0.4 overrides the lexical
+`answer_quality_score` end to end including `grounding_score`, disabled reflection never sets
+`entailment_used`, an LLM response omitting the field still counts as used at its 1.0 default). Full suite: 3502
+passed, only the known pre-existing OCR failure (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
+
+### PR 23 status: researched, threshold left unchanged (2026-07-19) — Answer-intent margin telemetry (W1)
+
+Per explicit instruction, last in this follow-up sequence and gated on real data: "choose a wider margin
+threshold only after analyzing collected telemetry." The analysis was run — its conclusive finding is that no
+threshold change is justified yet.
+
+**Finding**: `outputs/logs/application.log` (the configured `LOG_FILE`) does not exist anywhere in this
+repository — confirmed directly, not assumed. Zero `answer_intent_resolved` events have ever been recorded,
+meaning this system has not yet served real questions with logging active since that telemetry was added. There
+is nothing to analyze, and therefore no defensible basis to widen `AnswerIntentDecision.is_contested`'s
+threshold past an exact tie (`margin == 0`) — doing so anyway would be exactly the "guess" the plan's own
+Direction explicitly rules out. **The threshold is left unchanged, as instructed.**
+
+**Deliverable**: `scripts/report_answer_intent_margin_distribution.py` (new) — parses `answer_intent_resolved`
+log lines (mirrors `scripts/report_retrieval_intent_fallback_rate.py`'s exact log-parsing style, since this
+event, like that one, embeds its fields directly in the message text via `%s` placeholders rather than only via
+logging's `extra={}` kwarg) into a margin histogram (capped display bucket for margin >= 5), so that once real
+usage does accumulate telemetry, analyzing it to decide W1 is a single command away instead of something to
+build from scratch. Verified end-to-end against both the real (missing) log file — confirming the "no
+telemetry yet" message — and a synthetic sample log, confirming the histogram/no-runner-up/intent-breakdown
+parsing is correct.
+
+**Tests**: `test_report_answer_intent_margin_distribution.py` (new, 9 tests — empty input, unrelated lines
+ignored, no-runner-up counted separately from the margin histogram, histogram construction, large-margin
+capping, per-intent counts, missing-log-file exit code, empty-log "no telemetry" message, populated-log report
+output). Full suite: 3511 passed, only the known pre-existing OCR failure
+(`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
+
+**Recommended next step, once real telemetry exists**: run `python scripts/report_answer_intent_margin_distribution
+.py` after a real usage period, and only then revisit whether `is_contested`'s threshold should widen past
+`margin == 0` — exactly as this PR (and the original plan) specify.
+
 ### Deferred to a separate workstream (explicitly not part of this plan)
 
 - **Retrieval keyword-strategy redesign** (the 8 domain-term lists in `retrieval_signal_terms.py`) — out of

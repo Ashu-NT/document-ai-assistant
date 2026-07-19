@@ -132,5 +132,8 @@ def log_answer_generation_recorded(
             "format_policy_violation_reasons": diagnostics.get(
                 "format_policy_violation_reasons"
             ),
+            "format_policy_violation_regenerated": diagnostics.get(
+                "format_policy_violation_regenerated"
+            ),
         },
     )

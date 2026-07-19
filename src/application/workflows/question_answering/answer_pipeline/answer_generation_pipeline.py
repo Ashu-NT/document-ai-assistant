@@ -243,6 +243,7 @@ class AnswerGenerationPipeline:
             resolved_structured_entities=resolved_structured_entities,
             structured_context=structured_context,
             answer_intent_decision=intent_decision,
+            retrieval_intent_contested=analyzed_query.is_intent_contested(),
         )
         generated = self._answer_generation_service.generate(gen_request)
 

@@ -50,6 +50,23 @@ def test_detects_two_clauses_split_on_a_multi_part_question_mark() -> None:
     assert signal.unrelated_intent == AnswerIntent.PROCEDURE_STEPS
 
 
+def test_detects_two_clauses_split_on_enumerated_markers() -> None:
+    """W3 (answering_flow_weakness_remediation_plan.md): the previously
+    deferred enumerated-request expansion tier, now handled by
+    QuestionClauseSplitter -- picked up here for free, same as the
+    multi-question-mark case above."""
+    detector = CompoundQuestionDetector()
+
+    signal = detector.detect(
+        question="Tell me: 1) the spare parts 2) how do I replace the seal",
+        driving_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+    )
+
+    assert signal.is_compound is True
+    assert signal.reason == "enumerated_list"
+    assert signal.unrelated_intent == AnswerIntent.PROCEDURE_STEPS
+
+
 def test_returns_not_compound_for_a_non_compound_question() -> None:
     detector = CompoundQuestionDetector()
 

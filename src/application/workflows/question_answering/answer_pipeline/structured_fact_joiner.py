@@ -135,6 +135,7 @@ class StructuredFactJoiner:
         structured_context = self._answer_context_organizer.organize(
             answer_intent=intent_decision.intent,
             chunks=approved_prepared_chunks,
+            resolved_identifiers=scoped_identifiers,
         )
         source_number_by_chunk_id = self._source_number_by_chunk_id(
             chunks=approved_prepared_chunks,

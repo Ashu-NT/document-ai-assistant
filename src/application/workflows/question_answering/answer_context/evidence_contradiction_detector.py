@@ -9,6 +9,8 @@ from src.application.workflows.question_answering.answer_context.models import (
     AnswerMaintenanceEntry,
     AnswerSource,
 )
+from src.domain.common import IdentifierType
+from src.domain.document.entities.identifier import Identifier
 
 # Start narrow (PR 10, answering_flow_weakness_remediation_plan.md, W4):
 # only these AnswerKeyValue.field_kind values are treated as
@@ -16,10 +18,7 @@ from src.application.workflows.question_answering.answer_context.models import (
 # number" (KeyValueExtractor._field_kind() classifies part/serial/order/
 # model numbers as "identifier"). Maintenance interval is handled
 # separately below since it lives on AnswerMaintenanceEntry, not
-# AnswerKeyValue. Procedure-step order is explicitly deferred -- detecting
-# it needs a step-sequence parser this pass doesn't build (see PR 9's
-# has_step_sequence_gap() for a narrower, answer-text-only version of that
-# same idea).
+# AnswerKeyValue.
 _CONTRADICTION_FIELD_KINDS = frozenset({"identifier", "specification"})
 
 _NUMBER_PATTERN = re.compile(r"[\d,]+(?:\.\d+)?")
@@ -31,6 +30,31 @@ _PRESSURE_UNIT_ALIASES: dict[str, tuple[str, ...]] = {
 _IDENTIFIER_PUNCTUATION_PATTERN = re.compile(r"[\s\-_.]+")
 _WORD_PATTERN = re.compile(r"[a-z0-9]+")
 _ARTICLES = frozenset({"the", "a", "an"})
+
+# Procedure-step order conflicts (PR follow-up to PR 10, W4,
+# answering_flow_weakness_remediation_plan.md -- previously explicitly
+# deferred pending a step-sequence parser). Only chunk types that are
+# genuinely a sequence of actions -- matches the chunk-type set already
+# used elsewhere in this codebase to identify "procedure-like" content --
+# are considered; a SPECIFICATION_SUMMARY or DOCUMENT_SUMMARY chunk isn't a
+# step sequence even if it happens to contain numbered text.
+_PROCEDURE_LIKE_CHUNK_TYPES = frozenset(
+    {
+        "maintenance_procedure",
+        "operation_instruction",
+        "installation_instruction",
+        "troubleshooting",
+    }
+)
+# Mirrors reflection's has_step_sequence_gap() patterns
+# (coverage_requirement_context_detector.py) -- same pragmatic v1
+# heuristic, tried in the same order (explicit "Step N" wording first,
+# falling back to a bare numbered line), but capturing the step's
+# description text too, not just its number, since here we need to
+# compare step *content* across sources, not just check one source's own
+# numbering for gaps.
+_STEP_WORD_WITH_TEXT = re.compile(r"(?im)^\s*step\s+(\d+)\s*[:.)]?\s+(.+?)\s*$")
+_NUMBERED_LINE_WITH_TEXT = re.compile(r"^\s*(\d+)[.):]\s+(.+?)\s*$", re.MULTILINE)
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,16 +95,35 @@ class EvidenceContradictionDetector:
         key_values: Sequence[AnswerKeyValue],
         maintenance_entries: Sequence[AnswerMaintenanceEntry],
         sources: Sequence[AnswerSource] | None = None,
+        resolved_identifiers: Sequence[Identifier] = (),
     ) -> list[EvidenceConflict]:
         document_id_by_source_number = {
             source.source_number: source.document_id
             for source in (sources or [])
             if source.document_id
         }
+        # Equipment-variant/document-revision normalization (previously a
+        # documented gap): two sources whose documents carry disjoint,
+        # non-empty MODEL_NUMBER identifiers describe different equipment,
+        # so a value difference between them is an expected variant
+        # difference, not a genuine contradiction. Deliberately
+        # conservative -- absent this signal (the common case today, since
+        # most callers don't resolve identifiers ahead of contradiction
+        # detection), behavior is unchanged.
+        model_numbers_by_document_id = _model_numbers_by_document_id(
+            resolved_identifiers
+        )
         return [
-            *self._detect_key_value_conflicts(key_values, document_id_by_source_number),
+            *self._detect_key_value_conflicts(
+                key_values, document_id_by_source_number, model_numbers_by_document_id
+            ),
             *self._detect_maintenance_interval_conflicts(
-                maintenance_entries, document_id_by_source_number
+                maintenance_entries,
+                document_id_by_source_number,
+                model_numbers_by_document_id,
+            ),
+            *self._detect_procedure_order_conflicts(
+                sources or [], document_id_by_source_number, model_numbers_by_document_id
             ),
         ]
 
@@ -88,6 +131,7 @@ class EvidenceContradictionDetector:
         self,
         key_values: Sequence[AnswerKeyValue],
         document_id_by_source_number: dict[int, str],
+        model_numbers_by_document_id: dict[str, frozenset[str]],
     ) -> list[EvidenceConflict]:
         groups: dict[str, dict[str, set[int]]] = {}
         raw_values: dict[tuple[str, str], str] = {}
@@ -121,13 +165,16 @@ class EvidenceContradictionDetector:
                     all_sources, document_id_by_source_number
                 ),
             )
-            for key, value_groups, all_sources in self._conflicting_groups(groups)
+            for key, value_groups, all_sources in self._conflicting_groups(
+                groups, document_id_by_source_number, model_numbers_by_document_id
+            )
         ]
 
     def _detect_maintenance_interval_conflicts(
         self,
         maintenance_entries: Sequence[AnswerMaintenanceEntry],
         document_id_by_source_number: dict[int, str],
+        model_numbers_by_document_id: dict[str, frozenset[str]],
     ) -> list[EvidenceConflict]:
         groups: dict[str, dict[str, set[int]]] = {}
         raw_values: dict[tuple[str, str], str] = {}
@@ -157,12 +204,83 @@ class EvidenceContradictionDetector:
                     all_sources, document_id_by_source_number
                 ),
             )
-            for task, value_groups, all_sources in self._conflicting_groups(groups)
+            for task, value_groups, all_sources in self._conflicting_groups(
+                groups, document_id_by_source_number, model_numbers_by_document_id
+            )
         ]
+
+    def _detect_procedure_order_conflicts(
+        self,
+        sources: Sequence[AnswerSource],
+        document_id_by_source_number: dict[int, str],
+        model_numbers_by_document_id: dict[str, frozenset[str]],
+    ) -> list[EvidenceConflict]:
+        groups: dict[str, list[AnswerSource]] = {}
+        for source in sources:
+            if (source.chunk_type or "") not in _PROCEDURE_LIKE_CHUNK_TYPES:
+                continue
+            if not (source.content or "").strip():
+                continue
+            normalized_section = _normalize_label(source.section_path or "")
+            if not normalized_section:
+                continue
+            groups.setdefault(normalized_section, []).append(source)
+
+        conflicts: list[EvidenceConflict] = []
+        for section, group_sources in groups.items():
+            step_sequences: dict[int, tuple[str, ...]] = {}
+            for source in group_sources:
+                steps = _extract_step_sequence(source.content)
+                if steps is not None:
+                    step_sequences[source.source_number] = steps
+            source_numbers = sorted(step_sequences)
+            for i in range(len(source_numbers)):
+                for j in range(i + 1, len(source_numbers)):
+                    first_number, second_number = (
+                        source_numbers[i],
+                        source_numbers[j],
+                    )
+                    first_steps = step_sequences[first_number]
+                    second_steps = step_sequences[second_number]
+                    # Same steps, same count, different order -- a genuine
+                    # sequencing disagreement, not merely "one source
+                    # covers more/fewer steps" (a completeness gap, not a
+                    # contradiction).
+                    if (
+                        len(first_steps) != len(second_steps)
+                        or set(first_steps) != set(second_steps)
+                        or first_steps == second_steps
+                    ):
+                        continue
+                    involved_sources = {first_number, second_number}
+                    if _are_different_equipment_variants(
+                        _document_ids_for(
+                            involved_sources, document_id_by_source_number
+                        ),
+                        model_numbers_by_document_id,
+                    ):
+                        continue
+                    conflicts.append(
+                        EvidenceConflict(
+                            key=section,
+                            field_kind="procedure_step_order",
+                            values=(
+                                " -> ".join(first_steps),
+                                " -> ".join(second_steps),
+                            ),
+                            source_numbers=tuple(sorted(involved_sources)),
+                            document_ids=_document_ids_for(
+                                involved_sources, document_id_by_source_number
+                            ),
+                        )
+                    )
+        return conflicts
 
     @staticmethod
     def _conflicting_groups(
         groups: dict[str, dict[str, set[int]]],
+        document_id_by_source_number: dict[int, str],
+        model_numbers_by_document_id: dict[str, frozenset[str]],
     ):
         for key, value_groups in groups.items():
             if len(value_groups) < 2:
@@ -175,6 +293,11 @@ class EvidenceContradictionDetector:
             # (a messy multi-value extraction from one chunk), that's an
             # extraction quirk, not a cross-source disagreement.
             if len(all_sources) < 2:
+                continue
+            if _are_different_equipment_variants(
+                _document_ids_for(all_sources, document_id_by_source_number),
+                model_numbers_by_document_id,
+            ):
                 continue
             yield key, value_groups, all_sources
 
@@ -192,6 +315,59 @@ def _document_ids_for(
             }
         )
     )
+
+
+def _model_numbers_by_document_id(
+    resolved_identifiers: Sequence[Identifier],
+) -> dict[str, frozenset[str]]:
+    grouped: dict[str, set[str]] = {}
+    for identifier in resolved_identifiers:
+        if identifier.identifier_type != IdentifierType.MODEL_NUMBER:
+            continue
+        if not identifier.document_id:
+            continue
+        normalized = _IDENTIFIER_PUNCTUATION_PATTERN.sub(
+            "", str(identifier.raw_value or "").strip().lower()
+        )
+        if not normalized:
+            continue
+        grouped.setdefault(identifier.document_id, set()).add(normalized)
+    return {document_id: frozenset(values) for document_id, values in grouped.items()}
+
+
+def _are_different_equipment_variants(
+    document_ids: tuple[str, ...],
+    model_numbers_by_document_id: dict[str, frozenset[str]],
+) -> bool:
+    variant_sets = [
+        model_numbers_by_document_id[document_id]
+        for document_id in document_ids
+        if model_numbers_by_document_id.get(document_id)
+    ]
+    if len(variant_sets) < 2:
+        return False
+    return any(
+        not (variant_sets[i] & variant_sets[j])
+        for i in range(len(variant_sets))
+        for j in range(i + 1, len(variant_sets))
+    )
+
+
+def _extract_step_sequence(content: str) -> tuple[str, ...] | None:
+    text = content or ""
+    matches = _STEP_WORD_WITH_TEXT.findall(text)
+    if len(matches) < 2:
+        matches = _NUMBERED_LINE_WITH_TEXT.findall(text)
+    if len(matches) < 2:
+        return None
+    steps = tuple(
+        normalized
+        for _step_number, description in matches
+        if (normalized := _normalize_label(description))
+    )
+    if len(steps) < 2:
+        return None
+    return steps
 
 
 def _normalize_label(value: str) -> str:
