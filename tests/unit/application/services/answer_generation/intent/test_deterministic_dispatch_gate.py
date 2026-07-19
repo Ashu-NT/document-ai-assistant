@@ -12,7 +12,7 @@ def _decision(**overrides) -> AnswerIntentDecision:
         intent=AnswerIntent.IDENTIFIER_LOOKUP,
         confidence=0.9,
         reason="test",
-        matched_signals=[],
+        matched_signals=["question:part number"],
         runner_up_intent=None,
         runner_up_score=0,
         best_score=6,
@@ -84,6 +84,66 @@ def test_contested_check_runs_before_the_compound_check() -> None:
 
     result = gate.evaluate(
         question="What are the spare parts and how do I replace the seal?",
+        effective_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        intent_decision=decision,
+    )
+
+    assert result.reason == "contested_intent"
+
+
+def test_bypasses_for_a_decision_with_no_matched_signal_at_all() -> None:
+    """PR 5 (answering_flow_weakness_remediation_plan.md): a pure fallback
+    winner (empty matched_signals -- see AnswerIntentAnalyzer.analyze()'s
+    scores[best_intent] <= 0 branch) is exactly as risky as a contested
+    tie, just from the opposite direction: nothing positively chose this
+    intent, so a domain-specific renderer must not fire on the strength of
+    a default."""
+    gate = DeterministicDispatchGate()
+    decision = _decision(
+        intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        matched_signals=[],
+        runner_up_intent=None,
+    )
+
+    result = gate.evaluate(
+        question="Tell me about the pump.",
+        effective_intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        intent_decision=decision,
+    )
+
+    assert result.should_bypass is True
+    assert result.reason == "no_signal"
+
+
+def test_ignores_a_no_signal_decision_about_an_intent_that_was_overridden_away() -> None:
+    gate = DeterministicDispatchGate()
+    decision = _decision(
+        intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        matched_signals=[],
+        runner_up_intent=None,
+    )
+
+    result = gate.evaluate(
+        question="Tell me about the pump.",
+        effective_intent=AnswerIntent.PROCEDURE_STEPS,
+        intent_decision=decision,
+    )
+
+    assert result.should_bypass is False
+
+
+def test_contested_check_runs_before_the_no_signal_check() -> None:
+    gate = DeterministicDispatchGate()
+    decision = _decision(
+        intent=AnswerIntent.IDENTIFIER_LOOKUP,
+        matched_signals=[],
+        best_score=6,
+        runner_up_intent=AnswerIntent.TABLE_SUMMARY,
+        runner_up_score=6,
+    )
+
+    result = gate.evaluate(
+        question="List all part numbers",
         effective_intent=AnswerIntent.IDENTIFIER_LOOKUP,
         intent_decision=decision,
     )

@@ -40,11 +40,18 @@ from src.application.services.answer_generation.formatting.renderers import (
 from src.application.services.answer_generation.formatting.spare_parts_list_renderer import (
     SparePartsListRenderer,
 )
+from src.application.services.answer_generation.intent.answer_intent import (
+    AnswerIntent,
+)
 from src.application.services.answer_generation.intent.answer_intent_analyzer import (
     AnswerIntentAnalyzer,
 )
+from src.application.services.answer_generation.intent.compound_question_detector import (
+    chunks_plausibly_cover_intent,
+)
 from src.application.services.answer_generation.intent.deterministic_dispatch_gate import (
     DeterministicDispatchGate,
+    DispatchBypassReason,
 )
 from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
     AnswerContextOrganizer,
@@ -179,6 +186,18 @@ class AnswerGenerationService:
         diagnostics["deterministic_dispatch_bypass_reason"] = (
             dispatch_gate_decision.reason
         )
+        if dispatch_gate_decision.reason == DispatchBypassReason.COMPOUND_QUESTION:
+            unrelated_intent = (
+                AnswerIntent(dispatch_gate_decision.compound_intent_value)
+                if dispatch_gate_decision.compound_intent_value is not None
+                else None
+            )
+            diagnostics["compound_question_coverage_plausible"] = (
+                chunks_plausibly_cover_intent(
+                    resolved_request.context_chunks,
+                    unrelated_intent,
+                )
+            )
         if not dispatch_gate_decision.should_bypass:
             deterministic_result = self.deterministic_renderer_dispatcher.render(
                 question=resolved_request.question,

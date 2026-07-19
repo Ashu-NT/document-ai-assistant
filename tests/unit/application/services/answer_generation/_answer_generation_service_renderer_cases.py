@@ -272,6 +272,11 @@ def test_generate_bypasses_deterministic_identifier_renderer_for_a_compound_ques
     assert result.limitation_note is None
     assert result.diagnostics["deterministic_dispatch_bypassed"] is True
     assert result.diagnostics["deterministic_dispatch_bypass_reason"] == "compound_question"
+    # The default chunk's content ("Replace hydraulic filter...") happens to
+    # contain a PROCEDURE_STEPS term ("replace"), so the unrelated clause's
+    # intent is plausibly covered by what retrieval already fetched (PR 6's
+    # explicit logging requirement, not a coverage guarantee).
+    assert result.diagnostics["compound_question_coverage_plausible"] is True
 
 
 def test_generate_deterministic_spare_parts_renderer_sets_no_limitation_note_for_non_compound_question() -> None:
@@ -325,3 +330,7 @@ def test_generate_bypasses_deterministic_spare_parts_renderer_for_a_compound_que
     assert result.limitation_note is None
     assert result.diagnostics["deterministic_dispatch_bypassed"] is True
     assert result.diagnostics["deterministic_dispatch_bypass_reason"] == "compound_question"
+    # The spare-parts table chunk's content carries no PROCEDURE_STEPS term
+    # at all, so the unrelated ("how do i replace the seal") clause is NOT
+    # plausibly covered by what retrieval fetched -- a genuine evidence gap.
+    assert result.diagnostics["compound_question_coverage_plausible"] is False

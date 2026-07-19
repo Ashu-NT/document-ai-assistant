@@ -101,6 +101,9 @@ def log_answer_generation_recorded(
             "deterministic_dispatch_bypass_reason": diagnostics.get(
                 "deterministic_dispatch_bypass_reason"
             ),
+            "compound_question_coverage_plausible": diagnostics.get(
+                "compound_question_coverage_plausible"
+            ),
             "prompt_canonicalized_key_values_removed": diagnostics.get(
                 "prompt_canonicalized_key_values_removed"
             ),

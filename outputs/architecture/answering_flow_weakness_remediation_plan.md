@@ -291,7 +291,7 @@ reflection performs no second classification.
 pass-through). Full suite: 3325 passed, only the known pre-existing OCR failure
 (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
-### PR 4 — Keep `AnswerIntentDecision` local to answer generation (no new `AgentState` field)
+### PR 4 status: verified, no code changes needed (2026-07-19) — Keep `AnswerIntentDecision` local to answer generation (no new `AgentState` field)
 
 `AnswerIntentDecision` already flows correctly through `StructuredFactJoiner` → `AnswerGenerationRequest` →
 `AnswerGenerationRequestResolver` → `DeterministicDispatchGate` — that's the correct scope for renderer
@@ -302,29 +302,91 @@ drives retrieval/retry/sufficiency/reflection; `AnswerIntent` drives determinist
 formatting. Do not force renderer dispatch onto `RetrievalQueryIntent` for consistency's sake — they represent
 different decisions.
 
-### PR 5 — Make `DeterministicDispatchGate`'s bypass reasons explicit and enumerable
+**Verification (this pass), traced end to end by direct code read, not by trusting the description above**:
+- `StructuredFactJoiner.join()` calls `_resolve_structured_answer_intent_decision()` (only when identifiers/
+  structured entities were actually resolved) and returns it as `StructuredFactJoinResult.intent_decision`
+  (`structured_fact_joiner.py:130,178-184`).
+- `answer_generation_pipeline.py:205,230` reads `join_result.intent_decision` and passes it straight into
+  `AnswerGenerationRequest(answer_intent_decision=intent_decision, ...)`.
+- `AnswerGenerationRequestResolver._resolve_intent_decision()` returns `request.answer_intent_decision` as-is
+  when present, skipping a second `AnswerIntentAnalyzer.analyze()` call entirely
+  (`answer_generation_request_resolver.py:84-85`); falls back to `analyze()` only when no upstream decision was
+  supplied.
+- `AnswerGenerationService.generate()` passes the resolved `intent_decision` straight to
+  `self.deterministic_dispatch_gate.evaluate(effective_intent=resolved_request.answer_intent,
+  intent_decision=intent_decision)` (`answer_generation_service.py:171-175`) — `effective_intent` is explicitly
+  the resolved request's answer_intent, not the decision's own `.intent`, confirming the earlier
+  `effective_intent`-gating fix (this session) is still in place.
+- `DeterministicDispatchGate.evaluate()` reads exactly `.intent`, `.is_contested`, `.margin` off
+  `AnswerIntentDecision` — all three already exist; **no missing fields, no dataclass changes required**.
+- `AgentState` (`agent_state.py`) still has zero references to `answer_intent_decision`/`AnswerIntentDecision`
+  — grepped directly, confirming it has not crept in since Phase 0's mapping pass.
+- Targeted regression check: `tests/unit/application/services/answer_generation/` (15 tests) — all pass,
+  confirming this verification pass changed nothing observable.
 
-`DeterministicDispatchGate.evaluate()` already returns a reason string (`"contested_intent"`/`"compound_question"`,
-added this session) — formalize this into an explicit small set: `CONTESTED_INTENT`, `NO_SIGNAL`,
-`COMPOUND_QUESTION` now; `UNSUPPORTED_RENDERER`, `CONFLICTING_EVIDENCE`, `INCOMPLETE_EXHAUSTIVE_EVIDENCE` added
-later (PR 8-10) once the evidence metadata they depend on exists. No new answer-path router — this gate is
-already the single decision point, per this session's own design; just widen what it can say no because of.
+No code or test changes in this PR — it closed with the same conclusion the plan predicted, confirmed rather
+than assumed.
 
-### PR 6 — Structured compound-question detection, expanded incrementally
+### PR 5 status: implemented (2026-07-19) — Make `DeterministicDispatchGate`'s bypass reasons explicit and enumerable
 
-Change the compound detector's result from boolean/string to a structured shape (`is_compound`, `reason`,
-`clauses`) if it isn't already — reuse `QuestionClauseSplitter`'s existing clause-splitting logic (built this
-session for reflection) rather than maintaining two detectors. Expand detection incrementally: explicit
-conjunction (already built) → two question-mark-delimited sentences → enumerated requests (`1) ... 2) ...`) —
-each addition should have its own test proving it does *not* over-trigger on a plain noun-phrase conjunction
-("inspection and certification requirements" staying single-request), mirroring the false-positive guard this
-session's `QuestionClauseSplitter` already has.
+Added `DispatchBypassReason(StrEnum)` (`deterministic_dispatch_gate.py`) with `CONTESTED_INTENT`, `NO_SIGNAL`,
+`COMPOUND_QUESTION` — `UNSUPPORTED_RENDERER`/`CONFLICTING_EVIDENCE`/`INCOMPLETE_EXHAUSTIVE_EVIDENCE` are still
+deferred to PR 8-10 once the evidence metadata they depend on exists. `StrEnum` (matching `AnswerIntent`/
+`RetrievalQueryIntent`'s own convention) so every existing `.reason == "compound_question"`-style string
+comparison and diagnostics-dict serialization kept working unmodified — confirmed by the pre-existing tests
+passing without changes to their assertions.
 
-**Retrieval limitation, explicitly deferred**: compound detection happens *after* retrieval today, so bypassing
-the renderer doesn't guarantee both clauses were actually retrieved. For this PR: log detected-compound cases
-and whether retrieval's chunks plausibly cover both clauses — do not redesign retrieval in the same change.
-Moving/duplicating a lightweight compound signal earlier into `QuestionAnsweringRouter.decide()` is a separate,
-later follow-up.
+Also added the actual `NO_SIGNAL` check the enum implied but the gate didn't yet have:
+`intent_decision.intent == effective_intent and not intent_decision.matched_signals` now forces a bypass, gated
+on the same "is this decision actually in effect" guard the contested check already used (a caller-overridden
+`effective_intent` means the analyzer's own empty-matched-signals result describes a hypothetical intent that
+was never used). Verified this can never spuriously fire on a real domain-specific classification: every
+`_score_terms()`/signal-application call in `question_signal_scorer.py`/`chunk_content_signal_scorer.py` appends
+a `matched[intent]` entry in the same branch that increments `scores[intent]`, so `matched_signals` is only ever
+empty on `AnswerIntentAnalyzer.analyze()`'s true `scores[best_intent] <= 0` fallback (intent=`GENERAL`) — never
+on a real winning intent test scenarios exercise.
+
+New tests in `test_deterministic_dispatch_gate.py`: `test_bypasses_for_a_decision_with_no_matched_signal_at_all`,
+`test_ignores_a_no_signal_decision_about_an_intent_that_was_overridden_away`,
+`test_contested_check_runs_before_the_no_signal_check`. The shared `_decision()` test helper's default
+`matched_signals` was changed from `[]` to a non-empty placeholder so the pre-existing contested/compound tests
+keep testing exactly what they always tested, not incidentally exercising the new NO_SIGNAL path.
+
+### PR 6 status: implemented (2026-07-19) — Structured compound-question detection, expanded incrementally
+
+`CompoundQuestionDetector.detect()` now returns `CompoundQuestionSignal(is_compound, reason, unrelated_intent,
+clauses)` instead of a bare `AnswerIntent | None`. Rebuilt on top of `QuestionClauseSplitter` (built this session
+for reflection's multi-clause coverage scoring) instead of the detector's own narrower conjunction-only regex —
+this closes two gaps at once: (1) the multi-question-mark expansion ("What are the spare parts? How do I
+replace the seal?") now works for free, no new splitting logic needed; (2) the detector inherits the splitter's
+noun-phrase false-positive guard, so "What are the inspection and certification requirements?" correctly stays
+single-request (new test `test_does_not_over_trigger_on_a_plain_noun_phrase_conjunction`) — the old regex-based
+half-split had no such guard at all. Enumerated-request detection (`1) ... 2) ...`) is the one still-deferred
+expansion tier from the original three; left for a follow-up since `QuestionClauseSplitter` has no equivalent
+splitting strategy for it yet and inventing one deserves its own validation pass, not a rushed addition here.
+
+**Retrieval-limitation logging (this PR's explicit requirement, not deferred)**: added
+`chunks_plausibly_cover_intent(chunks, intent)` to `compound_question_detector.py` — a cheap, non-authoritative
+proxy reusing the same `_INTENT_TERM_SETS` vocabulary against chunk content instead of question text.
+`AnswerGenerationService.generate()` now computes `diagnostics["compound_question_coverage_plausible"]`
+whenever the bypass reason is `COMPOUND_QUESTION`, and `log_answer_generation_recorded()` surfaces it in the
+per-turn structured log line alongside the existing bypass fields, so a future report script can distinguish
+"compound question, plausibly answerable anyway" from "compound question, genuine evidence gap" — without
+redesigning retrieval itself, per this PR's explicit scope limit. Moving/duplicating a lightweight compound
+signal earlier into `QuestionAnsweringRouter.decide()` remains a separate, later follow-up.
+
+Hit the same circular-import shape as PR 2/3: `CompoundQuestionDetector.__init__`'s `QuestionClauseSplitter`
+default now imports it lazily inside the constructor (not at module level) for the same reason
+`RetrievalIntentDecision` needed `TYPE_CHECKING` there — a module-level import re-enters
+`src.application.langgraph`'s `__init__` chain, which imports back into this module via
+`answer_generation_service.py` → `deterministic_dispatch_gate.py`.
+
+**Tests**: `test_compound_question_detector.py` rewritten for the structured return type (existing cases kept,
++3 new: multi-question-mark, noun-phrase guard, `chunks_plausibly_cover_intent` behavior); 2 existing
+`_answer_generation_service_renderer_cases.py` compound tests gained a `compound_question_coverage_plausible`
+assertion (one `True` case, one `False` case, both derived from the actual fixture chunk content, not guessed).
+Full suite: 3333 passed, only the known pre-existing OCR failure
+(`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
 ### PR 7 — Decision trace on the answer result, not top-level `AgentState`
 
