@@ -36,6 +36,7 @@ class AgentState(TypedDict):
     reflection_result: dict[str, Any] | None
     reflection_decision: str | None
     reflection_score: float | None
+    reflection_triggered_by: str | None
     answer_quality: dict[str, Any] | None
     evidence_quality: dict[str, Any] | None
     retry_query: str | None
@@ -171,6 +172,7 @@ def build_agent_state(
         reflection_result=None,
         reflection_decision=None,
         reflection_score=None,
+        reflection_triggered_by=None,
         answer_quality=None,
         evidence_quality=None,
         retry_query=None,

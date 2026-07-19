@@ -612,19 +612,51 @@ list, +4 new end-to-end tests: regenerate-then-succeeds, regenerate-then-abstain
 cross-document clarify); `test_final_response_node.py` (+1). Full suite: 3420 passed, only the known
 pre-existing OCR failure (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
-### PR 12 — Risk-based reflection (closes W9 — requires sign-off before implementation)
+### PR 12 status: implemented (2026-07-19) — Risk-based reflection (closes W9)
 
-Reflection stays off by default globally (standing decision, unchanged) — this PR does not flip that. Instead,
-gate a *scoped* enablement on a `requires_reflection` signal combining: LLM-generated (not deterministic-rendered)
-answer, contested intent, compound question, truncated evidence (PR 8), conflicting evidence (PR 10), an
-`ORDERED_PROCEDURE`/`EXHAUSTIVE_LIST` coverage requirement (PR 9), or safety-critical intent content. Layer
-validation cheaply first — deterministic checks (citation source exists, structured values trace to evidence,
-units preserved, all clauses addressed, truncation disclosed, procedure order preserved) — before ever reaching
-semantic/LLM reflection, so the expensive path only runs when the cheap one already found something worth a
-closer look or the signal list above says this turn is inherently risky.
+**Sign-off** (resolved before any code was written): high-stakes intents for the scoped opt-in are
+`SAFETY_WARNINGS`, `PROCEDURE_STEPS`, `TROUBLESHOOTING`, `CERTIFICATION_SUMMARY`, and `MAINTENANCE_SUMMARY`
+(confirmed explicitly — wrong maintenance intervals can lead to equipment failure, worth the reflection cost
+even without another risk signal present). Confirmed no conflict with the standing "reflection off by default"
+decision: that decision lives at `state["reflection_enabled"]`'s *global* default (`build_agent_state()` →
+`False`, unchanged by this PR) — production wiring separately hardcodes `ReflectionPolicy(enabled=True)` at the
+*service* level, which only ever matters once a turn has already reached `ReflectionService.review()` in the
+first place. This PR's scoped opt-in operates entirely at the *node* level, deciding per-turn whether to reach
+`review()` at all when the global flag is off — the general default itself never changes.
 
-**Before writing code**: agree on which intents qualify as "high-stakes" for this scoped opt-in, and confirm it
-doesn't conflict with the standing "reflection off by default" decision's original rationale.
+Added `ReflectionRiskSignal` (`langgraph/nodes/reflection_risk_signal.py`) and
+`compute_reflection_risk_signal(answer_payload) -> ReflectionRiskSignal`, combining exactly the plan's signal
+list — contested intent, compound question, truncated evidence (PR 8), conflicting evidence (PR 10), an
+`ordered_procedure`/`exhaustive_list` coverage requirement (PR 9), or a high-stakes intent — gated on the answer
+actually being LLM-generated (a deterministic-rendered answer only ever formats already-verified structured
+facts; nothing here can override that exclusion). Every field is read straight off `answer_payload["diagnostics"]`
+— already fully populated by PR 5/7/8/9/10's decision_trace/coverage_requirement/evidence_conflicts/truncation
+flags — so this required **zero new plumbing** through the generation pipeline, only a new reader.
+
+`ReflectAnswerNode.__call__` was restructured (route/answer_payload validation now happens *before* the
+reflection-enabled check, not after, so the risk signal has diagnostics to read) to run reflection whenever
+`state["reflection_enabled"]` is on **or** `risk_signal.requires_reflection` is true — recording which one via a
+new `reflection_triggered_by` field (`"explicit_enable"` | `"scoped_risk_signal"` | `None`), threaded through
+`AgentState`, the node's trace, and the graph-visible patch, for observability.
+
+**Interpretation note on "layer validation cheaply first"**: re-read carefully against the actual code before
+implementing anything further here — `ReflectionService.review()` *already* computes
+`DeterministicReflectionDecider.decide()` before ever attempting the LLM call (built in an earlier phase this
+session); the plan's own cited "deterministic checks" (citation source exists, units preserved, clauses
+addressed, etc.) are exactly what the existing deterministic decider/validator/PR-11 guardrails already do.
+**No restructuring of `review()`'s internal LLM-gating was made** — doing so (e.g. skipping the LLM whenever the
+deterministic decision is already a clean `ACCEPT`) would have silently changed the outcome of several existing,
+explicitly-asserted tests (confirmed by direct inspection: `test_reflection_service_downgrades_clarify_without_
+question_to_accept_with_limitations` and others construct scenarios specifically to exercise the LLM-driven
+decision path, asserting `llm_service.calls` is non-empty). Changing that behavior wasn't required by the sign-off
+and risked a real regression for no confirmed benefit, so PR 12's scope stayed at the node-level gate only — the
+"cheap-before-expensive" layering it asks for was already true architecturally, not something to newly build.
+
+**Tests**: `test_reflection_risk_signal.py` (new, 13 tests — every signal in isolation, the deterministic-render
+exclusion, all 5 high-stakes intents, missing/malformed payload handling), `test_reflect_answer_node.py` (+3 —
+skip when disabled and not risky, scoped-opt-in run when disabled but risky, explicit-enable run regardless of
+risk). Full suite: 3436 passed, only the known pre-existing OCR failure
+(`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
 ### Deferred to a separate workstream (explicitly not part of this plan)
 

@@ -256,6 +256,108 @@ def test_reflect_answer_node_passes_none_when_intent_is_unavailable() -> None:
     assert reflection_service.calls[0]["retrieval_query_intent"] is None
 
 
+def test_reflect_answer_node_skips_reflection_when_disabled_and_not_risky() -> None:
+    """PR 12 (answering_flow_weakness_remediation_plan.md): the global
+    default is unchanged -- a routine turn with no risk signal still gets
+    no reflection when reflection_enabled is off."""
+    reflection_service = _FakeReflectionService(_accept_result())
+    node = ReflectAnswerNode(ToolRegistry(), reflection_service=reflection_service)
+    state = build_agent_state(
+        user_input="What is the operating pressure?",
+        document_id="doc_1",
+        reflection_enabled=False,
+    )
+    state["question"] = "What is the operating pressure?"
+    state["tool_results"] = {
+        "answer_question": {
+            "success": True,
+            "data": {
+                "route": "retrieval_qa",
+                "answer_text": "6 bar.",
+                "approved_chunk_ids": [],
+                "rejected_chunk_ids": [],
+                "retrieval_result": {},
+                "diagnostics": {
+                    "decision_trace": {"llm_used": True},
+                    "answer_intent": "specification_summary",
+                    "coverage_requirement": "single_fact",
+                },
+            },
+        }
+    }
+
+    patch = node(state)
+
+    assert reflection_service.calls == []
+    assert "reflection_triggered_by" not in patch
+
+
+def test_reflect_answer_node_runs_reflection_for_a_risky_turn_even_when_disabled() -> None:
+    """The scoped opt-in: a genuinely risky turn (here, a safety-warnings
+    answer) still gets reflection even though reflection_enabled is off."""
+    reflection_service = _FakeReflectionService(_accept_result())
+    node = ReflectAnswerNode(ToolRegistry(), reflection_service=reflection_service)
+    state = build_agent_state(
+        user_input="What safety precautions apply?",
+        document_id="doc_1",
+        reflection_enabled=False,
+    )
+    state["question"] = "What safety precautions apply?"
+    state["tool_results"] = {
+        "answer_question": {
+            "success": True,
+            "data": {
+                "route": "retrieval_qa",
+                "answer_text": "Wear protective gear.",
+                "approved_chunk_ids": [],
+                "rejected_chunk_ids": [],
+                "retrieval_result": {},
+                "diagnostics": {
+                    "decision_trace": {"llm_used": True},
+                    "answer_intent": "safety_warnings",
+                },
+            },
+        }
+    }
+
+    patch = node(state)
+
+    assert reflection_service.calls
+    assert patch["reflection_triggered_by"] == "scoped_risk_signal"
+
+
+def test_reflect_answer_node_runs_reflection_when_explicitly_enabled_regardless_of_risk() -> None:
+    reflection_service = _FakeReflectionService(_accept_result())
+    node = ReflectAnswerNode(ToolRegistry(), reflection_service=reflection_service)
+    state = build_agent_state(
+        user_input="What is the operating pressure?",
+        document_id="doc_1",
+        reflection_enabled=True,
+    )
+    state["question"] = "What is the operating pressure?"
+    state["tool_results"] = {
+        "answer_question": {
+            "success": True,
+            "data": {
+                "route": "retrieval_qa",
+                "answer_text": "6 bar.",
+                "approved_chunk_ids": [],
+                "rejected_chunk_ids": [],
+                "retrieval_result": {},
+                "diagnostics": {
+                    "decision_trace": {"llm_used": True},
+                    "answer_intent": "specification_summary",
+                },
+            },
+        }
+    }
+
+    patch = node(state)
+
+    assert reflection_service.calls
+    assert patch["reflection_triggered_by"] == "explicit_enable"
+
+
 def _clarify_result(
     question: str,
     *,

@@ -14,6 +14,9 @@ from src.application.langgraph.nodes.node_utils import (
     extract_coverage_signal,
     extract_retrieval_intent_decision,
 )
+from src.application.langgraph.nodes.reflection_risk_signal import (
+    compute_reflection_risk_signal,
+)
 from src.application.langgraph.reflection import ClarificationBuilder, ReflectionService
 from src.application.langgraph.reflection.constants import (
     REFLECTION_CLARIFICATION_KIND,
@@ -43,7 +46,7 @@ class ReflectAnswerNode:
             "reflect_answer",
             route=state.get("route"),
         )
-        if self.reflection_service is None or not state.get("reflection_enabled", False):
+        if self.reflection_service is None:
             trace_entry = self.recorder.finish_node(token, success=True)
             return {
                 "trace": extend_trace(state["trace"], trace_entry),
@@ -68,6 +71,18 @@ class ReflectAnswerNode:
                 "trace": extend_trace(state["trace"], trace_entry),
             }
 
+
+        reflection_enabled = bool(state.get("reflection_enabled", False))
+        risk_signal = compute_reflection_risk_signal(answer_payload)
+        if not reflection_enabled and not risk_signal.requires_reflection:
+            trace_entry = self.recorder.finish_node(token, success=True)
+            return {
+                "trace": extend_trace(state["trace"], trace_entry),
+            }
+        reflection_triggered_by = (
+            "explicit_enable" if reflection_enabled else "scoped_risk_signal"
+        )
+
         generated_answer = (
             str(answer_payload.get("answer_text") or "").strip()
             or str(state.get("response_text") or "").strip()
@@ -89,9 +104,6 @@ class ReflectAnswerNode:
         if not approved_chunks and isinstance(context_chunks, list):
             approved_chunks = [chunk for chunk in context_chunks if isinstance(chunk, dict)]
 
-        # Extracted once and reused below instead of re-parsing
-        # retrieval_result twice -- see PR 2/3,
-        # answering_flow_weakness_remediation_plan.md.
         retrieval_intent_decision = extract_retrieval_intent_decision(retrieval_result)
         retrieval_query_intent = (
             retrieval_intent_decision.intent
@@ -143,17 +155,22 @@ class ReflectAnswerNode:
                 "confidence": result.decision.confidence,
                 "overall_score": result.overall_score,
                 "reason": result.decision.reason,
+                "triggered_by": reflection_triggered_by,
             }
         )
         trace_entry = self.recorder.finish_node(
             token,
             success=True,
-            diagnostics={"decision": result.decision.decision.value},
+            diagnostics={
+                "decision": result.decision.decision.value,
+                "reflection_triggered_by": reflection_triggered_by,
+            },
         )
         return {
             "reflection_attempts": int(state.get("reflection_attempts", 0)) + 1,
             "reflection_result": serialize_graph_value(asdict(result)),
             "reflection_decision": result.decision.decision.value,
+            "reflection_triggered_by": reflection_triggered_by,
             "reflection_score": result.overall_score,
             "answer_quality": result.diagnostics.get("answer_quality"),
             "evidence_quality": result.diagnostics.get("evidence_quality"),
@@ -179,11 +196,6 @@ class ReflectAnswerNode:
                 "retry_query": result.decision.retry_query,
             }
         if decision == "CLARIFY":
-            # An ambiguity-driven CLARIFY (an exact tie between two candidate
-            # intents) must surface the ambiguity's own options, not a
-            # domain-specific fixed list for whichever intent happened to
-            # win the tie -- force the generic/missing_information-based
-            # options path by withholding the intent in that case.
             is_ambiguity_driven = (
                 result.decision.diagnostics.get("validator") == "ambiguous_intent_clarify"
             )
