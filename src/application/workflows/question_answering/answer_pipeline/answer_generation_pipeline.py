@@ -4,7 +4,6 @@ from src.application.contracts.guardrails import GuardrailResult
 from src.application.contracts.guardrails.guardrail_context import GuardrailContext
 from src.application.contracts.guardrails.guardrail_decision import GuardrailDecision
 from src.application.guardrails.context.context_guardrail_chain import ContextGuardrailChain
-from src.application.guardrails.guardrail_runner import GuardrailRunner
 from src.application.guardrails.services import PreGenerationGuardrailService
 from src.application.services.answer_generation.answer_generation_request import (
     AnswerGenerationRequest,
@@ -14,6 +13,12 @@ from src.application.services.answer_generation.answer_generation_service import
 )
 from src.application.workflows.question_answering.answer_pipeline.decision_trace_builder import (
     build_decision_trace,
+)
+from src.application.workflows.question_answering.answer_pipeline.post_answer_disposition_resolver import (
+    PostAnswerDispositionResolver,
+)
+from src.application.workflows.question_answering.answer_pipeline.post_answer_guardrail_evaluator import (
+    PostAnswerGuardrailEvaluator,
 )
 from src.application.workflows.question_answering.answer_pipeline.structured_evidence_merger import (
     StructuredEvidenceMerger,
@@ -67,6 +72,13 @@ class AnswerGenerationPipeline:
         self._pre_generation_guardrail_service = pre_generation_guardrail_service
         self._answer_generation_service = answer_generation_service
         self._post_answer_guardrails = post_answer_guardrails
+        self._post_answer_guardrail_evaluator = PostAnswerGuardrailEvaluator(
+            post_answer_guardrails
+        )
+        self._post_answer_disposition_resolver = PostAnswerDispositionResolver(
+            evaluator=self._post_answer_guardrail_evaluator,
+            answer_generation_service=answer_generation_service,
+        )
         self._structured_evidence_merger = structured_evidence_merger
         self._structured_fact_joiner = structured_fact_joiner
 
@@ -234,74 +246,45 @@ class AnswerGenerationPipeline:
         )
         generated = self._answer_generation_service.generate(gen_request)
 
-        # Phase 6: post-answer guardrails
-        post_answer_guardrail_warnings: list[dict] = []
-        if self._post_answer_guardrails:
-            post_context = GuardrailContext(
-                query_text=request.question,
-                query_intent=analyzed_intent,
-                query_chunk_types=[chunk_type.value for chunk_type in analyzed_query.chunk_types],
-                approved_chunks=approved_chunks,
-                answer_text=generated.answer_text,
-                answer_intent=(
-                    generated.answer_intent.value
-                    if generated.answer_intent is not None
-                    else None
-                ),
-                # Converted to plain dicts here (not passed as the typed
-                # AnswerSection/ReferenceNote dataclasses) to match
-                # GuardrailContext's existing loose-dict convention for
-                # cross-layer data (see `citations` on the same class) --
-                # plan section 9.6 sections/reference_notes redesign.
-                sections=[
-                    {
-                        "heading": section.heading,
-                        "body": section.body,
-                        "reference_note_ids": section.reference_note_ids,
-                    }
-                    for section in generated.sections
-                ],
-                reference_notes=[
-                    {
-                        "note_id": note.note_id,
-                        "claim_text": note.claim_text,
-                        "source_number": note.source_number,
-                        "chunk_id": note.chunk_id,
-                    }
-                    for note in generated.reference_notes
-                ],
-                metadata=generated.diagnostics,
-            )
-            post_results = GuardrailRunner(self._post_answer_guardrails).run_all(
-                post_context
-            )
-            post_blocking = next(
-                (result for result in post_results if not result.allowed), None
-            )
-            if post_blocking is not None:
-                return QuestionAnsweringResult(
-                    route=QuestionAnsweringRoute.BLOCKED_BY_GUARDRAIL,
-                    safe_user_message=post_blocking.safe_user_message,
-                    guardrail_decision=post_blocking.decision,
-                    guardrail_result=post_blocking,
-                    retrieval_result=workflow_result,
-                    approved_chunk_ids=approved_ids,
-                    rejected_chunk_ids=rejected_chunk_ids,
-                    resolved_identifiers=resolved_identifiers,
-                    resolved_structured_entities=resolved_structured_entities,
-                    diagnostics={"blocked_by": "post_answer_guardrail"},
-                )
-            post_answer_guardrail_warnings = [
-                {
-                    "decision": result.decision.value,
-                    "reason": result.reason,
-                    "violations": [
-                        violation.description for violation in result.violations
-                    ],
-                }
-                for result in post_results
-                if result.violations
-            ]
+        # Phase 6: post-answer guardrails (PR 11,
+        # answering_flow_weakness_remediation_plan.md, closes W8) -- every
+        # disposition above WARN used to be a no-op; this now regenerates
+        # once on REGENERATE, and never loops a second time. The regenerate
+        # loop and terminal-result construction live in
+        # PostAnswerDispositionResolver, not here, to keep this method's
+        # own length manageable.
+        emit_progress(progress_callback, "Checking answer guardrails...")
+        chunk_type_values = [
+            chunk_type.value for chunk_type in analyzed_query.chunk_types
+        ]
+        evaluation = self._post_answer_guardrail_evaluator.evaluate(
+            generated=generated,
+            question=request.question,
+            analyzed_intent=analyzed_intent,
+            chunk_types=chunk_type_values,
+            approved_chunks=approved_chunks,
+        )
+        disposition_outcome = self._post_answer_disposition_resolver.resolve(
+            generated=generated,
+            evaluation=evaluation,
+            gen_request=gen_request,
+            question=request.question,
+            analyzed_intent=analyzed_intent,
+            chunk_types=chunk_type_values,
+            approved_chunks=approved_chunks,
+            common_result_kwargs={
+                "retrieval_result": workflow_result,
+                "approved_chunk_ids": approved_ids,
+                "rejected_chunk_ids": rejected_chunk_ids,
+                "resolved_identifiers": resolved_identifiers,
+                "resolved_structured_entities": resolved_structured_entities,
+            },
+        )
+        if disposition_outcome.terminal_result is not None:
+            return disposition_outcome.terminal_result
+        generated = disposition_outcome.generated
+        evaluation = disposition_outcome.evaluation
+        regenerated_once = disposition_outcome.regenerated_once
 
         emit_progress(progress_callback, "Answer ready.")
         return QuestionAnsweringResult(
@@ -326,9 +309,12 @@ class AnswerGenerationPipeline:
                 **generated.diagnostics,
                 **workflow_result.diagnostics,
                 **(
-                    {"post_answer_guardrail_warnings": post_answer_guardrail_warnings}
-                    if post_answer_guardrail_warnings
+                    {"post_answer_guardrail_warnings": evaluation.warnings}
+                    if evaluation.warnings
                     else {}
+                ),
+                **(
+                    {"post_answer_regenerated": True} if regenerated_once else {}
                 ),
                 "decision_trace": build_decision_trace(
                     analyzed_query=analyzed_query,

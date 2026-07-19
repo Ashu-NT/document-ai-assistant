@@ -32,6 +32,7 @@ def build_agent_services(
     from src.application.guardrails.answering import (
         AnswerSupportGuardrail,
         CitationGuardrail,
+        ConflictingEvidenceGuardrail,
         SafetyAnswerGuardrail,
         UnsupportedClaimGuardrail,
         UnsupportedSuggestionGuardrail,
@@ -139,6 +140,7 @@ def build_agent_services(
         post_answer_guardrails=(
             [
                 SafetyAnswerGuardrail(),
+                ConflictingEvidenceGuardrail(),
                 CitationGuardrail(),
                 UnsupportedClaimGuardrail(),
                 UnsupportedSuggestionGuardrail(),

@@ -5,7 +5,16 @@ from src.application.workflows.question_answering.answer_context.models import (
     AnswerKeyValue,
     AnswerMaintenanceEntry,
     AnswerMaintenanceReference,
+    AnswerSource,
 )
+
+
+def _source(source_number: int, document_id: str) -> AnswerSource:
+    return AnswerSource(
+        source_number=source_number,
+        chunk_id=f"chunk_{source_number}",
+        document_id=document_id,
+    )
 
 
 def _kv(key, value, unit=None, source_number=1, field_kind="specification"):
@@ -175,3 +184,53 @@ def test_matches_maintenance_tasks_with_minor_wording_differences() -> None:
     )
 
     assert len(conflicts) == 1
+
+
+def test_populates_document_ids_when_sources_are_provided() -> None:
+    """PR 11 (answering_flow_weakness_remediation_plan.md): document_ids lets
+    a consumer (ConflictingEvidenceGuardrail) tell a same-document conflict
+    apart from one spanning multiple documents, without its own
+    source_number -> document_id lookup."""
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[
+            _kv("Operating pressure", "6 bar", source_number=1),
+            _kv("Operating pressure", "8 bar", source_number=2),
+        ],
+        maintenance_entries=[],
+        sources=[_source(1, "doc_a"), _source(2, "doc_b")],
+    )
+
+    assert len(conflicts) == 1
+    assert conflicts[0].document_ids == ("doc_a", "doc_b")
+
+
+def test_document_ids_collapses_to_one_when_sources_share_a_document() -> None:
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[
+            _kv("Operating pressure", "6 bar", source_number=1),
+            _kv("Operating pressure", "8 bar", source_number=2),
+        ],
+        maintenance_entries=[],
+        sources=[_source(1, "doc_a"), _source(2, "doc_a")],
+    )
+
+    assert len(conflicts) == 1
+    assert conflicts[0].document_ids == ("doc_a",)
+
+
+def test_document_ids_defaults_to_empty_when_sources_are_not_provided() -> None:
+    detector = EvidenceContradictionDetector()
+
+    conflicts = detector.detect(
+        key_values=[
+            _kv("Operating pressure", "6 bar", source_number=1),
+            _kv("Operating pressure", "8 bar", source_number=2),
+        ],
+        maintenance_entries=[],
+    )
+
+    assert conflicts[0].document_ids == ()

@@ -242,6 +242,7 @@ def test_progress_callback_receives_stage_messages_for_full_generation_path(
         "Retrieved 1 evidence chunk(s).",
         "Checking context guardrails...",
         "Generating answer...",
+        "Checking answer guardrails...",
         "Answer ready.",
     ]
 

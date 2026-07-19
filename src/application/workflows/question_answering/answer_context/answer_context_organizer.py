@@ -103,6 +103,7 @@ class AnswerContextOrganizer:
         evidence_conflicts = self.evidence_contradiction_detector.detect(
             key_values=key_values,
             maintenance_entries=maintenance_entries,
+            sources=sources,
         )
         diagnostics = {
             "chunk_type_counts": dict(
@@ -132,6 +133,7 @@ class AnswerContextOrganizer:
                     "values": list(conflict.values),
                     "source_numbers": list(conflict.source_numbers),
                     "is_critical": conflict.is_critical,
+                    "document_ids": list(conflict.document_ids),
                 }
                 for conflict in evidence_conflicts
             ],

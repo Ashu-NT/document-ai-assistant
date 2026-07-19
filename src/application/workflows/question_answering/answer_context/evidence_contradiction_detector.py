@@ -7,6 +7,7 @@ from typing import Sequence
 from src.application.workflows.question_answering.answer_context.models import (
     AnswerKeyValue,
     AnswerMaintenanceEntry,
+    AnswerSource,
 )
 
 # Start narrow (PR 10, answering_flow_weakness_remediation_plan.md, W4):
@@ -46,6 +47,13 @@ class EvidenceConflict:
     values: tuple[str, ...]
     source_numbers: tuple[int, ...]
     is_critical: bool = True
+    # Populated only when `detect()` is given `sources` (PR 11,
+    # answering_flow_weakness_remediation_plan.md) -- lets a consumer (e.g.
+    # ConflictingEvidenceGuardrail) distinguish "these sources genuinely
+    # disagree" from "these sources describe different documents/equipment
+    # and were never disambiguated" without doing its own source_number ->
+    # document_id lookup. Empty when sources weren't provided.
+    document_ids: tuple[str, ...] = ()
 
 
 class EvidenceContradictionDetector:
@@ -62,14 +70,24 @@ class EvidenceContradictionDetector:
         *,
         key_values: Sequence[AnswerKeyValue],
         maintenance_entries: Sequence[AnswerMaintenanceEntry],
+        sources: Sequence[AnswerSource] | None = None,
     ) -> list[EvidenceConflict]:
+        document_id_by_source_number = {
+            source.source_number: source.document_id
+            for source in (sources or [])
+            if source.document_id
+        }
         return [
-            *self._detect_key_value_conflicts(key_values),
-            *self._detect_maintenance_interval_conflicts(maintenance_entries),
+            *self._detect_key_value_conflicts(key_values, document_id_by_source_number),
+            *self._detect_maintenance_interval_conflicts(
+                maintenance_entries, document_id_by_source_number
+            ),
         ]
 
     def _detect_key_value_conflicts(
-        self, key_values: Sequence[AnswerKeyValue]
+        self,
+        key_values: Sequence[AnswerKeyValue],
+        document_id_by_source_number: dict[int, str],
     ) -> list[EvidenceConflict]:
         groups: dict[str, dict[str, set[int]]] = {}
         raw_values: dict[tuple[str, str], str] = {}
@@ -99,12 +117,17 @@ class EvidenceContradictionDetector:
                     for normalized_value in value_groups
                 ),
                 source_numbers=tuple(sorted(all_sources)),
+                document_ids=_document_ids_for(
+                    all_sources, document_id_by_source_number
+                ),
             )
             for key, value_groups, all_sources in self._conflicting_groups(groups)
         ]
 
     def _detect_maintenance_interval_conflicts(
-        self, maintenance_entries: Sequence[AnswerMaintenanceEntry]
+        self,
+        maintenance_entries: Sequence[AnswerMaintenanceEntry],
+        document_id_by_source_number: dict[int, str],
     ) -> list[EvidenceConflict]:
         groups: dict[str, dict[str, set[int]]] = {}
         raw_values: dict[tuple[str, str], str] = {}
@@ -130,6 +153,9 @@ class EvidenceContradictionDetector:
                     for normalized_value in value_groups
                 ),
                 source_numbers=tuple(sorted(all_sources)),
+                document_ids=_document_ids_for(
+                    all_sources, document_id_by_source_number
+                ),
             )
             for task, value_groups, all_sources in self._conflicting_groups(groups)
         ]
@@ -151,6 +177,21 @@ class EvidenceContradictionDetector:
             if len(all_sources) < 2:
                 continue
             yield key, value_groups, all_sources
+
+
+def _document_ids_for(
+    source_numbers: set[int],
+    document_id_by_source_number: dict[int, str],
+) -> tuple[str, ...]:
+    return tuple(
+        sorted(
+            {
+                document_id_by_source_number[source_number]
+                for source_number in source_numbers
+                if source_number in document_id_by_source_number
+            }
+        )
+    )
 
 
 def _normalize_label(value: str) -> str:

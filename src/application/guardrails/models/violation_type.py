@@ -23,3 +23,4 @@ class ViolationType(StrEnum):
     MISSING_CITATION = "missing_citation"
     UNSUPPORTED_CLAIM = "unsupported_claim"
     SAFETY_CONTENT = "safety_content"
+    CONFLICTING_EVIDENCE = "conflicting_evidence"

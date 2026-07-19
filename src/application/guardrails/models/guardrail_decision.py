@@ -19,3 +19,4 @@ class GuardrailDecision(StrEnum):
     CITATION_REQUIRED = "citation_required"
     UNSUPPORTED_CLAIMS = "unsupported_claims"
     SAFETY_BLOCKED = "safety_blocked"
+    CONFLICTING_EVIDENCE = "conflicting_evidence"

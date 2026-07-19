@@ -15,7 +15,7 @@ class _FakeContradictionDetector:
         self._conflicts = conflicts
         self.calls = 0
 
-    def detect(self, *, key_values, maintenance_entries) -> list[EvidenceConflict]:
+    def detect(self, *, key_values, maintenance_entries, sources=None) -> list[EvidenceConflict]:
         self.calls += 1
         return self._conflicts
 
@@ -61,6 +61,7 @@ def test_organize_attaches_detected_conflicts_to_diagnostics() -> None:
             "values": ["6 bar", "8 bar"],
             "source_numbers": [1, 2],
             "is_critical": True,
+            "document_ids": [],
         }
     ]
 

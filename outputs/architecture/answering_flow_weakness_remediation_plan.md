@@ -553,21 +553,64 @@ that would otherwise fire the deterministic identifier renderer instead bypasses
 `structured_context` carries a critical conflict). Full suite: 3390 passed, only the known pre-existing OCR
 failure (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
-### PR 11 — Graduated guardrail enforcement (closes W8 — requires sign-off before implementation)
+### PR 11 status: implemented (2026-07-19) — Graduated guardrail enforcement (closes W8)
 
-Guardrails currently run in four different places (context, pre-generation, post-answer, final-response) — do
-not rewrite them into one service in this PR. First define a shared disposition mapping: `PASS` / `WARN` /
-`REGENERATE` / `ABSTAIN` / `BLOCK`, and map each existing guardrail's findings onto it. Proposed policy pending
-sign-off: unsupported critical claim or invalid citation → regenerate once; repeated failure after one
-regeneration → abstain; critical conflicting source values (PR 10) → abstain or request clarification; minor
-formatting issues → warn (unchanged from today). Regenerate is capped at exactly one attempt — a second
-validation failure abstains, it does not loop. Add regression tests confirming `FinalResponseNode`'s recovery
-heuristic still cannot restore an answer that a safety guardrail deliberately replaced
-(`response_text_guardrail_replaced`, already built this session — this PR only adds more callers that can set
-it via `REGENERATE`/`ABSTAIN`, so the existing protection needs to keep covering them).
+**Sign-off** (resolved before any code was written): critical conflicting-evidence findings abstain by default,
+routing to CLARIFY only when the conflict is demonstrably explained by an undisambiguated equipment/document
+scope; `UnsupportedSuggestionGuardrail` gets the same severity as the generic unsupported-claim case
+(regenerate once, then abstain); `MAINTENANCE_SUMMARY` counts as high-stakes for PR 12; abstain/clarify message
+copy was drafted during implementation for review here rather than nailed down up front.
 
-**Before writing code**: agree on the severity-tiering model — which findings, on which intents, escalate past
-warn-only, and what the user-facing fallback message looks like when a regeneration also fails.
+Guardrails still run in the same four places (context, pre-generation, post-answer, final-response) — not
+rewritten into one service, per the plan. A new `GuardrailDisposition` enum (`PASS`/`WARN`/`REGENERATE`/
+`CLARIFY`/`ABSTAIN`/`BLOCK`, `guardrails/models/guardrail_disposition.py`) layers on top of the existing
+`GuardrailDecision` values, scoped to the 5 post-answer guardrails (the only stage that was warn-only before
+this PR — context/pre-generation/final-response already correctly block via `allowed=False`):
+
+- `CitationGuardrail` / `UnsupportedClaimGuardrail` / `UnsupportedSuggestionGuardrail` / `AnswerSupportGuardrail`
+  → **REGENERATE** once, then **ABSTAIN** if the regenerated answer still fails.
+- `SafetyAnswerGuardrail` → **ABSTAIN** immediately, no regenerate (per sign-off: retrying a failed
+  safety-evidence check risks confidently generating a *different* wrong answer).
+- New `ConflictingEvidenceGuardrail` (reads PR 10's `evidence_conflicts` straight off
+  `GeneratedAnswer.diagnostics`, no new plumbing) → **ABSTAIN** by default; **CLARIFY** only when the conflict's
+  sources span more than one `document_id` (PR 10's `EvidenceConflict.document_ids`, extended this PR to accept
+  `sources` for exactly this lookup) — the proxy for "the disagreement is demonstrably an undisambiguated
+  equipment/revision scope" the sign-off asked for.
+- `allowed=False` from *any* post-answer guardrail is an unconditional **BLOCK** override on top of the tiers
+  above, regardless of decision value — preserves the pre-PR-11 contract exactly (a pre-existing test exercised
+  this dead-in-production-today path directly; confirmed it still passes unmodified).
+- Everything else defaults to **WARN** (today's behavior, unchanged).
+
+Implementation split across new, focused modules (`answer_pipeline/post_answer_guardrail_evaluator.py` runs all
+post-answer guardrails and reduces to one disposition; `answer_pipeline/post_answer_disposition_resolver.py`
+owns the regenerate-once-then-abstain loop and terminal-`QuestionAnsweringResult` construction — extracted out
+of `AnswerGenerationPipeline.run()` specifically to keep that method's length manageable) plus
+`guardrails/answering/guardrail_disposition_mapper.py` (the decision → disposition table) and
+`guardrails/answering/post_answer_abstain_messages.py` (draft abstain copy, reviewable here rather than
+pre-agreed).
+
+**Known, documented gap**: the CLARIFY path surfaces the clarifying question as plain `response_text` — it does
+not (yet) wire a structured resume-with-answer flow the way the pre-query ambiguity clarification path does
+(`pending_clarification`/`resume_route` in `ClarificationBuilder`). Building that round-trip for
+evidence-conflict clarification specifically is a materially larger addition the sign-off didn't ask for; left
+for a follow-up once real usage shows it's needed.
+
+**Regression coverage for the safety-critical recovery heuristic** (the plan's explicit ask): confirmed by
+direct code read that `_is_safe_failure_message()` (`response_text_resolver.py`) is an *exact-string* membership
+check against exactly 2 known sentinels (`REFLECTION_SAFE_FAILURE_MESSAGE`, the grounding-failure message) — so
+none of PR 11's new abstain messages can be mistaken for one unless they happen to collide verbatim. Added
+`test_no_abstain_message_collides_with_the_recovery_heuristics_sentinels` (asserts none do) plus a direct
+`FinalResponseNode` regression test proving a PR 11 abstain message survives even with `reflection_decision =
+"ACCEPT"` (every other recovery condition satisfied).
+
+**Tests** (7 new/modified files, ~40 new tests): `test_guardrail_disposition_mapper.py`,
+`test_conflicting_evidence_guardrail.py`, `test_post_answer_abstain_messages.py`,
+`test_post_answer_guardrail_evaluator.py` (all new); `test_evidence_contradiction_detector.py` (+3, the
+`document_ids` enrichment); `_test_question_answering_workflow_part3.py`/`_part4.py` (updated the one existing
+test whose fixture used a now-escalated decision as its "stays warn-only" example, matching progress-message
+list, +4 new end-to-end tests: regenerate-then-succeeds, regenerate-then-abstain, immediate safety abstain,
+cross-document clarify); `test_final_response_node.py` (+1). Full suite: 3420 passed, only the known
+pre-existing OCR failure (`test_parse_runs_optional_page_ocr_fallback_before_graph_build`).
 
 ### PR 12 — Risk-based reflection (closes W9 — requires sign-off before implementation)
 
