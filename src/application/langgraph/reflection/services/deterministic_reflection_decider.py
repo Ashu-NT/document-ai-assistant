@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.application.langgraph.reflection.decomposition import (
+    MultiClauseCoverageResult,
+)
 from src.application.langgraph.reflection.evaluators.maintenance_evidence_relevance_detector import (
     MaintenanceEvidenceRelevanceDetector,
 )
@@ -28,6 +31,7 @@ class DeterministicReflectionDecider:
         selected_document_id: str | None,
         approved_chunks: list[dict[str, Any]],
         retrieval_retry_count: int,
+        clause_coverage: MultiClauseCoverageResult | None = None,
     ) -> ReflectionDecision:
         lower_question = question.lower()
         lower_intent = (answer_intent or "").lower()
@@ -214,6 +218,20 @@ class DeterministicReflectionDecider:
                     "maintenance intervals",
                     "maintenance procedures",
                 ],
+            )
+        if clause_coverage is not None and not clause_coverage.is_fully_covered:
+            uncovered = clause_coverage.uncovered_clauses
+            return ReflectionDecision(
+                decision=ReflectionDecisionType.RETRIEVE_AGAIN,
+                confidence=0.85,
+                reason="The answer did not address every part of a multi-part question.",
+                # Targets the retry at exactly the missed clause(s) instead
+                # of the whole question -- reuses the existing retry
+                # reformulation machinery (it already treats a real,
+                # related retry_query verbatim) rather than a new per-clause
+                # retrieval mechanism.
+                retry_query=" ".join(uncovered),
+                missing_information=list(uncovered),
             )
         if (
             answer_quality.score >= policy.minimum_answer_quality_score

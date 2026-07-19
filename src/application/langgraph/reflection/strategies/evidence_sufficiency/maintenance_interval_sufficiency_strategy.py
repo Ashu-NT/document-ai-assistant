@@ -55,4 +55,37 @@ class MaintenanceIntervalEvidenceSufficiencyStrategy:
                     "selected document."
                 ),
             )
+        if self._answer_has_interval_structure_the_generic_scorer_missed(context):
+            return SufficiencyVerdict(
+                verdict=SufficiencyVerdictType.SUFFICIENT,
+                reason=(
+                    "The answer has clear maintenance interval structure "
+                    "even though it shares no question words verbatim."
+                ),
+            )
         return self._generic_strategy.is_answer_sufficient(context)
+
+    @staticmethod
+    def _answer_has_interval_structure_the_generic_scorer_missed(
+        context: EvidenceSufficiencyContext,
+    ) -> bool:
+        """A domain-aware rescue for the exact case the generic term-overlap
+        check can't see: an answer that describes maintenance intervals in
+        different words than the question (§3.5 -- this used to live as a
+        maintenance-specific fallback inside the supposedly-generic
+        `AnswerQualityScorer`; it belongs here instead, gated on exactly the
+        same other conditions the generic strategy itself requires)."""
+        answer_quality = context.answer_quality
+        evidence_quality = context.evidence_quality
+        return (
+            evidence_quality.has_sufficient_evidence
+            and not answer_quality.contains_requested_information
+            and not answer_quality.has_duplicate_content
+            and not answer_quality.unexpected_pages
+            and MaintenanceEvidenceRelevanceDetector.question_requests_maintenance_intervals(
+                context.question.lower()
+            )
+            and MaintenanceEvidenceRelevanceDetector.has_interval_structure(
+                context.answer_text.lower()
+            )
+        )

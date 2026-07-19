@@ -1,3 +1,7 @@
+from src.application.langgraph.reflection.decomposition import (
+    ClauseCoverage,
+    MultiClauseCoverageResult,
+)
 from src.application.langgraph.reflection.evaluators.answer_quality_scorer import (
     AnswerQualityScorer,
 )
@@ -138,3 +142,109 @@ def test_maintenance_unrelated_specs_branch_still_sets_its_real_reformulation_qu
     assert decision.retry_query == (
         "maintenance intervals preventive maintenance schedule operating hours only"
     )
+
+
+def test_uncovered_clause_forces_retrieve_again_targeting_the_missed_clause() -> None:
+    """An answer that would otherwise ACCEPT (good grounded evidence, high
+    answer quality) must still RETRIEVE_AGAIN -- targeted at the specific
+    missed clause -- when a multi-part question left one clause unaddressed."""
+    question = "What is the operating pressure and what is the operating temperature?"
+    answer = "The operating pressure is 6 bar, as shown on page 4."
+    answer_quality = AnswerQualityScorer.score(
+        question=question,
+        answer=answer,
+        citations=[{"chunk_id": "chunk_4", "source": {"page_start": 4}}],
+        approved_pages=[4],
+    )
+    evidence_quality = EvidenceQualityScorer.score(
+        approved_chunks=[
+            {
+                "chunk_id": "chunk_4",
+                "document_id": "doc_1",
+                "content": "Operating pressure is 6 bar.",
+                "source": {"page_start": 4},
+            }
+        ],
+        rejected_chunks=[],
+        selected_document_id="doc_1",
+    )
+    clause_coverage = MultiClauseCoverageResult(
+        clauses=(
+            ClauseCoverage(clause="What is the operating pressure", is_covered=True),
+            ClauseCoverage(
+                clause="what is the operating temperature?", is_covered=False
+            ),
+        )
+    )
+
+    decision = DeterministicReflectionDecider.decide(
+        policy=ReflectionPolicy(),
+        answer_quality=answer_quality,
+        evidence_quality=evidence_quality,
+        question=question,
+        answer=answer,
+        answer_intent="specification_summary",
+        citations=[{"chunk_id": "chunk_4", "source": {"page_start": 4}}],
+        selected_document_id="doc_1",
+        approved_chunks=[
+            {
+                "chunk_id": "chunk_4",
+                "document_id": "doc_1",
+                "content": "Operating pressure is 6 bar.",
+                "source": {"page_start": 4},
+            }
+        ],
+        retrieval_retry_count=0,
+        clause_coverage=clause_coverage,
+    )
+
+    assert decision.decision == ReflectionDecisionType.RETRIEVE_AGAIN
+    assert decision.retry_query == "what is the operating temperature?"
+    assert decision.missing_information == ["what is the operating temperature?"]
+
+
+def test_clause_coverage_none_is_byte_identical_to_before_the_change() -> None:
+    """Mandatory backward-compatibility test: every existing caller that
+    doesn't pass `clause_coverage` must be completely unaffected."""
+    question = "What is the pump maximum flow rate specification?"
+    answer = "The pump maximum flow rate specification is 120 m3/h, as shown on page 4."
+    answer_quality = AnswerQualityScorer.score(
+        question=question,
+        answer=answer,
+        citations=[{"chunk_id": "chunk_4", "source": {"page_start": 4}}],
+        approved_pages=[4],
+    )
+    evidence_quality = EvidenceQualityScorer.score(
+        approved_chunks=[
+            {
+                "chunk_id": "chunk_4",
+                "document_id": "doc_1",
+                "content": "Pump maximum flow rate is 120 m3/h.",
+                "source": {"page_start": 4},
+            }
+        ],
+        rejected_chunks=[],
+        selected_document_id="doc_1",
+    )
+
+    decision = DeterministicReflectionDecider.decide(
+        policy=ReflectionPolicy(),
+        answer_quality=answer_quality,
+        evidence_quality=evidence_quality,
+        question=question,
+        answer=answer,
+        answer_intent="specification_summary",
+        citations=[{"chunk_id": "chunk_4", "source": {"page_start": 4}}],
+        selected_document_id="doc_1",
+        approved_chunks=[
+            {
+                "chunk_id": "chunk_4",
+                "document_id": "doc_1",
+                "content": "Pump maximum flow rate is 120 m3/h.",
+                "source": {"page_start": 4},
+            }
+        ],
+        retrieval_retry_count=0,
+    )
+
+    assert decision.decision == ReflectionDecisionType.ACCEPT

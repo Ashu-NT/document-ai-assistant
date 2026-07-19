@@ -1,5 +1,65 @@
 # Adaptive Reflection Agentic Design — Findings and Implementation Plan
 
+## Phase 4 status: implemented (2026-07-19)
+
+The `decomposition/` package (§3.4) and the §3.5 hardcoded-leak cleanup are both done, verified with the full
+unit suite: 3275 passed, same 1 pre-existing unrelated OCR failure, zero new regressions (17 new tests). This
+was the last phase of the plan — all of Phases 0-4 are now implemented.
+
+- **`QuestionClauseSplitter` is a pragmatic v1 heuristic, not NLP**, exactly as the plan anticipated. It splits
+  on question-mark-delimited sentences first, then on "and"/"as well as" -- but a conjunction only starts a new
+  clause when the text after it opens with a question-trigger word (what/which/how/is/are/do/can/...); otherwise
+  it's merged back into the prior clause. This deliberately under-splits ambiguous cases ("maintenance tasks and
+  maintenance intervals" stays one clause) rather than risk false-positive splitting of a plain noun-phrase
+  conjunction into a fake multi-clause question -- confirmed necessary by an early test failure where the naive
+  version split exactly that kind of phrase.
+- **The boolean lives on a new, separate `QuestionClauses`/`MultiClauseCoverageResult` pair, not on
+  `RetrievalQueryIntentClassification`** as the plan's §3.4 sketch suggested. Following Phase 3's established
+  "recompute fresh where it's needed" precedent (`QueryAmbiguityDetector`), `ReflectionService.review()` computes
+  clauses fresh from the question via an injected `QuestionClauseSplitter`, only invoking
+  `MultiClauseCoverageScorer` when `has_multiple_clauses` is true. This avoids a second plumbing path through
+  `answer_question_node.py`/`QuestionAnsweringResult` purely to carry a boolean Phase 3 didn't already need.
+- **Insufficient per-clause coverage is wired into two places, both additive/optional**: (1)
+  `EvidenceSufficiencyContext` gained a `clause_coverage: MultiClauseCoverageResult | None = None` field,
+  consulted by `GenericEvidenceSufficiencyStrategy` as one more required condition for a SUFFICIENT verdict
+  (closing a real gap: previously a multi-clause question that silently missed a whole clause could still get the
+  validator's lenient FAIL/CLARIFY-to-ACCEPT_WITH_LIMITATIONS downgrade, since `generic_sufficiency_verdict` had
+  no way to know a clause was missed); (2) `DeterministicReflectionDecider.decide()` gained the same optional
+  parameter, checked in one new branch placed immediately before the final ACCEPT check -- so grounding
+  violations, insufficient-overall-evidence, and the maintenance-interval domain branches all still take priority
+  unchanged, and an otherwise-passing answer only gets redirected to RETRIEVE_AGAIN when a clause was genuinely
+  missed.
+- **The retry-per-clause mechanism is deliberately simpler than the plan's original "MULTI_STRATEGY multi-step
+  retrieval-and-merge, one step per clause" sketch.** That would have meant a new per-clause-aware
+  `RetrievalPlanBuilder` capable of distinct query text per step -- a materially invasive change to
+  already-well-tested initial-retrieval machinery, for a phase explicitly scoped as "optional" in the plan.
+  Instead, the new decider branch sets `retry_query` to the uncovered clause(s) joined verbatim, reusing the
+  *existing* `RetryReformulationStrategy` machinery from Phase 2 unchanged (it already treats a real, related
+  `retry_query` as-is). This targets the retry at exactly what was missed without inventing new
+  retrieval-plan-execution machinery -- a real, working "retrieve per clause" outcome, achieved through data
+  (a clause-focused query) rather than new control flow.
+- **§3.5 cleanup**: `AnswerQualityScorer` (the supposedly-generic scorer) no longer imports
+  `MaintenanceEvidenceRelevanceDetector` at all -- the maintenance-interval-structure rescue that used to live
+  there as a fallback (boosting `contains_requested_information` when the answer describes intervals in
+  different words than the question) now lives in `MaintenanceIntervalEvidenceSufficiencyStrategy` itself,
+  gated on the exact same conditions (`evidence_quality.has_sufficient_evidence`, no duplicate content, no
+  unexpected pages) the generic strategy already requires for SUFFICIENT. One acknowledged, narrow behavior
+  change: `AnswerQuality.score`/`.complete_enough` (read directly by `DeterministicReflectionDecider`'s own
+  maintenance branch, independent of the `EvidenceSufficiencyStrategy` layer) no longer get this domain boost --
+  in practice this only matters for the rare edge case of an answer sharing zero >3-character words with the
+  question despite having real interval structure, and even then the consequence is graceful
+  (`ACCEPT_WITH_LIMITATIONS` instead of a silent full `ACCEPT`), not a hard failure. Confirmed empirically via the
+  full test suite: no existing test depended on the old masking behavior.
+
+New code: `reflection/decomposition/` (`QuestionClauses`, `QuestionClauseSplitter`, `ClauseCoverage`,
+`MultiClauseCoverageResult`, `MultiClauseCoverageScorer`). `EvidenceSufficiencyContext`,
+`GenericEvidenceSufficiencyStrategy`, `DeterministicReflectionDecider.decide()`, and `ReflectionService` each
+gained one new optional, additive `clause_coverage`/collaborator parameter; `MaintenanceIntervalEvidenceSufficiencyStrategy`
+gained the migrated §3.5 rescue check; `AnswerQualityScorer` lost its `MaintenanceEvidenceRelevanceDetector`
+import entirely.
+
+All phases of this plan (0-4) are now implemented. No further phases are scoped.
+
 ## Phase 0 status: implemented (2026-07-19)
 
 All four Phase 0 items (§5) are done and verified — full unit suite 3211 passed, 1 pre-existing unrelated

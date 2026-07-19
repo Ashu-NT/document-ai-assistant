@@ -1,3 +1,7 @@
+from src.application.langgraph.reflection.decomposition import (
+    ClauseCoverage,
+    MultiClauseCoverageResult,
+)
 from src.application.langgraph.reflection.models import (
     AnswerQuality,
     EvidenceQuality,
@@ -109,3 +113,46 @@ def test_generic_strategy_is_insufficient_when_answer_cites_unexpected_pages() -
     )
 
     assert verdict.verdict == SufficiencyVerdictType.INSUFFICIENT_RETRY
+
+
+def test_generic_strategy_is_sufficient_when_clause_coverage_is_absent() -> None:
+    """A single-clause question never computes clause_coverage (stays
+    `None`) -- must be completely inert for every existing caller."""
+    strategy = GenericEvidenceSufficiencyStrategy()
+
+    verdict = strategy.is_answer_sufficient(_context(clause_coverage=None))
+
+    assert verdict.verdict == SufficiencyVerdictType.SUFFICIENT
+
+
+def test_generic_strategy_is_sufficient_when_all_clauses_are_covered() -> None:
+    strategy = GenericEvidenceSufficiencyStrategy()
+    clause_coverage = MultiClauseCoverageResult(
+        clauses=(
+            ClauseCoverage(clause="what is the pressure", is_covered=True),
+            ClauseCoverage(clause="what is the temperature", is_covered=True),
+        )
+    )
+
+    verdict = strategy.is_answer_sufficient(
+        _context(clause_coverage=clause_coverage)
+    )
+
+    assert verdict.verdict == SufficiencyVerdictType.SUFFICIENT
+
+
+def test_generic_strategy_is_insufficient_when_a_clause_is_uncovered() -> None:
+    strategy = GenericEvidenceSufficiencyStrategy()
+    clause_coverage = MultiClauseCoverageResult(
+        clauses=(
+            ClauseCoverage(clause="what is the pressure", is_covered=True),
+            ClauseCoverage(clause="what is the temperature", is_covered=False),
+        )
+    )
+
+    verdict = strategy.is_answer_sufficient(
+        _context(clause_coverage=clause_coverage)
+    )
+
+    assert verdict.verdict == SufficiencyVerdictType.INSUFFICIENT_RETRY
+    assert "what is the temperature" in verdict.missing_information

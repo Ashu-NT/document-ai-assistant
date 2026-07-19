@@ -8,9 +8,6 @@ from src.application.langgraph.reflection.evaluators.answer_duplicate_content_de
 from src.application.langgraph.reflection.evaluators.answer_page_reference_analyzer import (
     analyze_page_references,
 )
-from src.application.langgraph.reflection.evaluators.maintenance_evidence_relevance_detector import (
-    MaintenanceEvidenceRelevanceDetector,
-)
 from src.application.langgraph.reflection.models import AnswerQuality
 
 # A fluent-but-wrong answer must never be indistinguishable from a genuinely
@@ -53,16 +50,6 @@ class AnswerQualityScorer:
         }
         answer_terms = set(normalized_answer.lower().split())
         contains_requested_information = bool(question_terms.intersection(answer_terms))
-        if (
-            not contains_requested_information
-            and MaintenanceEvidenceRelevanceDetector.question_requests_maintenance_intervals(
-                question.lower()
-            )
-            and MaintenanceEvidenceRelevanceDetector.has_interval_structure(
-                lower_answer
-            )
-        ):
-            contains_requested_information = True
         complete_enough = answered_question and contains_requested_information
         page_analysis = analyze_page_references(
             answer_text=normalized_answer,

@@ -22,12 +22,17 @@ class GenericEvidenceSufficiencyStrategy:
     ) -> SufficiencyVerdict:
         answer_quality = context.answer_quality
         evidence_quality = context.evidence_quality
+        clause_coverage = context.clause_coverage
+        all_clauses_covered = (
+            clause_coverage is None or clause_coverage.is_fully_covered
+        )
 
         if (
             evidence_quality.has_sufficient_evidence
             and answer_quality.contains_requested_information
             and not answer_quality.has_duplicate_content
             and not answer_quality.unexpected_pages
+            and all_clauses_covered
         ):
             return SufficiencyVerdict(
                 verdict=SufficiencyVerdictType.SUFFICIENT,
@@ -42,6 +47,8 @@ class GenericEvidenceSufficiencyStrategy:
             missing_information.append("supporting evidence for the question")
         if not answer_quality.contains_requested_information:
             missing_information.append("information that directly answers the question")
+        if not all_clauses_covered:
+            missing_information.extend(clause_coverage.uncovered_clauses)
 
         return SufficiencyVerdict(
             verdict=SufficiencyVerdictType.INSUFFICIENT_RETRY,

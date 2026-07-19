@@ -218,6 +218,72 @@ def test_reflection_service_synthesizes_clarify_for_a_genuinely_ambiguous_questi
     }
 
 
+def test_reflection_service_retries_targeting_a_clause_the_answer_never_addressed() -> None:
+    """End-to-end proof of the multi-clause coverage trigger (Phase 4): a
+    two-part question whose answer only covers the first part must
+    RETRIEVE_AGAIN with a retry_query targeting the missed second part,
+    even though the answered part alone is well grounded."""
+    service = ReflectionService(
+        policy=ReflectionPolicy(enabled=False),
+    )
+
+    result = service.review(
+        original_user_question=(
+            "What is the operating pressure and what safety warnings apply?"
+        ),
+        generated_answer="The operating pressure is 6 bar, as shown on page 4.",
+        selected_document_id="doc_1",
+        selected_document_title="FWC12 Manual",
+        answer_intent="specification_summary",
+        approved_chunks=[
+            {
+                "chunk_id": "chunk_4",
+                "document_id": "doc_1",
+                "content": "Operating pressure is 6 bar.",
+                "source": {"page_start": 4},
+            }
+        ],
+        rejected_chunks=[],
+        citations=[{"chunk_id": "chunk_4", "source": {"page_start": 4}}],
+        reflection_attempts=0,
+        retrieval_retry_count=0,
+    )
+
+    assert result.decision.decision == ReflectionDecisionType.RETRIEVE_AGAIN
+    assert result.decision.retry_query == "what safety warnings apply?"
+    assert result.diagnostics["clause_coverage"] == {
+        "uncovered_clauses": ["what safety warnings apply?"],
+        "is_fully_covered": False,
+    }
+
+
+def test_reflection_service_clause_coverage_diagnostics_is_none_for_a_single_clause_question() -> None:
+    result = ReflectionService(
+        policy=ReflectionPolicy(enabled=False),
+    ).review(
+        original_user_question="What is the pump maximum flow rate specification?",
+        generated_answer="The pump maximum flow rate specification is 120 m3/h, as shown on page 4.",
+        selected_document_id="doc_1",
+        selected_document_title="FWC12 Manual",
+        answer_intent="specification_summary",
+        approved_chunks=[
+            {
+                "chunk_id": "chunk_4",
+                "document_id": "doc_1",
+                "content": "Pump maximum flow rate is 120 m3/h.",
+                "source": {"page_start": 4},
+            }
+        ],
+        rejected_chunks=[],
+        citations=[{"chunk_id": "chunk_4", "source": {"page_start": 4}}],
+        reflection_attempts=0,
+        retrieval_retry_count=0,
+    )
+
+    assert result.diagnostics["clause_coverage"] is None
+    assert result.decision.decision == ReflectionDecisionType.ACCEPT
+
+
 def test_reflection_service_retry_limit_with_evidence_returns_accept_with_limitations() -> None:
     service = ReflectionService(
         policy=ReflectionPolicy(enabled=False, max_retrieval_retries=1),

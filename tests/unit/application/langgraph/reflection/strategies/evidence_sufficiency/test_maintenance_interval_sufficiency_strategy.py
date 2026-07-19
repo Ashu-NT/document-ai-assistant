@@ -46,6 +46,41 @@ def test_maintenance_strategy_falls_back_to_generic_when_question_is_not_about_i
     assert verdict.verdict == SufficiencyVerdictType.SUFFICIENT
 
 
+def test_maintenance_strategy_rescues_an_answer_with_interval_structure_but_no_shared_words() -> None:
+    """§3.5: this fallback used to live inside the supposedly-generic
+    `AnswerQualityScorer`; it now lives here instead, gated on exactly the
+    same conditions the generic strategy itself requires (sufficient
+    evidence, no duplicate content, no unexpected pages)."""
+    strategy = MaintenanceIntervalEvidenceSufficiencyStrategy()
+    context = make_context(
+        question="What are the maintenance intervals?",
+        answer_intent="maintenance_summary",
+        # Deliberately shares no >3-char word with the question, but has
+        # clear interval structure ("every 100 operating hours").
+        answer_text="Service is due every 100 operating hours.",
+        approved_chunks=[],
+    )
+
+    verdict = strategy.is_answer_sufficient(context)
+
+    assert verdict.verdict == SufficiencyVerdictType.SUFFICIENT
+
+
+def test_maintenance_strategy_does_not_rescue_when_evidence_is_insufficient() -> None:
+    strategy = MaintenanceIntervalEvidenceSufficiencyStrategy()
+    context = make_context(
+        question="What are the maintenance intervals?",
+        answer_intent="maintenance_summary",
+        answer_text="Service is due every 100 operating hours.",
+        approved_chunks=[],
+        evidence_quality=make_evidence_quality(has_sufficient_evidence=False),
+    )
+
+    verdict = strategy.is_answer_sufficient(context)
+
+    assert verdict.verdict == SufficiencyVerdictType.INSUFFICIENT_RETRY
+
+
 def test_maintenance_strategy_falls_back_to_generic_when_no_relevant_evidence_exists() -> None:
     strategy = MaintenanceIntervalEvidenceSufficiencyStrategy()
     context = make_context(

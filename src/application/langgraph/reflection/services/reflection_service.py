@@ -15,6 +15,10 @@ from src.application.langgraph.reflection.evaluators.maintenance_evidence_releva
 from src.application.langgraph.reflection.evaluators.spare_parts_evidence_relevance_detector import (
     SparePartsEvidenceRelevanceDetector,
 )
+from src.application.langgraph.reflection.decomposition import (
+    MultiClauseCoverageScorer,
+    QuestionClauseSplitter,
+)
 from src.application.langgraph.reflection.models import (
     ReflectionDecision,
     ReflectionDecisionType,
@@ -61,6 +65,8 @@ class ReflectionService:
         model: str | None = None,
         evidence_sufficiency_registry: EvidenceSufficiencyStrategyRegistry | None = None,
         query_ambiguity_detector: QueryAmbiguityDetector | None = None,
+        question_clause_splitter: QuestionClauseSplitter | None = None,
+        multi_clause_coverage_scorer: MultiClauseCoverageScorer | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.prompt_builder = prompt_builder or ReflectionPromptBuilder()
@@ -73,6 +79,10 @@ class ReflectionService:
         )
         self.query_ambiguity_detector = (
             query_ambiguity_detector or QueryAmbiguityDetector()
+        )
+        self.question_clause_splitter = question_clause_splitter or QuestionClauseSplitter()
+        self.multi_clause_coverage_scorer = (
+            multi_clause_coverage_scorer or MultiClauseCoverageScorer()
         )
 
     def review(
@@ -133,6 +143,14 @@ class ReflectionService:
                 if chunk.get("document_id")
             }
         )
+        question_clauses = self.question_clause_splitter.split(original_user_question)
+        clause_coverage = (
+            self.multi_clause_coverage_scorer.score(
+                clauses=question_clauses, answer_text=generated_answer
+            )
+            if question_clauses.has_multiple_clauses
+            else None
+        )
         generic_sufficiency_verdict = self.evidence_sufficiency_registry.evaluate(
             retrieval_query_intent=retrieval_query_intent,
             context=EvidenceSufficiencyContext(
@@ -144,6 +162,7 @@ class ReflectionService:
                 rejected_chunks=rejected_chunks,
                 evidence_quality=evidence_quality,
                 answer_quality=answer_quality,
+                clause_coverage=clause_coverage,
             ),
         )
         ambiguous_intent_tie = self.query_ambiguity_detector.detect(original_user_question)
@@ -158,6 +177,7 @@ class ReflectionService:
             selected_document_id=selected_document_id,
             approved_chunks=approved_chunks,
             retrieval_retry_count=retrieval_retry_count,
+            clause_coverage=clause_coverage,
         )
         used_llm = False
         raw_llm_decision: ReflectionDecision | None = None
@@ -263,6 +283,14 @@ class ReflectionService:
                         "runner_up_label": ambiguous_intent_tie.runner_up_label,
                     }
                     if ambiguous_intent_tie is not None
+                    else None
+                ),
+                "clause_coverage": (
+                    {
+                        "uncovered_clauses": list(clause_coverage.uncovered_clauses),
+                        "is_fully_covered": clause_coverage.is_fully_covered,
+                    }
+                    if clause_coverage is not None
                     else None
                 ),
             },

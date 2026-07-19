@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from src.application.langgraph.reflection.decomposition import (
+    MultiClauseCoverageResult,
+)
 from src.application.langgraph.reflection.models import AnswerQuality, EvidenceQuality
 
 
@@ -21,3 +24,4 @@ class EvidenceSufficiencyContext:
     rejected_chunks: list[dict[str, Any]]
     evidence_quality: EvidenceQuality
     answer_quality: AnswerQuality
+    clause_coverage: MultiClauseCoverageResult | None = None
