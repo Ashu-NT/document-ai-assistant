@@ -27,6 +27,9 @@ from src.application.langgraph.reflection.services.deterministic_reflection_deci
 from src.application.langgraph.reflection.services.reflection_json_parser import (
     ReflectionJsonParser,
 )
+from src.application.langgraph.reflection.services.query_ambiguity_detector import (
+    QueryAmbiguityDetector,
+)
 from src.application.langgraph.reflection.services.reflection_response_schema import (
     build_reflection_response_json_schema,
 )
@@ -57,6 +60,7 @@ class ReflectionService:
         policy: ReflectionPolicy | None = None,
         model: str | None = None,
         evidence_sufficiency_registry: EvidenceSufficiencyStrategyRegistry | None = None,
+        query_ambiguity_detector: QueryAmbiguityDetector | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.prompt_builder = prompt_builder or ReflectionPromptBuilder()
@@ -66,6 +70,9 @@ class ReflectionService:
         self.model = model
         self.evidence_sufficiency_registry = (
             evidence_sufficiency_registry or EvidenceSufficiencyStrategyRegistry()
+        )
+        self.query_ambiguity_detector = (
+            query_ambiguity_detector or QueryAmbiguityDetector()
         )
 
     def review(
@@ -139,6 +146,7 @@ class ReflectionService:
                 answer_quality=answer_quality,
             ),
         )
+        ambiguous_intent_tie = self.query_ambiguity_detector.detect(original_user_question)
         deterministic = DeterministicReflectionDecider.decide(
             policy=self.policy,
             answer_quality=answer_quality,
@@ -196,6 +204,7 @@ class ReflectionService:
             has_unexpected_page_references=bool(answer_quality.unexpected_pages),
             has_duplicate_answer_content=answer_quality.has_duplicate_content,
             generic_sufficiency_verdict=generic_sufficiency_verdict,
+            ambiguous_intent_tie=ambiguous_intent_tie,
         )
         grounding_score = min(
             answer_quality.score,
@@ -248,5 +257,13 @@ class ReflectionService:
                 "validator_decision": effective_decision.decision.value,
                 "retrieval_query_intent": retrieval_query_intent,
                 "evidence_sufficiency_verdict": generic_sufficiency_verdict.verdict.value,
+                "ambiguous_intent_tie": (
+                    {
+                        "intent_label": ambiguous_intent_tie.intent_label,
+                        "runner_up_label": ambiguous_intent_tie.runner_up_label,
+                    }
+                    if ambiguous_intent_tie is not None
+                    else None
+                ),
             },
         )

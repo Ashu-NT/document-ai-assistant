@@ -177,6 +177,47 @@ def test_reflection_service_downgrades_clarify_without_question_to_accept_with_l
     assert isinstance(llm_service.calls[0]["response_schema"], dict)
 
 
+def test_reflection_service_synthesizes_clarify_for_a_genuinely_ambiguous_question() -> None:
+    """End-to-end proof of the ambiguity-driven clarification trigger: a
+    question that produces an exact RetrievalQueryIntent scoring tie (table
+    vs. troubleshooting -- confirmed via direct classification) must turn a
+    CLARIFY-without-question (which would otherwise fail safe, see
+    test_reflection_service_downgrades_clarify_without_question_to_accept_with_limitations)
+    into a real clarification instead."""
+    llm_service = _FakeLLMService(
+        '{"decision":"CLARIFY","confidence":0.6,"reason":"Ambiguous.","retry_query":null,'
+        '"clarification_question":null,"missing_information":[]}'
+    )
+    service = ReflectionService(
+        llm_service=llm_service,
+        policy=ReflectionPolicy(enabled=True),
+    )
+
+    result = service.review(
+        original_user_question="Show me the fault code table",
+        generated_answer="The document lists several fault codes in a table.",
+        selected_document_id="doc_1",
+        selected_document_title="FWC12 Manual",
+        answer_intent=None,
+        approved_chunks=[],
+        rejected_chunks=[],
+        citations=[],
+        reflection_attempts=0,
+        retrieval_retry_count=0,
+    )
+
+    assert result.decision.decision == ReflectionDecisionType.CLARIFY
+    assert (
+        result.decision.clarification_question
+        == "Are you asking about table or troubleshooting?"
+    )
+    assert result.requires_clarification is True
+    assert result.diagnostics["ambiguous_intent_tie"] == {
+        "intent_label": "table",
+        "runner_up_label": "troubleshooting",
+    }
+
+
 def test_reflection_service_retry_limit_with_evidence_returns_accept_with_limitations() -> None:
     service = ReflectionService(
         policy=ReflectionPolicy(enabled=False, max_retrieval_retries=1),

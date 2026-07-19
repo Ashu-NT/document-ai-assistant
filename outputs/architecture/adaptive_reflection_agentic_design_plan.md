@@ -5,6 +5,51 @@
 All four Phase 0 items (§5) are done and verified — full unit suite 3211 passed, 1 pre-existing unrelated
 failure, zero new regressions. Details in `reflection_flow_audit.md`'s own updated status section.
 
+## Phase 3 status: implemented (2026-07-19)
+
+The `ClarificationStrategy` registry (§3.3) and the ambiguity-driven clarification trigger are built and wired
+in, verified with the full unit suite (see run below). Per the standing "no dump files, no file >300LOC"
+instruction, every new file in `reflection/strategies/clarification/` is small and single-purpose (the largest,
+`clarification_strategy_registry.py`, is well under the limit); no existing file needed splitting for this phase.
+
+- **Dispatch simplified from dual-substring-match to single-intent dispatch**, exactly mirroring Phase 1/2's
+  pattern. The old `ClarificationBuilder._resolve_options()` matched via substring against either the question
+  text or `answer_intent`; the registry dispatches on exactly one `RetrievalQueryIntent` value. No existing test
+  asserted the old dual-substring nuance, so this is a safe, deliberate simplification, noted here for
+  transparency — not a silent behavior change.
+- **One shared strategy class, not N near-duplicates**, following the same principle as Phase 2's
+  `KeywordExpansionRetryReformulationStrategy`: `FixedOptionsClarificationStrategy` serves as both the generic
+  default (falls back to `missing_information`, then a 3-item generic list) and every domain-specific
+  registration (maintenance, specification), parametrized by `fixed_options` rather than subclassed.
+  `retrieval_query_intent` defaults to `None` in `ClarificationBuilder.build()`, which routes to the generic
+  strategy — callers must explicitly pass the resolved intent for domain dispatch to fire.
+- **The ambiguity signal recomputes `RetrievalQueryIntentClassification` fresh inside `QueryAmbiguityDetector`**,
+  rather than threading the already-computed classification through state from wherever it was first produced.
+  This mirrors Phase 1's precedent of "recompute a cheap, pure classification where it's needed" and avoids a
+  second plumbing path through `answer_question_node.py`/`QuestionAnsweringResult` purely to carry the
+  `runner_up_intent`/`gap` fields Phase 1 didn't already need. The signal is a genuine, domain-agnostic
+  ambiguity detector: an exact scoring tie (`gap == 0`) between the top two `RetrievalQueryIntent` candidates —
+  the same precise tie condition already used elsewhere this session to widen chunk-type preferences — works
+  for any pair of intents, not just a hardcoded keyword list.
+- **The trigger is scoped as narrowly as possible**: `ReflectionValidator.validate()` gained one new optional
+  parameter (`ambiguous_intent_tie: AmbiguousIntentTie | None = None`, defaulting to `None` like every other
+  additive parameter in this design), consulted in exactly one place — the `if not decision.clarification_question:`
+  branch inside the `CLARIFY` block that previously *unconditionally* failed safe. When the signal is present,
+  a real clarification question is synthesized (`"Are you asking about {X} or {Y}?"`) instead of failing; when
+  absent (every existing caller/test), the original fail-safe behavior is byte-identical. `ReflectAnswerNode`
+  correspondingly checks `result.decision.diagnostics.get("validator") == "ambiguous_intent_clarify"` and, only
+  in that case, withholds `retrieval_query_intent` from the `ClarificationBuilder` call so the ambiguity's own
+  two labels surface as the options instead of an unrelated domain-specific fixed list for whichever intent
+  happened to win the tie.
+
+New code: `reflection/strategies/clarification/` (context bundle, Protocol, `FixedOptionsClarificationStrategy`,
+registry); `reflection/services/query_ambiguity_detector.py` (`QueryAmbiguityDetector`, `AmbiguousIntentTie`).
+`ClarificationBuilder` rewritten to delegate option-building to the registry instead of its own
+`_resolve_options()`; `ReflectionService`/`ReflectionValidator`/`ReflectAnswerNode` each gained one new
+optional, additive parameter for the ambiguity signal.
+
+Not yet done: query decomposition (Phase 4).
+
 ## Phase 2 status: implemented (2026-07-19)
 
 The `RetryReformulationStrategy` registry (§3.2) is built and wired in, verified with the full unit suite:

@@ -144,7 +144,11 @@ class ReflectAnswerNode:
             "evidence_quality": result.diagnostics.get("evidence_quality"),
             "reflection_trace": reflection_trace,
             "trace": extend_trace(state["trace"], trace_entry),
-            **self._decision_patch(state=state, result=result),
+            **self._decision_patch(
+                state=state,
+                result=result,
+                retrieval_query_intent=extract_retrieval_query_intent(retrieval_result),
+            ),
         }
 
     def _decision_patch(
@@ -152,6 +156,7 @@ class ReflectAnswerNode:
         *,
         state: AgentState,
         result,
+        retrieval_query_intent: str | None = None,
     ) -> dict[str, Any]:
         decision = result.decision.decision.value
         if decision == "RETRIEVE_AGAIN":
@@ -159,6 +164,14 @@ class ReflectAnswerNode:
                 "retry_query": result.decision.retry_query,
             }
         if decision == "CLARIFY":
+            # An ambiguity-driven CLARIFY (an exact tie between two candidate
+            # intents) must surface the ambiguity's own options, not a
+            # domain-specific fixed list for whichever intent happened to
+            # win the tie -- force the generic/missing_information-based
+            # options path by withholding the intent in that case.
+            is_ambiguity_driven = (
+                result.decision.diagnostics.get("validator") == "ambiguous_intent_clarify"
+            )
             plan = self.clarification_builder.build(
                 decision=result.decision,
                 original_user_input=state.get("question") or state["user_input"],
@@ -168,6 +181,7 @@ class ReflectAnswerNode:
                 .get("answer_intent"),
                 selected_document_id=state.get("selected_document_id")
                 or state.get("document_id"),
+                retrieval_query_intent=None if is_ambiguity_driven else retrieval_query_intent,
             )
             option_dicts = [
                 {"label": option, "value": option}

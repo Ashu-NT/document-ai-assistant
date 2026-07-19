@@ -19,6 +19,9 @@ from src.application.langgraph.reflection.models import (
     SufficiencyVerdict,
 )
 from src.application.langgraph.reflection.policies import ReflectionPolicy
+from src.application.langgraph.reflection.services.query_ambiguity_detector import (
+    AmbiguousIntentTie,
+)
 
 
 class ReflectionValidator:
@@ -40,6 +43,7 @@ class ReflectionValidator:
         has_unexpected_page_references: bool = False,
         has_duplicate_answer_content: bool = False,
         generic_sufficiency_verdict: SufficiencyVerdict | None = None,
+        ambiguous_intent_tie: AmbiguousIntentTie | None = None,
     ) -> ReflectionDecision:
         diagnostics = dict(decision.diagnostics)
         normalized_confidence = min(max(float(decision.confidence), 0.0), 1.0)
@@ -327,6 +331,30 @@ class ReflectionValidator:
                 # to exist would defeat the point and could serve a wrong
                 # answer with no chance to clarify -- fail safe instead,
                 # regardless of whether evidence happens to exist.
+                #
+                # Exception: a genuine, generic ambiguity signal (an exact
+                # scoring tie between two RetrievalQueryIntent candidates --
+                # works for any pair of intents, no domain keyword list
+                # needed) lets us synthesize a real clarification question
+                # instead of failing outright.
+                if ambiguous_intent_tie is not None:
+                    return ReflectionDecision(
+                        decision=ReflectionDecisionType.CLARIFY,
+                        confidence=normalized_confidence,
+                        reason=(
+                            "The question could refer to more than one topic "
+                            "in this document."
+                        ),
+                        clarification_question=(
+                            f"Are you asking about {ambiguous_intent_tie.intent_label} "
+                            f"or {ambiguous_intent_tie.runner_up_label}?"
+                        ),
+                        missing_information=[
+                            ambiguous_intent_tie.intent_label,
+                            ambiguous_intent_tie.runner_up_label,
+                        ],
+                        diagnostics={**diagnostics, "validator": "ambiguous_intent_clarify"},
+                    )
                 return ReflectionDecision(
                     decision=ReflectionDecisionType.FAIL,
                     confidence=normalized_confidence,
