@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
-from src.application.services.answer_generation.intent.answer_intent_decision import (
+from src.application.services.answer_generation.intent.dispatch.answer_intent_decision import (
     AnswerIntentDecision,
 )
-from src.application.services.answer_generation.intent.compound_question_detector import (
+from src.application.services.answer_generation.intent.dispatch.compound_question_detector import (
     CompoundQuestionDetector,
 )
 

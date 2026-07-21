@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.tables.table_header_compatibility_matcher import (
+from src.application.workflows.parsing.tables.family_resolution.table_header_compatibility_matcher import (
     TableHeaderCompatibilityMatcher,
 )
 from src.domain.assets import TableAsset

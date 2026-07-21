@@ -1,8 +1,8 @@
 from src.application.services.answer_generation.intent.answer_intent import AnswerIntent
-from src.application.services.answer_generation.intent.answer_intent_decision import (
+from src.application.services.answer_generation.intent.dispatch.answer_intent_decision import (
     AnswerIntentDecision,
 )
-from src.application.services.answer_generation.intent.deterministic_dispatch_gate import (
+from src.application.services.answer_generation.intent.dispatch.deterministic_dispatch_gate import (
     DeterministicDispatchGate,
 )
 

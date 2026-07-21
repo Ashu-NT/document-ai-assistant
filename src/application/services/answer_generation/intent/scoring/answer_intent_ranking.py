@@ -3,7 +3,7 @@ from __future__ import annotations
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
-from src.application.services.answer_generation.intent.answer_intent_vocabulary import (
+from src.application.services.answer_generation.intent.scoring.answer_intent_vocabulary import (
     INTENT_PRIORITY,
 )
 

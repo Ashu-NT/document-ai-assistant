@@ -6,7 +6,7 @@ from typing import Callable
 from src.application.workflows.embedding import EmbeddedChunk
 from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
 from src.application.workflows.ingestion.models.ingestion_result import IngestionResult
-from src.application.workflows.ingestion.pipeline.ingestion_result_assembler import (
+from src.application.workflows.ingestion.pipeline.outcome.ingestion_result_assembler import (
     build_success_result,
 )
 from src.domain.document.aggregates.document_graph import DocumentGraph
@@ -17,7 +17,9 @@ from src.shared.events import EventContext
 from src.shared.ids import IdGenerator
 from src.shared.progress.progress_emitter import emit_progress
 
-from .ingestion_run_store import IngestionRunStore
+from src.application.workflows.ingestion.pipeline.run.ingestion_run_store import (
+    IngestionRunStore,
+)
 
 
 class IngestionSuccessFinalizer:

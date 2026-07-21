@@ -3,7 +3,7 @@ from __future__ import annotations
 from src.application.workflows.parsing.tables.structure.table_header_text_normalizer import (
     normalize_table_header_text,
 )
-from src.application.workflows.parsing.tables.table_header_signature_builder import (
+from src.application.workflows.parsing.tables.family_resolution.table_header_signature_builder import (
     TableHeaderSignatureBuilder,
 )
 from src.domain.assets import TableAsset

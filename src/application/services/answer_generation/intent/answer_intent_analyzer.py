@@ -5,23 +5,23 @@ from typing import Sequence
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
-from src.application.services.answer_generation.intent.answer_intent_decision import (
+from src.application.services.answer_generation.intent.dispatch.answer_intent_decision import (
     AnswerIntentDecision,
     compute_confidence,
 )
-from src.application.services.answer_generation.intent.answer_intent_ranking import (
+from src.application.services.answer_generation.intent.scoring.answer_intent_ranking import (
     pick_intent,
     runner_up,
 )
-from src.application.services.answer_generation.intent.answer_intent_vocabulary import (
+from src.application.services.answer_generation.intent.scoring.answer_intent_vocabulary import (
     ANSWER_INTENT_RULES_VERSION,
     INTENT_PRIORITY,
 )
-from src.application.services.answer_generation.intent.chunk_content_signal_scorer import (
+from src.application.services.answer_generation.intent.scoring.chunk_content_signal_scorer import (
     apply_chunk_content_signal,
     apply_chunk_type_preference_signal,
 )
-from src.application.services.answer_generation.intent.question_signal_scorer import (
+from src.application.services.answer_generation.intent.scoring.question_signal_scorer import (
     apply_maintenance_procedure_disambiguation,
     apply_question_signals,
     apply_retrieval_intent_signal,

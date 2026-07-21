@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.tables.table_header_signature_builder import (
+from src.application.workflows.parsing.tables.family_resolution.table_header_signature_builder import (
     TableHeaderSignatureBuilder,
 )
 from src.domain.assets import TableAsset, TableCellSpan

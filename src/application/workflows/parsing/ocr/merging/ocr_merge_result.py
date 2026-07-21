@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from src.application.workflows.parsing.canonical_element import CanonicalElement
-from src.application.workflows.parsing.ocr.ocr_trace import OCRTrace
+from src.application.workflows.parsing.ocr.merging.ocr_trace import OCRTrace
 
 
 @dataclass(slots=True)

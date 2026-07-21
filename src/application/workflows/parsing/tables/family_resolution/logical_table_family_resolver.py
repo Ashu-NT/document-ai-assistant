@@ -1,13 +1,13 @@
-from src.application.workflows.parsing.tables.logical_table_family_assignment import (
+from src.application.workflows.parsing.tables.family_resolution.logical_table_family_assignment import (
     LogicalTableFamilyAssignment,
 )
 from src.application.workflows.parsing.tables.families.same_page_table_region_compatibility_checker import (
     SamePageTableRegionCompatibilityChecker,
 )
-from src.application.workflows.parsing.tables.table_header_compatibility_matcher import (
+from src.application.workflows.parsing.tables.family_resolution.table_header_compatibility_matcher import (
     TableHeaderCompatibilityMatcher,
 )
-from src.application.workflows.parsing.tables.table_header_signature_builder import (
+from src.application.workflows.parsing.tables.family_resolution.table_header_signature_builder import (
     TableHeaderSignatureBuilder,
 )
 from src.domain.assets import TableAsset

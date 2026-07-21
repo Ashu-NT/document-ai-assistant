@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from src.application.services.answer_generation.intent.answer_intent_vocabulary import (
+from src.application.services.answer_generation.intent.scoring.answer_intent_vocabulary import (
     CERTIFICATION_TERMS,
     IDENTIFIER_TERMS,
     MAINTENANCE_TERMS,

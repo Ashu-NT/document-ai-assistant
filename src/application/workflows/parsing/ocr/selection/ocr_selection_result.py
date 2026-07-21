@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
-from src.application.workflows.parsing.ocr.ocr_target import OCRTarget
-from src.application.workflows.parsing.ocr.page_text_quality import PageTextQuality
+from src.application.workflows.parsing.ocr.targets.ocr_target import OCRTarget
+from src.application.workflows.parsing.ocr.selection.page_text_quality import PageTextQuality
 
 
 @dataclass(slots=True)

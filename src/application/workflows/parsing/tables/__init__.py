@@ -8,13 +8,13 @@ __all__ = [
 
 def __getattr__(name: str):
     if name == "LogicalTableFamilyAssignment":
-        from src.application.workflows.parsing.tables.logical_table_family_assignment import (
+        from src.application.workflows.parsing.tables.family_resolution.logical_table_family_assignment import (
             LogicalTableFamilyAssignment,
         )
 
         return LogicalTableFamilyAssignment
     if name == "LogicalTableFamilyResolver":
-        from src.application.workflows.parsing.tables.logical_table_family_resolver import (
+        from src.application.workflows.parsing.tables.family_resolution.logical_table_family_resolver import (
             LogicalTableFamilyResolver,
         )
 
@@ -26,7 +26,7 @@ def __getattr__(name: str):
 
         return TableSemanticResolver
     if name == "TableHeaderSignatureBuilder":
-        from src.application.workflows.parsing.tables.table_header_signature_builder import (
+        from src.application.workflows.parsing.tables.family_resolution.table_header_signature_builder import (
             TableHeaderSignatureBuilder,
         )
 

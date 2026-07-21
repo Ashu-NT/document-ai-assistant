@@ -4,11 +4,11 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from src.application.workflows.parsing.ocr.ocr_target import OCRTarget
-from src.application.workflows.parsing.ocr.ocr_target_execution_result import (
+from src.application.workflows.parsing.ocr.targets.ocr_target import OCRTarget
+from src.application.workflows.parsing.ocr.targets.ocr_target_execution_result import (
     OCRTargetExecutionResult,
 )
-from src.application.workflows.parsing.ocr.page_text_quality import PageTextQuality
+from src.application.workflows.parsing.ocr.selection.page_text_quality import PageTextQuality
 from src.config.paths import ensure_directory
 
 

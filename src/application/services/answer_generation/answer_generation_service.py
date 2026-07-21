@@ -55,10 +55,10 @@ from src.application.services.answer_generation.intent.answer_intent import (
 from src.application.services.answer_generation.intent.answer_intent_analyzer import (
     AnswerIntentAnalyzer,
 )
-from src.application.services.answer_generation.intent.compound_question_detector import (
+from src.application.services.answer_generation.intent.dispatch.compound_question_detector import (
     chunks_plausibly_cover_intent,
 )
-from src.application.services.answer_generation.intent.deterministic_dispatch_gate import (
+from src.application.services.answer_generation.intent.dispatch.deterministic_dispatch_gate import (
     DeterministicDispatchGate,
     DispatchBypassReason,
 )

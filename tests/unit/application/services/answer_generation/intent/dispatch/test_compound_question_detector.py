@@ -1,5 +1,5 @@
 from src.application.services.answer_generation.intent.answer_intent import AnswerIntent
-from src.application.services.answer_generation.intent.compound_question_detector import (
+from src.application.services.answer_generation.intent.dispatch.compound_question_detector import (
     CompoundQuestionDetector,
     chunks_plausibly_cover_intent,
 )

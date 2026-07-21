@@ -4,13 +4,13 @@ import re
 
 from src.application.contracts.ai import OCRResult
 from src.application.workflows.parsing.canonical_element import CanonicalElement
-from src.application.workflows.parsing.ocr.ocr_merge_policy import OCRMergePolicy
-from src.application.workflows.parsing.ocr.ocr_merge_result import OCRMergeResult
-from src.application.workflows.parsing.ocr.ocr_target_execution_result import (
+from src.application.workflows.parsing.ocr.merging.ocr_merge_policy import OCRMergePolicy
+from src.application.workflows.parsing.ocr.merging.ocr_merge_result import OCRMergeResult
+from src.application.workflows.parsing.ocr.targets.ocr_target_execution_result import (
     OCRTargetExecutionResult,
 )
-from src.application.workflows.parsing.ocr.ocr_target_type import OCRTargetType
-from src.application.workflows.parsing.ocr.ocr_trace import OCRTrace
+from src.application.workflows.parsing.ocr.targets.ocr_target_type import OCRTargetType
+from src.application.workflows.parsing.ocr.merging.ocr_trace import OCRTrace
 from src.domain.common import ElementType
 from src.shared.ids import IdGenerator, IdPrefix
 

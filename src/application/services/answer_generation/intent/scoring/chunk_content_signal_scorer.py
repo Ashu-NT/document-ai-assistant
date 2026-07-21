@@ -5,12 +5,12 @@ from typing import Sequence
 from src.application.services.answer_generation.intent.answer_intent import (
     AnswerIntent,
 )
-from src.application.services.answer_generation.intent.answer_intent_vocabulary import (
+from src.application.services.answer_generation.intent.scoring.answer_intent_vocabulary import (
     CHUNK_TYPE_TO_INTENT,
     STEP_PATTERN,
     TECHNICAL_VALUE_PATTERN,
 )
-from src.application.services.answer_generation.intent.question_signal_scorer import (
+from src.application.services.answer_generation.intent.scoring.question_signal_scorer import (
     looks_like_explicit_procedure_question,
     looks_like_maintenance_question,
     looks_like_specification_question,

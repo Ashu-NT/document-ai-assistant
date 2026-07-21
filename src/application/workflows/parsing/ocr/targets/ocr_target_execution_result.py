@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from src.application.contracts.ai import OCRResult
-from src.application.workflows.parsing.ocr.ocr_target import OCRTarget
+from src.application.workflows.parsing.ocr.targets.ocr_target import OCRTarget
 
 
 @dataclass(slots=True)

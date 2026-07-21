@@ -8,7 +8,7 @@ from src.application.workflows.ingestion.models.ingestion_exceptions import (
 )
 from src.application.workflows.ingestion.models.ingestion_stage import IngestionStage
 from src.application.workflows.ingestion.models.ingestion_status import IngestionStatus
-from src.application.workflows.ingestion.pipeline.ingestion_run_store import (
+from src.application.workflows.ingestion.pipeline.run.ingestion_run_store import (
     IngestionRunStore,
 )
 from src.domain.events import IngestionEvent

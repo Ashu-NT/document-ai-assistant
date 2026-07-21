@@ -5,46 +5,46 @@ from dataclasses import dataclass
 from src.application.workflows.ingestion.events.ingestion_stage_event_publisher import (
     IngestionStageEventPublisher,
 )
-from src.application.workflows.ingestion.pipeline.duplicate_check_step import (
+from src.application.workflows.ingestion.pipeline.duplicate_handling.duplicate_check_step import (
     DuplicateCheckStep,
 )
-from src.application.workflows.ingestion.pipeline.duplicate_ingestion_exit_handler import (
+from src.application.workflows.ingestion.pipeline.duplicate_handling.duplicate_ingestion_exit_handler import (
     DuplicateIngestionExitHandler,
 )
-from src.application.workflows.ingestion.pipeline.extraction_retry_step import (
+from src.application.workflows.ingestion.pipeline.steps.extraction_retry_step import (
     ExtractionRetryStep,
 )
-from src.application.workflows.ingestion.pipeline.ingestion_duplicate_coordinator import (
+from src.application.workflows.ingestion.pipeline.duplicate_handling.ingestion_duplicate_coordinator import (
     IngestionDuplicateCoordinator,
 )
-from src.application.workflows.ingestion.pipeline.ingestion_exception_handler import (
+from src.application.workflows.ingestion.pipeline.outcome.ingestion_exception_handler import (
     IngestionExceptionHandler,
 )
-from src.application.workflows.ingestion.pipeline.ingestion_run_bootstrap import (
+from src.application.workflows.ingestion.pipeline.run.ingestion_run_bootstrap import (
     IngestionRunBootstrapper,
 )
-from src.application.workflows.ingestion.pipeline.ingestion_run_store import (
+from src.application.workflows.ingestion.pipeline.run.ingestion_run_store import (
     IngestionRunStore,
 )
-from src.application.workflows.ingestion.pipeline.ingestion_stage_lifecycle_coordinator import (
+from src.application.workflows.ingestion.pipeline.stage_lifecycle.ingestion_stage_lifecycle_coordinator import (
     IngestionStageLifecycleCoordinator,
 )
-from src.application.workflows.ingestion.pipeline.ingestion_stage_payload_builder import (
+from src.application.workflows.ingestion.pipeline.stage_lifecycle.ingestion_stage_payload_builder import (
     IngestionStagePayloadBuilder,
 )
-from src.application.workflows.ingestion.pipeline.ingestion_stage_sequence_executor import (
+from src.application.workflows.ingestion.pipeline.stage_lifecycle.ingestion_stage_sequence_executor import (
     IngestionStageSequenceExecutor,
 )
-from src.application.workflows.ingestion.pipeline.ingestion_stage_state_applier import (
+from src.application.workflows.ingestion.pipeline.stage_lifecycle.ingestion_stage_state_applier import (
     IngestionStageStateApplier,
 )
-from src.application.workflows.ingestion.pipeline.ingestion_success_finalizer import (
+from src.application.workflows.ingestion.pipeline.outcome.ingestion_success_finalizer import (
     IngestionSuccessFinalizer,
 )
-from src.application.workflows.ingestion.pipeline.quality_check_step import (
+from src.application.workflows.ingestion.pipeline.steps.quality_check_step import (
     QualityCheckStep,
 )
-from src.application.workflows.ingestion.pipeline.reingestion_step import (
+from src.application.workflows.ingestion.pipeline.steps.reingestion_step import (
     ReingestionStep,
 )
 from src.application.workflows.ingestion.stages import (

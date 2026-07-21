@@ -8,7 +8,9 @@ from src.application.workflows.ingestion.models.ingestion_status import Ingestio
 from src.domain.workflow import IngestionRun
 from src.shared.events import EventContext
 
-from .ingestion_run_store import IngestionRunStore
+from src.application.workflows.ingestion.pipeline.run.ingestion_run_store import (
+    IngestionRunStore,
+)
 
 
 @dataclass(slots=True)

@@ -4,18 +4,18 @@ from pathlib import Path
 
 from src.application.services.ai import OCRService
 from src.application.workflows.parsing.canonical_element import CanonicalElement
-from src.application.workflows.parsing.ocr.canonical_ocr_merger import (
+from src.application.workflows.parsing.ocr.merging.canonical_ocr_merger import (
     CanonicalOCRMerger,
 )
-from src.application.workflows.parsing.ocr.ocr_merge_result import OCRMergeResult
+from src.application.workflows.parsing.ocr.merging.ocr_merge_result import OCRMergeResult
 from src.application.workflows.parsing.ocr.ocr_temporary_artifact_cleaner import (
     OCRTemporaryArtifactCleaner,
 )
-from src.application.workflows.parsing.ocr.ocr_target_execution_result import (
+from src.application.workflows.parsing.ocr.targets.ocr_target_execution_result import (
     OCRTargetExecutionResult,
 )
-from src.application.workflows.parsing.ocr.ocr_target_selector import OCRTargetSelector
-from src.application.workflows.parsing.ocr.ocr_target_type import OCRTargetType
+from src.application.workflows.parsing.ocr.selection.ocr_target_selector import OCRTargetSelector
+from src.application.workflows.parsing.ocr.targets.ocr_target_type import OCRTargetType
 from src.infrastructure.pdf import PDFPageRenderer, PDFRegionCropper
 from src.shared.activity import ActivityContext
 from src.shared.exceptions import InfrastructureError, OCRProviderError

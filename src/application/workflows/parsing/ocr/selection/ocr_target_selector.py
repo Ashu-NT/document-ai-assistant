@@ -4,11 +4,11 @@ from src.application.workflows.parsing.canonical_element import CanonicalElement
 from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
     repair_docling_text,
 )
-from src.application.workflows.parsing.ocr.ocr_selection_policy import OCRSelectionPolicy
-from src.application.workflows.parsing.ocr.ocr_selection_result import OCRSelectionResult
-from src.application.workflows.parsing.ocr.ocr_target import OCRTarget
-from src.application.workflows.parsing.ocr.ocr_target_type import OCRTargetType
-from src.application.workflows.parsing.ocr.page_text_quality_analyzer import (
+from src.application.workflows.parsing.ocr.selection.ocr_selection_policy import OCRSelectionPolicy
+from src.application.workflows.parsing.ocr.selection.ocr_selection_result import OCRSelectionResult
+from src.application.workflows.parsing.ocr.targets.ocr_target import OCRTarget
+from src.application.workflows.parsing.ocr.targets.ocr_target_type import OCRTargetType
+from src.application.workflows.parsing.ocr.selection.page_text_quality_analyzer import (
     PageTextQualityAnalyzer,
 )
 from src.domain.common import ElementType

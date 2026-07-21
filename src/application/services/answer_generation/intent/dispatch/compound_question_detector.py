@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Sequence
 
 from src.application.services.answer_generation.intent.answer_intent import AnswerIntent
-from src.application.services.answer_generation.intent.answer_intent_vocabulary import (
+from src.application.services.answer_generation.intent.scoring.answer_intent_vocabulary import (
     CERTIFICATION_TERMS,
     DOCUMENT_SUMMARY_TERMS,
     IDENTIFIER_TERMS,

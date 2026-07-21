@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from src.application.workflows.parsing.ocr.ocr_target_type import OCRTargetType
+from src.application.workflows.parsing.ocr.targets.ocr_target_type import OCRTargetType
 from src.domain.common import BoundingBox
 
 

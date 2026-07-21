@@ -3,8 +3,8 @@ from __future__ import annotations
 import re
 
 from src.application.workflows.parsing.canonical_element import CanonicalElement
-from src.application.workflows.parsing.ocr.ocr_selection_policy import OCRSelectionPolicy
-from src.application.workflows.parsing.ocr.page_text_quality import PageTextQuality
+from src.application.workflows.parsing.ocr.selection.ocr_selection_policy import OCRSelectionPolicy
+from src.application.workflows.parsing.ocr.selection.page_text_quality import PageTextQuality
 from src.domain.common import ElementType
 
 _TEXT_TYPES = {
