@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from src.application.workflows.question_answering.answer_pipeline.structured_evidence_scope import (
+from src.application.workflows.question_answering.answer_pipeline.structured_fact_join.structured_evidence_scope import (
     StructuredEvidenceScope,
 )
 from src.domain.document.entities.identifier import Identifier

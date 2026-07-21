@@ -42,7 +42,7 @@ def __getattr__(name: str):
 
         return AnswerContextOrganizer
     if name == "MaintenanceEntryMerger":
-        from src.application.workflows.question_answering.answer_context.maintenance_entry_merger import (
+        from src.application.workflows.question_answering.answer_context.maintenance.maintenance_entry_merger import (
             MaintenanceEntryMerger,
         )
 

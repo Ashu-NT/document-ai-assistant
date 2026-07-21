@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.application.workflows.ingestion.ingestion_exceptions import (
+from src.application.workflows.ingestion.models.ingestion_exceptions import (
     IngestionDependencyError,
 )
 from src.application.workflows.ingestion.runtime.ingestion_runtime_capabilities import (

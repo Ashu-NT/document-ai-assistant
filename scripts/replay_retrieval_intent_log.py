@@ -80,7 +80,7 @@ def _load_query_texts(truth_set_path: Path | None) -> list[str]:
 
 
 def replay(query_texts: Sequence[str], *, output_path: Path) -> int:
-    from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+    from src.application.workflows.retrieval.query_analysis.retrieval_query_intent_inferer import (
         RetrievalQueryIntentInferer,
     )
     from src.domain.retrieval import RetrievalQuery
@@ -88,7 +88,7 @@ def replay(query_texts: Sequence[str], *, output_path: Path) -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     inferer_logger = logging.getLogger(
-        "src.application.workflows.retrieval.retrieval_query_intent_inferer"
+        "src.application.workflows.retrieval.query_analysis.retrieval_query_intent_inferer"
     )
     original_level = inferer_logger.level
     original_propagate = inferer_logger.propagate

@@ -10,8 +10,8 @@ from src.application.workflows.ingestion.context.ingestion_execution_context_res
     resolve_event_context,
 )
 from src.application.workflows.ingestion.hashing.file_hash_service import compute_file_hash
-from src.application.workflows.ingestion.ingestion_request import IngestionRequest
-from src.application.workflows.ingestion.ingestion_status import IngestionStatus
+from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
+from src.application.workflows.ingestion.models.ingestion_status import IngestionStatus
 from src.application.workflows.ingestion.pipeline.ingestion_run_store import (
     IngestionRunStore,
 )

@@ -32,11 +32,11 @@ from src.application.services.answer_generation.execution import (
     AnswerGenerationPromptExecutor,
     AnswerGenerationResultAssembler,
 )
-from src.application.services.answer_generation.formatting.format_policy_violation_detector import (
+from src.application.services.answer_generation.formatting.policy.format_policy_violation_detector import (
     build_format_policy_corrective_note,
     detect_format_policy_violations,
 )
-from src.application.services.answer_generation.formatting.identifier_answer_renderer import (
+from src.application.services.answer_generation.formatting.renderers.identifier_answer_renderer import (
     IdentifierAnswerRenderer,
 )
 from src.application.services.answer_generation.formatting.renderers import (
@@ -46,7 +46,7 @@ from src.application.services.answer_generation.formatting.renderers import (
     ProcedureStepsRenderer,
     TroubleshootingRenderer,
 )
-from src.application.services.answer_generation.formatting.spare_parts_list_renderer import (
+from src.application.services.answer_generation.formatting.spare_parts.spare_parts_list_renderer import (
     SparePartsListRenderer,
 )
 from src.application.services.answer_generation.intent.answer_intent import (

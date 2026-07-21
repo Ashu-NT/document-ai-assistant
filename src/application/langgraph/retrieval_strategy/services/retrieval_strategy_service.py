@@ -22,12 +22,12 @@ from src.application.langgraph.retrieval_strategy.services.retrieval_signal_extr
     RetrievalSignalExtractor,
 )
 from src.application.langgraph.strategy_advisor.advisor import StrategyAdvisor
-from src.application.langgraph.strategy_advisor.advisor_models import (
+from src.application.langgraph.strategy_advisor.models.advisor_models import (
     StrategyAdvisorOutcome,
     StrategyAdvisorRequest,
     StrategyAdvisorStatus,
 )
-from src.application.langgraph.strategy_advisor.strategy_merge import StrategyDecisionMerger
+from src.application.langgraph.strategy_advisor.decision.strategy_merge import StrategyDecisionMerger
 from src.application.langgraph.retrieval_strategy.tracing import RetrievalStrategyTrace
 from src.application.langgraph.retrieval_strategy.validation import (
     RetrievalPlanValidator,

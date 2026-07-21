@@ -1,5 +1,5 @@
 from src.application.langgraph.strategy_advisor.advisor import StrategyAdvisor
-from src.application.langgraph.strategy_advisor.advisor_models import (
+from src.application.langgraph.strategy_advisor.models.advisor_models import (
     StrategyAdvisorEvent,
     StrategyAdvisorIntent,
     StrategyAdvisorOutcome,
@@ -7,13 +7,13 @@ from src.application.langgraph.strategy_advisor.advisor_models import (
     StrategyAdvisorRequest,
     StrategyAdvisorStatus,
 )
-from src.application.langgraph.strategy_advisor.advisor_validator import (
+from src.application.langgraph.strategy_advisor.validation.advisor_validator import (
     StrategyAdvisorValidator,
 )
-from src.application.langgraph.strategy_advisor.strategy_merge import (
+from src.application.langgraph.strategy_advisor.decision.strategy_merge import (
     StrategyDecisionMerger,
 )
-from src.application.langgraph.strategy_advisor.strategy_reason_builder import (
+from src.application.langgraph.strategy_advisor.decision.strategy_reason_builder import (
     StrategyReasonBuilder,
 )
 

@@ -1,24 +1,24 @@
 from src.application.services.document import DocumentLookupService
-from src.application.workflows.retrieval.context_chunk_converter import (
+from src.application.workflows.retrieval.context_expansion.context_chunk_converter import (
     to_retrieved_chunk,
 )
 from src.application.workflows.retrieval.context_expansion.document_chunk_index import (
     DocumentChunkIndex,
 )
-from src.application.workflows.retrieval.context_priority_policy import (
+from src.application.workflows.retrieval.context_expansion.context_priority_policy import (
     context_priority,
 )
-from src.application.workflows.retrieval.context_relation_classifier import (
+from src.application.workflows.retrieval.context_expansion.context_relation_classifier import (
     classify_context_relation,
 )
-from src.application.workflows.retrieval.retrieval_context_assembler import (
+from src.application.workflows.retrieval.context_expansion.retrieval_context_assembler import (
     RetrievalContextAssembler,
     RetrievalContextCandidate,
 )
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )
-from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
 from src.domain.retrieval import RetrievalQuery, RetrievedChunk

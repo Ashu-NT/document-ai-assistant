@@ -4,8 +4,8 @@ from datetime import UTC, datetime
 from typing import Callable
 
 from src.application.workflows.embedding import EmbeddedChunk
-from src.application.workflows.ingestion.ingestion_request import IngestionRequest
-from src.application.workflows.ingestion.ingestion_result import IngestionResult
+from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
+from src.application.workflows.ingestion.models.ingestion_result import IngestionResult
 from src.application.workflows.ingestion.pipeline.ingestion_result_assembler import (
     build_success_result,
 )

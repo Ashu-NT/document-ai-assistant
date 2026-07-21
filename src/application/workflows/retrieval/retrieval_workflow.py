@@ -21,13 +21,13 @@ from src.application.workflows.retrieval.retrieval_workflow_guardrail_adapter im
 from src.application.workflows.retrieval.retrieval_workflow_result import (
     RetrievalWorkflowResult,
 )
-from src.application.workflows.retrieval.retrieval_context_expander import (
+from src.application.workflows.retrieval.context_expansion.retrieval_context_expander import (
     RetrievalContextExpander,
 )
-from src.application.workflows.retrieval.cross_reference_context_expander import (
+from src.application.workflows.retrieval.context_expansion.cross_reference_context_expander import (
     CrossReferenceContextExpander,
 )
-from src.application.workflows.retrieval.retrieval_query_analyzer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_analyzer import (
     RetrievalQueryAnalyzer,
 )
 from src.application.workflows.retrieval.structured import (

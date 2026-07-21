@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from src.application.langgraph.evaluation.agent_test_case import AgentTestCase
+from src.application.langgraph.evaluation.models.agent_test_case import AgentTestCase
 from src.application.langgraph.evaluation.loading.agent_eval_case_parser import (
     extract_case_items,
     parse_case,

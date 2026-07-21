@@ -19,16 +19,16 @@ from src.application.workflows.classification import (
 )
 from src.application.workflows.embedding import EmbeddingWorkflow
 from src.application.workflows.extraction import ExtractionWorkflow
-from src.application.workflows.ingestion.ingestion_exceptions import (
+from src.application.workflows.ingestion.models.ingestion_exceptions import (
     IngestionWorkflowError,
 )
-from src.application.workflows.ingestion.ingestion_request import IngestionRequest
-from src.application.workflows.ingestion.ingestion_result import IngestionResult
-from src.application.workflows.ingestion.ingestion_stage import IngestionStage
+from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
+from src.application.workflows.ingestion.models.ingestion_result import IngestionResult
+from src.application.workflows.ingestion.models.ingestion_stage import IngestionStage
 from src.application.workflows.ingestion.pipeline import (
     build_ingestion_workflow_pipeline,
 )
-from src.application.workflows.ingestion.reingestion_request import (
+from src.application.workflows.ingestion.models.reingestion_request import (
     ReingestionRequest,
 )
 from src.application.workflows.ingestion.runtime import (

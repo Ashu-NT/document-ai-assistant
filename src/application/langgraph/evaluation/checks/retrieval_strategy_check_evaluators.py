@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from src.application.langgraph.evaluation.agent_eval_result import AgentTurnResult
-from src.application.langgraph.evaluation.agent_test_case import AgentExpectedBehavior
+from src.application.langgraph.evaluation.models.agent_eval_result import AgentTurnResult
+from src.application.langgraph.evaluation.models.agent_test_case import AgentExpectedBehavior
 from src.application.langgraph.evaluation.checks.safety_check_evaluators import (
     evaluate_document_scope,
 )

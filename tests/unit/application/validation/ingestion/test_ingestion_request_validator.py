@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from src.application.validation.ingestion import IngestionRequestValidator
-from src.application.workflows.ingestion.ingestion_request import IngestionRequest
+from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
 
 
 def test_validate_flags_file_too_large_when_explicit_limit_is_exceeded(

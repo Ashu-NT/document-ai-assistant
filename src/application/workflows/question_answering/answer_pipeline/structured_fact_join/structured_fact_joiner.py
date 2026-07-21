@@ -15,16 +15,16 @@ from src.application.workflows.question_answering.answer_context.structured_evid
 from src.application.workflows.question_answering.answer_context.structured_fact_key_value_builder import (
     StructuredFactKeyValueBuilder,
 )
-from src.application.workflows.question_answering.answer_pipeline.retrieved_chunk_converter import (
+from src.application.workflows.question_answering.answer_pipeline.structured_fact_join.retrieved_chunk_converter import (
     to_retrieved_chunk,
 )
-from src.application.workflows.question_answering.answer_pipeline.structured_evidence_scope import (
+from src.application.workflows.question_answering.answer_pipeline.structured_fact_join.structured_evidence_scope import (
     StructuredEvidenceScope,
 )
-from src.application.workflows.question_answering.answer_pipeline.structured_evidence_scope_filter import (
+from src.application.workflows.question_answering.answer_pipeline.structured_fact_join.structured_evidence_scope_filter import (
     StructuredEvidenceScopeFilter,
 )
-from src.application.workflows.question_answering.answer_pipeline.structured_fact_join_result import (
+from src.application.workflows.question_answering.answer_pipeline.structured_fact_join.structured_fact_join_result import (
     StructuredFactJoinResult,
 )
 from src.application.workflows.question_answering.evidence import FinalEvidencePreparer

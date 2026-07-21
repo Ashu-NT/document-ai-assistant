@@ -4,11 +4,11 @@ from typing import Any, Callable, Iterable, Sequence
 from uuid import uuid4
 
 from src.application.langgraph.common import serialize_graph_value
-from src.application.langgraph.evaluation.agent_eval_result import (
+from src.application.langgraph.evaluation.models.agent_eval_result import (
     AgentCaseResult,
     AgentEvalReport,
 )
-from src.application.langgraph.evaluation.agent_test_case import AgentTestCase
+from src.application.langgraph.evaluation.models.agent_test_case import AgentTestCase
 from src.application.langgraph.evaluation.execution.agent_eval_turn_runner import (
     run_turn,
 )

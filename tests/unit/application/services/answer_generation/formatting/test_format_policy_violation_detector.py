@@ -1,7 +1,7 @@
-from src.application.services.answer_generation.formatting.answer_format_policy import (
+from src.application.services.answer_generation.formatting.policy.answer_format_policy import (
     AnswerFormatPolicy,
 )
-from src.application.services.answer_generation.formatting.format_policy_violation_detector import (
+from src.application.services.answer_generation.formatting.policy.format_policy_violation_detector import (
     detect_format_policy_violations,
 )
 from src.application.services.answer_generation.intent.answer_intent import (

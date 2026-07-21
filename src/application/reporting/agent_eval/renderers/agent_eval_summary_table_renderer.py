@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.application.langgraph.evaluation.agent_eval_result import AgentEvalSummary
+    from src.application.langgraph.evaluation.models.agent_eval_result import AgentEvalSummary
 
 
 class AgentEvalSummaryTableRenderer:

@@ -10,7 +10,7 @@ from src.application.evaluation.retrieval.benchmarking import (
 from src.application.evaluation.retrieval.evaluators.benchmarking.workflow_result_adapter import (
     WorkflowResultAdapter,
 )
-from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
 from src.shared.exceptions import SchemaValidationError

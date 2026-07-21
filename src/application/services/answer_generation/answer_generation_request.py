@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from src.application.services.answer_generation.formatting.answer_format_policy import (
+from src.application.services.answer_generation.formatting.policy.answer_format_policy import (
     AnswerFormatPolicy,
 )
 from src.application.services.answer_generation.intent.answer_intent import (

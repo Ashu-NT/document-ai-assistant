@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from src.application.langgraph.evaluation.agent_eval_metric_registry import (
+from src.application.langgraph.evaluation.models.agent_eval_metric_registry import (
     AGENT_EVAL_THRESHOLD_METRIC_NAMES,
 )
-from src.application.langgraph.evaluation.agent_eval_result import AgentEvalReport
-from src.application.langgraph.evaluation.agent_eval_thresholds import (
+from src.application.langgraph.evaluation.models.agent_eval_result import AgentEvalReport
+from src.application.langgraph.evaluation.models.agent_eval_thresholds import (
     AgentEvalThresholds,
 )
 

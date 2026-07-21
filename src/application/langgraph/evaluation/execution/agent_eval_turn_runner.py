@@ -4,8 +4,8 @@ from typing import Any
 
 from src.application.langgraph.common import GraphResult, serialize_graph_value
 from src.application.langgraph.common.value_coercion import optional_str
-from src.application.langgraph.evaluation.agent_eval_result import AgentTurnResult
-from src.application.langgraph.evaluation.agent_test_case import AgentTurnInput
+from src.application.langgraph.evaluation.models.agent_eval_result import AgentTurnResult
+from src.application.langgraph.evaluation.models.agent_test_case import AgentTurnInput
 from src.application.langgraph.evaluation.scoring.turn_result_extractors import (
     extract_context_document_ids,
     extract_plan_tool_names,

@@ -1,7 +1,7 @@
 import pytest
 
 from src.application.workflows.ingestion import IngestionRequest, IngestionStatus
-from src.application.workflows.ingestion.ingestion_exceptions import (
+from src.application.workflows.ingestion.models.ingestion_exceptions import (
     IngestionDependencyError,
 )
 from src.application.workflows.ingestion.runtime import (

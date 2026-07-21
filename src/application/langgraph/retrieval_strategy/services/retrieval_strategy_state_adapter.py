@@ -7,7 +7,7 @@ from src.application.langgraph.retrieval_strategy.constants import (
     CLI_RETRIEVAL_STRATEGY_ALIASES,
 )
 from src.application.langgraph.state import AgentState
-from src.application.langgraph.strategy_advisor.advisor_models import (
+from src.application.langgraph.strategy_advisor.models.advisor_models import (
     StrategyAdvisorProposal,
 )
 from src.domain.retrieval.citation import Citation

@@ -4,10 +4,10 @@ from typing import Any
 from pydantic import ValidationError
 
 from src.application.validation.common import ValidationResult
-from src.application.workflows.extraction.response.extraction_response_sanitizer import (
+from src.application.workflows.extraction.response.parsing.extraction_response_sanitizer import (
     ExtractionResponseSanitizer,
 )
-from src.application.workflows.extraction.response.extraction_response_repairer import (
+from src.application.workflows.extraction.response.parsing.extraction_response_repairer import (
     ExtractionResponseRepairer,
 )
 from src.application.workflows.extraction.response.schemas.extraction_response_payload import (

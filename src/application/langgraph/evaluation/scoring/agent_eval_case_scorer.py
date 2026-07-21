@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Sequence
 
-from src.application.langgraph.evaluation.agent_eval_result import AgentTurnResult
-from src.application.langgraph.evaluation.agent_test_case import AgentExpectedBehavior
+from src.application.langgraph.evaluation.models.agent_eval_result import AgentTurnResult
+from src.application.langgraph.evaluation.models.agent_test_case import AgentExpectedBehavior
 from src.application.langgraph.evaluation.checks.policy_check_evaluators import (
     evaluate_answer_expectations,
     evaluate_plan_policy,

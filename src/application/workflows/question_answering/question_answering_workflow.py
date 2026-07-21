@@ -35,7 +35,7 @@ from src.application.workflows.question_answering.answer_pipeline.override_workf
 from src.application.workflows.question_answering.answer_pipeline.structured_evidence_merger import (
     StructuredEvidenceMerger,
 )
-from src.application.workflows.question_answering.answer_pipeline.structured_fact_joiner import (
+from src.application.workflows.question_answering.answer_pipeline.structured_fact_join.structured_fact_joiner import (
     StructuredFactJoiner,
 )
 from src.application.workflows.question_answering.evidence import (

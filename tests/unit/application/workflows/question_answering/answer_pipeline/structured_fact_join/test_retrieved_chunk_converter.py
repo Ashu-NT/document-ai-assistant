@@ -1,4 +1,4 @@
-from src.application.workflows.question_answering.answer_pipeline.retrieved_chunk_converter import (
+from src.application.workflows.question_answering.answer_pipeline.structured_fact_join.retrieved_chunk_converter import (
     to_retrieved_chunk,
 )
 from src.domain.common import SourceLocation

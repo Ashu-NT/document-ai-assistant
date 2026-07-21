@@ -4,7 +4,7 @@ import pytest
 
 from src.application.workflows.retrieval.retrieval_query_intent import RetrievalQueryIntent
 
-from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
 

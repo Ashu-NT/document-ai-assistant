@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from src.application.contracts import UnitOfWork
 from src.application.contracts.retrieval import VectorStore
-from src.application.workflows.ingestion.ingestion_exceptions import (
+from src.application.workflows.ingestion.models.ingestion_exceptions import (
     DocumentNotFoundForDeletionError,
 )
 from src.shared.activity import ActivityContext

@@ -4,7 +4,7 @@ from src.application.services.answer_generation.answer_generation_request import
 from src.application.services.answer_generation.coverage import (
     resolve_coverage_requirement,
 )
-from src.application.services.answer_generation.formatting.answer_format_policy import (
+from src.application.services.answer_generation.formatting.policy.answer_format_policy import (
     ANSWER_FORMAT_POLICY_RULES_VERSION,
 )
 from src.application.services.answer_generation.intent.answer_intent_analyzer import (
@@ -13,7 +13,7 @@ from src.application.services.answer_generation.intent.answer_intent_analyzer im
 from src.application.workflows.question_answering.answer_context.key_value_extractor import (
     KEY_VALUE_EXTRACTOR_RULES_VERSION,
 )
-from src.application.workflows.question_answering.answer_context.maintenance_entry_merger import (
+from src.application.workflows.question_answering.answer_context.maintenance.maintenance_entry_merger import (
     MAINTENANCE_ENTRY_MERGER_RULES_VERSION,
 )
 from src.config.logging import get_logger

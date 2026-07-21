@@ -17,7 +17,7 @@ from src.application.workflows.retrieval.intent.retrieval_query_intent_scorer im
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )
-from src.application.workflows.retrieval.retrieval_query_intent_classification import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_intent_classification import (
     RetrievalQueryIntentClassification,
 )
 from src.config.logging import get_logger

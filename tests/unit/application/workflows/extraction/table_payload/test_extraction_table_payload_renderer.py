@@ -1,4 +1,4 @@
-from src.application.workflows.extraction.batching.table_payload import (
+from src.application.workflows.extraction.table_payload import (
     ExtractionTablePayloadRenderer,
 )
 from src.domain.assets import TableAsset, TableParallelStream

@@ -1,8 +1,8 @@
-from src.application.services.answer_generation.formatting.spare_parts_list_renderer import (
+from src.application.services.answer_generation.formatting.spare_parts.spare_parts_list_renderer import (
     SparePartsListRenderer,
 )
 
-from src.application.services.answer_generation.formatting.spare_parts_table_parser import (
+from src.application.services.answer_generation.formatting.spare_parts.spare_parts_table_parser import (
     SPARE_PARTS_TABLE_PARSER_RULES_VERSION,
 )
 

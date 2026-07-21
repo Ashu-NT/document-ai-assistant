@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from src.application.services.document import DuplicateDetectionService
-from src.application.workflows.ingestion.ingestion_request import IngestionRequest
+from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
 
 
 class DuplicateCheckStep:

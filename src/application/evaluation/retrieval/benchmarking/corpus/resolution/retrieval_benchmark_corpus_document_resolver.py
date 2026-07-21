@@ -12,8 +12,8 @@ from src.application.services.document import (
 from src.application.services.extraction import ExtractionService
 from src.application.workflows.classification import DocumentClassificationWorkflow
 from src.application.workflows.ingestion import IngestionWorkflow
-from src.application.workflows.ingestion.ingestion_request import IngestionRequest
-from src.application.workflows.ingestion.reingestion_request import ReingestionRequest
+from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
+from src.application.workflows.ingestion.models.reingestion_request import ReingestionRequest
 from src.domain.classification import DocumentClassification
 from src.domain.document import DocumentGraph
 from src.shared.activity import ActivityContext

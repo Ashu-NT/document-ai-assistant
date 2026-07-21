@@ -14,10 +14,10 @@ from src.application.services.document.document_registration_service import (
 from src.application.services.document.document_application_service import (
     DocumentApplicationService,
 )
-from src.application.services.document.identifier_promotion_service import (
+from src.application.services.document.identifiers.identifier_promotion_service import (
     IdentifierPromotionService,
 )
-from src.application.services.document.deterministic_identifier_scanner import (
+from src.application.services.document.identifiers.deterministic_identifier_scanner import (
     DeterministicIdentifierScanner,
 )
 

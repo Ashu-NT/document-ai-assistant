@@ -11,8 +11,8 @@ from src.application.evaluation.retrieval.benchmarking.corpus.resolution.retriev
 from src.application.evaluation.retrieval.benchmarking.corpus.retrieval_benchmark_seed_target_collector import (
     _CorpusSeedTarget,
 )
-from src.application.workflows.ingestion.ingestion_result import IngestionResult
-from src.application.workflows.ingestion.ingestion_status import IngestionStatus
+from src.application.workflows.ingestion.models.ingestion_result import IngestionResult
+from src.application.workflows.ingestion.models.ingestion_status import IngestionStatus
 
 
 class FakeIngestionWorkflow:

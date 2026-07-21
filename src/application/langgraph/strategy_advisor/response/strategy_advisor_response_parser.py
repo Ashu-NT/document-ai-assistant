@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import ValidationError
 
-from src.application.langgraph.strategy_advisor.strategy_advisor_response_schema import (
+from src.application.langgraph.strategy_advisor.response.strategy_advisor_response_schema import (
     StrategyAdvisorResponsePayload,
 )
 from src.shared.exceptions import SchemaValidationError

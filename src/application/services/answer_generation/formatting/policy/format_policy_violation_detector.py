@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from src.application.services.answer_generation.formatting.answer_format_policy import (
+from src.application.services.answer_generation.formatting.policy.answer_format_policy import (
     AnswerFormatPolicy,
 )
 

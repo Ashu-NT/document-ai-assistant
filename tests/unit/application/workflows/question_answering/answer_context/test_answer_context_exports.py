@@ -20,7 +20,7 @@ from src.application.workflows.question_answering.answer_context import (
 from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
     AnswerContextOrganizer as OrganizerImpl,
 )
-from src.application.workflows.question_answering.answer_context.maintenance_entry_merger import (
+from src.application.workflows.question_answering.answer_context.maintenance.maintenance_entry_merger import (
     MaintenanceEntryMerger as MergerImpl,
 )
 from src.application.workflows.question_answering.answer_context.models import (

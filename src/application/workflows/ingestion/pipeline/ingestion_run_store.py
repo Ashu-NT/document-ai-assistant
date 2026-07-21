@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from src.application.contracts import UnitOfWork
-from src.application.workflows.ingestion.ingestion_status import IngestionStatus
+from src.application.workflows.ingestion.models.ingestion_status import IngestionStatus
 from src.domain.workflow import IngestionRun
 
 

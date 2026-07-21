@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.application.workflows.ingestion.content_hash import compute_content_hash_from_graph
+from src.application.workflows.ingestion.hashing.content_hash import compute_content_hash_from_graph
 from src.domain.common import ElementType, SourceLocation
 from src.domain.elements import CanonicalElement
 

@@ -16,7 +16,7 @@ from src.application.workflows.question_answering.answer_context.key_value_extra
 from src.application.workflows.question_answering.answer_context.maintenance.maintenance_task_extractor import (
     MaintenanceTaskExtractor,
 )
-from src.application.workflows.question_answering.answer_context.maintenance_entry_merger import (
+from src.application.workflows.question_answering.answer_context.maintenance.maintenance_entry_merger import (
     MaintenanceEntryMerger,
 )
 from src.application.workflows.question_answering.answer_context.section_group_builder import (

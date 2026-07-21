@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.application.services.document.identifier_promotion_service import (
+from src.application.services.document.identifiers.identifier_promotion_service import (
     IdentifierPromotionService,
 )
 

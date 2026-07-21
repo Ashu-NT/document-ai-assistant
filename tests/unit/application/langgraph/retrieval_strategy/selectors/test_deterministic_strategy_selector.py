@@ -7,7 +7,7 @@ from src.application.langgraph.retrieval_strategy.selectors import (
     DeterministicStrategySelector,
 )
 from src.application.langgraph.retrieval_strategy.services import RetrievalSignalExtractor
-from src.application.workflows.retrieval.retrieval_query_analyzer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_analyzer import (
     RetrievalQueryAnalyzer,
 )
 from src.domain.retrieval import RetrievalQuery

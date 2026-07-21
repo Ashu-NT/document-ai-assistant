@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.application.workflows.extraction.batching.table_payload.table_payload_support import (
+from src.application.workflows.extraction.table_payload.table_payload_support import (
     TablePayloadSupport,
 )
 from src.application.workflows.parsing.tables.structure.table_shape_resolver import (

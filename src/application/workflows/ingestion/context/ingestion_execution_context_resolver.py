@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.application.workflows.ingestion.ingestion_request import IngestionRequest
+from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
 from src.shared.activity import ActivityContext
 from src.shared.audit import AuditContext
 from src.shared.events import EventContext

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
 from src.domain.retrieval import RetrievalQuery

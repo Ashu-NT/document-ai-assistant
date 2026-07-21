@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.application.langgraph.strategy_advisor.advisor_models import StrategyAdvisorProposal
+from src.application.langgraph.strategy_advisor.models.advisor_models import StrategyAdvisorProposal
 
 
 class StrategyReasonBuilder:

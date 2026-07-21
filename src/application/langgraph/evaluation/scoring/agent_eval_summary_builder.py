@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from src.application.langgraph.evaluation.agent_eval_metric_registry import (
+from src.application.langgraph.evaluation.models.agent_eval_metric_registry import (
     AGENT_EVAL_METRIC_NAMES,
 )
-from src.application.langgraph.evaluation.agent_eval_result import (
+from src.application.langgraph.evaluation.models.agent_eval_result import (
     AgentCaseResult,
     AgentEvalSummary,
 )

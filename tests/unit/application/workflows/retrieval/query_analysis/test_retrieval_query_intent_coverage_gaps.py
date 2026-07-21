@@ -7,11 +7,11 @@ translation/language detection) rather than a bug -- low-confidence/GENERAL
 results on that input are exactly the signal the future LLM-clarification
 layer (Phase 5) is meant to catch."""
 
-from src.application.workflows.retrieval.retrieval_query_analyzer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_analyzer import (
     RetrievalQueryAnalyzer,
 )
 from src.application.workflows.retrieval.retrieval_query_intent import RetrievalQueryIntent
-from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
 from src.domain.retrieval import RetrievalQuery

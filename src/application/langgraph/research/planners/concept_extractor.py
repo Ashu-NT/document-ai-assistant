@@ -7,7 +7,7 @@ from src.application.langgraph.research.planners.concept_strategy_mapper import 
     CATEGORY_PATTERNS,
 )
 from src.application.langgraph.research.research_text_utils import normalize_theme
-from src.application.langgraph.strategy_advisor.advisor_models import (
+from src.application.langgraph.strategy_advisor.models.advisor_models import (
     StrategyAdvisorProposal,
 )
 

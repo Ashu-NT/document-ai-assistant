@@ -5,11 +5,11 @@ import inspect
 from src.application.langgraph.common import serialize_graph_value
 from src.application.langgraph.routing import IntentRouter, RouteType
 from src.application.langgraph.strategy_advisor.advisor import StrategyAdvisor
-from src.application.langgraph.strategy_advisor.advisor_models import (
+from src.application.langgraph.strategy_advisor.models.advisor_models import (
     StrategyAdvisorRequest,
     StrategyAdvisorStatus,
 )
-from src.application.langgraph.strategy_advisor.strategy_merge import StrategyDecisionMerger
+from src.application.langgraph.strategy_advisor.decision.strategy_merge import StrategyDecisionMerger
 from src.application.langgraph.state import AgentState
 from src.application.langgraph.tracing import GraphRunRecorder
 from src.application.langgraph.nodes.node_utils import extend_trace

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.application.workflows.extraction.response.extraction_payload_contracts import (
+from src.application.workflows.extraction.response.parsing.extraction_payload_contracts import (
     EXTRACTION_PAYLOAD_CONTRACTS,
     ExtractionPayloadContract,
 )
-from src.application.workflows.extraction.response.extraction_payload_field_picker import (
+from src.application.workflows.extraction.response.parsing.extraction_payload_field_picker import (
     optional_payload_text,
 )
 

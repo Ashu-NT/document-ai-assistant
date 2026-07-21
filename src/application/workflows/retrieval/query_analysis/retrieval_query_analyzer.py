@@ -1,14 +1,14 @@
-from src.application.workflows.retrieval.retrieval_query_chunk_type_preference_mapper import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_chunk_type_preference_mapper import (
     RetrievalQueryChunkTypePreferenceMapper,
 )
-from src.application.workflows.retrieval.retrieval_query_identifier_extractor import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_identifier_extractor import (
     RetrievalQueryIdentifierExtractor,
 )
-from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_intent_inferer import (
     RETRIEVAL_INTENT_RULES_VERSION,
     RetrievalQueryIntentInferer,
 )
-from src.application.workflows.retrieval.retrieval_query_rewriter import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_rewriter import (
     RetrievalQueryRewriter,
 )
 from src.config.logging import get_logger

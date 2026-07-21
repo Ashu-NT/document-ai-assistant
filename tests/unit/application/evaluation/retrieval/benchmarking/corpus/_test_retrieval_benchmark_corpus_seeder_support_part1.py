@@ -30,8 +30,8 @@ from src.application.evaluation.retrieval.benchmarking.models import (
 
 from src.application.workflows.ingestion import IngestionResult, IngestionStatus
 
-from src.application.workflows.ingestion.ingestion_request import IngestionRequest
-from src.application.workflows.ingestion.reingestion_request import ReingestionRequest
+from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
+from src.application.workflows.ingestion.models.reingestion_request import ReingestionRequest
 
 from src.domain.classification import ClassificationResult, DocumentClassification
 

@@ -16,10 +16,10 @@ from src.application.services.answer_generation.formatting.spare_parts.spare_par
 from src.application.services.answer_generation.formatting.spare_parts.spare_parts_group import (
     SparePartsGroup,
 )
-from src.application.services.answer_generation.formatting.spare_parts_table_evidence_detector import (
+from src.application.services.answer_generation.formatting.spare_parts.spare_parts_table_evidence_detector import (
     has_table_evidence,
 )
-from src.application.services.answer_generation.formatting.spare_parts_table_parser import (
+from src.application.services.answer_generation.formatting.spare_parts.spare_parts_table_parser import (
     SPARE_PARTS_TABLE_PARSER_RULES_VERSION,
     SparePartsTableParser,
 )

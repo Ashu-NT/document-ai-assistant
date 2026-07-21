@@ -17,7 +17,7 @@ from src.application.workflows.retrieval import (
     RetrievalContextExpander,
     RetrievalWorkflow,
 )
-from src.application.workflows.retrieval.cross_reference_context_expander import (
+from src.application.workflows.retrieval.context_expansion.cross_reference_context_expander import (
     CrossReferenceContextExpander,
 )
 from src.application.workflows.retrieval.structured import (

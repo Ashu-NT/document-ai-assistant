@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from src.application.workflows.ingestion.content_hash import compute_content_hash_from_graph
+from src.application.workflows.ingestion.hashing.content_hash import compute_content_hash_from_graph
 from src.application.workflows.ingestion.stages.parsing_stage_result import (
     ParsingStageResult,
 )

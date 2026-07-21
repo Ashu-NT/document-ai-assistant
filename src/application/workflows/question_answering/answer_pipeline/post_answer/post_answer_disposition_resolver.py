@@ -15,7 +15,7 @@ from src.application.services.answer_generation.answer_generation_request import
 from src.application.services.answer_generation.answer_generation_result import (
     GeneratedAnswer,
 )
-from src.application.workflows.question_answering.answer_pipeline.post_answer_guardrail_evaluator import (
+from src.application.workflows.question_answering.answer_pipeline.post_answer.post_answer_guardrail_evaluator import (
     PostAnswerGuardrailEvaluation,
     PostAnswerGuardrailEvaluator,
 )

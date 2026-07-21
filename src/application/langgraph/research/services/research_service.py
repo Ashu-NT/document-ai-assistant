@@ -49,7 +49,7 @@ from src.application.langgraph.research.validation.research_plan_validator impor
 from src.application.langgraph.research.validation.research_report_validator import (
     ResearchReportValidator,
 )
-from src.application.langgraph.strategy_advisor.advisor_models import (
+from src.application.langgraph.strategy_advisor.models.advisor_models import (
     StrategyAdvisorProposal,
 )
 from src.shared.exceptions import SchemaValidationError

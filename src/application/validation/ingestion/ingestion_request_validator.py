@@ -7,7 +7,7 @@ from src.application.validation.common import ValidationResult, Validator
 from src.domain.common import DocumentType
 
 if TYPE_CHECKING:
-    from src.application.workflows.ingestion.ingestion_request import (
+    from src.application.workflows.ingestion.models.ingestion_request import (
         IngestionRequest,
     )
 
@@ -19,7 +19,7 @@ class IngestionRequestValidator(Validator["IngestionRequest"]):
         self.max_file_size_bytes = max_file_size_bytes
 
     def validate(self, value: "IngestionRequest") -> ValidationResult:
-        from src.application.workflows.ingestion.ingestion_request import (
+        from src.application.workflows.ingestion.models.ingestion_request import (
             IngestionRequest,
         )
 

@@ -1,4 +1,4 @@
-from src.application.workflows.retrieval.retrieval_query_rewriter import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_rewriter import (
     RetrievalQueryRewriter,
 )
 

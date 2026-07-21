@@ -1,7 +1,7 @@
-from src.application.workflows.question_answering.answer_pipeline.structured_evidence_scope import (
+from src.application.workflows.question_answering.answer_pipeline.structured_fact_join.structured_evidence_scope import (
     StructuredEvidenceScope,
 )
-from src.application.workflows.question_answering.answer_pipeline.structured_evidence_scope_filter import (
+from src.application.workflows.question_answering.answer_pipeline.structured_fact_join.structured_evidence_scope_filter import (
     StructuredEvidenceScopeFilter,
 )
 from src.domain.common import ChunkType, IdentifierType

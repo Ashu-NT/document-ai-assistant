@@ -3,11 +3,11 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Callable, NoReturn
 
-from src.application.workflows.ingestion.ingestion_exceptions import (
+from src.application.workflows.ingestion.models.ingestion_exceptions import (
     IngestionWorkflowError,
 )
-from src.application.workflows.ingestion.ingestion_stage import IngestionStage
-from src.application.workflows.ingestion.ingestion_status import IngestionStatus
+from src.application.workflows.ingestion.models.ingestion_stage import IngestionStage
+from src.application.workflows.ingestion.models.ingestion_status import IngestionStatus
 from src.application.workflows.ingestion.pipeline.ingestion_run_store import (
     IngestionRunStore,
 )

@@ -3,15 +3,15 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from src.application.langgraph.strategy_advisor.concept_grounding import (
+from src.application.langgraph.strategy_advisor.validation.concept_grounding import (
     is_grounded_concept,
 )
-from src.application.langgraph.strategy_advisor.advisor_models import (
+from src.application.langgraph.strategy_advisor.models.advisor_models import (
     StrategyAdvisorIntent,
     StrategyAdvisorProposal,
     StrategyAdvisorRequest,
 )
-from src.application.langgraph.strategy_advisor.strategy_advisor_response_parser import (
+from src.application.langgraph.strategy_advisor.response.strategy_advisor_response_parser import (
     StrategyAdvisorResponseParser,
 )
 from src.application.langgraph.routing import RouteType

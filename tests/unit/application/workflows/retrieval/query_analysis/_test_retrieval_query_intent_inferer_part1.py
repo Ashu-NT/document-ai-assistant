@@ -4,7 +4,7 @@ import pytest
 
 from src.application.workflows.retrieval.retrieval_query_intent import RetrievalQueryIntent
 
-from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
 
@@ -234,7 +234,7 @@ class TestResolveAvoidsRedundantComputation:
         assert inferer.resolve(query) == RetrievalQueryIntent.SAFETY
 
     def test_resolve_matches_infer_after_a_real_analyze_call(self) -> None:
-        from src.application.workflows.retrieval.retrieval_query_analyzer import (
+        from src.application.workflows.retrieval.query_analysis.retrieval_query_analyzer import (
             RetrievalQueryAnalyzer,
         )
 

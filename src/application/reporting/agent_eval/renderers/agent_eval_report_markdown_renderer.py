@@ -16,7 +16,7 @@ from src.application.reporting.agent_eval.renderers.agent_eval_threshold_result_
 )
 
 if TYPE_CHECKING:
-    from src.application.langgraph.evaluation.agent_eval_result import (
+    from src.application.langgraph.evaluation.models.agent_eval_result import (
         AgentEvalReport,
     )
 

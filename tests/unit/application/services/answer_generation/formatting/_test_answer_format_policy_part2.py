@@ -1,6 +1,6 @@
 from src.application.services.answer_generation import AnswerFormatPolicy, AnswerIntent
 
-from src.application.services.answer_generation.formatting.answer_format_policy import (
+from src.application.services.answer_generation.formatting.policy.answer_format_policy import (
     _DIRECT_MAINTENANCE_RECORDS_INSTRUCTION,
     _ENTITY_GRAPH_AVAILABLE_INSTRUCTION,
     _EXACT_IDENTIFIER_ROWS_INSTRUCTION,
@@ -91,7 +91,7 @@ def test_resolve_combines_multiple_signals_without_losing_base_instructions() ->
 def test_resolve_logs_context_adjustment_with_rules_version(caplog) -> None:
     import logging
 
-    from src.application.services.answer_generation.formatting.answer_format_policy import (
+    from src.application.services.answer_generation.formatting.policy.answer_format_policy import (
         ANSWER_FORMAT_POLICY_RULES_VERSION,
     )
 

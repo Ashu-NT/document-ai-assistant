@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING
 
-from src.application.services.answer_generation.formatting.answer_format_policy_catalog import (
+from src.application.services.answer_generation.formatting.policy.answer_format_policy_catalog import (
     build_policy_catalog,
 )
 from src.application.services.answer_generation.intent.answer_intent import (

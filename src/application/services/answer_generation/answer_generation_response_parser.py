@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from src.application.services.answer_generation.answer_generation_response_schema import (
     AnswerGenerationResponsePayload,
 )
-from src.application.workflows.extraction.response.extraction_response_repairer import (
+from src.application.workflows.extraction.response.parsing.extraction_response_repairer import (
     ExtractionResponseRepairer,
 )
 from src.shared.exceptions import SchemaValidationError

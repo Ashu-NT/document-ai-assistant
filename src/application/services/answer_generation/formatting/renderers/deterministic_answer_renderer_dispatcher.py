@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.application.services.answer_generation.formatting.identifier_answer_renderer import (
+from src.application.services.answer_generation.formatting.renderers.identifier_answer_renderer import (
     IdentifierAnswerRenderer,
 )
 from src.application.services.answer_generation.formatting.renderers.deterministic_render_result import (
@@ -18,7 +18,7 @@ from src.application.services.answer_generation.formatting.renderers.procedure_s
 from src.application.services.answer_generation.formatting.renderers.troubleshooting_renderer import (
     TroubleshootingRenderer,
 )
-from src.application.services.answer_generation.formatting.spare_parts_list_renderer import (
+from src.application.services.answer_generation.formatting.spare_parts.spare_parts_list_renderer import (
     SparePartsListRenderer,
 )
 from src.application.services.answer_generation.intent.answer_intent import AnswerIntent

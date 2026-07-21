@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from src.application.workflows.ingestion.ingestion_stage import IngestionStage
+from src.application.workflows.ingestion.models.ingestion_stage import IngestionStage
 
 _INGESTION_SOURCE_DIR = (
-    Path(__file__).resolve().parents[5]
+    Path(__file__).resolve().parents[6]
     / "src"
     / "application"
     / "workflows"

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from src.application.langgraph.strategy_advisor.advisor_models import (
+from src.application.langgraph.strategy_advisor.models.advisor_models import (
     StrategyAdvisorEvent,
     StrategyAdvisorOutcome,
     StrategyAdvisorRequest,
     StrategyAdvisorStatus,
 )
-from src.application.langgraph.strategy_advisor.advisor_validator import (
+from src.application.langgraph.strategy_advisor.validation.advisor_validator import (
     StrategyAdvisorValidator,
 )
-from src.application.langgraph.strategy_advisor.strategy_advisor_response_schema import (
+from src.application.langgraph.strategy_advisor.response.strategy_advisor_response_schema import (
     build_strategy_advisor_response_json_schema,
 )
 from src.application.prompts.strategy_advisor import StrategyAdvisorPromptBuilder

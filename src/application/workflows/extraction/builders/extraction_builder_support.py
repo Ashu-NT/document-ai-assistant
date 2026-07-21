@@ -4,7 +4,7 @@ from typing import Any
 
 from src.application.workflows.common.confidence_coercion import coerce_confidence_score
 from src.application.workflows.extraction.context import SemanticExtractionContext
-from src.application.workflows.extraction.response.extraction_payload_field_picker import (
+from src.application.workflows.extraction.response.parsing.extraction_payload_field_picker import (
     optional_payload_text,
     pick_payload_value,
 )

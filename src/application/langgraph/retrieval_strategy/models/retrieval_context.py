@@ -9,7 +9,7 @@ from src.application.langgraph.retrieval_strategy.models.retrieval_strategy impo
 from src.domain.retrieval import RetrievalQuery
 
 if TYPE_CHECKING:
-    from src.application.langgraph.strategy_advisor.advisor_models import (
+    from src.application.langgraph.strategy_advisor.models.advisor_models import (
         StrategyAdvisorProposal,
     )
 

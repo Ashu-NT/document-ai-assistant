@@ -14,16 +14,16 @@ from src.application.services.answer_generation.answer_generation_service import
 from src.application.workflows.question_answering.answer_pipeline.decision_trace_builder import (
     build_decision_trace,
 )
-from src.application.workflows.question_answering.answer_pipeline.post_answer_disposition_resolver import (
+from src.application.workflows.question_answering.answer_pipeline.post_answer.post_answer_disposition_resolver import (
     PostAnswerDispositionResolver,
 )
-from src.application.workflows.question_answering.answer_pipeline.post_answer_guardrail_evaluator import (
+from src.application.workflows.question_answering.answer_pipeline.post_answer.post_answer_guardrail_evaluator import (
     PostAnswerGuardrailEvaluator,
 )
 from src.application.workflows.question_answering.answer_pipeline.structured_evidence_merger import (
     StructuredEvidenceMerger,
 )
-from src.application.workflows.question_answering.answer_pipeline.structured_fact_joiner import (
+from src.application.workflows.question_answering.answer_pipeline.structured_fact_join.structured_fact_joiner import (
     StructuredFactJoiner,
 )
 from src.application.workflows.question_answering.question_answering_request import (

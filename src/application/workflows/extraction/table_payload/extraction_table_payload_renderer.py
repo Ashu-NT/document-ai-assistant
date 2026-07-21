@@ -2,22 +2,22 @@ from __future__ import annotations
 
 from dataclasses import replace as dataclass_replace
 
-from src.application.workflows.extraction.batching.table_payload.generic_table_payload_builder import (
+from src.application.workflows.extraction.table_payload.generic_table_payload_builder import (
     GenericTablePayloadBuilder,
 )
-from src.application.workflows.extraction.batching.table_payload.maintenance_schedule_payload_builder import (
+from src.application.workflows.extraction.table_payload.maintenance_schedule_payload_builder import (
     MaintenanceSchedulePayloadBuilder,
 )
-from src.application.workflows.extraction.batching.table_payload.performance_curve_payload_builder import (
+from src.application.workflows.extraction.table_payload.performance_curve_payload_builder import (
     PerformanceCurvePayloadBuilder,
 )
-from src.application.workflows.extraction.batching.table_payload.spare_parts_table_payload_builder import (
+from src.application.workflows.extraction.table_payload.spare_parts_table_payload_builder import (
     SparePartsTablePayloadBuilder,
 )
-from src.application.workflows.extraction.batching.table_payload.specification_matrix_payload_builder import (
+from src.application.workflows.extraction.table_payload.specification_matrix_payload_builder import (
     SpecificationMatrixPayloadBuilder,
 )
-from src.application.workflows.extraction.batching.table_payload.troubleshooting_table_payload_builder import (
+from src.application.workflows.extraction.table_payload.troubleshooting_table_payload_builder import (
     TroubleshootingTablePayloadBuilder,
 )
 from src.application.workflows.shared.parallel_table_stream_view_resolver import (

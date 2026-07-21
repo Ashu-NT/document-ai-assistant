@@ -12,7 +12,7 @@ from src.application.reporting.agent_eval.renderers.agent_eval_report_markdown_r
 )
 
 if TYPE_CHECKING:
-    from src.application.langgraph.evaluation.agent_eval_result import AgentEvalReport
+    from src.application.langgraph.evaluation.models.agent_eval_result import AgentEvalReport
 
 
 class AgentEvalReportWriter:

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from src.shared.text.text_preview import preview_text
 
 if TYPE_CHECKING:
-    from src.application.langgraph.evaluation.agent_eval_result import AgentCaseResult
+    from src.application.langgraph.evaluation.models.agent_eval_result import AgentCaseResult
 
 
 class AgentEvalCaseMarkdownRenderer:

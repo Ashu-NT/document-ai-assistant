@@ -1,7 +1,7 @@
 from src.application.workflows.question_answering.question_answering_route import (
     QuestionAnsweringRoute,
 )
-from src.application.workflows.retrieval.retrieval_query_analyzer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_analyzer import (
     RetrievalQueryAnalyzer,
 )
 from src.application.workflows.retrieval.retrieval_query_intent import (

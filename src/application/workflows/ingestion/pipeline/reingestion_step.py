@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from src.application.services.document import DocumentLookupService
-from src.application.workflows.ingestion.ingestion_exceptions import (
+from src.application.workflows.ingestion.models.ingestion_exceptions import (
     DocumentNotFoundForReingestionError,
     ReingestionNotSupportedError,
 )
-from src.application.workflows.ingestion.ingestion_request import IngestionRequest
-from src.application.workflows.ingestion.reingestion_request import ReingestionRequest
+from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
+from src.application.workflows.ingestion.models.reingestion_request import ReingestionRequest
 from src.shared.activity import ActivityContext
 
 

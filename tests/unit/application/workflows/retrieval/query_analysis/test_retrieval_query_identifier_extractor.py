@@ -1,4 +1,4 @@
-from src.application.workflows.retrieval.retrieval_query_identifier_extractor import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_identifier_extractor import (
     RetrievalQueryIdentifierExtractor,
 )
 

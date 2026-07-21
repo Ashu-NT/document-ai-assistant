@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Sequence
 
-from src.application.services.answer_generation.formatting.spare_parts_row_fields import (
+from src.application.services.answer_generation.formatting.spare_parts.row_parsers.spare_parts_row_fields import (
     CONTENT_FIELDS,
     ROW_FIELD_ALIASES,
     has_identifying_content,

@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from src.application.workflows.ingestion.ingestion_stage import IngestionStage
-from src.application.workflows.ingestion.ingestion_status import IngestionStatus
+from src.application.workflows.ingestion.models.ingestion_stage import IngestionStage
+from src.application.workflows.ingestion.models.ingestion_status import IngestionStatus
 
 
 @dataclass(slots=True)

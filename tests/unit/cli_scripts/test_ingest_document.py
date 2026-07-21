@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
-from src.application.workflows.ingestion.ingestion_result import IngestionResult
-from src.application.workflows.ingestion.ingestion_status import IngestionStatus
+from src.application.workflows.ingestion.models.ingestion_result import IngestionResult
+from src.application.workflows.ingestion.models.ingestion_status import IngestionStatus
 from src.shared.exceptions import ApplicationError
 
 _SCRIPTS_DIR = Path(__file__).resolve().parents[3] / "scripts"

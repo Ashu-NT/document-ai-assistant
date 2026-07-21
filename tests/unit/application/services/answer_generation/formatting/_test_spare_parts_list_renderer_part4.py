@@ -1,6 +1,6 @@
 import json
 
-from src.application.services.answer_generation.formatting.spare_parts_list_renderer import (
+from src.application.services.answer_generation.formatting.spare_parts.spare_parts_list_renderer import (
     SparePartsListRenderer,
 )
 from src.application.services.answer_generation.intent.answer_intent import (

@@ -1,6 +1,6 @@
 from src.application.services.answer_generation import AnswerFormatPolicy, AnswerIntent
 
-from src.application.services.answer_generation.formatting.answer_format_policy import (
+from src.application.services.answer_generation.formatting.policy.answer_format_policy import (
     _DIRECT_MAINTENANCE_RECORDS_INSTRUCTION,
     _ENTITY_GRAPH_AVAILABLE_INSTRUCTION,
     _EXACT_IDENTIFIER_ROWS_INSTRUCTION,

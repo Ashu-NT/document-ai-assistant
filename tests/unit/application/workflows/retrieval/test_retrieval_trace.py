@@ -14,7 +14,7 @@ from src.application.workflows.retrieval.tracing.retrieval_trace_recorder import
 from src.application.workflows.retrieval.tracing.retrieval_trace_writer import (
     RetrievalTraceWriter,
 )
-from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
 

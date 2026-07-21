@@ -9,7 +9,7 @@ from src.application.langgraph.common.value_coercion import (
     optional_float,
     optional_str,
 )
-from src.application.langgraph.evaluation.agent_test_case import (
+from src.application.langgraph.evaluation.models.agent_test_case import (
     AgentExpectedBehavior,
     AgentTestCase,
     AgentTurnInput,

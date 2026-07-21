@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from src.application.langgraph.evaluation.agent_eval_result import AgentTurnResult
-from src.application.langgraph.evaluation.agent_test_case import AgentExpectedBehavior
+from src.application.langgraph.evaluation.models.agent_eval_result import AgentTurnResult
+from src.application.langgraph.evaluation.models.agent_test_case import AgentExpectedBehavior
 
 
 def evaluate_tool_policy(

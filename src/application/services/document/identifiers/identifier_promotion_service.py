@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from src.config.logging import get_logger
-from src.application.services.document.identifier_type_normalizer import (
+from src.application.services.document.identifiers.identifier_type_normalizer import (
     IdentifierTypeNormalizer,
 )
 from src.domain.common.enums import IdentifierType

@@ -2,22 +2,22 @@ from __future__ import annotations
 
 import re
 
-from src.application.services.answer_generation.formatting.free_form_position_row_parser import (
+from src.application.services.answer_generation.formatting.spare_parts.row_parsers.free_form_position_row_parser import (
     row_from_free_form_position_line,
 )
-from src.application.services.answer_generation.formatting.pid_tag_row_parser import (
+from src.application.services.answer_generation.formatting.spare_parts.row_parsers.pid_tag_row_parser import (
     row_from_pid_tag_line,
 )
-from src.application.services.answer_generation.formatting.position_pair_row_parser import (
+from src.application.services.answer_generation.formatting.spare_parts.row_parsers.position_pair_row_parser import (
     rows_from_position_pairs,
 )
 from src.application.services.answer_generation.formatting.spare_parts.spare_parts_group import (
     SparePartsGroup,
 )
-from src.application.services.answer_generation.formatting.spare_parts_table_evidence_detector import (
+from src.application.services.answer_generation.formatting.spare_parts.spare_parts_table_evidence_detector import (
     TABLE_EVIDENCE_PHRASE,
 )
-from src.application.services.answer_generation.formatting.structured_grid_row_parser import (
+from src.application.services.answer_generation.formatting.spare_parts.row_parsers.structured_grid_row_parser import (
     HEADER_SEPARATOR_PATTERN,
     rows_from_structured_grid,
     split_cells,

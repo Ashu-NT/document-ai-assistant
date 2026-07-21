@@ -1,4 +1,4 @@
-from src.application.services.answer_generation.formatting.identifier_answer_renderer import (
+from src.application.services.answer_generation.formatting.renderers.identifier_answer_renderer import (
     IdentifierAnswerRenderer,
 )
 

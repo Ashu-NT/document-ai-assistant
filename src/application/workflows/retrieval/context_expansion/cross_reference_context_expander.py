@@ -1,8 +1,8 @@
 from src.application.services.document import DocumentLookupService
-from src.application.workflows.retrieval.context_chunk_converter import (
+from src.application.workflows.retrieval.context_expansion.context_chunk_converter import (
     to_retrieved_chunk,
 )
-from src.application.workflows.retrieval.retrieval_query_intent_inferer import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_intent_inferer import (
     RetrievalQueryIntentInferer,
 )
 from src.domain.document import DocumentGraph

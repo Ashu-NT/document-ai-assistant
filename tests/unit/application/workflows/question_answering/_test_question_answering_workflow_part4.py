@@ -50,7 +50,7 @@ from src.application.services.answer_generation.intent.answer_intent_analyzer im
     AnswerIntentAnalyzer,
 )
 
-from src.application.workflows.retrieval.retrieval_query_chunk_type_preference_mapper import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_chunk_type_preference_mapper import (
     RetrievalQueryChunkTypePreferenceMapper,
 )
 

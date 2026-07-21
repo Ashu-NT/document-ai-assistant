@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.application.services.document.deterministic_identifier_scanner import (
+from src.application.services.document.identifiers.deterministic_identifier_scanner import (
     DeterministicIdentifierScanner,
 )
 from src.domain.common import ChunkType, SourceLocation

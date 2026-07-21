@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from src.application.workflows.ingestion.ingestion_request import IngestionRequest
-from src.application.workflows.ingestion.ingestion_result import IngestionResult
-from src.application.workflows.ingestion.ingestion_stage import IngestionStage
-from src.application.workflows.ingestion.ingestion_status import IngestionStatus
+from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
+from src.application.workflows.ingestion.models.ingestion_result import IngestionResult
+from src.application.workflows.ingestion.models.ingestion_stage import IngestionStage
+from src.application.workflows.ingestion.models.ingestion_status import IngestionStatus
 from src.application.workflows.ingestion.pipeline.sequence import (
     DocumentStructureStageSequence,
     SemanticIndexStageSequence,

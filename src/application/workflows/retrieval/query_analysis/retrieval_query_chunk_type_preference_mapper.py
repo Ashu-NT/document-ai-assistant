@@ -4,7 +4,7 @@ from src.application.workflows.retrieval.intent.retrieval_query_focus_predicates
     requests_maintenance_interval_evidence,
     requests_specification_setting_instructions,
 )
-from src.application.workflows.retrieval.retrieval_query_identifier_extractor import (
+from src.application.workflows.retrieval.query_analysis.retrieval_query_identifier_extractor import (
     RetrievalQueryIdentifierExtractor,
 )
 from src.application.workflows.retrieval.retrieval_query_intent import (

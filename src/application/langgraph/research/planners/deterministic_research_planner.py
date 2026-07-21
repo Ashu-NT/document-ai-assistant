@@ -24,7 +24,7 @@ from src.application.langgraph.research.planners.task_builders.general_task_buil
     build_general_tasks,
 )
 from src.application.langgraph.research.policies import ResearchPolicy
-from src.application.langgraph.strategy_advisor.advisor_models import (
+from src.application.langgraph.strategy_advisor.models.advisor_models import (
     StrategyAdvisorIntent,
     StrategyAdvisorProposal,
 )

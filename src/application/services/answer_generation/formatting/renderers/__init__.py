@@ -4,6 +4,9 @@ from src.application.services.answer_generation.formatting.renderers.determinist
 from src.application.services.answer_generation.formatting.renderers.deterministic_render_result import (
     DeterministicRenderResult,
 )
+from src.application.services.answer_generation.formatting.renderers.identifier_answer_renderer import (
+    IdentifierAnswerRenderer,
+)
 from src.application.services.answer_generation.formatting.renderers.key_value_fact_sheet_renderer import (
     KeyValueFactSheetRenderer,
 )
@@ -20,6 +23,7 @@ from src.application.services.answer_generation.formatting.renderers.troubleshoo
 __all__ = [
     "DeterministicAnswerRendererDispatcher",
     "DeterministicRenderResult",
+    "IdentifierAnswerRenderer",
     "KeyValueFactSheetRenderer",
     "MaintenanceScheduleRenderer",
     "ProcedureStepsRenderer",

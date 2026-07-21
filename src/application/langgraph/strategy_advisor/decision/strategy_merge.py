@@ -4,8 +4,8 @@ from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from src.application.langgraph.routing import RouteDecision, RouteType
-from src.application.langgraph.strategy_advisor.advisor_models import StrategyAdvisorProposal
-from src.application.langgraph.strategy_advisor.strategy_reason_builder import (
+from src.application.langgraph.strategy_advisor.models.advisor_models import StrategyAdvisorProposal
+from src.application.langgraph.strategy_advisor.decision.strategy_reason_builder import (
     StrategyReasonBuilder,
 )
 

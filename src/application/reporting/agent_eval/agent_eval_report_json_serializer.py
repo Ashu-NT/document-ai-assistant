@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from src.application.langgraph.common import serialize_graph_value
 
 if TYPE_CHECKING:
-    from src.application.langgraph.evaluation.agent_eval_result import AgentEvalReport
+    from src.application.langgraph.evaluation.models.agent_eval_result import AgentEvalReport
 
 
 class AgentEvalReportJsonSerializer:
