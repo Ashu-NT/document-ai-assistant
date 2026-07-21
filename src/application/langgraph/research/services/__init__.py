@@ -10,6 +10,9 @@ from src.application.langgraph.research.services.research_json_parser import (
 from src.application.langgraph.research.services.research_state_mapper import (
     ResearchStateMapper,
 )
+from src.application.langgraph.research.services.research_service import (
+    ResearchService,
+)
 
 __all__ = [
     "ResearchContextBuilder",
@@ -18,13 +21,3 @@ __all__ = [
     "ResearchStateMapper",
     "ResearchService",
 ]
-
-
-def __getattr__(name: str):
-    if name == "ResearchService":
-        from src.application.langgraph.research.services.research_service import (
-            ResearchService,
-        )
-
-        return ResearchService
-    raise AttributeError(name)

@@ -180,7 +180,9 @@ class DocumentAgentGraph:
                 from src.application.agent_runtime.streaming.event_stream_adapter import (
                     EventStreamAdapter,
                 )
-                return EventStreamAdapter(event_sink).run(self._compiled_graph, initial_state)
+                return EventStreamAdapter(event_sink).run(
+                    self._compiled_graph, dict(initial_state)
+                )  # type: ignore[return-value]
             return self._compiled_graph.invoke(initial_state)
 
         state: AgentState = dict(initial_state)  # type: ignore[assignment]

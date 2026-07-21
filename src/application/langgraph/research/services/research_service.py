@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.application.langgraph.research.executors.research_executor import (
     ResearchExecutor,
@@ -16,9 +16,6 @@ from src.application.langgraph.research.executors.research_iteration_controller 
 )
 from src.application.langgraph.research.planners.deterministic_research_planner import (
     DeterministicResearchPlanner,
-)
-from src.application.langgraph.research.planners.llm_research_planner import (
-    LLMResearchPlanner,
 )
 from src.application.langgraph.research.planners.research_plan_repair import (
     ResearchPlanRepair,
@@ -56,6 +53,21 @@ from src.application.langgraph.strategy_advisor.advisor_models import (
     StrategyAdvisorProposal,
 )
 from src.shared.exceptions import SchemaValidationError
+
+if TYPE_CHECKING:
+    # Deferred: llm_research_planner.py itself imports
+    # research.services.research_json_parser, which (as a submodule import)
+    # forces Python to first finish executing research/services/__init__.py
+    # -- which imports this file -- before llm_research_planner.py can
+    # finish initializing. A real top-level import here is a genuine
+    # circular import, not just an ordering inconvenience. TYPE_CHECKING is
+    # enough because llm_planner is never constructed by this class (only
+    # accepted as an already-built collaborator) and this file already has
+    # `from __future__ import annotations`, so the annotation below is never
+    # evaluated at runtime.
+    from src.application.langgraph.research.planners.llm_research_planner import (
+        LLMResearchPlanner,
+    )
 
 
 class ResearchService:

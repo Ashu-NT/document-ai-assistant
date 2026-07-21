@@ -1,20 +1,3 @@
-"""Single source of truth for plan-tool naming/argument constants.
-
-``plan_validator.py`` and ``plan_repair.py`` each grew their own copy of the
-tool-arg allow-list, and ``plan_repair.py`` additionally owns the only
-tool-rename map. The allow-lists (``KNOWN_TOOL_ARGS`` below) were identical
-dict literals in both files, so they are merged here verbatim.
-
-The two files' "which tool names are risky" marker lists had drifted apart
-instead: ``plan_validator.py`` used a 5-marker list to decide whether a step
-*looks* mutating (only enforced when the policy disallows mutating tools),
-while ``plan_repair.py`` used a different, 3-marker list to hard-fail
-repair of a *required* step outright (enforced unconditionally). These are
-genuinely different checks with different marker sets, not one drifted copy
-of the other, so both are kept here as distinct, separately named constants
-rather than force-merged into one list.
-"""
-
 from __future__ import annotations
 
 # Tool-arg allow-list, formerly duplicated verbatim as
