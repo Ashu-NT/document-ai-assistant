@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from src.application.langgraph.planning.execution_plan import ExecutionPlan
-from src.application.langgraph.planning.plan_step_factory import (
+from src.application.langgraph.planning.models.execution_plan import ExecutionPlan
+from src.application.langgraph.planning.models.plan_step_factory import (
     build_document_resolution_steps,
     build_execution_plan,
     build_plan_step,

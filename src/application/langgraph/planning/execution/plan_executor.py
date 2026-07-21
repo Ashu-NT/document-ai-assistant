@@ -8,13 +8,13 @@ from src.application.langgraph.common import GraphError
 from src.application.langgraph.common import serialize_graph_value
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.nodes.node_utils import build_error, serialize_tool_result
-from src.application.langgraph.planning.combined_answer_formatter import format_combined_answer
+from src.application.langgraph.planning.execution.combined_answer_formatter import format_combined_answer
 from src.application.langgraph.planning.execution.plan_step_request_builder import (
     build_plan_step_request,
     resolved_document_id,
 )
-from src.application.langgraph.planning.execution_plan import ExecutionPlan
-from src.application.langgraph.planning.plan_step_state_updater import (
+from src.application.langgraph.planning.models.execution_plan import ExecutionPlan
+from src.application.langgraph.planning.execution.plan_step_state_updater import (
     apply_failure_state,
     apply_success_state,
     store_canonical_tool_result,

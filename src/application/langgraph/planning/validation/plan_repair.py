@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from src.application.langgraph.factories.tool_registry import ToolRegistry
-from src.application.langgraph.planning.execution_plan import ExecutionPlan
+from src.application.langgraph.planning.models.execution_plan import ExecutionPlan
 from src.application.langgraph.planning.plan_policy import PlanPolicy
-from src.application.langgraph.planning.plan_step import PlanStep
+from src.application.langgraph.planning.models.plan_step import PlanStep
 from src.application.langgraph.planning.specs.plan_tool_spec import (
     KNOWN_TOOL_ARGS,
     REPAIR_UNSAFE_REQUIRED_STEP_MARKERS,

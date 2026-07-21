@@ -1,27 +1,29 @@
 from __future__ import annotations
 
-from src.application.langgraph.planning.compare_plan_builder import build_compare_plan
-from src.application.langgraph.planning.compound_request_classifier import (
+from src.application.langgraph.planning.deterministic.builders.compare_plan_builder import (
+    build_compare_plan,
+)
+from src.application.langgraph.planning.deterministic.compound_request_classifier import (
     is_compare_request,
     is_explore_and_answer_request,
     is_list_and_find_request,
     is_retrieve_and_answer_request,
     looks_compound,
 )
-from src.application.langgraph.planning.deterministic.identifier_plan_builder import (
+from src.application.langgraph.planning.deterministic.builders.identifier_plan_builder import (
     build_identifier_plan,
     extract_identifier_value,
     has_identifier_term,
 )
-from src.application.langgraph.planning.execution_plan import ExecutionPlan
-from src.application.langgraph.planning.explore_and_retrieve_plan_builders import (
+from src.application.langgraph.planning.models.execution_plan import ExecutionPlan
+from src.application.langgraph.planning.deterministic.builders.explore_and_retrieve_plan_builders import (
     build_explore_and_answer_plan,
     build_retrieve_and_answer_plan,
 )
-from src.application.langgraph.planning.list_and_find_plan_builder import (
+from src.application.langgraph.planning.deterministic.builders.list_and_find_plan_builder import (
     build_list_and_find_plan,
 )
-from src.application.langgraph.planning.structured_entity_plan_builder import (
+from src.application.langgraph.planning.deterministic.builders.structured_entity_plan_builder import (
     build_structured_entity_plan,
     extract_structured_entity_type,
 )

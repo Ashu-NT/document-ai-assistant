@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from src.application.langgraph.planning.plan_step import PlanStep
+from src.application.langgraph.planning.models.plan_step import PlanStep
 
 
 @dataclass(slots=True, frozen=True)

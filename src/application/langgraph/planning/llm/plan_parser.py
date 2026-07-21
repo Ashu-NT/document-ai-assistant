@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from src.application.langgraph.planning.execution_plan import ExecutionPlan
-from src.application.langgraph.planning.plan_response_schema import (
+from src.application.langgraph.planning.models.execution_plan import ExecutionPlan
+from src.application.langgraph.planning.llm.plan_response_schema import (
     PlanResponsePayload,
 )
-from src.application.langgraph.planning.plan_step import PlanStep
+from src.application.langgraph.planning.models.plan_step import PlanStep
 from src.shared.ids import IdGenerator
 from src.shared.llm.json_response import (
     is_json_validation_error,

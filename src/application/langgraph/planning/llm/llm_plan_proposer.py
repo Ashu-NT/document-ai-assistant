@@ -5,7 +5,7 @@ from typing import Any
 
 from src.application.langgraph.factories.tool_registry import ToolRegistry
 from src.application.langgraph.planning.plan_policy import PlanPolicy
-from src.application.langgraph.planning.plan_response_schema import (
+from src.application.langgraph.planning.llm.plan_response_schema import (
     build_plan_response_json_schema,
 )
 from src.application.langgraph.routing import RouteDecision
