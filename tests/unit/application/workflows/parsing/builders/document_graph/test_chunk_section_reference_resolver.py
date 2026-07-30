@@ -1,7 +1,7 @@
-from src.application.workflows.parsing.builders.document_graph.chunk_section_number_index import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_section_number_index import (
     ChunkSectionNumberIndex,
 )
-from src.application.workflows.parsing.builders.document_graph.chunk_section_reference_resolver import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_section_reference_resolver import (
     ChunkSectionReferenceResolver,
 )
 from src.domain.common import ChunkType, SourceLocation

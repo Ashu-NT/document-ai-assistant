@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.document_graph.chunk_cross_reference_linker import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_cross_reference_linker import (
     ChunkCrossReferenceLinker,
 )
 from src.domain.assets import TableAsset

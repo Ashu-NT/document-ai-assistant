@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.document_graph.asset_metadata_synchronizer import (
+from src.application.workflows.parsing.builders.document_graph.parsed_assets.asset_metadata_synchronizer import (
     AssetMetadataSynchronizer,
 )
 from src.domain.assets import (

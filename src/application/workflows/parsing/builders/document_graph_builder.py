@@ -7,20 +7,38 @@ from src.application.workflows.parsing.builders.chunking.runtime.chunking_runtim
 from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter_factory import (
     ChunkTokenCounterFactory,
 )
-from src.application.workflows.parsing.builders.document_graph import (
-    AssetMetadataSynchronizer,
-    AssetNearbyTextEnricher,
+from src.application.workflows.parsing.builders.document_graph.chunk_signal_aggregator import (
     ChunkSignalAggregator,
-    DocumentMetadataExtractor,
-    DocumentPersistentMetadataBuilder,
-    GraphChunkBuilder,
-    PageSizeExtractor,
-    ParsedAssetFactory,
-    ParsedElementFactory,
-    SectionBoundaryUpdater,
 )
-from src.application.workflows.parsing.builders.document_graph.chunk_cross_reference_linker import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_cross_reference_linker import (
     ChunkCrossReferenceLinker,
+)
+from src.application.workflows.parsing.builders.document_graph.document_metadata.document_metadata_extractor import (
+    DocumentMetadataExtractor,
+)
+from src.application.workflows.parsing.builders.document_graph.document_metadata.document_persistent_metadata_builder import (
+    DocumentPersistentMetadataBuilder,
+)
+from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (
+    GraphChunkBuilder,
+)
+from src.application.workflows.parsing.builders.document_graph.page_size_extractor import (
+    PageSizeExtractor,
+)
+from src.application.workflows.parsing.builders.document_graph.parsed_assets.asset_metadata_synchronizer import (
+    AssetMetadataSynchronizer,
+)
+from src.application.workflows.parsing.builders.document_graph.parsed_assets.asset_nearby_text_enricher import (
+    AssetNearbyTextEnricher,
+)
+from src.application.workflows.parsing.builders.document_graph.parsed_assets.parsed_asset_factory import (
+    ParsedAssetFactory,
+)
+from src.application.workflows.parsing.builders.document_graph.parsed_assets.parsed_element_factory import (
+    ParsedElementFactory,
+)
+from src.application.workflows.parsing.builders.document_graph.section_boundary_updater import (
+    SectionBoundaryUpdater,
 )
 from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,

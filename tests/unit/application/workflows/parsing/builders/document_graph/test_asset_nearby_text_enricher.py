@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.document_graph.asset_nearby_text_enricher import (
+from src.application.workflows.parsing.builders.document_graph.parsed_assets.asset_nearby_text_enricher import (
     AssetNearbyTextEnricher,
 )
 from src.application.workflows.parsing.builders.chunking.text.tokenization import (

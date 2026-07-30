@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.document_graph.chunk_section_number_index import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_section_number_index import (
     ChunkSectionNumberIndex,
     extract_leading_section_number,
 )

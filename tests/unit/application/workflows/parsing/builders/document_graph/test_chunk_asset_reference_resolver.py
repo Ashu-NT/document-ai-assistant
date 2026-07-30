@@ -1,7 +1,7 @@
-from src.application.workflows.parsing.builders.document_graph.chunk_asset_number_index import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_asset_number_index import (
     ChunkAssetNumberIndex,
 )
-from src.application.workflows.parsing.builders.document_graph.chunk_asset_reference_resolver import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_asset_reference_resolver import (
     ChunkAssetReferenceResolver,
 )
 from src.domain.assets import TableAsset

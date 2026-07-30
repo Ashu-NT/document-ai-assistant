@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.document_graph.parsed_asset_factory import (
+from src.application.workflows.parsing.builders.document_graph.parsed_assets.parsed_asset_factory import (
     ParsedAssetFactory,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement

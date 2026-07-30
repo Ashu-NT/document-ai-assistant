@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from src.application.workflows.parsing.builders.document_graph.chunk_cross_reference_resolver import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_cross_reference_resolver import (
     ResolvedTarget,
 )
-from src.application.workflows.parsing.builders.document_graph.chunk_cross_reference_tie_break import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_cross_reference_tie_break import (
     pick_best_candidate,
 )
-from src.application.workflows.parsing.builders.document_graph.chunk_section_number_index import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_section_number_index import (
     ChunkSectionNumberIndex,
 )
 from src.domain.document.entities import ChunkCrossReferenceResolutionStatus

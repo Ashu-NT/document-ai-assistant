@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.document_graph.source_location_factory import (
+from src.application.workflows.parsing.builders.document_graph.parsed_assets.source_location_factory import (
     SourceLocationFactory,
 )
 from src.application.workflows.parsing.parsed_canonical_element import (

@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.document_graph.chunk_cross_reference_resolver import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_cross_reference_resolver import (
     ChunkCrossReferenceResolver,
 )
 from src.domain.common import ChunkType, SourceLocation

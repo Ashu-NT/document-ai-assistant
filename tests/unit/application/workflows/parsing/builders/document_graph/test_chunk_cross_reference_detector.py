@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.document_graph.chunk_cross_reference_detector import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_cross_reference_detector import (
     ChunkCrossReferenceDetector,
 )
 
