@@ -10,6 +10,7 @@ from src.shared.exceptions.ingestion_exceptions import (
     ChunkingError,
     DocumentNormalizationError,
     DocumentParsingError,
+    DocumentParsingTimeoutError,
     FileHashError,
     IngestionError,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "DatabaseError",
     "DocumentNormalizationError",
     "DocumentParsingError",
+    "DocumentParsingTimeoutError",
     "FileHashError",
     "InfrastructureError",
     "IngestionError",

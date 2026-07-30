@@ -1,7 +1,9 @@
+import threading
+
 import pytest
 
 from src.infrastructure.parsing.docling import DoclingParser
-from src.shared.exceptions import DocumentParsingError
+from src.shared.exceptions import DocumentParsingError, DocumentParsingTimeoutError
 
 
 class FakeConverter:
@@ -15,6 +17,19 @@ class FakeConverter:
         if self.exc is not None:
             raise self.exc
         return self.result
+
+
+class SlowConverter:
+    """Blocks convert() until released, to simulate a hung Docling call."""
+
+    def __init__(self) -> None:
+        self.release = threading.Event()
+        self.started = threading.Event()
+
+    def convert(self, *args, **kwargs):
+        self.started.set()
+        self.release.wait(timeout=5)
+        return object()
 
 
 def test_parse_calls_converter_and_returns_raw_parsed_document() -> None:
@@ -118,4 +133,50 @@ def test_parse_builds_fresh_converter_when_ocr_override_given(monkeypatch) -> No
     assert build_calls == [True]
     assert cached_converter.calls == []
     assert len(override_converter.calls) == 1
+
+
+def test_parse_succeeds_within_timeout_budget() -> None:
+    raw_document = type("FakeRawDocument", (), {"title": "Manual", "num_pages": 1})()
+    conversion_result = type(
+        "FakeConversionResult",
+        (),
+        {"document": raw_document, "pages": [object()]},
+    )()
+    converter = FakeConverter(result=conversion_result)
+    parser = DoclingParser(
+        converter=converter,
+        parser_version="1.2.3",
+        timeout_seconds=5,
+    )
+
+    parsed_document = parser.parse("data/input/pump_manual.pdf")
+
+    assert parsed_document.title == "Manual"
+
+
+def test_parse_raises_timeout_error_when_conversion_hangs() -> None:
+    converter = SlowConverter()
+    parser = DoclingParser(
+        converter=converter,
+        parser_version="1.2.3",
+        timeout_seconds=0.05,
+    )
+
+    with pytest.raises(DocumentParsingTimeoutError):
+        parser.parse("data/input/pump_manual.pdf")
+
+    assert converter.started.wait(timeout=1)
+    converter.release.set()  # let the orphaned worker thread exit cleanly
+
+
+def test_parse_wraps_worker_thread_exceptions_when_timeout_set() -> None:
+    converter = FakeConverter(exc=RuntimeError("docling boom"))
+    parser = DoclingParser(
+        converter=converter,
+        parser_version="1.2.3",
+        timeout_seconds=5,
+    )
+
+    with pytest.raises(DocumentParsingError):
+        parser.parse("data/input/pump_manual.pdf")
 

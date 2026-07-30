@@ -21,7 +21,13 @@ class FakeNormalizer:
     def __init__(self, canonical_elements: list[ParsedCanonicalElement]) -> None:
         self.canonical_elements = canonical_elements
 
-    def normalize(self, raw_parsed_document: RawParsedDocument, document_id: str):
+    def normalize(
+        self,
+        raw_parsed_document: RawParsedDocument,
+        document_id: str,
+        *,
+        skipped_item_errors: list[str] | None = None,
+    ):
         return self.canonical_elements
 
 

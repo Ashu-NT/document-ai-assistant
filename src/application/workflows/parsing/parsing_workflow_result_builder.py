@@ -15,6 +15,7 @@ def build_parsing_workflow_result(
     page_count: int | None,
     ocr_trace=None,
     stage_durations: dict[str, float] | None = None,
+    normalization_item_errors: list[str] | None = None,
 ) -> ParsingWorkflowResult:
     elements = list(document_graph.elements.values())
     orphan_count = sum(1 for e in elements if e.parent_section_id is None)
@@ -38,6 +39,12 @@ def build_parsing_workflow_result(
             warning
             for warning in ocr_trace.warnings
             if warning not in warnings
+        )
+    if normalization_item_errors:
+        warnings.append(
+            f"{len(normalization_item_errors)} element(s) skipped during "
+            "normalization due to per-item errors: "
+            f"{'; '.join(normalization_item_errors[:5])}"
         )
     return ParsingWorkflowResult(
         document_id=document_graph.document.document_id,

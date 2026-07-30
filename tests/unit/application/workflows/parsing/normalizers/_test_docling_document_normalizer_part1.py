@@ -1,10 +1,13 @@
 from types import SimpleNamespace
 
+import pytest
+
 from src.application.workflows.parsing import RawParsedDocument
 
 from src.application.workflows.parsing.normalizers import DoclingDocumentNormalizer
 
 from src.domain.common import ElementType
+from src.shared.exceptions import DocumentNormalizationError
 
 class FakeLabel:
     def __init__(self, value: str) -> None:
@@ -364,6 +367,81 @@ def test_table_markdown_export_runs_once_and_reuses_single_item_traversal() -> N
     assert normalized[0].element_type == ElementType.TABLE
     assert raw_document.iterate_items_calls == 1
     assert table_item.export_to_markdown_calls == 1
+
+def test_normalize_skips_a_single_bad_item_and_keeps_the_rest() -> None:
+    good_item_one = FakeDoclingItem(
+        label="section_header",
+        text="Maintenance",
+        self_ref="#/texts/1",
+        level=1,
+        prov=[FakeProvenance(1)],
+    )
+    poison_item = FakeDoclingItem(
+        label="text",
+        text="poison",
+        self_ref="#/texts/2",
+        prov=[FakeProvenance(1)],
+    )
+    good_item_two = FakeDoclingItem(
+        label="text",
+        text="Replace the filter every 1000 hours.",
+        self_ref="#/texts/3",
+        prov=[FakeProvenance(1)],
+    )
+    raw_document = FakeRawDocument([good_item_one, poison_item, good_item_two])
+    normalizer = DoclingDocumentNormalizer()
+    original_extract_section_title = normalizer.text_resolver.extract_section_title
+
+    def _poison_aware_extract_section_title(element_type, text):
+        if text == "poison":
+            raise RuntimeError("corrupted section title")
+        return original_extract_section_title(element_type, text)
+
+    normalizer.text_resolver.extract_section_title = _poison_aware_extract_section_title
+    errors: list[str] = []
+
+    normalized = normalizer.normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_001",
+        skipped_item_errors=errors,
+    )
+
+    assert [element.text for element in normalized] == [
+        "Maintenance",
+        "Replace the filter every 1000 hours.",
+    ]
+    assert len(errors) == 1
+    assert "item 2" in errors[0]
+    assert "corrupted section title" in errors[0]
+
+
+def test_normalize_raises_when_every_item_fails() -> None:
+    poison_item_one = FakeDoclingItem(
+        label="text",
+        text="poison one",
+        self_ref="#/texts/1",
+        prov=[FakeProvenance(1)],
+    )
+    poison_item_two = FakeDoclingItem(
+        label="text",
+        text="poison two",
+        self_ref="#/texts/2",
+        prov=[FakeProvenance(1)],
+    )
+    raw_document = FakeRawDocument([poison_item_one, poison_item_two])
+    normalizer = DoclingDocumentNormalizer()
+
+    def _always_raise(item):
+        raise RuntimeError("corrupted provenance")
+
+    normalizer.provenance_extractor.extract_pages = _always_raise
+
+    with pytest.raises(DocumentNormalizationError):
+        normalizer.normalize(
+            make_raw_parsed_document(raw_document),
+            "doc_001",
+        )
+
 
 def test_picture_item_collects_caption_refs() -> None:
     caption_item = FakeDoclingItem(

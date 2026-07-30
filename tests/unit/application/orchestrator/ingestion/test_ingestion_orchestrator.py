@@ -51,7 +51,11 @@ def patched(monkeypatch):
     monkeypatch.setattr(
         ingestion_orchestrator,
         "resolve_ingestion_input_limits",
-        lambda: IngestionInputLimits(max_file_size_bytes=4096, max_pdf_pages=12),
+        lambda: IngestionInputLimits(
+            max_file_size_bytes=4096,
+            max_pdf_pages=12,
+            parse_timeout_seconds=600,
+        ),
     )
 
     monkeypatch.setattr(

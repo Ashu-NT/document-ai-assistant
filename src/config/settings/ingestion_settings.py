@@ -12,6 +12,11 @@ class IngestionSettings(AppBaseSettings):
 
     max_pdf_pages: int = Field(alias="MAX_PDF_PAGES")
 
+    parse_timeout_seconds: int = Field(
+        default=600,
+        alias="PARSE_TIMEOUT_SECONDS",
+    )
+
     enable_image_extraction: bool = Field(
         alias="ENABLE_IMAGE_EXTRACTION"
     )

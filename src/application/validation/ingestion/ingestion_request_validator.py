@@ -12,6 +12,15 @@ if TYPE_CHECKING:
     )
 
 _SUPPORTED_INGESTION_EXTENSIONS = frozenset({".pdf"})
+_PDF_MAGIC_BYTES = b"%PDF-"
+
+
+def _has_pdf_signature(path: Path) -> bool:
+    try:
+        with path.open("rb") as handle:
+            return handle.read(len(_PDF_MAGIC_BYTES)) == _PDF_MAGIC_BYTES
+    except OSError:
+        return False
 
 
 class IngestionRequestValidator(Validator["IngestionRequest"]):
@@ -60,6 +69,12 @@ class IngestionRequestValidator(Validator["IngestionRequest"]):
                 "file_path",
                 "Unsupported file extension for ingestion.",
                 "ingestion.file_path.unsupported_extension",
+            )
+        elif not _has_pdf_signature(resolved_path):
+            result.add_issue(
+                "file_path",
+                "File content does not match a PDF signature.",
+                "ingestion.file_path.content_mismatch",
             )
 
         try:

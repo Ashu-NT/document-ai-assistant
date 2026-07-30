@@ -1,3 +1,5 @@
+import threading
+from concurrent.futures import TimeoutError as ConversionTimeoutError
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
@@ -5,7 +7,7 @@ from src.application.workflows.parsing.raw_parsed_document import RawParsedDocum
 from src.infrastructure.parsing.docling.docling_converter_factory import (
     build_docling_converter,
 )
-from src.shared.exceptions import DocumentParsingError
+from src.shared.exceptions import DocumentParsingError, DocumentParsingTimeoutError
 
 
 class DoclingParser:
@@ -15,12 +17,14 @@ class DoclingParser:
         *,
         max_num_pages: int | None = None,
         max_file_size_bytes: int | None = None,
+        timeout_seconds: float | None = None,
         parser_name: str = "docling",
         parser_version: str | None = None,
     ) -> None:
         self.converter = converter or self._build_default_converter()
         self.max_num_pages = max_num_pages
         self.max_file_size_bytes = max_file_size_bytes
+        self.timeout_seconds = timeout_seconds
         self.parser_name = parser_name
         self.parser_version = parser_version or self._resolve_parser_version()
 
@@ -42,7 +46,11 @@ class DoclingParser:
             if self.max_file_size_bytes is not None:
                 conversion_kwargs["max_file_size"] = self.max_file_size_bytes
 
-            conversion_result = converter.convert(file_path, **conversion_kwargs)
+            conversion_result = self._convert_with_timeout(
+                converter,
+                file_path,
+                conversion_kwargs,
+            )
 
             raw_document = getattr(conversion_result, "document", None)
             if raw_document is None:
@@ -65,11 +73,54 @@ class DoclingParser:
             )
         except DocumentParsingError:
             raise
+        except ConversionTimeoutError as exc:
+            raise DocumentParsingTimeoutError(
+                f"Docling conversion exceeded {self.timeout_seconds}s.",
+                details={
+                    "file_path": file_path,
+                    "timeout_seconds": self.timeout_seconds,
+                },
+            ) from exc
         except Exception as exc:
             raise DocumentParsingError(
                 "Failed to parse document with Docling.",
                 details={"file_path": file_path},
             ) from exc
+
+    def _convert_with_timeout(
+        self,
+        converter: Any,
+        file_path: str,
+        conversion_kwargs: dict[str, Any],
+    ) -> Any:
+        if self.timeout_seconds is None:
+            return converter.convert(file_path, **conversion_kwargs)
+
+        # A daemon thread (not ThreadPoolExecutor) is used deliberately: Docling's
+        # convert() is not cancellable, so a hung call leaves an orphaned thread.
+        # ThreadPoolExecutor registers an atexit hook that joins every worker
+        # thread before the process can exit, which would hang shutdown on that
+        # same orphaned call. A plain daemon thread is dropped by the interpreter
+        # instead.
+        outcome: dict[str, Any] = {}
+
+        def _run() -> None:
+            try:
+                outcome["value"] = converter.convert(file_path, **conversion_kwargs)
+            except BaseException as exc:  # re-raised on the calling thread below
+                outcome["error"] = exc
+
+        worker = threading.Thread(target=_run, daemon=True)
+        worker.start()
+        worker.join(timeout=self.timeout_seconds)
+
+        if worker.is_alive():
+            raise ConversionTimeoutError(
+                f"Docling conversion exceeded {self.timeout_seconds}s."
+            )
+        if "error" in outcome:
+            raise outcome["error"]
+        return outcome["value"]
 
     @staticmethod
     def _build_default_converter(*, enable_ocr_override: bool | None = None) -> Any:

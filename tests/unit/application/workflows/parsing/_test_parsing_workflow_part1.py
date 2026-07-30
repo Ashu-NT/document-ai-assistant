@@ -43,6 +43,8 @@ class FakeNormalizer:
         self,
         raw_parsed_document: RawParsedDocument,
         document_id: str,
+        *,
+        skipped_item_errors: list[str] | None = None,
     ) -> list[ParsedCanonicalElement]:
         self.calls.append((raw_parsed_document, document_id))
         return self.canonical_elements

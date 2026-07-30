@@ -2,6 +2,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
+from src.application.contracts.parsing import ParserPort
 from src.application.validation.document import DocumentGraphValidator
 from src.application.workflows.parsing.canonical_element_ocr_enricher import (
     CanonicalElementOCREnricher,
@@ -25,7 +26,6 @@ from src.application.workflows.parsing.parsing_workflow_result_builder import (
 )
 from src.application.workflows.parsing.runtime.parsing_stage_runner import run_stage
 from src.domain.document import DocumentGraph, DocumentHashes
-from src.infrastructure.parsing.docling.docling_parser import DoclingParser
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
 from src.shared.formatting.duration_formatter import format_elapsed_seconds
@@ -36,7 +36,7 @@ from src.shared.progress.progress_emitter import emit_progress
 class ParsingWorkflow:
     def __init__(
         self,
-        parser: DoclingParser,
+        parser: ParserPort,
         normalizer: DoclingDocumentNormalizer,
         document_graph_builder: DocumentGraphBuilder,
         id_generator: IdGenerator,
@@ -103,6 +103,7 @@ class ParsingWorkflow:
             stage_name="docling_conversion",
             stage_durations=stage_durations,
         )
+        normalization_item_errors: list[str] = []
         canonical_elements = run_stage(
             progress_callback=progress_callback,
             start_message="Normalizing Docling output into canonical elements...",
@@ -111,6 +112,7 @@ class ParsingWorkflow:
             operation=lambda: self.normalizer.normalize(
                 raw_parsed_document,
                 resolved_document_id,
+                skipped_item_errors=normalization_item_errors,
             ),
             completion_message_builder=lambda result, elapsed_seconds: (
                 "Canonical normalization completed in "
@@ -227,6 +229,7 @@ class ParsingWorkflow:
             page_count=raw_parsed_document.page_count,
             ocr_trace=ocr_trace,
             stage_durations=stage_durations,
+            normalization_item_errors=normalization_item_errors,
         )
 
         emit_progress(

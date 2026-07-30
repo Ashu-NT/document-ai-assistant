@@ -55,6 +55,7 @@ class _FakeOcrRuntime:
 class _FakeInputLimits:
     max_file_size_bytes: int
     max_pdf_pages: int
+    parse_timeout_seconds: int
 
 
 @dataclass
@@ -82,7 +83,11 @@ def _patch_construction(monkeypatch, *, ocr_runtime: _FakeOcrRuntime) -> None:
     monkeypatch.setattr(
         parsing_runtime_builder,
         "resolve_ingestion_input_limits",
-        lambda: _FakeInputLimits(max_file_size_bytes=2048, max_pdf_pages=12),
+        lambda: _FakeInputLimits(
+            max_file_size_bytes=2048,
+            max_pdf_pages=12,
+            parse_timeout_seconds=600,
+        ),
     )
     monkeypatch.setattr(
         parsing_runtime_builder,
@@ -119,6 +124,7 @@ def test_build_parsing_runtime_wires_parsing_workflow(monkeypatch):
     assert parsing_workflow.parser.kwargs == {
         "max_num_pages": 12,
         "max_file_size_bytes": 2048,
+        "timeout_seconds": 600,
     }
     assert isinstance(parsing_workflow.normalizer, _FakeNormalizer)
     assert isinstance(parsing_workflow.document_graph_validator, _FakeGraphValidator)

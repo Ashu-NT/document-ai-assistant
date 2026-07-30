@@ -52,6 +52,7 @@ def build_parsing_runtime(
         parser=DoclingParser(
             max_num_pages=ingestion_input_limits.max_pdf_pages,
             max_file_size_bytes=ingestion_input_limits.max_file_size_bytes,
+            timeout_seconds=ingestion_input_limits.parse_timeout_seconds,
         ),
         normalizer=DoclingDocumentNormalizer(),
         document_graph_builder=document_graph_builder,
