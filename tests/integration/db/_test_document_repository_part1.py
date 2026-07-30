@@ -126,6 +126,35 @@ def test_document_repository_finds_duplicate_by_content_hash(
 
     assert found_document_id == sample_document.document_id
 
+def test_document_repository_finds_parser_version_by_document_id(
+    db_uow,
+    sample_document_graph,
+    sample_document,
+) -> None:
+    sample_document_graph.document.parser_version = "docling==2.1.0"
+    db_uow.documents.save_document_graph(sample_document_graph)
+    db_uow.commit()
+
+    found_parser_version = db_uow.documents.find_parser_version_by_document_id(
+        sample_document.document_id,
+    )
+
+    assert found_parser_version == "docling==2.1.0"
+
+def test_document_repository_returns_none_parser_version_when_not_set(
+    db_uow,
+    sample_document_graph,
+    sample_document,
+) -> None:
+    db_uow.documents.save_document_graph(sample_document_graph)
+    db_uow.commit()
+
+    found_parser_version = db_uow.documents.find_parser_version_by_document_id(
+        sample_document.document_id,
+    )
+
+    assert found_parser_version is None
+
 def test_document_repository_lists_chunks_by_document(
     db_uow,
     sample_document_graph,

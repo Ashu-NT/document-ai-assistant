@@ -44,6 +44,7 @@ class ParsingWorkflow:
         ocr_policy: ParsingOCRPolicy | None = None,
         canonical_element_ocr_enricher: CanonicalElementOCREnricher | None = None,
         page_ocr_fallback_workflow: PageOCRFallbackWorkflow | None = None,
+        audit_service=None,
     ) -> None:
         self.parser = parser
         self.normalizer = normalizer
@@ -53,12 +54,13 @@ class ParsingWorkflow:
         self.ocr_policy = ocr_policy
         self.canonical_element_ocr_enricher = canonical_element_ocr_enricher
         self.page_ocr_fallback_workflow = page_ocr_fallback_workflow
+        self.audit_service = audit_service
 
     @tracked_action(
         action="parsing.workflow_completed",
         entity_type="document",
         activity=True,
-        audit=False,
+        audit=True,
         event=False,
     )
     def parse(

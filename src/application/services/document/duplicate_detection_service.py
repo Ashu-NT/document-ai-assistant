@@ -61,10 +61,26 @@ class DuplicateDetectionService:
         self,
         content_hash: str,
         activity_context: ActivityContext | None = None,
+        current_parser_version: str | None = None,
     ) -> ActionResult:
         existing_document_id = (
             self.document_repository.find_document_id_by_content_hash(content_hash)
         )
+
+        if existing_document_id is not None and current_parser_version is not None:
+            stored_parser_version = (
+                self.document_repository.find_parser_version_by_document_id(
+                    existing_document_id
+                )
+            )
+            if stored_parser_version != current_parser_version:
+                # The existing document was parsed with a different parser
+                # version than the one running now. Treat this as "not a
+                # duplicate" so the document is reprocessed with the current
+                # parser instead of being silently skipped as stale. This
+                # leaves the old row in place rather than replacing it -
+                # cleanup of stale parses is a separate concern.
+                existing_document_id = None
 
         result = DuplicateDetectionResult(
             is_duplicate=existing_document_id is not None,

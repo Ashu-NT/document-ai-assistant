@@ -49,7 +49,11 @@ def build_parsing_ocr_runtime(
             page_ocr_fallback_workflow=None,
         )
 
-    ocr_service = OCRService(build_ocr_provider())
+    ocr_service = OCRService(
+        build_ocr_provider(),
+        retry_attempts=ocr_settings.retry_attempts,
+        retry_backoff_seconds=ocr_settings.retry_backoff_seconds,
+    )
     canonical_element_ocr_enricher = (
         CanonicalElementOCREnricher(ocr_service)
         if resolved_policy.asset_ocr_enabled

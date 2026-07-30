@@ -19,6 +19,7 @@ class DocumentMapper:
             document_type=document.document_type.value,
             language=document.language,
             source_name=document.source_name,
+            parser_version=document.parser_version,
             metadata_json=json.dumps(document.metadata),
             page_count=document.statistics.page_count,
             created_at=document.audit.created_at,
@@ -38,6 +39,7 @@ class DocumentMapper:
             document_type=DocumentType(orm.document_type),
             language=orm.language,
             source_name=orm.source_name,
+            parser_version=orm.parser_version,
             metadata=json.loads(orm.metadata_json or "{}"),
             statistics=DocumentStatistics(
                 page_count=orm.page_count,

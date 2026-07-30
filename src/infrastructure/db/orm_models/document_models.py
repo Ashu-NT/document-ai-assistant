@@ -34,6 +34,7 @@ class DocumentORM(Base):
     )
     language: Mapped[str | None] = mapped_column(String, nullable=True)
     source_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    parser_version: Mapped[str | None] = mapped_column(String, nullable=True)
     metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 

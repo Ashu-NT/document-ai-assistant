@@ -1,5 +1,39 @@
 from tests.unit.application.workflows.ingestion._test_ingestion_workflow_support import *  # noqa: F401,F403
 
+
+def test_ingestion_workflow_warns_on_low_parse_confidence(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+    monkeypatch,
+) -> None:
+    from src.config.settings import ingestion_settings
+
+    monkeypatch.setattr(ingestion_settings, "low_confidence_parse_threshold", 0.5)
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nmanual")
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        parsing_workflow=FakeParsingWorkflow(
+            sample_document_graph,
+            parse_confidence=0.1,
+        ),
+    )
+
+    result = workflow.run(
+        IngestionRequest(
+            file_path=str(input_file),
+            document_type=DocumentType.MANUAL.value,
+            run_quality_checks=False,
+            requested_by="user_001",
+        )
+    )
+
+    assert any("Low parse confidence" in warning for warning in result.warnings)
+
 def test_ingestion_workflow_persists_run_and_emits_stage_events(
     tmp_path,
     sample_document_graph,

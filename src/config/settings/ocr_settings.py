@@ -89,6 +89,16 @@ class OCRSettings(AppBaseSettings):
         alias="OCR_FAIL_FAST",
     )
 
+    retry_attempts: int = Field(
+        default=2,
+        alias="OCR_RETRY_ATTEMPTS",
+    )
+
+    retry_backoff_seconds: float = Field(
+        default=0.5,
+        alias="OCR_RETRY_BACKOFF_SECONDS",
+    )
+
     paddle_lang: str = Field(
         default="en",
         alias="PADDLE_OCR_LANG",

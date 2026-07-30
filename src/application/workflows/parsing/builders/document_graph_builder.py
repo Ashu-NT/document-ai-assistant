@@ -156,6 +156,7 @@ class DocumentGraphBuilder:
                     language=DocumentMetadataExtractor.extract_language(
                         raw_parsed_document
                     ),
+                    parser_version=raw_parsed_document.parser_version,
                 )
 
                 graph = DocumentGraph(document=document)

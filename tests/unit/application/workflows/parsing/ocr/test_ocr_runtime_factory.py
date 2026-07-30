@@ -107,7 +107,7 @@ def test_build_parsing_ocr_runtime_builds_asset_enricher_when_enabled(
     monkeypatch.setattr(
         ocr_runtime_factory,
         "OCRService",
-        lambda provider: ("ocr_service", provider),
+        lambda provider, **kwargs: ("ocr_service", provider),
     )
     monkeypatch.setattr(
         ocr_runtime_factory,

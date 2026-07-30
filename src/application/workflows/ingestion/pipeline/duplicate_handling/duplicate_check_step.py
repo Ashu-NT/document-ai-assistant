@@ -40,6 +40,7 @@ class DuplicateCheckStep:
         request: IngestionRequest,
         content_hash: str,
         activity_context,
+        current_parser_version: str | None = None,
     ) -> str | None:
         from src.config.settings import duplicate_detection_settings
 
@@ -52,5 +53,6 @@ class DuplicateCheckStep:
         result = self.duplicate_detection_service.check_content_hash(
             content_hash,
             activity_context=activity_context,
+            current_parser_version=current_parser_version,
         )
         return result.payload.get("existing_document_id")

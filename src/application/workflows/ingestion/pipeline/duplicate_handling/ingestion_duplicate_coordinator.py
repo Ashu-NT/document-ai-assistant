@@ -100,11 +100,13 @@ class IngestionDuplicateCoordinator:
         warnings: list[str],
         activity_context,
         event_context: EventContext | None,
+        current_parser_version: str | None = None,
     ) -> IngestionResult | None:
         duplicate_document_id = self.duplicate_check_step.check_content_hash_duplicate(
             request=request,
             content_hash=content_hash,
             activity_context=activity_context,
+            current_parser_version=current_parser_version,
         )
         if duplicate_document_id is None:
             return None

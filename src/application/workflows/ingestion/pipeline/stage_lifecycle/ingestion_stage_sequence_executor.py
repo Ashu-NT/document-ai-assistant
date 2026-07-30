@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
 from src.application.workflows.ingestion.models.ingestion_result import IngestionResult
 from src.application.workflows.ingestion.models.ingestion_stage import IngestionStage
@@ -8,7 +10,10 @@ from src.application.workflows.ingestion.pipeline.stage_lifecycle.sequence impor
     DocumentStructureStageSequence,
     SemanticIndexStageSequence,
 )
+from src.config.settings import ingestion_settings
 from src.domain.common import DocumentType
+
+logger = logging.getLogger(__name__)
 
 
 def _coerce_document_type(value: str | None) -> DocumentType | None:
@@ -122,6 +127,7 @@ class IngestionStageSequenceExecutor:
                 warnings=warnings,
                 activity_context=activity_context,
                 event_context=stage_session.event_context,
+                current_parser_version=parsing_result.document_graph.document.parser_version,
             )
             if duplicate_result is not None:
                 return duplicate_result
@@ -257,5 +263,25 @@ class IngestionStageSequenceExecutor:
             status=ingestion_run.status,
             payload=self.stage_payloads.parsing_completed(parsing_result),
         )
-        warnings.extend(parsing_result.parse_warnings)
+        parsing_stage_warnings = list(parsing_result.parse_warnings)
+        if (
+            parsing_result.parse_confidence is not None
+            and parsing_result.parse_confidence
+            < ingestion_settings.low_confidence_parse_threshold
+        ):
+            parsing_stage_warnings.append(
+                f"Low parse confidence ({parsing_result.parse_confidence:.2f}); "
+                "review this document's extraction quality before relying on it."
+            )
+        if parsing_stage_warnings:
+            logger.warning(
+                "parsing produced warnings",
+                extra={
+                    "document_id": parsing_result.document_id,
+                    "correlation_id": correlation_id,
+                    "parse_confidence": parsing_result.parse_confidence,
+                    "warnings": parsing_stage_warnings,
+                },
+            )
+        warnings.extend(parsing_stage_warnings)
         return parsing_result, next_content_hash

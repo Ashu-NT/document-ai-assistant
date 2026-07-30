@@ -37,3 +37,17 @@ class DocumentDuplicateChecker:
                 "Failed to check document content hash duplicate.",
                 details={"content_hash": content_hash},
             ) from exc
+
+    def find_parser_version_by_document_id(self, document_id: str) -> str | None:
+        try:
+            statement = select(DocumentORM.parser_version).where(
+                DocumentORM.id == document_id,
+            )
+
+            return self.session.execute(statement).scalar_one_or_none()
+
+        except SQLAlchemyError as exc:
+            raise DatabaseError(
+                "Failed to look up document parser version.",
+                details={"document_id": document_id},
+            ) from exc

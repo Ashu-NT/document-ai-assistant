@@ -85,6 +85,7 @@ class FakeDuplicateDetectionService:
         self,
         content_hash: str,
         activity_context=None,
+        current_parser_version=None,
     ) -> ActionResult:
         self.content_hash_calls.append(content_hash)
         return ActionResult(
@@ -92,8 +93,9 @@ class FakeDuplicateDetectionService:
         )
 
 class FakeParsingWorkflow:
-    def __init__(self, graph) -> None:
+    def __init__(self, graph, *, parse_confidence: float | None = None) -> None:
         self.graph = graph
+        self.parse_confidence = parse_confidence
         self.calls = []
 
     def parse(
@@ -139,6 +141,7 @@ class FakeParsingWorkflow:
             picture_count=len(graph.pictures),
             document_graph=graph,
             parse_warnings=["parser warning"],
+            parse_confidence=self.parse_confidence,
         )
 
 class FailingParsingWorkflow:

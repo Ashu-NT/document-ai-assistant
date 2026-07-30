@@ -37,6 +37,9 @@ class SqlAlchemyDocumentRepository(DocumentRepository):
     def find_document_id_by_content_hash(self, content_hash: str) -> str | None:
         return self.duplicate_checker.find_document_id_by_content_hash(content_hash)
 
+    def find_parser_version_by_document_id(self, document_id: str) -> str | None:
+        return self.duplicate_checker.find_parser_version_by_document_id(document_id)
+
     def save_document_graph(self, document_graph: DocumentGraph) -> None:
         self.writer.save_document_graph(document_graph)
 

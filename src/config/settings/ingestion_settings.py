@@ -17,6 +17,11 @@ class IngestionSettings(AppBaseSettings):
         alias="PARSE_TIMEOUT_SECONDS",
     )
 
+    low_confidence_parse_threshold: float = Field(
+        default=0.5,
+        alias="LOW_CONFIDENCE_PARSE_THRESHOLD",
+    )
+
     enable_image_extraction: bool = Field(
         alias="ENABLE_IMAGE_EXTRACTION"
     )

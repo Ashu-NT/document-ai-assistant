@@ -6,6 +6,7 @@ Debug utility for verifying Docling output -> canonical elements -> document gra
 
 Usage:
     python scripts/debug_parse_document.py --input data/input/example.pdf
+    "C:\Users\ashu\Downloads\5230_414698_furuno_rev01\5230 0050 Furuno MAN Ice Radar FICE-100 Installation Manual.pdf"
 """
 
 import argparse

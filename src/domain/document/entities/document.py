@@ -17,6 +17,7 @@ class Document:
     document_type: DocumentType = DocumentType.UNKNOWN
     language: str | None = None
     source_name: str | None = None
+    parser_version: str | None = None
 
     metadata: dict[str, Any] = field(default_factory=dict)
     statistics: DocumentStatistics = field(default_factory=DocumentStatistics)
