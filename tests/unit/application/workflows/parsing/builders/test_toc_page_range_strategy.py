@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.section_hierarchy import (
+from src.application.workflows.parsing.builders.section_hierarchy.strategies.toc_page_range_strategy import (
     TocPageRangeStrategy,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement

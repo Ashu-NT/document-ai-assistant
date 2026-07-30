@@ -1,6 +1,6 @@
 import re
 
-from src.application.workflows.parsing.builders.section_hierarchy.section_hierarchy_strategy import (
+from src.application.workflows.parsing.builders.section_hierarchy.strategies.section_hierarchy_strategy import (
     SectionHierarchyStrategy,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement

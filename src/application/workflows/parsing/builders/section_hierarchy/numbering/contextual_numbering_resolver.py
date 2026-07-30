@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from src.application.workflows.parsing.builders.section_hierarchy.heading_numbering import (
+from src.application.workflows.parsing.builders.section_hierarchy.numbering.heading_numbering import (
     extract_contextual_number,
     extract_heading_number,
     numbering_depth,
     parent_numberings,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.numbering_hierarchy_strategy import (
+from src.application.workflows.parsing.builders.section_hierarchy.strategies.numbering_hierarchy_strategy import (
     NumberingHierarchyStrategy,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.toc_page_range_strategy import (
+from src.application.workflows.parsing.builders.section_hierarchy.strategies.toc_page_range_strategy import (
     TocPageRangeStrategy,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement

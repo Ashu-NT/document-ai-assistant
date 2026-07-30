@@ -1,25 +1,25 @@
 from dataclasses import dataclass, field
 
-from src.application.workflows.parsing.builders.section_hierarchy.contextual_numbering_resolver import (
+from src.application.workflows.parsing.builders.section_hierarchy.numbering.contextual_numbering_resolver import (
     ContextualNumberingResolver,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.heading_level_strategy import (
+from src.application.workflows.parsing.builders.section_hierarchy.strategies.heading_level_strategy import (
     HeadingLevelStrategy,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.heading_numbering import (
+from src.application.workflows.parsing.builders.section_hierarchy.numbering.heading_numbering import (
     extract_heading_number,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.layout_heuristic_strategy import (
+from src.application.workflows.parsing.builders.section_hierarchy.strategies.layout_heuristic_strategy import (
     LayoutHeuristicStrategy,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.numbering_hierarchy_strategy import (
+from src.application.workflows.parsing.builders.section_hierarchy.strategies.numbering_hierarchy_strategy import (
     NumberingHierarchyStrategy,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.section_level_normalizer import (
+from src.application.workflows.parsing.builders.section_hierarchy.numbering.section_level_normalizer import (
     levels_are_weak,
     normalize_levels,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.toc_page_range_strategy import (
+from src.application.workflows.parsing.builders.section_hierarchy.strategies.toc_page_range_strategy import (
     TocPageRangeStrategy,
 )
 from src.application.workflows.parsing.builders.section_hierarchy.toc import (

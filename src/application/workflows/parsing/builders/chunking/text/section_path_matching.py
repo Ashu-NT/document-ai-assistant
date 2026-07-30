@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.builders.chunking.text.section_path_sanitizer import (
     sanitize_section_path,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.heading_numbering import (
+from src.application.workflows.parsing.builders.section_hierarchy.numbering.heading_numbering import (
     strip_heading_number,
 )
 

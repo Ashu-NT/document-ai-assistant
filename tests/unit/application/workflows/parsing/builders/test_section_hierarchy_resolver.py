@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.section_hierarchy import (
+from src.application.workflows.parsing.builders.section_hierarchy.section_hierarchy_resolver import (
     SectionHierarchyResolver,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement

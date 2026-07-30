@@ -1,9 +1,9 @@
-from src.application.workflows.parsing.builders.section_hierarchy.heading_numbering import (
+from src.application.workflows.parsing.builders.section_hierarchy.numbering.heading_numbering import (
     extract_contextual_number,
     extract_heading_number,
     numbering_depth,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.section_hierarchy_strategy import (
+from src.application.workflows.parsing.builders.section_hierarchy.strategies.section_hierarchy_strategy import (
     SectionHierarchyStrategy,
 )
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry import (

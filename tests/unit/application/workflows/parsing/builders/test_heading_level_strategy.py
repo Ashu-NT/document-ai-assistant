@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.section_hierarchy import (
+from src.application.workflows.parsing.builders.section_hierarchy.strategies.heading_level_strategy import (
     HeadingLevelStrategy,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
