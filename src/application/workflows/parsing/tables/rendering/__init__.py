@@ -1,4 +1,14 @@
+from typing import TYPE_CHECKING
+
 __all__ = ["StructuredRowRenderer", "TableAssetStructuredTextRenderer"]
+
+if TYPE_CHECKING:
+    from src.application.workflows.parsing.tables.rendering.structured_row_renderer import (
+        StructuredRowRenderer,
+    )
+    from src.application.workflows.parsing.tables.rendering.table_asset_structured_text_renderer import (
+        TableAssetStructuredTextRenderer,
+    )
 
 
 def __getattr__(name: str):

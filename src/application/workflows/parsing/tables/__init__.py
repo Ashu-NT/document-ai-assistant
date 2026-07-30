@@ -1,9 +1,25 @@
+from typing import TYPE_CHECKING
+
 __all__ = [
     "LogicalTableFamilyAssignment",
     "LogicalTableFamilyResolver",
     "TableSemanticResolver",
     "TableHeaderSignatureBuilder",
 ]
+
+if TYPE_CHECKING:
+    from src.application.workflows.parsing.tables.family_resolution.logical_table_family_assignment import (
+        LogicalTableFamilyAssignment,
+    )
+    from src.application.workflows.parsing.tables.family_resolution.logical_table_family_resolver import (
+        LogicalTableFamilyResolver,
+    )
+    from src.application.workflows.parsing.tables.table_semantic_resolver import (
+        TableSemanticResolver,
+    )
+    from src.application.workflows.parsing.tables.family_resolution.table_header_signature_builder import (
+        TableHeaderSignatureBuilder,
+    )
 
 
 def __getattr__(name: str):

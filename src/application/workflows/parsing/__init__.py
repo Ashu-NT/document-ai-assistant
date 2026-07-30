@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from src.application.workflows.parsing.parsed_canonical_element import (
     ParsedCanonicalElement,
 )
@@ -9,6 +11,12 @@ __all__ = [
     "ParsingWorkflowResult",
     "RawParsedDocument",
 ]
+
+if TYPE_CHECKING:
+    from src.application.workflows.parsing.parsing_workflow import ParsingWorkflow
+    from src.application.workflows.parsing.parsing_workflow_result import (
+        ParsingWorkflowResult,
+    )
 
 
 def __getattr__(name: str):

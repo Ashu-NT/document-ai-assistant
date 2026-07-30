@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 __all__ = [
     "TableHeaderPathBuilder",
     "TableShapeResolver",
@@ -5,6 +7,23 @@ __all__ = [
     "TableStructureSummary",
     "TableStructureSummaryBuilder",
 ]
+
+if TYPE_CHECKING:
+    from src.application.workflows.parsing.tables.structure.table_header_path_builder import (
+        TableHeaderPathBuilder,
+    )
+    from src.application.workflows.parsing.tables.structure.table_shape_resolver import (
+        TableShapeResolver,
+    )
+    from src.application.workflows.parsing.tables.structure.table_structure_context_renderer import (
+        TableStructureContextRenderer,
+    )
+    from src.application.workflows.parsing.tables.structure.table_structure_summary import (
+        TableStructureSummary,
+    )
+    from src.application.workflows.parsing.tables.structure.table_structure_summary_builder import (
+        TableStructureSummaryBuilder,
+    )
 
 
 def __getattr__(name: str):

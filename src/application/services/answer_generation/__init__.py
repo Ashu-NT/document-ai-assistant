@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 __all__ = [
     "AnswerFormatPolicy",
     "AnswerGenerationRequest",
@@ -7,6 +9,27 @@ __all__ = [
     "AnswerIntentDecision",
     "GeneratedAnswer",
 ]
+
+if TYPE_CHECKING:
+    from src.application.services.answer_generation.formatting.policy.answer_format_policy import (
+        AnswerFormatPolicy,
+    )
+    from src.application.services.answer_generation.answer_generation_request import (
+        AnswerGenerationRequest,
+    )
+    from src.application.services.answer_generation.answer_generation_service import (
+        AnswerGenerationService,
+    )
+    from src.application.services.answer_generation.intent.answer_intent import (
+        AnswerIntent,
+    )
+    from src.application.services.answer_generation.intent.answer_intent_analyzer import (
+        AnswerIntentAnalyzer,
+        AnswerIntentDecision,
+    )
+    from src.application.services.answer_generation.answer_generation_result import (
+        GeneratedAnswer,
+    )
 
 
 def __getattr__(name: str):

@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from src.application.workflows.question_answering.answer_context.models import (
     AnswerKeyValue,
     AnswerMaintenanceEntry,
@@ -32,6 +34,23 @@ __all__ = [
     "StructuredFactKeyValueBuilder",
     "StructuredSourceBuilder",
 ]
+
+if TYPE_CHECKING:
+    from src.application.workflows.question_answering.answer_context.answer_context_organizer import (
+        AnswerContextOrganizer,
+    )
+    from src.application.workflows.question_answering.answer_context.maintenance.maintenance_entry_merger import (
+        MaintenanceEntryMerger,
+    )
+    from src.application.workflows.question_answering.answer_context.structured_evidence_view_builder import (
+        StructuredEvidenceViewBuilder,
+    )
+    from src.application.workflows.question_answering.answer_context.structured_fact_key_value_builder import (
+        StructuredFactKeyValueBuilder,
+    )
+    from src.application.workflows.question_answering.answer_context.structured_source_builder import (
+        StructuredSourceBuilder,
+    )
 
 
 def __getattr__(name: str):
