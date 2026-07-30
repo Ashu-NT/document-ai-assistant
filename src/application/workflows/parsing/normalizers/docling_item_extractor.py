@@ -80,6 +80,8 @@ class DoclingItemExtractor:
             return ElementType.FORM
         if "caption" in value:
             return ElementType.CAPTION
+        if "footnote" in value:
+            return ElementType.FOOTNOTE
         if "text" in value or "paragraph" in value:
             return ElementType.TEXT
 

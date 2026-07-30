@@ -207,6 +207,18 @@ class ChunkFragmentBuilder:
                 return None
             chunk_type = self.picture_fragment_builder.picture_chunk_type(text)
             standalone = True
+        elif element.element_type == ElementType.FORMULA:
+            if not self._element_contributes_to_chunk(element):
+                return None
+            text = clean_chunk_text(element.text)
+            chunk_type = ChunkType.FORMULA
+            standalone = True
+        elif element.element_type == ElementType.CODE:
+            if not self._element_contributes_to_chunk(element):
+                return None
+            text = clean_chunk_text(element.text)
+            chunk_type = ChunkType.CODE_BLOCK
+            standalone = True
         else:
             if not self._element_contributes_to_chunk(element):
                 return None

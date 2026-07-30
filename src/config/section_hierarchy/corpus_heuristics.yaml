@@ -1,0 +1,23 @@
+# Corpus-specific vocabulary for section-hierarchy heuristics. These were
+# tuned against the current document corpus -- extend or override this file
+# per deployment when onboarding a new document source with different
+# boilerplate/vocabulary, instead of editing the heuristic code itself.
+
+# Exact-match normalized header text treated as vendor cover-page/branding
+# boilerplate, never a real section heading (SectionHeaderFilter).
+branding_headers:
+  - "environmentally"
+  - "responsible solutions"
+  - "engineered"
+  - "environmentally responsible solutions engineered"
+
+# Single-word headers (e.g. "Controls") that commonly act as an umbrella
+# grouping short headers underneath them (LayoutHeuristicStrategy).
+umbrella_words:
+  - "controls"
+  - "functions"
+  - "loading"
+  - "measurements"
+  - "properties"
+  - "types"
+  - "waveforms"

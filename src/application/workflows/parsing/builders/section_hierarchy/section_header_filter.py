@@ -1,13 +1,10 @@
 import re
 
+from src.application.workflows.parsing.builders.section_hierarchy.corpus_heuristics_config import (
+    branding_headers as load_branding_headers,
+)
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 
-_BRANDING_HEADERS = {
-    "environmentally",
-    "responsible solutions",
-    "engineered",
-    "environmentally responsible solutions engineered",
-}
 _SENTENCE_START_MARKERS = {
     "after",
     "before",
@@ -32,6 +29,11 @@ _TASK_HEADER_RE = re.compile(
 
 
 class SectionHeaderFilter:
+    def __init__(self, *, branding_headers: frozenset[str] | None = None) -> None:
+        self.branding_headers = (
+            branding_headers if branding_headers is not None else load_branding_headers()
+        )
+
     def filter(
         self,
         headers: list[ParsedCanonicalElement],
@@ -49,7 +51,7 @@ class SectionHeaderFilter:
         normalized = self._normalize(text)
         if not normalized:
             return False
-        if normalized in _BRANDING_HEADERS:
+        if normalized in self.branding_headers:
             return False
         if self._looks_like_sentence(normalized, text):
             return False

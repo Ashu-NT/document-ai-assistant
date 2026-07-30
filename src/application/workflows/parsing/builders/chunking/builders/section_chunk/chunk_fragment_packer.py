@@ -250,11 +250,13 @@ class ChunkFragmentPacker:
         """A numbered list (procedure steps) that would otherwise get split
         arbitrarily by the token-budget check below reads far worse than one
         that starts a page early -- so if this fragment begins a new list
-        run, and the whole run fits in one chunk on its own, flush now
-        rather than let the run start here and fracture partway through once
-        the running total overflows. If the run itself is larger than a
-        whole chunk, splitting is unavoidable and this is a no-op -- that
-        remains the accepted, unhandled case for v1."""
+        run and adding the whole run to the current chunk would overflow
+        it, flush now rather than let the run start here glued to unrelated
+        preceding content. This holds whether the run fits in one chunk on
+        its own (avoids fracturing it at all) or is itself larger than a
+        whole chunk (fracturing across multiple chunks is then unavoidable,
+        but the run's own first chunk still starts clean instead of being
+        mixed with whatever came before it)."""
         if not current_fragments:
             return False
 
@@ -265,7 +267,7 @@ class ChunkFragmentPacker:
             return False  # already mid-run; nothing to protect by flushing now
 
         run_total = fragment.list_run_total_tokens
-        if run_total is None or run_total > text_splitter.max_chunk_tokens:
+        if run_total is None:
             return False
 
         current_tokens = ChunkFragmentPacker._fragments_token_count(current_fragments)

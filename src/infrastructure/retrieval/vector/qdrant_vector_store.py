@@ -135,11 +135,17 @@ class QdrantVectorStore(VectorStore):
         if not point_ids:
             return
 
+        self.delete_vector_points(point_ids)
+        self.mapping_repository.delete_document_mappings(document_id)
+
+    def delete_vector_points(self, point_ids: list[str]) -> None:
+        if not point_ids:
+            return
+
         self.client.delete(
             collection_name=self.collection_name,
             points_selector=point_ids,
         )
-        self.mapping_repository.delete_document_mappings(document_id)
 
     def _build_filter(
         self,

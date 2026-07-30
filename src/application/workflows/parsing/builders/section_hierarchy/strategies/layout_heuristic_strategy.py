@@ -1,5 +1,8 @@
 import re
 
+from src.application.workflows.parsing.builders.section_hierarchy.corpus_heuristics_config import (
+    umbrella_words as load_umbrella_words,
+)
 from src.application.workflows.parsing.builders.section_hierarchy.strategies.section_hierarchy_strategy import (
     SectionHierarchyStrategy,
 )
@@ -9,15 +12,11 @@ from src.domain.common import ElementType
 
 class LayoutHeuristicStrategy(SectionHierarchyStrategy):
     name = "layout_heuristic"
-    _UMBRELLA_WORDS = {
-        "controls",
-        "functions",
-        "loading",
-        "measurements",
-        "properties",
-        "types",
-        "waveforms",
-    }
+
+    def __init__(self, *, umbrella_words: frozenset[str] | None = None) -> None:
+        self.umbrella_words = (
+            umbrella_words if umbrella_words is not None else load_umbrella_words()
+        )
 
     def can_apply(
         self,
@@ -134,7 +133,7 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
 
         if (
             candidate_words
-            and candidate_words[-1] in self._UMBRELLA_WORDS
+            and candidate_words[-1] in self.umbrella_words
             and len(candidate_words) == 1
             and len(current_words) <= 4
             and text_between <= 220

@@ -13,6 +13,8 @@ _SPECIAL_CHUNK_TYPES = {
     ChunkType.OVERVIEW,
     ChunkType.DRAWING_REFERENCE,
     ChunkType.SPARE_PARTS_TABLE,
+    ChunkType.FORMULA,
+    ChunkType.CODE_BLOCK,
 }
 _PROCEDURAL_TYPES = {
     ChunkType.MAINTENANCE_PROCEDURE,

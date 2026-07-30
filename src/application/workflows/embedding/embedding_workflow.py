@@ -96,6 +96,9 @@ class EmbeddingWorkflow:
     def delete_document_vectors(self, document_id: str) -> None:
         self.vector_store.delete_document_vectors(document_id)
 
+    def delete_vector_points(self, point_ids: list[str]) -> None:
+        self.vector_store.delete_vector_points(point_ids)
+
     def store_embedded_chunks(
         self,
         embedded_chunks: list[EmbeddedChunk],

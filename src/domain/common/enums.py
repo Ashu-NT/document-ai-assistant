@@ -22,6 +22,7 @@ class ElementType(StrEnum):
     FORM = "form"
     CODE = "code"
     FORMULA = "formula"
+    FOOTNOTE = "footnote"
     UNKNOWN = "unknown"
 
 
@@ -37,6 +38,8 @@ class ChunkType(StrEnum):
     OPERATION_INSTRUCTION = "operation_instruction"
     CERTIFICATION_INFO = "certification_info"
     DRAWING_REFERENCE = "drawing_reference"
+    CODE_BLOCK = "code_block"
+    FORMULA = "formula"
     GENERAL = "general"
     UNKNOWN = "unknown"
 

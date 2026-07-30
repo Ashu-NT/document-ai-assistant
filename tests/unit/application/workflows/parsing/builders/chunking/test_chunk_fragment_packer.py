@@ -119,13 +119,12 @@ def test_list_run_tagging_flushes_before_the_run_instead_of_splitting_it() -> No
     assert groups[1] == ["Step 1.", "Step 2.", "Step 3."]
 
 
-def test_does_not_flush_before_a_list_run_that_would_not_fit_in_one_chunk_anyway() -> (
-    None
-):
-    # The list itself (70 tokens) exceeds max_chunk_tokens (50) -- no
-    # proactive flush can help, splitting remains unavoidable, and the
-    # packer must fall through to its normal overflow handling rather than
-    # flushing pointlessly before every fragment of an oversized run.
+def test_flushes_before_an_oversized_list_run_to_give_it_a_clean_start() -> None:
+    # The list itself (70 tokens) exceeds max_chunk_tokens (50) -- splitting
+    # across multiple chunks is unavoidable, but the run should still start
+    # its own chunk rather than being glued to unrelated preceding content;
+    # it then fractures at the fragment boundary once the running total
+    # overflows, same as any other overflowing content.
     intro = make_fragment(text="Intro paragraph.", token_count=10, order_index=1)
     step_1 = make_fragment(
         text="Step 1.",
@@ -144,9 +143,10 @@ def test_does_not_flush_before_a_list_run_that_would_not_fit_in_one_chunk_anyway
 
     groups = _pack([intro, step_1, step_2])
 
-    assert len(groups) == 2
-    assert groups[0] == ["Intro paragraph.", "Step 1."]
-    assert groups[1] == ["Step 2."]
+    assert len(groups) == 3
+    assert groups[0] == ["Intro paragraph."]
+    assert groups[1] == ["Step 1."]
+    assert groups[2] == ["Step 2."]
 
 
 def test_does_not_flush_mid_run_between_fragments_of_the_same_list() -> None:

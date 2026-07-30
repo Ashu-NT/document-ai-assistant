@@ -47,6 +47,21 @@ class FakeClassificationRepository:
         self.call_log.append(("classifications", document_id))
 
 
+class FakeVectorMappingRepository:
+    def __init__(self, call_log: list, *, point_ids: list[str] | None = None) -> None:
+        self.call_log = call_log
+        self.point_ids = point_ids if point_ids is not None else ["point_1"]
+        self.delete_calls = []
+
+    def list_qdrant_point_ids_by_document(self, document_id: str) -> list[str]:
+        self.call_log.append(("list_vector_mappings", document_id))
+        return self.point_ids
+
+    def delete_document_mappings(self, document_id: str) -> None:
+        self.delete_calls.append(document_id)
+        self.call_log.append(("vector_mappings", document_id))
+
+
 class FakeUnitOfWork:
     def __init__(
         self,
@@ -60,6 +75,7 @@ class FakeUnitOfWork:
         )
         self.extractions = FakeExtractionRepository(self.call_log)
         self.classifications = FakeClassificationRepository(self.call_log)
+        self.vector_mappings = FakeVectorMappingRepository(self.call_log)
         self.commit_count = 0
         self.rollback_count = 0
 
@@ -75,9 +91,9 @@ class FakeVectorStore:
         self.call_log = call_log
         self.delete_calls = []
 
-    def delete_document_vectors(self, document_id: str) -> None:
-        self.delete_calls.append(document_id)
-        self.call_log.append(("vectors", document_id))
+    def delete_vector_points(self, point_ids: list[str]) -> None:
+        self.delete_calls.append(point_ids)
+        self.call_log.append(("vectors", point_ids))
 
 
 def test_delete_document_workflow_raises_when_document_not_found() -> None:
@@ -91,6 +107,7 @@ def test_delete_document_workflow_raises_when_document_not_found() -> None:
     assert unit_of_work.extractions.delete_calls == []
     assert unit_of_work.classifications.delete_calls == []
     assert unit_of_work.documents.delete_calls == []
+    assert unit_of_work.vector_mappings.delete_calls == []
     assert vector_store.delete_calls == []
     assert unit_of_work.commit_count == 0
 
@@ -105,16 +122,22 @@ def test_delete_document_workflow_deletes_all_document_data_in_order() -> None:
     assert unit_of_work.extractions.delete_calls == ["doc_001"]
     assert unit_of_work.classifications.delete_calls == ["doc_001"]
     assert unit_of_work.documents.delete_calls == ["doc_001"]
-    assert vector_store.delete_calls == ["doc_001"]
-    assert unit_of_work.commit_count == 2
+    assert unit_of_work.vector_mappings.delete_calls == ["doc_001"]
+    assert vector_store.delete_calls == [["point_1"]]
+    assert unit_of_work.commit_count == 1
     assert unit_of_work.rollback_count == 0
-    # extraction and classification rows must be gone before the document
-    # row itself, and vectors are cleaned up only after the SQL commit.
+    # Qdrant point IDs are read before anything is deleted (the mapping
+    # rows won't exist to query afterward); vector_mappings is deleted
+    # within the same SQL transaction as everything else, before the
+    # chunks/document rows it references (FK ordering); Qdrant point
+    # deletion itself only happens after that transaction commits.
     assert unit_of_work.call_log == [
+        ("list_vector_mappings", "doc_001"),
+        ("vector_mappings", "doc_001"),
         ("extractions", "doc_001"),
         ("classifications", "doc_001"),
         ("documents", "doc_001"),
-        ("vectors", "doc_001"),
+        ("vectors", ["point_1"]),
     ]
 
 

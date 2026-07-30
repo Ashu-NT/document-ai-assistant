@@ -79,6 +79,10 @@ _CHUNK_TYPE_CANDIDATES: dict[ChunkType, frozenset[ExtractionPromptType]] = {
     # expected to reliably appear here.
     ChunkType.CERTIFICATION_INFO: frozenset(),
     ChunkType.DRAWING_REFERENCE: frozenset(),
+    # Formula/code chunks are unlikely to contain extractable structured
+    # entities beyond an identifier that happens to appear nearby.
+    ChunkType.FORMULA: frozenset(),
+    ChunkType.CODE_BLOCK: frozenset(),
 }
 
 

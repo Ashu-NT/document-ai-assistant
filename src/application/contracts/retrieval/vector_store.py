@@ -13,3 +13,6 @@ class VectorStore(Protocol):
 
     def delete_document_vectors(self, document_id: str) -> None:
         ...
+
+    def delete_vector_points(self, point_ids: list[str]) -> None:
+        ...

@@ -45,6 +45,22 @@ def test_chunk_text_splitter_prefers_sentence_boundaries() -> None:
     ]
 
 
+def test_chunk_text_splitter_prefers_clause_boundaries_over_raw_token_windows() -> None:
+    splitter = ChunkTextSplitter(max_chunk_tokens=6, chunk_overlap=0)
+
+    # One long compound sentence (no sentence-ending punctuation until the
+    # very end), too long to keep whole -- should split before "unless"
+    # rather than mid-clause at an arbitrary token count.
+    result = splitter.split(
+        "Do not open the valve, unless pressure has been fully released."
+    )
+
+    assert result == [
+        "Do not open the valve",
+        "unless pressure has been fully released.",
+    ]
+
+
 def test_chunk_text_splitter_adds_overlap_between_windows() -> None:
     splitter = ChunkTextSplitter(max_chunk_tokens=3, chunk_overlap=1)
 

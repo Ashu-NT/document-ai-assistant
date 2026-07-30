@@ -126,6 +126,24 @@ def test_layout_strategy_does_not_nest_umbrella_child_beyond_text_length_thresho
     assert levels["child"] == 3
 
 
+def test_layout_strategy_uses_injected_umbrella_words_override() -> None:
+    headers = [
+        make_header("root", "Widgets", 1, 1),
+        make_header("child", "Brightness", 2, 1),
+    ]
+    strategy = LayoutHeuristicStrategy(umbrella_words=frozenset({"widgets"}))
+
+    levels = strategy.assign_levels(
+        headers,
+        headers,
+        current_levels={"root": 1, "child": 3},
+    )
+
+    # "widgets" isn't in the default corpus config, but is nested correctly
+    # once injected directly, proving the override is actually used.
+    assert levels["child"] == 2
+
+
 def test_layout_strategy_does_not_overnest_unrelated_roots() -> None:
     headers = [
         make_header("intro", "Introduction", 1, 3),

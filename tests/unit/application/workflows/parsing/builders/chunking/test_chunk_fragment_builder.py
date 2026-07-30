@@ -193,6 +193,54 @@ def make_text_element(
     )
 
 
+def test_build_section_fragments_tags_formula_element_as_standalone_formula_chunk() -> (
+    None
+):
+    builder = make_builder(include_picture_chunks=False)
+    section = _make_section()
+    elements = [
+        make_text_element(
+            element_id="formula_1",
+            text="E = m c^2",
+            element_type=ElementType.FORMULA,
+        ),
+    ]
+
+    fragments = builder.build_section_fragments(
+        document_title="Pump Manual",
+        document_type=None,
+        section=section,
+        elements=elements,
+    )
+
+    assert len(fragments) == 1
+    assert fragments[0].chunk_type == ChunkType.FORMULA
+    assert fragments[0].standalone is True
+
+
+def test_build_section_fragments_tags_code_element_as_standalone_code_chunk() -> None:
+    builder = make_builder(include_picture_chunks=False)
+    section = _make_section()
+    elements = [
+        make_text_element(
+            element_id="code_1",
+            text="def run():\n    return 1",
+            element_type=ElementType.CODE,
+        ),
+    ]
+
+    fragments = builder.build_section_fragments(
+        document_title="Pump Manual",
+        document_type=None,
+        section=section,
+        elements=elements,
+    )
+
+    assert len(fragments) == 1
+    assert fragments[0].chunk_type == ChunkType.CODE_BLOCK
+    assert fragments[0].standalone is True
+
+
 def test_build_section_fragments_tags_a_contiguous_list_run() -> None:
     builder = make_builder(include_picture_chunks=False)
     section = _make_section()

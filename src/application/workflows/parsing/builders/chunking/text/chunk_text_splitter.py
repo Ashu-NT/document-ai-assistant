@@ -76,6 +76,7 @@ class ChunkTextSplitter:
             (self._split_paragraphs, "\n\n"),
             (self._split_lines, "\n"),
             (self._split_sentences, " "),
+            (self._split_clauses, " "),
         ]
 
         if level >= len(splitters):
@@ -143,6 +144,27 @@ class ChunkTextSplitter:
         return [
             part.strip()
             for part in re.split(r"(?<=[.!?])\s+", text)
+            if part.strip()
+        ]
+
+    # Last semantic-boundary attempt before the raw token-window fallback
+    # below, which has no awareness of sentence/clause structure at all.
+    # This only matters for a single sentence long enough on its own to
+    # exceed max_chunk_tokens (long compound safety-warning sentences with
+    # several conditional clauses are the realistic case) -- splitting on
+    # semicolons or before a comma-joined conjunction keeps each piece a
+    # complete clause instead of cutting through the middle of one.
+    _CLAUSE_BOUNDARY_PATTERN = re.compile(
+        r"(?<=[;:])\s+|,\s+(?=(?:and|or|but|nor|unless|if|since|because|"
+        r"when|while|which|that|so)\b)",
+        re.IGNORECASE,
+    )
+
+    @classmethod
+    def _split_clauses(cls, text: str) -> list[str]:
+        return [
+            part.strip()
+            for part in cls._CLAUSE_BOUNDARY_PATTERN.split(text)
             if part.strip()
         ]
 

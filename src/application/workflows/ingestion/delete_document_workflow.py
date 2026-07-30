@@ -42,7 +42,16 @@ class DeleteDocumentWorkflow:
                 details={"document_id": document_id},
             )
 
+        # Captured before the SQL delete: FK constraints are enforced now
+        # (PRAGMA foreign_keys=ON), so the `chunk_vectors` mapping rows must
+        # be gone before `chunks`/`documents` are deleted, which means the
+        # point IDs have to be read first.
+        point_ids = self.unit_of_work.vector_mappings.list_qdrant_point_ids_by_document(
+            document_id
+        )
+
         try:
+            self.unit_of_work.vector_mappings.delete_document_mappings(document_id)
             self.unit_of_work.extractions.delete_by_document(document_id)
             self.unit_of_work.classifications.delete_document_classification(
                 document_id
@@ -53,9 +62,8 @@ class DeleteDocumentWorkflow:
             self.unit_of_work.rollback()
             raise
 
-        # Vector cleanup runs after the SQL transaction commits: SQLite here
-        # has no FK enforcement, so leaving `chunk_vectors` rows momentarily
-        # pointing at a deleted document is safe, and this ordering means a
-        # Qdrant failure never leaves the document half-deleted in SQL.
-        self.vector_store.delete_document_vectors(document_id)
-        self.unit_of_work.commit()
+        # Qdrant cleanup runs after the SQL transaction commits, using the
+        # point IDs captured above (the SQL mapping rows are already gone):
+        # a Qdrant failure here never leaves the document half-deleted in
+        # SQL, only inert orphaned vectors in Qdrant.
+        self.vector_store.delete_vector_points(point_ids)
