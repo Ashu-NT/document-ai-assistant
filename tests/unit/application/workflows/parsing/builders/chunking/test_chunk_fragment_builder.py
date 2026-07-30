@@ -178,6 +178,93 @@ def _make_section():
     )
 
 
+def make_text_element(
+    *,
+    element_id: str,
+    text: str,
+    element_type: ElementType = ElementType.TEXT,
+) -> CanonicalElement:
+    return CanonicalElement(
+        element_id=element_id,
+        document_id="doc_001",
+        element_type=element_type,
+        text=text,
+        source=SourceLocation(page_start=1, page_end=1),
+    )
+
+
+def test_build_section_fragments_tags_a_contiguous_list_run() -> None:
+    builder = make_builder(include_picture_chunks=False)
+    section = _make_section()
+    elements = [
+        make_text_element(element_id="txt_1", text="Do the following:"),
+        make_text_element(
+            element_id="li_1", text="Step 1.", element_type=ElementType.LIST_ITEM
+        ),
+        make_text_element(
+            element_id="li_2", text="Step 2.", element_type=ElementType.LIST_ITEM
+        ),
+        make_text_element(
+            element_id="li_3", text="Step 3.", element_type=ElementType.LIST_ITEM
+        ),
+    ]
+
+    fragments = builder.build_section_fragments(
+        document_title="Pump Manual",
+        document_type=None,
+        section=section,
+        elements=elements,
+    )
+
+    by_element_id = {
+        fragment.element_ids[0]: fragment
+        for fragment in fragments
+        if fragment.element_ids
+    }
+    assert by_element_id["txt_1"].list_run_id is None
+    list_run_id = by_element_id["li_1"].list_run_id
+    assert list_run_id is not None
+    assert by_element_id["li_2"].list_run_id == list_run_id
+    assert by_element_id["li_3"].list_run_id == list_run_id
+
+    expected_total = (
+        by_element_id["li_1"].token_count
+        + by_element_id["li_2"].token_count
+        + by_element_id["li_3"].token_count
+    )
+    assert by_element_id["li_1"].list_run_total_tokens == expected_total
+    assert by_element_id["li_2"].list_run_total_tokens == expected_total
+    assert by_element_id["li_3"].list_run_total_tokens == expected_total
+
+
+def test_build_section_fragments_treats_non_contiguous_lists_as_separate_runs() -> None:
+    builder = make_builder(include_picture_chunks=False)
+    section = _make_section()
+    elements = [
+        make_text_element(
+            element_id="li_1", text="Step 1.", element_type=ElementType.LIST_ITEM
+        ),
+        make_text_element(element_id="txt_1", text="An interruption."),
+        make_text_element(
+            element_id="li_2", text="Step A.", element_type=ElementType.LIST_ITEM
+        ),
+    ]
+
+    fragments = builder.build_section_fragments(
+        document_title="Pump Manual",
+        document_type=None,
+        section=section,
+        elements=elements,
+    )
+
+    by_element_id = {
+        fragment.element_ids[0]: fragment
+        for fragment in fragments
+        if fragment.element_ids
+    }
+    assert by_element_id["li_1"].list_run_id != by_element_id["li_2"].list_run_id
+
+
 def test_table_chunk_type_detects_spare_parts_via_header_row_when_text_markers_miss() -> None:
     builder = make_builder(include_picture_chunks=False)
     # No spaces around pipes -- misses the "| part |" text marker -- and no

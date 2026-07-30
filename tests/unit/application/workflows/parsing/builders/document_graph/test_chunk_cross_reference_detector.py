@@ -130,3 +130,43 @@ def test_rejects_implausible_page_numbers() -> None:
     result = _detector().detect("(→ Page 0)")
 
     assert result.page_references == []
+
+
+def test_detects_see_table_reference() -> None:
+    # Generic English idiom, not corpus-verified against a specific
+    # shipyard document (unlike the page-reference patterns above) -- see
+    # the caveat comment on _TABLE_REFERENCE_PATTERNS.
+    result = _detector().detect("Spare parts are listed in see Table 3 below.")
+
+    assert len(result.table_references) == 1
+    assert result.table_references[0].target_asset_label == "3"
+
+
+def test_detects_table_above_below_reference() -> None:
+    result = _detector().detect("Table 3.2 above lists the recommended torque values.")
+
+    assert len(result.table_references) == 1
+    assert result.table_references[0].target_asset_label == "3.2"
+
+
+def test_detects_see_figure_reference() -> None:
+    result = _detector().detect("The assembly is shown in see Figure 2.")
+
+    assert len(result.figure_references) == 1
+    assert result.figure_references[0].target_asset_label == "2"
+
+
+def test_detects_abbreviated_fig_reference() -> None:
+    result = _detector().detect("Refer to fig. 5 for the wiring diagram.")
+
+    assert len(result.figure_references) == 1
+    assert result.figure_references[0].target_asset_label == "5"
+
+
+def test_does_not_detect_drawing_id_references() -> None:
+    # Deliberately out of scope -- see the caveat comment on
+    # _TABLE_REFERENCE_PATTERNS/_FIGURE_REFERENCE_PATTERNS.
+    result = _detector().detect("See Drawing SK-1044 for dimensions.")
+
+    assert result.table_references == []
+    assert result.figure_references == []

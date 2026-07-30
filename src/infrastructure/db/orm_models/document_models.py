@@ -278,6 +278,7 @@ class ChunkCrossReferenceORM(Base):
     matched_text: Mapped[str] = mapped_column(String, nullable=False)
     target_page: Mapped[int | None] = mapped_column(Integer, nullable=True)
     target_section_label: Mapped[str | None] = mapped_column(String, nullable=True)
+    target_asset_label: Mapped[str | None] = mapped_column(String, nullable=True)
 
     resolution_status: Mapped[str] = mapped_column(
         String, nullable=False, index=True

@@ -108,6 +108,8 @@ class ChunkFragmentBuilder:
         fragments.extend(family_result.fragments)
         consumed_element_ids.update(family_result.consumed_element_ids)
 
+        list_run_id_by_element_id = self._assign_list_run_ids(section, elements)
+
         for index, element in enumerate(elements):
             if element.element_id in consumed_element_ids:
                 continue
@@ -118,9 +120,50 @@ class ChunkFragmentBuilder:
                 element,
             )
             if fragment is not None:
+                fragment.list_run_id = list_run_id_by_element_id.get(element.element_id)
                 fragments.append(fragment)
 
+        self._apply_list_run_totals(fragments)
+
         return sorted(fragments, key=lambda fragment: fragment.order_index)
+
+    @staticmethod
+    def _assign_list_run_ids(
+        section: DocumentSection,
+        elements: list[CanonicalElement],
+    ) -> dict[str, str]:
+        """Groups contiguous LIST_ITEM elements (in reading order) into
+        numbered runs, e.g. the steps of one maintenance procedure."""
+        list_run_id_by_element_id: dict[str, str] = {}
+        run_index = 0
+        in_run = False
+
+        for element in elements:
+            if element.element_type == ElementType.LIST_ITEM:
+                if not in_run:
+                    run_index += 1
+                    in_run = True
+                list_run_id_by_element_id[element.element_id] = (
+                    f"{section.section_id}::list_run_{run_index}"
+                )
+            else:
+                in_run = False
+
+        return list_run_id_by_element_id
+
+    @staticmethod
+    def _apply_list_run_totals(fragments: list[ChunkFragment]) -> None:
+        totals: dict[str, int] = {}
+        for fragment in fragments:
+            if fragment.list_run_id is None:
+                continue
+            totals[fragment.list_run_id] = (
+                totals.get(fragment.list_run_id, 0) + fragment.token_count
+            )
+
+        for fragment in fragments:
+            if fragment.list_run_id is not None:
+                fragment.list_run_total_tokens = totals[fragment.list_run_id]
 
     def _build_fragment_from_element(
         self,

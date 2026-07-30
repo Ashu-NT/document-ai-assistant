@@ -38,6 +38,27 @@ _SECTION_REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bchap\.\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
 )
 
+# Table/figure references: a bare "table N"/"fig. N" trigger, mirroring the
+# bare "chap. N" section pattern above -- the label itself immediately
+# followed by a number is a strong enough signal on its own (no "see"/
+# "refer to" prefix required) to catch phrasing like "see Table 3", "Table
+# 3 above", "Refer to fig. 5", "Fig. 5 shows...". Generic English idioms,
+# not shipyard- or company-specific numbering schemes. Deliberately
+# excludes drawing-ID patterns ("Drawing SK-1044") -- those formats vary a
+# lot between shipyards/companies and guessing one from first principles
+# risks silently wrong matches; that needs real sample documents to
+# validate against before a pattern is added. Resolution (see
+# ChunkAssetReferenceResolver) depends on the source document captioning
+# its tables/figures with a leading number, which cannot be assumed -- an
+# unresolved result here is an expected, non-error outcome, not a
+# detection failure.
+_TABLE_REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"\btable\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
+)
+_FIGURE_REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"\bfig(?:ure)?\.?\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
+)
+
 _MAX_PLAUSIBLE_PAGE = 20_000
 
 
@@ -54,9 +75,17 @@ class DetectedSectionReference:
 
 
 @dataclass(slots=True, frozen=True)
+class DetectedAssetReference:
+    matched_text: str
+    target_asset_label: str
+
+
+@dataclass(slots=True, frozen=True)
 class ChunkReferenceDetectionResult:
     page_references: list[DetectedPageReference]
     section_references: list[DetectedSectionReference]
+    table_references: list[DetectedAssetReference]
+    figure_references: list[DetectedAssetReference]
 
 
 class ChunkCrossReferenceDetector:
@@ -66,15 +95,28 @@ class ChunkCrossReferenceDetector:
 
     def detect(self, content: str) -> ChunkReferenceDetectionResult:
         if not content:
-            return ChunkReferenceDetectionResult(page_references=[], section_references=[])
+            return ChunkReferenceDetectionResult(
+                page_references=[],
+                section_references=[],
+                table_references=[],
+                figure_references=[],
+            )
 
         consumed_spans: list[tuple[int, int]] = []
         page_references = self._detect_page_references(content, consumed_spans)
         section_references = self._detect_section_references(content, consumed_spans)
+        table_references = self._detect_asset_references(
+            content, consumed_spans, _TABLE_REFERENCE_PATTERNS
+        )
+        figure_references = self._detect_asset_references(
+            content, consumed_spans, _FIGURE_REFERENCE_PATTERNS
+        )
 
         return ChunkReferenceDetectionResult(
             page_references=page_references,
             section_references=section_references,
+            table_references=table_references,
+            figure_references=figure_references,
         )
 
     def _detect_page_references(
@@ -124,6 +166,30 @@ class ChunkCrossReferenceDetector:
         return references
 
     @staticmethod
+    def _detect_asset_references(
+        content: str,
+        consumed_spans: list[tuple[int, int]],
+        patterns: tuple[re.Pattern[str], ...],
+    ) -> list[DetectedAssetReference]:
+        references: list[DetectedAssetReference] = []
+
+        for pattern in patterns:
+            for match in pattern.finditer(content):
+                span = match.span()
+                if ChunkCrossReferenceDetector._overlaps_any(span, consumed_spans):
+                    continue
+
+                consumed_spans.append(span)
+                references.append(
+                    DetectedAssetReference(
+                        matched_text=match.group(0).strip(),
+                        target_asset_label=match.group(1),
+                    )
+                )
+
+        return references
+
+    @staticmethod
     def _parse_plausible_page(raw_value: str) -> int | None:
         try:
             page = int(raw_value)
@@ -144,6 +210,7 @@ class ChunkCrossReferenceDetector:
 __all__ = [
     "ChunkCrossReferenceDetector",
     "ChunkReferenceDetectionResult",
+    "DetectedAssetReference",
     "DetectedPageReference",
     "DetectedSectionReference",
 ]

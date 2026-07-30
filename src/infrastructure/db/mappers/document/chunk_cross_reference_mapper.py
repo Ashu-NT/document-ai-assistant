@@ -18,6 +18,7 @@ class ChunkCrossReferenceMapper:
             matched_text=cross_reference.matched_text,
             target_page=cross_reference.target_page,
             target_section_label=cross_reference.target_section_label,
+            target_asset_label=cross_reference.target_asset_label,
             resolution_status=cross_reference.resolution_status.value,
             confidence_score=cross_reference.confidence_score,
             created_at=cross_reference.audit.created_at,
@@ -34,6 +35,7 @@ class ChunkCrossReferenceMapper:
             matched_text=orm.matched_text,
             target_page=orm.target_page,
             target_section_label=orm.target_section_label,
+            target_asset_label=orm.target_asset_label,
             resolution_status=ChunkCrossReferenceResolutionStatus(orm.resolution_status),
             confidence_score=orm.confidence_score,
         )

@@ -34,3 +34,10 @@ class ChunkFragment:
     table_structure_quality: float | None = None
     header_paths: list[list[str]] = field(default_factory=list)
     axis_summary: dict[str, str] = field(default_factory=dict)
+    # Shared id for consecutive LIST_ITEM-derived fragments (a numbered
+    # procedure's steps), and the summed token_count across every fragment
+    # in that run. Lets the packer avoid starting a new chunk partway
+    # through a list when the whole list would fit in one chunk on its own
+    # -- see ChunkFragmentPacker._should_flush_before_list_run.
+    list_run_id: str | None = None
+    list_run_total_tokens: int | None = None

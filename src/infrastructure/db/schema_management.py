@@ -23,6 +23,12 @@ def ensure_database_schema(engine: Engine) -> None:
     )
     _ensure_sqlite_column(
         engine=engine,
+        table_name="chunk_cross_references",
+        column_name="target_asset_label",
+        column_ddl="TEXT",
+    )
+    _ensure_sqlite_column(
+        engine=engine,
         table_name="elements",
         column_name="parser_extra_json",
         column_ddl="TEXT",

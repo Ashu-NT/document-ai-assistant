@@ -93,6 +93,20 @@ class ChunkFragmentPacker:
                 )
                 current_fragments = []
 
+            if self._should_flush_before_list_run(
+                current_fragments=current_fragments,
+                fragment=fragment,
+                text_splitter=text_splitter,
+            ):
+                self._flush_current_fragments(
+                    chunk_payloads=chunk_payloads,
+                    document_title=document_title,
+                    current_fragments=current_fragments,
+                    section_path_lookup=section_path_lookup,
+                    payload_factory=payload_factory,
+                )
+                current_fragments = []
+
             candidate_fragments = [*current_fragments, fragment]
             if self._fragments_token_count(candidate_fragments) <= text_splitter.max_chunk_tokens:
                 current_fragments = candidate_fragments
@@ -225,3 +239,34 @@ class ChunkFragmentPacker:
     @staticmethod
     def _fragments_token_count(fragments: list[ChunkFragment]) -> int:
         return sum(fragment.token_count for fragment in fragments)
+
+    @staticmethod
+    def _should_flush_before_list_run(
+        *,
+        current_fragments: list[ChunkFragment],
+        fragment: ChunkFragment,
+        text_splitter: ChunkTextSplitter,
+    ) -> bool:
+        """A numbered list (procedure steps) that would otherwise get split
+        arbitrarily by the token-budget check below reads far worse than one
+        that starts a page early -- so if this fragment begins a new list
+        run, and the whole run fits in one chunk on its own, flush now
+        rather than let the run start here and fracture partway through once
+        the running total overflows. If the run itself is larger than a
+        whole chunk, splitting is unavoidable and this is a no-op -- that
+        remains the accepted, unhandled case for v1."""
+        if not current_fragments:
+            return False
+
+        if fragment.list_run_id is None:
+            return False
+
+        if fragment.list_run_id == current_fragments[-1].list_run_id:
+            return False  # already mid-run; nothing to protect by flushing now
+
+        run_total = fragment.list_run_total_tokens
+        if run_total is None or run_total > text_splitter.max_chunk_tokens:
+            return False
+
+        current_tokens = ChunkFragmentPacker._fragments_token_count(current_fragments)
+        return current_tokens + run_total > text_splitter.max_chunk_tokens
