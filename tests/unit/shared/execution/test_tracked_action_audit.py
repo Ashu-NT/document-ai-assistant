@@ -28,6 +28,7 @@ class ExampleAuditService:
             entity_id=document_id,
             message="Document deleted.",
             payload={"document_id": document_id},
+            before_state={"document_id": document_id, "title": "Pump Manual"},
         )
 
     @tracked_action(
@@ -65,6 +66,19 @@ def test_tracked_action_records_audit_success() -> None:
     assert record["entity_id"] == "doc_001"
     assert record["outcome"] == AuditOutcome.SUCCESS
     assert record["after_state"]["document_id"] == "doc_001"
+    assert record["before_state"] == {"document_id": "doc_001", "title": "Pump Manual"}
+
+
+def test_tracked_action_records_no_before_state_when_action_result_omits_it() -> None:
+    service = ExampleAuditService()
+
+    service.generate_questions(
+        audit_context=AuditContext(actor_id="user_001"),
+    )
+
+    record = service.audit_service.records[0]
+
+    assert record["before_state"] is None
 
 
 def test_tracked_action_records_audit_failure() -> None:

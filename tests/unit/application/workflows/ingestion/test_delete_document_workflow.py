@@ -1,9 +1,30 @@
+from datetime import datetime, timezone
+
 import pytest
 
+from src.application.contracts.document import DocumentCatalogEntry
 from src.application.workflows.ingestion import (
     DeleteDocumentWorkflow,
     DocumentNotFoundForDeletionError,
 )
+
+
+def _make_document_entry(document_id: str) -> DocumentCatalogEntry:
+    return DocumentCatalogEntry(
+        document_id=document_id,
+        title="Hydraulic Pump Manual",
+        file_name="pump_manual.pdf",
+        file_path="data/input/pump_manual.pdf",
+        document_type="manual",
+        language="en",
+        page_count=42,
+        chunk_count=10,
+        section_count=3,
+        identifier_count=5,
+        table_count=2,
+        picture_count=1,
+        created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    )
 
 
 class FakeDocumentRepository:
@@ -14,7 +35,7 @@ class FakeDocumentRepository:
 
     def get_document_entry(self, document_id: str):
         if document_id == self.existing_document_id:
-            return object()
+            return _make_document_entry(document_id)
         return None
 
     def delete_document(self, document_id: str) -> None:
@@ -117,8 +138,25 @@ def test_delete_document_workflow_deletes_all_document_data_in_order() -> None:
     vector_store = FakeVectorStore(unit_of_work.call_log)
     workflow = DeleteDocumentWorkflow(unit_of_work=unit_of_work, vector_store=vector_store)
 
-    workflow.run("doc_001")
+    result = workflow.run("doc_001")
 
+    assert result.entity_type == "document"
+    assert result.entity_id == "doc_001"
+    assert result.before_state == {
+        "document_id": "doc_001",
+        "title": "Hydraulic Pump Manual",
+        "file_name": "pump_manual.pdf",
+        "file_path": "data/input/pump_manual.pdf",
+        "document_type": "manual",
+        "language": "en",
+        "page_count": 42,
+        "chunk_count": 10,
+        "section_count": 3,
+        "identifier_count": 5,
+        "table_count": 2,
+        "picture_count": 1,
+        "created_at": "2026-01-01T00:00:00+00:00",
+    }
     assert unit_of_work.extractions.delete_calls == ["doc_001"]
     assert unit_of_work.classifications.delete_calls == ["doc_001"]
     assert unit_of_work.documents.delete_calls == ["doc_001"]

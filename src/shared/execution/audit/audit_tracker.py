@@ -32,6 +32,7 @@ class AuditTracker:
             entity_id=action_result.entity_id,
             outcome=AuditOutcome.SUCCESS,
             severity=AuditSeverity.LOW,
+            before_state=action_result.before_state,
             after_state=action_result.payload,
             metadata={"message": action_result.message},
         )
