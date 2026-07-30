@@ -1,7 +1,7 @@
-from src.application.workflows.parsing.normalizers.table_layout.geometric_row_clusterer import (
+from src.application.workflows.parsing.normalizers.table_layout.text_grid.geometric_row_clusterer import (
     GridElement,
 )
-from src.application.workflows.parsing.normalizers.table_layout.orphaned_toc_row_reconstructor import (
+from src.application.workflows.parsing.normalizers.table_layout.text_grid.orphaned_toc_row_reconstructor import (
     OrphanedTocRowReconstructor,
 )
 from src.domain.common import BoundingBox

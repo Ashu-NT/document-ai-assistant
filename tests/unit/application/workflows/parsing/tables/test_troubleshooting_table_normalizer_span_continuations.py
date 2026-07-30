@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.tables.normalization.troubleshooting_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.troubleshooting.troubleshooting_table_normalizer import (
     TroubleshootingTableNormalizer,
 )
 from src.domain.assets.table_cell_span import TableCellSpan

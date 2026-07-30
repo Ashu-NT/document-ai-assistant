@@ -10,13 +10,13 @@ from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     normalize_cell,
 )
 from src.domain.assets.table_cell_span import TableCellSpan
-from src.application.workflows.parsing.tables.normalization.troubleshooting_row_continuation_merger import (
+from src.application.workflows.parsing.tables.normalization.troubleshooting.troubleshooting_row_continuation_merger import (
     TroubleshootingRowContinuationMerger,
 )
-from src.application.workflows.parsing.tables.normalization.troubleshooting_row_continuation_evidence_builder import (
+from src.application.workflows.parsing.tables.normalization.troubleshooting.troubleshooting_row_continuation_evidence_builder import (
     TroubleshootingRowContinuationEvidenceBuilder,
 )
-from src.application.workflows.parsing.tables.normalization.troubleshooting_row_parser import (
+from src.application.workflows.parsing.tables.normalization.troubleshooting.troubleshooting_row_parser import (
     TroubleshootingRowParser,
 )
 

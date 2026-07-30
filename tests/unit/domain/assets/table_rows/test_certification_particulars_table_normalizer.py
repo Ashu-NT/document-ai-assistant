@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.tables.normalization.certification_particulars_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.key_value.certification_particulars_table_normalizer import (
     CertificationParticularsTableNormalizer,
 )
 

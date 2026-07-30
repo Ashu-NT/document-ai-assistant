@@ -3,11 +3,11 @@ from __future__ import annotations
 from collections import defaultdict
 
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
-from src.application.workflows.parsing.normalizers.table_layout.orphaned_toc_row_reconstructor import (
+from src.application.workflows.parsing.normalizers.table_layout.text_grid.orphaned_toc_row_reconstructor import (
     OrphanedTocResult,
     OrphanedTocRowReconstructor,
 )
-from src.application.workflows.parsing.normalizers.table_layout.text_grid_table_detector import (
+from src.application.workflows.parsing.normalizers.table_layout.text_grid.text_grid_table_detector import (
     GridElement,
     TextGridTableDetector,
     TextGridTableResult,

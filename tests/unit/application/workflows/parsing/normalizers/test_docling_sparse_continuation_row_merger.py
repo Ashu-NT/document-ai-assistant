@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.normalizers.docling_sparse_continuation_row_merger import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_sparse_continuation_row_merger import (
     DoclingSparseContinuationRowMerger,
 )
 from src.domain.assets import TableCellSpan

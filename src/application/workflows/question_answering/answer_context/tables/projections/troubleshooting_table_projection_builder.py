@@ -9,7 +9,7 @@ from src.application.workflows.question_answering.answer_context.tables.projecti
 from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
     TableQueryStrategy,
 )
-from src.application.workflows.parsing.tables.normalization.troubleshooting_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.troubleshooting.troubleshooting_table_normalizer import (
     TroubleshootingTableNormalizer,
 )
 

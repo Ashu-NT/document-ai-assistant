@@ -4,7 +4,7 @@ from typing import Any
 from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
     repair_docling_text,
 )
-from src.application.workflows.parsing.normalizers.docling_table_row_grid_builder import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_table_row_grid_builder import (
     DoclingTableRowGridBuilder,
 )
 from src.application.workflows.parsing.normalizers.table_layout.docling_table_cell_candidate_builder import (

@@ -6,7 +6,7 @@ from src.application.workflows.parsing.tables.rows.compact_schedule_matrix_canon
 from src.application.workflows.parsing.tables.rows.normalized_table_rows import (
     NormalizedTableRows,
 )
-from src.application.workflows.parsing.tables.normalization.maintenance_schedule_continuation_row_merger import (
+from src.application.workflows.parsing.tables.normalization.maintenance_schedule.maintenance_schedule_continuation_row_merger import (
     MaintenanceScheduleContinuationRowMerger,
 )
 from src.application.workflows.parsing.tables.rows.table_row_patterns import (

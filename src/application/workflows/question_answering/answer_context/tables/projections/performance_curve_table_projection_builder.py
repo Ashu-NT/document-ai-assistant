@@ -6,7 +6,7 @@ from src.application.workflows.question_answering.answer_context.tables.projecti
 from src.application.workflows.question_answering.answer_context.tables.table_query_strategy import (
     TableQueryStrategy,
 )
-from src.application.workflows.parsing.tables.normalization.performance_curve_matrix_normalizer import (
+from src.application.workflows.parsing.tables.normalization.performance_curve.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
 )
 

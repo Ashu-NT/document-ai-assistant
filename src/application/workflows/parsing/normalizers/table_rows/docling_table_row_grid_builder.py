@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.application.workflows.parsing.normalizers.docling_table_row_repairer import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_table_row_repairer import (
     DoclingTableRowRepairer,
 )
-from src.application.workflows.parsing.normalizers.table_layout.docling_parallel_table_reconstructor import (
+from src.application.workflows.parsing.normalizers.table_layout.parallel_streams.docling_parallel_table_reconstructor import (
     DoclingParallelTableReconstructor,
 )
 from src.application.workflows.parsing.normalizers.table_layout.docling_parallel_toc_reconstructor import (
@@ -14,7 +14,7 @@ from src.application.workflows.parsing.normalizers.table_layout.docling_parallel
 from src.application.workflows.parsing.normalizers.table_layout.docling_table_cell_candidate_builder import (
     DoclingTableCellCandidateBuilder,
 )
-from src.application.workflows.parsing.normalizers.table_layout.docling_table_raw_row_builder import (
+from src.application.workflows.parsing.normalizers.table_layout.parallel_streams.docling_table_raw_row_builder import (
     DoclingTableRawRowBuilder,
 )
 from src.application.workflows.parsing.normalizers.table_layout.table_reconstruction_result import (

@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.normalizers.docling_toc_table_row_reconstructor import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_toc_table_row_reconstructor import (
     DoclingTocTableRowReconstructor,
 )
 

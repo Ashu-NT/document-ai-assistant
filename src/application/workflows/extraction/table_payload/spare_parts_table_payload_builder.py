@@ -4,7 +4,7 @@ from src.application.workflows.extraction.table_payload.table_payload_support im
     TablePayloadSupport,
 )
 from src.domain.assets import TableAsset
-from src.application.workflows.parsing.tables.normalization.spare_parts_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.spare_parts.spare_parts_table_normalizer import (
     SparePartsTableNormalizer,
 )
 

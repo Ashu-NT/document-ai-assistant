@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.normalizers.table_layout.text_grid_table_detector import (
+from src.application.workflows.parsing.normalizers.table_layout.text_grid.text_grid_table_detector import (
     GridElement,
     TextGridTableDetector,
 )

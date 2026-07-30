@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.normalizers.table_layout.parallel_table_stream_clusterer import (
+from src.application.workflows.parsing.normalizers.table_layout.parallel_streams.parallel_table_stream_clusterer import (
     ParallelTableStreamClusterer,
 )
 from src.domain.assets import TableCellSpan

@@ -3,7 +3,7 @@ from typing import Any
 from src.application.workflows.parsing.normalizers.docling_item_extractor import (
     DoclingItemExtractor,
 )
-from src.application.workflows.parsing.normalizers.docling_table_extractor import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_table_extractor import (
     DoclingTableExtractor,
 )
 from src.application.workflows.parsing.normalizers.docling_value_accessors import (

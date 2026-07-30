@@ -1,6 +1,6 @@
 import pytest
 
-from src.application.workflows.parsing.normalizers.docling_table_row_grid_builder import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_table_row_grid_builder import (
     DoclingTableRowGridBuilder,
 )
 from src.shared.exceptions import DocumentNormalizationError

@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.tables.normalization.spare_parts_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.spare_parts.spare_parts_table_normalizer import (
     SparePartsTableNormalizer,
 )
 

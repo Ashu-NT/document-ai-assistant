@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.normalizers.docling_template_duplicate_column_collapser import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_template_duplicate_column_collapser import (
     DoclingTemplateDuplicateColumnCollapser,
 )
 

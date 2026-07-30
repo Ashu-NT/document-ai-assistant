@@ -18,10 +18,10 @@ from src.application.workflows.parsing.normalizers.docling_layout_metadata_build
 from src.application.workflows.parsing.normalizers.docling_provenance_extractor import (
     DoclingProvenanceExtractor,
 )
-from src.application.workflows.parsing.normalizers.docling_table_extractor import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_table_extractor import (
     DoclingTableExtractor,
 )
-from src.application.workflows.parsing.normalizers.table_layout.text_grid_table_fallback_applier import (
+from src.application.workflows.parsing.normalizers.table_layout.text_grid.text_grid_table_fallback_applier import (
     TextGridTableFallbackApplier,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement

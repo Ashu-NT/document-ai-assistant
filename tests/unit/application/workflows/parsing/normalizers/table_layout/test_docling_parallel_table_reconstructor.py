@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.normalizers.table_layout.docling_parallel_table_reconstructor import (
+from src.application.workflows.parsing.normalizers.table_layout.parallel_streams.docling_parallel_table_reconstructor import (
     DoclingParallelTableReconstructor,
 )
 from src.domain.assets import TableCellSpan

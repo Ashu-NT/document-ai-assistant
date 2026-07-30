@@ -10,7 +10,7 @@ from src.application.workflows.parsing.tables.rows.table_row_patterns import (
     normalize_cell,
 )
 from src.application.workflows.shared.table_shape import TableShape
-from src.application.workflows.parsing.tables.normalization.performance_curve_matrix_normalizer import (
+from src.application.workflows.parsing.tables.normalization.performance_curve.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
 )
 

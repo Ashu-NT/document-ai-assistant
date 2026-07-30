@@ -5,28 +5,28 @@ from src.application.workflows.parsing.tables.rows.normalized_table_rows import 
 )
 from src.domain.assets import TableAsset
 from src.domain.assets.table_cell_span import TableCellSpan
-from src.application.workflows.parsing.tables.normalization.certification_particulars_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.key_value.certification_particulars_table_normalizer import (
     CertificationParticularsTableNormalizer,
 )
 from src.application.workflows.parsing.tables.normalization.generic_wrapped_row_table_normalizer import (
     GenericWrappedRowTableNormalizer,
 )
-from src.application.workflows.parsing.tables.normalization.maintenance_schedule_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.maintenance_schedule.maintenance_schedule_table_normalizer import (
     MaintenanceScheduleTableNormalizer,
 )
 from src.application.workflows.parsing.tables.normalization.parallel_stream_row_combiner import (
     ParallelStreamRowCombiner,
 )
-from src.application.workflows.parsing.tables.normalization.performance_curve_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.performance_curve.performance_curve_table_normalizer import (
     PerformanceCurveTableNormalizer,
 )
-from src.application.workflows.parsing.tables.normalization.spare_parts_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.spare_parts.spare_parts_table_normalizer import (
     SparePartsTableNormalizer,
 )
-from src.application.workflows.parsing.tables.normalization.specification_key_value_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.key_value.specification_key_value_table_normalizer import (
     SpecificationKeyValueTableNormalizer,
 )
-from src.application.workflows.parsing.tables.normalization.troubleshooting_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.troubleshooting.troubleshooting_table_normalizer import (
     TroubleshootingTableNormalizer,
 )
 

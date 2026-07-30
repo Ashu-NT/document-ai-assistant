@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.tables.normalization.maintenance_schedule_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.maintenance_schedule.maintenance_schedule_table_normalizer import (
     MaintenanceScheduleTableNormalizer,
 )
 

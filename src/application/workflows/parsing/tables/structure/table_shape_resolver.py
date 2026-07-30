@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.application.workflows.parsing.tables.normalization.performance_curve_matrix_normalizer import (
+from src.application.workflows.parsing.tables.normalization.performance_curve.performance_curve_matrix_normalizer import (
     PerformanceCurveMatrixNormalizer,
 )
 from src.domain.assets import TableAsset

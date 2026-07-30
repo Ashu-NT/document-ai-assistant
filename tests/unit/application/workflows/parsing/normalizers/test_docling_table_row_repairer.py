@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.normalizers.docling_table_row_repairer import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_table_row_repairer import (
     DoclingTableRowRepairer,
 )
 

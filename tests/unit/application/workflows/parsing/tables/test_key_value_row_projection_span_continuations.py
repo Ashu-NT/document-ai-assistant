@@ -1,7 +1,7 @@
-from src.application.workflows.parsing.tables.normalization.key_value_row_projection import (
+from src.application.workflows.parsing.tables.normalization.key_value.key_value_row_projection import (
     project_key_value_rows,
 )
-from src.application.workflows.parsing.tables.normalization.specification_key_value_table_normalizer import (
+from src.application.workflows.parsing.tables.normalization.key_value.specification_key_value_table_normalizer import (
     SpecificationKeyValueTableNormalizer,
 )
 from src.application.workflows.parsing.tables.rows.table_row_canonicalizer import (

@@ -2,22 +2,22 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from src.application.workflows.parsing.normalizers.docling_table_row_repairer import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_table_row_repairer import (
     DoclingTableRowRepairer,
 )
-from src.application.workflows.parsing.normalizers.table_layout.parallel_table_quality_evaluator import (
+from src.application.workflows.parsing.normalizers.table_layout.parallel_streams.parallel_table_quality_evaluator import (
     ParallelTableQualityEvaluator,
 )
-from src.application.workflows.parsing.normalizers.table_layout.parallel_table_stream_clusterer import (
+from src.application.workflows.parsing.normalizers.table_layout.parallel_streams.parallel_table_stream_clusterer import (
     ParallelTableStreamClusterer,
 )
-from src.application.workflows.parsing.normalizers.table_layout.parallel_table_stream_descriptor_builder import (
+from src.application.workflows.parsing.normalizers.table_layout.parallel_streams.parallel_table_stream_descriptor_builder import (
     ParallelTableStreamDescriptorBuilder,
 )
-from src.application.workflows.parsing.normalizers.table_layout.docling_table_raw_row_builder import (
+from src.application.workflows.parsing.normalizers.table_layout.parallel_streams.docling_table_raw_row_builder import (
     DoclingTableRawRowBuilder,
 )
-from src.application.workflows.parsing.normalizers.table_layout.parallel_table_vertical_alignment_checker import (
+from src.application.workflows.parsing.normalizers.table_layout.parallel_streams.parallel_table_vertical_alignment_checker import (
     ParallelTableVerticalAlignmentChecker,
 )
 from src.application.workflows.parsing.normalizers.table_layout.table_reconstruction_result import (

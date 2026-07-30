@@ -3,7 +3,7 @@ from __future__ import annotations
 from src.application.workflows.parsing.tables.rows.normalized_table_rows import (
     NormalizedTableRows,
 )
-from src.application.workflows.parsing.tables.normalization.key_value_continuation_row_merger import (
+from src.application.workflows.parsing.tables.normalization.key_value.key_value_continuation_row_merger import (
     KeyValueContinuationRowMerger,
 )
 from src.application.workflows.parsing.tables.rows.table_row_canonicalizer import (

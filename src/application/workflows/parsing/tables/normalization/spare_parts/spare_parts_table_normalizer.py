@@ -3,7 +3,7 @@ from __future__ import annotations
 from src.application.workflows.parsing.tables.rows.normalized_table_rows import (
     NormalizedTableRows,
 )
-from src.application.workflows.parsing.tables.normalization.spare_parts_normalization_support import (
+from src.application.workflows.parsing.tables.normalization.spare_parts.spare_parts_normalization_support import (
     FIELD_LABELS,
     POSITION_WITH_DOT_PATTERN,
     QUANTITY_PATTERN,

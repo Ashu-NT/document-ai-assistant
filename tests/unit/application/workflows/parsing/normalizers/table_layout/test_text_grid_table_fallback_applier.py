@@ -1,5 +1,5 @@
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
-from src.application.workflows.parsing.normalizers.table_layout.text_grid_table_fallback_applier import (
+from src.application.workflows.parsing.normalizers.table_layout.text_grid.text_grid_table_fallback_applier import (
     TextGridTableFallbackApplier,
 )
 from src.domain.common import BoundingBox, ElementType

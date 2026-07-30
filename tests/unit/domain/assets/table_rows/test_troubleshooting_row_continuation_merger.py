@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.tables.normalization.troubleshooting_row_continuation_merger import (
+from src.application.workflows.parsing.tables.normalization.troubleshooting.troubleshooting_row_continuation_merger import (
     TroubleshootingRowContinuationMerger,
 )
 

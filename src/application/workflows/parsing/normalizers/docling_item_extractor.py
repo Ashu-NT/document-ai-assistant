@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from typing import Any
 
-from src.application.workflows.parsing.normalizers.docling_table_extractor import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_table_extractor import (
     DoclingTableExtractor,
 )
 from src.domain.common import ElementType

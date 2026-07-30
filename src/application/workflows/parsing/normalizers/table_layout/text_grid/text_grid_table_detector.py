@@ -4,7 +4,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Iterable
 
-from src.application.workflows.parsing.normalizers.table_layout.geometric_row_clusterer import (
+from src.application.workflows.parsing.normalizers.table_layout.text_grid.geometric_row_clusterer import (
     GeometricRowClusterer,
     GridElement,
 )

@@ -3,11 +3,11 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from src.application.workflows.parsing.normalizers.docling_toc_table_row_reconstructor import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_toc_table_row_reconstructor import (
     TOC_PAGE_NUMBER_PATTERN,
     DoclingTocTableRowReconstructor,
 )
-from src.application.workflows.parsing.normalizers.table_layout.geometric_row_clusterer import (
+from src.application.workflows.parsing.normalizers.table_layout.text_grid.geometric_row_clusterer import (
     GeometricRowClusterer,
     GridElement,
 )

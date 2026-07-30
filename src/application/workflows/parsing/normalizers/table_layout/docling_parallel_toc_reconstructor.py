@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from src.application.workflows.parsing.normalizers.docling_toc_table_row_reconstructor import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_toc_table_row_reconstructor import (
     TOC_PAGE_NUMBER_PATTERN,
     DoclingTocTableRowReconstructor,
 )
-from src.application.workflows.parsing.normalizers.table_layout.parallel_table_stream_clusterer import (
+from src.application.workflows.parsing.normalizers.table_layout.parallel_streams.parallel_table_stream_clusterer import (
     ParallelTableStreamClusterer,
 )
-from src.application.workflows.parsing.normalizers.table_layout.docling_table_raw_row_builder import (
+from src.application.workflows.parsing.normalizers.table_layout.parallel_streams.docling_table_raw_row_builder import (
     DoclingTableRawRowBuilder,
 )
 from src.domain.assets import TableCellSpan

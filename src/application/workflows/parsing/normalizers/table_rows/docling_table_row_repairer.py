@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-from src.application.workflows.parsing.normalizers.docling_interval_table_row_repairer import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_interval_table_row_repairer import (
     DoclingIntervalTableRowRepairer,
 )
-from src.application.workflows.parsing.normalizers.docling_sparse_continuation_row_merger import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_sparse_continuation_row_merger import (
     DoclingSparseContinuationRowMerger,
 )
-from src.application.workflows.parsing.normalizers.docling_repeated_cell_row_collapser import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_repeated_cell_row_collapser import (
     DoclingRepeatedCellRowCollapser,
 )
-from src.application.workflows.parsing.normalizers.docling_single_column_structured_table_reconstructor import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_single_column_structured_table_reconstructor import (
     DoclingSingleColumnStructuredTableReconstructor,
 )
-from src.application.workflows.parsing.normalizers.docling_template_duplicate_column_collapser import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_template_duplicate_column_collapser import (
     DoclingTemplateDuplicateColumnCollapser,
 )
-from src.application.workflows.parsing.normalizers.docling_toc_table_row_reconstructor import (
+from src.application.workflows.parsing.normalizers.table_rows.docling_toc_table_row_reconstructor import (
     DoclingTocTableRowReconstructor,
 )
 from src.domain.assets import TableCellSpan
