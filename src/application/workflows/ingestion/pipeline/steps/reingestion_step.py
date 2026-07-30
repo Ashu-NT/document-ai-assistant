@@ -48,7 +48,7 @@ class ReingestionStep:
             request.document_id if request.preserve_document_id else None
         )
         return IngestionRequest(
-            file_path=existing_graph.document.file_path,
+            file_path=request.file_path_override or existing_graph.document.file_path,
             document_type=existing_graph.document.document_type.value,
             title=existing_graph.document.title,
             source_name=existing_graph.document.source_name,

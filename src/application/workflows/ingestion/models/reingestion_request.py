@@ -13,3 +13,4 @@ class ReingestionRequest:
     requested_by: str | None = None
     correlation_id: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    file_path_override: str | None = None

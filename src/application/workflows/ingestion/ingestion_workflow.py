@@ -21,6 +21,7 @@ from src.application.workflows.embedding import EmbeddingWorkflow
 from src.application.workflows.extraction import ExtractionWorkflow
 from src.application.workflows.ingestion.models.ingestion_exceptions import (
     IngestionWorkflowError,
+    StaleParserVersionDetected,
 )
 from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
 from src.application.workflows.ingestion.models.ingestion_result import IngestionResult
@@ -181,32 +182,49 @@ class IngestionWorkflow:
         )
 
         current_stage = IngestionStage.DUPLICATE_CHECK
-        duplicate_result = pipeline.duplicate_coordinator.check_file_hash_duplicate(
-            request=request,
-            ingestion_run=ingestion_run,
-            file_name=file_name,
-            file_path=file_path,
-            file_hash=file_hash,
-            correlation_id=correlation_id,
-            warnings=warnings,
-            activity_context=resolved_activity_context,
-            event_context=resolved_event_context,
-            progress_callback=progress_callback,
-        )
-        if duplicate_result is not None:
-            return duplicate_result
-        return pipeline.stage_sequence_executor.run(
-            request=request,
-            file_path=file_path,
-            file_name=file_name,
-            file_hash=file_hash,
-            content_hash=content_hash,
-            correlation_id=correlation_id,
-            ingestion_run=ingestion_run,
-            stage_session=stage_session,
-            activity_context=resolved_activity_context,
-            warnings=warnings,
-        )
+        try:
+            duplicate_result = pipeline.duplicate_coordinator.check_file_hash_duplicate(
+                request=request,
+                ingestion_run=ingestion_run,
+                file_name=file_name,
+                file_path=file_path,
+                file_hash=file_hash,
+                correlation_id=correlation_id,
+                warnings=warnings,
+                activity_context=resolved_activity_context,
+                event_context=resolved_event_context,
+                progress_callback=progress_callback,
+                current_parser_version=self.parsing_workflow.parser.parser_version,
+            )
+            if duplicate_result is not None:
+                return duplicate_result
+            return pipeline.stage_sequence_executor.run(
+                request=request,
+                file_path=file_path,
+                file_name=file_name,
+                file_hash=file_hash,
+                content_hash=content_hash,
+                correlation_id=correlation_id,
+                ingestion_run=ingestion_run,
+                stage_session=stage_session,
+                activity_context=resolved_activity_context,
+                warnings=warnings,
+            )
+        except StaleParserVersionDetected as exc:
+            return self.reingest(
+                ReingestionRequest(
+                    document_id=exc.details["document_id"],
+                    force=True,
+                    preserve_document_id=True,
+                    run_quality_checks=request.run_quality_checks,
+                    requested_by=request.requested_by,
+                    correlation_id=correlation_id,
+                    file_path_override=file_path,
+                ),
+                activity_context=resolved_activity_context,
+                audit_context=audit_context,
+                progress_callback=progress_callback,
+            )
 
     @tracked_action(
         action="document.reingestion.requested",

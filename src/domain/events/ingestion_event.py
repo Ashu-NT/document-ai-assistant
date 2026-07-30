@@ -114,6 +114,30 @@ class IngestionEvent(DomainEvent):
         )
 
     @classmethod
+    def redirected_stale_parser_version(
+        cls,
+        event_id: str,
+        ingestion_run_id: str,
+        *,
+        target_document_id: str,
+        document_id: str | None = None,
+        file_path: str | None = None,
+        file_name: str | None = None,
+    ) -> "IngestionEvent":
+        return cls(
+            event_id=event_id,
+            event_type="ingestion.redirected_stale_parser_version",
+            aggregate_id=document_id or target_document_id,
+            aggregate_type="document",
+            document_id=document_id,
+            ingestion_run_id=ingestion_run_id,
+            status="redirected_stale_parser_version",
+            file_path=file_path,
+            file_name=file_name,
+            payload={"target_document_id": target_document_id},
+        )
+
+    @classmethod
     def completed(
         cls,
         event_id: str,

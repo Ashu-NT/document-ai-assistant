@@ -69,16 +69,26 @@ class FakeDuplicateDetectionService:
         *,
         file_duplicate_document_id: str | None = None,
         content_duplicate_document_id: str | None = None,
+        stale_document_id: str | None = None,
     ) -> None:
         self.file_duplicate_document_id = file_duplicate_document_id
         self.content_duplicate_document_id = content_duplicate_document_id
+        self.stale_document_id = stale_document_id
         self.file_hash_calls = []
         self.content_hash_calls = []
 
-    def check_file_hash(self, file_hash: str, activity_context=None) -> ActionResult:
+    def check_file_hash(
+        self,
+        file_hash: str,
+        activity_context=None,
+        current_parser_version=None,
+    ) -> ActionResult:
         self.file_hash_calls.append(file_hash)
         return ActionResult(
-            payload={"existing_document_id": self.file_duplicate_document_id}
+            payload={
+                "existing_document_id": self.file_duplicate_document_id,
+                "stale_document_id": None,
+            }
         )
 
     def check_content_hash(
@@ -89,13 +99,23 @@ class FakeDuplicateDetectionService:
     ) -> ActionResult:
         self.content_hash_calls.append(content_hash)
         return ActionResult(
-            payload={"existing_document_id": self.content_duplicate_document_id}
+            payload={
+                "existing_document_id": self.content_duplicate_document_id,
+                "stale_document_id": self.stale_document_id,
+            }
         )
 
 class FakeParsingWorkflow:
-    def __init__(self, graph, *, parse_confidence: float | None = None) -> None:
+    def __init__(
+        self,
+        graph,
+        *,
+        parse_confidence: float | None = None,
+        parser_version: str | None = None,
+    ) -> None:
         self.graph = graph
         self.parse_confidence = parse_confidence
+        self.parser = SimpleNamespace(parser_version=parser_version)
         self.calls = []
 
     def parse(
@@ -145,6 +165,9 @@ class FakeParsingWorkflow:
         )
 
 class FailingParsingWorkflow:
+    def __init__(self) -> None:
+        self.parser = SimpleNamespace(parser_version=None)
+
     def parse(
         self,
         *,

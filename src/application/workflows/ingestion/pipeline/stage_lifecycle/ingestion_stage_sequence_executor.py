@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import logging
 
+from src.application.workflows.ingestion.models.ingestion_exceptions import (
+    StaleParserVersionDetected,
+)
 from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
 from src.application.workflows.ingestion.models.ingestion_result import IngestionResult
 from src.application.workflows.ingestion.models.ingestion_stage import IngestionStage
@@ -210,6 +213,11 @@ class IngestionStageSequenceExecutor:
                 event_context=stage_session.event_context,
                 progress_callback=stage_session.progress_callback,
             )
+        except StaleParserVersionDetected:
+            # Not a failure - the ingestion_run was already finalized as
+            # REDIRECTED_STALE_PARSER_VERSION by the duplicate coordinator.
+            # Propagate so IngestionWorkflow.run() can redirect to reingest().
+            raise
         except Exception as exc:
             self.exception_handler.handle(
                 exc,

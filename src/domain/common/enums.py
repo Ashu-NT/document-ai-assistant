@@ -73,3 +73,4 @@ class IngestionStatus(StrEnum):
     FAILED = "failed"
     SKIPPED_FILE_DUPLICATE = "skipped_file_duplicate"
     SKIPPED_CONTENT_DUPLICATE = "skipped_content_duplicate"
+    REDIRECTED_STALE_PARSER_VERSION = "redirected_stale_parser_version"

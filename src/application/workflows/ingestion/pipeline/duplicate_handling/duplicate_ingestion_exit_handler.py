@@ -87,3 +87,32 @@ class DuplicateIngestionExitHandler:
         if duplicate_type == "file_hash":
             return IngestionStatus.SKIPPED_FILE_DUPLICATE
         return IngestionStatus.SKIPPED_CONTENT_DUPLICATE
+
+    def handle_stale_redirect(
+        self,
+        *,
+        ingestion_run: IngestionRun,
+        target_document_id: str,
+        file_name: str,
+        file_path: str,
+        event_context: EventContext | None,
+    ) -> None:
+        """Finalizes the in-flight ingestion_run as redirected (not failed,
+        not a plain skip) before the caller raises StaleParserVersionDetected
+        to hand off to IngestionWorkflow.reingest() for target_document_id.
+        """
+        ingestion_run.status = IngestionStatus.REDIRECTED_STALE_PARSER_VERSION
+        ingestion_run.document_id = target_document_id
+        ingestion_run.finished_at = datetime.now(UTC)
+        self.run_store.update(ingestion_run)
+        self.event_publisher.publish_event(
+            IngestionEvent.redirected_stale_parser_version(
+                event_id=self.id_generator.new_event_id(),
+                ingestion_run_id=ingestion_run.run_id,
+                target_document_id=target_document_id,
+                document_id=target_document_id,
+                file_path=file_path,
+                file_name=file_name,
+            ),
+            event_context=event_context,
+        )

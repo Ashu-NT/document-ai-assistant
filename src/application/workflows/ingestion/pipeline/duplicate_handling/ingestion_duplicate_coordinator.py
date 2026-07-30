@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Callable
 
+from src.application.workflows.ingestion.models.ingestion_exceptions import (
+    StaleParserVersionDetected,
+)
 from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
 from src.application.workflows.ingestion.models.ingestion_result import IngestionResult
 from src.application.workflows.ingestion.models.ingestion_stage import IngestionStage
@@ -38,6 +41,7 @@ class IngestionDuplicateCoordinator:
         activity_context,
         event_context: EventContext | None,
         progress_callback: Callable[[str], None] | None = None,
+        current_parser_version: str | None = None,
     ) -> IngestionResult | None:
         self.event_publisher.publish_stage_started(
             ingestion_run=ingestion_run,
@@ -46,12 +50,21 @@ class IngestionDuplicateCoordinator:
             file_name=file_name,
             progress_callback=progress_callback,
         )
-        duplicate_document_id = self.duplicate_check_step.check_file_hash_duplicate(
+        outcome = self.duplicate_check_step.check_file_hash_duplicate(
             request=request,
             file_hash=file_hash,
             activity_context=activity_context,
+            current_parser_version=current_parser_version,
         )
-        if duplicate_document_id is None:
+        if outcome.stale_document_id is not None:
+            self._redirect_to_reingest(
+                ingestion_run=ingestion_run,
+                stale_document_id=outcome.stale_document_id,
+                file_name=file_name,
+                file_path=file_path,
+                event_context=event_context,
+            )
+        if outcome.duplicate_document_id is None:
             self.event_publisher.publish_stage_completed(
                 ingestion_run=ingestion_run,
                 stage=IngestionStage.DUPLICATE_CHECK,
@@ -74,7 +87,7 @@ class IngestionDuplicateCoordinator:
         return self.duplicate_exit_handler.handle(
             request=request,
             ingestion_run=ingestion_run,
-            duplicate_document_id=duplicate_document_id,
+            duplicate_document_id=outcome.duplicate_document_id,
             duplicate_type="file_hash",
             current_stage=IngestionStage.DUPLICATE_CHECK,
             file_name=file_name,
@@ -102,18 +115,26 @@ class IngestionDuplicateCoordinator:
         event_context: EventContext | None,
         current_parser_version: str | None = None,
     ) -> IngestionResult | None:
-        duplicate_document_id = self.duplicate_check_step.check_content_hash_duplicate(
+        outcome = self.duplicate_check_step.check_content_hash_duplicate(
             request=request,
             content_hash=content_hash,
             activity_context=activity_context,
             current_parser_version=current_parser_version,
         )
-        if duplicate_document_id is None:
+        if outcome.stale_document_id is not None:
+            self._redirect_to_reingest(
+                ingestion_run=ingestion_run,
+                stale_document_id=outcome.stale_document_id,
+                file_name=file_name,
+                file_path=file_path,
+                event_context=event_context,
+            )
+        if outcome.duplicate_document_id is None:
             return None
         return self.duplicate_exit_handler.handle(
             request=request,
             ingestion_run=ingestion_run,
-            duplicate_document_id=duplicate_document_id,
+            duplicate_document_id=outcome.duplicate_document_id,
             duplicate_type="content_hash",
             current_stage=duplicate_stage,
             file_name=file_name,
@@ -123,4 +144,27 @@ class IngestionDuplicateCoordinator:
             correlation_id=correlation_id,
             warnings=warnings,
             event_context=event_context,
+        )
+
+    def _redirect_to_reingest(
+        self,
+        *,
+        ingestion_run: IngestionRun,
+        stale_document_id: str,
+        file_name: str,
+        file_path: str,
+        event_context: EventContext | None,
+    ) -> None:
+        self.duplicate_exit_handler.handle_stale_redirect(
+            ingestion_run=ingestion_run,
+            target_document_id=stale_document_id,
+            file_name=file_name,
+            file_path=file_path,
+            event_context=event_context,
+        )
+        raise StaleParserVersionDetected(
+            "A duplicate hash matches a document parsed with a different "
+            "parser version; redirecting to reingest.",
+            error_code="ingestion.stale_parser_version_detected",
+            details={"document_id": stale_document_id},
         )

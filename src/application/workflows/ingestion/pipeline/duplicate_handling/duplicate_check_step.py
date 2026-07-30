@@ -1,7 +1,15 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from src.application.services.document import DuplicateDetectionService
 from src.application.workflows.ingestion.models.ingestion_request import IngestionRequest
+
+
+@dataclass(frozen=True)
+class DuplicateCheckOutcome:
+    duplicate_document_id: str | None = None
+    stale_document_id: str | None = None
 
 
 class DuplicateCheckStep:
@@ -19,20 +27,25 @@ class DuplicateCheckStep:
         request: IngestionRequest,
         file_hash: str,
         activity_context,
-    ) -> str | None:
+        current_parser_version: str | None = None,
+    ) -> DuplicateCheckOutcome:
         from src.config.settings import duplicate_detection_settings
 
         if request.force:
-            return None
+            return DuplicateCheckOutcome()
 
         if not duplicate_detection_settings.enable_file_hash_check:
-            return None
+            return DuplicateCheckOutcome()
 
         result = self.duplicate_detection_service.check_file_hash(
             file_hash,
             activity_context=activity_context,
+            current_parser_version=current_parser_version,
         )
-        return result.payload.get("existing_document_id")
+        return DuplicateCheckOutcome(
+            duplicate_document_id=result.payload.get("existing_document_id"),
+            stale_document_id=result.payload.get("stale_document_id"),
+        )
 
     def check_content_hash_duplicate(
         self,
@@ -41,18 +54,21 @@ class DuplicateCheckStep:
         content_hash: str,
         activity_context,
         current_parser_version: str | None = None,
-    ) -> str | None:
+    ) -> DuplicateCheckOutcome:
         from src.config.settings import duplicate_detection_settings
 
         if request.force:
-            return None
+            return DuplicateCheckOutcome()
 
         if not duplicate_detection_settings.enable_content_hash_check:
-            return None
+            return DuplicateCheckOutcome()
 
         result = self.duplicate_detection_service.check_content_hash(
             content_hash,
             activity_context=activity_context,
             current_parser_version=current_parser_version,
         )
-        return result.payload.get("existing_document_id")
+        return DuplicateCheckOutcome(
+            duplicate_document_id=result.payload.get("existing_document_id"),
+            stale_document_id=result.payload.get("stale_document_id"),
+        )

@@ -16,6 +16,31 @@ class DuplicateDetectionService:
     def __init__(self, document_repository: DocumentRepository) -> None:
         self.document_repository = document_repository
 
+    def _split_duplicate_from_stale(
+        self,
+        existing_document_id: str | None,
+        current_parser_version: str | None,
+    ) -> tuple[str | None, str | None]:
+        """Returns (duplicate_document_id, stale_document_id).
+
+        A hash match parsed with a different parser version than the one
+        running now is neither a true duplicate (do not skip it) nor a
+        fresh document (do not orphan the stale row) - the caller is
+        expected to redirect it into a reingest of stale_document_id so the
+        stale content is replaced in place.
+        """
+        if existing_document_id is None or current_parser_version is None:
+            return existing_document_id, None
+
+        stored_parser_version = (
+            self.document_repository.find_parser_version_by_document_id(
+                existing_document_id
+            )
+        )
+        if stored_parser_version != current_parser_version:
+            return None, existing_document_id
+        return existing_document_id, None
+
     @tracked_action(
         action="document.duplicate_check",
         entity_type="document",
@@ -27,9 +52,13 @@ class DuplicateDetectionService:
         self,
         file_hash: str,
         activity_context: ActivityContext | None = None,
+        current_parser_version: str | None = None,
     ) -> ActionResult:
         existing_document_id = self.document_repository.find_document_id_by_file_hash(
             file_hash
+        )
+        existing_document_id, stale_document_id = self._split_duplicate_from_stale(
+            existing_document_id, current_parser_version
         )
 
         result = DuplicateDetectionResult(
@@ -46,6 +75,7 @@ class DuplicateDetectionService:
                 "is_duplicate": result.is_duplicate,
                 "duplicate_type": result.duplicate_type,
                 "existing_document_id": result.existing_document_id,
+                "stale_document_id": stale_document_id,
                 "cache_candidate": True,
             },
         )
@@ -66,21 +96,9 @@ class DuplicateDetectionService:
         existing_document_id = (
             self.document_repository.find_document_id_by_content_hash(content_hash)
         )
-
-        if existing_document_id is not None and current_parser_version is not None:
-            stored_parser_version = (
-                self.document_repository.find_parser_version_by_document_id(
-                    existing_document_id
-                )
-            )
-            if stored_parser_version != current_parser_version:
-                # The existing document was parsed with a different parser
-                # version than the one running now. Treat this as "not a
-                # duplicate" so the document is reprocessed with the current
-                # parser instead of being silently skipped as stale. This
-                # leaves the old row in place rather than replacing it -
-                # cleanup of stale parses is a separate concern.
-                existing_document_id = None
+        existing_document_id, stale_document_id = self._split_duplicate_from_stale(
+            existing_document_id, current_parser_version
+        )
 
         result = DuplicateDetectionResult(
             is_duplicate=existing_document_id is not None,
@@ -96,6 +114,7 @@ class DuplicateDetectionService:
                 "is_duplicate": result.is_duplicate,
                 "duplicate_type": result.duplicate_type,
                 "existing_document_id": result.existing_document_id,
+                "stale_document_id": stale_document_id,
                 "cache_candidate": True,
             },
         )

@@ -53,6 +53,56 @@ def test_reingest_replaces_extraction_and_deletes_stale_vectors_for_existing_doc
     assert embedding_workflow.delete_calls == [document_id]
     assert embedding_workflow.store_calls
 
+
+def test_run_redirects_to_reingest_when_content_hash_matches_stale_parser_version(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+) -> None:
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nmanual")
+    existing_graph = copy.deepcopy(sample_document_graph)
+    existing_graph.document.file_path = str(tmp_path / "original_upload.pdf")
+    document_id = existing_graph.document.document_id
+
+    document_lookup_service = FakeDocumentLookupService(existing_graph)
+    document_registration_service = FakeDocumentRegistrationService()
+    extraction_workflow = FakeExtractionWorkflow(sample_extraction_result)
+    embedding_workflow = FakeEmbeddingWorkflow()
+    parsing_workflow = FakeParsingWorkflow(sample_document_graph)
+    duplicate_service = FakeDuplicateDetectionService(stale_document_id=document_id)
+
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        parsing_workflow=parsing_workflow,
+        document_registration_service=document_registration_service,
+        extraction_workflow=extraction_workflow,
+        embedding_workflow=embedding_workflow,
+        document_lookup_service=document_lookup_service,
+        duplicate_service=duplicate_service,
+    )
+
+    result = workflow.run(
+        IngestionRequest(file_path=str(input_file), run_quality_checks=False)
+    )
+
+    # The redirect must land on the existing document's id, not mint a new
+    # one, and must replace its content rather than orphaning it.
+    assert result.status == IngestionStatus.COMPLETE
+    assert result.document_id == document_id
+    assert len(document_registration_service.replace_calls) == 1
+    assert document_registration_service.calls == []
+    assert embedding_workflow.delete_calls == [document_id]
+
+    # The current request's file path must be used for the reparse, not the
+    # existing document's stored path (which may no longer exist on disk in
+    # an ephemeral-upload deployment).
+    assert parsing_workflow.calls[-1]["document_id"] == document_id
+    assert parsing_workflow.calls[-1]["file_path"] == str(input_file)
+
 def test_run_uses_additive_registration_and_save_when_not_reingesting(
     tmp_path,
     sample_document_graph,

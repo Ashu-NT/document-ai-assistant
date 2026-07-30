@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""
+r"""
 Debug utility for verifying Docling output -> canonical elements -> document graph
 -> provisional chunks -> document classification -> post-classification chunks.
 

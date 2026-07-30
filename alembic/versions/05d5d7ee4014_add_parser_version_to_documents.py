@@ -1,7 +1,7 @@
 """add parser_version to documents
 
 Revision ID: 05d5d7ee4014
-Revises: c3d4e5f6a7b8
+Revises: 7f2a9c4e1b6d
 Create Date: 2026-07-30 00:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = '05d5d7ee4014'
-down_revision: Union[str, Sequence[str], None] = 'c3d4e5f6a7b8'
+down_revision: Union[str, Sequence[str], None] = '7f2a9c4e1b6d'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
