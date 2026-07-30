@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.builders.document_graph.parsed_asset_factory import (
     ParsedAssetFactory,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.application.workflows.parsing.tables.structure.table_header_path_builder import (
     TableHeaderPathBuilder,
 )
@@ -9,7 +9,7 @@ from src.domain.common import ElementType
 from src.shared.ids import IdGenerator
 
 
-def _parsed_table_element(**metadata_overrides: object) -> CanonicalElement:
+def _parsed_table_element(**metadata_overrides: object) -> ParsedCanonicalElement:
     metadata = {
         "table_rows": [
             ["Parameter", "", "Value"],
@@ -24,7 +24,7 @@ def _parsed_table_element(**metadata_overrides: object) -> CanonicalElement:
         "column_count": 3,
     }
     metadata.update(metadata_overrides)
-    return CanonicalElement(
+    return ParsedCanonicalElement(
         element_id="el_table_1",
         document_id="doc_1",
         element_type=ElementType.TABLE,

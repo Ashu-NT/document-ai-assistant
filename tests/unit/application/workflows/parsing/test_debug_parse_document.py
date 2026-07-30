@@ -2,7 +2,7 @@ from pathlib import Path
 
 from scripts.debug_parse_document import build_report
 from src.application.workflows.parsing import (
-    CanonicalElement as ParsedCanonicalElement,
+    ParsedCanonicalElement,
     RawParsedDocument,
 )
 from src.application.workflows.parsing.builders import (

@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.application.workflows.parsing.builders.section_hierarchy.section_heading_labeler import (
     SectionHeadingLabeler,
 )
@@ -20,7 +20,7 @@ class SectionStackBuilder:
     def build(
         self,
         document_id: str,
-        headers: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
         effective_levels: dict[str, int],
         explicit_parent_headers: dict[str, str] | None = None,
         header_numberings: dict[str, str] | None = None,
@@ -101,7 +101,7 @@ class SectionStackBuilder:
             stack.pop(candidate_level, None)
 
     @staticmethod
-    def _source_from_element(element: CanonicalElement) -> SourceLocation:
+    def _source_from_element(element: ParsedCanonicalElement) -> SourceLocation:
         bbox = None
         if element.bbox is not None:
             bbox = BoundingBox(

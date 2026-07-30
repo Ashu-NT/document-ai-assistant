@@ -1,4 +1,4 @@
-from src.application.workflows.parsing import CanonicalElement as ParsedCanonicalElement
+from src.application.workflows.parsing import ParsedCanonicalElement
 from src.application.workflows.parsing.canonical_element_ocr_enricher import (
     CanonicalElementOCREnricher,
 )

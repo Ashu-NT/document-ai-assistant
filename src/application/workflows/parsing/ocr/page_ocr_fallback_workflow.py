@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from src.application.services.ai import OCRService
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.application.workflows.parsing.ocr.merging.canonical_ocr_merger import (
     CanonicalOCRMerger,
 )
@@ -58,7 +58,7 @@ class PageOCRFallbackWorkflow:
         self,
         *,
         file_path: str,
-        canonical_elements: list[CanonicalElement],
+        canonical_elements: list[ParsedCanonicalElement],
         page_count: int | None,
         activity_context: ActivityContext | None = None,
     ) -> OCRMergeResult:

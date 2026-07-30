@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.builders.section_hierarchy import (
     LayoutHeuristicStrategy,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.domain.common import ElementType
 
 
@@ -10,8 +10,8 @@ def make_header(
     text: str,
     order_index: int,
     page: int,
-) -> CanonicalElement:
-    return CanonicalElement(
+) -> ParsedCanonicalElement:
+    return ParsedCanonicalElement(
         element_id=element_id,
         document_id="doc_001",
         element_type=ElementType.SECTION_HEADER,
@@ -62,8 +62,8 @@ def test_layout_strategy_can_refine_short_child_headings() -> None:
     assert levels["capacitive"] == 3
 
 
-def make_text(element_id: str, text: str, order_index: int, page: int) -> CanonicalElement:
-    return CanonicalElement(
+def make_text(element_id: str, text: str, order_index: int, page: int) -> ParsedCanonicalElement:
+    return ParsedCanonicalElement(
         element_id=element_id,
         document_id="doc_001",
         element_type=ElementType.TEXT,

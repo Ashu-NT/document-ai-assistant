@@ -5,7 +5,7 @@ from src.domain.common import BoundingBox, ElementType
 
 
 @dataclass(slots=True)
-class CanonicalElement:
+class ParsedCanonicalElement:
     element_id: str
     document_id: str
     element_type: ElementType

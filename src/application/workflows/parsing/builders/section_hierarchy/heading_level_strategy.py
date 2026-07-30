@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.builders.section_hierarchy.section_hierarchy_strategy import (
     SectionHierarchyStrategy,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 
 
 class HeadingLevelStrategy(SectionHierarchyStrategy):
@@ -9,8 +9,8 @@ class HeadingLevelStrategy(SectionHierarchyStrategy):
 
     def can_apply(
         self,
-        headers: list[CanonicalElement],
-        elements: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
+        elements: list[ParsedCanonicalElement],
         current_levels: dict[str, int] | None = None,
     ) -> bool:
         del elements
@@ -24,8 +24,8 @@ class HeadingLevelStrategy(SectionHierarchyStrategy):
 
     def assign_levels(
         self,
-        headers: list[CanonicalElement],
-        elements: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
+        elements: list[ParsedCanonicalElement],
         current_levels: dict[str, int] | None = None,
     ) -> dict[str, int]:
         del elements

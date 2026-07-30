@@ -1,13 +1,13 @@
 from src.application.workflows.parsing.builders.section_hierarchy import (
     SectionStackBuilder,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.domain.common import ElementType
 from src.shared.ids import IdGenerator
 
 
-def make_header(element_id: str, text: str, order_index: int) -> CanonicalElement:
-    return CanonicalElement(
+def make_header(element_id: str, text: str, order_index: int) -> ParsedCanonicalElement:
+    return ParsedCanonicalElement(
         element_id=element_id,
         document_id="doc_001",
         element_type=ElementType.SECTION_HEADER,

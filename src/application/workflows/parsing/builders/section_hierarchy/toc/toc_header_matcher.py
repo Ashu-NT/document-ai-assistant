@@ -6,7 +6,7 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry 
     TocEntry,
     normalize_toc_title,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 
 
 class TocHeaderMatcher:
@@ -15,9 +15,9 @@ class TocHeaderMatcher:
     @staticmethod
     def match_entry_to_header(
         entry: TocEntry,
-        headers: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
         matched_header_ids: set[str],
-    ) -> CanonicalElement | None:
+    ) -> ParsedCanonicalElement | None:
         candidates = [
             header
             for header in headers

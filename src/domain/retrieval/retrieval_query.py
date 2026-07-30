@@ -24,24 +24,8 @@ class RetrievalQuery:
 
     analyzed: bool = False
 
-    # Plain string, not the RetrievalQueryIntent enum -- that enum is
-    # application-layer, and this domain module must not import from
-    # src.application (mirrors the RetrievedChunk.retrieval_source
-    # precedent: an application-owned vocabulary stored as a bare string on
-    # the domain object). Set by RetrievalQueryAnalyzer.analyze() so callers
-    # that already have an analyzed query can skip re-running intent
-    # inference; see RetrievalQueryIntentInferer.resolve().
     detected_intent: str | None = None
 
-    # The classification behind detected_intent, previously computed and
-    # then discarded the moment RetrievalQueryAnalyzer.analyze() returned --
-    # persisted here so a later consumer (reflection's ambiguity check) can
-    # read the SAME classification that actually drove retrieval instead of
-    # re-running RetrievalQueryIntentInferer.classify() a second,
-    # independent time (see answering_flow_weakness_remediation_plan.md,
-    # PR 1-3). All optional/None until analyze() has run. intent_runner_up
-    # is a plain string for the same domain/application-boundary reason as
-    # detected_intent above.
     intent_best_score: int | None = None
     intent_runner_up_score: int | None = None
     intent_score_gap: int | None = None
@@ -55,10 +39,4 @@ class RetrievalQuery:
         return bool(self.detected_identifiers)
 
     def is_intent_contested(self) -> bool:
-        """An exact scoring tie between this query's winning intent and its
-        runner-up (mirrors RetrievalIntentDecision.is_contested /
-        AnswerIntentDecision.is_contested -- the same "gap == 0" signal,
-        computed here instead of duplicated wherever a RetrievalQuery is
-        available, e.g. AnswerGenerationPipeline (W2,
-        answering_flow_weakness_remediation_plan.md))."""
         return self.intent_runner_up is not None and self.intent_score_gap == 0

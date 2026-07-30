@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry_parser import (
     TocEntryParser,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.domain.common import ElementType
 
 
@@ -23,12 +23,12 @@ class TocCandidateCollector:
 
     def collect(
         self,
-        elements: list[CanonicalElement],
+        elements: list[ParsedCanonicalElement],
         *,
         anchor_page: int,
         anchor_order: int | None,
-    ) -> list[CanonicalElement]:
-        accepted: list[CanonicalElement] = []
+    ) -> list[ParsedCanonicalElement]:
+        accepted: list[ParsedCanonicalElement] = []
         last_toc_page: int | None = None
 
         for element in sorted(elements, key=lambda item: item.order_index):

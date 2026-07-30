@@ -20,7 +20,7 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry_
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_header_matcher import (
     TocHeaderMatcher,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.domain.common import ElementType
 
 
@@ -44,8 +44,8 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
 
     def can_apply(
         self,
-        headers: list[CanonicalElement],
-        elements: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
+        elements: list[ParsedCanonicalElement],
         current_levels: dict[str, int] | None = None,
     ) -> bool:
         del current_levels
@@ -54,8 +54,8 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
 
     def assign_levels(
         self,
-        headers: list[CanonicalElement],
-        elements: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
+        elements: list[ParsedCanonicalElement],
         current_levels: dict[str, int] | None = None,
     ) -> dict[str, int]:
         del current_levels
@@ -114,8 +114,8 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
 
     def build_outline(
         self,
-        headers: list[CanonicalElement],
-        elements: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
+        elements: list[ParsedCanonicalElement],
     ) -> TocOutline:
         anchor_page, toc_header_id, anchor_order = self._find_toc_anchor(headers, elements)
         if anchor_page is None:
@@ -156,8 +156,8 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
 
     def _find_toc_anchor(
         self,
-        headers: list[CanonicalElement],
-        elements: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
+        elements: list[ParsedCanonicalElement],
     ) -> tuple[int | None, str | None, int | None]:
         for header in sorted(headers, key=lambda item: item.order_index):
             if not self._looks_like_toc_header(header.text):
@@ -191,11 +191,11 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
         return normalize_toc_title(value) in cls._TOC_HEADER_ALIASES
 
     @staticmethod
-    def _is_document_index(element: CanonicalElement) -> bool:
+    def _is_document_index(element: ParsedCanonicalElement) -> bool:
         return element.metadata.get("item_label") == "document_index"
 
     @staticmethod
-    def _infer_in_range_level(header: CanonicalElement) -> int:
+    def _infer_in_range_level(header: ParsedCanonicalElement) -> int:
         number = extract_heading_number(header.text)
         depth = numbering_depth(number)
         if depth is not None:

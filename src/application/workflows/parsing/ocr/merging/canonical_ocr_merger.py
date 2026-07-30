@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from src.application.contracts.ai import OCRResult
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.application.workflows.parsing.ocr.merging.ocr_merge_policy import OCRMergePolicy
 from src.application.workflows.parsing.ocr.merging.ocr_merge_result import OCRMergeResult
 from src.application.workflows.parsing.ocr.targets.ocr_target_execution_result import (
@@ -30,7 +30,7 @@ class CanonicalOCRMerger:
         *,
         document_path: str,
         page_count: int,
-        canonical_elements: list[CanonicalElement],
+        canonical_elements: list[ParsedCanonicalElement],
         selection_result,
         execution_results: list[OCRTargetExecutionResult],
         persist_trace: bool = False,
@@ -109,7 +109,7 @@ class CanonicalOCRMerger:
 
     def _merge_asset_target(
         self,
-        element: CanonicalElement | None,
+        element: ParsedCanonicalElement | None,
         execution: OCRTargetExecutionResult,
     ) -> bool:
         if element is None:
@@ -132,10 +132,10 @@ class CanonicalOCRMerger:
     def _build_synthetic_element(
         self,
         *,
-        merged_elements: list[CanonicalElement],
-        source_element: CanonicalElement | None,
+        merged_elements: list[ParsedCanonicalElement],
+        source_element: ParsedCanonicalElement | None,
         execution: OCRTargetExecutionResult,
-    ) -> CanonicalElement:
+    ) -> ParsedCanonicalElement:
         document_id = (
             source_element.document_id
             if source_element is not None
@@ -149,7 +149,7 @@ class CanonicalOCRMerger:
         metadata = self._build_metadata(execution)
         metadata["source"] = f"ocr_{execution.target.target_type.value}_fallback"
 
-        return CanonicalElement(
+        return ParsedCanonicalElement(
             element_id=self.id_generator.new_id(IdPrefix.ELEMENT),
             document_id=document_id,
             element_type=ElementType.TEXT,
@@ -166,9 +166,9 @@ class CanonicalOCRMerger:
 
     def _resolve_insertion_index(
         self,
-        merged_elements: list[CanonicalElement],
+        merged_elements: list[ParsedCanonicalElement],
         *,
-        source_element: CanonicalElement | None,
+        source_element: ParsedCanonicalElement | None,
         execution: OCRTargetExecutionResult,
     ) -> int:
         if source_element is not None:
@@ -189,7 +189,7 @@ class CanonicalOCRMerger:
     def _attach_ocr_metadata(
         self,
         *,
-        element: CanonicalElement,
+        element: ParsedCanonicalElement,
         execution: OCRTargetExecutionResult,
         attach_as_main_text: bool,
     ) -> None:
@@ -235,7 +235,7 @@ class CanonicalOCRMerger:
 
     def _is_duplicate_text(
         self,
-        merged_elements: list[CanonicalElement],
+        merged_elements: list[ParsedCanonicalElement],
         execution: OCRTargetExecutionResult,
     ) -> bool:
         if execution.ocr_result is None:
@@ -265,19 +265,19 @@ class CanonicalOCRMerger:
         return re.sub(r"\s+", " ", value).strip().lower()
 
     @staticmethod
-    def _renumber_order_indexes(elements: list[CanonicalElement]) -> None:
+    def _renumber_order_indexes(elements: list[ParsedCanonicalElement]) -> None:
         for index, element in enumerate(elements, start=1):
             element.order_index = index
 
     @staticmethod
-    def _resolve_document_id(elements: list[CanonicalElement]) -> str:
+    def _resolve_document_id(elements: list[ParsedCanonicalElement]) -> str:
         return elements[0].document_id if elements else ""
 
     @staticmethod
     def _find_source_element(
-        elements_by_id: dict[str, CanonicalElement],
+        elements_by_id: dict[str, ParsedCanonicalElement],
         execution: OCRTargetExecutionResult,
-    ) -> CanonicalElement | None:
+    ) -> ParsedCanonicalElement | None:
         source_element_id = execution.target.source_element_id
         if source_element_id is None:
             return None

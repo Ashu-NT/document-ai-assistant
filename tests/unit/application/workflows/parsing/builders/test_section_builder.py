@@ -2,7 +2,7 @@ from src.application.workflows.parsing.builders import SectionBuilder
 from src.application.workflows.parsing.builders.section_hierarchy import (
     SectionHierarchyResolution,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.domain.common import ElementType
 from src.shared.ids import IdGenerator
 
@@ -13,8 +13,8 @@ def make_element(
     text: str,
     order_index: int,
     metadata: dict | None = None,
-) -> CanonicalElement:
-    return CanonicalElement(
+) -> ParsedCanonicalElement:
+    return ParsedCanonicalElement(
         element_id=element_id,
         document_id="doc_001",
         element_type=element_type,
@@ -203,7 +203,7 @@ def test_section_builder_ignores_filtered_headers_during_hierarchy_resolution() 
 class _FakeHierarchyResolver:
     def resolve(
         self,
-        canonical_elements: list[CanonicalElement],
+        canonical_elements: list[ParsedCanonicalElement],
     ) -> SectionHierarchyResolution:
         del canonical_elements
         return SectionHierarchyResolution(

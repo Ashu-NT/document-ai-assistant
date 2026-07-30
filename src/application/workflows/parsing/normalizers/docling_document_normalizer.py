@@ -24,7 +24,7 @@ from src.application.workflows.parsing.normalizers.docling_table_extractor impor
 from src.application.workflows.parsing.normalizers.table_layout.text_grid_table_fallback_applier import (
     TextGridTableFallbackApplier,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
 from src.shared.exceptions import DocumentNormalizationError
 
@@ -56,11 +56,11 @@ class DoclingDocumentNormalizer:
         self,
         raw_parsed_document: RawParsedDocument,
         document_id: str,
-    ) -> list[CanonicalElement]:
+    ) -> list[ParsedCanonicalElement]:
         try:
             raw_document = raw_parsed_document.raw_document
             items = list(self.item_extractor.iter_items(raw_document))
-            normalized: list[CanonicalElement] = []
+            normalized: list[ParsedCanonicalElement] = []
             caption_extractor = DoclingCaptionExtractor(
                 raw_document,
                 items=items,
@@ -123,7 +123,7 @@ class DoclingDocumentNormalizer:
                 )
 
                 normalized.append(
-                    CanonicalElement(
+                    ParsedCanonicalElement(
                         element_id=raw_ref or f"canon_{index}",
                         document_id=document_id,
                         element_type=element_type,
@@ -154,8 +154,8 @@ class DoclingDocumentNormalizer:
 
     @staticmethod
     def _apply_multi_column_reading_order(
-        elements: list[CanonicalElement],
-    ) -> list[CanonicalElement]:
+        elements: list[ParsedCanonicalElement],
+    ) -> list[ParsedCanonicalElement]:
         """Re-sequences same-page elements into layout-resolved reading
         order (left lane fully before right lane) wherever the page layout
         analyzer detected genuine multi-column content. Docling's native

@@ -1,4 +1,4 @@
-from src.application.workflows.parsing import CanonicalElement
+from src.application.workflows.parsing import ParsedCanonicalElement
 from src.application.workflows.parsing.ocr import (
     OCRSelectionPolicy,
     PageTextQualityAnalyzer,
@@ -14,8 +14,8 @@ def make_element(
     page_number: int,
     bbox: BoundingBox | None = None,
     metadata: dict | None = None,
-) -> CanonicalElement:
-    return CanonicalElement(
+) -> ParsedCanonicalElement:
+    return ParsedCanonicalElement(
         element_id=element_id,
         document_id="doc_001",
         element_type=element_type,

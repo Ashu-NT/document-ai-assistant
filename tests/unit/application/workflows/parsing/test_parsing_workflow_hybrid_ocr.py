@@ -1,4 +1,4 @@
-from src.application.workflows.parsing import CanonicalElement, ParsingWorkflow, RawParsedDocument
+from src.application.workflows.parsing import ParsedCanonicalElement, ParsingWorkflow, RawParsedDocument
 from src.application.workflows.parsing.ocr.parsing_ocr_policy import ParsingOCRPolicy
 from src.domain.common import ElementType
 from src.shared.ids import IdGenerator
@@ -18,7 +18,7 @@ class FakeParser:
 
 
 class FakeNormalizer:
-    def __init__(self, canonical_elements: list[CanonicalElement]) -> None:
+    def __init__(self, canonical_elements: list[ParsedCanonicalElement]) -> None:
         self.canonical_elements = canonical_elements
 
     def normalize(self, raw_parsed_document: RawParsedDocument, document_id: str):
@@ -36,7 +36,7 @@ class FakeGraphBuilder:
 
 
 class FakePageOCRFallbackWorkflow:
-    def __init__(self, enriched_elements: list[CanonicalElement]) -> None:
+    def __init__(self, enriched_elements: list[ParsedCanonicalElement]) -> None:
         self.enriched_elements = enriched_elements
         self.calls: list[tuple[str, int | None]] = []
 
@@ -53,9 +53,9 @@ class FakePageOCRFallbackWorkflow:
 
 
 class FakeCanonicalElementOCREnricher:
-    def __init__(self, enriched_elements: list[CanonicalElement]) -> None:
+    def __init__(self, enriched_elements: list[ParsedCanonicalElement]) -> None:
         self.enriched_elements = enriched_elements
-        self.calls: list[list[CanonicalElement]] = []
+        self.calls: list[list[ParsedCanonicalElement]] = []
 
     def enrich(self, canonical_elements, activity_context=None):
         self.calls.append(list(canonical_elements))
@@ -71,7 +71,7 @@ def test_parse_runs_optional_page_ocr_fallback_before_graph_build(sample_documen
         parser_name="docling",
     )
     canonical_elements = [
-        CanonicalElement(
+        ParsedCanonicalElement(
             element_id="canon_001",
             document_id="doc_placeholder",
             element_type=ElementType.TEXT,
@@ -82,7 +82,7 @@ def test_parse_runs_optional_page_ocr_fallback_before_graph_build(sample_documen
         )
     ]
     enriched_elements = [
-        CanonicalElement(
+        ParsedCanonicalElement(
             element_id="canon_002",
             document_id="doc_placeholder",
             element_type=ElementType.TEXT,
@@ -123,7 +123,7 @@ def test_parse_skips_provider_ocr_hooks_when_runtime_policy_disables_them(
         parser_name="docling",
     )
     canonical_elements = [
-        CanonicalElement(
+        ParsedCanonicalElement(
             element_id="canon_001",
             document_id="doc_placeholder",
             element_type=ElementType.TEXT,
@@ -134,7 +134,7 @@ def test_parse_skips_provider_ocr_hooks_when_runtime_policy_disables_them(
         )
     ]
     ocr_enriched_elements = [
-        CanonicalElement(
+        ParsedCanonicalElement(
             element_id="canon_002",
             document_id="doc_placeholder",
             element_type=ElementType.TEXT,
@@ -145,7 +145,7 @@ def test_parse_skips_provider_ocr_hooks_when_runtime_policy_disables_them(
         )
     ]
     fallback_elements = [
-        CanonicalElement(
+        ParsedCanonicalElement(
             element_id="canon_003",
             document_id="doc_placeholder",
             element_type=ElementType.TEXT,

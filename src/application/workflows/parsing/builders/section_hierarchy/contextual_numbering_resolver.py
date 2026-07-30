@@ -14,7 +14,7 @@ from src.application.workflows.parsing.builders.section_hierarchy.numbering_hier
 from src.application.workflows.parsing.builders.section_hierarchy.toc_page_range_strategy import (
     TocPageRangeStrategy,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 
 if TYPE_CHECKING:
     from src.application.workflows.parsing.builders.section_hierarchy.section_hierarchy_resolver import (
@@ -38,7 +38,7 @@ class ContextualNumberingResolver:
 
     def apply(
         self,
-        headers: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
         resolution: SectionHierarchyResolution,
     ) -> None:
         ordered_headers = sorted(headers, key=lambda header: header.order_index)
@@ -96,7 +96,7 @@ class ContextualNumberingResolver:
 
     def _attach_chapter_markers(
         self,
-        ordered_headers: list[CanonicalElement],
+        ordered_headers: list[ParsedCanonicalElement],
         resolution: SectionHierarchyResolution,
     ) -> None:
         for index, header in enumerate(ordered_headers):
@@ -127,7 +127,7 @@ class ContextualNumberingResolver:
 
     @staticmethod
     def _can_assign_contextual_parent(
-        header: CanonicalElement,
+        header: ParsedCanonicalElement,
         resolution: SectionHierarchyResolution,
     ) -> bool:
         if header.element_id in resolution.explicit_parent_headers:
@@ -151,7 +151,7 @@ class ContextualNumberingResolver:
 
     @staticmethod
     def _is_simple_numbered_step(
-        header: CanonicalElement,
+        header: ParsedCanonicalElement,
         resolution: SectionHierarchyResolution,
     ) -> bool:
         number = resolution.header_numberings.get(header.element_id)
@@ -163,8 +163,8 @@ class ContextualNumberingResolver:
 
     def _find_contextual_parent_header(
         self,
-        header: CanonicalElement,
-        ordered_headers: list[CanonicalElement],
+        header: ParsedCanonicalElement,
+        ordered_headers: list[ParsedCanonicalElement],
         resolution: SectionHierarchyResolution,
         number_to_header_id: dict[str, str],
         header_index_by_id: dict[str, int],

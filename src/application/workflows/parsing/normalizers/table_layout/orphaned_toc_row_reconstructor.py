@@ -13,16 +13,8 @@ from src.application.workflows.parsing.normalizers.table_layout.geometric_row_cl
 )
 from src.domain.common import BoundingBox
 
-# A line/element made of nothing but dots (and whitespace) is a dot-leader
-# run -- pure visual filler between a title and its page number, never real
-# content. Requires 2+ dots so a single incidental "." never matches.
 _DOT_LEADER_ELEMENT_PATTERN = re.compile(r"^[.\s]{2,}$")
 
-# Page-level gate, mirroring the same-spirit chunk-level check in
-# `chunk_type_markers.is_toc_remnant_text` but at the element level: only
-# attempt this reconstruction when a meaningful fraction of the page's
-# candidate elements are genuinely dot-leader-shaped, so this never fires on
-# ordinary prose that happens to have a few short lines.
 _MIN_DOT_LEADER_ELEMENTS = 4
 _MIN_DOT_LEADER_FRACTION = 0.15
 

@@ -1,16 +1,16 @@
 from src.application.workflows.parsing.builders.section_hierarchy import (
     HeadingLevelStrategy,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.domain.common import ElementType
 
 
-def make_header(element_id: str, text: str, level: int | None) -> CanonicalElement:
+def make_header(element_id: str, text: str, level: int | None) -> ParsedCanonicalElement:
     metadata = {}
     if level is not None:
         metadata["heading_level"] = level
 
-    return CanonicalElement(
+    return ParsedCanonicalElement(
         element_id=element_id,
         document_id="doc_001",
         element_type=ElementType.SECTION_HEADER,

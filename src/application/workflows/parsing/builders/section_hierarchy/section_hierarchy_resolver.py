@@ -25,7 +25,7 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc_page_range
 from src.application.workflows.parsing.builders.section_hierarchy.toc import (
     TocOutline,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.application.workflows.parsing.parsing_value_coercion import (
     coerce_positive_int,
 )
@@ -64,7 +64,7 @@ class SectionHierarchyResolver:
 
     def resolve(
         self,
-        canonical_elements: list[CanonicalElement],
+        canonical_elements: list[ParsedCanonicalElement],
     ) -> SectionHierarchyResolution:
         headers = sorted(
             [

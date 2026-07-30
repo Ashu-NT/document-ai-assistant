@@ -23,25 +23,6 @@ class TextGridTableResult:
 class TextGridTableDetector:
     """Recovers tabular data from loose text elements that Docling's own
     table-detection model never recognized as a table region at all.
-
-    Confirmed on a real document: a dense record grid (e.g. a
-    "pos | door-number | location" block) came through purely as
-    individual short text elements, in Docling's own bottom-to-top
-    emission order, with no positional correlation between a row's values
-    once flattened to plain text -- the record-per-row relationship the
-    visual table encodes was destroyed. This has nothing to do with any of
-    this codebase's own table-reconstruction bugs: there is no Docling
-    table object to extract from in this case.
-
-    Detection is purely geometric (row/column bounding-box alignment) --
-    deliberately no vocabulary, keyword, or language signal, so it behaves
-    identically regardless of document language or content domain,
-    matching this codebase's document-agnostic design constraint. A
-    header row is deliberately NOT synthesized here (best-effort header
-    matching for scattered label text is fragile and low-value compared to
-    the actual data-row recovery) -- callers get a table with a blank
-    header row, consistent with how downstream code already expects
-    `table_rows[0]` to be a header row.
     """
 
     MIN_ROWS = 3

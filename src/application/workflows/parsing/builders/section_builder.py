@@ -11,7 +11,7 @@ from src.application.workflows.parsing.builders.section_hierarchy import (
     SectionPathRelinker,
     SectionStackBuilder,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.domain.common import BoundingBox, ElementType, SourceLocation
 from src.domain.document import DocumentSection
 from src.shared.ids import IdGenerator, IdPrefix
@@ -43,7 +43,7 @@ class SectionBuilder:
     def build(
         self,
         document_id: str,
-        canonical_elements: list[CanonicalElement],
+        canonical_elements: list[ParsedCanonicalElement],
         *,
         default_title: str = "Document",
     ) -> SectionBuildResult:
@@ -210,14 +210,14 @@ class SectionBuilder:
 
     def resolve_section_id(
         self,
-        element: CanonicalElement,
+        element: ParsedCanonicalElement,
         build_result: SectionBuildResult,
     ) -> str | None:
         return build_result.element_section_ids.get(element.element_id)
 
     def resolve_section_path(
         self,
-        element: CanonicalElement,
+        element: ParsedCanonicalElement,
         build_result: SectionBuildResult,
     ) -> list[str]:
         return list(build_result.element_section_paths.get(element.element_id, []))
@@ -225,8 +225,8 @@ class SectionBuilder:
     def _build_leading_root_section(
         self,
         document_id: str,
-        ordered_elements: list[CanonicalElement],
-        headers: list[CanonicalElement],
+        ordered_elements: list[ParsedCanonicalElement],
+        headers: list[ParsedCanonicalElement],
         default_title: str,
     ) -> DocumentSection | None:
         first_header_order = headers[0].order_index
@@ -252,7 +252,7 @@ class SectionBuilder:
         )
 
     @staticmethod
-    def _source_from_element(element: CanonicalElement | None) -> SourceLocation:
+    def _source_from_element(element: ParsedCanonicalElement | None) -> SourceLocation:
         if element is None:
             return SourceLocation()
 

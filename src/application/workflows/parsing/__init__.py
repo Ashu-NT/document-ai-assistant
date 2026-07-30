@@ -1,8 +1,10 @@
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import (
+    ParsedCanonicalElement,
+)
 from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
 
 __all__ = [
-    "CanonicalElement",
+    "ParsedCanonicalElement",
     "ParsingWorkflow",
     "ParsingWorkflowResult",
     "RawParsedDocument",

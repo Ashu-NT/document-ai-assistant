@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.application.workflows.parsing.normalizers.table_layout.text_grid_table_fallback_applier import (
     TextGridTableFallbackApplier,
 )
@@ -15,8 +15,8 @@ def _text_element(
     y1: float,
     y2: float,
     order_index: int,
-) -> CanonicalElement:
-    return CanonicalElement(
+) -> ParsedCanonicalElement:
+    return ParsedCanonicalElement(
         element_id=element_id,
         document_id="doc_1",
         element_type=ElementType.TEXT,
@@ -39,7 +39,7 @@ def _grid_row_elements(
     value: str,
     y1: float,
     y2: float,
-) -> list[CanonicalElement]:
+) -> list[ParsedCanonicalElement]:
     return [
         _text_element(
             f"el_{start_index}",
@@ -64,8 +64,8 @@ def _grid_row_elements(
     ]
 
 
-def _loose_grid_elements(page: int = 1) -> list[CanonicalElement]:
-    elements: list[CanonicalElement] = []
+def _loose_grid_elements(page: int = 1) -> list[ParsedCanonicalElement]:
+    elements: list[ParsedCanonicalElement] = []
     for row_index in range(4):
         elements.extend(
             _grid_row_elements(
@@ -128,7 +128,7 @@ def test_apply_renumbers_order_index_sequentially_after_synthesis() -> None:
 def test_apply_does_not_touch_text_elements_already_covered_by_an_existing_table() -> None:
     applier = TextGridTableFallbackApplier()
     grid_elements = _loose_grid_elements()
-    existing_table = CanonicalElement(
+    existing_table = ParsedCanonicalElement(
         element_id="el_real_table",
         document_id="doc_1",
         element_type=ElementType.TABLE,
@@ -172,7 +172,7 @@ def _toc_row_elements(
     page_number: str,
     y1: float,
     y2: float,
-) -> list[CanonicalElement]:
+) -> list[ParsedCanonicalElement]:
     return [
         _text_element(
             f"el_{start_index}", title, page=page, x1=50.0, x2=250.0, y1=y1, y2=y2,
@@ -189,14 +189,14 @@ def _toc_row_elements(
     ]
 
 
-def _orphaned_toc_elements(page: int = 1) -> list[CanonicalElement]:
+def _orphaned_toc_elements(page: int = 1) -> list[ParsedCanonicalElement]:
     rows = [
         ("1.1 First topic", "1"),
         ("1.2 Second topic", "2"),
         ("1.3 Third topic", "3"),
         ("1.4 Fourth topic", "4"),
     ]
-    elements: list[CanonicalElement] = []
+    elements: list[ParsedCanonicalElement] = []
     for row_index, (title, page_number) in enumerate(rows):
         elements.extend(
             _toc_row_elements(

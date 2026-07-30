@@ -11,21 +11,6 @@ from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
     repair_docling_text,
 )
 
-# Page numbering isn't always Arabic-digit throughout a document -- a book's
-# front matter commonly uses roman numerals ("i, ii, iii...") while the main
-# body switches to "1, 2, 3...", and both conventions can appear in the same
-# document (different TOC tables/pages). The lookahead requires at least one
-# roman-numeral letter (M/D/C/L/X/V/I, either case) so this never matches an
-# empty string, and the whole fragment enforces strict roman-numeral
-# structure (proper subtractive-notation ordering), not just "any combination
-# of these letters" -- e.g. "CIVIL"/"DID"/"LID" correctly do not match, since
-# they don't fit the thousands-hundreds-tens-ones grouping. The one common
-# English word that does still validly match is "mix" (a genuine, syntactically
-# valid roman numeral reading), an accepted, narrow false-positive risk of the
-# same order as this reconstructor's existing numeric/lettered-numbering
-# false-positive risks -- and it only matters where a page-number-shaped
-# candidate is expected (an isolated cell, or text immediately before a
-# dot-leader/whitespace at the very end of a cell), not in arbitrary prose.
 _ROMAN_NUMERAL_TEXT = (
     r"(?i:(?=[MDCLXVI])M{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3}))"
 )

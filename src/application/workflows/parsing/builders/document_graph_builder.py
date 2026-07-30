@@ -31,8 +31,8 @@ from src.application.workflows.parsing.tables import (
     LogicalTableFamilyResolver,
     TableSemanticResolver,
 )
-from src.application.workflows.parsing.canonical_element import (
-    CanonicalElement as ParsedCanonicalElement,
+from src.application.workflows.parsing.parsed_canonical_element import (
+    ParsedCanonicalElement,
 )
 from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
 from src.domain.common import ElementType

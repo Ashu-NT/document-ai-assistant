@@ -1,5 +1,5 @@
 from src.application.services.ai import OCRService
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
     repair_docling_text,
 )
@@ -13,10 +13,10 @@ class CanonicalElementOCREnricher:
 
     def enrich(
         self,
-        canonical_elements: list[CanonicalElement],
+        canonical_elements: list[ParsedCanonicalElement],
         *,
         activity_context: ActivityContext | None = None,
-    ) -> list[CanonicalElement]:
+    ) -> list[ParsedCanonicalElement]:
         for element in canonical_elements:
             self._enrich_element(
                 element,
@@ -27,7 +27,7 @@ class CanonicalElementOCREnricher:
 
     def _enrich_element(
         self,
-        element: CanonicalElement,
+        element: ParsedCanonicalElement,
         *,
         activity_context: ActivityContext | None = None,
     ) -> None:

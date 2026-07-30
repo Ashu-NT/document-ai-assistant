@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.application.workflows.parsing.normalizers.table_layout.orphaned_toc_row_reconstructor import (
     OrphanedTocResult,
     OrphanedTocRowReconstructor,
@@ -39,14 +39,14 @@ class TextGridTableFallbackApplier:
         self.detector = detector or TextGridTableDetector()
         self.toc_reconstructor = toc_reconstructor or OrphanedTocRowReconstructor()
 
-    def apply(self, elements: list[CanonicalElement]) -> list[CanonicalElement]:
+    def apply(self, elements: list[ParsedCanonicalElement]) -> list[ParsedCanonicalElement]:
         elements_by_page: dict[int, list[int]] = defaultdict(list)
         for position, element in enumerate(elements):
             if element.page_start is not None:
                 elements_by_page[element.page_start].append(position)
 
         positions_to_remove: set[int] = set()
-        synthetic_by_position: dict[int, CanonicalElement] = {}
+        synthetic_by_position: dict[int, ParsedCanonicalElement] = {}
 
         for page_number, positions in elements_by_page.items():
             table_bboxes = [
@@ -91,7 +91,7 @@ class TextGridTableFallbackApplier:
         if not positions_to_remove:
             return elements
 
-        rebuilt: list[CanonicalElement] = []
+        rebuilt: list[ParsedCanonicalElement] = []
         for position, element in enumerate(elements):
             if position in synthetic_by_position:
                 rebuilt.append(synthetic_by_position[position])
@@ -106,7 +106,7 @@ class TextGridTableFallbackApplier:
 
     @staticmethod
     def _is_candidate(
-        element: CanonicalElement,
+        element: ParsedCanonicalElement,
         table_bboxes: list[BoundingBox],
     ) -> bool:
         if element.element_type != ElementType.TEXT:
@@ -133,11 +133,11 @@ class TextGridTableFallbackApplier:
     def _build_table_element(
         self,
         *,
-        anchor_element: CanonicalElement,
+        anchor_element: ParsedCanonicalElement,
         page_number: int,
         result: TextGridTableResult | OrphanedTocResult,
         tier: str,
-    ) -> CanonicalElement:
+    ) -> ParsedCanonicalElement:
         markdown = self._rows_to_markdown(result.rows)
         metadata = {
             "table_rows": result.rows,
@@ -146,7 +146,7 @@ class TextGridTableFallbackApplier:
             "column_count": max((len(row) for row in result.rows), default=0),
             "markdown": markdown,
         }
-        return CanonicalElement(
+        return ParsedCanonicalElement(
             element_id=f"{anchor_element.element_id}_text_grid_table",
             document_id=anchor_element.document_id,
             element_type=ElementType.TABLE,

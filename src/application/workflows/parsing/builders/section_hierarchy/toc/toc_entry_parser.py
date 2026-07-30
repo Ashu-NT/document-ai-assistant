@@ -10,14 +10,14 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry 
     TocEntry,
     normalize_toc_title,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 
 
 class TocEntryParser:
     """Parses raw TOC table rows or text blocks into `TocEntry` records."""
 
     @staticmethod
-    def extract_entries_from_element(element: CanonicalElement) -> list[TocEntry]:
+    def extract_entries_from_element(element: ParsedCanonicalElement) -> list[TocEntry]:
         rows = element.metadata.get("table_rows")
         if isinstance(rows, list):
             entries = TocEntryParser.parse_toc_rows(rows)

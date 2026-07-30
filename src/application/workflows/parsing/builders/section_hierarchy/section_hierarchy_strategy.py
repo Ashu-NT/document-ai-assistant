@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 
 
 class SectionHierarchyStrategy(ABC):
@@ -9,8 +9,8 @@ class SectionHierarchyStrategy(ABC):
     @abstractmethod
     def can_apply(
         self,
-        headers: list[CanonicalElement],
-        elements: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
+        elements: list[ParsedCanonicalElement],
         current_levels: dict[str, int] | None = None,
     ) -> bool:
         raise NotImplementedError
@@ -18,8 +18,8 @@ class SectionHierarchyStrategy(ABC):
     @abstractmethod
     def assign_levels(
         self,
-        headers: list[CanonicalElement],
-        elements: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
+        elements: list[ParsedCanonicalElement],
         current_levels: dict[str, int] | None = None,
     ) -> dict[str, int]:
         raise NotImplementedError

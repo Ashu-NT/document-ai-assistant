@@ -1,8 +1,8 @@
 from src.application.workflows.parsing.builders.document_graph.source_location_factory import (
     SourceLocationFactory,
 )
-from src.application.workflows.parsing.canonical_element import (
-    CanonicalElement as ParsedCanonicalElement,
+from src.application.workflows.parsing.parsed_canonical_element import (
+    ParsedCanonicalElement,
 )
 from src.domain.common import ParserMetadata
 from src.domain.elements import CanonicalElement

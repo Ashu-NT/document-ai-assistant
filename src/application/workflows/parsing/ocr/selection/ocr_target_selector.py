@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
     repair_docling_text,
 )
@@ -28,7 +28,7 @@ class OCRTargetSelector:
         self,
         *,
         document_path: str,
-        canonical_elements: list[CanonicalElement],
+        canonical_elements: list[ParsedCanonicalElement],
         page_count: int | None,
     ) -> OCRSelectionResult:
         page_analyses = self.page_text_quality_analyzer.analyze(
@@ -163,10 +163,10 @@ class OCRTargetSelector:
 
     @staticmethod
     def _candidate_region_elements(
-        canonical_elements: list[CanonicalElement],
+        canonical_elements: list[ParsedCanonicalElement],
         page_number: int,
-    ) -> list[CanonicalElement]:
-        candidates: list[CanonicalElement] = []
+    ) -> list[ParsedCanonicalElement]:
+        candidates: list[ParsedCanonicalElement] = []
         for element in canonical_elements:
             if element.page_start != page_number:
                 continue

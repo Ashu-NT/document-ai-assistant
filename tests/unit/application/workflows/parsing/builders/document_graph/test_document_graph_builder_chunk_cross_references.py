@@ -1,5 +1,5 @@
 from src.application.workflows.parsing import (
-    CanonicalElement as ParsedCanonicalElement,
+    ParsedCanonicalElement,
     RawParsedDocument,
 )
 from src.application.workflows.parsing.builders import (

@@ -1,5 +1,5 @@
-from src.application.workflows.parsing.canonical_element import (
-    CanonicalElement as ParsedCanonicalElement,
+from src.application.workflows.parsing.parsed_canonical_element import (
+    ParsedCanonicalElement,
 )
 from src.domain.common import BoundingBox, SourceLocation
 

@@ -1,6 +1,6 @@
 import re
 
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 
 _BRANDING_HEADERS = {
     "environmentally",
@@ -34,13 +34,13 @@ _TASK_HEADER_RE = re.compile(
 class SectionHeaderFilter:
     def filter(
         self,
-        headers: list[CanonicalElement],
-    ) -> list[CanonicalElement]:
+        headers: list[ParsedCanonicalElement],
+    ) -> list[ParsedCanonicalElement]:
         return [header for header in headers if self._is_viable_header(header)]
 
     def _is_viable_header(
         self,
-        header: CanonicalElement,
+        header: ParsedCanonicalElement,
     ) -> bool:
         text = (header.text or "").strip()
         if not text:

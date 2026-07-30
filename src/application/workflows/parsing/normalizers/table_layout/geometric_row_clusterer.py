@@ -28,14 +28,6 @@ class GeometricRowClusterer:
     same "which elements share a visual row" answer, just interpret each
     row's members differently afterwards.
     """
-
-    # Fraction of the smaller element's height that two elements' Y-ranges
-    # must overlap by to be considered part of the same visual row. Chosen
-    # low enough to tolerate a few points of baseline jitter between
-    # same-row cells (confirmed against real data: same-row cells commonly
-    # differ in height by a point or two) while still cleanly separating
-    # adjacent real rows, whose Y-ranges do not overlap at all on a normal,
-    # regularly-spaced grid.
     ROW_OVERLAP_FRACTION = 0.3
 
     @classmethod

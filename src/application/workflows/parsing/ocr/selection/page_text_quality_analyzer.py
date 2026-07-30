@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.application.workflows.parsing.ocr.selection.ocr_selection_policy import OCRSelectionPolicy
 from src.application.workflows.parsing.ocr.selection.page_text_quality import PageTextQuality
 from src.domain.common import ElementType
@@ -30,7 +30,7 @@ class PageTextQualityAnalyzer:
 
     def analyze(
         self,
-        canonical_elements: list[CanonicalElement],
+        canonical_elements: list[ParsedCanonicalElement],
         page_count: int | None,
     ) -> list[PageTextQuality]:
         resolved_page_count = self._resolve_page_count(canonical_elements, page_count)
@@ -46,7 +46,7 @@ class PageTextQualityAnalyzer:
         self,
         *,
         page_number: int,
-        page_elements: list[CanonicalElement],
+        page_elements: list[ParsedCanonicalElement],
     ) -> PageTextQuality:
         text_char_count = 0
         word_count = 0
@@ -135,7 +135,7 @@ class PageTextQualityAnalyzer:
 
     @staticmethod
     def _resolve_page_count(
-        canonical_elements: list[CanonicalElement],
+        canonical_elements: list[ParsedCanonicalElement],
         page_count: int | None,
     ) -> int:
         if page_count is not None and page_count > 0:
@@ -151,10 +151,10 @@ class PageTextQualityAnalyzer:
 
     @staticmethod
     def _page_elements(
-        canonical_elements: list[CanonicalElement],
+        canonical_elements: list[ParsedCanonicalElement],
         page_number: int,
-    ) -> list[CanonicalElement]:
-        elements: list[CanonicalElement] = []
+    ) -> list[ParsedCanonicalElement]:
+        elements: list[ParsedCanonicalElement] = []
         for element in canonical_elements:
             start = element.page_start
             end = element.page_end or start
@@ -166,7 +166,7 @@ class PageTextQualityAnalyzer:
 
     @staticmethod
     def _estimate_text_density(
-        page_elements: list[CanonicalElement],
+        page_elements: list[ParsedCanonicalElement],
         text_char_count: int,
     ) -> float | None:
         page_area = PageTextQualityAnalyzer._estimate_page_area(page_elements)
@@ -176,7 +176,7 @@ class PageTextQualityAnalyzer:
 
     @staticmethod
     def _estimate_image_area_ratio(
-        page_elements: list[CanonicalElement],
+        page_elements: list[ParsedCanonicalElement],
         text_char_count: int,
     ) -> float | None:
         visual_areas = [
@@ -195,7 +195,7 @@ class PageTextQualityAnalyzer:
         return round(min(sum(visual_areas) / page_area, 1.0), 6)
 
     @staticmethod
-    def _estimate_page_area(page_elements: list[CanonicalElement]) -> float | None:
+    def _estimate_page_area(page_elements: list[ParsedCanonicalElement]) -> float | None:
         boxes = [
             element.bbox
             for element in page_elements
@@ -213,7 +213,7 @@ class PageTextQualityAnalyzer:
         return max_x * max_y
 
     @staticmethod
-    def _bbox_area(element: CanonicalElement) -> float | None:
+    def _bbox_area(element: ParsedCanonicalElement) -> float | None:
         bbox = element.bbox
         if bbox is None:
             return None

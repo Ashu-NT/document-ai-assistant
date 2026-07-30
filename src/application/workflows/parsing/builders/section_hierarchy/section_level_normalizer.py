@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 
 
 def levels_are_weak(levels: dict[str, int]) -> bool:
@@ -9,7 +9,7 @@ def levels_are_weak(levels: dict[str, int]) -> bool:
 
 
 def normalize_levels(
-    headers: list[CanonicalElement],
+    headers: list[ParsedCanonicalElement],
     levels: dict[str, int],
 ) -> dict[str, int]:
     if not levels:

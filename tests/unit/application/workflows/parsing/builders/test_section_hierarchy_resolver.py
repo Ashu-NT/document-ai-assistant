@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.builders.section_hierarchy import (
     SectionHierarchyResolver,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.domain.common import ElementType
 
 
@@ -12,8 +12,8 @@ def make_element(
     order_index: int,
     page: int,
     metadata: dict | None = None,
-) -> CanonicalElement:
-    return CanonicalElement(
+) -> ParsedCanonicalElement:
+    return ParsedCanonicalElement(
         element_id=element_id,
         document_id="doc_001",
         element_type=element_type,

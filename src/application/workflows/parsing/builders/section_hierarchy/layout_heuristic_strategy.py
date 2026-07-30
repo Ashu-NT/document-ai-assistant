@@ -3,7 +3,7 @@ import re
 from src.application.workflows.parsing.builders.section_hierarchy.section_hierarchy_strategy import (
     SectionHierarchyStrategy,
 )
-from src.application.workflows.parsing.canonical_element import CanonicalElement
+from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.domain.common import ElementType
 
 
@@ -21,8 +21,8 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
 
     def can_apply(
         self,
-        headers: list[CanonicalElement],
-        elements: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
+        elements: list[ParsedCanonicalElement],
         current_levels: dict[str, int] | None = None,
     ) -> bool:
         del elements
@@ -30,8 +30,8 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
 
     def assign_levels(
         self,
-        headers: list[CanonicalElement],
-        elements: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
+        elements: list[ParsedCanonicalElement],
         current_levels: dict[str, int] | None = None,
     ) -> dict[str, int]:
         levels = dict(current_levels or {})
@@ -80,7 +80,7 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
         return levels
 
     @staticmethod
-    def _has_numbered_heading(headers: list[CanonicalElement]) -> bool:
+    def _has_numbered_heading(headers: list[ParsedCanonicalElement]) -> bool:
         return any(
             LayoutHeuristicStrategy._infer_numbered_level(header.text) is not None
             for header in headers
@@ -103,8 +103,8 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
 
     def _should_nest_under(
         self,
-        candidate: CanonicalElement,
-        current: CanonicalElement,
+        candidate: ParsedCanonicalElement,
+        current: ParsedCanonicalElement,
         *,
         prefix_text_lengths: list[int],
         header_position_by_id: dict[str, int],
@@ -148,7 +148,7 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
 
     @staticmethod
     def _build_text_position_index(
-        elements: list[CanonicalElement],
+        elements: list[ParsedCanonicalElement],
     ) -> tuple[list[int], dict[str, int]]:
         """Builds the shared state _text_between() needs to compute the
         text-length between any two headers in O(1): a prefix-sum array of
@@ -196,7 +196,7 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
 
     @staticmethod
     def _build_top_level_anchor_ids(
-        headers: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
         levels: dict[str, int],
     ) -> list[str | None]:
         anchors: list[str | None] = []
@@ -212,7 +212,7 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
     @staticmethod
     def _top_level_anchor_id(
         index: int,
-        headers: list[CanonicalElement],
+        headers: list[ParsedCanonicalElement],
         levels: dict[str, int],
     ) -> str | None:
         for candidate in reversed(headers[: index + 1]):
