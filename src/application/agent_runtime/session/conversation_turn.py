@@ -12,7 +12,7 @@ class ConversationTurn:
     timestamp: str
 
     @classmethod
-    def from_message(cls, message: dict[str, Any]) -> "ConversationTurn" | None:
+    def from_message(cls, message: dict[str, Any]) -> ConversationTurn | None:
         role = str(message.get("role") or "").strip()
         content = str(message.get("content") or "").strip()
         if not role or not content:

@@ -28,6 +28,7 @@ from src.application.langgraph.research.services.mappers.research_task_result_st
 from src.application.langgraph.research.services.mappers.research_task_state_mapper import (
     tasks_from_list,
 )
+from src.application.langgraph.state.agent_state import AgentState
 
 
 class ResearchStateMapper:
@@ -51,14 +52,16 @@ class ResearchStateMapper:
         )
 
     @classmethod
-    def result_from_state(cls, state: dict[str, Any]) -> ResearchResult | None:
+    def result_from_state(cls, state: AgentState) -> ResearchResult | None:
         plan = cls.plan_from_dict(state.get("research_plan"))
         goal = goal_from_dict(state.get("research_goal"))
         if plan is None or goal is None:
             return None
+        research_result = state.get("research_result")
+        research_result = research_result if isinstance(research_result, dict) else None
         return ResearchResult(
-            success=bool(state.get("research_result", {}).get("success", True))
-            if isinstance(state.get("research_result"), dict)
+            success=bool(research_result.get("success", True))
+            if research_result is not None
             else True,
             goal=goal,
             plan=plan,
@@ -69,8 +72,8 @@ class ResearchStateMapper:
             gaps=gaps_from_list(state.get("research_gaps")),
             iterations=int(state.get("research_iterations") or 0),
             errors=[str(item) for item in list(state.get("research_errors") or [])],
-            diagnostics=dict(state.get("research_result", {}).get("diagnostics") or {})
-            if isinstance(state.get("research_result"), dict)
+            diagnostics=dict(research_result.get("diagnostics") or {})
+            if research_result is not None
             else {},
         )
 

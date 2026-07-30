@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 from src.domain.extraction import ExtractionResult
 from src.infrastructure.db.mappers.extraction.extraction_chunk_coverage_mapper import (
     ExtractionChunkCoverageMapper,
@@ -74,17 +76,17 @@ class ExtractionResultMapper:
     @staticmethod
     def to_domain(
         orm: ExtractionResultORM,
-        task_rows: list[MaintenanceTaskORM] | None = None,
-        spare_part_rows: list[SparePartORM] | None = None,
-        equipment_rows: list[EquipmentInfoORM] | None = None,
-        manufacturer_rows: list[ManufacturerORM] | None = None,
-        supplier_rows: list[SupplierORM] | None = None,
-        contact_point_rows: list[ContactPointORM] | None = None,
-        procedure_rows: list[ProcedureORM] | None = None,
-        specification_rows: list[SpecificationORM] | None = None,
-        safety_warning_rows: list[SafetyWarningORM] | None = None,
-        maintenance_interval_rows: list[MaintenanceIntervalORM] | None = None,
-        troubleshooting_entry_rows: list[TroubleshootingEntryORM] | None = None,
+        task_rows: Sequence[MaintenanceTaskORM] | None = None,
+        spare_part_rows: Sequence[SparePartORM] | None = None,
+        equipment_rows: Sequence[EquipmentInfoORM] | None = None,
+        manufacturer_rows: Sequence[ManufacturerORM] | None = None,
+        supplier_rows: Sequence[SupplierORM] | None = None,
+        contact_point_rows: Sequence[ContactPointORM] | None = None,
+        procedure_rows: Sequence[ProcedureORM] | None = None,
+        specification_rows: Sequence[SpecificationORM] | None = None,
+        safety_warning_rows: Sequence[SafetyWarningORM] | None = None,
+        maintenance_interval_rows: Sequence[MaintenanceIntervalORM] | None = None,
+        troubleshooting_entry_rows: Sequence[TroubleshootingEntryORM] | None = None,
     ) -> ExtractionResult:
         return ExtractionResult(
             extraction_id=orm.id,

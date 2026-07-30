@@ -14,8 +14,11 @@ import json
 import sys
 import traceback
 from pathlib import Path
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 from uuid import uuid4
+
+if TYPE_CHECKING:
+    from src.application.agent_runtime.policies import DemoVisibilityPolicy
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = PROJECT_ROOT / "src"

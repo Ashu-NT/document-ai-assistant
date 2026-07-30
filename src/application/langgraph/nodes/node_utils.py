@@ -10,6 +10,7 @@ from src.application.langgraph.common.value_coercion import optional_str
 from src.application.langgraph.nodes.retrieval_intent_decision import (
     RetrievalIntentDecision,
 )
+from src.application.langgraph.state.agent_state import AgentState
 from src.application.workflows.shared.structured_evidence_deduplication import (
     deduplicate_identifiers as shared_deduplicate_identifiers,
     deduplicate_structured_entities as shared_deduplicate_structured_entities,
@@ -120,7 +121,7 @@ def build_error(
     }
 
 
-def resolve_selected_document(state: dict[str, Any]) -> tuple[str | None, str | None]:
+def resolve_selected_document(state: AgentState) -> tuple[str | None, str | None]:
     document_id = state.get("document_id")
     if isinstance(document_id, str) and document_id:
         return document_id, optional_str(state.get("document_title"))

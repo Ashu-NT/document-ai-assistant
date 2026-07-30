@@ -8,6 +8,7 @@ from src.application.guardrails.messages.guardrail_message_builder import (
 from src.application.langgraph.reflection.constants import (
     REFLECTION_SAFE_FAILURE_MESSAGE,
 )
+from src.application.langgraph.state.agent_state import AgentState
 
 _GUARDRAIL_MESSAGE_BUILDER = GuardrailMessageBuilder()
 _SAFE_FAILURE_MESSAGES = {
@@ -57,7 +58,7 @@ def resolve_answer_text(
     return fallback_response_text
 
 
-def resolve_state_response_text(state: dict[str, Any]) -> str | None:
+def resolve_state_response_text(state: AgentState) -> str | None:
     tool_results = state.get("tool_results")
     if not isinstance(tool_results, dict):
         tool_results = {}
@@ -72,7 +73,7 @@ def resolve_state_response_text(state: dict[str, Any]) -> str | None:
     )
 
 
-def generated_answer_text_from_state(state: dict[str, Any]) -> str | None:
+def generated_answer_text_from_state(state: AgentState) -> str | None:
     tool_results = state.get("tool_results")
     if not isinstance(tool_results, dict):
         return None
@@ -87,7 +88,7 @@ def is_usable_reflection_decision(value: str | None) -> bool:
     return _is_usable_reflection_decision(value)
 
 
-def reflection_decision_from_state(state: dict[str, Any]) -> str | None:
+def reflection_decision_from_state(state: AgentState) -> str | None:
     return _reflection_decision_from_state(state)
 
 
@@ -114,7 +115,7 @@ def _generated_answer_text(tool_results: dict[str, Any]) -> str | None:
     return None
 
 
-def _reflection_decision_from_state(state: dict[str, Any]) -> str | None:
+def _reflection_decision_from_state(state: AgentState) -> str | None:
     value = state.get("reflection_decision")
     if isinstance(value, str) and value.strip():
         return value.strip()

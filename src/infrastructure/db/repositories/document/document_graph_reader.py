@@ -1,4 +1,5 @@
 from collections import Counter
+from collections.abc import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -128,7 +129,7 @@ class DocumentGraphReader:
 
     def _group_element_ids_by_section(
         self,
-        elements: list[ElementORM],
+        elements: Sequence[ElementORM],
     ) -> dict[str, list[str]]:
         grouped: dict[str, list[str]] = {}
 

@@ -212,19 +212,19 @@ class DoclingDocumentNormalizer:
                 for _, entry_element in entries
             ):
                 continue
-            entries.sort(
-                key=lambda entry: (
-                    entry[1].metadata.get("layout_page_order")
-                    if entry[1].metadata.get("layout_page_order") is not None
-                    else entry[0]
-                )
-            )
+            entries.sort(key=DoclingDocumentNormalizer._reading_order_sort_key)
             for position, (_, element) in zip(positions, entries):
                 reordered[position] = element
 
         for index, element in enumerate(reordered, start=1):
             element.order_index = index
         return reordered
+
+    @staticmethod
+    def _reading_order_sort_key(entry: tuple[int, ParsedCanonicalElement]) -> int:
+        position, element = entry
+        layout_page_order = element.metadata.get("layout_page_order")
+        return int(layout_page_order) if layout_page_order is not None else position
 
     @staticmethod
     def _extract_page_lane_count(

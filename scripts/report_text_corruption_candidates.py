@@ -64,6 +64,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Sequence
 
+from sqlalchemy import Row
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = PROJECT_ROOT / "src"
 
@@ -118,7 +120,7 @@ class DocumentCandidateGroup:
 
 
 def scan_chunk_rows(
-    rows: Sequence[tuple[str, str, str, int | None, int | None]],
+    rows: Sequence[Row[tuple[str, str, str, int | None, int | None]]],
     *,
     min_run_length: int,
     min_run_count: int,

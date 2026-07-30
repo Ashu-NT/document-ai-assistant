@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 from src.domain.memory import ConversationMemory, ConversationMessage
 from src.infrastructure.db.orm_models import ConversationMemoryORM, ConversationMessageORM
 
@@ -26,7 +28,7 @@ class ConversationMemoryMapper:
     @staticmethod
     def to_domain(
         memory_row: ConversationMemoryORM,
-        message_rows: list[ConversationMessageORM],
+        message_rows: Sequence[ConversationMessageORM],
     ) -> ConversationMemory:
         memory = ConversationMemory(conversation_id=memory_row.id)
 

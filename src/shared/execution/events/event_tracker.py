@@ -20,7 +20,7 @@ class EventTracker:
         result: Any,
         default_entity_type: str | None,
     ) -> None:
-        event_service:EventService = getattr(service_instance, "event_service", None)
+        event_service: EventService | None = getattr(service_instance, "event_service", None)
 
         if event_service is None:
             return
