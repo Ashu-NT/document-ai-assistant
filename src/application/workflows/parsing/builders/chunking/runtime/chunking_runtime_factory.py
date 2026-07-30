@@ -19,6 +19,9 @@ from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk
 from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter_factory import (
     ChunkTokenCounterFactory,
 )
+from src.application.workflows.parsing.builders.chunking.text.tokenization.whitespace_chunk_token_counter import (
+    WhitespaceChunkTokenCounter,
+)
 from src.application.workflows.parsing.builders.chunking.runtime.chunking_runtime import (
     ChunkingRuntime,
 )
@@ -34,9 +37,38 @@ from src.application.workflows.parsing.builders.chunking.policies.section_merge_
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
     ChunkingProfile,
 )
+from src.config.logging import get_logger
 from src.domain.common import DocumentType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
+
+logger = get_logger(__name__)
+
+# Reserve room for special tokens (e.g. BERT-family [CLS]/[SEP]) that the
+# embedding model's tokenizer adds on top of the content tokens.
+_SPECIAL_TOKEN_RESERVE = 2
+
+# Conservative estimate of how many real embedding-model subword tokens a
+# single whitespace-split "word" of technical text (part numbers, unit
+# codes, alphanumeric identifiers) expands into. Whitespace counting
+# understates real token counts, so budgets measured in words are clamped
+# against the worst-case end of this range rather than the model ceiling
+# directly -- otherwise a word-counted chunk could still silently exceed the
+# embedding model's real limit and get truncated at embed time.
+_WORD_TO_SUBWORD_EXPANSION_FACTOR = 1.6
+
+
+def _max_safe_chunk_tokens(token_counter: ChunkTokenCounter) -> int:
+    try:
+        from src.config.settings import embedding_settings
+
+        ceiling = max(1, embedding_settings.max_sequence_tokens - _SPECIAL_TOKEN_RESERVE)
+    except Exception:
+        ceiling = 510
+
+    if isinstance(token_counter, WhitespaceChunkTokenCounter):
+        return max(1, int(ceiling / _WORD_TO_SUBWORD_EXPANSION_FACTOR))
+    return ceiling
 
 
 class ChunkingRuntimeFactory:
@@ -77,7 +109,19 @@ class ChunkingRuntimeFactory:
             sections=sections,
             section_elements_by_id=section_elements_by_id,
         )
+        token_counter = self.token_counter or self.token_counter_factory.create()
         max_chunk_tokens = self.max_chunk_tokens_override or policy.max_chunk_tokens
+        safe_max_chunk_tokens = _max_safe_chunk_tokens(token_counter)
+        if max_chunk_tokens > safe_max_chunk_tokens:
+            logger.warning(
+                "chunking profile max_chunk_tokens exceeds embedding model capacity, clamping",
+                extra={
+                    "profile": policy.profile_name.value,
+                    "configured_max_chunk_tokens": max_chunk_tokens,
+                    "clamped_max_chunk_tokens": safe_max_chunk_tokens,
+                },
+            )
+            max_chunk_tokens = safe_max_chunk_tokens
         chunk_overlap = (
             self.chunk_overlap_override
             if self.chunk_overlap_override is not None
@@ -88,7 +132,6 @@ class ChunkingRuntimeFactory:
             if self.min_section_text_length_override is not None
             else max(12, policy.same_topic_merge_tokens // 6)
         )
-        token_counter = self.token_counter or self.token_counter_factory.create()
         text_splitter = ChunkTextSplitter(
             max_chunk_tokens=max_chunk_tokens,
             chunk_overlap=chunk_overlap,

@@ -7,9 +7,9 @@ from src.config.settings import ingestion_settings
 
 @dataclass(frozen=True)
 class ParsingChunkingSettings:
-    max_chunk_tokens: int
-    chunk_overlap: int
-    min_section_text_length: int
+    max_chunk_tokens: int | None
+    chunk_overlap: int | None
+    min_section_text_length: int | None
 
 
 def resolve_parsing_chunking_settings() -> ParsingChunkingSettings:

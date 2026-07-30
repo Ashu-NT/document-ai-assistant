@@ -86,8 +86,13 @@ class RetrievalSettings(AppBaseSettings):
         alias="RETRIEVAL_MIN_SCORE"
     )
 
+    # Expands retrieved chunks with their linked table/figure/section
+    # cross-references at query time (e.g. a chunk that says "see Table 4"
+    # also pulls in Table 4). Defaults on: the ingest-time linking this
+    # depends on (ChunkCrossReferenceLinker) is meaningless if nothing at
+    # query time ever uses it.
     cross_reference_expansion_enabled: bool = Field(
-        default=False,
+        default=True,
         alias="RETRIEVAL_CROSS_REFERENCE_EXPANSION_ENABLED"
     )
 

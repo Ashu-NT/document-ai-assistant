@@ -63,11 +63,6 @@ from src.domain.document import (
 from src.shared.exceptions import ChunkingError
 from src.shared.ids import IdGenerator
 
-_DEFAULT_MAX_CHUNK_TOKENS = 1000
-_DEFAULT_CHUNK_OVERLAP = 150
-_DEFAULT_MIN_SECTION_TEXT_LENGTH = 150
-
-
 class DocumentGraphBuilder:
     def __init__(
         self,
@@ -85,21 +80,6 @@ class DocumentGraphBuilder:
         self.section_builder = section_builder
         self.profiler = profiler or GraphBuildProfiler.disabled()
         self.chunk_cross_reference_linker = chunk_cross_reference_linker
-        resolved_max_chunk_tokens = (
-            max_chunk_tokens
-            if max_chunk_tokens is not None
-            else _DEFAULT_MAX_CHUNK_TOKENS
-        )
-        resolved_chunk_overlap = (
-            chunk_overlap
-            if chunk_overlap is not None
-            else _DEFAULT_CHUNK_OVERLAP
-        )
-        resolved_min_section_text_length = (
-            min_section_text_length
-            if min_section_text_length is not None
-            else _DEFAULT_MIN_SECTION_TEXT_LENGTH
-        )
         token_counter_factory = ChunkTokenCounterFactory()
         if section_chunk_builder is not None:
             self.section_chunk_builder = section_chunk_builder
@@ -107,15 +87,13 @@ class DocumentGraphBuilder:
             self.section_chunk_builder = SectionChunkBuilder(
                 runtime_factory=ChunkingRuntimeFactory(
                     token_counter_factory=token_counter_factory,
-                    max_chunk_tokens_override=resolved_max_chunk_tokens,
-                    chunk_overlap_override=resolved_chunk_overlap,
-                    min_section_text_length_override=(
-                        resolved_min_section_text_length
-                    ),
+                    max_chunk_tokens_override=max_chunk_tokens,
+                    chunk_overlap_override=chunk_overlap,
+                    min_section_text_length_override=min_section_text_length,
                 ),
-                max_chunk_tokens=resolved_max_chunk_tokens,
-                chunk_overlap=resolved_chunk_overlap,
-                min_section_text_length=resolved_min_section_text_length,
+                max_chunk_tokens=max_chunk_tokens,
+                chunk_overlap=chunk_overlap,
+                min_section_text_length=min_section_text_length,
                 profiler=self.profiler,
             )
         self.asset_factory = ParsedAssetFactory(id_generator)
@@ -156,6 +134,7 @@ class DocumentGraphBuilder:
         hashes: DocumentHashes,
         canonical_elements: list[ParsedCanonicalElement],
         raw_parsed_document: RawParsedDocument,
+        skipped_element_errors: list[str] | None = None,
     ) -> DocumentGraph:
         try:
             with self.profiler.measure(
@@ -207,61 +186,87 @@ class DocumentGraphBuilder:
                 key=lambda element: element.order_index,
             )
 
+            element_errors = (
+                skipped_element_errors if skipped_element_errors is not None else []
+            )
             with self.profiler.measure(
                 name="document_graph_builder.materialize_elements_assets",
                 input_counts={"ordered_elements": len(ordered_elements)},
             ) as stage:
                 for parsed_element in ordered_elements:
-                    parent_section_id = self.section_builder.resolve_section_id(
-                        parsed_element,
-                        section_build_result,
-                    )
-                    resolved_section_path = self.section_builder.resolve_section_path(
-                        parsed_element,
-                        section_build_result,
-                    )
                     table_id = None
                     picture_id = None
-
-                    if parsed_element.element_type == ElementType.TABLE:
-                        table_id, table_asset = self.asset_factory.build_table_asset(
-                            document_id=document_id,
-                            parent_section_id=parent_section_id,
-                            parsed_element=parsed_element,
+                    try:
+                        parent_section_id = self.section_builder.resolve_section_id(
+                            parsed_element,
+                            section_build_result,
                         )
-                        graph.tables[table_id] = table_asset
-
-                    if parsed_element.element_type == ElementType.PICTURE:
-                        picture_id, picture_asset = self.asset_factory.build_picture_asset(
-                            document_id=document_id,
-                            parent_section_id=parent_section_id,
-                            parsed_element=parsed_element,
+                        resolved_section_path = (
+                            self.section_builder.resolve_section_path(
+                                parsed_element,
+                                section_build_result,
+                            )
                         )
-                        graph.pictures[picture_id] = picture_asset
 
-                    domain_element = element_factory.build(
-                        document_id=document_id,
-                        parsed_element=parsed_element,
-                        parent_section_id=parent_section_id,
-                        resolved_section_path=resolved_section_path,
-                        effective_heading_level=section_build_result.header_levels.get(
-                            parsed_element.element_id
-                        ),
-                        heading_level_source=section_build_result.header_sources.get(
-                            parsed_element.element_id
-                        ),
-                        table_id=table_id,
-                        picture_id=picture_id,
-                    )
+                        if parsed_element.element_type == ElementType.TABLE:
+                            table_id, table_asset = self.asset_factory.build_table_asset(
+                                document_id=document_id,
+                                parent_section_id=parent_section_id,
+                                parsed_element=parsed_element,
+                            )
+                            graph.tables[table_id] = table_asset
 
-                    graph.add_element(domain_element)
-                    if parent_section_id and parent_section_id in section_lookup:
-                        section = section_lookup[parent_section_id]
-                        section.element_ids.append(domain_element.element_id)
-                        SectionBoundaryUpdater.update(section, domain_element)
+                        if parsed_element.element_type == ElementType.PICTURE:
+                            picture_id, picture_asset = self.asset_factory.build_picture_asset(
+                                document_id=document_id,
+                                parent_section_id=parent_section_id,
+                                parsed_element=parsed_element,
+                            )
+                            graph.pictures[picture_id] = picture_asset
+
+                        domain_element = element_factory.build(
+                            document_id=document_id,
+                            parsed_element=parsed_element,
+                            parent_section_id=parent_section_id,
+                            resolved_section_path=resolved_section_path,
+                            effective_heading_level=section_build_result.header_levels.get(
+                                parsed_element.element_id
+                            ),
+                            heading_level_source=section_build_result.header_sources.get(
+                                parsed_element.element_id
+                            ),
+                            table_id=table_id,
+                            picture_id=picture_id,
+                        )
+
+                        graph.add_element(domain_element)
+                        if parent_section_id and parent_section_id in section_lookup:
+                            section = section_lookup[parent_section_id]
+                            section.element_ids.append(domain_element.element_id)
+                            SectionBoundaryUpdater.update(section, domain_element)
+                    except Exception as exc:  # one bad element must not sink the document
+                        if table_id is not None:
+                            graph.tables.pop(table_id, None)
+                        if picture_id is not None:
+                            graph.pictures.pop(picture_id, None)
+                        element_errors.append(
+                            f"element {parsed_element.element_id!r} "
+                            f"({parsed_element.element_type}): {exc}"
+                        )
+                        continue
                 stage.output_counts["graph_elements"] = len(graph.elements)
                 stage.output_counts["tables"] = len(graph.tables)
                 stage.output_counts["pictures"] = len(graph.pictures)
+
+            if element_errors and not graph.elements:
+                raise ChunkingError(
+                    "Document graph build produced zero usable elements.",
+                    details={
+                        "document_id": document_id,
+                        "element_count": len(ordered_elements),
+                        "errors": element_errors[:10],
+                    },
+                )
 
             self.asset_nearby_text_enricher.enrich(graph)
             AssetMetadataSynchronizer.sync(graph)

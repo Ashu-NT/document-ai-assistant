@@ -178,6 +178,7 @@ class ParsingWorkflow:
             canonical_elements = ocr_merge_result.canonical_elements
             ocr_trace = ocr_merge_result.ocr_trace
 
+        graph_build_element_errors: list[str] = []
         document_graph = run_stage(
             progress_callback=progress_callback,
             start_message=(
@@ -195,6 +196,7 @@ class ParsingWorkflow:
                 ),
                 canonical_elements=canonical_elements,
                 raw_parsed_document=raw_parsed_document,
+                skipped_element_errors=graph_build_element_errors,
             ),
             completion_message_builder=lambda result, elapsed_seconds: (
                 "Document graph build completed in "
@@ -232,6 +234,7 @@ class ParsingWorkflow:
             ocr_trace=ocr_trace,
             stage_durations=stage_durations,
             normalization_item_errors=normalization_item_errors,
+            graph_build_item_errors=graph_build_element_errors,
         )
 
         emit_progress(

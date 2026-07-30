@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text
+from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.db.base import Base
@@ -11,7 +11,14 @@ class IngestionRunORM(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
 
-    document_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    # SET NULL (not CASCADE): an ingestion run is audit/history for a
+    # document that may later be deleted -- the run record should survive
+    # as history, just detached from the deleted document.
+    document_id: Mapped[str | None] = mapped_column(
+        ForeignKey("documents.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     file_path: Mapped[str | None] = mapped_column(String, nullable=True)
     file_hash: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     content_hash: Mapped[str | None] = mapped_column(String, nullable=True, index=True)

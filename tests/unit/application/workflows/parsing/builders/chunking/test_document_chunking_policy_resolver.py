@@ -18,7 +18,7 @@ def test_resolver_uses_enum_profile_for_explicit_document_type() -> None:
     )
 
     assert policy.profile_name == ChunkingProfile.MANUAL
-    assert policy.max_chunk_tokens == 1000
+    assert policy.max_chunk_tokens == 310
 
 
 def test_resolver_uses_profile_override_before_document_type() -> None:
@@ -46,7 +46,7 @@ def test_resolver_uses_certificate_policy_for_certificate_document_type() -> Non
     )
 
     assert policy.profile_name == ChunkingProfile.CERTIFICATE
-    assert policy.max_chunk_tokens == 500
+    assert policy.max_chunk_tokens == 250
     assert policy.include_table_context is True
     assert policy.include_picture_chunks is False
 
@@ -63,7 +63,7 @@ def test_resolver_maps_certificate_profile_override_to_certificate_policy() -> N
     )
 
     assert policy.profile_name == ChunkingProfile.CERTIFICATE
-    assert policy.max_chunk_tokens == 500
+    assert policy.max_chunk_tokens == 250
 
 
 def test_resolver_drawing_policy_has_drawing_profile_name() -> None:

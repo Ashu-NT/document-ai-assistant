@@ -4,6 +4,12 @@ from src.config.settings.base_settings import AppBaseSettings
 
 
 class ChunkingSettings(AppBaseSettings):
+    # "whitespace" (word count) understates real embedding-model subword
+    # tokens for technical text; ChunkingRuntimeFactory's safety clamp
+    # accounts for that gap so budgets stay truncation-safe regardless of
+    # which counter is active. "transformer" measures real tokens directly
+    # but changes chunk-size-sensitive behavior throughout the pipeline, so
+    # it's opt-in rather than the default — see end_to_end_pipeline_audit.md.
     token_counter_provider: str = Field(
         default="whitespace",
         alias="CHUNK_TOKEN_COUNTER_PROVIDER",

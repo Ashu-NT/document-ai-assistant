@@ -7,7 +7,10 @@ from src.application.workflows.parsing.builders.chunking.text.tokenization.trans
 from src.application.workflows.parsing.builders.chunking.text.tokenization.whitespace_chunk_token_counter import (
     WhitespaceChunkTokenCounter,
 )
+from src.config.logging import get_logger
 from src.shared.exceptions import InfrastructureError
+
+logger = get_logger(__name__)
 
 _DEFAULT_TRANSFORMER_CHUNK_TOKENIZER_MODEL = "BAAI/bge-small-en-v1.5"
 
@@ -76,10 +79,22 @@ class ChunkTokenCounterFactory:
             cache_key = (provider, model_name, local_only)
             cached = self._cache.get(cache_key)
             if cached is None:
-                cached = TransformerChunkTokenCounter.from_pretrained(
-                    model_name=model_name,
-                    local_files_only=local_only,
-                )
+                try:
+                    cached = TransformerChunkTokenCounter.from_pretrained(
+                        model_name=model_name,
+                        local_files_only=local_only,
+                    )
+                except InfrastructureError:
+                    logger.warning(
+                        "transformer tokenizer unavailable, falling back to whitespace "
+                        "token counting (chunk sizes will be measured in words, not "
+                        "real subword tokens)",
+                        extra={"model_name": model_name, "local_files_only": local_only},
+                    )
+                    cache_key = ("whitespace", "", True)
+                    cached = self._cache.get(cache_key)
+                    if cached is None:
+                        cached = WhitespaceChunkTokenCounter()
                 self._cache[cache_key] = cached
             return cached
 

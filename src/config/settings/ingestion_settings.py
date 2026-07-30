@@ -40,18 +40,23 @@ class IngestionSettings(AppBaseSettings):
         alias="ENABLE_ANSWER_GENERATION"
     )
 
-    max_chunk_tokens: int = Field(
-        default=1000,
+    # These three are global overrides for the per-document-type chunking
+    # profiles (src/config/chunking/*.yaml). Leave unset (None) so each
+    # document type's own tuned profile takes effect; only set one of these
+    # to force the same value across every document type regardless of
+    # profile.
+    max_chunk_tokens: int | None = Field(
+        default=None,
         alias="MAX_CHUNK_TOKENS"
     )
 
-    chunk_overlap: int = Field(
-        default=150,
+    chunk_overlap: int | None = Field(
+        default=None,
         alias="CHUNK_OVERLAP"
     )
 
-    min_section_text_length: int = Field(
-        default=150,
+    min_section_text_length: int | None = Field(
+        default=None,
         alias="MIN_SECTION_TEXT_LENGTH"
     )
 

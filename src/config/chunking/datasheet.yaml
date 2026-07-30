@@ -1,6 +1,6 @@
 # Chunking policy for DATASHEET document type.
 profile_name: datasheet
-max_chunk_tokens: 600
+max_chunk_tokens: 270
 chunk_overlap: 75
 same_topic_merge_tokens: 80
 intro_context_tokens: 110
