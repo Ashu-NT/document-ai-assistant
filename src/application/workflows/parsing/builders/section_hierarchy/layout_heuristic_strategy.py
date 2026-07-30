@@ -63,9 +63,6 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
                     continue
 
                 candidate_level = levels.get(candidate.element_id, 1)
-                if candidate_level >= current_level and candidate.element_id != current_root_id:
-                    pass
-
                 if not self._should_nest_under(
                     candidate,
                     header,
@@ -208,18 +205,6 @@ class LayoutHeuristicStrategy(SectionHierarchyStrategy):
             anchors.append(current_anchor_id)
 
         return anchors
-
-    @staticmethod
-    def _top_level_anchor_id(
-        index: int,
-        headers: list[ParsedCanonicalElement],
-        levels: dict[str, int],
-    ) -> str | None:
-        for candidate in reversed(headers[: index + 1]):
-            if levels.get(candidate.element_id, 1) == 1:
-                return candidate.element_id
-
-        return None
 
     @staticmethod
     def _normalize_title(value: str | None) -> str:

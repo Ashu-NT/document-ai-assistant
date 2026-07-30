@@ -291,5 +291,14 @@ class IngestionStageSequenceExecutor:
                     "warnings": parsing_stage_warnings,
                 },
             )
+        if parsing_result.stage_durations:
+            logger.info(
+                "parsing stage durations",
+                extra={
+                    "document_id": parsing_result.document_id,
+                    "correlation_id": correlation_id,
+                    "stage_durations": parsing_result.stage_durations,
+                },
+            )
         warnings.extend(parsing_stage_warnings)
         return parsing_result, next_content_hash

@@ -34,6 +34,47 @@ def test_ingestion_workflow_warns_on_low_parse_confidence(
 
     assert any("Low parse confidence" in warning for warning in result.warnings)
 
+
+def test_ingestion_workflow_logs_parsing_stage_durations(
+    tmp_path,
+    sample_document_graph,
+    sample_document_classification,
+    sample_extraction_result,
+    caplog,
+) -> None:
+    import logging
+
+    input_file = tmp_path / "manual.pdf"
+    input_file.write_bytes(b"%PDF-1.4\nmanual")
+    workflow = _build_workflow(
+        sample_document_graph=sample_document_graph,
+        sample_document_classification=sample_document_classification,
+        sample_extraction_result=sample_extraction_result,
+        parsing_workflow=FakeParsingWorkflow(
+            sample_document_graph,
+            stage_durations={"docling_conversion": 1.5, "total": 2.0},
+        ),
+    )
+
+    with caplog.at_level(logging.INFO):
+        workflow.run(
+            IngestionRequest(
+                file_path=str(input_file),
+                document_type=DocumentType.MANUAL.value,
+                run_quality_checks=False,
+                requested_by="user_001",
+            )
+        )
+
+    duration_records = [
+        record for record in caplog.records if record.message == "parsing stage durations"
+    ]
+    assert len(duration_records) == 1
+    assert duration_records[0].stage_durations == {
+        "docling_conversion": 1.5,
+        "total": 2.0,
+    }
+
 def test_ingestion_workflow_persists_run_and_emits_stage_events(
     tmp_path,
     sample_document_graph,

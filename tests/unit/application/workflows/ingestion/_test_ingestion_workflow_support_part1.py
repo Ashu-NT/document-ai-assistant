@@ -112,9 +112,11 @@ class FakeParsingWorkflow:
         *,
         parse_confidence: float | None = None,
         parser_version: str | None = None,
+        stage_durations: dict[str, float] | None = None,
     ) -> None:
         self.graph = graph
         self.parse_confidence = parse_confidence
+        self.stage_durations = stage_durations
         self.parser = SimpleNamespace(parser_version=parser_version)
         self.calls = []
 
@@ -162,6 +164,7 @@ class FakeParsingWorkflow:
             document_graph=graph,
             parse_warnings=["parser warning"],
             parse_confidence=self.parse_confidence,
+            stage_durations=self.stage_durations or {},
         )
 
 class FailingParsingWorkflow:
