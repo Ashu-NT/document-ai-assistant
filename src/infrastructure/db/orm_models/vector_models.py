@@ -12,13 +12,13 @@ class ChunkVectorORM(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
 
     document_id: Mapped[str] = mapped_column(
-        ForeignKey("documents.id"),
+        ForeignKey("documents.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
     )
 
     chunk_id: Mapped[str] = mapped_column(
-        ForeignKey("chunks.id"),
+        ForeignKey("chunks.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
     )

@@ -123,7 +123,14 @@ class ExtractionWriter:
             ) from exc
 
     def _insert_extraction_result(self, result: ExtractionResult) -> None:
+        # Explicit flush()es: none of these ORM classes have a relationship()
+        # declared toward ExtractionResultORM/EquipmentInfoORM/
+        # MaintenanceTaskORM (only plain FK columns), so SQLAlchemy's
+        # automatic flush-time insert ordering cannot topologically sort
+        # them within a single flush -- see the identical fix and
+        # explanation in DocumentWriter._merge_document_structure.
         self.session.merge(ExtractionResultMapper.to_orm(result))
+        self.session.flush()
 
         bulk_merge(
             self.session,
@@ -175,6 +182,11 @@ class ExtractionWriter:
                 for contact_point in result.contact_points
             ],
         )
+        # equipment_info and maintenance_tasks must be flushed before
+        # procedures/troubleshooting_entries/maintenance_intervals below,
+        # which reference them via equipment_id/maintenance_task_id.
+        self.session.flush()
+
         bulk_merge(
             self.session,
             ProcedureORM,

@@ -12,7 +12,7 @@ class SemanticRelationshipORM(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
 
     document_id: Mapped[str] = mapped_column(
-        ForeignKey("documents.id"),
+        ForeignKey("documents.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

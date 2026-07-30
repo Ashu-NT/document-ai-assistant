@@ -14,8 +14,10 @@ class MaintenanceIntervalORM(ExtractionEntityColumnsMixin, Base):
 
     interval: Mapped[str] = mapped_column(String, nullable=False)
     component_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    # SET NULL: the interval fact remains valid even without a specific
+    # maintenance-task link.
     maintenance_task_id: Mapped[str | None] = mapped_column(
-        ForeignKey("maintenance_tasks.id"),
+        ForeignKey("maintenance_tasks.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )

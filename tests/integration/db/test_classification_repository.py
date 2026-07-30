@@ -1,4 +1,11 @@
+import pytest
+
 from src.domain.common import DocumentType
+
+# document_classifications.document_id is now a CASCADE FK to documents.id
+# (real enforcement only started once the test engine's PRAGMA gap was
+# fixed), so a real "doc_001" row must exist before these tests can insert.
+pytestmark = pytest.mark.usefixtures("seeded_document_and_chunk")
 
 
 def test_save_and_load_document_classification(

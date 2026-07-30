@@ -18,8 +18,10 @@ class ProcedureORM(ExtractionEntityColumnsMixin, Base):
     )
     steps_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
     component_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    # SET NULL: the procedure fact remains valid/useful even without a
+    # specific equipment link.
     equipment_id: Mapped[str | None] = mapped_column(
-        ForeignKey("equipment_info.id"),
+        ForeignKey("equipment_info.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )

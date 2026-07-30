@@ -16,8 +16,9 @@ class TroubleshootingEntryORM(ExtractionEntityColumnsMixin, Base):
     cause: Mapped[str | None] = mapped_column(Text, nullable=True)
     remedy: Mapped[str | None] = mapped_column(Text, nullable=True)
     component_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    # SET NULL: same reasoning as ProcedureORM.equipment_id.
     equipment_id: Mapped[str | None] = mapped_column(
-        ForeignKey("equipment_info.id"),
+        ForeignKey("equipment_info.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )

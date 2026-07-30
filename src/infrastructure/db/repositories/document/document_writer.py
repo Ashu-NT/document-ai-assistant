@@ -87,18 +87,30 @@ class DocumentWriter:
         self._merge_chunk_artifacts(document_graph)
 
     def _merge_document_structure(self, document_graph: DocumentGraph) -> None:
+        # Explicit flush()es between stages: none of documents/sections/
+        # elements/chunks have an ORM relationship() declared toward each
+        # other (only plain FK columns), so SQLAlchemy's automatic
+        # flush-time insert ordering cannot topologically sort them within
+        # a single flush -- it silently attempted to INSERT chunks before
+        # their parent document/section existed once FK enforcement was
+        # actually turned on (PRAGMA foreign_keys=ON), which no test caught
+        # because the test engine never enabled that pragma either.
         self.session.merge(DocumentMapper.to_orm(document_graph.document))
+        self.session.flush()
 
         bulk_merge(
             self.session,
             SectionORM,
             [SectionMapper.to_orm(section) for section in document_graph.sections.values()],
         )
+        self.session.flush()
+
         bulk_merge(
             self.session,
             ElementORM,
             [ElementMapper.to_orm(element) for element in document_graph.elements.values()],
         )
+        self.session.flush()
 
     def _merge_chunk_artifacts(self, document_graph: DocumentGraph) -> None:
         bulk_merge(
@@ -106,6 +118,8 @@ class DocumentWriter:
             ChunkORM,
             [ChunkMapper.to_orm(chunk) for chunk in document_graph.chunks.values()],
         )
+        self.session.flush()
+
         bulk_merge(
             self.session,
             GeneratedQuestionORM,

@@ -1,3 +1,14 @@
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _seed_documents_and_chunks(seed_document_with_chunks) -> None:
+    # chunk_vectors.document_id/chunk_id are now enforced CASCADE FKs, so
+    # both "chunk_001" and "chunk_002" (used across these tests) need a
+    # real row before save_mapping can insert against them.
+    seed_document_with_chunks(["chunk_001", "chunk_002"])
+
+
 def test_list_qdrant_point_ids_by_document(
     db_uow,
 ) -> None:

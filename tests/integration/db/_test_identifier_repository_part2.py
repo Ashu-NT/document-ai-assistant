@@ -28,7 +28,10 @@ def _make_chunk(
     document_id: str = "doc_001",
     page_start: int | None = 10,
     page_end: int | None = 12,
-    section_id: str | None = "sec_001",
+    # None, not a made-up section id: these tests never add a matching
+    # SectionORM row to the graph, and a real (now-enforced) FK would
+    # reject a chunk referencing a section that doesn't exist.
+    section_id: str | None = None,
 ) -> DocumentChunk:
     return DocumentChunk(
         chunk_id=chunk_id,
@@ -104,7 +107,7 @@ def test_get_identifiers_on_page_excludes_other_documents(db_uow) -> None:
     chunk_a = DocumentChunk(
         chunk_id="ck_a",
         document_id=doc_a,
-        section_id="sec_a",
+        section_id=None,
         content="Part PN-AA",
         chunk_type=ChunkType.SPARE_PARTS_TABLE,
         sequence_number=1,
@@ -115,7 +118,7 @@ def test_get_identifiers_on_page_excludes_other_documents(db_uow) -> None:
     chunk_b = DocumentChunk(
         chunk_id="ck_b",
         document_id=doc_b,
-        section_id="sec_b",
+        section_id=None,
         content="Part PN-BB",
         chunk_type=ChunkType.SPARE_PARTS_TABLE,
         sequence_number=1,

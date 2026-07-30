@@ -51,7 +51,7 @@ class SectionORM(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     document_id: Mapped[str] = mapped_column(
-        ForeignKey("documents.id"),
+        ForeignKey("documents.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
     )
@@ -84,7 +84,7 @@ class ElementORM(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     document_id: Mapped[str] = mapped_column(
-        ForeignKey("documents.id"),
+        ForeignKey("documents.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
     )
@@ -93,8 +93,12 @@ class ElementORM(Base):
 
     text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # SET NULL, not CASCADE: an element without its section link is still
+    # valid document content, and no code path deletes a single section
+    # while keeping the document (delete_document/replace_document_graph
+    # always remove sections and elements together).
     parent_section_id: Mapped[str | None] = mapped_column(
-        ForeignKey("sections.id"),
+        ForeignKey("sections.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
@@ -136,12 +140,14 @@ class ChunkORM(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
 
     document_id: Mapped[str] = mapped_column(
-        ForeignKey("documents.id"),
+        ForeignKey("documents.id", ondelete="CASCADE"),
         nullable=False,
     )
 
+    # SET NULL, not CASCADE: a chunk is still valid content without its
+    # section link (same reasoning as ElementORM.parent_section_id above).
     section_id: Mapped[str | None] = mapped_column(
-        ForeignKey("sections.id"),
+        ForeignKey("sections.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
@@ -206,13 +212,16 @@ class GeneratedQuestionORM(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
 
     document_id: Mapped[str] = mapped_column(
-        ForeignKey("documents.id"),
+        ForeignKey("documents.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
     )
 
+    # CASCADE: a generated question is meaningless without the chunk it was
+    # generated from (unlike the nullable, SET NULL-on-delete sibling links
+    # elsewhere in this file, this FK is NOT NULL by design).
     chunk_id: Mapped[str] = mapped_column(
-        ForeignKey("chunks.id"),
+        ForeignKey("chunks.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
     )
@@ -232,19 +241,23 @@ class IdentifierORM(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
 
     document_id: Mapped[str] = mapped_column(
-        ForeignKey("documents.id"),
+        ForeignKey("documents.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
     )
 
+    # SET NULL: an identifier (part number, serial number, etc.) is a
+    # valuable, searchable document-level fact on its own -- it should
+    # survive even if its specific chunk/element provenance link goes
+    # stale, not disappear along with one chunk/element.
     chunk_id: Mapped[str | None] = mapped_column(
-        ForeignKey("chunks.id"),
+        ForeignKey("chunks.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
 
     element_id: Mapped[str | None] = mapped_column(
-        ForeignKey("elements.id"),
+        ForeignKey("elements.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
@@ -268,18 +281,23 @@ class ChunkCrossReferenceORM(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
 
     document_id: Mapped[str] = mapped_column(
-        ForeignKey("documents.id"),
+        ForeignKey("documents.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
     )
 
+    # CASCADE: a cross-reference is meaningless without its source chunk
+    # (NOT NULL by design). target_chunk_id is SET NULL instead: the
+    # reference record itself (matched_text, resolution_status) is still
+    # worth keeping even if the specific target chunk it once resolved to
+    # is later removed.
     source_chunk_id: Mapped[str] = mapped_column(
-        ForeignKey("chunks.id"),
+        ForeignKey("chunks.id", ondelete="CASCADE"),
         index=True,
         nullable=False,
     )
     target_chunk_id: Mapped[str | None] = mapped_column(
-        ForeignKey("chunks.id"),
+        ForeignKey("chunks.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )

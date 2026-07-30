@@ -20,8 +20,14 @@ class ExtractionEntityColumnsMixin:
 
     @declared_attr
     def extraction_id(cls) -> Mapped[str | None]:
+        # SET NULL, not CASCADE: document_id is the real ownership boundary
+        # for these entities (ExtractionWriter._delete_extraction_result
+        # already deletes/replaces every entity table by document_id, never
+        # by extraction_id) -- extraction_id is a lineage tag ("which
+        # extraction run produced this row"), so losing it should orphan
+        # the tag, not destroy the extracted fact itself.
         return mapped_column(
-            ForeignKey("extraction_results.id"),
+            ForeignKey("extraction_results.id", ondelete="SET NULL"),
             nullable=True,
             index=True,
         )
@@ -29,15 +35,19 @@ class ExtractionEntityColumnsMixin:
     @declared_attr
     def document_id(cls) -> Mapped[str]:
         return mapped_column(
-            ForeignKey("documents.id"),
+            ForeignKey("documents.id", ondelete="CASCADE"),
             nullable=False,
             index=True,
         )
 
     @declared_attr
     def source_chunk_id(cls) -> Mapped[str | None]:
+        # SET NULL: an extracted entity (spare part, procedure, etc.) is
+        # still a valid, useful fact even if its specific source chunk
+        # reference becomes stale -- document_id's CASCADE is what actually
+        # governs whether the entity itself should exist.
         return mapped_column(
-            ForeignKey("chunks.id"),
+            ForeignKey("chunks.id", ondelete="SET NULL"),
             nullable=True,
             index=True,
         )
