@@ -52,6 +52,18 @@ def test_extraction_result_validator_rejects_invalid_confidence(
     assert result.issues[0].code == "extraction.confidence.invalid"
 
 
+def test_extraction_result_validator_accepts_none_confidence(
+    sample_extraction_result,
+) -> None:
+    sample_extraction_result.confidence_score = None
+
+    result = ExtractionResultValidator().validate(
+        sample_extraction_result
+    )
+
+    assert result.is_valid
+
+
 def test_extraction_result_validator_detects_maintenance_task_document_mismatch(
     sample_extraction_result,
 ) -> None:

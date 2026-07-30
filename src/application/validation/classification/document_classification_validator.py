@@ -17,7 +17,8 @@ class DocumentClassificationValidator(Validator[DocumentClassification]):
         if not value.result.classification_id:
             result.add_issue("classification_id", "Classification id is required.", "classification.id.required")
 
-        if value.result.confidence_score < 0 or value.result.confidence_score > 1:
+        confidence_score = value.result.confidence_score
+        if confidence_score is not None and (confidence_score < 0 or confidence_score > 1):
             result.add_issue("confidence_score", "Confidence must be between 0 and 1.", "classification.confidence.invalid")
 
         return result

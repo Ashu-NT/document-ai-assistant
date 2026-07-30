@@ -50,3 +50,15 @@ def test_document_classification_validator_rejects_invalid_confidence(
 
     assert not result.is_valid
     assert result.issues[0].code == "classification.confidence.invalid"
+
+
+def test_document_classification_validator_accepts_none_confidence(
+    sample_document_classification,
+) -> None:
+    sample_document_classification.result.confidence_score = None
+
+    result = DocumentClassificationValidator().validate(
+        sample_document_classification
+    )
+
+    assert result.is_valid

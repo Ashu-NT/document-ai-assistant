@@ -12,7 +12,9 @@ class ExtractionResultValidator(Validator[ExtractionResult]):
         if not value.document_id:
             result.add_issue("document_id", "Document id is required.", "extraction.document_id.required")
 
-        if value.confidence_score < 0 or value.confidence_score > 1:
+        if value.confidence_score is not None and (
+            value.confidence_score < 0 or value.confidence_score > 1
+        ):
             result.add_issue("confidence_score", "Confidence must be between 0 and 1.", "extraction.confidence.invalid")
 
         for task in value.maintenance_tasks:

@@ -149,6 +149,8 @@ class ParsedAssetFactory:
 
     @staticmethod
     def _build_row_ids(*, table_id: str, row_count: object) -> list[str]:
+        if not isinstance(row_count, (int, float, str)):
+            return []
         try:
             count = max(0, int(row_count))
         except (TypeError, ValueError):
@@ -157,15 +159,19 @@ class ParsedAssetFactory:
 
     @staticmethod
     def _coerce_float(value: object) -> float | None:
+        if not isinstance(value, (int, float, str)):
+            return None
         try:
-            return float(value) if value is not None else None
+            return float(value)
         except (TypeError, ValueError):
             return None
 
     @staticmethod
     def _coerce_int(value: object) -> int | None:
+        if not isinstance(value, (int, float, str)):
+            return None
         try:
-            return int(value) if value is not None else None
+            return int(value)
         except (TypeError, ValueError):
             return None
 
