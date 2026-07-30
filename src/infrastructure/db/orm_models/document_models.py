@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infrastructure.db.base import Base
@@ -121,12 +121,22 @@ class ElementORM(Base):
 
 class ChunkORM(Base):
     __tablename__ = "chunks"
+    __table_args__ = (
+        # Composite index covers ordered-retrieval-by-document (the common
+        # hot path) and also serves plain document_id-only lookups via the
+        # leftmost-prefix rule, so a separate single-column index on
+        # document_id alone would be redundant.
+        Index(
+            "ix_chunks_document_id_sequence_number",
+            "document_id",
+            "sequence_number",
+        ),
+    )
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
 
     document_id: Mapped[str] = mapped_column(
         ForeignKey("documents.id"),
-        index=True,
         nullable=False,
     )
 

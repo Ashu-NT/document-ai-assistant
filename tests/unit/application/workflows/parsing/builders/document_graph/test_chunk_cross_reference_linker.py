@@ -80,6 +80,30 @@ def test_link_leaves_a_table_reference_unresolved_when_no_asset_is_captioned_wit
     assert xref.resolution_status == ChunkCrossReferenceResolutionStatus.UNRESOLVED
 
 
+def test_link_falls_back_to_page_proximity_when_table_has_no_caption() -> None:
+    table = TableAsset(
+        table_id="table_1",
+        document_id="doc_001",
+        markdown="| a | b |",
+        metadata=AssetMetadata(caption=None),
+    )
+    referencing_chunk = make_chunk(
+        chunk_id="ref", content="Spare parts are listed in Table 3."
+    )
+    target_chunk = make_chunk(
+        chunk_id="target", content="table contents here", table_ids=["table_1"]
+    )
+    graph = make_graph([referencing_chunk, target_chunk], tables={"table_1": table})
+
+    cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    assert len(cross_references) == 1
+    xref = cross_references[0]
+    assert xref.target_chunk_id == "target"
+    assert xref.resolution_status == ChunkCrossReferenceResolutionStatus.RESOLVED_AMBIGUOUS
+    assert xref.confidence_score == 0.3
+
+
 def test_link_does_not_self_reference_when_the_table_reference_lands_on_its_own_chunk() -> (
     None
 ):

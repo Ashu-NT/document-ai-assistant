@@ -52,6 +52,11 @@ def test_embed_chunk_uses_embedding_text_when_present(sample_chunk) -> None:
     provider = FakeEmbeddingProvider()
     service = EmbeddingService(provider)
     sample_chunk.chunk_type = ChunkType.GENERAL
+    # No section_path/maintenance-signal content, so re-enrichment at embed
+    # time is a no-op and this isolates the embedding_text-selection logic
+    # under test (not the enrichment content itself).
+    sample_chunk.section_path = []
+    sample_chunk.content = "General remark."
     sample_chunk.embedding_text = "Section: Maintenance\nReplace hydraulic filter."
 
     vector = service.embed_chunk(sample_chunk)
@@ -66,6 +71,8 @@ def test_embed_chunks_falls_back_to_chunk_content(sample_chunk) -> None:
     provider = FakeEmbeddingProvider()
     service = EmbeddingService(provider)
     sample_chunk.chunk_type = ChunkType.GENERAL
+    sample_chunk.section_path = []
+    sample_chunk.content = "General remark."
     sample_chunk.embedding_text = None
 
     vectors = service.embed_chunks([sample_chunk])
@@ -112,7 +119,7 @@ def test_embed_chunk_appends_enrichment_for_classified_maintenance_chunk(
     assert "Related terms:" in embedded_text
 
 
-def test_embed_chunk_no_enrichment_for_general_chunk(sample_chunk) -> None:
+def test_embed_chunk_adds_section_component_framing_for_general_chunk(sample_chunk) -> None:
     from src.domain.common import ChunkType
 
     provider = FakeEmbeddingProvider()
@@ -129,7 +136,12 @@ def test_embed_chunk_no_enrichment_for_general_chunk(sample_chunk) -> None:
     service.embed_chunk(sample_chunk)
 
     embedded_text = provider.text_calls[0]
-    assert "Section:" not in embedded_text
+    assert "Section: Overview" in embedded_text
+    assert "Component: 7.3 Vacuum Pump" in embedded_text
+    # No maintenance-signal keywords in the content, so no generic aliases
+    # get added even though GENERAL chunks are no longer unconditionally
+    # excluded from enrichment.
+    assert "Related terms:" not in embedded_text
     assert "Related terms:" not in embedded_text
 
 

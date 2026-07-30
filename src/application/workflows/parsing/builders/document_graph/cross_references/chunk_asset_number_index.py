@@ -29,12 +29,24 @@ def extract_leading_figure_number(caption: str) -> str | None:
     return match.group(1) if match else None
 
 
+# Same page-adjacency window used elsewhere for asset-related heuristics
+# (see LogicalTableFamilyResolver's max_continuation_page_gap) -- a
+# proximity guess more than one page away from the reference is more likely
+# to be wrong than helpful.
+_MAX_PROXIMITY_PAGE_GAP = 1
+
+
 class ChunkAssetNumberIndex:
     """Maps each distinct captioned table/figure number (e.g. "3" extracted
     from a table caption like "Table 3. Spare parts") to every chunk that
     contains that asset, built once per document so
     `ChunkAssetReferenceResolver` doesn't re-scan every chunk for each
-    detected table/figure reference in the document."""
+    detected table/figure reference in the document.
+
+    Also separately tracks every table/figure-bearing chunk regardless of
+    whether its caption carries a number, so a reference to an uncaptioned
+    or differently-numbered asset can still fall back to a page-proximity
+    guess instead of going unresolved outright."""
 
     def __init__(
         self,
@@ -45,11 +57,16 @@ class ChunkAssetNumberIndex:
     ) -> None:
         self._table_chunks_by_label: dict[str, list[DocumentChunk]] = defaultdict(list)
         self._figure_chunks_by_label: dict[str, list[DocumentChunk]] = defaultdict(list)
+        self._table_chunks: list[DocumentChunk] = []
+        self._figure_chunks: list[DocumentChunk] = []
 
         for chunk in chunks:
             for table_id in chunk.table_ids:
                 table = tables.get(table_id)
-                if table is None or not table.metadata.caption:
+                if table is None:
+                    continue
+                self._table_chunks.append(chunk)
+                if not table.metadata.caption:
                     continue
                 label = extract_leading_table_number(table.metadata.caption)
                 if label:
@@ -57,7 +74,10 @@ class ChunkAssetNumberIndex:
 
             for picture_id in chunk.picture_ids:
                 picture = pictures.get(picture_id)
-                if picture is None or not picture.metadata.caption:
+                if picture is None:
+                    continue
+                self._figure_chunks.append(chunk)
+                if not picture.metadata.caption:
                     continue
                 label = extract_leading_figure_number(picture.metadata.caption)
                 if label:
@@ -68,6 +88,35 @@ class ChunkAssetNumberIndex:
 
     def figure_matches(self, label: str) -> list[DocumentChunk]:
         return list(self._figure_chunks_by_label.get(label, ()))
+
+    def nearest_table_chunk(self, source_page: int | None) -> DocumentChunk | None:
+        return self._nearest_chunk(self._table_chunks, source_page)
+
+    def nearest_figure_chunk(self, source_page: int | None) -> DocumentChunk | None:
+        return self._nearest_chunk(self._figure_chunks, source_page)
+
+    @staticmethod
+    def _nearest_chunk(
+        candidates: list[DocumentChunk],
+        source_page: int | None,
+    ) -> DocumentChunk | None:
+        if source_page is None or not candidates:
+            return None
+
+        best_chunk: DocumentChunk | None = None
+        best_distance: int | None = None
+        for candidate in candidates:
+            candidate_page = candidate.source.page_start or candidate.source.page_end
+            if candidate_page is None:
+                continue
+            distance = abs(candidate_page - source_page)
+            if distance > _MAX_PROXIMITY_PAGE_GAP:
+                continue
+            if best_distance is None or distance < best_distance:
+                best_distance = distance
+                best_chunk = candidate
+
+        return best_chunk
 
 
 __all__ = [

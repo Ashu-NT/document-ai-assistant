@@ -7,6 +7,9 @@ from src.application.workflows.retrieval.query_analysis.retrieval_query_analyzer
 from src.application.workflows.retrieval.retrieval_query_intent import (
     RetrievalQueryIntent,
 )
+from src.application.workflows.retrieval.retrieval_query_intent_top_k_config import (
+    intent_top_k_overrides,
+)
 from src.config.settings import retrieval_settings
 from src.domain.common import new_id
 from src.domain.retrieval import RetrievalQuery
@@ -29,7 +32,7 @@ class QuestionAnsweringRouter:
     def decide(
         self,
         question: str,
-        top_k: int = 5,
+        top_k: int | None = None,
         document_id: str | None = None,
     ) -> tuple[QuestionAnsweringRoute, RetrievalQuery, RetrievalQueryIntent]:
         """Return the route and the fully-analyzed RetrievalQuery in one call.
@@ -40,7 +43,7 @@ class QuestionAnsweringRouter:
         raw_query = RetrievalQuery(
             query_id=new_id("q"),
             query_text=question,
-            top_k=top_k,
+            top_k=top_k if top_k is not None else retrieval_settings.final_retrieval_top_k,
             document_id=document_id,
             use_dense=retrieval_settings.enable_dense_retrieval,
             use_keyword=retrieval_settings.enable_keyword_retrieval,
@@ -48,6 +51,13 @@ class QuestionAnsweringRouter:
         )
         analyzed = self._query_analyzer.analyze(raw_query)
         intent = self._query_analyzer.intent_inferer.resolve(analyzed)
+
+        # An explicit caller-supplied top_k always wins; otherwise size the
+        # result count to the query's intent (e.g. a multi-step
+        # troubleshooting answer needs more chunks than a single-fact
+        # identifier lookup) instead of one fixed count for every question.
+        if top_k is None:
+            analyzed.top_k = intent_top_k_overrides().get(intent, analyzed.top_k)
 
         if intent == RetrievalQueryIntent.DOCUMENT_EXPLORATION:
             return QuestionAnsweringRoute.DOCUMENT_EXPLORATION, analyzed, intent

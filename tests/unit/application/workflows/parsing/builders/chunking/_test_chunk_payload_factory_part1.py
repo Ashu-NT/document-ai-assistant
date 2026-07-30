@@ -148,7 +148,10 @@ class TestEmbeddingTextIncludesSectionPath:
         )
         assert "Component:" not in payload.embedding_text
 
-    def test_no_enrichment_for_general_chunk_type(self) -> None:
+    def test_general_chunk_type_gets_section_and_component_framing(self) -> None:
+        # Section/Component framing is generic, safe context for any chunk
+        # type -- only chunk-type-specific aliasing stays gated to the
+        # semantically-enriched types.
         factory = ChunkPayloadFactory()
         fragment = _make_fragment(
             text="Refer to this manual for operating instructions.",
@@ -160,8 +163,8 @@ class TestEmbeddingTextIncludesSectionPath:
             document_title="Manual",
             fragments=[fragment],
         )
-        assert "Section:" not in payload.embedding_text
-        assert "Component:" not in payload.embedding_text
+        assert "Section: Overview" in payload.embedding_text
+        assert "Component: 7.3 Vacuum Pump" in payload.embedding_text
         assert "Related terms:" not in payload.embedding_text
 
 class TestContentNotPolluted:

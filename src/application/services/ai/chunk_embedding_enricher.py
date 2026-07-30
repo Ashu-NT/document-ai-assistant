@@ -1,7 +1,6 @@
 from dataclasses import replace as dataclass_replace
 
 from src.application.services.ai.chunk_enrichment import (
-    ENRICHED_CHUNK_TYPES,
     build_chunk_related_terms,
     build_maintenance_spec_terms,
     chunk_type_label,
@@ -36,16 +35,18 @@ def enrich_embedding_text(
             row_labels=rows_metadata.row_labels,
             units=rows_metadata.units,
         )
-    if chunk_type not in ENRICHED_CHUNK_TYPES and table_metadata is None:
-        return base_text
-
     additions: list[str] = []
     label = chunk_type_label(chunk_type)
 
     if label is not None and f"Chunk type: {label}" not in base_text:
         additions.append(f"Chunk type: {label}")
 
-    if section_path and (chunk_type in ENRICHED_CHUNK_TYPES or table_metadata is not None):
+    # Section/Component framing and the generic related-term matching below
+    # are safe and useful for every chunk type, including GENERAL -- only
+    # the chunk-type-specific alias branches inside build_chunk_related_terms()
+    # stay gated to their own types (a SAFETY_WARNING-specific alias like
+    # "hazard" has no business being tacked onto an unrelated GENERAL chunk).
+    if section_path:
         local_title = section_path[-1]
         if f"Section: {local_title}" not in base_text:
             additions.append(f"Section: {local_title}")

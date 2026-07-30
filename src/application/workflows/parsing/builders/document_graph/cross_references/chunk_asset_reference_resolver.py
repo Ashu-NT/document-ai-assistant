@@ -17,6 +17,10 @@ from src.domain.document.entities import ChunkCrossReferenceResolutionStatus
 # arbitrary shipyard documents the way page numbers can.
 _CONFIDENCE_RESOLVED_UNIQUE = 0.75
 _CONFIDENCE_RESOLVED_AMBIGUOUS = 0.5
+# Weaker still: no caption number matched at all, so this falls back to
+# "the nearest table/figure on an adjacent page" rather than an actual
+# label match -- a guess, not a resolution, hence the low confidence.
+_CONFIDENCE_RESOLVED_PROXIMITY_FALLBACK = 0.3
 _CONFIDENCE_UNRESOLVED = 0.0
 
 
@@ -25,27 +29,44 @@ class ChunkAssetReferenceResolver:
     containing that asset, using the leading number already extracted from
     the asset's caption by `ChunkAssetNumberIndex`. Unlike section
     resolution, there is no descendant/hierarchical fallback -- a table/
-    figure number is a flat label, not a nested path."""
+    figure number is a flat label, not a nested path. When no caption
+    numbering matches at all (uncaptioned or inconsistently-numbered
+    documents), falls back to the nearest table/figure on an adjacent page
+    rather than leaving the reference unresolved outright."""
 
     def resolve_table(
         self,
         *,
         target_label: str,
         index: ChunkAssetNumberIndex,
+        source_page: int | None = None,
     ) -> ResolvedTarget:
-        return self._resolve(index.table_matches(target_label))
+        return self._resolve(
+            index.table_matches(target_label),
+            fallback_chunk=index.nearest_table_chunk(source_page),
+        )
 
     def resolve_figure(
         self,
         *,
         target_label: str,
         index: ChunkAssetNumberIndex,
+        source_page: int | None = None,
     ) -> ResolvedTarget:
-        return self._resolve(index.figure_matches(target_label))
+        return self._resolve(
+            index.figure_matches(target_label),
+            fallback_chunk=index.nearest_figure_chunk(source_page),
+        )
 
     @staticmethod
-    def _resolve(candidates) -> ResolvedTarget:
+    def _resolve(candidates, *, fallback_chunk=None) -> ResolvedTarget:
         if not candidates:
+            if fallback_chunk is not None:
+                return ResolvedTarget(
+                    target_chunk_id=fallback_chunk.chunk_id,
+                    resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_AMBIGUOUS,
+                    confidence_score=_CONFIDENCE_RESOLVED_PROXIMITY_FALLBACK,
+                )
             return ResolvedTarget(
                 target_chunk_id=None,
                 resolution_status=ChunkCrossReferenceResolutionStatus.UNRESOLVED,

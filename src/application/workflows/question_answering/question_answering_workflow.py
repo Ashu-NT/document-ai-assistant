@@ -151,7 +151,7 @@ class QuestionAnsweringWorkflow:
         emit_progress(progress_callback, "Analyzing question...")
         route, analyzed_query, analyzed_intent = self._router.decide(
             question=request.question,
-            top_k=request.top_k or 5,
+            top_k=request.top_k,
             document_id=request.document_id,
         )
 

@@ -111,10 +111,13 @@ class ChunkCrossReferenceLinker:
                     )
                 )
 
+            source_page = chunk.source.page_start or chunk.source.page_end
+
             for table_reference in detection.table_references:
                 resolved = self.asset_resolver.resolve_table(
                     target_label=table_reference.target_asset_label,
                     index=asset_index,
+                    source_page=source_page,
                 )
                 if resolved.target_chunk_id == chunk.chunk_id:
                     continue
@@ -139,6 +142,7 @@ class ChunkCrossReferenceLinker:
                 resolved = self.asset_resolver.resolve_figure(
                     target_label=figure_reference.target_asset_label,
                     index=asset_index,
+                    source_page=source_page,
                 )
                 if resolved.target_chunk_id == chunk.chunk_id:
                     continue

@@ -1,0 +1,16 @@
+# Optional per-intent overrides for the final retrieval top-k. Any
+# RetrievalQueryIntent not listed here uses the global RETRIEVAL_FINAL_TOP_K
+# default. Only intents with a structural reason to need more or fewer
+# chunks are overridden here:
+#   - identifier/spec lookups are a single narrow fact -- fewer, more
+#     precise chunks reduce noise.
+#   - troubleshooting/procedure/maintenance answers often span multiple
+#     steps or candidate causes -- a single default-sized top-k risks
+#     truncating a multi-step answer partway through.
+# An explicit caller-supplied top_k always wins over this config.
+overrides:
+  identifier: 3
+  specification: 4
+  troubleshooting: 8
+  procedure: 7
+  maintenance: 6

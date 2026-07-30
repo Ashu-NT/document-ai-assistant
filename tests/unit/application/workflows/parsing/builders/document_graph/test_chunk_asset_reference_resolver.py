@@ -79,6 +79,48 @@ def test_returns_unresolved_when_document_never_captions_tables_with_numbers() -
     assert result.resolution_status == ChunkCrossReferenceResolutionStatus.UNRESOLVED
 
 
+def test_falls_back_to_nearest_table_on_adjacent_page_when_uncaptioned() -> None:
+    # No caption number matches "3" at all (the table has no caption), but
+    # the source_page is adjacent to the table's page, so this should still
+    # resolve as a low-confidence proximity guess rather than UNRESOLVED.
+    table = make_table(table_id="table_1", caption=None)
+    chunk = make_chunk(chunk_id="a", table_ids=["table_1"])
+    index = ChunkAssetNumberIndex(chunks=[chunk], tables={"table_1": table}, pictures={})
+
+    result = _resolver().resolve_table(target_label="3", index=index, source_page=1)
+
+    assert result.target_chunk_id == "a"
+    assert result.resolution_status == ChunkCrossReferenceResolutionStatus.RESOLVED_AMBIGUOUS
+    assert result.confidence_score == 0.3
+
+
+def test_proximity_fallback_does_not_trigger_without_a_source_page() -> None:
+    table = make_table(table_id="table_1", caption=None)
+    chunk = make_chunk(chunk_id="a", table_ids=["table_1"])
+    index = ChunkAssetNumberIndex(chunks=[chunk], tables={"table_1": table}, pictures={})
+
+    result = _resolver().resolve_table(target_label="3", index=index)
+
+    assert result.resolution_status == ChunkCrossReferenceResolutionStatus.UNRESOLVED
+
+
+def test_proximity_fallback_does_not_trigger_beyond_the_page_window() -> None:
+    table = make_table(table_id="table_1", caption=None)
+    chunk = DocumentChunk(
+        chunk_id="a",
+        document_id="doc_001",
+        section_id=None,
+        content="content",
+        source=SourceLocation(page_start=10, page_end=10),
+        table_ids=["table_1"],
+    )
+    index = ChunkAssetNumberIndex(chunks=[chunk], tables={"table_1": table}, pictures={})
+
+    result = _resolver().resolve_table(target_label="3", index=index, source_page=1)
+
+    assert result.resolution_status == ChunkCrossReferenceResolutionStatus.UNRESOLVED
+
+
 def test_prefers_procedure_like_chunk_when_multiple_chunks_share_the_table_number() -> (
     None
 ):
