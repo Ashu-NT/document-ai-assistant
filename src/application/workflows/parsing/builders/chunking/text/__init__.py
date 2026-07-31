@@ -4,12 +4,10 @@ from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitte
 from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     clean_chunk_text,
     common_path_prefix,
-    count_tokens,
     is_contents_title,
     is_low_value_fragment,
     is_reference_title,
     looks_like_boilerplate,
-    tail_words,
     unique_preserve_order,
 )
 from src.application.workflows.parsing.builders.chunking.text.section_path_matching import (
@@ -31,13 +29,11 @@ __all__ = [
     "WhitespaceChunkTokenCounter",
     "clean_chunk_text",
     "common_path_prefix",
-    "count_tokens",
     "is_contents_title",
     "is_low_value_fragment",
     "is_reference_title",
     "looks_like_boilerplate",
     "normalize_section_path_for_matching",
     "normalized_section_path_text",
-    "tail_words",
     "unique_preserve_order",
 ]

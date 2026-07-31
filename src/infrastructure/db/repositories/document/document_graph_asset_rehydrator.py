@@ -1,7 +1,14 @@
-from src.domain.assets import AssetMetadata, PictureAsset, TableAsset, TableCellSpan
+from src.domain.assets import (
+    AssetMetadata,
+    FormAsset,
+    PictureAsset,
+    TableAsset,
+    TableCellSpan,
+)
 from src.domain.document import DocumentGraph
 from src.infrastructure.db.repositories.document.document_graph_value_cleaners import (
     clean_axis_summary,
+    clean_form_fields,
     clean_header_paths,
     clean_multiline_text,
     clean_parallel_stream_descriptors,
@@ -73,6 +80,27 @@ def rehydrate_assets(graph: DocumentGraph) -> None:
                 layout_lane_index=coerce_int(parser_extra.get("layout_lane_index")),
                 layout_lane_count=coerce_int(parser_extra.get("layout_lane_count")),
                 page_orientation=clean_text(parser_extra.get("page_orientation")),
+                metadata=AssetMetadata(
+                    source=element.source,
+                    caption=(
+                        clean_text(parser_extra.get("caption"))
+                        if parser_extra.get("caption") is not None
+                        else None
+                    ),
+                    nearby_text=(
+                        clean_text(parser_extra.get("nearby_text"))
+                        if parser_extra.get("nearby_text") is not None
+                        else None
+                    ),
+                ),
+            )
+
+        if element.form_id is not None and element.form_id not in graph.forms:
+            graph.forms[element.form_id] = FormAsset(
+                form_id=element.form_id,
+                document_id=element.document_id,
+                parent_section_id=element.parent_section_id,
+                fields=clean_form_fields(parser_extra.get("form_fields")),
                 metadata=AssetMetadata(
                     source=element.source,
                     caption=(

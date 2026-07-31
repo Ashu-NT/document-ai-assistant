@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from src.domain.assets import PictureAsset, TableAsset
+from src.domain.assets import FormAsset, PictureAsset, TableAsset
 from src.domain.document.entities import (
     ChunkCrossReference,
     DocumentChunk,
@@ -22,6 +22,7 @@ class DocumentGraph:
 
     tables: dict[str, TableAsset] = field(default_factory=dict)
     pictures: dict[str, PictureAsset] = field(default_factory=dict)
+    forms: dict[str, FormAsset] = field(default_factory=dict)
 
     questions: dict[str, GeneratedQuestion] = field(default_factory=dict)
     identifiers: dict[str, Identifier] = field(default_factory=dict)

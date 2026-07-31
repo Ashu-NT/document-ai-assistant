@@ -163,9 +163,16 @@ class StructuredSectionFragmentBuilder:
             return None
 
         content = "\n".join(texts).strip()
-        token_count = self.text_splitter.count_tokens(content)
-        if token_count < spec.min_tokens:
+        # Word count, not self.text_splitter.count_tokens(): min_tokens is a
+        # "is there enough substance here" gate, not an embedding-budget
+        # check, so it must stay stable regardless of which ChunkTokenCounter
+        # is configured -- riding on the pluggable counter let a structured
+        # family claim (and permanently chunk-type-lock) short elements more
+        # aggressively whenever a real-subword-token counter was active.
+        if len(content.split()) < spec.min_tokens:
             return None
+
+        token_count = self.text_splitter.count_tokens(content)
 
         section_path = self._enrich_section_path(spec, elements)
         first_element = elements[0]

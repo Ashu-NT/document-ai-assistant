@@ -45,6 +45,7 @@ class FinalEvidencePreparer:
             prepared_chunks = self._table_evidence_hydrator.hydrate(
                 chunks=prepared_chunks,
                 graphs_by_document_id=graphs_by_document_id,
+                query=query,
             )
 
         prepared_chunks = self._deduplicator.deduplicate(

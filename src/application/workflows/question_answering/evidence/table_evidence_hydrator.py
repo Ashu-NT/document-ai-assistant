@@ -12,10 +12,13 @@ from src.application.workflows.parsing.tables.structure import (
     TableShapeResolver,
     TableStructureContextRenderer,
 )
+from src.application.workflows.question_answering.evidence.table_row_bbox_matcher import (
+    TableRowBboxMatcher,
+)
 from src.domain.assets import TableAsset
 from src.domain.common import ChunkType
 from src.domain.document import DocumentGraph
-from src.domain.retrieval import RetrievedChunk
+from src.domain.retrieval import RetrievalQuery, RetrievedChunk
 
 _TABLE_LIKE_CHUNK_TYPES = {
     ChunkType.SPARE_PARTS_TABLE,
@@ -35,6 +38,7 @@ class TableEvidenceHydrator:
         table_shape_resolver: TableShapeResolver | None = None,
         structured_text_renderer: TableAssetStructuredTextRenderer | None = None,
         family_asset_composer: LogicalTableFamilyAssetComposer | None = None,
+        row_bbox_matcher: TableRowBboxMatcher | None = None,
     ) -> None:
         self.table_structure_context_renderer = (
             table_structure_context_renderer or TableStructureContextRenderer()
@@ -46,12 +50,14 @@ class TableEvidenceHydrator:
         self.family_asset_composer = (
             family_asset_composer or LogicalTableFamilyAssetComposer()
         )
+        self.row_bbox_matcher = row_bbox_matcher or TableRowBboxMatcher()
 
     def hydrate(
         self,
         *,
         chunks: list[RetrievedChunk],
         graphs_by_document_id: dict[str, DocumentGraph],
+        query: RetrievalQuery | None = None,
     ) -> list[RetrievedChunk]:
         seen_table_keys: set[tuple[str, str]] = set()
         hydrated_chunks: list[RetrievedChunk] = []
@@ -144,11 +150,23 @@ class TableEvidenceHydrator:
                 metadata["table_axis_summary"] = json.dumps(axis_summary)
             if composed_table.rows:
                 metadata["table_rows_json"] = json.dumps(composed_table.rows)
+
+            citation = chunk.citation
+            if query is not None and chunk.citation is not None:
+                row_bboxes = self.row_bbox_matcher.match(
+                    table=composed_table,
+                    query_text=query.effective_query(),
+                    identifier_values=chunk.identifier_values,
+                )
+                if row_bboxes:
+                    citation = dataclass_replace(chunk.citation, row_bboxes=row_bboxes)
+
             hydrated_chunks.append(
                 dataclass_replace(
                     chunk,
                     content=self._table_text_with_structured_rows(composed_table),
                     metadata=metadata,
+                    citation=citation,
                 )
             )
 

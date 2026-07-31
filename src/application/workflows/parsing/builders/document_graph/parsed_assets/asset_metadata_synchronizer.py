@@ -7,9 +7,9 @@ _TABLE_SHAPE_RESOLVER = TableShapeResolver()
 
 
 class AssetMetadataSynchronizer:
-    """Syncs table/picture asset metadata (markdown, caption, nearby text, OCR
-    text, image path) onto each element's parser_metadata.extra so downstream
-    chunking sees the enriched values."""
+    """Syncs table/picture/form asset metadata (markdown, caption, nearby
+    text, OCR text, image path, form fields) onto each element's
+    parser_metadata.extra so downstream chunking sees the enriched values."""
 
     @staticmethod
     def sync(graph: DocumentGraph) -> None:
@@ -81,3 +81,20 @@ class AssetMetadataSynchronizer:
                 parser_extra["ocr_provenance_version"] = "1"
                 if picture_asset.image_path:
                     parser_extra["image_path"] = picture_asset.image_path
+
+            if element.form_id is not None and element.form_id in graph.forms:
+                form_asset = graph.forms[element.form_id]
+                if form_asset.metadata.caption:
+                    parser_extra["caption"] = form_asset.metadata.caption
+                if form_asset.metadata.nearby_text:
+                    parser_extra["nearby_text"] = form_asset.metadata.nearby_text
+                if form_asset.fields:
+                    parser_extra["form_fields"] = [
+                        {
+                            "label": form_field.label,
+                            "key_text": form_field.key_text,
+                            "value_text": form_field.value_text,
+                            "cell_id": form_field.cell_id,
+                        }
+                        for form_field in form_asset.fields
+                    ]

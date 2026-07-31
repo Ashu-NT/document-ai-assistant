@@ -40,6 +40,7 @@ class ChunkType(StrEnum):
     DRAWING_REFERENCE = "drawing_reference"
     CODE_BLOCK = "code_block"
     FORMULA = "formula"
+    FORM_DATA = "form_data"
     GENERAL = "general"
     UNKNOWN = "unknown"
 

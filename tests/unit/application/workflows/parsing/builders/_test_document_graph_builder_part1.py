@@ -208,6 +208,62 @@ def test_document_graph_builder_creates_table_assets_and_picture_assets() -> Non
         == "Refer to the exploded view for part placement."
     )
 
+def test_document_graph_builder_creates_form_asset_and_standalone_chunk() -> None:
+    builder = make_builder()
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="Equipment Identification",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="form_1",
+                element_type=ElementType.FORM,
+                order_index=2,
+                text=None,
+                page_start=1,
+                metadata={
+                    "caption": "Equipment identification form",
+                    "form_fields": [
+                        {
+                            "label": "key",
+                            "key_text": "Model",
+                            "value_text": "HP-001",
+                            "cell_id": 0,
+                        }
+                    ],
+                },
+            ),
+        ],
+        raw_parsed_document=make_raw_parsed_document(),
+    )
+
+    form = next(iter(graph.forms.values()))
+    assert form.metadata.caption == "Equipment identification form"
+    assert form.fields[0].key_text == "Model"
+    assert form.fields[0].value_text == "HP-001"
+
+    form_element = next(
+        element
+        for element in graph.elements.values()
+        if element.element_type == ElementType.FORM
+    )
+    assert form_element.form_id == form.form_id
+
+    form_chunk = find_chunk_by_type(graph, "form_data")
+    assert "Model: HP-001" in form_chunk.content
+
+
 def test_document_graph_builder_does_not_make_chunks_from_picture_ocr_noise() -> None:
     builder = make_builder()
     graph = builder.build(

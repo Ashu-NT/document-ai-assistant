@@ -3,10 +3,10 @@ import json
 from src.application.workflows.question_answering.evidence.table_evidence_hydrator import (
     TableEvidenceHydrator,
 )
-from src.domain.assets import TableAsset
-from src.domain.common import ChunkType, SourceLocation
+from src.domain.assets import TableAsset, TableCellSpan
+from src.domain.common import BoundingBox, ChunkType, SourceLocation
 from src.domain.document import Document, DocumentChunk, DocumentGraph, DocumentHashes
-from src.domain.retrieval import RetrievedChunk
+from src.domain.retrieval import Citation, RetrievalQuery, RetrievedChunk
 
 
 def _make_document() -> Document:
@@ -33,7 +33,12 @@ def _make_graph(*, table: TableAsset, source_chunk_content: str) -> DocumentGrap
     return graph
 
 
-def _make_retrieved_chunk(*, content: str) -> RetrievedChunk:
+def _make_retrieved_chunk(
+    *,
+    content: str,
+    citation: Citation | None = None,
+    identifier_values: list[str] | None = None,
+) -> RetrievedChunk:
     return RetrievedChunk(
         chunk_id="chunk_001",
         document_id="doc_001",
@@ -42,6 +47,8 @@ def _make_retrieved_chunk(*, content: str) -> RetrievedChunk:
         retrieval_source="dense",
         chunk_type=ChunkType.SPARE_PARTS_TABLE,
         source=SourceLocation(),
+        citation=citation,
+        identifier_values=identifier_values or [],
     )
 
 
@@ -263,3 +270,121 @@ def test_hydrate_drops_repeated_multi_row_headers_when_family_pages_repeat_them(
     assert "Row 2: Component=Motor | Manufacturer=ABB | Serial number=SN-002" in hydrated[
         0
     ].content
+
+
+def _make_citation() -> Citation:
+    return Citation(
+        citation_id="citation_001",
+        document_id="doc_001",
+        chunk_id="chunk_001",
+    )
+
+
+def _make_filter_table(*, with_cell_spans: bool) -> TableAsset:
+    return TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="| Part | Qty |\n|---|---|\n| HP-001 | 1 |\n| Filter | 2 |",
+        rows=[
+            ["Part", "Qty"],
+            ["HP-001", "1"],
+            ["Filter", "2"],
+        ],
+        cell_spans=(
+            [
+                TableCellSpan(
+                    row_start=2,
+                    row_end=2,
+                    col_start=0,
+                    col_end=0,
+                    text="Filter",
+                    normalized_text="filter",
+                    page_number=3,
+                    bbox=BoundingBox(x1=10.0, y1=20.0, x2=30.0, y2=40.0),
+                ),
+                TableCellSpan(
+                    row_start=2,
+                    row_end=2,
+                    col_start=1,
+                    col_end=1,
+                    text="2",
+                    normalized_text="2",
+                    page_number=3,
+                    bbox=BoundingBox(x1=35.0, y1=20.0, x2=45.0, y2=40.0),
+                ),
+            ]
+            if with_cell_spans
+            else []
+        ),
+    )
+
+
+def test_hydrate_attaches_row_bboxes_only_for_the_row_matching_the_query() -> None:
+    table = _make_filter_table(with_cell_spans=True)
+    graph = _make_graph(table=table, source_chunk_content=table.markdown)
+    citation = _make_citation()
+    chunk = _make_retrieved_chunk(content=table.markdown or "", citation=citation)
+    query = RetrievalQuery(query_id="query_001", query_text="Where is the filter located?")
+
+    hydrated = TableEvidenceHydrator().hydrate(
+        chunks=[chunk],
+        graphs_by_document_id={"doc_001": graph},
+        query=query,
+    )
+
+    assert hydrated[0].citation is not None
+    row_bboxes = hydrated[0].citation.row_bboxes
+    assert row_bboxes is not None
+    assert len(row_bboxes) == 1
+    assert row_bboxes[0].row_index == 2
+    assert row_bboxes[0].page_number == 3
+    assert row_bboxes[0].bbox == BoundingBox(x1=10.0, y1=20.0, x2=45.0, y2=40.0)
+
+
+def test_hydrate_attaches_no_row_bboxes_when_query_matches_nothing() -> None:
+    table = _make_filter_table(with_cell_spans=True)
+    graph = _make_graph(table=table, source_chunk_content=table.markdown)
+    citation = _make_citation()
+    chunk = _make_retrieved_chunk(content=table.markdown or "", citation=citation)
+    query = RetrievalQuery(query_id="query_001", query_text="torque specification values")
+
+    hydrated = TableEvidenceHydrator().hydrate(
+        chunks=[chunk],
+        graphs_by_document_id={"doc_001": graph},
+        query=query,
+    )
+
+    assert hydrated[0].citation is not None
+    assert hydrated[0].citation.row_bboxes is None
+
+
+def test_hydrate_without_query_leaves_citation_row_bboxes_unset() -> None:
+    table = _make_filter_table(with_cell_spans=True)
+    graph = _make_graph(table=table, source_chunk_content=table.markdown)
+    citation = _make_citation()
+    chunk = _make_retrieved_chunk(content=table.markdown or "", citation=citation)
+
+    hydrated = TableEvidenceHydrator().hydrate(
+        chunks=[chunk],
+        graphs_by_document_id={"doc_001": graph},
+    )
+
+    assert hydrated[0].citation is not None
+    assert hydrated[0].citation.row_bboxes is None
+
+
+def test_hydrate_skips_row_bboxes_when_no_cell_spans_match_the_selected_row() -> None:
+    table = _make_filter_table(with_cell_spans=False)
+    graph = _make_graph(table=table, source_chunk_content=table.markdown)
+    citation = _make_citation()
+    chunk = _make_retrieved_chunk(content=table.markdown or "", citation=citation)
+    query = RetrievalQuery(query_id="query_001", query_text="Where is the filter located?")
+
+    hydrated = TableEvidenceHydrator().hydrate(
+        chunks=[chunk],
+        graphs_by_document_id={"doc_001": graph},
+        query=query,
+    )
+
+    assert hydrated[0].citation is not None
+    assert hydrated[0].citation.row_bboxes is None

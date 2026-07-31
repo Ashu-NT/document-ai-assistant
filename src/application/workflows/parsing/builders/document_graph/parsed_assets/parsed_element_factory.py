@@ -32,6 +32,7 @@ class ParsedElementFactory:
         heading_level_source: str | None,
         table_id: str | None,
         picture_id: str | None,
+        form_id: str | None = None,
     ) -> CanonicalElement:
         return CanonicalElement(
             element_id=self.id_generator.new_id(IdPrefix.ELEMENT),
@@ -43,6 +44,7 @@ class ParsedElementFactory:
             source=SourceLocationFactory.from_parsed(parsed_element),
             table_id=table_id,
             picture_id=picture_id,
+            form_id=form_id,
             parser_metadata=ParserMetadata(
                 parser_name=self.parser_name,
                 parser_version=self.parser_version,

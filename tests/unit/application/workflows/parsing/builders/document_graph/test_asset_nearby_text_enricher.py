@@ -4,7 +4,7 @@ from src.application.workflows.parsing.builders.document_graph.parsed_assets.ass
 from src.application.workflows.parsing.builders.chunking.text.tokenization import (
     WhitespaceChunkTokenCounter,
 )
-from src.domain.assets import TableAsset
+from src.domain.assets import FormAsset, TableAsset
 from src.domain.common import ElementType, SourceLocation
 from src.domain.document import Document, DocumentGraph, DocumentHashes, DocumentSection
 from src.domain.elements import CanonicalElement
@@ -85,6 +85,41 @@ def test_enrich_finds_nearby_text_for_table_and_picture_assets() -> None:
     assert "spare parts" in graph.tables["table_1"].metadata.nearby_text
     assert graph.pictures["picture_1"].metadata.nearby_text is not None
     assert "assembly" in graph.pictures["picture_1"].metadata.nearby_text
+
+
+def test_enrich_finds_nearby_text_for_form_assets() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.add_section(
+        DocumentSection(section_id="sec_1", document_id="doc_001", title="Section")
+    )
+
+    intro_text = CanonicalElement(
+        element_id="el_intro",
+        document_id="doc_001",
+        element_type=ElementType.TEXT,
+        text="The following form identifies the equipment.",
+        parent_section_id="sec_1",
+        source=SourceLocation(page_start=1, page_end=1),
+    )
+    form_element = CanonicalElement(
+        element_id="el_form",
+        document_id="doc_001",
+        element_type=ElementType.FORM,
+        form_id="form_1",
+        parent_section_id="sec_1",
+        source=SourceLocation(page_start=1, page_end=1),
+    )
+
+    for element in (intro_text, form_element):
+        graph.add_element(element)
+    graph.sections["sec_1"].element_ids = ["el_intro", "el_form"]
+
+    graph.forms["form_1"] = FormAsset(form_id="form_1", document_id="doc_001")
+
+    AssetNearbyTextEnricher(context_window=2).enrich(graph)
+
+    assert graph.forms["form_1"].metadata.nearby_text is not None
+    assert "identifies the equipment" in graph.forms["form_1"].metadata.nearby_text
 
 
 def test_enrich_skips_assets_with_no_owning_element() -> None:

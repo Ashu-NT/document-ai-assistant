@@ -2,12 +2,6 @@ import re
 from collections.abc import Iterable
 from typing import Any
 
-from src.application.workflows.parsing.builders.chunking.text.tokenization.whitespace_chunk_token_counter import (
-    WhitespaceChunkTokenCounter,
-)
-
-_WHITESPACE_TOKEN_COUNTER = WhitespaceChunkTokenCounter()
-
 
 def resolve_parser_extra(element: Any) -> dict:
     if element.parser_metadata is None or element.parser_metadata.extra is None:
@@ -31,14 +25,6 @@ def clean_chunk_text(text: str | None) -> str | None:
 
     cleaned = re.sub(r"\n{3,}", "\n\n", str(text)).strip()
     return cleaned or None
-
-
-def count_tokens(text: str | None) -> int:
-    return _WHITESPACE_TOKEN_COUNTER.count_tokens(text)
-
-
-def tail_words(text: str, count: int) -> str:
-    return _WHITESPACE_TOKEN_COUNTER.tail_text(text, count)
 
 
 def unique_preserve_order(values: Iterable[str]) -> list[str]:

@@ -12,6 +12,8 @@ from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
 )
 from src.domain.assets import (
     AssetMetadata,
+    FormAsset,
+    FormField,
     PictureAsset,
     TableAsset,
     TableCellSpan,
@@ -146,6 +148,65 @@ class ParsedAssetFactory:
                 ),
             ),
         )
+
+    def build_form_asset(
+        self,
+        *,
+        document_id: str,
+        parent_section_id: str | None,
+        parsed_element: ParsedCanonicalElement,
+    ) -> tuple[str, FormAsset]:
+        form_id = self.id_generator.new_id("form")
+        return (
+            form_id,
+            FormAsset(
+                form_id=form_id,
+                document_id=document_id,
+                parent_section_id=parent_section_id,
+                fields=self._clean_form_fields(
+                    parsed_element.metadata.get("form_fields")
+                ),
+                metadata=AssetMetadata(
+                    source=SourceLocationFactory.from_parsed(parsed_element),
+                    caption=parsed_element.metadata.get("caption"),
+                ),
+            ),
+        )
+
+    @classmethod
+    def _clean_form_fields(cls, value: object) -> list[FormField]:
+        if not isinstance(value, list):
+            return []
+        fields: list[FormField] = []
+        for entry in value:
+            if not isinstance(entry, dict):
+                continue
+            key_text = (
+                cls._clean_text(entry.get("key_text"))
+                if entry.get("key_text") is not None
+                else None
+            )
+            value_text = (
+                cls._clean_text(entry.get("value_text"))
+                if entry.get("value_text") is not None
+                else None
+            )
+            if not key_text and not value_text:
+                continue
+            label = (
+                cls._clean_text(entry.get("label"))
+                if entry.get("label") is not None
+                else None
+            )
+            fields.append(
+                FormField(
+                    label=label,
+                    key_text=key_text,
+                    value_text=value_text,
+                    cell_id=cls._coerce_int(entry.get("cell_id")),
+                )
+            )
+        return fields
 
     @staticmethod
     def _build_row_ids(*, table_id: str, row_count: object) -> list[str]:

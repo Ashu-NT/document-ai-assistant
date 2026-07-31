@@ -115,6 +115,7 @@ class ElementORM(Base):
 
     table_id: Mapped[str | None] = mapped_column(String, nullable=True)
     picture_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    form_id: Mapped[str | None] = mapped_column(String, nullable=True)
 
     raw_source_type: Mapped[str | None] = mapped_column(String, nullable=True)
     raw_ref: Mapped[str | None] = mapped_column(String, nullable=True)

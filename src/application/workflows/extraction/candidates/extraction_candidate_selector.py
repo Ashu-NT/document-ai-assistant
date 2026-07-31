@@ -83,6 +83,9 @@ _CHUNK_TYPE_CANDIDATES: dict[ChunkType, frozenset[ExtractionPromptType]] = {
     # entities beyond an identifier that happens to appear nearby.
     ChunkType.FORMULA: frozenset(),
     ChunkType.CODE_BLOCK: frozenset(),
+    # Form chunks are raw field/value pairs -- any structured entity worth
+    # extracting from them is already captured as an identifier.
+    ChunkType.FORM_DATA: frozenset(),
 }
 
 

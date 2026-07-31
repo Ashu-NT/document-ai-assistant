@@ -15,6 +15,7 @@ _SPECIAL_CHUNK_TYPES = {
     ChunkType.SPARE_PARTS_TABLE,
     ChunkType.FORMULA,
     ChunkType.CODE_BLOCK,
+    ChunkType.FORM_DATA,
 }
 _PROCEDURAL_TYPES = {
     ChunkType.MAINTENANCE_PROCEDURE,

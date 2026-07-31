@@ -47,17 +47,21 @@ class AssetNearbyTextEnricher:
             input_counts={
                 "tables": len(graph.tables),
                 "pictures": len(graph.pictures),
+                "forms": len(graph.forms),
             },
         ) as stage:
-            elements_by_table_id, elements_by_picture_id = self._index_asset_elements(
-                graph
-            )
+            (
+                elements_by_table_id,
+                elements_by_picture_id,
+                elements_by_form_id,
+            ) = self._index_asset_elements(graph)
             enriched_assets = 0
             section_elements_cache: dict[str, list[CanonicalElement]] = {}
             section_index_cache: dict[str, dict[str, int]] = {}
             for asset_collection, elements_by_asset_id in (
                 (graph.tables, elements_by_table_id),
                 (graph.pictures, elements_by_picture_id),
+                (graph.forms, elements_by_form_id),
             ):
                 for asset_id, asset in asset_collection.items():
                     asset_element = elements_by_asset_id.get(asset_id)
@@ -135,18 +139,25 @@ class AssetNearbyTextEnricher:
     @staticmethod
     def _index_asset_elements(
         graph: DocumentGraph,
-    ) -> tuple[dict[str, CanonicalElement], dict[str, CanonicalElement]]:
-        """Builds table_id/picture_id -> owning element lookups in one pass
-        over the document's elements, instead of scanning every element
-        again for every table/picture asset."""
+    ) -> tuple[
+        dict[str, CanonicalElement],
+        dict[str, CanonicalElement],
+        dict[str, CanonicalElement],
+    ]:
+        """Builds table_id/picture_id/form_id -> owning element lookups in
+        one pass over the document's elements, instead of scanning every
+        element again for every table/picture/form asset."""
         elements_by_table_id: dict[str, CanonicalElement] = {}
         elements_by_picture_id: dict[str, CanonicalElement] = {}
+        elements_by_form_id: dict[str, CanonicalElement] = {}
         for element in graph.elements.values():
             if element.table_id is not None:
                 elements_by_table_id.setdefault(element.table_id, element)
             if element.picture_id is not None:
                 elements_by_picture_id.setdefault(element.picture_id, element)
-        return elements_by_table_id, elements_by_picture_id
+            if element.form_id is not None:
+                elements_by_form_id.setdefault(element.form_id, element)
+        return elements_by_table_id, elements_by_picture_id, elements_by_form_id
 
     @staticmethod
     def _contributes_to_nearby_text(element: CanonicalElement) -> bool:

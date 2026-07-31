@@ -145,10 +145,14 @@ class SectionChunkSkipper:
             return False
 
         boilerplate_hits = sum(1 for text in texts if looks_like_boilerplate(text))
-        longest_text_tokens = max(
-            self.text_splitter.count_tokens(text)
-            for text in texts
-        )
+        # Word counts, not self.text_splitter.count_tokens(): these two are
+        # "is this text substantial enough to look like real prose vs. front
+        # matter" gates, not embedding-budget checks, so they must stay
+        # stable regardless of which ChunkTokenCounter is configured. The
+        # total_tokens below is different -- it's compared against
+        # max_chunk_tokens (a real budget), so it correctly stays counter-
+        # aware.
+        longest_text_words = max(len((text or "").split()) for text in texts)
         total_tokens = sum(
             self.text_splitter.count_tokens(text)
             for text in texts
@@ -158,7 +162,7 @@ class SectionChunkSkipper:
             return True
 
         if any(
-            self.text_splitter.count_tokens(text) >= 18 and re.search(r"[.!?]", text)
+            len((text or "").split()) >= 18 and re.search(r"[.!?]", text or "")
             for text in texts
         ):
             return False
@@ -172,7 +176,7 @@ class SectionChunkSkipper:
         return (
             page_end == 1
             and len(texts) >= 3
-            and longest_text_tokens <= 12
+            and longest_text_words <= 12
             and total_tokens <= self.text_splitter.max_chunk_tokens // 4
         )
 

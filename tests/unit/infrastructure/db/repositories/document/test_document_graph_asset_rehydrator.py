@@ -245,6 +245,62 @@ def test_rehydrate_assets_repairs_table_text_mojibake() -> None:
     assert table.rows == [["Description"], ["Don’ts → Setup"]]
 
 
+def test_rehydrate_assets_restores_form_fields() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.add_element(
+        CanonicalElement(
+            element_id="el_form_1",
+            document_id="doc_001",
+            element_type=ElementType.FORM,
+            form_id="form_1",
+            parser_metadata=ParserMetadata(
+                parser_name="docling",
+                extra={
+                    "caption": "Equipment identification form",
+                    "nearby_text": "The following form identifies the equipment.",
+                    "form_fields": [
+                        {
+                            "label": "key",
+                            "key_text": "Model",
+                            "value_text": "HP-001",
+                            "cell_id": 0,
+                        }
+                    ],
+                },
+            ),
+        )
+    )
+
+    rehydrate_assets(graph)
+
+    form = graph.forms["form_1"]
+    assert form.metadata.caption == "Equipment identification form"
+    assert form.metadata.nearby_text == "The following form identifies the equipment."
+    assert len(form.fields) == 1
+    assert form.fields[0].key_text == "Model"
+    assert form.fields[0].value_text == "HP-001"
+    assert form.fields[0].cell_id == 0
+
+
+def test_rehydrate_assets_defaults_gracefully_when_form_fields_missing() -> None:
+    graph = DocumentGraph(document=_make_document())
+    graph.add_element(
+        CanonicalElement(
+            element_id="el_form_1",
+            document_id="doc_001",
+            element_type=ElementType.FORM,
+            form_id="form_1",
+            parser_metadata=ParserMetadata(parser_name="docling", extra={}),
+        )
+    )
+
+    rehydrate_assets(graph)
+
+    form = graph.forms["form_1"]
+    assert form.fields == []
+    assert form.has_fields() is False
+
+
 def test_rehydrate_assets_restores_picture_ocr_provenance() -> None:
     graph = DocumentGraph(document=_make_document())
     graph.add_element(

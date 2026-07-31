@@ -63,13 +63,18 @@ class PictureFragmentBuilder:
         nearby_text = self.asset_context_resolver.nearby_text(
             elements=elements, index=index
         )
-        ocr_text = clean_chunk_text(parser_extra.get("ocr_text"))
-        ocr_text, ocr_token_count = self.asset_context_resolver.truncate_to_asset_context(
-            ocr_text
+        raw_ocr_text = clean_chunk_text(parser_extra.get("ocr_text"))
+        ocr_text, _ = self.asset_context_resolver.truncate_to_asset_context(
+            raw_ocr_text
         )
 
         if not caption and not nearby_text:
-            if ocr_text is None or ocr_token_count < 6:
+            # Word count of the pre-truncation OCR text, not the post-
+            # truncation token count: this is a "is there enough raw OCR
+            # substance to bother" gate, not an embedding-budget check, so
+            # it must stay stable regardless of which ChunkTokenCounter is
+            # configured for the asset-context truncation above.
+            if ocr_text is None or raw_ocr_text is None or len(raw_ocr_text.split()) < 6:
                 return None
 
         parts: list[str] = []

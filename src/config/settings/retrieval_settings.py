@@ -76,8 +76,14 @@ class RetrievalSettings(AppBaseSettings):
         alias="RETRIEVAL_MAX_CONTEXT_CHUNKS"
     )
 
+    # Compared against DocumentChunk.statistics.token_count_estimate, which
+    # is computed with CHUNK_TOKEN_COUNTER_PROVIDER's real subword tokenizer
+    # by default -- 900 was tuned under the old whitespace-word-count
+    # default; scaled by the measured ~1.83x word-to-subword-token
+    # expansion factor (see chunking_runtime_factory.py) so the effective
+    # context window doesn't silently shrink under real token counting.
     context_token_budget: int = Field(
-        default=900,
+        default=1650,
         alias="RETRIEVAL_CONTEXT_TOKEN_BUDGET"
     )
 

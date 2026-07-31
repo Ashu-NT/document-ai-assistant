@@ -23,6 +23,7 @@ class CanonicalElement:
 
     table_id: str | None = None
     picture_id: str | None = None
+    form_id: str | None = None
 
     parser_metadata: ParserMetadata | None = None
     audit: AuditMetadata = field(default_factory=AuditMetadata)

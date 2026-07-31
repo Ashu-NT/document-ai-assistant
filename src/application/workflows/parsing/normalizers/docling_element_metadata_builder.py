@@ -72,6 +72,9 @@ class DoclingElementMetadataBuilder:
                 table_structure=table_structure,
             )
 
+        if element_type == ElementType.FORM:
+            self._apply_form_metadata(metadata, item=item)
+
         if caption:
             metadata["caption"] = caption
 
@@ -155,3 +158,70 @@ class DoclingElementMetadataBuilder:
 
         if markdown and "table_structure_tier" not in metadata:
             metadata["table_structure_tier"] = "markdown_only"
+
+    def _apply_form_metadata(self, metadata: dict[str, Any], *, item: Any) -> None:
+        graph = get_value(item, "graph")
+        if graph is None:
+            return
+
+        cells = list(get_value(graph, "cells") or [])
+        links = list(get_value(graph, "links") or [])
+
+        cell_by_id: dict[Any, Any] = {}
+        for cell in cells:
+            cell_id = get_value(cell, "cell_id")
+            if cell_id is not None:
+                cell_by_id[cell_id] = cell
+
+        value_cell_id_by_key_id: dict[Any, Any] = {}
+        for link in links:
+            if self._label_value(get_value(link, "label")) != "to_value":
+                continue
+            source_id = get_value(link, "source_cell_id")
+            target_id = get_value(link, "target_cell_id")
+            if source_id is not None and target_id is not None:
+                value_cell_id_by_key_id[source_id] = target_id
+
+        fields: list[dict[str, Any]] = []
+        for cell in cells:
+            label = self._label_value(get_value(cell, "label"))
+            if label not in ("key", "checkbox"):
+                continue
+
+            cell_id = get_value(cell, "cell_id")
+            key_text = clean_text(get_value(cell, "text"))
+
+            value_text = None
+            value_cell_id = value_cell_id_by_key_id.get(cell_id)
+            if value_cell_id is not None:
+                value_cell = cell_by_id.get(value_cell_id)
+                if value_cell is not None:
+                    value_text = clean_text(get_value(value_cell, "text"))
+
+            if not key_text and not value_text:
+                continue
+
+            fields.append(
+                {
+                    "label": label,
+                    "key_text": key_text,
+                    "value_text": value_text,
+                    "cell_id": cell_id,
+                }
+            )
+
+        if fields:
+            metadata["form_fields"] = fields
+
+    @staticmethod
+    def _label_value(value: Any) -> str | None:
+        if value is None:
+            return None
+        # Docling's real GraphLink.label/GraphCell.label are Enum members
+        # (GraphLinkLabel is a plain Enum, not a StrEnum -- str() on it gives
+        # "GraphLinkLabel.TO_VALUE", not "to_value"), so .value must be read
+        # explicitly rather than relying on str(); plain strings (e.g. from
+        # dict-shaped test fixtures) have no .value and fall through as-is.
+        if hasattr(value, "value"):
+            value = value.value
+        return str(value).strip().lower() or None

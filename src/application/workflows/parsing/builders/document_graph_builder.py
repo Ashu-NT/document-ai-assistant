@@ -196,6 +196,7 @@ class DocumentGraphBuilder:
                 for parsed_element in ordered_elements:
                     table_id = None
                     picture_id = None
+                    form_id = None
                     try:
                         parent_section_id = self.section_builder.resolve_section_id(
                             parsed_element,
@@ -224,6 +225,14 @@ class DocumentGraphBuilder:
                             )
                             graph.pictures[picture_id] = picture_asset
 
+                        if parsed_element.element_type == ElementType.FORM:
+                            form_id, form_asset = self.asset_factory.build_form_asset(
+                                document_id=document_id,
+                                parent_section_id=parent_section_id,
+                                parsed_element=parsed_element,
+                            )
+                            graph.forms[form_id] = form_asset
+
                         domain_element = element_factory.build(
                             document_id=document_id,
                             parsed_element=parsed_element,
@@ -237,6 +246,7 @@ class DocumentGraphBuilder:
                             ),
                             table_id=table_id,
                             picture_id=picture_id,
+                            form_id=form_id,
                         )
 
                         graph.add_element(domain_element)
@@ -249,6 +259,8 @@ class DocumentGraphBuilder:
                             graph.tables.pop(table_id, None)
                         if picture_id is not None:
                             graph.pictures.pop(picture_id, None)
+                        if form_id is not None:
+                            graph.forms.pop(form_id, None)
                         element_errors.append(
                             f"element {parsed_element.element_id!r} "
                             f"({parsed_element.element_type}): {exc}"
@@ -257,6 +269,7 @@ class DocumentGraphBuilder:
                 stage.output_counts["graph_elements"] = len(graph.elements)
                 stage.output_counts["tables"] = len(graph.tables)
                 stage.output_counts["pictures"] = len(graph.pictures)
+                stage.output_counts["forms"] = len(graph.forms)
 
             if element_errors and not graph.elements:
                 raise ChunkingError(

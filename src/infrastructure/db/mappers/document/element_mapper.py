@@ -34,6 +34,7 @@ class ElementMapper:
             bbox_y2=bbox.y2 if bbox else None,
             table_id=element.table_id,
             picture_id=element.picture_id,
+            form_id=element.form_id,
             raw_source_type=(
                 element.parser_metadata.raw_source_type
                 if element.parser_metadata
@@ -82,5 +83,6 @@ class ElementMapper:
             ),
             table_id=orm.table_id,
             picture_id=orm.picture_id,
+            form_id=orm.form_id,
             parser_metadata=parser_metadata,
         )

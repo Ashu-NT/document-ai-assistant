@@ -2,7 +2,8 @@ from src.application.workflows.parsing.tables.families import (
     LogicalTableFamilyAssetComposer,
     LogicalTableFamilyRowMerger,
 )
-from src.domain.assets import TableAsset, TableParallelStream
+from src.domain.assets import TableAsset, TableCellSpan, TableParallelStream
+from src.domain.common import BoundingBox
 
 
 def test_row_merger_drops_repeated_multi_row_header_block_for_compatible_family() -> None:
@@ -136,6 +137,60 @@ def test_asset_composer_builds_single_family_table_with_merged_rows_and_metadata
         ["manufacturer"],
         ["serial number"],
     ]
+
+
+def test_asset_composer_concatenates_cell_spans_from_all_member_tables() -> None:
+    first = TableAsset(
+        table_id="table_001",
+        document_id="doc_001",
+        markdown="technical data page 1",
+        rows=[
+            ["Component", "Manufacturer"],
+            ["Pump", "Calpeda"],
+        ],
+        cell_spans=[
+            TableCellSpan(
+                row_start=1,
+                row_end=1,
+                col_start=0,
+                col_end=0,
+                text="Pump",
+                normalized_text="pump",
+                page_number=1,
+                bbox=BoundingBox(x1=1.0, y1=1.0, x2=2.0, y2=2.0),
+            ),
+        ],
+        logical_table_family_id="family_001",
+    )
+    second = TableAsset(
+        table_id="table_002",
+        document_id="doc_001",
+        markdown="technical data page 2",
+        rows=[
+            ["Component", "Manufacturer"],
+            ["Motor", "ABB"],
+        ],
+        cell_spans=[
+            TableCellSpan(
+                row_start=1,
+                row_end=1,
+                col_start=0,
+                col_end=0,
+                text="Motor",
+                normalized_text="motor",
+                page_number=2,
+                bbox=BoundingBox(x1=3.0, y1=3.0, x2=4.0, y2=4.0),
+            ),
+        ],
+        logical_table_family_id="family_001",
+    )
+
+    composed = LogicalTableFamilyAssetComposer().compose([first, second])
+
+    assert composed is not None
+    assert [span.text for span in composed.cell_spans] == ["Pump", "Motor"]
+    assert composed.cell_spans[0].page_number == 1
+    assert composed.cell_spans[1].page_number == 2
 
 
 def test_asset_composer_preserves_parallel_stream_rows_and_descriptors() -> None:

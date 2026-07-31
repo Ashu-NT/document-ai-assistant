@@ -70,6 +70,35 @@ def test_document_repository_rehydrates_asset_metadata_for_rechunking(
     )
     sample_document_graph.add_element(picture_element)
     sample_document_graph.sections["sec_001"].element_ids.append(picture_element.element_id)
+    form_element = sample_element.__class__(
+        element_id="el_003",
+        document_id=sample_element.document_id,
+        element_type=ElementType.FORM,
+        text=None,
+        parent_section_id=sample_element.parent_section_id,
+        reading_order=3,
+        source=sample_element.source,
+        form_id="form_001",
+        parser_metadata=ParserMetadata(
+            parser_name="docling",
+            raw_source_type="form",
+            raw_ref="#/pages/9/elements/3",
+            extra={
+                "caption": "Equipment identification form",
+                "nearby_text": "The following form identifies the equipment.",
+                "form_fields": [
+                    {
+                        "label": "key",
+                        "key_text": "Model",
+                        "value_text": "HP-001",
+                        "cell_id": 0,
+                    }
+                ],
+            },
+        ),
+    )
+    sample_document_graph.add_element(form_element)
+    sample_document_graph.sections["sec_001"].element_ids.append(form_element.element_id)
     sample_document_graph.tables["table_001"].markdown = (
         "| Order Code | Size |\n|---|---|\n| DF-100 | DN100 |"
     )
@@ -97,6 +126,14 @@ def test_document_repository_rehydrates_asset_metadata_for_rechunking(
     assert loaded.tables["table_001"].layout_lane_index == 1
     assert loaded.tables["table_001"].layout_lane_count == 1
     assert loaded.tables["table_001"].page_orientation == "portrait"
+    assert loaded.forms["form_001"].metadata.caption == "Equipment identification form"
+    assert (
+        loaded.forms["form_001"].metadata.nearby_text
+        == "The following form identifies the equipment."
+    )
+    assert loaded.forms["form_001"].fields[0].key_text == "Model"
+    assert loaded.forms["form_001"].fields[0].value_text == "HP-001"
+    assert loaded.elements["el_003"].form_id == "form_001"
 
 def test_document_repository_finds_duplicate_by_file_hash(
     db_uow,

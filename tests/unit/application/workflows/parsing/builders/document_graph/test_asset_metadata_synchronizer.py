@@ -3,6 +3,8 @@ from src.application.workflows.parsing.builders.document_graph.parsed_assets.ass
 )
 from src.domain.assets import (
     AssetMetadata,
+    FormAsset,
+    FormField,
     PictureAsset,
     TableAsset,
     TableCellSpan,
@@ -190,6 +192,55 @@ def test_sync_forwards_picture_ocr_and_caption_fields() -> None:
     assert extra["ocr_mode"] == "scanned"
     assert extra["ocr_provenance_version"] == "1"
     assert extra["image_path"] == "images/fig1.png"
+
+
+def test_sync_forwards_form_fields_and_caption() -> None:
+    graph = _make_graph()
+    form = FormAsset(
+        form_id="form_001",
+        document_id="doc_001",
+        fields=[
+            FormField(label="key", key_text="Model", value_text="HP-001", cell_id=0)
+        ],
+        metadata=AssetMetadata(
+            caption="Equipment identification form",
+            nearby_text="See the form below.",
+        ),
+    )
+    graph.forms["form_001"] = form
+    element = CanonicalElement(
+        element_id="el_5",
+        document_id="doc_001",
+        element_type=ElementType.FORM,
+        form_id="form_001",
+        parser_metadata=ParserMetadata(parser_name="docling", extra={}),
+    )
+    graph.add_element(element)
+
+    AssetMetadataSynchronizer.sync(graph)
+
+    extra = element.parser_metadata.extra
+    assert extra["caption"] == "Equipment identification form"
+    assert extra["nearby_text"] == "See the form below."
+    assert extra["form_fields"] == [
+        {"label": "key", "key_text": "Model", "value_text": "HP-001", "cell_id": 0}
+    ]
+
+
+def test_sync_skips_form_element_whose_form_id_is_not_in_graph() -> None:
+    graph = _make_graph()
+    element = CanonicalElement(
+        element_id="el_6",
+        document_id="doc_001",
+        element_type=ElementType.FORM,
+        form_id="missing_form",
+        parser_metadata=ParserMetadata(parser_name="docling", extra={}),
+    )
+    graph.add_element(element)
+
+    AssetMetadataSynchronizer.sync(graph)
+
+    assert element.parser_metadata.extra == {}
 
 
 def test_sync_skips_elements_with_no_parser_metadata() -> None:

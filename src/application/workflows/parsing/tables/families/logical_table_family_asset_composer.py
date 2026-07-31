@@ -50,6 +50,7 @@ class LogicalTableFamilyAssetComposer:
                 table.parent_section_id for table in qualifying_tables
             ),
             rows=merged_rows,
+            cell_spans=[span for table in qualifying_tables for span in table.cell_spans],
             parallel_stream_rows=parallel_stream_rows,
             parallel_stream_descriptors=self._merge_parallel_stream_descriptors(
                 qualifying_tables,

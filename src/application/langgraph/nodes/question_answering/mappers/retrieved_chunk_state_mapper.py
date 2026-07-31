@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.domain.common import ChunkType, SourceLocation
+from src.domain.common import BoundingBox, ChunkType, SourceLocation
 from src.domain.document.value_objects import ChunkStatistics
 from src.domain.retrieval.citation import Citation
 from src.domain.retrieval.retrieved_chunk import RetrievedChunk
+from src.domain.retrieval.row_bounding_box import RowBoundingBox
 
 
 def dict_to_chunk(payload: dict[str, Any]) -> RetrievedChunk:
@@ -49,6 +50,7 @@ def dict_to_source(payload: Any) -> SourceLocation:
     return SourceLocation(
         page_start=int(page_start) if isinstance(page_start, int) else None,
         page_end=int(page_end) if isinstance(page_end, int) else None,
+        bbox=_bbox_from_payload(payload.get("bbox")),
     )
 
 
@@ -62,7 +64,46 @@ def dict_to_citation(payload: dict[str, Any]) -> Citation:
         document_name=str(payload.get("document_name") or "") or None,
         section_title=str(payload.get("section_title") or "") or None,
         source=source,
+        row_bboxes=_row_bboxes_from_payload(payload.get("row_bboxes")),
     )
+
+
+def _bbox_from_payload(value: Any) -> BoundingBox | None:
+    if not isinstance(value, dict):
+        return None
+    try:
+        return BoundingBox(
+            x1=float(value["x1"]),
+            y1=float(value["y1"]),
+            x2=float(value["x2"]),
+            y2=float(value["y2"]),
+        )
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _row_bboxes_from_payload(value: Any) -> list[RowBoundingBox] | None:
+    if not isinstance(value, list):
+        return None
+    row_bboxes: list[RowBoundingBox] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        bbox = _bbox_from_payload(item.get("bbox"))
+        if bbox is None:
+            continue
+        row_index = item.get("row_index")
+        if not isinstance(row_index, int):
+            continue
+        page_number = item.get("page_number")
+        row_bboxes.append(
+            RowBoundingBox(
+                row_index=row_index,
+                page_number=page_number if isinstance(page_number, int) else None,
+                bbox=bbox,
+            )
+        )
+    return row_bboxes or None
 
 
 def dict_to_statistics(payload: Any) -> ChunkStatistics | None:

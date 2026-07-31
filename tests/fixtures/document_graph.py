@@ -1,7 +1,8 @@
 import pytest
 
-from src.domain.assets import PictureAsset, TableAsset
+from src.domain.assets import FormAsset, PictureAsset, TableAsset
 from src.domain.assets.asset_metadata import AssetMetadata
+from src.domain.assets.form_field import FormField
 from src.domain.common import ChunkType, DocumentType, ElementType, IdentifierType
 from src.domain.common.source_location import SourceLocation
 from src.domain.document import (
@@ -175,6 +176,27 @@ def sample_picture_asset(document_id: str, section_id: str) -> PictureAsset:
 
 
 @pytest.fixture
+def sample_form_asset(document_id: str, section_id: str) -> FormAsset:
+    return FormAsset(
+        form_id="form_001",
+        document_id=document_id,
+        parent_section_id=section_id,
+        fields=[
+            FormField(
+                label="key",
+                key_text="Model",
+                value_text="HP-001",
+                cell_id=0,
+            )
+        ],
+        metadata=AssetMetadata(
+            caption="Equipment identification form",
+            nearby_text="The following form identifies the equipment.",
+        ),
+    )
+
+
+@pytest.fixture
 def sample_document_graph(
     sample_document: Document,
     sample_section: DocumentSection,
@@ -184,6 +206,7 @@ def sample_document_graph(
     sample_question: GeneratedQuestion,
     sample_table_asset: TableAsset,
     sample_picture_asset: PictureAsset,
+    sample_form_asset: FormAsset,
 ) -> DocumentGraph:
     graph = DocumentGraph(document=sample_document)
     graph.add_section(sample_section)
@@ -193,4 +216,5 @@ def sample_document_graph(
     graph.questions[sample_question.question_id] = sample_question
     graph.tables[sample_table_asset.table_id] = sample_table_asset
     graph.pictures[sample_picture_asset.picture_id] = sample_picture_asset
+    graph.forms[sample_form_asset.form_id] = sample_form_asset
     return graph

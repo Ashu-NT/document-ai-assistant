@@ -17,6 +17,7 @@ class ChunkFragment:
     element_ids: list[str] = field(default_factory=list)
     table_ids: list[str] = field(default_factory=list)
     picture_ids: list[str] = field(default_factory=list)
+    form_ids: list[str] = field(default_factory=list)
     page_start: int | None = None
     page_end: int | None = None
     token_count: int = 0

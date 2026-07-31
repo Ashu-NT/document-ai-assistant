@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from src.domain.common import AuditMetadata, SourceLocation
+from src.domain.retrieval.row_bounding_box import RowBoundingBox
 
 
 @dataclass(slots=True)
@@ -17,6 +18,8 @@ class Citation:
     source: SourceLocation = field(default_factory=SourceLocation)
 
     audit: AuditMetadata = field(default_factory=AuditMetadata)
+
+    row_bboxes: list[RowBoundingBox] | None = None
 
     def display_text(self) -> str:
         parts = []

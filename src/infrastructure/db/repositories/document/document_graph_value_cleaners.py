@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
     repair_docling_text,
 )
-from src.domain.assets import TableParallelStream
+from src.domain.assets import FormField, TableParallelStream
 
 
 def clean_text(value: object) -> str | None:
@@ -88,6 +88,41 @@ def clean_axis_summary(value: object) -> dict[str, str]:
         if cleaned_key and cleaned_value:
             cleaned_summary[cleaned_key] = cleaned_value
     return cleaned_summary
+
+
+def clean_form_fields(value: object) -> list[FormField]:
+    if not isinstance(value, list):
+        return []
+    fields: list[FormField] = []
+    for entry in value:
+        if not isinstance(entry, dict):
+            continue
+        key_text = (
+            clean_text(entry.get("key_text"))
+            if entry.get("key_text") is not None
+            else None
+        )
+        value_text = (
+            clean_text(entry.get("value_text"))
+            if entry.get("value_text") is not None
+            else None
+        )
+        if not key_text and not value_text:
+            continue
+        label = (
+            clean_text(entry.get("label"))
+            if entry.get("label") is not None
+            else None
+        )
+        fields.append(
+            FormField(
+                label=label,
+                key_text=key_text,
+                value_text=value_text,
+                cell_id=coerce_int(entry.get("cell_id")),
+            )
+        )
+    return fields
 
 
 def clean_table_signals(value: object) -> frozenset[str]:

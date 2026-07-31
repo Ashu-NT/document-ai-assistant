@@ -241,6 +241,76 @@ def test_build_section_fragments_tags_code_element_as_standalone_code_chunk() ->
     assert fragments[0].standalone is True
 
 
+def make_form_element(
+    *,
+    element_id: str = "form_1",
+    form_id: str = "form_001",
+    metadata: dict | None = None,
+) -> CanonicalElement:
+    return CanonicalElement(
+        element_id=element_id,
+        document_id="doc_001",
+        element_type=ElementType.FORM,
+        text=None,
+        form_id=form_id,
+        source=SourceLocation(page_start=1, page_end=1),
+        parser_metadata=ParserMetadata(parser_name="docling", extra=metadata or {}),
+    )
+
+
+def test_build_section_fragments_tags_form_element_as_standalone_form_data_chunk() -> (
+    None
+):
+    builder = make_builder(include_picture_chunks=False)
+    section = _make_section()
+    elements = [
+        make_form_element(
+            metadata={
+                "caption": "Equipment identification form",
+                "form_fields": [
+                    {
+                        "label": "key",
+                        "key_text": "Model",
+                        "value_text": "HP-001",
+                        "cell_id": 0,
+                    }
+                ],
+            },
+        ),
+    ]
+
+    fragments = builder.build_section_fragments(
+        document_title="Pump Manual",
+        document_type=None,
+        section=section,
+        elements=elements,
+    )
+
+    assert len(fragments) == 1
+    assert fragments[0].chunk_type == ChunkType.FORM_DATA
+    assert fragments[0].standalone is True
+    assert fragments[0].form_ids == ["form_001"]
+    assert "Form: Equipment identification form" in fragments[0].text
+    assert "Model: HP-001" in fragments[0].text
+
+
+def test_build_section_fragments_discards_form_element_with_no_fields_or_caption() -> (
+    None
+):
+    builder = make_builder(include_picture_chunks=False)
+    section = _make_section()
+    elements = [make_form_element()]
+
+    fragments = builder.build_section_fragments(
+        document_title="Pump Manual",
+        document_type=None,
+        section=section,
+        elements=elements,
+    )
+
+    assert fragments == []
+
+
 def test_build_section_fragments_tags_a_contiguous_list_run() -> None:
     builder = make_builder(include_picture_chunks=False)
     section = _make_section()

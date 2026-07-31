@@ -4,7 +4,7 @@ from src.config.settings.chunking_settings import ChunkingSettings
 def test_chunking_settings_defaults() -> None:
     settings = ChunkingSettings()
 
-    assert settings.token_counter_provider == "whitespace"
+    assert settings.token_counter_provider == "transformer"
     assert settings.tokenizer_model is None
     assert settings.tokenizer_local_only is True
     assert settings.use_layout_front_matter_signal is False

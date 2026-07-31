@@ -199,3 +199,70 @@ def test_build_table_asset_rehydrates_parallel_stream_descriptors() -> None:
 
     assert [item.stream_index for item in table.parallel_stream_descriptors] == [1, 2]
     assert [item.page_number for item in table.parallel_stream_descriptors] == [4, 4]
+
+
+def _parsed_form_element(**metadata_overrides: object) -> ParsedCanonicalElement:
+    metadata = {
+        "form_fields": [
+            {
+                "label": "key",
+                "key_text": "Model",
+                "value_text": "HP-001",
+                "cell_id": 0,
+            }
+        ],
+        "caption": "Equipment identification form",
+    }
+    metadata.update(metadata_overrides)
+    return ParsedCanonicalElement(
+        element_id="el_form_1",
+        document_id="doc_1",
+        element_type=ElementType.FORM,
+        metadata=metadata,
+    )
+
+
+def test_build_form_asset_populates_fields_from_metadata() -> None:
+    factory = ParsedAssetFactory(IdGenerator())
+
+    _, form = factory.build_form_asset(
+        document_id="doc_1",
+        parent_section_id=None,
+        parsed_element=_parsed_form_element(),
+    )
+
+    assert len(form.fields) == 1
+    assert form.fields[0].label == "key"
+    assert form.fields[0].key_text == "Model"
+    assert form.fields[0].value_text == "HP-001"
+    assert form.fields[0].cell_id == 0
+    assert form.metadata.caption == "Equipment identification form"
+
+
+def test_build_form_asset_drops_fields_with_no_key_or_value_text() -> None:
+    factory = ParsedAssetFactory(IdGenerator())
+
+    _, form = factory.build_form_asset(
+        document_id="doc_1",
+        parent_section_id=None,
+        parsed_element=_parsed_form_element(
+            form_fields=[
+                {"label": "key", "key_text": None, "value_text": None, "cell_id": 1}
+            ]
+        ),
+    )
+
+    assert form.fields == []
+
+
+def test_build_form_asset_defaults_to_empty_fields_when_missing() -> None:
+    factory = ParsedAssetFactory(IdGenerator())
+
+    _, form = factory.build_form_asset(
+        document_id="doc_1",
+        parent_section_id=None,
+        parsed_element=_parsed_form_element(form_fields=None),
+    )
+
+    assert form.fields == []
+    assert form.has_fields() is False

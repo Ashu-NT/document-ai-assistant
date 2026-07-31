@@ -175,6 +175,135 @@ def test_build_upgrades_tier_to_parallel_streams_when_present() -> None:
     assert metadata["table_parallel_stream_descriptors"][0]["page_number"] == 2
 
 
+def test_build_extracts_form_fields_from_graph_key_value_links() -> None:
+    builder = _builder()
+
+    metadata = builder.build(
+        {
+            "graph": {
+                "cells": [
+                    {"cell_id": 0, "label": "key", "text": "Model"},
+                    {"cell_id": 1, "label": "value", "text": "HP-001"},
+                ],
+                "links": [
+                    {"label": "to_value", "source_cell_id": 0, "target_cell_id": 1},
+                ],
+            }
+        },
+        raw_ref=None,
+        element_type=ElementType.FORM,
+        caption=None,
+        layout_metadata=None,
+        markdown=None,
+        table_structure=None,
+    )
+
+    assert metadata["form_fields"] == [
+        {"label": "key", "key_text": "Model", "value_text": "HP-001", "cell_id": 0}
+    ]
+
+
+def test_build_extracts_checkbox_field_with_no_linked_value() -> None:
+    builder = _builder()
+
+    metadata = builder.build(
+        {
+            "graph": {
+                "cells": [
+                    {"cell_id": 0, "label": "checkbox", "text": "Approved"},
+                ],
+                "links": [],
+            }
+        },
+        raw_ref=None,
+        element_type=ElementType.FORM,
+        caption=None,
+        layout_metadata=None,
+        markdown=None,
+        table_structure=None,
+    )
+
+    assert metadata["form_fields"] == [
+        {"label": "checkbox", "key_text": "Approved", "value_text": None, "cell_id": 0}
+    ]
+
+
+def test_build_extracts_form_fields_from_real_docling_graph_objects() -> None:
+    # Regression test: docling_core's real GraphLink/GraphCell.label are
+    # Enum members, not plain strings (GraphLinkLabel is a plain Enum, so
+    # str() on it gives "GraphLinkLabel.TO_VALUE", not "to_value") -- a dict-
+    # shaped fake graph with string labels would pass even if the value-cell
+    # linking logic couldn't handle real Docling output at all.
+    from docling_core.types.doc.items.key_value import GraphCell, GraphData, GraphLink
+    from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
+
+    builder = _builder()
+    graph = GraphData(
+        cells=[
+            GraphCell(cell_id=0, label=GraphCellLabel.KEY, text="Model", orig="Model"),
+            GraphCell(cell_id=1, label=GraphCellLabel.VALUE, text="HP-001", orig="HP-001"),
+        ],
+        links=[
+            GraphLink(
+                label=GraphLinkLabel.TO_VALUE, source_cell_id=0, target_cell_id=1
+            ),
+        ],
+    )
+
+    metadata = builder.build(
+        {"graph": graph},
+        raw_ref=None,
+        element_type=ElementType.FORM,
+        caption=None,
+        layout_metadata=None,
+        markdown=None,
+        table_structure=None,
+    )
+
+    assert metadata["form_fields"] == [
+        {"label": "key", "key_text": "Model", "value_text": "HP-001", "cell_id": 0}
+    ]
+
+
+def test_build_skips_form_fields_when_graph_missing() -> None:
+    builder = _builder()
+
+    metadata = builder.build(
+        {},
+        raw_ref=None,
+        element_type=ElementType.FORM,
+        caption=None,
+        layout_metadata=None,
+        markdown=None,
+        table_structure=None,
+    )
+
+    assert "form_fields" not in metadata
+
+
+def test_build_ignores_orphan_value_cell_with_no_key_link() -> None:
+    builder = _builder()
+
+    metadata = builder.build(
+        {
+            "graph": {
+                "cells": [
+                    {"cell_id": 0, "label": "value", "text": "Unlinked"},
+                ],
+                "links": [],
+            }
+        },
+        raw_ref=None,
+        element_type=ElementType.FORM,
+        caption=None,
+        layout_metadata=None,
+        markdown=None,
+        table_structure=None,
+    )
+
+    assert "form_fields" not in metadata
+
+
 def test_build_falls_back_to_markdown_only_tier_without_structure() -> None:
     builder = _builder()
 

@@ -207,6 +207,14 @@ class ChunkFragmentBuilder:
                 return None
             chunk_type = self.picture_fragment_builder.picture_chunk_type(text)
             standalone = True
+        elif element.form_id is not None or element.element_type == ElementType.FORM:
+            if not self._element_contributes_to_chunk(element):
+                return None
+            text = self._form_fragment_text(resolve_parser_extra(element))
+            if not text:
+                return None
+            chunk_type = ChunkType.FORM_DATA
+            standalone = True
         elif element.element_type == ElementType.FORMULA:
             if not self._element_contributes_to_chunk(element):
                 return None
@@ -242,6 +250,7 @@ class ChunkFragmentBuilder:
             element_ids=[element.element_id],
             table_ids=[element.table_id] if element.table_id is not None else [],
             picture_ids=[element.picture_id] if element.picture_id is not None else [],
+            form_ids=[element.form_id] if element.form_id is not None else [],
             page_start=element.source.page_start,
             page_end=element.source.page_end,
             token_count=self.text_splitter.count_tokens(text),
@@ -262,6 +271,34 @@ class ChunkFragmentBuilder:
             header_paths=table_metadata.get("header_paths") or [],
             axis_summary=table_metadata.get("axis_summary") or {},
         )
+
+    @staticmethod
+    def _form_fragment_text(parser_extra: dict) -> str | None:
+        parts: list[str] = []
+
+        caption = clean_chunk_text(parser_extra.get("caption"))
+        if caption:
+            parts.append(f"Form: {caption}")
+
+        nearby_text = clean_chunk_text(parser_extra.get("nearby_text"))
+        if nearby_text:
+            parts.append(f"Context: {nearby_text}")
+
+        fields = parser_extra.get("form_fields")
+        if isinstance(fields, list):
+            for entry in fields:
+                if not isinstance(entry, dict):
+                    continue
+                key_text = clean_chunk_text(entry.get("key_text"))
+                value_text = clean_chunk_text(entry.get("value_text"))
+                if key_text and value_text:
+                    parts.append(f"{key_text}: {value_text}")
+                elif key_text:
+                    parts.append(key_text)
+                elif value_text:
+                    parts.append(value_text)
+
+        return "\n".join(parts).strip() or None
 
     @staticmethod
     def _element_contributes_to_chunk(element: CanonicalElement) -> bool:
