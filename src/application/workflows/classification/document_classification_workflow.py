@@ -1,5 +1,6 @@
 from typing import Any
 
+from src.application.contracts.document.document_repository import DocumentRepository
 from src.application.prompts.classification import (
     DOCUMENT_CLASSIFICATION_PROMPT_VERSION,
     DocumentClassificationPromptBuilder,
@@ -47,11 +48,13 @@ class DocumentClassificationWorkflow:
         id_generator: IdGenerator,
         prompt_builder: DocumentClassificationPromptBuilder | None = None,
         classification_model: str | None = None,
+        document_repository: DocumentRepository | None = None,
     ) -> None:
         self.llm_service = llm_service
         self.classification_service = classification_service
         self.document_classification_validator = document_classification_validator
         self.id_generator = id_generator
+        self.document_repository = document_repository
         self.prompt_builder = prompt_builder or DocumentClassificationPromptBuilder()
         self.classification_model = (
             classification_model
@@ -70,8 +73,25 @@ class DocumentClassificationWorkflow:
         self,
         document_graph: DocumentGraph | Document,
         activity_context: ActivityContext | None = None,
-    ) -> DocumentClassification:
+    ) -> DocumentClassification | None:
+        from src.config.settings import classification_settings
+
         document = self._resolve_document(document_graph)
+
+        if not classification_settings.allow_reclassification:
+            existing = self.classification_service.get_document_classification(
+                document.document_id
+            )
+            if existing is not None:
+                return existing
+
+        if classification_settings.use_cache:
+            cached = self._reuse_cached_classification(
+                document, activity_context=activity_context
+            )
+            if cached is not None:
+                return cached
+
         prompt = self.prompt_builder.build(document_graph)
         response = self.llm_service.generate(
             prompt,
@@ -81,9 +101,64 @@ class DocumentClassificationWorkflow:
         )
 
         classification = self._build_classification(document, response)
+        assert classification.result is not None
+
+        if not classification_settings.store_reasoning:
+            classification.result.rationale = None
+            classification.result.evidence = []
+
+        if not classification.result.is_confident(
+            classification_settings.confidence_threshold
+        ):
+            return None
 
         validation = self.document_classification_validator.validate(classification)
         validation.raise_if_invalid()
+
+        self.classification_service.save_document_classification(
+            classification,
+            activity_context=activity_context,
+        )
+        return classification
+
+    def _reuse_cached_classification(
+        self,
+        document: Document,
+        activity_context: ActivityContext | None = None,
+    ) -> DocumentClassification | None:
+        if self.document_repository is None:
+            return None
+
+        content_hash = document.hashes.content_hash
+        if not content_hash:
+            return None
+
+        other_document_id = self.document_repository.find_document_id_by_content_hash(
+            content_hash
+        )
+        if other_document_id is None or other_document_id == document.document_id:
+            return None
+
+        cached = self.classification_service.get_document_classification(
+            other_document_id
+        )
+        if cached is None or cached.result is None:
+            return None
+
+        cached_result = cached.result
+        result = ClassificationResult(
+            classification_id=self.id_generator.new_id(IdPrefix.CLASSIFICATION),
+            document_id=document.document_id,
+            predicted_label=cached_result.predicted_label,
+            confidence_score=cached_result.confidence_score,
+            rationale=cached_result.rationale,
+            evidence=list(cached_result.evidence),
+        )
+        classification = DocumentClassification(
+            document_id=document.document_id,
+            document_type=cached.document_type,
+            result=result,
+        )
 
         self.classification_service.save_document_classification(
             classification,

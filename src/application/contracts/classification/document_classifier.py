@@ -5,5 +5,5 @@ from src.domain.document import DocumentGraph
 
 
 class DocumentClassifier(Protocol):
-    def classify_document(self, document_graph: DocumentGraph) -> DocumentClassification:
+    def classify_document(self, document_graph: DocumentGraph) -> DocumentClassification | None:
         ...

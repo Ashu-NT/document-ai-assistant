@@ -24,14 +24,6 @@ class ClassificationSettings(AppBaseSettings):
         alias="CLASSIFICATION_ALLOW_RECLASSIFICATION"
     )
 
-    use_rules: bool = Field(
-        alias="CLASSIFICATION_USE_RULES"
-    )
-
-    use_llm: bool = Field(
-        alias="CLASSIFICATION_USE_LLM"
-    )
-
     use_cache: bool = Field(
         alias="CLASSIFICATION_USE_CACHE"
     )

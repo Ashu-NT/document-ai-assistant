@@ -62,6 +62,7 @@ class IngestionWorkflow:
         id_generator: IdGenerator,
         runtime_capabilities: IngestionRuntimeCapabilities | None = None,
         extraction_enabled: bool = True,
+        classification_enabled: bool = True,
         quality_gate: DocumentQualityGate | None = None,
         identifier_promotion_service: IdentifierPromotionService | None = None,
         deterministic_identifier_scanner: DeterministicIdentifierScanner | None = None,
@@ -91,8 +92,10 @@ class IngestionWorkflow:
                 deterministic_identifier_scanner is not None
             ),
             semantic_linking_enabled=semantic_linking_workflow is not None,
+            classification_enabled=classification_enabled,
         )
         self.extraction_enabled = self.runtime_capabilities.extraction_enabled
+        self.classification_enabled = self.runtime_capabilities.classification_enabled
         self.quality_gate = quality_gate or DocumentQualityGate()
         self.identifier_promotion_service = identifier_promotion_service
         self.deterministic_identifier_scanner = (
@@ -132,6 +135,7 @@ class IngestionWorkflow:
             embedding_workflow=self.embedding_workflow,
             runtime_capabilities=self.runtime_capabilities,
             extraction_enabled=self.extraction_enabled,
+            classification_enabled=self.classification_enabled,
             runtime_diagnostics_loader=self._runtime_diagnostics,
             question_generation_model_loader=self._question_generation_model,
             extraction_model_loader=self._extraction_model,

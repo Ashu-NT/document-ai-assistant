@@ -20,6 +20,7 @@ class IngestionRuntimeProfileResolver:
         question_generation_enabled: bool,
         deterministic_identifier_scan_enabled: bool,
         semantic_linking_enabled: bool,
+        classification_enabled: bool = True,
     ) -> IngestionRuntimeCapabilities:
         profile = self._coerce_profile(requested_profile)
         resolved_profile = self._resolve_profile(
@@ -39,6 +40,7 @@ class IngestionRuntimeProfileResolver:
                 deterministic_identifier_scan_enabled
             ),
             semantic_linking_enabled=semantic_linking_enabled,
+            classification_enabled=classification_enabled,
         )
 
     @staticmethod

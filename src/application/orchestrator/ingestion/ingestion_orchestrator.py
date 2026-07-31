@@ -40,6 +40,7 @@ from src.application.workflows.ingestion.runtime import (
 from src.application.workflows.linking import SemanticLinkingWorkflow
 from src.bootstrap.startup import bootstrap_application
 from src.config.settings import (
+    classification_settings,
     embedding_settings,
     extraction_settings,
     ingestion_settings,
@@ -129,6 +130,7 @@ def build_ingestion_runtime(
         classification_service=classification_service,
         document_classification_validator=document_validator,
         id_generator=resolved_id_generator,
+        document_repository=document_repository,
     )
     post_classification_chunk_finalization_workflow = (
         PostClassificationChunkFinalizationWorkflow(
@@ -191,6 +193,7 @@ def build_ingestion_runtime(
             extraction_settings.extraction_enabled
             and extraction_settings.semantic_linking_enabled
         ),
+        classification_enabled=classification_settings.enabled,
     )
 
     ingestion_workflow = IngestionWorkflow(
@@ -210,6 +213,7 @@ def build_ingestion_runtime(
         id_generator=resolved_id_generator,
         runtime_capabilities=runtime_capabilities,
         extraction_enabled=extraction_settings.extraction_enabled,
+        classification_enabled=classification_settings.enabled,
         identifier_promotion_service=identifier_promotion_service,
         deterministic_identifier_scanner=deterministic_identifier_scanner,
         document_lookup_service=document_lookup_service,

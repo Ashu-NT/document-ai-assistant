@@ -14,12 +14,22 @@ class IngestionStagePayloadBuilder:
         return {"document_id": document_id}
 
     @staticmethod
-    def classification_completed(classification) -> dict[str, object]:
+    def classification_completed(
+        classification,
+        *,
+        classification_enabled: bool,
+    ) -> dict[str, object]:
         return {
-            "document_type": classification.document_type.value,
+            "skipped": not classification_enabled,
+            "reason": "disabled_by_config" if not classification_enabled else None,
+            "document_type": (
+                classification.document_type.value
+                if classification is not None
+                else None
+            ),
             "confidence_score": (
                 classification.result.confidence_score
-                if classification.result is not None
+                if classification is not None and classification.result is not None
                 else None
             ),
         }

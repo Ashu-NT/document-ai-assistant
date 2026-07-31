@@ -17,6 +17,7 @@ class DocumentStructureStageSequence:
         runtime_diagnostics_loader,
         ensure_final_graph_has_chunks,
         extraction_enabled: bool,
+        classification_enabled: bool,
         extraction_model_loader,
     ) -> None:
         self.stage_lifecycle = stage_lifecycle
@@ -28,6 +29,7 @@ class DocumentStructureStageSequence:
         self.runtime_diagnostics_loader = runtime_diagnostics_loader
         self.ensure_final_graph_has_chunks = ensure_final_graph_has_chunks
         self.extraction_enabled = extraction_enabled
+        self.classification_enabled = classification_enabled
         self.extraction_model_loader = extraction_model_loader
 
     def run_registration(
@@ -75,6 +77,7 @@ class DocumentStructureStageSequence:
         classification_stage_result = self.classification_stage_runner.run(
             document_graph=parsing_result.document_graph,
             activity_context=activity_context,
+            progress_callback=stage_session.progress_callback,
         )
         classification = classification_stage_result.classification
         self.stage_state_applier.apply_classification(
@@ -85,8 +88,15 @@ class DocumentStructureStageSequence:
         self.stage_lifecycle.complete(
             stage_session,
             stage=IngestionStage.CLASSIFICATION,
-            document_id=classification.document_id,
-            payload=self.stage_payloads.classification_completed(classification),
+            document_id=(
+                classification.document_id
+                if classification is not None
+                else parsing_result.document_id
+            ),
+            payload=self.stage_payloads.classification_completed(
+                classification,
+                classification_enabled=self.classification_enabled,
+            ),
         )
         return classification
 

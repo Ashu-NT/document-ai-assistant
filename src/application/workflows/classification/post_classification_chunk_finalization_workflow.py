@@ -141,9 +141,10 @@ class PostClassificationChunkFinalizationWorkflow:
             document_id
         )
         if classification is None:
-            raise ApplicationError(
-                "Document classification not found for post-classification finalization.",
-                details={"document_id": document_id},
+            emit_progress(
+                progress_callback,
+                "No saved document classification found; falling back to "
+                "structural inference only.",
             )
 
         emit_progress(

@@ -86,6 +86,7 @@ def build_ingestion_workflow_pipeline(
     embedding_workflow,
     runtime_capabilities,
     extraction_enabled: bool,
+    classification_enabled: bool,
     runtime_diagnostics_loader,
     question_generation_model_loader,
     extraction_model_loader,
@@ -162,6 +163,7 @@ def build_ingestion_workflow_pipeline(
         ),
         classification_stage_runner=ClassificationStageRunner(
             document_classification_workflow=document_classification_workflow,
+            classification_enabled=classification_enabled,
             commit=unit_of_work.commit,
         ),
         finalization_stage_runner=FinalizationStageRunner(
@@ -191,6 +193,7 @@ def build_ingestion_workflow_pipeline(
         runtime_diagnostics_loader=runtime_diagnostics_loader,
         ensure_final_graph_has_chunks=ensure_final_graph_has_chunks,
         extraction_enabled=extraction_enabled,
+        classification_enabled=classification_enabled,
         extraction_model_loader=extraction_model_loader,
     )
     return IngestionWorkflowPipeline(

@@ -305,6 +305,15 @@ def test_ingestion_workflow_is_wired_with_the_same_document_lookup_service(patch
     )
 
 
+def test_document_classification_workflow_is_wired_with_the_document_repository(patched):
+    runtime = build_ingestion_runtime()
+
+    assert (
+        runtime.document_classification_workflow.kwargs["document_repository"]
+        == "documents_repo"
+    )
+
+
 def test_post_classification_workflow_uses_the_document_graph_builder_chunk_builder(patched):
     runtime = build_ingestion_runtime()
 

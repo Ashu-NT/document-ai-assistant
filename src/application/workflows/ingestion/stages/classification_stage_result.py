@@ -5,5 +5,5 @@ from dataclasses import dataclass
 
 @dataclass(slots=True)
 class ClassificationStageResult:
-    classification: object
+    classification: object | None
     classification_model: str | None

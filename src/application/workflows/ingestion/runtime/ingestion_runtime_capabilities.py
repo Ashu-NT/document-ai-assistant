@@ -15,6 +15,7 @@ class IngestionRuntimeCapabilities:
     question_generation_enabled: bool
     deterministic_identifier_scan_enabled: bool
     semantic_linking_enabled: bool
+    classification_enabled: bool = True
 
     @property
     def semantic_enrichment_enabled(self) -> bool:
@@ -31,4 +32,5 @@ class IngestionRuntimeCapabilities:
                 self.deterministic_identifier_scan_enabled
             ),
             "semantic_linking_enabled": self.semantic_linking_enabled,
+            "classification_enabled": self.classification_enabled,
         }

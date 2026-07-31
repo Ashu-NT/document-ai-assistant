@@ -2,6 +2,7 @@ from src.application.prompts.classification import (
     DOCUMENT_CLASSIFICATION_PROMPT_VERSION,
     DocumentClassificationPromptBuilder,
 )
+from src.config.settings import classification_settings
 
 
 def test_document_classification_prompt_builder_includes_document_summary_and_labels(
@@ -38,3 +39,17 @@ def test_document_classification_prompt_builder_supports_document_only_input(
     assert sample_document.document_id in prompt
     assert sample_document.title in prompt
     assert "No graph-derived content summary was available." in prompt
+
+
+def test_document_classification_prompt_builder_truncates_graph_summary(
+    sample_document_graph,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(classification_settings, "max_text_length", 10)
+    builder = DocumentClassificationPromptBuilder()
+
+    prompt = builder.build(sample_document_graph)
+
+    full_summary = builder.summary_builder.build(sample_document_graph)
+    assert full_summary[:10] in prompt
+    assert "Replace hydraulic filter every 1000 operating hours." not in prompt

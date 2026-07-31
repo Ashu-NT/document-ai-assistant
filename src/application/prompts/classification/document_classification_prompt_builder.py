@@ -37,6 +37,12 @@ class DocumentClassificationPromptBuilder:
         stats = self._resolve_statistics(document_or_graph)
         graph_summary = self._resolve_graph_summary(document_or_graph)
 
+        from src.config.settings import classification_settings
+
+        max_text_length = classification_settings.max_text_length
+        if len(graph_summary) > max_text_length:
+            graph_summary = graph_summary[:max_text_length]
+
         return (
             "You classify technical documents using metadata, document statistics, "
             "document structure, and representative content from a parsed document graph.\n"

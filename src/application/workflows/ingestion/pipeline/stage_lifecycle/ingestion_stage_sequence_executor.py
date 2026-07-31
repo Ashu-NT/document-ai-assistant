@@ -49,6 +49,7 @@ class IngestionStageSequenceExecutor:
         runtime_diagnostics_loader,
         ensure_final_graph_has_chunks,
         extraction_enabled: bool,
+        classification_enabled: bool,
         extraction_model_loader,
     ) -> None:
         self.stage_lifecycle = stage_lifecycle
@@ -59,6 +60,7 @@ class IngestionStageSequenceExecutor:
         self.success_finalizer = success_finalizer
         self.exception_handler = exception_handler
         self.extraction_enabled = extraction_enabled
+        self.classification_enabled = classification_enabled
         self.document_structure_sequence = DocumentStructureStageSequence(
             stage_lifecycle=stage_lifecycle,
             stage_payloads=stage_payloads,
@@ -69,6 +71,7 @@ class IngestionStageSequenceExecutor:
             runtime_diagnostics_loader=runtime_diagnostics_loader,
             ensure_final_graph_has_chunks=ensure_final_graph_has_chunks,
             extraction_enabled=extraction_enabled,
+            classification_enabled=classification_enabled,
             extraction_model_loader=extraction_model_loader,
         )
         self.semantic_index_sequence = SemanticIndexStageSequence(

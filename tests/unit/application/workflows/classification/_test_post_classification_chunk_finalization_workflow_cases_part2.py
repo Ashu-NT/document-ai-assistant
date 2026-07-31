@@ -53,6 +53,55 @@ def test_post_classification_finalization_skips_question_generation_when_disable
         for message in messages
     )
 
+def test_post_classification_finalization_tolerates_missing_classification(
+    sample_document_graph,
+    sample_chunk,
+) -> None:
+    graph = copy.deepcopy(sample_document_graph)
+    detail_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_detail",
+        content="Detail content.",
+        chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+    )
+    graph.replace_chunks([detail_chunk])
+    decision = DocumentTypeDecision(
+        effective_document_type=DocumentType.UNKNOWN,
+        effective_chunking_profile=ChunkingProfile.DEFAULT,
+        confidence=0.0,
+        reasons=["no saved classification available"],
+        should_rechunk=False,
+    )
+    (
+        workflow,
+        _,
+        registration_service,
+        _,
+        embedding_workflow,
+        _,
+        _,
+    ) = make_workflow(
+        graph=graph,
+        classification=None,
+        decision=decision,
+        rechunked_chunks=[detail_chunk],
+        provisional_profile=ChunkingProfile.MANUAL,
+        enable_question_generation=False,
+    )
+    messages: list[str] = []
+
+    result = workflow.finalize(
+        graph.document.document_id,
+        progress_callback=messages.append,
+    )
+
+    assert list(result.chunks) == ["chunk_detail"]
+    assert registration_service.replace_calls
+    assert embedding_workflow.calls == [["chunk_detail"]]
+    assert any(
+        "No saved document classification found" in message for message in messages
+    )
+
 def test_asset_heavy_datasheet_finalization_does_not_produce_zero_chunks(
     sample_document,
     sample_document_classification,

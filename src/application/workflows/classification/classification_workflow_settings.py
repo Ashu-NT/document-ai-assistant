@@ -17,6 +17,15 @@ def default_enable_question_generation() -> bool:
     return resolve_setting(_load, False)
 
 
+def default_classification_enabled() -> bool:
+    def _load() -> bool:
+        from src.config.settings import classification_settings
+
+        return classification_settings.enabled
+
+    return resolve_setting(_load, True)
+
+
 def default_strong_model_threshold() -> float:
     def _load() -> float:
         from src.config.settings import classification_settings
