@@ -14,7 +14,7 @@ from src.application.workflows.ingestion.pipeline.run.ingestion_run_store import
 from src.domain.events import IngestionEvent
 from src.domain.workflow import IngestionRun
 from src.shared.events import EventContext
-from src.shared.exceptions import ApplicationError
+from src.shared.exceptions import ApplicationError, DatabaseError
 from src.shared.ids import IdGenerator
 from src.shared.progress.progress_emitter import emit_progress
 
@@ -43,18 +43,23 @@ class IngestionExceptionHandler:
         progress_callback: Callable[[str], None] | None = None,
     ) -> NoReturn:
         self.run_store.rollback()
+        original_document_id = ingestion_run.document_id
         ingestion_run.mark_status(
             IngestionStatus.FAILED,
             finished_at=datetime.now(UTC),
             error_message=str(exc),
         )
-        self.run_store.update(ingestion_run)
+        try:
+            self.run_store.update(ingestion_run)
+        except DatabaseError:
+            ingestion_run.document_id = None
+            self.run_store.update(ingestion_run)
         self.event_publisher.publish_event(
             IngestionEvent.failed(
                 event_id=self.id_generator.new_event_id(),
                 ingestion_run_id=ingestion_run.run_id,
                 error_message=str(exc),
-                document_id=ingestion_run.document_id,
+                document_id=original_document_id,
                 stage=current_stage.value if current_stage is not None else None,
                 file_path=file_path,
                 file_name=file_name,

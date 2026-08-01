@@ -22,14 +22,6 @@ class IngestionSettings(AppBaseSettings):
         alias="LOW_CONFIDENCE_PARSE_THRESHOLD",
     )
 
-    enable_image_extraction: bool = Field(
-        alias="ENABLE_IMAGE_EXTRACTION"
-    )
-
-    enable_table_extraction: bool = Field(
-        alias="ENABLE_TABLE_EXTRACTION"
-    )
-
     enable_question_generation: bool = Field(
         default=False,
         alias="ENABLE_QUESTION_GENERATION"

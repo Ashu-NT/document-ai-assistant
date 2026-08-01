@@ -6,6 +6,7 @@ from src.application.orchestrator.retrieval import retrieval_runtime_builder
 from src.application.orchestrator.retrieval.retrieval_runtime_builder import (
     build_retrieval_runtime,
 )
+from src.config.settings import guardrail_settings
 
 
 class _FakeVectorStore:
@@ -94,3 +95,16 @@ def test_build_retrieval_runtime_passes_through_provided_guardrails(monkeypatch)
         post_guardrail_a,
         post_guardrail_b,
     ]
+
+
+def test_build_retrieval_runtime_wires_min_evidence_chunks_from_guardrail_settings(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        retrieval_runtime_builder, "build_vector_store", _fake_build_vector_store
+    )
+    monkeypatch.setattr(guardrail_settings, "min_evidence_chunks", 3)
+
+    runtime = build_retrieval_runtime(unit_of_work=_uow(), embedding_provider=object())  # pyright: ignore[reportArgumentType]
+
+    assert runtime.retrieval_workflow.min_evidence_chunks == 3

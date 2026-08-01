@@ -277,7 +277,6 @@ def generate_case_answer(
         question=question,
         document_id=document_id,
         allow_answer_generation=True,
-        require_citations=True,
     )
     try:
         tool_result = answer_question_tool.run(request)

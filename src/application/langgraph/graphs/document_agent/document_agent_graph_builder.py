@@ -14,7 +14,13 @@ except ImportError:  # pragma: no cover
 
 
 def compile_graph(nodes: dict[str, Any]) -> Any | None:
-    if StateGraph is None:
+    try:
+        from src.config.settings import langgraph_settings
+        langgraph_enabled = langgraph_settings.enabled
+    except Exception:  # pragma: no cover
+        langgraph_enabled = True
+
+    if StateGraph is None or not langgraph_enabled:
         return None
 
     graph = StateGraph(AgentState)

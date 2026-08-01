@@ -80,7 +80,6 @@ def build_plan_step_request(
             top_k=state.get("top_k"),
             allow_answer_generation=state["allow_answer_generation"],
             include_context=state["include_context"],
-            require_citations=True,
             resolved_identifiers=deserialize_identifiers(
                 (identifier_hits.get("data") or {}).get("identifiers") or []
             ),

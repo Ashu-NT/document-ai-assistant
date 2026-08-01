@@ -23,7 +23,12 @@ def build_agent_runtime(
     enable_llm_research_planning: bool,
 ) -> AgentRuntime:
     from src.application.langgraph import ConversationMemory, GraphFactory, SessionStateStore
-    from src.config.settings import ingestion_settings, langgraph_settings, llm_settings
+    from src.config.settings import (
+        ingestion_settings,
+        langgraph_settings,
+        llm_settings,
+        memory_settings,
+    )
 
     services = build_agent_services(
         session,
@@ -37,9 +42,10 @@ def build_agent_runtime(
         enable_llm_research_planning=enable_llm_research_planning,
     )
     session_state_store = SessionStateStore()
-    conversation_memory = ConversationMemory(
-        max_messages=20,
-        session_state_store=session_state_store,
+    conversation_memory = (
+        ConversationMemory(session_state_store=session_state_store)
+        if memory_settings.enable_short_term_memory
+        else None
     )
     graph = GraphFactory(node_factory=node_factory).create_document_agent_graph(
         tool_registry=tool_registry,
@@ -75,6 +81,7 @@ def build_agent_runtime(
             "deep_research_enabled": langgraph_settings.deep_research_enabled,
             "reflection_enabled": langgraph_settings.reflection_enabled,
             "retrieval_strategy_enabled": langgraph_settings.retrieval_strategy_enabled,
+            "langgraph_enabled": langgraph_settings.enabled,
             "generation_enabled": enable_generation or ingestion_settings.enable_answer_generation,
         },
     )

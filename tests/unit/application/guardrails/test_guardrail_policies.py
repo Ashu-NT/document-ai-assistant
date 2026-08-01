@@ -1,7 +1,9 @@
 from src.application.guardrails.policies.answer_guardrail_policy import AnswerGuardrailPolicy
+from src.application.guardrails.policies.citation_policy import CitationPolicy
 from src.application.guardrails.policies.enterprise_guardrail_policy import EnterpriseGuardrailPolicy
 from src.application.guardrails.policies.retrieval_guardrail_policy import RetrievalGuardrailPolicy
 from src.application.guardrails.policies.safety_guardrail_policy import SafetyGuardrailPolicy
+from src.config.settings import guardrail_settings
 
 
 def test_retrieval_guardrail_policy_has_sensible_defaults() -> None:
@@ -29,19 +31,16 @@ def test_enterprise_guardrail_policy_has_sensible_defaults() -> None:
     policy = EnterpriseGuardrailPolicy()
 
     assert policy.block_out_of_scope_queries is True
-    assert policy.require_citations is True
     assert policy.max_context_tokens > 0
 
 
 def test_enterprise_guardrail_policy_is_configurable() -> None:
     policy = EnterpriseGuardrailPolicy(
         block_out_of_scope_queries=False,
-        require_citations=False,
         max_context_tokens=8000,
     )
 
     assert policy.block_out_of_scope_queries is False
-    assert policy.require_citations is False
     assert policy.max_context_tokens == 8000
 
 
@@ -91,3 +90,34 @@ def test_policies_are_frozen_dataclasses() -> None:
         assert False, "Expected FrozenInstanceError"
     except Exception:
         pass
+
+
+def test_retrieval_guardrail_policy_min_evidence_chunks_reflects_settings(monkeypatch) -> None:
+    monkeypatch.setattr(guardrail_settings, "min_evidence_chunks", 2)
+
+    policy = RetrievalGuardrailPolicy()
+
+    assert policy.min_evidence_chunks == 2
+
+
+def test_answer_guardrail_policy_require_citations_reflects_settings(monkeypatch) -> None:
+    monkeypatch.setattr(guardrail_settings, "require_citations", False)
+
+    policy = AnswerGuardrailPolicy()
+
+    assert policy.require_citations is False
+
+
+def test_citation_policy_require_citations_reflects_settings(monkeypatch) -> None:
+    monkeypatch.setattr(guardrail_settings, "require_citations", False)
+
+    policy = CitationPolicy()
+
+    assert policy.require_citations is False
+
+
+def test_citation_policy_has_sensible_defaults() -> None:
+    policy = CitationPolicy()
+
+    assert policy.require_citations is True
+    assert "answer_question" in policy.citation_required_routes

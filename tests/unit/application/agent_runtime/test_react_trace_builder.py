@@ -58,7 +58,7 @@ def test_research_plan_becomes_react_step() -> None:
     trace = builder.build(
         user_input="Generate a maintenance report",
         result=result,
-        policy=DemoVisibilityPolicy(),
+        policy=DemoVisibilityPolicy(show_research_plan=True),
     )
 
     assert any(step.title == "Research Plan" for step in trace.steps)
@@ -75,7 +75,7 @@ def test_retrieval_strategy_becomes_react_step() -> None:
     trace = builder.build(
         user_input="Question",
         result=result,
-        policy=DemoVisibilityPolicy(),
+        policy=DemoVisibilityPolicy(show_retrieval_strategy=True),
     )
 
     assert any(step.title == "Retrieval Strategy" for step in trace.steps)
@@ -113,7 +113,7 @@ def test_retrieval_strategy_step_renders_guarded_advisor_details() -> None:
     trace = builder.build(
         user_input="contrast fault recovery with scheduled servicing",
         result=result,
-        policy=DemoVisibilityPolicy(),
+        policy=DemoVisibilityPolicy(show_retrieval_strategy=True),
     )
 
     retrieval_step = next(step for step in trace.steps if step.title == "Retrieval Strategy")
@@ -151,7 +151,7 @@ def test_reflection_result_becomes_react_step() -> None:
     trace = builder.build(
         user_input="Question",
         result=result,
-        policy=DemoVisibilityPolicy(),
+        policy=DemoVisibilityPolicy(show_reflection=True),
     )
 
     assert any(step.title == "Reflection" for step in trace.steps)
@@ -177,7 +177,7 @@ def test_deep_research_strategy_coverage_becomes_reflection_step() -> None:
     trace = builder.build(
         user_input="compare maintenance procedures and troubleshooting",
         result=result,
-        policy=DemoVisibilityPolicy(),
+        policy=DemoVisibilityPolicy(show_reflection=True),
     )
 
     reflection_step = next(step for step in trace.steps if step.title == "Reflection")
@@ -231,7 +231,7 @@ def test_retrieval_strategy_step_shows_advisor_rejection_reason_without_proposal
     trace = builder.build(
         user_input="What are the maintenance intervals?",
         result=result,
-        policy=DemoVisibilityPolicy(),
+        policy=DemoVisibilityPolicy(show_retrieval_strategy=True),
     )
 
     retrieval_step = next(step for step in trace.steps if step.title == "Retrieval Strategy")

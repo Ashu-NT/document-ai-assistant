@@ -770,7 +770,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             top_k=args.top_k,
             include_context=args.show_context,
             allow_answer_generation=effective_generation,
-            require_citations=True,
             trace=args.trace,
             progress_callback=print_status if not args.json else None,
         )

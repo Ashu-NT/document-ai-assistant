@@ -3,6 +3,9 @@ import pytest
 from src.application.contracts.guardrails import GuardrailDecision
 from src.application.contracts.guardrails.guardrail_context import GuardrailContext
 from src.application.contracts.guardrails.guardrail_result import GuardrailResult
+from src.application.guardrails.policies.retrieval_guardrail_policy import (
+    RetrievalGuardrailPolicy,
+)
 from src.application.guardrails.retrieval.query_scope_guardrail import QueryScopeGuardrail
 from src.application.guardrails.retrieval.retrieval_evidence_guardrail import (
     RetrievalEvidenceGuardrail,
@@ -129,7 +132,9 @@ def test_workflow_post_guardrail_attaches_result_on_pass(
     workflow = make_workflow(
         retrieval_service,
         post_retrieval_guardrails=[
-            RetrievalEvidenceGuardrail(),
+            RetrievalEvidenceGuardrail(
+                policy=RetrievalGuardrailPolicy(min_evidence_chunks=1)
+            ),
         ],
     )
 
@@ -189,7 +194,9 @@ def test_workflow_with_combined_guardrails_passes_end_to_end(
         retrieval_service,
         pre_retrieval_guardrails=[QueryScopeGuardrail()],
         post_retrieval_guardrails=[
-            RetrievalEvidenceGuardrail(),
+            RetrievalEvidenceGuardrail(
+                policy=RetrievalGuardrailPolicy(min_evidence_chunks=1)
+            ),
             RetrievalConfidenceGuardrail(),
         ],
     )

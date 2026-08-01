@@ -1,3 +1,5 @@
+import os
+
 from src.config.settings import (
     database_settings,
     qdrant_settings,
@@ -15,6 +17,10 @@ def bootstrap_application() -> None:
     - file parsing
     - Qdrant local mode
     """
+
+    # Docling/HuggingFace Hub otherwise attempts a network round-trip on every
+    # conversion to check for model updates, even when the model is already
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
     storage_settings.ensure_directories()
     database_settings.ensure_database_directory()

@@ -10,9 +10,3 @@ class DuplicateDetectionSettings(AppBaseSettings):
     enable_content_hash_check: bool = Field(
         alias="ENABLE_CONTENT_HASH_CHECK"
     )
-
-    content_hash_normalize_text: bool = Field(
-        alias="CONTENT_HASH_NORMALIZE_TEXT"
-    )
-
-        

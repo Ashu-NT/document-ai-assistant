@@ -1,13 +1,27 @@
-import threading
+import multiprocessing
+import queue
 from concurrent.futures import TimeoutError as ConversionTimeoutError
 from importlib.metadata import PackageNotFoundError, version
-from typing import Any
+from typing import Any, Callable
 
 from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
+from src.infrastructure.parsing.docling.docling_conversion_worker import (
+    ConversionOutcome,
+    run_conversion_in_subprocess,
+)
 from src.infrastructure.parsing.docling.docling_converter_factory import (
     build_docling_converter,
 )
 from src.shared.exceptions import DocumentParsingError, DocumentParsingTimeoutError
+
+# How long to wait on the result queue after the subprocess has already
+# exited (normally or via terminate/kill): the queue.put() happens-before the
+# process exit in the success/error paths, so this is just a defensive bound
+# against an unlikely OS-level scheduling race, not a real conversion budget.
+_RESULT_QUEUE_DRAIN_TIMEOUT_SECONDS = 5.0
+
+# Grace period given to a timed-out subprocess between SIGTERM and SIGKILL.
+_TERMINATE_GRACE_PERIOD_SECONDS = 5.0
 
 
 class DoclingParser:
@@ -20,6 +34,7 @@ class DoclingParser:
         timeout_seconds: float | None = None,
         parser_name: str = "docling",
         parser_version: str | None = None,
+        converter_factory: Callable[..., Any] | None = None,
     ) -> None:
         self.converter = converter or self._build_default_converter()
         self.max_num_pages = max_num_pages
@@ -27,6 +42,7 @@ class DoclingParser:
         self.timeout_seconds = timeout_seconds
         self.parser_name = parser_name
         self.parser_version = parser_version or self._resolve_parser_version()
+        self._converter_factory = converter_factory or build_docling_converter
 
     def parse(
         self,
@@ -35,25 +51,19 @@ class DoclingParser:
         enable_ocr_override: bool | None = None,
     ) -> RawParsedDocument:
         try:
-            converter = (
-                self.converter
-                if enable_ocr_override is None
-                else self._build_default_converter(enable_ocr_override=enable_ocr_override)
-            )
             conversion_kwargs: dict[str, Any] = {"raises_on_error": True}
             if self.max_num_pages is not None:
                 conversion_kwargs["max_num_pages"] = self.max_num_pages
             if self.max_file_size_bytes is not None:
                 conversion_kwargs["max_file_size"] = self.max_file_size_bytes
 
-            conversion_result = self._convert_with_timeout(
-                converter,
+            outcome = self._convert_with_timeout(
                 file_path,
                 conversion_kwargs,
+                enable_ocr_override,
             )
 
-            raw_document = getattr(conversion_result, "document", None)
-            if raw_document is None:
+            if outcome.document is None:
                 raise DocumentParsingError(
                     "Docling parser returned no document.",
                     details={"file_path": file_path},
@@ -61,15 +71,12 @@ class DoclingParser:
 
             return RawParsedDocument(
                 file_path=file_path,
-                title=self._extract_title(raw_document, file_path),
-                page_count=self._extract_page_count(
-                    conversion_result,
-                    raw_document,
-                ),
-                raw_document=raw_document,
+                title=outcome.title,
+                page_count=outcome.page_count,
+                raw_document=outcome.document,
                 parser_name=self.parser_name,
                 parser_version=self.parser_version,
-                metadata=self._extract_metadata(conversion_result),
+                metadata=outcome.metadata,
             )
         except DocumentParsingError:
             raise
@@ -89,38 +96,93 @@ class DoclingParser:
 
     def _convert_with_timeout(
         self,
-        converter: Any,
         file_path: str,
         conversion_kwargs: dict[str, Any],
-    ) -> Any:
+        enable_ocr_override: bool | None,
+    ) -> ConversionOutcome:
         if self.timeout_seconds is None:
-            return converter.convert(file_path, **conversion_kwargs)
+            converter = (
+                self.converter
+                if enable_ocr_override is None
+                else self._build_default_converter(
+                    enable_ocr_override=enable_ocr_override
+                )
+            )
+            conversion_result = converter.convert(file_path, **conversion_kwargs)
+            raw_document = getattr(conversion_result, "document", None)
+            return ConversionOutcome(
+                document=raw_document,
+                title=(
+                    self._extract_title(raw_document, file_path)
+                    if raw_document is not None
+                    else None
+                ),
+                page_count=(
+                    self._extract_page_count(conversion_result, raw_document)
+                    if raw_document is not None
+                    else None
+                ),
+                metadata=self._extract_metadata(conversion_result),
+            )
 
-        # A daemon thread (not ThreadPoolExecutor) is used deliberately: Docling's
-        # convert() is not cancellable, so a hung call leaves an orphaned thread.
-        # ThreadPoolExecutor registers an atexit hook that joins every worker
-        # thread before the process can exit, which would hang shutdown on that
-        # same orphaned call. A plain daemon thread is dropped by the interpreter
-        # instead.
-        outcome: dict[str, Any] = {}
+        return self._convert_in_subprocess(
+            file_path,
+            conversion_kwargs,
+            enable_ocr_override,
+        )
 
-        def _run() -> None:
-            try:
-                outcome["value"] = converter.convert(file_path, **conversion_kwargs)
-            except BaseException as exc:  # re-raised on the calling thread below
-                outcome["error"] = exc
+    def _convert_in_subprocess(
+        self,
+        file_path: str,
+        conversion_kwargs: dict[str, Any],
+        enable_ocr_override: bool | None,
+    ) -> ConversionOutcome:
+        result_queue: multiprocessing.Queue = multiprocessing.Queue()
+        process = multiprocessing.Process(
+            target=run_conversion_in_subprocess,
+            args=(
+                file_path,
+                conversion_kwargs,
+                enable_ocr_override,
+                result_queue,
+                self._converter_factory,
+            ),
+            daemon=True,
+        )
+        process.start()
+        process.join(timeout=self.timeout_seconds)
 
-        worker = threading.Thread(target=_run, daemon=True)
-        worker.start()
-        worker.join(timeout=self.timeout_seconds)
-
-        if worker.is_alive():
+        if process.is_alive():
+            process.terminate()
+            process.join(timeout=_TERMINATE_GRACE_PERIOD_SECONDS)
+            if process.is_alive():
+                process.kill()
+                process.join()
             raise ConversionTimeoutError(
                 f"Docling conversion exceeded {self.timeout_seconds}s."
             )
-        if "error" in outcome:
-            raise outcome["error"]
-        return outcome["value"]
+
+        if process.exitcode not in (0, None):
+            raise DocumentParsingError(
+                "Docling conversion subprocess exited unexpectedly "
+                f"(exit code {process.exitcode}).",
+                details={"file_path": file_path, "exitcode": process.exitcode},
+            )
+
+        try:
+            status, payload = result_queue.get(
+                timeout=_RESULT_QUEUE_DRAIN_TIMEOUT_SECONDS
+            )
+        except queue.Empty as exc:
+            raise DocumentParsingError(
+                "Docling conversion subprocess exited without producing a "
+                "result.",
+                details={"file_path": file_path},
+            ) from exc
+
+        if status == "error":
+            raise payload
+        return payload
 
     @staticmethod
     def _build_default_converter(*, enable_ocr_override: bool | None = None) -> Any:

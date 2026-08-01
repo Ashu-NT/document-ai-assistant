@@ -31,7 +31,9 @@ def test_no_evidence_returns_no_evidence_decision(sample_retrieval_query) -> Non
 
 
 def test_sufficient_evidence_returns_allow(sample_retrieved_chunk) -> None:
-    guardrail = RetrievalEvidenceGuardrail()
+    guardrail = RetrievalEvidenceGuardrail(
+        policy=RetrievalGuardrailPolicy(min_evidence_chunks=1)
+    )
     context = make_context(chunks=[sample_retrieved_chunk], min_evidence_chunks=1)
 
     result = guardrail.check(context)

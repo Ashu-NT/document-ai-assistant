@@ -24,7 +24,7 @@ from src.application.workflows.retrieval.structured import (
     StructuredEntityResolver,
     StructuredEvidenceResolver,
 )
-from src.config.settings import retrieval_settings
+from src.config.settings import guardrail_settings, retrieval_settings
 from src.infrastructure.ai.embeddings import create_embedding_provider
 from src.infrastructure.retrieval.keyword import SqlKeywordIndex
 from src.infrastructure.retrieval.rerankers import DeterministicHybridReranker
@@ -99,6 +99,7 @@ def build_retrieval_runtime(
         pre_retrieval_guardrails=list(pre_retrieval_guardrails or []),
         post_retrieval_guardrails=list(post_retrieval_guardrails or []),
         seed_guardrails=list(seed_guardrails or []),
+        min_evidence_chunks=guardrail_settings.min_evidence_chunks,
     )
     return RetrievalRuntime(
         retrieval_workflow=retrieval_workflow,

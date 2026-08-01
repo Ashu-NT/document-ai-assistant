@@ -1,5 +1,4 @@
 from  src.config.settings.settings import (
-    app_settings,
     database_settings,
     docling_settings,
     embedding_settings,
@@ -12,7 +11,6 @@ from  src.config.settings.settings import (
     classification_settings,
     chunking_settings,
     logging_settings,
-    agent_settings,
     langgraph_settings,
     memory_settings,
     extraction_settings,
@@ -22,7 +20,6 @@ from  src.config.settings.settings import (
 )
 
 __all__ = [
-    "app_settings",
     "database_settings",
     "docling_settings",
     "embedding_settings",
@@ -35,7 +32,6 @@ __all__ = [
     "classification_settings",
     "chunking_settings",
     "logging_settings",
-    "agent_settings",
     "langgraph_settings",
     "memory_settings",
     "extraction_settings",

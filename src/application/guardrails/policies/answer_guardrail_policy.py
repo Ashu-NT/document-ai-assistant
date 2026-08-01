@@ -9,9 +9,17 @@ def _default_min_claim_support_score() -> float:
         return 0.60
 
 
+def _default_require_citations() -> bool:
+    try:
+        from src.config.settings import guardrail_settings
+        return guardrail_settings.require_citations
+    except Exception:
+        return True
+
+
 @dataclass(slots=True, frozen=True)
 class AnswerGuardrailPolicy:
-    require_citations: bool = True
+    require_citations: bool = field(default_factory=_default_require_citations)
     block_unsupported_claims: bool = True
     block_unsupported_suggestions: bool = True
     min_claim_support_score: float = field(

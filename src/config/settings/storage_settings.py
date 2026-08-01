@@ -7,8 +7,6 @@ from src.config.paths import resolve_project_path
 
 
 class StorageSettings(AppBaseSettings):
-    project_root: str | None = Field(default=None, alias="PROJECT_ROOT")
-
     data_dir: str = Field(alias="DATA_DIR")
     input_dir: str = Field(alias="INPUT_DIR")
     output_dir: str = Field(alias="OUTPUT_DIR")

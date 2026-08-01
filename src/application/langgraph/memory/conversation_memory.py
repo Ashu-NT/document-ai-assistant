@@ -7,16 +7,27 @@ from typing import Any
 from src.application.langgraph.memory.session_state_store import SessionStateStore
 
 
+def _default_max_conversation_messages() -> int:
+    try:
+        from src.config.settings import memory_settings
+        return memory_settings.max_conversation_messages
+    except Exception:
+        return 20
+
+
 class ConversationMemory:
     def __init__(
         self,
         *,
-        max_messages: int = 20,
+        max_messages: int | None = None,
         session_state_store: SessionStateStore | None = None,
     ) -> None:
-        self.max_messages = max_messages
+        resolved_max_messages = (
+            max_messages if max_messages is not None else _default_max_conversation_messages()
+        )
+        self.max_messages = resolved_max_messages
         self.session_state_store = session_state_store
-        self._messages: deque[dict[str, Any]] = deque(maxlen=max_messages)
+        self._messages: deque[dict[str, Any]] = deque(maxlen=resolved_max_messages)
         self._loaded_session_id: str | None = None
         self._selected_document_id: str | None = None
         self._selected_document_title: str | None = None

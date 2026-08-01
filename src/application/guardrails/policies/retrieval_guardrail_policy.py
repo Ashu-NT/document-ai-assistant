@@ -17,10 +17,18 @@ def _default_relevance_score_threshold() -> float:
         return 0.40
 
 
+def _default_min_evidence_chunks() -> int:
+    try:
+        from src.config.settings import guardrail_settings
+        return guardrail_settings.min_evidence_chunks
+    except Exception:
+        return 1
+
+
 @dataclass(slots=True, frozen=True)
 class RetrievalGuardrailPolicy:
     min_retrieval_score: float = field(default_factory=_default_min_retrieval_score)
-    min_evidence_chunks: int = 1
+    min_evidence_chunks: int = field(default_factory=_default_min_evidence_chunks)
     min_procedure_evidence_chunks: int = 1
     min_specification_evidence_chunks: int = 1
     min_safety_evidence_chunks: int = 1

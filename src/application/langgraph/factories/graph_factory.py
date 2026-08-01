@@ -20,7 +20,6 @@ class GraphFactory:
         effective_memory = memory
         if effective_memory is None and session_state_store is not None:
             effective_memory = ConversationMemory(
-                max_messages=20,
                 session_state_store=session_state_store,
             )
         nodes = self.node_factory.build_document_agent_nodes(

@@ -14,7 +14,6 @@ class QuestionAnsweringRequest:
     include_context: bool = False
     show_raw_evidence: bool = False
     allow_answer_generation: bool = False
-    require_citations: bool = True
     context_override_chunks: list[RetrievedChunk] | None = None
     retry_query: str | None = None
     resolved_identifiers: list = field(default_factory=list)

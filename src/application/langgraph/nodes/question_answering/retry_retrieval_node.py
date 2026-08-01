@@ -197,7 +197,6 @@ class RetryRetrievalNode:
                 top_k=state.get("top_k"),
                 allow_answer_generation=state["allow_answer_generation"],
                 include_context=state["include_context"],
-                require_citations=True,
                 context_override_chunks=merged_chunks,
                 retry_query=retry_query,
                 resolved_identifiers=resolved_identifiers,

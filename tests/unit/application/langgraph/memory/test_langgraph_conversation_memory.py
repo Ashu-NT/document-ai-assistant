@@ -1,4 +1,5 @@
 from src.application.langgraph.memory import ConversationMemory, SessionStateStore
+from src.config.settings import memory_settings
 
 
 def test_conversation_memory_caps_history() -> None:
@@ -36,3 +37,18 @@ def test_conversation_memory_loads_and_saves_session_state() -> None:
     assert snapshot["selected_document_id"] == "doc-42"
     assert snapshot["selected_document_title"] == "FWC12 Manual"
     assert snapshot["history"][0]["content"] == "open FWC12"
+
+
+def test_conversation_memory_uses_configured_max_messages_by_default(monkeypatch) -> None:
+    monkeypatch.setattr(memory_settings, "max_conversation_messages", 2)
+
+    memory = ConversationMemory()
+
+    memory.append_user_message("one")
+    memory.append_assistant_message("two")
+    memory.append_user_message("three")
+
+    history = memory.get_history()
+    assert len(history) == 2
+    assert history[0]["content"] == "two"
+    assert history[1]["content"] == "three"
