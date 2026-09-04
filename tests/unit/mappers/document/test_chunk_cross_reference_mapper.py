@@ -46,3 +46,59 @@ def test_chunk_cross_reference_mapper_round_trip_for_unresolved_section_referenc
     assert domain.target_page is None
     assert domain.target_chunk_id is None
     assert domain.resolution_status == ChunkCrossReferenceResolutionStatus.UNRESOLVED
+
+
+def test_chunk_cross_reference_mapper_round_trip_for_pdf_link_provenance_and_reconciliation_outcome() -> (
+    None
+):
+    from src.domain.common import BoundingBox
+    from src.domain.document.entities import (
+        ChunkCrossReference,
+        ChunkCrossReferenceResolutionStatus,
+        ChunkCrossReferenceType,
+        CrossReferenceReconciliationOutcome,
+        PdfLinkProvenance,
+    )
+
+    native_reference = ChunkCrossReference(
+        cross_reference_id="xref_003",
+        document_id="doc_001",
+        source_chunk_id="chunk_001",
+        reference_type=ChunkCrossReferenceType.PDF_LINK_REFERENCE,
+        matched_text="pdf_link_annotation",
+        target_page=49,
+        target_chunk_id="chunk_002",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+        confidence_score=0.9,
+        link_provenance=PdfLinkProvenance(
+            source_page=313,
+            link_kind="goto",
+            source_rect=BoundingBox(x1=1.0, y1=2.0, x2=3.0, y2=4.0),
+            rect_coordinate_origin="pdf_native_bottom_left",
+            source_page_size=(612.0, 792.0),
+            source_page_rotation_degrees=0,
+            source_page_label="313",
+            dest_page_label="41",
+        ),
+        reconciliation_outcome=CrossReferenceReconciliationOutcome.CONFIRMED,
+    )
+
+    orm = ChunkCrossReferenceMapper.to_orm(native_reference)
+    domain = ChunkCrossReferenceMapper.to_domain(orm)
+
+    assert domain.reference_type == ChunkCrossReferenceType.PDF_LINK_REFERENCE
+    assert domain.reconciliation_outcome == CrossReferenceReconciliationOutcome.CONFIRMED
+    assert domain.link_provenance == native_reference.link_provenance
+    assert domain.link_provenance.source_page == 313
+    assert domain.link_provenance.link_kind == "goto"
+    assert domain.link_provenance.dest_page_label == "41"
+
+
+def test_chunk_cross_reference_mapper_round_trip_with_no_provenance_or_outcome(
+    sample_chunk_cross_reference,
+) -> None:
+    orm = ChunkCrossReferenceMapper.to_orm(sample_chunk_cross_reference)
+    domain = ChunkCrossReferenceMapper.to_domain(orm)
+
+    assert domain.link_provenance is None
+    assert domain.reconciliation_outcome is None
