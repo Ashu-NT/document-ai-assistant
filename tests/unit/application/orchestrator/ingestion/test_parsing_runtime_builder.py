@@ -33,14 +33,14 @@ class _FakeDocumentGraphBuilder:
         max_chunk_tokens,
         chunk_overlap,
         min_section_text_length,
-        chunk_cross_reference_linker=None,
+        cross_reference_pipeline=None,
     ):
         self.id_generator = id_generator
         self.section_builder = section_builder
         self.max_chunk_tokens = max_chunk_tokens
         self.chunk_overlap = chunk_overlap
         self.min_section_text_length = min_section_text_length
-        self.chunk_cross_reference_linker = chunk_cross_reference_linker
+        self.cross_reference_pipeline = cross_reference_pipeline
         self.chunk_builder = object()
 
 
