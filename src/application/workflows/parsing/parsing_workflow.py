@@ -58,6 +58,7 @@ class ParsingWorkflow:
         self.page_ocr_fallback_workflow = page_ocr_fallback_workflow
         self.pdf_link_annotation_extractor = pdf_link_annotation_extractor
         self.audit_service = audit_service
+        self.last_pdf_link_extraction_result = None
 
     @tracked_action(
         action="parsing.workflow_completed",
@@ -200,6 +201,7 @@ class ParsingWorkflow:
                 stage_name="pdf_link_extraction",
                 stage_durations=stage_durations,
             )
+        self.last_pdf_link_extraction_result = pdf_link_extraction_result
 
         graph_build_element_errors: list[str] = []
         document_graph = run_stage(

@@ -5,6 +5,7 @@ from src.domain.document.entities import ChunkCrossReference, CrossReferenceEvid
 
 @dataclass(slots=True, frozen=True)
 class CrossReferenceReconciliationDiagnostics:
+    single_source_count: int = 0
     confirmed_count: int = 0
     accepted_textual_count: int = 0
     accepted_native_count: int = 0

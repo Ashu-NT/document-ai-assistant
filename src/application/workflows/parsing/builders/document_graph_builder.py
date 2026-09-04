@@ -12,6 +12,7 @@ from src.application.workflows.parsing.builders.document_graph.chunk_signal_aggr
     ChunkSignalAggregator,
 )
 from src.application.workflows.parsing.builders.document_graph.cross_references import (
+    CrossReferenceLinkingOutcome,
     CrossReferencePipeline,
 )
 from src.application.workflows.parsing.builders.document_graph.document_metadata.document_metadata_extractor import (
@@ -111,6 +112,13 @@ class DocumentGraphBuilder:
         )
         self.persistent_metadata_builder = DocumentPersistentMetadataBuilder()
         self.last_section_build_result: SectionBuildResult | None = None
+        # Inspection hook for callers that need the native/reconciliation
+        # diagnostics after build() returns (e.g. corpus verification
+        # scripts) - the outcome itself is otherwise fully consumed inside
+        # build() and discarded. Mirrors last_section_build_result above.
+        self.last_cross_reference_linking_outcome: (
+            CrossReferenceLinkingOutcome | None
+        ) = None
         if hasattr(self.section_builder, "set_profiler"):
             self.section_builder.set_profiler(self.profiler)
         if hasattr(self.section_chunk_builder, "set_profiler"):
@@ -316,6 +324,7 @@ class DocumentGraphBuilder:
                     linking_outcome = self.cross_reference_pipeline.run(
                         graph, pdf_link_extraction_result
                     )
+                    self.last_cross_reference_linking_outcome = linking_outcome
                     for evidence in linking_outcome.evidence:
                         graph.add_cross_reference_evidence(evidence)
                     for cross_reference in linking_outcome.canonical_references:

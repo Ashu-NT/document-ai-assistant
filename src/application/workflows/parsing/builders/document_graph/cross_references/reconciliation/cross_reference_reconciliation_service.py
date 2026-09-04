@@ -55,6 +55,7 @@ class CrossReferenceReconciliationService:
         evidence: list[CrossReferenceEvidence] = []
         canonical_references: list[ChunkCrossReference] = []
         counts = {
+            "single_source_count": 0,
             "confirmed_count": 0,
             "accepted_textual_count": 0,
             "accepted_native_count": 0,
@@ -85,6 +86,7 @@ class CrossReferenceReconciliationService:
                         canonical_cross_reference_id=None,
                     )
                 )
+                counts["single_source_count"] += 1
 
             if not resolved_fuzzy and not resolved_native:
                 continue
@@ -96,6 +98,7 @@ class CrossReferenceReconciliationService:
                     ev, canonical = self._emit_single_source(candidate)
                     evidence.append(ev)
                     canonical_references.append(canonical)
+                    counts["single_source_count"] += 1
                 continue
 
             if len(resolved_fuzzy) == 1 and len(resolved_native) == 1:

@@ -228,6 +228,7 @@ def test_multiple_independent_native_candidates_on_one_chunk_with_no_fuzzy_are_n
     )
 
     assert result.diagnostics.unreconciled_multi_candidate_chunks == 0
+    assert result.diagnostics.single_source_count == 2
     assert len(result.canonical_references) == 2
     assert {c.target_chunk_id for c in result.canonical_references} == {"c2", "c3"}
     assert all(
@@ -292,6 +293,7 @@ def test_unresolved_fuzzy_candidate_becomes_evidence_only_with_no_canonical_row(
         == CrossReferenceReconciliationOutcome.SINGLE_SOURCE
     )
     assert result.evidence[0].canonical_cross_reference_id is None
+    assert result.diagnostics.single_source_count == 1
 
 
 def test_single_fuzzy_candidate_with_no_native_result_passes_through_as_single_source() -> (
@@ -312,3 +314,4 @@ def test_single_fuzzy_candidate_with_no_native_result_passes_through_as_single_s
     assert canonical.reconciliation_outcome == CrossReferenceReconciliationOutcome.SINGLE_SOURCE
     assert len(result.evidence) == 1
     assert result.evidence[0].canonical_cross_reference_id == canonical.cross_reference_id
+    assert result.diagnostics.single_source_count == 1

@@ -344,7 +344,7 @@ def build_report(*, document_entry, document_graph, table_assets: list[ResolvedT
         [
             "## Logical Table Families",
             "",
-            "_Note: TOC outline and raw pre-sanitization section paths are available in `scripts/debug_parse_document.py`; the persisted graph export shows the stored section path and normalized matching path that survive reload._",
+            "_Note: this export shows the stored section path and normalized matching path that survive reload._",
             "",
         ]
     )
