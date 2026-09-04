@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 
 from src.application.workflows.parsing.builders.document_graph.cross_references.pdf_link.pdf_link_cross_reference_linker import (
@@ -7,6 +8,7 @@ from src.application.workflows.parsing.builders.document_graph.cross_references.
     CrossReferenceReconciliationDiagnostics,
     CrossReferenceReconciliationResult,
 )
+from src.config.logging import get_logger
 from src.domain.document.entities import (
     ChunkCrossReference,
     ChunkCrossReferenceResolutionStatus,
@@ -15,6 +17,9 @@ from src.domain.document.entities import (
     CrossReferenceReconciliationOutcome,
 )
 from src.shared.ids import IdGenerator, IdPrefix
+from src.shared.observability.stage_logger import time_stage
+
+_logger = get_logger(__name__)
 
 _Outcome = CrossReferenceReconciliationOutcome
 _Status = ChunkCrossReferenceResolutionStatus
@@ -37,6 +42,47 @@ class CrossReferenceReconciliationService:
         self.id_generator = id_generator
 
     def reconcile(
+        self,
+        *,
+        location_type_fuzzy_references: list[ChunkCrossReference],
+        native_result: PdfLinkLinkingResult | None,
+    ) -> CrossReferenceReconciliationResult:
+        document_id = next(
+            (c.document_id for c in location_type_fuzzy_references),
+            next(
+                (c.document_id for c in (native_result.references if native_result else [])),
+                None,
+            ),
+        )
+        with time_stage(
+            _logger,
+            "cross_reference_reconciliation",
+            document_id=document_id,
+            success_level=logging.DEBUG,
+        ) as scope:
+            result = self._reconcile(
+                location_type_fuzzy_references=location_type_fuzzy_references,
+                native_result=native_result,
+            )
+            scope.counts.update(
+                {
+                    "fuzzy_candidates": len(location_type_fuzzy_references),
+                    "native_candidates": (
+                        len(native_result.references) if native_result else 0
+                    ),
+                    "single_source_count": result.diagnostics.single_source_count,
+                    "confirmed_count": result.diagnostics.confirmed_count,
+                    "accepted_textual_count": result.diagnostics.accepted_textual_count,
+                    "accepted_native_count": result.diagnostics.accepted_native_count,
+                    "conflict_count": result.diagnostics.conflict_count,
+                    "unreconciled_multi_candidate_chunks": (
+                        result.diagnostics.unreconciled_multi_candidate_chunks
+                    ),
+                }
+            )
+        return result
+
+    def _reconcile(
         self,
         *,
         location_type_fuzzy_references: list[ChunkCrossReference],

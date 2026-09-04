@@ -51,9 +51,6 @@ from src.config.logging import get_logger
 from src.shared.exceptions import ApplicationError
 
 if TYPE_CHECKING:
-    # Deferred: see query_ambiguity_detector.py -- a module-level import
-    # here re-enters src.application.langgraph.nodes's __init__ chain,
-    # which imports back into this reflection package.
     from src.application.langgraph.nodes.retrieval_intent_decision import (
         RetrievalIntentDecision,
     )
@@ -224,14 +221,6 @@ class ReflectionService:
         entailment_used = False
         unsupported_claims: list[str] = []
         if used_llm and raw_llm_decision is not None:
-            # W9 (answering_flow_weakness_remediation_plan.md): once a real
-            # LLM verdict on claim-to-evidence faithfulness exists, prefer
-            # it over AnswerQualityScorer's lexical-overlap proxy for the
-            # *score* -- deterministic's own decision-making above already
-            # ran on the lexical score by design (cheap-before-expensive,
-            # PR 12's established interpretation), so this only affects
-            # grounding_score/overall_score and downstream reporting, never
-            # which decision was reached.
             entailment_score = raw_llm_decision.diagnostics.get("entailment_score")
             unsupported_claims = raw_llm_decision.diagnostics.get(
                 "unsupported_claims", []

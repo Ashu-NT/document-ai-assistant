@@ -1,5 +1,6 @@
 import os
 
+from src.config.logging import configure_logging
 from src.config.settings import (
     database_settings,
     qdrant_settings,
@@ -22,6 +23,7 @@ def bootstrap_application() -> None:
     # conversion to check for model updates, even when the model is already
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
+    configure_logging()
     storage_settings.ensure_directories()
     database_settings.ensure_database_directory()
     qdrant_settings.ensure_storage_directory()

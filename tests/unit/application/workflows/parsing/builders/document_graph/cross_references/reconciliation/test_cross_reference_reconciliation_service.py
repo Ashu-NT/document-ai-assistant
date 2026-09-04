@@ -315,3 +315,40 @@ def test_single_fuzzy_candidate_with_no_native_result_passes_through_as_single_s
     assert len(result.evidence) == 1
     assert result.evidence[0].canonical_cross_reference_id == canonical.cross_reference_id
     assert result.diagnostics.single_source_count == 1
+
+
+_RECONCILIATION_LOGGER_NAME = (
+    "src.application.workflows.parsing.builders.document_graph"
+    ".cross_references.reconciliation.cross_reference_reconciliation_service"
+)
+
+
+def test_reconcile_logs_a_debug_summary_with_outcome_counts(caplog) -> None:
+    fuzzy = xref(
+        reference_type=ChunkCrossReferenceType.SECTION_REFERENCE,
+        source_chunk_id="c1",
+        target_chunk_id="c2",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+    )
+    native = xref(
+        reference_type=ChunkCrossReferenceType.PDF_LINK_REFERENCE,
+        source_chunk_id="c1",
+        target_chunk_id="c2",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+    )
+
+    with caplog.at_level("DEBUG", logger=_RECONCILIATION_LOGGER_NAME):
+        _service().reconcile(
+            location_type_fuzzy_references=[fuzzy], native_result=native_result(native)
+        )
+
+    assert len(caplog.records) == 1
+    record = caplog.records[0]
+    assert record.levelno == 10  # DEBUG
+    message = record.getMessage()
+    assert "stage=cross_reference_reconciliation" in message
+    assert "status=ok" in message
+    assert "document_id=doc_001" in message
+    assert "confirmed_count=1" in message
+    assert "fuzzy_candidates=1" in message
+    assert "native_candidates=1" in message

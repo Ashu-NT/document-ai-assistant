@@ -1,3 +1,7 @@
+import logging
+
+import pytest
+
 from src.application.workflows.parsing.profiling import GraphBuildProfiler
 
 
@@ -20,3 +24,64 @@ def test_graph_build_profiler_records_stage_metrics() -> None:
     assert metric.operations["strategy"] == "layout_heuristic"
     assert metric.elapsed_seconds >= 0
     assert messages
+
+
+def test_graph_build_profiler_logs_stage_completion_even_when_disabled(caplog) -> None:
+    """The heavy GraphBuildStageMetric history stays opt-in (`enabled`), but
+    basic stage-completion logging must fire regardless - this is what
+    makes a real corpus run observable without turning profiling on."""
+    profiler = GraphBuildProfiler.disabled()
+    profiler.document_id = "doc_disabled_logging"
+
+    logger_name = "src.application.workflows.parsing.profiling.graph_build_profiler"
+    with caplog.at_level("INFO", logger=logger_name):
+        with profiler.measure(
+            name="document_graph_builder.add_sections",
+            input_counts={"sections": 3},
+        ) as stage:
+            stage.output_counts["graph_sections"] = 3
+
+    assert profiler.stage_metrics == []  # heavy history stays off
+    assert len(caplog.records) == 1
+    message = caplog.records[0].getMessage()
+    assert "stage=document_graph_builder.add_sections" in message
+    assert "status=ok" in message
+    assert "document_id=doc_disabled_logging" in message
+    assert "sections=3" in message
+    assert "graph_sections=3" in message
+
+
+def test_graph_build_profiler_logs_error_and_reraises_on_stage_exception(caplog) -> None:
+    profiler = GraphBuildProfiler.disabled()
+    logger_name = "src.application.workflows.parsing.profiling.graph_build_profiler"
+
+    with caplog.at_level("DEBUG", logger=logger_name):
+        with pytest.raises(ValueError, match="bad stage"):
+            with profiler.measure(name="failing_stage"):
+                raise ValueError("bad stage")
+
+    assert len(caplog.records) == 1
+    record = caplog.records[0]
+    assert record.levelno == logging.ERROR
+    message = record.getMessage()
+    assert "stage=failing_stage" in message
+    assert "status=failed" in message
+    assert "error=bad stage" in message
+
+
+def test_graph_build_profiler_output_counts_do_not_collide_with_fixed_log_fields(
+    caplog,
+) -> None:
+    """document_graph_builder.py sets stage.output_counts["document_id"] -
+    this must never crash or shadow the profiler's own document_id."""
+    profiler = GraphBuildProfiler.disabled()
+    profiler.document_id = "doc_real"
+    logger_name = "src.application.workflows.parsing.profiling.graph_build_profiler"
+
+    with caplog.at_level("INFO", logger=logger_name):
+        with profiler.measure(name="initialize_document") as stage:
+            stage.output_counts["document_id"] = "doc_from_output_counts"
+
+    message = caplog.records[0].getMessage()
+    assert "document_id=doc_real" in message
+    assert "doc_from_output_counts" not in message

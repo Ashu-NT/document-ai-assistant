@@ -44,22 +44,8 @@ from src.domain.elements import CanonicalElement
 
 logger = get_logger(__name__)
 
-# Reserve room for special tokens (e.g. BERT-family [CLS]/[SEP]) that the
-# embedding model's tokenizer adds on top of the content tokens.
-_SPECIAL_TOKEN_RESERVE = 2
 
-# Conservative estimate of how many real embedding-model subword tokens a
-# single whitespace-split "word" of technical text (part numbers, unit
-# codes, alphanumeric identifiers) expands into. Whitespace counting
-# understates real token counts, so budgets measured in words are clamped
-# against the worst-case end of this range rather than the model ceiling
-# directly -- otherwise a word-counted chunk could still silently exceed the
-# embedding model's real limit and get truncated at embed time. Measured
-# against the real BAAI/bge-small-en-v1.5 tokenizer on representative
-# technical strings (part numbers, ordering codes, table markdown): 1.83x
-# aggregate, 2.90x worst case (identifier-dense ordering-info lines) -- this
-# is a safety ceiling, not an average, so it uses the worst case rounded up,
-# not the aggregate (a prior 1.6x value under-clamped exactly this content).
+_SPECIAL_TOKEN_RESERVE = 2
 _WORD_TO_SUBWORD_EXPANSION_FACTOR = 3.0
 
 

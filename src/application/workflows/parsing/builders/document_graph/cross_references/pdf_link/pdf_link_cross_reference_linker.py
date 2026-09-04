@@ -1,9 +1,11 @@
+import logging
 from dataclasses import dataclass, field
 
 from src.application.contracts.pdf_links import PdfLinkExtractionResult
 from src.application.workflows.parsing.builders.document_graph.cross_references.pdf_link.chunk_page_index import (
     ChunkPageIndex,
 )
+from src.config.logging import get_logger
 from src.domain.document import DocumentGraph
 from src.domain.document.entities import (
     ChunkCrossReference,
@@ -12,6 +14,9 @@ from src.domain.document.entities import (
     PdfLinkProvenance,
 )
 from src.shared.ids import IdGenerator, IdPrefix
+from src.shared.observability.stage_logger import time_stage
+
+_logger = get_logger(__name__)
 
 # Legacy compatibility value, not a calibrated probability. Copied verbatim
 # from ChunkCrossReferenceResolver's own _CONFIDENCE_RESOLVED_UNIQUE purely
@@ -59,6 +64,30 @@ class PdfLinkCrossReferenceLinker:
         self.id_generator = id_generator
 
     def link(
+        self,
+        graph: DocumentGraph,
+        extraction_result: PdfLinkExtractionResult,
+    ) -> PdfLinkLinkingResult:
+        with time_stage(
+            _logger,
+            "pdf_native_cross_reference_linker",
+            document_id=graph.document.document_id,
+            success_level=logging.DEBUG,
+        ) as scope:
+            result = self._link(graph, extraction_result)
+            scope.counts.update(
+                {
+                    "annotations": len(extraction_result.annotations),
+                    "resolved": len(result.references),
+                    "ambiguous": result.diagnostics.ambiguous_count,
+                    "unresolved": result.diagnostics.unresolved_count,
+                    "self_reference": result.diagnostics.self_reference_count,
+                    "duplicate": result.diagnostics.duplicate_count,
+                }
+            )
+        return result
+
+    def _link(
         self,
         graph: DocumentGraph,
         extraction_result: PdfLinkExtractionResult,

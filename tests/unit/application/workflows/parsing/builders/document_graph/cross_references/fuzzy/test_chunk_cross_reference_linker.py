@@ -125,3 +125,36 @@ def test_link_does_not_self_reference_when_the_table_reference_lands_on_its_own_
     cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
 
     assert cross_references == []
+
+
+def test_link_logs_a_debug_summary_with_counts_by_reference_type(caplog) -> None:
+    table = TableAsset(
+        table_id="table_1",
+        document_id="doc_001",
+        markdown="| a | b |",
+        metadata=AssetMetadata(caption="Table 3. Spare parts list"),
+    )
+    referencing_chunk = make_chunk(
+        chunk_id="ref", content="Spare parts are listed in Table 3."
+    )
+    target_chunk = make_chunk(
+        chunk_id="target", content="table contents here", table_ids=["table_1"]
+    )
+    graph = make_graph([referencing_chunk, target_chunk], tables={"table_1": table})
+    logger_name = (
+        "src.application.workflows.parsing.builders.document_graph"
+        ".cross_references.fuzzy.chunk_cross_reference_linker"
+    )
+
+    with caplog.at_level("DEBUG", logger=logger_name):
+        ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    assert len(caplog.records) == 1
+    record = caplog.records[0]
+    assert record.levelno == 10  # DEBUG
+    message = record.getMessage()
+    assert "stage=fuzzy_cross_reference_linker" in message
+    assert "status=ok" in message
+    assert "document_id=doc_001" in message
+    assert "table_reference=1" in message
+    assert "total=1" in message

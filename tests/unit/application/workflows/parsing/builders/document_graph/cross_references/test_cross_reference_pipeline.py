@@ -141,3 +141,76 @@ def test_pipeline_returns_reconciliation_diagnostics_and_evidence() -> None:
     assert outcome.canonical_references == [canonical]
     assert outcome.reconciliation_diagnostics.confirmed_count == 1
     assert outcome.native_diagnostics is None
+
+
+_PIPELINE_LOGGER_NAME = (
+    "src.application.workflows.parsing.builders.document_graph"
+    ".cross_references.cross_reference_pipeline"
+)
+
+
+def test_pipeline_logs_info_summary_on_success(caplog) -> None:
+    canonical = xref(ChunkCrossReferenceType.PDF_LINK_REFERENCE)
+    reconciliation_result = CrossReferenceReconciliationResult(
+        evidence=[],
+        canonical_references=[canonical],
+        diagnostics=CrossReferenceReconciliationDiagnostics(confirmed_count=1),
+    )
+    pipeline = CrossReferencePipeline(
+        fuzzy_linker=FakeFuzzyLinker([]),
+        reconciliation_service=FakeReconciliationService(reconciliation_result),
+    )
+
+    with caplog.at_level("INFO", logger=_PIPELINE_LOGGER_NAME):
+        pipeline.run(make_graph())
+
+    assert len(caplog.records) == 1
+    record = caplog.records[0]
+    assert record.levelno == 20  # INFO
+    message = record.getMessage()
+    assert "stage=cross_reference_pipeline" in message
+    assert "status=ok" in message
+    assert "document_id=doc_001" in message
+    assert "canonical_rows=1" in message
+    assert "confirmed_count=1" in message
+
+
+def test_pipeline_logs_warning_when_conflicts_or_unreconciled_present(caplog) -> None:
+    reconciliation_result = CrossReferenceReconciliationResult(
+        evidence=[],
+        canonical_references=[],
+        diagnostics=CrossReferenceReconciliationDiagnostics(
+            conflict_count=1, unreconciled_multi_candidate_chunks=2
+        ),
+    )
+    pipeline = CrossReferencePipeline(
+        fuzzy_linker=FakeFuzzyLinker([]),
+        reconciliation_service=FakeReconciliationService(reconciliation_result),
+    )
+
+    with caplog.at_level("INFO", logger=_PIPELINE_LOGGER_NAME):
+        pipeline.run(make_graph())
+
+    levels = [record.levelno for record in caplog.records]
+    assert 20 in levels  # INFO completion line still present
+    assert 30 in levels  # WARNING
+    warning_message = next(
+        record.getMessage() for record in caplog.records if record.levelno == 30
+    )
+    assert "conflict_count=1" in warning_message
+    assert "unreconciled_multi_candidate_chunks=2" in warning_message
+
+
+def test_pipeline_does_not_warn_when_no_conflicts_or_unreconciled(caplog) -> None:
+    reconciliation_result = CrossReferenceReconciliationResult(
+        evidence=[], canonical_references=[], diagnostics=CrossReferenceReconciliationDiagnostics()
+    )
+    pipeline = CrossReferencePipeline(
+        fuzzy_linker=FakeFuzzyLinker([]),
+        reconciliation_service=FakeReconciliationService(reconciliation_result),
+    )
+
+    with caplog.at_level("INFO", logger=_PIPELINE_LOGGER_NAME):
+        pipeline.run(make_graph())
+
+    assert all(record.levelno != 30 for record in caplog.records)

@@ -38,11 +38,15 @@ from src.application.workflows.ingestion.runtime import (
 )
 from src.application.workflows.linking import SemanticLinkingWorkflow
 from src.application.workflows.parsing import ParsingWorkflow
+from src.config.logging import get_logger
 from src.shared.activity import ActivityContext
 from src.shared.audit import AuditContext
 from src.shared.events import EventContext
 from src.shared.execution import tracked_action
 from src.shared.ids import IdGenerator
+from src.shared.observability.stage_logger import time_stage
+
+_logger = get_logger(__name__)
 
 class IngestionWorkflow:
     def __init__(
@@ -186,49 +190,59 @@ class IngestionWorkflow:
         )
 
         current_stage = IngestionStage.DUPLICATE_CHECK
-        try:
-            duplicate_result = pipeline.duplicate_coordinator.check_file_hash_duplicate(
-                request=request,
-                ingestion_run=ingestion_run,
-                file_name=file_name,
-                file_path=file_path,
-                file_hash=file_hash,
-                correlation_id=correlation_id,
-                warnings=warnings,
-                activity_context=resolved_activity_context,
-                event_context=resolved_event_context,
-                progress_callback=progress_callback,
-                current_parser_version=self.parsing_workflow.parser.parser_version,
-            )
-            if duplicate_result is not None:
-                return duplicate_result
-            return pipeline.stage_sequence_executor.run(
-                request=request,
-                file_path=file_path,
-                file_name=file_name,
-                file_hash=file_hash,
-                content_hash=content_hash,
-                correlation_id=correlation_id,
-                ingestion_run=ingestion_run,
-                stage_session=stage_session,
-                activity_context=resolved_activity_context,
-                warnings=warnings,
-            )
-        except StaleParserVersionDetected as exc:
-            return self.reingest(
-                ReingestionRequest(
-                    document_id=exc.details["document_id"],
-                    force=True,
-                    preserve_document_id=True,
-                    run_quality_checks=request.run_quality_checks,
-                    requested_by=request.requested_by,
+        with time_stage(
+            _logger,
+            "ingestion_workflow",
+            document_id=ingestion_run.document_id,
+            ingestion_run_id=ingestion_run.run_id,
+        ) as scope:
+            try:
+                duplicate_result = pipeline.duplicate_coordinator.check_file_hash_duplicate(
+                    request=request,
+                    ingestion_run=ingestion_run,
+                    file_name=file_name,
+                    file_path=file_path,
+                    file_hash=file_hash,
                     correlation_id=correlation_id,
-                    file_path_override=file_path,
-                ),
-                activity_context=resolved_activity_context,
-                audit_context=audit_context,
-                progress_callback=progress_callback,
-            )
+                    warnings=warnings,
+                    activity_context=resolved_activity_context,
+                    event_context=resolved_event_context,
+                    progress_callback=progress_callback,
+                    current_parser_version=self.parsing_workflow.parser.parser_version,
+                )
+                if duplicate_result is not None:
+                    scope.counts["outcome"] = "duplicate"
+                    return duplicate_result
+                result = pipeline.stage_sequence_executor.run(
+                    request=request,
+                    file_path=file_path,
+                    file_name=file_name,
+                    file_hash=file_hash,
+                    content_hash=content_hash,
+                    correlation_id=correlation_id,
+                    ingestion_run=ingestion_run,
+                    stage_session=stage_session,
+                    activity_context=resolved_activity_context,
+                    warnings=warnings,
+                )
+                scope.counts["outcome"] = "ingested"
+                return result
+            except StaleParserVersionDetected as exc:
+                scope.counts["outcome"] = "stale_parser_reingest"
+                return self.reingest(
+                    ReingestionRequest(
+                        document_id=exc.details["document_id"],
+                        force=True,
+                        preserve_document_id=True,
+                        run_quality_checks=request.run_quality_checks,
+                        requested_by=request.requested_by,
+                        correlation_id=correlation_id,
+                        file_path_override=file_path,
+                    ),
+                    activity_context=resolved_activity_context,
+                    audit_context=audit_context,
+                    progress_callback=progress_callback,
+                )
 
     @tracked_action(
         action="document.reingestion.requested",

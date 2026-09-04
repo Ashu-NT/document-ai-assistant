@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_asset_number_index import (
     ChunkAssetNumberIndex,
 )
@@ -18,12 +20,16 @@ from src.application.workflows.parsing.builders.document_graph.cross_references.
 from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_section_reference_resolver import (
     ChunkSectionReferenceResolver,
 )
+from src.config.logging import get_logger
 from src.domain.document import DocumentGraph
 from src.domain.document.entities import (
     ChunkCrossReference,
     ChunkCrossReferenceType,
 )
 from src.shared.ids import IdGenerator, IdPrefix
+from src.shared.observability.stage_logger import time_stage
+
+_logger = get_logger(__name__)
 
 
 class ChunkCrossReferenceLinker:
@@ -44,6 +50,22 @@ class ChunkCrossReferenceLinker:
         self.asset_resolver = asset_resolver or ChunkAssetReferenceResolver()
 
     def link(self, graph: DocumentGraph) -> list[ChunkCrossReference]:
+        with time_stage(
+            _logger,
+            "fuzzy_cross_reference_linker",
+            document_id=graph.document.document_id,
+            success_level=logging.DEBUG,
+        ) as scope:
+            cross_references = self._link(graph)
+            counts: dict[str, int] = {}
+            for reference in cross_references:
+                key = reference.reference_type.value
+                counts[key] = counts.get(key, 0) + 1
+            scope.counts.update(counts)
+            scope.counts["total"] = len(cross_references)
+        return cross_references
+
+    def _link(self, graph: DocumentGraph) -> list[ChunkCrossReference]:
         chunks = list(graph.chunks.values())
         section_index = ChunkSectionNumberIndex(chunks)
         asset_index = ChunkAssetNumberIndex(

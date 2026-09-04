@@ -348,3 +348,81 @@ def test_parse_skips_pdf_link_extraction_when_no_extractor_injected(
 
     assert builder.calls[0]["pdf_link_extraction_result"] is None
     assert "pdf_link_extraction" not in result.stage_durations
+
+
+def test_parse_logs_a_warning_when_pdf_link_extraction_is_degraded(
+    sample_document_graph, caplog
+) -> None:
+    from src.application.contracts.pdf_links import PdfLinkExtractionResult, PdfLinkPageFailure
+
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/pump_manual.pdf",
+        title="Hydraulic Pump Manual",
+        page_count=3,
+        raw_document=object(),
+        parser_name="docling",
+    )
+    parser = FakeParser(raw_parsed_document)
+    normalizer = FakeNormalizer([])
+    builder = FakeDocumentGraphBuilder(copy.deepcopy(sample_document_graph))
+    extraction_result = PdfLinkExtractionResult(
+        status="partial",
+        page_failures=[PdfLinkPageFailure(page_number=3, error_message="bad page")],
+    )
+    workflow = ParsingWorkflow(
+        parser=parser,
+        normalizer=normalizer,
+        document_graph_builder=builder,
+        id_generator=IdGenerator(),
+        pdf_link_annotation_extractor=FakePdfLinkAnnotationExtractor(extraction_result),
+    )
+    logger_name = "src.application.workflows.parsing.parsing_workflow"
+
+    with caplog.at_level("WARNING", logger=logger_name):
+        workflow.parse(
+            file_path="data/input/pump_manual.pdf",
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        )
+
+    assert len(caplog.records) == 1
+    message = caplog.records[0].getMessage()
+    assert "pdf_link_extraction_degraded" in message
+    assert "status=partial" in message
+    assert "page_failures=1" in message
+
+
+def test_parse_does_not_warn_when_pdf_link_extraction_status_is_ok(
+    sample_document_graph, caplog
+) -> None:
+    from src.application.contracts.pdf_links import PdfLinkExtractionResult
+
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/pump_manual.pdf",
+        title="Hydraulic Pump Manual",
+        page_count=3,
+        raw_document=object(),
+        parser_name="docling",
+    )
+    parser = FakeParser(raw_parsed_document)
+    normalizer = FakeNormalizer([])
+    builder = FakeDocumentGraphBuilder(copy.deepcopy(sample_document_graph))
+    workflow = ParsingWorkflow(
+        parser=parser,
+        normalizer=normalizer,
+        document_graph_builder=builder,
+        id_generator=IdGenerator(),
+        pdf_link_annotation_extractor=FakePdfLinkAnnotationExtractor(
+            PdfLinkExtractionResult(status="ok")
+        ),
+    )
+    logger_name = "src.application.workflows.parsing.parsing_workflow"
+
+    with caplog.at_level("WARNING", logger=logger_name):
+        workflow.parse(
+            file_path="data/input/pump_manual.pdf",
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        )
+
+    assert caplog.records == []

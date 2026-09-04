@@ -158,3 +158,29 @@ def test_linker_does_not_mutate_graph() -> None:
     _linker().link(graph, extraction_result)
 
     assert graph.cross_references == {}
+
+
+def test_link_logs_a_debug_summary_with_resolution_counts(caplog) -> None:
+    graph = make_graph(
+        [make_chunk(chunk_id="source", page_start=1), make_chunk(chunk_id="target", page_start=49)]
+    )
+    extraction_result = PdfLinkExtractionResult(
+        annotations=[make_annotation(source_page=1, dest_page=49)]
+    )
+    logger_name = (
+        "src.application.workflows.parsing.builders.document_graph"
+        ".cross_references.pdf_link.pdf_link_cross_reference_linker"
+    )
+
+    with caplog.at_level("DEBUG", logger=logger_name):
+        _linker().link(graph, extraction_result)
+
+    assert len(caplog.records) == 1
+    record = caplog.records[0]
+    assert record.levelno == 10  # DEBUG
+    message = record.getMessage()
+    assert "stage=pdf_native_cross_reference_linker" in message
+    assert "status=ok" in message
+    assert "annotations=1" in message
+    assert "resolved=1" in message
+    assert "ambiguous=0" in message

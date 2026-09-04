@@ -26,12 +26,15 @@ from src.application.workflows.parsing.parsing_workflow_result_builder import (
     build_parsing_workflow_result,
 )
 from src.application.workflows.parsing.runtime.parsing_stage_runner import run_stage
+from src.config.logging import get_logger
 from src.domain.document import DocumentGraph, DocumentHashes
 from src.shared.activity import ActivityContext
 from src.shared.execution import tracked_action
 from src.shared.formatting.duration_formatter import format_elapsed_seconds
 from src.shared.ids import IdGenerator, IdPrefix
 from src.shared.progress.progress_emitter import emit_progress
+
+_logger = get_logger(__name__)
 
 
 class ParsingWorkflow:
@@ -108,6 +111,7 @@ class ParsingWorkflow:
             ),
             stage_name="docling_conversion",
             stage_durations=stage_durations,
+            document_id=resolved_document_id,
         )
         normalization_item_errors: list[str] = []
         canonical_elements = run_stage(
@@ -127,6 +131,7 @@ class ParsingWorkflow:
             ),
             stage_name="canonical_normalization",
             stage_durations=stage_durations,
+            document_id=resolved_document_id,
         )
         ocr_trace = None
         if (
@@ -152,6 +157,7 @@ class ParsingWorkflow:
                 ),
                 stage_name="canonical_element_ocr_enrichment",
                 stage_durations=stage_durations,
+                document_id=resolved_document_id,
             )
         if (
             self.page_ocr_fallback_workflow is not None
@@ -178,6 +184,7 @@ class ParsingWorkflow:
                 ),
                 stage_name="page_ocr_fallback",
                 stage_durations=stage_durations,
+                document_id=resolved_document_id,
             )
             canonical_elements = ocr_merge_result.canonical_elements
             ocr_trace = ocr_merge_result.ocr_trace
@@ -200,7 +207,20 @@ class ParsingWorkflow:
                 ),
                 stage_name="pdf_link_extraction",
                 stage_durations=stage_durations,
+                document_id=resolved_document_id,
             )
+            if pdf_link_extraction_result.status != "ok":
+                _logger.warning(
+                    "pdf_link_extraction_degraded document_id=%s status=%s "
+                    "page_failures=%s non_internal_links_excluded=%s "
+                    "invalid_destinations_skipped=%s error=%r",
+                    resolved_document_id,
+                    pdf_link_extraction_result.status,
+                    len(pdf_link_extraction_result.page_failures),
+                    pdf_link_extraction_result.non_internal_links_excluded,
+                    pdf_link_extraction_result.invalid_destinations_skipped,
+                    pdf_link_extraction_result.error_message,
+                )
         self.last_pdf_link_extraction_result = pdf_link_extraction_result
 
         graph_build_element_errors: list[str] = []
@@ -233,6 +253,7 @@ class ParsingWorkflow:
             ),
             stage_name="graph_build",
             stage_durations=stage_durations,
+            document_id=resolved_document_id,
         )
 
         if self.document_graph_validator is not None:
@@ -248,6 +269,7 @@ class ParsingWorkflow:
                 ),
                 stage_name="graph_validation",
                 stage_durations=stage_durations,
+                document_id=resolved_document_id,
             )
 
         total_elapsed_seconds = time.perf_counter() - total_started_at

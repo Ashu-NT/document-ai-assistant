@@ -146,6 +146,7 @@ class DocumentGraphBuilder:
         skipped_element_errors: list[str] | None = None,
         pdf_link_extraction_result: PdfLinkExtractionResult | None = None,
     ) -> DocumentGraph:
+        self.profiler.document_id = document_id
         try:
             with self.profiler.measure(
                 name="document_graph_builder.initialize_document",
