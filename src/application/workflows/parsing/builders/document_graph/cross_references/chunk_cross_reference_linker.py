@@ -27,13 +27,6 @@ from src.shared.ids import IdGenerator, IdPrefix
 
 
 class ChunkCrossReferenceLinker:
-    """Detects and resolves same-document inline cross-references
-    ("(-> Page 1062)", "see chapter 8.9") across every chunk of a document,
-    producing `ChunkCrossReference` rows. Runs against `graph.chunks`, which
-    must already be fully populated (final content/page/chunk_type) -- see
-    `DocumentGraphBuilder.build()`, where this is called right after
-    `GraphChunkBuilder.build_chunks` populates the graph, before
-    persistence."""
 
     def __init__(
         self,

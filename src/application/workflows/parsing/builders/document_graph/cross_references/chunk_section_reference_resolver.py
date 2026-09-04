@@ -11,17 +11,9 @@ from src.application.workflows.parsing.builders.document_graph.cross_references.
 )
 from src.domain.document.entities import ChunkCrossReferenceResolutionStatus
 
-# Lower than the page-based resolver's equivalents (0.9/0.6): a section
-# reference is inherently fuzzier than an exact page lookup -- a "section"
-# is a broad region typically spanning many chunks, and even a "unique"
-# match usually means the landing chunk was picked by tie-break (earliest
-# sequence_number), not that only one chunk genuinely exists for that
-# section.
+
 _CONFIDENCE_RESOLVED_UNIQUE = 0.85
 _CONFIDENCE_RESOLVED_AMBIGUOUS = 0.55
-# A descendant-subsection match ("see section 6.3" landing on 6.3.1's first
-# chunk because 6.3 itself has no directly-chunked content) is a step
-# further removed from the literal target than either of the above.
 _CONFIDENCE_RESOLVED_DESCENDANT = 0.5
 _CONFIDENCE_UNRESOLVED = 0.0
 

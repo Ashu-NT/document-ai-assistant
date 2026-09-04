@@ -11,28 +11,14 @@ from src.application.workflows.parsing.builders.document_graph.cross_references.
 )
 from src.domain.document.entities import ChunkCrossReferenceResolutionStatus
 
-# Lower than the page-based resolver's equivalents (0.9/0.6): resolution
-# depends on the source document having numbered its table/figure captions
-# in the first place, an assumption that cannot be corpus-verified across
-# arbitrary shipyard documents the way page numbers can.
+
 _CONFIDENCE_RESOLVED_UNIQUE = 0.75
 _CONFIDENCE_RESOLVED_AMBIGUOUS = 0.5
-# Weaker still: no caption number matched at all, so this falls back to
-# "the nearest table/figure on an adjacent page" rather than an actual
-# label match -- a guess, not a resolution, hence the low confidence.
 _CONFIDENCE_RESOLVED_PROXIMITY_FALLBACK = 0.3
 _CONFIDENCE_UNRESOLVED = 0.0
 
 
 class ChunkAssetReferenceResolver:
-    """Resolves a detected table/figure reference ("see Table 3") to a chunk
-    containing that asset, using the leading number already extracted from
-    the asset's caption by `ChunkAssetNumberIndex`. Unlike section
-    resolution, there is no descendant/hierarchical fallback -- a table/
-    figure number is a flat label, not a nested path. When no caption
-    numbering matches at all (uncaptioned or inconsistently-numbered
-    documents), falls back to the nearest table/figure on an adjacent page
-    rather than leaving the reference unresolved outright."""
 
     def resolve_table(
         self,

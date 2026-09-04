@@ -89,9 +89,6 @@ class ChunkReferenceDetectionResult:
 
 
 class ChunkCrossReferenceDetector:
-    """Detects inline same-document cross-references in a chunk's own text
-    (e.g. "(-> Page 1062)", "see chapter 8.9") via regex only -- no
-    resolution logic here, see `ChunkCrossReferenceResolver`."""
 
     def detect(self, content: str) -> ChunkReferenceDetectionResult:
         if not content:

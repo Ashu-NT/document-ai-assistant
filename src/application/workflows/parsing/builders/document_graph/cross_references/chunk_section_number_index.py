@@ -5,15 +5,6 @@ from collections import defaultdict
 
 from src.domain.document.entities.chunk import DocumentChunk
 
-# A section title in this corpus is consistently "<number> <title text>",
-# e.g. "6.7.1 Lubrication oil", "7.3.23.6 Engine Interface Module EIM" --
-# `\b` after the number requires a non-word character (space, punctuation,
-# end of string) immediately after, so a run-together parsing artifact like
-# "3.2AbnahmeprufzeugnisnachDINEN10204" does NOT match (no boundary between
-# the "2" and the following letter), and a part-number-shaped title like
-# "0762 0050 CER 1612..." only ever contributes a single bare number, not a
-# dotted section path, so it cannot collide with genuine "N.N"-style
-# cross-references in practice.
 _LEADING_SECTION_NUMBER_PATTERN = re.compile(r"^(\d+(?:\.\d+)*)\b")
 
 
