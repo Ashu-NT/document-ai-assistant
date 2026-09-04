@@ -11,6 +11,7 @@ class IdPrefix(str, Enum):
     QUESTION = "question"
     IDENTIFIER = "identifier"
     CROSS_REFERENCE = "xref"
+    CROSS_REFERENCE_EVIDENCE = "xref_evidence"
 
     INGESTION_RUN = "run"
     CLASSIFICATION = "classification"

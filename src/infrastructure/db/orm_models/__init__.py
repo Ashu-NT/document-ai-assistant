@@ -1,6 +1,7 @@
 from src.infrastructure.db.orm_models.document_models import (
     ChunkCrossReferenceORM,
     ChunkORM,
+    CrossReferenceEvidenceORM,
     DocumentORM,
     ElementORM,
     GeneratedQuestionORM,
@@ -37,6 +38,7 @@ __all__ = [
     "ChunkCrossReferenceORM",
     "ChunkORM",
     "ChunkVectorORM",
+    "CrossReferenceEvidenceORM",
     "DocumentORM",
     "ElementORM",
     "GeneratedQuestionORM",

@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from src.domain.assets import FormAsset, PictureAsset, TableAsset
 from src.domain.document.entities import (
     ChunkCrossReference,
+    CrossReferenceEvidence,
     DocumentChunk,
     Document,
     Identifier,
@@ -27,6 +28,11 @@ class DocumentGraph:
     questions: dict[str, GeneratedQuestion] = field(default_factory=dict)
     identifiers: dict[str, Identifier] = field(default_factory=dict)
     cross_references: dict[str, ChunkCrossReference] = field(default_factory=dict)
+    # Audit-only evidence backing reconciled/canonical cross-references (see
+    # CrossReferenceReconciliationService). Never read by retrieval.
+    cross_reference_evidence: dict[str, CrossReferenceEvidence] = field(
+        default_factory=dict
+    )
 
     def add_element(self, element: CanonicalElement) -> None:
         self.elements[element.element_id] = element
@@ -39,6 +45,9 @@ class DocumentGraph:
 
     def add_cross_reference(self, cross_reference: ChunkCrossReference) -> None:
         self.cross_references[cross_reference.cross_reference_id] = cross_reference
+
+    def add_cross_reference_evidence(self, evidence: CrossReferenceEvidence) -> None:
+        self.cross_reference_evidence[evidence.evidence_id] = evidence
 
     def replace_chunks(self, chunks: list[DocumentChunk]) -> None:
         self.chunks = {chunk.chunk_id: chunk for chunk in chunks}

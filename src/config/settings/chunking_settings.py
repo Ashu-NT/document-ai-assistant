@@ -37,3 +37,11 @@ class ChunkingSettings(AppBaseSettings):
         default=False,
         alias="CHUNK_CROSS_REFERENCE_DETECTION_ENABLED",
     )
+
+    # Disabled by default until validated against real corpus documents -
+    # see doc/corpus_confirmation_needed.md and
+    # outputs/architecture/pdf_link_cross_reference_plan.md.
+    pdf_link_cross_reference_enabled: bool = Field(
+        default=False,
+        alias="CHUNK_CROSS_REFERENCE_PDF_LINKS_ENABLED",
+    )

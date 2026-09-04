@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_asset_number_index import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_asset_number_index import (
     ChunkAssetNumberIndex,
 )
-from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_asset_reference_resolver import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_asset_reference_resolver import (
     ChunkAssetReferenceResolver,
 )
-from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_cross_reference_detector import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_cross_reference_detector import (
     ChunkCrossReferenceDetector,
 )
-from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_cross_reference_resolver import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_cross_reference_resolver import (
     ChunkCrossReferenceResolver,
 )
-from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_section_number_index import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_section_number_index import (
     ChunkSectionNumberIndex,
 )
-from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_section_reference_resolver import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_section_reference_resolver import (
     ChunkSectionReferenceResolver,
 )
 from src.domain.document import DocumentGraph

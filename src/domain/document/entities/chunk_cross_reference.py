@@ -2,6 +2,10 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 from src.domain.common import AuditMetadata
+from src.domain.document.entities.cross_reference_reconciliation_outcome import (
+    CrossReferenceReconciliationOutcome,
+)
+from src.domain.document.entities.pdf_link_provenance import PdfLinkProvenance
 
 
 class ChunkCrossReferenceType(StrEnum):
@@ -16,6 +20,9 @@ class ChunkCrossReferenceType(StrEnum):
     # conventions vary a lot across source documents.
     TABLE_REFERENCE = "table_reference"
     FIGURE_REFERENCE = "figure_reference"
+    # Resolved via PdfLinkCrossReferenceLinker from a same-document PDF GOTO
+    # link annotation - exact structural evidence, not text-derived.
+    PDF_LINK_REFERENCE = "pdf_link_reference"
 
 
 class ChunkCrossReferenceResolutionStatus(StrEnum):
@@ -48,5 +55,15 @@ class ChunkCrossReference:
         ChunkCrossReferenceResolutionStatus.UNRESOLVED
     )
     confidence_score: float = 0.0
+
+    # Populated for PDF_LINK_REFERENCE rows, and for CONFIRMED rows where a
+    # native evidence row corroborated the target regardless of which type
+    # won the canonical label (see CrossReferenceReconciliationService).
+    link_provenance: PdfLinkProvenance | None = None
+
+    # Set only when this canonical row was produced by reconciling fuzzy and
+    # native candidates (see CrossReferenceReconciliationOutcome). None for
+    # every row with no cross-source counterpart, which is the majority case.
+    reconciliation_outcome: CrossReferenceReconciliationOutcome | None = None
 
     audit: AuditMetadata = field(default_factory=AuditMetadata)

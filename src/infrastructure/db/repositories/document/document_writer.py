@@ -8,6 +8,7 @@ from src.domain.document.entities.identifier import Identifier
 from src.infrastructure.db.mappers import (
     ChunkCrossReferenceMapper,
     ChunkMapper,
+    CrossReferenceEvidenceMapper,
     DocumentMapper,
     ElementMapper,
     GeneratedQuestionMapper,
@@ -18,6 +19,7 @@ from src.infrastructure.db.repositories.common import bulk_merge
 from src.infrastructure.db.orm_models import (
     ChunkCrossReferenceORM,
     ChunkORM,
+    CrossReferenceEvidenceORM,
     DocumentORM,
     GeneratedQuestionORM,
     IdentifierORM,
@@ -144,6 +146,16 @@ class DocumentWriter:
                 for cross_reference in document_graph.cross_references.values()
             ],
         )
+        self.session.flush()
+
+        bulk_merge(
+            self.session,
+            CrossReferenceEvidenceORM,
+            [
+                CrossReferenceEvidenceMapper.to_orm(evidence)
+                for evidence in document_graph.cross_reference_evidence.values()
+            ],
+        )
 
     def _delete_document_chunk_artifacts(self, document_id: str) -> None:
         self.session.execute(
@@ -154,6 +166,16 @@ class DocumentWriter:
         self.session.execute(
             delete(IdentifierORM).where(
                 IdentifierORM.document_id == document_id
+            )
+        )
+        # Evidence is append-only *within* a document's lifecycle, not
+        # forever - a reingest deletes and reinserts it same as the
+        # canonical cross-references it backs. Deleted before the canonical
+        # rows so no ON DELETE SET NULL churn happens for rows being removed
+        # anyway.
+        self.session.execute(
+            delete(CrossReferenceEvidenceORM).where(
+                CrossReferenceEvidenceORM.document_id == document_id
             )
         )
         self.session.execute(

@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any
 
+from src.infrastructure.pdf.pdfium_process_lock import PDFIUM_PROCESS_LOCK
 from src.infrastructure.pdf.rendered_page import RenderedPage
 from src.shared.exceptions import InfrastructureError
 
@@ -55,9 +56,10 @@ class OpenedPDFDocument:
                     },
                 )
 
-            page = self.document[page_index]
-            bitmap = page.render(scale=dpi / 72.0)
-            image = bitmap.to_pil()
+            with PDFIUM_PROCESS_LOCK:
+                page = self.document[page_index]
+                bitmap = page.render(scale=dpi / 72.0)
+                image = bitmap.to_pil()
             image.save(output_path)
             width, height = image.size
             return RenderedPage(
@@ -95,7 +97,8 @@ class OpenedPDFDocument:
 class PDFPageRenderer:
     def open(self, pdf_path: str) -> OpenedPDFDocument:
         pdfium = self._import_pypdfium2()
-        document = pdfium.PdfDocument(pdf_path)
+        with PDFIUM_PROCESS_LOCK:
+            document = pdfium.PdfDocument(pdf_path)
         return OpenedPDFDocument(pdf_path=pdf_path, document=document)
 
     def render_page(
@@ -113,7 +116,8 @@ class PDFPageRenderer:
     def _safe_close(value: Any) -> None:
         close = getattr(value, "close", None)
         if callable(close):
-            close()
+            with PDFIUM_PROCESS_LOCK:
+                close()
 
     @staticmethod
     def _import_pypdfium2():

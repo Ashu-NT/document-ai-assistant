@@ -314,4 +314,63 @@ class ChunkCrossReferenceORM(Base):
     )
     confidence_score: Mapped[float] = mapped_column(nullable=False)
 
+    # Set for PDF_LINK_REFERENCE rows, and for CONFIRMED rows where native
+    # evidence corroborated the target (see CrossReferenceReconciliationService).
+    link_provenance_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Set only when this row was produced by reconciling fuzzy and native
+    # candidates - None for every row with no cross-source counterpart.
+    reconciliation_outcome: Mapped[str | None] = mapped_column(
+        String, nullable=True, index=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class CrossReferenceEvidenceORM(Base):
+    __tablename__ = "chunk_cross_reference_evidence"
+    __table_args__ = (
+        Index(
+            "ix_chunk_cross_reference_evidence_document_id_source_chunk_id",
+            "document_id",
+            "source_chunk_id",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+
+    # CASCADE: evidence is append-only within a document's lifecycle, not
+    # globally permanent - it dies with its document.
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("documents.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    source_chunk_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+
+    reference_type: Mapped[str] = mapped_column(String, nullable=False)
+    matched_text: Mapped[str] = mapped_column(String, nullable=False)
+    target_page: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    target_section_label: Mapped[str | None] = mapped_column(String, nullable=True)
+    target_chunk_id: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    resolution_status: Mapped[str] = mapped_column(String, nullable=False)
+    confidence_score: Mapped[float] = mapped_column(nullable=False)
+
+    link_provenance_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    reconciliation_outcome: Mapped[str | None] = mapped_column(
+        String, nullable=True, index=True
+    )
+    reconciliation_group_id: Mapped[str | None] = mapped_column(
+        String, nullable=True, index=True
+    )
+    # SET NULL, not CASCADE: the evidence row (matched_text,
+    # resolution_status, provenance) is still worth keeping for audit even
+    # if the canonical row it once fed is later removed (e.g. re-ingestion).
+    canonical_cross_reference_id: Mapped[str | None] = mapped_column(
+        ForeignKey("chunk_cross_references.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

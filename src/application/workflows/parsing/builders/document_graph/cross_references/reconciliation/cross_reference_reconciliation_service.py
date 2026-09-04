@@ -113,11 +113,12 @@ class CrossReferenceReconciliationService:
             # which fuzzy candidate corresponds to which native candidate is
             # undecidable without bbox/source-location matching. Do not
             # guess - evidence only, no canonical row for anyone here.
+            multi_candidate_group_id = self._new_group_id()
             evidence.extend(
                 self._to_evidence(
                     candidate,
                     outcome=_Outcome.UNRECONCILED_MULTI_CANDIDATE,
-                    group_id=self._new_group_id(),
+                    group_id=multi_candidate_group_id,
                     canonical_cross_reference_id=None,
                 )
                 for candidate in resolved_fuzzy + resolved_native

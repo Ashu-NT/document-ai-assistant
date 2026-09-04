@@ -3,11 +3,14 @@ from src.domain.document.entities import (
     ChunkCrossReference,
     ChunkCrossReferenceResolutionStatus,
     ChunkCrossReferenceType,
+    CrossReferenceEvidence,
+    CrossReferenceReconciliationOutcome,
     Document,
     DocumentChunk,
     DocumentSection,
     GeneratedQuestion,
     Identifier,
+    PdfLinkProvenance,
 )
 from src.domain.document.value_objects import (
     ChunkStatistics,
@@ -20,6 +23,8 @@ __all__ = [
     "ChunkCrossReferenceResolutionStatus",
     "ChunkCrossReferenceType",
     "ChunkStatistics",
+    "CrossReferenceEvidence",
+    "CrossReferenceReconciliationOutcome",
     "Document",
     "DocumentChunk",
     "DocumentGraph",
@@ -28,4 +33,5 @@ __all__ = [
     "DocumentStatistics",
     "GeneratedQuestion",
     "Identifier",
+    "PdfLinkProvenance",
 ]

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from src.application.contracts.pdf_links import PdfLinkExtractionResult
 from src.application.workflows.parsing.builders.chunking import SectionChunkBuilder
 from src.application.workflows.parsing.builders.chunking.runtime.chunking_runtime_factory import (
     ChunkingRuntimeFactory,
@@ -10,8 +11,8 @@ from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk
 from src.application.workflows.parsing.builders.document_graph.chunk_signal_aggregator import (
     ChunkSignalAggregator,
 )
-from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_cross_reference_linker import (
-    ChunkCrossReferenceLinker,
+from src.application.workflows.parsing.builders.document_graph.cross_references import (
+    CrossReferencePipeline,
 )
 from src.application.workflows.parsing.builders.document_graph.document_metadata.document_metadata_extractor import (
     DocumentMetadataExtractor,
@@ -74,12 +75,12 @@ class DocumentGraphBuilder:
         min_section_text_length: int | None = None,
         section_chunk_builder: SectionChunkBuilder | None = None,
         profiler: GraphBuildProfiler | None = None,
-        chunk_cross_reference_linker: ChunkCrossReferenceLinker | None = None,
+        cross_reference_pipeline: CrossReferencePipeline | None = None,
     ) -> None:
         self.id_generator = id_generator
         self.section_builder = section_builder
         self.profiler = profiler or GraphBuildProfiler.disabled()
-        self.chunk_cross_reference_linker = chunk_cross_reference_linker
+        self.cross_reference_pipeline = cross_reference_pipeline
         token_counter_factory = ChunkTokenCounterFactory()
         if section_chunk_builder is not None:
             self.section_chunk_builder = section_chunk_builder
@@ -135,6 +136,7 @@ class DocumentGraphBuilder:
         canonical_elements: list[ParsedCanonicalElement],
         raw_parsed_document: RawParsedDocument,
         skipped_element_errors: list[str] | None = None,
+        pdf_link_extraction_result: PdfLinkExtractionResult | None = None,
     ) -> DocumentGraph:
         try:
             with self.profiler.measure(
@@ -306,14 +308,22 @@ class DocumentGraphBuilder:
                     graph.add_chunk(chunk)
                 stage.output_counts["graph_chunks"] = len(graph.chunks)
 
-            if self.chunk_cross_reference_linker is not None:
+            if self.cross_reference_pipeline is not None:
                 with self.profiler.measure(
                     name="document_graph_builder.link_chunk_cross_references",
                     input_counts={"chunks": len(graph.chunks)},
                 ) as stage:
-                    for cross_reference in self.chunk_cross_reference_linker.link(graph):
+                    linking_outcome = self.cross_reference_pipeline.run(
+                        graph, pdf_link_extraction_result
+                    )
+                    for evidence in linking_outcome.evidence:
+                        graph.add_cross_reference_evidence(evidence)
+                    for cross_reference in linking_outcome.canonical_references:
                         graph.add_cross_reference(cross_reference)
                     stage.output_counts["cross_references"] = len(graph.cross_references)
+                    stage.output_counts["cross_reference_evidence"] = len(
+                        graph.cross_reference_evidence
+                    )
 
             with self.profiler.measure(
                 name="document_graph_builder.aggregate_chunk_signals",

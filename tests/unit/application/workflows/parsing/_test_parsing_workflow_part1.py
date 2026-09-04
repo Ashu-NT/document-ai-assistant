@@ -268,3 +268,83 @@ def test_parse_raises_schema_validation_error_when_graph_validation_fails(
 
     assert parser.calls == ["data/input/pump_manual.pdf"]
     assert validator.calls == [sample_document_graph]
+
+
+class FakePdfLinkAnnotationExtractor:
+    """Hand-built fake conforming structurally to PdfLinkExtractorPort -
+    the Protocol isn't @runtime_checkable, so dependency injection is proven
+    by exercising it through ParsingWorkflow end-to-end rather than a
+    separate isinstance test."""
+
+    def __init__(self, extraction_result) -> None:
+        self.extraction_result = extraction_result
+        self.calls: list[str] = []
+
+    def extract(self, file_path: str):
+        self.calls.append(file_path)
+        return self.extraction_result
+
+
+def test_parse_runs_pdf_link_extraction_and_threads_result_into_graph_build(
+    sample_document_graph,
+) -> None:
+    from src.application.contracts.pdf_links import PdfLinkExtractionResult
+
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/pump_manual.pdf",
+        title="Hydraulic Pump Manual",
+        page_count=3,
+        raw_document=object(),
+        parser_name="docling",
+    )
+    parser = FakeParser(raw_parsed_document)
+    normalizer = FakeNormalizer([])
+    builder = FakeDocumentGraphBuilder(copy.deepcopy(sample_document_graph))
+    extraction_result = PdfLinkExtractionResult(status="ok")
+    pdf_link_annotation_extractor = FakePdfLinkAnnotationExtractor(extraction_result)
+    workflow = ParsingWorkflow(
+        parser=parser,
+        normalizer=normalizer,
+        document_graph_builder=builder,
+        id_generator=IdGenerator(),
+        pdf_link_annotation_extractor=pdf_link_annotation_extractor,
+    )
+
+    workflow.parse(
+        file_path="data/input/pump_manual.pdf",
+        file_hash="file_hash_001",
+        content_hash="content_hash_001",
+    )
+
+    assert pdf_link_annotation_extractor.calls == ["data/input/pump_manual.pdf"]
+    assert builder.calls[0]["pdf_link_extraction_result"] is extraction_result
+
+
+def test_parse_skips_pdf_link_extraction_when_no_extractor_injected(
+    sample_document_graph,
+) -> None:
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/pump_manual.pdf",
+        title="Hydraulic Pump Manual",
+        page_count=3,
+        raw_document=object(),
+        parser_name="docling",
+    )
+    parser = FakeParser(raw_parsed_document)
+    normalizer = FakeNormalizer([])
+    builder = FakeDocumentGraphBuilder(copy.deepcopy(sample_document_graph))
+    workflow = ParsingWorkflow(
+        parser=parser,
+        normalizer=normalizer,
+        document_graph_builder=builder,
+        id_generator=IdGenerator(),
+    )
+
+    result = workflow.parse(
+        file_path="data/input/pump_manual.pdf",
+        file_hash="file_hash_001",
+        content_hash="content_hash_001",
+    )
+
+    assert builder.calls[0]["pdf_link_extraction_result"] is None
+    assert "pdf_link_extraction" not in result.stage_durations

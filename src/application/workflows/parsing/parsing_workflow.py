@@ -3,6 +3,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from src.application.contracts.parsing import ParserPort
+from src.application.contracts.pdf_links import PdfLinkExtractorPort
 from src.application.validation.document import DocumentGraphValidator
 from src.application.workflows.parsing.canonical_element_ocr_enricher import (
     CanonicalElementOCREnricher,
@@ -44,6 +45,7 @@ class ParsingWorkflow:
         ocr_policy: ParsingOCRPolicy | None = None,
         canonical_element_ocr_enricher: CanonicalElementOCREnricher | None = None,
         page_ocr_fallback_workflow: PageOCRFallbackWorkflow | None = None,
+        pdf_link_annotation_extractor: PdfLinkExtractorPort | None = None,
         audit_service=None,
     ) -> None:
         self.parser = parser
@@ -54,6 +56,7 @@ class ParsingWorkflow:
         self.ocr_policy = ocr_policy
         self.canonical_element_ocr_enricher = canonical_element_ocr_enricher
         self.page_ocr_fallback_workflow = page_ocr_fallback_workflow
+        self.pdf_link_annotation_extractor = pdf_link_annotation_extractor
         self.audit_service = audit_service
 
     @tracked_action(
@@ -178,6 +181,26 @@ class ParsingWorkflow:
             canonical_elements = ocr_merge_result.canonical_elements
             ocr_trace = ocr_merge_result.ocr_trace
 
+        pdf_link_extraction_result = None
+        if self.pdf_link_annotation_extractor is not None:
+            pdf_link_extraction_result = run_stage(
+                progress_callback=progress_callback,
+                start_message=f"Extracting PDF link annotations for {file_name}...",
+                heartbeat_label=f"PDF link extraction for {file_name}",
+                failure_label=f"PDF link extraction for {file_name}",
+                operation=lambda: self.pdf_link_annotation_extractor.extract(
+                    file_path
+                ),
+                completion_message_builder=lambda result, elapsed_seconds: (
+                    "PDF link extraction completed in "
+                    f"{format_elapsed_seconds(elapsed_seconds)} "
+                    f"({len(result.annotations)} annotation(s), "
+                    f"status={result.status})."
+                ),
+                stage_name="pdf_link_extraction",
+                stage_durations=stage_durations,
+            )
+
         graph_build_element_errors: list[str] = []
         document_graph = run_stage(
             progress_callback=progress_callback,
@@ -197,6 +220,7 @@ class ParsingWorkflow:
                 canonical_elements=canonical_elements,
                 raw_parsed_document=raw_parsed_document,
                 skipped_element_errors=graph_build_element_errors,
+                pdf_link_extraction_result=pdf_link_extraction_result,
             ),
             completion_message_builder=lambda result, elapsed_seconds: (
                 "Document graph build completed in "

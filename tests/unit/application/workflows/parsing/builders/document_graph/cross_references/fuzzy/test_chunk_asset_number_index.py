@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_asset_number_index import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_asset_number_index import (
     ChunkAssetNumberIndex,
     extract_leading_figure_number,
     extract_leading_table_number,

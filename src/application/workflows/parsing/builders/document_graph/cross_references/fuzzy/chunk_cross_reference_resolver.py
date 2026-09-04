@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from src.application.workflows.parsing.builders.document_graph.cross_references.chunk_cross_reference_tie_break import (
+from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_cross_reference_tie_break import (
     pick_best_candidate,
 )
 from src.domain.document.entities import ChunkCrossReferenceResolutionStatus
