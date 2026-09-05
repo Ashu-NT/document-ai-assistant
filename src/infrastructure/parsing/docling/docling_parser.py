@@ -1,5 +1,6 @@
 import multiprocessing
 import queue
+import time
 from concurrent.futures import TimeoutError as ConversionTimeoutError
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any, Callable
@@ -36,10 +37,19 @@ class DoclingParser:
         parser_version: str | None = None,
         converter_factory: Callable[..., Any] | None = None,
     ) -> None:
-        self.converter = converter or self._build_default_converter()
+        
+        self.timeout_seconds =timeout_seconds
+        
+        if converter is not None:
+            self.converter = converter
+        elif timeout_seconds is None:
+            self.converter = self._build_default_converter()
+        else:
+            self.converter = None
+            
         self.max_num_pages = max_num_pages
         self.max_file_size_bytes = max_file_size_bytes
-        self.timeout_seconds = timeout_seconds
+        
         self.parser_name = parser_name
         self.parser_version = parser_version or self._resolve_parser_version()
         self._converter_factory = converter_factory or build_docling_converter
@@ -137,7 +147,8 @@ class DoclingParser:
         conversion_kwargs: dict[str, Any],
         enable_ocr_override: bool | None,
     ) -> ConversionOutcome:
-        result_queue: multiprocessing.Queue = multiprocessing.Queue()
+        result_queue: multiprocessing.Queue = multiprocessing.Queue(maxsize=1)
+
         process = multiprocessing.Process(
             target=run_conversion_in_subprocess,
             args=(
@@ -147,42 +158,88 @@ class DoclingParser:
                 result_queue,
                 self._converter_factory,
             ),
-            daemon=True,
         )
+
         process.start()
-        process.join(timeout=self.timeout_seconds)
 
-        if process.is_alive():
-            process.terminate()
-            process.join(timeout=_TERMINATE_GRACE_PERIOD_SECONDS)
-            if process.is_alive():
-                process.kill()
-                process.join()
-            raise ConversionTimeoutError(
-                f"Docling conversion exceeded {self.timeout_seconds}s."
-            )
-
-        if process.exitcode not in (0, None):
-            raise DocumentParsingError(
-                "Docling conversion subprocess exited unexpectedly "
-                f"(exit code {process.exitcode}).",
-                details={"file_path": file_path, "exitcode": process.exitcode},
-            )
+        deadline = time.monotonic() + self.timeout_seconds
 
         try:
-            status, payload = result_queue.get(
-                timeout=_RESULT_QUEUE_DRAIN_TIMEOUT_SECONDS
-            )
-        except queue.Empty as exc:
-            raise DocumentParsingError(
-                "Docling conversion subprocess exited without producing a "
-                "result.",
-                details={"file_path": file_path},
-            ) from exc
+            while True:
+                remaining = deadline - time.monotonic()
 
-        if status == "error":
-            raise payload
-        return payload
+                if remaining <= 0:
+                    self._terminate_process(process)
+
+                    raise ConversionTimeoutError(
+                        f"Docling conversion exceeded "
+                        f"{self.timeout_seconds}s."
+                    )
+
+                try:
+                    status, payload = result_queue.get(
+                        timeout=min(0.5, remaining)
+                    )
+                    break
+
+                except queue.Empty:
+                    if process.is_alive():
+                        continue
+
+                    process.join()
+
+                    if process.exitcode not in (0, None):
+                        raise DocumentParsingError(
+                            "Docling conversion subprocess exited unexpectedly "
+                            f"(exit code {process.exitcode}).",
+                            details={
+                                "file_path": file_path,
+                                "exitcode": process.exitcode,
+                            },
+                        )
+
+                    # Defensive final drain in case process shutdown and queue
+                    # availability crossed very closely.
+                    try:
+                        status, payload = result_queue.get(
+                            timeout=_RESULT_QUEUE_DRAIN_TIMEOUT_SECONDS
+                        )
+                        break
+                    except queue.Empty as exc:
+                        raise DocumentParsingError(
+                            "Docling conversion subprocess exited without "
+                            "producing a result.",
+                            details={"file_path": file_path},
+                        ) from exc
+
+            # The parent has now consumed the potentially large queue payload,
+            # so the worker's queue feeder can finish and the process can exit.
+            process.join(timeout=_TERMINATE_GRACE_PERIOD_SECONDS)
+
+            if process.is_alive():
+                self._terminate_process(process)
+
+            if status == "error":
+                raise payload
+
+            return payload
+
+        finally:
+            if process.is_alive():
+                self._terminate_process(process)
+
+            result_queue.close()
+
+
+    @staticmethod
+    def _terminate_process(process: multiprocessing.Process) -> None:
+        process.terminate()
+        process.join(timeout=_TERMINATE_GRACE_PERIOD_SECONDS)
+
+        if process.is_alive():
+            process.kill()
+            process.join()
+
 
     @staticmethod
     def _build_default_converter(*, enable_ocr_override: bool | None = None) -> Any:
