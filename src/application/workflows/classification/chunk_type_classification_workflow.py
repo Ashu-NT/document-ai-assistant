@@ -36,6 +36,15 @@ def _default_chunk_type_classification_model() -> str | None:
         return None
 
 
+def _default_chunk_type_classification_confidence_threshold() -> float:
+    try:
+        from src.config.settings import classification_settings
+
+        return classification_settings.chunk_classification_confidence_threshold
+    except Exception:
+        return 0.70
+
+
 @dataclass(slots=True)
 class _ChunkTypeClassificationOutcome:
     chunk: DocumentChunk
@@ -59,11 +68,17 @@ class ChunkTypeClassificationWorkflow:
         llm_service: LLMService,
         classification_model: str | None = None,
         enable_chunk_type_classification: bool | None = None,
+        confidence_threshold: float | None = None,
     ) -> None:
         model = classification_model or _default_chunk_type_classification_model()
         self.llm_classifier = ChunkTypeLLMClassifier(
             llm_service=llm_service,
             model=model,
+            confidence_threshold=(
+                confidence_threshold
+                if confidence_threshold is not None
+                else _default_chunk_type_classification_confidence_threshold()
+            ),
         )
         self.enable_chunk_type_classification = (
             enable_chunk_type_classification

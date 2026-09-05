@@ -32,6 +32,12 @@ class IngestionSettings(AppBaseSettings):
         alias="ENABLE_ANSWER_GENERATION"
     )
 
+    max_generated_questions_per_chunk: int = Field(
+        default=5,
+        ge=1,
+        alias="MAX_GENERATED_QUESTIONS_PER_CHUNK",
+    )
+
     # These three are global overrides for the per-document-type chunking
     # profiles (src/config/chunking/*.yaml). Leave unset (None) so each
     # document type's own tuned profile takes effect; only set one of these

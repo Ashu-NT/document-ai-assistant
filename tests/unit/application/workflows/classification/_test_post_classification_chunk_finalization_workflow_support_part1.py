@@ -66,6 +66,7 @@ class FakeClassificationService:
 class FakeQuestionGenerationService:
     def __init__(self) -> None:
         self.calls: list[list[str]] = []
+        self.max_questions_per_chunk_calls: list[int] = []
 
     def generate_for_chunks(
         self,
@@ -75,6 +76,7 @@ class FakeQuestionGenerationService:
         progress_callback=None,
     ) -> list[GeneratedQuestion]:
         self.calls.append([chunk.chunk_id for chunk in chunks])
+        self.max_questions_per_chunk_calls.append(max_questions_per_chunk)
         if progress_callback is not None:
             progress_callback(
                 f"question generation called for {len(chunks)} chunk(s)"

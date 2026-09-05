@@ -12,6 +12,7 @@ from src.application.workflows.classification.chunk_type_classification_workflow
 )
 from src.application.workflows.classification.classification_workflow_settings import (
     default_enable_question_generation,
+    default_max_questions_per_chunk,
 )
 from src.application.workflows.classification.finalization.asset_fallback_chunk_recovery import (
     AssetFallbackChunkRecovery,
@@ -113,7 +114,7 @@ class PostClassificationChunkFinalizationWorkflow:
         self,
         document_id: str,
         *,
-        max_questions_per_chunk: int = 5,
+        max_questions_per_chunk: int | None = None,
         embed_final_chunks: bool = True,
         enable_question_generation: bool | None = None,
         activity_context: ActivityContext | None = None,
@@ -214,7 +215,11 @@ class PostClassificationChunkFinalizationWorkflow:
         graph.clear_chunk_dependents()
         self._question_generation_runner.generate_if_enabled(
             graph=graph,
-            max_questions_per_chunk=max_questions_per_chunk,
+            max_questions_per_chunk=(
+                max_questions_per_chunk
+                if max_questions_per_chunk is not None
+                else default_max_questions_per_chunk()
+            ),
             enable_question_generation=enable_question_generation,
             activity_context=activity_context,
             progress_callback=progress_callback,

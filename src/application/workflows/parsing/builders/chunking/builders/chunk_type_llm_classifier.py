@@ -17,9 +17,15 @@ class ChunkTypeLLMClassifier:
     whenever this module is the first one touched.
     """
 
-    def __init__(self, llm_service=None, model: str | None = None) -> None:
+    def __init__(
+        self,
+        llm_service=None,
+        model: str | None = None,
+        confidence_threshold: float = 0.0,
+    ) -> None:
         self._llm_service = llm_service
         self._model = model
+        self._confidence_threshold = confidence_threshold
         self._prompt_builder = ChunkTypePromptBuilder()
 
     def is_available(self) -> bool:
@@ -53,6 +59,8 @@ class ChunkTypeLLMClassifier:
             response_schema=build_classification_response_json_schema(),
         )
         payload = ClassificationResponseParser().parse(response)
+        if payload.confidence_score < self._confidence_threshold:
+            return None
         return self._resolve_chunk_type(payload.label)
 
     @staticmethod

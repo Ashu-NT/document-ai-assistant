@@ -17,6 +17,15 @@ def default_enable_question_generation() -> bool:
     return resolve_setting(_load, False)
 
 
+def default_max_questions_per_chunk() -> int:
+    def _load() -> int:
+        from src.config.settings import ingestion_settings
+
+        return ingestion_settings.max_generated_questions_per_chunk
+
+    return resolve_setting(_load, 5)
+
+
 def default_classification_enabled() -> bool:
     def _load() -> bool:
         from src.config.settings import classification_settings

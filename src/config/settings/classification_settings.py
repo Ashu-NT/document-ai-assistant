@@ -32,10 +32,6 @@ class ClassificationSettings(AppBaseSettings):
         alias="CLASSIFICATION_MAX_TEXT_LENGTH"
     )
 
-    document_types: str = Field(
-        alias="DOCUMENT_TYPES"
-    )
-
     chunk_type_classification_enabled: bool = Field(
         default=False,
         alias="CHUNK_TYPE_CLASSIFICATION_ENABLED"
@@ -43,6 +39,13 @@ class ClassificationSettings(AppBaseSettings):
 
     chunk_classification_llm: str = Field(
         alias="CHUNK_CLASSIFICATION_LLM"
+    )
+
+    chunk_classification_confidence_threshold: float = Field(
+        default=0.70,
+        ge=0.0,
+        le=1.0,
+        alias="CHUNK_CLASSIFICATION_CONFIDENCE_THRESHOLD",
     )
 
     strong_model_threshold: float = Field(
@@ -59,11 +62,3 @@ class ClassificationSettings(AppBaseSettings):
         default=0.55,
         alias="CLASSIFICATION_WEAK_SIGNAL_THRESHOLD"
     )
-
-    @property
-    def supported_document_types(self) -> list[str]:
-        return [
-            item.strip()
-            for item in self.document_types.split(",")
-        ]
-

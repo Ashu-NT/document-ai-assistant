@@ -121,3 +121,31 @@ def test_classify_passes_response_schema_to_llm() -> None:
     assert llm_service.calls
     assert llm_service.calls[0]["model"] == "chunk-model"
     assert isinstance(llm_service.calls[0]["response_schema"], dict)
+
+
+def test_classify_discards_label_below_confidence_threshold() -> None:
+    classifier = ChunkTypeLLMClassifier(
+        llm_service=FakeLLMService("maintenance_interval", confidence=0.69),
+        confidence_threshold=0.70,
+    )
+
+    result = classifier.classify(
+        content="Replace filter at the specified service interval.",
+        section_path=["Maintenance"],
+    )
+
+    assert result is None
+
+
+def test_classify_accepts_label_at_confidence_threshold() -> None:
+    classifier = ChunkTypeLLMClassifier(
+        llm_service=FakeLLMService("maintenance_interval", confidence=0.70),
+        confidence_threshold=0.70,
+    )
+
+    result = classifier.classify(
+        content="Replace filter at the specified service interval.",
+        section_path=["Maintenance"],
+    )
+
+    assert result == ChunkType.MAINTENANCE_INTERVAL

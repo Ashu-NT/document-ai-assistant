@@ -53,6 +53,48 @@ def test_post_classification_finalization_reuses_chunks_and_runs_questions_and_e
     assert len(graph_chunk_builder.calls) == 1
     assert operations == ["delete_vectors", "replace", "embed"]
 
+
+def test_post_classification_finalization_uses_configured_question_limit(
+    sample_document_graph,
+    sample_document_classification,
+    sample_chunk,
+    monkeypatch,
+) -> None:
+    from src.config.settings import ingestion_settings
+
+    graph = copy.deepcopy(sample_document_graph)
+    detail_chunk = clone_chunk(
+        sample_chunk,
+        chunk_id="chunk_detail",
+        content="Detail content.",
+        chunk_type=ChunkType.MAINTENANCE_PROCEDURE,
+    )
+    graph.replace_chunks([detail_chunk])
+    decision = DocumentTypeDecision(
+        effective_document_type=DocumentType.MANUAL,
+        effective_chunking_profile=ChunkingProfile.MANUAL,
+        confidence=0.9,
+        reasons=["reused provisional chunks"],
+        should_rechunk=False,
+    )
+    workflow, question_service, *_ = make_workflow(
+        graph=graph,
+        classification=sample_document_classification,
+        decision=decision,
+        rechunked_chunks=[detail_chunk],
+        provisional_profile=ChunkingProfile.MANUAL,
+        enable_question_generation=True,
+    )
+    monkeypatch.setattr(
+        ingestion_settings,
+        "max_generated_questions_per_chunk",
+        7,
+    )
+
+    workflow.finalize(graph.document.document_id)
+
+    assert question_service.max_questions_per_chunk_calls == [7]
+
 def test_post_classification_finalization_rechunks_before_questions_and_embeddings(
     sample_document_graph,
     sample_document_classification,
