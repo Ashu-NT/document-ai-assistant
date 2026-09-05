@@ -19,9 +19,13 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     StructuredMarkerMatcher,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured.markers.models import EvidenceMarker
 from src.domain.common import ChunkType, DocumentType, ElementType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
+from src.application.workflows.parsing.builders.chunking.builders.fragment.table_chunk_eligibility_policy import (
+    TableChunkEligibilityPolicy,
+)
 
 # A marker match preceded by one of these cues describes the ABSENCE of the
 # matched thing (e.g. "cannot be obtained as spare parts"), not a genuine
@@ -52,10 +56,17 @@ class StructuredSectionFragmentBuilder:
         text_splitter: ChunkTextSplitter,
         spec_factory: StructuredFamilySpecFactory | None = None,
         marker_matcher: StructuredMarkerMatcher | None = None,
+        table_chunk_eligibility_policy: TableChunkEligibilityPolicy | None = None,
     ) -> None:
         self.text_splitter = text_splitter
         self.spec_factory = spec_factory or StructuredFamilySpecFactory()
         self.marker_matcher = marker_matcher or StructuredMarkerMatcher()
+        self.table_chunk_eligibility_policy = (
+            table_chunk_eligibility_policy
+            or TableChunkEligibilityPolicy(
+                text_splitter=text_splitter,
+            )
+        )
 
     def build(
         self,
@@ -79,7 +90,7 @@ class StructuredSectionFragmentBuilder:
             document_type=document_type,
             section=section,
             elements=ordered_elements,
-            normalizer=self._normalize_text,
+            normalizer=self.marker_matcher.normalize,
             document_sections_combined_text=document_sections_combined_text,
         )
         if not selection.specs:
@@ -239,8 +250,11 @@ class StructuredSectionFragmentBuilder:
             merged_windows.append((start_index, end_index))
         return merged_windows
 
-    @staticmethod
-    def _is_structurable_element(element: CanonicalElement) -> bool:
+
+    def _is_structurable_element(
+        self,
+        element: CanonicalElement,
+    ) -> bool:
         if element.element_type not in {
             ElementType.TEXT,
             ElementType.LIST_ITEM,
@@ -250,14 +264,27 @@ class StructuredSectionFragmentBuilder:
             ElementType.PICTURE,
         }:
             return False
+
         if is_furniture_or_embedded_picture(element):
             return False
-        return bool(StructuredElementTextResolver.resolve(element))
+
+        if (
+            element.table_id is not None
+            or element.element_type == ElementType.TABLE
+        ):
+            if not self.table_chunk_eligibility_policy.should_chunk(
+                element
+            ):
+                return False
+
+        return bool(
+            StructuredElementTextResolver.resolve(element)
+        )
 
     def _matches_markers(
         self,
         text: str,
-        markers: tuple[str, ...],
+        markers: tuple[EvidenceMarker, ...],
     ) -> bool:
         normalized_text = self.marker_matcher.normalize(text)
 
@@ -273,11 +300,11 @@ class StructuredSectionFragmentBuilder:
             ):
                 lookback_start = max(
                     0,
-                    match.start() - 80,
+                    match.start - 80,
                 )
 
                 preceding_text = normalized_text[
-                    lookback_start : match.start()
+                    lookback_start : match.start
                 ]
 
                 if any(
@@ -318,15 +345,15 @@ class StructuredSectionFragmentBuilder:
         if spec.chunk_type not in _PROCEDURAL_TYPES:
             return list(spec.section_path)
 
-        base_last = StructuredSectionFragmentBuilder._normalize_text(
+        base_last = self.marker_matcher.normalize(
             spec.section_path[-1] if spec.section_path else None
         )
         for element in elements:
             raw = (StructuredElementTextResolver.resolve(element) or "").strip()
             if not raw:
                 continue
-            normalized = StructuredSectionFragmentBuilder._normalize_text(raw)
-            if not self.marker_matcher.contains_any(spec.anchor_markers, normalized):
+            normalized = self.marker_matcher.normalize(raw)
+            if not self.marker_matcher.contains_any(normalized,spec.anchor_markers):
                 continue
             words = raw.split()
             if not (2 <= len(words) <= 12):
@@ -340,8 +367,3 @@ class StructuredSectionFragmentBuilder:
             return [*spec.section_path, raw]
 
         return list(spec.section_path)
-
-    @staticmethod
-    def _normalize_text(value: str | None) -> str:
-        normalized = re.sub(r"[\W_]+", " ", str(value or ""), flags=re.UNICODE)
-        return " ".join(normalized.strip().lower().split())

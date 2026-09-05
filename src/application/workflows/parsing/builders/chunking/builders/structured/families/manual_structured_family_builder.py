@@ -3,6 +3,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.fam
     extend_markers,
     path_contains_markers,
     sanitized_base_path,
+    path_contains_terms,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     MANUAL_COMMISSIONING_MARKERS,
@@ -79,19 +80,27 @@ class ManualStructuredFamilyBuilder:
             base_path,
             MANUAL_MAINTENANCE_INTERVAL_MARKERS,
         ) or path_contains_markers(base_path, MANUAL_LUBRICATION_MARKERS)
-        base_has_troubleshooting_path = path_contains_markers(
+        base_has_troubleshooting_path = path_contains_terms(
             base_path,
             _TROUBLESHOOTING_PATH_MARKERS,
         )
-        base_has_commissioning_path = path_contains_markers(
+        base_has_commissioning_path = path_contains_terms(
             base_path,
             _COMMISSIONING_PATH_MARKERS,
         )
-        base_has_shutdown_path = path_contains_markers(
+        base_has_shutdown_path = path_contains_terms(
             base_path,
             _SHUTDOWN_PATH_MARKERS,
         )
-        base_has_safety_path = path_contains_markers(base_path, _SAFETY_PATH_MARKERS)
+        base_has_safety_path = path_contains_terms(base_path, _SAFETY_PATH_MARKERS)
+        base_has_installation_path = path_contains_markers(
+            base_path,
+            MANUAL_INSTALLATION_MARKERS,
+        )
+        base_has_lubrication_path = path_contains_markers(
+            base_path,
+            MANUAL_LUBRICATION_MARKERS,
+        )
         return StructuredFamilySpecSelection(
             specs=[
                 StructuredSectionWindowSpec(
@@ -106,6 +115,7 @@ class ManualStructuredFamilyBuilder:
                     radius_before=1,
                     radius_after=6,
                     include_full_section_if_no_anchor=base_has_operation_path,
+                    section_context_matches=base_has_operation_path,
                 ),
                 *(
                     []
@@ -123,6 +133,7 @@ class ManualStructuredFamilyBuilder:
                             radius_before=1,
                             radius_after=6,
                             include_full_section_if_no_anchor=base_has_maintenance_path,
+                            section_context_matches=base_has_maintenance_path,
                         )
                     ]
                 ),
@@ -138,6 +149,7 @@ class ManualStructuredFamilyBuilder:
                     radius_before=1,
                     radius_after=8,
                     include_full_section_if_no_anchor=base_has_interval_path,
+                    section_context_matches=base_has_interval_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_TROUBLESHOOTING,
@@ -155,12 +167,13 @@ class ManualStructuredFamilyBuilder:
                     radius_before=2,
                     radius_after=10,
                     include_full_section_if_no_anchor=base_has_troubleshooting_path,
+                    section_context_matches=base_has_troubleshooting_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_SPARE_PARTS,
                     section_path=(
                         base_path
-                        if path_contains_markers(base_path, _SPARE_PARTS_PATH_MARKERS)
+                        if path_contains_terms(base_path, _SPARE_PARTS_PATH_MARKERS)
                         else append_label_if_missing(base_path, "Spare Parts")
                     ),
                     anchor_markers=extend_markers(
@@ -177,7 +190,7 @@ class ManualStructuredFamilyBuilder:
                     family=StructuredEvidenceFamily.MANUAL_COMMISSIONING,
                     section_path=(
                         base_path
-                        if path_contains_markers(base_path, _COMMISSIONING_PATH_MARKERS)
+                        if path_contains_terms(base_path, _COMMISSIONING_PATH_MARKERS)
                         else append_label_if_missing(base_path, "Commissioning")
                     ),
                     anchor_markers=extend_markers(
@@ -189,6 +202,7 @@ class ManualStructuredFamilyBuilder:
                     radius_before=1,
                     radius_after=6,
                     include_full_section_if_no_anchor=base_has_commissioning_path,
+                    section_context_matches=base_has_shutdown_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_SHUTDOWN,
@@ -206,6 +220,7 @@ class ManualStructuredFamilyBuilder:
                     radius_before=1,
                     radius_after=6,
                     include_full_section_if_no_anchor=base_has_shutdown_path,
+                    section_context_matches=base_has_shutdown_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_SAFETY_INSTRUCTIONS,
@@ -223,6 +238,7 @@ class ManualStructuredFamilyBuilder:
                     radius_before=1,
                     radius_after=8,
                     include_full_section_if_no_anchor=base_has_safety_path,
+                    section_context_matches=base_has_safety_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_LUBRICATION,
@@ -236,6 +252,7 @@ class ManualStructuredFamilyBuilder:
                     radius_before=1,
                     radius_after=8,
                     include_full_section_if_no_anchor=base_has_interval_path,
+                    section_context_matches=base_has_lubrication_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_INSTALLATION,
@@ -248,10 +265,8 @@ class ManualStructuredFamilyBuilder:
                     chunk_type=ChunkType.INSTALLATION_INSTRUCTION,
                     radius_before=1,
                     radius_after=6,
-                    include_full_section_if_no_anchor=path_contains_markers(
-                        base_path,
-                        MANUAL_INSTALLATION_MARKERS,
-                    ),
+                    section_context_matches=base_has_installation_path,
+                    include_full_section_if_no_anchor=base_has_installation_path,
                 ),
             ]
         )

@@ -18,13 +18,36 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.str
 )
 from src.domain.common import ChunkType, DocumentType
 
+from src.application.workflows.parsing.builders.chunking.builders.structured.markers.models import (
+    EvidenceMarker,
+    MarkerStrength,
+)
+
 _APPROVAL_INFORMATION_MARKERS = (
-    "approval",
-    "basic specifications",
-    "extended order code",
-    "atex",
-    "iecex",
-    "conformity",
+    EvidenceMarker(
+        "approval",
+        MarkerStrength.MEDIUM,
+    ),
+    EvidenceMarker(
+        "basic specifications",
+        MarkerStrength.MEDIUM,
+    ),
+    EvidenceMarker(
+        "extended order code",
+        MarkerStrength.STRONG,
+    ),
+    EvidenceMarker(
+        "atex",
+        MarkerStrength.STRONG,
+    ),
+    EvidenceMarker(
+        "iecex",
+        MarkerStrength.STRONG,
+    ),
+    EvidenceMarker(
+        "conformity",
+        MarkerStrength.MEDIUM,
+    ),
 )
 
 
@@ -73,7 +96,7 @@ class ApprovalInformationStructuredFamilyBuilder:
             path.append(current_title)
 
         if (
-            context.local_contains_any(("basic specifications",))
+            context.section_contains_any_term(("basic specifications",))
             or "extended order code" in ApprovalInformationStructuredFamilyBuilder._normalize(
                 current_title
             )

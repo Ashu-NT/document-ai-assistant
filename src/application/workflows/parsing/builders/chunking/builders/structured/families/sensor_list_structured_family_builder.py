@@ -11,6 +11,14 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
     SENSOR_LIST_MARKERS,
     TAG_LIST_MARKERS,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured.markers.models import (
+    EvidenceMarker,
+)
+from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
+    extend_markers,
+    path_contains_terms,
+    sanitized_base_path,
+)
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_evidence_family import (
     StructuredEvidenceFamily,
 )
@@ -82,11 +90,18 @@ class SensorListStructuredFamilyBuilder:
             specs.append(
                 StructuredSectionWindowSpec(
                     family=family,
-                    section_path=self._path_for_label(base_path, label),
+                    section_path=self._path_for_label(
+                        base_path,
+                        label,
+                    ),
                     anchor_markers=extend_markers(
                         family=family,
                         base_markers=markers,
                         marker_tuning=marker_tuning,
+                    ),
+                    section_context_matches=path_contains_terms(
+                        base_path,
+                        (label,),
                     ),
                     chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
                     radius_before=1,
@@ -100,8 +115,13 @@ class SensorListStructuredFamilyBuilder:
         base_path: list[str],
         label: str,
     ) -> list[str]:
-        markers = (label.lower(),)
-        return base_path if path_contains_markers(base_path, markers) else [label]
+        terms = (label,)
+
+        return (
+            base_path
+            if path_contains_terms(base_path, terms)
+            else [label]
+        )
 
     @staticmethod
     def _should_include_family(
@@ -109,15 +129,18 @@ class SensorListStructuredFamilyBuilder:
         base_path: list[str],
         label: str,
         context: StructuredFamilyContext,
-        markers: tuple[str, ...],
+        markers: tuple[EvidenceMarker, ...],
     ) -> bool:
-        label_markers = (label.lower(),)
-        if path_contains_markers(base_path, label_markers):
+        if path_contains_terms(
+            base_path,
+            (label,),
+        ):
             return True
+
         if any(
-            path_contains_markers(
+            path_contains_terms(
                 base_path,
-                (other_label.lower(),),
+                (other_label,),
             )
             for other_label in (
                 "Sensor List",
@@ -128,4 +151,5 @@ class SensorListStructuredFamilyBuilder:
             )
         ):
             return False
+
         return context.local_contains_any(markers)

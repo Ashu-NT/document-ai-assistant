@@ -11,7 +11,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.fam
 from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
     append_label_if_missing,
     extend_markers,
-    path_contains_markers,
+    path_contains_terms,
     sanitized_base_path,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
@@ -55,6 +55,7 @@ class CertificateStructuredFamilyBuilder:
             and not context.contains_any(CERTIFICATE_DOCUMENT_MARKERS)
         ):
             return StructuredFamilySpecSelection()
+
         if (
             not context.has_known_document_type()
             and not context.contains_any(CERTIFICATE_DOCUMENT_MARKERS)
@@ -66,6 +67,36 @@ class CertificateStructuredFamilyBuilder:
             section_title=context.section.title,
             document_title=context.document_title,
         )
+
+        base_has_cover_sheet_path = path_contains_terms(
+            base_path,
+            COVER_SHEET_PATH_MARKERS,
+        )
+        base_has_general_information_path = path_contains_terms(
+            base_path,
+            GENERAL_INFORMATION_PATH_MARKERS,
+        )
+        base_has_particulars_path = path_contains_terms(
+            base_path,
+            PARTICULARS_PATH_MARKERS,
+        )
+        base_has_compliance_information_path = path_contains_terms(
+            base_path,
+            COMPLIANCE_INFORMATION_PATH_MARKERS,
+        )
+        base_has_approval_information_path = path_contains_terms(
+            base_path,
+            APPROVAL_INFORMATION_PATH_MARKERS,
+        )
+        base_has_test_data_path = path_contains_terms(
+            base_path,
+            TEST_DATA_PATH_MARKERS,
+        )
+        base_has_attachment_information_path = path_contains_terms(
+            base_path,
+            ATTACHMENT_INFORMATION_PATH_MARKERS,
+        )
+
         specs: list[StructuredSectionWindowSpec] = []
 
         if CertificateInclusionPolicy.should_include_cover_sheet(
@@ -85,14 +116,12 @@ class CertificateStructuredFamilyBuilder:
                         base_markers=CERTIFICATE_COVER_SHEET_MARKERS,
                         marker_tuning=marker_tuning,
                     ),
+                    section_context_matches=base_has_cover_sheet_path,
                     chunk_type=ChunkType.CERTIFICATION_INFO,
                     radius_before=1,
                     radius_after=14,
                     combine_all_windows=True,
-                    include_full_section_if_no_anchor=path_contains_markers(
-                        base_path,
-                        COVER_SHEET_PATH_MARKERS,
-                    ),
+                    include_full_section_if_no_anchor=base_has_cover_sheet_path,
                 )
             )
 
@@ -113,6 +142,7 @@ class CertificateStructuredFamilyBuilder:
                         base_markers=CERTIFICATE_GENERAL_INFORMATION_MARKERS,
                         marker_tuning=marker_tuning,
                     ),
+                    section_context_matches=base_has_general_information_path,
                     chunk_type=ChunkType.CERTIFICATION_INFO,
                     radius_before=1,
                     radius_after=14,
@@ -135,13 +165,12 @@ class CertificateStructuredFamilyBuilder:
                         base_markers=CERTIFICATE_PARTICULARS_MARKERS,
                         marker_tuning=marker_tuning,
                     ),
+                    section_context_matches=base_has_particulars_path,
                     chunk_type=ChunkType.CERTIFICATION_INFO,
                     radius_before=2,
                     radius_after=16,
                     combine_all_windows=True,
-                    include_full_section_if_no_anchor=path_contains_markers(
-                        base_path, PARTICULARS_PATH_MARKERS
-                    ),
+                    include_full_section_if_no_anchor=base_has_particulars_path,
                 )
             )
 
@@ -162,6 +191,7 @@ class CertificateStructuredFamilyBuilder:
                         base_markers=CERTIFICATE_COMPLIANCE_INFORMATION_MARKERS,
                         marker_tuning=marker_tuning,
                     ),
+                    section_context_matches=base_has_compliance_information_path,
                     chunk_type=ChunkType.CERTIFICATION_INFO,
                     radius_before=1,
                     radius_after=12,
@@ -186,6 +216,7 @@ class CertificateStructuredFamilyBuilder:
                         base_markers=CERTIFICATE_APPROVAL_INFORMATION_MARKERS,
                         marker_tuning=marker_tuning,
                     ),
+                    section_context_matches=base_has_approval_information_path,
                     chunk_type=ChunkType.CERTIFICATION_INFO,
                     radius_before=1,
                     radius_after=12,
@@ -210,6 +241,7 @@ class CertificateStructuredFamilyBuilder:
                         base_markers=CERTIFICATE_TEST_DATA_MARKERS,
                         marker_tuning=marker_tuning,
                     ),
+                    section_context_matches=base_has_test_data_path,
                     chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
                     radius_before=1,
                     radius_after=12,
@@ -233,18 +265,20 @@ class CertificateStructuredFamilyBuilder:
                         base_markers=CERTIFICATE_ATTACHMENT_INFORMATION_MARKERS,
                         marker_tuning=marker_tuning,
                     ),
+                    section_context_matches=base_has_attachment_information_path,
                     chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
                     radius_before=1,
                     radius_after=16,
                     combine_all_windows=True,
-                    include_full_section_if_no_anchor=path_contains_markers(
-                        base_path,
-                        ATTACHMENT_INFORMATION_PATH_MARKERS,
+                    include_full_section_if_no_anchor=(
+                        base_has_attachment_information_path
                     ),
                 )
             )
 
-        return StructuredFamilySpecSelection(specs=specs)
+        return StructuredFamilySpecSelection(
+            specs=specs,
+        )
 
     @staticmethod
     def _particulars_section_path(
@@ -252,8 +286,13 @@ class CertificateStructuredFamilyBuilder:
         context: StructuredFamilyContext,
         base_path: list[str],
     ) -> list[str]:
-        if CertificateInclusionPolicy.looks_like_identification_table(context):
-            return ["Description / Manufacturer Designation / Serial Number table"]
+        if CertificateInclusionPolicy.looks_like_identification_table(
+            context
+        ):
+            return [
+                "Description / Manufacturer Designation / Serial Number table"
+            ]
+
         return CertificateStructuredFamilyBuilder._family_section_path(
             base_path=base_path,
             family_markers=PARTICULARS_PATH_MARKERS,
@@ -267,6 +306,13 @@ class CertificateStructuredFamilyBuilder:
         family_markers: tuple[str, ...],
         label: str,
     ) -> list[str]:
-        if path_contains_markers(base_path, family_markers):
+        if path_contains_terms(
+            base_path,
+            family_markers,
+        ):
             return base_path
-        return append_label_if_missing(base_path, label)
+
+        return append_label_if_missing(
+            base_path,
+            label,
+        )

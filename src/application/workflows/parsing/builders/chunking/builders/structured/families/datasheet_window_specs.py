@@ -4,6 +4,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.fam
 from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
     extend_markers,
     path_contains_markers,
+    path_contains_terms,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     DATASHEET_COOLING_SYSTEM_MARKERS,
@@ -66,7 +67,7 @@ def build_datasheet_window_specs(
             radius_before=1,
             radius_after=12,
             combine_all_windows=True,
-            include_full_section_if_no_anchor=path_contains_markers(
+            include_full_section_if_no_anchor=path_contains_terms(
                 base_path,
                 PRODUCT_OVERVIEW_PATH_MARKERS,
             ),
@@ -99,7 +100,7 @@ def build_datasheet_window_specs(
             radius_before=1,
             radius_after=14,
             combine_all_windows=True,
-            include_full_section_if_no_anchor=path_contains_markers(
+            include_full_section_if_no_anchor=path_contains_terms(
                 base_path,
                 TECHNICAL_FEATURES_PATH_MARKERS,
             ),
@@ -168,7 +169,7 @@ def build_datasheet_window_specs(
             radius_before=1,
             radius_after=12,
             combine_all_windows=True,
-            include_full_section_if_no_anchor=path_contains_markers(
+            include_full_section_if_no_anchor=path_contains_terms(
                 base_path,
                 COOLING_SYSTEM_PATH_MARKERS,
             ),
@@ -189,7 +190,7 @@ def build_datasheet_window_specs(
             radius_before=1,
             radius_after=12,
             combine_all_windows=True,
-            include_full_section_if_no_anchor=path_contains_markers(
+            include_full_section_if_no_anchor=path_contains_terms(
                 base_path,
                 SENSOR_INFORMATION_PATH_MARKERS,
             ),
@@ -248,7 +249,7 @@ def build_datasheet_window_specs(
             radius_before=1,
             radius_after=12,
             combine_all_windows=True,
-            include_full_section_if_no_anchor=path_contains_markers(
+            include_full_section_if_no_anchor=path_contains_terms(
                 base_path,
                 INSTALLATION_MAINTENANCE_PATH_MARKERS,
             ),

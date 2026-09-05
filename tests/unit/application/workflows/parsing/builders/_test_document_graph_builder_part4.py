@@ -262,10 +262,11 @@ def test_document_graph_builder_skips_single_column_layout_tables_from_chunks() 
         ],
         raw_parsed_document=make_raw_parsed_document(),
     )
-
+    
     chunks = list(graph.chunks.values())
 
     assert len(chunks) == 1
     assert chunks[0].chunk_type.value == "general"
     assert "Increase the factor scale" in chunks[0].content
+
     assert chunks[0].table_ids == []

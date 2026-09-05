@@ -15,39 +15,39 @@ from src.application.workflows.parsing.parsing_value_coercion import (
 from src.application.workflows.shared.table_category import TableCategory
 from src.domain.common import ChunkType
 from src.domain.elements import CanonicalElement
-
+from src.application.workflows.parsing.builders.chunking.builders.fragment.table_chunk_eligibility_policy import (
+    TableChunkEligibilityPolicy,
+)
+from src.application.workflows.parsing.builders.chunking.builders.structured_section_fragment_builder import StructuredSectionFragmentBuilder
 
 class TableFragmentBuilder:
     """Builds fragment text and classifies chunk type for table elements."""
-
+  
     def __init__(
+            self,
+            *,
+            text_splitter: ChunkTextSplitter,
+            include_table_context: bool,
+            asset_context_resolver: AssetContextResolver,
+            table_chunk_eligibility_policy: TableChunkEligibilityPolicy | None = None,
+        ) -> None:
+            self.text_splitter = text_splitter
+            self.include_table_context = include_table_context
+            self.asset_context_resolver = asset_context_resolver
+            self.table_chunk_eligibility_policy = (
+                table_chunk_eligibility_policy
+                or TableChunkEligibilityPolicy(
+                    text_splitter=text_splitter,
+                )
+            )
+
+    def should_chunk_table_element(
         self,
-        *,
-        text_splitter: ChunkTextSplitter,
-        include_table_context: bool,
-        asset_context_resolver: AssetContextResolver,
-    ) -> None:
-        self.text_splitter = text_splitter
-        self.include_table_context = include_table_context
-        self.asset_context_resolver = asset_context_resolver
-
-    def should_chunk_table_element(self, element: CanonicalElement) -> bool:
-        parser_extra = resolve_parser_extra(element)
-        column_count = coerce_positive_int(parser_extra.get("column_count"))
-        row_count = coerce_positive_int(parser_extra.get("row_count"))
-        markdown = clean_chunk_text(parser_extra.get("markdown") or element.text) or ""
-
-        if column_count is not None and column_count <= 1:
-            return False
-
-        if (
-            row_count is not None
-            and row_count <= 1
-            and self.text_splitter.count_tokens(markdown) > 30
-        ):
-            return False
-
-        return True
+        element: CanonicalElement,
+    ) -> bool:
+        return self.table_chunk_eligibility_policy.should_chunk(
+            element
+        )
 
     def table_fragment_text(
         self,

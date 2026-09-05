@@ -3,6 +3,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.fam
     extend_markers,
     path_contains_markers,
     sanitized_base_path,
+    path_contains_terms,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     REPORT_ADDITIONAL_INFORMATION_MARKERS,
@@ -186,7 +187,7 @@ class ReportStructuredFamilyBuilder:
                     radius_before=1,
                     radius_after=14,
                     combine_all_windows=True,
-                    include_full_section_if_no_anchor=path_contains_markers(
+                    include_full_section_if_no_anchor=path_contains_terms(
                         base_path,
                         _PERFORMANCE_DATA_PATH_MARKERS,
                     ),
@@ -227,6 +228,13 @@ class ReportStructuredFamilyBuilder:
         family_markers: tuple[str, ...],
         label: str,
     ) -> list[str]:
-        if path_contains_markers(base_path, family_markers):
+        if path_contains_terms(
+            base_path,
+            family_markers,
+        ):
             return base_path
-        return append_label_if_missing(base_path, label)
+
+        return append_label_if_missing(
+            base_path,
+            label,
+        )

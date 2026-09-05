@@ -28,6 +28,47 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.str
 from src.domain.common import ChunkType, DocumentType
 
 
+_TITLE_BLOCK_SECTION_TERMS = (
+    "title block",
+)
+
+_REVISION_TABLE_SECTION_TERMS = (
+    "revision table",
+    "revision history",
+    "revision record",
+    "change record",
+)
+
+_VESSEL_PARTICULARS_SECTION_TERMS = (
+    "vessel particulars",
+    "principal particulars",
+    "main particulars",
+)
+
+_LABEL_BLOCK_SECTION_TERMS = (
+    "navigation lights",
+    "navigation light arrangement",
+    "signal lights",
+    "signal light arrangement",
+    "lamp labels",
+    "light arrangement",
+)
+
+_COMPLIANCE_TABLE_SECTION_TERMS = (
+    "colreg",
+    "colregs",
+    "compliance",
+    "visibility arc",
+)
+
+_EQUIPMENT_LEGEND_SECTION_TERMS = (
+    "equipment legend",
+    "equipment list",
+    "item list",
+    "legend",
+)
+
+
 class DrawingStructuredFamilyBuilder:
     def build(
         self,
@@ -35,14 +76,14 @@ class DrawingStructuredFamilyBuilder:
         context: StructuredFamilyContext,
         marker_tuning: StructuredFamilyMarkerTuning | None,
     ) -> StructuredFamilySpecSelection:
-        # Exit early only when the type is definitively non-DRAWING AND the section
-        # content also lacks drawing-specific markers.  A document classified as
-        # "manual" may still contain a drawing appendix whose sections carry marker
-        # text ("navigation lights", "drawing number", etc.) that signals drawing
-        # content — those sections should still benefit from drawing specs.
+        has_local_drawing_evidence = (
+            context.section_contains_any(DRAWING_DOCUMENT_MARKERS)
+            or context.content_contains_any(DRAWING_DOCUMENT_MARKERS)
+        )
+
         if (
             not context.matches_document_type(DocumentType.DRAWING)
-            and not context.local_contains_any(DRAWING_DOCUMENT_MARKERS)
+            and not has_local_drawing_evidence
         ):
             return StructuredFamilySpecSelection()
 
@@ -56,6 +97,9 @@ class DrawingStructuredFamilyBuilder:
                         base_markers=DRAWING_TITLE_BLOCK_MARKERS,
                         marker_tuning=marker_tuning,
                     ),
+                    section_context_matches=context.section_contains_any_term(
+                        _TITLE_BLOCK_SECTION_TERMS
+                    ),
                     chunk_type=ChunkType.GENERAL,
                     radius_before=3,
                     radius_after=8,
@@ -67,6 +111,9 @@ class DrawingStructuredFamilyBuilder:
                         family=StructuredEvidenceFamily.DRAWING_REVISION_TABLE,
                         base_markers=DRAWING_REVISION_TABLE_MARKERS,
                         marker_tuning=marker_tuning,
+                    ),
+                    section_context_matches=context.section_contains_any_term(
+                        _REVISION_TABLE_SECTION_TERMS
                     ),
                     chunk_type=ChunkType.GENERAL,
                     radius_before=4,
@@ -80,6 +127,9 @@ class DrawingStructuredFamilyBuilder:
                         base_markers=DRAWING_VESSEL_PARTICULARS_MARKERS,
                         marker_tuning=marker_tuning,
                     ),
+                    section_context_matches=context.section_contains_any_term(
+                        _VESSEL_PARTICULARS_SECTION_TERMS
+                    ),
                     chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
                     radius_before=1,
                     radius_after=6,
@@ -91,6 +141,9 @@ class DrawingStructuredFamilyBuilder:
                         family=StructuredEvidenceFamily.DRAWING_LABEL_BLOCK,
                         base_markers=DRAWING_LABEL_BLOCK_MARKERS,
                         marker_tuning=marker_tuning,
+                    ),
+                    section_context_matches=context.section_contains_any_term(
+                        _LABEL_BLOCK_SECTION_TERMS
                     ),
                     chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
                     radius_before=0,
@@ -105,6 +158,9 @@ class DrawingStructuredFamilyBuilder:
                         base_markers=DRAWING_COMPLIANCE_TABLE_MARKERS,
                         marker_tuning=marker_tuning,
                     ),
+                    section_context_matches=context.section_contains_any_term(
+                        _COMPLIANCE_TABLE_SECTION_TERMS
+                    ),
                     chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
                     radius_before=2,
                     radius_after=3,
@@ -116,6 +172,9 @@ class DrawingStructuredFamilyBuilder:
                         family=StructuredEvidenceFamily.DRAWING_EQUIPMENT_LEGEND,
                         base_markers=DRAWING_EQUIPMENT_LEGEND_MARKERS,
                         marker_tuning=marker_tuning,
+                    ),
+                    section_context_matches=context.section_contains_any_term(
+                        _EQUIPMENT_LEGEND_SECTION_TERMS
                     ),
                     chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
                     radius_before=1,

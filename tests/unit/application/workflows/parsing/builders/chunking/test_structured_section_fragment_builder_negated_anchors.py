@@ -14,6 +14,10 @@ from src.domain.common import (
     ParserMetadata,
     SourceLocation,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured.markers.models import (
+    EvidenceMarker,
+    MarkerStrength,
+)
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 
@@ -55,31 +59,46 @@ def make_builder() -> StructuredSectionFragmentBuilder:
         spec_factory=StructuredFamilySpecFactory(enable_benchmark_tuning=False),
     )
 
-
 def test_matches_markers_rejects_a_negated_availability_mention() -> None:
-    # Regression guard for a real bug: "spare parts" is a MANUAL_SPARE_PARTS
-    # anchor marker, but a sentence saying components CANNOT be obtained as
-    # spare parts is the opposite of a genuine spare-parts-list anchor. This
-    # marker is also one of the few chunk_type values ChunkTypeResolver can
-    # never override (SPARE_PARTS_TABLE is in `_SPECIAL_CHUNK_TYPES`), so a
-    # false anchor match here permanently mislabels whatever text window
-    # surrounds it.
+    builder = make_builder()
+
     text = (
         "pressurised vessel components cannot be obtained as spare parts "
         "because the vessels are only ever tested and documented as a unit"
     )
-    assert (
-        StructuredSectionFragmentBuilder._matches_markers(text, ("spare parts",))
-        is False
+
+    markers = (
+        EvidenceMarker(
+            "spare parts",
+            MarkerStrength.STRONG,
+        ),
     )
+
+    assert builder._matches_markers(
+        text,
+        markers,
+    ) is False
 
 
 def test_matches_markers_still_accepts_a_genuine_mention() -> None:
-    text = "see the spare parts list at the end of this manual for ordering codes"
-    assert (
-        StructuredSectionFragmentBuilder._matches_markers(text, ("spare parts",))
-        is True
+    builder = make_builder()
+
+    text = (
+        "see the spare parts list at the end of this manual "
+        "for ordering codes"
     )
+
+    markers = (
+        EvidenceMarker(
+            "spare parts",
+            MarkerStrength.STRONG,
+        ),
+    )
+
+    assert builder._matches_markers(
+        text,
+        markers,
+    ) is True
 
 
 def test_fragment_builder_does_not_tag_a_negated_spare_parts_mention_as_spare_parts_table() -> (

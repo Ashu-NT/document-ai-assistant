@@ -29,6 +29,9 @@ from src.application.workflows.parsing.parsing_value_coercion import coerce_floa
 from src.application.workflows.parsing.tables.families import (
     LogicalTableFamilyRowMerger,
 )
+from src.application.workflows.parsing.builders.chunking.builders.fragment.table_chunk_eligibility_policy import (
+    TableChunkEligibilityPolicy,
+)
 from src.domain.common import ChunkType, ElementType
 from src.domain.common import DocumentType
 from src.domain.document import DocumentSection
@@ -36,6 +39,7 @@ from src.domain.elements import CanonicalElement
 
 
 class ChunkFragmentBuilder:
+ 
     def __init__(
         self,
         *,
@@ -49,34 +53,62 @@ class ChunkFragmentBuilder:
     ) -> None:
         self.text_splitter = text_splitter
         self.include_picture_chunks = include_picture_chunks
+
+        self.table_chunk_eligibility_policy = (
+            TableChunkEligibilityPolicy(
+                text_splitter=text_splitter,
+            )
+        )
+
+        self.asset_context_resolver = AssetContextResolver(
+            text_splitter=text_splitter,
+            asset_context_window=max(
+                0,
+                asset_context_window,
+            ),
+            asset_context_max_tokens=max(
+                12,
+                asset_context_max_tokens,
+            ),
+            element_contributes_to_chunk=(
+                self._element_contributes_to_chunk
+            ),
+        )
+
         self.structured_fragment_builder = (
             structured_fragment_builder
             or StructuredSectionFragmentBuilder(
                 text_splitter=text_splitter,
+                table_chunk_eligibility_policy=(
+                    self.table_chunk_eligibility_policy
+                ),
             )
         )
-        self.asset_context_resolver = AssetContextResolver(
-            text_splitter=text_splitter,
-            asset_context_window=max(0, asset_context_window),
-            asset_context_max_tokens=max(12, asset_context_max_tokens),
-            element_contributes_to_chunk=self._element_contributes_to_chunk,
-        )
+
         self.table_fragment_builder = TableFragmentBuilder(
             text_splitter=text_splitter,
             include_table_context=include_table_context,
             asset_context_resolver=self.asset_context_resolver,
+            table_chunk_eligibility_policy=(
+                self.table_chunk_eligibility_policy
+            ),
         )
+
         self.logical_table_family_fragment_builder = (
             LogicalTableFamilyFragmentBuilder(
                 table_fragment_builder=self.table_fragment_builder,
             )
         )
-        self.logical_table_family_row_merger = LogicalTableFamilyRowMerger()
+
+        self.logical_table_family_row_merger = (
+            LogicalTableFamilyRowMerger()
+        )
+
         self.picture_fragment_builder = PictureFragmentBuilder(
             page_sizes=page_sizes or {},
             asset_context_resolver=self.asset_context_resolver,
         )
-
+ 
     def build_section_fragments(
         self,
         *,
@@ -337,10 +369,18 @@ class ChunkFragmentBuilder:
             family_elements = [
                 element
                 for element in elements
-                if str(
-                    resolve_parser_extra(element).get("logical_table_family_id") or ""
-                ).strip()
-                == family_id
+                if (
+                    str(
+                        resolve_parser_extra(element).get(
+                            "logical_table_family_id"
+                        )
+                        or ""
+                    ).strip()
+                    == family_id
+                    and self.table_fragment_builder.should_chunk_table_element(
+                        element
+                    )
+                )
             ]
             if not family_elements:
                 continue

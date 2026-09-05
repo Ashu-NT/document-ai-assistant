@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.chunking.builders.structured.markers.certificate_markers import (
+from .catalogs.certificate_markers import (
     CERTIFICATE_ATTACHMENT_INFORMATION_MARKERS,
     CERTIFICATE_APPROVAL_INFORMATION_MARKERS,
     CERTIFICATE_COMPLIANCE_INFORMATION_MARKERS,
@@ -8,7 +8,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
     CERTIFICATE_PARTICULARS_MARKERS,
     CERTIFICATE_TEST_DATA_MARKERS,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.markers.datasheet_markers import (
+from .catalogs.datasheet_markers import (
     DATASHEET_COOLING_SYSTEM_MARKERS,
     DATASHEET_CONNECTION_INFORMATION_MARKERS,
     DATASHEET_DOCUMENT_MARKERS,
@@ -24,7 +24,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
     DATASHEET_TECHNICAL_DATA_MARKERS,
     DATASHEET_TECHNICAL_FEATURES_MARKERS,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.markers.drawing_markers import (
+from .catalogs.drawing_markers import (
     DRAWING_COMPLIANCE_TABLE_MARKERS,
     DRAWING_DOCUMENT_MARKERS,
     DRAWING_EQUIPMENT_LEGEND_MARKERS,
@@ -33,7 +33,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
     DRAWING_TITLE_BLOCK_MARKERS,
     DRAWING_VESSEL_PARTICULARS_MARKERS,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.markers.manual_markers import (
+from .catalogs.manual_markers import (
     MANUAL_COMMISSIONING_MARKERS,
     MANUAL_DOCUMENT_MARKERS,
     MANUAL_INSTALLATION_MARKERS,
@@ -46,7 +46,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
     MANUAL_SPARE_PARTS_MARKERS,
     MANUAL_TROUBLESHOOTING_MARKERS,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.markers.report_markers import (
+from .catalogs.report_markers import (
     REPORT_ADDITIONAL_INFORMATION_MARKERS,
     REPORT_CALIBRATION_RESULTS_MARKERS,
     REPORT_CERTIFICATION_SECTION_MARKERS,
@@ -60,7 +60,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
     REPORT_PERFORMANCE_DATA_MARKERS,
     REPORT_PROCEDURE_MARKERS,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.markers.sensor_markers import (
+from .catalogs.sensor_markers import (
     INSTRUMENT_LIST_MARKERS,
     IO_LIST_MARKERS,
     PID_LIST_MARKERS,
@@ -68,7 +68,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
     SENSOR_LIST_MARKERS,
     TAG_LIST_MARKERS,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.markers.structured_marker_matcher import (
+from .structured_marker_matcher import (
     StructuredMarkerMatcher
 )
 

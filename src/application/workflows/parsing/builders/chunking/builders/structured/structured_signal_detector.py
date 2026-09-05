@@ -1,7 +1,9 @@
-import re
-
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     GENERIC_STRUCTURED_MARKERS,
+    StructuredMarkerMatcher,
+)
+from src.application.workflows.parsing.builders.chunking.builders.structured.markers.models import (
+    EvidenceMarker,
 )
 
 
@@ -9,9 +11,11 @@ class StructuredSignalDetector:
     def __init__(
         self,
         *,
-        markers: tuple[str, ...] | None = None,
+        markers: tuple[EvidenceMarker, ...] | None = None,
+        marker_matcher: StructuredMarkerMatcher | None = None,
     ) -> None:
         self.markers = markers or GENERIC_STRUCTURED_MARKERS
+        self.marker_matcher = marker_matcher or StructuredMarkerMatcher()
 
     def has_structured_markers(
         self,
@@ -19,18 +23,13 @@ class StructuredSignalDetector:
         document_title: str | None,
         values: list[str],
     ) -> bool:
-        haystacks = [
-            self._normalize(value)
-            for value in values
-            if self._normalize(value)
-        ]
-        return any(
-            marker in haystack
-            for marker in self.markers
-            for haystack in haystacks
-        )
+        _ = document_title
 
-    @staticmethod
-    def _normalize(value: str | None) -> str:
-        normalized = re.sub(r"[\W_]+", " ", str(value or ""), flags=re.UNICODE)
-        return " ".join(normalized.strip().lower().split())
+        return any(
+            self.marker_matcher.contains_any(
+                value,
+                self.markers,
+            )
+            for value in values
+            if value
+        )
