@@ -3,11 +3,15 @@ from dataclasses import dataclass
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_element_text_resolver import (
     StructuredElementTextResolver,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
+    StructuredMarkerMatcher,
+)
 from src.domain.common import DocumentType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 
 
+_MARKER_MATCHER = StructuredMarkerMatcher()
 @dataclass(slots=True, frozen=True)
 class StructuredFamilyContext:
     document_title: str | None
@@ -128,9 +132,7 @@ class StructuredFamilyContext:
         markers: tuple[str, ...],
         *haystacks: str,
     ) -> bool:
-        return any(
-            marker in haystack
-            for marker in markers
-            for haystack in haystacks
-            if haystack
+        return _MARKER_MATCHER.contains_any(
+            markers,
+            *haystacks,
         )

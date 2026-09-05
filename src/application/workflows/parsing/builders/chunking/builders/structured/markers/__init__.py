@@ -68,6 +68,9 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
     SENSOR_LIST_MARKERS,
     TAG_LIST_MARKERS,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured.markers.structured_marker_matcher import (
+    StructuredMarkerMatcher
+)
 
 GENERIC_STRUCTURED_MARKERS = tuple(
     dict.fromkeys(
@@ -194,4 +197,5 @@ __all__ = [
     "SENSOR_DOCUMENT_MARKERS",
     "SENSOR_LIST_MARKERS",
     "TAG_LIST_MARKERS",
+    "StructuredMarkerMatcher",
 ]

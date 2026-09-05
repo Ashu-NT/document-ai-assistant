@@ -16,6 +16,9 @@ from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitte
 from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     is_furniture_or_embedded_picture,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
+    StructuredMarkerMatcher,
+)
 from src.domain.common import ChunkType, DocumentType, ElementType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
@@ -48,9 +51,11 @@ class StructuredSectionFragmentBuilder:
         *,
         text_splitter: ChunkTextSplitter,
         spec_factory: StructuredFamilySpecFactory | None = None,
+        marker_matcher: StructuredMarkerMatcher | None = None,
     ) -> None:
         self.text_splitter = text_splitter
         self.spec_factory = spec_factory or StructuredFamilySpecFactory()
+        self.marker_matcher = marker_matcher or StructuredMarkerMatcher()
 
     def build(
         self,
@@ -114,7 +119,7 @@ class StructuredSectionFragmentBuilder:
             index
             for index, element in enumerate(elements)
             if self._matches_markers(
-                self._normalize_text(StructuredElementTextResolver.resolve(element)),
+                StructuredElementTextResolver.resolve(element) or "",
                 spec.anchor_markers,
             )
         ]
@@ -249,20 +254,44 @@ class StructuredSectionFragmentBuilder:
             return False
         return bool(StructuredElementTextResolver.resolve(element))
 
-    @staticmethod
-    def _matches_markers(text: str, markers: tuple[str, ...]) -> bool:
+    def _matches_markers(
+        self,
+        text: str,
+        markers: tuple[str, ...],
+    ) -> bool:
+        normalized_text = self.marker_matcher.normalize(text)
+
+        normalized_negation_cues = tuple(
+            self.marker_matcher.normalize(cue)
+            for cue in _NEGATED_AVAILABILITY_CUES
+        )
+
         for marker in markers:
-            marker_index = text.find(marker)
-            if marker_index == -1:
-                continue
-            preceding_text = text[:marker_index]
-            if any(cue in preceding_text for cue in _NEGATED_AVAILABILITY_CUES):
-                continue
-            return True
+            for match in self.marker_matcher.iter_matches(
+                normalized_text,
+                marker,
+            ):
+                lookback_start = max(
+                    0,
+                    match.start() - 80,
+                )
+
+                preceding_text = normalized_text[
+                    lookback_start : match.start()
+                ]
+
+                if any(
+                    cue in preceding_text
+                    for cue in normalized_negation_cues
+                ):
+                    continue
+
+                return True
+
         return False
 
-    @staticmethod
     def _enrich_section_path(
+        self,
         spec: StructuredSectionWindowSpec,
         elements: list[CanonicalElement],
     ) -> list[str]:
@@ -297,7 +326,7 @@ class StructuredSectionFragmentBuilder:
             if not raw:
                 continue
             normalized = StructuredSectionFragmentBuilder._normalize_text(raw)
-            if not any(marker in normalized for marker in spec.anchor_markers):
+            if not self.marker_matcher.contains_any(spec.anchor_markers, normalized):
                 continue
             words = raw.split()
             if not (2 <= len(words) <= 12):

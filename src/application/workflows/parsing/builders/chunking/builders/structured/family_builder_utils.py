@@ -9,7 +9,12 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.str
 from src.application.workflows.parsing.builders.chunking.text.section_path_sanitizer import (
     sanitize_section_path,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
+    StructuredMarkerMatcher
+)
 
+
+_MARKER_MATCHER = StructuredMarkerMatcher()
 
 def extend_markers(
     *,
@@ -51,9 +56,16 @@ def path_contains_markers(
     path: list[str],
     markers: tuple[str, ...],
 ) -> bool:
-    normalized_path = " > ".join(_normalize(part) for part in path if part)
-    return any(marker in normalized_path for marker in markers)
+    normalized_path = " > ".join(
+        _normalize(part)
+        for part in path
+        if part
+    )
 
+    return _MARKER_MATCHER.contains_any(
+        markers,
+        normalized_path,
+    )
 
 def _normalize(value: str | None) -> str:
     normalized = re.sub(r"[\W_]+", " ", str(value or ""), flags=re.UNICODE)

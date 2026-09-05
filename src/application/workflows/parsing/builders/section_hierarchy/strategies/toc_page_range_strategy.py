@@ -164,18 +164,28 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
                 continue
 
             page_no = header.page_start or header.page_end
-            if page_no is None:
+            if page_no is None or page_no > self._TOC_SCAN_PAGE_LIMIT:
                 continue
 
             return page_no, header.element_id, header.order_index
 
-        early_tables = [
-            element
-            for element in sorted(elements, key=lambda item: item.order_index)
-            if element.element_type == ElementType.TABLE
-            and self._is_document_index(element)
-            and (element.page_start or element.page_end or 0) <= self._TOC_SCAN_PAGE_LIMIT
-        ]
+        early_tables = []
+
+        for element in sorted(elements, key=lambda item: item.order_index):
+            if element.element_type != ElementType.TABLE:
+                continue
+
+            if not self._is_document_index(element):
+                continue
+
+            page_no = element.page_start or element.page_end
+            if page_no is None:
+                continue
+
+            if page_no > self._TOC_SCAN_PAGE_LIMIT:
+                continue
+
+            early_tables.append(element)
         if not early_tables:
             return None, None, None
 
