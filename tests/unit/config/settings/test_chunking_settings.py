@@ -2,7 +2,7 @@ from src.config.settings.chunking_settings import ChunkingSettings
 
 
 def test_chunking_settings_defaults() -> None:
-    settings = ChunkingSettings()
+    settings = ChunkingSettings(_env_file=None)
 
     assert settings.token_counter_provider == "transformer"
     assert settings.tokenizer_model is None

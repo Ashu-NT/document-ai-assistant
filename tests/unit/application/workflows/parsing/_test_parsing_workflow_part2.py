@@ -11,6 +11,7 @@ from src.application.workflows.parsing import (
     ParsingWorkflow,
     RawParsedDocument,
 )
+from src.application.workflows.parsing.ocr.parsing_ocr_policy import ParsingOCRPolicy
 
 from src.domain.common import ElementType
 
@@ -116,6 +117,14 @@ def test_parse_runs_optional_ocr_enricher_before_graph_build(
         normalizer=normalizer,
         document_graph_builder=builder,
         id_generator=IdGenerator(),
+        ocr_policy=ParsingOCRPolicy(
+            docling_ocr_enabled=False,
+            provider_requested=True,
+            provider_name="test",
+            asset_ocr_enabled=True,
+            page_fallback_enabled=False,
+            region_fallback_enabled=False,
+        ),
         canonical_element_ocr_enricher=enricher,
     )
 

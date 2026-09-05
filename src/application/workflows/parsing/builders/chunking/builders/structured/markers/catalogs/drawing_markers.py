@@ -15,6 +15,8 @@ DRAWING_DOCUMENT_MARKERS = (
     EvidenceMarker("assembly drawing", MarkerStrength.STRONG),
     EvidenceMarker("schematic drawing", MarkerStrength.STRONG),
     EvidenceMarker("navigation light arrangement", MarkerStrength.STRONG),
+    EvidenceMarker("arrangement navigation lights", MarkerStrength.STRONG),
+    EvidenceMarker("arrangement of navigation lights", MarkerStrength.STRONG),
     EvidenceMarker("signal light arrangement", MarkerStrength.STRONG),
     EvidenceMarker("sheet number", MarkerStrength.MEDIUM),
     EvidenceMarker("sheet no", MarkerStrength.MEDIUM),

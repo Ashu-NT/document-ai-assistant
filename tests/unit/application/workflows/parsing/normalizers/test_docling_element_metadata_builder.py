@@ -234,8 +234,13 @@ def test_build_extracts_form_fields_from_real_docling_graph_objects() -> None:
     # str() on it gives "GraphLinkLabel.TO_VALUE", not "to_value") -- a dict-
     # shaped fake graph with string labels would pass even if the value-cell
     # linking logic couldn't handle real Docling output at all.
-    from docling_core.types.doc.items.key_value import GraphCell, GraphData, GraphLink
-    from docling_core.types.doc.labels import GraphCellLabel, GraphLinkLabel
+    from docling_core.types.doc import (
+        GraphCell,
+        GraphCellLabel,
+        GraphData,
+        GraphLink,
+        GraphLinkLabel,
+    )
 
     builder = _builder()
     graph = GraphData(

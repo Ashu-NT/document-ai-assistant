@@ -296,6 +296,10 @@ class DocumentGraphBuilder:
             AssetMetadataSynchronizer.sync(graph)
             self.logical_table_family_resolver.resolve(graph)
             self.table_semantic_resolver.resolve(graph)
+            # Family composition and semantic normalization can replace table
+            # shape/category metadata. Keep chunk-facing element metadata aligned
+            # with the final asset state.
+            AssetMetadataSynchronizer.sync(graph)
             graph.document.metadata = self.persistent_metadata_builder.build(
                 raw_parsed_document=raw_parsed_document,
                 section_build_result=section_build_result,

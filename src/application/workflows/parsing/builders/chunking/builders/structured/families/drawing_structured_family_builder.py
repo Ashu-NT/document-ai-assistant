@@ -146,7 +146,7 @@ class DrawingStructuredFamilyBuilder:
                         _LABEL_BLOCK_SECTION_TERMS
                     ),
                     chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
-                    radius_before=0,
+                    radius_before=1,
                     radius_after=2,
                     combine_all_windows=True,
                 ),

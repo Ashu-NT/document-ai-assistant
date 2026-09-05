@@ -103,6 +103,14 @@ def test_parse_runs_optional_page_ocr_fallback_before_graph_build(sample_documen
         normalizer=FakeNormalizer(canonical_elements),
         document_graph_builder=FakeGraphBuilder(sample_document_graph),
         id_generator=IdGenerator(),
+        ocr_policy=ParsingOCRPolicy(
+            docling_ocr_enabled=False,
+            provider_requested=True,
+            provider_name="test",
+            asset_ocr_enabled=False,
+            page_fallback_enabled=True,
+            region_fallback_enabled=False,
+        ),
         page_ocr_fallback_workflow=FakePageOCRFallbackWorkflow(enriched_elements),
     )
 

@@ -56,8 +56,11 @@ class LogicalTableFamilyAssetComposer:
                 qualifying_tables,
                 stream_rows=parallel_stream_rows,
             ),
-            row_count=len(merged_rows) or None,
-            column_count=max((len(row) for row in merged_rows), default=0) or None,
+            row_count=len(merged_rows) or lead_table.row_count,
+            column_count=(
+                max((len(row) for row in merged_rows), default=0)
+                or lead_table.column_count
+            ),
             logical_table_family_id=resolved_family_id,
             family_index=1,
             family_total=len(qualifying_tables),
