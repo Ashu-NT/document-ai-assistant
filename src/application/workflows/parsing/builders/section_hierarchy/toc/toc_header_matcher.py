@@ -23,6 +23,8 @@ class _ScoredHeader:
 class TocHeaderMatcher:
     """Matches TOC entries with title, numbering, and page-position evidence."""
 
+    _MAX_PAGE_DISTANCE = 24
+
     @classmethod
     def match_entry_to_header(
         cls,
@@ -60,6 +62,12 @@ class TocHeaderMatcher:
         candidate_title = normalize_toc_title(strip_heading_number(header.text))
         if not candidate_title:
             return None
+        if (
+            entry.numbering is not None
+            and candidate_number is not None
+            and candidate_number != entry.numbering
+        ):
+            return None
 
         exact_title = candidate_title == entry.normalized_title
         same_number = bool(entry.numbering and candidate_number == entry.numbering)
@@ -69,9 +77,9 @@ class TocHeaderMatcher:
         )
         if same_number and exact_title:
             quality = 4
-        elif same_number and contains_title:
-            quality = 3
         elif exact_title:
+            quality = 3
+        elif same_number and contains_title:
             quality = 2
         elif contains_title:
             quality = 1
@@ -84,6 +92,8 @@ class TocHeaderMatcher:
             if page_no is not None
             else 10_000
         )
+        if page_distance > TocHeaderMatcher._MAX_PAGE_DISTANCE:
+            return None
         return _ScoredHeader(
             header=header,
             title_quality=quality,

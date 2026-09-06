@@ -3,6 +3,9 @@ from collections import defaultdict
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry_parser import (
     TocEntryParser,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_element_eligibility_policy import (
+    TocElementEligibilityPolicy,
+)
 from src.application.workflows.parsing.parsed_canonical_element import (
     ParsedCanonicalElement,
 )
@@ -45,6 +48,8 @@ class TocCandidateCollector:
             ):
                 continue
             if element.element_type in self._TOC_ELEMENT_TYPES:
+                if not TocElementEligibilityPolicy.is_eligible(element):
+                    continue
                 by_page[page_no].append(element)
 
         accepted: list[ParsedCanonicalElement] = []

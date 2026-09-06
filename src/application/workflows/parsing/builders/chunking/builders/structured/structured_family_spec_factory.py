@@ -25,6 +25,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.tun
 from src.domain.common import DocumentType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
+from src.application.workflows.parsing.profiling import GraphBuildProfiler
 
 
 class StructuredFamilySpecFactory:
@@ -34,7 +35,9 @@ class StructuredFamilySpecFactory:
         family_builders: list[object] | None = None,
         marker_tuning: StructuredFamilyMarkerTuning | None = None,
         enable_benchmark_tuning: bool = True,
+        profiler: GraphBuildProfiler | None = None,
     ) -> None:
+        self.profiler = profiler or GraphBuildProfiler.disabled()
         self.family_builders = family_builders or [
             DrawingStructuredFamilyBuilder(),
             CertificateStructuredFamilyBuilder(),
@@ -54,6 +57,9 @@ class StructuredFamilySpecFactory:
             )
         )
 
+    def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
+        self.profiler = profiler or GraphBuildProfiler.disabled()
+
     def build(
         self,
         *,
@@ -64,28 +70,44 @@ class StructuredFamilySpecFactory:
         normalizer,
         document_sections_combined_text: str = "",
     ) -> StructuredFamilySpecSelection:
-        context = StructuredFamilyContext.from_inputs(
-            document_title=document_title,
-            document_type=document_type,
-            section=section,
-            elements=elements,
-            normalizer=normalizer,
-            document_sections_combined_text=document_sections_combined_text,
-        )
-        selections = [
-            builder.build(
-                context=context,
-                marker_tuning=self.marker_tuning,
+        with self.profiler.aggregate(
+            name="structured_family_spec_factory.prepare_context",
+            input_counts={
+                "sections": 1,
+                "elements": len(elements),
+                "document_section_text_chars": len(document_sections_combined_text),
+            },
+        ) as stage:
+            context = StructuredFamilyContext.from_inputs(
+                document_title=document_title,
+                document_type=document_type,
+                section=section,
+                elements=elements,
+                normalizer=normalizer,
+                document_sections_combined_text=document_sections_combined_text,
             )
-            for builder in self.family_builders
-        ]
-        return StructuredFamilySpecSelection(
-            specs=self._merge_specs(selections),
-            consume_all_elements=any(
-                selection.consume_all_elements
-                for selection in selections
-            ),
-        )
+            stage.output_counts["normalized_elements"] = len(context.normalized_texts)
+
+        with self.profiler.aggregate(
+            name="structured_family_spec_factory.select_specs",
+            input_counts={"sections": 1, "family_builders": len(self.family_builders)},
+        ) as stage:
+            selections = [
+                builder.build(
+                    context=context,
+                    marker_tuning=self.marker_tuning,
+                )
+                for builder in self.family_builders
+            ]
+            specs = self._merge_specs(selections)
+            stage.output_counts["specs"] = len(specs)
+            return StructuredFamilySpecSelection(
+                specs=specs,
+                consume_all_elements=any(
+                    selection.consume_all_elements
+                    for selection in selections
+                ),
+            )
 
     @staticmethod
     def _merge_specs(

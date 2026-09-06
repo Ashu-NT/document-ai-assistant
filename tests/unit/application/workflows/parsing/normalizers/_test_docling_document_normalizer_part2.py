@@ -498,7 +498,7 @@ def test_normalizer_logs_lane_count_disagreement_without_altering_table_rows(cap
         },
     )
 
-    with caplog.at_level("INFO"):
+    with caplog.at_level("DEBUG"):
         normalized = DoclingDocumentNormalizer().normalize(
             make_raw_parsed_document(raw_document),
             "doc_003",
@@ -514,3 +514,8 @@ def test_normalizer_logs_lane_count_disagreement_without_altering_table_rows(cap
     assert "parallel_table_stream_lane_count_disagreement" in caplog.text
     assert "cell_cluster_count=2" in caplog.text
     assert "page_lane_count=1" in caplog.text
+    assert all(
+        record.levelname == "DEBUG"
+        for record in caplog.records
+        if "parallel_table_stream_lane_count_disagreement" in record.getMessage()
+    )

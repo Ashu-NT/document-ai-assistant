@@ -85,3 +85,41 @@ def test_graph_build_profiler_output_counts_do_not_collide_with_fixed_log_fields
     message = caplog.records[0].getMessage()
     assert "document_id=doc_real" in message
     assert "doc_from_output_counts" not in message
+
+
+def test_graph_build_profiler_aggregates_repeated_nested_stages(caplog) -> None:
+    profiler = GraphBuildProfiler(document_id="doc_aggregate")
+    logger_name = "src.application.workflows.parsing.profiling.graph_build_profiler"
+
+    with caplog.at_level("INFO", logger=logger_name):
+        for _ in range(3):
+            with profiler.aggregate(
+                name="chunk_fragment_builder.ordinary_elements",
+                input_counts={"sections": 1, "elements": 2},
+            ) as stage:
+                stage.output_counts["fragments"] = 1
+
+        assert caplog.records == []
+        profiler.flush_aggregates()
+
+    assert len(caplog.records) == 1
+    message = caplog.records[0].getMessage()
+    assert "stage=chunk_fragment_builder.ordinary_elements" in message
+    assert "invocations=3" in message
+    assert "sections=3" in message
+    assert "elements=6" in message
+    assert "fragments=3" in message
+    assert profiler.stage_metrics[-1].operations["invocations"] == 3
+
+
+def test_graph_build_profiler_flush_clears_aggregate_batch(caplog) -> None:
+    profiler = GraphBuildProfiler.disabled()
+    logger_name = "src.application.workflows.parsing.profiling.graph_build_profiler"
+
+    with caplog.at_level("INFO", logger=logger_name):
+        with profiler.aggregate(name="nested"):
+            pass
+        profiler.flush_aggregates()
+        profiler.flush_aggregates()
+
+    assert len(caplog.records) == 1

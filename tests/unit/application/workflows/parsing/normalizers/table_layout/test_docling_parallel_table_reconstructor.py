@@ -67,7 +67,7 @@ def test_reconstruct_logs_disagreement_when_page_lane_count_mismatches(caplog) -
     reconstructor = DoclingParallelTableReconstructor()
     spans = _two_lane_spans()
 
-    with caplog.at_level("INFO"):
+    with caplog.at_level("DEBUG"):
         reconstructor.reconstruct(spans, page_lane_count=1)
 
     assert "parallel_table_stream_lane_count_disagreement" in caplog.text

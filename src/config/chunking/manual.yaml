@@ -1,7 +1,7 @@
 # Chunking policy for MANUAL document type.
 profile_name: manual
 max_chunk_tokens: 310
-chunk_overlap: 100
+chunk_overlap: 20
 same_topic_merge_tokens: 120
 intro_context_tokens: 160
 asset_context_window: 2

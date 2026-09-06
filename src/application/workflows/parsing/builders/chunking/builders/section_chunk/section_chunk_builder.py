@@ -106,6 +106,7 @@ class SectionChunkBuilder:
                 page_sizes=page_sizes,
             )
             stage.output_counts["sections"] = 1
+        runtime.fragment_builder.set_profiler(self.profiler)
 
         if runtime.section_skipper.should_skip_section(
             document_title=document_title,
@@ -114,12 +115,15 @@ class SectionChunkBuilder:
         ):
             return []
 
-        fragments = runtime.fragment_builder.build_section_fragments(
-            document_title=document_title,
-            document_type=document_type,
-            section=section,
-            elements=elements,
-        )
+        try:
+            fragments = runtime.fragment_builder.build_section_fragments(
+                document_title=document_title,
+                document_type=document_type,
+                section=section,
+                elements=elements,
+            )
+        finally:
+            self.profiler.flush_aggregates()
         if not fragments:
             return []
 
@@ -156,6 +160,7 @@ class SectionChunkBuilder:
                 page_sizes=page_sizes,
             )
             stage.output_counts["sections"] = len(sections)
+        runtime.fragment_builder.set_profiler(self.profiler)
         with self.profiler.measure(
             name="section_chunk_builder.order_sections",
             input_counts={"sections": len(sections)},
@@ -189,35 +194,40 @@ class SectionChunkBuilder:
             )
         fragments: list[ChunkFragment] = []
 
-        with self.profiler.measure(
-            name="section_chunk_builder.build_fragments",
-            input_counts={"sections": len(ordered_sections)},
-        ) as stage:
-            skipped_sections = 0
-            for section in ordered_sections:
-                elements = section_elements_by_id.get(section.section_id, [])
-                if not elements:
-                    continue
+        try:
+            with self.profiler.measure(
+                name="section_chunk_builder.build_fragments",
+                input_counts={"sections": len(ordered_sections)},
+            ) as stage:
+                skipped_sections = 0
+                for section in ordered_sections:
+                    elements = section_elements_by_id.get(section.section_id, [])
+                    if not elements:
+                        continue
 
-                if runtime.section_skipper.should_skip_section(
-                    document_title=document_title,
-                    section=section,
-                    elements=elements,
-                ):
-                    skipped_sections += 1
-                    continue
-
-                fragments.extend(
-                    runtime.fragment_builder.build_section_fragments(
+                    if runtime.section_skipper.should_skip_section(
                         document_title=document_title,
-                        document_type=document_type,
                         section=section,
                         elements=elements,
-                        document_sections_combined_text=document_sections_combined_text,
+                    ):
+                        skipped_sections += 1
+                        continue
+
+                    fragments.extend(
+                        runtime.fragment_builder.build_section_fragments(
+                            document_title=document_title,
+                            document_type=document_type,
+                            section=section,
+                            elements=elements,
+                            document_sections_combined_text=(
+                                document_sections_combined_text
+                            ),
+                        )
                     )
-                )
-            stage.output_counts["fragments"] = len(fragments)
-            stage.operations["skipped_sections"] = skipped_sections
+                stage.output_counts["fragments"] = len(fragments)
+                stage.operations["skipped_sections"] = skipped_sections
+        finally:
+            self.profiler.flush_aggregates()
 
         if not fragments:
             base_payloads: list[ChunkPayload] = []

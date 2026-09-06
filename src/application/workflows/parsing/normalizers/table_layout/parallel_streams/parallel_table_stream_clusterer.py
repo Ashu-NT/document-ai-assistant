@@ -48,7 +48,7 @@ class ParallelTableStreamClusterer:
         page_lane_count: int | None,
     ) -> list[list[TableCellSpan]]:
         if page_lane_count is not None and len(result) != page_lane_count:
-            _logger.info(
+            _logger.debug(
                 "parallel_table_stream_lane_count_disagreement "
                 "cell_cluster_count=%s page_lane_count=%s",
                 len(result),

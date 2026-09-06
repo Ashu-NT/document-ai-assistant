@@ -6,6 +6,7 @@ from time import perf_counter
 from typing import Generator
 
 from src.application.workflows.parsing.profiling.graph_build_stage_models import (
+    GraphBuildStageAggregate,
     GraphBuildStageMetric,
     GraphBuildStageScope,
 )
@@ -27,6 +28,7 @@ class GraphBuildProfiler:
         self.progress_callback = progress_callback
         self.document_id = document_id
         self.stage_metrics: list[GraphBuildStageMetric] = []
+        self._aggregates: dict[str, GraphBuildStageAggregate] = {}
         self._started_at: float | None = None
 
     @classmethod
@@ -96,6 +98,85 @@ class GraphBuildProfiler:
             )
             self.stage_metrics.append(metric)
             self._emit_stage(metric)
+
+    @contextmanager
+    def aggregate(
+        self,
+        *,
+        name: str,
+        input_counts: dict[str, int | float | str | None] | None = None,
+        operations: dict[str, int | float | str | None] | None = None,
+    ) -> Generator[GraphBuildStageScope, None, None]:
+        """Accumulate repeated nested work without emitting per-call INFO logs."""
+        scope = GraphBuildStageScope()
+        if input_counts is not None:
+            scope.input_counts.update(input_counts)
+        if operations is not None:
+            scope.operations.update(operations)
+
+        started_at = perf_counter()
+        if self.enabled and self._started_at is None:
+            self._started_at = started_at
+        try:
+            yield scope
+        except Exception as exc:
+            log_stage_result(
+                _logger,
+                stage_name=name,
+                duration_ms=(perf_counter() - started_at) * 1000,
+                status="failed",
+                level=logging.ERROR,
+                document_id=self.document_id,
+                counts={**scope.input_counts, "error": str(exc)},
+            )
+            raise
+
+        ended_at = perf_counter()
+        aggregate = self._aggregates.get(name)
+        if aggregate is None:
+            aggregate = GraphBuildStageAggregate(
+                name=name,
+                started_at=started_at,
+                ended_at=ended_at,
+            )
+            self._aggregates[name] = aggregate
+        aggregate.add(started_at=started_at, ended_at=ended_at, scope=scope)
+
+    def flush_aggregates(self) -> None:
+        """Emit one summary per repeated stage and clear the pending batch."""
+        for aggregate in self._aggregates.values():
+            counts = {
+                "invocations": aggregate.invocation_count,
+                **aggregate.input_counts,
+                **aggregate.output_counts,
+            }
+            log_stage_result(
+                _logger,
+                stage_name=aggregate.name,
+                duration_ms=aggregate.elapsed_seconds * 1000,
+                status="ok",
+                document_id=self.document_id,
+                counts=counts,
+            )
+            if self.enabled:
+                root_started_at = self._started_at or aggregate.started_at
+                metric = GraphBuildStageMetric(
+                    name=aggregate.name,
+                    started_at_offset_seconds=(
+                        aggregate.started_at - root_started_at
+                    ),
+                    ended_at_offset_seconds=aggregate.ended_at - root_started_at,
+                    elapsed_seconds=aggregate.elapsed_seconds,
+                    input_counts=dict(aggregate.input_counts),
+                    output_counts=dict(aggregate.output_counts),
+                    operations={
+                        "invocations": aggregate.invocation_count,
+                        **aggregate.operations,
+                    },
+                )
+                self.stage_metrics.append(metric)
+                self._emit_stage(metric)
+        self._aggregates.clear()
 
     def total_elapsed_seconds(self) -> float:
         if not self.stage_metrics:

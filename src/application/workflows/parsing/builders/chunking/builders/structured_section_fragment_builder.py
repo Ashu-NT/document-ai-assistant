@@ -26,6 +26,7 @@ from src.domain.elements import CanonicalElement
 from src.application.workflows.parsing.builders.chunking.builders.fragment.table_chunk_eligibility_policy import (
     TableChunkEligibilityPolicy,
 )
+from src.application.workflows.parsing.profiling import GraphBuildProfiler
 
 class StructuredSectionFragmentBuilder:
     def __init__(
@@ -36,7 +37,9 @@ class StructuredSectionFragmentBuilder:
         marker_matcher: StructuredMarkerMatcher | None = None,
         marker_match_policy: StructuredMarkerMatchPolicy | None = None,
         table_chunk_eligibility_policy: TableChunkEligibilityPolicy | None = None,
+        profiler: GraphBuildProfiler | None = None,
     ) -> None:
+        self.profiler = profiler or GraphBuildProfiler.disabled()
         self.text_splitter = text_splitter
         self.spec_factory = spec_factory or StructuredFamilySpecFactory()
         self.marker_matcher = marker_matcher or StructuredMarkerMatcher()
@@ -50,6 +53,11 @@ class StructuredSectionFragmentBuilder:
                 text_splitter=text_splitter,
             )
         )
+        self.spec_factory.set_profiler(self.profiler)
+
+    def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
+        self.profiler = profiler or GraphBuildProfiler.disabled()
+        self.spec_factory.set_profiler(self.profiler)
 
     def build(
         self,
@@ -79,19 +87,42 @@ class StructuredSectionFragmentBuilder:
         if not selection.specs:
             return [], set()
 
+        windows_by_spec: list[
+            tuple[StructuredSectionWindowSpec, list[list[CanonicalElement]]]
+        ] = []
+        with self.profiler.aggregate(
+            name="structured_section_fragment_builder.collect_windows",
+            input_counts={"sections": 1, "specs": len(selection.specs)},
+        ) as stage:
+            for spec in selection.specs:
+                windows_by_spec.append(
+                    (spec, self._collect_windows(ordered_elements, spec))
+                )
+            stage.output_counts["windows"] = sum(
+                len(windows) for _, windows in windows_by_spec
+            )
+
         fragments: list[ChunkFragment] = []
         consumed_element_ids: set[str] = set()
-        for spec in selection.specs:
-            for window in self._collect_windows(ordered_elements, spec):
-                fragment = self._build_fragment(
-                    section=section,
-                    elements=window,
-                    spec=spec,
-                )
-                if fragment is None:
-                    continue
-                fragments.append(fragment)
-                consumed_element_ids.update(fragment.element_ids)
+        with self.profiler.aggregate(
+            name="structured_section_fragment_builder.materialize_fragments",
+            input_counts={
+                "sections": 1,
+                "windows": sum(len(windows) for _, windows in windows_by_spec),
+            },
+        ) as stage:
+            for spec, windows in windows_by_spec:
+                for window in windows:
+                    fragment = self._build_fragment(
+                        section=section,
+                        elements=window,
+                        spec=spec,
+                    )
+                    if fragment is None:
+                        continue
+                    fragments.append(fragment)
+                    consumed_element_ids.update(fragment.element_ids)
+            stage.output_counts["fragments"] = len(fragments)
 
         if selection.consume_all_elements and fragments:
             consumed_element_ids.update(

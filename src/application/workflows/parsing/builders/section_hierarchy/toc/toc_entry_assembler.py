@@ -13,6 +13,9 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry 
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry_parser import (
     TocEntryParser,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_visual_line_assembler import (
+    TocVisualLineAssembler,
+)
 from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
     repair_docling_text,
 )
@@ -24,6 +27,13 @@ from src.application.workflows.parsing.parsed_canonical_element import (
 class TocEntryAssembler:
     """Assembles TOC entries across adjacent elements on each visual page."""
 
+    def __init__(
+        self,
+        *,
+        visual_line_assembler: TocVisualLineAssembler | None = None,
+    ) -> None:
+        self.visual_line_assembler = visual_line_assembler or TocVisualLineAssembler()
+
     def assemble(
         self,
         elements: list[ParsedCanonicalElement],
@@ -34,7 +44,7 @@ class TocEntryAssembler:
             if page_no is not None:
                 by_page[page_no].append(element)
 
-        entries: list[TocEntry] = []
+        entries: list[TocEntry] = self.visual_line_assembler.assemble(elements)
         for page_no in sorted(by_page):
             entries.extend(self._assemble_page(by_page[page_no]))
         return self._deduplicate(entries)
@@ -86,9 +96,15 @@ class TocEntryAssembler:
             " ",
             repair_docling_text(str(value or "")).strip(),
         )
-        if not text or extract_heading_number(text) is None:
+        number = extract_heading_number(text)
+        if not text or number is None:
             return None
         if re.search(r"\s\d{1,4}$", text):
+            return None
+        title = strip_heading_number(text)
+        if not title:
+            return None
+        if (numbering_depth(number) or 1) == 1 and len(title.split()) < 4:
             return None
         return text
 

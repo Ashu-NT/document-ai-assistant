@@ -41,19 +41,20 @@ def test_cluster_logs_disagreement_when_page_lane_count_mismatches(caplog) -> No
     clusterer = ParallelTableStreamClusterer()
     spans = _two_lane_spans()
 
-    with caplog.at_level("INFO"):
+    with caplog.at_level("DEBUG"):
         clusterer.cluster(spans, page_lane_count=1)
 
     assert "parallel_table_stream_lane_count_disagreement" in caplog.text
     assert "cell_cluster_count=2" in caplog.text
     assert "page_lane_count=1" in caplog.text
+    assert all(record.levelname == "DEBUG" for record in caplog.records)
 
 
 def test_cluster_does_not_log_when_page_lane_count_matches(caplog) -> None:
     clusterer = ParallelTableStreamClusterer()
     spans = _two_lane_spans()
 
-    with caplog.at_level("INFO"):
+    with caplog.at_level("DEBUG"):
         clusterer.cluster(spans, page_lane_count=2)
 
     assert "parallel_table_stream_lane_count_disagreement" not in caplog.text
@@ -63,7 +64,7 @@ def test_cluster_does_not_log_when_page_lane_count_is_absent(caplog) -> None:
     clusterer = ParallelTableStreamClusterer()
     spans = _two_lane_spans()
 
-    with caplog.at_level("INFO"):
+    with caplog.at_level("DEBUG"):
         clusterer.cluster(spans)
 
     assert "parallel_table_stream_lane_count_disagreement" not in caplog.text
@@ -73,7 +74,7 @@ def test_cluster_below_span_threshold_still_honors_page_lane_count_logging(caplo
     clusterer = ParallelTableStreamClusterer()
     spans = [_make_span(row=0, col=0, x1=40, x2=250)]
 
-    with caplog.at_level("INFO"):
+    with caplog.at_level("DEBUG"):
         result = clusterer.cluster(spans, page_lane_count=2)
 
     assert result == []

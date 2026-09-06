@@ -36,6 +36,7 @@ from src.domain.common import ChunkType, ElementType
 from src.domain.common import DocumentType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
+from src.application.workflows.parsing.profiling import GraphBuildProfiler
 
 
 class ChunkFragmentBuilder:
@@ -50,7 +51,9 @@ class ChunkFragmentBuilder:
         asset_context_window: int = 1,
         asset_context_max_tokens: int = 72,
         page_sizes: dict[int, tuple[float, float]] | None = None,
+        profiler: GraphBuildProfiler | None = None,
     ) -> None:
+        self.profiler = profiler or GraphBuildProfiler.disabled()
         self.text_splitter = text_splitter
         self.include_picture_chunks = include_picture_chunks
 
@@ -108,6 +111,11 @@ class ChunkFragmentBuilder:
             page_sizes=page_sizes or {},
             asset_context_resolver=self.asset_context_resolver,
         )
+        self.structured_fragment_builder.set_profiler(self.profiler)
+
+    def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
+        self.profiler = profiler or GraphBuildProfiler.disabled()
+        self.structured_fragment_builder.set_profiler(self.profiler)
  
     def build_section_fragments(
         self,
@@ -128,32 +136,55 @@ class ChunkFragmentBuilder:
             )
         )
         fragments: list[ChunkFragment] = list(structured_fragments)
-        self._enrich_structured_table_fragments(
-            fragments=fragments,
-            elements=elements,
-        )
-        family_result = self.logical_table_family_fragment_builder.build(
-            section=section,
-            elements=elements,
-            excluded_element_ids=consumed_element_ids,
-        )
+        with self.profiler.aggregate(
+            name="chunk_fragment_builder.enrich_structured_tables",
+            input_counts={"sections": 1, "structured_fragments": len(fragments)},
+        ):
+            self._enrich_structured_table_fragments(
+                fragments=fragments,
+                elements=elements,
+            )
+        with self.profiler.aggregate(
+            name="chunk_fragment_builder.logical_table_families",
+            input_counts={"sections": 1, "elements": len(elements)},
+        ) as stage:
+            family_result = self.logical_table_family_fragment_builder.build(
+                section=section,
+                elements=elements,
+                excluded_element_ids=consumed_element_ids,
+            )
+            stage.output_counts["fragments"] = len(family_result.fragments)
         fragments.extend(family_result.fragments)
         consumed_element_ids.update(family_result.consumed_element_ids)
 
-        list_run_id_by_element_id = self._assign_list_run_ids(section, elements)
+        with self.profiler.aggregate(
+            name="chunk_fragment_builder.assign_list_runs",
+            input_counts={"sections": 1, "elements": len(elements)},
+        ) as stage:
+            list_run_id_by_element_id = self._assign_list_run_ids(section, elements)
+            stage.output_counts["list_items"] = len(list_run_id_by_element_id)
 
-        for index, element in enumerate(elements):
-            if element.element_id in consumed_element_ids:
-                continue
-            fragment = self._build_fragment_from_element(
-                section,
-                elements,
-                index,
-                element,
-            )
-            if fragment is not None:
-                fragment.list_run_id = list_run_id_by_element_id.get(element.element_id)
-                fragments.append(fragment)
+        with self.profiler.aggregate(
+            name="chunk_fragment_builder.ordinary_elements",
+            input_counts={"sections": 1, "elements": len(elements)},
+        ) as stage:
+            ordinary_fragment_count = 0
+            for index, element in enumerate(elements):
+                if element.element_id in consumed_element_ids:
+                    continue
+                fragment = self._build_fragment_from_element(
+                    section,
+                    elements,
+                    index,
+                    element,
+                )
+                if fragment is not None:
+                    fragment.list_run_id = list_run_id_by_element_id.get(
+                        element.element_id
+                    )
+                    fragments.append(fragment)
+                    ordinary_fragment_count += 1
+            stage.output_counts["fragments"] = ordinary_fragment_count
 
         self._apply_list_run_totals(fragments)
 
