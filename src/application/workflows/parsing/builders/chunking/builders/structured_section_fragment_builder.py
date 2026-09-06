@@ -232,7 +232,6 @@ class StructuredSectionFragmentBuilder:
             merged_windows.append((start_index, end_index))
         return merged_windows
 
-
     def _is_structurable_element(
         self,
         element: CanonicalElement,
@@ -245,7 +244,7 @@ class StructuredSectionFragmentBuilder:
             ElementType.TABLE,
             ElementType.PICTURE,
         }:
-        return False
+            return False
         if is_furniture_or_embedded_picture(element):
             return False
 
