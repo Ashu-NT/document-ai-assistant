@@ -15,6 +15,9 @@ _TASK_NUMBER_PATTERN = re.compile(
     r"\b(?:task|exercise|step|problem)\s+(?P<number>\d+(?:\.\d+)*)\b",
     re.IGNORECASE,
 )
+_EMBEDDED_ITEM_NUMBER_PATTERN = re.compile(
+    r"^\s*\d{2,6}\s*(?:-|\u2013|\u2014|:)\s*\S"
+)
 
 
 def extract_heading_number(text: str | None) -> str | None:
@@ -79,3 +82,7 @@ def parent_numberings(numbering: str | None) -> list[str]:
 
     parts = [part for part in numbering.split(".") if part]
     return [".".join(parts[:index]) for index in range(len(parts) - 1, 0, -1)]
+
+
+def has_embedded_item_numbering(text: str | None) -> bool:
+    return bool(text and _EMBEDDED_ITEM_NUMBER_PATTERN.match(text))

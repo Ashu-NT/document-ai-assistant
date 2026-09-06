@@ -1,5 +1,10 @@
 from dataclasses import dataclass, field
 
+from src.application.workflows.parsing.builders.section_hierarchy.heading_candidates import (
+    HeadingCandidateAssessment,
+    HeadingCandidateRole,
+    HeadingCandidateRoleResolver,
+)
 from src.application.workflows.parsing.builders.section_hierarchy.numbering.contextual_numbering_resolver import (
     ContextualNumberingResolver,
 )
@@ -39,6 +44,9 @@ class SectionHierarchyResolution:
     raw_levels: dict[str, int | None] = field(default_factory=dict)
     header_numberings: dict[str, str] = field(default_factory=dict)
     explicit_parent_headers: dict[str, str] = field(default_factory=dict)
+    heading_assessments: dict[str, HeadingCandidateAssessment] = field(
+        default_factory=dict
+    )
     toc_outline: TocOutline | None = None
 
 
@@ -50,6 +58,7 @@ class SectionHierarchyResolver:
         toc_page_range_strategy: TocPageRangeStrategy | None = None,
         numbering_hierarchy_strategy: NumberingHierarchyStrategy | None = None,
         layout_heuristic_strategy: LayoutHeuristicStrategy | None = None,
+        heading_candidate_role_resolver: HeadingCandidateRoleResolver | None = None,
     ) -> None:
         self.heading_level_strategy = heading_level_strategy or HeadingLevelStrategy()
         self.toc_page_range_strategy = toc_page_range_strategy or TocPageRangeStrategy()
@@ -57,6 +66,9 @@ class SectionHierarchyResolver:
             numbering_hierarchy_strategy or NumberingHierarchyStrategy()
         )
         self.layout_heuristic_strategy = layout_heuristic_strategy or LayoutHeuristicStrategy()
+        self.heading_candidate_role_resolver = (
+            heading_candidate_role_resolver or HeadingCandidateRoleResolver()
+        )
         self._contextual_numbering_resolver = ContextualNumberingResolver(
             toc_page_range_strategy=self.toc_page_range_strategy,
             numbering_hierarchy_strategy=self.numbering_hierarchy_strategy,
@@ -155,9 +167,38 @@ class SectionHierarchyResolver:
             resolution.sources.setdefault(header.element_id, "default")
 
         resolution.effective_levels = normalize_levels(headers, resolution.effective_levels)
-        self._contextual_numbering_resolver.apply(headers, resolution)
+        resolution.heading_assessments = self.heading_candidate_role_resolver.resolve(
+            headers=headers,
+            elements=canonical_elements,
+            hierarchy_resolution=resolution,
+        )
+        outline_headers = self._retain_outline_candidates(headers, resolution)
+        if outline_headers:
+            resolution.effective_levels = normalize_levels(
+                outline_headers,
+                resolution.effective_levels,
+            )
+            self._contextual_numbering_resolver.apply(outline_headers, resolution)
         if resolution.toc_outline is not None:
             resolution.toc_outline.header_numberings = dict(
                 resolution.header_numberings
             )
         return resolution
+
+    @staticmethod
+    def _retain_outline_candidates(
+        headers: list[ParsedCanonicalElement],
+        resolution: SectionHierarchyResolution,
+    ) -> list[ParsedCanonicalElement]:
+        outline_ids = {
+            header_id
+            for header_id, assessment in resolution.heading_assessments.items()
+            if assessment.role == HeadingCandidateRole.OUTLINE_SECTION
+        }
+        for header_id in tuple(resolution.effective_levels):
+            if header_id in outline_ids:
+                continue
+            resolution.effective_levels.pop(header_id, None)
+            resolution.sources.pop(header_id, None)
+            resolution.explicit_parent_headers.pop(header_id, None)
+        return [header for header in headers if header.element_id in outline_ids]

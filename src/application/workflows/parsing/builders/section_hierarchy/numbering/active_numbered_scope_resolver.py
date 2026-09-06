@@ -1,6 +1,5 @@
-import re
-
 from src.application.workflows.parsing.builders.section_hierarchy.numbering.heading_numbering import (
+    has_embedded_item_numbering,
     numbering_depth,
     parent_numberings,
 )
@@ -9,9 +8,12 @@ from src.application.workflows.parsing.parsed_canonical_element import (
 )
 
 
-_EMBEDDED_NUMBERED_HEADING_PATTERN = re.compile(
-    r"^\s*\d{2,6}\s*(?:-|\u2013|\u2014|:)\s*\S"
-)
+_NON_OUTLINE_ROLES = {
+    "caption",
+    "local_label",
+    "noise",
+    "table_category",
+}
 
 
 class ActiveNumberedScopeResolver:
@@ -88,14 +90,18 @@ class ActiveNumberedScopeResolver:
         source: str | None,
         effective_level: int | None,
     ) -> bool:
+        candidate_role = header.metadata.get("heading_candidate_role")
+        if candidate_role == "outline_section":
+            return False
+        if candidate_role in _NON_OUTLINE_ROLES:
+            return True
         if numbering_depth(number) != 1 or not active_header_by_depth:
             return False
-        if source == "toc_page_range" and effective_level == 1:
-            return False
+        del source, effective_level
         text = (header.text or "").strip()
         return max(active_header_by_depth) >= 2 and (
             text.startswith(f"{number}.")
-            or _EMBEDDED_NUMBERED_HEADING_PATTERN.match(text) is not None
+            or has_embedded_item_numbering(text)
         )
 
     @staticmethod

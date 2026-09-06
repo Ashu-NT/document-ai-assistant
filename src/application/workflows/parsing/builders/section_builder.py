@@ -1,6 +1,3 @@
-from src.application.workflows.parsing.builders.chunking.text.section_path_matching import (
-    normalize_section_path_for_matching,
-)
 from src.application.workflows.parsing.profiling import GraphBuildProfiler
 from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,
@@ -14,13 +11,15 @@ from src.application.workflows.parsing.builders.section_hierarchy.section_hierar
 from src.application.workflows.parsing.builders.section_hierarchy.section_path_relinker import (
     SectionPathRelinker,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.section_root_factory import (
+    SectionRootFactory,
+)
 from src.application.workflows.parsing.builders.section_hierarchy.section_stack_builder import (
     SectionStackBuilder,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
-from src.domain.common import BoundingBox, ElementType, SourceLocation
-from src.domain.document import DocumentSection
-from src.shared.ids import IdGenerator, IdPrefix
+from src.domain.common import ElementType
+from src.shared.ids import IdGenerator
 
 
 class SectionBuilder:
@@ -32,6 +31,7 @@ class SectionBuilder:
         hierarchy_resolver: SectionHierarchyResolver | None = None,
         section_path_relinker: SectionPathRelinker | None = None,
         section_stack_builder: SectionStackBuilder | None = None,
+        section_root_factory: SectionRootFactory | None = None,
         profiler: GraphBuildProfiler | None = None,
     ) -> None:
         self.id_generator = id_generator
@@ -42,6 +42,7 @@ class SectionBuilder:
         self.section_stack_builder = section_stack_builder or SectionStackBuilder(
             id_generator
         )
+        self.section_root_factory = section_root_factory or SectionRootFactory(id_generator)
 
     def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
         self.profiler = profiler or GraphBuildProfiler.disabled()
@@ -76,52 +77,13 @@ class SectionBuilder:
             )
             headers = self.header_filter.filter(raw_headers)
             stage.output_counts["headers"] = len(headers)
-        filtered_header_ids = {
-            header.element_id
-            for header in headers
-        }
-        for header in raw_headers:
-            header.metadata["structural_heading"] = (
-                header.element_id in filtered_header_ids
-            )
-
+        filtered_header_ids = {header.element_id for header in headers}
         if not headers:
-            root_path = [default_title]
-            root_section = DocumentSection(
-                section_id=self.id_generator.new_id(IdPrefix.SECTION),
+            self._mark_structural_headers(raw_headers, set())
+            return self.section_root_factory.build_root_only_result(
                 document_id=document_id,
+                elements=ordered_elements,
                 title=default_title,
-                level=1,
-                section_path=list(root_path),
-                raw_section_path=list(root_path),
-                normalized_section_path=(
-                    normalize_section_path_for_matching(
-                        root_path,
-                        document_title=default_title,
-                    )
-                    or list(root_path)
-                ),
-                source=self._source_from_element(
-                    ordered_elements[0] if ordered_elements else None
-                ),
-                sequence_number=1,
-                reading_order_start=(
-                    ordered_elements[0].order_index if ordered_elements else None
-                ),
-                reading_order_end=(
-                    ordered_elements[-1].order_index if ordered_elements else None
-                ),
-            )
-            return SectionBuildResult(
-                sections=[root_section],
-                element_section_ids={
-                    element.element_id: root_section.section_id
-                    for element in ordered_elements
-                },
-                element_section_paths={
-                    element.element_id: list(root_section.section_path)
-                    for element in ordered_elements
-                },
             )
 
         with self.profiler.measure(
@@ -142,6 +104,28 @@ class SectionBuilder:
             stage.output_counts["resolved_headers"] = len(
                 hierarchy_resolution.effective_levels
             )
+        structural_header_ids = set(hierarchy_resolution.effective_levels)
+        headers = [
+            header for header in headers if header.element_id in structural_header_ids
+        ]
+        self._mark_structural_headers(raw_headers, structural_header_ids)
+        if not headers:
+            result = self.section_root_factory.build_root_only_result(
+                document_id=document_id,
+                elements=ordered_elements,
+                title=default_title,
+            )
+            result.header_sources = dict(hierarchy_resolution.sources)
+            result.header_raw_levels = dict(hierarchy_resolution.raw_levels)
+            result.header_numberings = dict(hierarchy_resolution.header_numberings)
+            result.heading_candidate_assessments = {
+                header_id: assessment.to_dict()
+                for header_id, assessment in (
+                    hierarchy_resolution.heading_assessments.items()
+                )
+            }
+            result.toc_outline = hierarchy_resolution.toc_outline
+            return result
         with self.profiler.measure(
             name="section_builder.build_section_stack",
             input_counts={"headers": len(headers)},
@@ -160,11 +144,11 @@ class SectionBuilder:
             name="section_builder.build_leading_root_section",
             input_counts={"ordered_elements": len(ordered_elements)},
         ) as stage:
-            root_section = self._build_leading_root_section(
-                document_id,
-                ordered_elements,
-                headers,
-                default_title,
+            root_section = self.section_root_factory.build_leading_root(
+                document_id=document_id,
+                elements=ordered_elements,
+                headers=headers,
+                title=default_title,
             )
             stage.output_counts["created_root_section"] = int(root_section is not None)
         if root_section is not None:
@@ -214,8 +198,24 @@ class SectionBuilder:
             header_numberings=hierarchy_resolution.header_numberings,
             header_parent_headers=hierarchy_resolution.explicit_parent_headers,
             header_section_ids=header_section_ids,
+            heading_candidate_assessments={
+                header_id: assessment.to_dict()
+                for header_id, assessment in (
+                    hierarchy_resolution.heading_assessments.items()
+                )
+            },
             toc_outline=hierarchy_resolution.toc_outline,
         )
+
+    @staticmethod
+    def _mark_structural_headers(
+        headers: list[ParsedCanonicalElement],
+        structural_header_ids: set[str],
+    ) -> None:
+        for header in headers:
+            header.metadata["structural_heading"] = (
+                header.element_id in structural_header_ids
+            )
 
     def resolve_section_id(
         self,
@@ -230,52 +230,3 @@ class SectionBuilder:
         build_result: SectionBuildResult,
     ) -> list[str]:
         return list(build_result.element_section_paths.get(element.element_id, []))
-
-    def _build_leading_root_section(
-        self,
-        document_id: str,
-        ordered_elements: list[ParsedCanonicalElement],
-        headers: list[ParsedCanonicalElement],
-        default_title: str,
-    ) -> DocumentSection | None:
-        first_header_order = headers[0].order_index
-        leading_elements = [
-            element
-            for element in ordered_elements
-            if element.order_index < first_header_order
-        ]
-        if not leading_elements:
-            return None
-
-        return DocumentSection(
-            section_id=self.id_generator.new_id(IdPrefix.SECTION),
-            document_id=document_id,
-            title=default_title,
-            level=1,
-            section_path=[default_title],
-            raw_section_path=[default_title],
-            source=self._source_from_element(leading_elements[0]),
-            sequence_number=1,
-            reading_order_start=leading_elements[0].order_index,
-            reading_order_end=leading_elements[-1].order_index,
-        )
-
-    @staticmethod
-    def _source_from_element(element: ParsedCanonicalElement | None) -> SourceLocation:
-        if element is None:
-            return SourceLocation()
-
-        bbox = None
-        if element.bbox is not None:
-            bbox = BoundingBox(
-                x1=element.bbox.x1,
-                y1=element.bbox.y1,
-                x2=element.bbox.x2,
-                y2=element.bbox.y2,
-            )
-
-        return SourceLocation(
-            page_start=element.page_start,
-            page_end=element.page_end,
-            bbox=bbox,
-        )

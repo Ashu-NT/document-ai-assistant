@@ -47,11 +47,15 @@ def test_document_graph_builder_persists_outline_and_artifact_metadata() -> None
 
     metadata = graph.document.metadata
     assert metadata["parser"] == {"name": "docling", "version": "1.2.3"}
-    assert metadata["artifact_versions"]["section_path_schema"] == "3"
+    assert metadata["artifact_versions"]["section_path_schema"] == "4"
     assert metadata["artifact_versions"]["table_structure_schema"] == "3"
     assert metadata["outline"]["header_numberings"] == {
         "hdr_1": "7",
         "hdr_2": "7.1",
     }
+    assert metadata["outline"]["heading_role_counts"] == {
+        "outline_section": 2
+    }
+    assert metadata["outline"]["non_outline_heading_assessments"] == {}
     assert metadata["table_understanding"]["logical_table_family_count"] == 0
     assert metadata["table_understanding"]["table_shape_counts"] == {}

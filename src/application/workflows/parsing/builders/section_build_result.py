@@ -15,4 +15,7 @@ class SectionBuildResult:
     header_numberings: dict[str, str] = field(default_factory=dict)
     header_parent_headers: dict[str, str] = field(default_factory=dict)
     header_section_ids: dict[str, str] = field(default_factory=dict)
+    heading_candidate_assessments: dict[str, dict[str, object]] = field(
+        default_factory=dict
+    )
     toc_outline: TocOutline | None = None

@@ -8,7 +8,7 @@ from src.domain.document import DocumentGraph
 
 
 class DocumentPersistentMetadataBuilder:
-    SECTION_PATH_SCHEMA_VERSION = "3"
+    SECTION_PATH_SCHEMA_VERSION = "4"
     TABLE_STRUCTURE_SCHEMA_VERSION = "3"
     TABLE_SEMANTIC_SCHEMA_VERSION = "1"
     OCR_PROVENANCE_SCHEMA_VERSION = "1"
@@ -49,6 +49,21 @@ class DocumentPersistentMetadataBuilder:
             },
             "outline": {
                 "header_numberings": dict(section_build_result.header_numberings),
+                "heading_role_counts": dict(
+                    Counter(
+                        str(assessment.get("role") or "unknown")
+                        for assessment in (
+                            section_build_result.heading_candidate_assessments.values()
+                        )
+                    )
+                ),
+                "non_outline_heading_assessments": {
+                    header_id: assessment
+                    for header_id, assessment in (
+                        section_build_result.heading_candidate_assessments.items()
+                    )
+                    if assessment.get("role") != "outline_section"
+                },
                 "toc_outline": (
                     section_build_result.toc_outline.to_dict()
                     if section_build_result.toc_outline is not None

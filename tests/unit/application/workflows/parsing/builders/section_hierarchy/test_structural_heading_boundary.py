@@ -44,6 +44,18 @@ def _text(element_id: str, text: str, order_index: int) -> ParsedCanonicalElemen
     )
 
 
+def _table(element_id: str, text: str, order_index: int) -> ParsedCanonicalElement:
+    return ParsedCanonicalElement(
+        element_id=element_id,
+        document_id="doc_001",
+        element_type=ElementType.TABLE,
+        text=text,
+        order_index=order_index,
+        page_start=1,
+        page_end=1,
+    )
+
+
 def test_active_numbered_scope_owns_local_subheads_until_next_peer() -> None:
     headers = [
         _header("h2", "2 Safety", 1),
@@ -131,20 +143,28 @@ def test_repeated_procedure_role_headers_remain_local_evidence() -> None:
 
 
 def test_embedded_numbered_headings_do_not_reset_active_document_scope() -> None:
-    headers = [
+    elements = [
         _header("h4", "4 Technical Data", 1),
         _header("h42", "4.2 Product data", 2),
         _header("record_1", "1. Power-related data", 3),
-        _header("record_11", "11. Fuel system", 4),
-        _header("h5", "5 Functional Description", 5),
+        _table("table_1", "Parameter | Value", 4),
+        _header("record_11", "11. Fuel system", 5),
+        _table("table_11", "Parameter | Value", 6),
+        _header("h5", "5 Functional Description", 7),
     ]
 
-    resolution = SectionHierarchyResolver().resolve(headers)
+    result = SectionBuilder(IdGenerator()).build("doc_001", elements)
 
-    assert resolution.explicit_parent_headers["h42"] == "h4"
-    assert resolution.explicit_parent_headers["record_1"] == "h42"
-    assert resolution.explicit_parent_headers["record_11"] == "h42"
-    assert "h5" not in resolution.explicit_parent_headers
+    assert [section.title for section in result.sections] == [
+        "4 Technical Data",
+        "4.2 Product data",
+        "5 Functional Description",
+    ]
+    expected_path = ["4 Technical Data", "4.2 Product data"]
+    assert result.element_section_paths["record_1"] == expected_path
+    assert result.element_section_paths["table_11"] == expected_path
+    assert elements[2].metadata["heading_candidate_role"] == "table_category"
+    assert elements[4].metadata["heading_candidate_role"] == "table_category"
 
 
 def test_same_page_child_before_parent_is_recovered_without_reordering_content() -> None:
@@ -182,16 +202,24 @@ def test_forward_parent_on_another_page_is_not_accepted() -> None:
 
 
 def test_numbered_alarm_records_remain_inside_active_catalog_scope() -> None:
-    headers = [
+    elements = [
         _header("h7", "7 Operating Instructions", 1),
         _header("h72", "7.2 Troubleshooting", 2),
         _header("alarm_641", "641 - System reset by watchdog", 3),
-        _header("alarm_625", "625 - Fuel pressure alarm", 4),
-        _header("h8", "8 Component Exchange", 5),
+        _text("alarm_641_body", "Check the event log.", 4),
+        _header("alarm_625", "625 - Fuel pressure alarm", 5),
+        _text("alarm_625_body", "Inspect the pressure sensor.", 6),
+        _header("h8", "8 Component Exchange", 7),
     ]
 
-    resolution = SectionHierarchyResolver().resolve(headers)
+    result = SectionBuilder(IdGenerator()).build("doc_001", elements)
 
-    assert resolution.explicit_parent_headers["alarm_641"] == "h72"
-    assert resolution.explicit_parent_headers["alarm_625"] == "h72"
-    assert "h8" not in resolution.explicit_parent_headers
+    assert [section.title for section in result.sections] == [
+        "7 Operating Instructions",
+        "7.2 Troubleshooting",
+        "8 Component Exchange",
+    ]
+    expected_path = ["7 Operating Instructions", "7.2 Troubleshooting"]
+    assert result.element_section_paths["alarm_641"] == expected_path
+    assert result.element_section_paths["alarm_625_body"] == expected_path
+    assert elements[2].metadata["heading_candidate_role"] == "local_label"
