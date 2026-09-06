@@ -76,13 +76,9 @@ def test_section_chunk_builder_emits_report_connection_procedure_chunk() -> None
     procedure_payload = next(
         payload
         for payload in payloads
-        if payload.section_path
-        == [
-            "Brief Operating Instructions",
-            "6 Electrical connection",
-            "6.2 Connecting the device",
-        ]
+        if payload.chunk_type == ChunkType.OPERATION_INSTRUCTION
     )
 
+    assert procedure_payload.section_path == section.section_path
     assert procedure_payload.chunk_type == ChunkType.OPERATION_INSTRUCTION
     assert "switch off supply voltage" in procedure_payload.content.lower()

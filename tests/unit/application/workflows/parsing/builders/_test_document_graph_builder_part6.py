@@ -158,7 +158,7 @@ def test_document_graph_builder_merges_same_topic_sibling_sections_under_parent(
 
     assert len(graph.chunks) == 2
     assert overview_chunk.section_path == ["Lab preparation"]
-    assert "Subsections:" in overview_chunk.content
+    assert "Direct subsections (2):" in overview_chunk.content
     assert detail_chunk.section_path == ["Lab preparation"]
     assert "Prep task 1: Interrupt handler and bit manipulation" in detail_chunk.content
 
@@ -283,10 +283,20 @@ def test_document_graph_builder_creates_structured_drawing_chunks() -> None:
         raw_parsed_document=raw_parsed_document,
     )
 
-    title_block_chunk = find_chunk_by_path(graph, ["Title block"])
-    lamp_labels_chunk = find_chunk_by_path(graph, ["Lamp labels"])
-    colreg_chunk = find_chunk_by_path(graph, ["COLREG table"])
+    title_block_chunk = next(
+        chunk for chunk in graph.chunks.values() if "13759/3540-01.00" in chunk.content
+    )
+    lamp_labels_chunk = next(
+        chunk for chunk in graph.chunks.values() if "13 - SIDE LAMP SB - GREEN" in chunk.content
+    )
+    colreg_chunk = next(
+        chunk for chunk in graph.chunks.values() if "Actual 62.23 m" in chunk.content
+    )
 
+    assert all(
+        chunk.section_path == graph.sections[chunk.section_id].section_path
+        for chunk in (title_block_chunk, lamp_labels_chunk, colreg_chunk)
+    )
     assert "13759/3540-01.00" in title_block_chunk.content
     assert "13 - SIDE LAMP SB - GREEN" in lamp_labels_chunk.content
     assert "Actual 62.23 m" in colreg_chunk.content

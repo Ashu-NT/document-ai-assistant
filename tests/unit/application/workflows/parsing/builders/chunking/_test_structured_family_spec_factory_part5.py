@@ -107,13 +107,14 @@ def test_fragment_builder_emits_report_mounting_chunk() -> None:
         (
             fragment
             for fragment in fragments
-            if fragment.section_path
-            == ["Brief Operating Instructions", "5 Mounting"]
+            if fragment.chunk_type == ChunkType.INSTALLATION_INSTRUCTION
+            and "25 Nm" in fragment.text
         ),
         None,
     )
 
     assert mounting is not None
+    assert mounting.section_path == section.section_path
     assert mounting.chunk_type == ChunkType.INSTALLATION_INSTRUCTION
     assert "25 Nm" in mounting.text
 
@@ -151,13 +152,14 @@ def test_fragment_builder_emits_report_operation_options_chunk() -> None:
         (
             fragment
             for fragment in fragments
-            if fragment.section_path
-            == ["Brief Operating Instructions", "7 Operation options"]
+            if fragment.chunk_type == ChunkType.OPERATION_INSTRUCTION
+            and "12 seconds" in fragment.text
         ),
         None,
     )
 
     assert op_options is not None
+    assert op_options.section_path == section.section_path
     assert op_options.chunk_type == ChunkType.OPERATION_INSTRUCTION
     assert "12 seconds" in op_options.text
 
@@ -240,7 +242,8 @@ def test_fragment_builder_applies_datasheet_specs_to_manual_classified_datasheet
         (
             fragment
             for fragment in fragments
-            if fragment.section_path == ["Ordering example"]
+            if fragment.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+            and "MK311007" in fragment.text
         ),
         None,
     )
@@ -249,5 +252,6 @@ def test_fragment_builder_applies_datasheet_specs_to_manual_classified_datasheet
         "Datasheet structured specs must activate for MANUAL-classified documents "
         "whose content contains 'ordering example'"
     )
+    assert ordering_example.section_path == section.section_path
     assert ordering_example.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
     assert "MK311007" in ordering_example.text

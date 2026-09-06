@@ -113,13 +113,7 @@ def test_fragment_builder_keeps_manual_maintenance_family_when_sensor_list_exist
     )
 
     assert any(
-        fragment.section_path
-        == [
-            "7 Components",
-            "7.1 Macerators",
-            "Maintenance 7.1.11",
-            "Maintenance Intervals",
-        ]
+        fragment.section_path == section.section_path
         and fragment.chunk_type == ChunkType.MAINTENANCE_INTERVAL
         for fragment in fragments
     )
@@ -161,9 +155,10 @@ def test_fragment_builder_detects_maintenance_intervals_without_specific_hour_va
     maintenance_interval = next(
         fragment
         for fragment in fragments
-        if fragment.section_path == ["Maintenance", "Maintenance Intervals"]
+        if fragment.chunk_type == ChunkType.MAINTENANCE_INTERVAL
     )
 
+    assert maintenance_interval.section_path == section.section_path
     assert maintenance_interval.chunk_type == ChunkType.MAINTENANCE_INTERVAL
     assert "monthly" in maintenance_interval.text.lower()
 
@@ -200,9 +195,10 @@ def test_fragment_builder_detects_troubleshooting_without_equipment_names() -> N
     troubleshooting = next(
         fragment
         for fragment in fragments
-        if fragment.section_path == ["Maintenance", "Troubleshooting"]
+        if fragment.chunk_type == ChunkType.TROUBLESHOOTING
     )
 
+    assert troubleshooting.section_path == section.section_path
     assert troubleshooting.chunk_type == ChunkType.TROUBLESHOOTING
     assert "Corrective action" in troubleshooting.text
 

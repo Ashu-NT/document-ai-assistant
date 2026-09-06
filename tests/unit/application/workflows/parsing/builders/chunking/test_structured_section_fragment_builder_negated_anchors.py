@@ -74,7 +74,7 @@ def test_matches_markers_rejects_a_negated_availability_mention() -> None:
         ),
     )
 
-    assert builder._matches_markers(
+    assert builder.marker_match_policy.matches(
         text,
         markers,
     ) is False
@@ -95,7 +95,7 @@ def test_matches_markers_still_accepts_a_genuine_mention() -> None:
         ),
     )
 
-    assert builder._matches_markers(
+    assert builder.marker_match_policy.matches(
         text,
         markers,
     ) is True

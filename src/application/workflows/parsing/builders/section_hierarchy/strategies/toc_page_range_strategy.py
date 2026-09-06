@@ -17,6 +17,9 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_candid
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry_parser import (
     TocEntryParser,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry_assembler import (
+    TocEntryAssembler,
+)
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_header_matcher import (
     TocHeaderMatcher,
 )
@@ -35,12 +38,14 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
         "sommaire",
         "toc",
     }
-    _TOC_SCAN_PAGE_LIMIT = 8
+    _TOC_ANCHOR_SCAN_PAGE_LIMIT = 20
+    _TOC_MAX_SPAN_PAGES = 24
 
     def __init__(self) -> None:
         self._candidate_collector = TocCandidateCollector(
-            max_scan_page=self._TOC_SCAN_PAGE_LIMIT
+            max_span_pages=self._TOC_MAX_SPAN_PAGES
         )
+        self._entry_assembler = TocEntryAssembler()
 
     def can_apply(
         self,
@@ -62,6 +67,14 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
 
         sorted_headers = sorted(headers, key=lambda header: header.order_index)
         outline = self.build_outline(sorted_headers, elements)
+        return self.assign_levels_from_outline(sorted_headers, outline)
+
+    def assign_levels_from_outline(
+        self,
+        headers: list[ParsedCanonicalElement],
+        outline: TocOutline,
+    ) -> dict[str, int]:
+        sorted_headers = sorted(headers, key=lambda header: header.order_index)
         if not outline.entries:
             return {}
 
@@ -127,19 +140,19 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
             anchor_order=anchor_order,
         )
 
-        entries: list[TocEntry] = []
-        for element in candidate_elements:
-            entries.extend(TocEntryParser.extract_entries_from_element(element))
+        entries = self._entry_assembler.assemble(candidate_elements)
 
         if not entries:
             return TocOutline(toc_header_id=toc_header_id, entries=entries)
 
         matched_entries: dict[str, TocEntry] = {}
         header_numberings: dict[str, str] = {}
+        unmatched_entries: list[TocEntry] = []
         matched_header_ids: set[str] = set()
         for entry in entries:
             header = TocHeaderMatcher.match_entry_to_header(entry, headers, matched_header_ids)
             if header is None:
+                unmatched_entries.append(entry)
                 continue
 
             matched_header_ids.add(header.element_id)
@@ -152,6 +165,7 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
             entries=entries,
             matched_entries=matched_entries,
             header_numberings=header_numberings,
+            unmatched_entries=unmatched_entries,
         )
 
     def _find_toc_anchor(
@@ -164,7 +178,7 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
                 continue
 
             page_no = header.page_start or header.page_end
-            if page_no is None or page_no > self._TOC_SCAN_PAGE_LIMIT:
+            if page_no is None or page_no > self._TOC_ANCHOR_SCAN_PAGE_LIMIT:
                 continue
 
             return page_no, header.element_id, header.order_index
@@ -182,7 +196,7 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
             if page_no is None:
                 continue
 
-            if page_no > self._TOC_SCAN_PAGE_LIMIT:
+            if page_no > self._TOC_ANCHOR_SCAN_PAGE_LIMIT:
                 continue
 
             early_tables.append(element)

@@ -154,15 +154,10 @@ def test_section_chunk_builder_emits_manual_maintenance_interval_chunk() -> None
     interval_payload = next(
         payload
         for payload in payloads
-        if payload.section_path
-        == [
-            "7 Components",
-            "7.1 Macerators",
-            "Maintenance",
-            "Maintenance Intervals",
-        ]
+        if payload.chunk_type == ChunkType.MAINTENANCE_INTERVAL
     )
 
+    assert interval_payload.section_path == section.section_path
     assert interval_payload.chunk_type == ChunkType.MAINTENANCE_INTERVAL
     assert "9000 operating hours" in interval_payload.content
 
@@ -261,5 +256,4 @@ def test_section_chunk_builder_resets_stale_manual_maintenance_branch_path() -> 
         "7 Components",
         "7.1 Macerators",
         "Maintenance 7.1.11",
-        "Maintenance Intervals",
     ]

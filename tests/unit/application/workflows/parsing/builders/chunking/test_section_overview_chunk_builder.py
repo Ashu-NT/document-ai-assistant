@@ -85,6 +85,33 @@ def test_build_overview_chunk_token_count_matches_when_truncated() -> None:
     )
     assert overview_token_count == text_splitter.count_tokens(overview_text)
     assert overview_token_count <= builder.max_overview_tokens
+    assert "Direct subsections (10):" in overview_text
+    assert "omitted due to token limit" in overview_text
+
+
+def test_build_overview_reports_complete_direct_child_count() -> None:
+    builder = SectionOverviewChunkBuilder(
+        text_splitter=ChunkTextSplitter(max_chunk_tokens=400),
+        payload_factory=ChunkPayloadFactory(),
+    )
+    parent = _make_section("sec_parent", title="Safety")
+    children = [
+        _make_section(
+            f"sec_child_{index}",
+            title=f"Safety topic {index}",
+            parent_section_id=parent.section_id,
+        )
+        for index in range(12)
+    ]
+
+    overview_text, _ = builder._build_overview_text(
+        section=parent,
+        child_sections=children,
+        elements=[],
+    )
+
+    assert "Direct subsections (12):" in overview_text
+    assert "Safety topic 11" in overview_text
 
 
 def test_build_returns_no_payload_when_no_child_sections() -> None:

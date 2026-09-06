@@ -149,3 +149,149 @@ def test_toc_strategy_merges_split_toc_tables_across_adjacent_pages() -> None:
     assert levels["hdr_overview"] == 2
     assert levels["hdr_operation"] == 1
     assert levels["hdr_startup"] == 2
+
+
+def test_toc_strategy_collects_a_relative_six_page_toc_starting_on_page_five() -> None:
+    elements = [
+        make_element("hdr_toc", ElementType.SECTION_HEADER, "Table of Contents", 5, 1),
+    ]
+    for index, page in enumerate(range(5, 11), start=1):
+        elements.append(
+            make_element(
+                f"toc_{index}",
+                ElementType.TABLE,
+                "",
+                page,
+                index + 1,
+                metadata={
+                    "item_label": "document_index",
+                    "table_rows": [[str(index), f"Chapter {index}", str(page + 10)]],
+                },
+            )
+        )
+    elements.extend(
+        make_element(
+            f"body_{index}",
+            ElementType.SECTION_HEADER,
+            f"{index} Chapter {index}",
+            page + 10,
+            index + 20,
+        )
+        for index, page in enumerate(range(5, 11), start=1)
+    )
+    headers = [
+        element
+        for element in elements
+        if element.element_type == ElementType.SECTION_HEADER
+    ]
+
+    outline = TocPageRangeStrategy().build_outline(headers, elements)
+
+    assert len(outline.entries) == 6
+    assert {entry.numbering for entry in outline.entries} == {
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+    }
+
+
+def test_toc_strategy_assembles_wrapped_prefix_reported_after_table() -> None:
+    elements = [
+        make_element("hdr_toc", ElementType.SECTION_HEADER, "Contents", 5, 1),
+        make_element(
+            "toc_table",
+            ElementType.TABLE,
+            "",
+            5,
+            2,
+            metadata={
+                "item_label": "document_index",
+                "table_rows": [["Marine applications", "13"]],
+            },
+        ),
+        make_element(
+            "toc_prefix",
+            ElementType.TEXT,
+            "2.2 Intended use of engines and systems in",
+            5,
+            3,
+        ),
+        make_element(
+            "body",
+            ElementType.SECTION_HEADER,
+            "2.2 Intended use of engines and systems in Marine applications",
+            13,
+            4,
+        ),
+    ]
+    headers = [elements[0], elements[-1]]
+
+    outline = TocPageRangeStrategy().build_outline(headers, elements)
+
+    assert outline.entries[0].numbering == "2.2"
+    assert outline.entries[0].title == (
+        "Intended use of engines and systems in Marine applications"
+    )
+    assert outline.matched_entries["body"] == outline.entries[0]
+
+
+def test_toc_strategy_keeps_parallel_column_streams_independent() -> None:
+    elements = [
+        make_element("hdr_toc", ElementType.SECTION_HEADER, "Contents", 2, 1),
+        make_element(
+            "toc_table",
+            ElementType.TABLE,
+            "",
+            2,
+            2,
+            metadata={
+                "item_label": "document_index",
+                "table_parallel_stream_rows": [
+                    [["1", "Introduction", "3"], ["1.1", "Scope", "4"]],
+                    [["6", "Maintenance", "67"], ["7", "Operation", "69"]],
+                ],
+            },
+        ),
+    ]
+
+    outline = TocPageRangeStrategy().build_outline([elements[0]], elements)
+
+    assert [(entry.numbering, entry.title) for entry in outline.entries] == [
+        ("1", "Introduction"),
+        ("1.1", "Scope"),
+        ("6", "Maintenance"),
+        ("7", "Operation"),
+    ]
+
+
+def test_toc_strategy_matches_repeated_titles_by_expected_page() -> None:
+    elements = [
+        make_element("hdr_toc", ElementType.SECTION_HEADER, "Contents", 2, 1),
+        make_element("toc", ElementType.TEXT, "Operation .... 70", 2, 2),
+        make_element("early", ElementType.SECTION_HEADER, "Operation", 20, 3),
+        make_element("expected", ElementType.SECTION_HEADER, "Operation", 70, 4),
+    ]
+    headers = [elements[0], elements[2], elements[3]]
+
+    outline = TocPageRangeStrategy().build_outline(headers, elements)
+
+    assert "expected" in outline.matched_entries
+    assert "early" not in outline.matched_entries
+
+
+def test_toc_strategy_leaves_materially_ambiguous_titles_unmatched() -> None:
+    elements = [
+        make_element("hdr_toc", ElementType.SECTION_HEADER, "Contents", 2, 1),
+        make_element("toc", ElementType.TEXT, "Overview .... 8", 2, 2),
+        make_element("first", ElementType.SECTION_HEADER, "Overview", 8, 3),
+        make_element("second", ElementType.SECTION_HEADER, "Overview", 8, 4),
+    ]
+    headers = [elements[0], elements[2], elements[3]]
+
+    outline = TocPageRangeStrategy().build_outline(headers, elements)
+
+    assert outline.matched_entries == {}
+    assert [entry.title for entry in outline.unmatched_entries] == ["Overview"]

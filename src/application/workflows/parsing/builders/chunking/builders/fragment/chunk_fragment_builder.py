@@ -334,8 +334,10 @@ class ChunkFragmentBuilder:
 
     @staticmethod
     def _element_contributes_to_chunk(element: CanonicalElement) -> bool:
+        parser_extra = resolve_parser_extra(element)
+        if element.element_type == ElementType.SECTION_HEADER:
+            return parser_extra.get("structural_heading") is False
         if element.element_type in {
-            ElementType.SECTION_HEADER,
             ElementType.PICTURE,
             ElementType.TITLE,
             ElementType.CAPTION,

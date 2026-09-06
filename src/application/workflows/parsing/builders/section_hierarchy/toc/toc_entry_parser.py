@@ -18,6 +18,15 @@ class TocEntryParser:
 
     @staticmethod
     def extract_entries_from_element(element: ParsedCanonicalElement) -> list[TocEntry]:
+        parallel_streams = element.metadata.get("table_parallel_stream_rows")
+        if isinstance(parallel_streams, list):
+            entries: list[TocEntry] = []
+            for stream_rows in parallel_streams:
+                if isinstance(stream_rows, list):
+                    entries.extend(TocEntryParser.parse_toc_rows(stream_rows))
+            if entries:
+                return entries
+
         rows = element.metadata.get("table_rows")
         if isinstance(rows, list):
             entries = TocEntryParser.parse_toc_rows(rows)

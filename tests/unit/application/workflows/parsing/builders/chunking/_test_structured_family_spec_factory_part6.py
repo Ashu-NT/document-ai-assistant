@@ -109,7 +109,8 @@ def test_fragment_builder_applies_report_specs_to_manual_classified_report_docum
         (
             fragment
             for fragment in fragments
-            if fragment.section_path == ["Final Inspection Report", "Device information"]
+            if fragment.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+            and "PT-2024-00312" in fragment.text
         ),
         None,
     )
@@ -118,6 +119,7 @@ def test_fragment_builder_applies_report_specs_to_manual_classified_report_docum
         "Report structured specs must activate for MANUAL-classified documents "
         "whose title contains 'final inspection report'"
     )
+    assert device_info.section_path == section.section_path
     assert device_info.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
     assert "PT-2024-00312" in device_info.text
 
@@ -162,7 +164,8 @@ def test_fragment_builder_applies_report_specs_via_document_sections_signal() ->
         (
             f
             for f in fragments
-            if f.section_path == ["Final Inspection Report", "Device information"]
+            if f.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+            and "PT-2024-00312" in f.text
         ),
         None,
     )
@@ -171,6 +174,7 @@ def test_fragment_builder_applies_report_specs_via_document_sections_signal() ->
         "Report specs must activate via document_sections_combined_text even when "
         "document_title ('Pressure transmitter') contains no report marker"
     )
+    assert device_info.section_path == section.section_path
     assert device_info.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
     assert "PT-2024-00312" in device_info.text
 
@@ -211,7 +215,12 @@ def test_fragment_builder_applies_datasheet_specs_via_document_sections_signal()
     )
 
     ordering_example = next(
-        (f for f in fragments if f.section_path == ["Ordering example"]),
+        (
+            f
+            for f in fragments
+            if f.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+            and "MK311007" in f.text
+        ),
         None,
     )
 
@@ -219,6 +228,7 @@ def test_fragment_builder_applies_datasheet_specs_via_document_sections_signal()
         "Datasheet specs must activate via document_sections_combined_text even when "
         "document_title ('DN25 DN80 MK311xxx') contains no datasheet marker"
     )
+    assert ordering_example.section_path == section.section_path
     assert ordering_example.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
     assert "MK311007" in ordering_example.text
 

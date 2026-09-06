@@ -163,8 +163,13 @@ def test_document_graph_builder_creates_combined_anchor_and_towing_lamp_chunk() 
         raw_parsed_document=raw_parsed_document,
     )
 
-    lamp_labels_chunk = find_chunk_by_path(graph, ["Lamp labels"])
+    lamp_labels_chunk = next(
+        chunk for chunk in graph.chunks.values() if "15 - COMBINED" in chunk.content
+    )
 
+    assert lamp_labels_chunk.section_path == graph.sections[
+        lamp_labels_chunk.section_id
+    ].section_path
     assert "15 - COMBINED" in lamp_labels_chunk.content
     assert "3540.6000" in lamp_labels_chunk.content
     assert "16 - COMBINED" in lamp_labels_chunk.content

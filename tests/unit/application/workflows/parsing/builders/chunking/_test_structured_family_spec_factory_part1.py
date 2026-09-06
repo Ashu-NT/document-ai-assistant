@@ -118,9 +118,10 @@ def test_fragment_builder_detects_drawing_title_block_without_benchmark_identifi
     title_block = next(
         fragment
         for fragment in fragments
-        if fragment.section_path == ["Title block"]
+        if "A-100" in fragment.text
     )
 
+    assert title_block.section_path == section.section_path
     assert "A-100" in title_block.text
 
 def test_fragment_builder_detects_certificate_particulars_from_generic_markers() -> None:
@@ -156,9 +157,11 @@ def test_fragment_builder_detects_certificate_particulars_from_generic_markers()
     particulars = next(
         fragment
         for fragment in fragments
-        if fragment.section_path == ["Certificate", "Particulars"]
+        if fragment.chunk_type == ChunkType.CERTIFICATION_INFO
+        and "Nominal size DN50" in fragment.text
     )
 
+    assert particulars.section_path == section.section_path
     assert particulars.chunk_type == ChunkType.CERTIFICATION_INFO
     assert "Nominal size DN50" in particulars.text
 
@@ -272,8 +275,10 @@ def test_fragment_builder_detects_datasheet_ordering_example_without_benchmark_c
     ordering = next(
         fragment
         for fragment in fragments
-        if fragment.section_path == ["Ordering example"]
+        if fragment.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+        and "Order code" in fragment.text
     )
 
+    assert ordering.section_path == section.section_path
     assert ordering.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
     assert "Order code" in ordering.text

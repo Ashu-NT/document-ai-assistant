@@ -3,6 +3,9 @@ import re
 from src.application.workflows.parsing.builders.section_hierarchy.corpus_heuristics_config import (
     branding_headers as load_branding_headers,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.local_semantic_header_detector import (
+    LocalSemanticHeaderDetector,
+)
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 
 _SENTENCE_START_MARKERS = {
@@ -29,16 +32,30 @@ _TASK_HEADER_RE = re.compile(
 
 
 class SectionHeaderFilter:
-    def __init__(self, *, branding_headers: frozenset[str] | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        branding_headers: frozenset[str] | None = None,
+        local_semantic_detector: LocalSemanticHeaderDetector | None = None,
+    ) -> None:
         self.branding_headers = (
             branding_headers if branding_headers is not None else load_branding_headers()
+        )
+        self.local_semantic_detector = (
+            local_semantic_detector or LocalSemanticHeaderDetector()
         )
 
     def filter(
         self,
         headers: list[ParsedCanonicalElement],
     ) -> list[ParsedCanonicalElement]:
-        return [header for header in headers if self._is_viable_header(header)]
+        local_header_ids = self.local_semantic_detector.detect(headers)
+        return [
+            header
+            for header in headers
+            if header.element_id not in local_header_ids
+            and self._is_viable_header(header)
+        ]
 
     def _is_viable_header(
         self,

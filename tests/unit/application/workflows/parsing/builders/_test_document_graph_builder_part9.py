@@ -159,15 +159,13 @@ def test_document_graph_builder_creates_approval_matrix_chunk() -> None:
         raw_parsed_document=raw_parsed_document,
     )
 
-    approval_chunk = find_chunk_by_path(
-        graph,
-        [
-            "Safety Instructions",
-            "Extended order code: Cerabar M",
-            "Basic specifications",
-        ],
+    approval_chunk = next(
+        chunk for chunk in graph.chunks.values() if "PMC51 PMP5x BG" in chunk.content
     )
 
+    assert approval_chunk.section_path == graph.sections[
+        approval_chunk.section_id
+    ].section_path
     assert "PMC51 PMP5x BG" in approval_chunk.content
     assert "ATEX II 3 G Ex ic IIC T6...T4 Gc" in approval_chunk.content
     assert "IECEx Ex ic IIC T6...T4 Gc" in approval_chunk.content

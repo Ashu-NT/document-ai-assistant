@@ -26,6 +26,7 @@ class TocOutline:
     entries: list[TocEntry] = field(default_factory=list)
     matched_entries: dict[str, TocEntry] = field(default_factory=dict)
     header_numberings: dict[str, str] = field(default_factory=dict)
+    unmatched_entries: list[TocEntry] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -36,6 +37,9 @@ class TocOutline:
                 for header_id, entry in self.matched_entries.items()
             },
             "header_numberings": dict(self.header_numberings),
+            "unmatched_entries": [
+                entry.to_dict() for entry in self.unmatched_entries
+            ],
         }
 
 

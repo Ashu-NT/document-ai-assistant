@@ -66,21 +66,24 @@ class SectionBuilder:
             name="section_builder.collect_headers",
             input_counts={"canonical_elements": len(canonical_elements)},
         ) as stage:
-            headers = self.header_filter.filter(
-                sorted(
-                    [
-                        element
-                        for element in canonical_elements
-                        if element.element_type == ElementType.SECTION_HEADER
-                    ],
-                    key=lambda element: element.order_index,
-                )
+            raw_headers = sorted(
+                [
+                    element
+                    for element in canonical_elements
+                    if element.element_type == ElementType.SECTION_HEADER
+                ],
+                key=lambda element: element.order_index,
             )
+            headers = self.header_filter.filter(raw_headers)
             stage.output_counts["headers"] = len(headers)
         filtered_header_ids = {
             header.element_id
             for header in headers
         }
+        for header in raw_headers:
+            header.metadata["structural_heading"] = (
+                header.element_id in filtered_header_ids
+            )
 
         if not headers:
             root_path = [default_title]

@@ -1,5 +1,3 @@
-import re
-
 from src.application.workflows.parsing.builders.chunking.builders.structured import (
     StructuredFamilySpecFactory,
     StructuredSectionWindowSpec,
@@ -19,35 +17,15 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     StructuredMarkerMatcher,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.markers.models import EvidenceMarker
+from src.application.workflows.parsing.builders.chunking.builders.structured.markers.structured_marker_match_policy import (
+    StructuredMarkerMatchPolicy,
+)
 from src.domain.common import ChunkType, DocumentType, ElementType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 from src.application.workflows.parsing.builders.chunking.builders.fragment.table_chunk_eligibility_policy import (
     TableChunkEligibilityPolicy,
 )
-
-# A marker match preceded by one of these cues describes the ABSENCE of the
-# matched thing (e.g. "cannot be obtained as spare parts"), not a genuine
-# instance of it -- real document: a "Spare Parts" family anchor matched
-# "spare parts" inside "components cannot be obtained as spare parts because
-# the vessels are only ever tested and documented as a unit", which then
-# swept an entire unrelated safety/replacement-interval passage into a
-# hard-locked SPARE_PARTS_TABLE chunk (chunk_type=SPARE_PARTS_TABLE is one of
-# the few types ChunkTypeResolver can never override). Not scoped to any one
-# marker family since the same negated-availability phrasing can precede any
-# anchor term.
-_NEGATED_AVAILABILITY_CUES = (
-    "cannot be obtained as",
-    "can not be obtained as",
-    "not available as",
-    "not obtainable as",
-    "no longer available as",
-    "not sold as",
-    "not supplied as",
-    "not offered as",
-)
-
 
 class StructuredSectionFragmentBuilder:
     def __init__(
@@ -56,11 +34,16 @@ class StructuredSectionFragmentBuilder:
         text_splitter: ChunkTextSplitter,
         spec_factory: StructuredFamilySpecFactory | None = None,
         marker_matcher: StructuredMarkerMatcher | None = None,
+        marker_match_policy: StructuredMarkerMatchPolicy | None = None,
         table_chunk_eligibility_policy: TableChunkEligibilityPolicy | None = None,
     ) -> None:
         self.text_splitter = text_splitter
         self.spec_factory = spec_factory or StructuredFamilySpecFactory()
         self.marker_matcher = marker_matcher or StructuredMarkerMatcher()
+        self.marker_match_policy = (
+            marker_match_policy
+            or StructuredMarkerMatchPolicy(matcher=self.marker_matcher)
+        )
         self.table_chunk_eligibility_policy = (
             table_chunk_eligibility_policy
             or TableChunkEligibilityPolicy(
@@ -129,7 +112,7 @@ class StructuredSectionFragmentBuilder:
         anchor_indexes = [
             index
             for index, element in enumerate(elements)
-            if self._matches_markers(
+            if self.marker_match_policy.matches(
                 StructuredElementTextResolver.resolve(element) or "",
                 spec.anchor_markers,
             )
@@ -190,15 +173,14 @@ class StructuredSectionFragmentBuilder:
 
         token_count = self.text_splitter.count_tokens(content)
 
-        section_path = self._enrich_section_path(spec, elements)
         first_element = elements[0]
         return ChunkFragment(
             text=content,
             chunk_type=spec.chunk_type,
             standalone=True,
             section_id=section.section_id,
-            section_title=section_path[-1] if section_path else "",
-            section_path=section_path,
+            section_title=section.title,
+            section_path=list(section.section_path),
             section_level=section.level,
             parent_section_id=section.parent_section_id,
             element_ids=[element.element_id for element in elements],
@@ -263,8 +245,7 @@ class StructuredSectionFragmentBuilder:
             ElementType.TABLE,
             ElementType.PICTURE,
         }:
-            return False
-
+        return False
         if is_furniture_or_embedded_picture(element):
             return False
 
@@ -281,89 +262,3 @@ class StructuredSectionFragmentBuilder:
             StructuredElementTextResolver.resolve(element)
         )
 
-    def _matches_markers(
-        self,
-        text: str,
-        markers: tuple[EvidenceMarker, ...],
-    ) -> bool:
-        normalized_text = self.marker_matcher.normalize(text)
-
-        normalized_negation_cues = tuple(
-            self.marker_matcher.normalize(cue)
-            for cue in _NEGATED_AVAILABILITY_CUES
-        )
-
-        for marker in markers:
-            for match in self.marker_matcher.iter_matches(
-                normalized_text,
-                marker,
-            ):
-                lookback_start = max(
-                    0,
-                    match.start - 80,
-                )
-
-                preceding_text = normalized_text[
-                    lookback_start : match.start
-                ]
-
-                if any(
-                    cue in preceding_text
-                    for cue in normalized_negation_cues
-                ):
-                    continue
-
-                return True
-
-        return False
-
-    def _enrich_section_path(
-        self,
-        spec: StructuredSectionWindowSpec,
-        elements: list[CanonicalElement],
-    ) -> list[str]:
-        """Append a subsection label when the anchor element is a heading-like text.
-
-        For individual (non-combined) procedural windows, the element that triggered
-        the anchor is often a sub-procedure heading such as "Removal of the Screen
-        Basket".  Appending it to the spec path gives the chunk a more specific,
-        searchable section path without hardcoding any document-specific strings.
-
-        Guards:
-        - combine_all_windows=True specs produce merged content — no single title fits.
-        - Non-procedural specs (drawing blocks, spec tables, etc.) must not be enriched
-          because their anchors are field labels, not section headings.
-        """
-        _PROCEDURAL_TYPES = {
-            ChunkType.MAINTENANCE_PROCEDURE,
-            ChunkType.OPERATION_INSTRUCTION,
-            ChunkType.INSTALLATION_INSTRUCTION,
-            ChunkType.TROUBLESHOOTING,
-        }
-        if spec.combine_all_windows:
-            return list(spec.section_path)
-        if spec.chunk_type not in _PROCEDURAL_TYPES:
-            return list(spec.section_path)
-
-        base_last = self.marker_matcher.normalize(
-            spec.section_path[-1] if spec.section_path else None
-        )
-        for element in elements:
-            raw = (StructuredElementTextResolver.resolve(element) or "").strip()
-            if not raw:
-                continue
-            normalized = self.marker_matcher.normalize(raw)
-            if not self.marker_matcher.contains_any(normalized,spec.anchor_markers):
-                continue
-            words = raw.split()
-            if not (2 <= len(words) <= 12):
-                continue
-            if not raw[0].isupper():
-                continue
-            if raw.endswith("."):
-                continue
-            if normalized == base_last:
-                break
-            return [*spec.section_path, raw]
-
-        return list(spec.section_path)

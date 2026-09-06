@@ -273,12 +273,7 @@ def test_fragment_builder_does_not_bleed_datasheet_connection_family_into_manual
         for fragment in fragments
     )
     assert any(
-        fragment.section_path
-        == [
-            "7 Components",
-            "7.1 Macerators",
-            "Maintenance 7.1.11",
-            "Maintenance Intervals",
-        ]
+        fragment.section_path == section.section_path
+        and fragment.chunk_type == ChunkType.MAINTENANCE_INTERVAL
         for fragment in fragments
     )

@@ -31,7 +31,7 @@ class SectionStackBuilder:
         stack: dict[int, DocumentSection] = {}
 
         for index, header in enumerate(sorted(headers, key=lambda element: element.order_index), start=1):
-            level = max(1, effective_levels.get(header.element_id, 1))
+            level = min(max(1, effective_levels.get(header.element_id, 1)), 6)
             explicit_parent_header_id = (
                 explicit_parent_headers.get(header.element_id)
                 if explicit_parent_headers is not None

@@ -1,6 +1,7 @@
 TestDoc/
 .pytest_tmp_local
 .tmp
+tmp/
 outputs/debug_graph_build/
 outputs/debug_parsing/
 outputs/agent_sessions/

@@ -195,7 +195,7 @@ def test_document_graph_builder_merges_short_related_subsections_into_one_chunk(
 
     assert len(graph.chunks) == 2
     assert overview_chunk.section_path == ["Procedure"]
-    assert "Subsections: Preparation; Execution" in overview_chunk.content
+    assert "Direct subsections (2): Preparation; Execution" in overview_chunk.content
     assert detail_chunk.section_path == ["Procedure"]
     assert "Wear gloves and isolate power." in detail_chunk.content
     assert "Execution" in detail_chunk.content
@@ -260,6 +260,6 @@ def test_document_graph_builder_merges_intro_with_child_task_when_under_budget()
 
     assert len(graph.chunks) == 2
     assert overview_chunk.section_path == ["A first DSP project with Code Composer Studio"]
-    assert "Subsections: Lab task 1: Feeding the ADC input directly to the DAC output" in overview_chunk.content
+    assert "Direct subsections (1): Lab task 1: Feeding the ADC input directly to the DAC output" in overview_chunk.content
     assert detail_chunk.section_path == ["A first DSP project with Code Composer Studio"]
     assert "Lab task 1: Feeding the ADC input directly to the DAC output" in detail_chunk.content

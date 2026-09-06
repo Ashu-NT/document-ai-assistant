@@ -102,20 +102,15 @@ class SectionHierarchyResolver:
             )
 
         current_is_weak = levels_are_weak(resolution.effective_levels)
-        if self.toc_page_range_strategy.can_apply(
+        toc_outline = self.toc_page_range_strategy.build_outline(
             headers,
             canonical_elements,
-            current_levels=resolution.effective_levels,
-        ):
-            toc_outline = self.toc_page_range_strategy.build_outline(
-                headers,
-                canonical_elements,
-            )
+        )
+        if toc_outline.entries:
             resolution.toc_outline = toc_outline
-            toc_levels = self.toc_page_range_strategy.assign_levels(
+            toc_levels = self.toc_page_range_strategy.assign_levels_from_outline(
                 headers,
-                canonical_elements,
-                current_levels=resolution.effective_levels,
+                toc_outline,
             )
             for header_id, level in toc_levels.items():
                 if current_is_weak or header_id not in resolution.effective_levels:

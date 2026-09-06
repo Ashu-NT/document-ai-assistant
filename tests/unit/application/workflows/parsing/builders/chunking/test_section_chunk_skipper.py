@@ -245,13 +245,13 @@ def test_section_chunk_builder_emits_structured_chunk_for_contents_polluted_sect
     approval_payload = next(
         payload
         for payload in payloads
-        if payload.section_path
-        == [
-            "Safety Instructions",
-            "Extended order code: Cerabar M",
-            "Basic specifications",
-        ]
+        if "PMC51 PMP5x BG" in payload.content
     )
 
+    assert approval_payload.section_path == [
+        "Extended order code",
+        "Basic specifications",
+        "Extended order code: Cerabar M",
+    ]
     assert "PMC51 PMP5x BG" in approval_payload.content
     assert "IECEx Ex ic IIC T6...T4 Gc" in approval_payload.content

@@ -152,8 +152,8 @@ def test_fragment_builder_keeps_certificate_identification_table_out_of_general_
     )
 
     assert any(
-        fragment.section_path
-        == ["Description / Manufacturer Designation / Serial Number table"]
+        fragment.section_path == section.section_path
+        and "Serial Number" in fragment.text
         for fragment in fragments
     )
     assert all(
@@ -248,11 +248,13 @@ def test_fragment_builder_emits_report_procedure_chunk() -> None:
         (
             fragment
             for fragment in fragments
-            if fragment.section_path == ["Final Inspection Report", "Procedure"]
+            if fragment.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+            and "P0043" in fragment.text
         ),
         None,
     )
 
     assert procedure is not None
+    assert procedure.section_path == section.section_path
     assert procedure.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
     assert "P0043" in procedure.text

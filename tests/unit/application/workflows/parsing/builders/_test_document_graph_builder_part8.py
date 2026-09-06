@@ -212,15 +212,17 @@ def test_document_graph_builder_creates_structured_report_chunks() -> None:
         raw_parsed_document=raw_parsed_document,
     )
 
-    device_chunk = find_chunk_by_path(
-        graph,
-        ["Final Inspection Report", "Device information"],
+    device_chunk = next(
+        chunk for chunk in graph.chunks.values() if "Cerabar M PMP51" in chunk.content
     )
-    additional_chunk = find_chunk_by_path(
-        graph,
-        ["Final Inspection Report", "Additional information"],
+    additional_chunk = next(
+        chunk for chunk in graph.chunks.values() if "4...20 mA HART" in chunk.content
     )
 
+    assert device_chunk.section_path == graph.sections[device_chunk.section_id].section_path
+    assert additional_chunk.section_path == graph.sections[
+        additional_chunk.section_id
+    ].section_path
     assert "Cerabar M PMP51" in device_chunk.content
     assert "9180" in device_chunk.content
     assert "4...20 mA HART" in additional_chunk.content

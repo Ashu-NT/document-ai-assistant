@@ -7,6 +7,9 @@ from src.application.workflows.parsing.builders.chunking.models.chunk_payload im
 from src.application.workflows.parsing.builders.chunking.builders.chunk_payload_factory import (
     ChunkPayloadFactory,
 )
+from src.application.workflows.parsing.builders.chunking.builders.overview_subsection_summary_builder import (
+    OverviewSubsectionSummaryBuilder,
+)
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
@@ -29,6 +32,9 @@ class SectionOverviewChunkBuilder:
     ) -> None:
         self.text_splitter = text_splitter
         self.payload_factory = payload_factory
+        self.subsection_summary_builder = OverviewSubsectionSummaryBuilder(
+            count_tokens=self.text_splitter.count_tokens,
+        )
         self.max_overview_tokens = max(
             60,
             min(
@@ -114,14 +120,27 @@ class SectionOverviewChunkBuilder:
         if not child_titles:
             return None
 
-        intro_text = self._direct_section_text(elements)
         parts = [f"Section overview: {section.title}"]
+        summary_budget = max(
+            0,
+            self.max_overview_tokens
+            - self.text_splitter.count_tokens(parts[0])
+            - 2,
+        )
+        subsection_summary = self.subsection_summary_builder.build(
+            child_titles,
+            max_tokens=summary_budget,
+        )
+        if subsection_summary:
+            parts.append(subsection_summary)
+
+        used_tokens = self.text_splitter.count_tokens("\n\n".join(parts))
+        intro_text = self._direct_section_text(
+            elements,
+            max_tokens=max(0, self.max_overview_tokens - used_tokens - 2),
+        )
         if intro_text:
             parts.append(intro_text)
-
-        subsection_summary = "; ".join(child_titles[:8])
-        if subsection_summary:
-            parts.append(f"Subsections: {subsection_summary}")
 
         overview_text = clean_chunk_text("\n\n".join(parts))
         if not overview_text:
@@ -129,7 +148,14 @@ class SectionOverviewChunkBuilder:
 
         return self._truncate_to_token_limit(overview_text)
 
-    def _direct_section_text(self, elements: list[CanonicalElement]) -> str | None:
+    def _direct_section_text(
+        self,
+        elements: list[CanonicalElement],
+        *,
+        max_tokens: int,
+    ) -> str | None:
+        if max_tokens <= 0:
+            return None
         texts: list[str] = []
 
         for element in elements:
@@ -148,7 +174,10 @@ class SectionOverviewChunkBuilder:
         if not texts:
             return None
 
-        text, _ = self._truncate_to_token_limit("\n\n".join(texts))
+        text, _ = self.text_splitter.token_counter.truncate_to_tokens_with_count(
+            "\n\n".join(texts),
+            max_tokens,
+        )
         return text
 
     def _truncate_to_token_limit(self, text: str) -> tuple[str, int]:
