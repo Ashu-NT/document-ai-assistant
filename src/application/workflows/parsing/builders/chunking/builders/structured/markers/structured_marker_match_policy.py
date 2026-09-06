@@ -1,5 +1,6 @@
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers.models import (
     EvidenceMarker,
+    MarkerMatch,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers.structured_marker_matcher import (
     StructuredMarkerMatcher,
@@ -28,11 +29,19 @@ class StructuredMarkerMatchPolicy:
         )
 
     def matches(self, text: str, markers: tuple[EvidenceMarker, ...]) -> bool:
+        return bool(self.find_matches(text, markers))
+
+    def find_matches(
+        self,
+        text: str,
+        markers: tuple[EvidenceMarker, ...],
+    ) -> tuple[MarkerMatch, ...]:
         normalized_text = self.matcher.normalize(text)
+        accepted: list[MarkerMatch] = []
         for marker in markers:
             for match in self.matcher.iter_matches(normalized_text, marker):
                 preceding_text = normalized_text[max(0, match.start - 80) : match.start]
                 if any(cue in preceding_text for cue in self.negation_cues):
                     continue
-                return True
-        return False
+                accepted.append(match)
+        return tuple(accepted)

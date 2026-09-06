@@ -1,5 +1,12 @@
 from src.application.workflows.parsing.builders.chunking.builders.structured import (
     StructuredFamilySpecFactory,
+)
+from src.application.workflows.parsing.builders.chunking.builders.structured.arbitration import (
+    StructuredReferenceEvidencePolicy,
+    StructuredWindowArbitrator,
+    StructuredWindowCandidateBuilder,
+)
+from src.application.workflows.parsing.builders.chunking.builders.structured.structured_section_window_spec import (
     StructuredSectionWindowSpec,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_element_text_resolver import (
@@ -36,6 +43,8 @@ class StructuredSectionFragmentBuilder:
         spec_factory: StructuredFamilySpecFactory | None = None,
         marker_matcher: StructuredMarkerMatcher | None = None,
         marker_match_policy: StructuredMarkerMatchPolicy | None = None,
+        candidate_builder: StructuredWindowCandidateBuilder | None = None,
+        window_arbitrator: StructuredWindowArbitrator | None = None,
         table_chunk_eligibility_policy: TableChunkEligibilityPolicy | None = None,
         profiler: GraphBuildProfiler | None = None,
     ) -> None:
@@ -47,6 +56,13 @@ class StructuredSectionFragmentBuilder:
             marker_match_policy
             or StructuredMarkerMatchPolicy(matcher=self.marker_matcher)
         )
+        self.candidate_builder = candidate_builder or StructuredWindowCandidateBuilder(
+            marker_match_policy=self.marker_match_policy,
+            reference_policy=StructuredReferenceEvidencePolicy(
+                matcher=self.marker_matcher,
+            ),
+        )
+        self.window_arbitrator = window_arbitrator or StructuredWindowArbitrator()
         self.table_chunk_eligibility_policy = (
             table_chunk_eligibility_policy
             or TableChunkEligibilityPolicy(
@@ -87,20 +103,18 @@ class StructuredSectionFragmentBuilder:
         if not selection.specs:
             return [], set()
 
-        windows_by_spec: list[
-            tuple[StructuredSectionWindowSpec, list[list[CanonicalElement]]]
-        ] = []
         with self.profiler.aggregate(
             name="structured_section_fragment_builder.collect_windows",
             input_counts={"sections": 1, "specs": len(selection.specs)},
         ) as stage:
-            for spec in selection.specs:
-                windows_by_spec.append(
-                    (spec, self._collect_windows(ordered_elements, spec))
-                )
-            stage.output_counts["windows"] = sum(
-                len(windows) for _, windows in windows_by_spec
+            candidates = self.candidate_builder.build(
+                section=section,
+                elements=ordered_elements,
+                specs=selection.specs,
             )
+            selected_candidates = self.window_arbitrator.select(candidates)
+            stage.output_counts["candidate_windows"] = len(candidates)
+            stage.output_counts["selected_windows"] = len(selected_candidates)
 
         fragments: list[ChunkFragment] = []
         consumed_element_ids: set[str] = set()
@@ -108,20 +122,19 @@ class StructuredSectionFragmentBuilder:
             name="structured_section_fragment_builder.materialize_fragments",
             input_counts={
                 "sections": 1,
-                "windows": sum(len(windows) for _, windows in windows_by_spec),
+                "windows": len(selected_candidates),
             },
         ) as stage:
-            for spec, windows in windows_by_spec:
-                for window in windows:
-                    fragment = self._build_fragment(
-                        section=section,
-                        elements=window,
-                        spec=spec,
-                    )
-                    if fragment is None:
-                        continue
-                    fragments.append(fragment)
-                    consumed_element_ids.update(fragment.element_ids)
+            for candidate in selected_candidates:
+                fragment = self._build_fragment(
+                    section=section,
+                    elements=list(candidate.elements),
+                    spec=candidate.spec,
+                )
+                if fragment is None:
+                    continue
+                fragments.append(fragment)
+                consumed_element_ids.update(fragment.element_ids)
             stage.output_counts["fragments"] = len(fragments)
 
         if selection.consume_all_elements and fragments:
@@ -134,48 +147,6 @@ class StructuredSectionFragmentBuilder:
             sorted(fragments, key=lambda fragment: fragment.order_index),
             consumed_element_ids,
         )
-
-    def _collect_windows(
-        self,
-        elements: list[CanonicalElement],
-        spec: StructuredSectionWindowSpec,
-    ) -> list[list[CanonicalElement]]:
-        anchor_indexes = [
-            index
-            for index, element in enumerate(elements)
-            if self.marker_match_policy.matches(
-                StructuredElementTextResolver.resolve(element) or "",
-                spec.anchor_markers,
-            )
-        ]
-        if not anchor_indexes:
-            if spec.include_full_section_if_no_anchor and elements:
-                return [list(elements)]
-            else:
-                return []
-
-        windows: list[tuple[int, int]] = []
-        for anchor_index in anchor_indexes:
-            start_index = max(0, anchor_index - spec.radius_before)
-            end_index = min(len(elements) - 1, anchor_index + spec.radius_after)
-            windows.append((start_index, end_index))
-
-        merged_windows = self._merge_windows(windows)
-        window_elements = [
-            elements[start_index : end_index + 1]
-            for start_index, end_index in merged_windows
-        ]
-        if spec.combine_all_windows and window_elements:
-            combined_elements: list[CanonicalElement] = []
-            seen_element_ids: set[str] = set()
-            for window in window_elements:
-                for element in window:
-                    if element.element_id in seen_element_ids:
-                        continue
-                    seen_element_ids.add(element.element_id)
-                    combined_elements.append(element)
-            return [combined_elements]
-        return window_elements
 
     def _build_fragment(
         self,
@@ -244,24 +215,6 @@ class StructuredSectionFragmentBuilder:
             token_count=token_count,
             order_index=first_element.reading_order or 0,
         )
-
-    @staticmethod
-    def _merge_windows(windows: list[tuple[int, int]]) -> list[tuple[int, int]]:
-        if not windows:
-            return []
-
-        ordered_windows = sorted(windows)
-        merged_windows = [ordered_windows[0]]
-        for start_index, end_index in ordered_windows[1:]:
-            previous_start, previous_end = merged_windows[-1]
-            if start_index <= previous_end + 1:
-                merged_windows[-1] = (
-                    previous_start,
-                    max(previous_end, end_index),
-                )
-                continue
-            merged_windows.append((start_index, end_index))
-        return merged_windows
 
     def _is_structurable_element(
         self,

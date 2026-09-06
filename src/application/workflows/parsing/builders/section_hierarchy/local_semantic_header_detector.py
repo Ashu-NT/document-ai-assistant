@@ -23,6 +23,12 @@ _TABLE_ROLE_LABELS = frozenset(
         "value",
     }
 )
+_PROCEDURE_ROLE_PATTERN = re.compile(
+    r"^(?:preconditions?|preparatory\s+(?:steps?|work)|final\s+(?:steps?|work)|"
+    r"special\s+tools?(?:\s*[,/&+]\s*(?:materials?|spare\s+parts?))*|"
+    r"materials?\s*[,/&+]\s*spare\s+parts?)\s*[:]?\s*$",
+    re.IGNORECASE,
+)
 
 
 class LocalSemanticHeaderDetector:
@@ -47,6 +53,12 @@ class LocalSemanticHeaderDetector:
                 local_ids.add(header.element_id)
                 continue
             if normalized in _TABLE_ROLE_LABELS and counts[normalized] > 1:
+                local_ids.add(header.element_id)
+                continue
+            if (
+                counts[normalized] > 1
+                and _PROCEDURE_ROLE_PATTERN.fullmatch(normalized)
+            ):
                 local_ids.add(header.element_id)
                 continue
             if self._is_repeated_alert_description(header, normalized, counts):

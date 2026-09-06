@@ -147,6 +147,14 @@ class StructuredFamilySpecFactory:
                     radius_after=spec.radius_after,
                     min_tokens=spec.min_tokens,
                     combine_all_windows=spec.combine_all_windows,
+                    include_full_section_if_no_anchor=(
+                        existing.include_full_section_if_no_anchor
+                        or spec.include_full_section_if_no_anchor
+                    ),
+                    section_context_matches=(
+                        existing.section_context_matches
+                        or spec.section_context_matches
+                    ),
                 )
 
         return list(merged.values())

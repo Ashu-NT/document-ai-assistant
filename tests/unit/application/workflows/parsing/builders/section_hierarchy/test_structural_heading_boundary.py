@@ -107,3 +107,41 @@ def test_parent_link_validator_rejects_links_beyond_maximum_depth() -> None:
     SectionParentLinkValidator(max_depth=6).validate(headers, links)
 
     assert "h7" not in links
+
+
+def test_repeated_procedure_role_headers_remain_local_evidence() -> None:
+    elements = [
+        _header("task_1", "8.1 Checking filter", 1),
+        _header("pre_1", "Preconditions", 2, level=2),
+        _text("body_1", "Shut down the engine.", 3),
+        _header("task_2", "8.2 Checking pump", 4),
+        _header("pre_2", "Preconditions", 5, level=2),
+        _text("body_2", "Close the isolation valve.", 6),
+    ]
+
+    result = SectionBuilder(IdGenerator()).build("doc_001", elements)
+
+    assert [section.title for section in result.sections] == [
+        "8.1 Checking filter",
+        "8.2 Checking pump",
+    ]
+    assert elements[1].metadata["structural_heading"] is False
+    assert elements[4].metadata["structural_heading"] is False
+    assert result.element_section_paths["pre_2"] == ["8.2 Checking pump"]
+
+
+def test_embedded_record_numbers_do_not_reset_active_numbered_scope() -> None:
+    headers = [
+        _header("h4", "4 Technical Data", 1),
+        _header("h42", "4.2 Product data", 2),
+        _header("record_1", "1. Power-related data", 3),
+        _header("record_11", "11. Fuel system", 4),
+        _header("h5", "5 Functional Description", 5),
+    ]
+
+    resolution = SectionHierarchyResolver().resolve(headers)
+
+    assert resolution.explicit_parent_headers["h42"] == "h4"
+    assert resolution.explicit_parent_headers["record_1"] == "h42"
+    assert resolution.explicit_parent_headers["record_11"] == "h42"
+    assert "h5" not in resolution.explicit_parent_headers

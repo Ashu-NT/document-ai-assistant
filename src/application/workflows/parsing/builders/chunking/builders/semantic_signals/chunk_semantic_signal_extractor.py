@@ -47,29 +47,27 @@ class ChunkSemanticSignalExtractor:
         if not fragments:
             return {}
 
-        aggregated: dict[ChunkType, int] = {}
-        for fragment in fragments:
-            for chunk_type, score in self.extract_from_fragment(fragment).items():
-                aggregated[chunk_type] = aggregated.get(chunk_type, 0) + score
+        effective_content = content
+        if effective_content is None:
+            effective_content = "\n".join(
+                fragment.text for fragment in fragments if fragment.text
+            )
 
-        if content is not None:
-            for chunk_type, score in self.extract(
-                section_title=fragments[0].section_title,
-                section_path=fragments[0].section_path,
-                text=content,
-                table_ids=[
+        # Section metadata describes the final chunk, not every input
+        # fragment. Counting it once prevents inherited paths from gaining
+        # artificial strength merely because a chunk contains more elements.
+        return self.extract(
+            section_title=fragments[0].section_title,
+            section_path=fragments[0].section_path,
+            text=effective_content,
+            table_ids=list(
+                dict.fromkeys(
                     table_id
                     for fragment in fragments
                     for table_id in fragment.table_ids
-                ],
-            ).items():
-                aggregated[chunk_type] = aggregated.get(chunk_type, 0) + score
-
-        return {
-            chunk_type: score
-            for chunk_type, score in aggregated.items()
-            if score > 0
-        }
+                )
+            ),
+        )
 
     def extract(
         self,

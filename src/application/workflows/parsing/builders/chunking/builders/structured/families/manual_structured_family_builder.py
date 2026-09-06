@@ -202,7 +202,7 @@ class ManualStructuredFamilyBuilder:
                     radius_before=1,
                     radius_after=6,
                     include_full_section_if_no_anchor=base_has_commissioning_path,
-                    section_context_matches=base_has_shutdown_path,
+                    section_context_matches=base_has_commissioning_path,
                 ),
                 StructuredSectionWindowSpec(
                     family=StructuredEvidenceFamily.MANUAL_SHUTDOWN,

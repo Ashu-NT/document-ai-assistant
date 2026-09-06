@@ -13,6 +13,9 @@ from src.application.workflows.parsing.parsing_value_coercion import (
     coerce_positive_int,
 )
 from src.application.workflows.shared.table_category import TableCategory
+from src.application.workflows.shared.table_category_chunk_type import (
+    chunk_type_for_table_category,
+)
 from src.domain.common import ChunkType
 from src.domain.elements import CanonicalElement
 from src.application.workflows.parsing.builders.chunking.builders.fragment.table_chunk_eligibility_policy import (
@@ -255,22 +258,7 @@ class TableFragmentBuilder:
 
     @staticmethod
     def _chunk_type_from_table_category(table_category: str) -> ChunkType | None:
-        if table_category == TableCategory.SPARE_PARTS_TABLE:
-            return ChunkType.SPARE_PARTS_TABLE
-        if table_category == TableCategory.MAINTENANCE_INTERVAL_TABLE:
-            return ChunkType.MAINTENANCE_INTERVAL
-        if table_category == TableCategory.TROUBLESHOOTING_TABLE:
-            return ChunkType.TROUBLESHOOTING
-        if table_category == TableCategory.OPERATION_REFERENCE_TABLE:
-            return ChunkType.OPERATION_INSTRUCTION
-        if table_category in {
-            TableCategory.TECHNICAL_DATA_TABLE,
-            TableCategory.OPERATING_LIMITS_TABLE,
-        }:
-            return ChunkType.TECHNICAL_SPECIFICATION
-        if table_category == TableCategory.CERTIFICATION_TABLE:
-            return ChunkType.CERTIFICATION_INFO
-        return None
+        return chunk_type_for_table_category(table_category)
 
     @staticmethod
     def _has_spare_part_header_row(parser_extra: dict) -> bool:

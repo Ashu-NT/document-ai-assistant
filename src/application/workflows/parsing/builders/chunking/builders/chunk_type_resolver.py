@@ -74,6 +74,10 @@ class ChunkTypeResolver:
         if not scores:
             return ChunkType.GENERAL
 
+        declared_type = self._qualified_declared_type(fragments, scores)
+        if declared_type is not None:
+            return declared_type
+
         ordered_scores = sorted(
             scores.items(),
             key=lambda item: (-item[1], item[0].value),
@@ -91,6 +95,23 @@ class ChunkTypeResolver:
             return ChunkType.GENERAL
 
         return chunk_type
+
+    def _qualified_declared_type(
+        self,
+        fragments: list[ChunkFragment],
+        scores: dict[ChunkType, int],
+    ) -> ChunkType | None:
+        declared_types = {
+            fragment.chunk_type
+            for fragment in fragments
+            if fragment.chunk_type not in {ChunkType.GENERAL, ChunkType.UNKNOWN}
+        }
+        if len(declared_types) != 1:
+            return None
+        declared_type = next(iter(declared_types))
+        if scores.get(declared_type, 0) < max(1, self.min_score - 1):
+            return None
+        return declared_type
 
     def are_semantically_compatible(
         self,
