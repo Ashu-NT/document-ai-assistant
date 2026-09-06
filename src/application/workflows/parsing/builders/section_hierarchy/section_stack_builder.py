@@ -30,7 +30,9 @@ class SectionStackBuilder:
         header_sections: dict[str, DocumentSection] = {}
         stack: dict[int, DocumentSection] = {}
 
-        for index, header in enumerate(sorted(headers, key=lambda element: element.order_index), start=1):
+        for index, header in enumerate(
+            sorted(headers, key=lambda element: element.order_index), start=1
+        ):
             level = min(max(1, effective_levels.get(header.element_id, 1)), 6)
             explicit_parent_header_id = (
                 explicit_parent_headers.get(header.element_id)
@@ -54,9 +56,7 @@ class SectionStackBuilder:
                 ),
             )
             section_path = (
-                [*parent_section.section_path, title]
-                if parent_section is not None
-                else [title]
+                [*parent_section.section_path, title] if parent_section is not None else [title]
             )
 
             section = DocumentSection(
@@ -81,7 +81,43 @@ class SectionStackBuilder:
             stack[level] = section
             self._clear_deeper_levels(stack, level)
 
+        self._apply_explicit_parents(
+            header_sections=header_sections,
+            explicit_parent_headers=explicit_parent_headers or {},
+        )
+
         return sections, header_section_ids
+
+    @staticmethod
+    def _apply_explicit_parents(
+        *,
+        header_sections: dict[str, DocumentSection],
+        explicit_parent_headers: dict[str, str],
+    ) -> None:
+        for child_header_id, parent_header_id in explicit_parent_headers.items():
+            child = header_sections.get(child_header_id)
+            parent = header_sections.get(parent_header_id)
+            if child is None or parent is None:
+                continue
+            child.parent_section_id = parent.section_id
+
+        section_by_id = {section.section_id: section for section in header_sections.values()}
+        resolved_paths: dict[str, list[str]] = {}
+
+        def resolve_path(section: DocumentSection) -> list[str]:
+            cached = resolved_paths.get(section.section_id)
+            if cached is not None:
+                return cached
+            parent = section_by_id.get(section.parent_section_id or "")
+            path = [section.title]
+            if parent is not None:
+                path = [*resolve_path(parent), section.title]
+            resolved_paths[section.section_id] = path
+            return path
+
+        for section in header_sections.values():
+            section.section_path = resolve_path(section)
+            section.raw_section_path = list(section.section_path)
 
     @staticmethod
     def _find_parent_section(

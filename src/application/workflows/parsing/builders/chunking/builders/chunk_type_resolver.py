@@ -109,7 +109,7 @@ class ChunkTypeResolver:
         if len(declared_types) != 1:
             return None
         declared_type = next(iter(declared_types))
-        if scores.get(declared_type, 0) < max(1, self.min_score - 1):
+        if scores.get(declared_type, 0) < max(1, self.min_score - 2):
             return None
         return declared_type
 
@@ -149,7 +149,8 @@ class ChunkTypeResolver:
     ) -> int:
         if (
             any(fragment.table_ids for fragment in fragments)
-            and top_type in {
+            and top_type
+            in {
                 ChunkType.TECHNICAL_SPECIFICATION,
                 ChunkType.TROUBLESHOOTING,
             }
@@ -177,10 +178,7 @@ class ChunkTypeResolver:
                 return fragment.chunk_type
 
         for fragment in fragments:
-            if (
-                fragment.standalone
-                and fragment.chunk_type in _STANDALONE_PRESERVED_TABLE_TYPES
-            ):
+            if fragment.standalone and fragment.chunk_type in _STANDALONE_PRESERVED_TABLE_TYPES:
                 return fragment.chunk_type
         return None
 

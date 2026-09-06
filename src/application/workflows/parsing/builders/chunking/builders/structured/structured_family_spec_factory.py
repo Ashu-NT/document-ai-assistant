@@ -101,13 +101,7 @@ class StructuredFamilySpecFactory:
             ]
             specs = self._merge_specs(selections)
             stage.output_counts["specs"] = len(specs)
-            return StructuredFamilySpecSelection(
-                specs=specs,
-                consume_all_elements=any(
-                    selection.consume_all_elements
-                    for selection in selections
-                ),
-            )
+            return StructuredFamilySpecSelection(specs=specs)
 
     @staticmethod
     def _merge_specs(

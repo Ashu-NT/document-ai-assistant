@@ -8,4 +8,3 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.str
 @dataclass(slots=True, frozen=True)
 class StructuredFamilySpecSelection:
     specs: list[StructuredSectionWindowSpec] = field(default_factory=list)
-    consume_all_elements: bool = False

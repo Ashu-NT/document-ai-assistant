@@ -1,3 +1,5 @@
+import re
+
 from src.application.workflows.parsing.builders.section_hierarchy.numbering.heading_numbering import (
     numbering_depth,
     parent_numberings,
@@ -5,6 +7,9 @@ from src.application.workflows.parsing.builders.section_hierarchy.numbering.head
 from src.application.workflows.parsing.parsed_canonical_element import (
     ParsedCanonicalElement,
 )
+
+
+_LOCAL_RECORD_NUMBER_PATTERN = re.compile(r"^\s*\d{2,6}\s*(?:-|\u2013|\u2014|:)\s*\S")
 
 
 class ActiveNumberedScopeResolver:
@@ -23,6 +28,8 @@ class ActiveNumberedScopeResolver:
                 header,
                 number,
                 active_header_by_depth,
+                source=resolution.sources.get(header_id),
+                effective_level=resolution.effective_levels.get(header_id),
             ):
                 has_numbered_scope = self._attach_numbered_parent(
                     header_id,
@@ -75,11 +82,18 @@ class ActiveNumberedScopeResolver:
         header: ParsedCanonicalElement,
         number: str,
         active_header_by_depth: dict[int, ParsedCanonicalElement],
+        *,
+        source: str | None,
+        effective_level: int | None,
     ) -> bool:
         if numbering_depth(number) != 1 or not active_header_by_depth:
             return False
+        if source == "toc_page_range" and effective_level == 1:
+            return False
         text = (header.text or "").strip()
-        return text.startswith(f"{number}.") and max(active_header_by_depth) >= 2
+        return max(active_header_by_depth) >= 2 and (
+            text.startswith(f"{number}.") or _LOCAL_RECORD_NUMBER_PATTERN.match(text) is not None
+        )
 
     @staticmethod
     def _deepest_active_parent(
@@ -94,7 +108,5 @@ class ActiveNumberedScopeResolver:
         active_header_by_depth: dict[int, ParsedCanonicalElement],
         depth: int,
     ) -> None:
-        for candidate_depth in [
-            value for value in active_header_by_depth if value > depth
-        ]:
+        for candidate_depth in [value for value in active_header_by_depth if value > depth]:
             active_header_by_depth.pop(candidate_depth, None)

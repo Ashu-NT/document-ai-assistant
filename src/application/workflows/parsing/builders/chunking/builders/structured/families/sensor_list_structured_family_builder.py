@@ -1,8 +1,3 @@
-from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
-    extend_markers,
-    path_contains_markers,
-    sanitized_base_path,
-)
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     INSTRUMENT_LIST_MARKERS,
     IO_LIST_MARKERS,
@@ -117,11 +112,7 @@ class SensorListStructuredFamilyBuilder:
     ) -> list[str]:
         terms = (label,)
 
-        return (
-            base_path
-            if path_contains_terms(base_path, terms)
-            else [label]
-        )
+        return base_path if path_contains_terms(base_path, terms) else [label]
 
     @staticmethod
     def _should_include_family(

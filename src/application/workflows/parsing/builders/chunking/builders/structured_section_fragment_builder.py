@@ -5,6 +5,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.arb
     StructuredReferenceEvidencePolicy,
     StructuredWindowArbitrator,
     StructuredWindowCandidateBuilder,
+    StructuredWindowOwnershipResolver,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_section_window_spec import (
     StructuredSectionWindowSpec,
@@ -27,13 +28,14 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers.structured_marker_match_policy import (
     StructuredMarkerMatchPolicy,
 )
-from src.domain.common import ChunkType, DocumentType, ElementType
+from src.domain.common import DocumentType, ElementType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 from src.application.workflows.parsing.builders.chunking.builders.fragment.table_chunk_eligibility_policy import (
     TableChunkEligibilityPolicy,
 )
 from src.application.workflows.parsing.profiling import GraphBuildProfiler
+
 
 class StructuredSectionFragmentBuilder:
     def __init__(
@@ -45,6 +47,7 @@ class StructuredSectionFragmentBuilder:
         marker_match_policy: StructuredMarkerMatchPolicy | None = None,
         candidate_builder: StructuredWindowCandidateBuilder | None = None,
         window_arbitrator: StructuredWindowArbitrator | None = None,
+        ownership_resolver: StructuredWindowOwnershipResolver | None = None,
         table_chunk_eligibility_policy: TableChunkEligibilityPolicy | None = None,
         profiler: GraphBuildProfiler | None = None,
     ) -> None:
@@ -52,9 +55,8 @@ class StructuredSectionFragmentBuilder:
         self.text_splitter = text_splitter
         self.spec_factory = spec_factory or StructuredFamilySpecFactory()
         self.marker_matcher = marker_matcher or StructuredMarkerMatcher()
-        self.marker_match_policy = (
-            marker_match_policy
-            or StructuredMarkerMatchPolicy(matcher=self.marker_matcher)
+        self.marker_match_policy = marker_match_policy or StructuredMarkerMatchPolicy(
+            matcher=self.marker_matcher
         )
         self.candidate_builder = candidate_builder or StructuredWindowCandidateBuilder(
             marker_match_policy=self.marker_match_policy,
@@ -63,6 +65,7 @@ class StructuredSectionFragmentBuilder:
             ),
         )
         self.window_arbitrator = window_arbitrator or StructuredWindowArbitrator()
+        self.ownership_resolver = ownership_resolver or StructuredWindowOwnershipResolver()
         self.table_chunk_eligibility_policy = (
             table_chunk_eligibility_policy
             or TableChunkEligibilityPolicy(
@@ -85,9 +88,7 @@ class StructuredSectionFragmentBuilder:
         document_sections_combined_text: str = "",
     ) -> tuple[list[ChunkFragment], set[str]]:
         ordered_elements = [
-            element
-            for element in elements
-            if self._is_structurable_element(element)
+            element for element in elements if self._is_structurable_element(element)
         ]
         if not ordered_elements:
             return [], set()
@@ -113,6 +114,7 @@ class StructuredSectionFragmentBuilder:
                 specs=selection.specs,
             )
             selected_candidates = self.window_arbitrator.select(candidates)
+            selected_candidates = self.ownership_resolver.resolve(selected_candidates)
             stage.output_counts["candidate_windows"] = len(candidates)
             stage.output_counts["selected_windows"] = len(selected_candidates)
 
@@ -136,12 +138,6 @@ class StructuredSectionFragmentBuilder:
                 fragments.append(fragment)
                 consumed_element_ids.update(fragment.element_ids)
             stage.output_counts["fragments"] = len(fragments)
-
-        if selection.consume_all_elements and fragments:
-            consumed_element_ids.update(
-                element.element_id
-                for element in ordered_elements
-            )
 
         return (
             sorted(fragments, key=lambda fragment: fragment.order_index),
@@ -186,15 +182,9 @@ class StructuredSectionFragmentBuilder:
             section_level=section.level,
             parent_section_id=section.parent_section_id,
             element_ids=[element.element_id for element in elements],
-            table_ids=[
-                element.table_id
-                for element in elements
-                if element.table_id is not None
-            ],
+            table_ids=[element.table_id for element in elements if element.table_id is not None],
             picture_ids=[
-                element.picture_id
-                for element in elements
-                if element.picture_id is not None
+                element.picture_id for element in elements if element.picture_id is not None
             ],
             page_start=min(
                 (
@@ -232,16 +222,8 @@ class StructuredSectionFragmentBuilder:
         if is_furniture_or_embedded_picture(element):
             return False
 
-        if (
-            element.table_id is not None
-            or element.element_type == ElementType.TABLE
-        ):
-            if not self.table_chunk_eligibility_policy.should_chunk(
-                element
-            ):
+        if element.table_id is not None or element.element_type == ElementType.TABLE:
+            if not self.table_chunk_eligibility_policy.should_chunk(element):
                 return False
 
-        return bool(
-            StructuredElementTextResolver.resolve(element)
-        )
-
+        return bool(StructuredElementTextResolver.resolve(element))

@@ -59,15 +59,12 @@ class StructuredWindowEvidenceScorer:
         spec: StructuredSectionWindowSpec,
         elements: tuple[CanonicalElement, ...],
         marker_score: int,
+        local_section_context: bool = False,
     ) -> tuple[int, bool]:
         content = "\n".join(
-            text
-            for element in elements
-            if (text := StructuredElementTextResolver.resolve(element))
+            text for element in elements if (text := StructuredElementTextResolver.resolve(element))
         )
-        table_ids = [
-            element.table_id for element in elements if element.table_id is not None
-        ]
+        table_ids = [element.table_id for element in elements if element.table_id is not None]
         semantic_score = self.signal_extractor.extract(
             section_title=section.title,
             section_path=list(section.section_path),
@@ -79,11 +76,8 @@ class StructuredWindowEvidenceScorer:
             elements=elements,
             content=content,
         )
-        context_matches = (
-            spec.section_context_matches
-            or spec.include_full_section_if_no_anchor
-        )
-        direct_evidence = direct_score > 0 or context_matches
+        context_matches = local_section_context or spec.section_context_matches
+        direct_evidence = direct_score > 0 or local_section_context
         context_score = 4 if context_matches else 0
         return marker_score + min(semantic_score, 8) + direct_score + context_score, direct_evidence
 
@@ -94,15 +88,16 @@ class StructuredWindowEvidenceScorer:
         elements: tuple[CanonicalElement, ...],
     ) -> bool:
         content = "\n".join(
-            text
-            for element in elements
-            if (text := StructuredElementTextResolver.resolve(element))
+            text for element in elements if (text := StructuredElementTextResolver.resolve(element))
         )
-        return self._direct_evidence_score(
-            spec=spec,
-            elements=elements,
-            content=content,
-        ) > 0
+        return (
+            self._direct_evidence_score(
+                spec=spec,
+                elements=elements,
+                content=content,
+            )
+            > 0
+        )
 
     def _direct_evidence_score(
         self,
@@ -116,24 +111,26 @@ class StructuredWindowEvidenceScorer:
             return category_score
         if spec.chunk_type == ChunkType.MAINTENANCE_INTERVAL and INTERVAL_PATTERN.search(content):
             return 7
-        if spec.chunk_type == ChunkType.TECHNICAL_SPECIFICATION and SPEC_VALUE_PATTERN.search(content):
+        if spec.chunk_type == ChunkType.TECHNICAL_SPECIFICATION and SPEC_VALUE_PATTERN.search(
+            content
+        ):
             return 6
         if spec.chunk_type == ChunkType.SPARE_PARTS_TABLE and _PART_VALUE_PATTERN.search(content):
             return 7
-        if spec.chunk_type == ChunkType.TROUBLESHOOTING and _TROUBLESHOOTING_PAIR_PATTERN.search(content):
+        if spec.chunk_type == ChunkType.TROUBLESHOOTING and _TROUBLESHOOTING_PAIR_PATTERN.search(
+            content
+        ):
             return 7
         if spec.chunk_type == ChunkType.SAFETY_WARNING and _SAFETY_CALLOUT_PATTERN.search(content):
             return 6
         if spec.chunk_type in _PROCEDURAL_TYPES:
-            list_count = sum(
-                element.element_type == ElementType.LIST_ITEM for element in elements
-            )
+            list_count = sum(element.element_type == ElementType.LIST_ITEM for element in elements)
             if list_count >= 2:
                 return 5
-        if (
-            spec.chunk_type in {ChunkType.TECHNICAL_SPECIFICATION, ChunkType.CERTIFICATION_INFO}
-            and any(element.element_type == ElementType.KEY_VALUE for element in elements)
-        ):
+        if spec.chunk_type in {
+            ChunkType.TECHNICAL_SPECIFICATION,
+            ChunkType.CERTIFICATION_INFO,
+        } and any(element.element_type == ElementType.KEY_VALUE for element in elements):
             return 5
         return 0
 

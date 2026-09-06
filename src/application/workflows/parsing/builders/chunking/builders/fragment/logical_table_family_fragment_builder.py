@@ -9,7 +9,6 @@ from src.application.workflows.parsing.builders.chunking.models.chunk_fragment i
     ChunkFragment,
 )
 from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
-    clean_chunk_text,
     resolve_parser_extra,
 )
 from src.application.workflows.parsing.parsing_value_coercion import (
@@ -114,8 +113,7 @@ class LogicalTableFamilyFragmentBuilder:
             element=lead_element,
         )
         markdown_parts = [
-            self.table_fragment_builder.table_markdown_text(element)
-            for element in family_elements
+            self.table_fragment_builder.table_markdown_text(element) for element in family_elements
         ]
         markdown_text = "\n\n".join(part for part in markdown_parts if part)
         text = self.table_fragment_builder.compose_table_text(
@@ -127,10 +125,7 @@ class LogicalTableFamilyFragmentBuilder:
 
         parser_extra = resolve_parser_extra(lead_element)
         merged_rows = self.row_merger.merge_row_groups(
-            [
-                self.table_fragment_builder.table_rows(element) or []
-                for element in family_elements
-            ]
+            [self.table_fragment_builder.table_rows(element) or [] for element in family_elements]
         )
         body_row_count = max(0, len(merged_rows or []) - 1)
         merged_structure_metadata = self.table_fragment_builder.merge_family_table_metadata(
@@ -149,9 +144,7 @@ class LogicalTableFamilyFragmentBuilder:
             parent_section_id=section.parent_section_id,
             element_ids=[element.element_id for element in family_elements],
             table_ids=[
-                element.table_id
-                for element in family_elements
-                if element.table_id is not None
+                element.table_id for element in family_elements if element.table_id is not None
             ],
             page_start=min(
                 (
@@ -172,17 +165,13 @@ class LogicalTableFamilyFragmentBuilder:
             token_count=self.table_fragment_builder.text_splitter.count_tokens(text),
             table_context=context_text,
             table_rows=merged_rows,
-            logical_table_family_id=str(
-                parser_extra.get("logical_table_family_id") or ""
-            ).strip()
+            logical_table_family_id=str(parser_extra.get("logical_table_family_id") or "").strip()
             or None,
             logical_table_family_index=1,
             logical_table_family_total=1,
             logical_table_continuation_role="single",
             table_category=str(parser_extra.get("table_category") or "").strip() or None,
-            table_category_confidence=coerce_float(
-                parser_extra.get("table_category_confidence")
-            ),
+            table_category_confidence=coerce_float(parser_extra.get("table_category_confidence")),
             table_row_start=1 if body_row_count > 0 else None,
             table_row_end=body_row_count if body_row_count > 0 else None,
             table_shape=merged_structure_metadata["table_shape"],

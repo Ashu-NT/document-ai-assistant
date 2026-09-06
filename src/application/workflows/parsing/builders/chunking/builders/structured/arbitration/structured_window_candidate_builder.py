@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from src.application.workflows.parsing.builders.chunking.builders.structured.arbitration.structured_reference_evidence_policy import (
     StructuredReferenceEvidencePolicy,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured.arbitration.structured_section_context_policy import (
+    StructuredSectionContextPolicy,
+)
 from src.application.workflows.parsing.builders.chunking.builders.structured.arbitration.structured_window_candidate import (
     StructuredWindowCandidate,
 )
@@ -44,13 +47,15 @@ class StructuredWindowCandidateBuilder:
         qualification_policy: StructuredMarkerQualificationPolicy | None = None,
         reference_policy: StructuredReferenceEvidencePolicy,
         evidence_scorer: StructuredWindowEvidenceScorer | None = None,
+        section_context_policy: StructuredSectionContextPolicy | None = None,
     ) -> None:
         self.marker_match_policy = marker_match_policy
-        self.qualification_policy = (
-            qualification_policy or StructuredMarkerQualificationPolicy()
-        )
+        self.qualification_policy = qualification_policy or StructuredMarkerQualificationPolicy()
         self.reference_policy = reference_policy
         self.evidence_scorer = evidence_scorer or StructuredWindowEvidenceScorer()
+        self.section_context_policy = section_context_policy or (
+            StructuredSectionContextPolicy(marker_match_policy=marker_match_policy)
+        )
 
     def build(
         self,
@@ -63,20 +68,23 @@ class StructuredWindowCandidateBuilder:
         for spec in specs:
             anchors = self._matched_anchors(elements, spec)
             windows = self._windows(elements, spec, anchors)
+            local_section_context = self.section_context_policy.matches_local_section(
+                section=section,
+                spec=spec,
+            )
             for window, window_anchors in windows:
+                has_direct_evidence = self.evidence_scorer.has_direct_evidence(
+                    spec=spec,
+                    elements=window,
+                )
+                if not window_anchors and not (local_section_context or has_direct_evidence):
+                    continue
                 qualification = self.qualification_policy.qualify(
-                    matches=tuple(
-                        match
-                        for anchor in window_anchors
-                        for match in anchor.matches
-                    ),
+                    matches=tuple(match for anchor in window_anchors for match in anchor.matches),
                     section_context_matches=(
-                        spec.section_context_matches
-                        or spec.include_full_section_if_no_anchor
-                        or self.evidence_scorer.has_direct_evidence(
-                            spec=spec,
-                            elements=window,
-                        )
+                        local_section_context
+                        or (spec.section_context_matches and bool(window_anchors))
+                        or has_direct_evidence
                     ),
                 )
                 if window_anchors and not qualification.qualified:
@@ -87,6 +95,7 @@ class StructuredWindowCandidateBuilder:
                     spec=spec,
                     elements=window,
                     marker_score=marker_score,
+                    local_section_context=local_section_context,
                 )
                 reference_only = bool(window_anchors) and all(
                     anchor.reference_only for anchor in window_anchors

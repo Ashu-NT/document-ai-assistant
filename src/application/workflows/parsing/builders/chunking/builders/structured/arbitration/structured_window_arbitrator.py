@@ -17,7 +17,13 @@ class StructuredWindowArbitrator:
         selected: list[StructuredWindowCandidate] = []
         for component in self._components(candidates):
             selected.extend(self._select_component(component))
-        return sorted(selected, key=lambda candidate: candidate.order_index)
+        return sorted(
+            selected,
+            key=lambda candidate: (
+                candidate.order_index,
+                candidate.spec.chunk_type.value,
+            ),
+        )
 
     def _select_component(
         self,
@@ -37,9 +43,7 @@ class StructuredWindowArbitrator:
         )
         winner = ordered[0]
         runner_up = ordered[1]
-        direct_candidates = [
-            candidate for candidate in ordered if candidate.direct_evidence
-        ]
+        direct_candidates = [candidate for candidate in ordered if candidate.direct_evidence]
         if len(direct_candidates) > 1:
             direct_components = self._components(direct_candidates)
             if len(direct_components) > 1:

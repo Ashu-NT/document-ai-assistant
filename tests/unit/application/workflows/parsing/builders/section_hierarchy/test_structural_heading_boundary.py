@@ -145,3 +145,53 @@ def test_embedded_record_numbers_do_not_reset_active_numbered_scope() -> None:
     assert resolution.explicit_parent_headers["record_1"] == "h42"
     assert resolution.explicit_parent_headers["record_11"] == "h42"
     assert "h5" not in resolution.explicit_parent_headers
+
+
+def test_same_page_child_before_parent_is_recovered_without_reordering_content() -> None:
+    headers = [
+        _header("h41", "4.1 Main dimensions", 1, page=35),
+        _header("h4", "4 Technical Data", 2, page=35),
+        _header("h42", "4.2 Product data", 3, page=36),
+    ]
+
+    result = SectionBuilder(IdGenerator()).build("doc_001", headers)
+
+    by_title = {section.title: section for section in result.sections}
+    assert (
+        by_title["4.1 Main dimensions"].parent_section_id == by_title["4 Technical Data"].section_id
+    )
+    assert by_title["4.1 Main dimensions"].section_path == [
+        "4 Technical Data",
+        "4.1 Main dimensions",
+    ]
+    assert by_title["4.2 Product data"].section_path == [
+        "4 Technical Data",
+        "4.2 Product data",
+    ]
+
+
+def test_forward_parent_on_another_page_is_not_accepted() -> None:
+    headers = [
+        _header("h41", "4.1 Main dimensions", 1, page=34),
+        _header("h4", "4 Technical Data", 2, page=35),
+    ]
+
+    resolution = SectionHierarchyResolver().resolve(headers)
+
+    assert "h41" not in resolution.explicit_parent_headers
+
+
+def test_numbered_alarm_records_remain_inside_active_catalog_scope() -> None:
+    headers = [
+        _header("h7", "7 Operating Instructions", 1),
+        _header("h72", "7.2 Troubleshooting", 2),
+        _header("alarm_641", "641 - System reset by watchdog", 3),
+        _header("alarm_625", "625 - Fuel pressure alarm", 4),
+        _header("h8", "8 Component Exchange", 5),
+    ]
+
+    resolution = SectionHierarchyResolver().resolve(headers)
+
+    assert resolution.explicit_parent_headers["alarm_641"] == "h72"
+    assert resolution.explicit_parent_headers["alarm_625"] == "h72"
+    assert "h8" not in resolution.explicit_parent_headers

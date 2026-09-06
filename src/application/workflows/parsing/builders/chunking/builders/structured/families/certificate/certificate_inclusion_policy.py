@@ -1,5 +1,5 @@
 from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
-    path_contains_markers, path_contains_terms
+    path_contains_terms,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     CERTIFICATE_ATTACHMENT_INFORMATION_MARKERS,
@@ -189,9 +189,4 @@ class CertificateInclusionPolicy:
             markers,
         )
 
-        return len(
-            {
-                match.marker
-                for match in matches
-            }
-        )
+        return len({match.marker for match in matches})

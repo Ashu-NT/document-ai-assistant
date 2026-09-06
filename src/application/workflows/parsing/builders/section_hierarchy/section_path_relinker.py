@@ -50,14 +50,16 @@ class SectionPathRelinker:
             section.normalized_section_path = normalized_path
             section.level = max(1, len(sanitized_path))
 
+            section_by_path.setdefault(tuple(sanitized_path), section)
+
+        for section in ordered_sections:
             parent_section = self._find_parent_section(
-                sanitized_path=sanitized_path,
+                sanitized_path=section.section_path,
                 section_by_path=section_by_path,
             )
             section.parent_section_id = (
                 parent_section.section_id if parent_section is not None else None
             )
-            section_by_path[tuple(sanitized_path)] = section
 
     @staticmethod
     def _find_parent_section(

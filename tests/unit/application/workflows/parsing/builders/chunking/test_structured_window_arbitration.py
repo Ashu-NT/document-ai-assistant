@@ -2,6 +2,7 @@ from src.application.workflows.parsing.builders.chunking import SectionChunkBuil
 from src.application.workflows.parsing.builders.chunking.builders.structured.arbitration import (
     StructuredWindowArbitrator,
     StructuredWindowCandidate,
+    StructuredWindowOwnershipResolver,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers.models import (
     EvidenceMarker,
@@ -45,9 +46,7 @@ def _spec(chunk_type: ChunkType) -> StructuredSectionWindowSpec:
     return StructuredSectionWindowSpec(
         family=StructuredEvidenceFamily.MANUAL_MAINTENANCE_INTERVAL,
         section_path=["Section"],
-        anchor_markers=(
-            EvidenceMarker("maintenance interval", MarkerStrength.STRONG),
-        ),
+        anchor_markers=(EvidenceMarker("maintenance interval", MarkerStrength.STRONG),),
         chunk_type=chunk_type,
     )
 
@@ -168,8 +167,91 @@ def test_distinct_direct_evidence_types_in_one_section_are_preserved() -> None:
         direct=True,
     )
 
-    selected = StructuredWindowArbitrator().select(
+    selected = StructuredWindowArbitrator().select([interval_candidate, specification_candidate])
+
+    assert selected == [interval_candidate, specification_candidate]
+
+
+def test_shared_structured_context_is_owned_by_nearest_direct_anchor() -> None:
+    before = _element("e1", "General introduction", 1)
+    interval = _element("e2", "Every 500 hours inspect the filter.", 2)
+    middle = _element("e3", "Record the completed work.", 3)
+    specification = _element("e4", "Rated voltage: 400 V.", 4)
+    after = _element("e5", "Store the record with the equipment file.", 5)
+    all_elements = (before, interval, middle, specification, after)
+    interval_candidate = _candidate(
+        chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+        elements=all_elements,
+        anchors=frozenset({"e2"}),
+        score=14,
+        direct=True,
+    )
+    specification_candidate = _candidate(
+        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+        elements=all_elements,
+        anchors=frozenset({"e4"}),
+        score=14,
+        direct=True,
+    )
+
+    resolved = StructuredWindowOwnershipResolver().resolve(
         [interval_candidate, specification_candidate]
     )
 
-    assert selected == [interval_candidate, specification_candidate]
+    assert [element.element_id for element in resolved[0].elements] == [
+        "e1",
+        "e2",
+        "e3",
+    ]
+    assert [element.element_id for element in resolved[1].elements] == ["e4", "e5"]
+    assert resolved[0].element_ids.isdisjoint(resolved[1].element_ids)
+
+
+def test_unanchored_section_candidate_does_not_steal_anchored_context() -> None:
+    anchor = _element("e1", "Rated voltage: 400 V.", 1)
+    context = _element("e2", "The enclosure is suitable for marine service.", 2)
+    elements = (anchor, context)
+    anchored = _candidate(
+        chunk_type=ChunkType.TECHNICAL_SPECIFICATION,
+        elements=elements,
+        anchors=frozenset({"e1"}),
+        score=12,
+        direct=True,
+    )
+    unanchored = _candidate(
+        chunk_type=ChunkType.GENERAL,
+        elements=elements,
+        anchors=frozenset(),
+        score=14,
+        direct=True,
+    )
+
+    resolved = StructuredWindowOwnershipResolver().resolve([unanchored, anchored])
+
+    assert len(resolved) == 1
+    assert resolved[0].spec.chunk_type == ChunkType.TECHNICAL_SPECIFICATION
+    assert resolved[0].element_ids == {"e1", "e2"}
+
+
+def test_drawing_windows_do_not_consume_unowned_section_evidence() -> None:
+    elements = [
+        _element("e1", "Drawing number: DWG-001", 1),
+        *[
+            _element(f"e{index}", f"General drawing note {index}", index)
+            for index in range(2, 14)
+        ],
+        _element("e14", "Unmatched installation clearance must remain searchable.", 14),
+    ]
+
+    payloads = SectionChunkBuilder().build_chunk_payloads(
+        document_title="General arrangement drawing",
+        document_type=DocumentType.DRAWING,
+        section=_section("Drawing sheet"),
+        elements=elements,
+    )
+
+    assert payloads
+    assert any(
+        "Unmatched installation clearance must remain searchable." in payload.content
+        for payload in payloads
+    )

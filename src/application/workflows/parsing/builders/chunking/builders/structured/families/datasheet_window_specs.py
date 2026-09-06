@@ -3,7 +3,6 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.fam
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
     extend_markers,
-    path_contains_markers,
     path_contains_terms,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
@@ -209,9 +208,7 @@ def build_datasheet_window_specs(
         ),
         StructuredSectionWindowSpec(
             family=StructuredEvidenceFamily.DATASHEET_PRESSURE_TEMPERATURE_DATA,
-            section_path=[
-                "Druck - Temperatur - Diagramm / Pressure - Temperature - Diagram"
-            ],
+            section_path=["Druck - Temperatur - Diagramm / Pressure - Temperature - Diagram"],
             anchor_markers=extend_markers(
                 family=StructuredEvidenceFamily.DATASHEET_PRESSURE_TEMPERATURE_DATA,
                 base_markers=DATASHEET_PRESSURE_TEMPERATURE_MARKERS,

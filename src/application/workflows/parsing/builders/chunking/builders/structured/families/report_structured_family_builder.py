@@ -1,7 +1,6 @@
 from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
     append_label_if_missing,
     extend_markers,
-    path_contains_markers,
     sanitized_base_path,
     path_contains_terms,
 )
@@ -52,9 +51,8 @@ class ReportStructuredFamilyBuilder:
             and not context.contains_any(REPORT_DOCUMENT_MARKERS)
         ):
             return StructuredFamilySpecSelection()
-        if (
-            not context.has_known_document_type()
-            and not context.contains_any(REPORT_DOCUMENT_MARKERS)
+        if not context.has_known_document_type() and not context.contains_any(
+            REPORT_DOCUMENT_MARKERS
         ):
             return StructuredFamilySpecSelection()
 

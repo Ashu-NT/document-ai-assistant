@@ -181,5 +181,4 @@ class DrawingStructuredFamilyBuilder:
                     radius_after=8,
                 ),
             ],
-            consume_all_elements=True,
         )

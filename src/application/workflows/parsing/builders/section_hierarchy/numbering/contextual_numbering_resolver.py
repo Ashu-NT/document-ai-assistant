@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.builders.section_hierarchy.numbering.active_numbered_scope_resolver import (
     ActiveNumberedScopeResolver,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.numbering.forward_numbered_parent_resolver import (
+    ForwardNumberedParentResolver,
+)
 from src.application.workflows.parsing.builders.section_hierarchy.numbering.heading_numbering import (
     extract_heading_number,
     numbering_depth,
@@ -20,18 +23,19 @@ class ContextualNumberingResolver:
         toc_page_range_strategy,
         numbering_hierarchy_strategy,
         scope_resolver: ActiveNumberedScopeResolver | None = None,
+        forward_parent_resolver: ForwardNumberedParentResolver | None = None,
         parent_link_validator: SectionParentLinkValidator | None = None,
     ) -> None:
         self.toc_page_range_strategy = toc_page_range_strategy
         self.numbering_hierarchy_strategy = numbering_hierarchy_strategy
         self.scope_resolver = scope_resolver or ActiveNumberedScopeResolver()
-        self.parent_link_validator = (
-            parent_link_validator or SectionParentLinkValidator()
-        )
+        self.forward_parent_resolver = forward_parent_resolver or ForwardNumberedParentResolver()
+        self.parent_link_validator = parent_link_validator or SectionParentLinkValidator()
 
     def apply(self, headers, resolution) -> None:
         ordered_headers = sorted(headers, key=lambda header: header.order_index)
         self.scope_resolver.apply(ordered_headers, resolution)
+        self.forward_parent_resolver.apply(ordered_headers, resolution)
         self._attach_chapter_markers(ordered_headers, resolution)
         self.parent_link_validator.validate(
             ordered_headers,

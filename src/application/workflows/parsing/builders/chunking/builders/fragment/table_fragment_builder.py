@@ -12,7 +12,6 @@ from src.application.workflows.parsing.parsing_value_coercion import (
     coerce_float,
     coerce_positive_int,
 )
-from src.application.workflows.shared.table_category import TableCategory
 from src.application.workflows.shared.table_category_chunk_type import (
     chunk_type_for_table_category,
 )
@@ -21,36 +20,34 @@ from src.domain.elements import CanonicalElement
 from src.application.workflows.parsing.builders.chunking.builders.fragment.table_chunk_eligibility_policy import (
     TableChunkEligibilityPolicy,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured_section_fragment_builder import StructuredSectionFragmentBuilder
+
 
 class TableFragmentBuilder:
     """Builds fragment text and classifies chunk type for table elements."""
-  
+
     def __init__(
-            self,
-            *,
-            text_splitter: ChunkTextSplitter,
-            include_table_context: bool,
-            asset_context_resolver: AssetContextResolver,
-            table_chunk_eligibility_policy: TableChunkEligibilityPolicy | None = None,
-        ) -> None:
-            self.text_splitter = text_splitter
-            self.include_table_context = include_table_context
-            self.asset_context_resolver = asset_context_resolver
-            self.table_chunk_eligibility_policy = (
-                table_chunk_eligibility_policy
-                or TableChunkEligibilityPolicy(
-                    text_splitter=text_splitter,
-                )
+        self,
+        *,
+        text_splitter: ChunkTextSplitter,
+        include_table_context: bool,
+        asset_context_resolver: AssetContextResolver,
+        table_chunk_eligibility_policy: TableChunkEligibilityPolicy | None = None,
+    ) -> None:
+        self.text_splitter = text_splitter
+        self.include_table_context = include_table_context
+        self.asset_context_resolver = asset_context_resolver
+        self.table_chunk_eligibility_policy = (
+            table_chunk_eligibility_policy
+            or TableChunkEligibilityPolicy(
+                text_splitter=text_splitter,
             )
+        )
 
     def should_chunk_table_element(
         self,
         element: CanonicalElement,
     ) -> bool:
-        return self.table_chunk_eligibility_policy.should_chunk(
-            element
-        )
+        return self.table_chunk_eligibility_policy.should_chunk(element)
 
     def table_fragment_text(
         self,
@@ -121,25 +118,18 @@ class TableFragmentBuilder:
                 parser_extra.get("logical_table_family_id") or ""
             ).strip()
             or None,
-            "logical_table_family_index": coerce_positive_int(
-                parser_extra.get("family_index")
-            ),
-            "logical_table_family_total": coerce_positive_int(
-                parser_extra.get("family_total")
-            ),
+            "logical_table_family_index": coerce_positive_int(parser_extra.get("family_index")),
+            "logical_table_family_total": coerce_positive_int(parser_extra.get("family_total")),
             "logical_table_continuation_role": str(
                 parser_extra.get("continuation_role") or ""
             ).strip()
             or None,
-            "table_category": str(parser_extra.get("table_category") or "").strip()
-            or None,
+            "table_category": str(parser_extra.get("table_category") or "").strip() or None,
             "table_category_confidence": coerce_float(
                 parser_extra.get("table_category_confidence")
             ),
             "table_shape": str(parser_extra.get("table_shape") or "").strip() or None,
-            "table_structure_quality": coerce_float(
-                parser_extra.get("table_structure_quality")
-            ),
+            "table_structure_quality": coerce_float(parser_extra.get("table_structure_quality")),
             "header_paths": TableFragmentBuilder._clean_header_paths(
                 parser_extra.get("table_header_paths_json")
             ),
