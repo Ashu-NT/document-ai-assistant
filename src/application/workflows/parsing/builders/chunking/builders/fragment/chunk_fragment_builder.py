@@ -16,6 +16,9 @@ from src.application.workflows.parsing.builders.chunking.models.chunk_fragment i
 from src.application.workflows.parsing.builders.chunking.builders.structured_section_fragment_builder import (
     StructuredSectionFragmentBuilder,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured.structured_document_evidence_context import (
+    StructuredDocumentEvidenceContext,
+)
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
@@ -124,7 +127,7 @@ class ChunkFragmentBuilder:
         document_type: DocumentType | None,
         section: DocumentSection,
         elements: list[CanonicalElement],
-        document_sections_combined_text: str = "",
+        document_context: StructuredDocumentEvidenceContext | None = None,
     ) -> list[ChunkFragment]:
         structured_fragments, consumed_element_ids = (
             self.structured_fragment_builder.build(
@@ -132,7 +135,7 @@ class ChunkFragmentBuilder:
                 document_type=document_type,
                 section=section,
                 elements=elements,
-                document_sections_combined_text=document_sections_combined_text,
+                document_context=document_context,
             )
         )
         fragments: list[ChunkFragment] = list(structured_fragments)

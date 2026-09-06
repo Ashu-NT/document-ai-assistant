@@ -150,6 +150,22 @@ def build_graph_stage_catalog() -> list[GraphBuildStageDescriptor]:
             complexity_reason="Joins each section path once.",
         ),
         GraphBuildStageDescriptor(
+            name="section_chunk_builder.prepare_structured_document_context",
+            owner="StructuredDocumentEvidenceContext",
+            function="build",
+            responsibility="Normalize reusable document-level structured evidence once.",
+            worst_case_complexity="O(d)",
+            complexity_reason="Normalizes title and combined section-path text once per document.",
+        ),
+        GraphBuildStageDescriptor(
+            name="structured_family_spec_factory.select_specs",
+            owner="StructuredFamilySpecFactory",
+            function="build",
+            responsibility="Select applicable structured evidence families for each section.",
+            worst_case_complexity="O(s * f * l)",
+            complexity_reason="Each family checks local section evidence and cached document signals.",
+        ),
+        GraphBuildStageDescriptor(
             name="section_chunk_builder.build_fragments",
             owner="ChunkFragmentBuilder",
             function="build_section_fragments",

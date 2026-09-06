@@ -7,13 +7,14 @@ from src.application.workflows.parsing.builders.chunking.builders.section_chunk.
 from src.application.workflows.parsing.builders.chunking.builders.section_overview_chunk_builder import (
     SectionOverviewChunkBuilder,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured import (
+    StructuredDocumentEvidenceContext,
+)
 from src.application.workflows.parsing.builders.chunking.deduplication.chunk_payload_deduplicator import (
     ChunkPayloadDeduplicator,
 )
-from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
+from src.application.workflows.parsing.builders.chunking.models import (
     ChunkFragment,
-)
-from src.application.workflows.parsing.builders.chunking.models.chunk_payload import (
     ChunkPayload,
 )
 from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
@@ -92,7 +93,6 @@ class SectionChunkBuilder:
     ) -> list[ChunkPayload]:
         if not elements:
             return []
-
         with self.profiler.measure(
             name="section_chunk_builder.create_runtime",
             input_counts={"sections": 1, "elements": len(elements)},
@@ -107,7 +107,6 @@ class SectionChunkBuilder:
             )
             stage.output_counts["sections"] = 1
         runtime.fragment_builder.set_profiler(self.profiler)
-
         if runtime.section_skipper.should_skip_section(
             document_title=document_title,
             section=section,
@@ -126,7 +125,6 @@ class SectionChunkBuilder:
             self.profiler.flush_aggregates()
         if not fragments:
             return []
-
         return self._deduplicate_payloads(
             self.fragment_packer.pack(
                 document_title=document_title,
@@ -192,6 +190,24 @@ class SectionChunkBuilder:
             stage.output_counts["combined_text_length"] = len(
                 document_sections_combined_text
             )
+        with self.profiler.measure(
+            name="section_chunk_builder.prepare_structured_document_context",
+            input_counts={
+                "document_section_text_chars": len(
+                    document_sections_combined_text
+                )
+            },
+        ) as stage:
+            document_context = StructuredDocumentEvidenceContext.build(
+                document_title=document_title,
+                document_sections_combined_text=document_sections_combined_text,
+                matcher=(
+                    runtime.fragment_builder.structured_fragment_builder.marker_matcher
+                ),
+            )
+            stage.output_counts["normalized_document_text_chars"] = len(
+                document_context.normalized_section_text
+            )
         fragments: list[ChunkFragment] = []
 
         try:
@@ -219,9 +235,7 @@ class SectionChunkBuilder:
                             document_type=document_type,
                             section=section,
                             elements=elements,
-                            document_sections_combined_text=(
-                                document_sections_combined_text
-                            ),
+                            document_context=document_context,
                         )
                     )
                 stage.output_counts["fragments"] = len(fragments)

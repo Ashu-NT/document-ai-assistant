@@ -38,10 +38,9 @@ class StructuredMarkerMatchPolicy:
     ) -> tuple[MarkerMatch, ...]:
         normalized_text = self.matcher.normalize(text)
         accepted: list[MarkerMatch] = []
-        for marker in markers:
-            for match in self.matcher.iter_matches(normalized_text, marker):
-                preceding_text = normalized_text[max(0, match.start - 80) : match.start]
-                if any(cue in preceding_text for cue in self.negation_cues):
-                    continue
-                accepted.append(match)
+        for match in self.matcher.find_normalized_matches(normalized_text, markers):
+            preceding_text = normalized_text[max(0, match.start - 80) : match.start]
+            if any(cue in preceding_text for cue in self.negation_cues):
+                continue
+            accepted.append(match)
         return tuple(accepted)

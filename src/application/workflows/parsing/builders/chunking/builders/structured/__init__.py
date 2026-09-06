@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_evidence_family import (
     StructuredEvidenceFamily,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured.structured_document_evidence_context import (
+    StructuredDocumentEvidenceContext,
+)
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_context import (
     StructuredFamilyContext,
 )
@@ -22,6 +25,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.str
 
 __all__ = [
     "StructuredEvidenceFamily",
+    "StructuredDocumentEvidenceContext",
     "StructuredFamilyContext",
     "StructuredFamilyMarkerTuning",
     "StructuredFamilySpecFactory",

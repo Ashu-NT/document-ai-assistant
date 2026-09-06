@@ -130,7 +130,7 @@ def test_repeated_procedure_role_headers_remain_local_evidence() -> None:
     assert result.element_section_paths["pre_2"] == ["8.2 Checking pump"]
 
 
-def test_embedded_record_numbers_do_not_reset_active_numbered_scope() -> None:
+def test_embedded_numbered_headings_do_not_reset_active_document_scope() -> None:
     headers = [
         _header("h4", "4 Technical Data", 1),
         _header("h42", "4.2 Product data", 2),

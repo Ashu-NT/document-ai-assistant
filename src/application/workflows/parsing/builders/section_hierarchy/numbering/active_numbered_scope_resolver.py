@@ -9,7 +9,9 @@ from src.application.workflows.parsing.parsed_canonical_element import (
 )
 
 
-_LOCAL_RECORD_NUMBER_PATTERN = re.compile(r"^\s*\d{2,6}\s*(?:-|\u2013|\u2014|:)\s*\S")
+_EMBEDDED_NUMBERED_HEADING_PATTERN = re.compile(
+    r"^\s*\d{2,6}\s*(?:-|\u2013|\u2014|:)\s*\S"
+)
 
 
 class ActiveNumberedScopeResolver:
@@ -24,7 +26,7 @@ class ActiveNumberedScopeResolver:
         for header in sorted(headers, key=lambda item: item.order_index):
             header_id = header.element_id
             number = resolution.header_numberings.get(header_id)
-            if number and not self._is_local_numbered_step(
+            if number and not self._is_embedded_numbered_heading(
                 header,
                 number,
                 active_header_by_depth,
@@ -78,7 +80,7 @@ class ActiveNumberedScopeResolver:
         resolution.sources[header_id] = "numbered_scope"
 
     @staticmethod
-    def _is_local_numbered_step(
+    def _is_embedded_numbered_heading(
         header: ParsedCanonicalElement,
         number: str,
         active_header_by_depth: dict[int, ParsedCanonicalElement],
@@ -92,7 +94,8 @@ class ActiveNumberedScopeResolver:
             return False
         text = (header.text or "").strip()
         return max(active_header_by_depth) >= 2 and (
-            text.startswith(f"{number}.") or _LOCAL_RECORD_NUMBER_PATTERN.match(text) is not None
+            text.startswith(f"{number}.")
+            or _EMBEDDED_NUMBERED_HEADING_PATTERN.match(text) is not None
         )
 
     @staticmethod

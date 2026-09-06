@@ -10,6 +10,9 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.arb
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_section_window_spec import (
     StructuredSectionWindowSpec,
 )
+from src.application.workflows.parsing.builders.chunking.builders.structured.structured_document_evidence_context import (
+    StructuredDocumentEvidenceContext,
+)
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_element_text_resolver import (
     StructuredElementTextResolver,
 )
@@ -86,6 +89,7 @@ class StructuredSectionFragmentBuilder:
         section: DocumentSection,
         elements: list[CanonicalElement],
         document_sections_combined_text: str = "",
+        document_context: StructuredDocumentEvidenceContext | None = None,
     ) -> tuple[list[ChunkFragment], set[str]]:
         ordered_elements = [
             element for element in elements if self._is_structurable_element(element)
@@ -93,13 +97,19 @@ class StructuredSectionFragmentBuilder:
         if not ordered_elements:
             return [], set()
 
+        document_context = document_context or StructuredDocumentEvidenceContext.build(
+            document_title=document_title,
+            document_sections_combined_text=document_sections_combined_text,
+            matcher=self.marker_matcher,
+        )
         selection = self.spec_factory.build(
             document_title=document_title,
             document_type=document_type,
             section=section,
             elements=ordered_elements,
             normalizer=self.marker_matcher.normalize,
-            document_sections_combined_text=document_sections_combined_text,
+            document_context=document_context,
+            marker_matcher=self.marker_matcher,
         )
         if not selection.specs:
             return [], set()
