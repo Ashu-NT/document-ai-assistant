@@ -56,10 +56,10 @@ def test_build_still_orders_left_lane_before_right_lane_when_right_column_starts
     # the other doesn't) used to flip the whole column's reading order,
     # putting the right column before the left one entirely.
     candidates = [
-        _candidate(element_ref="right_1", bbox=BoundingBox(452, 100, 600, 150)),
-        _candidate(element_ref="right_2", bbox=BoundingBox(452, 160, 600, 200)),
-        _candidate(element_ref="left_1", bbox=BoundingBox(56, 180, 300, 230)),
-        _candidate(element_ref="left_2", bbox=BoundingBox(56, 240, 300, 280)),
+        _candidate(element_ref="right_1", bbox=BoundingBox(452, 800, 600, 850)),
+        _candidate(element_ref="right_2", bbox=BoundingBox(452, 740, 600, 780)),
+        _candidate(element_ref="left_1", bbox=BoundingBox(56, 720, 300, 770)),
+        _candidate(element_ref="left_2", bbox=BoundingBox(56, 660, 300, 700)),
     ]
     detection = LayoutLaneDetection(lane_count=2, split_x=376.0)
 
@@ -79,11 +79,11 @@ def test_build_interleaves_full_width_heading_before_the_column_bank() -> None:
     candidates = [
         _candidate(
             element_ref="heading",
-            bbox=BoundingBox(20, 10, 780, 40),
+            bbox=BoundingBox(20, 900, 780, 930),
             label="section_header",
         ),
-        _candidate(element_ref="right_1", bbox=BoundingBox(452, 100, 600, 150)),
-        _candidate(element_ref="left_1", bbox=BoundingBox(56, 180, 300, 230)),
+        _candidate(element_ref="right_1", bbox=BoundingBox(452, 700, 600, 750)),
+        _candidate(element_ref="left_1", bbox=BoundingBox(56, 640, 300, 690)),
     ]
     detection = LayoutLaneDetection(lane_count=2, split_x=376.0)
 
@@ -101,8 +101,8 @@ def test_build_interleaves_full_width_heading_before_the_column_bank() -> None:
 
 def test_build_returns_single_region_for_single_column_page() -> None:
     candidates = [
-        _candidate(element_ref="text_1", bbox=BoundingBox(20, 100, 780, 150)),
-        _candidate(element_ref="text_2", bbox=BoundingBox(20, 160, 780, 200)),
+        _candidate(element_ref="text_1", bbox=BoundingBox(20, 800, 780, 850)),
+        _candidate(element_ref="text_2", bbox=BoundingBox(20, 740, 780, 780)),
     ]
     detection = LayoutLaneDetection(lane_count=1)
 

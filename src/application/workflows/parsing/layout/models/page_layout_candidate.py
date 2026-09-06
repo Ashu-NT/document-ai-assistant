@@ -20,7 +20,8 @@ class PageLayoutCandidate:
     def top_y(self) -> float | None:
         if self.bbox is None:
             return None
-        return min(self.bbox.y1, self.bbox.y2)
+        # Docling PDF provenance uses BOTTOMLEFT coordinates.
+        return max(self.bbox.y1, self.bbox.y2)
 
     def width(self) -> float | None:
         if self.bbox is None:
@@ -35,7 +36,7 @@ class PageLayoutCandidate:
     def bottom_y(self) -> float | None:
         if self.bbox is None:
             return None
-        return max(self.bbox.y1, self.bbox.y2)
+        return min(self.bbox.y1, self.bbox.y2)
 
     def spans_split(self, split_x: float) -> bool:
         if self.bbox is None:

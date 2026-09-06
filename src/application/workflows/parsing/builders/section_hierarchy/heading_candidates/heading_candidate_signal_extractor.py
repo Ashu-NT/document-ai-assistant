@@ -10,13 +10,18 @@ from src.application.workflows.parsing.builders.section_hierarchy.numbering.head
     has_embedded_item_numbering,
     numbering_depth,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_heading_recognizer import (
+    TocHeadingRecognizer,
+)
 from src.application.workflows.parsing.parsed_canonical_element import (
     ParsedCanonicalElement,
 )
+from src.domain.common import ElementType
 
 
 _CAPTION_PATTERN = re.compile(
-    r"^(?:fig(?:ure)?|table|diagram|drawing|image|plate)\s*[.:-]?\s*[a-z0-9]",
+    r"^(?:fig(?:ure)?|table|diagram|drawing|image|plate)"
+    r"(?:\s+(?:no\.?\s*)?[a-z]?\d[\w.-]*|\s*[.:-]\s*\S)",
     re.IGNORECASE,
 )
 _LOW_SIGNAL_PATTERN = re.compile(r"^[\W_\d]+$", re.UNICODE)
@@ -53,6 +58,7 @@ class HeadingCandidateSignalExtractor:
             numbering,
             active_numberings,
         )
+        document_index_heading = TocHeadingRecognizer.matches(header.text)
         return HeadingCandidateSignals(
             numbering=numbering,
             numbering_depth=depth,
@@ -75,6 +81,7 @@ class HeadingCandidateSignalExtractor:
                 and toc_entry.numbering == numbering
             ),
             toc_page_close=toc_page_distance is not None and toc_page_distance <= 3,
+            document_index_heading=document_index_heading,
             native_heading_level=self._positive_int(
                 header.metadata.get("heading_level")
             ),
@@ -91,12 +98,24 @@ class HeadingCandidateSignalExtractor:
                 if next_element is not None
                 else None
             ),
+            nearby_table_same_page=context.has_nearby_element_type(
+                header,
+                ElementType.TABLE,
+            ),
+            nearby_picture_same_page=context.has_nearby_element_type(
+                header,
+                ElementType.PICTURE,
+            ),
             repeated_title_count=context.repeated_title_count(header.element_id),
+            nearby_repeated_title=context.has_nearby_repeated_title(header_index),
             embedded_item_numbering=has_embedded_item_numbering(header.text),
             layout_prominent=context.has_prominent_height(header),
             indented_from_active=self._is_indented(header, active_header),
             page_continuous=self._is_page_continuous(header, active_header),
-            caption_like=bool(_CAPTION_PATTERN.match((header.text or "").strip())),
+            caption_like=bool(
+                not document_index_heading
+                and _CAPTION_PATTERN.match((header.text or "").strip())
+            ),
             noise_like=self._is_noise(header, normalized_title),
             title_word_count=len(normalized_title.split()),
             ends_with_colon=(header.text or "").rstrip().endswith(":"),

@@ -54,7 +54,7 @@ class LayoutRegionSegmenter:
         current_top = current.top_y()
         if previous_bottom is None or current_top is None:
             return False
-        return (current_top - previous_bottom) > threshold
+        return (previous_bottom - current_top) > threshold
 
     def _gap_threshold(
         self,

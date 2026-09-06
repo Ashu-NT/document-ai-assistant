@@ -14,13 +14,17 @@ class HeadingCandidateSignals:
     toc_title_exact: bool
     toc_number_exact: bool
     toc_page_close: bool
+    document_index_heading: bool
     native_heading_level: int | None
     has_descendant_pattern: bool
     has_sibling_pattern: bool
     next_element_type: ElementType | None
     next_element_same_page: bool
     next_element_order_gap: int | None
+    nearby_table_same_page: bool
+    nearby_picture_same_page: bool
     repeated_title_count: int
+    nearby_repeated_title: bool
     embedded_item_numbering: bool
     layout_prominent: bool
     indented_from_active: bool
@@ -32,7 +36,7 @@ class HeadingCandidateSignals:
 
     @property
     def adjacent_table(self) -> bool:
-        return (
+        return self.nearby_table_same_page or (
             self.next_element_type == ElementType.TABLE
             and self.next_element_same_page
             and (self.next_element_order_gap or 10_000) <= 3
@@ -40,7 +44,7 @@ class HeadingCandidateSignals:
 
     @property
     def adjacent_picture(self) -> bool:
-        return (
+        return self.nearby_picture_same_page or (
             self.next_element_type == ElementType.PICTURE
             and self.next_element_same_page
             and (self.next_element_order_gap or 10_000) <= 3

@@ -11,7 +11,7 @@ class LayoutReadingOrderResolver:
         return sorted(
             candidates,
             key=lambda candidate: (
-                candidate.top_y() or 0.0,
+                -(candidate.top_y() or 0.0),
                 candidate.center_x() or 0.0,
                 candidate.element_ref,
             ),

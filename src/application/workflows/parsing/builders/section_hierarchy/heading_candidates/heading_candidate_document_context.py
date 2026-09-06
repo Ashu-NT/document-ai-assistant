@@ -83,6 +83,32 @@ class HeadingCandidateDocumentContext:
                 return element
         return None
 
+    def has_nearby_element_type(
+        self,
+        header: ParsedCanonicalElement,
+        element_type: ElementType,
+        *,
+        max_order_gap: int = 4,
+    ) -> bool:
+        """Finds local structural evidence without crossing a heading or page boundary."""
+        position = self.element_positions.get(header.element_id)
+        if position is None:
+            return False
+        header_page = header.page_start or header.page_end
+        for element in self.elements[position + 1 : position + max_order_gap + 1]:
+            if element.element_type == ElementType.SECTION_HEADER:
+                break
+            element_page = element.page_start or element.page_end
+            if (
+                header_page is not None
+                and element_page is not None
+                and element_page != header_page
+            ):
+                break
+            if element.element_type == element_type:
+                return True
+        return False
+
     def has_descendant_pattern(self, header_index: int) -> bool:
         header = self.headers[header_index]
         numbering = self.numberings.get(header.element_id)
@@ -135,6 +161,33 @@ class HeadingCandidateDocumentContext:
 
     def repeated_title_count(self, header_id: str) -> int:
         return self.title_counts[self.normalized_title(header_id)]
+
+    def has_nearby_repeated_title(
+        self,
+        header_index: int,
+        *,
+        max_page_distance: int = 2,
+        max_header_distance: int = 80,
+    ) -> bool:
+        header = self.headers[header_index]
+        title = self.normalized_title(header.element_id)
+        if not title or self.title_counts[title] < 2:
+            return False
+        page = header.page_start or header.page_end
+        start = max(0, header_index - max_header_distance)
+        stop = min(len(self.headers), header_index + max_header_distance + 1)
+        for candidate_index in range(start, stop):
+            if candidate_index == header_index:
+                continue
+            candidate = self.headers[candidate_index]
+            if self.normalized_title(candidate.element_id) != title:
+                continue
+            candidate_page = candidate.page_start or candidate.page_end
+            if page is None or candidate_page is None:
+                return True
+            if abs(candidate_page - page) <= max_page_distance:
+                return True
+        return False
 
     def has_prominent_height(self, header: ParsedCanonicalElement) -> bool:
         if header.bbox is None or not self.median_header_height:

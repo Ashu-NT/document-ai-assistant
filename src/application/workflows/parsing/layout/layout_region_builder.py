@@ -176,11 +176,11 @@ class LayoutRegionBuilder:
             for key, items in grouped.items()
             if key != "full"
         ]
-        return min(lane_top_ys, default=0.0)
+        return max(lane_top_ys, default=0.0)
 
     @staticmethod
     def _group_top_y(candidates: list[PageLayoutCandidate]) -> float:
-        return min(
+        return max(
             (
                 candidate.top_y()
                 for candidate in candidates
@@ -198,9 +198,9 @@ class LayoutRegionBuilder:
     ) -> tuple[float, int, int]:
         key, candidates = item
         if key == "full":
-            return (LayoutRegionBuilder._group_top_y(candidates), 0, 0)
+            return (-LayoutRegionBuilder._group_top_y(candidates), 0, 0)
         lane_index = lane_meta[key] or 0
-        return (shared_lane_top_y, 1, lane_index)
+        return (-shared_lane_top_y, 1, lane_index)
 
     @staticmethod
     def _merge_bbox(candidates: list[PageLayoutCandidate]) -> BoundingBox | None:

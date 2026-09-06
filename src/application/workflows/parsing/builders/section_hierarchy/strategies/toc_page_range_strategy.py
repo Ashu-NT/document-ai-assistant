@@ -9,7 +9,6 @@ from src.application.workflows.parsing.builders.section_hierarchy.strategies.sec
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry import (
     TocEntry,
     TocOutline,
-    normalize_toc_title,
 )
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_candidate_collector import (
     TocCandidateCollector,
@@ -23,21 +22,15 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry_
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_header_matcher import (
     TocHeaderMatcher,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_heading_recognizer import (
+    TocHeadingRecognizer,
+)
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.domain.common import ElementType
 
 
 class TocPageRangeStrategy(SectionHierarchyStrategy):
     name = "toc_page_range"
-    _TOC_HEADER_ALIASES = {
-        "contents",
-        "content",
-        "table of contents",
-        "inhaltsverzeichnis",
-        "inhalt",
-        "sommaire",
-        "toc",
-    }
     _TOC_ANCHOR_SCAN_PAGE_LIMIT = 20
     _TOC_MAX_SPAN_PAGES = 24
 
@@ -212,7 +205,7 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
 
     @classmethod
     def _looks_like_toc_header(cls, value: str | None) -> bool:
-        return normalize_toc_title(value) in cls._TOC_HEADER_ALIASES
+        return TocHeadingRecognizer.matches(value)
 
     @staticmethod
     def _is_document_index(element: ParsedCanonicalElement) -> bool:

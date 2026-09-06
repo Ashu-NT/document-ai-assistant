@@ -18,6 +18,9 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry_
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_header_matcher import (
     TocHeaderMatcher,
 )
+from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_heading_recognizer import (
+    TocHeadingRecognizer,
+)
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_visual_line_assembler import (
     TocVisualLineAssembler,
 )
@@ -29,6 +32,7 @@ __all__ = [
     "TocElementEligibilityPolicy",
     "TocEntryAssembler",
     "TocHeaderMatcher",
+    "TocHeadingRecognizer",
     "TocVisualLineAssembler",
     "TocOutline",
     "normalize_toc_title",

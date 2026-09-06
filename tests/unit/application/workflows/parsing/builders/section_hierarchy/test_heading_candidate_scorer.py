@@ -21,13 +21,17 @@ def _signals(**overrides) -> HeadingCandidateSignals:
         "toc_title_exact": False,
         "toc_number_exact": False,
         "toc_page_close": False,
+        "document_index_heading": False,
         "native_heading_level": None,
         "has_descendant_pattern": False,
         "has_sibling_pattern": False,
         "next_element_type": None,
         "next_element_same_page": False,
         "next_element_order_gap": None,
+        "nearby_table_same_page": False,
+        "nearby_picture_same_page": False,
         "repeated_title_count": 1,
+        "nearby_repeated_title": False,
         "embedded_item_numbering": False,
         "layout_prominent": False,
         "indented_from_active": False,
@@ -90,3 +94,28 @@ def test_caption_and_furniture_are_not_outline_sections() -> None:
 
     assert scorer.assess(_signals(caption_like=True)).role == HeadingCandidateRole.CAPTION
     assert scorer.assess(_signals(noise_like=True)).role == HeadingCandidateRole.NOISE
+
+
+def test_document_index_heading_is_not_demoted_by_its_table() -> None:
+    assessment = HeadingCandidateScorer().assess(
+        _signals(
+            document_index_heading=True,
+            nearby_table_same_page=True,
+            title_word_count=3,
+        )
+    )
+
+    assert assessment.role == HeadingCandidateRole.OUTLINE_SECTION
+
+
+def test_nearby_repeated_short_label_is_local_inside_active_scope() -> None:
+    assessment = HeadingCandidateScorer().assess(
+        _signals(
+            active_scope_depth=3,
+            repeated_title_count=2,
+            nearby_repeated_title=True,
+            title_word_count=2,
+        )
+    )
+
+    assert assessment.role == HeadingCandidateRole.LOCAL_LABEL

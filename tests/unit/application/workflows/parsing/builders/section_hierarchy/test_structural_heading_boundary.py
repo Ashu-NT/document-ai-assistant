@@ -223,3 +223,27 @@ def test_numbered_alarm_records_remain_inside_active_catalog_scope() -> None:
     assert result.element_section_paths["alarm_641"] == expected_path
     assert result.element_section_paths["alarm_625_body"] == expected_path
     assert elements[2].metadata["heading_candidate_role"] == "local_label"
+
+
+def test_short_numbered_record_with_nearby_table_does_not_reset_outline() -> None:
+    elements = [
+        _header("h7", "7 Operating Instructions", 1),
+        _header("h72", "7.2 Troubleshooting", 2),
+        _header("record_3", "3 - High temperature", 3),
+        _text("record_code", "Code: 123", 4),
+        _text("record_description", "The measured value exceeded its limit.", 5),
+        _table("record_actions", "Cause | Corrective action", 6),
+        _header("h73", "7.3 Task Description", 7),
+    ]
+
+    result = SectionBuilder(IdGenerator()).build("doc_001", elements)
+
+    assert [section.title for section in result.sections] == [
+        "7 Operating Instructions",
+        "7.2 Troubleshooting",
+        "7.3 Task Description",
+    ]
+    troubleshooting_path = ["7 Operating Instructions", "7.2 Troubleshooting"]
+    assert result.element_section_paths["record_3"] == troubleshooting_path
+    assert result.element_section_paths["record_actions"] == troubleshooting_path
+    assert elements[2].metadata["heading_candidate_role"] == "table_category"

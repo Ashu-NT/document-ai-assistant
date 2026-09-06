@@ -51,6 +51,9 @@ class HeadingCandidateScorer:
         if signals.toc_page_close:
             score += 1.0
             reasons.append("toc_page_close")
+        if signals.document_index_heading:
+            score += 10.0
+            reasons.append("document_index_heading")
         if signals.numbering_compatible is True:
             score += 4.0
             reasons.append("numbering_compatible")
@@ -98,8 +101,8 @@ class HeadingCandidateScorer:
     @staticmethod
     def _score_local_label(signals, scores, reasons) -> None:
         score = 0.0
-        if signals.repeated_title_count >= 2:
-            score += 3.0
+        if signals.nearby_repeated_title:
+            score += 5.0
             reasons.append("repeated_local_title")
         if signals.embedded_item_numbering and signals.active_scope_depth is not None:
             score += 5.0
@@ -112,6 +115,8 @@ class HeadingCandidateScorer:
         if signals.numbering_compatible is False:
             score += 2.0
         if signals.indented_from_active:
+            score += 1.0
+        if signals.nearby_repeated_title and signals.title_word_count <= 4:
             score += 1.0
         scores[HeadingCandidateRole.LOCAL_LABEL] = score
 
@@ -135,6 +140,8 @@ class HeadingCandidateScorer:
     ) -> HeadingCandidateRole:
         if signals.noise_like:
             return HeadingCandidateRole.NOISE
+        if signals.document_index_heading:
+            return HeadingCandidateRole.OUTLINE_SECTION
         if signals.caption_like and scores[HeadingCandidateRole.CAPTION] >= 6.0:
             return HeadingCandidateRole.CAPTION
 
