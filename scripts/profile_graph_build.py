@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# The script adds the repository root to sys.path before importing src modules.
+# ruff: noqa: E402
+
 import argparse
 import cProfile
 import pstats
@@ -27,6 +30,8 @@ from src.application.workflows.parsing.normalizers.docling_document_normalizer i
 )
 from src.application.reporting.document_parsing.graph_build_profiling import (
     GraphBuildReportWriter,
+    build_structured_family_timing_summary,
+    render_structured_family_timing_console_lines,
 )
 from src.application.orchestrator.ingestion.ingestion_input_limits import (
     resolve_ingestion_input_limits,
@@ -519,6 +524,11 @@ def main() -> int:
         improvement_percent = ((baseline - graph_build_seconds) / baseline) * 100.0
 
     stage_metrics = [asdict(metric) for metric in graph_profiler.stage_metrics]
+    structured_family_timings = build_structured_family_timing_summary(stage_metrics)
+    for line in render_structured_family_timing_console_lines(
+        structured_family_timings
+    ):
+        _emit(line)
     report_data = {
         "input_document": {
             "file_path": str(input_path),
@@ -543,6 +553,7 @@ def main() -> int:
             "graph_build_improvement_percent": improvement_percent,
         },
         "stage_metrics": stage_metrics,
+        "structured_family_timings": structured_family_timings,
         "architecture_map": [
             asdict(descriptor)
             for descriptor in build_graph_stage_catalog()

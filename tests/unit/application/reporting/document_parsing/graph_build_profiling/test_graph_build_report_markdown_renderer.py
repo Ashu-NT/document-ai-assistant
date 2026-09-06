@@ -44,3 +44,32 @@ def test_display_operation_name_maps_known_keys() -> None:
 
     assert renderer._display_operation_name("docling_conversion") == "Docling Conversion"
     assert renderer._display_operation_name("unknown_stage") == "Unknown Stage"
+
+
+def test_render_includes_structured_family_timing_breakdown() -> None:
+    report_data = {
+        **_MINIMAL_REPORT_DATA,
+        "structured_family_timings": {
+            "select_specs_elapsed_seconds": 2.0,
+            "family_elapsed_seconds": 1.5,
+            "unattributed_elapsed_seconds": 0.5,
+            "accounted_percent": 75.0,
+            "families": [
+                {
+                    "family_builder": "ManualStructuredFamilyBuilder",
+                    "elapsed_seconds": 1.5,
+                    "invocations": 3,
+                    "average_milliseconds": 500.0,
+                    "specs": 4,
+                    "select_specs_percent": 75.0,
+                }
+            ],
+        },
+    }
+
+    markdown = GraphBuildReportMarkdownRenderer().render(report_data)
+
+    assert "## Structured Family Timing Breakdown" in markdown
+    assert "ManualStructuredFamilyBuilder" in markdown
+    assert "500.000ms" in markdown
+    assert "75.00%" in markdown

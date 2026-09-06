@@ -14,6 +14,7 @@ class GraphBuildReportMarkdownRenderer:
         architecture_map = report_data["architecture_map"]
         bottlenecks = report_data["ranked_bottlenecks"]
         operation_profiles = report_data.get("operation_profiles") or {}
+        family_timings = report_data.get("structured_family_timings") or {}
 
         lines = [
             "# Parsing Pipeline Performance Report",
@@ -68,6 +69,9 @@ class GraphBuildReportMarkdownRenderer:
                     f"{peak_bytes} | "
                     f"`{prof_path}` |"
                 )
+        if isinstance(family_timings, dict) and family_timings.get("families"):
+            lines.extend(self._render_structured_family_timings(family_timings))
+
         lines.extend(
             [
                 "",
@@ -207,6 +211,39 @@ class GraphBuildReportMarkdownRenderer:
             )
 
         return "\n".join(lines) + "\n"
+
+    @staticmethod
+    def _render_structured_family_timings(
+        summary: dict[str, object],
+    ) -> list[str]:
+        total_seconds = float(summary.get("select_specs_elapsed_seconds", 0.0))
+        family_seconds = float(summary.get("family_elapsed_seconds", 0.0))
+        unattributed_seconds = float(summary.get("unattributed_elapsed_seconds", 0.0))
+        accounted_percent = float(summary.get("accounted_percent", 0.0))
+        lines = [
+            "",
+            "## Structured Family Timing Breakdown",
+            f"- `select_specs` total: `{total_seconds:.3f}s`",
+            f"- Family builders total: `{family_seconds:.3f}s`",
+            f"- Selection/merge overhead: `{unattributed_seconds:.3f}s`",
+            f"- Family timing accounted: `{accounted_percent:.2f}%`",
+            "",
+            "| Family Builder | Elapsed | Calls | Average | Specs | Share of select_specs |",
+            "| --- | ---: | ---: | ---: | ---: | ---: |",
+        ]
+        for family in summary.get("families", []):
+            if not isinstance(family, dict):
+                continue
+            lines.append(
+                "| "
+                f"{family['family_builder']} | "
+                f"{float(family['elapsed_seconds']):.3f}s | "
+                f"{int(family['invocations'])} | "
+                f"{float(family['average_milliseconds']):.3f}ms | "
+                f"{int(family['specs'])} | "
+                f"{float(family['select_specs_percent']):.2f}% |"
+            )
+        return lines
 
     @staticmethod
     def _format_mapping(value: object) -> str:
