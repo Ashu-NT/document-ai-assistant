@@ -1,3 +1,16 @@
+from src.application.evaluation.ingestion import (
+    IngestionExpectationEvaluator,
+)
+from src.application.evaluation.ingestion.loaders import (
+    DEFAULT_INGESTION_TRUTH_SET_PATH,
+    IngestionTruthSetLoader,
+)
+from src.application.evaluation.ingestion.models import (
+    ExpectedCrossReference,
+    IngestionAssertionResult,
+    IngestionExpectationCase,
+    IngestionExpectationCaseResult,
+)
 from src.application.evaluation.retrieval import (
     ChunkQualityEvaluator,
     RetrievalBenchmarkEvaluator,
@@ -23,6 +36,13 @@ from src.application.evaluation.retrieval import (
 )
 
 __all__ = [
+    "IngestionExpectationEvaluator",
+    "DEFAULT_INGESTION_TRUTH_SET_PATH",
+    "IngestionTruthSetLoader",
+    "ExpectedCrossReference",
+    "IngestionAssertionResult",
+    "IngestionExpectationCase",
+    "IngestionExpectationCaseResult",
     "ChunkQualityEvaluator",
     "RetrievalBenchmarkEvaluator",
     "RetrievalBenchmarkCase",
