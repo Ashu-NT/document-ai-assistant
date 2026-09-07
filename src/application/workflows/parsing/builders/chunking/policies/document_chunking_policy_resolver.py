@@ -5,6 +5,9 @@ from src.application.workflows.parsing.builders.chunking.policies.policy.chunkin
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inference import (
+    ChunkingProfileInference,
+)
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inferer import (
     ChunkingProfileInferer,
 )
@@ -42,21 +45,42 @@ class DocumentChunkingPolicyResolver:
         sections: list[DocumentSection],
         section_elements_by_id: dict[str, list[CanonicalElement]],
         chunking_profile_override: ChunkingProfile | None = None,
+        precomputed_inference: ChunkingProfileInference | None = None,
     ) -> DocumentChunkingPolicy:
         if chunking_profile_override is not None:
             return self._policy_registry.get(chunking_profile_override)
 
+        profile = self.resolve_profile(
+            document_title=document_title,
+            document_type=document_type,
+            sections=sections,
+            section_elements_by_id=section_elements_by_id,
+            precomputed_inference=precomputed_inference,
+        )
+        return self._policy_registry.get(profile)
+
+    def resolve_profile(
+        self,
+        *,
+        document_title: str | None,
+        document_type: DocumentType | None,
+        sections: list[DocumentSection],
+        section_elements_by_id: dict[str, list[CanonicalElement]],
+        precomputed_inference: ChunkingProfileInference | None = None,
+    ) -> ChunkingProfile:
         mapped_profile = (
             _DOCUMENT_TYPE_PROFILES.get(document_type)
             if document_type is not None
             else None
         )
         if mapped_profile is not None:
-            return self._policy_registry.get(mapped_profile)
+            return mapped_profile
 
-        profile = self.profile_inferer.infer(
+        if precomputed_inference is not None:
+            return precomputed_inference.selected_profile
+
+        return self.profile_inferer.infer(
             document_title=document_title,
             sections=sections,
             section_elements_by_id=section_elements_by_id,
         )
-        return self._policy_registry.get(profile)

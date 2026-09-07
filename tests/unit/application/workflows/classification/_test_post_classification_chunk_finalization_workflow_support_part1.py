@@ -154,6 +154,9 @@ class FakeChunkingPolicyResolver:
     def __init__(self, profile_name: ChunkingProfile) -> None:
         self.profile_name = profile_name
 
+    def resolve_profile(self, **kwargs) -> ChunkingProfile:
+        return self.profile_name
+
     def resolve(self, **kwargs) -> DocumentChunkingPolicy:
         return DocumentChunkingPolicy(
             profile_name=self.profile_name,

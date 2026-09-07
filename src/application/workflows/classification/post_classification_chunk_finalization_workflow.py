@@ -162,17 +162,22 @@ class PostClassificationChunkFinalizationWorkflow:
             sections=sections,
             section_elements_by_id=section_elements_by_id,
         )
-        provisional_policy = self.chunking_policy_resolver.resolve(
+        # Reuses structural_inference instead of re-running the same
+        # ChunkingProfileStatistics build + scoring a second time -- only
+        # takes the inference path itself when document_type doesn't map to
+        # a known profile, which is what resolve() would otherwise do here.
+        provisional_chunking_profile = self.chunking_policy_resolver.resolve_profile(
             document_title=graph.document.title,
             document_type=graph.document.document_type,
             sections=sections,
             section_elements_by_id=section_elements_by_id,
+            precomputed_inference=structural_inference,
         )
         decision = self.document_type_resolver.resolve(
             parser_title_hint=graph.document.document_type,
             structural_inference=structural_inference,
             classification=classification,
-            provisional_chunking_profile=provisional_policy.profile_name,
+            provisional_chunking_profile=provisional_chunking_profile,
         )
         emit_progress(
             progress_callback,
