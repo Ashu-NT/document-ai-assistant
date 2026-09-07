@@ -24,10 +24,12 @@ class SectionMergePolicy:
     combined content fits the token budget and there's no hard semantic
     conflict between the two sections:
 
-    - sibling merge: same parent section, AND at least one positive
-      compatibility signal (shared title topic, or the same coarse content
-      family -- e.g. two different legal clauses, or two different safety
-      warnings).
+    - sibling merge: same parent section, AND a real positive compatibility
+      signal (shared title topic today). Sharing a coarse content family
+      (e.g. two different legal clauses) is checked earlier only as a hard
+      veto when families *differ* -- matching families alone is never
+      sufficient to merge, just as differing families alone is enough to
+      block it.
     - intro refinement: the earlier fragment is a genuine ancestor of the
       later one AND is itself introductory (background/overview-style),
       AND is short enough to still read as scene-setting rather than
@@ -157,15 +159,16 @@ class SectionMergePolicy:
         previous_title: str,
         next_title: str,
     ) -> bool:
+        # Sharing a semantic family (checked earlier, as a hard veto when
+        # families differ) is necessary but never sufficient on its own --
+        # two siblings of the same broad family with no other relationship
+        # (e.g. two unrelated legal clauses) are exactly the "uncertain"
+        # case the conservative default is for. A real positive signal
+        # (shared title topic today) is required to actually merge.
         if not SectionMergePolicy._shares_parent(previous_fragment, next_fragment):
             return False
 
-        if titles_share_topic(previous_title, next_title):
-            return True
-
-        previous_family = section_semantic_family(previous_title)
-        next_family = section_semantic_family(next_title)
-        return previous_family is not None and previous_family == next_family
+        return titles_share_topic(previous_title, next_title)
 
     @staticmethod
     def _shares_parent(

@@ -103,13 +103,13 @@ def test_merge_policy_separates_sections_with_conflicting_hard_families() -> Non
     assert should_flush is True
 
 
-def test_merge_policy_merges_same_family_siblings_without_shared_topic() -> None:
-    # "1.7 Modifications" and "1.8 Liability and Warranty" don't share a
-    # topic, but both are the "legal" family -- same family is a valid
-    # positive signal on its own (rule 5), so they may merge. This is a
-    # deliberate design decision, not a regression: the hard veto is
-    # specifically for CROSS-family pairs (see the next test), not for two
-    # different clauses of the same kind.
+def test_merge_policy_keeps_same_family_siblings_separate_without_shared_topic() -> None:
+    # "1.7 Modifications" and "1.8 Liability and Warranty" are both the
+    # "legal" family, but don't share a topic -- same family alone is never
+    # sufficient to merge (it's a veto/compatibility signal, not proof of
+    # compatibility), so with no other positive signal this is exactly the
+    # "uncertain" case the conservative default is for. Contrast with the
+    # next test, where DIFFERENT families still hard-veto regardless.
     policy = make_policy()
     current_fragment = make_fragment(
         text="Modifications require written consent.",
@@ -135,15 +135,15 @@ def test_merge_policy_merges_same_family_siblings_without_shared_topic() -> None
         next_fragment=next_fragment,
     )
 
-    assert should_flush is False
+    assert should_flush is True
 
 
 def test_merge_policy_separates_cross_family_numbered_siblings() -> None:
     # Regression for the actual reported bug: numbering alone (both
     # sections numbered, same parent) must never be enough to merge a
-    # legal clause with an unrelated procedural/technical section. Unlike
-    # the same-family case above, "legal" vs "procedural" is a hard
-    # cross-family veto.
+    # legal clause with an unrelated procedural/technical section. Cross-
+    # family pairs are hard-vetoed outright (stronger than the same-family
+    # case above, which merely fails to find a positive signal).
     policy = make_policy()
     current_fragment = make_fragment(
         text="Modifications require written consent.",

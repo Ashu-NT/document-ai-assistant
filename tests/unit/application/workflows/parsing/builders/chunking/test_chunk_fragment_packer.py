@@ -153,10 +153,12 @@ def test_merged_sibling_sections_keep_all_touched_section_ids_for_cross_referenc
     None
 ):
     # Regression for the section-path collapse bug: SectionMergePolicy folds
-    # "1.7 Modifications" and "1.8 Liability and Warranty" into one chunk
-    # because both are the same "legal" content family -- a real positive
-    # merge signal (section_semantic_family), not just shared numbering.
-    # The "1 General" intro fragment does NOT fold in with them: "General"
+    # "1.7 Interrupt Handling Setup" and "1.8 Interrupt Handling
+    # Verification" into one chunk because they share a real title topic
+    # ("interrupt handling") -- a genuine positive merge signal, not just
+    # shared numbering or shared broad family (same family alone is no
+    # longer sufficient -- see test_section_merge_policy.py). The
+    # "1 General" intro fragment does NOT fold in with them: "General"
     # isn't recognized introductory language, so it stays its own chunk
     # (the conservative default). The merged chunk's primary section_id/
     # section_path still collapse to the common ancestor "1 General" for
@@ -174,32 +176,32 @@ def test_merged_sibling_sections_keep_all_touched_section_ids_for_cross_referenc
         parent_section_id=None,
         token_count=10,
     )
-    modifications = ChunkFragment(
-        text="1.7 Modifications require written consent.",
+    setup = ChunkFragment(
+        text="1.7 Interrupt Handling Setup configures the vector table.",
         chunk_type=ChunkType.GENERAL,
         order_index=2,
         section_id="s_17",
-        section_title="1.7 Modifications",
-        section_path=["1 General", "1.7 Modifications"],
+        section_title="1.7 Interrupt Handling Setup",
+        section_path=["1 General", "1.7 Interrupt Handling Setup"],
         section_level=2,
         parent_section_id="s_general",
         token_count=8,
     )
-    liability = ChunkFragment(
-        text="1.8 Liability and Warranty is limited as described below.",
+    verification = ChunkFragment(
+        text="1.8 Interrupt Handling Verification checks the ISR fires correctly.",
         chunk_type=ChunkType.GENERAL,
         order_index=3,
         section_id="s_18",
-        section_title="1.8 Liability and Warranty",
-        section_path=["1 General", "1.8 Liability and Warranty"],
+        section_title="1.8 Interrupt Handling Verification",
+        section_path=["1 General", "1.8 Interrupt Handling Verification"],
         section_level=2,
         parent_section_id="s_general",
         token_count=8,
     )
     section_path_lookup = {
         ("1 General",): "s_general",
-        ("1 General", "1.7 Modifications"): "s_17",
-        ("1 General", "1.8 Liability and Warranty"): "s_18",
+        ("1 General", "1.7 Interrupt Handling Setup"): "s_17",
+        ("1 General", "1.8 Interrupt Handling Verification"): "s_18",
     }
 
     text_splitter = ChunkTextSplitter(max_chunk_tokens=50, chunk_overlap=0)
@@ -208,7 +210,7 @@ def test_merged_sibling_sections_keep_all_touched_section_ids_for_cross_referenc
     )
     payloads = ChunkFragmentPacker().pack(
         document_title=None,
-        fragments=[general, modifications, liability],
+        fragments=[general, setup, verification],
         section_path_lookup=section_path_lookup,
         text_splitter=text_splitter,
         payload_factory=ChunkPayloadFactory(),
@@ -223,8 +225,8 @@ def test_merged_sibling_sections_keep_all_touched_section_ids_for_cross_referenc
 
     assert merged_payload.section_path == ["1 General"]
     assert merged_payload.section_ids == ["s_general", "s_17", "s_18"]
-    assert "1.7 Modifications" in merged_payload.content
-    assert "1.8 Liability and Warranty" in merged_payload.content
+    assert "1.7 Interrupt Handling Setup" in merged_payload.content
+    assert "1.8 Interrupt Handling Verification" in merged_payload.content
 
 
 def test_does_not_flush_mid_run_between_fragments_of_the_same_list() -> None:
