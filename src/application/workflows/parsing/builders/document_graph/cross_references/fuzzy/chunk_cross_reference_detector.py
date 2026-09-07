@@ -32,10 +32,42 @@ _PAGE_REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
 # only against text not already consumed by a page-reference match above, so
 # a combined "see chapter X.X ..., Page N" match isn't also double-recorded
 # as a separate, redundant section-only reference.
-_SECTION_REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
+#
+# Detection is deliberately recall-oriented and covers several generic,
+# domain-independent lead-in phrasings -- corpus review (a real 98-page
+# manual) found genuine internal references phrased as "with reference to
+# section 9.4" and "described in section 6.5 of this user manual" that a
+# narrower "see section"/"see chapter" list misses entirely. Detection is
+# NOT acceptance: a bare "Section 1.2" can just as easily cite an external
+# standard/directive ("...Annex I, Section 1.2 Controls..."). That
+# distinction is ChunkCrossReferenceContextQualifier's job, downstream of
+# detection -- see DetectedSectionReference.is_explicit_lead_in below.
+_EXPLICIT_SECTION_REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bsee\s+section\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
     re.compile(r"\bsee\s+chapter\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
+    re.compile(r"\brefer(?:s|red)?\s+to\s+section\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
+    re.compile(r"\brefer(?:s|red)?\s+to\s+chapter\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
+    re.compile(
+        r"\bwith\s+reference\s+to\s+section\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE
+    ),
+    re.compile(
+        r"\bwith\s+reference\s+to\s+chapter\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE
+    ),
+    re.compile(r"\bdescribed\s+in\s+section\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
+    re.compile(r"\bdescribed\s+in\s+chapter\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
     re.compile(r"\bchap\.\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
+)
+
+# A bare "Section 6.5"/"Chapter 6.5" with no directional lead-in at all --
+# the weakest possible signal (equally at home citing this document or
+# someone else's), so it's tagged is_explicit_lead_in=False and left for
+# the context qualifier to corroborate (or reject) using anchors and
+# target-existence, never accepted on the strength of the match alone.
+# Checked last so it only claims spans an explicit pattern above didn't
+# already consume.
+_GENERIC_SECTION_REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"\bsection\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
+    re.compile(r"\bchapter\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
 )
 
 # Table/figure references: a bare "table N"/"fig. N" trigger, mirroring the
@@ -72,6 +104,12 @@ class DetectedPageReference:
 class DetectedSectionReference:
     matched_text: str
     target_section_label: str
+    # True for an explicit navigational lead-in ("see section", "refer to
+    # section", "with reference to section", "described in section",
+    # "chap."); False for a bare "section N"/"chapter N" mention with no
+    # lead-in. Drives how much weight ChunkCrossReferenceContextQualifier
+    # gives the match on its own, before anchors/target-existence.
+    is_explicit_lead_in: bool = True
 
 
 @dataclass(slots=True, frozen=True)
@@ -146,7 +184,7 @@ class ChunkCrossReferenceDetector:
     ) -> list[DetectedSectionReference]:
         references: list[DetectedSectionReference] = []
 
-        for pattern in _SECTION_REFERENCE_PATTERNS:
+        for pattern in _EXPLICIT_SECTION_REFERENCE_PATTERNS:
             for match in pattern.finditer(content):
                 span = match.span()
                 if self._overlaps_any(span, consumed_spans):
@@ -157,6 +195,22 @@ class ChunkCrossReferenceDetector:
                     DetectedSectionReference(
                         matched_text=match.group(0).strip(),
                         target_section_label=match.group(1),
+                        is_explicit_lead_in=True,
+                    )
+                )
+
+        for pattern in _GENERIC_SECTION_REFERENCE_PATTERNS:
+            for match in pattern.finditer(content):
+                span = match.span()
+                if self._overlaps_any(span, consumed_spans):
+                    continue
+
+                consumed_spans.append(span)
+                references.append(
+                    DetectedSectionReference(
+                        matched_text=match.group(0).strip(),
+                        target_section_label=match.group(1),
+                        is_explicit_lead_in=False,
                     )
                 )
 

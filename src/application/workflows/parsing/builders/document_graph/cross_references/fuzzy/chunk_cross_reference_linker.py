@@ -8,6 +8,9 @@ from src.application.workflows.parsing.builders.document_graph.cross_references.
 from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_asset_reference_resolver import (
     ChunkAssetReferenceResolver,
 )
+from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_cross_reference_context_qualifier import (
+    ChunkCrossReferenceContextQualifier,
+)
 from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_cross_reference_detector import (
     ChunkCrossReferenceDetector,
 )
@@ -19,6 +22,9 @@ from src.application.workflows.parsing.builders.document_graph.cross_references.
 )
 from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_section_reference_resolver import (
     ChunkSectionReferenceResolver,
+)
+from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.cross_reference_qualification import (
+    CrossReferenceScope,
 )
 from src.config.logging import get_logger
 from src.domain.document import DocumentGraph
@@ -42,12 +48,14 @@ class ChunkCrossReferenceLinker:
         resolver: ChunkCrossReferenceResolver | None = None,
         section_resolver: ChunkSectionReferenceResolver | None = None,
         asset_resolver: ChunkAssetReferenceResolver | None = None,
+        context_qualifier: ChunkCrossReferenceContextQualifier | None = None,
     ) -> None:
         self.id_generator = id_generator
         self.detector = detector or ChunkCrossReferenceDetector()
         self.resolver = resolver or ChunkCrossReferenceResolver()
         self.section_resolver = section_resolver or ChunkSectionReferenceResolver()
         self.asset_resolver = asset_resolver or ChunkAssetReferenceResolver()
+        self.context_qualifier = context_qualifier or ChunkCrossReferenceContextQualifier()
 
     def link(self, graph: DocumentGraph) -> list[ChunkCrossReference]:
         with time_stage(
@@ -56,16 +64,19 @@ class ChunkCrossReferenceLinker:
             document_id=graph.document.document_id,
             success_level=logging.DEBUG,
         ) as scope:
-            cross_references = self._link(graph)
+            cross_references, qualification_counts = self._link(graph)
             counts: dict[str, int] = {}
             for reference in cross_references:
                 key = reference.reference_type.value
                 counts[key] = counts.get(key, 0) + 1
             scope.counts.update(counts)
+            scope.counts.update(qualification_counts)
             scope.counts["total"] = len(cross_references)
         return cross_references
 
-    def _link(self, graph: DocumentGraph) -> list[ChunkCrossReference]:
+    def _link(
+        self, graph: DocumentGraph
+    ) -> tuple[list[ChunkCrossReference], dict[str, int]]:
         chunks = list(graph.chunks.values())
         section_index = ChunkSectionNumberIndex(chunks, sections=graph.sections)
         asset_index = ChunkAssetNumberIndex(
@@ -74,9 +85,52 @@ class ChunkCrossReferenceLinker:
             pictures=graph.pictures,
         )
         cross_references: list[ChunkCrossReference] = []
+        qualification_counts: dict[str, int] = {}
 
         for chunk in chunks:
             detection = self.detector.detect(chunk.content)
+
+            for section_reference in detection.section_references:
+                target_exists = bool(
+                    section_index.exact_match(section_reference.target_section_label)
+                    or section_index.descendant_matches(
+                        section_reference.target_section_label
+                    )
+                )
+                qualification = self.context_qualifier.qualify_section_reference(
+                    is_explicit_lead_in=section_reference.is_explicit_lead_in,
+                    context_text=chunk.content,
+                    target_exists_in_document=target_exists,
+                )
+                qualification_key = f"section_reference_{qualification.scope.value}"
+                qualification_counts[qualification_key] = (
+                    qualification_counts.get(qualification_key, 0) + 1
+                )
+                if qualification.scope != CrossReferenceScope.INTERNAL:
+                    continue
+
+                resolved = self.section_resolver.resolve(
+                    target_section_label=section_reference.target_section_label,
+                    index=section_index,
+                )
+                if resolved.target_chunk_id == chunk.chunk_id:
+                    continue
+
+                cross_references.append(
+                    ChunkCrossReference(
+                        cross_reference_id=self.id_generator.new_id(
+                            IdPrefix.CROSS_REFERENCE
+                        ),
+                        document_id=graph.document.document_id,
+                        source_chunk_id=chunk.chunk_id,
+                        reference_type=ChunkCrossReferenceType.SECTION_REFERENCE,
+                        matched_text=section_reference.matched_text,
+                        target_section_label=section_reference.target_section_label,
+                        target_chunk_id=resolved.target_chunk_id,
+                        resolution_status=resolved.resolution_status,
+                        confidence_score=resolved.confidence_score,
+                    )
+                )
 
             for page_reference in detection.page_references:
                 resolved = self.resolver.resolve(
@@ -96,30 +150,6 @@ class ChunkCrossReferenceLinker:
                         reference_type=ChunkCrossReferenceType.PAGE_REFERENCE,
                         matched_text=page_reference.matched_text,
                         target_page=page_reference.target_page,
-                        target_chunk_id=resolved.target_chunk_id,
-                        resolution_status=resolved.resolution_status,
-                        confidence_score=resolved.confidence_score,
-                    )
-                )
-
-            for section_reference in detection.section_references:
-                resolved = self.section_resolver.resolve(
-                    target_section_label=section_reference.target_section_label,
-                    index=section_index,
-                )
-                if resolved.target_chunk_id == chunk.chunk_id:
-                    continue
-
-                cross_references.append(
-                    ChunkCrossReference(
-                        cross_reference_id=self.id_generator.new_id(
-                            IdPrefix.CROSS_REFERENCE
-                        ),
-                        document_id=graph.document.document_id,
-                        source_chunk_id=chunk.chunk_id,
-                        reference_type=ChunkCrossReferenceType.SECTION_REFERENCE,
-                        matched_text=section_reference.matched_text,
-                        target_section_label=section_reference.target_section_label,
                         target_chunk_id=resolved.target_chunk_id,
                         resolution_status=resolved.resolution_status,
                         confidence_score=resolved.confidence_score,
@@ -178,7 +208,7 @@ class ChunkCrossReferenceLinker:
                     )
                 )
 
-        return cross_references
+        return cross_references, qualification_counts
 
 
 __all__ = ["ChunkCrossReferenceLinker"]

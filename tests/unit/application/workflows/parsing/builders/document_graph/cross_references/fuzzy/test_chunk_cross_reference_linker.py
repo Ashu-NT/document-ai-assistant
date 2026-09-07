@@ -12,15 +12,23 @@ from src.domain.document.value_objects import DocumentHashes
 from src.shared.ids import IdGenerator
 
 
-def make_chunk(*, chunk_id: str, content: str, table_ids: list[str] | None = None) -> DocumentChunk:
+def make_chunk(
+    *,
+    chunk_id: str,
+    content: str,
+    table_ids: list[str] | None = None,
+    section_path: list[str] | None = None,
+    sequence_number: int = 1,
+) -> DocumentChunk:
     return DocumentChunk(
         chunk_id=chunk_id,
         document_id="doc_001",
         section_id=None,
+        section_path=section_path or [],
         content=content,
         source=SourceLocation(page_start=1, page_end=1),
         table_ids=table_ids or [],
-        sequence_number=1,
+        sequence_number=sequence_number,
     )
 
 
@@ -125,6 +133,141 @@ def test_link_does_not_self_reference_when_the_table_reference_lands_on_its_own_
     cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
 
     assert cross_references == []
+
+
+def test_link_resolves_an_explicit_section_reference_with_no_anchors_present() -> None:
+    # Preserves today's accepted behavior for "see section"/"chap." -- an
+    # explicit lead-in with no anchors either way still resolves, exactly
+    # as it did before the qualifier was introduced.
+    referencing_chunk = make_chunk(
+        chunk_id="ref", content="See section 9 for wiring details.", sequence_number=1
+    )
+    target_chunk = make_chunk(
+        chunk_id="target",
+        content="Wiring details go here.",
+        section_path=["9 Wiring"],
+        sequence_number=2,
+    )
+    graph = make_graph([referencing_chunk, target_chunk], tables={})
+
+    cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    section_refs = [
+        xref
+        for xref in cross_references
+        if xref.reference_type == ChunkCrossReferenceType.SECTION_REFERENCE
+    ]
+    assert len(section_refs) == 1
+    assert section_refs[0].target_chunk_id == "target"
+    assert section_refs[0].resolution_status == ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE
+
+
+def test_link_resolves_an_alternate_phrasing_section_reference() -> None:
+    # Regression for the redesign's core motivation: "with reference to
+    # section" used to be invisible to the detector entirely.
+    referencing_chunk = make_chunk(
+        chunk_id="ref",
+        content="With reference to section 9.4, item 13 above, refit the end shield.",
+        sequence_number=1,
+    )
+    target_chunk = make_chunk(
+        chunk_id="target",
+        content="End shield refit instructions.",
+        section_path=["9.4 End Shield"],
+        sequence_number=2,
+    )
+    graph = make_graph([referencing_chunk, target_chunk], tables={})
+
+    cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    section_refs = [
+        xref
+        for xref in cross_references
+        if xref.reference_type == ChunkCrossReferenceType.SECTION_REFERENCE
+    ]
+    assert len(section_refs) == 1
+    assert section_refs[0].target_chunk_id == "target"
+    assert section_refs[0].matched_text == "With reference to section 9.4"
+
+
+def test_link_drops_a_generic_bare_section_mention_that_cites_an_external_directive() -> (
+    None
+):
+    # The core behavior change: a bare "Section N" next to an external
+    # standards-body anchor no longer produces a cross-reference at all --
+    # not even an unresolved one -- because it never proceeds past
+    # qualification.
+    referencing_chunk = make_chunk(
+        chunk_id="ref",
+        content=(
+            "The latest version of the Directive for Machinery, Annex I, "
+            "Section 1.2 Controls should be observed."
+        ),
+        section_path=["1.2 Something Unrelated"],
+    )
+    graph = make_graph([referencing_chunk], tables={})
+
+    cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    assert cross_references == []
+
+
+def test_link_drops_an_ambiguous_generic_bare_section_mention_with_no_signal_either_way() -> (
+    None
+):
+    referencing_chunk = make_chunk(
+        chunk_id="ref", content="Section 12.9 was updated last year."
+    )
+    graph = make_graph([referencing_chunk], tables={})
+
+    cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    assert cross_references == []
+
+
+def test_link_resolves_a_generic_bare_section_mention_with_an_internal_anchor() -> None:
+    referencing_chunk = make_chunk(
+        chunk_id="ref",
+        content="Section 4.2 of this manual covers installation drawings.",
+        sequence_number=1,
+    )
+    target_chunk = make_chunk(
+        chunk_id="target",
+        content="Installation drawing details.",
+        section_path=["4.2 Installation Drawings"],
+        sequence_number=2,
+    )
+    graph = make_graph([referencing_chunk, target_chunk], tables={})
+
+    cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    section_refs = [
+        xref
+        for xref in cross_references
+        if xref.reference_type == ChunkCrossReferenceType.SECTION_REFERENCE
+    ]
+    assert len(section_refs) == 1
+    assert section_refs[0].target_chunk_id == "target"
+
+
+def test_link_still_records_an_unresolved_section_reference_when_the_target_is_missing() -> (
+    None
+):
+    # Qualified INTERNAL (explicit lead-in), but the referenced section
+    # doesn't exist anywhere in this document -- proceeds to resolution as
+    # before and comes back UNRESOLVED, an expected, non-error outcome.
+    referencing_chunk = make_chunk(
+        chunk_id="ref", content="Refer to section 99.9 for details."
+    )
+    graph = make_graph([referencing_chunk], tables={})
+
+    cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    assert len(cross_references) == 1
+    xref = cross_references[0]
+    assert xref.reference_type == ChunkCrossReferenceType.SECTION_REFERENCE
+    assert xref.target_chunk_id is None
+    assert xref.resolution_status == ChunkCrossReferenceResolutionStatus.UNRESOLVED
 
 
 def test_link_logs_a_debug_summary_with_counts_by_reference_type(caplog) -> None:

@@ -98,6 +98,57 @@ def test_detects_see_section_reference() -> None:
 
     assert len(result.section_references) == 1
     assert result.section_references[0].target_section_label == "6"
+    assert result.section_references[0].is_explicit_lead_in is True
+
+
+def test_detects_with_reference_to_section_phrasing() -> None:
+    # Real document (corpus review): "With reference to section 9.4, item
+    # 13 above, refit the end shield..." -- a genuine internal reference the
+    # narrower "see section"/"see chapter" list used to miss entirely.
+    result = _detector().detect(
+        "With reference to section 9.4, item 13 above, refit the end shield."
+    )
+
+    assert len(result.section_references) == 1
+    assert result.section_references[0].target_section_label == "9.4"
+    assert result.section_references[0].is_explicit_lead_in is True
+
+
+def test_detects_refer_to_section_phrasing() -> None:
+    result = _detector().detect("Refer to section 5.2 for calibration steps.")
+
+    assert len(result.section_references) == 1
+    assert result.section_references[0].target_section_label == "5.2"
+    assert result.section_references[0].is_explicit_lead_in is True
+
+
+def test_detects_described_in_section_phrasing() -> None:
+    # Real document (corpus review): "Start up and test the disposer
+    # according to applicable start-up procedures described in section 6.5
+    # of this user manual."
+    result = _detector().detect(
+        "Start up procedures described in section 6.5 of this user manual."
+    )
+
+    assert len(result.section_references) == 1
+    assert result.section_references[0].target_section_label == "6.5"
+    assert result.section_references[0].is_explicit_lead_in is True
+
+
+def test_detects_generic_bare_section_mention_as_lower_confidence_candidate() -> None:
+ 
+    result = _detector().detect("Annex I, Section 1.2 Controls should be observed.")
+
+    assert len(result.section_references) == 1
+    assert result.section_references[0].target_section_label == "1.2"
+    assert result.section_references[0].is_explicit_lead_in is False
+
+
+def test_generic_bare_pattern_does_not_double_count_an_explicit_lead_in_match() -> None:
+    result = _detector().detect("With reference to section 9.4, item 13 above.")
+
+    assert len(result.section_references) == 1
+    assert result.section_references[0].is_explicit_lead_in is True
 
 
 def test_does_not_record_a_redundant_section_reference_for_an_already_captured_page_reference() -> (
