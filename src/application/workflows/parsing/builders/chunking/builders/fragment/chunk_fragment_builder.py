@@ -402,11 +402,13 @@ class ChunkFragmentBuilder:
             if family_id is None:
                 continue
 
+            fragment_element_ids = set(fragment.element_ids)
             family_elements = [
                 element
                 for element in elements
                 if (
-                    str(
+                    element.element_id in fragment_element_ids
+                    and str(
                         resolve_parser_extra(element).get(
                             "logical_table_family_id"
                         )

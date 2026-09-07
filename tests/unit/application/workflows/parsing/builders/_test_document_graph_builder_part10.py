@@ -160,6 +160,83 @@ def test_document_graph_builder_keeps_unrelated_sibling_sections_separate() -> N
         ["Procedure", "Troubleshooting"],
     ]
 
+def test_document_graph_builder_resolves_clean_chunk_types_for_numbered_hard_veto_siblings() -> (
+    None
+):
+    # Regression for chunk-type dilution from bad merges (audit finding #4):
+    # "1.7 Safety Warnings" and "1.8 Troubleshooting" are numbered siblings
+    # under the same parent -- exactly the shape the old numbered-sibling
+    # merge bug glued together. ChunkSemanticSignalExtractor.extract_from_fragments
+    # only reads the *first* fragment's section_title, so merging these two
+    # would have silently mislabeled the whole chunk with just the first
+    # section's type (or worse) instead of resolving each section's own,
+    # correct, specific type. With SectionMergePolicy's hard family veto
+    # (safety vs. procedural) now keeping them separate, ChunkTypeResolver
+    # sees each section's own clean signal and resolves both correctly.
+    builder = make_builder(max_chunk_tokens=200, chunk_overlap=0)
+    graph = builder.build(
+        document_id="doc_001",
+        file_path="data/input/pump_manual.pdf",
+        hashes=DocumentHashes(
+            file_hash="file_hash_001",
+            content_hash="content_hash_001",
+        ),
+        canonical_elements=[
+            make_parsed_element(
+                element_id="hdr_1",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=1,
+                text="1 General",
+                page_start=1,
+                metadata={"heading_level": 1},
+            ),
+            make_parsed_element(
+                element_id="hdr_2",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=2,
+                text="1.7 Safety Warnings",
+                page_start=1,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="txt_1",
+                element_type=ElementType.TEXT,
+                order_index=3,
+                text="Disconnect the system from power before opening the housing.",
+                page_start=1,
+            ),
+            make_parsed_element(
+                element_id="hdr_3",
+                element_type=ElementType.SECTION_HEADER,
+                order_index=4,
+                text="1.8 Troubleshooting",
+                page_start=1,
+                metadata={"heading_level": 2},
+            ),
+            make_parsed_element(
+                element_id="txt_2",
+                element_type=ElementType.TEXT,
+                order_index=5,
+                text="Check the fuse, verify the supply voltage, and inspect the relay.",
+                page_start=1,
+            ),
+        ],
+        raw_parsed_document=make_raw_parsed_document(),
+    )
+
+    detail_chunks = find_non_overview_chunks(graph)
+    safety_chunk = next(
+        chunk for chunk in detail_chunks if chunk.section_path[-1] == "1.7 Safety Warnings"
+    )
+    troubleshooting_chunk = next(
+        chunk for chunk in detail_chunks if chunk.section_path[-1] == "1.8 Troubleshooting"
+    )
+
+    assert len(graph.chunks) == 3
+    assert safety_chunk.chunk_type.value == "safety_warning"
+    assert troubleshooting_chunk.chunk_type.value == "troubleshooting"
+
+
 def test_document_graph_builder_populates_identifier_count_in_statistics() -> None:
     builder = make_builder()
     graph = builder.build(

@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.builders.chunking.builders.fragment.chunk_fragment_builder import (
     ChunkFragmentBuilder,
 )
+from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
+    ChunkFragment,
+)
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
@@ -530,3 +533,47 @@ def test_build_section_fragments_merges_structural_fields_across_family_members(
     assert fragment.table_structure_quality == 0.8
     assert fragment.header_paths == [["Task"], ["Monthly"]]
     assert fragment.axis_summary == {"rows": "task", "columns": "monthly"}
+
+
+def test_enrich_structured_table_fragments_scopes_to_the_fragments_own_elements() -> None:
+    # Regression: a structured fragment's arbitration window may only cover
+    # part of a multi-page logical table family (tbl_1 here). Enrichment
+    # must not reach across the whole section and pull in tbl_2's rows too
+    # -- tbl_2 belongs to a different fragment's window (or none at all),
+    # and the fragment's own text never included it, so describing it in
+    # the fragment's table_rows/table_shape metadata would overstate what
+    # the fragment's content actually represents.
+    builder = make_builder(include_picture_chunks=False)
+    tbl_1 = make_table_element(
+        element_id="tbl_1",
+        table_id="table_001",
+        text="| Task | Monthly |\n|---|---|\n| Inspect filter | x |",
+        markdown="| Task | Monthly |\n|---|---|\n| Inspect filter | x |",
+        table_rows=[["Task", "Monthly"], ["Inspect filter", "x"]],
+        metadata={
+            "logical_table_family_id": "table_family_3",
+            "table_category": "maintenance_interval_table",
+            "table_category_confidence": 0.9,
+        },
+    )
+    tbl_2_outside_window = make_table_element(
+        element_id="tbl_2",
+        table_id="table_002",
+        text="| Task | Monthly |\n|---|---|\n| Replace gasket | x |",
+        markdown="| Task | Monthly |\n|---|---|\n| Replace gasket | x |",
+        table_rows=[["Task", "Monthly"], ["Replace gasket", "x"]],
+        metadata={"logical_table_family_id": "table_family_3"},
+    )
+    fragment = ChunkFragment(
+        text="Inspect filter | x",
+        chunk_type=ChunkType.MAINTENANCE_INTERVAL,
+        element_ids=["tbl_1"],
+    )
+
+    builder._enrich_structured_table_fragments(
+        fragments=[fragment],
+        elements=[tbl_1, tbl_2_outside_window],
+    )
+
+    assert fragment.table_rows == [["Task", "Monthly"], ["Inspect filter", "x"]]
+    assert fragment.table_row_end == 1

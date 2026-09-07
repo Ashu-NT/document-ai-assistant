@@ -87,7 +87,10 @@ class SectionChunkSkipper:
             for value in [page_start, page_end]
             if value is not None
         ) if page_start is not None or page_end is not None else None
-        return latest_page is not None and latest_page > 3
+        return (
+            latest_page is not None
+            and latest_page > chunking_settings.contents_recovery_late_page_threshold
+        )
 
     def _is_front_matter_section(
         self,
@@ -100,7 +103,7 @@ class SectionChunkSkipper:
             return False
 
         page_end = section.source.page_end
-        if page_end is not None and page_end > 2:
+        if page_end is not None and page_end > chunking_settings.front_matter_max_page:
             return False
 
         if (

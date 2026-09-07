@@ -33,6 +33,20 @@ class ChunkingSettings(AppBaseSettings):
         alias="CHUNK_USE_LAYOUT_FRONT_MATTER_SIGNAL",
     )
 
+    # SectionChunkSkipper's fixed page-number assumptions, pulled out to
+    # settings so an unusual manual (e.g. a multi-page cover/legal/revision
+    # block before real content starts) can widen them without a code
+    # change. Defaults reproduce the previously-hardcoded values exactly.
+    front_matter_max_page: int = Field(
+        default=2,
+        alias="CHUNK_FRONT_MATTER_MAX_PAGE",
+    )
+
+    contents_recovery_late_page_threshold: int = Field(
+        default=3,
+        alias="CHUNK_CONTENTS_RECOVERY_LATE_PAGE_THRESHOLD",
+    )
+
     chunk_cross_reference_detection_enabled: bool = Field(
         default=False,
         alias="CHUNK_CROSS_REFERENCE_DETECTION_ENABLED",

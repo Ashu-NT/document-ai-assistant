@@ -199,6 +199,99 @@ def test_layout_front_matter_signal_on_but_absent_falls_back_to_existing_heurist
     assert should_skip is False
 
 
+def test_front_matter_max_page_is_configurable_for_documents_with_a_longer_cover_block(
+    monkeypatch,
+) -> None:
+    # Default front_matter_max_page=2 means a page-3 section is never even
+    # considered for front-matter skipping, regardless of content -- a
+    # document with a longer cover/legal block (e.g. a 3-page title +
+    # revision-history + disclaimer run) would slip past it. Raising the
+    # setting lets that boundary widen without touching the heuristic code.
+    skipper = SectionChunkSkipper(
+        text_splitter=ChunkTextSplitter(max_chunk_tokens=220, chunk_overlap=20),
+    )
+    section = make_section(
+        title="Legal notice",
+        section_path=["Legal notice"],
+        page=3,
+        parent_section_id=None,
+    )
+    elements = [
+        make_element(
+            element_id="txt_1",
+            element_type=ElementType.TEXT,
+            text="Copyright 2024 Acme Corp.",
+            page=3,
+        ),
+        make_element(
+            element_id="txt_2",
+            element_type=ElementType.TEXT,
+            text="All rights reserved.",
+            page=3,
+        ),
+    ]
+
+    should_skip_by_default = skipper.should_skip_section(
+        document_title="Pressure transmitter report",
+        section=section,
+        elements=elements,
+    )
+
+    monkeypatch.setattr(chunking_settings, "front_matter_max_page", 3)
+
+    should_skip_with_wider_setting = skipper.should_skip_section(
+        document_title="Pressure transmitter report",
+        section=section,
+        elements=elements,
+    )
+
+    assert should_skip_by_default is False
+    assert should_skip_with_wider_setting is True
+
+
+def test_contents_recovery_late_page_threshold_is_configurable_for_a_longer_toc(
+    monkeypatch,
+) -> None:
+    # Default contents_recovery_late_page_threshold=3 recovers (stops
+    # skipping) any section past page 3 nested under a "Contents" ancestor.
+    # A document with a longer table of contents that still hasn't reached
+    # real content by page 4 needs that boundary pushed further out.
+    skipper = SectionChunkSkipper(
+        text_splitter=ChunkTextSplitter(max_chunk_tokens=220, chunk_overlap=20),
+    )
+    section = make_section(
+        title="Section 1",
+        section_path=["Contents", "Section 1"],
+        page=4,
+        parent_section_id="sec_contents",
+    )
+    elements = [
+        make_element(
+            element_id="txt_1",
+            element_type=ElementType.TEXT,
+            text="Section 1 4",
+            page=4,
+        )
+    ]
+
+    should_skip_by_default = skipper.should_skip_section(
+        document_title="Hydraulic Pump Manual",
+        section=section,
+        elements=elements,
+    )
+
+    monkeypatch.setattr(chunking_settings, "contents_recovery_late_page_threshold", 5)
+
+    should_skip_with_wider_setting = skipper.should_skip_section(
+        document_title="Hydraulic Pump Manual",
+        section=section,
+        elements=elements,
+    )
+
+    assert should_skip_by_default is False
+    assert should_skip_with_wider_setting is True
+
+
 def test_section_chunk_builder_emits_structured_chunk_for_contents_polluted_section() -> None:
     builder = SectionChunkBuilder()
     section = make_section(
