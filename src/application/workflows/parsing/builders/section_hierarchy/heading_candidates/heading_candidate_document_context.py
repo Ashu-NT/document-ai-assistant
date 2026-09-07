@@ -6,6 +6,7 @@ from statistics import median
 
 from src.application.workflows.parsing.builders.section_hierarchy.numbering.heading_numbering import (
     extract_heading_number,
+    has_structured_record_heading,
     numbering_depth,
     strip_heading_number,
 )
@@ -136,6 +137,32 @@ class HeadingCandidateDocumentContext:
             )
             if self._are_numbered_siblings(numbering, candidate_number):
                 return True
+        return False
+
+    def is_followed_by_structured_record_heading(
+        self,
+        header_index: int,
+        *,
+        max_header_distance: int = 3,
+        max_page_distance: int = 1,
+    ) -> bool:
+        """Detect a local lead-in immediately before catalog-style records."""
+        header = self.headers[header_index]
+        page = header.page_start or header.page_end
+        for candidate in self.headers[
+            header_index + 1 : header_index + max_header_distance + 1
+        ]:
+            candidate_page = candidate.page_start or candidate.page_end
+            if (
+                page is not None
+                and candidate_page is not None
+                and candidate_page - page > max_page_distance
+            ):
+                break
+            if has_structured_record_heading(candidate.text):
+                return True
+            if self.numbering_for(candidate) is not None:
+                break
         return False
 
     @staticmethod

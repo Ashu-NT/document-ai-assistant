@@ -122,3 +122,46 @@ def test_toc_heading_stays_outline_while_numbered_table_caption_does_not() -> No
 
     assert assessments["toc"].role == HeadingCandidateRole.OUTLINE_SECTION
     assert assessments["caption"].role == HeadingCandidateRole.CAPTION
+
+
+def test_local_lead_in_before_fault_records_stays_inside_active_scope() -> None:
+    headers = [
+        _element("h7", ElementType.SECTION_HEADER, "7 Operating Instructions", 1),
+        _element("h72", ElementType.SECTION_HEADER, "7.2 Troubleshooting", 2),
+        _element("h723", ElementType.SECTION_HEADER, "7.2.3 Fault messages", 3),
+        _element(
+            "lead_in",
+            ElementType.SECTION_HEADER,
+            "Procedure following an automatic shutdown",
+            4,
+        ),
+        _element("record", ElementType.SECTION_HEADER, "3 - High temperature", 5),
+        _element("h73", ElementType.SECTION_HEADER, "7.3 Task Description", 7),
+    ]
+    resolution = SectionHierarchyResolution(
+        effective_levels={
+            "h7": 1,
+            "h72": 2,
+            "h723": 3,
+            "lead_in": 4,
+            "record": 1,
+            "h73": 2,
+        },
+        header_numberings={
+            "h7": "7",
+            "h72": "7.2",
+            "h723": "7.2.3",
+            "record": "3",
+            "h73": "7.3",
+        },
+    )
+
+    assessments = HeadingCandidateRoleResolver().resolve(
+        headers=headers,
+        elements=headers,
+        hierarchy_resolution=resolution,
+    )
+
+    assert assessments["lead_in"].role == HeadingCandidateRole.LOCAL_LABEL
+    assert assessments["record"].role == HeadingCandidateRole.LOCAL_LABEL
+    assert assessments["h73"].role == HeadingCandidateRole.OUTLINE_SECTION

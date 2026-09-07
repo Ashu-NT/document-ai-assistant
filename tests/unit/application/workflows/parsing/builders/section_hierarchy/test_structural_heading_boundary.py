@@ -247,3 +247,35 @@ def test_short_numbered_record_with_nearby_table_does_not_reset_outline() -> Non
     assert result.element_section_paths["record_3"] == troubleshooting_path
     assert result.element_section_paths["record_actions"] == troubleshooting_path
     assert elements[2].metadata["heading_candidate_role"] == "table_category"
+
+
+def test_catalog_lead_in_does_not_own_following_structured_records() -> None:
+    elements = [
+        _header("h7", "7 Operating Instructions", 1),
+        _header("h72", "7.2 Troubleshooting", 2),
+        _header("h723", "7.2.3 Fault messages", 3),
+        _header("lead_in", "Procedure following an automatic shutdown", 4),
+        _header("record_3", "3 - High temperature", 5),
+        _text("record_3_body", "Inspect the fuel temperature sensor.", 6),
+        _header("record_4", "4 - Low pressure", 7),
+        _text("record_4_body", "Inspect the pressure sensor.", 8),
+        _header("h73", "7.3 Task Description", 9),
+    ]
+
+    result = SectionBuilder(IdGenerator()).build("doc_001", elements)
+
+    assert [section.title for section in result.sections] == [
+        "7 Operating Instructions",
+        "7.2 Troubleshooting",
+        "7.2.3 Fault messages",
+        "7.3 Task Description",
+    ]
+    expected_path = [
+        "7 Operating Instructions",
+        "7.2 Troubleshooting",
+        "7.2.3 Fault messages",
+    ]
+    assert result.element_section_paths["lead_in"] == expected_path
+    assert result.element_section_paths["record_3"] == expected_path
+    assert result.element_section_paths["record_4_body"] == expected_path
+    assert elements[3].metadata["heading_candidate_role"] == "local_label"

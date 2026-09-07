@@ -1,5 +1,5 @@
 from src.application.workflows.parsing.builders.section_hierarchy.numbering.heading_numbering import (
-    has_embedded_item_numbering,
+    has_structured_record_heading,
     numbering_depth,
     parent_numberings,
 )
@@ -101,7 +101,7 @@ class ActiveNumberedScopeResolver:
         text = (header.text or "").strip()
         return max(active_header_by_depth) >= 2 and (
             text.startswith(f"{number}.")
-            or has_embedded_item_numbering(text)
+            or has_structured_record_heading(text)
         )
 
     @staticmethod

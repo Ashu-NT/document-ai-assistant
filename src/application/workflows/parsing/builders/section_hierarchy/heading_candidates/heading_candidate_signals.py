@@ -25,7 +25,8 @@ class HeadingCandidateSignals:
     nearby_picture_same_page: bool
     repeated_title_count: int
     nearby_repeated_title: bool
-    embedded_item_numbering: bool
+    structured_record_heading: bool
+    followed_by_structured_record_heading: bool
     layout_prominent: bool
     indented_from_active: bool
     page_continuous: bool

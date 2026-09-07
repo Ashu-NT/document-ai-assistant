@@ -7,7 +7,7 @@ from src.application.workflows.parsing.builders.section_hierarchy.heading_candid
     HeadingCandidateSignals,
 )
 from src.application.workflows.parsing.builders.section_hierarchy.numbering.heading_numbering import (
-    has_embedded_item_numbering,
+    has_structured_record_heading,
     numbering_depth,
 )
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_heading_recognizer import (
@@ -108,7 +108,10 @@ class HeadingCandidateSignalExtractor:
             ),
             repeated_title_count=context.repeated_title_count(header.element_id),
             nearby_repeated_title=context.has_nearby_repeated_title(header_index),
-            embedded_item_numbering=has_embedded_item_numbering(header.text),
+            structured_record_heading=has_structured_record_heading(header.text),
+            followed_by_structured_record_heading=(
+                context.is_followed_by_structured_record_heading(header_index)
+            ),
             layout_prominent=context.has_prominent_height(header),
             indented_from_active=self._is_indented(header, active_header),
             page_continuous=self._is_page_continuous(header, active_header),

@@ -32,7 +32,8 @@ def _signals(**overrides) -> HeadingCandidateSignals:
         "nearby_picture_same_page": False,
         "repeated_title_count": 1,
         "nearby_repeated_title": False,
-        "embedded_item_numbering": False,
+        "structured_record_heading": False,
+        "followed_by_structured_record_heading": False,
         "layout_prominent": False,
         "indented_from_active": False,
         "page_continuous": True,
@@ -119,3 +120,17 @@ def test_nearby_repeated_short_label_is_local_inside_active_scope() -> None:
     )
 
     assert assessment.role == HeadingCandidateRole.LOCAL_LABEL
+
+
+def test_local_lead_in_before_structured_records_is_not_an_outline_section() -> None:
+    assessment = HeadingCandidateScorer().assess(
+        _signals(
+            active_scope_depth=3,
+            followed_by_structured_record_heading=True,
+            native_heading_level=4,
+            title_word_count=7,
+        )
+    )
+
+    assert assessment.role == HeadingCandidateRole.LOCAL_LABEL
+    assert "followed_by_structured_record_heading" in assessment.reasons
