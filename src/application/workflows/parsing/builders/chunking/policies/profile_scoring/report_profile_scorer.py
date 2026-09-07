@@ -11,13 +11,13 @@ def score_report_profile(
     reasons: dict[ChunkingProfile, list[str]],
     statistics: ChunkingProfileStatistics,
 ) -> None:
-    if statistics.report_marker_hits > 0:
+    if statistics.report_structural_evidence_hits > 0:
         scores[ChunkingProfile.REPORT] += min(
             5.0,
-            statistics.report_marker_hits * 1.7,
+            statistics.report_structural_evidence_hits * 1.7,
         )
         reasons[ChunkingProfile.REPORT].append(
-            f"Report markers found in title/sections ({statistics.report_marker_hits} hits)."
+            f"Report markers found in title/sections ({statistics.report_structural_evidence_hits} hits)."
         )
 
     if statistics.long_text_ratio >= 0.35:
@@ -44,7 +44,7 @@ def score_report_profile(
             f"Section hierarchy supports report-style structure (nested ratio {statistics.nested_section_ratio:.2f})."
         )
 
-    if statistics.manual_marker_hits >= 3 and statistics.procedure_like_section_count >= 2:
+    if statistics.manual_structural_evidence_hits >= 3 and statistics.procedure_like_section_count >= 2:
         scores[ChunkingProfile.REPORT] -= 1.4
         reasons[ChunkingProfile.REPORT].append(
             "Strong procedure/task structure reduces report confidence."

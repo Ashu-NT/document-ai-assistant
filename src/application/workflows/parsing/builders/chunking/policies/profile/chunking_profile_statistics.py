@@ -20,19 +20,28 @@ class ChunkingProfileStatistics:
     long_text_ratio: float = 0.0
     short_text_ratio: float = 0.0
 
-    manual_marker_hits: int = 0
-    datasheet_marker_hits: int = 0
-    drawing_marker_hits: int = 0
-    report_marker_hits: int = 0
-    certificate_marker_hits: int = 0
+    # Counts of profile-indicative terms found in section/document TITLES (a
+    # crude substring search, see ChunkingProfileStatisticsBuilder) feeding
+    # the "structural_evidence" signal used by
+    # ChunkingProfileInferer/HybridDocumentTypeResolver -- deliberately named
+    # "structural_evidence", not "marker", so this isn't confused with the
+    # unrelated, much richer EvidenceMarker/MarkerStrength system under
+    # chunking/builders/structured/markers, which scores evidence within
+    # already-classified section content, not raw title term density across
+    # a whole document.
+    manual_structural_evidence_hits: int = 0
+    datasheet_structural_evidence_hits: int = 0
+    drawing_structural_evidence_hits: int = 0
+    report_structural_evidence_hits: int = 0
+    certificate_structural_evidence_hits: int = 0
     procedure_like_section_count: int = 0
 
     @property
-    def total_marker_hits(self) -> int:
+    def total_structural_evidence_hits(self) -> int:
         return (
-            self.manual_marker_hits
-            + self.datasheet_marker_hits
-            + self.drawing_marker_hits
-            + self.report_marker_hits
-            + self.certificate_marker_hits
+            self.manual_structural_evidence_hits
+            + self.datasheet_structural_evidence_hits
+            + self.drawing_structural_evidence_hits
+            + self.report_structural_evidence_hits
+            + self.certificate_structural_evidence_hits
         )

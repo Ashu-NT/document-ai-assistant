@@ -45,7 +45,7 @@ def score_default_profile(
             "Top structural profile scores are relatively close."
         )
 
-    if statistics.total_marker_hits == 0:
+    if statistics.total_structural_evidence_hits == 0:
         scores[ChunkingProfile.DEFAULT] += 0.8
         reasons[ChunkingProfile.DEFAULT].append(
             "No strong profile markers were found in the title or section headings."

@@ -233,7 +233,7 @@ def test_certificate_like_document_selects_certificate_with_reasons() -> None:
         for reason in result.reasons[ChunkingProfile.CERTIFICATE]
     )
 
-def test_certificate_marker_hits_are_counted_in_statistics() -> None:
+def test_certificate_structural_evidence_hits_are_counted_in_statistics() -> None:
     result = infer_result(
         document_title="Certificate of Conformity",
         sections=[make_section(section_id="sec_1", title="Conformity Statement")],
@@ -248,7 +248,7 @@ def test_certificate_marker_hits_are_counted_in_statistics() -> None:
         },
     )
 
-    assert result.statistics.certificate_marker_hits >= 1
+    assert result.statistics.certificate_structural_evidence_hits >= 1
 
 def test_certificate_profile_does_not_select_for_manual_heavy_document() -> None:
     result = infer_result(

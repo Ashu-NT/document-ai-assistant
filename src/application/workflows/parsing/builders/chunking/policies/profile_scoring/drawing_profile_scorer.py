@@ -11,13 +11,13 @@ def score_drawing_profile(
     reasons: dict[ChunkingProfile, list[str]],
     statistics: ChunkingProfileStatistics,
 ) -> None:
-    if statistics.drawing_marker_hits > 0:
+    if statistics.drawing_structural_evidence_hits > 0:
         scores[ChunkingProfile.DRAWING] += min(
             5.0,
-            statistics.drawing_marker_hits * 1.7,
+            statistics.drawing_structural_evidence_hits * 1.7,
         )
         reasons[ChunkingProfile.DRAWING].append(
-            f"Drawing/schematic markers found in title/sections ({statistics.drawing_marker_hits} hits)."
+            f"Drawing/schematic markers found in title/sections ({statistics.drawing_structural_evidence_hits} hits)."
         )
 
     if statistics.picture_ratio >= 0.22:

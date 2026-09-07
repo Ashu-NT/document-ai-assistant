@@ -11,13 +11,13 @@ def score_datasheet_profile(
     reasons: dict[ChunkingProfile, list[str]],
     statistics: ChunkingProfileStatistics,
 ) -> None:
-    if statistics.datasheet_marker_hits > 0:
+    if statistics.datasheet_structural_evidence_hits > 0:
         scores[ChunkingProfile.DATASHEET] += min(
             5.0,
-            statistics.datasheet_marker_hits * 1.7,
+            statistics.datasheet_structural_evidence_hits * 1.7,
         )
         reasons[ChunkingProfile.DATASHEET].append(
-            f"Datasheet/specification markers found in title/sections ({statistics.datasheet_marker_hits} hits)."
+            f"Datasheet/specification markers found in title/sections ({statistics.datasheet_structural_evidence_hits} hits)."
         )
 
     if statistics.table_ratio >= 0.22:
@@ -49,7 +49,7 @@ def score_datasheet_profile(
             "Section structure is shallow, which fits specification-style documents."
         )
 
-    if statistics.manual_marker_hits >= 3 or statistics.procedure_like_section_count >= 2:
+    if statistics.manual_structural_evidence_hits >= 3 or statistics.procedure_like_section_count >= 2:
         scores[ChunkingProfile.DATASHEET] -= 2.0
         reasons[ChunkingProfile.DATASHEET].append(
             "Strong manual/procedure signals reduce datasheet confidence."

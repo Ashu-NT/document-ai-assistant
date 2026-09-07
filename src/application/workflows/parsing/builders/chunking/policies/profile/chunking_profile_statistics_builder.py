@@ -16,7 +16,14 @@ _TEXTUAL_ELEMENT_TYPES = {
     ElementType.CODE,
 }
 
-_MANUAL_MARKERS = (
+# Crude title-keyword lists feeding the "structural_evidence" signal used by
+# ChunkingProfileInferer/HybridDocumentTypeResolver -- deliberately separate
+# from the typed EvidenceMarker/MarkerStrength catalogs under
+# chunking/builders/structured/markers, which score evidence within
+# already-classified section content, not raw title keyword density across
+# a whole document. See ChunkingProfileStatistics for why these stay named
+# "structural_evidence", not "marker".
+_MANUAL_STRUCTURAL_EVIDENCE_TERMS = (
     "maintenance",
     "procedure",
     "task",
@@ -27,7 +34,7 @@ _MANUAL_MARKERS = (
     "inspection",
     "repair",
 )
-_DATASHEET_MARKERS = (
+_DATASHEET_STRUCTURAL_EVIDENCE_TERMS = (
     "datasheet",
     "technical data",
     "technical specification",
@@ -39,14 +46,14 @@ _DATASHEET_MARKERS = (
     "ratings",
     "dimensions",
 )
-_DRAWING_MARKERS = (
+_DRAWING_STRUCTURAL_EVIDENCE_TERMS = (
     "drawing",
     "schematic",
     "diagram",
     "layout",
     "wiring",
 )
-_REPORT_MARKERS = (
+_REPORT_STRUCTURAL_EVIDENCE_TERMS = (
     "abstract",
     "results",
     "discussion",
@@ -56,7 +63,7 @@ _REPORT_MARKERS = (
     "methodology",
     "method",
 )
-_CERTIFICATE_MARKERS = (
+_CERTIFICATE_STRUCTURAL_EVIDENCE_TERMS = (
     "certificate",
     "conformity",
     "certification",
@@ -164,28 +171,34 @@ class ChunkingProfileStatisticsBuilder:
             nested_section_ratio=self._ratio(nested_section_count, section_count),
             long_text_ratio=self._ratio(long_text_block_count, text_element_count),
             short_text_ratio=self._ratio(short_text_block_count, text_element_count),
-            manual_marker_hits=self._count_marker_hits(all_titles, _MANUAL_MARKERS),
-            datasheet_marker_hits=self._count_marker_hits(
-                all_titles,
-                _DATASHEET_MARKERS,
+            manual_structural_evidence_hits=self._count_structural_evidence_hits(
+                all_titles, _MANUAL_STRUCTURAL_EVIDENCE_TERMS
             ),
-            drawing_marker_hits=self._count_marker_hits(all_titles, _DRAWING_MARKERS),
-            report_marker_hits=self._count_marker_hits(all_titles, _REPORT_MARKERS),
-            certificate_marker_hits=self._count_marker_hits(
+            datasheet_structural_evidence_hits=self._count_structural_evidence_hits(
                 all_titles,
-                _CERTIFICATE_MARKERS,
+                _DATASHEET_STRUCTURAL_EVIDENCE_TERMS,
+            ),
+            drawing_structural_evidence_hits=self._count_structural_evidence_hits(
+                all_titles, _DRAWING_STRUCTURAL_EVIDENCE_TERMS
+            ),
+            report_structural_evidence_hits=self._count_structural_evidence_hits(
+                all_titles, _REPORT_STRUCTURAL_EVIDENCE_TERMS
+            ),
+            certificate_structural_evidence_hits=self._count_structural_evidence_hits(
+                all_titles,
+                _CERTIFICATE_STRUCTURAL_EVIDENCE_TERMS,
             ),
             procedure_like_section_count=procedure_like_section_count,
         )
 
     @staticmethod
-    def _count_marker_hits(
+    def _count_structural_evidence_hits(
         titles: list[str],
-        markers: tuple[str, ...],
+        terms: tuple[str, ...],
     ) -> int:
         hits = 0
         for title in titles:
-            hits += sum(1 for marker in markers if marker in title)
+            hits += sum(1 for term in terms if term in title)
         return hits
 
     @staticmethod
@@ -195,8 +208,8 @@ class ChunkingProfileStatisticsBuilder:
             return False
 
         return is_task_like_title(title) or any(
-            marker in normalized
-            for marker in (
+            keyword in normalized
+            for keyword in (
                 "maintenance",
                 "procedure",
                 "operation",

@@ -11,13 +11,13 @@ def score_manual_profile(
     reasons: dict[ChunkingProfile, list[str]],
     statistics: ChunkingProfileStatistics,
 ) -> None:
-    if statistics.manual_marker_hits > 0:
+    if statistics.manual_structural_evidence_hits > 0:
         scores[ChunkingProfile.MANUAL] += min(
             5.0,
-            statistics.manual_marker_hits * 1.6,
+            statistics.manual_structural_evidence_hits * 1.6,
         )
         reasons[ChunkingProfile.MANUAL].append(
-            f"Manual markers found in title/sections ({statistics.manual_marker_hits} hits)."
+            f"Manual markers found in title/sections ({statistics.manual_structural_evidence_hits} hits)."
         )
 
     if statistics.procedure_like_section_count > 0:
@@ -38,7 +38,7 @@ def score_manual_profile(
     if (
         statistics.long_text_ratio >= 0.25
         and (
-            statistics.manual_marker_hits > 0
+            statistics.manual_structural_evidence_hits > 0
             or statistics.procedure_like_section_count > 0
         )
     ):
