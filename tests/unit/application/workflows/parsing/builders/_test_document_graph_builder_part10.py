@@ -163,16 +163,6 @@ def test_document_graph_builder_keeps_unrelated_sibling_sections_separate() -> N
 def test_document_graph_builder_resolves_clean_chunk_types_for_numbered_hard_veto_siblings() -> (
     None
 ):
-    # Regression for chunk-type dilution from bad merges (audit finding #4):
-    # "1.7 Safety Warnings" and "1.8 Troubleshooting" are numbered siblings
-    # under the same parent -- exactly the shape the old numbered-sibling
-    # merge bug glued together. ChunkSemanticSignalExtractor.extract_from_fragments
-    # only reads the *first* fragment's section_title, so merging these two
-    # would have silently mislabeled the whole chunk with just the first
-    # section's type (or worse) instead of resolving each section's own,
-    # correct, specific type. With SectionMergePolicy's hard family veto
-    # (safety vs. procedural) now keeping them separate, ChunkTypeResolver
-    # sees each section's own clean signal and resolves both correctly.
     builder = make_builder(max_chunk_tokens=200, chunk_overlap=0)
     graph = builder.build(
         document_id="doc_001",

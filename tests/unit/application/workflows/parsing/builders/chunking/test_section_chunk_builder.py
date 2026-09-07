@@ -297,6 +297,14 @@ def test_build_document_chunk_payloads_merges_related_sibling_sections_via_merge
         section_elements_by_id=section_elements_by_id,
     )
 
-    assert len(payloads) == 1
-    assert "Bit manipulation explanation." in payloads[0].content
-    assert "Prep task question follows." in payloads[0].content
+    # One merged content payload for the two siblings, plus the "Lab
+    # preparation" parent's own overview payload (it now has two
+    # recognized children) -- the point under test is that the siblings'
+    # own content collapsed into a single payload rather than two.
+    content_payloads = [
+        payload for payload in payloads if payload.chunk_type.value != "overview"
+    ]
+
+    assert len(content_payloads) == 1
+    assert "Bit manipulation explanation." in content_payloads[0].content
+    assert "Prep task question follows." in content_payloads[0].content
