@@ -34,6 +34,7 @@ class RecurringPageFurnitureDetector:
         *,
         candidates: list[PageLayoutCandidate],
         page_sizes: dict[int, tuple[float | None, float | None]],
+        reference_candidates: list[PageLayoutCandidate] | None = None,
     ) -> dict[str, PageFurnitureRole]:
         page_numbers = set(page_sizes) or {
             candidate.page_number for candidate in candidates
@@ -45,7 +46,9 @@ class RecurringPageFurnitureDetector:
             tuple[PageFurnitureRole, str, int],
             list[tuple[PageLayoutCandidate, float]],
         ] = defaultdict(list)
-        for candidate in candidates:
+        target_refs = {candidate.element_ref for candidate in candidates}
+        all_candidates = [*candidates, *(reference_candidates or [])]
+        for candidate in all_candidates:
             classified = self._classify(candidate, page_sizes)
             if classified is None:
                 continue
@@ -76,7 +79,8 @@ class RecurringPageFurnitureDetector:
             ):
                 continue
             for candidate, _anchor in entries_by_page.values():
-                detected[candidate.element_ref] = role
+                if candidate.element_ref in target_refs:
+                    detected[candidate.element_ref] = role
         return detected
 
     def _classify(
@@ -84,7 +88,11 @@ class RecurringPageFurnitureDetector:
         candidate: PageLayoutCandidate,
         page_sizes: dict[int, tuple[float | None, float | None]],
     ) -> tuple[PageFurnitureRole, float, int] | None:
-        if candidate.bbox is None or candidate.label.casefold() not in _ELIGIBLE_LABELS:
+        explicit_role = self._explicit_role(candidate)
+        if candidate.bbox is None or (
+            explicit_role is None
+            and candidate.label.casefold() not in _ELIGIBLE_LABELS
+        ):
             return None
         page_width, page_height = page_sizes.get(candidate.page_number, (None, None))
         if not page_width or not page_height or page_width <= 0 or page_height <= 0:
@@ -92,7 +100,14 @@ class RecurringPageFurnitureDetector:
 
         top_ratio = candidate.top_y() / page_height
         bottom_ratio = candidate.bottom_y() / page_height
-        if top_ratio >= 1.0 - self._PAGE_EDGE_RATIO:
+        if explicit_role is not None:
+            role = explicit_role
+            vertical_anchor = (
+                top_ratio
+                if role == PageFurnitureRole.RUNNING_HEADER
+                else bottom_ratio
+            )
+        elif top_ratio >= 1.0 - self._PAGE_EDGE_RATIO:
             role = PageFurnitureRole.RUNNING_HEADER
             vertical_anchor = top_ratio
         elif bottom_ratio <= self._PAGE_EDGE_RATIO:
@@ -104,6 +119,17 @@ class RecurringPageFurnitureDetector:
         center_x = candidate.center_x() or 0.0
         horizontal_bucket = min(2, max(0, int((center_x / page_width) * 3)))
         return role, vertical_anchor, horizontal_bucket
+
+    @staticmethod
+    def _explicit_role(
+        candidate: PageLayoutCandidate,
+    ) -> PageFurnitureRole | None:
+        label = candidate.label.casefold()
+        if label == "page_header":
+            return PageFurnitureRole.RUNNING_HEADER
+        if label == "page_footer":
+            return PageFurnitureRole.RUNNING_FOOTER
+        return None
 
     @staticmethod
     def _minimum_occurrences(page_count: int) -> int:

@@ -95,6 +95,7 @@ class PageLayoutAnalyzer:
         *,
         raw_document: Any,
         candidates: list[PageLayoutCandidate],
+        furniture_reference_candidates: list[PageLayoutCandidate] | None = None,
     ) -> dict[str, dict[str, object]]:
         analyses = self.analyze(
             raw_document=raw_document,
@@ -106,6 +107,7 @@ class PageLayoutAnalyzer:
             page_furniture_roles=self.page_furniture_detector.detect(
                 candidates=candidates,
                 page_sizes=page_sizes,
+                reference_candidates=furniture_reference_candidates,
             ),
         )
 

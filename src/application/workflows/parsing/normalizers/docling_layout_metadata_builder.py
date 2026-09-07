@@ -34,31 +34,42 @@ class DoclingLayoutMetadataBuilder:
         provenance_extractor: DoclingProvenanceExtractor,
     ) -> dict[str, dict[str, object]]:
         candidates: list[PageLayoutCandidate] = []
+        furniture_reference_candidates: list[PageLayoutCandidate] = []
         for index, item in enumerate(items, start=1):
-            if item_extractor.should_skip(item):
-                continue
             page_start, page_end = provenance_extractor.extract_pages(item)
             page_number = page_start or page_end
             if page_number is None:
                 continue
             element_ref = item_extractor.extract_raw_ref(item) or f"canon_{index}"
-            candidates.append(
-                PageLayoutCandidate(
-                    element_ref=element_ref,
-                    page_number=page_number,
-                    bbox=provenance_extractor.extract_bbox(
-                        item,
-                        raw_document=raw_document,
-                    ),
-                    label=item_extractor.lower_label(item),
-                    text=self._candidate_text(item),
-                    content_layer=item_extractor.extract_content_layer(item),
-                )
+            candidate = PageLayoutCandidate(
+                element_ref=element_ref,
+                page_number=page_number,
+                bbox=provenance_extractor.extract_bbox(
+                    item,
+                    raw_document=raw_document,
+                ),
+                label=item_extractor.lower_label(item),
+                text=self._candidate_text(item),
+                content_layer=item_extractor.extract_content_layer(item),
             )
+            if self._is_explicit_furniture(candidate):
+                furniture_reference_candidates.append(candidate)
+                continue
+            if item_extractor.should_skip(item):
+                continue
+            candidates.append(candidate)
 
         return self.layout_analyzer.analyze_and_serialize(
             raw_document=raw_document,
             candidates=candidates,
+            furniture_reference_candidates=furniture_reference_candidates,
+        )
+
+    @staticmethod
+    def _is_explicit_furniture(candidate: PageLayoutCandidate) -> bool:
+        return (
+            candidate.label.casefold() in {"page_header", "page_footer"}
+            or candidate.content_layer == "furniture"
         )
 
     @staticmethod

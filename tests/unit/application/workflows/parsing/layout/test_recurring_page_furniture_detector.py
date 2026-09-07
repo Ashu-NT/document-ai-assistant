@@ -125,3 +125,70 @@ def test_layout_analyzer_serializes_detected_furniture_metadata() -> None:
 
     assert metadata["header_3"]["layout_is_page_furniture"] is True
     assert metadata["header_3"]["layout_page_furniture_role"] == "running_header"
+
+
+def test_native_header_references_identify_a_sparse_mislabelled_copy() -> None:
+    target = _candidate(
+        "mislabelled_header",
+        10,
+        "Compressor Operating Manual",
+        y1=940,
+        y2=970,
+        label="section_header",
+    )
+    references = [
+        _candidate(
+            f"native_header_{page}",
+            page,
+            "Compressor Operating Manual",
+            y1=940,
+            y2=970,
+            label="page_header",
+        )
+        for page in range(1, 10)
+    ]
+
+    result = RecurringPageFurnitureDetector().detect(
+        candidates=[target],
+        reference_candidates=references,
+        page_sizes=_page_sizes(10),
+    )
+
+    assert result == {
+        "mislabelled_header": PageFurnitureRole.RUNNING_HEADER,
+    }
+
+
+def test_native_furniture_references_are_not_serialized_as_body_elements() -> None:
+    pages = {
+        page: SimpleNamespace(size=SimpleNamespace(width=600, height=1000))
+        for page in range(1, 7)
+    }
+    target = _candidate(
+        "mislabelled_header",
+        6,
+        "Service Manual",
+        y1=940,
+        y2=970,
+        label="section_header",
+    )
+    references = [
+        _candidate(
+            f"native_header_{page}",
+            page,
+            "Service Manual",
+            y1=940,
+            y2=970,
+            label="page_header",
+        )
+        for page in range(1, 6)
+    ]
+
+    metadata = PageLayoutAnalyzer().analyze_and_serialize(
+        raw_document=SimpleNamespace(pages=pages),
+        candidates=[target],
+        furniture_reference_candidates=references,
+    )
+
+    assert set(metadata) == {"mislabelled_header"}
+    assert metadata["mislabelled_header"]["layout_is_page_furniture"] is True
