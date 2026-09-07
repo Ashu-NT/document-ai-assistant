@@ -149,6 +149,77 @@ def test_flushes_before_an_oversized_list_run_to_give_it_a_clean_start() -> None
     assert groups[2] == ["Step 2."]
 
 
+def test_merged_sibling_sections_keep_all_touched_section_ids_for_cross_reference_lookup() -> (
+    None
+):
+    # Regression for the section-path collapse bug: SectionMergePolicy folds
+    # a "1 General" intro fragment together with its numbered child
+    # subsections "1.7 Modifications" and "1.8 Liability and Warranty" (both
+    # numbered titles count as task-like, so they keep merging under their
+    # shared parent) into a single chunk. section_path collapses to the
+    # common ancestor "1 General" for display, but section_ids must still
+    # list every subsection so a fuzzy "see section 1.8" reference can find
+    # this chunk (see ChunkSectionNumberIndex).
+    general = ChunkFragment(
+        text="General provisions apply to this contract.",
+        chunk_type=ChunkType.GENERAL,
+        order_index=1,
+        section_id="s_general",
+        section_title="1 General",
+        section_path=["1 General"],
+        section_level=1,
+        parent_section_id=None,
+        token_count=10,
+    )
+    modifications = ChunkFragment(
+        text="1.7 Modifications require written consent.",
+        chunk_type=ChunkType.GENERAL,
+        order_index=2,
+        section_id="s_17",
+        section_title="1.7 Modifications",
+        section_path=["1 General", "1.7 Modifications"],
+        section_level=2,
+        parent_section_id="s_general",
+        token_count=8,
+    )
+    liability = ChunkFragment(
+        text="1.8 Liability and Warranty is limited as described below.",
+        chunk_type=ChunkType.GENERAL,
+        order_index=3,
+        section_id="s_18",
+        section_title="1.8 Liability and Warranty",
+        section_path=["1 General", "1.8 Liability and Warranty"],
+        section_level=2,
+        parent_section_id="s_general",
+        token_count=8,
+    )
+    section_path_lookup = {
+        ("1 General",): "s_general",
+        ("1 General", "1.7 Modifications"): "s_17",
+        ("1 General", "1.8 Liability and Warranty"): "s_18",
+    }
+
+    text_splitter = ChunkTextSplitter(max_chunk_tokens=50, chunk_overlap=0)
+    merge_policy = SectionMergePolicy(
+        text_splitter=text_splitter, min_section_text_length=10
+    )
+    payloads = ChunkFragmentPacker().pack(
+        document_title=None,
+        fragments=[general, modifications, liability],
+        section_path_lookup=section_path_lookup,
+        text_splitter=text_splitter,
+        payload_factory=ChunkPayloadFactory(),
+        merge_policy=merge_policy,
+    )
+
+    assert len(payloads) == 1
+    payload = payloads[0]
+    assert payload.section_path == ["1 General"]
+    assert payload.section_ids == ["s_general", "s_17", "s_18"]
+    assert "1.7 Modifications" in payload.content
+    assert "1.8 Liability and Warranty" in payload.content
+
+
 def test_does_not_flush_mid_run_between_fragments_of_the_same_list() -> None:
     step_1 = make_fragment(
         text="Step 1.",

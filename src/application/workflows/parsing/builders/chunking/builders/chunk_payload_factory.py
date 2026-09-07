@@ -42,6 +42,12 @@ class ChunkPayloadFactory:
             document_title=document_title,
             section_path_lookup=section_path_lookup,
         )
+        section_ids = self._resolve_touched_section_ids(
+            fragments,
+            document_title=document_title,
+            section_path_lookup=section_path_lookup,
+            primary_section_id=section_id,
+        )
         content = content_override or self._assemble_chunk_content(fragments)
         cleaned_content = clean_chunk_text(content) or ""
         chunk_type = self.chunk_type_resolver.resolve(
@@ -55,6 +61,7 @@ class ChunkPayloadFactory:
             section_path=list(section_path),
             content=cleaned_content,
             chunk_type=chunk_type,
+            section_ids=section_ids,
             element_ids=unique_preserve_order(
                 element_id
                 for fragment in fragments
@@ -197,6 +204,41 @@ class ChunkPayloadFactory:
             first_fragment.section_id or "",
             sanitized_first_path,
         )
+
+    @staticmethod
+    def _resolve_touched_section_ids(
+        fragments: list[ChunkFragment],
+        *,
+        document_title: str | None,
+        section_path_lookup: dict[tuple[str, ...], str] | None,
+        primary_section_id: str,
+    ) -> list[str]:
+        """Every distinct section a merged chunk's fragments came from, not
+        just the common-ancestor `primary_section_id` - lets a chunk whose
+        display section got collapsed to a coarse ancestor (see
+        SectionMergePolicy) still be found by a fuzzy cross-reference to one
+        of the finer subsections it actually contains."""
+        section_ids: list[str] = []
+        seen: set[str] = set()
+
+        def add(section_id: str | None) -> None:
+            if section_id and section_id not in seen:
+                seen.add(section_id)
+                section_ids.append(section_id)
+
+        add(primary_section_id)
+        for fragment in fragments:
+            if not fragment.section_path:
+                continue
+            if section_path_lookup is not None:
+                sanitized = sanitize_section_path(
+                    list(fragment.section_path),
+                    document_title=document_title,
+                )
+                add(section_path_lookup.get(tuple(sanitized)))
+            else:
+                add(fragment.section_id)
+        return section_ids
 
     @staticmethod
     def _build_embedding_text(

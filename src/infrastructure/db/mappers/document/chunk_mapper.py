@@ -36,6 +36,7 @@ class ChunkMapper:
             chunk_type=chunk.chunk_type.value,
             chunk_type_source=chunk.chunk_type_source,
             section_path=json.dumps(chunk.section_path),
+            section_ids_json=ChunkMapper._dump_string_list(chunk.section_ids),
             page_start=chunk.source.page_start,
             page_end=chunk.source.page_end,
             sequence_number=chunk.sequence_number,
@@ -64,6 +65,7 @@ class ChunkMapper:
             chunk_type=ChunkType(orm.chunk_type),
             chunk_type_source=orm.chunk_type_source or "deterministic",
             section_path=ChunkMapper._load_string_list(orm.section_path),
+            section_ids=ChunkMapper._load_string_list(orm.section_ids_json),
             element_ids=(
                 list(element_ids)
                 if element_ids is not None

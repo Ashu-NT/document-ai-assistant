@@ -105,6 +105,7 @@ class GraphChunkBuilder:
                         content=chunk_payload.content,
                         chunk_type=chunk_payload.chunk_type,
                         section_path=list(chunk_payload.section_path),
+                        section_ids=list(chunk_payload.section_ids),
                         element_ids=list(chunk_payload.element_ids),
                         table_ids=list(chunk_payload.table_ids),
                         picture_ids=list(chunk_payload.picture_ids),

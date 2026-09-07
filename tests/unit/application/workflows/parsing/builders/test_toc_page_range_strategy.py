@@ -282,6 +282,46 @@ def test_toc_strategy_matches_repeated_titles_by_expected_page() -> None:
     assert "early" not in outline.matched_entries
 
 
+def test_toc_strategy_records_numbering_drift_evidence_without_matching() -> None:
+    # Regression: TOC says "1.9 Liability and Warranty", body heading says
+    # "1.8 Liability and Warranty" (real drift found in a customer manual).
+    # The numbering mismatch must still hard-reject the match (no change in
+    # matching/level-assignment behavior), but the drift must be recorded
+    # as evidence so it's visible instead of silently relying on a fallback
+    # strategy to recover the right level elsewhere.
+    elements = [
+        make_element("hdr_toc", ElementType.SECTION_HEADER, "Contents", 2, 1),
+        make_element(
+            "toc_table",
+            ElementType.TABLE,
+            "",
+            2,
+            2,
+            metadata={
+                "item_label": "document_index",
+                "table_rows": [["1.9", "Liability and Warranty", "8"]],
+            },
+        ),
+        make_element(
+            "hdr_body",
+            ElementType.SECTION_HEADER,
+            "1.8 Liability and Warranty",
+            8,
+            3,
+        ),
+    ]
+    headers = [elements[0], elements[-1]]
+
+    outline = TocPageRangeStrategy().build_outline(headers, elements)
+
+    assert "hdr_body" not in outline.matched_entries
+    assert len(outline.numbering_drift_evidence) == 1
+    drift = outline.numbering_drift_evidence[0]
+    assert drift["toc_numbering"] == "1.9"
+    assert drift["body_numbering"] == "1.8"
+    assert drift["body_header_id"] == "hdr_body"
+
+
 def test_toc_strategy_leaves_materially_ambiguous_titles_unmatched() -> None:
     elements = [
         make_element("hdr_toc", ElementType.SECTION_HEADER, "Contents", 2, 1),

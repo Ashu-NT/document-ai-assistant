@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 """
+claude --resume 505b5021-19a8-494e-84f7-533093472d65
+
 Ingest one PDF through the production parsing path (Docling conversion ->
 canonical normalization -> document graph build, including the PDF-native
 link extractor and fuzzy/native cross-reference reconciliation when

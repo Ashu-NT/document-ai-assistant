@@ -26,7 +26,10 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_headin
     TocHeadingRecognizer,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
+from src.config.logging import get_logger
 from src.domain.common import ElementType
+
+_logger = get_logger(__name__)
 
 
 class TocPageRangeStrategy(SectionHierarchyStrategy):
@@ -142,8 +145,14 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
         header_numberings: dict[str, str] = {}
         unmatched_entries: list[TocEntry] = []
         matched_header_ids: set[str] = set()
+        numbering_drift_evidence: list[dict[str, object]] = []
         for entry in entries:
-            header = TocHeaderMatcher.match_entry_to_header(entry, headers, matched_header_ids)
+            header = TocHeaderMatcher.match_entry_to_header(
+                entry,
+                headers,
+                matched_header_ids,
+                numbering_drift_evidence=numbering_drift_evidence,
+            )
             if header is None:
                 unmatched_entries.append(entry)
                 continue
@@ -153,12 +162,20 @@ class TocPageRangeStrategy(SectionHierarchyStrategy):
             if entry.numbering:
                 header_numberings[header.element_id] = entry.numbering
 
+        if numbering_drift_evidence:
+            _logger.warning(
+                "toc_body_numbering_drift count=%d evidence=%s",
+                len(numbering_drift_evidence),
+                numbering_drift_evidence,
+            )
+
         return TocOutline(
             toc_header_id=toc_header_id,
             entries=entries,
             matched_entries=matched_entries,
             header_numberings=header_numberings,
             unmatched_entries=unmatched_entries,
+            numbering_drift_evidence=numbering_drift_evidence,
         )
 
     def _find_toc_anchor(

@@ -31,13 +31,20 @@ class TocHeaderMatcher:
         entry: TocEntry,
         headers: list[ParsedCanonicalElement],
         matched_header_ids: set[str],
+        numbering_drift_evidence: list[dict[str, object]] | None = None,
     ) -> ParsedCanonicalElement | None:
+        candidate_headers = [
+            header for header in headers if header.element_id not in matched_header_ids
+        ]
         scored = [
             match
-            for header in headers
-            if header.element_id not in matched_header_ids
+            for header in candidate_headers
             if (match := cls._score(entry, header)) is not None
         ]
+        if numbering_drift_evidence is not None:
+            cls._record_numbering_drift(
+                entry, candidate_headers, numbering_drift_evidence
+            )
         if not scored:
             return None
 
@@ -52,6 +59,34 @@ class TocHeaderMatcher:
         if len(scored) > 1 and cls._materially_tied(winner, scored[1]):
             return None
         return winner.header
+
+    @staticmethod
+    def _record_numbering_drift(
+        entry: TocEntry,
+        headers: list[ParsedCanonicalElement],
+        numbering_drift_evidence: list[dict[str, object]],
+    ) -> None:
+        """Evidence-only: does not affect matching or level assignment, see
+        the hard-reject on numbering mismatch in `_score`."""
+        if entry.numbering is None:
+            return
+
+        for header in headers:
+            candidate_number = extract_heading_number(header.text)
+            if candidate_number is None or candidate_number == entry.numbering:
+                continue
+            candidate_title = normalize_toc_title(strip_heading_number(header.text))
+            if not candidate_title or candidate_title != entry.normalized_title:
+                continue
+            numbering_drift_evidence.append(
+                {
+                    "toc_numbering": entry.numbering,
+                    "toc_title": entry.title,
+                    "body_numbering": candidate_number,
+                    "body_header_id": header.element_id,
+                    "body_text": header.text,
+                }
+            )
 
     @staticmethod
     def _score(

@@ -4,6 +4,7 @@ import re
 from collections import defaultdict
 
 from src.domain.document.entities.chunk import DocumentChunk
+from src.domain.document.entities.section import DocumentSection
 
 _LEADING_SECTION_NUMBER_PATTERN = re.compile(r"^(\d+(?:\.\d+)*)\b")
 
@@ -18,18 +19,37 @@ class ChunkSectionNumberIndex:
     extracted from a section title like "6.7.1 Lubrication oil") to every
     chunk under that section, built once per document so
     `ChunkSectionReferenceResolver` doesn't re-scan every chunk for each
-    detected section reference in the document."""
+    detected section reference in the document.
 
-    def __init__(self, chunks: list[DocumentChunk]) -> None:
+    A chunk whose primary `section_path` was collapsed to a coarse common
+    ancestor (see SectionMergePolicy / ChunkPayloadFactory) is still indexed
+    under every finer subsection listed in `chunk.section_ids`, using
+    `sections` to resolve each id back to its own path - otherwise such a
+    chunk would be unreachable by a fuzzy reference to a subsection it
+    actually contains."""
+
+    def __init__(
+        self,
+        chunks: list[DocumentChunk],
+        sections: dict[str, DocumentSection] | None = None,
+    ) -> None:
         self._chunks_by_label: dict[str, list[DocumentChunk]] = defaultdict(list)
+        sections = sections or {}
 
         for chunk in chunks:
             seen_labels_for_chunk: set[str] = set()
-            for part in chunk.section_path:
-                label = extract_leading_section_number(part)
-                if label and label not in seen_labels_for_chunk:
-                    seen_labels_for_chunk.add(label)
-                    self._chunks_by_label[label].append(chunk)
+            touched_paths = [chunk.section_path]
+            for section_id in chunk.section_ids:
+                section = sections.get(section_id)
+                if section is not None and section.section_path:
+                    touched_paths.append(section.section_path)
+
+            for path in touched_paths:
+                for part in path:
+                    label = extract_leading_section_number(part)
+                    if label and label not in seen_labels_for_chunk:
+                        seen_labels_for_chunk.add(label)
+                        self._chunks_by_label[label].append(chunk)
 
     def exact_match(self, label: str) -> list[DocumentChunk]:
         return list(self._chunks_by_label.get(label, ()))

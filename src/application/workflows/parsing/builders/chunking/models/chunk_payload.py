@@ -10,6 +10,7 @@ class ChunkPayload:
     content: str
     chunk_type: ChunkType
     embedding_text: str
+    section_ids: list[str] = field(default_factory=list)
     element_ids: list[str] = field(default_factory=list)
     table_ids: list[str] = field(default_factory=list)
     picture_ids: list[str] = field(default_factory=list)

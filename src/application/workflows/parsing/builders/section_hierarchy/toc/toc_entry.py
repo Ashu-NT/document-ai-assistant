@@ -27,6 +27,12 @@ class TocOutline:
     matched_entries: dict[str, TocEntry] = field(default_factory=dict)
     header_numberings: dict[str, str] = field(default_factory=dict)
     unmatched_entries: list[TocEntry] = field(default_factory=list)
+    # Headers with an exact TOC title match but conflicting explicit
+    # numbering (e.g. TOC "1.9 Liability and Warranty" vs body heading "1.8
+    # Liability and Warranty") - recorded for visibility only, since
+    # TocHeaderMatcher still hard-rejects these as a match to avoid
+    # false-positive TOC-to-heading links.
+    numbering_drift_evidence: list[dict[str, object]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -39,6 +45,9 @@ class TocOutline:
             "header_numberings": dict(self.header_numberings),
             "unmatched_entries": [
                 entry.to_dict() for entry in self.unmatched_entries
+            ],
+            "numbering_drift_evidence": [
+                dict(item) for item in self.numbering_drift_evidence
             ],
         }
 

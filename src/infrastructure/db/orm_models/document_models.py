@@ -193,6 +193,7 @@ class ChunkORM(Base):
     )
 
     section_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    section_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     page_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
     page_end: Mapped[int | None] = mapped_column(Integer, nullable=True)

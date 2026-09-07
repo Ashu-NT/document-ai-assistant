@@ -15,6 +15,12 @@ class DocumentChunk:
     chunk_type_source: str = "deterministic"
 
     section_path: list[str] = field(default_factory=list)
+    # section_id/section_path stay the common-ancestor section for display;
+    # section_ids also lists every finer subsection whose content was folded
+    # into this chunk by section-merging, so cross-reference indexing can
+    # still resolve "see section X.Y" for a subsection this chunk contains
+    # but doesn't lead with.
+    section_ids: list[str] = field(default_factory=list)
 
     element_ids: list[str] = field(default_factory=list)
     table_ids: list[str] = field(default_factory=list)

@@ -67,7 +67,7 @@ class ChunkCrossReferenceLinker:
 
     def _link(self, graph: DocumentGraph) -> list[ChunkCrossReference]:
         chunks = list(graph.chunks.values())
-        section_index = ChunkSectionNumberIndex(chunks)
+        section_index = ChunkSectionNumberIndex(chunks, sections=graph.sections)
         asset_index = ChunkAssetNumberIndex(
             chunks=chunks,
             tables=graph.tables,
