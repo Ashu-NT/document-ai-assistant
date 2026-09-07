@@ -22,7 +22,12 @@ def upgrade() -> None:
         'chunks',
         sa.Column('section_ids_json', sa.Text(), nullable=True),
     )
+    op.add_column(
+        'chunks',
+        sa.Column('section_ids_text', sa.Text(), nullable=True),
+    )
 
 
 def downgrade() -> None:
+    op.drop_column('chunks', 'section_ids_text')
     op.drop_column('chunks', 'section_ids_json')
