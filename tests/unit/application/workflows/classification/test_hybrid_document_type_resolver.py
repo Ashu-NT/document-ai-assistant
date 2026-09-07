@@ -2,11 +2,11 @@ from src.application.workflows.classification import HybridDocumentTypeResolver
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inference import (
-    ChunkingProfileInference,
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference import (
+    StructuralProfileInference,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
-    ChunkingProfileStatistics,
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_document_features import (
+    StructuralDocumentFeatures,
 )
 from src.domain.classification import ClassificationResult, DocumentClassification
 from src.domain.common import DocumentType, ModelProcessingMetadata
@@ -16,13 +16,13 @@ def make_inference(
     *,
     profile: ChunkingProfile,
     confidence: float,
-) -> ChunkingProfileInference:
-    return ChunkingProfileInference(
+) -> StructuralProfileInference:
+    return StructuralProfileInference(
         selected_profile=profile,
         confidence=confidence,
         scores={profile: confidence},
         reasons={profile: [f"{profile.value} signal"]},
-        statistics=ChunkingProfileStatistics(),
+        features=StructuralDocumentFeatures(),
     )
 
 

@@ -5,11 +5,11 @@ from src.application.workflows.parsing.builders.chunking.policies.policy.chunkin
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inference import (
-    ChunkingProfileInference,
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference import (
+    StructuralProfileInference,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inferer import (
-    ChunkingProfileInferer,
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inferer import (
+    StructuralProfileInferer,
 )
 from src.application.workflows.parsing.builders.chunking.policies.policy.document_chunking_policy import (
     DocumentChunkingPolicy,
@@ -31,10 +31,10 @@ class DocumentChunkingPolicyResolver:
     def __init__(
         self,
         *,
-        profile_inferer: ChunkingProfileInferer | None = None,
+        profile_inferer: StructuralProfileInferer | None = None,
         policy_registry: ChunkingPolicyRegistry | None = None,
     ) -> None:
-        self.profile_inferer = profile_inferer or ChunkingProfileInferer()
+        self.profile_inferer = profile_inferer or StructuralProfileInferer()
         self._policy_registry = policy_registry or default_registry()
 
     def resolve(
@@ -45,7 +45,7 @@ class DocumentChunkingPolicyResolver:
         sections: list[DocumentSection],
         section_elements_by_id: dict[str, list[CanonicalElement]],
         chunking_profile_override: ChunkingProfile | None = None,
-        precomputed_inference: ChunkingProfileInference | None = None,
+        precomputed_inference: StructuralProfileInference | None = None,
     ) -> DocumentChunkingPolicy:
         if chunking_profile_override is not None:
             return self._policy_registry.get(chunking_profile_override)
@@ -66,7 +66,7 @@ class DocumentChunkingPolicyResolver:
         document_type: DocumentType | None,
         sections: list[DocumentSection],
         section_elements_by_id: dict[str, list[CanonicalElement]],
-        precomputed_inference: ChunkingProfileInference | None = None,
+        precomputed_inference: StructuralProfileInference | None = None,
     ) -> ChunkingProfile:
         mapped_profile = (
             _DOCUMENT_TYPE_PROFILES.get(document_type)

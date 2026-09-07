@@ -1,54 +1,55 @@
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
-    ChunkingProfileStatistics,
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_document_features import (
+    StructuralDocumentFeatures,
 )
 
 
-def score_manual_profile(
-    scores: dict[ChunkingProfile, float],
-    reasons: dict[ChunkingProfile, list[str]],
-    statistics: ChunkingProfileStatistics,
-) -> None:
-    if statistics.manual_structural_evidence_hits > 0:
-        scores[ChunkingProfile.MANUAL] += min(
-            5.0,
-            statistics.manual_structural_evidence_hits * 1.6,
-        )
-        reasons[ChunkingProfile.MANUAL].append(
-            f"Manual markers found in title/sections ({statistics.manual_structural_evidence_hits} hits)."
-        )
+class ManualScorer:
+    profile = ChunkingProfile.MANUAL
 
-    if statistics.procedure_like_section_count > 0:
-        scores[ChunkingProfile.MANUAL] += min(
-            2.0,
-            0.8 + (statistics.procedure_like_section_count * 0.4),
-        )
-        reasons[ChunkingProfile.MANUAL].append(
-            f"Procedure-like section titles are present ({statistics.procedure_like_section_count})."
-        )
+    def score(self, features: StructuralDocumentFeatures) -> tuple[float, list[str]]:
+        score = 0.0
+        reasons: list[str] = []
 
-    if statistics.list_ratio >= 0.12:
-        scores[ChunkingProfile.MANUAL] += 1.3
-        reasons[ChunkingProfile.MANUAL].append(
-            f"List items are common (ratio {statistics.list_ratio:.2f})."
-        )
+        if features.manual_structural_evidence_hits > 0:
+            score += min(5.0, features.manual_structural_evidence_hits * 1.6)
+            reasons.append(
+                f"Manual markers found in title/sections ({features.manual_structural_evidence_hits} hits)."
+            )
 
-    if (
-        statistics.long_text_ratio >= 0.25
-        and (
-            statistics.manual_structural_evidence_hits > 0
-            or statistics.procedure_like_section_count > 0
-        )
-    ):
-        scores[ChunkingProfile.MANUAL] += 1.2
-        reasons[ChunkingProfile.MANUAL].append(
-            f"Narrative text blocks are present (long-text ratio {statistics.long_text_ratio:.2f})."
-        )
+        if features.procedure_like_section_count > 0:
+            score += min(
+                2.0,
+                0.8 + (features.procedure_like_section_count * 0.4),
+            )
+            reasons.append(
+                f"Procedure-like section titles are present ({features.procedure_like_section_count})."
+            )
 
-    if statistics.max_section_depth >= 3 or statistics.nested_section_ratio >= 0.35:
-        scores[ChunkingProfile.MANUAL] += 0.8
-        reasons[ChunkingProfile.MANUAL].append(
-            f"Section hierarchy is task-oriented or nested (depth {statistics.max_section_depth})."
-        )
+        if features.list_ratio >= 0.12:
+            score += 1.3
+            reasons.append(
+                f"List items are common (ratio {features.list_ratio:.2f})."
+            )
+
+        if (
+            features.long_text_ratio >= 0.25
+            and (
+                features.manual_structural_evidence_hits > 0
+                or features.procedure_like_section_count > 0
+            )
+        ):
+            score += 1.2
+            reasons.append(
+                f"Narrative text blocks are present (long-text ratio {features.long_text_ratio:.2f})."
+            )
+
+        if features.max_section_depth >= 3 or features.nested_section_ratio >= 0.35:
+            score += 0.8
+            reasons.append(
+                f"Section hierarchy is task-oriented or nested (depth {features.max_section_depth})."
+            )
+
+        return score, reasons

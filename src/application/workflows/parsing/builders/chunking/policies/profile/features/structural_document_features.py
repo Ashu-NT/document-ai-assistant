@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass(slots=True, frozen=True)
-class ChunkingProfileStatistics:
+class StructuralDocumentFeatures:
     element_count: int = 0
     section_count: int = 0
     root_section_count: int = 0
@@ -21,9 +21,9 @@ class ChunkingProfileStatistics:
     short_text_ratio: float = 0.0
 
     # Counts of profile-indicative terms found in section/document TITLES (a
-    # crude substring search, see ChunkingProfileStatisticsBuilder) feeding
+    # crude substring search, see StructuralFeatureExtractor) feeding
     # the "structural_evidence" signal used by
-    # ChunkingProfileInferer/HybridDocumentTypeResolver -- deliberately named
+    # StructuralProfileInferer/HybridDocumentTypeResolver -- deliberately named
     # "structural_evidence", not "marker", so this isn't confused with the
     # unrelated, much richer EvidenceMarker/MarkerStrength system under
     # chunking/builders/structured/markers, which scores evidence within

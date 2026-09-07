@@ -3,18 +3,18 @@ from dataclasses import dataclass
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
-    ChunkingProfileStatistics,
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_document_features import (
+    StructuralDocumentFeatures,
 )
 
 
 @dataclass(slots=True, frozen=True)
-class ChunkingProfileInference:
+class StructuralProfileInference:
     selected_profile: ChunkingProfile
     confidence: float
     scores: dict[ChunkingProfile, float]
     reasons: dict[ChunkingProfile, list[str]]
-    statistics: ChunkingProfileStatistics
+    features: StructuralDocumentFeatures
 
     @property
     def selected_reasons(self) -> list[str]:

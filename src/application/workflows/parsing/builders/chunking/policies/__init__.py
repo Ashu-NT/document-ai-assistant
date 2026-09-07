@@ -1,20 +1,23 @@
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inference import (
-    ChunkingProfileInference,
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference import (
+    StructuralProfileInference,
 )
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inferer import (
-    ChunkingProfileInferer,
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inferer import (
+    StructuralProfileInferer,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_scorer import (
-    ChunkingProfileScorer,
+from src.application.workflows.parsing.builders.chunking.policies.profile.scoring.profile_score_aggregator import (
+    ProfileScoreAggregator,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
-    ChunkingProfileStatistics,
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_decision_policy import (
+    StructuralProfileDecisionPolicy,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics_builder import (
-    ChunkingProfileStatisticsBuilder,
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_document_features import (
+    StructuralDocumentFeatures,
+)
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_feature_extractor import (
+    StructuralFeatureExtractor,
 )
 from src.application.workflows.parsing.builders.chunking.policies.policy.document_chunking_policy import (
     DocumentChunkingPolicy,
@@ -34,11 +37,12 @@ from src.application.workflows.parsing.builders.chunking.policies.section_merge.
 
 __all__ = [
     "ChunkingProfile",
-    "ChunkingProfileInference",
-    "ChunkingProfileInferer",
-    "ChunkingProfileScorer",
-    "ChunkingProfileStatistics",
-    "ChunkingProfileStatisticsBuilder",
+    "StructuralProfileInference",
+    "StructuralProfileInferer",
+    "ProfileScoreAggregator",
+    "StructuralProfileDecisionPolicy",
+    "StructuralDocumentFeatures",
+    "StructuralFeatureExtractor",
     "DocumentChunkingPolicy",
     "DocumentChunkingPolicyResolver",
     "SectionMergePolicy",

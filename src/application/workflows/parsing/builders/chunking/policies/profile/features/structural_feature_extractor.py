@@ -1,5 +1,5 @@
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
-    ChunkingProfileStatistics,
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_document_features import (
+    StructuralDocumentFeatures,
 )
 from src.application.workflows.parsing.builders.chunking.policies.section_merge.section_semantics import (
     is_task_like_title,
@@ -17,11 +17,11 @@ _TEXTUAL_ELEMENT_TYPES = {
 }
 
 # Crude title-keyword lists feeding the "structural_evidence" signal used by
-# ChunkingProfileInferer/HybridDocumentTypeResolver -- deliberately separate
+# StructuralProfileInferer/HybridDocumentTypeResolver -- deliberately separate
 # from the typed EvidenceMarker/MarkerStrength catalogs under
 # chunking/builders/structured/markers, which score evidence within
 # already-classified section content, not raw title keyword density across
-# a whole document. See ChunkingProfileStatistics for why these stay named
+# a whole document. See StructuralDocumentFeatures for why these stay named
 # "structural_evidence", not "marker".
 _MANUAL_STRUCTURAL_EVIDENCE_TERMS = (
     "maintenance",
@@ -73,14 +73,14 @@ _CERTIFICATE_STRUCTURAL_EVIDENCE_TERMS = (
 )
 
 
-class ChunkingProfileStatisticsBuilder:
+class StructuralFeatureExtractor:
     def build(
         self,
         *,
         document_title: str | None,
         sections: list[DocumentSection],
         section_elements_by_id: dict[str, list[CanonicalElement]],
-    ) -> ChunkingProfileStatistics:
+    ) -> StructuralDocumentFeatures:
         all_titles = [
             title
             for title in [
@@ -156,7 +156,7 @@ class ChunkingProfileStatisticsBuilder:
             else 0.0
         )
 
-        return ChunkingProfileStatistics(
+        return StructuralDocumentFeatures(
             element_count=element_count,
             section_count=section_count,
             root_section_count=root_section_count,

@@ -7,14 +7,14 @@ from src.application.workflows.parsing.builders.chunking.builders.chunk_type.chu
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inference import (
-    ChunkingProfileInference,
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference import (
+    StructuralProfileInference,
 )
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
-    ChunkingProfileStatistics,
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_document_features import (
+    StructuralDocumentFeatures,
 )
 from src.application.workflows.parsing.builders.chunking.models.chunk_payload import (
     ChunkPayload,
@@ -36,8 +36,8 @@ __all__ = [
     "ChunkSemanticSignalExtractor",
     "ChunkFragment",
     "ChunkingProfile",
-    "ChunkingProfileInference",
-    "ChunkingProfileStatistics",
+    "StructuralProfileInference",
+    "StructuralDocumentFeatures",
     "ChunkTypeResolver",
     "ChunkPayload",
     "ChunkTextSplitter",

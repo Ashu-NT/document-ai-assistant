@@ -19,12 +19,12 @@ from src.application.workflows.parsing.builders.chunking.policies.profile.chunki
     ChunkingProfile,
 )
 
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inference import (
-    ChunkingProfileInference,
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference import (
+    StructuralProfileInference,
 )
 
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
-    ChunkingProfileStatistics,
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_document_features import (
+    StructuralDocumentFeatures,
 )
 
 from src.application.workflows.parsing.builders.chunking.policies.policy.document_chunking_policy import (
@@ -143,11 +143,11 @@ class FakeGraphChunkBuilder:
         self.calls.append(kwargs)
         return self.rechunked_chunks
 
-class FakeChunkingProfileInferer:
-    def __init__(self, inference: ChunkingProfileInference) -> None:
+class FakeStructuralProfileInferer:
+    def __init__(self, inference: StructuralProfileInference) -> None:
         self.inference = inference
 
-    def infer_result(self, **kwargs) -> ChunkingProfileInference:
+    def infer_result(self, **kwargs) -> StructuralProfileInference:
         return self.inference
 
 class FakeChunkingPolicyResolver:
@@ -201,13 +201,13 @@ def clone_chunk(
         embedding_text=sample_chunk.embedding_text,
     )
 
-def make_inference(profile: ChunkingProfile) -> ChunkingProfileInference:
-    return ChunkingProfileInference(
+def make_inference(profile: ChunkingProfile) -> StructuralProfileInference:
+    return StructuralProfileInference(
         selected_profile=profile,
         confidence=0.81,
         scores={profile: 4.0},
         reasons={profile: [f"{profile.value} signal"]},
-        statistics=ChunkingProfileStatistics(),
+        features=StructuralDocumentFeatures(),
     )
 
 __all__ = [name for name in globals() if not name.startswith("__")]

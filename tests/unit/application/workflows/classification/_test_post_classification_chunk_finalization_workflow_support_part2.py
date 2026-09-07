@@ -32,7 +32,7 @@ def make_workflow(
         embedding_workflow=embedding_workflow,
         vector_store=vector_store,
         graph_chunk_builder=graph_chunk_builder,
-        chunking_profile_inferer=FakeChunkingProfileInferer(
+        chunking_profile_inferer=FakeStructuralProfileInferer(
             make_inference(provisional_profile)
         ),
         chunking_policy_resolver=FakeChunkingPolicyResolver(provisional_profile),

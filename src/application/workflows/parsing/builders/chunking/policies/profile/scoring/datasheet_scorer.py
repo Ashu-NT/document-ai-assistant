@@ -1,62 +1,63 @@
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
-    ChunkingProfileStatistics,
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_document_features import (
+    StructuralDocumentFeatures,
 )
 
 
-def score_datasheet_profile(
-    scores: dict[ChunkingProfile, float],
-    reasons: dict[ChunkingProfile, list[str]],
-    statistics: ChunkingProfileStatistics,
-) -> None:
-    if statistics.datasheet_structural_evidence_hits > 0:
-        scores[ChunkingProfile.DATASHEET] += min(
-            5.0,
-            statistics.datasheet_structural_evidence_hits * 1.7,
-        )
-        reasons[ChunkingProfile.DATASHEET].append(
-            f"Datasheet/specification markers found in title/sections ({statistics.datasheet_structural_evidence_hits} hits)."
-        )
+class DatasheetScorer:
+    profile = ChunkingProfile.DATASHEET
 
-    if statistics.table_ratio >= 0.22:
-        scores[ChunkingProfile.DATASHEET] += 2.5
-        reasons[ChunkingProfile.DATASHEET].append(
-            f"Tables are dominant (ratio {statistics.table_ratio:.2f})."
-        )
-    elif statistics.table_ratio >= 0.12:
-        scores[ChunkingProfile.DATASHEET] += 1.2
-        reasons[ChunkingProfile.DATASHEET].append(
-            f"Tables are a notable structural signal (ratio {statistics.table_ratio:.2f})."
-        )
+    def score(self, features: StructuralDocumentFeatures) -> tuple[float, list[str]]:
+        score = 0.0
+        reasons: list[str] = []
 
-    if statistics.short_text_ratio >= 0.35:
-        scores[ChunkingProfile.DATASHEET] += 1.2
-        reasons[ChunkingProfile.DATASHEET].append(
-            f"Text blocks are short and spec-like (short-text ratio {statistics.short_text_ratio:.2f})."
-        )
+        if features.datasheet_structural_evidence_hits > 0:
+            score += min(5.0, features.datasheet_structural_evidence_hits * 1.7)
+            reasons.append(
+                f"Datasheet/specification markers found in title/sections ({features.datasheet_structural_evidence_hits} hits)."
+            )
 
-    if 0 < statistics.avg_text_tokens <= 14:
-        scores[ChunkingProfile.DATASHEET] += 0.9
-        reasons[ChunkingProfile.DATASHEET].append(
-            f"Average text blocks are concise ({statistics.avg_text_tokens:.1f} tokens)."
-        )
+        if features.table_ratio >= 0.22:
+            score += 2.5
+            reasons.append(
+                f"Tables are dominant (ratio {features.table_ratio:.2f})."
+            )
+        elif features.table_ratio >= 0.12:
+            score += 1.2
+            reasons.append(
+                f"Tables are a notable structural signal (ratio {features.table_ratio:.2f})."
+            )
 
-    if statistics.max_section_depth <= 2 and statistics.root_section_count >= statistics.nested_section_count:
-        scores[ChunkingProfile.DATASHEET] += 0.6
-        reasons[ChunkingProfile.DATASHEET].append(
-            "Section structure is shallow, which fits specification-style documents."
-        )
+        if features.short_text_ratio >= 0.35:
+            score += 1.2
+            reasons.append(
+                f"Text blocks are short and spec-like (short-text ratio {features.short_text_ratio:.2f})."
+            )
 
-    if statistics.manual_structural_evidence_hits >= 3 or statistics.procedure_like_section_count >= 2:
-        scores[ChunkingProfile.DATASHEET] -= 2.0
-        reasons[ChunkingProfile.DATASHEET].append(
-            "Strong manual/procedure signals reduce datasheet confidence."
-        )
+        if 0 < features.avg_text_tokens <= 14:
+            score += 0.9
+            reasons.append(
+                f"Average text blocks are concise ({features.avg_text_tokens:.1f} tokens)."
+            )
 
-    if statistics.long_text_ratio >= 0.35:
-        scores[ChunkingProfile.DATASHEET] -= 1.0
-        reasons[ChunkingProfile.DATASHEET].append(
-            "Long narrative text is less typical for a datasheet."
-        )
+        if features.max_section_depth <= 2 and features.root_section_count >= features.nested_section_count:
+            score += 0.6
+            reasons.append(
+                "Section structure is shallow, which fits specification-style documents."
+            )
+
+        if features.manual_structural_evidence_hits >= 3 or features.procedure_like_section_count >= 2:
+            score -= 2.0
+            reasons.append(
+                "Strong manual/procedure signals reduce datasheet confidence."
+            )
+
+        if features.long_text_ratio >= 0.35:
+            score -= 1.0
+            reasons.append(
+                "Long narrative text is less typical for a datasheet."
+            )
+
+        return score, reasons

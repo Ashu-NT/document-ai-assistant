@@ -30,8 +30,8 @@ from src.application.workflows.classification.hybrid_document_type_resolver impo
     HybridDocumentTypeResolver,
 )
 from src.application.workflows.embedding import EmbeddingWorkflow
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inferer import (
-    ChunkingProfileInferer,
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inferer import (
+    StructuralProfileInferer,
 )
 from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy_resolver import (
     DocumentChunkingPolicyResolver,
@@ -59,7 +59,7 @@ class PostClassificationChunkFinalizationWorkflow:
         vector_store: VectorStore,
         graph_chunk_builder: GraphChunkBuilder,
         chunk_type_classification_workflow: ChunkTypeClassificationWorkflow | None = None,
-        chunking_profile_inferer: ChunkingProfileInferer | None = None,
+        chunking_profile_inferer: StructuralProfileInferer | None = None,
         chunking_policy_resolver: DocumentChunkingPolicyResolver | None = None,
         document_type_resolver: HybridDocumentTypeResolver | None = None,
         enable_question_generation: bool | None = None,
@@ -73,7 +73,7 @@ class PostClassificationChunkFinalizationWorkflow:
         self.graph_chunk_builder = graph_chunk_builder
         self.chunk_type_classification_workflow = chunk_type_classification_workflow
         self.chunking_profile_inferer = (
-            chunking_profile_inferer or ChunkingProfileInferer()
+            chunking_profile_inferer or StructuralProfileInferer()
         )
         self.chunking_policy_resolver = (
             chunking_policy_resolver or DocumentChunkingPolicyResolver()
@@ -163,7 +163,7 @@ class PostClassificationChunkFinalizationWorkflow:
             section_elements_by_id=section_elements_by_id,
         )
         # Reuses structural_inference instead of re-running the same
-        # ChunkingProfileStatistics build + scoring a second time -- only
+        # StructuralDocumentFeatures build + scoring a second time -- only
         # takes the inference path itself when document_type doesn't map to
         # a known profile, which is what resolve() would otherwise do here.
         provisional_chunking_profile = self.chunking_policy_resolver.resolve_profile(

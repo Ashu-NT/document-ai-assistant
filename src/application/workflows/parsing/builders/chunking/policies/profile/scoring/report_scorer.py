@@ -1,51 +1,52 @@
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
-    ChunkingProfileStatistics,
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_document_features import (
+    StructuralDocumentFeatures,
 )
 
 
-def score_report_profile(
-    scores: dict[ChunkingProfile, float],
-    reasons: dict[ChunkingProfile, list[str]],
-    statistics: ChunkingProfileStatistics,
-) -> None:
-    if statistics.report_structural_evidence_hits > 0:
-        scores[ChunkingProfile.REPORT] += min(
-            5.0,
-            statistics.report_structural_evidence_hits * 1.7,
-        )
-        reasons[ChunkingProfile.REPORT].append(
-            f"Report markers found in title/sections ({statistics.report_structural_evidence_hits} hits)."
-        )
+class ReportScorer:
+    profile = ChunkingProfile.REPORT
 
-    if statistics.long_text_ratio >= 0.35:
-        scores[ChunkingProfile.REPORT] += 1.8
-        reasons[ChunkingProfile.REPORT].append(
-            f"Narrative text blocks are common (long-text ratio {statistics.long_text_ratio:.2f})."
-        )
+    def score(self, features: StructuralDocumentFeatures) -> tuple[float, list[str]]:
+        score = 0.0
+        reasons: list[str] = []
 
-    if statistics.avg_text_tokens >= 18:
-        scores[ChunkingProfile.REPORT] += 1.1
-        reasons[ChunkingProfile.REPORT].append(
-            f"Average text blocks are long ({statistics.avg_text_tokens:.1f} tokens)."
-        )
+        if features.report_structural_evidence_hits > 0:
+            score += min(5.0, features.report_structural_evidence_hits * 1.7)
+            reasons.append(
+                f"Report markers found in title/sections ({features.report_structural_evidence_hits} hits)."
+            )
 
-    if statistics.section_count >= 4:
-        scores[ChunkingProfile.REPORT] += 0.7
-        reasons[ChunkingProfile.REPORT].append(
-            f"Document has multiple narrative sections ({statistics.section_count})."
-        )
+        if features.long_text_ratio >= 0.35:
+            score += 1.8
+            reasons.append(
+                f"Narrative text blocks are common (long-text ratio {features.long_text_ratio:.2f})."
+            )
 
-    if statistics.nested_section_ratio >= 0.20:
-        scores[ChunkingProfile.REPORT] += 0.6
-        reasons[ChunkingProfile.REPORT].append(
-            f"Section hierarchy supports report-style structure (nested ratio {statistics.nested_section_ratio:.2f})."
-        )
+        if features.avg_text_tokens >= 18:
+            score += 1.1
+            reasons.append(
+                f"Average text blocks are long ({features.avg_text_tokens:.1f} tokens)."
+            )
 
-    if statistics.manual_structural_evidence_hits >= 3 and statistics.procedure_like_section_count >= 2:
-        scores[ChunkingProfile.REPORT] -= 1.4
-        reasons[ChunkingProfile.REPORT].append(
-            "Strong procedure/task structure reduces report confidence."
-        )
+        if features.section_count >= 4:
+            score += 0.7
+            reasons.append(
+                f"Document has multiple narrative sections ({features.section_count})."
+            )
+
+        if features.nested_section_ratio >= 0.20:
+            score += 0.6
+            reasons.append(
+                f"Section hierarchy supports report-style structure (nested ratio {features.nested_section_ratio:.2f})."
+            )
+
+        if features.manual_structural_evidence_hits >= 3 and features.procedure_like_section_count >= 2:
+            score -= 1.4
+            reasons.append(
+                "Strong procedure/task structure reduces report confidence."
+            )
+
+        return score, reasons

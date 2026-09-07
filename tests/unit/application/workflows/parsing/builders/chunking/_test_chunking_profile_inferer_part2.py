@@ -1,13 +1,13 @@
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inference import (
-    ChunkingProfileInference,
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference import (
+    StructuralProfileInference,
 )
 
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
 
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inferer import (
-    ChunkingProfileInferer,
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inferer import (
+    StructuralProfileInferer,
 )
 
 from src.domain.common import ElementType
@@ -51,8 +51,8 @@ def infer_result(
     document_title: str,
     sections: list[DocumentSection],
     elements: dict[str, list[CanonicalElement]],
-) -> ChunkingProfileInference:
-    inferer = ChunkingProfileInferer()
+) -> StructuralProfileInference:
+    inferer = StructuralProfileInferer()
     return inferer.infer_result(
         document_title=document_title,
         sections=sections,
@@ -248,7 +248,7 @@ def test_certificate_structural_evidence_hits_are_counted_in_statistics() -> Non
         },
     )
 
-    assert result.statistics.certificate_structural_evidence_hits >= 1
+    assert result.features.certificate_structural_evidence_hits >= 1
 
 def test_certificate_profile_does_not_select_for_manual_heavy_document() -> None:
     result = infer_result(

@@ -9,8 +9,8 @@ from src.application.workflows.classification.document_type_decision import (
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inference import (
-    ChunkingProfileInference,
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference import (
+    StructuralProfileInference,
 )
 from src.domain.classification import DocumentClassification
 from src.domain.common import DocumentType
@@ -44,7 +44,7 @@ class HybridDocumentTypeResolver:
         self,
         *,
         parser_title_hint: DocumentType | None,
-        structural_inference: ChunkingProfileInference,
+        structural_inference: StructuralProfileInference,
         classification: DocumentClassification | None,
         provisional_chunking_profile: ChunkingProfile | None = None,
     ) -> DocumentTypeDecision:
