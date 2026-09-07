@@ -250,12 +250,17 @@ def test_link_resolves_a_generic_bare_section_mention_with_an_internal_anchor() 
     assert section_refs[0].target_chunk_id == "target"
 
 
-def test_link_still_records_an_unresolved_section_reference_when_the_target_is_missing() -> (
+def test_link_drops_an_explicit_lead_in_section_reference_when_the_target_is_missing() -> (
     None
 ):
-    # Qualified INTERNAL (explicit lead-in), but the referenced section
-    # doesn't exist anywhere in this document -- proceeds to resolution as
-    # before and comes back UNRESOLVED, an expected, non-error outcome.
+    # Target-existence is now a required qualification condition, not just
+    # a resolver-level fallback: an explicit lead-in pointing at a number
+    # that doesn't exist anywhere in this document is withheld as
+    # AMBIGUOUS before ever reaching the resolver -- no cross-reference
+    # row is produced at all (not even an UNRESOLVED one). Since
+    # qualification and resolution now check target-existence against the
+    # same index, a qualified-INTERNAL section reference always resolves;
+    # UNRESOLVED is no longer reachable through this path.
     referencing_chunk = make_chunk(
         chunk_id="ref", content="Refer to section 99.9 for details."
     )
@@ -263,11 +268,7 @@ def test_link_still_records_an_unresolved_section_reference_when_the_target_is_m
 
     cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
 
-    assert len(cross_references) == 1
-    xref = cross_references[0]
-    assert xref.reference_type == ChunkCrossReferenceType.SECTION_REFERENCE
-    assert xref.target_chunk_id is None
-    assert xref.resolution_status == ChunkCrossReferenceResolutionStatus.UNRESOLVED
+    assert cross_references == []
 
 
 def test_link_logs_a_debug_summary_with_counts_by_reference_type(caplog) -> None:

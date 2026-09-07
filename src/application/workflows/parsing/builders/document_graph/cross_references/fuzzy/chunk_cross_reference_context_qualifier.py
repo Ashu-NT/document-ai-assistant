@@ -38,13 +38,15 @@ _EXTERNAL_ANCHOR_MARKERS: tuple[str, ...] = (
     "asme",
 )
 
-_CONFIDENCE_EXPLICIT_DEFAULT = 0.7
-_CONFIDENCE_EXPLICIT_CORROBORATED = 0.9
+_CONFIDENCE_ANCHOR_AND_LEAD_IN_AND_TARGET = 0.95
+_CONFIDENCE_ANCHOR_AND_TARGET = 0.8
+_CONFIDENCE_LEAD_IN_AND_TARGET = 0.75
+_CONFIDENCE_GENERIC_CAUTIOUS = 0.45
 _CONFIDENCE_EXTERNAL_ANCHOR = 0.85
 _CONFIDENCE_CONFLICTING_ANCHORS = 0.4
-_CONFIDENCE_GENERIC_WITH_INTERNAL_ANCHOR = 0.65
-_CONFIDENCE_GENERIC_WITH_EXISTING_TARGET = 0.45
-_CONFIDENCE_GENERIC_UNCORROBORATED = 0.3
+_CONFIDENCE_ANCHOR_WITHOUT_TARGET = 0.45
+_CONFIDENCE_LEAD_IN_WITHOUT_TARGET = 0.35
+_CONFIDENCE_NO_SIGNAL = 0.3
 
 
 def _normalize(text: str) -> str:
@@ -61,23 +63,28 @@ class ChunkCrossReferenceContextQualifier:
     keeps detection recall-oriented (see chunk_cross_reference_detector.py)
     without letting every match straight through to resolution.
 
-    Rules, in order:
-    1. An external anchor with no internal anchor to counter it -> EXTERNAL.
-    2. Both anchor types present -> genuinely conflicting signal -> AMBIGUOUS
+    Target-existence (does this label actually appear in the current
+    document's own section numbering) is a REQUIRED condition for INTERNAL,
+    not just a confidence booster -- an anchor or lead-in phrase can make a
+    reference *look* internal, but only a real target confirms it. Rules,
+    in order:
+    1. Both anchor types present -> genuinely conflicting signal -> AMBIGUOUS
        rather than guessing.
-    3. An explicit navigational lead-in ("see section", "refer to section",
-       "with reference to section", "described in section", "chap.") is
-       trusted on its own -- this preserves today's accepted behavior for
-       the patterns that already existed before this qualifier was added.
-       An internal anchor or an existing target simply raises confidence.
-    4. A bare "section N"/"chapter N" with no lead-in is corroborated, never
-       trusted alone: an internal anchor promotes it to INTERNAL (higher
-       confidence); failing that, the target number actually existing in
-       this document's own numbering promotes it too (lower confidence --
-       existence alone doesn't rule out coincidence with an external
-       citation); with neither, it's AMBIGUOUS, not confidently EXTERNAL --
-       there's no positive evidence either way, and "don't resolve" is the
-       same safe outcome either way.
+    2. An external anchor with no internal anchor to counter it -> EXTERNAL,
+       regardless of lead-in strength or target existence.
+    3. An internal anchor with an existing target -> INTERNAL (highest
+       confidence when the lead-in itself is also explicit). An internal
+       anchor with NO existing target is withheld as AMBIGUOUS -- the
+       wording reads internal, but nothing confirms it actually is.
+    4. No anchors either way: an explicit lead-in ("see section", "refer to
+       section", "with reference to section", "described in section",
+       "chap.") with an existing target -> INTERNAL. Without a target, that
+       same explicit lead-in is now AMBIGUOUS too -- lead-in phrasing alone
+       is no longer sufficient without corroboration.
+    5. A bare "section N"/"chapter N" with no lead-in, no anchors: an
+       existing target still promotes it to INTERNAL, but at the lowest,
+       most cautious confidence tier (existence alone doesn't rule out
+       coincidence with an external citation). No target -> AMBIGUOUS.
     """
 
     def qualify_section_reference(
@@ -109,40 +116,57 @@ class ChunkCrossReferenceContextQualifier:
                 reasons=("external_anchor_present",),
             )
 
-        if is_explicit_lead_in:
-            reasons = ["explicit_internal_lead_in"]
-            if has_internal_anchor:
-                reasons.append("internal_anchor_present")
-            if target_exists_in_document:
-                reasons.append("target_section_exists_in_document")
-            confidence = (
-                _CONFIDENCE_EXPLICIT_CORROBORATED
-                if (has_internal_anchor or target_exists_in_document)
-                else _CONFIDENCE_EXPLICIT_DEFAULT
-            )
+        if has_internal_anchor:
+            if not target_exists_in_document:
+                return CrossReferenceQualification(
+                    scope=CrossReferenceScope.AMBIGUOUS,
+                    confidence=_CONFIDENCE_ANCHOR_WITHOUT_TARGET,
+                    reasons=(
+                        "internal_anchor_present",
+                        "target_section_not_found_in_document",
+                    ),
+                )
+            reasons = ["internal_anchor_present", "target_section_exists_in_document"]
+            if is_explicit_lead_in:
+                reasons.append("explicit_internal_lead_in")
+                confidence = _CONFIDENCE_ANCHOR_AND_LEAD_IN_AND_TARGET
+            else:
+                confidence = _CONFIDENCE_ANCHOR_AND_TARGET
             return CrossReferenceQualification(
                 scope=CrossReferenceScope.INTERNAL,
                 confidence=confidence,
                 reasons=tuple(reasons),
             )
 
-        if has_internal_anchor:
+        if is_explicit_lead_in:
+            if not target_exists_in_document:
+                return CrossReferenceQualification(
+                    scope=CrossReferenceScope.AMBIGUOUS,
+                    confidence=_CONFIDENCE_LEAD_IN_WITHOUT_TARGET,
+                    reasons=(
+                        "explicit_internal_lead_in",
+                        "target_section_not_found_in_document",
+                    ),
+                )
             return CrossReferenceQualification(
                 scope=CrossReferenceScope.INTERNAL,
-                confidence=_CONFIDENCE_GENERIC_WITH_INTERNAL_ANCHOR,
-                reasons=("generic_bare_mention", "internal_anchor_present"),
+                confidence=_CONFIDENCE_LEAD_IN_AND_TARGET,
+                reasons=(
+                    "explicit_internal_lead_in",
+                    "target_section_exists_in_document",
+                ),
             )
 
         if target_exists_in_document:
             return CrossReferenceQualification(
                 scope=CrossReferenceScope.INTERNAL,
-                confidence=_CONFIDENCE_GENERIC_WITH_EXISTING_TARGET,
+                confidence=_CONFIDENCE_GENERIC_CAUTIOUS,
                 reasons=("generic_bare_mention", "target_section_exists_in_document"),
             )
 
         return CrossReferenceQualification(
             scope=CrossReferenceScope.AMBIGUOUS,
-            confidence=_CONFIDENCE_GENERIC_UNCORROBORATED,
+            confidence=_CONFIDENCE_NO_SIGNAL,
             reasons=("generic_bare_mention", "no_corroborating_signal"),
         )
 

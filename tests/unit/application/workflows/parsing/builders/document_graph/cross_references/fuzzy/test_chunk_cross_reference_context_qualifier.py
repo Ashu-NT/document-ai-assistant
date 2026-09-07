@@ -10,11 +10,11 @@ def _qualifier() -> ChunkCrossReferenceContextQualifier:
     return ChunkCrossReferenceContextQualifier()
 
 
-def test_explicit_lead_in_with_no_anchors_is_internal() -> None:
+def test_explicit_lead_in_with_existing_target_and_no_anchors_is_internal() -> None:
     # Real document (corpus review): "With reference to section 9.4, item
     # 13 above, refit the end shield..." -- no "this manual"-style anchor
-    # anywhere nearby, but the explicit lead-in phrase is trusted on its
-    # own, preserving today's accepted behavior for "see section"/"chap."
+    # anywhere nearby, but the explicit lead-in phrase plus a confirmed
+    # target is enough.
     result = _qualifier().qualify_section_reference(
         is_explicit_lead_in=True,
         context_text="With reference to section 9.4, item 13 above, refit the end shield.",
@@ -23,23 +23,55 @@ def test_explicit_lead_in_with_no_anchors_is_internal() -> None:
 
     assert result.scope == CrossReferenceScope.INTERNAL
     assert "explicit_internal_lead_in" in result.reasons
+    assert "target_section_exists_in_document" in result.reasons
 
 
-def test_explicit_lead_in_confidence_rises_with_an_internal_anchor() -> None:
-    without_anchor = _qualifier().qualify_section_reference(
+def test_explicit_lead_in_with_no_anchor_and_no_target_is_ambiguous() -> None:
+    # Target-existence is now a required condition, not just a confidence
+    # booster: an explicit lead-in phrase alone, pointing at a number that
+    # doesn't exist anywhere in this document, is no longer trusted blindly.
+    result = _qualifier().qualify_section_reference(
         is_explicit_lead_in=True,
-        context_text="Refer to section 5.2 for calibration steps.",
+        context_text="Refer to section 99.9 for calibration steps.",
         target_exists_in_document=False,
     )
-    with_anchor = _qualifier().qualify_section_reference(
+
+    assert result.scope == CrossReferenceScope.AMBIGUOUS
+    assert "target_section_not_found_in_document" in result.reasons
+
+
+def test_internal_anchor_with_existing_target_is_internal_and_ranks_above_lead_in_alone() -> (
+    None
+):
+    anchor_and_target = _qualifier().qualify_section_reference(
         is_explicit_lead_in=True,
         context_text="Refer to section 5.2 of this manual for calibration steps.",
+        target_exists_in_document=True,
+    )
+    lead_in_and_target_only = _qualifier().qualify_section_reference(
+        is_explicit_lead_in=True,
+        context_text="Refer to section 5.2 for calibration steps.",
+        target_exists_in_document=True,
+    )
+
+    assert anchor_and_target.scope == CrossReferenceScope.INTERNAL
+    assert lead_in_and_target_only.scope == CrossReferenceScope.INTERNAL
+    assert anchor_and_target.confidence > lead_in_and_target_only.confidence
+
+
+def test_internal_anchor_without_an_existing_target_is_ambiguous_not_internal() -> None:
+    # The wording reads internal ("of this manual"), but with no confirmed
+    # target the anchor alone still isn't proof -- withheld as AMBIGUOUS
+    # rather than trusted on wording alone.
+    result = _qualifier().qualify_section_reference(
+        is_explicit_lead_in=False,
+        context_text="Section 4.2 of this manual covers installation drawings.",
         target_exists_in_document=False,
     )
 
-    assert without_anchor.scope == CrossReferenceScope.INTERNAL
-    assert with_anchor.scope == CrossReferenceScope.INTERNAL
-    assert with_anchor.confidence > without_anchor.confidence
+    assert result.scope == CrossReferenceScope.AMBIGUOUS
+    assert "internal_anchor_present" in result.reasons
+    assert "target_section_not_found_in_document" in result.reasons
 
 
 def test_external_anchor_overrides_even_an_explicit_lead_in() -> None:
@@ -74,26 +106,26 @@ def test_bare_generic_mention_citing_an_external_directive_is_external() -> None
     assert result.scope == CrossReferenceScope.EXTERNAL
 
 
-def test_bare_generic_mention_with_internal_anchor_is_internal_but_lower_confidence_than_explicit() -> (
+def test_bare_generic_mention_with_internal_anchor_and_target_outranks_bare_target_alone() -> (
     None
 ):
-    generic_result = _qualifier().qualify_section_reference(
+    with_anchor = _qualifier().qualify_section_reference(
         is_explicit_lead_in=False,
         context_text="Section 4.2 of this manual covers installation drawings.",
         target_exists_in_document=True,
     )
-    explicit_result = _qualifier().qualify_section_reference(
-        is_explicit_lead_in=True,
-        context_text="Refer to section 4.2 of this manual for installation drawings.",
+    bare_with_target_only = _qualifier().qualify_section_reference(
+        is_explicit_lead_in=False,
+        context_text="Section 4.2 Installation Drawings",
         target_exists_in_document=True,
     )
 
-    assert generic_result.scope == CrossReferenceScope.INTERNAL
-    assert explicit_result.scope == CrossReferenceScope.INTERNAL
-    assert generic_result.confidence < explicit_result.confidence
+    assert with_anchor.scope == CrossReferenceScope.INTERNAL
+    assert bare_with_target_only.scope == CrossReferenceScope.INTERNAL
+    assert with_anchor.confidence > bare_with_target_only.confidence
 
 
-def test_bare_generic_mention_with_existing_target_but_no_anchor_is_weakly_internal() -> (
+def test_bare_generic_mention_with_existing_target_but_no_anchor_is_cautiously_internal() -> (
     None
 ):
     result = _qualifier().qualify_section_reference(
