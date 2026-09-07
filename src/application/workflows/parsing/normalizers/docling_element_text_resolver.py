@@ -85,12 +85,15 @@ class DoclingElementTextResolver:
         item: Any,
         element_type: ElementType,
         *,
+        raw_document: Any | None = None,
         page_lane_count: int | None = None,
     ) -> TableReconstructionResult | None:
         if element_type != ElementType.TABLE:
             return None
         return self.table_extractor.extract_structure(
-            item, page_lane_count=page_lane_count
+            item,
+            raw_document=raw_document,
+            page_lane_count=page_lane_count,
         )
 
     @staticmethod

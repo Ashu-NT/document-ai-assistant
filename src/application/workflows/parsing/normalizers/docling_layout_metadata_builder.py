@@ -46,7 +46,10 @@ class DoclingLayoutMetadataBuilder:
                 PageLayoutCandidate(
                     element_ref=element_ref,
                     page_number=page_number,
-                    bbox=provenance_extractor.extract_bbox(item),
+                    bbox=provenance_extractor.extract_bbox(
+                        item,
+                        raw_document=raw_document,
+                    ),
                     label=item_extractor.lower_label(item),
                     text=self._candidate_text(item),
                     content_layer=item_extractor.extract_content_layer(item),

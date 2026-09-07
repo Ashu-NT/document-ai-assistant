@@ -19,7 +19,12 @@ class DoclingTableCellCandidateBuilder:
     ) -> None:
         self.provenance_extractor = provenance_extractor or DoclingProvenanceExtractor()
 
-    def build(self, table_cells: list[Any]) -> list[TableCellSpan]:
+    def build(
+        self,
+        table_cells: list[Any],
+        *,
+        raw_document: Any | None = None,
+    ) -> list[TableCellSpan]:
         spans: list[TableCellSpan] = []
         for cell in table_cells:
             row_start = self._coerce_int(self._get_value(cell, "start_row_offset_idx"))
@@ -52,7 +57,10 @@ class DoclingTableCellCandidateBuilder:
                     normalized_text=" ".join(raw_lines) if raw_lines else text,
                     raw_lines=raw_lines,
                     page_number=page_start or page_end,
-                    bbox=self.provenance_extractor.extract_bbox(cell),
+                    bbox=self.provenance_extractor.extract_bbox(
+                        cell,
+                        raw_document=raw_document,
+                    ),
                 )
             )
         return spans

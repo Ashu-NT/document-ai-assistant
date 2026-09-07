@@ -3,6 +3,9 @@ from collections import defaultdict
 from src.application.workflows.parsing.normalizers.docling_caption_extractor import (
     DoclingCaptionExtractor,
 )
+from src.application.workflows.parsing.normalizers.docling_bbox_normalizer import (
+    DoclingBBoxNormalizer,
+)
 from src.application.workflows.parsing.normalizers.docling_element_metadata_builder import (
     DoclingElementMetadataBuilder,
 )
@@ -139,6 +142,7 @@ class DoclingDocumentNormalizer:
         table_structure = self.text_resolver.extract_table_structure(
             item,
             element_type,
+            raw_document=raw_document,
             page_lane_count=self._extract_page_lane_count(
                 element_layout_metadata
             ),
@@ -154,7 +158,10 @@ class DoclingDocumentNormalizer:
             table_markdown=table_markdown,
         )
         page_start, page_end = self.provenance_extractor.extract_pages(item)
-        bbox = self.provenance_extractor.extract_bbox(item)
+        bbox = self.provenance_extractor.extract_bbox(
+            item,
+            raw_document=raw_document,
+        )
         section_path = self.item_extractor.extract_section_path(item)
         section_title = self.text_resolver.extract_section_title(
             element_type, text
@@ -168,6 +175,8 @@ class DoclingDocumentNormalizer:
             markdown=table_markdown,
             table_structure=table_structure,
         )
+        if bbox is not None:
+            metadata["bbox_coordinate_origin"] = DoclingBBoxNormalizer.CANONICAL_ORIGIN
 
         return ParsedCanonicalElement(
             element_id=raw_ref or f"canon_{index}",

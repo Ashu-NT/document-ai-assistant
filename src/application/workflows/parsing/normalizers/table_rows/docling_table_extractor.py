@@ -127,13 +127,17 @@ class DoclingTableExtractor:
         self,
         item: Any,
         *,
+        raw_document: Any | None = None,
         page_lane_count: int | None = None,
     ) -> TableReconstructionResult:
         table_cells = self._extract_table_cells(item)
         if not table_cells:
             return TableReconstructionResult(rows=[], cell_spans=[])
 
-        spans = self.cell_candidate_builder.build(table_cells)
+        spans = self.cell_candidate_builder.build(
+            table_cells,
+            raw_document=raw_document,
+        )
         return self.row_grid_builder.build_reconstruction(
             spans, page_lane_count=page_lane_count
         )

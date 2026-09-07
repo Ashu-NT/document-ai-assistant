@@ -1,5 +1,11 @@
 from typing import Any
 
+from src.application.workflows.parsing.normalizers.docling_bbox_normalizer import (
+    DoclingBBoxNormalizer,
+)
+from src.application.workflows.parsing.normalizers.docling_page_height_resolver import (
+    DoclingPageHeightResolver,
+)
 from src.domain.common import BoundingBox
 
 
@@ -19,14 +25,31 @@ class DoclingProvenanceExtractor:
 
         return (page_numbers[0], page_numbers[-1])
 
-    def extract_bbox(self, item: Any) -> BoundingBox | None:
+    def extract_bbox(
+        self,
+        item: Any,
+        *,
+        raw_document: Any | None = None,
+    ) -> BoundingBox | None:
         provenances = self.extract_provenances(item)
         for provenance in provenances:
-            bbox = self._bbox_from_object(self._get_value(provenance, "bbox"))
+            bbox = self._bbox_from_object(
+                self._get_value(provenance, "bbox"),
+                page_height=DoclingPageHeightResolver.resolve(
+                    raw_document,
+                    self._page_number_from_provenance(provenance),
+                ),
+            )
             if bbox is not None:
                 return bbox
 
-        return self._bbox_from_object(self._get_value(item, "bbox"))
+        return self._bbox_from_object(
+            self._get_value(item, "bbox"),
+            page_height=DoclingPageHeightResolver.resolve(
+                raw_document,
+                self._page_number_from_provenance(item),
+            ),
+        )
 
     def extract_provenances(self, item: Any) -> list[Any]:
         for attribute_name in ("prov", "provenance", "provenances"):
@@ -60,34 +83,13 @@ class DoclingProvenanceExtractor:
 
         return None
 
-    @classmethod
-    def _bbox_from_object(cls, raw_bbox: Any) -> BoundingBox | None:
-        if raw_bbox is None:
-            return None
-
-        attribute_sets = [
-            ("x1", "y1", "x2", "y2"),
-            ("x0", "y0", "x1", "y1"),
-            ("l", "t", "r", "b"),
-            ("left", "top", "right", "bottom"),
-        ]
-
-        for attribute_names in attribute_sets:
-            values = [
-                cls._get_value(raw_bbox, attribute_name)
-                for attribute_name in attribute_names
-            ]
-            if any(value is None for value in values):
-                continue
-
-            return BoundingBox(
-                x1=float(values[0]),
-                y1=float(values[1]),
-                x2=float(values[2]),
-                y2=float(values[3]),
-            )
-
-        return None
+    @staticmethod
+    def _bbox_from_object(
+        raw_bbox: Any,
+        *,
+        page_height: float | None = None,
+    ) -> BoundingBox | None:
+        return DoclingBBoxNormalizer.normalize(raw_bbox, page_height=page_height)
 
     @staticmethod
     def _get_value(value: Any, name: str) -> Any:
