@@ -1,4 +1,12 @@
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
+
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
+    ChunkingProfile,
+)
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_evidence_matcher import (
+    StructuralEvidenceSummary,
+)
 
 
 @dataclass(slots=True, frozen=True)
@@ -20,28 +28,14 @@ class StructuralDocumentFeatures:
     long_text_ratio: float = 0.0
     short_text_ratio: float = 0.0
 
-    # Counts of profile-indicative terms found in section/document TITLES (a
-    # crude substring search, see StructuralFeatureExtractor) feeding
-    # the "structural_evidence" signal used by
-    # StructuralProfileInferer/HybridDocumentTypeResolver -- deliberately named
-    # "structural_evidence", not "marker", so this isn't confused with the
-    # unrelated, much richer EvidenceMarker/MarkerStrength system under
-    # chunking/builders/structured/markers, which scores evidence within
-    # already-classified section content, not raw title term density across
-    # a whole document.
-    manual_structural_evidence_hits: int = 0
-    datasheet_structural_evidence_hits: int = 0
-    drawing_structural_evidence_hits: int = 0
-    report_structural_evidence_hits: int = 0
-    certificate_structural_evidence_hits: int = 0
+    # Per-profile title-keyword evidence (a crude substring search, see
+    # StructuralEvidenceMatcher) feeding the signal used by
+    # StructuralProfileInferer/HybridDocumentTypeResolver -- deliberately
+    # separate from the unrelated, much richer EvidenceMarker/MarkerStrength
+    # system under chunking/builders/structured/markers, which scores
+    # evidence within already-classified section content, not raw title
+    # term density across a whole document.
+    evidence: Mapping[ChunkingProfile, StructuralEvidenceSummary] = field(
+        default_factory=dict
+    )
     procedure_like_section_count: int = 0
-
-    @property
-    def total_structural_evidence_hits(self) -> int:
-        return (
-            self.manual_structural_evidence_hits
-            + self.datasheet_structural_evidence_hits
-            + self.drawing_structural_evidence_hits
-            + self.report_structural_evidence_hits
-            + self.certificate_structural_evidence_hits
-        )

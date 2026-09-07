@@ -12,11 +12,12 @@ class ManualScorer:
     def score(self, features: StructuralDocumentFeatures) -> tuple[float, list[str]]:
         score = 0.0
         reasons: list[str] = []
+        manual_evidence = features.evidence[ChunkingProfile.MANUAL]
 
-        if features.manual_structural_evidence_hits > 0:
-            score += min(5.0, features.manual_structural_evidence_hits * 1.6)
+        if manual_evidence.total_occurrences > 0:
+            score += min(5.0, manual_evidence.total_occurrences * 1.6)
             reasons.append(
-                f"Manual markers found in title/sections ({features.manual_structural_evidence_hits} hits)."
+                f"Manual markers found in title/sections ({manual_evidence.total_occurrences} hits)."
             )
 
         if features.procedure_like_section_count > 0:
@@ -37,7 +38,7 @@ class ManualScorer:
         if (
             features.long_text_ratio >= 0.25
             and (
-                features.manual_structural_evidence_hits > 0
+                manual_evidence.total_occurrences > 0
                 or features.procedure_like_section_count > 0
             )
         ):

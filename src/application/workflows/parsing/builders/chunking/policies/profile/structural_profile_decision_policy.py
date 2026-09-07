@@ -73,7 +73,10 @@ class StructuralProfileDecisionPolicy:
             default_score += 0.9
             reasons.append("Top structural profile scores are relatively close.")
 
-        if features.total_structural_evidence_hits == 0:
+        total_evidence_occurrences = sum(
+            summary.total_occurrences for summary in features.evidence.values()
+        )
+        if total_evidence_occurrences == 0:
             default_score += 0.8
             reasons.append(
                 "No strong profile markers were found in the title or section headings."

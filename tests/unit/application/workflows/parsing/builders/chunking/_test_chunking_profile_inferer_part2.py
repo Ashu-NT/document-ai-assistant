@@ -248,7 +248,7 @@ def test_certificate_structural_evidence_hits_are_counted_in_statistics() -> Non
         },
     )
 
-    assert result.features.certificate_structural_evidence_hits >= 1
+    assert result.features.evidence[ChunkingProfile.CERTIFICATE].total_occurrences >= 1
 
 def test_certificate_profile_does_not_select_for_manual_heavy_document() -> None:
     result = infer_result(

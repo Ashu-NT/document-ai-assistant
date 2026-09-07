@@ -12,11 +12,12 @@ class ReportScorer:
     def score(self, features: StructuralDocumentFeatures) -> tuple[float, list[str]]:
         score = 0.0
         reasons: list[str] = []
+        report_evidence = features.evidence[ChunkingProfile.REPORT]
 
-        if features.report_structural_evidence_hits > 0:
-            score += min(5.0, features.report_structural_evidence_hits * 1.7)
+        if report_evidence.total_occurrences > 0:
+            score += min(5.0, report_evidence.total_occurrences * 1.7)
             reasons.append(
-                f"Report markers found in title/sections ({features.report_structural_evidence_hits} hits)."
+                f"Report markers found in title/sections ({report_evidence.total_occurrences} hits)."
             )
 
         if features.long_text_ratio >= 0.35:
@@ -43,7 +44,8 @@ class ReportScorer:
                 f"Section hierarchy supports report-style structure (nested ratio {features.nested_section_ratio:.2f})."
             )
 
-        if features.manual_structural_evidence_hits >= 3 and features.procedure_like_section_count >= 2:
+        manual_evidence = features.evidence[ChunkingProfile.MANUAL]
+        if manual_evidence.total_occurrences >= 3 and features.procedure_like_section_count >= 2:
             score -= 1.4
             reasons.append(
                 "Strong procedure/task structure reduces report confidence."

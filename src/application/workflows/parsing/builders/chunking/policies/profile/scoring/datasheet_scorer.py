@@ -12,11 +12,12 @@ class DatasheetScorer:
     def score(self, features: StructuralDocumentFeatures) -> tuple[float, list[str]]:
         score = 0.0
         reasons: list[str] = []
+        datasheet_evidence = features.evidence[ChunkingProfile.DATASHEET]
 
-        if features.datasheet_structural_evidence_hits > 0:
-            score += min(5.0, features.datasheet_structural_evidence_hits * 1.7)
+        if datasheet_evidence.total_occurrences > 0:
+            score += min(5.0, datasheet_evidence.total_occurrences * 1.7)
             reasons.append(
-                f"Datasheet/specification markers found in title/sections ({features.datasheet_structural_evidence_hits} hits)."
+                f"Datasheet/specification markers found in title/sections ({datasheet_evidence.total_occurrences} hits)."
             )
 
         if features.table_ratio >= 0.22:
@@ -48,7 +49,8 @@ class DatasheetScorer:
                 "Section structure is shallow, which fits specification-style documents."
             )
 
-        if features.manual_structural_evidence_hits >= 3 or features.procedure_like_section_count >= 2:
+        manual_evidence = features.evidence[ChunkingProfile.MANUAL]
+        if manual_evidence.total_occurrences >= 3 or features.procedure_like_section_count >= 2:
             score -= 2.0
             reasons.append(
                 "Strong manual/procedure signals reduce datasheet confidence."

@@ -12,11 +12,12 @@ class DrawingScorer:
     def score(self, features: StructuralDocumentFeatures) -> tuple[float, list[str]]:
         score = 0.0
         reasons: list[str] = []
+        drawing_evidence = features.evidence[ChunkingProfile.DRAWING]
 
-        if features.drawing_structural_evidence_hits > 0:
-            score += min(5.0, features.drawing_structural_evidence_hits * 1.7)
+        if drawing_evidence.total_occurrences > 0:
+            score += min(5.0, drawing_evidence.total_occurrences * 1.7)
             reasons.append(
-                f"Drawing/schematic markers found in title/sections ({features.drawing_structural_evidence_hits} hits)."
+                f"Drawing/schematic markers found in title/sections ({drawing_evidence.total_occurrences} hits)."
             )
 
         if features.picture_ratio >= 0.22:

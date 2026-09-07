@@ -77,4 +77,4 @@ def test_returned_inference_contains_scores_reasons_and_statistics() -> None:
     assert isinstance(result.scores, dict)
     assert ChunkingProfile.MANUAL in result.scores
     assert isinstance(result.reasons[ChunkingProfile.MANUAL], list)
-    assert result.features.manual_structural_evidence_hits >= 1
+    assert result.features.evidence[ChunkingProfile.MANUAL].total_occurrences >= 1

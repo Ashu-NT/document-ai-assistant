@@ -1,5 +1,10 @@
 from .chunking_profile import ChunkingProfile
-from .features import StructuralDocumentFeatures, StructuralFeatureExtractor
+from .features import (
+    StructuralDocumentFeatures,
+    StructuralEvidenceMatcher,
+    StructuralEvidenceSummary,
+    StructuralFeatureExtractor,
+)
 from .scoring import (
     CertificateScorer,
     DatasheetScorer,
@@ -25,6 +30,8 @@ __all__ = [
     "ProfileScores",
     "ReportScorer",
     "StructuralDocumentFeatures",
+    "StructuralEvidenceMatcher",
+    "StructuralEvidenceSummary",
     "StructuralFeatureExtractor",
     "StructuralProfileDecisionPolicy",
     "StructuralProfileInference",

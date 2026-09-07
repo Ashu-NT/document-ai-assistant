@@ -1,5 +1,10 @@
+from dataclasses import dataclass
+
 from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_document_features import (
     StructuralDocumentFeatures,
+)
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_evidence_matcher import (
+    StructuralEvidenceMatcher,
 )
 from src.application.workflows.parsing.builders.chunking.policies.section_merge.section_semantics import (
     is_task_like_title,
@@ -16,64 +21,33 @@ _TEXTUAL_ELEMENT_TYPES = {
     ElementType.CODE,
 }
 
-# Crude title-keyword lists feeding the "structural_evidence" signal used by
-# StructuralProfileInferer/HybridDocumentTypeResolver -- deliberately separate
-# from the typed EvidenceMarker/MarkerStrength catalogs under
-# chunking/builders/structured/markers, which score evidence within
-# already-classified section content, not raw title keyword density across
-# a whole document. See StructuralDocumentFeatures for why these stay named
-# "structural_evidence", not "marker".
-_MANUAL_STRUCTURAL_EVIDENCE_TERMS = (
-    "maintenance",
-    "procedure",
-    "task",
-    "operation",
-    "installation",
-    "troubleshooting",
-    "service",
-    "inspection",
-    "repair",
-)
-_DATASHEET_STRUCTURAL_EVIDENCE_TERMS = (
-    "datasheet",
-    "technical data",
-    "technical specification",
-    "specification",
-    "specifications",
-    "electrical",
-    "mechanical",
-    "rating",
-    "ratings",
-    "dimensions",
-)
-_DRAWING_STRUCTURAL_EVIDENCE_TERMS = (
-    "drawing",
-    "schematic",
-    "diagram",
-    "layout",
-    "wiring",
-)
-_REPORT_STRUCTURAL_EVIDENCE_TERMS = (
-    "abstract",
-    "results",
-    "discussion",
-    "conclusion",
-    "conclusions",
-    "background",
-    "methodology",
-    "method",
-)
-_CERTIFICATE_STRUCTURAL_EVIDENCE_TERMS = (
-    "certificate",
-    "conformity",
-    "certification",
-    "inspection certificate",
-    "test certificate",
-    "certificate of conformity",
-)
+
+@dataclass(slots=True, frozen=True)
+class _ElementCounts:
+    element_count: int
+    table_count: int
+    picture_count: int
+    list_count: int
+    caption_count: int
+    text_element_count: int
+    text_token_total: int
+    long_text_block_count: int
+    short_text_block_count: int
 
 
 class StructuralFeatureExtractor:
+    """Builds StructuralDocumentFeatures for one document: layout,
+    hierarchy, and text-shape statistics (this class's own job), plus
+    per-profile title-keyword evidence (delegated to
+    StructuralEvidenceMatcher)."""
+
+    def __init__(
+        self,
+        *,
+        evidence_matcher: StructuralEvidenceMatcher | None = None,
+    ) -> None:
+        self.evidence_matcher = evidence_matcher or StructuralEvidenceMatcher()
+
     def build(
         self,
         *,
@@ -81,18 +55,32 @@ class StructuralFeatureExtractor:
         sections: list[DocumentSection],
         section_elements_by_id: dict[str, list[CanonicalElement]],
     ) -> StructuralDocumentFeatures:
-        all_titles = [
-            title
-            for title in [
-                normalize_section_title(document_title),
-                *[
-                    normalize_section_title(section.title)
-                    for section in sections
-                ],
-            ]
-            if title
-        ]
+        element_counts = self._count_elements(section_elements_by_id)
+        hierarchy_statistics = self._build_hierarchy_statistics(sections)
+        layout_statistics = self._build_layout_statistics(element_counts)
+        text_shape_statistics = self._build_text_shape_statistics(element_counts)
 
+        titles = self._collect_titles(document_title, sections)
+        evidence = self.evidence_matcher.match(titles)
+
+        procedure_like_section_count = sum(
+            1
+            for section in sections
+            if self._is_procedure_like_title(section.title)
+        )
+
+        return StructuralDocumentFeatures(
+            **hierarchy_statistics,
+            **layout_statistics,
+            **text_shape_statistics,
+            evidence=evidence,
+            procedure_like_section_count=procedure_like_section_count,
+        )
+
+    @staticmethod
+    def _count_elements(
+        section_elements_by_id: dict[str, list[CanonicalElement]],
+    ) -> _ElementCounts:
         element_count = 0
         table_count = 0
         picture_count = 0
@@ -128,6 +116,23 @@ class StructuralFeatureExtractor:
                 if tokens <= 8:
                     short_text_block_count += 1
 
+        return _ElementCounts(
+            element_count=element_count,
+            table_count=table_count,
+            picture_count=picture_count,
+            list_count=list_count,
+            caption_count=caption_count,
+            text_element_count=text_element_count,
+            text_token_total=text_token_total,
+            long_text_block_count=long_text_block_count,
+            short_text_block_count=short_text_block_count,
+        )
+
+    @classmethod
+    def _build_hierarchy_statistics(
+        cls,
+        sections: list[DocumentSection],
+    ) -> dict[str, int | float]:
         section_count = len(sections)
         root_section_count = sum(
             1 for section in sections if section.parent_section_id is None
@@ -144,62 +149,64 @@ class StructuralFeatureExtractor:
             ),
             default=1,
         )
-        procedure_like_section_count = sum(
-            1
-            for section in sections
-            if self._is_procedure_like_title(section.title)
-        )
+        return {
+            "section_count": section_count,
+            "root_section_count": root_section_count,
+            "nested_section_count": nested_section_count,
+            "max_section_depth": max_section_depth,
+            "nested_section_ratio": cls._ratio(nested_section_count, section_count),
+        }
 
+    @classmethod
+    def _build_layout_statistics(
+        cls,
+        counts: _ElementCounts,
+    ) -> dict[str, int | float]:
+        return {
+            "element_count": counts.element_count,
+            "table_ratio": cls._ratio(counts.table_count, counts.element_count),
+            "picture_ratio": cls._ratio(counts.picture_count, counts.element_count),
+            "list_ratio": cls._ratio(counts.list_count, counts.element_count),
+            "caption_ratio": cls._ratio(counts.caption_count, counts.element_count),
+        }
+
+    @classmethod
+    def _build_text_shape_statistics(
+        cls,
+        counts: _ElementCounts,
+    ) -> dict[str, int | float]:
         avg_text_tokens = (
-            text_token_total / text_element_count
-            if text_element_count > 0
+            counts.text_token_total / counts.text_element_count
+            if counts.text_element_count > 0
             else 0.0
         )
-
-        return StructuralDocumentFeatures(
-            element_count=element_count,
-            section_count=section_count,
-            root_section_count=root_section_count,
-            nested_section_count=nested_section_count,
-            max_section_depth=max_section_depth,
-            text_element_count=text_element_count,
-            avg_text_tokens=avg_text_tokens,
-            table_ratio=self._ratio(table_count, element_count),
-            picture_ratio=self._ratio(picture_count, element_count),
-            list_ratio=self._ratio(list_count, element_count),
-            caption_ratio=self._ratio(caption_count, element_count),
-            nested_section_ratio=self._ratio(nested_section_count, section_count),
-            long_text_ratio=self._ratio(long_text_block_count, text_element_count),
-            short_text_ratio=self._ratio(short_text_block_count, text_element_count),
-            manual_structural_evidence_hits=self._count_structural_evidence_hits(
-                all_titles, _MANUAL_STRUCTURAL_EVIDENCE_TERMS
+        return {
+            "text_element_count": counts.text_element_count,
+            "avg_text_tokens": avg_text_tokens,
+            "long_text_ratio": cls._ratio(
+                counts.long_text_block_count, counts.text_element_count
             ),
-            datasheet_structural_evidence_hits=self._count_structural_evidence_hits(
-                all_titles,
-                _DATASHEET_STRUCTURAL_EVIDENCE_TERMS,
+            "short_text_ratio": cls._ratio(
+                counts.short_text_block_count, counts.text_element_count
             ),
-            drawing_structural_evidence_hits=self._count_structural_evidence_hits(
-                all_titles, _DRAWING_STRUCTURAL_EVIDENCE_TERMS
-            ),
-            report_structural_evidence_hits=self._count_structural_evidence_hits(
-                all_titles, _REPORT_STRUCTURAL_EVIDENCE_TERMS
-            ),
-            certificate_structural_evidence_hits=self._count_structural_evidence_hits(
-                all_titles,
-                _CERTIFICATE_STRUCTURAL_EVIDENCE_TERMS,
-            ),
-            procedure_like_section_count=procedure_like_section_count,
-        )
+        }
 
     @staticmethod
-    def _count_structural_evidence_hits(
-        titles: list[str],
-        terms: tuple[str, ...],
-    ) -> int:
-        hits = 0
-        for title in titles:
-            hits += sum(1 for term in terms if term in title)
-        return hits
+    def _collect_titles(
+        document_title: str | None,
+        sections: list[DocumentSection],
+    ) -> list[str]:
+        return [
+            title
+            for title in [
+                normalize_section_title(document_title),
+                *[
+                    normalize_section_title(section.title)
+                    for section in sections
+                ],
+            ]
+            if title
+        ]
 
     @staticmethod
     def _is_procedure_like_title(title: str | None) -> bool:
