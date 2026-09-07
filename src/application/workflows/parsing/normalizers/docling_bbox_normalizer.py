@@ -27,7 +27,11 @@ class DoclingBBoxNormalizer:
         if coordinates is None:
             return None
         left, first_y, right, second_y = coordinates
+        has_explicit_origin = cls._get_value(raw_bbox, "coord_origin") is not None
         origin = cls._extract_origin(raw_bbox)
+
+        if has_explicit_origin and origin is None:
+            return None
 
         if origin == cls._TOPLEFT:
             if page_height is None or page_height <= 0:
@@ -38,8 +42,8 @@ class DoclingBBoxNormalizer:
             top = max(first_y, second_y)
             bottom = min(first_y, second_y)
         else:
-            # Origin-less inputs predate origin preservation and already use
-            # the canonical top-then-bottom ordering in this application.
+            # Preserve legacy origin-less inputs. Callers still use min/max
+            # accessors, so changing their historical ordering is unnecessary.
             top = first_y
             bottom = second_y
 
@@ -75,6 +79,9 @@ class DoclingBBoxNormalizer:
             return None
         value = cls._get_value(raw_origin, "value") or raw_origin
         normalized = str(value).rsplit(".", 1)[-1].strip().upper()
+        normalized = (
+            normalized.replace("-", "").replace("_", "").replace(" ", "")
+        )
         return normalized if normalized in {cls._TOPLEFT, cls._BOTTOMLEFT} else None
 
     @staticmethod

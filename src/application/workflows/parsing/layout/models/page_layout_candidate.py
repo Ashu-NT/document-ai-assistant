@@ -20,7 +20,7 @@ class PageLayoutCandidate:
     def top_y(self) -> float | None:
         if self.bbox is None:
             return None
-        # Docling PDF provenance uses BOTTOMLEFT coordinates.
+        # The Docling adapter normalizes all explicit origins to BOTTOMLEFT.
         return max(self.bbox.y1, self.bbox.y2)
 
     def width(self) -> float | None:

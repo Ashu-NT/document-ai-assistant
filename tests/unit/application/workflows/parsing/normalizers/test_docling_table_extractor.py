@@ -13,6 +13,7 @@ class _FakeCell:
         end_col_offset_idx=None,
         text=None,
         prov=None,
+        bbox=None,
     ) -> None:
         self.start_row_offset_idx = start_row_offset_idx
         self.end_row_offset_idx = end_row_offset_idx
@@ -20,6 +21,7 @@ class _FakeCell:
         self.end_col_offset_idx = end_col_offset_idx
         self.text = text
         self.prov = prov or []
+        self.bbox = bbox
 
 
 class _FakeData:
@@ -33,11 +35,12 @@ class _FakeTableItem:
 
 
 class _FakeBBox:
-    def __init__(self, x1, y1, x2, y2) -> None:
+    def __init__(self, x1, y1, x2, y2, coord_origin=None) -> None:
         self.x1 = x1
         self.y1 = y1
         self.x2 = x2
         self.y2 = y2
+        self.coord_origin = coord_origin
 
 
 class _FakeProvenance:
@@ -160,3 +163,36 @@ def test_extract_cell_spans_preserves_optional_page_and_bbox_metadata() -> None:
             "bbox": {"x1": 10.0, "y1": 20.0, "x2": 110.0, "y2": 40.0},
         }
     ]
+
+
+def test_extract_structure_uses_parent_page_to_normalize_cell_bbox() -> None:
+    extractor = DoclingTableExtractor()
+    item = _FakeTableItem(
+        [
+            _FakeCell(
+                start_row_offset_idx=0,
+                end_row_offset_idx=1,
+                start_col_offset_idx=0,
+                end_col_offset_idx=1,
+                text="Voltage",
+                bbox=_FakeBBox(10, 20, 110, 50, "TOPLEFT"),
+            )
+        ]
+    )
+    raw_document = {"pages": {3: {"size": {"height": 200}}}}
+
+    result = extractor.extract_structure(
+        item,
+        raw_document=raw_document,
+        page_number=3,
+    )
+
+    span = result.cell_spans[0]
+    assert span.page_number == 3
+    assert span.bbox is not None
+    assert (span.bbox.x1, span.bbox.y1, span.bbox.x2, span.bbox.y2) == (
+        10,
+        180,
+        110,
+        150,
+    )

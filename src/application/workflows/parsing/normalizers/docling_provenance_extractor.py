@@ -30,6 +30,7 @@ class DoclingProvenanceExtractor:
         item: Any,
         *,
         raw_document: Any | None = None,
+        default_page_number: int | None = None,
     ) -> BoundingBox | None:
         provenances = self.extract_provenances(item)
         for provenance in provenances:
@@ -37,7 +38,8 @@ class DoclingProvenanceExtractor:
                 self._get_value(provenance, "bbox"),
                 page_height=DoclingPageHeightResolver.resolve(
                     raw_document,
-                    self._page_number_from_provenance(provenance),
+                    self._page_number_from_provenance(provenance)
+                    or default_page_number,
                 ),
             )
             if bbox is not None:
@@ -47,7 +49,7 @@ class DoclingProvenanceExtractor:
             self._get_value(item, "bbox"),
             page_height=DoclingPageHeightResolver.resolve(
                 raw_document,
-                self._page_number_from_provenance(item),
+                self._page_number_from_provenance(item) or default_page_number,
             ),
         )
 

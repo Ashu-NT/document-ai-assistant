@@ -19,9 +19,12 @@ class DoclingPageHeightResolver:
     @staticmethod
     def _page_for_number(pages: Any, page_number: int) -> Any:
         if isinstance(pages, dict):
-            return pages.get(page_number) or pages.get(str(page_number))
+            page = pages.get(page_number)
+            return page if page is not None else pages.get(str(page_number))
+        if page_number < 1:
+            return None
         try:
-            return pages[page_number]
+            return pages[page_number - 1]
         except (IndexError, KeyError, TypeError):
             return None
 

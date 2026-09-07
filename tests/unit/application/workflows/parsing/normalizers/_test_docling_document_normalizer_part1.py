@@ -1,5 +1,3 @@
-from types import SimpleNamespace
-
 import pytest
 
 from src.application.workflows.parsing import RawParsedDocument
@@ -127,6 +125,7 @@ def test_section_header_preserves_heading_level_label_and_raw_ref() -> None:
     assert normalized[0].metadata["heading_level"] == 2
     assert normalized[0].metadata["item_label"] == "section_header"
     assert normalized[0].metadata["raw_ref"] == "#/texts/1"
+    assert normalized[0].metadata["bbox_coordinate_origin"] == "BOTTOMLEFT"
 
 def test_text_element_does_not_use_paragraph_text_as_section_title() -> None:
     raw_document = FakeRawDocument(
@@ -201,6 +200,7 @@ def test_table_item_becomes_table_element_and_preserves_metadata() -> None:
             "text": "Part",
             "normalized_text": "Part",
             "raw_lines": ["Part"],
+            "page_number": 2,
         },
         {
             "row_start": 0,
@@ -212,6 +212,7 @@ def test_table_item_becomes_table_element_and_preserves_metadata() -> None:
             "text": "Description",
             "normalized_text": "Description",
             "raw_lines": ["Description"],
+            "page_number": 2,
         },
     ]
 

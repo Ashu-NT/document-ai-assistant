@@ -24,6 +24,7 @@ class DoclingTableCellCandidateBuilder:
         table_cells: list[Any],
         *,
         raw_document: Any | None = None,
+        default_page_number: int | None = None,
     ) -> list[TableCellSpan]:
         spans: list[TableCellSpan] = []
         for cell in table_cells:
@@ -41,6 +42,7 @@ class DoclingTableCellCandidateBuilder:
 
             raw_lines = [line.strip() for line in text.splitlines() if line.strip()]
             page_start, page_end = self.provenance_extractor.extract_pages(cell)
+            page_number = page_start or page_end or default_page_number
             spans.append(
                 TableCellSpan(
                     row_start=row_start,
@@ -56,10 +58,11 @@ class DoclingTableCellCandidateBuilder:
                     text=text,
                     normalized_text=" ".join(raw_lines) if raw_lines else text,
                     raw_lines=raw_lines,
-                    page_number=page_start or page_end,
+                    page_number=page_number,
                     bbox=self.provenance_extractor.extract_bbox(
                         cell,
                         raw_document=raw_document,
+                        default_page_number=page_number,
                     ),
                 )
             )

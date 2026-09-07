@@ -128,6 +128,7 @@ class DoclingTableExtractor:
         item: Any,
         *,
         raw_document: Any | None = None,
+        page_number: int | None = None,
         page_lane_count: int | None = None,
     ) -> TableReconstructionResult:
         table_cells = self._extract_table_cells(item)
@@ -137,6 +138,7 @@ class DoclingTableExtractor:
         spans = self.cell_candidate_builder.build(
             table_cells,
             raw_document=raw_document,
+            default_page_number=page_number,
         )
         return self.row_grid_builder.build_reconstruction(
             spans, page_lane_count=page_lane_count

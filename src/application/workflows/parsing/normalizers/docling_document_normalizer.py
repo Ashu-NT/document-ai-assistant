@@ -139,10 +139,12 @@ class DoclingDocumentNormalizer:
             element_type,
             raw_document=raw_document,
         )
+        page_start, page_end = self.provenance_extractor.extract_pages(item)
         table_structure = self.text_resolver.extract_table_structure(
             item,
             element_type,
             raw_document=raw_document,
+            page_number=page_start or page_end,
             page_lane_count=self._extract_page_lane_count(
                 element_layout_metadata
             ),
@@ -157,10 +159,10 @@ class DoclingDocumentNormalizer:
             caption=caption,
             table_markdown=table_markdown,
         )
-        page_start, page_end = self.provenance_extractor.extract_pages(item)
         bbox = self.provenance_extractor.extract_bbox(
             item,
             raw_document=raw_document,
+            default_page_number=page_start or page_end,
         )
         section_path = self.item_extractor.extract_section_path(item)
         section_title = self.text_resolver.extract_section_title(

@@ -86,6 +86,7 @@ class DoclingElementTextResolver:
         element_type: ElementType,
         *,
         raw_document: Any | None = None,
+        page_number: int | None = None,
         page_lane_count: int | None = None,
     ) -> TableReconstructionResult | None:
         if element_type != ElementType.TABLE:
@@ -93,6 +94,7 @@ class DoclingElementTextResolver:
         return self.table_extractor.extract_structure(
             item,
             raw_document=raw_document,
+            page_number=page_number,
             page_lane_count=page_lane_count,
         )
 

@@ -18,8 +18,17 @@ class _FakeTableExtractor:
         self.markdown_calls.append((item, doc))
         return self.markdown
 
-    def extract_structure(self, item, *, page_lane_count=None):
-        self.structure_calls.append((item, page_lane_count))
+    def extract_structure(
+        self,
+        item,
+        *,
+        raw_document=None,
+        page_number=None,
+        page_lane_count=None,
+    ):
+        self.structure_calls.append(
+            (item, raw_document, page_number, page_lane_count)
+        )
         return self.structure
 
 
@@ -157,15 +166,21 @@ def test_extract_table_structure_only_for_table_elements() -> None:
     assert resolver.extract_table_structure({}, ElementType.TEXT) is None
 
 
-def test_extract_table_structure_threads_page_lane_count_through() -> None:
+def test_extract_table_structure_threads_layout_context_through() -> None:
     table_extractor = _FakeTableExtractor(
         structure=TableReconstructionResult(rows=[["A"]])
     )
     resolver = DoclingElementTextResolver(table_extractor)
 
-    resolver.extract_table_structure({}, ElementType.TABLE, page_lane_count=2)
+    resolver.extract_table_structure(
+        {},
+        ElementType.TABLE,
+        raw_document="doc",
+        page_number=3,
+        page_lane_count=2,
+    )
 
-    assert table_extractor.structure_calls == [({}, 2)]
+    assert table_extractor.structure_calls == [({}, "doc", 3, 2)]
 
 
 def test_extract_section_title_only_for_section_headers() -> None:
