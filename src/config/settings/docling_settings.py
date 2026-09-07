@@ -5,7 +5,7 @@ from src.config.settings.base_settings import AppBaseSettings
 
 class DoclingSettings(AppBaseSettings):
     pdf_backend: str = Field(
-        default="pypdfium2",
+        default="docling_parse",
         alias="DOCLING_PDF_BACKEND",
     )
 

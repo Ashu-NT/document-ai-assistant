@@ -2,6 +2,8 @@ from typing import Any
 
 from src.config.settings import docling_settings
 from src.shared.exceptions import InfrastructureError
+from docling.datamodel.pipeline_options import PdfBackend
+from docling.datamodel.pipeline_options import PdfPipelineOptions
 
 
 def build_docling_converter(*, enable_ocr_override: bool | None = None) -> Any:
@@ -44,10 +46,10 @@ def build_docling_converter(*, enable_ocr_override: bool | None = None) -> Any:
 
 
 def _configure_pipeline_options(
-    pipeline_options: Any,
+    pipeline_options: PdfPipelineOptions,
     *,
     enable_ocr: bool,
-    table_former_mode_class: Any | None,
+    table_former_mode_class: type | None,
 ) -> None:
     pipeline_options.accelerator_options.device = _normalize_accelerator_device()
     pipeline_options.accelerator_options.num_threads = docling_settings.num_threads
@@ -179,7 +181,7 @@ def _normalize_pdf_backend_value() -> str:
     }
 
     try:
-        normalized_backend = normalize_pdf_backend(docling_settings.pdf_backend)
+        normalized_backend = normalize_pdf_backend(PdfBackend(docling_settings.pdf_backend))
     except Exception as exc:
         raise InfrastructureError(
             "Unsupported Docling PDF backend configured.",
