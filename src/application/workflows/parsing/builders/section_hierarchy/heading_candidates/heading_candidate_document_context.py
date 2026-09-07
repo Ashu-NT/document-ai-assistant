@@ -216,6 +216,32 @@ class HeadingCandidateDocumentContext:
                 return True
         return False
 
+    def repeats_recent_heading(
+        self,
+        header_index: int,
+        *,
+        max_header_distance: int = 8,
+        max_page_distance: int = 1,
+    ) -> bool:
+        """Detect a repeated continuation heading without demoting its first use."""
+        header = self.headers[header_index]
+        title = self.normalized_title(header.element_id)
+        if not title:
+            return False
+        page = header.page_start or header.page_end
+        start = max(0, header_index - max_header_distance)
+        for candidate in reversed(self.headers[start:header_index]):
+            candidate_page = candidate.page_start or candidate.page_end
+            if (
+                page is not None
+                and candidate_page is not None
+                and page - candidate_page > max_page_distance
+            ):
+                break
+            if self.normalized_title(candidate.element_id) == title:
+                return True
+        return False
+
     def has_prominent_height(self, header: ParsedCanonicalElement) -> bool:
         if header.bbox is None or not self.median_header_height:
             return False

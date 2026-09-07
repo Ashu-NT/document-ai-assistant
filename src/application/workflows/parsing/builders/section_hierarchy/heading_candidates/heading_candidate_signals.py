@@ -25,6 +25,7 @@ class HeadingCandidateSignals:
     nearby_picture_same_page: bool
     repeated_title_count: int
     nearby_repeated_title: bool
+    repeats_recent_heading: bool
     structured_record_heading: bool
     followed_by_structured_record_heading: bool
     layout_prominent: bool
@@ -34,6 +35,7 @@ class HeadingCandidateSignals:
     noise_like: bool
     title_word_count: int
     ends_with_colon: bool
+    sentence_like_local_label: bool
 
     @property
     def adjacent_table(self) -> bool:

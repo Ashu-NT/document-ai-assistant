@@ -108,6 +108,7 @@ class HeadingCandidateSignalExtractor:
             ),
             repeated_title_count=context.repeated_title_count(header.element_id),
             nearby_repeated_title=context.has_nearby_repeated_title(header_index),
+            repeats_recent_heading=context.repeats_recent_heading(header_index),
             structured_record_heading=has_structured_record_heading(header.text),
             followed_by_structured_record_heading=(
                 context.is_followed_by_structured_record_heading(header_index)
@@ -122,6 +123,11 @@ class HeadingCandidateSignalExtractor:
             noise_like=self._is_noise(header, normalized_title),
             title_word_count=len(normalized_title.split()),
             ends_with_colon=(header.text or "").rstrip().endswith(":"),
+            sentence_like_local_label=self._is_sentence_like_local_label(
+                header.text,
+                numbering=numbering,
+                word_count=len(normalized_title.split()),
+            ),
         )
 
     @staticmethod
@@ -196,6 +202,18 @@ class HeadingCandidateSignalExtractor:
             or _LOW_SIGNAL_PATTERN.fullmatch((header.text or "").strip())
             or content_layer in {"furniture", "background"}
         )
+
+    @staticmethod
+    def _is_sentence_like_local_label(
+        value: str | None,
+        *,
+        numbering: str | None,
+        word_count: int,
+    ) -> bool:
+        if numbering is not None:
+            return False
+        text = (value or "").strip()
+        return text.endswith("!") or (text.endswith(".") and word_count <= 5)
 
     @staticmethod
     def _positive_int(value) -> int | None:

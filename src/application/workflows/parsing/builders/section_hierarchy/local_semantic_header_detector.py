@@ -7,7 +7,7 @@ from src.application.workflows.parsing.parsed_canonical_element import (
 
 
 _CALLOUT_LABEL_PATTERN = re.compile(
-    r"^(?:warning|caution|danger|notice|note|important)(?:\s*[:!])?$",
+    r"^(?:warning|caution|danger|notice|note|important)(?:\s*[:!](?:\s*.*)?)?$",
     re.IGNORECASE,
 )
 _TABLE_ROLE_LABELS = frozenset(

@@ -32,6 +32,7 @@ def _signals(**overrides) -> HeadingCandidateSignals:
         "nearby_picture_same_page": False,
         "repeated_title_count": 1,
         "nearby_repeated_title": False,
+        "repeats_recent_heading": False,
         "structured_record_heading": False,
         "followed_by_structured_record_heading": False,
         "layout_prominent": False,
@@ -41,6 +42,7 @@ def _signals(**overrides) -> HeadingCandidateSignals:
         "noise_like": False,
         "title_word_count": 3,
         "ends_with_colon": False,
+        "sentence_like_local_label": False,
     }
     values.update(overrides)
     return HeadingCandidateSignals(**values)
@@ -134,3 +136,42 @@ def test_local_lead_in_before_structured_records_is_not_an_outline_section() -> 
 
     assert assessment.role == HeadingCandidateRole.LOCAL_LABEL
     assert "followed_by_structured_record_heading" in assessment.reasons
+
+
+def test_unnumbered_colon_label_inside_numbered_scope_is_local() -> None:
+    assessment = HeadingCandidateScorer().assess(
+        _signals(
+            active_scope_depth=3,
+            ends_with_colon=True,
+            title_word_count=2,
+        )
+    )
+
+    assert assessment.role == HeadingCandidateRole.LOCAL_LABEL
+
+
+def test_short_sentence_heading_inside_numbered_scope_is_local() -> None:
+    assessment = HeadingCandidateScorer().assess(
+        _signals(
+            active_scope_depth=4,
+            sentence_like_local_label=True,
+            title_word_count=2,
+        )
+    )
+
+    assert assessment.role == HeadingCandidateRole.LOCAL_LABEL
+
+
+def test_repeated_continuation_heading_is_local() -> None:
+    assessment = HeadingCandidateScorer().assess(
+        _signals(
+            active_scope_depth=4,
+            repeated_title_count=2,
+            nearby_repeated_title=True,
+            repeats_recent_heading=True,
+            title_word_count=7,
+        )
+    )
+
+    assert assessment.role == HeadingCandidateRole.LOCAL_LABEL
+    assert "repeated_continuation_heading" in assessment.reasons

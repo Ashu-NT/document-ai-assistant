@@ -22,3 +22,13 @@ def test_repair_docling_text_fixes_common_symbol_mojibake() -> None:
 def test_repair_docling_text_preserves_clean_unicode_text() -> None:
     assert repair_docling_text("Maintenance Intervals") == "Maintenance Intervals"
     assert repair_docling_text("P&ID Pos Nr.") == "P&ID Pos Nr."
+
+
+def test_repair_docling_text_joins_unicode_line_break_hyphenation() -> None:
+    assert repair_docling_text("engi\u2010 ne running") == "engine running"
+    assert repair_docling_text("re\u00adplacement") == "replacement"
+
+
+def test_repair_docling_text_preserves_semantic_hyphens() -> None:
+    assert repair_docling_text("high-pressure pump") == "high-pressure pump"
+    assert repair_docling_text("oil\u2010filter") == "oil\u2010filter"

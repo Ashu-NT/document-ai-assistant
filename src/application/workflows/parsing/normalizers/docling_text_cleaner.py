@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 _MOJIBAKE_MARKERS = (
     "\u00c3\u00a2\u20ac",
     "\u00c3\u00a2\u20ac\u00e2\u201e\u00a2",
@@ -42,7 +44,13 @@ def repair_docling_text(value: str | None) -> str:
     normalized = text.replace("\xa0", " ")
     repaired = _repair_utf8_mojibake(normalized)
     repaired = _apply_direct_replacements(repaired)
+    repaired = _repair_line_break_hyphenation(repaired)
     return repaired.strip()
+
+
+def _repair_line_break_hyphenation(value: str) -> str:
+    value = value.replace("\u00ad", "")
+    return re.sub(r"(?<=\w)\u2010\s+(?=\w)", "", value)
 
 
 def _repair_utf8_mojibake(value: str) -> str:

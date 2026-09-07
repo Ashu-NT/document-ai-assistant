@@ -104,6 +104,9 @@ class HeadingCandidateScorer:
         if signals.nearby_repeated_title:
             score += 5.0
             reasons.append("repeated_local_title")
+        if signals.repeats_recent_heading:
+            score += 6.0
+            reasons.append("repeated_continuation_heading")
         if signals.structured_record_heading and signals.active_scope_depth is not None:
             score += 5.0
             reasons.append("structured_record_heading")
@@ -116,6 +119,16 @@ class HeadingCandidateScorer:
         if signals.ends_with_colon:
             score += 2.0
             reasons.append("label_punctuation")
+        if (
+            signals.ends_with_colon
+            and signals.active_scope_depth is not None
+            and signals.numbering is None
+        ):
+            score += 4.0
+            reasons.append("scope_local_label_punctuation")
+        if signals.sentence_like_local_label and signals.active_scope_depth is not None:
+            score += 6.0
+            reasons.append("sentence_like_local_label")
         if signals.active_scope_depth is not None:
             score += 1.0
         if signals.numbering_compatible is False:
@@ -168,9 +181,15 @@ class HeadingCandidateScorer:
         if (
             best_alternative == HeadingCandidateRole.LOCAL_LABEL
             and signals.repeated_title_count < 2
-            and not (signals.ends_with_colon and signals.indented_from_active)
+            and not (
+                signals.ends_with_colon
+                and signals.active_scope_depth is not None
+                and signals.numbering is None
+            )
             and not signals.structured_record_heading
             and not signals.followed_by_structured_record_heading
+            and not signals.repeats_recent_heading
+            and not signals.sentence_like_local_label
         ):
             return HeadingCandidateRole.OUTLINE_SECTION
         if (

@@ -279,3 +279,4 @@ def test_catalog_lead_in_does_not_own_following_structured_records() -> None:
     assert result.element_section_paths["record_3"] == expected_path
     assert result.element_section_paths["record_4_body"] == expected_path
     assert elements[3].metadata["heading_candidate_role"] == "local_label"
+
