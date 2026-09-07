@@ -90,7 +90,6 @@ class ChunkingProfileStatisticsBuilder:
         table_count = 0
         picture_count = 0
         list_count = 0
-        code_count = 0
         caption_count = 0
         text_element_count = 0
         text_token_total = 0
@@ -106,8 +105,6 @@ class ChunkingProfileStatisticsBuilder:
                     picture_count += 1
                 elif element.element_type == ElementType.LIST_ITEM:
                     list_count += 1
-                elif element.element_type == ElementType.CODE:
-                    code_count += 1
                 elif element.element_type == ElementType.CAPTION:
                     caption_count += 1
 
@@ -158,20 +155,11 @@ class ChunkingProfileStatisticsBuilder:
             root_section_count=root_section_count,
             nested_section_count=nested_section_count,
             max_section_depth=max_section_depth,
-            table_count=table_count,
-            picture_count=picture_count,
-            list_count=list_count,
-            code_count=code_count,
-            caption_count=caption_count,
             text_element_count=text_element_count,
-            text_token_total=text_token_total,
-            long_text_block_count=long_text_block_count,
-            short_text_block_count=short_text_block_count,
             avg_text_tokens=avg_text_tokens,
             table_ratio=self._ratio(table_count, element_count),
             picture_ratio=self._ratio(picture_count, element_count),
             list_ratio=self._ratio(list_count, element_count),
-            code_ratio=self._ratio(code_count, element_count),
             caption_ratio=self._ratio(caption_count, element_count),
             nested_section_ratio=self._ratio(nested_section_count, section_count),
             long_text_ratio=self._ratio(long_text_block_count, text_element_count),
