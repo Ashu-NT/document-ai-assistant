@@ -1,7 +1,7 @@
 import inspect
 from typing import Any
 
-from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+from src.application.workflows.parsing.normalizers.text.docling_text_cleaner import (
     repair_docling_text,
 )
 from src.application.workflows.parsing.normalizers.table_rows.docling_table_row_grid_builder import (

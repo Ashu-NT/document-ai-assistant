@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.section_hierarchy.corpus_heuristics_config import (
+from src.application.workflows.parsing.builders.section_hierarchy.filtering.corpus_heuristics_config import (
     branding_headers,
     umbrella_words,
 )

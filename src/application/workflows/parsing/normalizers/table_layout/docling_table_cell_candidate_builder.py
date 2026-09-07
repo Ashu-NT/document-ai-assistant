@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.application.workflows.parsing.normalizers.docling_provenance_extractor import (
+from src.application.workflows.parsing.normalizers.provenance.docling_provenance_extractor import (
     DoclingProvenanceExtractor,
 )
-from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+from src.application.workflows.parsing.normalizers.text.docling_text_cleaner import (
     repair_docling_text,
 )
 from src.domain.assets import TableCellSpan

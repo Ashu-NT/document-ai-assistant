@@ -7,7 +7,7 @@ from src.application.workflows.parsing.parsed_canonical_element import (
 from src.application.workflows.parsing.builders.document_graph.parsed_assets.source_location_factory import (
     SourceLocationFactory,
 )
-from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+from src.application.workflows.parsing.normalizers.text.docling_text_cleaner import (
     repair_docling_text,
 )
 from src.domain.assets import (

@@ -6,13 +6,13 @@ from src.application.workflows.parsing.layout.page_layout_analyzer import (
 from src.application.workflows.parsing.layout.models.page_layout_candidate import (
     PageLayoutCandidate,
 )
-from src.application.workflows.parsing.normalizers.docling_item_extractor import (
+from src.application.workflows.parsing.normalizers.item_extraction.docling_item_extractor import (
     DoclingItemExtractor,
 )
-from src.application.workflows.parsing.normalizers.docling_provenance_extractor import (
+from src.application.workflows.parsing.normalizers.provenance.docling_provenance_extractor import (
     DoclingProvenanceExtractor,
 )
-from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+from src.application.workflows.parsing.normalizers.text.docling_text_cleaner import (
     repair_docling_text,
 )
 

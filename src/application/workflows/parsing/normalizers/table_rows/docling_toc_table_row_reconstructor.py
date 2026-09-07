@@ -7,7 +7,7 @@ from src.application.workflows.parsing.builders.section_hierarchy.numbering.head
     extract_heading_number,
     strip_heading_number,
 )
-from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+from src.application.workflows.parsing.normalizers.text.docling_text_cleaner import (
     repair_docling_text,
 )
 

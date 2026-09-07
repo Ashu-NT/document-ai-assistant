@@ -1,5 +1,5 @@
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
-from src.application.workflows.parsing.builders.section_hierarchy.section_heading_labeler import (
+from src.application.workflows.parsing.builders.section_hierarchy.construction.section_heading_labeler import (
     SectionHeadingLabeler,
 )
 from src.domain.common import BoundingBox, SourceLocation

@@ -3,7 +3,7 @@ import re
 from src.application.workflows.parsing.builders.section_hierarchy.numbering.heading_numbering import (
     numbering_depth,
 )
-from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+from src.application.workflows.parsing.normalizers.text.docling_text_cleaner import (
     repair_docling_text,
 )
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry import (

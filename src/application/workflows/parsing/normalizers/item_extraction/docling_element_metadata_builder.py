@@ -1,12 +1,12 @@
 from typing import Any
 
-from src.application.workflows.parsing.normalizers.docling_item_extractor import (
+from src.application.workflows.parsing.normalizers.item_extraction.docling_item_extractor import (
     DoclingItemExtractor,
 )
 from src.application.workflows.parsing.normalizers.table_rows.docling_table_extractor import (
     DoclingTableExtractor,
 )
-from src.application.workflows.parsing.normalizers.docling_value_accessors import (
+from src.application.workflows.parsing.normalizers.text.docling_value_accessors import (
     clean_text,
     get_value,
 )

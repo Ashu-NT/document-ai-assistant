@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from src.application.workflows.parsing.normalizers.docling_page_height_resolver import (
+from src.application.workflows.parsing.normalizers.provenance.docling_page_height_resolver import (
     DoclingPageHeightResolver,
 )
 

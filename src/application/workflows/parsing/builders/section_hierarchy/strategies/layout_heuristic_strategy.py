@@ -1,6 +1,6 @@
 import re
 
-from src.application.workflows.parsing.builders.section_hierarchy.corpus_heuristics_config import (
+from src.application.workflows.parsing.builders.section_hierarchy.filtering.corpus_heuristics_config import (
     umbrella_words as load_umbrella_words,
 )
 from src.application.workflows.parsing.builders.section_hierarchy.strategies.section_hierarchy_strategy import (

@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.section_hierarchy.section_header_filter import (
+from src.application.workflows.parsing.builders.section_hierarchy.filtering.section_header_filter import (
     SectionHeaderFilter,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement

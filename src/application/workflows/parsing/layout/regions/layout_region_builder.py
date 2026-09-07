@@ -6,7 +6,7 @@ from src.application.workflows.parsing.layout.layout_lane_detector import (
 from src.application.workflows.parsing.layout.layout_reading_order_resolver import (
     LayoutReadingOrderResolver,
 )
-from src.application.workflows.parsing.layout.layout_region_segmenter import (
+from src.application.workflows.parsing.layout.regions.layout_region_segmenter import (
     LayoutRegionSegmenter,
 )
 from src.application.workflows.parsing.layout.models.layout_region_role import (

@@ -1,7 +1,7 @@
 from enum import Enum
 from types import SimpleNamespace
 
-from src.application.workflows.parsing.normalizers.docling_item_extractor import (
+from src.application.workflows.parsing.normalizers.item_extraction.docling_item_extractor import (
     DoclingItemExtractor,
 )
 from src.domain.common import ElementType

@@ -1,6 +1,6 @@
 from enum import Enum
 
-from src.application.workflows.parsing.normalizers.docling_bbox_normalizer import (
+from src.application.workflows.parsing.normalizers.provenance.docling_bbox_normalizer import (
     DoclingBBoxNormalizer,
 )
 

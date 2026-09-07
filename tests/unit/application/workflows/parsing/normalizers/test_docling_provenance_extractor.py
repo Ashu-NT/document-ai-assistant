@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from src.application.workflows.parsing.normalizers.docling_provenance_extractor import (
+from src.application.workflows.parsing.normalizers.provenance.docling_provenance_extractor import (
     DoclingProvenanceExtractor,
 )
 

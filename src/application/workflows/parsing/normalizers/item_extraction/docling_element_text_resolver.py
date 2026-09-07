@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.application.workflows.parsing.normalizers.docling_caption_extractor import (
+from src.application.workflows.parsing.normalizers.item_extraction.docling_caption_extractor import (
     DoclingCaptionExtractor,
 )
 from src.application.workflows.parsing.normalizers.table_rows.docling_table_extractor import (
@@ -9,7 +9,7 @@ from src.application.workflows.parsing.normalizers.table_rows.docling_table_extr
 from src.application.workflows.parsing.normalizers.table_rows.docling_table_markdown_renderer import (
     DoclingTableMarkdownRenderer,
 )
-from src.application.workflows.parsing.normalizers.docling_value_accessors import (
+from src.application.workflows.parsing.normalizers.text.docling_value_accessors import (
     clean_text,
     get_value,
 )

@@ -16,7 +16,7 @@ from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_entry_
 from src.application.workflows.parsing.builders.section_hierarchy.toc.toc_visual_line_assembler import (
     TocVisualLineAssembler,
 )
-from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+from src.application.workflows.parsing.normalizers.text.docling_text_cleaner import (
     repair_docling_text,
 )
 from src.application.workflows.parsing.parsed_canonical_element import (

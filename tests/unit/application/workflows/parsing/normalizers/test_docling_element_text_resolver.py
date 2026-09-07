@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.normalizers.docling_element_text_resolver import (
+from src.application.workflows.parsing.normalizers.item_extraction.docling_element_text_resolver import (
     DoclingElementTextResolver,
 )
 from src.application.workflows.parsing.normalizers.table_layout.table_reconstruction_result import (

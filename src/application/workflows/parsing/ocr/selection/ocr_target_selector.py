@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
-from src.application.workflows.parsing.normalizers.docling_text_cleaner import (
+from src.application.workflows.parsing.normalizers.text.docling_text_cleaner import (
     repair_docling_text,
 )
 from src.application.workflows.parsing.ocr.selection.ocr_selection_policy import OCRSelectionPolicy

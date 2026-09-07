@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.layout.layout_lane_detector import (
     LayoutLaneDetection,
 )
-from src.application.workflows.parsing.layout.layout_region_builder import (
+from src.application.workflows.parsing.layout.regions.layout_region_builder import (
     LayoutRegionBuilder,
 )
 from src.application.workflows.parsing.layout.models.page_layout_candidate import (

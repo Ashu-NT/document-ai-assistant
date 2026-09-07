@@ -2,19 +2,19 @@ from src.application.workflows.parsing.profiling import GraphBuildProfiler
 from src.application.workflows.parsing.builders.section_build_result import (
     SectionBuildResult,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.section_header_filter import (
+from src.application.workflows.parsing.builders.section_hierarchy.filtering.section_header_filter import (
     SectionHeaderFilter,
 )
 from src.application.workflows.parsing.builders.section_hierarchy.section_hierarchy_resolver import (
     SectionHierarchyResolver,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.section_path_relinker import (
+from src.application.workflows.parsing.builders.section_hierarchy.construction.section_path_relinker import (
     SectionPathRelinker,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.section_root_factory import (
+from src.application.workflows.parsing.builders.section_hierarchy.construction.section_root_factory import (
     SectionRootFactory,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.section_stack_builder import (
+from src.application.workflows.parsing.builders.section_hierarchy.construction.section_stack_builder import (
     SectionStackBuilder,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement

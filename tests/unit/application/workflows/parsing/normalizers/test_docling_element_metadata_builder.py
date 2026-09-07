@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.normalizers.docling_element_metadata_builder import (
+from src.application.workflows.parsing.normalizers.item_extraction.docling_element_metadata_builder import (
     DoclingElementMetadataBuilder,
 )
 from src.application.workflows.parsing.normalizers.table_layout.table_reconstruction_result import (

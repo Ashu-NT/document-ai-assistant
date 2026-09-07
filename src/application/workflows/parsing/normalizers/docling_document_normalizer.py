@@ -1,24 +1,24 @@
 from collections import defaultdict
 
-from src.application.workflows.parsing.normalizers.docling_caption_extractor import (
+from src.application.workflows.parsing.normalizers.item_extraction.docling_caption_extractor import (
     DoclingCaptionExtractor,
 )
-from src.application.workflows.parsing.normalizers.docling_bbox_normalizer import (
+from src.application.workflows.parsing.normalizers.provenance.docling_bbox_normalizer import (
     DoclingBBoxNormalizer,
 )
-from src.application.workflows.parsing.normalizers.docling_element_metadata_builder import (
+from src.application.workflows.parsing.normalizers.item_extraction.docling_element_metadata_builder import (
     DoclingElementMetadataBuilder,
 )
-from src.application.workflows.parsing.normalizers.docling_element_text_resolver import (
+from src.application.workflows.parsing.normalizers.item_extraction.docling_element_text_resolver import (
     DoclingElementTextResolver,
 )
-from src.application.workflows.parsing.normalizers.docling_item_extractor import (
+from src.application.workflows.parsing.normalizers.item_extraction.docling_item_extractor import (
     DoclingItemExtractor,
 )
 from src.application.workflows.parsing.normalizers.docling_layout_metadata_builder import (
     DoclingLayoutMetadataBuilder,
 )
-from src.application.workflows.parsing.normalizers.docling_provenance_extractor import (
+from src.application.workflows.parsing.normalizers.provenance.docling_provenance_extractor import (
     DoclingProvenanceExtractor,
 )
 from src.application.workflows.parsing.normalizers.table_rows.docling_table_extractor import (

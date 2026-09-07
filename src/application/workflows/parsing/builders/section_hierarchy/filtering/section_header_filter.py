@@ -1,9 +1,9 @@
 import re
 
-from src.application.workflows.parsing.builders.section_hierarchy.corpus_heuristics_config import (
+from src.application.workflows.parsing.builders.section_hierarchy.filtering.corpus_heuristics_config import (
     branding_headers as load_branding_headers,
 )
-from src.application.workflows.parsing.builders.section_hierarchy.local_semantic_header_detector import (
+from src.application.workflows.parsing.builders.section_hierarchy.filtering.local_semantic_header_detector import (
     LocalSemanticHeaderDetector,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement

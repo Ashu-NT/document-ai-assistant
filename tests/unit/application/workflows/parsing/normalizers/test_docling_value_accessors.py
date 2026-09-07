@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.normalizers.docling_value_accessors import (
+from src.application.workflows.parsing.normalizers.text.docling_value_accessors import (
     clean_text,
     get_value,
 )

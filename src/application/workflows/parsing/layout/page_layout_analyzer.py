@@ -10,7 +10,7 @@ from src.application.workflows.parsing.layout.layout_lane_detector import (
 from src.application.workflows.parsing.layout.layout_metadata_serializer import (
     LayoutMetadataSerializer,
 )
-from src.application.workflows.parsing.layout.layout_region_builder import (
+from src.application.workflows.parsing.layout.regions.layout_region_builder import (
     LayoutRegionBuilder,
 )
 from src.application.workflows.parsing.layout.models.page_layout_analysis import (

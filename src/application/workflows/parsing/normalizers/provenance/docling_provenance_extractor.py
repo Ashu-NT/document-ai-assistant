@@ -1,9 +1,9 @@
 from typing import Any
 
-from src.application.workflows.parsing.normalizers.docling_bbox_normalizer import (
+from src.application.workflows.parsing.normalizers.provenance.docling_bbox_normalizer import (
     DoclingBBoxNormalizer,
 )
-from src.application.workflows.parsing.normalizers.docling_page_height_resolver import (
+from src.application.workflows.parsing.normalizers.provenance.docling_page_height_resolver import (
     DoclingPageHeightResolver,
 )
 from src.domain.common import BoundingBox
