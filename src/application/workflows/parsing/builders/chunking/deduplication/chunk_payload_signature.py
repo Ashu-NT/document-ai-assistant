@@ -7,6 +7,7 @@ from src.application.workflows.shared.text_signature_utils import (
     detect_scaffolding_role as detect_payload_role,
     extract_identifier_tokens,
     normalize_free_text,
+    overview_body_content,
     strip_scaffolding_prefixes,
     tokenize_text,
 )
@@ -21,7 +22,7 @@ class ChunkPayloadSignature:
     stripped_token_set: frozenset[str]
     identifier_tokens: frozenset[str]
     is_table_like: bool
-    has_subsection_summary: bool
+    has_comparable_overview_body: bool
 
     @classmethod
     def from_payload(
@@ -39,5 +40,7 @@ class ChunkPayloadSignature:
             is_table_like=payload.chunk_type.value == "spare_parts_table"
             or bool(payload.table_ids)
             or "|" in payload.content,
-            has_subsection_summary="subsections:" in (payload.content or "").lower(),
+            has_comparable_overview_body=bool(
+                overview_body_content(payload.content)
+            ),
         )

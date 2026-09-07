@@ -55,15 +55,20 @@ def test_context_only_duplicate_collapses_into_atomic_chunk() -> None:
     assert result.diagnostics[0]["reason"] == "context_companion_duplicate"
 
 
-def test_section_overview_with_unique_summary_remains() -> None:
+def test_section_overview_with_unrelated_content_remains() -> None:
+    # The overview's own title + subsection listing share no real content
+    # with an unrelated atomic chunk elsewhere -- must not collapse just
+    # because it's an overview chunk (that gate was the bug: any overview
+    # containing a subsections listing used to be exempted from dedup
+    # entirely, regardless of what its own title/body actually said).
     deduplicator = ChunkPayloadDeduplicator()
     atomic_payload = make_payload(
         content="Replace hydraulic filter every 1000 hours."
     )
     overview_payload = make_payload(
         content=(
-            "Section overview: Replace hydraulic filter every 1000 hours.\n\n"
-            "Subsections: filter removal; filter installation."
+            "Section overview: Maintenance\n\n"
+            "Direct subsections (2): filter removal; filter installation."
         ),
         chunk_type=ChunkType.OVERVIEW,
         section_path=["Maintenance"],
@@ -72,6 +77,32 @@ def test_section_overview_with_unique_summary_remains() -> None:
     result = deduplicator.deduplicate([overview_payload, atomic_payload])
 
     assert len(result.payloads) == 2
+
+
+def test_section_overview_whose_own_title_duplicates_atomic_content_collapses() -> (
+    None
+):
+    # Regression: the overview-dedup gate used to short-circuit on the mere
+    # presence of a subsections listing, so an overview chunk whose own
+    # title/body genuinely duplicated a real content chunk was never even
+    # compared. It must now be caught like any other overview duplicate.
+    deduplicator = ChunkPayloadDeduplicator()
+    atomic_payload = make_payload(
+        content="Replace hydraulic filter every 1000 hours."
+    )
+    overview_payload = make_payload(
+        content=(
+            "Section overview: Replace hydraulic filter every 1000 hours.\n\n"
+            "Direct subsections (2): filter removal; filter installation."
+        ),
+        chunk_type=ChunkType.OVERVIEW,
+        section_path=["Maintenance"],
+    )
+
+    result = deduplicator.deduplicate([overview_payload, atomic_payload])
+
+    assert len(result.payloads) == 1
+    assert result.payloads[0] is atomic_payload
 
 
 def test_normal_overlapping_chunks_remain_when_unique_context_exists() -> None:

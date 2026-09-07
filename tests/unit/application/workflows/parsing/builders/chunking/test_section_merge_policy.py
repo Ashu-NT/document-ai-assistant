@@ -131,3 +131,70 @@ def test_merge_policy_separates_unrelated_sibling_sections() -> None:
     )
 
     assert should_flush is True
+
+
+def test_merge_policy_separates_unrelated_numbered_sibling_sections() -> None:
+    # Regression: is_task_like_title() treats ANY numbered heading as
+    # "task-like", so two numbered siblings with no topic in common (e.g.
+    # a contract's "1.7 Modifications" and "1.8 Liability and Warranty")
+    # must not merge just because both happen to be numbered -- this was
+    # the root cause of two unrelated legal sections landing in one chunk.
+    policy = make_policy()
+    current_fragment = make_fragment(
+        text="Modifications require written consent.",
+        section_id="sec_17",
+        section_title="1.7 Modifications",
+        section_path=["1 General", "1.7 Modifications"],
+        section_level=2,
+        parent_section_id="sec_general",
+        token_count=24,
+    )
+    next_fragment = make_fragment(
+        text="Liability is limited as described below.",
+        section_id="sec_18",
+        section_title="1.8 Liability and Warranty",
+        section_path=["1 General", "1.8 Liability and Warranty"],
+        section_level=2,
+        parent_section_id="sec_general",
+        token_count=24,
+    )
+
+    should_flush = policy.should_flush_on_section_change(
+        current_fragments=[current_fragment],
+        next_fragment=next_fragment,
+    )
+
+    assert should_flush is True
+
+
+def test_merge_policy_merges_bare_numbered_siblings_with_no_topic_text() -> None:
+    # Two numbered siblings with nothing left to compare once numbering is
+    # stripped (e.g. plain "Step 1"/"Step 2") still merge -- the numbering
+    # itself is the only signal that they belong to the same sequence, and
+    # there's no real topic text to say otherwise.
+    policy = make_policy()
+    current_fragment = make_fragment(
+        text="Turn off the main valve.",
+        section_id="sec_step1",
+        section_title="Step 1",
+        section_path=["Procedure", "Step 1"],
+        section_level=2,
+        parent_section_id="sec_procedure",
+        token_count=24,
+    )
+    next_fragment = make_fragment(
+        text="Disconnect the power supply.",
+        section_id="sec_step2",
+        section_title="Step 2",
+        section_path=["Procedure", "Step 2"],
+        section_level=2,
+        parent_section_id="sec_procedure",
+        token_count=24,
+    )
+
+    should_flush = policy.should_flush_on_section_change(
+        current_fragments=[current_fragment],
+        next_fragment=next_fragment,
+    )
+
+    assert should_flush is False

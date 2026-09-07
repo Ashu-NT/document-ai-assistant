@@ -230,6 +230,8 @@ class ChunkPayloadDeduplicator:
         keys: list[tuple[str, object]] = []
         if payload.section_id:
             keys.append(("section_id", payload.section_id))
+        for section_id in payload.section_ids:
+            keys.append(("section_id", section_id))
         if payload.section_path:
             section_path = tuple(payload.section_path)
             for index in range(1, len(section_path) + 1):

@@ -104,7 +104,7 @@ class ChunkPayloadSimilarityPolicy:
         if overview_signature is None or atomic_signature is None:
             return None
 
-        if overview_signature.has_subsection_summary:
+        if not overview_signature.has_comparable_overview_body:
             return None
 
         if self._normalized_stripped_match(overview_signature, atomic_signature):
@@ -214,6 +214,11 @@ class ChunkPayloadSimilarityPolicy:
     ) -> bool:
         if left_payload.section_id and left_payload.section_id == right_payload.section_id:
             return True
+        if ChunkPayloadSimilarityPolicy._touched_section_ids_overlap(
+            left_payload,
+            right_payload,
+        ):
+            return True
         if left_payload.section_path == right_payload.section_path:
             return True
         if is_path_prefix(
@@ -230,6 +235,21 @@ class ChunkPayloadSimilarityPolicy:
             right_payload.page_start,
             right_payload.page_end,
         )
+
+    @staticmethod
+    def _touched_section_ids_overlap(
+        left_payload: ChunkPayload,
+        right_payload: ChunkPayload,
+    ) -> bool:
+        # section_ids covers every section a merged chunk's fragments came
+        # from (see ChunkPayloadFactory), not just the common-ancestor
+        # section_id/section_path it displays -- without this, two chunks
+        # can be genuine duplicates over a shared subsection yet never get
+        # compared, because only one of them displays that subsection as
+        # its primary section.
+        left_ids = set(left_payload.section_ids)
+        right_ids = set(right_payload.section_ids)
+        return bool(left_ids and right_ids and left_ids & right_ids)
 
     @staticmethod
     def _page_spans_overlap(

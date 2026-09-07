@@ -56,6 +56,64 @@ _TASK_MARKERS = {
     "verification",
 }
 
+_SAFETY_FAMILY_MARKERS = {
+    "safety",
+    "warning",
+    "warnings",
+    "caution",
+    "danger",
+    "hazard",
+    "hazards",
+    "hazardous",
+}
+
+_LEGAL_FAMILY_MARKERS = {
+    "warranty",
+    "liability",
+    "indemnity",
+    "indemnification",
+    "confidentiality",
+    "governing law",
+    "termination",
+    "modification",
+    "modifications",
+    "amendment",
+    "amendments",
+    "terms and conditions",
+    "disclaimer",
+    "copyright",
+    "intellectual property",
+    "force majeure",
+    "assignment",
+    "severability",
+}
+
+_REFERENCE_FAMILY_MARKERS = {
+    "spare part",
+    "spare parts",
+    "appendix",
+    "appendices",
+    "reference",
+    "references",
+    "bibliography",
+    "glossary",
+    "index",
+    "annex",
+}
+
+_PROCEDURAL_FAMILY_MARKERS = {
+    "maintenance",
+    "procedure",
+    "installation",
+    "operation",
+    "troubleshooting",
+    "commissioning",
+    "repair",
+    "inspection",
+    "calibration",
+    "servicing",
+}
+
 _NUMBERING_PREFIX = re.compile(
     r"^(?:chapter|section|part)?\s*\d+(?:\.\d+)*(?:[.)])?\s*",
     re.IGNORECASE,

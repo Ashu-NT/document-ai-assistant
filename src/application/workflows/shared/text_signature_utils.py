@@ -54,6 +54,36 @@ def strip_scaffolding_prefixes(content: str | None) -> str:
     return "\n".join(cleaned_lines).strip()
 
 
+def overview_body_content(content: str | None) -> str:
+    """The comparable content of a SectionOverviewChunkBuilder overview
+    chunk: its own "Section overview:" label is stripped (keeping the
+    section title after it, same as strip_scaffolding_prefixes), and
+    OverviewSubsectionSummaryBuilder's "Direct subsections (...): ..."
+    listing is dropped entirely -- a listing of child titles is never
+    real distinguishing content, it's just a restatement of headings that
+    exist elsewhere in the document too. Empty only when nothing but that
+    listing (and no section title) was present, which is when an overview
+    chunk can never duplicate a real content chunk."""
+    if not content:
+        return ""
+
+    kept_lines = []
+    for raw_line in str(content).splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        lowered = line.lower()
+        if lowered.startswith("direct subsections"):
+            continue
+        if lowered.startswith("section overview:"):
+            line = line[len("section overview:"):].strip(" :-")
+            if not line:
+                continue
+        kept_lines.append(line)
+
+    return "\n".join(kept_lines).strip()
+
+
 def normalize_free_text(value: str | None) -> str:
     if not value:
         return ""

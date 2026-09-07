@@ -13,6 +13,7 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
 from src.application.workflows.parsing.builders.chunking.policies.section_merge.section_semantics import (
     is_introductory_title,
     is_task_like_title,
+    semantic_section_title,
     titles_share_topic,
 )
 
@@ -167,9 +168,14 @@ class SectionMergePolicy:
         ):
             return False
 
-        return (
+        if not (
             previous_fragment.parent_section_id is not None
             and previous_fragment.parent_section_id == next_fragment.parent_section_id
+        ):
+            return False
+
+        return not semantic_section_title(previous_title) and not semantic_section_title(
+            next_title
         )
 
     @staticmethod
