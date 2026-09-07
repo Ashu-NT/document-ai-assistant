@@ -10,6 +10,7 @@ from src.application.workflows.parsing.builders.document_graph.cross_references.
 )
 from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_cross_reference_context_qualifier import (
     ChunkCrossReferenceContextQualifier,
+    extract_local_reference_context,
 )
 from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_cross_reference_detector import (
     ChunkCrossReferenceDetector,
@@ -97,9 +98,12 @@ class ChunkCrossReferenceLinker:
                         section_reference.target_section_label
                     )
                 )
+                local_context = extract_local_reference_context(
+                    chunk.content, section_reference.span
+                )
                 qualification = self.context_qualifier.qualify_section_reference(
                     is_explicit_lead_in=section_reference.is_explicit_lead_in,
-                    context_text=chunk.content,
+                    context_text=local_context,
                     target_exists_in_document=target_exists,
                 )
                 qualification_key = f"section_reference_{qualification.scope.value}"

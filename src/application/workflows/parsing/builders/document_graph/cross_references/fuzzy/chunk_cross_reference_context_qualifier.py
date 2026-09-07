@@ -53,6 +53,32 @@ def _normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().lower()
 
 
+# Matches a sentence-ending punctuation mark followed by whitespace (or end
+# of string) -- used to find the sentence boundaries immediately around a
+# reference match, not the whole chunk.
+_SENTENCE_END_PATTERN = re.compile(r"[.!?](?:\s+|$)")
+
+
+def extract_local_reference_context(content: str, span: tuple[int, int]) -> str:
+    """The sentence containing `span` within `content`, nothing more. A
+    chunk routinely contains several unrelated sentences -- an anchor
+    belonging to one reference (e.g. a nearby external standard citation)
+    must not leak into the qualification of a different reference
+    elsewhere in the same chunk. Falls back to the whole content if no
+    sentence boundary is found (e.g. a single-sentence chunk, or a match
+    spanning the entire content)."""
+    start, end = span
+
+    left_bound = 0
+    for boundary in _SENTENCE_END_PATTERN.finditer(content, 0, start):
+        left_bound = boundary.end()
+
+    right_boundary = _SENTENCE_END_PATTERN.search(content, end)
+    right_bound = right_boundary.end() if right_boundary else len(content)
+
+    return content[left_bound:right_bound]
+
+
 class ChunkCrossReferenceContextQualifier:
     """Decides whether a detected section/chapter reference actually points
     within the current document (INTERNAL), clearly cites something else
@@ -171,4 +197,4 @@ class ChunkCrossReferenceContextQualifier:
         )
 
 
-__all__ = ["ChunkCrossReferenceContextQualifier"]
+__all__ = ["ChunkCrossReferenceContextQualifier", "extract_local_reference_context"]

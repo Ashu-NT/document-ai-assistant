@@ -271,6 +271,38 @@ def test_link_drops_an_explicit_lead_in_section_reference_when_the_target_is_mis
     assert cross_references == []
 
 
+def test_link_qualifies_a_mixed_internal_and_external_reference_in_the_same_chunk_independently() -> (
+    None
+):
+    referencing_chunk = make_chunk(
+        chunk_id="ref",
+        content=(
+            "Refer to section 5.2 for calibration steps. "
+            "This procedure also mirrors the ISO 9001 standard for reference."
+        ),
+        section_path=["1 Intro"],
+        sequence_number=1,
+    )
+    target_chunk = make_chunk(
+        chunk_id="target",
+        content="Calibration steps go here.",
+        section_path=["5.2 Calibration"],
+        sequence_number=2,
+    )
+    graph = make_graph([referencing_chunk, target_chunk], tables={})
+
+    cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    section_refs = [
+        xref
+        for xref in cross_references
+        if xref.reference_type == ChunkCrossReferenceType.SECTION_REFERENCE
+    ]
+    assert len(section_refs) == 1
+    assert section_refs[0].target_chunk_id == "target"
+    assert section_refs[0].matched_text == "Refer to section 5.2"
+
+
 def test_link_logs_a_debug_summary_with_counts_by_reference_type(caplog) -> None:
     table = TableAsset(
         table_id="table_1",

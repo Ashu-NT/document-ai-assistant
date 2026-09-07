@@ -104,11 +104,9 @@ class DetectedPageReference:
 class DetectedSectionReference:
     matched_text: str
     target_section_label: str
-    # True for an explicit navigational lead-in ("see section", "refer to
-    # section", "with reference to section", "described in section",
-    # "chap."); False for a bare "section N"/"chapter N" mention with no
-    # lead-in. Drives how much weight ChunkCrossReferenceContextQualifier
-    # gives the match on its own, before anchors/target-existence.
+
+    span: tuple[int, int]
+
     is_explicit_lead_in: bool = True
 
 
@@ -195,6 +193,7 @@ class ChunkCrossReferenceDetector:
                     DetectedSectionReference(
                         matched_text=match.group(0).strip(),
                         target_section_label=match.group(1),
+                        span=span,
                         is_explicit_lead_in=True,
                     )
                 )
@@ -210,6 +209,7 @@ class ChunkCrossReferenceDetector:
                     DetectedSectionReference(
                         matched_text=match.group(0).strip(),
                         target_section_label=match.group(1),
+                        span=span,
                         is_explicit_lead_in=False,
                     )
                 )

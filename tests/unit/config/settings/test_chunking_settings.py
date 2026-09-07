@@ -1,7 +1,27 @@
 from src.config.settings.chunking_settings import ChunkingSettings
 
+# Every alias this settings class reads from the environment. pydantic-
+# settings' env source reads real process environment variables regardless
+# of `_env_file=None` (that only disables the .env FILE) -- if the ambient
+# shell happens to export one of these (as this project's own .env does, and
+# some shells source it directly), the "defaults" test would silently assert
+# against whatever the shell happens to have rather than the class defaults.
+_ALL_ALIASES = (
+    "CHUNK_TOKEN_COUNTER_PROVIDER",
+    "CHUNK_TOKENIZER_MODEL",
+    "CHUNK_TOKENIZER_LOCAL_ONLY",
+    "CHUNK_USE_LAYOUT_FRONT_MATTER_SIGNAL",
+    "CHUNK_FRONT_MATTER_MAX_PAGE",
+    "CHUNK_CONTENTS_RECOVERY_LATE_PAGE_THRESHOLD",
+    "CHUNK_CROSS_REFERENCE_DETECTION_ENABLED",
+    "CHUNK_CROSS_REFERENCE_PDF_LINKS_ENABLED",
+)
 
-def test_chunking_settings_defaults() -> None:
+
+def test_chunking_settings_defaults(monkeypatch) -> None:
+    for alias in _ALL_ALIASES:
+        monkeypatch.delenv(alias, raising=False)
+
     settings = ChunkingSettings(_env_file=None)
 
     assert settings.token_counter_provider == "transformer"

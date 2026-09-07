@@ -26,7 +26,7 @@ def test_services_no_longer_contain_large_inline_prompt_strings() -> None:
         "src/application/services/question_generation/question_generation_service.py"
     )
     chunk_type_classifier = _read(
-        "src/application/workflows/parsing/builders/chunking/builders/chunk_type_llm_classifier.py"
+        "src/application/workflows/parsing/builders/chunking/builders/chunk_type/chunk_type_llm_classifier.py"
     )
 
     assert "You generate concise user questions from technical document excerpts." not in (

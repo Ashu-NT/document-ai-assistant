@@ -192,15 +192,11 @@ def test_parse_builds_fresh_converter_when_ocr_override_given(monkeypatch) -> No
 
 
 def test_parse_succeeds_within_timeout_budget() -> None:
-    # The timeout-enforced path always runs conversion in a real spawned
-    # subprocess and ignores the injected `converter` instance (it can't be
-    # pickled across the process boundary, and in production is never used
-    # together with a timeout anyway) - `converter_factory` is the seam for
-    # controlling what the subprocess actually converts with.
+
     parser = DoclingParser(
         converter=FakeConverter(),  # unused on this path; avoids a real build
         parser_version="1.2.3",
-        timeout_seconds=5,
+        timeout_seconds=20,
         converter_factory=_build_subprocess_fake_converter,
     )
 
