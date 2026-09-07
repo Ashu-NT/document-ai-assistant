@@ -153,13 +153,16 @@ def test_merged_sibling_sections_keep_all_touched_section_ids_for_cross_referenc
     None
 ):
     # Regression for the section-path collapse bug: SectionMergePolicy folds
-    # a "1 General" intro fragment together with its numbered child
-    # subsections "1.7 Modifications" and "1.8 Liability and Warranty" (both
-    # numbered titles count as task-like, so they keep merging under their
-    # shared parent) into a single chunk. section_path collapses to the
-    # common ancestor "1 General" for display, but section_ids must still
-    # list every subsection so a fuzzy "see section 1.8" reference can find
-    # this chunk (see ChunkSectionNumberIndex).
+    # "1.7 Modifications" and "1.8 Liability and Warranty" into one chunk
+    # because both are the same "legal" content family -- a real positive
+    # merge signal (section_semantic_family), not just shared numbering.
+    # The "1 General" intro fragment does NOT fold in with them: "General"
+    # isn't recognized introductory language, so it stays its own chunk
+    # (the conservative default). The merged chunk's primary section_id/
+    # section_path still collapse to the common ancestor "1 General" for
+    # display (same as the intro chunk's), but section_ids must list every
+    # subsection so a fuzzy "see section 1.8" reference can find this
+    # chunk and not the unrelated intro chunk (see ChunkSectionNumberIndex).
     general = ChunkFragment(
         text="General provisions apply to this contract.",
         chunk_type=ChunkType.GENERAL,
@@ -212,12 +215,16 @@ def test_merged_sibling_sections_keep_all_touched_section_ids_for_cross_referenc
         merge_policy=merge_policy,
     )
 
-    assert len(payloads) == 1
-    payload = payloads[0]
-    assert payload.section_path == ["1 General"]
-    assert payload.section_ids == ["s_general", "s_17", "s_18"]
-    assert "1.7 Modifications" in payload.content
-    assert "1.8 Liability and Warranty" in payload.content
+    assert len(payloads) == 2
+    general_payload, merged_payload = payloads
+
+    assert general_payload.section_ids == ["s_general"]
+    assert "General provisions" in general_payload.content
+
+    assert merged_payload.section_path == ["1 General"]
+    assert merged_payload.section_ids == ["s_general", "s_17", "s_18"]
+    assert "1.7 Modifications" in merged_payload.content
+    assert "1.8 Liability and Warranty" in merged_payload.content
 
 
 def test_does_not_flush_mid_run_between_fragments_of_the_same_list() -> None:

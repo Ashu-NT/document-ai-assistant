@@ -199,3 +199,28 @@ def is_task_like_title(title: str | None) -> bool:
         return True
 
     return bool(re.match(r"^\d+(?:\.\d+)*(?:[.)])?\s+", normalized))
+
+
+def section_semantic_family(title: str | None) -> str | None:
+    """Coarse content-family guess from a section title alone (safety,
+    legal/contractual, reference/appendix material, or procedural/technical
+    work) -- used by SectionMergePolicy as a hard veto between sections
+    with different, incompatible families (e.g. a legal clause and a
+    maintenance procedure), and as a same-family positive merge signal.
+    Deliberately independent of numbering: two sections being numbered
+    says nothing about whether their content is compatible. Returns None
+    when the title doesn't match a recognized family (most section titles
+    won't -- that's expected, not a gap to fill in)."""
+    normalized = normalize_section_title(title)
+    if not normalized:
+        return None
+
+    if any(marker in normalized for marker in _SAFETY_FAMILY_MARKERS):
+        return "safety"
+    if any(marker in normalized for marker in _LEGAL_FAMILY_MARKERS):
+        return "legal"
+    if any(marker in normalized for marker in _REFERENCE_FAMILY_MARKERS):
+        return "reference"
+    if any(marker in normalized for marker in _PROCEDURAL_FAMILY_MARKERS):
+        return "procedural"
+    return None

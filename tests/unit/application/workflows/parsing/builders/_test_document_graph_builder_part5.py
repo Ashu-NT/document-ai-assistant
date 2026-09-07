@@ -190,18 +190,26 @@ def test_document_graph_builder_merges_short_related_subsections_into_one_chunk(
         raw_parsed_document=make_raw_parsed_document(),
     )
 
+    # "Preparation" and "Execution" share a parent but neither a title topic
+    # nor a recognized content family -- under the section-merge rules,
+    # numbering/adjacency alone is never enough, so they stay separate
+    # chunks rather than folding into one "detail" chunk.
     overview_chunk = find_chunk_by_type(graph, "overview")
-    detail_chunk = find_non_overview_chunks(graph)[0]
+    detail_chunks = find_non_overview_chunks(graph)
+    preparation_chunk = next(
+        chunk for chunk in detail_chunks if chunk.section_path == ["Procedure", "Preparation"]
+    )
+    execution_chunk = next(
+        chunk for chunk in detail_chunks if chunk.section_path == ["Procedure", "Execution"]
+    )
 
-    assert len(graph.chunks) == 2
+    assert len(graph.chunks) == 3
     assert overview_chunk.section_path == ["Procedure"]
     assert "Direct subsections (2): Preparation; Execution" in overview_chunk.content
-    assert detail_chunk.section_path == ["Procedure"]
-    assert "Wear gloves and isolate power." in detail_chunk.content
-    assert "Execution" in detail_chunk.content
-    assert "Remove the cover and inspect the seal." in detail_chunk.content
+    assert "Wear gloves and isolate power." in preparation_chunk.content
+    assert "Remove the cover and inspect the seal." in execution_chunk.content
 
-def test_document_graph_builder_merges_intro_with_child_task_when_under_budget() -> None:
+def test_document_graph_builder_keeps_non_introductory_parent_text_separate_from_child_task() -> None:
     builder = make_builder(max_chunk_tokens=200, chunk_overlap=0)
     graph = builder.build(
         document_id="doc_001",
@@ -255,11 +263,27 @@ def test_document_graph_builder_merges_intro_with_child_task_when_under_budget()
         raw_parsed_document=make_raw_parsed_document(),
     )
 
-    overview_chunk = find_chunk_by_type(graph, "overview")
-    detail_chunk = find_non_overview_chunks(graph)[0]
+    # The parent's title isn't recognized introductory language (e.g.
+    # "Overview", "Background"), so its own body text no longer folds into
+    # the child task's chunk just because it's short and precedes it --
+    # the conservative default keeps them separate.
+    chunks = list(graph.chunks.values())
+    intro_chunk = next(
+        chunk
+        for chunk in chunks
+        if chunk.section_path == ["A first DSP project with Code Composer Studio"]
+    )
+    task_chunk = next(
+        chunk
+        for chunk in chunks
+        if chunk.section_path
+        == [
+            "A first DSP project with Code Composer Studio",
+            "Lab task 1: Feeding the ADC input directly to the DAC output",
+        ]
+    )
 
     assert len(graph.chunks) == 2
-    assert overview_chunk.section_path == ["A first DSP project with Code Composer Studio"]
-    assert "Direct subsections (1): Lab task 1: Feeding the ADC input directly to the DAC output" in overview_chunk.content
-    assert detail_chunk.section_path == ["A first DSP project with Code Composer Studio"]
-    assert "Lab task 1: Feeding the ADC input directly to the DAC output" in detail_chunk.content
+    assert "This project introduces the signal path" in intro_chunk.content
+    assert "Feed a sine wave into ADC 1" in task_chunk.content
+    assert "Reconnect the cable to ADC 0" in task_chunk.content
