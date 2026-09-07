@@ -194,6 +194,12 @@ class ChunkORM(Base):
 
     section_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     section_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Denormalized search text for sections folded into this chunk BEYOND
+    # its primary section_path (see SectionMergePolicy) - deliberately
+    # excludes the primary path itself (already covered by section_path)
+    # so keyword search doesn't double-count it for the common unmerged
+    # case, where this stays NULL.
+    section_ids_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     page_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
     page_end: Mapped[int | None] = mapped_column(Integer, nullable=True)

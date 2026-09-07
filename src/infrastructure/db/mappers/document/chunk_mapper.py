@@ -2,6 +2,7 @@ import json
 
 from src.domain.common import ChunkType
 from src.domain.document.entities import DocumentChunk
+from src.domain.document.entities.section import DocumentSection
 from src.domain.document.value_objects import ChunkStatistics
 from src.infrastructure.db.mappers.common.source_location_mapper import (
     columns_to_source_location,
@@ -11,7 +12,11 @@ from src.infrastructure.db.orm_models import ChunkORM
 
 class ChunkMapper:
     @staticmethod
-    def to_orm(chunk: DocumentChunk) -> ChunkORM:
+    def to_orm(
+        chunk: DocumentChunk,
+        *,
+        sections: dict[str, DocumentSection] | None = None,
+    ) -> ChunkORM:
         return ChunkORM(
             id=chunk.chunk_id,
             document_id=chunk.document_id,
@@ -37,6 +42,7 @@ class ChunkMapper:
             chunk_type_source=chunk.chunk_type_source,
             section_path=json.dumps(chunk.section_path),
             section_ids_json=ChunkMapper._dump_string_list(chunk.section_ids),
+            section_ids_text=ChunkMapper._build_touched_section_text(chunk, sections),
             page_start=chunk.source.page_start,
             page_end=chunk.source.page_end,
             sequence_number=chunk.sequence_number,
@@ -105,6 +111,27 @@ class ChunkMapper:
                 token_count_estimate=orm.token_count_estimate,
             ),
         )
+
+    @staticmethod
+    def _build_touched_section_text(
+        chunk: DocumentChunk,
+        sections: dict[str, DocumentSection] | None,
+    ) -> str | None:
+        """Search text for sections folded into this chunk beyond its
+        primary section_path (chunk.section_ids[0], see
+        ChunkPayloadFactory) -- lets SQL keyword search and section-match
+        scoring find a merged chunk by a subsection it contains without
+        double-counting the primary path, which section_path already
+        covers."""
+        if not sections or len(chunk.section_ids) <= 1:
+            return None
+
+        texts = [
+            " > ".join(section.section_path)
+            for section_id in chunk.section_ids[1:]
+            if (section := sections.get(section_id)) is not None and section.section_path
+        ]
+        return " | ".join(texts) if texts else None
 
     @staticmethod
     def _dump_string_list(values: list[str]) -> str:

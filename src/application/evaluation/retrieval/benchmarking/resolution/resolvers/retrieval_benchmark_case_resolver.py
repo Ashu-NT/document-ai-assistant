@@ -48,7 +48,11 @@ class RetrievalBenchmarkCaseResolver:
                     "chunk_count": 0,
                 },
             )
-        candidates = self.chunk_matcher.match_chunks(benchmark_case, ordered_chunks)
+        candidates = self.chunk_matcher.match_chunks(
+            benchmark_case,
+            ordered_chunks,
+            sections=document_graph.sections,
+        )
         viable_candidates = [
             candidate
             for candidate in candidates

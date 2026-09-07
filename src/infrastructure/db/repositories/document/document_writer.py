@@ -118,7 +118,10 @@ class DocumentWriter:
         bulk_merge(
             self.session,
             ChunkORM,
-            [ChunkMapper.to_orm(chunk) for chunk in document_graph.chunks.values()],
+            [
+                ChunkMapper.to_orm(chunk, sections=document_graph.sections)
+                for chunk in document_graph.chunks.values()
+            ],
         )
         self.session.flush()
 

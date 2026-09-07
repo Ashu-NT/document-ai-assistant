@@ -12,7 +12,7 @@ from src.application.evaluation.retrieval.benchmarking.resolution.matching.text_
 from src.application.evaluation.retrieval.benchmarking.resolution.models import (
     RetrievalBenchmarkResolutionCandidate,
 )
-from src.domain.document import DocumentChunk
+from src.domain.document import DocumentChunk, DocumentSection
 from src.shared.text.text_preview import preview_text
 
 
@@ -28,6 +28,8 @@ class RetrievalBenchmarkChunkMatcher:
         self,
         benchmark_case: RetrievalBenchmarkCase,
         chunks: list[DocumentChunk],
+        *,
+        sections: dict[str, DocumentSection] | None = None,
     ) -> list[RetrievalBenchmarkResolutionCandidate]:
         # expected_relevant_passage is invariant across every chunk in this
         # call, so tokenize/normalize it once instead of redoing it (via
@@ -44,6 +46,7 @@ class RetrievalBenchmarkChunkMatcher:
                 chunk,
                 expected_tokens=expected_tokens,
                 normalized_expected=normalized_expected,
+                sections=sections,
             )
             for chunk in chunks
         ]
@@ -67,6 +70,7 @@ class RetrievalBenchmarkChunkMatcher:
         *,
         expected_tokens: frozenset[str],
         normalized_expected: str,
+        sections: dict[str, DocumentSection] | None = None,
     ) -> RetrievalBenchmarkResolutionCandidate:
         passage_overlap = self._passage_overlap(expected_tokens, chunk.content)
         exact_passage_match = self._exact_passage_match(
@@ -76,6 +80,7 @@ class RetrievalBenchmarkChunkMatcher:
         section_match_score, exact_section_path_match = self._section_match_score(
             benchmark_case,
             chunk,
+            sections=sections,
         )
         page_match_score, page_match = self._page_match_score(benchmark_case, chunk)
         passage_score = (4.0 if exact_passage_match else 0.0) + (passage_overlap * 10.0)
@@ -132,28 +137,57 @@ class RetrievalBenchmarkChunkMatcher:
         cls,
         benchmark_case: RetrievalBenchmarkCase,
         chunk: DocumentChunk,
+        *,
+        sections: dict[str, DocumentSection] | None = None,
     ) -> tuple[float, bool]:
-        chunk_segments = normalize_path_segments(chunk.section_path)
+        chunk_segment_candidates = cls._touched_section_segments(chunk, sections)
         expected_paths = benchmark_case.expected_section_paths or [
             benchmark_case.expected_section_path
         ]
-        if not expected_paths or not chunk_segments:
+        if not expected_paths or not chunk_segment_candidates:
             return 0.0, False
 
         best_score = 0.0
         best_exact_match = False
         for expected_path in expected_paths:
-            score, exact_match = cls._path_match_score(
-                expected_path,
-                chunk_segments,
-            )
-            if exact_match:
-                return score, True
-            if score > best_score:
-                best_score = score
-                best_exact_match = exact_match
+            for chunk_segments in chunk_segment_candidates:
+                score, exact_match = cls._path_match_score(
+                    expected_path,
+                    chunk_segments,
+                )
+                if exact_match:
+                    return score, True
+                if score > best_score:
+                    best_score = score
+                    best_exact_match = exact_match
 
         return best_score, best_exact_match
+
+    @staticmethod
+    def _touched_section_segments(
+        chunk: DocumentChunk,
+        sections: dict[str, DocumentSection] | None,
+    ) -> list[list[str]]:
+        """Every section path a chunk's content actually came from, not
+        just its displayed primary section_path -- a chunk merged from
+        sibling subsections (see SectionMergePolicy) must still score a
+        section match against ground truth naming one of the subsections
+        folded into it, or benchmark recall silently undercounts it."""
+        segment_candidates: list[list[str]] = []
+        primary_segments = normalize_path_segments(chunk.section_path)
+        if primary_segments:
+            segment_candidates.append(primary_segments)
+
+        if sections:
+            for section_id in chunk.section_ids:
+                section = sections.get(section_id)
+                if section is None or not section.section_path:
+                    continue
+                segments = normalize_path_segments(section.section_path)
+                if segments and segments not in segment_candidates:
+                    segment_candidates.append(segments)
+
+        return segment_candidates
 
     @staticmethod
     def _path_match_score(

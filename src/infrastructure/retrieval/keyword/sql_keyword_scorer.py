@@ -5,6 +5,9 @@ from src.application.workflows.retrieval.deduplication.retrieved_chunk_signature
 )
 from src.domain.retrieval import RetrievalQuery
 from src.infrastructure.db.orm_models import ChunkORM, DocumentORM
+from src.infrastructure.retrieval.keyword.scoring.sql_keyword_morphology import (
+    section_path_hit,
+)
 from src.infrastructure.retrieval.keyword.scoring.sql_keyword_penalties import (
     ancestor_specificity_bonus,
     chunk_role_penalty,
@@ -82,6 +85,16 @@ class SqlKeywordScorer:
             normalized_local=normalized_local,
             normalized_ancestor=normalized_ancestor,
         )
+        # Sections folded into this chunk beyond its primary section_path
+        # (see SectionMergePolicy / ChunkMapper.section_ids_text) - a
+        # coarser signal than local/ancestor since it doesn't distinguish
+        # hierarchy depth, but without it a merged chunk scores no section
+        # relevance at all for a subsection it actually contains.
+        padded_touched_sections = f" {normalize_query_text(row.section_ids_text or '')} "
+        touched_section_match = bool(
+            query_terms
+            and any(section_path_hit(term, padded_touched_sections) for term in query_terms)
+        )
         chunk_type_fit_value = chunk_type_fit(retrieval_query, row.chunk_type)
         primary_type_fit_value = primary_type_fit(retrieval_query, row.chunk_type)
         structured_fit_value = structured_fit(
@@ -103,6 +116,7 @@ class SqlKeywordScorer:
             exact_phrase_match=exact_phrase_match,
             ordered_match=ordered_match,
             section_match=section_match,
+            touched_section_match=touched_section_match,
             chunk_type_fit=chunk_type_fit_value,
             primary_type_fit=primary_type_fit_value,
             structured_fit=structured_fit_value,
@@ -116,6 +130,7 @@ class SqlKeywordScorer:
             chunk_role=chunk_role,
             primary_type_fit_value=primary_type_fit_value,
             section_matches=section_match,
+            touched_section_match=touched_section_match,
         )
         return SqlKeywordScoreBreakdown(total_score=score, metadata=metadata)
 
@@ -135,6 +150,7 @@ class SqlKeywordScorer:
         exact_phrase_match: bool,
         ordered_match: float,
         section_match: SqlKeywordSectionMatches,
+        touched_section_match: bool,
         chunk_type_fit: bool,
         primary_type_fit: bool,
         structured_fit: bool,
@@ -165,6 +181,8 @@ class SqlKeywordScorer:
                 )
         elif section_match.ancestor_section_match:
             score += 1.5
+        elif touched_section_match:
+            score += 2.0
 
         if any(marker in lowered_query for marker in OVERVIEW_QUERY_MARKERS):
             score += overview_section_bonus(

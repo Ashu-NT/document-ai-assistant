@@ -1,3 +1,4 @@
+from src.domain.document.entities.section import DocumentSection
 from src.infrastructure.db.mappers import ChunkMapper
 
 
@@ -55,3 +56,72 @@ def test_chunk_mapper_defaults_table_structure_fields_when_absent(sample_chunk) 
     assert domain.table_structure_quality is None
     assert domain.header_paths == []
     assert domain.axis_summary == {}
+
+
+def test_chunk_mapper_round_trips_touched_section_ids(sample_chunk) -> None:
+    sample_chunk.section_ids = ["sec_general", "sec_18"]
+
+    orm = ChunkMapper.to_orm(sample_chunk)
+    domain = ChunkMapper.to_domain(orm)
+
+    assert orm.section_ids_json == '["sec_general", "sec_18"]'
+    assert domain.section_ids == ["sec_general", "sec_18"]
+
+
+def test_chunk_mapper_denormalizes_touched_sections_beyond_the_primary_path(
+    sample_chunk,
+) -> None:
+    # Regression: a chunk merged from sibling subsections (see
+    # SectionMergePolicy) must get a section_ids_text populated from every
+    # subsection BEYOND its primary section, so SQL keyword search can find
+    # it by a subsection its displayed section_path doesn't show. The
+    # primary section itself must not appear here (that's already covered
+    # by the section_path column) to avoid double-counting for the
+    # unmerged case.
+    sample_chunk.section_ids = ["sec_001", "sec_18"]
+    sections = {
+        "sec_001": DocumentSection(
+            section_id="sec_001",
+            document_id=sample_chunk.document_id,
+            title="1 General",
+            section_path=["1 General"],
+        ),
+        "sec_18": DocumentSection(
+            section_id="sec_18",
+            document_id=sample_chunk.document_id,
+            title="1.8 Liability and Warranty",
+            section_path=["1 General", "1.8 Liability and Warranty"],
+        ),
+    }
+
+    orm = ChunkMapper.to_orm(sample_chunk, sections=sections)
+
+    assert orm.section_ids_text == "1 General > 1.8 Liability and Warranty"
+
+
+def test_chunk_mapper_leaves_section_ids_text_none_for_a_single_section_chunk(
+    sample_chunk,
+) -> None:
+    sections = {
+        "sec_001": DocumentSection(
+            section_id="sec_001",
+            document_id=sample_chunk.document_id,
+            title="Maintenance Schedule",
+            section_path=["Maintenance Schedule"],
+        ),
+    }
+    sample_chunk.section_ids = ["sec_001"]
+
+    orm = ChunkMapper.to_orm(sample_chunk, sections=sections)
+
+    assert orm.section_ids_text is None
+
+
+def test_chunk_mapper_leaves_section_ids_text_none_without_sections_argument(
+    sample_chunk,
+) -> None:
+    sample_chunk.section_ids = ["sec_001", "sec_18"]
+
+    orm = ChunkMapper.to_orm(sample_chunk)
+
+    assert orm.section_ids_text is None

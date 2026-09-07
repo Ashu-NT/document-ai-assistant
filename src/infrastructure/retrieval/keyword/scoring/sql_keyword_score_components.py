@@ -198,6 +198,7 @@ def build_metadata(
     chunk_role: str,
     primary_type_fit_value: bool,
     section_matches: SqlKeywordSectionMatches,
+    touched_section_match: bool = False,
 ) -> dict[str, str]:
     metadata = {
         "sql_keyword_source_score": f"{score:.6f}",
@@ -216,6 +217,7 @@ def build_metadata(
         "sql_exact_phrase_match": str(exact_phrase_match).lower(),
         "sql_section_path_match": str(section_matches.section_path_match).lower(),
         "sql_local_section_match": str(section_matches.local_section_match).lower(),
+        "sql_touched_section_match": str(touched_section_match).lower(),
         "sql_ordered_match_bonus": f"{ordered_match:.6f}",
         "sql_chunk_role": chunk_role,
         "sql_primary_type_fit": str(primary_type_fit_value).lower(),

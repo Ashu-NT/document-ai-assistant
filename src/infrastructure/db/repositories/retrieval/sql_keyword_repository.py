@@ -156,6 +156,7 @@ class SqlKeywordRepository:
                 ChunkORM.content.ilike(pattern),
                 ChunkORM.embedding_text.ilike(pattern),
                 ChunkORM.section_path.ilike(pattern),
+                ChunkORM.section_ids_text.ilike(pattern),
                 DocumentORM.title.ilike(pattern),
                 DocumentORM.file_name.ilike(pattern),
             )
@@ -215,6 +216,7 @@ class SqlKeywordRepository:
             score += case((ChunkORM.content.ilike(pattern), 40), else_=0)
             score += case((ChunkORM.embedding_text.ilike(pattern), 36), else_=0)
             score += case((ChunkORM.section_path.ilike(pattern), 24), else_=0)
+            score += case((ChunkORM.section_ids_text.ilike(pattern), 18), else_=0)
             score += case((DocumentORM.title.ilike(pattern), 12), else_=0)
             score += case((DocumentORM.file_name.ilike(pattern), 10), else_=0)
 
@@ -222,6 +224,7 @@ class SqlKeywordRepository:
             score += case((ChunkORM.content.ilike(pattern), 24), else_=0)
             score += case((ChunkORM.embedding_text.ilike(pattern), 20), else_=0)
             score += case((ChunkORM.section_path.ilike(pattern), 14), else_=0)
+            score += case((ChunkORM.section_ids_text.ilike(pattern), 10), else_=0)
             score += case((DocumentORM.title.ilike(pattern), 6), else_=0)
             score += case((DocumentORM.file_name.ilike(pattern), 6), else_=0)
 
@@ -229,6 +232,7 @@ class SqlKeywordRepository:
             score += case((ChunkORM.content.ilike(pattern), 4), else_=0)
             score += case((ChunkORM.embedding_text.ilike(pattern), 4), else_=0)
             score += case((ChunkORM.section_path.ilike(pattern), 3), else_=0)
+            score += case((ChunkORM.section_ids_text.ilike(pattern), 2), else_=0)
             score += case((DocumentORM.title.ilike(pattern), 1), else_=0)
             score += case((DocumentORM.file_name.ilike(pattern), 1), else_=0)
 

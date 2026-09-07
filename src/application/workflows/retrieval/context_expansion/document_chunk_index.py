@@ -1,6 +1,18 @@
 from src.domain.common import ChunkType
 
 
+def _touched_section_ids(chunk) -> list:
+    """Every section a chunk's content actually came from, not just its
+    displayed primary `section_id` -- a chunk merged from several sibling
+    subsections (see SectionMergePolicy) must still be findable by anchoring
+    on any one of them, not only the common-ancestor id it displays."""
+    if chunk.section_ids:
+        return list(chunk.section_ids)
+    if chunk.section_id is not None:
+        return [chunk.section_id]
+    return []
+
+
 class DocumentChunkIndex:
     """Pre-indexes one document's chunk list once so a per-anchor lookup
     only touches chunks that could plausibly match one of
@@ -49,8 +61,8 @@ class DocumentChunkIndex:
         for chunk in document_chunks:
             by_chunk_id[chunk.chunk_id] = chunk
 
-            if chunk.section_id is not None:
-                by_section_id.setdefault(chunk.section_id, []).append(chunk)
+            for section_id in _touched_section_ids(chunk):
+                by_section_id.setdefault(section_id, []).append(chunk)
 
             for table_id in chunk.table_ids:
                 by_table_id.setdefault(table_id, []).append(chunk)
@@ -102,8 +114,8 @@ class DocumentChunkIndex:
             for chunk in chunks:
                 candidates[chunk.chunk_id] = chunk
 
-        if anchor_document_chunk.section_id is not None:
-            _add_all(self.by_section_id.get(anchor_document_chunk.section_id, []))
+        for section_id in _touched_section_ids(anchor_document_chunk):
+            _add_all(self.by_section_id.get(section_id, []))
 
         anchor_path = tuple(anchor_document_chunk.section_path)
         for prefix_length in range(len(anchor_path)):
