@@ -2,6 +2,8 @@ import re
 from collections.abc import Iterable
 from typing import Any
 
+from src.application.workflows.parsing.layout.page_furniture import is_page_furniture
+
 
 def resolve_parser_extra(element: Any) -> dict:
     if element.parser_metadata is None or element.parser_metadata.extra is None:
@@ -16,7 +18,7 @@ def is_furniture_or_embedded_picture(element: Any) -> bool:
     if isinstance(parent_ref, str) and parent_ref.startswith("#/pictures/"):
         return True
 
-    return extra.get("content_layer") == "furniture"
+    return extra.get("content_layer") == "furniture" or is_page_furniture(extra)
 
 
 def clean_chunk_text(text: str | None) -> str | None:

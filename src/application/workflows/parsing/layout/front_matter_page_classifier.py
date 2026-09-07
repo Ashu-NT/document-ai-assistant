@@ -24,6 +24,20 @@ class FrontMatterPageClassifier:
         for candidate in candidates:
             pages[candidate.page_number].append(candidate)
 
+        document_index_pages = sorted(
+            page_number
+            for page_number, page_candidates in pages.items()
+            if any(
+                (candidate.label or "").strip().casefold() == "document_index"
+                for candidate in page_candidates
+            )
+        )
+        if document_index_pages:
+            initial_index_end = self._initial_contiguous_end(document_index_pages)
+            return {
+                page_number for page_number in pages if page_number <= initial_index_end
+            }
+
         first_body_page: int | None = None
         for page_number in sorted(pages):
             if self._looks_like_body_page(pages[page_number]):
@@ -37,6 +51,15 @@ class FrontMatterPageClassifier:
             for page_number in pages
             if page_number < first_body_page
         }
+
+    @staticmethod
+    def _initial_contiguous_end(page_numbers: list[int]) -> int:
+        end = page_numbers[0]
+        for page_number in page_numbers[1:]:
+            if page_number > end + 1:
+                break
+            end = page_number
+        return end
 
     def _looks_like_body_page(self, candidates: list[PageLayoutCandidate]) -> bool:
         numbered_headers = 0

@@ -2,6 +2,7 @@ from src.application.workflows.parsing.parsed_canonical_element import (
     ParsedCanonicalElement,
 )
 from src.domain.common import ElementType
+from src.application.workflows.parsing.layout.page_furniture import is_page_furniture
 
 
 class TocElementEligibilityPolicy:
@@ -23,8 +24,17 @@ class TocElementEligibilityPolicy:
             or parser_extra.get("label")
             or ""
         ).lower()
-        content_layer = str(parser_extra.get("content_layer") or "").lower()
-        if item_label in cls._FURNITURE_LABELS or content_layer == "furniture":
+        content_layer = str(
+            element.metadata.get("content_layer")
+            or parser_extra.get("content_layer")
+            or ""
+        ).lower()
+        if (
+            item_label in cls._FURNITURE_LABELS
+            or content_layer == "furniture"
+            or is_page_furniture(element.metadata)
+            or is_page_furniture(parser_extra)
+        ):
             return False
 
         bbox = element.bbox

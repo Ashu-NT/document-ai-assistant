@@ -7,6 +7,7 @@ from src.application.workflows.parsing.builders.section_hierarchy.filtering.loca
     LocalSemanticHeaderDetector,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
+from src.application.workflows.parsing.layout.page_furniture import is_page_furniture
 
 _SENTENCE_START_MARKERS = {
     "after",
@@ -61,6 +62,8 @@ class SectionHeaderFilter:
         self,
         header: ParsedCanonicalElement,
     ) -> bool:
+        if is_page_furniture(header.metadata):
+            return False
         text = (header.text or "").strip()
         if not text:
             return False

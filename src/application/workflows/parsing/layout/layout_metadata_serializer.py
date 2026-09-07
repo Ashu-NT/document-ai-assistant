@@ -3,6 +3,11 @@ from collections.abc import Sequence
 from src.application.workflows.parsing.layout.models.page_layout_analysis import (
     PageLayoutAnalysis,
 )
+from src.application.workflows.parsing.layout.page_furniture import (
+    IS_PAGE_FURNITURE_KEY,
+    PAGE_FURNITURE_ROLE_KEY,
+    PageFurnitureRole,
+)
 
 
 class LayoutMetadataSerializer:
@@ -11,7 +16,10 @@ class LayoutMetadataSerializer:
     def serialize(
         self,
         analyses: Sequence[PageLayoutAnalysis],
+        *,
+        page_furniture_roles: dict[str, PageFurnitureRole] | None = None,
     ) -> dict[str, dict[str, object]]:
+        furniture_roles = page_furniture_roles or {}
         serialized: dict[str, dict[str, object]] = {}
         for analysis in analyses:
             page_order = 0
@@ -38,6 +46,10 @@ class LayoutMetadataSerializer:
                     }
                     if analysis.is_front_matter:
                         payload["layout_is_front_matter"] = True
+                    furniture_role = furniture_roles.get(element_ref)
+                    if furniture_role is not None:
+                        payload[IS_PAGE_FURNITURE_KEY] = True
+                        payload[PAGE_FURNITURE_ROLE_KEY] = furniture_role.value
                     if region.lane_index is not None:
                         payload["layout_lane_index"] = region.lane_index + 1
                     if region.bbox is not None:

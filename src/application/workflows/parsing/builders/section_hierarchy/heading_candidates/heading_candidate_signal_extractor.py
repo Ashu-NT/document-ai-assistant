@@ -17,6 +17,7 @@ from src.application.workflows.parsing.parsed_canonical_element import (
     ParsedCanonicalElement,
 )
 from src.domain.common import ElementType
+from src.application.workflows.parsing.layout.page_furniture import is_page_furniture
 
 
 _CAPTION_PATTERN = re.compile(
@@ -201,6 +202,7 @@ class HeadingCandidateSignalExtractor:
             not normalized_title
             or _LOW_SIGNAL_PATTERN.fullmatch((header.text or "").strip())
             or content_layer in {"furniture", "background"}
+            or is_page_furniture(header.metadata)
         )
 
     @staticmethod

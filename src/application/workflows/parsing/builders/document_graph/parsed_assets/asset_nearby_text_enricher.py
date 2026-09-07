@@ -11,6 +11,7 @@ from src.application.workflows.parsing.profiling import GraphBuildProfiler
 from src.domain.common import ElementType
 from src.domain.document import DocumentGraph
 from src.domain.elements import CanonicalElement
+from src.application.workflows.parsing.layout.page_furniture import is_page_furniture
 
 
 class AssetNearbyTextEnricher:
@@ -179,7 +180,10 @@ class AssetNearbyTextEnricher:
         if isinstance(parent_ref, str) and parent_ref.startswith("#/pictures/"):
             return False
 
-        return parser_extra.get("content_layer") != "furniture"
+        return (
+            parser_extra.get("content_layer") != "furniture"
+            and not is_page_furniture(parser_extra)
+        )
 
     @staticmethod
     def _shares_page_context(

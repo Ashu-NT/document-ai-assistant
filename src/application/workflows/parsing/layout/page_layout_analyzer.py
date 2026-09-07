@@ -22,6 +22,9 @@ from src.application.workflows.parsing.layout.models.page_layout_candidate impor
 from src.application.workflows.parsing.layout.page_orientation_resolver import (
     PageOrientationResolver,
 )
+from src.application.workflows.parsing.layout.page_furniture import (
+    RecurringPageFurnitureDetector,
+)
 
 
 class PageLayoutAnalyzer:
@@ -33,6 +36,7 @@ class PageLayoutAnalyzer:
         metadata_serializer: LayoutMetadataSerializer | None = None,
         orientation_resolver: PageOrientationResolver | None = None,
         region_builder: LayoutRegionBuilder | None = None,
+        page_furniture_detector: RecurringPageFurnitureDetector | None = None,
     ) -> None:
         self.front_matter_page_classifier = (
             front_matter_page_classifier or FrontMatterPageClassifier()
@@ -41,6 +45,9 @@ class PageLayoutAnalyzer:
         self.metadata_serializer = metadata_serializer or LayoutMetadataSerializer()
         self.orientation_resolver = orientation_resolver or PageOrientationResolver()
         self.region_builder = region_builder or LayoutRegionBuilder()
+        self.page_furniture_detector = (
+            page_furniture_detector or RecurringPageFurnitureDetector()
+        )
 
     def analyze(
         self,
@@ -93,7 +100,14 @@ class PageLayoutAnalyzer:
             raw_document=raw_document,
             candidates=candidates,
         )
-        return self.metadata_serializer.serialize(analyses)
+        page_sizes = self._extract_page_sizes(raw_document)
+        return self.metadata_serializer.serialize(
+            analyses,
+            page_furniture_roles=self.page_furniture_detector.detect(
+                candidates=candidates,
+                page_sizes=page_sizes,
+            ),
+        )
 
     @staticmethod
     def _extract_page_sizes(
