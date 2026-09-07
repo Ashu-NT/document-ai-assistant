@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from src.application.services.ai import LLMService
-from src.application.workflows.parsing.builders.chunking.builders.chunk_type_llm_classifier import (
+from src.application.workflows.parsing.builders.chunking.builders.chunk_type.chunk_type_llm_classifier import (
     ChunkTypeLLMClassifier,
 )
 from src.domain.common import ChunkType

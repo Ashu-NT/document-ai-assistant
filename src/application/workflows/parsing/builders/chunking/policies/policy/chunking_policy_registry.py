@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.application.workflows.parsing.builders.chunking.policies.chunking_policy_loader import (
+from src.application.workflows.parsing.builders.chunking.policies.policy.chunking_policy_loader import (
     load_policy_from_yaml,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy import (
+from src.application.workflows.parsing.builders.chunking.policies.policy.document_chunking_policy import (
     DocumentChunkingPolicy,
 )
 

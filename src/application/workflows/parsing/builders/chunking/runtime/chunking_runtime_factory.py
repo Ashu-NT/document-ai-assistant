@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.chunking.builders.chunk_type_resolver import (
+from src.application.workflows.parsing.builders.chunking.builders.chunk_type.chunk_type_resolver import (
     ChunkTypeResolver,
 )
 from src.application.workflows.parsing.builders.chunking.builders.fragment.chunk_fragment_builder import (
@@ -31,10 +31,10 @@ from src.application.workflows.parsing.builders.chunking.policies.document_chunk
 from src.application.workflows.parsing.builders.chunking.builders.section_chunk_skipper import (
     SectionChunkSkipper,
 )
-from src.application.workflows.parsing.builders.chunking.policies.section_merge_policy import (
+from src.application.workflows.parsing.builders.chunking.policies.section_merge.section_merge_policy import (
     SectionMergePolicy,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
 from src.config.logging import get_logger

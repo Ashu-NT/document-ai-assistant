@@ -9,13 +9,13 @@ from src.application.workflows.parsing.builders.chunking.builders.chunk_payload_
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
-from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy import (
+from src.application.workflows.parsing.builders.chunking.policies.policy.document_chunking_policy import (
     DocumentChunkingPolicy,
 )
 from src.application.workflows.parsing.builders.chunking.builders.section_chunk_skipper import (
     SectionChunkSkipper,
 )
-from src.application.workflows.parsing.builders.chunking.policies.section_merge_policy import (
+from src.application.workflows.parsing.builders.chunking.policies.section_merge.section_merge_policy import (
     SectionMergePolicy,
 )
 

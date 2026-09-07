@@ -1,13 +1,13 @@
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_inference import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inference import (
     ChunkingProfileInference,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_scorer import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_scorer import (
     ChunkingProfileScorer,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_statistics_builder import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics_builder import (
     ChunkingProfileStatisticsBuilder,
 )
 from src.domain.document import DocumentSection

@@ -1,6 +1,6 @@
 from typing import Callable
 
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
 from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (

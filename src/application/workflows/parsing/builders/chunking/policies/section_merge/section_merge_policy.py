@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.chunking.builders.chunk_type_resolver import (
+from src.application.workflows.parsing.builders.chunking.builders.chunk_type.chunk_type_resolver import (
     ChunkTypeResolver,
 )
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
@@ -10,7 +10,7 @@ from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitte
 from src.application.workflows.parsing.builders.chunking.text.chunking_utils import (
     common_path_prefix,
 )
-from src.application.workflows.parsing.builders.chunking.policies.section_semantics import (
+from src.application.workflows.parsing.builders.chunking.policies.section_merge.section_semantics import (
     is_introductory_title,
     is_task_like_title,
     titles_share_topic,

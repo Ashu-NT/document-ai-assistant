@@ -1,7 +1,7 @@
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_statistics import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
     ChunkingProfileStatistics,
 )
-from src.application.workflows.parsing.builders.chunking.policies.section_semantics import (
+from src.application.workflows.parsing.builders.chunking.policies.section_merge.section_semantics import (
     is_task_like_title,
     normalize_section_title,
 )

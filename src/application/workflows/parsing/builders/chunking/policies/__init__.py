@@ -1,31 +1,31 @@
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_inference import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inference import (
     ChunkingProfileInference,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_inferer import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inferer import (
     ChunkingProfileInferer,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_scorer import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_scorer import (
     ChunkingProfileScorer,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_statistics import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
     ChunkingProfileStatistics,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_statistics_builder import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics_builder import (
     ChunkingProfileStatisticsBuilder,
 )
-from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy import (
+from src.application.workflows.parsing.builders.chunking.policies.policy.document_chunking_policy import (
     DocumentChunkingPolicy,
 )
 from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy_resolver import (
     DocumentChunkingPolicyResolver,
 )
-from src.application.workflows.parsing.builders.chunking.policies.section_merge_policy import (
+from src.application.workflows.parsing.builders.chunking.policies.section_merge.section_merge_policy import (
     SectionMergePolicy,
 )
-from src.application.workflows.parsing.builders.chunking.policies.section_semantics import (
+from src.application.workflows.parsing.builders.chunking.policies.section_merge.section_semantics import (
     is_introductory_title,
     is_task_like_title,
     normalize_section_title,

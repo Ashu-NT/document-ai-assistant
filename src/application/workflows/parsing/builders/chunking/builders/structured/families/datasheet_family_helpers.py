@@ -1,8 +1,8 @@
-from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.families.family_builder_utils import (
     append_label_if_missing,
     path_contains_terms,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_context import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.context.structured_family_context import (
     StructuredFamilyContext,
 )
 

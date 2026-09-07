@@ -8,13 +8,13 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers.structured_marker_matcher import (
     StructuredMarkerMatcher,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_document_evidence_context import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.context.structured_document_evidence_context import (
     StructuredDocumentEvidenceContext,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_spec_factory import (
     StructuredFamilySpecFactory,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_spec_selection import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.spec.structured_family_spec_selection import (
     StructuredFamilySpecSelection,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured_section_fragment_builder import (

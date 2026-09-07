@@ -7,13 +7,13 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.arb
     StructuredWindowCandidateBuilder,
     StructuredWindowOwnershipResolver,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_section_window_spec import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.spec.structured_section_window_spec import (
     StructuredSectionWindowSpec,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_document_evidence_context import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.context.structured_document_evidence_context import (
     StructuredDocumentEvidenceContext,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_element_text_resolver import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.context.structured_element_text_resolver import (
     StructuredElementTextResolver,
 )
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (

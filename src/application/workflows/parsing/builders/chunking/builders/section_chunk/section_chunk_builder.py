@@ -4,7 +4,7 @@ from src.application.workflows.parsing.builders.chunking.builders.section_chunk.
 from src.application.workflows.parsing.builders.chunking.builders.section_chunk.overview_payload_merger import (
     merge_overview_payloads,
 )
-from src.application.workflows.parsing.builders.chunking.builders.section_overview_chunk_builder import (
+from src.application.workflows.parsing.builders.chunking.builders.overview.section_overview_chunk_builder import (
     SectionOverviewChunkBuilder,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured import (
@@ -17,7 +17,7 @@ from src.application.workflows.parsing.builders.chunking.models import (
     ChunkFragment,
     ChunkPayload,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
 from src.application.workflows.parsing.builders.chunking.runtime.chunking_runtime_factory import (

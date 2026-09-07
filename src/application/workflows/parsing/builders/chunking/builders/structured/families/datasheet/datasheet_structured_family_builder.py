@@ -4,19 +4,19 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.fam
 from src.application.workflows.parsing.builders.chunking.builders.structured.families.datasheet_window_specs import (
     build_datasheet_window_specs,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.families.family_builder_utils import (
     sanitized_base_path,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     DATASHEET_DOCUMENT_MARKERS,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_context import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.context.structured_family_context import (
     StructuredFamilyContext,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_marker_tuning import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.tuning.structured_family_marker_tuning import (
     StructuredFamilyMarkerTuning,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_spec_selection import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.spec.structured_family_spec_selection import (
     StructuredFamilySpecSelection,
 )
 from src.domain.common import DocumentType

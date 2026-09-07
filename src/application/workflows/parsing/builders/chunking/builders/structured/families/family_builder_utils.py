@@ -7,7 +7,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_evidence_family import (
     StructuredEvidenceFamily,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_marker_tuning import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.tuning.structured_family_marker_tuning import (
     StructuredFamilyMarkerTuning,
 )
 from src.application.workflows.parsing.builders.chunking.text.section_path_sanitizer import (

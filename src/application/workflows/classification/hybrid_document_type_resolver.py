@@ -6,10 +6,10 @@ from src.application.workflows.classification.classification_workflow_settings i
 from src.application.workflows.classification.document_type_decision import (
     DocumentTypeDecision,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_inference import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inference import (
     ChunkingProfileInference,
 )
 from src.domain.classification import DocumentClassification

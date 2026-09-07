@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.builders.chunking.models.chunk_fragment import (
     ChunkFragment,
 )
-from src.application.workflows.parsing.builders.chunking.builders.chunk_type_resolver import (
+from src.application.workflows.parsing.builders.chunking.builders.chunk_type.chunk_type_resolver import (
     ChunkTypeResolver,
 )
 from src.application.workflows.parsing.builders.chunking.models.chunk_payload import (

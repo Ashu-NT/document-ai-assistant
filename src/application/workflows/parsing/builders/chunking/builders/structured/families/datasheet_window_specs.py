@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.builders.chunking.builders.structured.families.datasheet_family_helpers import (
     family_section_path,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.families.family_builder_utils import (
     extend_markers,
     path_contains_terms,
 )
@@ -23,10 +23,10 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_evidence_family import (
     StructuredEvidenceFamily,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_marker_tuning import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.tuning.structured_family_marker_tuning import (
     StructuredFamilyMarkerTuning,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_section_window_spec import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.spec.structured_section_window_spec import (
     StructuredSectionWindowSpec,
 )
 from src.domain.common import ChunkType

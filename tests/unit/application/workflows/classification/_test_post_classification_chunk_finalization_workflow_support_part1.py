@@ -15,19 +15,19 @@ from src.application.workflows.parsing.builders.chunking.builders.section_chunk.
     SectionChunkBuilder,
 )
 
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
 
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_inference import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_inference import (
     ChunkingProfileInference,
 )
 
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_statistics import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
     ChunkingProfileStatistics,
 )
 
-from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy import (
+from src.application.workflows.parsing.builders.chunking.policies.policy.document_chunking_policy import (
     DocumentChunkingPolicy,
 )
 

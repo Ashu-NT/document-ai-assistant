@@ -6,10 +6,10 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers.models import (
     EvidenceMarker,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_element_text_resolver import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.context.structured_element_text_resolver import (
     StructuredElementTextResolver,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_document_evidence_context import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.context.structured_document_evidence_context import (
     StructuredDocumentEvidenceContext,
 )
 from src.domain.common import DocumentType

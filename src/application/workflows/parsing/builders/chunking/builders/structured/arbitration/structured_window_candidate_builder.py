@@ -21,10 +21,10 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers.structured_marker_match_policy import (
     StructuredMarkerMatchPolicy,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_element_text_resolver import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.context.structured_element_text_resolver import (
     StructuredElementTextResolver,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_section_window_spec import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.spec.structured_section_window_spec import (
     StructuredSectionWindowSpec,
 )
 from src.domain.document import DocumentSection

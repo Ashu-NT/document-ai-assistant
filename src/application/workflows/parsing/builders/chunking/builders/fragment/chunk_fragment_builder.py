@@ -16,7 +16,7 @@ from src.application.workflows.parsing.builders.chunking.models.chunk_fragment i
 from src.application.workflows.parsing.builders.chunking.builders.structured_section_fragment_builder import (
     StructuredSectionFragmentBuilder,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_document_evidence_context import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.context.structured_document_evidence_context import (
     StructuredDocumentEvidenceContext,
 )
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (

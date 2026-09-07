@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.builders.chunking.builders.chunk_payload_factory import (
     ChunkPayloadFactory,
 )
-from src.application.workflows.parsing.builders.chunking.builders.section_overview_chunk_builder import (
+from src.application.workflows.parsing.builders.chunking.builders.overview.section_overview_chunk_builder import (
     SectionOverviewChunkBuilder,
 )
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (

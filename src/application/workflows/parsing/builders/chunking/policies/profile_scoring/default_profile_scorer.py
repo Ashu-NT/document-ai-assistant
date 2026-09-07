@@ -1,7 +1,7 @@
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile_statistics import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile_statistics import (
     ChunkingProfileStatistics,
 )
 

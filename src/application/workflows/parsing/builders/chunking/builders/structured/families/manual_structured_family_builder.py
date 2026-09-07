@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.families.family_builder_utils import (
     append_label_if_missing,
     extend_markers,
     path_contains_markers,
@@ -22,16 +22,16 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_evidence_family import (
     StructuredEvidenceFamily,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_context import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.context.structured_family_context import (
     StructuredFamilyContext,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_marker_tuning import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.tuning.structured_family_marker_tuning import (
     StructuredFamilyMarkerTuning,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_spec_selection import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.spec.structured_family_spec_selection import (
     StructuredFamilySpecSelection,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_section_window_spec import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.spec.structured_section_window_spec import (
     StructuredSectionWindowSpec,
 )
 from src.domain.common import ChunkType, DocumentType

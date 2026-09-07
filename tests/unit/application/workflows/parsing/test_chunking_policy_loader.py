@@ -1,13 +1,13 @@
 import pytest
 from pathlib import Path
 
-from src.application.workflows.parsing.builders.chunking.policies.chunking_policy_loader import (
+from src.application.workflows.parsing.builders.chunking.policies.policy.chunking_policy_loader import (
     load_policy_from_yaml,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_policy_registry import (
+from src.application.workflows.parsing.builders.chunking.policies.policy.chunking_policy_registry import (
     ChunkingPolicyRegistry,
 )
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
 from src.shared.exceptions import SchemaValidationError

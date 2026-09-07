@@ -11,7 +11,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
 from src.application.workflows.parsing.builders.chunking.builders.structured.structured_evidence_family import (
     StructuredEvidenceFamily,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_section_window_spec import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.spec.structured_section_window_spec import (
     StructuredSectionWindowSpec,
 )
 from src.domain.common import ChunkType, DocumentType, ElementType, SourceLocation

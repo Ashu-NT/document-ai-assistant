@@ -1,7 +1,7 @@
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers.structured_marker_match_policy import (
     StructuredMarkerMatchPolicy,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_section_window_spec import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.spec.structured_section_window_spec import (
     StructuredSectionWindowSpec,
 )
 from src.domain.document import DocumentSection

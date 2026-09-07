@@ -8,7 +8,7 @@ from src.application.workflows.parsing.builders.chunking.models.chunk_fragment i
     ChunkFragment,
 )
 
-from src.application.workflows.parsing.builders.chunking.policies.section_merge_policy import (
+from src.application.workflows.parsing.builders.chunking.policies.section_merge.section_merge_policy import (
     SectionMergePolicy,
 )
 

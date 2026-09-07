@@ -1,4 +1,4 @@
-from src.application.workflows.parsing.builders.chunking.builders.structured.family_builder_utils import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.families.family_builder_utils import (
     path_contains_terms,
 )
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
@@ -17,7 +17,7 @@ from src.application.workflows.parsing.builders.chunking.builders.structured.mar
 from src.application.workflows.parsing.builders.chunking.builders.structured.markers import (
     StructuredMarkerMatcher,
 )
-from src.application.workflows.parsing.builders.chunking.builders.structured.structured_family_context import (
+from src.application.workflows.parsing.builders.chunking.builders.structured.context.structured_family_context import (
     StructuredFamilyContext,
 )
 

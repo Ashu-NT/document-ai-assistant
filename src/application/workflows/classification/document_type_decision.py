@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from src.application.workflows.parsing.builders.chunking.policies.chunking_profile import (
+from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
 from src.domain.common import DocumentType
