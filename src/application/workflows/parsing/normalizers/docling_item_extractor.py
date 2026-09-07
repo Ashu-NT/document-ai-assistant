@@ -113,7 +113,8 @@ class DoclingItemExtractor:
         if value is None:
             return None
 
-        text = str(value).strip()
+        enum_value = self._get_value(value, "value")
+        text = str(enum_value if enum_value is not None else value).strip().lower()
         return text or None
 
     def extract_parent_ref(self, item: Any) -> str | None:

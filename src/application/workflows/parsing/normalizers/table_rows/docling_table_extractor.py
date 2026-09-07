@@ -13,6 +13,9 @@ from src.application.workflows.parsing.normalizers.table_layout.docling_table_ce
 from src.application.workflows.parsing.normalizers.table_layout.table_reconstruction_result import (
     TableReconstructionResult,
 )
+from src.application.workflows.parsing.normalizers.table_rows.docling_table_markdown_renderer import (
+    DoclingTableMarkdownRenderer,
+)
 
 
 class DoclingTableExtractor:
@@ -49,10 +52,19 @@ class DoclingTableExtractor:
         item: Any,
         *,
         doc: Any | None = None,
+        renderer: DoclingTableMarkdownRenderer | None = None,
     ) -> str | None:
         for attribute_name in ("markdown", "md", "text"):
             value = self._get_value(item, attribute_name)
             cleaned = self._clean_text(value)
+            if cleaned:
+                return cleaned
+
+        if renderer is not None:
+            try:
+                cleaned = self._clean_text(renderer.render(item))
+            except Exception:
+                cleaned = None
             if cleaned:
                 return cleaned
 

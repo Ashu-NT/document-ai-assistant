@@ -73,3 +73,26 @@ def test_render_includes_structured_family_timing_breakdown() -> None:
     assert "ManualStructuredFamilyBuilder" in markdown
     assert "500.000ms" in markdown
     assert "75.00%" in markdown
+
+
+def test_render_includes_canonical_normalization_stage_metrics() -> None:
+    report_data = {
+        **_MINIMAL_REPORT_DATA,
+        "normalization_stage_metrics": [
+            {
+                "name": "canonical_normalizer.serialize_tables",
+                "started_at_offset_seconds": 0.1,
+                "ended_at_offset_seconds": 0.3,
+                "elapsed_seconds": 0.2,
+                "input_counts": {"tables": 2},
+                "output_counts": {},
+                "operations": {"invocations": 2},
+            }
+        ],
+    }
+
+    markdown = GraphBuildReportMarkdownRenderer().render(report_data)
+
+    assert "## Canonical Normalization Stage Metrics" in markdown
+    assert "canonical_normalizer.serialize_tables" in markdown
+    assert "invocations=2" in markdown

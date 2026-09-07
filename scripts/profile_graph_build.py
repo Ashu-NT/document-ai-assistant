@@ -412,7 +412,8 @@ def main() -> int:
         max_num_pages=ingestion_input_limits.max_pdf_pages,
         max_file_size_bytes=ingestion_input_limits.max_file_size_bytes,
     )
-    normalizer = DoclingDocumentNormalizer()
+    normalization_profiler = GraphBuildProfiler(progress_callback=_emit)
+    normalizer = DoclingDocumentNormalizer(profiler=normalization_profiler)
 
     raw_parsed_document, docling_conversion_profile = _profile_operation(
         label="Docling conversion",
@@ -524,6 +525,9 @@ def main() -> int:
         improvement_percent = ((baseline - graph_build_seconds) / baseline) * 100.0
 
     stage_metrics = [asdict(metric) for metric in graph_profiler.stage_metrics]
+    normalization_stage_metrics = [
+        asdict(metric) for metric in normalization_profiler.stage_metrics
+    ]
     structured_family_timings = build_structured_family_timing_summary(stage_metrics)
     for line in render_structured_family_timing_console_lines(
         structured_family_timings
@@ -553,6 +557,7 @@ def main() -> int:
             "graph_build_improvement_percent": improvement_percent,
         },
         "stage_metrics": stage_metrics,
+        "normalization_stage_metrics": normalization_stage_metrics,
         "structured_family_timings": structured_family_timings,
         "architecture_map": [
             asdict(descriptor)

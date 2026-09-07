@@ -6,6 +6,9 @@ from src.application.workflows.parsing.normalizers.docling_caption_extractor imp
 from src.application.workflows.parsing.normalizers.table_rows.docling_table_extractor import (
     DoclingTableExtractor,
 )
+from src.application.workflows.parsing.normalizers.table_rows.docling_table_markdown_renderer import (
+    DoclingTableMarkdownRenderer,
+)
 from src.application.workflows.parsing.normalizers.docling_value_accessors import (
     clean_text,
     get_value,
@@ -61,13 +64,20 @@ class DoclingElementTextResolver:
         element_type: ElementType,
         *,
         raw_document: Any,
+        renderer: DoclingTableMarkdownRenderer | None = None,
     ) -> str | None:
         if element_type != ElementType.TABLE:
             return None
 
+        if renderer is None:
+            return self.table_extractor.extract_markdown(
+                item,
+                doc=raw_document,
+            )
         return self.table_extractor.extract_markdown(
             item,
             doc=raw_document,
+            renderer=renderer,
         )
 
     @staticmethod

@@ -12,8 +12,9 @@ class _FakeFastTokenizer:
         add_special_tokens: bool = False,
         return_offsets_mapping: bool = False,
         truncation: bool = False,
+        verbose: bool = True,
     ) -> dict[str, object]:
-        del add_special_tokens, truncation
+        del add_special_tokens, truncation, verbose
         offsets = []
         cursor = 0
         for part in text.replace(",", " ,").split():

@@ -24,11 +24,16 @@ from src.application.workflows.parsing.normalizers.docling_provenance_extractor 
 from src.application.workflows.parsing.normalizers.table_rows.docling_table_extractor import (
     DoclingTableExtractor,
 )
+from src.application.workflows.parsing.normalizers.table_rows.docling_table_markdown_renderer import (
+    DoclingTableMarkdownRenderer,
+)
 from src.application.workflows.parsing.normalizers.table_layout.text_grid.text_grid_table_fallback_applier import (
     TextGridTableFallbackApplier,
 )
 from src.application.workflows.parsing.parsed_canonical_element import ParsedCanonicalElement
 from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
+from src.application.workflows.parsing.profiling import GraphBuildProfiler
+from src.domain.common import ElementType
 from src.shared.exceptions import DocumentNormalizationError
 
 
@@ -39,6 +44,7 @@ class DoclingDocumentNormalizer:
         text_resolver: DoclingElementTextResolver | None = None,
         metadata_builder: DoclingElementMetadataBuilder | None = None,
         text_grid_table_fallback_applier: TextGridTableFallbackApplier | None = None,
+        profiler: GraphBuildProfiler | None = None,
     ) -> None:
         self.layout_metadata_builder = DoclingLayoutMetadataBuilder()
         self.table_extractor = DoclingTableExtractor()
@@ -54,6 +60,10 @@ class DoclingDocumentNormalizer:
         self.text_grid_table_fallback_applier = (
             text_grid_table_fallback_applier or TextGridTableFallbackApplier()
         )
+        self.profiler = profiler or GraphBuildProfiler.disabled()
+
+    def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
+        self.profiler = profiler or GraphBuildProfiler.disabled()
 
     def normalize(
         self,
@@ -63,42 +73,52 @@ class DoclingDocumentNormalizer:
         skipped_item_errors: list[str] | None = None,
     ) -> list[ParsedCanonicalElement]:
         try:
+            self.profiler.document_id = document_id
             raw_document = raw_parsed_document.raw_document
-            items = list(self.item_extractor.iter_items(raw_document))
+            with self.profiler.measure(name="canonical_normalizer.collect_items") as scope:
+                items = list(self.item_extractor.iter_items(raw_document))
+                scope.output_counts["items"] = len(items)
             normalized: list[ParsedCanonicalElement] = []
             errors = skipped_item_errors if skipped_item_errors is not None else []
-            caption_extractor = DoclingCaptionExtractor(
-                raw_document,
-                items=items,
-            )
-            layout_metadata_by_element_ref = self.layout_metadata_builder.build(
-                raw_document=raw_document,
-                items=items,
-                item_extractor=self.item_extractor,
-                provenance_extractor=self.provenance_extractor,
-            )
+            with self.profiler.measure(name="canonical_normalizer.build_caption_index"):
+                caption_extractor = DoclingCaptionExtractor(raw_document, items=items)
+            with self.profiler.measure(name="canonical_normalizer.analyze_layout") as scope:
+                layout_metadata_by_element_ref = self.layout_metadata_builder.build(
+                    raw_document=raw_document,
+                    items=items,
+                    item_extractor=self.item_extractor,
+                    provenance_extractor=self.provenance_extractor,
+                )
+                scope.output_counts["layout_elements"] = len(
+                    layout_metadata_by_element_ref
+                )
+            with self.profiler.measure(name="canonical_normalizer.prepare_table_renderer"):
+                table_markdown_renderer = DoclingTableMarkdownRenderer.try_create(
+                    raw_document
+                )
 
-            for index, item in enumerate(
-                items,
-                start=1,
-            ):
-                try:
-                    if self.item_extractor.should_skip(item):
+            with self.profiler.measure(name="canonical_normalizer.normalize_items") as scope:
+                for index, item in enumerate(items, start=1):
+                    try:
+                        if self.item_extractor.should_skip(item):
+                            continue
+
+                        element = self._build_canonical_element(
+                            item=item,
+                            index=index,
+                            document_id=document_id,
+                            raw_document=raw_document,
+                            caption_extractor=caption_extractor,
+                            layout_metadata_by_element_ref=layout_metadata_by_element_ref,
+                            table_markdown_renderer=table_markdown_renderer,
+                        )
+                    except Exception as exc:  # one bad item must not sink the document
+                        errors.append(f"item {index}: {exc}")
                         continue
-
-                    element = self._build_canonical_element(
-                        item=item,
-                        index=index,
-                        document_id=document_id,
-                        raw_document=raw_document,
-                        caption_extractor=caption_extractor,
-                        layout_metadata_by_element_ref=layout_metadata_by_element_ref,
-                    )
-                except Exception as exc:  # one bad item must not sink the document
-                    errors.append(f"item {index}: {exc}")
-                    continue
-
-                normalized.append(element)
+                    normalized.append(element)
+                scope.output_counts["normalized_elements"] = len(normalized)
+                scope.output_counts["skipped_or_failed_items"] = len(items) - len(normalized)
+            self.profiler.flush_aggregates()
 
             if errors and not normalized:
                 raise DocumentNormalizationError(
@@ -106,8 +126,10 @@ class DoclingDocumentNormalizer:
                     details={"item_count": len(items), "errors": errors[:10]},
                 )
 
-            reordered = self._apply_multi_column_reading_order(normalized)
-            return self.text_grid_table_fallback_applier.apply(reordered)
+            with self.profiler.measure(name="canonical_normalizer.apply_reading_order"):
+                reordered = self._apply_multi_column_reading_order(normalized)
+            with self.profiler.measure(name="canonical_normalizer.apply_text_grid_fallback"):
+                return self.text_grid_table_fallback_applier.apply(reordered)
         except DocumentNormalizationError:
             raise
         except Exception as exc:
@@ -128,27 +150,35 @@ class DoclingDocumentNormalizer:
         raw_document,
         caption_extractor: DoclingCaptionExtractor,
         layout_metadata_by_element_ref: dict[str, dict[str, object]],
+        table_markdown_renderer: DoclingTableMarkdownRenderer | None,
     ) -> ParsedCanonicalElement:
         element_type = self.item_extractor.extract_element_type(item)
         raw_ref = self.item_extractor.extract_raw_ref(item)
         element_layout_metadata = layout_metadata_by_element_ref.get(
             raw_ref or f"canon_{index}"
         )
-        table_markdown = self.text_resolver.extract_table_markdown(
-            item,
-            element_type,
-            raw_document=raw_document,
-        )
+        table_markdown = None
+        if element_type == ElementType.TABLE:
+            with self.profiler.aggregate(name="canonical_normalizer.serialize_tables"):
+                table_markdown = self.text_resolver.extract_table_markdown(
+                    item,
+                    element_type,
+                    raw_document=raw_document,
+                    renderer=table_markdown_renderer,
+                )
         page_start, page_end = self.provenance_extractor.extract_pages(item)
-        table_structure = self.text_resolver.extract_table_structure(
-            item,
-            element_type,
-            raw_document=raw_document,
-            page_number=page_start or page_end,
-            page_lane_count=self._extract_page_lane_count(
-                element_layout_metadata
-            ),
-        )
+        table_structure = None
+        if element_type == ElementType.TABLE:
+            with self.profiler.aggregate(name="canonical_normalizer.reconstruct_tables"):
+                table_structure = self.text_resolver.extract_table_structure(
+                    item,
+                    element_type,
+                    raw_document=raw_document,
+                    page_number=page_start or page_end,
+                    page_lane_count=self._extract_page_lane_count(
+                        element_layout_metadata
+                    ),
+                )
         caption = self.text_resolver.extract_caption_text(
             item,
             caption_extractor,

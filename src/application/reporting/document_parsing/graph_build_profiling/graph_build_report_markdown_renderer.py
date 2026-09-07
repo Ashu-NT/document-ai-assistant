@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from src.application.reporting.document_parsing.graph_build_profiling.stage_metrics_markdown_renderer import (
+    render_stage_metrics_table,
+)
+
 
 class GraphBuildReportMarkdownRenderer:
     """Renders a graph-build performance report dict into a Markdown document."""
@@ -15,6 +19,7 @@ class GraphBuildReportMarkdownRenderer:
         bottlenecks = report_data["ranked_bottlenecks"]
         operation_profiles = report_data.get("operation_profiles") or {}
         family_timings = report_data.get("structured_family_timings") or {}
+        normalization_metrics = report_data.get("normalization_stage_metrics") or []
 
         lines = [
             "# Parsing Pipeline Performance Report",
@@ -71,6 +76,13 @@ class GraphBuildReportMarkdownRenderer:
                 )
         if isinstance(family_timings, dict) and family_timings.get("families"):
             lines.extend(self._render_structured_family_timings(family_timings))
+        if isinstance(normalization_metrics, list) and normalization_metrics:
+            lines.extend(
+                render_stage_metrics_table(
+                    title="Canonical Normalization Stage Metrics",
+                    metrics=normalization_metrics,
+                )
+            )
 
         lines.extend(
             [

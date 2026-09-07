@@ -1,3 +1,4 @@
+from enum import Enum
 from types import SimpleNamespace
 
 from src.application.workflows.parsing.normalizers.docling_item_extractor import (
@@ -9,6 +10,11 @@ from src.domain.common import ElementType
 class FakeTableExtractor:
     def is_table_item(self, item) -> bool:
         return False
+
+
+class FakeContentLayer(str, Enum):
+    BODY = "body"
+    FURNITURE = "furniture"
 
 
 def make_item(label: str):
@@ -41,3 +47,14 @@ def test_extract_element_type_falls_back_to_text_for_unknown_label() -> None:
     result = _extractor().extract_element_type(make_item("something_unrecognized"))
 
     assert result == ElementType.TEXT
+
+
+def test_should_skip_docling_enum_furniture_layer_for_any_item_label() -> None:
+    item = SimpleNamespace(
+        label="text",
+        text="Repeated document control note",
+        content_layer=FakeContentLayer.FURNITURE,
+    )
+
+    assert _extractor().extract_content_layer(item) == "furniture"
+    assert _extractor().should_skip(item) is True

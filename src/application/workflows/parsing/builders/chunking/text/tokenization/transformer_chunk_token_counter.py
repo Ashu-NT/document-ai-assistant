@@ -60,6 +60,7 @@ class TransformerChunkTokenCounter(ChunkTokenCounter):
                 text,
                 add_special_tokens=False,
                 truncation=False,
+                verbose=False,
             )
             input_ids = encoded.get("input_ids", [])
             return len(input_ids)
@@ -137,6 +138,7 @@ class TransformerChunkTokenCounter(ChunkTokenCounter):
                 add_special_tokens=False,
                 return_offsets_mapping=True,
                 truncation=False,
+                verbose=False,
             )
         except Exception:
             return []

@@ -13,8 +13,9 @@ class FakeFastTokenizer:
         add_special_tokens: bool = False,
         return_offsets_mapping: bool = False,
         truncation: bool = False,
+        verbose: bool = True,
     ) -> dict[str, object]:
-        del add_special_tokens, truncation
+        del add_special_tokens, truncation, verbose
         offsets = [
             (match.start(), match.end())
             for match in re.finditer(r"[A-Za-z]+|[.,!?]", text)
@@ -36,18 +37,53 @@ class FakeTokenizerWithoutOffsets:
         add_special_tokens: bool = False,
         return_offsets_mapping: bool = False,
         truncation: bool = False,
+        verbose: bool = True,
     ) -> dict[str, object]:
-        del text, add_special_tokens, return_offsets_mapping, truncation
+        del text, add_special_tokens, return_offsets_mapping, truncation, verbose
         return {"input_ids": [0, 1, 2]}
 
     def tokenize(self, text: str) -> list[str]:
         return text.split()
 
 
+class RecordingFastTokenizer(FakeFastTokenizer):
+    def __init__(self) -> None:
+        self.verbose_values: list[bool] = []
+        self.truncation_values: list[bool] = []
+
+    def __call__(
+        self,
+        text: str,
+        *,
+        add_special_tokens: bool = False,
+        return_offsets_mapping: bool = False,
+        truncation: bool = False,
+        verbose: bool = True,
+    ) -> dict[str, object]:
+        self.verbose_values.append(verbose)
+        self.truncation_values.append(truncation)
+        return super().__call__(
+            text,
+            add_special_tokens=add_special_tokens,
+            return_offsets_mapping=return_offsets_mapping,
+            truncation=truncation,
+            verbose=verbose,
+        )
+
+
 def test_transformer_chunk_token_counter_counts_tokens_from_offsets() -> None:
     counter = TransformerChunkTokenCounter(tokenizer=FakeFastTokenizer())
 
     assert counter.count_tokens("alpha, beta gamma") == 4
+
+
+def test_transformer_counter_suppresses_model_limit_warning_without_truncation() -> None:
+    tokenizer = RecordingFastTokenizer()
+    counter = TransformerChunkTokenCounter(tokenizer=tokenizer)
+
+    assert counter.count_tokens("alpha beta gamma") == 3
+    assert tokenizer.verbose_values == [False]
+    assert tokenizer.truncation_values == [False]
 
 
 def test_transformer_chunk_token_counter_truncates_with_offsets() -> None:
