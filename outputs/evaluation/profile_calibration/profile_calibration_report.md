@@ -1,5 +1,5 @@
 # Profile Calibration Report
-
+# claude --resume 505b5021-19a8-494e-84f7-533093472d65
 Compares the production (OLD, raw-occurrence) evidence formula against a candidate (NEW, ratio-based) one, both decided through the SAME unmodified StructuralProfileDecisionPolicy. Neither production scorer nor decision-policy files are changed by this report -- see project_structural_profile_calibration memory for why (n=1 real document isn't enough to also re-tune the decision-policy thresholds without risking blind tuning).
 
 - documents: `22`
