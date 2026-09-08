@@ -52,6 +52,19 @@ class ProfileCalibrationReportStore:
         self._write(results)
         return results
 
+    def remove(self, document_hash: str) -> list[ProfileCalibrationCaseResult]:
+        """Drops a case entirely, e.g. when a document turns out to be
+        mislabeled (wrong folder/expected_profile) and should be excluded
+        from analysis rather than corrected in place -- its true label is
+        unknown, not merely different."""
+        results = [
+            existing
+            for existing in self.load()
+            if existing.document_hash != document_hash
+        ]
+        self._write(results)
+        return results
+
     def _write(self, results: list[ProfileCalibrationCaseResult]) -> None:
         self.results_path.parent.mkdir(parents=True, exist_ok=True)
         self.results_path.write_text(

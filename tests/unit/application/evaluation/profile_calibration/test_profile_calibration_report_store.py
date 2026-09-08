@@ -86,6 +86,32 @@ def test_upsert_accumulates_distinct_hashes(tmp_path) -> None:
     assert {r.document_hash for r in results} == {"hash-1", "hash-2"}
 
 
+def test_remove_drops_the_case_and_leaves_others_intact(tmp_path) -> None:
+    store = ProfileCalibrationReportStore(
+        results_path=tmp_path / "results.json",
+        report_path=tmp_path / "report.md",
+    )
+    store.upsert(_make_result("doc-a", document_hash="hash-1"))
+    store.upsert(_make_result("doc-b", document_hash="hash-2"))
+
+    remaining = store.remove("hash-1")
+
+    assert {r.document_hash for r in remaining} == {"hash-2"}
+    assert {r.document_hash for r in store.load()} == {"hash-2"}
+
+
+def test_remove_unknown_hash_is_a_no_op(tmp_path) -> None:
+    store = ProfileCalibrationReportStore(
+        results_path=tmp_path / "results.json",
+        report_path=tmp_path / "report.md",
+    )
+    store.upsert(_make_result("doc-a", document_hash="hash-1"))
+
+    remaining = store.remove("hash-does-not-exist")
+
+    assert {r.document_hash for r in remaining} == {"hash-1"}
+
+
 def test_same_label_different_hash_does_not_collide(tmp_path) -> None:
     """Safeguard: identity is document_hash, not the human label -- two
     genuinely different documents that happen to share a label must both

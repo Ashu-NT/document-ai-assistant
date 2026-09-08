@@ -1,74 +1,5 @@
 [
   {
-    "document_label": "Reg - 70 Record of Construction and Equipment_2164376_01",
-    "document_hash": "726afa10dcaae3c10038caa5f6a8a4c6da704b026483350d6ed18b00ad0144c9",
-    "expected_profile": "certificate",
-    "section_count": 4,
-    "evidence_diagnostics": {
-      "manual": {
-        "total_occurrences": 0,
-        "distinct_term_count": 0,
-        "matching_title_count": 0
-      },
-      "datasheet": {
-        "total_occurrences": 0,
-        "distinct_term_count": 0,
-        "matching_title_count": 0
-      },
-      "drawing": {
-        "total_occurrences": 0,
-        "distinct_term_count": 0,
-        "matching_title_count": 0
-      },
-      "report": {
-        "total_occurrences": 0,
-        "distinct_term_count": 0,
-        "matching_title_count": 0
-      },
-      "certificate": {
-        "total_occurrences": 0,
-        "distinct_term_count": 0,
-        "matching_title_count": 0
-      }
-    },
-    "old": {
-      "scores": {
-        "default": 3.0,
-        "manual": 2.5,
-        "datasheet": 3.9,
-        "drawing": 0.0,
-        "report": 1.3,
-        "certificate": 2.9
-      },
-      "selected_profile": "datasheet",
-      "second_profile": "default",
-      "confidence": 0.462,
-      "top_score": 3.9,
-      "second_score": 3.0,
-      "gap": 0.8999999999999999,
-      "is_default": false
-    },
-    "new": {
-      "scores": {
-        "default": 3.0,
-        "manual": 2.5,
-        "datasheet": 3.9,
-        "drawing": 0.0,
-        "report": 1.3,
-        "certificate": 2.9
-      },
-      "selected_profile": "datasheet",
-      "second_profile": "default",
-      "confidence": 0.462,
-      "top_score": 3.9,
-      "second_score": 3.0,
-      "gap": 0.8999999999999999,
-      "is_default": false
-    },
-    "old_correct": false,
-    "new_correct": false
-  },
-  {
     "document_label": "Reg - 73  ITC69 certificate addendum_2164376",
     "document_hash": "c46ae98016ad9874377a25552841e950f7bd2d9e7afcbbfbabf2d495a3d82b6f",
     "expected_profile": "certificate",
@@ -205,5 +136,212 @@
     },
     "old_correct": true,
     "new_correct": true
+  },
+  {
+    "document_label": "1612 0100 Schroeder MAN Hatch",
+    "document_hash": "6d44dc8054211e16236ccad3c254f27e90ee6d12bbcf95e38904aecc4074aa2a",
+    "expected_profile": "manual",
+    "section_count": 131,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 11,
+        "distinct_term_count": 4,
+        "matching_title_count": 9
+      },
+      "datasheet": {
+        "total_occurrences": 13,
+        "distinct_term_count": 5,
+        "matching_title_count": 12
+      },
+      "drawing": {
+        "total_occurrences": 6,
+        "distinct_term_count": 3,
+        "matching_title_count": 6
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 2.5,
+        "manual": 7.8,
+        "datasheet": 5.1,
+        "drawing": 7.4,
+        "report": 0.0,
+        "certificate": 0.0
+      },
+      "selected_profile": "manual",
+      "second_profile": "drawing",
+      "confidence": 0.609,
+      "top_score": 7.8,
+      "second_score": 7.4,
+      "gap": 0.39999999999999947,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 2.5,
+        "manual": 5.546,
+        "datasheet": 3.15,
+        "drawing": 5.375,
+        "report": 0.0,
+        "certificate": 0.0
+      },
+      "selected_profile": "manual",
+      "second_profile": "drawing",
+      "confidence": 0.474,
+      "top_score": 5.546,
+      "second_score": 5.375,
+      "gap": 0.17100000000000026,
+      "is_default": false
+    },
+    "old_correct": true,
+    "new_correct": true
+  },
+  {
+    "document_label": "1611 Lethe Exterior Doors Exterior Hinge Doors",
+    "document_hash": "7c987148ec28ca68d0ed86fcff83723b0aa55b0ac4c2660dc84e5da985d9c3ed",
+    "expected_profile": "certificate",
+    "section_count": 2,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 1,
+        "distinct_term_count": 1,
+        "matching_title_count": 1
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 2,
+        "distinct_term_count": 2,
+        "matching_title_count": 1
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 2.2,
+        "manual": 2.8,
+        "datasheet": 2.0,
+        "drawing": 0.0,
+        "report": 1.8,
+        "certificate": 3.9
+      },
+      "selected_profile": "certificate",
+      "second_profile": "manual",
+      "confidence": 0.482,
+      "top_score": 3.9,
+      "second_score": 2.8,
+      "gap": 1.1,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 0.9,
+        "manual": 3.483,
+        "datasheet": 2.0,
+        "drawing": 0.0,
+        "report": 1.8,
+        "certificate": 4.6
+      },
+      "selected_profile": "certificate",
+      "second_profile": "manual",
+      "confidence": 0.506,
+      "top_score": 4.6,
+      "second_score": 3.483,
+      "gap": 1.1169999999999995,
+      "is_default": false
+    },
+    "old_correct": true,
+    "new_correct": true
+  },
+  {
+    "document_label": "1615 0050 Kaefer MAN Fire Sliding Door A-60 With Drive E3000 Mini",
+    "document_hash": "6ea392c2bfe9d5fc42f6a8f291eb04f59f232a5bf2f93fd26ed60596c6d65a01",
+    "expected_profile": "manual",
+    "section_count": 104,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 2,
+        "distinct_term_count": 1,
+        "matching_title_count": 2
+      },
+      "datasheet": {
+        "total_occurrences": 2,
+        "distinct_term_count": 1,
+        "matching_title_count": 2
+      },
+      "drawing": {
+        "total_occurrences": 2,
+        "distinct_term_count": 2,
+        "matching_title_count": 2
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 5,
+        "distinct_term_count": 2,
+        "matching_title_count": 5
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 2.5,
+        "manual": 6.0,
+        "datasheet": 3.5,
+        "drawing": 5.8,
+        "report": 1.3,
+        "certificate": 4.1
+      },
+      "selected_profile": "manual",
+      "second_profile": "drawing",
+      "confidence": 0.501,
+      "top_score": 6.0,
+      "second_score": 5.8,
+      "gap": 0.20000000000000018,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 3.8,
+        "manual": 3.549,
+        "datasheet": 0.815,
+        "drawing": 4.015,
+        "report": 1.3,
+        "certificate": 1.138
+      },
+      "selected_profile": "drawing",
+      "second_profile": "default",
+      "confidence": 0.397,
+      "top_score": 4.015,
+      "second_score": 3.8,
+      "gap": 0.21499999999999986,
+      "is_default": false
+    },
+    "old_correct": true,
+    "new_correct": false
   }
 ]
