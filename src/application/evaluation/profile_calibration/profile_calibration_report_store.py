@@ -16,11 +16,14 @@ DEFAULT_REPORT_PATH = Path(
 class ProfileCalibrationReportStore:
     """Accumulates ProfileCalibrationCaseResult across separate script runs
     (one document at a time, as the user supplies more labeled documents)
-    into a persisted JSON store, keyed by document_label so re-running the
-    same document updates its entry instead of duplicating it. Also renders
-    a human-readable markdown summary, fully regenerated from the JSON
-    store on every write -- the JSON is the source of truth, the markdown
-    is a disposable view of it.
+    into a persisted JSON store, keyed by document_hash (a stable content
+    hash) so re-running the SAME document updates its entry instead of
+    duplicating it, while document_label stays free-text display metadata:
+    renaming a label never loses history, and two different documents that
+    happen to share a label never collide or silently overwrite each other.
+    Also renders a human-readable markdown summary, fully regenerated from
+    the JSON store on every write -- the JSON is the source of truth, the
+    markdown is a disposable view of it.
     """
 
     def __init__(
@@ -43,7 +46,7 @@ class ProfileCalibrationReportStore:
         results = [
             existing
             for existing in results
-            if existing.document_label != result.document_label
+            if existing.document_hash != result.document_hash
         ]
         results.append(result)
         self._write(results)
@@ -80,31 +83,39 @@ def render_markdown_report(results: list[ProfileCalibrationCaseResult]) -> str:
     lines.append("")
 
     lines.append(
-        "| document | expected | OLD selected | OLD gap | OLD conf | OLD default | "
-        "NEW selected | NEW gap | NEW conf | NEW default |"
+        "| document | hash | expected | OLD selected | OLD 2nd | OLD gap | OLD conf | OLD default | "
+        "NEW selected | NEW 2nd | NEW gap | NEW conf | NEW default |"
     )
-    lines.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+    lines.append(
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
+    )
     for r in results:
         old_mark = "" if r.old_correct else " **WRONG**"
         new_mark = "" if r.new_correct else " **WRONG**"
         lines.append(
-            f"| {r.document_label} | {r.expected_profile} "
-            f"| {r.old.selected_profile}{old_mark} | {r.old.gap:.2f} | {r.old.confidence:.3f} | {r.old.is_default} "
-            f"| {r.new.selected_profile}{new_mark} | {r.new.gap:.2f} | {r.new.confidence:.3f} | {r.new.is_default} |"
+            f"| {r.document_label} | `{r.document_hash[:12]}` | {r.expected_profile} "
+            f"| {r.old.selected_profile}{old_mark} | {r.old.second_profile} | {r.old.gap:.2f} | {r.old.confidence:.3f} | {r.old.is_default} "
+            f"| {r.new.selected_profile}{new_mark} | {r.new.second_profile} | {r.new.gap:.2f} | {r.new.confidence:.3f} | {r.new.is_default} |"
         )
     lines.append("")
 
     for r in results:
         lines.append(f"## {r.document_label}")
         lines.append("")
-        lines.append(f"expected: `{r.expected_profile}`")
+        lines.append(f"- document_hash: `{r.document_hash}`")
+        lines.append(f"- expected: `{r.expected_profile}`")
+        lines.append(f"- section_count: `{r.section_count}`")
         lines.append("")
-        lines.append("| profile | OLD score | NEW score |")
-        lines.append("| --- | --- | --- |")
+        lines.append("| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |")
+        lines.append("| --- | --- | --- | --- | --- | --- |")
         for profile in sorted(set(r.old.scores) | set(r.new.scores)):
+            diag = r.evidence_diagnostics.get(profile)
+            occurrences = diag.total_occurrences if diag else "-"
+            distinct = diag.distinct_term_count if diag else "-"
+            matching = diag.matching_title_count if diag else "-"
             lines.append(
                 f"| {profile} | {r.old.scores.get(profile, 0.0):.2f} "
-                f"| {r.new.scores.get(profile, 0.0):.2f} |"
+                f"| {r.new.scores.get(profile, 0.0):.2f} | {occurrences} | {distinct} | {matching} |"
             )
         lines.append("")
 

@@ -1,38 +1,209 @@
 [
   {
-    "document_label": "FWC12 hydraulic pump manual (real debug-report data)",
-    "expected_profile": "manual",
+    "document_label": "Reg - 70 Record of Construction and Equipment_2164376_01",
+    "document_hash": "726afa10dcaae3c10038caa5f6a8a4c6da704b026483350d6ed18b00ad0144c9",
+    "expected_profile": "certificate",
+    "section_count": 4,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 3.0,
+        "manual": 2.5,
+        "datasheet": 3.9,
+        "drawing": 0.0,
+        "report": 1.3,
+        "certificate": 2.9
+      },
+      "selected_profile": "datasheet",
+      "second_profile": "default",
+      "confidence": 0.462,
+      "top_score": 3.9,
+      "second_score": 3.0,
+      "gap": 0.8999999999999999,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 3.0,
+        "manual": 2.5,
+        "datasheet": 3.9,
+        "drawing": 0.0,
+        "report": 1.3,
+        "certificate": 2.9
+      },
+      "selected_profile": "datasheet",
+      "second_profile": "default",
+      "confidence": 0.462,
+      "top_score": 3.9,
+      "second_score": 3.0,
+      "gap": 0.8999999999999999,
+      "is_default": false
+    },
+    "old_correct": false,
+    "new_correct": false
+  },
+  {
+    "document_label": "Reg - 73  ITC69 certificate addendum_2164376",
+    "document_hash": "c46ae98016ad9874377a25552841e950f7bd2d9e7afcbbfbabf2d495a3d82b6f",
+    "expected_profile": "certificate",
+    "section_count": 1,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 2,
+        "distinct_term_count": 1,
+        "matching_title_count": 2
+      }
+    },
     "old": {
       "scores": {
         "default": 0.0,
-        "manual": 10.3,
-        "datasheet": 2.0,
-        "drawing": 4.0,
-        "report": 1.7,
-        "certificate": 0.0
+        "manual": 0.0,
+        "datasheet": 2.7,
+        "drawing": 2.5,
+        "report": 0.0,
+        "certificate": 5.1
       },
-      "selected_profile": "manual",
-      "confidence": 0.845,
-      "top_score": 10.3,
-      "second_score": 4.0,
-      "gap": 6.300000000000001,
+      "selected_profile": "certificate",
+      "second_profile": "datasheet",
+      "confidence": 0.625,
+      "top_score": 5.1,
+      "second_score": 2.7,
+      "gap": 2.3999999999999995,
       "is_default": false
     },
     "new": {
       "scores": {
         "default": 0.0,
-        "manual": 8.476,
-        "datasheet": 0.0,
-        "drawing": 1.317,
-        "report": 1.7,
-        "certificate": 0.0
+        "manual": 0.0,
+        "datasheet": 2.7,
+        "drawing": 2.5,
+        "report": 0.0,
+        "certificate": 6.5
       },
-      "selected_profile": "manual",
-      "confidence": 0.92,
-      "top_score": 8.476,
-      "second_score": 1.7,
-      "gap": 6.776000000000001,
+      "selected_profile": "certificate",
+      "second_profile": "datasheet",
+      "confidence": 0.749,
+      "top_score": 6.5,
+      "second_score": 2.7,
+      "gap": 3.8,
       "is_default": false
-    }
+    },
+    "old_correct": true,
+    "new_correct": true
+  },
+  {
+    "document_label": "Reg - 9 MTU_Engine_Air_Pollution_TSO25-032289 EA3-EAPP_SN_536113910",
+    "document_hash": "1c0c425c14d8273a97944553e117f3e65870dd4fa6140941771d9566adb14738",
+    "expected_profile": "certificate",
+    "section_count": 7,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 2,
+        "distinct_term_count": 1,
+        "matching_title_count": 2
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 0.0,
+        "manual": 2.5,
+        "datasheet": 2.7,
+        "drawing": 0.0,
+        "report": 0.7,
+        "certificate": 5.1
+      },
+      "selected_profile": "certificate",
+      "second_profile": "datasheet",
+      "confidence": 0.625,
+      "top_score": 5.1,
+      "second_score": 2.7,
+      "gap": 2.3999999999999995,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 2.2,
+        "manual": 2.5,
+        "datasheet": 2.7,
+        "drawing": 0.0,
+        "report": 0.7,
+        "certificate": 4.014
+      },
+      "selected_profile": "certificate",
+      "second_profile": "datasheet",
+      "confidence": 0.507,
+      "top_score": 4.014,
+      "second_score": 2.7,
+      "gap": 1.314,
+      "is_default": false
+    },
+    "old_correct": true,
+    "new_correct": true
   }
 ]

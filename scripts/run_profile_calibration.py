@@ -42,7 +42,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--label",
         required=True,
-        help="Human-readable label for this document in the accumulating report.",
+        help=(
+            "Human-readable display name for this document in the report. "
+            "Purely metadata -- identity is the file's own content hash, "
+            "so reusing a label never collides with a different document "
+            "and renaming a label never loses history."
+        ),
     )
     parser.add_argument(
         "--expected-profile",
@@ -123,6 +128,7 @@ def main() -> int:
     runner = ProfileCalibrationRunner()
     case_result = runner.run(
         document_label=_args.label,
+        document_hash=file_hash,
         expected_profile=_args.expected_profile,
         document_title=graph.document.title,
         sections=sections,

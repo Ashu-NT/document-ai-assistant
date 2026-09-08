@@ -10,6 +10,7 @@ class ProfileScoringSnapshot:
 
     scores: dict[str, float]
     selected_profile: str
+    second_profile: str
     confidence: float
     top_score: float
     second_score: float

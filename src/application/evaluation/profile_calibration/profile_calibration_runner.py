@@ -4,11 +4,17 @@ from src.application.evaluation.profile_calibration.candidate.candidate_score_ag
 from src.application.evaluation.profile_calibration.models.profile_calibration_case_result import (
     ProfileCalibrationCaseResult,
 )
+from src.application.evaluation.profile_calibration.models.profile_evidence_diagnostics import (
+    ProfileEvidenceDiagnostics,
+)
 from src.application.evaluation.profile_calibration.models.profile_scoring_snapshot import (
     ProfileScoringSnapshot,
 )
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
+)
+from src.application.workflows.parsing.builders.chunking.policies.profile.features.structural_document_features import (
+    StructuralDocumentFeatures,
 )
 from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_decision_policy import (
     StructuralProfileDecisionPolicy,
@@ -46,6 +52,7 @@ class ProfileCalibrationRunner:
         self,
         *,
         document_label: str,
+        document_hash: str,
         expected_profile: str,
         document_title: str | None,
         sections: list[DocumentSection],
@@ -78,10 +85,26 @@ class ProfileCalibrationRunner:
 
         return ProfileCalibrationCaseResult(
             document_label=document_label,
+            document_hash=document_hash,
             expected_profile=expected_profile,
+            section_count=features.section_count,
+            evidence_diagnostics=self._evidence_diagnostics(features),
             old=old_snapshot,
             new=new_snapshot,
         )
+
+    @staticmethod
+    def _evidence_diagnostics(
+        features: StructuralDocumentFeatures,
+    ) -> dict[str, ProfileEvidenceDiagnostics]:
+        return {
+            profile.value: ProfileEvidenceDiagnostics(
+                total_occurrences=summary.total_occurrences,
+                distinct_term_count=summary.distinct_term_count,
+                matching_title_count=summary.matching_title_count,
+            )
+            for profile, summary in features.evidence.items()
+        }
 
     @staticmethod
     def _snapshot(
@@ -90,12 +113,28 @@ class ProfileCalibrationRunner:
         selected_profile: ChunkingProfile,
         confidence: float,
     ) -> ProfileScoringSnapshot:
-        ordered = sorted(scores.values(), reverse=True)
-        top_score = ordered[0] if ordered else 0.0
-        second_score = ordered[1] if len(ordered) > 1 else 0.0
+        # "top" is always the actual winner passed in (matching whatever
+        # tie-break StructuralProfileDecisionPolicy applied), and "second"
+        # is the highest-scoring profile OTHER than the winner -- not just
+        # whichever numeric sort happens to land second, which could
+        # disagree with the winner on a tie.
+        top_score = scores.get(selected_profile, 0.0)
+        runners_up = sorted(
+            (
+                (profile, score)
+                for profile, score in scores.items()
+                if profile != selected_profile
+            ),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+        second_profile, second_score = (
+            runners_up[0] if runners_up else (ChunkingProfile.DEFAULT, 0.0)
+        )
         return ProfileScoringSnapshot(
             scores={profile.value: score for profile, score in scores.items()},
             selected_profile=selected_profile.value,
+            second_profile=second_profile.value,
             confidence=confidence,
             top_score=top_score,
             second_score=second_score,
