@@ -2,9 +2,9 @@
 
 Compares the production (OLD, raw-occurrence) evidence formula against a candidate (NEW, ratio-based) one, both decided through the SAME unmodified StructuralProfileDecisionPolicy. Neither production scorer nor decision-policy files are changed by this report -- see project_structural_profile_calibration memory for why (n=1 real document isn't enough to also re-tune the decision-policy thresholds without risking blind tuning).
 
-- documents: `7`
-- OLD formula accuracy: `7/7`
-- NEW formula accuracy: `6/7`
+- documents: `15`
+- OLD formula accuracy: `10/15`
+- NEW formula accuracy: `9/15`
 
 | document | hash | expected | OLD selected | OLD 2nd | OLD gap | OLD conf | OLD default | NEW selected | NEW 2nd | NEW gap | NEW conf | NEW default |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -15,6 +15,14 @@ Compares the production (OLD, raw-occurrence) evidence formula against a candida
 | 1615 0050 Kaefer MAN Fire Sliding Door A-60 With Drive E3000 Mini | `6ea392c2bfe9` | manual | manual | drawing | 0.20 | 0.501 | False | drawing **WRONG** | default | 0.21 | 0.397 | False |
 | 2130 0255 KSB MAN Butterfly Valves Addition | `42066022b36b` | manual | manual | datasheet | 2.70 | 0.727 | False | manual | datasheet | 2.75 | 0.684 | False |
 | 2150 0080 BesiMarine MAN Regulating Valves | `d6bc858f8147` | manual | manual | drawing | 0.40 | 0.609 | False | manual | drawing | 1.37 | 0.619 | False |
+| 2670 0040 ABB MAN General Documents | `fb5dbc01be2d` | datasheet | default **WRONG** | manual | 3.50 | 0.600 | True | default **WRONG** | manual | 3.50 | 0.600 | True |
+| 4550 0070 Kliewe MAN Laundry Filter | `f8c11d19820a` | datasheet | default **WRONG** | datasheet | 3.10 | 0.600 | True | default **WRONG** | drawing | 3.10 | 0.600 | True |
+| 13759_4545_01.00_REV.06_DECK_WASH_SYSTEM_AS_BUILT | `89d71c735868` | drawing | default **WRONG** | datasheet | 3.60 | 0.600 | True | default **WRONG** | datasheet | 3.60 | 0.600 | True |
+| 13759_5541_01.00_REV.00_Echo Sounders and Speedlogs AS BUILT | `6eabe6f41590` | drawing | default **WRONG** | datasheet | 3.60 | 0.600 | True | default **WRONG** | datasheet | 3.60 | 0.600 | True |
+| 2166 0100 Besecke DRW 2166-33.10 RevR01 Alarmbox for Hebefix | `73bba73c41b6` | drawing | drawing | datasheet | 1.40 | 0.517 | False | drawing | datasheet | 1.20 | 0.492 | False |
+| 3331 0100 Besecke DRW 3331-33.24 RevR01 Distribution Board DB24 | `324a720c33e0` | drawing | drawing | datasheet | 1.40 | 0.517 | False | drawing | datasheet | 1.31 | 0.506 | False |
+| 3652 0020 Waertsilae DRW Bridge Navigational Watch Alarm System (BNWAS) | `8509a0f5896b` | drawing | drawing | manual | 1.30 | 0.507 | False | drawing | manual | 1.10 | 0.482 | False |
+| 2670 0070 ABB MAN Test and Trial Documents | `c8683ed57b6d` | report | manual **WRONG** | datasheet | 2.70 | 0.727 | False | manual **WRONG** | datasheet | 3.26 | 0.692 | False |
 
 ## Reg - 73  ITC69 certificate addendum_2164376
 
@@ -120,3 +128,123 @@ Compares the production (OLD, raw-occurrence) evidence formula against a candida
 | drawing | 7.40 | 5.55 | 16 | 3 | 11 |
 | manual | 7.80 | 6.93 | 43 | 6 | 35 |
 | report | 0.00 | 0.00 | 0 | 0 | 0 |
+
+## 2670 0040 ABB MAN General Documents
+
+- document_hash: `fb5dbc01be2d6d7903558a8d2d854d9843dafe795a42aa31e3aa5db61989c033`
+- expected: `datasheet`
+- section_count: `25`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 0.50 | 0.50 | 0 | 0 | 0 |
+| datasheet | 1.30 | 1.30 | 0 | 0 | 0 |
+| default | 6.30 | 6.30 | - | - | - |
+| drawing | 2.40 | 2.40 | 0 | 0 | 0 |
+| manual | 2.80 | 2.80 | 0 | 0 | 0 |
+| report | 1.30 | 1.30 | 0 | 0 | 0 |
+
+## 4550 0070 Kliewe MAN Laundry Filter
+
+- document_hash: `f8c11d19820a8cc5c71615af644d6f4363f11bcbe31b77a2c718cdf50a651e0f`
+- expected: `datasheet`
+- section_count: `5`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 0.00 | 0.00 | 0 | 0 | 0 |
+| datasheet | 2.40 | 2.35 | 1 | 1 | 1 |
+| default | 5.50 | 5.50 | - | - | - |
+| drawing | 2.40 | 2.40 | 0 | 0 | 0 |
+| manual | 1.60 | 1.60 | 0 | 0 | 0 |
+| report | 0.70 | 0.70 | 0 | 0 | 0 |
+
+## 13759_4545_01.00_REV.06_DECK_WASH_SYSTEM_AS_BUILT
+
+- document_hash: `89d71c735868f4a1de9f422447ac435cc406e72d7b26cf6639334c2c50345f94`
+- expected: `drawing`
+- section_count: `1`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 1.50 | 1.50 | 0 | 0 | 0 |
+| datasheet | 2.70 | 2.70 | 0 | 0 | 0 |
+| default | 6.30 | 6.30 | - | - | - |
+| drawing | 2.40 | 2.40 | 0 | 0 | 0 |
+| manual | 0.00 | 0.00 | 0 | 0 | 0 |
+| report | 0.00 | 0.00 | 0 | 0 | 0 |
+
+## 13759_5541_01.00_REV.00_Echo Sounders and Speedlogs AS BUILT
+
+- document_hash: `6eabe6f41590f206bcb23f9a8a37f27fb3085c9d4045612de8a47504fa5be4ca`
+- expected: `drawing`
+- section_count: `1`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 1.50 | 1.50 | 0 | 0 | 0 |
+| datasheet | 2.70 | 2.70 | 0 | 0 | 0 |
+| default | 6.30 | 6.30 | - | - | - |
+| drawing | 2.40 | 2.40 | 0 | 0 | 0 |
+| manual | 0.00 | 0.00 | 0 | 0 | 0 |
+| report | 0.00 | 0.00 | 0 | 0 | 0 |
+
+## 2166 0100 Besecke DRW 2166-33.10 RevR01 Alarmbox for Hebefix
+
+- document_hash: `73bba73c41b646f55b59ae1a774b652aefdd29b4b91d15a8177843e951376d73`
+- expected: `drawing`
+- section_count: `8`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 1.50 | 1.50 | 0 | 0 | 0 |
+| datasheet | 2.70 | 2.70 | 0 | 0 | 0 |
+| default | 2.20 | 2.20 | - | - | - |
+| drawing | 4.10 | 3.90 | 1 | 1 | 1 |
+| manual | 1.20 | 1.20 | 0 | 0 | 0 |
+| report | 0.70 | 0.70 | 0 | 0 | 0 |
+
+## 3331 0100 Besecke DRW 3331-33.24 RevR01 Distribution Board DB24
+
+- document_hash: `324a720c33e0c178e578801e2b6b75d4597a43169d1e1ca27de0bc775e8fcca9`
+- expected: `drawing`
+- section_count: `7`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 1.50 | 1.50 | 0 | 0 | 0 |
+| datasheet | 2.70 | 2.70 | 0 | 0 | 0 |
+| default | 2.20 | 2.20 | - | - | - |
+| drawing | 4.10 | 4.01 | 1 | 1 | 1 |
+| manual | 1.20 | 1.20 | 0 | 0 | 0 |
+| report | 0.70 | 0.70 | 0 | 0 | 0 |
+
+## 3652 0020 Waertsilae DRW Bridge Navigational Watch Alarm System (BNWAS)
+
+- document_hash: `8509a0f5896b0cc08accee3fabc4537e20653c040a4d6f2aef61abfac7abbd56`
+- expected: `drawing`
+- section_count: `8`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 0.00 | 0.00 | 0 | 0 | 0 |
+| datasheet | 0.70 | 0.70 | 0 | 0 | 0 |
+| default | 2.20 | 2.20 | - | - | - |
+| drawing | 4.10 | 3.90 | 1 | 1 | 1 |
+| manual | 2.80 | 2.80 | 0 | 0 | 0 |
+| report | 1.30 | 1.30 | 0 | 0 | 0 |
+
+## 2670 0070 ABB MAN Test and Trial Documents
+
+- document_hash: `c8683ed57b6dc119cb0c35df64a0a8117e0271333b74e5d2f1bcdfd48804710b`
+- expected: `report`
+- section_count: `282`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 0.00 | 0.00 | 0 | 0 | 0 |
+| datasheet | 5.10 | 1.73 | 6 | 2 | 6 |
+| default | 0.00 | 0.00 | - | - | - |
+| drawing | 0.00 | 0.00 | 0 | 0 | 0 |
+| manual | 7.80 | 4.98 | 40 | 1 | 40 |
+| report | 4.90 | 1.13 | 5 | 1 | 5 |

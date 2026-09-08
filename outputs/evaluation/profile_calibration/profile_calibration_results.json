@@ -481,5 +481,557 @@
     },
     "old_correct": true,
     "new_correct": true
+  },
+  {
+    "document_label": "2670 0040 ABB MAN General Documents",
+    "document_hash": "fb5dbc01be2d6d7903558a8d2d854d9843dafe795a42aa31e3aa5db61989c033",
+    "expected_profile": "datasheet",
+    "section_count": 25,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 6.3,
+        "manual": 2.8,
+        "datasheet": 1.3,
+        "drawing": 2.4,
+        "report": 1.3,
+        "certificate": 0.5
+      },
+      "selected_profile": "default",
+      "second_profile": "manual",
+      "confidence": 0.6,
+      "top_score": 6.3,
+      "second_score": 2.8,
+      "gap": 3.5,
+      "is_default": true
+    },
+    "new": {
+      "scores": {
+        "default": 6.3,
+        "manual": 2.8,
+        "datasheet": 1.3,
+        "drawing": 2.4,
+        "report": 1.3,
+        "certificate": 0.5
+      },
+      "selected_profile": "default",
+      "second_profile": "manual",
+      "confidence": 0.6,
+      "top_score": 6.3,
+      "second_score": 2.8,
+      "gap": 3.5,
+      "is_default": true
+    },
+    "old_correct": false,
+    "new_correct": false
+  },
+  {
+    "document_label": "4550 0070 Kliewe MAN Laundry Filter",
+    "document_hash": "f8c11d19820a8cc5c71615af644d6f4363f11bcbe31b77a2c718cdf50a651e0f",
+    "expected_profile": "datasheet",
+    "section_count": 5,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 1,
+        "distinct_term_count": 1,
+        "matching_title_count": 1
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 5.5,
+        "manual": 1.6,
+        "datasheet": 2.4,
+        "drawing": 2.4,
+        "report": 0.7,
+        "certificate": 0.0
+      },
+      "selected_profile": "default",
+      "second_profile": "datasheet",
+      "confidence": 0.6,
+      "top_score": 5.5,
+      "second_score": 2.4,
+      "gap": 3.1,
+      "is_default": true
+    },
+    "new": {
+      "scores": {
+        "default": 5.5,
+        "manual": 1.6,
+        "datasheet": 2.35,
+        "drawing": 2.4,
+        "report": 0.7,
+        "certificate": 0.0
+      },
+      "selected_profile": "default",
+      "second_profile": "drawing",
+      "confidence": 0.6,
+      "top_score": 5.5,
+      "second_score": 2.4,
+      "gap": 3.1,
+      "is_default": true
+    },
+    "old_correct": false,
+    "new_correct": false
+  },
+  {
+    "document_label": "13759_4545_01.00_REV.06_DECK_WASH_SYSTEM_AS_BUILT",
+    "document_hash": "89d71c735868f4a1de9f422447ac435cc406e72d7b26cf6639334c2c50345f94",
+    "expected_profile": "drawing",
+    "section_count": 1,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 6.3,
+        "manual": 0.0,
+        "datasheet": 2.7,
+        "drawing": 2.4,
+        "report": 0.0,
+        "certificate": 1.5
+      },
+      "selected_profile": "default",
+      "second_profile": "datasheet",
+      "confidence": 0.6,
+      "top_score": 6.3,
+      "second_score": 2.7,
+      "gap": 3.5999999999999996,
+      "is_default": true
+    },
+    "new": {
+      "scores": {
+        "default": 6.3,
+        "manual": 0.0,
+        "datasheet": 2.7,
+        "drawing": 2.4,
+        "report": 0.0,
+        "certificate": 1.5
+      },
+      "selected_profile": "default",
+      "second_profile": "datasheet",
+      "confidence": 0.6,
+      "top_score": 6.3,
+      "second_score": 2.7,
+      "gap": 3.5999999999999996,
+      "is_default": true
+    },
+    "old_correct": false,
+    "new_correct": false
+  },
+  {
+    "document_label": "13759_5541_01.00_REV.00_Echo Sounders and Speedlogs AS BUILT",
+    "document_hash": "6eabe6f41590f206bcb23f9a8a37f27fb3085c9d4045612de8a47504fa5be4ca",
+    "expected_profile": "drawing",
+    "section_count": 1,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 6.3,
+        "manual": 0.0,
+        "datasheet": 2.7,
+        "drawing": 2.4,
+        "report": 0.0,
+        "certificate": 1.5
+      },
+      "selected_profile": "default",
+      "second_profile": "datasheet",
+      "confidence": 0.6,
+      "top_score": 6.3,
+      "second_score": 2.7,
+      "gap": 3.5999999999999996,
+      "is_default": true
+    },
+    "new": {
+      "scores": {
+        "default": 6.3,
+        "manual": 0.0,
+        "datasheet": 2.7,
+        "drawing": 2.4,
+        "report": 0.0,
+        "certificate": 1.5
+      },
+      "selected_profile": "default",
+      "second_profile": "datasheet",
+      "confidence": 0.6,
+      "top_score": 6.3,
+      "second_score": 2.7,
+      "gap": 3.5999999999999996,
+      "is_default": true
+    },
+    "old_correct": false,
+    "new_correct": false
+  },
+  {
+    "document_label": "2166 0100 Besecke DRW 2166-33.10 RevR01 Alarmbox for Hebefix",
+    "document_hash": "73bba73c41b646f55b59ae1a774b652aefdd29b4b91d15a8177843e951376d73",
+    "expected_profile": "drawing",
+    "section_count": 8,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 1,
+        "distinct_term_count": 1,
+        "matching_title_count": 1
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 2.2,
+        "manual": 1.2,
+        "datasheet": 2.7,
+        "drawing": 4.1,
+        "report": 0.7,
+        "certificate": 1.5
+      },
+      "selected_profile": "drawing",
+      "second_profile": "datasheet",
+      "confidence": 0.517,
+      "top_score": 4.1,
+      "second_score": 2.7,
+      "gap": 1.3999999999999995,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 2.2,
+        "manual": 1.2,
+        "datasheet": 2.7,
+        "drawing": 3.9,
+        "report": 0.7,
+        "certificate": 1.5
+      },
+      "selected_profile": "drawing",
+      "second_profile": "datasheet",
+      "confidence": 0.492,
+      "top_score": 3.9,
+      "second_score": 2.7,
+      "gap": 1.1999999999999997,
+      "is_default": false
+    },
+    "old_correct": true,
+    "new_correct": true
+  },
+  {
+    "document_label": "3331 0100 Besecke DRW 3331-33.24 RevR01 Distribution Board DB24",
+    "document_hash": "324a720c33e0c178e578801e2b6b75d4597a43169d1e1ca27de0bc775e8fcca9",
+    "expected_profile": "drawing",
+    "section_count": 7,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 1,
+        "distinct_term_count": 1,
+        "matching_title_count": 1
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 2.2,
+        "manual": 1.2,
+        "datasheet": 2.7,
+        "drawing": 4.1,
+        "report": 0.7,
+        "certificate": 1.5
+      },
+      "selected_profile": "drawing",
+      "second_profile": "datasheet",
+      "confidence": 0.517,
+      "top_score": 4.1,
+      "second_score": 2.7,
+      "gap": 1.3999999999999995,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 2.2,
+        "manual": 1.2,
+        "datasheet": 2.7,
+        "drawing": 4.007,
+        "report": 0.7,
+        "certificate": 1.5
+      },
+      "selected_profile": "drawing",
+      "second_profile": "datasheet",
+      "confidence": 0.506,
+      "top_score": 4.007,
+      "second_score": 2.7,
+      "gap": 1.3069999999999995,
+      "is_default": false
+    },
+    "old_correct": true,
+    "new_correct": true
+  },
+  {
+    "document_label": "3652 0020 Waertsilae DRW Bridge Navigational Watch Alarm System (BNWAS)",
+    "document_hash": "8509a0f5896b0cc08accee3fabc4537e20653c040a4d6f2aef61abfac7abbd56",
+    "expected_profile": "drawing",
+    "section_count": 8,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 1,
+        "distinct_term_count": 1,
+        "matching_title_count": 1
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 2.2,
+        "manual": 2.8,
+        "datasheet": 0.7,
+        "drawing": 4.1,
+        "report": 1.3,
+        "certificate": 0.0
+      },
+      "selected_profile": "drawing",
+      "second_profile": "manual",
+      "confidence": 0.507,
+      "top_score": 4.1,
+      "second_score": 2.8,
+      "gap": 1.2999999999999998,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 2.2,
+        "manual": 2.8,
+        "datasheet": 0.7,
+        "drawing": 3.9,
+        "report": 1.3,
+        "certificate": 0.0
+      },
+      "selected_profile": "drawing",
+      "second_profile": "manual",
+      "confidence": 0.482,
+      "top_score": 3.9,
+      "second_score": 2.8,
+      "gap": 1.1,
+      "is_default": false
+    },
+    "old_correct": true,
+    "new_correct": true
+  },
+  {
+    "document_label": "2670 0070 ABB MAN Test and Trial Documents",
+    "document_hash": "c8683ed57b6dc119cb0c35df64a0a8117e0271333b74e5d2f1bcdfd48804710b",
+    "expected_profile": "report",
+    "section_count": 282,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 40,
+        "distinct_term_count": 1,
+        "matching_title_count": 40
+      },
+      "datasheet": {
+        "total_occurrences": 6,
+        "distinct_term_count": 2,
+        "matching_title_count": 6
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 5,
+        "distinct_term_count": 1,
+        "matching_title_count": 5
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 0.0,
+        "manual": 7.8,
+        "datasheet": 5.1,
+        "drawing": 0.0,
+        "report": 4.9,
+        "certificate": 0.0
+      },
+      "selected_profile": "manual",
+      "second_profile": "datasheet",
+      "confidence": 0.727,
+      "top_score": 7.8,
+      "second_score": 5.1,
+      "gap": 2.7,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 0.0,
+        "manual": 4.984,
+        "datasheet": 1.728,
+        "drawing": 0.0,
+        "report": 1.131,
+        "certificate": 0.0
+      },
+      "selected_profile": "manual",
+      "second_profile": "datasheet",
+      "confidence": 0.692,
+      "top_score": 4.984,
+      "second_score": 1.728,
+      "gap": 3.2560000000000002,
+      "is_default": false
+    },
+    "old_correct": false,
+    "new_correct": false
   }
 ]
