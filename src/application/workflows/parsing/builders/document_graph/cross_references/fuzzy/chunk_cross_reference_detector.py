@@ -58,32 +58,34 @@ _EXPLICIT_SECTION_REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bchap\.\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
 )
 
-# A bare "Section 6.5"/"Chapter 6.5" with no directional lead-in at all --
-# the weakest possible signal (equally at home citing this document or
-# someone else's), so it's tagged is_explicit_lead_in=False and left for
-# the context qualifier to corroborate (or reject) using anchors and
-# target-existence, never accepted on the strength of the match alone.
-# Checked last so it only claims spans an explicit pattern above didn't
-# already consume.
 _GENERIC_SECTION_REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bsection\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
     re.compile(r"\bchapter\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
 )
 
-# Table/figure references: a bare "table N"/"fig. N" trigger, mirroring the
-# bare "chap. N" section pattern above -- the label itself immediately
-# followed by a number is a strong enough signal on its own (no "see"/
-# "refer to" prefix required) to catch phrasing like "see Table 3", "Table
-# 3 above", "Refer to fig. 5", "Fig. 5 shows...". Generic English idioms,
-# not shipyard- or company-specific numbering schemes. Deliberately
-# excludes drawing-ID patterns ("Drawing SK-1044") -- those formats vary a
-# lot between shipyards/companies and guessing one from first principles
-# risks silently wrong matches; that needs real sample documents to
-# validate against before a pattern is added. Resolution (see
-# ChunkAssetReferenceResolver) depends on the source document captioning
-# its tables/figures with a leading number, which cannot be assumed -- an
-# unresolved result here is an expected, non-error outcome, not a
-# detection failure.
+_ANNEX_LABEL = r"(\d+(?:\.\d+)*|[A-Za-z])"
+_EXPLICIT_ANNEX_REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(rf"\bsee\s+annex\s*{_ANNEX_LABEL}\b", re.IGNORECASE),
+    re.compile(rf"\bsee\s+appendix\s*{_ANNEX_LABEL}\b", re.IGNORECASE),
+    re.compile(rf"\brefer(?:s|red)?\s+to\s+annex\s*{_ANNEX_LABEL}\b", re.IGNORECASE),
+    re.compile(rf"\brefer(?:s|red)?\s+to\s+appendix\s*{_ANNEX_LABEL}\b", re.IGNORECASE),
+    re.compile(
+        rf"\bwith\s+reference\s+to\s+annex\s*{_ANNEX_LABEL}\b", re.IGNORECASE
+    ),
+    re.compile(
+        rf"\bwith\s+reference\s+to\s+appendix\s*{_ANNEX_LABEL}\b", re.IGNORECASE
+    ),
+    re.compile(rf"\bdescribed\s+in\s+annex\s*{_ANNEX_LABEL}\b", re.IGNORECASE),
+    re.compile(rf"\bdescribed\s+in\s+appendix\s*{_ANNEX_LABEL}\b", re.IGNORECASE),
+)
+# A bare "Annex 2"/"Appendix B" with no lead-in -- weakest signal, same
+# treatment as the generic bare section pattern: detected for recall, never
+# accepted on the strength of the match alone.
+_GENERIC_ANNEX_REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(rf"\bannex\s*{_ANNEX_LABEL}\b", re.IGNORECASE),
+    re.compile(rf"\bappendix\s*{_ANNEX_LABEL}\b", re.IGNORECASE),
+)
+
 _TABLE_REFERENCE_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\btable\s*(\d+(?:\.\d+)*)\b", re.IGNORECASE),
 )
@@ -111,6 +113,16 @@ class DetectedSectionReference:
 
 
 @dataclass(slots=True, frozen=True)
+class DetectedAnnexReference:
+    matched_text: str
+    target_annex_label: str
+
+    span: tuple[int, int]
+
+    is_explicit_lead_in: bool = True
+
+
+@dataclass(slots=True, frozen=True)
 class DetectedAssetReference:
     matched_text: str
     target_asset_label: str
@@ -120,6 +132,7 @@ class DetectedAssetReference:
 class ChunkReferenceDetectionResult:
     page_references: list[DetectedPageReference]
     section_references: list[DetectedSectionReference]
+    annex_references: list[DetectedAnnexReference]
     table_references: list[DetectedAssetReference]
     figure_references: list[DetectedAssetReference]
 
@@ -131,6 +144,7 @@ class ChunkCrossReferenceDetector:
             return ChunkReferenceDetectionResult(
                 page_references=[],
                 section_references=[],
+                annex_references=[],
                 table_references=[],
                 figure_references=[],
             )
@@ -138,6 +152,7 @@ class ChunkCrossReferenceDetector:
         consumed_spans: list[tuple[int, int]] = []
         page_references = self._detect_page_references(content, consumed_spans)
         section_references = self._detect_section_references(content, consumed_spans)
+        annex_references = self._detect_annex_references(content, consumed_spans)
         table_references = self._detect_asset_references(
             content, consumed_spans, _TABLE_REFERENCE_PATTERNS
         )
@@ -148,6 +163,7 @@ class ChunkCrossReferenceDetector:
         return ChunkReferenceDetectionResult(
             page_references=page_references,
             section_references=section_references,
+            annex_references=annex_references,
             table_references=table_references,
             figure_references=figure_references,
         )
@@ -216,6 +232,45 @@ class ChunkCrossReferenceDetector:
 
         return references
 
+    def _detect_annex_references(
+        self, content: str, consumed_spans: list[tuple[int, int]]
+    ) -> list[DetectedAnnexReference]:
+        references: list[DetectedAnnexReference] = []
+
+        for pattern in _EXPLICIT_ANNEX_REFERENCE_PATTERNS:
+            for match in pattern.finditer(content):
+                span = match.span()
+                if self._overlaps_any(span, consumed_spans):
+                    continue
+
+                consumed_spans.append(span)
+                references.append(
+                    DetectedAnnexReference(
+                        matched_text=match.group(0).strip(),
+                        target_annex_label=match.group(1),
+                        span=span,
+                        is_explicit_lead_in=True,
+                    )
+                )
+
+        for pattern in _GENERIC_ANNEX_REFERENCE_PATTERNS:
+            for match in pattern.finditer(content):
+                span = match.span()
+                if self._overlaps_any(span, consumed_spans):
+                    continue
+
+                consumed_spans.append(span)
+                references.append(
+                    DetectedAnnexReference(
+                        matched_text=match.group(0).strip(),
+                        target_annex_label=match.group(1),
+                        span=span,
+                        is_explicit_lead_in=False,
+                    )
+                )
+
+        return references
+
     @staticmethod
     def _detect_asset_references(
         content: str,
@@ -261,6 +316,7 @@ class ChunkCrossReferenceDetector:
 __all__ = [
     "ChunkCrossReferenceDetector",
     "ChunkReferenceDetectionResult",
+    "DetectedAnnexReference",
     "DetectedAssetReference",
     "DetectedPageReference",
     "DetectedSectionReference",

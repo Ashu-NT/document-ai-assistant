@@ -196,6 +196,36 @@ def test_cross_reference_present_assertion_matches_by_clue_type_and_target() -> 
     assert result.passed is True
 
 
+def test_cross_reference_present_assertion_matches_annex_target() -> None:
+    graph = make_graph(
+        cross_references={
+            "xref_1": ChunkCrossReference(
+                cross_reference_id="xref_1",
+                document_id="doc_001",
+                source_chunk_id="c1",
+                reference_type=ChunkCrossReferenceType.ANNEX_REFERENCE,
+                matched_text="Refer to Annex 2",
+                target_annex_label="2",
+            ),
+        }
+    )
+
+    result = _evaluator().evaluate(
+        case=make_case(
+            expected_cross_references=(
+                ExpectedCrossReference(
+                    clue="Refer to Annex 2",
+                    expected_reference_type="annex_reference",
+                    expected_target_annex="2",
+                ),
+            )
+        ),
+        document_graph=graph,
+    )
+
+    assert result.passed is True
+
+
 def test_cross_reference_present_assertion_fails_when_missing() -> None:
     graph = make_graph(cross_references={})
 

@@ -12,6 +12,7 @@ class ExpectedCrossReference:
     # (e.g. a citation of an external standard/directive).
     expected_reference_type: str | None = None
     expected_target_section: str | None = None
+    expected_target_annex: str | None = None
 
 
 @dataclass(slots=True, frozen=True)

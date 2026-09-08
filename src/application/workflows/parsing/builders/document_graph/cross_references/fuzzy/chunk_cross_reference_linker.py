@@ -2,6 +2,12 @@ from __future__ import annotations
 
 import logging
 
+from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_annex_number_index import (
+    ChunkAnnexNumberIndex,
+)
+from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_annex_reference_resolver import (
+    ChunkAnnexReferenceResolver,
+)
 from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_asset_number_index import (
     ChunkAssetNumberIndex,
 )
@@ -49,6 +55,7 @@ class ChunkCrossReferenceLinker:
         resolver: ChunkCrossReferenceResolver | None = None,
         section_resolver: ChunkSectionReferenceResolver | None = None,
         asset_resolver: ChunkAssetReferenceResolver | None = None,
+        annex_resolver: ChunkAnnexReferenceResolver | None = None,
         context_qualifier: ChunkCrossReferenceContextQualifier | None = None,
     ) -> None:
         self.id_generator = id_generator
@@ -56,6 +63,7 @@ class ChunkCrossReferenceLinker:
         self.resolver = resolver or ChunkCrossReferenceResolver()
         self.section_resolver = section_resolver or ChunkSectionReferenceResolver()
         self.asset_resolver = asset_resolver or ChunkAssetReferenceResolver()
+        self.annex_resolver = annex_resolver or ChunkAnnexReferenceResolver()
         self.context_qualifier = context_qualifier or ChunkCrossReferenceContextQualifier()
 
     def link(self, graph: DocumentGraph) -> list[ChunkCrossReference]:
@@ -80,6 +88,7 @@ class ChunkCrossReferenceLinker:
     ) -> tuple[list[ChunkCrossReference], dict[str, int]]:
         chunks = list(graph.chunks.values())
         section_index = ChunkSectionNumberIndex(chunks, sections=graph.sections)
+        annex_index = ChunkAnnexNumberIndex(chunks)
         asset_index = ChunkAssetNumberIndex(
             chunks=chunks,
             tables=graph.tables,
@@ -101,7 +110,7 @@ class ChunkCrossReferenceLinker:
                 local_context = extract_local_reference_context(
                     chunk.content, section_reference.span
                 )
-                qualification = self.context_qualifier.qualify_section_reference(
+                qualification = self.context_qualifier.qualify_reference(
                     is_explicit_lead_in=section_reference.is_explicit_lead_in,
                     context_text=local_context,
                     target_exists_in_document=target_exists,
@@ -130,6 +139,48 @@ class ChunkCrossReferenceLinker:
                         reference_type=ChunkCrossReferenceType.SECTION_REFERENCE,
                         matched_text=section_reference.matched_text,
                         target_section_label=section_reference.target_section_label,
+                        target_chunk_id=resolved.target_chunk_id,
+                        resolution_status=resolved.resolution_status,
+                        confidence_score=resolved.confidence_score,
+                    )
+                )
+
+            for annex_reference in detection.annex_references:
+                target_exists = bool(
+                    annex_index.matches(annex_reference.target_annex_label)
+                )
+                local_context = extract_local_reference_context(
+                    chunk.content, annex_reference.span
+                )
+                qualification = self.context_qualifier.qualify_reference(
+                    is_explicit_lead_in=annex_reference.is_explicit_lead_in,
+                    context_text=local_context,
+                    target_exists_in_document=target_exists,
+                )
+                qualification_key = f"annex_reference_{qualification.scope.value}"
+                qualification_counts[qualification_key] = (
+                    qualification_counts.get(qualification_key, 0) + 1
+                )
+                if qualification.scope != CrossReferenceScope.INTERNAL:
+                    continue
+
+                resolved = self.annex_resolver.resolve(
+                    target_label=annex_reference.target_annex_label,
+                    index=annex_index,
+                )
+                if resolved.target_chunk_id == chunk.chunk_id:
+                    continue
+
+                cross_references.append(
+                    ChunkCrossReference(
+                        cross_reference_id=self.id_generator.new_id(
+                            IdPrefix.CROSS_REFERENCE
+                        ),
+                        document_id=graph.document.document_id,
+                        source_chunk_id=chunk.chunk_id,
+                        reference_type=ChunkCrossReferenceType.ANNEX_REFERENCE,
+                        matched_text=annex_reference.matched_text,
+                        target_annex_label=annex_reference.target_annex_label,
                         target_chunk_id=resolved.target_chunk_id,
                         resolution_status=resolved.resolution_status,
                         confidence_score=resolved.confidence_score,

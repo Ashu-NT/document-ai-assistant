@@ -163,11 +163,60 @@ def test_does_not_record_a_redundant_section_reference_for_an_already_captured_p
     assert result.section_references == []
 
 
+def test_detects_refer_to_annex_phrasing() -> None:
+    # Real document (corpus review): "Refer to Annex 2 for P&ID-200429
+    # showing sensor locations."
+    result = _detector().detect("Refer to Annex 2 for sensor locations.")
+
+    assert len(result.annex_references) == 1
+    assert result.annex_references[0].target_annex_label == "2"
+    assert result.annex_references[0].is_explicit_lead_in is True
+
+
+def test_detects_see_appendix_phrasing() -> None:
+    result = _detector().detect("See Appendix B for calibration data.")
+
+    assert len(result.annex_references) == 1
+    assert result.annex_references[0].target_annex_label == "B"
+    assert result.annex_references[0].is_explicit_lead_in is True
+
+
+def test_detects_generic_bare_annex_mention_as_lower_confidence_candidate() -> None:
+    # Real document (corpus review): "Annex V regulations" cites an
+    # external directive's own Annex V using this exact bare phrasing.
+    result = _detector().detect("Annex V regulations must be observed.")
+
+    assert len(result.annex_references) == 1
+    assert result.annex_references[0].target_annex_label == "V"
+    assert result.annex_references[0].is_explicit_lead_in is False
+
+
+def test_generic_bare_annex_pattern_does_not_double_count_an_explicit_lead_in_match() -> (
+    None
+):
+    result = _detector().detect("Refer to Annex 2 for sensor locations.")
+
+    assert len(result.annex_references) == 1
+    assert result.annex_references[0].is_explicit_lead_in is True
+
+
+def test_annex_and_section_references_do_not_interfere_with_each_other() -> None:
+    result = _detector().detect(
+        "See Section 8 for general notes. Refer to Annex 2 for sensor locations."
+    )
+
+    assert len(result.section_references) == 1
+    assert result.section_references[0].target_section_label == "8"
+    assert len(result.annex_references) == 1
+    assert result.annex_references[0].target_annex_label == "2"
+
+
 def test_returns_empty_result_for_plain_text() -> None:
     result = _detector().detect("Tighten the bolts to the specified torque.")
 
     assert result.page_references == []
     assert result.section_references == []
+    assert result.annex_references == []
 
 
 def test_returns_empty_result_for_empty_content() -> None:
@@ -175,6 +224,7 @@ def test_returns_empty_result_for_empty_content() -> None:
 
     assert result.page_references == []
     assert result.section_references == []
+    assert result.annex_references == []
 
 
 def test_rejects_implausible_page_numbers() -> None:

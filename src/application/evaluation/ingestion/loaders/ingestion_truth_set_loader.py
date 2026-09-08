@@ -104,6 +104,11 @@ class IngestionTruthSetLoader:
                     if entry.get("expected_target_section") is not None
                     else None
                 ),
+                expected_target_annex=(
+                    str(entry["expected_target_annex"])
+                    if entry.get("expected_target_annex") is not None
+                    else None
+                ),
             )
             for entry in (payload.get("expected_cross_references") or [])
         )

@@ -13,13 +13,11 @@ class ChunkCrossReferenceType(StrEnum):
     # Resolved via ChunkSectionReferenceResolver against the numeric prefix
     # in each chunk's section_path titles (e.g. "8.9 Lubrication oil").
     SECTION_REFERENCE = "section_reference"
-    # Resolved via ChunkAssetReferenceResolver against the leading number in
-    # a table/picture asset's caption (e.g. "Table 3. Spare parts"). Falls
-    # back to UNRESOLVED when the document doesn't caption its tables with a
-    # number, which is expected and not an error - table/figure numbering
-    # conventions vary a lot across source documents.
+
     TABLE_REFERENCE = "table_reference"
     FIGURE_REFERENCE = "figure_reference"
+ 
+    ANNEX_REFERENCE = "annex_reference"
     # Resolved via PdfLinkCrossReferenceLinker from a same-document PDF GOTO
     # link annotation - exact structural evidence, not text-derived.
     PDF_LINK_REFERENCE = "pdf_link_reference"
@@ -49,6 +47,9 @@ class ChunkCrossReference:
     # Populated for TABLE_REFERENCE/FIGURE_REFERENCE (e.g. "3" from "see
     # Table 3").
     target_asset_label: str | None = None
+    # Populated for ANNEX_REFERENCE (e.g. "2" from "Refer to Annex 2", or
+    # "B" from "see Appendix B").
+    target_annex_label: str | None = None
 
     target_chunk_id: str | None = None
     resolution_status: ChunkCrossReferenceResolutionStatus = (
@@ -56,14 +57,8 @@ class ChunkCrossReference:
     )
     confidence_score: float = 0.0
 
-    # Populated for PDF_LINK_REFERENCE rows, and for CONFIRMED rows where a
-    # native evidence row corroborated the target regardless of which type
-    # won the canonical label (see CrossReferenceReconciliationService).
     link_provenance: PdfLinkProvenance | None = None
 
-    # Set only when this canonical row was produced by reconciling fuzzy and
-    # native candidates (see CrossReferenceReconciliationOutcome). None for
-    # every row with no cross-source counterpart, which is the majority case.
     reconciliation_outcome: CrossReferenceReconciliationOutcome | None = None
 
     audit: AuditMetadata = field(default_factory=AuditMetadata)

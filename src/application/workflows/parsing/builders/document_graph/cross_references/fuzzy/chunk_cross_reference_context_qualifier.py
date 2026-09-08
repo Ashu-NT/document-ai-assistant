@@ -80,20 +80,24 @@ def extract_local_reference_context(content: str, span: tuple[int, int]) -> str:
 
 
 class ChunkCrossReferenceContextQualifier:
-    """Decides whether a detected section/chapter reference actually points
-    within the current document (INTERNAL), clearly cites something else
-    (EXTERNAL), or can't be told apart from the text alone (AMBIGUOUS).
+    """Decides whether a detected reference (section/chapter, annex/
+    appendix, ...) actually points within the current document (INTERNAL),
+    clearly cites something else (EXTERNAL), or can't be told apart from
+    the text alone (AMBIGUOUS). Type-agnostic on purpose: the same anchor/
+    target-existence reasoning applies regardless of what kind of label was
+    matched, so every fuzzy reference type shares this one qualifier
+    instead of duplicating the rules per type.
 
-    Detection only proves a phrase was found -- it never proves the number
+    Detection only proves a phrase was found -- it never proves the label
     belongs to *this* document. This is the deliberate second stage that
     keeps detection recall-oriented (see chunk_cross_reference_detector.py)
     without letting every match straight through to resolution.
 
     Target-existence (does this label actually appear in the current
-    document's own section numbering) is a REQUIRED condition for INTERNAL,
-    not just a confidence booster -- an anchor or lead-in phrase can make a
-    reference *look* internal, but only a real target confirms it. Rules,
-    in order:
+    document, per whatever index the caller resolves it against) is a
+    REQUIRED condition for INTERNAL, not just a confidence booster -- an
+    anchor or lead-in phrase can make a reference *look* internal, but only
+    a real target confirms it. Rules, in order:
     1. Both anchor types present -> genuinely conflicting signal -> AMBIGUOUS
        rather than guessing.
     2. An external anchor with no internal anchor to counter it -> EXTERNAL,
@@ -103,17 +107,17 @@ class ChunkCrossReferenceContextQualifier:
        anchor with NO existing target is withheld as AMBIGUOUS -- the
        wording reads internal, but nothing confirms it actually is.
     4. No anchors either way: an explicit lead-in ("see section", "refer to
-       section", "with reference to section", "described in section",
-       "chap.") with an existing target -> INTERNAL. Without a target, that
-       same explicit lead-in is now AMBIGUOUS too -- lead-in phrasing alone
-       is no longer sufficient without corroboration.
-    5. A bare "section N"/"chapter N" with no lead-in, no anchors: an
+       annex", "with reference to appendix", "described in section", ...)
+       with an existing target -> INTERNAL. Without a target, that same
+       explicit lead-in is now AMBIGUOUS too -- lead-in phrasing alone is
+       no longer sufficient without corroboration.
+    5. A bare "section N"/"annex N" with no lead-in, no anchors: an
        existing target still promotes it to INTERNAL, but at the lowest,
        most cautious confidence tier (existence alone doesn't rule out
        coincidence with an external citation). No target -> AMBIGUOUS.
     """
 
-    def qualify_section_reference(
+    def qualify_reference(
         self,
         *,
         is_explicit_lead_in: bool,
@@ -149,10 +153,10 @@ class ChunkCrossReferenceContextQualifier:
                     confidence=_CONFIDENCE_ANCHOR_WITHOUT_TARGET,
                     reasons=(
                         "internal_anchor_present",
-                        "target_section_not_found_in_document",
+                        "target_not_found_in_document",
                     ),
                 )
-            reasons = ["internal_anchor_present", "target_section_exists_in_document"]
+            reasons = ["internal_anchor_present", "target_exists_in_document"]
             if is_explicit_lead_in:
                 reasons.append("explicit_internal_lead_in")
                 confidence = _CONFIDENCE_ANCHOR_AND_LEAD_IN_AND_TARGET
@@ -171,7 +175,7 @@ class ChunkCrossReferenceContextQualifier:
                     confidence=_CONFIDENCE_LEAD_IN_WITHOUT_TARGET,
                     reasons=(
                         "explicit_internal_lead_in",
-                        "target_section_not_found_in_document",
+                        "target_not_found_in_document",
                     ),
                 )
             return CrossReferenceQualification(
@@ -179,7 +183,7 @@ class ChunkCrossReferenceContextQualifier:
                 confidence=_CONFIDENCE_LEAD_IN_AND_TARGET,
                 reasons=(
                     "explicit_internal_lead_in",
-                    "target_section_exists_in_document",
+                    "target_exists_in_document",
                 ),
             )
 
@@ -187,7 +191,7 @@ class ChunkCrossReferenceContextQualifier:
             return CrossReferenceQualification(
                 scope=CrossReferenceScope.INTERNAL,
                 confidence=_CONFIDENCE_GENERIC_CAUTIOUS,
-                reasons=("generic_bare_mention", "target_section_exists_in_document"),
+                reasons=("generic_bare_mention", "target_exists_in_document"),
             )
 
         return CrossReferenceQualification(

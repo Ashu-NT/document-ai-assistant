@@ -149,16 +149,19 @@ class IngestionExpectationEvaluator:
                 or cross_reference.target_section_label
                 == expected.expected_target_section
             )
+            and (
+                expected.expected_target_annex is None
+                or cross_reference.target_annex_label
+                == expected.expected_target_annex
+            )
             for cross_reference in matching
         )
+        expected_target = expected.expected_target_section or expected.expected_target_annex
         return IngestionAssertionResult(
             name=f"cross_reference_present[{expected.clue}]",
-            expected=(
-                f"{expected.expected_reference_type} -> "
-                f"{expected.expected_target_section}"
-            ),
+            expected=f"{expected.expected_reference_type} -> {expected_target}",
             actual=[
-                (cr.reference_type.value, cr.target_section_label)
+                (cr.reference_type.value, cr.target_section_label, cr.target_annex_label)
                 for cr in matching
             ],
             passed=passed,

@@ -303,6 +303,86 @@ def test_link_qualifies_a_mixed_internal_and_external_reference_in_the_same_chun
     assert section_refs[0].matched_text == "Refer to section 5.2"
 
 
+def test_link_resolves_an_annex_reference_to_the_chunk_mentioning_that_label() -> None:
+    # Real document shape: annex/appendix sub-numbering that never became
+    # its own section heading, only ever appearing as plain chunk content.
+    referencing_chunk = make_chunk(
+        chunk_id="ref",
+        content="Refer to Annex 2 for sensor locations.",
+        sequence_number=1,
+    )
+    target_chunk = make_chunk(
+        chunk_id="target",
+        content="8.2 Annex 2\n\nSensors",
+        sequence_number=2,
+    )
+    graph = make_graph([referencing_chunk, target_chunk], tables={})
+
+    cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    annex_refs = [
+        xref
+        for xref in cross_references
+        if xref.reference_type == ChunkCrossReferenceType.ANNEX_REFERENCE
+    ]
+    assert len(annex_refs) == 1
+    assert annex_refs[0].target_chunk_id == "target"
+    assert annex_refs[0].target_annex_label == "2"
+    assert annex_refs[0].resolution_status == ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE
+
+
+def test_link_resolves_a_letter_appendix_reference() -> None:
+    referencing_chunk = make_chunk(
+        chunk_id="ref", content="See Appendix B for calibration data.", sequence_number=1
+    )
+    target_chunk = make_chunk(
+        chunk_id="target", content="Appendix B: Calibration Data", sequence_number=2
+    )
+    graph = make_graph([referencing_chunk, target_chunk], tables={})
+
+    cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    annex_refs = [
+        xref
+        for xref in cross_references
+        if xref.reference_type == ChunkCrossReferenceType.ANNEX_REFERENCE
+    ]
+    assert len(annex_refs) == 1
+    assert annex_refs[0].target_chunk_id == "target"
+    assert annex_refs[0].target_annex_label == "B"
+
+
+def test_link_drops_a_bare_annex_mention_that_cites_an_external_directive() -> None:
+    # Real document (corpus review): "Annex V regulations must be observed"
+    # cites an external directive's own Annex V using the same bare
+    # phrasing a genuine internal reference would use.
+    referencing_chunk = make_chunk(
+        chunk_id="ref",
+        content="The latest Directive Annex V regulations must be observed.",
+    )
+    graph = make_graph([referencing_chunk], tables={})
+
+    cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    assert cross_references == []
+
+
+def test_link_still_produces_no_annex_reference_when_no_chunk_mentions_the_label() -> (
+    None
+):
+    referencing_chunk = make_chunk(
+        chunk_id="ref", content="Refer to Annex 9 for details."
+    )
+    graph = make_graph([referencing_chunk], tables={})
+
+    cross_references = ChunkCrossReferenceLinker(id_generator=IdGenerator()).link(graph)
+
+    # Qualified INTERNAL (explicit lead-in, but no anchor and the label 9
+    # doesn't exist anywhere -> AMBIGUOUS, same target-existence-required
+    # rule as section references), so nothing is produced at all.
+    assert cross_references == []
+
+
 def test_link_logs_a_debug_summary_with_counts_by_reference_type(caplog) -> None:
     table = TableAsset(
         table_id="table_1",
