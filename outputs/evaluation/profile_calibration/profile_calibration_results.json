@@ -412,5 +412,74 @@
     },
     "old_correct": true,
     "new_correct": true
+  },
+  {
+    "document_label": "2150 0080 BesiMarine MAN Regulating Valves",
+    "document_hash": "d6bc858f81478f77ad53221753c335ffdb9d6e82d506e04a7968892a85fcd46e",
+    "expected_profile": "manual",
+    "section_count": 186,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 43,
+        "distinct_term_count": 6,
+        "matching_title_count": 35
+      },
+      "datasheet": {
+        "total_occurrences": 28,
+        "distinct_term_count": 7,
+        "matching_title_count": 20
+      },
+      "drawing": {
+        "total_occurrences": 16,
+        "distinct_term_count": 3,
+        "matching_title_count": 11
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 2.5,
+        "manual": 7.8,
+        "datasheet": 5.1,
+        "drawing": 7.4,
+        "report": 0.0,
+        "certificate": 0.0
+      },
+      "selected_profile": "manual",
+      "second_profile": "drawing",
+      "confidence": 0.609,
+      "top_score": 7.8,
+      "second_score": 7.4,
+      "gap": 0.39999999999999947,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 0.9,
+        "manual": 6.929,
+        "datasheet": 3.845,
+        "drawing": 5.555,
+        "report": 0.0,
+        "certificate": 0.0
+      },
+      "selected_profile": "manual",
+      "second_profile": "drawing",
+      "confidence": 0.619,
+      "top_score": 6.929,
+      "second_score": 5.555,
+      "gap": 1.3740000000000006,
+      "is_default": false
+    },
+    "old_correct": true,
+    "new_correct": true
   }
 ]

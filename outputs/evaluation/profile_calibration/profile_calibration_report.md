@@ -2,9 +2,9 @@
 
 Compares the production (OLD, raw-occurrence) evidence formula against a candidate (NEW, ratio-based) one, both decided through the SAME unmodified StructuralProfileDecisionPolicy. Neither production scorer nor decision-policy files are changed by this report -- see project_structural_profile_calibration memory for why (n=1 real document isn't enough to also re-tune the decision-policy thresholds without risking blind tuning).
 
-- documents: `6`
-- OLD formula accuracy: `6/6`
-- NEW formula accuracy: `5/6`
+- documents: `7`
+- OLD formula accuracy: `7/7`
+- NEW formula accuracy: `6/7`
 
 | document | hash | expected | OLD selected | OLD 2nd | OLD gap | OLD conf | OLD default | NEW selected | NEW 2nd | NEW gap | NEW conf | NEW default |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -14,6 +14,7 @@ Compares the production (OLD, raw-occurrence) evidence formula against a candida
 | 1611 Lethe Exterior Doors Exterior Hinge Doors | `7c987148ec28` | certificate | certificate | manual | 1.10 | 0.482 | False | certificate | manual | 1.12 | 0.506 | False |
 | 1615 0050 Kaefer MAN Fire Sliding Door A-60 With Drive E3000 Mini | `6ea392c2bfe9` | manual | manual | drawing | 0.20 | 0.501 | False | drawing **WRONG** | default | 0.21 | 0.397 | False |
 | 2130 0255 KSB MAN Butterfly Valves Addition | `42066022b36b` | manual | manual | datasheet | 2.70 | 0.727 | False | manual | datasheet | 2.75 | 0.684 | False |
+| 2150 0080 BesiMarine MAN Regulating Valves | `d6bc858f8147` | manual | manual | drawing | 0.40 | 0.609 | False | manual | drawing | 1.37 | 0.619 | False |
 
 ## Reg - 73  ITC69 certificate addendum_2164376
 
@@ -103,4 +104,19 @@ Compares the production (OLD, raw-occurrence) evidence formula against a candida
 | default | 0.00 | 0.00 | - | - | - |
 | drawing | 4.10 | 3.17 | 1 | 1 | 1 |
 | manual | 7.80 | 6.48 | 18 | 7 | 15 |
+| report | 0.00 | 0.00 | 0 | 0 | 0 |
+
+## 2150 0080 BesiMarine MAN Regulating Valves
+
+- document_hash: `d6bc858f81478f77ad53221753c335ffdb9d6e82d506e04a7968892a85fcd46e`
+- expected: `manual`
+- section_count: `186`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 0.00 | 0.00 | 0 | 0 | 0 |
+| datasheet | 5.10 | 3.85 | 28 | 7 | 20 |
+| default | 2.50 | 0.90 | - | - | - |
+| drawing | 7.40 | 5.55 | 16 | 3 | 11 |
+| manual | 7.80 | 6.93 | 43 | 6 | 35 |
 | report | 0.00 | 0.00 | 0 | 0 | 0 |
