@@ -1033,5 +1033,488 @@
     },
     "old_correct": false,
     "new_correct": false
+  },
+  {
+    "document_label": "30008_FLW-Boardwalk_TechnicalSpecification_Rev_0_6",
+    "document_hash": "e089956c7df6bd0e1aab11bb1eaee998b7405c6ba200756af10a1b7ed2e04b48",
+    "expected_profile": "datasheet",
+    "section_count": 38,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 6,
+        "distinct_term_count": 2,
+        "matching_title_count": 5
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 0.0,
+        "manual": 2.8,
+        "datasheet": 5.1,
+        "drawing": 1.1,
+        "report": 1.3,
+        "certificate": 0.0
+      },
+      "selected_profile": "datasheet",
+      "second_profile": "manual",
+      "confidence": 0.617,
+      "top_score": 5.1,
+      "second_score": 2.8,
+      "gap": 2.3,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 5.5,
+        "manual": 2.8,
+        "datasheet": 2.389,
+        "drawing": 1.1,
+        "report": 1.3,
+        "certificate": 0.0
+      },
+      "selected_profile": "default",
+      "second_profile": "manual",
+      "confidence": 0.6,
+      "top_score": 5.5,
+      "second_score": 2.8,
+      "gap": 2.7,
+      "is_default": true
+    },
+    "old_correct": true,
+    "new_correct": false
+  },
+  {
+    "document_label": "6.1 Datasheet foam pump",
+    "document_hash": "a7e8f250f9cfb11320753efa68f6516f2afe52c0db92e71b2dc862e8a476556e",
+    "expected_profile": "datasheet",
+    "section_count": 4,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 5,
+        "distinct_term_count": 4,
+        "matching_title_count": 3
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 0.0,
+        "manual": 1.2,
+        "datasheet": 6.8,
+        "drawing": 0.2,
+        "report": 1.8,
+        "certificate": 1.5
+      },
+      "selected_profile": "datasheet",
+      "second_profile": "report",
+      "confidence": 0.827,
+      "top_score": 6.8,
+      "second_score": 1.8,
+      "gap": 5.0,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 0.0,
+        "manual": 1.2,
+        "datasheet": 6.8,
+        "drawing": 0.2,
+        "report": 1.8,
+        "certificate": 1.5
+      },
+      "selected_profile": "datasheet",
+      "second_profile": "report",
+      "confidence": 0.827,
+      "top_score": 6.8,
+      "second_score": 1.8,
+      "gap": 5.0,
+      "is_default": false
+    },
+    "old_correct": true,
+    "new_correct": true
+  },
+  {
+    "document_label": "DAS-ANT-1-SHEET-R1",
+    "document_hash": "9eb7191ff9e5a04f67c765e953c85c937aa0189d77e423a4a834ac68ff8f4e15",
+    "expected_profile": "datasheet",
+    "section_count": 2,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 3.3,
+        "manual": 0.0,
+        "datasheet": 5.2,
+        "drawing": 5.0,
+        "report": 0.0,
+        "certificate": 2.9
+      },
+      "selected_profile": "datasheet",
+      "second_profile": "drawing",
+      "confidence": 0.458,
+      "top_score": 5.2,
+      "second_score": 5.0,
+      "gap": 0.20000000000000018,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 3.3,
+        "manual": 0.0,
+        "datasheet": 5.2,
+        "drawing": 5.0,
+        "report": 0.0,
+        "certificate": 2.9
+      },
+      "selected_profile": "datasheet",
+      "second_profile": "drawing",
+      "confidence": 0.458,
+      "top_score": 5.2,
+      "second_score": 5.0,
+      "gap": 0.20000000000000018,
+      "is_default": false
+    },
+    "old_correct": true,
+    "new_correct": true
+  },
+  {
+    "document_label": "MS-EXT-1-SHEET-R0",
+    "document_hash": "6d6c2df5210231c73707e8b7a812eb752f6993ea1616b8762018c7f250e6affa",
+    "expected_profile": "datasheet",
+    "section_count": 3,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 4.6,
+        "manual": 0.0,
+        "datasheet": 3.9,
+        "drawing": 3.5,
+        "report": 0.0,
+        "certificate": 1.5
+      },
+      "selected_profile": "default",
+      "second_profile": "datasheet",
+      "confidence": 0.47,
+      "top_score": 4.6,
+      "second_score": 3.9,
+      "gap": 0.6999999999999997,
+      "is_default": true
+    },
+    "new": {
+      "scores": {
+        "default": 4.6,
+        "manual": 0.0,
+        "datasheet": 3.9,
+        "drawing": 3.5,
+        "report": 0.0,
+        "certificate": 1.5
+      },
+      "selected_profile": "default",
+      "second_profile": "datasheet",
+      "confidence": 0.47,
+      "top_score": 4.6,
+      "second_score": 3.9,
+      "gap": 0.6999999999999997,
+      "is_default": true
+    },
+    "old_correct": false,
+    "new_correct": false
+  },
+  {
+    "document_label": "Antenna Measurement VSWR-Report MY  BOARDWALK",
+    "document_hash": "156904142c92690862c9f537ace1dc9538eb51a4574646c7a0c63f465ceddfa8",
+    "expected_profile": "report",
+    "section_count": 1,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 0.8,
+        "manual": 0.0,
+        "datasheet": 2.7,
+        "drawing": 5.0,
+        "report": 0.0,
+        "certificate": 1.5
+      },
+      "selected_profile": "drawing",
+      "second_profile": "datasheet",
+      "confidence": 0.615,
+      "top_score": 5.0,
+      "second_score": 2.7,
+      "gap": 2.3,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 0.8,
+        "manual": 0.0,
+        "datasheet": 2.7,
+        "drawing": 5.0,
+        "report": 0.0,
+        "certificate": 1.5
+      },
+      "selected_profile": "drawing",
+      "second_profile": "datasheet",
+      "confidence": 0.615,
+      "top_score": 5.0,
+      "second_score": 2.7,
+      "gap": 2.3,
+      "is_default": false
+    },
+    "old_correct": false,
+    "new_correct": false
+  },
+  {
+    "document_label": "FAT program_8351446_v12",
+    "document_hash": "7d0f1b0aab44d4de3c1bfe4c96e0ecd0ea904cee371b66f3dbb8094857f38c3f",
+    "expected_profile": "report",
+    "section_count": 10,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 2,
+        "distinct_term_count": 1,
+        "matching_title_count": 2
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 0.0,
+        "manual": 5.2,
+        "datasheet": 0.7,
+        "drawing": 0.0,
+        "report": 0.7,
+        "certificate": 0.0
+      },
+      "selected_profile": "manual",
+      "second_profile": "datasheet",
+      "confidence": 0.789,
+      "top_score": 5.2,
+      "second_score": 0.7,
+      "gap": 4.5,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 1.3,
+        "manual": 3.833,
+        "datasheet": 0.7,
+        "drawing": 0.0,
+        "report": 0.7,
+        "certificate": 0.0
+      },
+      "selected_profile": "manual",
+      "second_profile": "default",
+      "confidence": 0.63,
+      "top_score": 3.833,
+      "second_score": 1.3,
+      "gap": 2.5330000000000004,
+      "is_default": false
+    },
+    "old_correct": false,
+    "new_correct": false
+  },
+  {
+    "document_label": "T0001 -8. Black PTH00125 _ MPO _ PORT 1 - to - PTH00110 _ MPO _ PORT 1",
+    "document_hash": "fa4b6c55c732a280aef617a28ecd52b5965e657e90a0ad835f18911a74a659cd",
+    "expected_profile": "report",
+    "section_count": 4,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "datasheet": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "drawing": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 6.3,
+        "manual": 1.2,
+        "datasheet": 2.7,
+        "drawing": 2.4,
+        "report": 0.7,
+        "certificate": 1.5
+      },
+      "selected_profile": "default",
+      "second_profile": "datasheet",
+      "confidence": 0.6,
+      "top_score": 6.3,
+      "second_score": 2.7,
+      "gap": 3.5999999999999996,
+      "is_default": true
+    },
+    "new": {
+      "scores": {
+        "default": 6.3,
+        "manual": 1.2,
+        "datasheet": 2.7,
+        "drawing": 2.4,
+        "report": 0.7,
+        "certificate": 1.5
+      },
+      "selected_profile": "default",
+      "second_profile": "datasheet",
+      "confidence": 0.6,
+      "top_score": 6.3,
+      "second_score": 2.7,
+      "gap": 3.5999999999999996,
+      "is_default": true
+    },
+    "old_correct": false,
+    "new_correct": false
   }
 ]

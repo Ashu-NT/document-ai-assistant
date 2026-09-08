@@ -2,9 +2,9 @@
 
 Compares the production (OLD, raw-occurrence) evidence formula against a candidate (NEW, ratio-based) one, both decided through the SAME unmodified StructuralProfileDecisionPolicy. Neither production scorer nor decision-policy files are changed by this report -- see project_structural_profile_calibration memory for why (n=1 real document isn't enough to also re-tune the decision-policy thresholds without risking blind tuning).
 
-- documents: `15`
-- OLD formula accuracy: `10/15`
-- NEW formula accuracy: `9/15`
+- documents: `22`
+- OLD formula accuracy: `13/22`
+- NEW formula accuracy: `11/22`
 
 | document | hash | expected | OLD selected | OLD 2nd | OLD gap | OLD conf | OLD default | NEW selected | NEW 2nd | NEW gap | NEW conf | NEW default |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -23,6 +23,13 @@ Compares the production (OLD, raw-occurrence) evidence formula against a candida
 | 3331 0100 Besecke DRW 3331-33.24 RevR01 Distribution Board DB24 | `324a720c33e0` | drawing | drawing | datasheet | 1.40 | 0.517 | False | drawing | datasheet | 1.31 | 0.506 | False |
 | 3652 0020 Waertsilae DRW Bridge Navigational Watch Alarm System (BNWAS) | `8509a0f5896b` | drawing | drawing | manual | 1.30 | 0.507 | False | drawing | manual | 1.10 | 0.482 | False |
 | 2670 0070 ABB MAN Test and Trial Documents | `c8683ed57b6d` | report | manual **WRONG** | datasheet | 2.70 | 0.727 | False | manual **WRONG** | datasheet | 3.26 | 0.692 | False |
+| 30008_FLW-Boardwalk_TechnicalSpecification_Rev_0_6 | `e089956c7df6` | datasheet | datasheet | manual | 2.30 | 0.617 | False | default **WRONG** | manual | 2.70 | 0.600 | True |
+| 6.1 Datasheet foam pump | `a7e8f250f9cf` | datasheet | datasheet | report | 5.00 | 0.827 | False | datasheet | report | 5.00 | 0.827 | False |
+| DAS-ANT-1-SHEET-R1 | `9eb7191ff9e5` | datasheet | datasheet | drawing | 0.20 | 0.458 | False | datasheet | drawing | 0.20 | 0.458 | False |
+| MS-EXT-1-SHEET-R0 | `6d6c2df52102` | datasheet | default **WRONG** | datasheet | 0.70 | 0.470 | True | default **WRONG** | datasheet | 0.70 | 0.470 | True |
+| Antenna Measurement VSWR-Report MY  BOARDWALK | `156904142c92` | report | drawing **WRONG** | datasheet | 2.30 | 0.615 | False | drawing **WRONG** | datasheet | 2.30 | 0.615 | False |
+| FAT program_8351446_v12 | `7d0f1b0aab44` | report | manual **WRONG** | datasheet | 4.50 | 0.789 | False | manual **WRONG** | default | 2.53 | 0.630 | False |
+| T0001 -8. Black PTH00125 _ MPO _ PORT 1 - to - PTH00110 _ MPO _ PORT 1 | `fa4b6c55c732` | report | default **WRONG** | datasheet | 3.60 | 0.600 | True | default **WRONG** | datasheet | 3.60 | 0.600 | True |
 
 ## Reg - 73  ITC69 certificate addendum_2164376
 
@@ -248,3 +255,108 @@ Compares the production (OLD, raw-occurrence) evidence formula against a candida
 | drawing | 0.00 | 0.00 | 0 | 0 | 0 |
 | manual | 7.80 | 4.98 | 40 | 1 | 40 |
 | report | 4.90 | 1.13 | 5 | 1 | 5 |
+
+## 30008_FLW-Boardwalk_TechnicalSpecification_Rev_0_6
+
+- document_hash: `e089956c7df6bd0e1aab11bb1eaee998b7405c6ba200756af10a1b7ed2e04b48`
+- expected: `datasheet`
+- section_count: `38`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 0.00 | 0.00 | 0 | 0 | 0 |
+| datasheet | 5.10 | 2.39 | 6 | 2 | 5 |
+| default | 0.00 | 5.50 | - | - | - |
+| drawing | 1.10 | 1.10 | 0 | 0 | 0 |
+| manual | 2.80 | 2.80 | 0 | 0 | 0 |
+| report | 1.30 | 1.30 | 0 | 0 | 0 |
+
+## 6.1 Datasheet foam pump
+
+- document_hash: `a7e8f250f9cfb11320753efa68f6516f2afe52c0db92e71b2dc862e8a476556e`
+- expected: `datasheet`
+- section_count: `4`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 1.50 | 1.50 | 0 | 0 | 0 |
+| datasheet | 6.80 | 6.80 | 5 | 4 | 3 |
+| default | 0.00 | 0.00 | - | - | - |
+| drawing | 0.20 | 0.20 | 0 | 0 | 0 |
+| manual | 1.20 | 1.20 | 0 | 0 | 0 |
+| report | 1.80 | 1.80 | 0 | 0 | 0 |
+
+## DAS-ANT-1-SHEET-R1
+
+- document_hash: `9eb7191ff9e5a04f67c765e953c85c937aa0189d77e423a4a834ac68ff8f4e15`
+- expected: `datasheet`
+- section_count: `2`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 2.90 | 2.90 | 0 | 0 | 0 |
+| datasheet | 5.20 | 5.20 | 0 | 0 | 0 |
+| default | 3.30 | 3.30 | - | - | - |
+| drawing | 5.00 | 5.00 | 0 | 0 | 0 |
+| manual | 0.00 | 0.00 | 0 | 0 | 0 |
+| report | 0.00 | 0.00 | 0 | 0 | 0 |
+
+## MS-EXT-1-SHEET-R0
+
+- document_hash: `6d6c2df5210231c73707e8b7a812eb752f6993ea1616b8762018c7f250e6affa`
+- expected: `datasheet`
+- section_count: `3`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 1.50 | 1.50 | 0 | 0 | 0 |
+| datasheet | 3.90 | 3.90 | 0 | 0 | 0 |
+| default | 4.60 | 4.60 | - | - | - |
+| drawing | 3.50 | 3.50 | 0 | 0 | 0 |
+| manual | 0.00 | 0.00 | 0 | 0 | 0 |
+| report | 0.00 | 0.00 | 0 | 0 | 0 |
+
+## Antenna Measurement VSWR-Report MY  BOARDWALK
+
+- document_hash: `156904142c92690862c9f537ace1dc9538eb51a4574646c7a0c63f465ceddfa8`
+- expected: `report`
+- section_count: `1`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 1.50 | 1.50 | 0 | 0 | 0 |
+| datasheet | 2.70 | 2.70 | 0 | 0 | 0 |
+| default | 0.80 | 0.80 | - | - | - |
+| drawing | 5.00 | 5.00 | 0 | 0 | 0 |
+| manual | 0.00 | 0.00 | 0 | 0 | 0 |
+| report | 0.00 | 0.00 | 0 | 0 | 0 |
+
+## FAT program_8351446_v12
+
+- document_hash: `7d0f1b0aab44d4de3c1bfe4c96e0ecd0ea904cee371b66f3dbb8094857f38c3f`
+- expected: `report`
+- section_count: `10`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 0.00 | 0.00 | 0 | 0 | 0 |
+| datasheet | 0.70 | 0.70 | 0 | 0 | 0 |
+| default | 0.00 | 1.30 | - | - | - |
+| drawing | 0.00 | 0.00 | 0 | 0 | 0 |
+| manual | 5.20 | 3.83 | 2 | 1 | 2 |
+| report | 0.70 | 0.70 | 0 | 0 | 0 |
+
+## T0001 -8. Black PTH00125 _ MPO _ PORT 1 - to - PTH00110 _ MPO _ PORT 1
+
+- document_hash: `fa4b6c55c732a280aef617a28ecd52b5965e657e90a0ad835f18911a74a659cd`
+- expected: `report`
+- section_count: `4`
+
+| profile | OLD score | NEW score | occurrences | distinct terms | matching titles |
+| --- | --- | --- | --- | --- | --- |
+| certificate | 1.50 | 1.50 | 0 | 0 | 0 |
+| datasheet | 2.70 | 2.70 | 0 | 0 | 0 |
+| default | 6.30 | 6.30 | - | - | - |
+| drawing | 2.40 | 2.40 | 0 | 0 | 0 |
+| manual | 1.20 | 1.20 | 0 | 0 | 0 |
+| report | 0.70 | 0.70 | 0 | 0 | 0 |
