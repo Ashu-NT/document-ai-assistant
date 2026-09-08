@@ -1,0 +1,38 @@
+[
+  {
+    "document_label": "FWC12 hydraulic pump manual (real debug-report data)",
+    "expected_profile": "manual",
+    "old": {
+      "scores": {
+        "default": 0.0,
+        "manual": 10.3,
+        "datasheet": 2.0,
+        "drawing": 4.0,
+        "report": 1.7,
+        "certificate": 0.0
+      },
+      "selected_profile": "manual",
+      "confidence": 0.845,
+      "top_score": 10.3,
+      "second_score": 4.0,
+      "gap": 6.300000000000001,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 0.0,
+        "manual": 8.476,
+        "datasheet": 0.0,
+        "drawing": 1.317,
+        "report": 1.7,
+        "certificate": 0.0
+      },
+      "selected_profile": "manual",
+      "confidence": 0.92,
+      "top_score": 8.476,
+      "second_score": 1.7,
+      "gap": 6.776000000000001,
+      "is_default": false
+    }
+  }
+]

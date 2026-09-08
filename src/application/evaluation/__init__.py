@@ -1,6 +1,16 @@
 from src.application.evaluation.ingestion import (
     IngestionExpectationEvaluator,
 )
+from src.application.evaluation.profile_calibration import (
+    CandidateScoreAggregator,
+    DEFAULT_REPORT_PATH as PROFILE_CALIBRATION_DEFAULT_REPORT_PATH,
+    DEFAULT_RESULTS_PATH as PROFILE_CALIBRATION_DEFAULT_RESULTS_PATH,
+    ProfileCalibrationCaseResult,
+    ProfileCalibrationReportStore,
+    ProfileCalibrationRunner,
+    ProfileScoringSnapshot,
+    candidate_evidence_score,
+)
 from src.application.evaluation.ingestion.loaders import (
     DEFAULT_INGESTION_TRUTH_SET_PATH,
     IngestionTruthSetLoader,
@@ -64,4 +74,12 @@ __all__ = [
     "RetrievalBenchmarkResolutionDiagnostic",
     "RetrievalTruthSetLoader",
     "DEFAULT_RETRIEVAL_TRUTH_SET_PATH",
+    "CandidateScoreAggregator",
+    "candidate_evidence_score",
+    "ProfileCalibrationCaseResult",
+    "ProfileScoringSnapshot",
+    "ProfileCalibrationRunner",
+    "ProfileCalibrationReportStore",
+    "PROFILE_CALIBRATION_DEFAULT_REPORT_PATH",
+    "PROFILE_CALIBRATION_DEFAULT_RESULTS_PATH",
 ]
