@@ -343,5 +343,74 @@
     },
     "old_correct": true,
     "new_correct": false
+  },
+  {
+    "document_label": "2130 0255 KSB MAN Butterfly Valves Addition",
+    "document_hash": "42066022b36b28f43864aa424edf428936e1cd81eb906de8a668c8c8bf347af9",
+    "expected_profile": "manual",
+    "section_count": 258,
+    "evidence_diagnostics": {
+      "manual": {
+        "total_occurrences": 18,
+        "distinct_term_count": 7,
+        "matching_title_count": 15
+      },
+      "datasheet": {
+        "total_occurrences": 25,
+        "distinct_term_count": 7,
+        "matching_title_count": 23
+      },
+      "drawing": {
+        "total_occurrences": 1,
+        "distinct_term_count": 1,
+        "matching_title_count": 1
+      },
+      "report": {
+        "total_occurrences": 0,
+        "distinct_term_count": 0,
+        "matching_title_count": 0
+      },
+      "certificate": {
+        "total_occurrences": 4,
+        "distinct_term_count": 2,
+        "matching_title_count": 4
+      }
+    },
+    "old": {
+      "scores": {
+        "default": 0.0,
+        "manual": 7.8,
+        "datasheet": 5.1,
+        "drawing": 4.1,
+        "report": 0.0,
+        "certificate": 4.1
+      },
+      "selected_profile": "manual",
+      "second_profile": "datasheet",
+      "confidence": 0.727,
+      "top_score": 7.8,
+      "second_score": 5.1,
+      "gap": 2.7,
+      "is_default": false
+    },
+    "new": {
+      "scores": {
+        "default": 0.0,
+        "manual": 6.482,
+        "datasheet": 3.735,
+        "drawing": 3.173,
+        "report": 0.0,
+        "certificate": 0.793
+      },
+      "selected_profile": "manual",
+      "second_profile": "datasheet",
+      "confidence": 0.684,
+      "top_score": 6.482,
+      "second_score": 3.735,
+      "gap": 2.7470000000000003,
+      "is_default": false
+    },
+    "old_correct": true,
+    "new_correct": true
   }
 ]
