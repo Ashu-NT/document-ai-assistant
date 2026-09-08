@@ -31,6 +31,11 @@ from src.application.workflows.parsing.builders.chunking.policies.policy.documen
     DocumentChunkingPolicy,
 )
 
+from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy_resolver import (
+    ChunkingProfileResolution,
+    ResolvedChunkingPolicy,
+)
+
 from src.domain.assets import AssetMetadata, PictureAsset, TableAsset
 
 from src.domain.common import ChunkType, DocumentType, ElementType, ParserMetadata
@@ -146,28 +151,36 @@ class FakeGraphChunkBuilder:
 class FakeStructuralProfileInferer:
     def __init__(self, inference: StructuralProfileInference) -> None:
         self.inference = inference
+        self.calls: list[dict] = []
 
     def infer_result(self, **kwargs) -> StructuralProfileInference:
+        self.calls.append(kwargs)
         return self.inference
 
 class FakeChunkingPolicyResolver:
     def __init__(self, profile_name: ChunkingProfile) -> None:
         self.profile_name = profile_name
 
-    def resolve_profile(self, **kwargs) -> ChunkingProfile:
-        return self.profile_name
+    def resolve_profile(self, **kwargs) -> ChunkingProfileResolution:
+        return ChunkingProfileResolution(
+            profile=self.profile_name,
+            structural_inference=kwargs.get("precomputed_inference"),
+        )
 
-    def resolve(self, **kwargs) -> DocumentChunkingPolicy:
-        return DocumentChunkingPolicy(
-            profile_name=self.profile_name,
-            max_chunk_tokens=200,
-            chunk_overlap=20,
-            same_topic_merge_tokens=90,
-            intro_context_tokens=120,
-            asset_context_window=1,
-            asset_context_max_tokens=72,
-            include_picture_chunks=self.profile_name
-            not in {ChunkingProfile.DATASHEET, ChunkingProfile.CERTIFICATE},
+    def resolve(self, **kwargs) -> ResolvedChunkingPolicy:
+        return ResolvedChunkingPolicy(
+            policy=DocumentChunkingPolicy(
+                profile_name=self.profile_name,
+                max_chunk_tokens=200,
+                chunk_overlap=20,
+                same_topic_merge_tokens=90,
+                intro_context_tokens=120,
+                asset_context_window=1,
+                asset_context_max_tokens=72,
+                include_picture_chunks=self.profile_name
+                not in {ChunkingProfile.DATASHEET, ChunkingProfile.CERTIFICATE},
+            ),
+            structural_inference=kwargs.get("precomputed_inference"),
         )
 
 class FakeDocumentTypeResolver:

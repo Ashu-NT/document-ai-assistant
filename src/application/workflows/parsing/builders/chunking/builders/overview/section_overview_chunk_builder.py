@@ -18,7 +18,7 @@ from src.application.workflows.parsing.builders.chunking.text.chunking_utils imp
     is_contents_title,
     is_reference_title,
 )
-from src.domain.common import ChunkType, ElementType
+from src.domain.common import ChunkType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 
@@ -67,7 +67,6 @@ class SectionOverviewChunkBuilder:
             overview_result = self._build_overview_text(
                 section=section,
                 child_sections=child_sections,
-                elements=section_elements_by_id.get(section.section_id, []),
             )
             if overview_result is None:
                 continue
@@ -109,8 +108,17 @@ class SectionOverviewChunkBuilder:
         *,
         section: DocumentSection,
         child_sections: list[DocumentSection],
-        elements: list[CanonicalElement],
     ) -> tuple[str, int] | None:
+        # Deliberately a pure subsection listing -- no direct section text.
+        # Pulling the section's own TEXT/LIST_ITEM/KEY_VALUE/CODE elements
+        # in here (as this used to) duplicates the exact same elements that
+        # independently flow into the section's own real content chunk(s),
+        # and that duplication is only ever truncated to a small fraction
+        # of the section's real text (max_overview_tokens is half the chunk
+        # budget) -- substantial but partial overlap that a dedup
+        # containment check (tuned for near-total duplicates) doesn't
+        # reliably catch. Fixed at the source instead of relying on dedup:
+        # see project_chunking_pipeline_quality memory, audit finding #5.
         child_titles = [
             clean_chunk_text(child_section.title)
             for child_section in child_sections
@@ -134,51 +142,11 @@ class SectionOverviewChunkBuilder:
         if subsection_summary:
             parts.append(subsection_summary)
 
-        used_tokens = self.text_splitter.count_tokens("\n\n".join(parts))
-        intro_text = self._direct_section_text(
-            elements,
-            max_tokens=max(0, self.max_overview_tokens - used_tokens - 2),
-        )
-        if intro_text:
-            parts.append(intro_text)
-
         overview_text = clean_chunk_text("\n\n".join(parts))
         if not overview_text:
             return None
 
         return self._truncate_to_token_limit(overview_text)
-
-    def _direct_section_text(
-        self,
-        elements: list[CanonicalElement],
-        *,
-        max_tokens: int,
-    ) -> str | None:
-        if max_tokens <= 0:
-            return None
-        texts: list[str] = []
-
-        for element in elements:
-            if element.element_type not in {
-                ElementType.TEXT,
-                ElementType.LIST_ITEM,
-                ElementType.KEY_VALUE,
-                ElementType.CODE,
-            }:
-                continue
-
-            text = clean_chunk_text(element.text)
-            if text:
-                texts.append(text)
-
-        if not texts:
-            return None
-
-        text, _ = self.text_splitter.token_counter.truncate_to_tokens_with_count(
-            "\n\n".join(texts),
-            max_tokens,
-        )
-        return text
 
     def _truncate_to_token_limit(self, text: str) -> tuple[str, int]:
         return self.text_splitter.token_counter.truncate_to_tokens_with_count(

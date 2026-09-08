@@ -33,8 +33,15 @@ from src.application.workflows.embedding import EmbeddingWorkflow
 from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inferer import (
     StructuralProfileInferer,
 )
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference_cache import (
+    load_structural_profile_inference,
+    store_structural_profile_inference,
+)
 from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy_resolver import (
     DocumentChunkingPolicyResolver,
+)
+from src.application.workflows.parsing.builders.document_graph.document_metadata.document_type_signal_cache import (
+    load_document_type_confirmed,
 )
 from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (
     GraphChunkBuilder,
@@ -157,22 +164,34 @@ class PostClassificationChunkFinalizationWorkflow:
             section.section_id: graph.get_section_elements(section.section_id)
             for section in sections
         }
-        structural_inference = self.chunking_profile_inferer.infer_result(
-            document_title=graph.document.title,
-            sections=sections,
-            section_elements_by_id=section_elements_by_id,
+        document_type_confirmed = load_document_type_confirmed(graph.document.metadata)
+        # Reuse the inference computed during parsing (cached on the
+        # document's persisted metadata) instead of recomputing the same
+        # StructuralDocumentFeatures build + scoring a second time. Only
+        # missing when parsing short-circuited on a confirmed document_type
+        # and never needed to run inference at all -- compute it fresh here
+        # since HybridDocumentTypeResolver always needs a real structural
+        # signal to weigh against model classification, confirmed type or not.
+        structural_inference = load_structural_profile_inference(
+            graph.document.metadata
         )
-        # Reuses structural_inference instead of re-running the same
-        # StructuralDocumentFeatures build + scoring a second time -- only
-        # takes the inference path itself when document_type doesn't map to
-        # a known profile, which is what resolve() would otherwise do here.
+        if structural_inference is None:
+            structural_inference = self.chunking_profile_inferer.infer_result(
+                document_title=graph.document.title,
+                sections=sections,
+                section_elements_by_id=section_elements_by_id,
+            )
+            store_structural_profile_inference(
+                graph.document.metadata, structural_inference
+            )
         provisional_chunking_profile = self.chunking_policy_resolver.resolve_profile(
             document_title=graph.document.title,
             document_type=graph.document.document_type,
+            document_type_confirmed=document_type_confirmed,
             sections=sections,
             section_elements_by_id=section_elements_by_id,
             precomputed_inference=structural_inference,
-        )
+        ).profile
         decision = self.document_type_resolver.resolve(
             parser_title_hint=graph.document.document_type,
             structural_inference=structural_inference,
@@ -195,7 +214,7 @@ class PostClassificationChunkFinalizationWorkflow:
             sections=sections,
             section_elements_by_id=section_elements_by_id,
             chunking_profile_override=decision.effective_chunking_profile,
-        )
+        ).policy
         final_chunks, final_chunk_mode = self._final_chunk_resolver.resolve(
             graph=graph,
             sections=sections,

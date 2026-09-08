@@ -4,6 +4,9 @@ from src.application.workflows.parsing.builders.document_graph.chunk_statistics_
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference import (
+    StructuralProfileInference,
+)
 from src.application.workflows.parsing.builders.chunking import SectionChunkBuilder
 from src.application.workflows.parsing.profiling import GraphBuildProfiler
 from src.domain.common import SourceLocation
@@ -28,6 +31,7 @@ class GraphChunkBuilder:
             or self._build_default_chunk_statistics_builder(section_chunk_builder)
         )
         self.profiler = profiler or GraphBuildProfiler.disabled()
+        self.last_structural_profile_inference: StructuralProfileInference | None = None
 
     def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
         self.profiler = profiler or GraphBuildProfiler.disabled()
@@ -41,6 +45,8 @@ class GraphChunkBuilder:
         sections: list[DocumentSection],
         document_type_override: DocumentType | None = None,
         chunking_profile_override: ChunkingProfile | None = None,
+        document_type_confirmed: bool = True,
+        precomputed_inference: StructuralProfileInference | None = None,
         page_sizes: dict[int, tuple[float, float]] | None = None,
     ) -> list[DocumentChunk]:
         with self.profiler.measure(
@@ -73,9 +79,14 @@ class GraphChunkBuilder:
                 document_title=graph.document.title,
                 document_type=document_type_override or graph.document.document_type,
                 chunking_profile_override=chunking_profile_override,
+                document_type_confirmed=document_type_confirmed,
+                precomputed_inference=precomputed_inference,
                 sections=ordered_sections,
                 section_elements_by_id=section_elements_by_id,
                 page_sizes=page_sizes,
+            )
+            self.last_structural_profile_inference = getattr(
+                self.section_chunk_builder, "last_structural_profile_inference", None
             )
             stage.output_counts["chunk_payloads"] = len(chunk_payloads)
         chunk_totals_by_section: dict[str, int] = {}

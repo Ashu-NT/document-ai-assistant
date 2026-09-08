@@ -21,6 +21,12 @@ from src.application.workflows.parsing.builders.document_graph.document_metadata
 from src.application.workflows.parsing.builders.document_graph.document_metadata.document_persistent_metadata_builder import (
     DocumentPersistentMetadataBuilder,
 )
+from src.application.workflows.parsing.builders.document_graph.document_metadata.document_type_signal_cache import (
+    store_document_type_confirmed,
+)
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference_cache import (
+    store_structural_profile_inference,
+)
 from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (
     GraphChunkBuilder,
 )
@@ -152,15 +158,18 @@ class DocumentGraphBuilder:
                 name="document_graph_builder.initialize_document",
                 input_counts={"canonical_elements": len(canonical_elements)},
             ) as stage:
+                document_type_hint = (
+                    DocumentMetadataExtractor.extract_document_type_hint(
+                        raw_parsed_document
+                    )
+                )
                 document = Document(
                     document_id=document_id,
                     file_name=Path(file_path).name,
                     file_path=file_path,
                     hashes=hashes,
                     title=raw_parsed_document.title or Path(file_path).stem,
-                    document_type=DocumentMetadataExtractor.extract_document_type(
-                        raw_parsed_document
-                    ),
+                    document_type=document_type_hint.document_type,
                     language=DocumentMetadataExtractor.extract_language(
                         raw_parsed_document
                     ),
@@ -316,9 +325,21 @@ class DocumentGraphBuilder:
                 },
             ) as stage:
                 for chunk in self.chunk_builder.build_chunks(
-                    graph=graph, sections=sections, page_sizes=page_sizes
+                    graph=graph,
+                    sections=sections,
+                    page_sizes=page_sizes,
+                    document_type_confirmed=document_type_hint.is_confirmed,
                 ):
                     graph.add_chunk(chunk)
+                store_document_type_confirmed(
+                    graph.document.metadata,
+                    is_confirmed=document_type_hint.is_confirmed,
+                )
+                if self.chunk_builder.last_structural_profile_inference is not None:
+                    store_structural_profile_inference(
+                        graph.document.metadata,
+                        self.chunk_builder.last_structural_profile_inference,
+                    )
                 stage.output_counts["graph_chunks"] = len(graph.chunks)
 
             if self.cross_reference_pipeline is not None:

@@ -20,6 +20,9 @@ from src.application.workflows.parsing.builders.chunking.models import (
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference import (
+    StructuralProfileInference,
+)
 from src.application.workflows.parsing.builders.chunking.runtime.chunking_runtime_factory import (
     ChunkingRuntimeFactory,
 )
@@ -77,6 +80,7 @@ class SectionChunkBuilder:
             payload_deduplicator or ChunkPayloadDeduplicator()
         )
         self.fragment_packer = ChunkFragmentPacker()
+        self.last_structural_profile_inference: StructuralProfileInference | None = None
 
     def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
         self.profiler = profiler or GraphBuildProfiler.disabled()
@@ -89,6 +93,8 @@ class SectionChunkBuilder:
         elements: list[CanonicalElement],
         document_type: DocumentType | None = None,
         chunking_profile_override: ChunkingProfile | None = None,
+        document_type_confirmed: bool = True,
+        precomputed_inference: StructuralProfileInference | None = None,
         page_sizes: dict[int, tuple[float, float]] | None = None,
     ) -> list[ChunkPayload]:
         if not elements:
@@ -101,10 +107,13 @@ class SectionChunkBuilder:
                 document_title=document_title,
                 document_type=document_type,
                 chunking_profile_override=chunking_profile_override,
+                document_type_confirmed=document_type_confirmed,
+                precomputed_inference=precomputed_inference,
                 sections=[section],
                 section_elements_by_id={section.section_id: elements},
                 page_sizes=page_sizes,
             )
+            self.last_structural_profile_inference = runtime.structural_inference
             stage.output_counts["sections"] = 1
         runtime.fragment_builder.set_profiler(self.profiler)
         if runtime.section_skipper.should_skip_section(
@@ -143,6 +152,8 @@ class SectionChunkBuilder:
         section_elements_by_id: dict[str, list[CanonicalElement]],
         document_type: DocumentType | None = None,
         chunking_profile_override: ChunkingProfile | None = None,
+        document_type_confirmed: bool = True,
+        precomputed_inference: StructuralProfileInference | None = None,
         page_sizes: dict[int, tuple[float, float]] | None = None,
     ) -> list[ChunkPayload]:
         with self.profiler.measure(
@@ -153,10 +164,13 @@ class SectionChunkBuilder:
                 document_title=document_title,
                 document_type=document_type,
                 chunking_profile_override=chunking_profile_override,
+                document_type_confirmed=document_type_confirmed,
+                precomputed_inference=precomputed_inference,
                 sections=sections,
                 section_elements_by_id=section_elements_by_id,
                 page_sizes=page_sizes,
             )
+            self.last_structural_profile_inference = runtime.structural_inference
             stage.output_counts["sections"] = len(sections)
         runtime.fragment_builder.set_profiler(self.profiler)
         with self.profiler.measure(

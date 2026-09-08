@@ -266,12 +266,23 @@ def test_document_graph_builder_keeps_non_introductory_parent_text_separate_from
     # The parent's title isn't recognized introductory language (e.g.
     # "Overview", "Background"), so its own body text no longer folds into
     # the child task's chunk just because it's short and precedes it --
-    # the conservative default keeps them separate.
+    # the conservative default keeps them separate. The parent also gets
+    # its own overview chunk (a third, pure subsection-listing chunk,
+    # distinct from its real content chunk) since overview chunks no
+    # longer duplicate the section's own direct text -- see
+    # SectionOverviewChunkBuilder / project_chunking_pipeline_quality
+    # memory, audit finding #5.
     chunks = list(graph.chunks.values())
-    intro_chunk = next(
+    parent_chunks = [
         chunk
         for chunk in chunks
         if chunk.section_path == ["A first DSP project with Code Composer Studio"]
+    ]
+    intro_chunk = next(
+        chunk for chunk in parent_chunks if chunk.chunk_type.value != "overview"
+    )
+    overview_chunk = next(
+        chunk for chunk in parent_chunks if chunk.chunk_type.value == "overview"
     )
     task_chunk = next(
         chunk
@@ -283,7 +294,9 @@ def test_document_graph_builder_keeps_non_introductory_parent_text_separate_from
         ]
     )
 
-    assert len(graph.chunks) == 2
+    assert len(graph.chunks) == 3
     assert "This project introduces the signal path" in intro_chunk.content
     assert "Feed a sine wave into ADC 1" in task_chunk.content
     assert "Reconnect the cable to ADC 0" in task_chunk.content
+    assert "This project introduces the signal path" not in overview_chunk.content
+    assert "Direct subsections (1): Lab task 1" in overview_chunk.content

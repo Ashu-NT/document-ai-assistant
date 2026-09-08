@@ -37,6 +37,9 @@ from src.application.workflows.parsing.builders.chunking.policies.section_merge.
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference import (
+    StructuralProfileInference,
+)
 from src.config.logging import get_logger
 from src.domain.common import DocumentType
 from src.domain.document import DocumentSection
@@ -90,16 +93,21 @@ class ChunkingRuntimeFactory:
         sections: list[DocumentSection],
         section_elements_by_id: dict[str, list[CanonicalElement]],
         chunking_profile_override: ChunkingProfile | None = None,
+        document_type_confirmed: bool = True,
+        precomputed_inference: StructuralProfileInference | None = None,
         page_sizes: dict[int, tuple[float, float]] | None = None,
     ) -> ChunkingRuntime:
         chunk_type_resolver = ChunkTypeResolver()
-        policy = self.policy_resolver.resolve(
+        resolution = self.policy_resolver.resolve(
             document_title=document_title,
             document_type=document_type,
             chunking_profile_override=chunking_profile_override,
+            document_type_confirmed=document_type_confirmed,
+            precomputed_inference=precomputed_inference,
             sections=sections,
             section_elements_by_id=section_elements_by_id,
         )
+        policy = resolution.policy
         token_counter = self.token_counter or self.token_counter_factory.create()
         max_chunk_tokens = self.max_chunk_tokens_override or policy.max_chunk_tokens
         safe_max_chunk_tokens = _max_safe_chunk_tokens(token_counter)
@@ -153,4 +161,5 @@ class ChunkingRuntimeFactory:
                 intro_context_tokens=policy.intro_context_tokens,
                 chunk_type_resolver=chunk_type_resolver,
             ),
+            structural_inference=resolution.structural_inference,
         )

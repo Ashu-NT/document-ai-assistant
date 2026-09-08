@@ -18,6 +18,9 @@ from src.application.workflows.parsing.builders.chunking.builders.section_chunk_
 from src.application.workflows.parsing.builders.chunking.policies.section_merge.section_merge_policy import (
     SectionMergePolicy,
 )
+from src.application.workflows.parsing.builders.chunking.policies.profile.structural_profile_inference import (
+    StructuralProfileInference,
+)
 
 
 @dataclass(slots=True)
@@ -28,3 +31,7 @@ class ChunkingRuntime:
     section_skipper: SectionChunkSkipper
     payload_factory: ChunkPayloadFactory
     merge_policy: SectionMergePolicy
+    # Populated only when this runtime's chunking profile was actually
+    # decided by structural inference (an unconfirmed document_type hint,
+    # or no type at all) -- None when a confirmed type short-circuited it.
+    structural_inference: StructuralProfileInference | None = None
