@@ -1,4 +1,5 @@
 TestDoc/
+diagnostics/
 .pytest_tmp_local
 .tmp
 tmp/
