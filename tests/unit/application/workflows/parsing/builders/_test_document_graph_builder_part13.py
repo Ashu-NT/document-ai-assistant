@@ -56,7 +56,7 @@ def test_document_graph_builder_isolates_bad_element_and_continues(monkeypatch) 
         ],
         raw_parsed_document=make_raw_parsed_document(),
         skipped_element_errors=errors,
-    )
+    ).graph
 
     surviving_texts = {element.text for element in graph.elements.values()}
     assert surviving_texts == {"Components", "Good text."}
@@ -107,7 +107,7 @@ def test_document_graph_builder_isolates_bad_form_element_and_continues(monkeypa
         ],
         raw_parsed_document=make_raw_parsed_document(),
         skipped_element_errors=errors,
-    )
+    ).graph
 
     surviving_texts = {element.text for element in graph.elements.values()}
     assert surviving_texts == {"Components", "Good text."}

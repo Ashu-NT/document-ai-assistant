@@ -57,7 +57,7 @@ def test_build_chunk_payloads_returns_empty_for_no_elements() -> None:
         document_title="Manual",
         section=section,
         elements=[],
-    )
+    ).payloads
 
     assert payloads == []
 
@@ -82,7 +82,7 @@ def test_build_chunk_payloads_returns_empty_when_section_is_skipped() -> None:
         document_title="Manual",
         section=section,
         elements=elements,
-    )
+    ).payloads
 
     assert payloads == []
 
@@ -104,7 +104,7 @@ def test_build_chunk_payloads_returns_content_payload_for_normal_section() -> No
         document_title="Manual",
         section=section,
         elements=elements,
-    )
+    ).payloads
 
     assert len(payloads) == 1
     assert "Mount the bracket" in payloads[0].content
@@ -130,7 +130,7 @@ def test_build_chunk_payloads_deduplicates_exact_duplicate_content_split_by_toke
         document_title="Manual",
         section=section,
         elements=elements,
-    )
+    ).payloads
 
     assert len(payloads) == 1
 
@@ -142,7 +142,7 @@ def test_build_document_chunk_payloads_returns_empty_for_no_sections() -> None:
         document_title="Manual",
         sections=[],
         section_elements_by_id={},
-    )
+    ).payloads
 
     assert payloads == []
 
@@ -178,7 +178,7 @@ def test_build_document_chunk_payloads_produces_overview_and_content_payloads_fo
         document_title="Manual",
         sections=[parent, child],
         section_elements_by_id=section_elements_by_id,
-    )
+    ).payloads
 
     overview_payloads = [
         payload for payload in payloads if payload.chunk_type.value == "overview"
@@ -238,7 +238,7 @@ def test_build_document_chunk_payloads_skips_front_matter_section_but_keeps_norm
         document_title="Manual",
         sections=[front_matter_section, normal_section],
         section_elements_by_id=section_elements_by_id,
-    )
+    ).payloads
 
     assert len(payloads) == 1
     assert payloads[0].section_path == ["Installation"]
@@ -295,7 +295,7 @@ def test_build_document_chunk_payloads_merges_related_sibling_sections_via_merge
         document_title="Lab Manual",
         sections=[parent, sibling_a, sibling_b],
         section_elements_by_id=section_elements_by_id,
-    )
+    ).payloads
 
     # One merged content payload for the two siblings, plus the "Lab
     # preparation" parent's own overview payload (it now has two

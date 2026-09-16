@@ -39,7 +39,7 @@ class AssetFallbackChunkRecovery:
             sections=sections,
             document_type_override=decision.effective_document_type,
             chunking_profile_override=ChunkingProfile.DEFAULT,
-        )
+        ).chunks
         if fallback_chunks:
             emit_progress(
                 progress_callback,

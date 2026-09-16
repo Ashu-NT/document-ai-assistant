@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.builders.chunking.builders.section_chunk.chunk_fragment_packer import (
     ChunkFragmentPacker,
 )
+from src.application.workflows.parsing.builders.chunking.builders.section_chunk.section_chunk_build_result import (
+    SectionChunkBuildResult,
+)
 from src.application.workflows.parsing.builders.chunking.builders.section_chunk.overview_payload_merger import (
     merge_overview_payloads,
 )
@@ -80,7 +83,6 @@ class SectionChunkBuilder:
             payload_deduplicator or ChunkPayloadDeduplicator()
         )
         self.fragment_packer = ChunkFragmentPacker()
-        self.last_structural_profile_inference: StructuralProfileInference | None = None
 
     def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
         self.profiler = profiler or GraphBuildProfiler.disabled()
@@ -96,9 +98,9 @@ class SectionChunkBuilder:
         document_type_confirmed: bool = True,
         precomputed_inference: StructuralProfileInference | None = None,
         page_sizes: dict[int, tuple[float, float]] | None = None,
-    ) -> list[ChunkPayload]:
+    ) -> SectionChunkBuildResult:
         if not elements:
-            return []
+            return SectionChunkBuildResult(payloads=[], structural_inference=None)
         with self.profiler.measure(
             name="section_chunk_builder.create_runtime",
             input_counts={"sections": 1, "elements": len(elements)},
@@ -113,7 +115,7 @@ class SectionChunkBuilder:
                 section_elements_by_id={section.section_id: elements},
                 page_sizes=page_sizes,
             )
-            self.last_structural_profile_inference = runtime.structural_inference
+            structural_inference = runtime.structural_inference
             stage.output_counts["sections"] = 1
         runtime.fragment_builder.set_profiler(self.profiler)
         if runtime.section_skipper.should_skip_section(
@@ -121,7 +123,9 @@ class SectionChunkBuilder:
             section=section,
             elements=elements,
         ):
-            return []
+            return SectionChunkBuildResult(
+                payloads=[], structural_inference=structural_inference
+            )
 
         try:
             fragments = runtime.fragment_builder.build_section_fragments(
@@ -133,15 +137,20 @@ class SectionChunkBuilder:
         finally:
             self.profiler.flush_aggregates()
         if not fragments:
-            return []
-        return self._deduplicate_payloads(
-            self.fragment_packer.pack(
-                document_title=document_title,
-                fragments=fragments,
-                text_splitter=runtime.text_splitter,
-                payload_factory=runtime.payload_factory,
-                merge_policy=runtime.merge_policy,
+            return SectionChunkBuildResult(
+                payloads=[], structural_inference=structural_inference
             )
+        return SectionChunkBuildResult(
+            payloads=self._deduplicate_payloads(
+                self.fragment_packer.pack(
+                    document_title=document_title,
+                    fragments=fragments,
+                    text_splitter=runtime.text_splitter,
+                    payload_factory=runtime.payload_factory,
+                    merge_policy=runtime.merge_policy,
+                )
+            ),
+            structural_inference=structural_inference,
         )
 
     def build_document_chunk_payloads(
@@ -155,7 +164,7 @@ class SectionChunkBuilder:
         document_type_confirmed: bool = True,
         precomputed_inference: StructuralProfileInference | None = None,
         page_sizes: dict[int, tuple[float, float]] | None = None,
-    ) -> list[ChunkPayload]:
+    ) -> SectionChunkBuildResult:
         with self.profiler.measure(
             name="section_chunk_builder.create_runtime",
             input_counts={"sections": len(sections)},
@@ -170,7 +179,7 @@ class SectionChunkBuilder:
                 section_elements_by_id=section_elements_by_id,
                 page_sizes=page_sizes,
             )
-            self.last_structural_profile_inference = runtime.structural_inference
+            structural_inference = runtime.structural_inference
             stage.output_counts["sections"] = len(sections)
         runtime.fragment_builder.set_profiler(self.profiler)
         with self.profiler.measure(
@@ -305,7 +314,10 @@ class SectionChunkBuilder:
         ) as stage:
             deduplicated_payloads = self._deduplicate_payloads(merged_payloads)
             stage.output_counts["deduplicated_payloads"] = len(deduplicated_payloads)
-        return deduplicated_payloads
+        return SectionChunkBuildResult(
+            payloads=deduplicated_payloads,
+            structural_inference=structural_inference,
+        )
 
     def _deduplicate_payloads(
         self,

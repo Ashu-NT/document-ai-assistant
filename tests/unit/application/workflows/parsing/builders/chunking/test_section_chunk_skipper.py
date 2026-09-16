@@ -333,7 +333,7 @@ def test_section_chunk_builder_emits_structured_chunk_for_contents_polluted_sect
         section=section,
         elements=elements,
         document_type=DocumentType.REPORT,
-    )
+    ).payloads
 
     approval_payload = next(
         payload

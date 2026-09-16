@@ -206,7 +206,7 @@ def main() -> int:
     document_id = id_generator.new_id(IdPrefix.DOCUMENT)
     file_hash, content_hash = compute_hashes(input_path)
 
-    parsing_workflow, document_graph_builder = build_parsing_runtime(
+    parsing_workflow, _document_graph_builder = build_parsing_runtime(
         id_generator=id_generator
     )
 
@@ -225,8 +225,8 @@ def main() -> int:
     )
 
     document_graph = result.document_graph
-    extraction_result = parsing_workflow.last_pdf_link_extraction_result
-    linking_outcome = document_graph_builder.last_cross_reference_linking_outcome
+    extraction_result = result.pdf_link_extraction_result
+    linking_outcome = result.cross_reference_linking_outcome
 
     report = build_report(
         input_path=input_path,

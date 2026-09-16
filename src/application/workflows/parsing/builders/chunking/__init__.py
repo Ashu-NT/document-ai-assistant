@@ -31,6 +31,9 @@ from src.application.workflows.parsing.builders.chunking.policies.document_chunk
 from src.application.workflows.parsing.builders.chunking.builders.section_chunk.section_chunk_builder import (
     SectionChunkBuilder,
 )
+from src.application.workflows.parsing.builders.chunking.builders.section_chunk.section_chunk_build_result import (
+    SectionChunkBuildResult,
+)
 
 __all__ = [
     "ChunkSemanticSignalExtractor",
@@ -44,4 +47,5 @@ __all__ = [
     "DocumentChunkingPolicy",
     "DocumentChunkingPolicyResolver",
     "SectionChunkBuilder",
+    "SectionChunkBuildResult",
 ]

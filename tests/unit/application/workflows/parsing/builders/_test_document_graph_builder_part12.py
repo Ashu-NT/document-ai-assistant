@@ -43,7 +43,7 @@ def test_document_graph_builder_persists_outline_and_artifact_metadata() -> None
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     metadata = graph.document.metadata
     assert metadata["parser"] == {"name": "docling", "version": "1.2.3"}

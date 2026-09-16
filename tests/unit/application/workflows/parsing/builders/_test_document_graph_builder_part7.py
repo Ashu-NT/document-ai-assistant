@@ -161,7 +161,7 @@ def test_document_graph_builder_creates_combined_anchor_and_towing_lamp_chunk() 
             ),
         ],
         raw_parsed_document=raw_parsed_document,
-    )
+    ).graph
 
     lamp_labels_chunk = next(
         chunk for chunk in graph.chunks.values() if "15 - COMBINED" in chunk.content

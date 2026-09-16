@@ -45,7 +45,7 @@ class FinalChunkResolver:
             sections=sections,
             document_type_override=decision.effective_document_type,
             chunking_profile_override=decision.effective_chunking_profile,
-        )
+        ).chunks
         if decision.should_rechunk:
             selected_chunks, selected_mode = rebuilt_chunks, "rechunked"
         elif not stored_chunks:

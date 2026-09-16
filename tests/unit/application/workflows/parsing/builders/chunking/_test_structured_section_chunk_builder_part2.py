@@ -71,7 +71,7 @@ def test_section_chunk_builder_emits_report_connection_procedure_chunk() -> None
         section=section,
         elements=elements,
         document_type=DocumentType.REPORT,
-    )
+    ).payloads
 
     procedure_payload = next(
         payload

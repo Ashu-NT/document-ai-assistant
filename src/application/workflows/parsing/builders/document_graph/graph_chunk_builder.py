@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.builders.document_graph.chunk_statistics_builder import (
     ChunkStatisticsBuilder,
 )
+from src.application.workflows.parsing.builders.document_graph.graph_chunk_build_result import (
+    GraphChunkBuildResult,
+)
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
@@ -31,7 +34,6 @@ class GraphChunkBuilder:
             or self._build_default_chunk_statistics_builder(section_chunk_builder)
         )
         self.profiler = profiler or GraphBuildProfiler.disabled()
-        self.last_structural_profile_inference: StructuralProfileInference | None = None
 
     def set_profiler(self, profiler: GraphBuildProfiler | None) -> None:
         self.profiler = profiler or GraphBuildProfiler.disabled()
@@ -48,7 +50,7 @@ class GraphChunkBuilder:
         document_type_confirmed: bool = True,
         precomputed_inference: StructuralProfileInference | None = None,
         page_sizes: dict[int, tuple[float, float]] | None = None,
-    ) -> list[DocumentChunk]:
+    ) -> GraphChunkBuildResult:
         with self.profiler.measure(
             name="graph_chunk_builder.order_sections",
             input_counts={"sections": len(sections)},
@@ -75,19 +77,21 @@ class GraphChunkBuilder:
             name="graph_chunk_builder.build_payloads",
             input_counts={"sections": len(ordered_sections)},
         ) as stage:
-            chunk_payloads = self.section_chunk_builder.build_document_chunk_payloads(
-                document_title=graph.document.title,
-                document_type=document_type_override or graph.document.document_type,
-                chunking_profile_override=chunking_profile_override,
-                document_type_confirmed=document_type_confirmed,
-                precomputed_inference=precomputed_inference,
-                sections=ordered_sections,
-                section_elements_by_id=section_elements_by_id,
-                page_sizes=page_sizes,
+            section_chunk_build_result = (
+                self.section_chunk_builder.build_document_chunk_payloads(
+                    document_title=graph.document.title,
+                    document_type=document_type_override
+                    or graph.document.document_type,
+                    chunking_profile_override=chunking_profile_override,
+                    document_type_confirmed=document_type_confirmed,
+                    precomputed_inference=precomputed_inference,
+                    sections=ordered_sections,
+                    section_elements_by_id=section_elements_by_id,
+                    page_sizes=page_sizes,
+                )
             )
-            self.last_structural_profile_inference = getattr(
-                self.section_chunk_builder, "last_structural_profile_inference", None
-            )
+            chunk_payloads = section_chunk_build_result.payloads
+            structural_inference = section_chunk_build_result.structural_inference
             stage.output_counts["chunk_payloads"] = len(chunk_payloads)
         chunk_totals_by_section: dict[str, int] = {}
         chunk_indexes_by_section: dict[str, int] = {}
@@ -147,7 +151,9 @@ class GraphChunkBuilder:
                 )
             stage.output_counts["chunks"] = len(chunks)
 
-        return chunks
+        return GraphChunkBuildResult(
+            chunks=chunks, structural_inference=structural_inference
+        )
 
     @staticmethod
     def _build_default_chunk_statistics_builder(

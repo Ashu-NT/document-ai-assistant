@@ -70,7 +70,7 @@ def test_section_chunk_builder_sanitizes_branding_noise_from_section_paths() -> 
         section=section,
         elements=elements,
         document_type=DocumentType.MANUAL,
-    )
+    ).payloads
 
     assert payloads[0].section_path == [
         "6 Operation & General Maintenance",
@@ -110,7 +110,7 @@ def test_section_chunk_builder_resets_numbered_sibling_paths() -> None:
         section=section,
         elements=elements,
         document_type=DocumentType.MANUAL,
-    )
+    ).payloads
 
     assert payloads[0].section_path == [
         "7 Components",
@@ -149,7 +149,7 @@ def test_section_chunk_builder_emits_manual_maintenance_interval_chunk() -> None
         section=section,
         elements=elements,
         document_type=DocumentType.MANUAL,
-    )
+    ).payloads
 
     interval_payload = next(
         payload
@@ -193,7 +193,7 @@ def test_section_chunk_builder_resets_path_when_manual_sections_advance() -> Non
         section=section,
         elements=elements,
         document_type=DocumentType.MANUAL,
-    )
+    ).payloads
 
     assert payloads[0].section_path == [
         "7 Components",
@@ -244,7 +244,7 @@ def test_section_chunk_builder_resets_stale_manual_maintenance_branch_path() -> 
         section=section,
         elements=elements,
         document_type=DocumentType.MANUAL,
-    )
+    ).payloads
 
     interval_payload = next(
         payload

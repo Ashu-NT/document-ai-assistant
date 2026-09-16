@@ -151,7 +151,7 @@ def test_document_graph_builder_merges_same_topic_sibling_sections_under_parent(
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     overview_chunk = find_chunk_by_type(graph, "overview")
     detail_chunk = find_non_overview_chunks(graph)[0]
@@ -281,7 +281,7 @@ def test_document_graph_builder_creates_structured_drawing_chunks() -> None:
             ),
         ],
         raw_parsed_document=raw_parsed_document,
-    )
+    ).graph
 
     title_block_chunk = next(
         chunk for chunk in graph.chunks.values() if "13759/3540-01.00" in chunk.content

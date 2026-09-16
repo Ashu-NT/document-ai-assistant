@@ -130,7 +130,7 @@ def test_document_graph_builder_populates_section_chunk_type_signals() -> None:
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     sections_with_signals = [
         s for s in graph.sections.values() if s.chunk_type_signals
@@ -188,7 +188,7 @@ def test_document_graph_builder_writes_overview_text_to_parent_section() -> None
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     parent_section = next(
         s for s in graph.sections.values() if s.title == "Maintenance"
@@ -244,7 +244,7 @@ def test_document_graph_builder_keeps_full_page_picture_for_certificate_profile(
             raw_document=raw_document,
             metadata={"document_type": "certificate"},
         ),
-    )
+    ).graph
 
     non_overview_chunks = find_non_overview_chunks(graph)
     assert len(non_overview_chunks) == 1
@@ -275,6 +275,6 @@ def test_document_graph_builder_drops_small_decorative_picture_for_certificate_p
             raw_document=raw_document,
             metadata={"document_type": "certificate"},
         ),
-    )
+    ).graph
 
     assert find_non_overview_chunks(graph) == []

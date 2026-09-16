@@ -97,7 +97,7 @@ def test_reference_only_mentions_do_not_create_structured_chunk_types() -> None:
         document_type=DocumentType.MANUAL,
         section=_section(),
         elements=elements,
-    )
+    ).payloads
 
     assert payloads
     assert all(payload.chunk_type == ChunkType.GENERAL for payload in payloads)
@@ -248,7 +248,7 @@ def test_drawing_windows_do_not_consume_unowned_section_evidence() -> None:
         document_type=DocumentType.DRAWING,
         section=_section("Drawing sheet"),
         elements=elements,
-    )
+    ).payloads
 
     assert payloads
     assert any(

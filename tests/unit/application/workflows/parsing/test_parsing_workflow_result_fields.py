@@ -124,3 +124,32 @@ class TestParsingWorkflowResultNewFields:
         assert result.orphan_element_count == 0
         assert result.elements_without_page_count == 0
         assert result.parse_warnings == []
+        assert result.pdf_link_extraction_result is None
+        assert result.cross_reference_linking_outcome is None
+
+    def test_result_carries_pdf_link_extraction_result_and_cross_reference_linking_outcome(
+        self,
+    ):
+        """Both fields are the explicit-return-value replacement for what
+        used to be read back from ParsingWorkflow.last_pdf_link_extraction_
+        result / DocumentGraphBuilder.last_cross_reference_linking_outcome
+        after the call returned (unsafe under concurrent reuse of a shared
+        workflow/builder instance)."""
+        graph = MagicMock()
+        extraction_result = MagicMock()
+        linking_outcome = MagicMock()
+        result = ParsingWorkflowResult(
+            document_id="doc1",
+            file_path="/f.pdf",
+            page_count=None,
+            element_count=0,
+            section_count=0,
+            chunk_count=0,
+            table_count=0,
+            picture_count=0,
+            document_graph=graph,
+            pdf_link_extraction_result=extraction_result,
+            cross_reference_linking_outcome=linking_outcome,
+        )
+        assert result.pdf_link_extraction_result is extraction_result
+        assert result.cross_reference_linking_outcome is linking_outcome

@@ -133,7 +133,7 @@ def test_document_graph_builder_uses_resolved_section_paths_for_chunks() -> None
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     chunk = find_non_overview_chunks(graph)[0]
 
@@ -191,7 +191,7 @@ def test_document_graph_builder_creates_table_assets_and_picture_assets() -> Non
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     table = next(iter(graph.tables.values()))
     picture = next(iter(graph.pictures.values()))
@@ -246,7 +246,7 @@ def test_document_graph_builder_creates_form_asset_and_standalone_chunk() -> Non
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     form = next(iter(graph.forms.values()))
     assert form.metadata.caption == "Equipment identification form"
@@ -299,7 +299,7 @@ def test_document_graph_builder_does_not_make_chunks_from_picture_ocr_noise() ->
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     chunk = find_non_overview_chunks(graph)[0]
 

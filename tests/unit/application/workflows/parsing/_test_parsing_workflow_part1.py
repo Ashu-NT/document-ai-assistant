@@ -11,6 +11,9 @@ from src.application.workflows.parsing import (
     ParsingWorkflow,
     RawParsedDocument,
 )
+from src.application.workflows.parsing.builders.document_graph_build_result import (
+    DocumentGraphBuildResult,
+)
 
 from src.domain.common import ElementType
 
@@ -50,13 +53,17 @@ class FakeNormalizer:
         return self.canonical_elements
 
 class FakeDocumentGraphBuilder:
-    def __init__(self, document_graph) -> None:
+    def __init__(self, document_graph, cross_reference_linking_outcome=None) -> None:
         self.document_graph = document_graph
+        self.cross_reference_linking_outcome = cross_reference_linking_outcome
         self.calls: list[dict] = []
 
     def build(self, **kwargs):
         self.calls.append(kwargs)
-        return self.document_graph
+        return DocumentGraphBuildResult(
+            graph=self.document_graph,
+            cross_reference_linking_outcome=self.cross_reference_linking_outcome,
+        )
 
 class FakeCanonicalElementOCREnricher:
     def __init__(self, enriched_elements: list[ParsedCanonicalElement]) -> None:
@@ -310,7 +317,7 @@ def test_parse_runs_pdf_link_extraction_and_threads_result_into_graph_build(
         pdf_link_annotation_extractor=pdf_link_annotation_extractor,
     )
 
-    workflow.parse(
+    result = workflow.parse(
         file_path="data/input/pump_manual.pdf",
         file_hash="file_hash_001",
         content_hash="content_hash_001",
@@ -318,6 +325,54 @@ def test_parse_runs_pdf_link_extraction_and_threads_result_into_graph_build(
 
     assert pdf_link_annotation_extractor.calls == ["data/input/pump_manual.pdf"]
     assert builder.calls[0]["pdf_link_extraction_result"] is extraction_result
+    # Regression test for the concurrent-parsing fix: the extraction result
+    # must come back as part of parse()'s return value, not be read off a
+    # `last_pdf_link_extraction_result` instance attribute afterward - a
+    # shared workflow instance reused across concurrent parse() calls could
+    # have that attribute overwritten before a caller read it back.
+    assert result.pdf_link_extraction_result is extraction_result
+    assert not hasattr(workflow, "last_pdf_link_extraction_result")
+
+
+def test_parse_returns_cross_reference_linking_outcome_explicitly(
+    sample_document_graph,
+) -> None:
+    """Regression test for the concurrent-parsing fix: the cross-reference
+    linking outcome computed inside DocumentGraphBuilder.build() must come
+    back as part of parse()'s return value, not be read off a
+    `last_cross_reference_linking_outcome` instance attribute on the
+    builder afterward - a shared builder instance reused across concurrent
+    build() calls could have that attribute overwritten before a caller
+    read it back."""
+    raw_parsed_document = RawParsedDocument(
+        file_path="data/input/pump_manual.pdf",
+        title="Hydraulic Pump Manual",
+        page_count=3,
+        raw_document=object(),
+        parser_name="docling",
+    )
+    parser = FakeParser(raw_parsed_document)
+    normalizer = FakeNormalizer([])
+    sentinel_outcome = object()
+    builder = FakeDocumentGraphBuilder(
+        copy.deepcopy(sample_document_graph),
+        cross_reference_linking_outcome=sentinel_outcome,
+    )
+    workflow = ParsingWorkflow(
+        parser=parser,
+        normalizer=normalizer,
+        document_graph_builder=builder,
+        id_generator=IdGenerator(),
+    )
+
+    result = workflow.parse(
+        file_path="data/input/pump_manual.pdf",
+        file_hash="file_hash_001",
+        content_hash="content_hash_001",
+    )
+
+    assert result.cross_reference_linking_outcome is sentinel_outcome
+    assert not hasattr(builder, "last_cross_reference_linking_outcome")
 
 
 def test_parse_skips_pdf_link_extraction_when_no_extractor_injected(

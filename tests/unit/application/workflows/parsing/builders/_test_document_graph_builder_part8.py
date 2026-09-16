@@ -210,7 +210,7 @@ def test_document_graph_builder_creates_structured_report_chunks() -> None:
             ),
         ],
         raw_parsed_document=raw_parsed_document,
-    )
+    ).graph
 
     device_chunk = next(
         chunk for chunk in graph.chunks.values() if "Cerabar M PMP51" in chunk.content

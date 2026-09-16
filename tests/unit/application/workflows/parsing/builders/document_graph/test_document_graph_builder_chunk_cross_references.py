@@ -103,7 +103,7 @@ class _StubCrossReferencePipeline:
         )
 
 
-def _build_graph(*, cross_reference_pipeline=None):
+def _build_graph_result(*, cross_reference_pipeline=None):
     builder = make_builder(cross_reference_pipeline=cross_reference_pipeline)
     return builder.build(
         document_id="doc_001",
@@ -120,15 +120,17 @@ def _build_graph(*, cross_reference_pipeline=None):
 def test_document_graph_builder_does_not_link_cross_references_when_no_pipeline_injected() -> (
     None
 ):
-    graph = _build_graph(cross_reference_pipeline=None)
+    result = _build_graph_result(cross_reference_pipeline=None)
 
-    assert graph.cross_references == {}
-    assert graph.cross_reference_evidence == {}
+    assert result.graph.cross_references == {}
+    assert result.graph.cross_reference_evidence == {}
+    assert result.cross_reference_linking_outcome is None
 
 
 def test_document_graph_builder_links_cross_references_when_pipeline_injected() -> None:
     pipeline = _StubCrossReferencePipeline()
-    graph = _build_graph(cross_reference_pipeline=pipeline)
+    result = _build_graph_result(cross_reference_pipeline=pipeline)
+    graph = result.graph
 
     assert len(pipeline.run_calls) == 1
     assert len(graph.cross_references) == 1
@@ -141,7 +143,26 @@ def test_document_graph_builder_links_cross_references_when_pipeline_injected() 
     assert evidence.document_id == "doc_001"
 
 
-def test_document_graph_builder_records_cross_reference_count_in_statistics() -> None:
-    graph = _build_graph(cross_reference_pipeline=_StubCrossReferencePipeline())
+def test_document_graph_builder_returns_cross_reference_linking_outcome_explicitly() -> (
+    None
+):
+    """Regression test for the concurrent-parsing fix: the linking outcome
+    must come back as part of build()'s return value, not be read off a
+    `last_cross_reference_linking_outcome` instance attribute afterward -
+    a shared builder instance reused across concurrent build() calls could
+    have that attribute overwritten before a caller read it back."""
+    pipeline = _StubCrossReferencePipeline()
+    result = _build_graph_result(cross_reference_pipeline=pipeline)
 
-    assert graph.document.statistics.cross_reference_count == 1
+    outcome = result.cross_reference_linking_outcome
+    assert outcome is not None
+    assert len(outcome.evidence) == 1
+    assert outcome.evidence[0].evidence_id == "xref_evidence_stub_1"
+    assert len(outcome.canonical_references) == 1
+    assert outcome.canonical_references[0].cross_reference_id == "xref_stub_1"
+
+
+def test_document_graph_builder_records_cross_reference_count_in_statistics() -> None:
+    result = _build_graph_result(cross_reference_pipeline=_StubCrossReferencePipeline())
+
+    assert result.graph.document.statistics.cross_reference_count == 1

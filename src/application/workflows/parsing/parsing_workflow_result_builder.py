@@ -17,6 +17,8 @@ def build_parsing_workflow_result(
     stage_durations: dict[str, float] | None = None,
     normalization_item_errors: list[str] | None = None,
     graph_build_item_errors: list[str] | None = None,
+    pdf_link_extraction_result=None,
+    cross_reference_linking_outcome=None,
 ) -> ParsingWorkflowResult:
     elements = list(document_graph.elements.values())
     orphan_count = sum(1 for e in elements if e.parent_section_id is None)
@@ -69,4 +71,6 @@ def build_parsing_workflow_result(
         parse_warnings=warnings,
         ocr_trace=ocr_trace,
         stage_durations=stage_durations or {},
+        pdf_link_extraction_result=pdf_link_extraction_result,
+        cross_reference_linking_outcome=cross_reference_linking_outcome,
     )

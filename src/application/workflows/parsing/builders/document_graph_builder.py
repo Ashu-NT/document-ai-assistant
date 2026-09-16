@@ -30,6 +30,9 @@ from src.application.workflows.parsing.builders.chunking.policies.profile.struct
 from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (
     GraphChunkBuilder,
 )
+from src.application.workflows.parsing.builders.document_graph_build_result import (
+    DocumentGraphBuildResult,
+)
 from src.application.workflows.parsing.builders.document_graph.page_size_extractor import (
     PageSizeExtractor,
 )
@@ -47,9 +50,6 @@ from src.application.workflows.parsing.builders.document_graph.parsed_assets.par
 )
 from src.application.workflows.parsing.builders.document_graph.section_boundary_updater import (
     SectionBoundaryUpdater,
-)
-from src.application.workflows.parsing.builders.section_build_result import (
-    SectionBuildResult,
 )
 from src.application.workflows.parsing.builders.section_builder import SectionBuilder
 from src.application.workflows.parsing.profiling import GraphBuildProfiler
@@ -117,14 +117,6 @@ class DocumentGraphBuilder:
             profiler=self.profiler,
         )
         self.persistent_metadata_builder = DocumentPersistentMetadataBuilder()
-        self.last_section_build_result: SectionBuildResult | None = None
-        # Inspection hook for callers that need the native/reconciliation
-        # diagnostics after build() returns (e.g. corpus verification
-        # scripts) - the outcome itself is otherwise fully consumed inside
-        # build() and discarded. Mirrors last_section_build_result above.
-        self.last_cross_reference_linking_outcome: (
-            CrossReferenceLinkingOutcome | None
-        ) = None
         if hasattr(self.section_builder, "set_profiler"):
             self.section_builder.set_profiler(self.profiler)
         if hasattr(self.section_chunk_builder, "set_profiler"):
@@ -151,7 +143,7 @@ class DocumentGraphBuilder:
         raw_parsed_document: RawParsedDocument,
         skipped_element_errors: list[str] | None = None,
         pdf_link_extraction_result: PdfLinkExtractionResult | None = None,
-    ) -> DocumentGraph:
+    ) -> DocumentGraphBuildResult:
         self.profiler.document_id = document_id
         try:
             with self.profiler.measure(
@@ -189,7 +181,6 @@ class DocumentGraphBuilder:
                 canonical_elements,
                 default_title=raw_parsed_document.title or "Document",
             )
-            self.last_section_build_result = section_build_result
             sections = section_build_result.sections
             section_lookup = {section.section_id: section for section in sections}
 
@@ -324,24 +315,26 @@ class DocumentGraphBuilder:
                     "elements": len(graph.elements),
                 },
             ) as stage:
-                for chunk in self.chunk_builder.build_chunks(
+                graph_chunk_build_result = self.chunk_builder.build_chunks(
                     graph=graph,
                     sections=sections,
                     page_sizes=page_sizes,
                     document_type_confirmed=document_type_hint.is_confirmed,
-                ):
+                )
+                for chunk in graph_chunk_build_result.chunks:
                     graph.add_chunk(chunk)
                 store_document_type_confirmed(
                     graph.document.metadata,
                     is_confirmed=document_type_hint.is_confirmed,
                 )
-                if self.chunk_builder.last_structural_profile_inference is not None:
+                if graph_chunk_build_result.structural_inference is not None:
                     store_structural_profile_inference(
                         graph.document.metadata,
-                        self.chunk_builder.last_structural_profile_inference,
+                        graph_chunk_build_result.structural_inference,
                     )
                 stage.output_counts["graph_chunks"] = len(graph.chunks)
 
+            linking_outcome: CrossReferenceLinkingOutcome | None = None
             if self.cross_reference_pipeline is not None:
                 with self.profiler.measure(
                     name="document_graph_builder.link_chunk_cross_references",
@@ -350,7 +343,6 @@ class DocumentGraphBuilder:
                     linking_outcome = self.cross_reference_pipeline.run(
                         graph, pdf_link_extraction_result
                     )
-                    self.last_cross_reference_linking_outcome = linking_outcome
                     for evidence in linking_outcome.evidence:
                         graph.add_cross_reference_evidence(evidence)
                     for cross_reference in linking_outcome.canonical_references:
@@ -390,7 +382,9 @@ class DocumentGraphBuilder:
                 )
                 stage.output_counts["chunk_type_counts"] = len(chunk_type_counts)
 
-            return graph
+            return DocumentGraphBuildResult(
+                graph=graph, cross_reference_linking_outcome=linking_outcome
+            )
         except ChunkingError:
             raise
         except Exception as exc:

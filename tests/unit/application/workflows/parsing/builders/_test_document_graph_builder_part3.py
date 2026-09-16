@@ -132,7 +132,7 @@ def test_document_graph_builder_keeps_whole_elements_when_packing_chunks() -> No
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     contents = [chunk.content for chunk in graph.chunks.values()]
 
@@ -187,7 +187,7 @@ def test_document_graph_builder_skips_table_of_contents_chunks() -> None:
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     chunks = list(graph.chunks.values())
 
@@ -230,7 +230,7 @@ def test_document_graph_builder_adds_document_and_section_context_to_embedding_t
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     chunk = find_non_overview_chunks(graph)[0]
 
@@ -268,7 +268,7 @@ def test_document_graph_builder_splits_large_single_element_by_sentence_boundary
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     contents = [chunk.content for chunk in graph.chunks.values()]
 

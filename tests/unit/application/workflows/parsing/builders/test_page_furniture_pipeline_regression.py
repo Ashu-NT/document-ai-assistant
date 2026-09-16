@@ -99,7 +99,7 @@ def test_recurring_footer_is_not_emitted_into_final_chunk_content() -> None:
         document_title="Compressor Manual",
         section=section,
         elements=elements,
-    )
+    ).payloads
 
     content = "\n".join(payload.content for payload in payloads)
     assert "Inspect the compressor" in content

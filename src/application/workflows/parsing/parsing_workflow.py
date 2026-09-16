@@ -61,7 +61,6 @@ class ParsingWorkflow:
         self.page_ocr_fallback_workflow = page_ocr_fallback_workflow
         self.pdf_link_annotation_extractor = pdf_link_annotation_extractor
         self.audit_service = audit_service
-        self.last_pdf_link_extraction_result = None
 
     @tracked_action(
         action="parsing.workflow_completed",
@@ -221,10 +220,9 @@ class ParsingWorkflow:
                     pdf_link_extraction_result.invalid_destinations_skipped,
                     pdf_link_extraction_result.error_message,
                 )
-        self.last_pdf_link_extraction_result = pdf_link_extraction_result
 
         graph_build_element_errors: list[str] = []
-        document_graph = run_stage(
+        document_graph_build_result = run_stage(
             progress_callback=progress_callback,
             start_message=(
                 "Building document graph from "
@@ -247,13 +245,17 @@ class ParsingWorkflow:
             completion_message_builder=lambda result, elapsed_seconds: (
                 "Document graph build completed in "
                 f"{format_elapsed_seconds(elapsed_seconds)} "
-                f"(sections={len(result.sections)}, "
-                f"elements={len(result.elements)}, "
-                f"chunks={len(result.chunks)})."
+                f"(sections={len(result.graph.sections)}, "
+                f"elements={len(result.graph.elements)}, "
+                f"chunks={len(result.graph.chunks)})."
             ),
             stage_name="graph_build",
             stage_durations=stage_durations,
             document_id=resolved_document_id,
+        )
+        document_graph = document_graph_build_result.graph
+        cross_reference_linking_outcome = (
+            document_graph_build_result.cross_reference_linking_outcome
         )
 
         if self.document_graph_validator is not None:
@@ -283,6 +285,8 @@ class ParsingWorkflow:
             stage_durations=stage_durations,
             normalization_item_errors=normalization_item_errors,
             graph_build_item_errors=graph_build_element_errors,
+            pdf_link_extraction_result=pdf_link_extraction_result,
+            cross_reference_linking_outcome=cross_reference_linking_outcome,
         )
 
         emit_progress(

@@ -473,10 +473,11 @@ def main() -> int:
         completion_message_builder=lambda result, elapsed_seconds: (
             "[graph] Unprofiled graph build completed "
             f"({_format_elapsed_seconds(elapsed_seconds)}, "
-            f"sections={len(result.sections)}, "
-            f"chunks={len(result.chunks)})."
+            f"sections={len(result.graph.sections)}, "
+            f"chunks={len(result.graph.chunks)})."
         ),
     )
+    measured_document_graph = measured_document_graph.graph
 
     graph_profiler = GraphBuildProfiler(progress_callback=_emit)
     profiled_id_generator = IdGenerator()
@@ -512,6 +513,7 @@ def main() -> int:
         output_prefix="graph_build",
         top_functions=args.top_functions,
     )
+    profiled_document_graph = profiled_document_graph.graph
     profiled_graph_build_seconds = float(graph_build_profile["elapsed_seconds"])
     _emit(
         "[graph] Profiled graph build counts "

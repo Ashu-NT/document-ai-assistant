@@ -165,7 +165,7 @@ def test_document_graph_builder_skips_cover_boilerplate_section() -> None:
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     chunks = list(graph.chunks.values())
 
@@ -214,7 +214,7 @@ def test_document_graph_builder_skips_bibliography_chunks() -> None:
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     chunks = list(graph.chunks.values())
 
@@ -261,7 +261,7 @@ def test_document_graph_builder_skips_single_column_layout_tables_from_chunks() 
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
     
     chunks = list(graph.chunks.values())
 

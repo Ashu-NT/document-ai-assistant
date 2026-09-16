@@ -33,7 +33,7 @@ def test_fragment_profiling_does_not_change_chunk_payloads() -> None:
         document_type=DocumentType.MANUAL,
         section=section,
         elements=elements,
-    )
+    ).payloads
     profiled = SectionChunkBuilder(
         profiler=GraphBuildProfiler(),
     ).build_chunk_payloads(
@@ -41,6 +41,6 @@ def test_fragment_profiling_does_not_change_chunk_payloads() -> None:
         document_type=DocumentType.MANUAL,
         section=section,
         elements=elements,
-    )
+    ).payloads
 
     assert profiled == baseline

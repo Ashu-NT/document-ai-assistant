@@ -137,7 +137,7 @@ def test_document_graph_builder_creates_picture_reference_chunk_with_context() -
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     picture_chunk = next(
         chunk
@@ -188,7 +188,7 @@ def test_document_graph_builder_creates_structured_chunk_from_picture_ocr_page()
             ),
         ],
         raw_parsed_document=raw_parsed_document,
-    )
+    ).graph
 
     structured_chunk = next(
         (
@@ -263,7 +263,7 @@ def test_document_graph_builder_uses_datasheet_profile_to_skip_picture_chunks() 
             ),
         ],
         raw_parsed_document=raw_parsed_document,
-    )
+    ).graph
 
     assert all(
         chunk.chunk_type.value != "drawing_reference"

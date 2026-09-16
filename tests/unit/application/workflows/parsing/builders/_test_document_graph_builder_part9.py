@@ -157,7 +157,7 @@ def test_document_graph_builder_creates_approval_matrix_chunk() -> None:
             ),
         ],
         raw_parsed_document=raw_parsed_document,
-    )
+    ).graph
 
     approval_chunk = next(
         chunk for chunk in graph.chunks.values() if "PMC51 PMP5x BG" in chunk.content
@@ -227,7 +227,7 @@ def test_document_graph_builder_creates_structured_sensor_list_chunk() -> None:
             ),
         ],
         raw_parsed_document=raw_parsed_document,
-    )
+    ).graph
 
     sensor_chunk = find_chunk_by_path(
         graph,

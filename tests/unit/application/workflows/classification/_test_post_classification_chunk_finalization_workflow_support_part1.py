@@ -10,6 +10,9 @@ from src.application.workflows.classification import (
 from src.application.workflows.parsing.builders.document_graph.graph_chunk_builder import (
     GraphChunkBuilder,
 )
+from src.application.workflows.parsing.builders.document_graph.graph_chunk_build_result import (
+    GraphChunkBuildResult,
+)
 
 from src.application.workflows.parsing.builders.chunking.builders.section_chunk.section_chunk_builder import (
     SectionChunkBuilder,
@@ -144,9 +147,11 @@ class FakeGraphChunkBuilder:
         self.rechunked_chunks = rechunked_chunks
         self.calls: list[dict] = []
 
-    def build_chunks(self, **kwargs) -> list[DocumentChunk]:
+    def build_chunks(self, **kwargs) -> GraphChunkBuildResult:
         self.calls.append(kwargs)
-        return self.rechunked_chunks
+        return GraphChunkBuildResult(
+            chunks=self.rechunked_chunks, structural_inference=None
+        )
 
 class FakeStructuralProfileInferer:
     def __init__(self, inference: StructuralProfileInference) -> None:

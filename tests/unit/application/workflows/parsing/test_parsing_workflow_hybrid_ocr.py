@@ -1,4 +1,7 @@
 from src.application.workflows.parsing import ParsedCanonicalElement, ParsingWorkflow, RawParsedDocument
+from src.application.workflows.parsing.builders.document_graph_build_result import (
+    DocumentGraphBuildResult,
+)
 from src.application.workflows.parsing.ocr.parsing_ocr_policy import ParsingOCRPolicy
 from src.domain.common import ElementType
 from src.shared.ids import IdGenerator
@@ -38,7 +41,7 @@ class FakeGraphBuilder:
 
     def build(self, **kwargs):
         self.calls.append(kwargs)
-        return self.graph
+        return DocumentGraphBuildResult(graph=self.graph)
 
 
 class FakePageOCRFallbackWorkflow:

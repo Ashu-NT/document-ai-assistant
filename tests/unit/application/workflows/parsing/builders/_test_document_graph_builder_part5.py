@@ -131,7 +131,7 @@ def test_document_graph_builder_creates_spare_parts_table_chunk_for_real_table()
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     chunk = next(iter(graph.chunks.values()))
 
@@ -188,7 +188,7 @@ def test_document_graph_builder_merges_short_related_subsections_into_one_chunk(
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     # "Preparation" and "Execution" share a parent but neither a title topic
     # nor a recognized content family -- under the section-merge rules,
@@ -261,7 +261,7 @@ def test_document_graph_builder_keeps_non_introductory_parent_text_separate_from
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     # The parent's title isn't recognized introductory language (e.g.
     # "Overview", "Background"), so its own body text no longer folds into

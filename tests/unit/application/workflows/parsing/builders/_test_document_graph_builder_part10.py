@@ -148,7 +148,7 @@ def test_document_graph_builder_keeps_unrelated_sibling_sections_separate() -> N
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     overview_chunk = find_chunk_by_type(graph, "overview")
     detail_chunks = find_non_overview_chunks(graph)
@@ -212,7 +212,7 @@ def test_document_graph_builder_resolves_clean_chunk_types_for_numbered_hard_vet
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     detail_chunks = find_non_overview_chunks(graph)
     safety_chunk = next(
@@ -252,7 +252,7 @@ def test_document_graph_builder_populates_identifier_count_in_statistics() -> No
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     assert graph.document.statistics.identifier_count == len(graph.identifiers)
 
@@ -280,7 +280,7 @@ def test_document_graph_builder_populates_chunk_type_counts_in_statistics() -> N
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     counts = graph.document.statistics.chunk_type_counts
     assert isinstance(counts, dict)
@@ -324,7 +324,7 @@ def test_document_graph_builder_persists_tokenizer_aware_chunk_statistics(
             ),
         ],
         raw_parsed_document=make_raw_parsed_document(),
-    )
+    ).graph
 
     chunk = find_non_overview_chunks(graph)[0]
 

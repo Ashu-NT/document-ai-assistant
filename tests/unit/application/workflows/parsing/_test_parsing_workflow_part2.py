@@ -11,6 +11,9 @@ from src.application.workflows.parsing import (
     ParsingWorkflow,
     RawParsedDocument,
 )
+from src.application.workflows.parsing.builders.document_graph_build_result import (
+    DocumentGraphBuildResult,
+)
 from src.application.workflows.parsing.ocr.parsing_ocr_policy import ParsingOCRPolicy
 
 from src.domain.common import ElementType
@@ -51,13 +54,17 @@ class FakeNormalizer:
         return self.canonical_elements
 
 class FakeDocumentGraphBuilder:
-    def __init__(self, document_graph) -> None:
+    def __init__(self, document_graph, cross_reference_linking_outcome=None) -> None:
         self.document_graph = document_graph
+        self.cross_reference_linking_outcome = cross_reference_linking_outcome
         self.calls: list[dict] = []
 
     def build(self, **kwargs):
         self.calls.append(kwargs)
-        return self.document_graph
+        return DocumentGraphBuildResult(
+            graph=self.document_graph,
+            cross_reference_linking_outcome=self.cross_reference_linking_outcome,
+        )
 
 class FakeCanonicalElementOCREnricher:
     def __init__(self, enriched_elements: list[ParsedCanonicalElement]) -> None:
