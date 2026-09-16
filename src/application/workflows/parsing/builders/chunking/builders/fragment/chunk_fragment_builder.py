@@ -185,11 +185,15 @@ class ChunkFragmentBuilder:
                     fragment.list_run_id = list_run_id_by_element_id.get(
                         element.element_id
                     )
+                    parser_extra = resolve_parser_extra(element)
+                    fragment.docling_group_id = parser_extra.get("docling_group_id")
+                    fragment.docling_group_type = parser_extra.get("docling_group_type")
                     fragments.append(fragment)
                     ordinary_fragment_count += 1
             stage.output_counts["fragments"] = ordinary_fragment_count
 
         self._apply_list_run_totals(fragments)
+        self._apply_docling_group_totals(fragments)
 
         return sorted(fragments, key=lambda fragment: fragment.order_index)
 
@@ -230,6 +234,24 @@ class ChunkFragmentBuilder:
         for fragment in fragments:
             if fragment.list_run_id is not None:
                 fragment.list_run_total_tokens = totals[fragment.list_run_id]
+
+    @staticmethod
+    def _apply_docling_group_totals(fragments: list[ChunkFragment]) -> None:
+        """Generic per-group token total, independent of list_run's totals
+        (deliberately not merged with _apply_list_run_totals -- the two are
+        keyed by different, unrelated identities: reading-order contiguity
+        vs. Docling's own group boundary)."""
+        totals: dict[str, int] = {}
+        for fragment in fragments:
+            if fragment.docling_group_id is None:
+                continue
+            totals[fragment.docling_group_id] = (
+                totals.get(fragment.docling_group_id, 0) + fragment.token_count
+            )
+
+        for fragment in fragments:
+            if fragment.docling_group_id is not None:
+                fragment.docling_group_total_tokens = totals[fragment.docling_group_id]
 
     def _build_fragment_from_element(
         self,

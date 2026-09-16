@@ -186,6 +186,7 @@ def make_text_element(
     element_id: str,
     text: str,
     element_type: ElementType = ElementType.TEXT,
+    metadata: dict | None = None,
 ) -> CanonicalElement:
     return CanonicalElement(
         element_id=element_id,
@@ -193,6 +194,9 @@ def make_text_element(
         element_type=element_type,
         text=text,
         source=SourceLocation(page_start=1, page_end=1),
+        parser_metadata=(
+            ParserMetadata(parser_name="docling", extra=metadata) if metadata else None
+        ),
     )
 
 
@@ -384,6 +388,79 @@ def test_build_section_fragments_treats_non_contiguous_lists_as_separate_runs() 
         if fragment.element_ids
     }
     assert by_element_id["li_1"].list_run_id != by_element_id["li_2"].list_run_id
+
+
+def test_build_section_fragments_propagates_docling_group_metadata_with_totals() -> (
+    None
+):
+    builder = make_builder(include_picture_chunks=False)
+    section = _make_section()
+    elements = [
+        make_text_element(
+            element_id="kv_1",
+            text="Nr.:",
+            element_type=ElementType.KEY_VALUE,
+            metadata={
+                "docling_group_id": "#/groups/0",
+                "docling_group_type": "key_value_area",
+            },
+        ),
+        make_text_element(
+            element_id="kv_2",
+            text="FB-8.6-21",
+            element_type=ElementType.KEY_VALUE,
+            metadata={
+                "docling_group_id": "#/groups/0",
+                "docling_group_type": "key_value_area",
+            },
+        ),
+        make_text_element(element_id="txt_1", text="Unrelated paragraph."),
+    ]
+
+    fragments = builder.build_section_fragments(
+        document_title="Datasheet",
+        document_type=None,
+        section=section,
+        elements=elements,
+    )
+
+    by_element_id = {
+        fragment.element_ids[0]: fragment
+        for fragment in fragments
+        if fragment.element_ids
+    }
+    assert by_element_id["kv_1"].docling_group_id == "#/groups/0"
+    assert by_element_id["kv_1"].docling_group_type == "key_value_area"
+    assert by_element_id["kv_2"].docling_group_id == "#/groups/0"
+    expected_total = (
+        by_element_id["kv_1"].token_count + by_element_id["kv_2"].token_count
+    )
+    assert by_element_id["kv_1"].docling_group_total_tokens == expected_total
+    assert by_element_id["kv_2"].docling_group_total_tokens == expected_total
+
+    # The unrelated neighboring element must not be pulled into the group.
+    assert by_element_id["txt_1"].docling_group_id is None
+    assert by_element_id["txt_1"].docling_group_type is None
+    assert by_element_id["txt_1"].docling_group_total_tokens is None
+
+
+def test_build_section_fragments_without_docling_group_metadata_leaves_fields_none() -> (
+    None
+):
+    builder = make_builder(include_picture_chunks=False)
+    section = _make_section()
+    elements = [make_text_element(element_id="txt_1", text="Plain paragraph.")]
+
+    fragments = builder.build_section_fragments(
+        document_title="Manual",
+        document_type=None,
+        section=section,
+        elements=elements,
+    )
+
+    assert fragments[0].docling_group_id is None
+    assert fragments[0].docling_group_type is None
+    assert fragments[0].docling_group_total_tokens is None
 
 
 def test_table_chunk_type_detects_spare_parts_via_header_row_when_text_markers_miss() -> None:

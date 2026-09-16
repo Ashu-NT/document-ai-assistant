@@ -1,5 +1,8 @@
 from typing import Any
 
+from src.application.workflows.parsing.normalizers.item_extraction.docling_group_index import (
+    DoclingGroupIndex,
+)
 from src.application.workflows.parsing.normalizers.item_extraction.docling_item_extractor import (
     DoclingItemExtractor,
 )
@@ -39,6 +42,7 @@ class DoclingElementMetadataBuilder:
         layout_metadata: dict[str, Any] | None,
         markdown: str | None,
         table_structure: TableReconstructionResult | None,
+        group_index: DoclingGroupIndex | None = None,
     ) -> dict[str, Any]:
         metadata: dict[str, Any] = {
             "raw_source_type": item.__class__.__name__,
@@ -59,6 +63,17 @@ class DoclingElementMetadataBuilder:
         parent_ref = self.item_extractor.extract_parent_ref(item)
         if parent_ref:
             metadata["parent_ref"] = parent_ref
+            group_type = (
+                group_index.group_type(parent_ref) if group_index is not None else None
+            )
+            if group_type:
+                # Only set when parent_ref resolves to a real Docling group
+                # (via group_index) -- distinguishes genuine group
+                # membership from an item merely having *some* parent
+                # (e.g. a picture caption's parent is the picture itself,
+                # not a group).
+                metadata["docling_group_id"] = parent_ref
+                metadata["docling_group_type"] = group_type
 
         heading_level = coerce_positive_int(get_value(item, "level"))
         if heading_level is not None:

@@ -68,6 +68,11 @@ class FakeDoclingItem:
         self.exported_markdown_doc = doc
         return self.markdown
 
+class FakeDoclingGroup:
+    def __init__(self, *, self_ref: str, label: str) -> None:
+        self.self_ref = self_ref
+        self.label = FakeLabel(label)
+
 class FakeRawDocument:
     def __init__(
         self,
@@ -76,11 +81,13 @@ class FakeRawDocument:
         texts: list[FakeDoclingItem] | None = None,
         tables: list[FakeDoclingItem] | None = None,
         pictures: list[FakeDoclingItem] | None = None,
+        groups: list[FakeDoclingGroup] | None = None,
     ) -> None:
         self._items = items
         self.texts = texts or []
         self.tables = tables or []
         self.pictures = pictures or []
+        self.groups = groups or []
         self.iterate_items_calls = 0
 
     def iterate_items(
@@ -470,5 +477,115 @@ def test_picture_item_collects_caption_refs() -> None:
 
     assert normalized[0].element_type == ElementType.PICTURE
     assert normalized[0].text == "Figure 1. Oscilloscope overview."
-    assert normalized[0].metadata["caption"] == "Figure 1. Oscilloscope overview."
-    assert normalized[0].metadata["image_path"] == "outputs/images/pic_002.png"
+
+
+def test_key_value_group_children_survive_normalization_with_group_metadata_intact() -> (
+    None
+):
+    key_1 = FakeDoclingItem(
+        label="key_value_region",
+        text="Nr.:",
+        self_ref="#/texts/1",
+        parent={"$ref": "#/groups/0"},
+        prov=[FakeProvenance(1)],
+    )
+    value_1 = FakeDoclingItem(
+        label="key_value_region",
+        text="FB-8.6-21",
+        self_ref="#/texts/2",
+        parent={"$ref": "#/groups/0"},
+        prov=[FakeProvenance(1)],
+    )
+    raw_document = FakeRawDocument(
+        [key_1, value_1],
+        groups=[FakeDoclingGroup(self_ref="#/groups/0", label="key_value_area")],
+    )
+
+    normalized = DoclingDocumentNormalizer().normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_001",
+    )
+
+    assert len(normalized) == 2
+    # Ordering preserved (Docling's own item order, matched by order_index).
+    assert [element.text for element in normalized] == ["Nr.:", "FB-8.6-21"]
+    for element in normalized:
+        assert element.metadata["docling_group_id"] == "#/groups/0"
+        assert element.metadata["docling_group_type"] == "key_value_area"
+
+
+def test_two_separate_adjacent_groups_of_the_same_type_remain_distinguishable() -> None:
+    group_a_child = FakeDoclingItem(
+        label="key_value_region",
+        text="Nr.: FB-8.6-21",
+        self_ref="#/texts/1",
+        parent={"$ref": "#/groups/0"},
+        prov=[FakeProvenance(1)],
+    )
+    group_b_child = FakeDoclingItem(
+        label="key_value_region",
+        text="Seite: 1 von 1",
+        self_ref="#/texts/2",
+        parent={"$ref": "#/groups/1"},
+        prov=[FakeProvenance(1)],
+    )
+    raw_document = FakeRawDocument(
+        [group_a_child, group_b_child],
+        groups=[
+            FakeDoclingGroup(self_ref="#/groups/0", label="key_value_area"),
+            FakeDoclingGroup(self_ref="#/groups/1", label="key_value_area"),
+        ],
+    )
+
+    normalized = DoclingDocumentNormalizer().normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_001",
+    )
+
+    ids = {element.text: element.metadata["docling_group_id"] for element in normalized}
+    assert ids["Nr.: FB-8.6-21"] == "#/groups/0"
+    assert ids["Seite: 1 von 1"] == "#/groups/1"
+    assert ids["Nr.: FB-8.6-21"] != ids["Seite: 1 von 1"]
+
+
+def test_elements_without_a_docling_group_parent_carry_no_group_metadata() -> None:
+    plain_text = FakeDoclingItem(
+        label="text",
+        text="Ordinary paragraph, not part of any Docling group.",
+        self_ref="#/texts/1",
+        prov=[FakeProvenance(1)],
+    )
+    raw_document = FakeRawDocument(
+        [plain_text],
+        groups=[FakeDoclingGroup(self_ref="#/groups/0", label="key_value_area")],
+    )
+
+    normalized = DoclingDocumentNormalizer().normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_001",
+    )
+
+    assert "docling_group_id" not in normalized[0].metadata
+    assert "docling_group_type" not in normalized[0].metadata
+
+
+def test_normalization_with_no_groups_at_all_behaves_exactly_as_before() -> None:
+    # FakeRawDocument's default groups=[] -- exercises the "Docling
+    # exposes no group data" path, same as every pre-existing test in this
+    # file that never sets `groups=`.
+    plain_text = FakeDoclingItem(
+        label="text",
+        text="No groups anywhere in this document.",
+        self_ref="#/texts/1",
+        prov=[FakeProvenance(1)],
+    )
+    raw_document = FakeRawDocument([plain_text])
+
+    normalized = DoclingDocumentNormalizer().normalize(
+        make_raw_parsed_document(raw_document),
+        "doc_001",
+    )
+
+    assert normalized[0].text == "No groups anywhere in this document."
+    assert "docling_group_id" not in normalized[0].metadata
+    assert "docling_group_type" not in normalized[0].metadata

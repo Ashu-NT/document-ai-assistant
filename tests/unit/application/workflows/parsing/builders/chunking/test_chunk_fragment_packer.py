@@ -23,6 +23,9 @@ def make_fragment(
     order_index: int,
     list_run_id: str | None = None,
     list_run_total_tokens: int | None = None,
+    docling_group_id: str | None = None,
+    docling_group_type: str | None = None,
+    docling_group_total_tokens: int | None = None,
 ) -> ChunkFragment:
     return ChunkFragment(
         text=text,
@@ -33,6 +36,9 @@ def make_fragment(
         token_count=token_count,
         list_run_id=list_run_id,
         list_run_total_tokens=list_run_total_tokens,
+        docling_group_id=docling_group_id,
+        docling_group_type=docling_group_type,
+        docling_group_total_tokens=docling_group_total_tokens,
     )
 
 
@@ -249,3 +255,156 @@ def test_does_not_flush_mid_run_between_fragments_of_the_same_list() -> None:
 
     assert len(groups) == 1
     assert groups[0] == ["Step 1.", "Step 2."]
+
+
+def test_without_group_tagging_a_small_key_value_group_splits_arbitrarily_and_absorbs_filler() -> (
+    None
+):
+    """Baseline ("before"): reproduces the real Kliewe-datasheet pattern
+    (a ~13-token key_value_area group scattered across chunks despite
+    fitting comfortably under budget) using synthetic fragments -- no
+    Docling group metadata, matching pre-fix behavior for every fragment
+    type today. Companion to the "after" test below."""
+    filler = make_fragment(text="Unrelated paragraph.", token_count=30, order_index=1)
+    kv_1 = make_fragment(text="Nr.:", token_count=8, order_index=2)
+    kv_2 = make_fragment(text="FB-8.6-21", token_count=8, order_index=3)
+    kv_3 = make_fragment(text="Seite: 1 von 1", token_count=8, order_index=4)
+
+    groups = _pack([filler, kv_1, kv_2, kv_3])
+
+    # 30 + 8 + 8 = 46 fits, so kv_1/kv_2 get glued to the unrelated filler;
+    # kv_3 then pushes the running total to 54, overflowing the 50-token
+    # budget -- the group fractures 2/1 across chunks, with no protection
+    # keeping its 3 members (24 tokens total) together despite comfortably
+    # fitting the budget on their own.
+    assert len(groups) == 2
+    assert groups[0] == ["Unrelated paragraph.", "Nr.:", "FB-8.6-21"]
+    assert groups[1] == ["Seite: 1 von 1"]
+
+
+def test_key_value_group_cohesion_flushes_filler_and_keeps_the_whole_group_together() -> (
+    None
+):
+    """Regression fixture for the real Kliewe-datasheet fragmentation
+    pattern ("after" the fix): a small key_value_area group that would
+    otherwise get glued to unrelated preceding content (or split) now
+    gets its own clean chunk, and the unrelated neighbor is flushed out
+    on its own -- it never becomes part of the group's chunk."""
+    filler = make_fragment(text="Unrelated paragraph.", token_count=30, order_index=1)
+    kv_1 = make_fragment(
+        text="Nr.:",
+        token_count=8,
+        order_index=2,
+        docling_group_id="#/groups/0",
+        docling_group_type="key_value_area",
+        docling_group_total_tokens=24,
+    )
+    kv_2 = make_fragment(
+        text="FB-8.6-21",
+        token_count=8,
+        order_index=3,
+        docling_group_id="#/groups/0",
+        docling_group_type="key_value_area",
+        docling_group_total_tokens=24,
+    )
+    kv_3 = make_fragment(
+        text="Seite: 1 von 1",
+        token_count=8,
+        order_index=4,
+        docling_group_id="#/groups/0",
+        docling_group_type="key_value_area",
+        docling_group_total_tokens=24,
+    )
+
+    groups = _pack([filler, kv_1, kv_2, kv_3])
+
+    assert len(groups) == 2
+    assert groups[0] == ["Unrelated paragraph."]
+    assert groups[1] == ["Nr.:", "FB-8.6-21", "Seite: 1 von 1"]
+
+
+def test_flushes_before_an_oversized_key_value_group_but_still_allows_it_to_split() -> (
+    None
+):
+    # The group itself (70 tokens) exceeds max_chunk_tokens (50) -- the
+    # hard budget constraint must win: splitting across multiple chunks
+    # stays allowed, cohesion never overrides it. The group still starts
+    # its own clean chunk rather than gluing to unrelated preceding
+    # content, exactly mirroring the oversized-list-run case above.
+    intro = make_fragment(text="Intro paragraph.", token_count=10, order_index=1)
+    kv_1 = make_fragment(
+        text="Field 1.",
+        token_count=35,
+        order_index=2,
+        docling_group_id="#/groups/0",
+        docling_group_type="key_value_area",
+        docling_group_total_tokens=70,
+    )
+    kv_2 = make_fragment(
+        text="Field 2.",
+        token_count=35,
+        order_index=3,
+        docling_group_id="#/groups/0",
+        docling_group_type="key_value_area",
+        docling_group_total_tokens=70,
+    )
+
+    groups = _pack([intro, kv_1, kv_2])
+
+    assert len(groups) == 3
+    assert groups[0] == ["Intro paragraph."]
+    assert groups[1] == ["Field 1."]
+    assert groups[2] == ["Field 2."]
+
+
+def test_list_run_and_key_value_group_cohesion_operate_independently() -> None:
+    """Regression: the new key_value_area cohesion check must not alter
+    pre-existing list-run flush behavior, and vice versa -- each
+    protection fires cleanly for its own kind of fragment in the same
+    packing pass with no cross-interference."""
+    step_1 = make_fragment(
+        text="Step 1.",
+        token_count=12,
+        order_index=1,
+        list_run_id="s1::list_run_1",
+        list_run_total_tokens=36,
+    )
+    step_2 = make_fragment(
+        text="Step 2.",
+        token_count=12,
+        order_index=2,
+        list_run_id="s1::list_run_1",
+        list_run_total_tokens=36,
+    )
+    step_3 = make_fragment(
+        text="Step 3.",
+        token_count=12,
+        order_index=3,
+        list_run_id="s1::list_run_1",
+        list_run_total_tokens=36,
+    )
+    kv_1 = make_fragment(
+        text="Nr.:",
+        token_count=10,
+        order_index=4,
+        docling_group_id="#/groups/0",
+        docling_group_type="key_value_area",
+        docling_group_total_tokens=20,
+    )
+    kv_2 = make_fragment(
+        text="FB-8.6-21",
+        token_count=10,
+        order_index=5,
+        docling_group_id="#/groups/0",
+        docling_group_type="key_value_area",
+        docling_group_total_tokens=20,
+    )
+
+    groups = _pack([step_1, step_2, step_3, kv_1, kv_2])
+
+    # List run (36 tokens) packs cleanly on its own; adding the key_value
+    # group (20 more) would overflow 50, so it flushes before kv_1 starts
+    # and gets its own clean chunk too.
+    assert len(groups) == 2
+    assert groups[0] == ["Step 1.", "Step 2.", "Step 3."]
+    assert groups[1] == ["Nr.:", "FB-8.6-21"]

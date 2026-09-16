@@ -39,6 +39,17 @@ class ChunkFragment:
     # procedure's steps), and the summed token_count across every fragment
     # in that run. Lets the packer avoid starting a new chunk partway
     # through a list when the whole list would fit in one chunk on its own
-    # -- see ChunkFragmentPacker._should_flush_before_list_run.
+    # -- see ChunkFragmentPacker._should_flush_before_list_run. Derived from
+    # reading-order contiguity, not Docling's own group boundaries.
     list_run_id: str | None = None
     list_run_total_tokens: int | None = None
+    # The owning Docling group's authoritative self_ref/label (e.g. "list",
+    # "key_value_area", "form_area"), resolved during normalization from
+    # Docling's real `raw_document.groups` data via DoclingGroupIndex - not
+    # inferred from proximity. Generic across every Docling group type;
+    # only key_value_area currently has a packing-cohesion consumer (see
+    # ChunkFragmentPacker._should_flush_before_key_value_group). None when
+    # the source element has no Docling group parent.
+    docling_group_id: str | None = None
+    docling_group_type: str | None = None
+    docling_group_total_tokens: int | None = None

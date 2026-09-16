@@ -107,6 +107,20 @@ class ChunkFragmentPacker:
                 )
                 current_fragments = []
 
+            if self._should_flush_before_key_value_group(
+                current_fragments=current_fragments,
+                fragment=fragment,
+                text_splitter=text_splitter,
+            ):
+                self._flush_current_fragments(
+                    chunk_payloads=chunk_payloads,
+                    document_title=document_title,
+                    current_fragments=current_fragments,
+                    section_path_lookup=section_path_lookup,
+                    payload_factory=payload_factory,
+                )
+                current_fragments = []
+
             candidate_fragments = [*current_fragments, fragment]
             if self._fragments_token_count(candidate_fragments) <= text_splitter.max_chunk_tokens:
                 current_fragments = candidate_fragments
@@ -272,3 +286,38 @@ class ChunkFragmentPacker:
 
         current_tokens = ChunkFragmentPacker._fragments_token_count(current_fragments)
         return current_tokens + run_total > text_splitter.max_chunk_tokens
+
+    @staticmethod
+    def _should_flush_before_key_value_group(
+        *,
+        current_fragments: list[ChunkFragment],
+        fragment: ChunkFragment,
+        text_splitter: ChunkTextSplitter,
+    ) -> bool:
+        """Same shape as _should_flush_before_list_run, for a different,
+        authoritative-Docling-boundary-derived grouping: a key_value_area
+        group's fields (e.g. a certificate's "Nr.:"/"Seite" header block)
+        read far worse scattered across chunks than glued to unrelated
+        preceding content -- so if this fragment begins a new
+        key_value_area group and adding the whole group to the current
+        chunk would overflow it, flush now so the group's own first chunk
+        starts clean. If the group itself is larger than a whole chunk,
+        splitting remains unavoidable and allowed -- the hard token
+        budget below is never violated for cohesion's sake. Scoped to
+        key_value_area only: other Docling group types (list, form_area,
+        ...) get no cohesion behavior from this method."""
+        if not current_fragments:
+            return False
+
+        if fragment.docling_group_type != "key_value_area":
+            return False
+
+        if fragment.docling_group_id == current_fragments[-1].docling_group_id:
+            return False  # already mid-group; nothing to protect by flushing now
+
+        group_total = fragment.docling_group_total_tokens
+        if group_total is None:
+            return False
+
+        current_tokens = ChunkFragmentPacker._fragments_token_count(current_fragments)
+        return current_tokens + group_total > text_splitter.max_chunk_tokens

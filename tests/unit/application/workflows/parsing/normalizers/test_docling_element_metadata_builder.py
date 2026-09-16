@@ -1,8 +1,17 @@
 from src.application.workflows.parsing.normalizers.item_extraction.docling_element_metadata_builder import (
     DoclingElementMetadataBuilder,
 )
+from src.application.workflows.parsing.normalizers.item_extraction.docling_group_index import (
+    DoclingGroupIndex,
+)
+from src.application.workflows.parsing.normalizers.item_extraction.docling_item_extractor import (
+    DoclingItemExtractor,
+)
 from src.application.workflows.parsing.normalizers.table_layout.table_reconstruction_result import (
     TableReconstructionResult,
+)
+from src.application.workflows.parsing.normalizers.table_rows.docling_table_extractor import (
+    DoclingTableExtractor,
 )
 from src.domain.assets import TableCellSpan, TableParallelStream
 from src.domain.common import ElementType
@@ -80,6 +89,91 @@ def test_build_populates_non_table_metadata() -> None:
     assert metadata["ocr_provider"] == "paddleocr"
     assert metadata["ocr_confidence"] == 0.87
     assert "table_structure_tier" not in metadata
+
+
+def _real_group_index(groups: list[dict]) -> DoclingGroupIndex:
+    item_extractor = DoclingItemExtractor(DoclingTableExtractor())
+    return DoclingGroupIndex(
+        {"groups": groups}, item_extractor=item_extractor
+    )
+
+
+def test_build_sets_docling_group_id_and_type_when_parent_resolves_to_a_real_group() -> (
+    None
+):
+    builder = _builder(
+        item_extractor=_FakeItemExtractor(
+            label="key_value_region", parent_ref="#/groups/2"
+        )
+    )
+    group_index = _real_group_index(
+        [{"self_ref": "#/groups/2", "label": "key_value_area"}]
+    )
+
+    metadata = builder.build(
+        {},
+        raw_ref="#/texts/9",
+        element_type=ElementType.KEY_VALUE,
+        caption=None,
+        layout_metadata=None,
+        markdown=None,
+        table_structure=None,
+        group_index=group_index,
+    )
+
+    assert metadata["parent_ref"] == "#/groups/2"
+    assert metadata["docling_group_id"] == "#/groups/2"
+    assert metadata["docling_group_type"] == "key_value_area"
+
+
+def test_build_omits_group_fields_when_parent_ref_does_not_resolve_to_a_real_group() -> (
+    None
+):
+    # A picture caption's parent_ref points at the picture item, not a
+    # Docling group -- must not be misread as group membership.
+    builder = _builder(
+        item_extractor=_FakeItemExtractor(label="caption", parent_ref="#/pictures/0")
+    )
+    group_index = _real_group_index(
+        [{"self_ref": "#/groups/2", "label": "key_value_area"}]
+    )
+
+    metadata = builder.build(
+        {},
+        raw_ref="#/texts/9",
+        element_type=ElementType.CAPTION,
+        caption=None,
+        layout_metadata=None,
+        markdown=None,
+        table_structure=None,
+        group_index=group_index,
+    )
+
+    assert metadata["parent_ref"] == "#/pictures/0"
+    assert "docling_group_id" not in metadata
+    assert "docling_group_type" not in metadata
+
+
+def test_build_omits_group_fields_when_no_group_index_is_provided() -> None:
+    builder = _builder(
+        item_extractor=_FakeItemExtractor(
+            label="key_value_region", parent_ref="#/groups/2"
+        )
+    )
+
+    metadata = builder.build(
+        {},
+        raw_ref="#/texts/9",
+        element_type=ElementType.KEY_VALUE,
+        caption=None,
+        layout_metadata=None,
+        markdown=None,
+        table_structure=None,
+    )
+
+    assert metadata["parent_ref"] == "#/groups/2"
+    assert "docling_group_id" not in metadata
+    assert "docling_group_type" not in metadata
 
 
 def test_build_defaults_to_row_grid_tier_when_rows_present() -> None:

@@ -12,6 +12,9 @@ from src.application.workflows.parsing.normalizers.item_extraction.docling_eleme
 from src.application.workflows.parsing.normalizers.item_extraction.docling_element_text_resolver import (
     DoclingElementTextResolver,
 )
+from src.application.workflows.parsing.normalizers.item_extraction.docling_group_index import (
+    DoclingGroupIndex,
+)
 from src.application.workflows.parsing.normalizers.item_extraction.docling_item_extractor import (
     DoclingItemExtractor,
 )
@@ -82,6 +85,10 @@ class DoclingDocumentNormalizer:
             errors = skipped_item_errors if skipped_item_errors is not None else []
             with self.profiler.measure(name="canonical_normalizer.build_caption_index"):
                 caption_extractor = DoclingCaptionExtractor(raw_document, items=items)
+            with self.profiler.measure(name="canonical_normalizer.build_group_index"):
+                group_index = DoclingGroupIndex(
+                    raw_document, item_extractor=self.item_extractor
+                )
             with self.profiler.measure(name="canonical_normalizer.analyze_layout") as scope:
                 layout_metadata_by_element_ref = self.layout_metadata_builder.build(
                     raw_document=raw_document,
@@ -111,6 +118,7 @@ class DoclingDocumentNormalizer:
                             caption_extractor=caption_extractor,
                             layout_metadata_by_element_ref=layout_metadata_by_element_ref,
                             table_markdown_renderer=table_markdown_renderer,
+                            group_index=group_index,
                         )
                     except Exception as exc:  # one bad item must not sink the document
                         errors.append(f"item {index}: {exc}")
@@ -151,6 +159,7 @@ class DoclingDocumentNormalizer:
         caption_extractor: DoclingCaptionExtractor,
         layout_metadata_by_element_ref: dict[str, dict[str, object]],
         table_markdown_renderer: DoclingTableMarkdownRenderer | None,
+        group_index: DoclingGroupIndex | None = None,
     ) -> ParsedCanonicalElement:
         element_type = self.item_extractor.extract_element_type(item)
         raw_ref = self.item_extractor.extract_raw_ref(item)
@@ -206,6 +215,7 @@ class DoclingDocumentNormalizer:
             layout_metadata=element_layout_metadata,
             markdown=table_markdown,
             table_structure=table_structure,
+            group_index=group_index,
         )
         if bbox is not None:
             metadata["bbox_coordinate_origin"] = DoclingBBoxNormalizer.CANONICAL_ORIGIN
