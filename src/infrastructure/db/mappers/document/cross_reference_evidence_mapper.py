@@ -26,6 +26,7 @@ class CrossReferenceEvidenceMapper:
             matched_text=evidence.matched_text,
             target_page=evidence.target_page,
             target_section_label=evidence.target_section_label,
+            target_annex_label=evidence.target_annex_label,
             target_chunk_id=evidence.target_chunk_id,
             resolution_status=evidence.resolution_status.value,
             confidence_score=evidence.confidence_score,
@@ -50,6 +51,7 @@ class CrossReferenceEvidenceMapper:
             matched_text=orm.matched_text,
             target_page=orm.target_page,
             target_section_label=orm.target_section_label,
+            target_annex_label=orm.target_annex_label,
             target_chunk_id=orm.target_chunk_id,
             resolution_status=ChunkCrossReferenceResolutionStatus(
                 orm.resolution_status

@@ -33,6 +33,34 @@ def test_cross_reference_evidence_mapper_round_trip_for_unpromoted_conflict() ->
     assert domain.reconciliation_outcome == CrossReferenceReconciliationOutcome.CONFLICT
     assert domain.reconciliation_group_id == "xref_evidence_group_001"
     assert domain.canonical_cross_reference_id is None
+    # A PAGE_REFERENCE candidate never carries an annex label - proves
+    # target_annex_label stays nullable/None for non-annex reference types.
+    assert domain.target_annex_label is None
+
+
+def test_cross_reference_evidence_mapper_round_trip_for_annex_reference() -> None:
+    evidence = CrossReferenceEvidence(
+        evidence_id="xref_evidence_annex_001",
+        document_id="doc_001",
+        source_chunk_id="chunk_001",
+        reference_type=ChunkCrossReferenceType.ANNEX_REFERENCE,
+        matched_text="Refer to Annex 2",
+        target_annex_label="Annex 2",
+        target_chunk_id="chunk_002",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+        confidence_score=0.85,
+        reconciliation_outcome=CrossReferenceReconciliationOutcome.CONFIRMED,
+        reconciliation_group_id="xref_evidence_group_annex_001",
+        canonical_cross_reference_id="xref_canonical_annex_001",
+    )
+
+    orm = CrossReferenceEvidenceMapper.to_orm(evidence)
+    domain = CrossReferenceEvidenceMapper.to_domain(orm)
+
+    assert orm.target_annex_label == "Annex 2"
+    assert domain.reference_type == ChunkCrossReferenceType.ANNEX_REFERENCE
+    assert domain.target_annex_label == "Annex 2"
+    assert domain.canonical_cross_reference_id == "xref_canonical_annex_001"
 
 
 def test_cross_reference_evidence_mapper_round_trip_for_promoted_native_evidence() -> (

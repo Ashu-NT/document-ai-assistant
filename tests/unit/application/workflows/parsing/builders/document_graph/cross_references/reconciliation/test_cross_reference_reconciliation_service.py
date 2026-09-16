@@ -21,6 +21,7 @@ def xref(
     target_chunk_id: str | None,
     resolution_status: ChunkCrossReferenceResolutionStatus,
     matched_text: str = "matched",
+    target_annex_label: str | None = None,
 ) -> ChunkCrossReference:
     return ChunkCrossReference(
         cross_reference_id="stub",
@@ -31,6 +32,7 @@ def xref(
         target_chunk_id=target_chunk_id,
         resolution_status=resolution_status,
         confidence_score=0.9,
+        target_annex_label=target_annex_label,
     )
 
 
@@ -202,6 +204,148 @@ def test_conflict_when_unique_page_reference_disagrees_with_native_and_yields_no
     assert all(
         evidence.canonical_cross_reference_id is None for evidence in result.evidence
     )
+
+
+def test_confirmed_prefers_annex_reference_shape_and_preserves_target_annex_label() -> (
+    None
+):
+    """ANNEX_REFERENCE shares SECTION_REFERENCE's trust status (an explicit
+    structural identifier), so it must also win CONFIRMED's canonical shape
+    - and _clone_as_canonical must not silently drop target_annex_label."""
+    annex_fuzzy = xref(
+        reference_type=ChunkCrossReferenceType.ANNEX_REFERENCE,
+        source_chunk_id="c1",
+        target_chunk_id="c2",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+        target_annex_label="Annex 2",
+    )
+    native = xref(
+        reference_type=ChunkCrossReferenceType.PDF_LINK_REFERENCE,
+        source_chunk_id="c1",
+        target_chunk_id="c2",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+    )
+
+    result = _service().reconcile(
+        location_type_fuzzy_references=[annex_fuzzy],
+        native_result=native_result(native),
+    )
+
+    canonical = result.canonical_references[0]
+    assert canonical.reference_type == ChunkCrossReferenceType.ANNEX_REFERENCE
+    assert canonical.target_annex_label == "Annex 2"
+    assert canonical.reconciliation_outcome == CrossReferenceReconciliationOutcome.CONFIRMED
+
+
+def test_accepted_textual_when_explicit_annex_reference_conflicts_with_native() -> None:
+    """Proves annex disagreement with native yields ACCEPTED_TEXTUAL, not
+    CONFLICT - annex is trusted the same way an explicit section reference
+    is, unlike a bare PAGE_REFERENCE (see the CONFLICT test above)."""
+    fuzzy = xref(
+        reference_type=ChunkCrossReferenceType.ANNEX_REFERENCE,
+        source_chunk_id="c1",
+        target_chunk_id="c2",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+        target_annex_label="Annex 3",
+    )
+    native = xref(
+        reference_type=ChunkCrossReferenceType.PDF_LINK_REFERENCE,
+        source_chunk_id="c1",
+        target_chunk_id="c3",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+    )
+
+    result = _service().reconcile(
+        location_type_fuzzy_references=[fuzzy], native_result=native_result(native)
+    )
+
+    assert result.diagnostics.accepted_textual_count == 1
+    canonical = result.canonical_references[0]
+    assert canonical.reference_type == ChunkCrossReferenceType.ANNEX_REFERENCE
+    assert canonical.target_chunk_id == "c2"
+    assert canonical.target_annex_label == "Annex 3"
+    assert (
+        canonical.reconciliation_outcome
+        == CrossReferenceReconciliationOutcome.ACCEPTED_TEXTUAL
+    )
+
+
+def test_accepted_native_when_weak_annex_reference_conflicts_with_unique_native() -> None:
+    fuzzy = xref(
+        reference_type=ChunkCrossReferenceType.ANNEX_REFERENCE,
+        source_chunk_id="c1",
+        target_chunk_id="c2",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_AMBIGUOUS,
+        target_annex_label="Annex 2",
+    )
+    native = xref(
+        reference_type=ChunkCrossReferenceType.PDF_LINK_REFERENCE,
+        source_chunk_id="c1",
+        target_chunk_id="c3",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+    )
+
+    result = _service().reconcile(
+        location_type_fuzzy_references=[fuzzy], native_result=native_result(native)
+    )
+
+    assert result.diagnostics.accepted_native_count == 1
+    canonical = result.canonical_references[0]
+    assert canonical.reference_type == ChunkCrossReferenceType.PDF_LINK_REFERENCE
+    assert canonical.target_chunk_id == "c3"
+
+
+def test_single_annex_candidate_with_no_native_result_preserves_target_annex_label() -> (
+    None
+):
+    fuzzy = xref(
+        reference_type=ChunkCrossReferenceType.ANNEX_REFERENCE,
+        source_chunk_id="c1",
+        target_chunk_id="c2",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+        target_annex_label="Annex 2",
+    )
+
+    result = _service().reconcile(location_type_fuzzy_references=[fuzzy], native_result=None)
+
+    assert len(result.canonical_references) == 1
+    canonical = result.canonical_references[0]
+    assert canonical.reconciliation_outcome == CrossReferenceReconciliationOutcome.SINGLE_SOURCE
+    assert canonical.target_annex_label == "Annex 2"
+    assert result.evidence[0].target_annex_label == "Annex 2"
+
+
+def test_unreconciled_multi_candidate_when_two_annex_candidates_compete_with_one_native() -> (
+    None
+):
+    annex_a = xref(
+        reference_type=ChunkCrossReferenceType.ANNEX_REFERENCE,
+        source_chunk_id="c1",
+        target_chunk_id="c2",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+        target_annex_label="Annex 2",
+    )
+    annex_b = xref(
+        reference_type=ChunkCrossReferenceType.ANNEX_REFERENCE,
+        source_chunk_id="c1",
+        target_chunk_id="c3",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+        target_annex_label="Annex 3",
+    )
+    native = xref(
+        reference_type=ChunkCrossReferenceType.PDF_LINK_REFERENCE,
+        source_chunk_id="c1",
+        target_chunk_id="c4",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+    )
+
+    result = _service().reconcile(
+        location_type_fuzzy_references=[annex_a, annex_b],
+        native_result=native_result(native),
+    )
+
+    assert result.diagnostics.unreconciled_multi_candidate_chunks == 1
+    assert result.canonical_references == []
 
 
 def test_multiple_independent_native_candidates_on_one_chunk_with_no_fuzzy_are_not_flagged() -> (

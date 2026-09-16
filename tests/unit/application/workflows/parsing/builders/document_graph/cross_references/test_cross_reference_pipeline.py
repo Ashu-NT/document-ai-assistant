@@ -92,6 +92,23 @@ def test_table_and_figure_candidates_bypass_reconciliation_untouched() -> None:
     assert passed_fuzzy == [page_reference]
 
 
+def test_annex_candidates_enter_reconciliation_unlike_table_and_figure() -> None:
+    annex_reference = xref(ChunkCrossReferenceType.ANNEX_REFERENCE)
+    table_reference = xref(ChunkCrossReferenceType.TABLE_REFERENCE)
+    fuzzy_linker = FakeFuzzyLinker([annex_reference, table_reference])
+    reconciliation_service = FakeReconciliationService(CrossReferenceReconciliationResult())
+    pipeline = CrossReferencePipeline(
+        fuzzy_linker=fuzzy_linker, reconciliation_service=reconciliation_service
+    )
+
+    outcome = pipeline.run(make_graph())
+
+    assert table_reference in outcome.canonical_references
+    assert annex_reference not in outcome.canonical_references
+    passed_fuzzy = reconciliation_service.calls[0]["location_type_fuzzy_references"]
+    assert passed_fuzzy == [annex_reference]
+
+
 def test_pipeline_never_mutates_graph() -> None:
     fuzzy_linker = FakeFuzzyLinker([])
     reconciliation_service = FakeReconciliationService(CrossReferenceReconciliationResult())

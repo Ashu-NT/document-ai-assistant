@@ -13,8 +13,9 @@ from src.domain.document.entities.pdf_link_provenance import PdfLinkProvenance
 
 @dataclass(slots=True)
 class CrossReferenceEvidence:
-    """One fuzzy PAGE_REFERENCE/SECTION_REFERENCE or native PDF_LINK_REFERENCE
-    candidate considered by CrossReferenceReconciliationService. Append-only
+    """One fuzzy PAGE_REFERENCE/SECTION_REFERENCE/ANNEX_REFERENCE or native
+    PDF_LINK_REFERENCE candidate considered by
+    CrossReferenceReconciliationService. Append-only
     within a document's lifecycle (see repository/migration notes) - never
     updated after insert, never read by retrieval. TABLE_REFERENCE/
     FIGURE_REFERENCE candidates never become evidence; they pass straight to
@@ -35,6 +36,7 @@ class CrossReferenceEvidence:
 
     target_page: int | None = None
     target_section_label: str | None = None
+    target_annex_label: str | None = None
 
     target_chunk_id: str | None = None
     resolution_status: ChunkCrossReferenceResolutionStatus = (

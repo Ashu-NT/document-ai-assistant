@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_cross_reference_resolver import (
     ChunkCrossReferenceResolver,
 )
+from src.application.workflows.parsing.builders.document_graph.cross_references.pdf_link.chunk_page_index import (
+    ChunkPageIndex,
+)
 from src.domain.common import ChunkType, SourceLocation
 from src.domain.document.entities import ChunkCrossReferenceResolutionStatus
 from src.domain.document.entities.chunk import DocumentChunk
@@ -29,6 +32,20 @@ def _resolver() -> ChunkCrossReferenceResolver:
     return ChunkCrossReferenceResolver()
 
 
+class _CountingChunkPageIndex(ChunkPageIndex):
+    """Spy subclass that counts `chunks_for_page` calls, so a test can prove
+    the resolver does an indexed lookup per reference instead of silently
+    regressing to an O(chunks) scan across the full document."""
+
+    def __init__(self, chunks: list[DocumentChunk]) -> None:
+        super().__init__(chunks)
+        self.lookup_calls = 0
+
+    def chunks_for_page(self, page: int) -> list[DocumentChunk]:
+        self.lookup_calls += 1
+        return super().chunks_for_page(page)
+
+
 def test_resolves_uniquely_when_exactly_one_candidate_covers_the_page() -> None:
     chunks = [
         make_chunk(chunk_id="c1", page_start=5),
@@ -36,7 +53,7 @@ def test_resolves_uniquely_when_exactly_one_candidate_covers_the_page() -> None:
         make_chunk(chunk_id="c3", page_start=50),
     ]
 
-    result = _resolver().resolve(target_page=42, chunks=chunks)
+    result = _resolver().resolve(target_page=42, index=ChunkPageIndex(chunks))
 
     assert result.target_chunk_id == "c2"
     assert result.resolution_status == ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE
@@ -46,7 +63,7 @@ def test_resolves_uniquely_when_exactly_one_candidate_covers_the_page() -> None:
 def test_resolves_uniquely_across_a_multi_page_chunk_span() -> None:
     chunks = [make_chunk(chunk_id="c1", page_start=40, page_end=45)]
 
-    result = _resolver().resolve(target_page=42, chunks=chunks)
+    result = _resolver().resolve(target_page=42, index=ChunkPageIndex(chunks))
 
     assert result.target_chunk_id == "c1"
     assert result.resolution_status == ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE
@@ -55,7 +72,7 @@ def test_resolves_uniquely_across_a_multi_page_chunk_span() -> None:
 def test_returns_unresolved_when_no_chunk_covers_the_target_page() -> None:
     chunks = [make_chunk(chunk_id="c1", page_start=5)]
 
-    result = _resolver().resolve(target_page=999, chunks=chunks)
+    result = _resolver().resolve(target_page=999, index=ChunkPageIndex(chunks))
 
     assert result.target_chunk_id is None
     assert result.resolution_status == ChunkCrossReferenceResolutionStatus.UNRESOLVED
@@ -65,7 +82,7 @@ def test_returns_unresolved_when_no_chunk_covers_the_target_page() -> None:
 def test_returns_unresolved_when_no_chunk_has_a_page_at_all() -> None:
     chunks = [make_chunk(chunk_id="c1", page_start=None, page_end=None)]
 
-    result = _resolver().resolve(target_page=1, chunks=chunks)
+    result = _resolver().resolve(target_page=1, index=ChunkPageIndex(chunks))
 
     assert result.target_chunk_id is None
     assert result.resolution_status == ChunkCrossReferenceResolutionStatus.UNRESOLVED
@@ -83,7 +100,7 @@ def test_prefers_procedure_like_chunk_type_when_multiple_candidates_share_a_page
         ),
     ]
 
-    result = _resolver().resolve(target_page=42, chunks=chunks)
+    result = _resolver().resolve(target_page=42, index=ChunkPageIndex(chunks))
 
     assert result.target_chunk_id == "procedure"
     assert (
@@ -107,7 +124,7 @@ def test_prefers_exact_page_start_match_over_a_merely_spanning_chunk() -> None:
         ),
     ]
 
-    result = _resolver().resolve(target_page=42, chunks=chunks)
+    result = _resolver().resolve(target_page=42, index=ChunkPageIndex(chunks))
 
     assert result.target_chunk_id == "exact"
 
@@ -128,7 +145,7 @@ def test_prefers_earliest_sequence_number_as_final_tie_break() -> None:
         ),
     ]
 
-    result = _resolver().resolve(target_page=42, chunks=chunks)
+    result = _resolver().resolve(target_page=42, index=ChunkPageIndex(chunks))
 
     assert result.target_chunk_id == "first"
 
@@ -149,9 +166,43 @@ def test_falls_back_to_all_candidates_when_none_are_procedure_like() -> None:
         ),
     ]
 
-    result = _resolver().resolve(target_page=42, chunks=chunks)
+    result = _resolver().resolve(target_page=42, index=ChunkPageIndex(chunks))
 
     assert result.target_chunk_id == "overview"
     assert (
         result.resolution_status == ChunkCrossReferenceResolutionStatus.RESOLVED_AMBIGUOUS
     )
+
+
+def test_resolve_performs_exactly_one_indexed_lookup_per_call() -> None:
+    chunks = [
+        make_chunk(chunk_id="c1", page_start=5),
+        make_chunk(chunk_id="c2", page_start=42),
+        make_chunk(chunk_id="c3", page_start=50),
+    ]
+    index = _CountingChunkPageIndex(chunks)
+
+    result = _resolver().resolve(target_page=42, index=index)
+
+    assert result.target_chunk_id == "c2"
+    assert index.lookup_calls == 1
+
+
+def test_resolves_correctly_with_constant_lookups_across_a_large_synthetic_document() -> (
+    None
+):
+    """Guards against regressing to an O(chunks) scan: on a 5,000-chunk
+    document, resolution must still stay correct while doing exactly one
+    indexed lookup per `resolve()` call."""
+    chunks = [
+        make_chunk(chunk_id=f"c{page}", page_start=page) for page in range(1, 5001)
+    ]
+    index = _CountingChunkPageIndex(chunks)
+    resolver = _resolver()
+
+    for target_page in (1, 2500, 5000):
+        result = resolver.resolve(target_page=target_page, index=index)
+        assert result.target_chunk_id == f"c{target_page}"
+        assert result.resolution_status == ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE
+
+    assert index.lookup_calls == 3

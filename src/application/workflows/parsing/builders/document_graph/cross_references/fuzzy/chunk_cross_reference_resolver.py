@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.chunk_cross_reference_tie_break import (
     pick_best_candidate,
 )
+from src.application.workflows.parsing.builders.document_graph.cross_references.pdf_link.chunk_page_index import (
+    ChunkPageIndex,
+)
 from src.domain.document.entities import ChunkCrossReferenceResolutionStatus
 from src.domain.document.entities.chunk import DocumentChunk
 
@@ -21,25 +24,20 @@ class ResolvedTarget:
 
 
 class ChunkCrossReferenceResolver:
-    """Resolves a detected page reference to the chunk on that page, given
-    every chunk of the same document. Kept separate from
+    """Resolves a detected page reference to the chunk on that page, using a
+    pre-built `ChunkPageIndex` (same "build once, look up many times" shape
+    as `PdfLinkCrossReferenceLinker`) instead of re-scanning every chunk of
+    the document per reference. Kept separate from
     `ChunkCrossReferenceDetector` so tie-break rules are unit-testable
-    against a hand-built `chunks` fixture without needing real chunk text."""
+    against a hand-built index without needing real chunk text."""
 
     def resolve(
         self,
         *,
         target_page: int,
-        chunks: list[DocumentChunk],
+        index: ChunkPageIndex,
     ) -> ResolvedTarget:
-        candidates = [
-            chunk
-            for chunk in chunks
-            if chunk.source.page_start is not None
-            and chunk.source.page_start
-            <= target_page
-            <= (chunk.source.page_end or chunk.source.page_start)
-        ]
+        candidates = index.chunks_for_page(target_page)
 
         if not candidates:
             return ResolvedTarget(

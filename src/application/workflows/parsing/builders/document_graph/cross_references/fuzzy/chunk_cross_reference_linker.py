@@ -33,6 +33,9 @@ from src.application.workflows.parsing.builders.document_graph.cross_references.
 from src.application.workflows.parsing.builders.document_graph.cross_references.fuzzy.cross_reference_qualification import (
     CrossReferenceScope,
 )
+from src.application.workflows.parsing.builders.document_graph.cross_references.pdf_link.chunk_page_index import (
+    ChunkPageIndex,
+)
 from src.config.logging import get_logger
 from src.domain.document import DocumentGraph
 from src.domain.document.entities import (
@@ -94,6 +97,7 @@ class ChunkCrossReferenceLinker:
             tables=graph.tables,
             pictures=graph.pictures,
         )
+        page_index = ChunkPageIndex(chunks)
         cross_references: list[ChunkCrossReference] = []
         qualification_counts: dict[str, int] = {}
 
@@ -190,7 +194,7 @@ class ChunkCrossReferenceLinker:
             for page_reference in detection.page_references:
                 resolved = self.resolver.resolve(
                     target_page=page_reference.target_page,
-                    chunks=chunks,
+                    index=page_index,
                 )
                 if resolved.target_chunk_id == chunk.chunk_id:
                     continue

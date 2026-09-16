@@ -389,13 +389,16 @@ def build_fuzzy_section(document_graph: Any, linking_outcome: Any) -> list[str]:
 
     lines.extend(
         [
-            "- fuzzy detections found (evidence-level, PAGE_REFERENCE/SECTION_REFERENCE - "
-            "includes those later overridden/conflicted/unreconciled by reconciliation):",
+            "- fuzzy detections found (evidence-level, PAGE_REFERENCE/SECTION_REFERENCE/"
+            "ANNEX_REFERENCE - includes those later overridden/conflicted/unreconciled by "
+            "reconciliation):",
             f"  - page_reference: `{detection_counts.get('page_reference', 0)}`",
             f"  - section_reference: `{detection_counts.get('section_reference', 0)}`",
+            f"  - annex_reference: `{detection_counts.get('annex_reference', 0)}`",
             "- canonical rows by reference_type (post-reconciliation, what retrieval actually sees):",
             f"  - page_reference: `{canonical_counts.get('page_reference', 0)}`",
             f"  - section_reference: `{canonical_counts.get('section_reference', 0)}`",
+            f"  - annex_reference: `{canonical_counts.get('annex_reference', 0)}`",
             f"  - table_reference: `{canonical_counts.get('table_reference', 0)}`",
             f"  - figure_reference: `{canonical_counts.get('figure_reference', 0)}`",
             f"  - pdf_link_reference: `{canonical_counts.get('pdf_link_reference', 0)}`",

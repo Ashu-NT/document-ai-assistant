@@ -24,10 +24,25 @@ _logger = get_logger(__name__)
 _Outcome = CrossReferenceReconciliationOutcome
 _Status = ChunkCrossReferenceResolutionStatus
 
+# SECTION_REFERENCE and ANNEX_REFERENCE both carry an explicit structural
+# identifier (a section/chapter number, an annex/appendix label) that is
+# meaningful to a reader independent of any link - unlike PAGE_REFERENCE,
+# a bare number that adds nothing a resolved link doesn't already give you
+# and carries printed/physical page-offset risk. This distinction drives
+# both the conflict-resolution trust rule (_reconcile_pair) and the
+# CONFIRMED canonical-shape rule (_emit_confirmed).
+_EXPLICIT_IDENTIFIER_TYPES = frozenset(
+    {
+        ChunkCrossReferenceType.SECTION_REFERENCE,
+        ChunkCrossReferenceType.ANNEX_REFERENCE,
+    }
+)
+
 
 class CrossReferenceReconciliationService:
-    """Reconciles fuzzy PAGE_REFERENCE/SECTION_REFERENCE candidates against
-    native PDF_LINK_REFERENCE candidates for the same source_chunk_id.
+    """Reconciles fuzzy PAGE_REFERENCE/SECTION_REFERENCE/ANNEX_REFERENCE
+    candidates against native PDF_LINK_REFERENCE candidates for the same
+    source_chunk_id.
 
     Pure and stateless: takes plain lists, returns a plain result, never
     touches DocumentGraph. Callers (CrossReferencePipeline) are responsible
@@ -194,11 +209,11 @@ class CrossReferenceReconciliationService:
             evs, canonical = self._emit_confirmed(fuzzy_candidate, native_candidate)
             return _Outcome.CONFIRMED, evs, canonical
 
-        is_explicit_section = (
-            fuzzy_candidate.reference_type == ChunkCrossReferenceType.SECTION_REFERENCE
+        is_explicit_identifier = (
+            fuzzy_candidate.reference_type in _EXPLICIT_IDENTIFIER_TYPES
             and fuzzy_candidate.resolution_status == _Status.RESOLVED_UNIQUE
         )
-        if is_explicit_section:
+        if is_explicit_identifier:
             evs, canonical = self._emit_accepted(
                 fuzzy_candidate,
                 native_candidate,
@@ -255,15 +270,14 @@ class CrossReferenceReconciliationService:
         canonical_id = self.id_generator.new_id(IdPrefix.CROSS_REFERENCE)
 
         # Deterministic canonical-shape rule (not "always native's shape"):
-        # an explicit section/chapter identifier is more informative to a
-        # reader than a bare page number, which adds nothing a resolved
-        # link doesn't already give you. In both branches link_provenance
-        # is attached, since native evidence participated in confirming
-        # this edge regardless of which type wins the label.
+        # an explicit section/chapter/annex identifier is more informative
+        # to a reader than a bare page number, which adds nothing a
+        # resolved link doesn't already give you. In both branches
+        # link_provenance is attached, since native evidence participated
+        # in confirming this edge regardless of which type wins the label.
         base = (
             fuzzy_candidate
-            if fuzzy_candidate.reference_type
-            == ChunkCrossReferenceType.SECTION_REFERENCE
+            if fuzzy_candidate.reference_type in _EXPLICIT_IDENTIFIER_TYPES
             else native_candidate
         )
         canonical = self._clone_as_canonical(
@@ -355,6 +369,7 @@ class CrossReferenceReconciliationService:
             matched_text=candidate.matched_text,
             target_page=candidate.target_page,
             target_section_label=candidate.target_section_label,
+            target_annex_label=candidate.target_annex_label,
             target_chunk_id=candidate.target_chunk_id,
             resolution_status=candidate.resolution_status,
             confidence_score=candidate.confidence_score,
@@ -381,6 +396,7 @@ class CrossReferenceReconciliationService:
             target_page=candidate.target_page,
             target_section_label=candidate.target_section_label,
             target_asset_label=candidate.target_asset_label,
+            target_annex_label=candidate.target_annex_label,
             target_chunk_id=candidate.target_chunk_id,
             resolution_status=candidate.resolution_status,
             confidence_score=candidate.confidence_score,

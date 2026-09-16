@@ -14,6 +14,38 @@ def test_chunk_cross_reference_mapper_round_trip(sample_chunk_cross_reference) -
     assert domain.target_page == sample_chunk_cross_reference.target_page
     assert domain.resolution_status == sample_chunk_cross_reference.resolution_status
     assert domain.confidence_score == sample_chunk_cross_reference.confidence_score
+    # sample_chunk_cross_reference is a PAGE_REFERENCE - proves
+    # target_annex_label stays nullable/None for non-annex reference types.
+    assert domain.target_annex_label is None
+
+
+def test_chunk_cross_reference_mapper_round_trip_for_annex_reference() -> None:
+    from src.domain.document.entities import (
+        ChunkCrossReference,
+        ChunkCrossReferenceResolutionStatus,
+        ChunkCrossReferenceType,
+    )
+
+    annex_reference = ChunkCrossReference(
+        cross_reference_id="xref_annex_001",
+        document_id="doc_001",
+        source_chunk_id="chunk_001",
+        target_chunk_id="chunk_002",
+        reference_type=ChunkCrossReferenceType.ANNEX_REFERENCE,
+        matched_text="Refer to Annex 2",
+        target_annex_label="Annex 2",
+        resolution_status=ChunkCrossReferenceResolutionStatus.RESOLVED_UNIQUE,
+        confidence_score=0.85,
+    )
+
+    orm = ChunkCrossReferenceMapper.to_orm(annex_reference)
+    domain = ChunkCrossReferenceMapper.to_domain(orm)
+
+    assert orm.target_annex_label == "Annex 2"
+    assert domain.reference_type == ChunkCrossReferenceType.ANNEX_REFERENCE
+    assert domain.target_annex_label == "Annex 2"
+    assert domain.target_section_label is None
+    assert domain.target_asset_label is None
 
 
 def test_chunk_cross_reference_mapper_round_trip_for_unresolved_section_reference() -> (

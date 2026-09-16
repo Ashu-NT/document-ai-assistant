@@ -22,6 +22,7 @@ _LOCATION_TYPES = frozenset(
     {
         ChunkCrossReferenceType.PAGE_REFERENCE,
         ChunkCrossReferenceType.SECTION_REFERENCE,
+        ChunkCrossReferenceType.ANNEX_REFERENCE,
     }
 )
 
@@ -47,9 +48,12 @@ class CrossReferencePipeline:
     itself, matching both linkers' and the reconciliation service's own
     purity.
 
-    TABLE_REFERENCE/FIGURE_REFERENCE fuzzy candidates never enter
-    reconciliation (no native equivalent competes for asset references) -
-    they pass straight through to the canonical output untouched.
+    Location-type fuzzy candidates (PAGE_REFERENCE, SECTION_REFERENCE,
+    ANNEX_REFERENCE) enter reconciliation against native PDF_LINK_REFERENCE
+    candidates for the same source chunk. TABLE_REFERENCE/FIGURE_REFERENCE
+    fuzzy candidates never enter reconciliation (no native equivalent
+    competes for asset references) - they pass straight through to the
+    canonical output untouched.
     """
 
     def __init__(

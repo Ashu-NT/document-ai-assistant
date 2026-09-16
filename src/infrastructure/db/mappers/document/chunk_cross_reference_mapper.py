@@ -24,6 +24,7 @@ class ChunkCrossReferenceMapper:
             target_page=cross_reference.target_page,
             target_section_label=cross_reference.target_section_label,
             target_asset_label=cross_reference.target_asset_label,
+            target_annex_label=cross_reference.target_annex_label,
             resolution_status=cross_reference.resolution_status.value,
             confidence_score=cross_reference.confidence_score,
             link_provenance_json=pdf_link_provenance_to_json(
@@ -49,6 +50,7 @@ class ChunkCrossReferenceMapper:
             target_page=orm.target_page,
             target_section_label=orm.target_section_label,
             target_asset_label=orm.target_asset_label,
+            target_annex_label=orm.target_annex_label,
             resolution_status=ChunkCrossReferenceResolutionStatus(orm.resolution_status),
             confidence_score=orm.confidence_score,
             link_provenance=json_to_pdf_link_provenance(orm.link_provenance_json),
