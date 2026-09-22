@@ -19,3 +19,7 @@ class LLMProviderError(InfrastructureError):
 
 class OCRProviderError(InfrastructureError):
     """Raised for OCR provider failures."""
+
+
+class ArtifactStoreError(InfrastructureError):
+    """Raised for parsed-artifact-store publication failures."""

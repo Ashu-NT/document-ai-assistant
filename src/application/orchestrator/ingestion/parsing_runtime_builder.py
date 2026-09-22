@@ -26,7 +26,8 @@ from src.application.workflows.parsing.builders.document_graph.cross_references.
 )
 from src.application.workflows.parsing.normalizers import DoclingDocumentNormalizer
 from src.application.workflows.parsing.ocr import build_parsing_ocr_runtime
-from src.config.settings import chunking_settings
+from src.config.settings import chunking_settings, parsed_artifact_store_settings
+from src.infrastructure.parsing.artifact_store import FilesystemParsedArtifactStore
 from src.infrastructure.parsing.docling import DoclingParser
 from src.infrastructure.pdf.pdf_link_annotation_extractor import (
     PdfLinkAnnotationExtractor,
@@ -79,6 +80,13 @@ def build_parsing_runtime(
         if chunking_settings.pdf_link_cross_reference_enabled
         else None
     )
+    parsed_artifact_store = (
+        FilesystemParsedArtifactStore(
+            root_dir=parsed_artifact_store_settings.cache_path
+        )
+        if parsed_artifact_store_settings.enabled
+        else None
+    )
     parsing_workflow = ParsingWorkflow(
         parser=DoclingParser(
             max_num_pages=ingestion_input_limits.max_pdf_pages,
@@ -93,5 +101,6 @@ def build_parsing_runtime(
         canonical_element_ocr_enricher=ocr_runtime.canonical_element_ocr_enricher,
         page_ocr_fallback_workflow=ocr_runtime.page_ocr_fallback_workflow,
         pdf_link_annotation_extractor=pdf_link_annotation_extractor,
+        parsed_artifact_store=parsed_artifact_store,
     )
     return parsing_workflow, document_graph_builder

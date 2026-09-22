@@ -2,9 +2,12 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from src.application.contracts.parsing import ParserPort
+from src.application.contracts.parsing import ParsedArtifactStorePort, ParserPort
 from src.application.contracts.pdf_links import PdfLinkExtractorPort
 from src.application.validation.document import DocumentGraphValidator
+from src.application.workflows.parsing.artifact_store.parsed_artifact_key import (
+    ParsedArtifactKey,
+)
 from src.application.workflows.parsing.canonical_element_ocr_enricher import (
     CanonicalElementOCREnricher,
 )
@@ -25,10 +28,12 @@ from src.application.workflows.parsing.parsing_workflow_result import (
 from src.application.workflows.parsing.parsing_workflow_result_builder import (
     build_parsing_workflow_result,
 )
+from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
 from src.application.workflows.parsing.runtime.parsing_stage_runner import run_stage
 from src.config.logging import get_logger
 from src.domain.document import DocumentGraph, DocumentHashes
 from src.shared.activity import ActivityContext
+from src.shared.exceptions import ArtifactStoreError
 from src.shared.execution import tracked_action
 from src.shared.formatting.duration_formatter import format_elapsed_seconds
 from src.shared.ids import IdGenerator, IdPrefix
@@ -50,6 +55,7 @@ class ParsingWorkflow:
         page_ocr_fallback_workflow: PageOCRFallbackWorkflow | None = None,
         pdf_link_annotation_extractor: PdfLinkExtractorPort | None = None,
         audit_service=None,
+        parsed_artifact_store: ParsedArtifactStorePort | None = None,
     ) -> None:
         self.parser = parser
         self.normalizer = normalizer
@@ -61,6 +67,7 @@ class ParsingWorkflow:
         self.page_ocr_fallback_workflow = page_ocr_fallback_workflow
         self.pdf_link_annotation_extractor = pdf_link_annotation_extractor
         self.audit_service = audit_service
+        self.parsed_artifact_store = parsed_artifact_store
 
     @tracked_action(
         action="parsing.workflow_completed",
@@ -98,9 +105,11 @@ class ParsingWorkflow:
             ),
             heartbeat_label=f"Docling conversion for {file_name}",
             failure_label=f"Docling conversion for {file_name}",
-            operation=lambda: self.parser.parse(
-                file_path,
+            operation=lambda: self._resolve_raw_parsed_document(
+                file_path=file_path,
+                file_hash=file_hash,
                 enable_ocr_override=enable_ocr_override,
+                document_id=resolved_document_id,
             ),
             completion_message_builder=lambda result, elapsed_seconds: (
                 "Docling conversion completed in "
@@ -299,6 +308,74 @@ class ParsingWorkflow:
             f"chunks={len(document_graph.chunks)}).",
         )
         return result
+
+    def _resolve_raw_parsed_document(
+        self,
+        *,
+        file_path: str,
+        file_hash: str,
+        enable_ocr_override: bool | None,
+        document_id: str,
+    ) -> RawParsedDocument:
+        artifact_key = self._build_artifact_key(
+            file_hash=file_hash,
+            enable_ocr_override=enable_ocr_override,
+        )
+
+        if artifact_key is not None and self.parsed_artifact_store is not None:
+            cached_document = self.parsed_artifact_store.get(
+                artifact_key, file_path=file_path
+            )
+            if cached_document is not None:
+                _logger.info(
+                    "parsed_artifact_cache_hit document_id=%s cache_key=%s",
+                    document_id,
+                    artifact_key.cache_key,
+                )
+                return cached_document
+
+        raw_parsed_document = self.parser.parse(
+            file_path,
+            enable_ocr_override=enable_ocr_override,
+        )
+
+        if artifact_key is not None and self.parsed_artifact_store is not None:
+            try:
+                self.parsed_artifact_store.put(artifact_key, raw_parsed_document)
+            except ArtifactStoreError as exc:
+                _logger.warning(
+                    "parsed_artifact_publish_failed document_id=%s "
+                    "cache_key=%s error=%r",
+                    document_id,
+                    artifact_key.cache_key,
+                    exc,
+                )
+
+        return raw_parsed_document
+
+    def _build_artifact_key(
+        self,
+        *,
+        file_hash: str,
+        enable_ocr_override: bool | None,
+    ) -> ParsedArtifactKey | None:
+        if self.parsed_artifact_store is None:
+            return None
+
+        fingerprint_resolver = getattr(
+            self.parser, "resolve_conversion_fingerprint", None
+        )
+        if fingerprint_resolver is None:
+            return None
+
+        return ParsedArtifactKey(
+            source_sha256=file_hash,
+            parser_name=self.parser.parser_name,
+            parser_version=self.parser.parser_version,
+            conversion_fingerprint=fingerprint_resolver(
+                enable_ocr_override=enable_ocr_override
+            ),
+        )
 
     def _validate_document_graph(self, document_graph: DocumentGraph) -> None:
         validation = self.document_graph_validator.validate(document_graph)

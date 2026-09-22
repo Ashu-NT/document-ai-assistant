@@ -14,6 +14,9 @@ from src.config.settings.langgraph_setting import LangGraphSettings
 from src.config.settings.memory_settings import MemorySettings
 from src.config.settings.extraction_settings import ExtractionSettings
 from src.config.settings.duplicate_detection_settings import DuplicateDetectionSettings
+from src.config.settings.parsed_artifact_store_settings import (
+    ParsedArtifactStoreSettings,
+)
 from src.config.settings.prompt_context_settings import PromptContextSettings
 from src.config.settings.storage_settings import StorageSettings
 
@@ -36,3 +39,4 @@ extraction_settings = ExtractionSettings()                      # type: ignore[c
 duplicate_detection_settings = DuplicateDetectionSettings()     # type: ignore[call-arg]
 storage_settings = StorageSettings()                            # type: ignore[call-arg]
 prompt_context_settings = PromptContextSettings()                # type: ignore[call-arg]
+parsed_artifact_store_settings = ParsedArtifactStoreSettings()  # type: ignore[call-arg]

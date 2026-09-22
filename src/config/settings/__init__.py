@@ -17,6 +17,7 @@ from  src.config.settings.settings import (
     duplicate_detection_settings,
     storage_settings,
     prompt_context_settings,
+    parsed_artifact_store_settings,
 )
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "duplicate_detection_settings",
     "storage_settings",
     "prompt_context_settings",
+    "parsed_artifact_store_settings",
 ]

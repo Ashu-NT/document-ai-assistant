@@ -6,6 +6,9 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any, Callable
 
 from src.application.workflows.parsing.raw_parsed_document import RawParsedDocument
+from src.infrastructure.parsing.docling.docling_conversion_fingerprint import (
+    compute_docling_conversion_fingerprint,
+)
 from src.infrastructure.parsing.docling.docling_conversion_worker import (
     ConversionOutcome,
     run_conversion_in_subprocess,
@@ -53,6 +56,19 @@ class DoclingParser:
         self.parser_name = parser_name
         self.parser_version = parser_version or self._resolve_parser_version()
         self._converter_factory = converter_factory or build_docling_converter
+
+    def resolve_conversion_fingerprint(
+        self,
+        *,
+        enable_ocr_override: bool | None = None,
+    ) -> str:
+        """Opaque identity of the conversion configuration this call would
+        actually use. Consumed by `ParsingWorkflow`/`ParsedArtifactKey`
+        without decomposition - see `compute_docling_conversion_fingerprint`.
+        """
+        return compute_docling_conversion_fingerprint(
+            enable_ocr_override=enable_ocr_override
+        )
 
     def parse(
         self,

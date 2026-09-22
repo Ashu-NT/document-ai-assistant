@@ -1,5 +1,6 @@
 from src.shared.exceptions.base import ApplicationError
 from src.shared.exceptions.infrastructure_exceptions import (
+    ArtifactStoreError,
     DatabaseError,
     InfrastructureError,
     LLMProviderError,
@@ -25,6 +26,7 @@ from src.shared.exceptions.validation_exceptions import (
 
 __all__ = [
     "ApplicationError",
+    "ArtifactStoreError",
     "ChunkingError",
     "DatabaseError",
     "DocumentNormalizationError",
