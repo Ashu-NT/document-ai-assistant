@@ -266,6 +266,35 @@ class TestPublicationSemantics:
         leftover = list(staging_root.glob("*")) if staging_root.exists() else []
         assert leftover == []
 
+    def test_put_raises_artifact_store_error_when_metadata_is_not_json_serializable(
+        self, tmp_path: Path
+    ) -> None:
+        # Regression test: a real Docling parse's RawParsedDocument.metadata
+        # can legitimately contain a value that turns out not to be
+        # JSON-serializable (discovered via a real 98-page manual: Docling's
+        # ConfidenceReport landing in metadata unconverted). This must
+        # degrade to ArtifactStoreError, never a raw TypeError/ValueError
+        # escaping put() - a malformed-but-otherwise-successful parse must
+        # never crash the caller.
+        import dataclasses
+
+        store = FilesystemParsedArtifactStore(root_dir=tmp_path / "artifacts")
+        key = _build_key()
+        document = dataclasses.replace(
+            _build_raw_parsed_document("BADMETA"),
+            metadata={"confidence": {1, 2, 3}},  # a set: not JSON-serializable
+        )
+
+        with pytest.raises(ArtifactStoreError):
+            store.put(key, document)
+
+        # No partially published canonical artifact is visible.
+        assert not (tmp_path / "artifacts" / key.cache_key).exists()
+        # Staging data was cleaned up per the existing publication contract.
+        staging_root = tmp_path / "artifacts" / ".staging"
+        leftover = list(staging_root.glob("*")) if staging_root.exists() else []
+        assert leftover == []
+
     def test_concurrent_same_key_publication_yields_one_valid_canonical_artifact(
         self, tmp_path: Path
     ) -> None:

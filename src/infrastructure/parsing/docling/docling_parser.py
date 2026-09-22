@@ -317,6 +317,13 @@ class DoclingParser:
 
         confidence = getattr(conversion_result, "confidence", None)
         if confidence is not None:
-            metadata["confidence"] = confidence
+            # `confidence` is Docling's own ConfidenceReport (a pydantic
+            # model), not a JSON-safe plain value. RawParsedDocument.metadata
+            # is persisted as-is into the Parsed Artifact Store's manifest
+            # (plain JSON) - store the model's own supported plain-dict
+            # serialization, not the live object, so metadata never carries
+            # a value the store can't round-trip.
+            model_dump = getattr(confidence, "model_dump", None)
+            metadata["confidence"] = model_dump() if callable(model_dump) else confidence
 
         return metadata

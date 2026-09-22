@@ -108,7 +108,7 @@ class FilesystemParsedArtifactStore:
             self._staging_root.mkdir(parents=True, exist_ok=True)
             staging_dir.mkdir(parents=True, exist_ok=False)
 
-            document_bytes = json.dumps(document_dict).encode("utf-8")
+            document_bytes = json.dumps(document_dict, indent=2).encode("utf-8")
             document_sha256 = hashlib.sha256(document_bytes).hexdigest()
             _write_bytes_durably(staging_dir / _DOCUMENT_FILENAME, document_bytes)
 
@@ -128,7 +128,12 @@ class FilesystemParsedArtifactStore:
             _write_bytes_durably(staging_dir / _MANIFEST_FILENAME, manifest_bytes)
 
             self._root.mkdir(parents=True, exist_ok=True)
-        except OSError as exc:
+        except (OSError, TypeError, ValueError) as exc:
+            # OSError: filesystem staging/write failures. TypeError/
+            # ValueError: json.dumps() failures (a non-JSON-serializable
+            # value reached document_dict/manifest, or a circular
+            # reference) - a malformed-but-otherwise-successful parse must
+            # degrade to "publication failed" here, not crash the caller.
             self._discard_staging(staging_dir)
             raise ArtifactStoreError(
                 "Failed to stage parsed artifact for publication.",

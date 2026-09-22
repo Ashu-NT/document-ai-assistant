@@ -254,6 +254,45 @@ def test_failed_publication_does_not_fail_parsing(
     assert len(parser.calls) == 1
 
 
+def test_non_json_serializable_metadata_does_not_fail_parsing(
+    tmp_path: Path, sample_document_graph
+) -> None:
+    # End-to-end regression test for the real bug found via a real 98-page
+    # manual: a RawParsedDocument.metadata value that turns out not to be
+    # JSON-serializable (e.g. Docling's ConfidenceReport landing there
+    # unconverted) must never turn an already-successful parse into a
+    # workflow failure - publication degrades to a logged warning, exactly
+    # like any other ArtifactStoreError.
+    import dataclasses
+
+    store = FilesystemParsedArtifactStore(root_dir=tmp_path / "artifacts")
+    raw_parsed_document = dataclasses.replace(
+        _build_raw_parsed_document("BADMETA", file_path="data/input/manual.pdf"),
+        metadata={"confidence": {1, 2, 3}},  # a set: not JSON-serializable
+    )
+    parser = FakeParser(raw_parsed_document)
+    workflow, _ = _build_workflow(
+        parser=parser,
+        sample_document_graph=sample_document_graph,
+        parsed_artifact_store=store,
+    )
+
+    result = workflow.parse(
+        file_path="data/input/manual.pdf",
+        file_hash="hash-1",
+        content_hash=None,
+        document_id="doc_1",
+    )
+
+    assert result.document_graph is not None
+    assert len(parser.calls) == 1
+    # No partially published canonical artifact is visible.
+    assert list((tmp_path / "artifacts").glob("*")) == [] or all(
+        p.name == ".staging" and list(p.glob("*")) == []
+        for p in (tmp_path / "artifacts").glob("*")
+    )
+
+
 def test_no_store_configured_leaves_behavior_unchanged(
     sample_document_graph,
 ) -> None:

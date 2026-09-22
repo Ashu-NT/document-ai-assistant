@@ -137,6 +137,44 @@ def test_parse_calls_converter_and_returns_raw_parsed_document() -> None:
     assert parsed_document.metadata["confidence"] == 0.97
 
 
+def test_parse_converts_pydantic_style_confidence_report_to_a_plain_dict() -> None:
+    # Regression test: Docling's real ConfidenceReport is a pydantic model,
+    # not a JSON-safe plain value. RawParsedDocument.metadata is persisted
+    # as-is into the Parsed Artifact Store's manifest (plain JSON) - storing
+    # the live model object there broke real-document artifact publication
+    # (json.dumps raised TypeError: Object of type ConfidenceReport is not
+    # JSON serializable). metadata["confidence"] must always be the model's
+    # own plain-dict serialization, not the live object.
+    class _FakeConfidenceReport:
+        def model_dump(self):
+            return {"mean_grade": 0.91, "low_grade": 0.62}
+
+    raw_document = type("FakeRawDocument", (), {"title": "Manual", "num_pages": 1})()
+    conversion_result = type(
+        "FakeConversionResult",
+        (),
+        {
+            "document": raw_document,
+            "pages": [object()],
+            "status": type("FakeStatus", (), {"value": "success"})(),
+            "confidence": _FakeConfidenceReport(),
+        },
+    )()
+    converter = FakeConverter(result=conversion_result)
+    parser = DoclingParser(converter=converter, parser_version="1.2.3")
+
+    parsed_document = parser.parse("data/input/pump_manual.pdf")
+
+    assert parsed_document.metadata["confidence"] == {
+        "mean_grade": 0.91,
+        "low_grade": 0.62,
+    }
+    # Must be JSON-serializable end to end, not just superficially plain.
+    import json
+
+    json.dumps(parsed_document.metadata)
+
+
 def test_parse_wraps_converter_failures_in_document_parsing_error() -> None:
     converter = FakeConverter(exc=RuntimeError("docling boom"))
     parser = DoclingParser(
