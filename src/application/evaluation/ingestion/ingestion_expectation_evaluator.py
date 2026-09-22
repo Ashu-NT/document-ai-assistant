@@ -1,5 +1,12 @@
-from collections import Counter
+from collections import Counter, defaultdict
 
+from src.application.evaluation.ingestion.chunk_token_budget import (
+    resolve_max_configured_chunk_tokens,
+)
+from src.application.evaluation.ingestion.models.cross_reference_evaluation_result import (
+    CrossReferenceEvaluationResult,
+    CrossReferenceTypeMetrics,
+)
 from src.application.evaluation.ingestion.models.ingestion_expectation_case import (
     ExpectedCrossReference,
     IngestionExpectationCase,
@@ -8,7 +15,24 @@ from src.application.evaluation.ingestion.models.ingestion_expectation_result im
     IngestionAssertionResult,
     IngestionExpectationCaseResult,
 )
+from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter_factory import (
+    ChunkTokenCounterFactory,
+)
 from src.domain.document.aggregates.document_graph import DocumentGraph
+from src.domain.document.entities.chunk_cross_reference import ChunkCrossReference
+
+# The universal, always-run invariant assertion names `evaluate()` appends
+# (see `_universal_invariants`) - exposed so reporting code can separate
+# "chunk/structural invariant" failures from curated case-specific
+# assertion failures without duplicating this set.
+UNIVERSAL_INVARIANT_ASSERTION_NAMES: frozenset[str] = frozenset(
+    {
+        "no_empty_chunks",
+        "chunk_page_provenance_present",
+        "element_page_provenance_present",
+        "chunk_hard_token_budget",
+    }
+)
 
 
 class IngestionExpectationEvaluator:
@@ -18,6 +42,15 @@ class IngestionExpectationEvaluator:
     `expected_*` field on the case becomes one assertion; an unset field is
     simply not checked, so a case can label only the facts someone actually
     verified rather than being forced to fill in every dimension.
+
+    `evaluate()` also always runs a small set of universal structural/chunk
+    invariants (no case-specific curation needed - these apply to any
+    document): no empty chunks, a hard cross-profile chunk token-budget
+    ceiling, and page-provenance presence on every element/chunk.
+
+    Cross-reference precision/recall/F1 by ChunkCrossReferenceType is a
+    separate method, `evaluate_cross_references()`, since its output is a
+    metrics structure rather than a flat list of pass/fail assertions.
 
     `expected_document_type` is accepted on the case but not evaluated here
     -- document classification is a separate downstream stage from parsing
@@ -96,6 +129,49 @@ class IngestionExpectationEvaluator:
                 )
             )
 
+        if case.expected_element_count_min is not None or case.expected_element_count_max is not None:
+            assertions.append(
+                self._range_assertion(
+                    name="element_count_range",
+                    minimum=case.expected_element_count_min,
+                    maximum=case.expected_element_count_max,
+                    actual=len(document_graph.elements),
+                )
+            )
+
+        if case.expected_chunk_count_min is not None or case.expected_chunk_count_max is not None:
+            assertions.append(
+                self._range_assertion(
+                    name="chunk_count_range",
+                    minimum=case.expected_chunk_count_min,
+                    maximum=case.expected_chunk_count_max,
+                    actual=len(document_graph.chunks),
+                )
+            )
+
+        if case.expected_table_count_min is not None or case.expected_table_count_max is not None:
+            assertions.append(
+                self._range_assertion(
+                    name="table_count_range",
+                    minimum=case.expected_table_count_min,
+                    maximum=case.expected_table_count_max,
+                    actual=len(document_graph.tables),
+                )
+            )
+
+        if case.expected_picture_count_min is not None or case.expected_picture_count_max is not None:
+            assertions.append(
+                self._range_assertion(
+                    name="picture_count_range",
+                    minimum=case.expected_picture_count_min,
+                    maximum=case.expected_picture_count_max,
+                    actual=len(document_graph.pictures),
+                )
+            )
+
+        for clue in case.required_text_clues:
+            assertions.append(self._text_clue_assertion(clue, document_graph))
+
         for expected_cross_reference in case.expected_cross_references:
             assertions.append(
                 self._cross_reference_assertion(
@@ -103,9 +179,210 @@ class IngestionExpectationEvaluator:
                 )
             )
 
+        assertions.extend(self._universal_invariants(document_graph))
+
         return IngestionExpectationCaseResult(
             case_id=case.case_id,
             assertions=assertions,
+        )
+
+    def evaluate_cross_references(
+        self,
+        *,
+        case: IngestionExpectationCase,
+        document_graph: DocumentGraph,
+    ) -> CrossReferenceEvaluationResult:
+        by_type: dict[str, list[ExpectedCrossReference]] = defaultdict(list)
+        must_not_resolve: list[ExpectedCrossReference] = []
+        for expected in case.expected_cross_references:
+            if expected.expected_reference_type is None:
+                must_not_resolve.append(expected)
+            else:
+                by_type[expected.expected_reference_type].append(expected)
+
+        type_metrics: list[CrossReferenceTypeMetrics] = []
+        for reference_type_value in sorted(by_type):
+            expected_matches = by_type[reference_type_value]
+            actual_of_type = [
+                cross_reference
+                for cross_reference in document_graph.cross_references.values()
+                if cross_reference.reference_type.value == reference_type_value
+            ]
+
+            matched_ids: set[str] = set()
+            matched_clues: list[str] = []
+            missed_clues: list[str] = []
+            for expected_match in expected_matches:
+                candidate = self._find_matching_cross_reference(
+                    expected_match,
+                    candidates=[
+                        cr for cr in actual_of_type
+                        if cr.cross_reference_id not in matched_ids
+                    ],
+                )
+                if candidate is not None:
+                    matched_ids.add(candidate.cross_reference_id)
+                    matched_clues.append(expected_match.clue)
+                else:
+                    missed_clues.append(expected_match.clue)
+
+            exhaustive = reference_type_value in case.exhaustive_cross_reference_types
+            false_positives = (
+                len([cr for cr in actual_of_type if cr.cross_reference_id not in matched_ids])
+                if exhaustive
+                else None
+            )
+
+            type_metrics.append(
+                CrossReferenceTypeMetrics(
+                    reference_type=reference_type_value,
+                    exhaustive=exhaustive,
+                    true_positives=len(matched_clues),
+                    false_negatives=len(missed_clues),
+                    false_positives=false_positives,
+                    matched_clues=tuple(matched_clues),
+                    missed_clues=tuple(missed_clues),
+                )
+            )
+
+        external_correct = 0
+        external_incorrect = 0
+        for expected in must_not_resolve:
+            clue = expected.clue.lower()
+            matching = [
+                cr
+                for cr in document_graph.cross_references.values()
+                if clue in (cr.matched_text or "").lower()
+            ]
+            if matching:
+                external_incorrect += 1
+            else:
+                external_correct += 1
+
+        reconciliation_outcome_counts = Counter(
+            cross_reference.reconciliation_outcome.value
+            if cross_reference.reconciliation_outcome is not None
+            else "(none)"
+            for cross_reference in document_graph.cross_references.values()
+        )
+
+        return CrossReferenceEvaluationResult(
+            case_id=case.case_id,
+            type_metrics=type_metrics,
+            reconciliation_outcome_counts=dict(reconciliation_outcome_counts),
+            external_reference_clues_correctly_unresolved=external_correct,
+            external_reference_clues_incorrectly_resolved=external_incorrect,
+        )
+
+    @staticmethod
+    def _find_matching_cross_reference(
+        expected: ExpectedCrossReference,
+        *,
+        candidates: list[ChunkCrossReference],
+    ) -> ChunkCrossReference | None:
+        clue = expected.clue.lower()
+        for cross_reference in candidates:
+            if clue not in (cross_reference.matched_text or "").lower():
+                continue
+            if (
+                expected.expected_target_section is not None
+                and cross_reference.target_section_label != expected.expected_target_section
+            ):
+                continue
+            if (
+                expected.expected_target_annex is not None
+                and cross_reference.target_annex_label != expected.expected_target_annex
+            ):
+                continue
+            return cross_reference
+        return None
+
+    def _universal_invariants(
+        self, document_graph: DocumentGraph
+    ) -> list[IngestionAssertionResult]:
+        assertions = [
+            self._no_empty_chunks_assertion(document_graph),
+            self._chunk_provenance_assertion(document_graph),
+            self._element_provenance_assertion(document_graph),
+        ]
+        token_budget_assertion = self._chunk_token_budget_assertion(document_graph)
+        if token_budget_assertion is not None:
+            assertions.append(token_budget_assertion)
+        return assertions
+
+    @staticmethod
+    def _no_empty_chunks_assertion(
+        document_graph: DocumentGraph,
+    ) -> IngestionAssertionResult:
+        empty_chunk_ids = [
+            chunk.chunk_id
+            for chunk in document_graph.chunks.values()
+            if not (chunk.content or "").strip()
+        ]
+        return IngestionAssertionResult(
+            name="no_empty_chunks",
+            expected=0,
+            actual=len(empty_chunk_ids),
+            passed=not empty_chunk_ids,
+        )
+
+    @staticmethod
+    def _chunk_provenance_assertion(
+        document_graph: DocumentGraph,
+    ) -> IngestionAssertionResult:
+        missing = [
+            chunk.chunk_id
+            for chunk in document_graph.chunks.values()
+            if chunk.source is None or chunk.source.page_start is None
+        ]
+        return IngestionAssertionResult(
+            name="chunk_page_provenance_present",
+            expected=0,
+            actual=len(missing),
+            passed=not missing,
+        )
+
+    @staticmethod
+    def _element_provenance_assertion(
+        document_graph: DocumentGraph,
+    ) -> IngestionAssertionResult:
+        missing = [
+            element.element_id
+            for element in document_graph.elements.values()
+            if element.source is None or element.source.page_start is None
+        ]
+        return IngestionAssertionResult(
+            name="element_page_provenance_present",
+            expected=0,
+            actual=len(missing),
+            passed=not missing,
+        )
+
+    @staticmethod
+    def _chunk_token_budget_assertion(
+        document_graph: DocumentGraph,
+    ) -> IngestionAssertionResult | None:
+        ceiling = resolve_max_configured_chunk_tokens()
+        if ceiling is None:
+            # No chunking profile could be read in this environment - skip
+            # rather than assert against a ceiling we cannot justify.
+            return None
+
+        counter = ChunkTokenCounterFactory().create()
+        over_budget = [
+            chunk.chunk_id
+            for chunk in document_graph.chunks.values()
+            if counter.count_tokens(chunk.content) > ceiling
+        ]
+        return IngestionAssertionResult(
+            name="chunk_hard_token_budget",
+            expected=f"<= {ceiling} tokens (max configured chunking-profile ceiling)",
+            actual=(
+                "all chunks within budget"
+                if not over_budget
+                else f"{len(over_budget)} chunk(s) over budget"
+            ),
+            passed=not over_budget,
         )
 
     @staticmethod
@@ -117,6 +394,42 @@ class IngestionExpectationEvaluator:
             expected=expected,
             actual=actual,
             passed=actual == expected,
+        )
+
+    @staticmethod
+    def _range_assertion(
+        *, name: str, minimum: int | None, maximum: int | None, actual: int
+    ) -> IngestionAssertionResult:
+        passed = True
+        if minimum is not None and actual < minimum:
+            passed = False
+        if maximum is not None and actual > maximum:
+            passed = False
+        expected_description = (
+            f"[{minimum if minimum is not None else '-inf'}, "
+            f"{maximum if maximum is not None else '+inf'}]"
+        )
+        return IngestionAssertionResult(
+            name=name,
+            expected=expected_description,
+            actual=actual,
+            passed=passed,
+        )
+
+    @staticmethod
+    def _text_clue_assertion(
+        clue: str, document_graph: DocumentGraph
+    ) -> IngestionAssertionResult:
+        clue_lower = clue.lower()
+        found = any(
+            clue_lower in (element.text or "").lower()
+            for element in document_graph.elements.values()
+        )
+        return IngestionAssertionResult(
+            name=f"required_text_clue[{clue}]",
+            expected="present in parsed document text",
+            actual="found" if found else "not found",
+            passed=found,
         )
 
     @staticmethod

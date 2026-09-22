@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 """
-Run every structural-expectations case in the ingestion truth set
-(TestDoc/retrieval_truth_set.md, section "# 7. Structural Expectations")
-through the real production parsing path (Docling conversion -> canonical
+Run every structural-expectations case discovered under
+TestDoc/fixtures/structural_expectations*.md (one file per reviewed
+document, discovered by content shape - see IngestionTruthSetLoader) through
+the real production parsing path (Docling conversion -> canonical
 normalization -> document graph build, including fuzzy/native cross-
 reference reconciliation) and report pass/fail per labeled assertion.
 

@@ -12,7 +12,7 @@ from src.application.evaluation.profile_calibration import (
     candidate_evidence_score,
 )
 from src.application.evaluation.ingestion.loaders import (
-    DEFAULT_INGESTION_TRUTH_SET_PATH,
+    DEFAULT_INGESTION_TRUTH_SET_GLOB,
     IngestionTruthSetLoader,
 )
 from src.application.evaluation.ingestion.models import (
@@ -47,7 +47,7 @@ from src.application.evaluation.retrieval import (
 
 __all__ = [
     "IngestionExpectationEvaluator",
-    "DEFAULT_INGESTION_TRUTH_SET_PATH",
+    "DEFAULT_INGESTION_TRUTH_SET_GLOB",
     "IngestionTruthSetLoader",
     "ExpectedCrossReference",
     "IngestionAssertionResult",

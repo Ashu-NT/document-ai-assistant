@@ -18,6 +18,7 @@ from  src.config.settings.settings import (
     storage_settings,
     prompt_context_settings,
     parsed_artifact_store_settings,
+    golden_corpus_settings,
 )
 
 __all__ = [
@@ -40,4 +41,5 @@ __all__ = [
     "storage_settings",
     "prompt_context_settings",
     "parsed_artifact_store_settings",
+    "golden_corpus_settings",
 ]

@@ -3,6 +3,9 @@ from pathlib import Path
 
 import yaml
 
+from src.application.evaluation.corpus.golden_corpus_manifest import (
+    GoldenCorpusManifest,
+)
 from src.application.evaluation.ingestion.models.ingestion_expectation_case import (
     ExpectedCrossReference,
     IngestionExpectationCase,
@@ -10,67 +13,87 @@ from src.application.evaluation.ingestion.models.ingestion_expectation_case impo
 from src.application.evaluation.retrieval.benchmarking.loaders.markdown_section_parser import (
     extract_sections,
 )
+from src.config.settings import golden_corpus_settings
 from src.shared.exceptions import SchemaValidationError
 
-DEFAULT_INGESTION_TRUTH_SET_PATH = Path("TestDoc/retrieval_truth_set.md")
+# Structural-expectations cases live in their own dedicated file(s), one per
+# reviewed document (e.g. structural_expectations_fwc12.md), NOT inside
+# TestDoc/retrieval_truth_set.md - that file stays retrieval-focused (see
+# approved decision "retrieval_truth_set.md remains retrieval-focused").
+# Discovered via glob rather than one hardcoded filename so new documents'
+# structural expectations can be added as new files without touching this
+# loader.
+DEFAULT_INGESTION_TRUTH_SET_GLOB = "fixtures/structural_expectations*.md"
 
-# Structural-expectations cases live in their own numbered section of the
-# same truth-set file the retrieval benchmark reads (see
-# RetrievalTruthSetLoader) -- one file per document holds both, per the
-# team's choice to keep one source of truth per document rather than
-# splitting retrieval and structural expectations across separate files.
-_STRUCTURAL_EXPECTATIONS_SECTION_NUMBER = "7"
-
-# Real YAML (not the retrieval truth-set's flat key:value parser) -- this
-# section is new, with no legacy content whose quirky formatting a stricter
-# parser could break, so it can support genuine nested lists/mappings
-# (expected_cross_references) from the start.
+# Real YAML (not the retrieval truth-set's flat key:value parser) so nested
+# structures (expected_cross_references) are supported without a bespoke
+# parser.
 _YAML_BLOCK_PATTERN = re.compile(r"```yaml\s*\n(?P<body>.*?)```", re.DOTALL)
 
 
 class IngestionTruthSetLoader:
+    """Discovers structural-expectation cases by content shape (any ```yaml
+    block with a non-empty `id:`), scanning EVERY numbered Markdown section
+    of the source file(s) - never a hardcoded section number. A prior
+    version hardcoded section "7", which silently stopped finding any case
+    the moment that file's section numbering changed (see the fixed
+    regression this loader now has a dedicated test for). Mirrors the same
+    shape-based discovery RetrievalTruthSetLoader already uses.
+    """
+
+    def __init__(self, *, manifest: GoldenCorpusManifest | None = None) -> None:
+        self._manifest = manifest or GoldenCorpusManifest.default()
+
     def load(
         self,
         path: Path | str | None = None,
     ) -> list[IngestionExpectationCase]:
-        source_path = self._source_path(path)
-        if not source_path.exists():
+        source_paths = self._source_paths(path)
+        missing = [p for p in source_paths if not p.exists()]
+        if missing:
             raise SchemaValidationError(
                 "Ingestion truth-set file not found.",
-                details={"path": str(source_path)},
+                details={"path": str(missing[0])},
             )
 
-        text = source_path.read_text(encoding="utf-8")
-        sections = extract_sections(text)
-        body = sections.get(_STRUCTURAL_EXPECTATIONS_SECTION_NUMBER, "")
+        cases: list[IngestionExpectationCase] = []
+        for source_path in source_paths:
+            cases.extend(self._load_file(source_path))
 
-        cases = [
-            self._build_case(
-                block_text,
-                source_path=source_path,
-                block_index=block_index,
-            )
-            for block_index, block_text in enumerate(
-                _YAML_BLOCK_PATTERN.findall(body),
-                start=1,
-            )
-        ]
-        cases = [case for case in cases if case is not None]
         if not cases:
             raise SchemaValidationError(
                 "Ingestion truth set did not contain any structural expectation cases.",
-                details={"path": str(source_path)},
+                details={"paths": [str(p) for p in source_paths]},
             )
         return cases
 
-    @staticmethod
-    def _source_path(path: Path | str | None) -> Path:
-        if path is None:
-            return DEFAULT_INGESTION_TRUTH_SET_PATH
-        return Path(path)
+    def _load_file(self, source_path: Path) -> list[IngestionExpectationCase]:
+        text = source_path.read_text(encoding="utf-8")
+        sections = extract_sections(text)
 
-    @staticmethod
+        cases: list[IngestionExpectationCase] = []
+        block_index = 0
+        for section_body in sections.values():
+            for block_text in _YAML_BLOCK_PATTERN.findall(section_body):
+                block_index += 1
+                case = self._build_case(
+                    block_text,
+                    source_path=source_path,
+                    block_index=block_index,
+                )
+                if case is not None:
+                    cases.append(case)
+        return cases
+
+    def _source_paths(self, path: Path | str | None) -> list[Path]:
+        if path is not None:
+            return [Path(path)]
+
+        root = golden_corpus_settings.root_path
+        return sorted(root.glob(DEFAULT_INGESTION_TRUTH_SET_GLOB))
+
     def _build_case(
+        self,
         block_text: str,
         *,
         source_path: Path,
@@ -89,11 +112,9 @@ class IngestionTruthSetLoader:
             # convention as the retrieval truth-set's case blocks.
             return None
 
-        if not payload.get("document_path"):
-            raise SchemaValidationError(
-                "Ingestion truth-set case is missing required field 'document_path'.",
-                details={"path": str(source_path), "block_index": block_index},
-            )
+        document_path, document_alias = self._resolve_document_path(
+            payload, source_path=source_path, block_index=block_index
+        )
 
         cross_references = tuple(
             ExpectedCrossReference(
@@ -115,7 +136,8 @@ class IngestionTruthSetLoader:
 
         return IngestionExpectationCase(
             case_id=str(payload["id"]),
-            document_path=Path(payload["document_path"]),
+            document_path=document_path,
+            document_alias=document_alias,
             expected_document_type=payload.get("expected_document_type"),
             expected_section_count=payload.get("expected_section_count"),
             expected_top_level_section_titles=tuple(
@@ -128,8 +150,46 @@ class IngestionTruthSetLoader:
             expected_cross_references=cross_references,
             expected_table_count=payload.get("expected_table_count"),
             expected_picture_count=payload.get("expected_picture_count"),
+            expected_element_count_min=payload.get("expected_element_count_min"),
+            expected_element_count_max=payload.get("expected_element_count_max"),
+            expected_chunk_count_min=payload.get("expected_chunk_count_min"),
+            expected_chunk_count_max=payload.get("expected_chunk_count_max"),
+            expected_table_count_min=payload.get("expected_table_count_min"),
+            expected_table_count_max=payload.get("expected_table_count_max"),
+            expected_picture_count_min=payload.get("expected_picture_count_min"),
+            expected_picture_count_max=payload.get("expected_picture_count_max"),
+            required_text_clues=tuple(payload.get("required_text_clues") or []),
+            exhaustive_cross_reference_types=tuple(
+                payload.get("exhaustive_cross_reference_types") or []
+            ),
             notes=payload.get("notes"),
         )
 
+    def _resolve_document_path(
+        self,
+        payload: dict,
+        *,
+        source_path: Path,
+        block_index: int,
+    ) -> tuple[Path, str | None]:
+        literal_path = payload.get("document_path")
+        alias = payload.get("document_alias")
 
-__all__ = ["IngestionTruthSetLoader", "DEFAULT_INGESTION_TRUTH_SET_PATH"]
+        if not literal_path and not alias:
+            raise SchemaValidationError(
+                "Ingestion truth-set case is missing required field "
+                "'document_path' or 'document_alias'.",
+                details={"path": str(source_path), "block_index": block_index},
+            )
+
+        if literal_path:
+            return Path(literal_path), (str(alias) if alias else None)
+
+        resolved_entry = self._manifest.entry(str(alias))
+        return (
+            self._manifest.root_dir / resolved_entry.relative_path,
+            str(alias),
+        )
+
+
+__all__ = ["IngestionTruthSetLoader", "DEFAULT_INGESTION_TRUTH_SET_GLOB"]
