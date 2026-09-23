@@ -13,6 +13,9 @@ from src.application.evaluation.ingestion.models.ingestion_expectation_result im
 from src.application.evaluation.ingestion.models.cross_reference_evaluation_result import (
     CrossReferenceEvaluationResult,
 )
+from src.application.evaluation.ingestion.models.chunk_token_budget_result import (
+    ChunkTokenBudgetEvaluationResult,
+)
 
 
 class GoldenEvaluationReportJsonSerializer:
@@ -25,6 +28,15 @@ class GoldenEvaluationReportJsonSerializer:
                 "structural_failed_count": report.structural_failed_count,
                 "structural_assertion_failure_count": report.structural_assertion_failure_count,
                 "chunk_invariant_failure_count": report.chunk_invariant_failure_count,
+                "chunk_token_budget_hard_violation_count": (
+                    report.chunk_token_budget_hard_violation_count
+                ),
+                "chunk_token_budget_oversized_indivisible_count": (
+                    report.chunk_token_budget_oversized_indivisible_count
+                ),
+                "chunk_token_budget_unresolved_aliases": list(
+                    report.chunk_token_budget_unresolved_aliases
+                ),
                 "documents_not_evaluated": [
                     outcome.alias for outcome in report.documents_not_evaluated
                 ],
@@ -65,6 +77,13 @@ class GoldenEvaluationReportJsonSerializer:
             "cross_references": (
                 self._serialize_cross_reference_result(outcome.cross_reference_result)
                 if outcome.cross_reference_result is not None
+                else None
+            ),
+            "chunk_token_budget": (
+                self._serialize_chunk_token_budget_result(
+                    outcome.chunk_token_budget_result
+                )
+                if outcome.chunk_token_budget_result is not None
                 else None
             ),
         }
@@ -115,6 +134,35 @@ class GoldenEvaluationReportJsonSerializer:
             "external_reference_clues_incorrectly_resolved": (
                 result.external_reference_clues_incorrectly_resolved
             ),
+        }
+
+    @staticmethod
+    def _serialize_chunk_token_budget_result(
+        result: ChunkTokenBudgetEvaluationResult,
+    ) -> dict[str, Any]:
+        return {
+            "resolved": result.resolved,
+            "profile": result.profile,
+            "effective_budget": result.effective_budget,
+            "unresolved_reason": result.unresolved_reason,
+            "max_observed_tokens": result.max_observed_tokens,
+            "normal_count": result.normal_count,
+            "oversized_indivisible_count": result.oversized_indivisible_count,
+            "hard_budget_violation_count": result.hard_budget_violation_count,
+            "passed": result.passed,
+            "oversized_chunks": [
+                {
+                    "chunk_id": diagnostic.chunk_id,
+                    "token_count": diagnostic.token_count,
+                    "budget": diagnostic.budget,
+                    "status": diagnostic.status.value,
+                    "chunk_type": diagnostic.chunk_type,
+                    "table_id": diagnostic.table_id,
+                    "table_row_start": diagnostic.table_row_start,
+                    "table_row_end": diagnostic.table_row_end,
+                }
+                for diagnostic in result.oversized_chunks
+            ],
         }
 
 

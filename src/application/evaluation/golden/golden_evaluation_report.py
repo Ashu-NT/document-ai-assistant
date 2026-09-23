@@ -66,6 +66,31 @@ class GoldenEvaluationReport:
         return count
 
     @property
+    def chunk_token_budget_hard_violation_count(self) -> int:
+        return sum(
+            outcome.chunk_token_budget_result.hard_budget_violation_count
+            for outcome in self.document_outcomes
+            if outcome.chunk_token_budget_result is not None
+        )
+
+    @property
+    def chunk_token_budget_oversized_indivisible_count(self) -> int:
+        return sum(
+            outcome.chunk_token_budget_result.oversized_indivisible_count
+            for outcome in self.document_outcomes
+            if outcome.chunk_token_budget_result is not None
+        )
+
+    @property
+    def chunk_token_budget_unresolved_aliases(self) -> tuple[str, ...]:
+        return tuple(
+            outcome.alias
+            for outcome in self.document_outcomes
+            if outcome.chunk_token_budget_result is not None
+            and not outcome.chunk_token_budget_result.resolved
+        )
+
+    @property
     def cross_reference_type_metrics(self) -> list[AggregateCrossReferenceTypeMetrics]:
         all_type_metrics = [
             metrics

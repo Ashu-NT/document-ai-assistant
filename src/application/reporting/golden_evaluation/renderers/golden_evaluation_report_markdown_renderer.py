@@ -42,12 +42,58 @@ class GoldenEvaluationReportMarkdownRenderer:
 
     @staticmethod
     def _render_chunking_section(report: GoldenEvaluationReport) -> list[str]:
-        return [
+        lines = [
             "## Chunking",
             "",
             f"- invariant failures: `{report.chunk_invariant_failure_count}`",
-            "",
+            f"- token-budget hard violations: `{report.chunk_token_budget_hard_violation_count}`",
+            f"- token-budget oversized-indivisible (informational, not a failure): "
+            f"`{report.chunk_token_budget_oversized_indivisible_count}`",
         ]
+        if report.chunk_token_budget_unresolved_aliases:
+            lines.append(
+                "- effective chunking profile could not be resolved for: "
+                f"`{', '.join(report.chunk_token_budget_unresolved_aliases)}`"
+            )
+        lines.append("")
+
+        for outcome in report.document_outcomes:
+            result = outcome.chunk_token_budget_result
+            if result is None:
+                continue
+            lines.append(f"### {outcome.alias}")
+            lines.append("")
+            if not result.resolved:
+                lines.append(f"- effective profile: unresolved ({result.unresolved_reason})")
+                lines.append("")
+                continue
+            lines.append(f"- effective profile: `{result.profile}`")
+            lines.append(f"- effective budget: `{result.effective_budget}` tokens")
+            lines.append(f"- max observed tokens: `{result.max_observed_tokens}`")
+            lines.append(f"- normal chunks: `{result.normal_count}`")
+            lines.append(
+                f"- oversized-indivisible chunks: `{result.oversized_indivisible_count}`"
+            )
+            lines.append(
+                f"- hard budget violations: `{result.hard_budget_violation_count}`"
+            )
+            if result.oversized_chunks:
+                lines.append("")
+                lines.append("| chunk_id | status | tokens | budget | chunk_type | table_id | rows |")
+                lines.append("| --- | --- | --- | --- | --- | --- | --- |")
+                for diagnostic in result.oversized_chunks:
+                    rows = (
+                        f"{diagnostic.table_row_start}-{diagnostic.table_row_end}"
+                        if diagnostic.table_row_start is not None
+                        else "n/a"
+                    )
+                    lines.append(
+                        f"| {diagnostic.chunk_id} | {diagnostic.status.value} | "
+                        f"{diagnostic.token_count} | {diagnostic.budget} | "
+                        f"{diagnostic.chunk_type} | {diagnostic.table_id or 'n/a'} | {rows} |"
+                    )
+            lines.append("")
+        return lines
 
     @staticmethod
     def _render_cross_reference_section(report: GoldenEvaluationReport) -> list[str]:

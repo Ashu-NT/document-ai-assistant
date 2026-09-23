@@ -13,6 +13,11 @@ from src.application.evaluation.golden.golden_document_evaluation_outcome import
 from src.application.evaluation.golden.golden_evaluation_report import (
     GoldenEvaluationReport,
 )
+from src.application.evaluation.ingestion.models.chunk_token_budget_result import (
+    ChunkTokenBudgetEvaluationResult,
+    ChunkTokenBudgetStatus,
+    OversizedChunkDiagnostic,
+)
 from src.application.evaluation.ingestion.models.cross_reference_evaluation_result import (
     CrossReferenceEvaluationResult,
     CrossReferenceTypeMetrics,
@@ -76,6 +81,34 @@ def _sample_report() -> GoldenEvaluationReport:
             status=GoldenDocumentEvaluationStatus.EVALUATED,
             structural_result=failing_structural,
             cross_reference_result=CrossReferenceEvaluationResult(case_id="struct_doc_b"),
+            chunk_token_budget_result=ChunkTokenBudgetEvaluationResult(
+                resolved=True,
+                profile="datasheet",
+                effective_budget=270,
+                max_observed_tokens=353,
+                normal_count=71,
+                oversized_indivisible_count=61,
+                hard_budget_violation_count=1,
+                oversized_chunks=(
+                    OversizedChunkDiagnostic(
+                        chunk_id="chunk_hard",
+                        token_count=300,
+                        budget=270,
+                        status=ChunkTokenBudgetStatus.HARD_BUDGET_VIOLATION,
+                        chunk_type="general",
+                    ),
+                    OversizedChunkDiagnostic(
+                        chunk_id="chunk_indivisible",
+                        token_count=316,
+                        budget=270,
+                        status=ChunkTokenBudgetStatus.OVERSIZED_INDIVISIBLE,
+                        chunk_type="technical_specification",
+                        table_id="t1",
+                        table_row_start=1,
+                        table_row_end=1,
+                    ),
+                ),
+            ),
         ),
         GoldenDocumentEvaluationOutcome(
             alias="doc_c",
@@ -120,6 +153,20 @@ class TestJsonSerialization:
             "confirmed": 1,
         }
 
+        doc_b = next(d for d in round_tripped["documents"] if d["alias"] == "doc_b")
+        budget = doc_b["chunk_token_budget"]
+        assert budget["resolved"] is True
+        assert budget["profile"] == "datasheet"
+        assert budget["effective_budget"] == 270
+        assert budget["hard_budget_violation_count"] == 1
+        assert budget["oversized_indivisible_count"] == 61
+        assert budget["passed"] is False
+        statuses = {c["status"] for c in budget["oversized_chunks"]}
+        assert statuses == {"hard_budget_violation", "oversized_indivisible"}
+
+        assert round_tripped["summary"]["chunk_token_budget_hard_violation_count"] == 1
+        assert round_tripped["summary"]["chunk_token_budget_oversized_indivisible_count"] == 61
+
     def test_aggregate_cross_reference_metrics_included(self) -> None:
         report = _sample_report()
         payload = GoldenEvaluationReportJsonSerializer().serialize(report)
@@ -153,6 +200,10 @@ class TestMarkdownRendering:
         assert "section_reference" in rendered
         assert "doc_c" in rendered  # listed as not-evaluated
         assert "docling 2.111.0" in rendered
+        assert "effective profile: `datasheet`" in rendered
+        assert "effective budget: `270` tokens" in rendered
+        assert "oversized_indivisible" in rendered
+        assert "hard_budget_violation" in rendered
 
     def test_render_does_not_collapse_into_a_single_score(self) -> None:
         rendered = GoldenEvaluationReportMarkdownRenderer().render(_sample_report())

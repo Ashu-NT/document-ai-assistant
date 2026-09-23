@@ -177,11 +177,15 @@ def _evaluate_one_document(
     cross_reference_result = evaluator.evaluate_cross_references(
         case=resolved_case, document_graph=parse_result.document_graph
     )
+    chunk_token_budget_result = evaluator.evaluate_chunk_token_budget(
+        parse_result.document_graph
+    )
     return GoldenDocumentEvaluationOutcome(
         alias=resolved.alias,
         status=GoldenDocumentEvaluationStatus.EVALUATED,
         structural_result=structural_result,
         cross_reference_result=cross_reference_result,
+        chunk_token_budget_result=chunk_token_budget_result,
     )
 
 

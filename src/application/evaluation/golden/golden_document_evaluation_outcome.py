@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
+from src.application.evaluation.ingestion.models.chunk_token_budget_result import (
+    ChunkTokenBudgetEvaluationResult,
+)
 from src.application.evaluation.ingestion.models.cross_reference_evaluation_result import (
     CrossReferenceEvaluationResult,
 )
@@ -29,6 +32,7 @@ class GoldenDocumentEvaluationOutcome:
     status: GoldenDocumentEvaluationStatus
     structural_result: IngestionExpectationCaseResult | None = None
     cross_reference_result: CrossReferenceEvaluationResult | None = None
+    chunk_token_budget_result: ChunkTokenBudgetEvaluationResult | None = None
     detail: str | None = None
 
     @property

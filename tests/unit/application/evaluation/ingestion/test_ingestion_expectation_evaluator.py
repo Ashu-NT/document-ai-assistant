@@ -5,6 +5,9 @@ from src.application.evaluation import (
     IngestionExpectationCase,
     IngestionExpectationEvaluator,
 )
+from src.application.evaluation.ingestion.models.chunk_token_budget_result import (
+    ChunkTokenBudgetStatus,
+)
 from src.domain.assets import TableAsset
 from src.domain.assets.asset_metadata import AssetMetadata
 from src.domain.assets.picture_asset import PictureAsset
@@ -22,6 +25,9 @@ from src.domain.document.entities.document import Document
 from src.domain.document.entities.section import DocumentSection
 from src.domain.document.value_objects import DocumentHashes
 from src.domain.elements.canonical_element import CanonicalElement
+from src.application.workflows.parsing.builders.document_graph.document_metadata.document_type_signal_cache import (
+    store_document_type_confirmed,
+)
 
 
 def make_case(**overrides) -> IngestionExpectationCase:
@@ -41,14 +47,21 @@ def make_graph(
     pictures: dict[str, PictureAsset] | None = None,
     cross_references: dict[str, ChunkCrossReference] | None = None,
     elements: dict[str, CanonicalElement] | None = None,
+    document_type: DocumentType = DocumentType.MANUAL,
+    # Marks document_type as confirmed so the effective chunking profile is
+    # reliably resolvable (via DOCUMENT_TYPE_CHUNKING_PROFILES) without
+    # needing a real structural_profile_inference in every test fixture.
+    # Pass False to exercise the "cannot be resolved" path.
+    document_type_confirmed: bool = True,
 ) -> DocumentGraph:
     document = Document(
         document_id="doc_001",
         file_name="sample.pdf",
         file_path="TestDoc/fixtures/sample.pdf",
         hashes=DocumentHashes(file_hash="h1", content_hash="c1"),
-        document_type=DocumentType.MANUAL,
+        document_type=document_type,
     )
+    store_document_type_confirmed(document.metadata, is_confirmed=document_type_confirmed)
     graph = DocumentGraph(document=document)
     graph.sections = sections or {}
     graph.chunks = chunks or {}
@@ -74,6 +87,9 @@ def make_chunk(
     chunk_type: ChunkType = ChunkType.GENERAL,
     content: str = "content",
     source: SourceLocation | None = None,
+    table_ids: list[str] | None = None,
+    table_row_start: int | None = None,
+    table_row_end: int | None = None,
 ) -> DocumentChunk:
     return DocumentChunk(
         chunk_id=chunk_id,
@@ -83,6 +99,9 @@ def make_chunk(
         content=content,
         source=source if source is not None else SourceLocation(page_start=1, page_end=1),
         sequence_number=1,
+        table_ids=table_ids or [],
+        table_row_start=table_row_start,
+        table_row_end=table_row_end,
     )
 
 
@@ -449,21 +468,203 @@ class TestUniversalInvariants:
         assert assertion.passed is False
         assert assertion.actual == 1
 
-    def test_chunk_hard_token_budget_invariant_fails_when_chunk_exceeds_ceiling(self) -> None:
-        from src.application.evaluation.ingestion.chunk_token_budget import (
-            resolve_max_configured_chunk_tokens,
+    def _certificate_budget(self) -> int:
+        from src.application.workflows.parsing.builders.chunking.policies.policy.chunking_policy_registry import (
+            default_registry,
+        )
+        from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
+            ChunkingProfile,
         )
 
-        ceiling = resolve_max_configured_chunk_tokens()
-        assert ceiling is not None, "chunking profiles must be readable for this test to be meaningful"
+        return default_registry().get(ChunkingProfile.CERTIFICATE).max_chunk_tokens
 
-        oversized_content = " ".join(["word"] * (ceiling + 50))
-        graph = make_graph(chunks={"c1": make_chunk(chunk_id="c1", content=oversized_content)})
+    def _content_over_budget(self, budget: int) -> str:
+        from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter_factory import (
+            ChunkTokenCounterFactory,
+        )
 
-        result = _evaluator().evaluate(case=make_case(), document_graph=graph)
+        counter = ChunkTokenCounterFactory().create()
+        words = ["word"]
+        while counter.count_tokens(" ".join(words)) <= budget:
+            words.append("word")
+        return " ".join(words)
 
-        assertion = _assertion(result, "chunk_hard_token_budget")
+    def test_a_ordinary_chunk_below_effective_budget_passes(self) -> None:
+        budget = self._certificate_budget()
+        graph = make_graph(
+            document_type=DocumentType.CERTIFICATE,
+            chunks={"c1": make_chunk(chunk_id="c1", content="short content")},
+        )
+
+        result = _evaluator().evaluate_chunk_token_budget(graph)
+
+        assert result.resolved is True
+        assert result.profile == "certificate"
+        assert result.effective_budget == budget
+        assert result.normal_count == 1
+        assert result.oversized_indivisible_count == 0
+        assert result.hard_budget_violation_count == 0
+        assert result.passed is True
+
+    def test_b_non_table_chunk_above_effective_budget_is_hard_violation(self) -> None:
+        budget = self._certificate_budget()
+        content = self._content_over_budget(budget)
+        graph = make_graph(
+            document_type=DocumentType.CERTIFICATE,
+            chunks={"c1": make_chunk(chunk_id="c1", content=content)},
+        )
+
+        result = _evaluator().evaluate_chunk_token_budget(graph)
+
+        assert result.hard_budget_violation_count == 1
+        assert result.oversized_indivisible_count == 0
+        assert result.passed is False
+        diagnostic = result.oversized_chunks[0]
+        assert diagnostic.status == ChunkTokenBudgetStatus.HARD_BUDGET_VIOLATION
+        assert diagnostic.chunk_id == "c1"
+
+    def test_c_multi_row_table_fragment_above_budget_is_hard_violation(self) -> None:
+        # A multi-row group (table_row_start != table_row_end) still over
+        # budget means production's own row-accumulation guard did not keep
+        # it in bounds -- NOT proof of minimum granularity, since the
+        # splitter could in principle have produced smaller (e.g. single-
+        # row) groups instead.
+        budget = self._certificate_budget()
+        content = self._content_over_budget(budget)
+        graph = make_graph(
+            document_type=DocumentType.CERTIFICATE,
+            chunks={
+                "c1": make_chunk(
+                    chunk_id="c1",
+                    content=content,
+                    table_ids=["t1"],
+                    table_row_start=1,
+                    table_row_end=3,
+                )
+            },
+        )
+
+        result = _evaluator().evaluate_chunk_token_budget(graph)
+
+        assert result.hard_budget_violation_count == 1
+        assert result.oversized_indivisible_count == 0
+        diagnostic = result.oversized_chunks[0]
+        assert diagnostic.status == ChunkTokenBudgetStatus.HARD_BUDGET_VIOLATION
+        assert diagnostic.table_id == "t1"
+        assert diagnostic.table_row_start == 1
+        assert diagnostic.table_row_end == 3
+
+    def test_d_single_row_table_fragment_above_budget_is_oversized_indivisible(self) -> None:
+        # table_row_start == table_row_end: this fragment IS the minimum
+        # granularity TableFragmentSplitter can ever produce (it only ever
+        # splits at row boundaries) - proof, not assumption.
+        budget = self._certificate_budget()
+        content = self._content_over_budget(budget)
+        graph = make_graph(
+            document_type=DocumentType.CERTIFICATE,
+            chunks={
+                "c1": make_chunk(
+                    chunk_id="c1",
+                    content=content,
+                    table_ids=["t1"],
+                    table_row_start=5,
+                    table_row_end=5,
+                )
+            },
+        )
+
+        result = _evaluator().evaluate_chunk_token_budget(graph)
+
+        assert result.hard_budget_violation_count == 0
+        assert result.oversized_indivisible_count == 1
+        # Oversized-indivisible findings remain visible and do NOT fail the
+        # invariant - only hard_budget_violation_count gates pass/fail.
+        assert result.passed is True
+        diagnostic = result.oversized_chunks[0]
+        assert diagnostic.status == ChunkTokenBudgetStatus.OVERSIZED_INDIVISIBLE
+        assert diagnostic.table_id == "t1"
+        assert diagnostic.table_row_start == 5
+        assert diagnostic.table_row_end == 5
+
+    def test_d_bare_table_id_alone_does_not_imply_indivisible(self) -> None:
+        # A table_id without row-range metadata proving single-row
+        # granularity must NOT be classified as indivisible merely for
+        # carrying a table_id.
+        budget = self._certificate_budget()
+        content = self._content_over_budget(budget)
+        graph = make_graph(
+            document_type=DocumentType.CERTIFICATE,
+            chunks={
+                "c1": make_chunk(
+                    chunk_id="c1",
+                    content=content,
+                    table_ids=["t1"],
+                    table_row_start=None,
+                    table_row_end=None,
+                )
+            },
+        )
+
+        result = _evaluator().evaluate_chunk_token_budget(graph)
+
+        assert result.hard_budget_violation_count == 1
+        assert result.oversized_indivisible_count == 0
+
+    def test_e_uses_effective_profile_budget_not_max_across_profiles(self) -> None:
+        from src.application.workflows.parsing.builders.chunking.policies.policy.chunking_policy_registry import (
+            default_registry,
+        )
+        from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
+            ChunkingProfile,
+        )
+        from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk_token_counter_factory import (
+            ChunkTokenCounterFactory,
+        )
+
+        certificate_budget = default_registry().get(ChunkingProfile.CERTIFICATE).max_chunk_tokens
+        manual_budget = default_registry().get(ChunkingProfile.MANUAL).max_chunk_tokens
+        assert certificate_budget < manual_budget, "profiles must genuinely differ for this test to be meaningful"
+
+        counter = ChunkTokenCounterFactory().create()
+        words = ["word"]
+        while counter.count_tokens(" ".join(words)) <= certificate_budget:
+            words.append("word")
+        content = " ".join(words)
+        assert counter.count_tokens(content) <= manual_budget, (
+            "content must stay under the LARGER profile's budget so this "
+            "test actually proves the smaller, effective one is enforced"
+        )
+
+        graph = make_graph(
+            document_type=DocumentType.CERTIFICATE,
+            chunks={"c1": make_chunk(chunk_id="c1", content=content)},
+        )
+
+        result = _evaluator().evaluate_chunk_token_budget(graph)
+
+        assert result.resolved is True
+        assert result.profile == "certificate"
+        assert result.effective_budget == certificate_budget
+        assert result.hard_budget_violation_count == 1
+
+    def test_f_unresolved_effective_profile_is_explicit_not_a_silent_pass(self) -> None:
+        graph = make_graph(
+            document_type=DocumentType.UNKNOWN,
+            document_type_confirmed=False,
+            chunks={"c1": make_chunk(chunk_id="c1", content="short content")},
+        )
+
+        result = _evaluator().evaluate_chunk_token_budget(graph)
+
+        assert result.resolved is False
+        assert result.unresolved_reason is not None
+        assert result.effective_budget is None
+        assert result.passed is False  # explicit non-pass, never a silent pass
+
+        case_result = _evaluator().evaluate(case=make_case(), document_graph=graph)
+        assertion = _assertion(case_result, "chunk_hard_token_budget")
         assert assertion.passed is False
+        assert "unresolved" in str(assertion.actual)
 
 
 class TestCrossReferenceEvaluation:

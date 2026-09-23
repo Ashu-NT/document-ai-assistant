@@ -1,7 +1,12 @@
 from collections import Counter, defaultdict
 
-from src.application.evaluation.ingestion.chunk_token_budget import (
-    resolve_max_configured_chunk_tokens,
+from src.application.evaluation.ingestion.effective_chunking_profile_resolver import (
+    resolve_effective_chunking_profile,
+)
+from src.application.evaluation.ingestion.models.chunk_token_budget_result import (
+    ChunkTokenBudgetEvaluationResult,
+    ChunkTokenBudgetStatus,
+    OversizedChunkDiagnostic,
 )
 from src.application.evaluation.ingestion.models.cross_reference_evaluation_result import (
     CrossReferenceEvaluationResult,
@@ -45,12 +50,15 @@ class IngestionExpectationEvaluator:
 
     `evaluate()` also always runs a small set of universal structural/chunk
     invariants (no case-specific curation needed - these apply to any
-    document): no empty chunks, a hard cross-profile chunk token-budget
-    ceiling, and page-provenance presence on every element/chunk.
+    document): no empty chunks, a hard token-budget check against the
+    EFFECTIVE chunking profile that actually produced this document's
+    chunks, and page-provenance presence on every element/chunk.
 
     Cross-reference precision/recall/F1 by ChunkCrossReferenceType is a
-    separate method, `evaluate_cross_references()`, since its output is a
-    metrics structure rather than a flat list of pass/fail assertions.
+    separate method, `evaluate_cross_references()`, and the token-budget
+    check's full diagnostics are a separate method,
+    `evaluate_chunk_token_budget()`, since both produce a metrics/diagnostic
+    structure rather than a flat list of pass/fail assertions.
 
     `expected_document_type` is accepted on the case but not evaluated here
     -- document classification is a separate downstream stage from parsing
@@ -274,6 +282,86 @@ class IngestionExpectationEvaluator:
             external_reference_clues_incorrectly_resolved=external_incorrect,
         )
 
+    def evaluate_chunk_token_budget(
+        self, document_graph: DocumentGraph
+    ) -> ChunkTokenBudgetEvaluationResult:
+        resolution = resolve_effective_chunking_profile(document_graph.document)
+        if not resolution.resolved or resolution.max_chunk_tokens is None:
+            return ChunkTokenBudgetEvaluationResult(
+                resolved=False,
+                profile=resolution.profile.value if resolution.profile else None,
+                unresolved_reason=resolution.unresolved_reason,
+            )
+
+        budget = resolution.max_chunk_tokens
+        counter = ChunkTokenCounterFactory().create()
+
+        normal_count = 0
+        max_observed = 0
+        oversized: list[OversizedChunkDiagnostic] = []
+
+        for chunk in document_graph.chunks.values():
+            token_count = counter.count_tokens(chunk.content)
+            max_observed = max(max_observed, token_count)
+            if token_count <= budget:
+                normal_count += 1
+                continue
+
+            # Proof, not assumption: a table-derived chunk representing
+            # exactly one row is - by construction - the finest granularity
+            # TableFragmentSplitter can ever produce (it only ever splits at
+            # row boundaries). If that single row still exceeds budget, no
+            # further splitting was possible under the current production
+            # architecture. A chunk is never classified this way merely for
+            # carrying a table_id - a multi-row group still over budget
+            # means production's own row-accumulation guard failed to keep
+            # it in bounds, which is a hard violation, not an exception.
+            is_single_row_table_fragment = (
+                bool(chunk.table_ids)
+                and chunk.table_row_start is not None
+                and chunk.table_row_end is not None
+                and chunk.table_row_start == chunk.table_row_end
+            )
+            status = (
+                ChunkTokenBudgetStatus.OVERSIZED_INDIVISIBLE
+                if is_single_row_table_fragment
+                else ChunkTokenBudgetStatus.HARD_BUDGET_VIOLATION
+            )
+            oversized.append(
+                OversizedChunkDiagnostic(
+                    chunk_id=chunk.chunk_id,
+                    token_count=token_count,
+                    budget=budget,
+                    status=status,
+                    chunk_type=chunk.chunk_type.value,
+                    table_id=chunk.table_ids[0] if chunk.table_ids else None,
+                    table_row_start=chunk.table_row_start,
+                    table_row_end=chunk.table_row_end,
+                )
+            )
+
+        oversized_indivisible_count = sum(
+            1
+            for diagnostic in oversized
+            if diagnostic.status == ChunkTokenBudgetStatus.OVERSIZED_INDIVISIBLE
+        )
+        hard_budget_violation_count = sum(
+            1
+            for diagnostic in oversized
+            if diagnostic.status == ChunkTokenBudgetStatus.HARD_BUDGET_VIOLATION
+        )
+
+        return ChunkTokenBudgetEvaluationResult(
+            resolved=True,
+            profile=resolution.profile.value if resolution.profile else None,
+            effective_budget=budget,
+            max_observed_tokens=max_observed,
+            normal_count=normal_count,
+            oversized_indivisible_count=oversized_indivisible_count,
+            hard_budget_violation_count=hard_budget_violation_count,
+            oversized_chunks=tuple(oversized),
+        )
+
     @staticmethod
     def _find_matching_cross_reference(
         expected: ExpectedCrossReference,
@@ -300,15 +388,14 @@ class IngestionExpectationEvaluator:
     def _universal_invariants(
         self, document_graph: DocumentGraph
     ) -> list[IngestionAssertionResult]:
-        assertions = [
+        return [
             self._no_empty_chunks_assertion(document_graph),
             self._chunk_provenance_assertion(document_graph),
             self._element_provenance_assertion(document_graph),
+            self._chunk_token_budget_assertion(
+                self.evaluate_chunk_token_budget(document_graph)
+            ),
         ]
-        token_budget_assertion = self._chunk_token_budget_assertion(document_graph)
-        if token_budget_assertion is not None:
-            assertions.append(token_budget_assertion)
-        return assertions
 
     @staticmethod
     def _no_empty_chunks_assertion(
@@ -360,29 +447,27 @@ class IngestionExpectationEvaluator:
 
     @staticmethod
     def _chunk_token_budget_assertion(
-        document_graph: DocumentGraph,
-    ) -> IngestionAssertionResult | None:
-        ceiling = resolve_max_configured_chunk_tokens()
-        if ceiling is None:
-            # No chunking profile could be read in this environment - skip
-            # rather than assert against a ceiling we cannot justify.
-            return None
-
-        counter = ChunkTokenCounterFactory().create()
-        over_budget = [
-            chunk.chunk_id
-            for chunk in document_graph.chunks.values()
-            if counter.count_tokens(chunk.content) > ceiling
-        ]
+        result: ChunkTokenBudgetEvaluationResult,
+    ) -> IngestionAssertionResult:
+        if not result.resolved:
+            return IngestionAssertionResult(
+                name="chunk_hard_token_budget",
+                expected="effective chunking profile resolvable",
+                actual=f"unresolved: {result.unresolved_reason}",
+                passed=False,
+            )
         return IngestionAssertionResult(
             name="chunk_hard_token_budget",
-            expected=f"<= {ceiling} tokens (max configured chunking-profile ceiling)",
-            actual=(
-                "all chunks within budget"
-                if not over_budget
-                else f"{len(over_budget)} chunk(s) over budget"
+            expected=(
+                f"0 hard budget violations (effective profile={result.profile!r}, "
+                f"budget<={result.effective_budget} tokens)"
             ),
-            passed=not over_budget,
+            actual=(
+                f"{result.hard_budget_violation_count} hard violation(s), "
+                f"{result.oversized_indivisible_count} oversized-indivisible "
+                f"(max observed {result.max_observed_tokens} tokens)"
+            ),
+            passed=result.passed,
         )
 
     @staticmethod
