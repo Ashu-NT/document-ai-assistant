@@ -1,3 +1,5 @@
+import pytest
+
 from src.application.workflows.classification import HybridDocumentTypeResolver
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
@@ -250,4 +252,95 @@ def test_hybrid_document_type_resolver_computes_should_rechunk_from_provisional_
     )
 
     assert decision.effective_chunking_profile == ChunkingProfile.MANUAL
+    assert decision.should_rechunk is True
+
+
+# Regression tests for the CERTIFICATE mapping defect: HybridDocumentTypeResolver
+# previously hardcoded its own DocumentType<->ChunkingProfile mapping,
+# separately from DocumentChunkingPolicyResolver's authoritative
+# DOCUMENT_TYPE_CHUNKING_PROFILES table, and never included CERTIFICATE in
+# either direction - so a confidently, correctly classified certificate
+# always silently fell back to ChunkingProfile.DEFAULT instead of the real,
+# tuned certificate.yaml profile.
+
+
+@pytest.mark.parametrize(
+    ("document_type", "expected_profile"),
+    [
+        (DocumentType.MANUAL, ChunkingProfile.MANUAL),
+        (DocumentType.DATASHEET, ChunkingProfile.DATASHEET),
+        (DocumentType.DRAWING, ChunkingProfile.DRAWING),
+        (DocumentType.REPORT, ChunkingProfile.REPORT),
+        (DocumentType.CERTIFICATE, ChunkingProfile.CERTIFICATE),
+        (DocumentType.UNKNOWN, ChunkingProfile.DEFAULT),
+    ],
+)
+def test_profile_for_document_type_covers_every_document_type(
+    document_type: DocumentType, expected_profile: ChunkingProfile
+) -> None:
+    assert (
+        HybridDocumentTypeResolver._profile_for_document_type(document_type)
+        == expected_profile
+    )
+
+
+@pytest.mark.parametrize(
+    ("profile", "expected_document_type"),
+    [
+        (ChunkingProfile.MANUAL, DocumentType.MANUAL),
+        (ChunkingProfile.DATASHEET, DocumentType.DATASHEET),
+        (ChunkingProfile.DRAWING, DocumentType.DRAWING),
+        (ChunkingProfile.REPORT, DocumentType.REPORT),
+        (ChunkingProfile.CERTIFICATE, DocumentType.CERTIFICATE),
+        (ChunkingProfile.DEFAULT, DocumentType.UNKNOWN),
+    ],
+)
+def test_document_type_for_profile_covers_every_chunking_profile(
+    profile: ChunkingProfile, expected_document_type: DocumentType
+) -> None:
+    assert (
+        HybridDocumentTypeResolver._document_type_for_profile(profile)
+        == expected_document_type
+    )
+
+
+def test_hybrid_document_type_resolver_agrees_on_certificate() -> None:
+    resolver = HybridDocumentTypeResolver()
+
+    decision = resolver.resolve(
+        parser_title_hint=DocumentType.UNKNOWN,
+        structural_inference=make_inference(
+            profile=ChunkingProfile.CERTIFICATE,
+            confidence=0.8,
+        ),
+        classification=make_document_classification(
+            document_type=DocumentType.CERTIFICATE,
+            confidence=0.85,
+        ),
+        provisional_chunking_profile=ChunkingProfile.DEFAULT,
+    )
+
+    assert decision.effective_document_type == DocumentType.CERTIFICATE
+    assert decision.effective_chunking_profile == ChunkingProfile.CERTIFICATE
+    assert decision.should_rechunk is True
+
+
+def test_hybrid_document_type_resolver_uses_structural_fallback_for_certificate() -> None:
+    # Exercises the REVERSE mapping specifically: structural inference alone
+    # (no model classification) selecting CERTIFICATE must resolve to
+    # DocumentType.CERTIFICATE, not UNKNOWN.
+    resolver = HybridDocumentTypeResolver()
+
+    decision = resolver.resolve(
+        parser_title_hint=DocumentType.UNKNOWN,
+        structural_inference=make_inference(
+            profile=ChunkingProfile.CERTIFICATE,
+            confidence=0.82,
+        ),
+        classification=None,
+        provisional_chunking_profile=ChunkingProfile.DEFAULT,
+    )
+
+    assert decision.effective_document_type == DocumentType.CERTIFICATE
+    assert decision.effective_chunking_profile == ChunkingProfile.CERTIFICATE
     assert decision.should_rechunk is True

@@ -6,6 +6,9 @@ from src.application.workflows.classification.classification_workflow_settings i
 from src.application.workflows.classification.document_type_decision import (
     DocumentTypeDecision,
 )
+from src.application.workflows.parsing.builders.chunking.policies.document_chunking_policy_resolver import (
+    DOCUMENT_TYPE_CHUNKING_PROFILES,
+)
 from src.application.workflows.parsing.builders.chunking.policies.profile.chunking_profile import (
     ChunkingProfile,
 )
@@ -14,6 +17,16 @@ from src.application.workflows.parsing.builders.chunking.policies.profile.struct
 )
 from src.domain.classification import DocumentClassification
 from src.domain.common import DocumentType
+
+# Reverse of DOCUMENT_TYPE_CHUNKING_PROFILES, derived rather than hand-
+# maintained a second time - the forward mapping is a clean bijection
+# (every non-UNKNOWN DocumentType maps to exactly one non-DEFAULT
+# ChunkingProfile), so inverting it is safe and keeps both directions in
+# permanent agreement with the single authoritative source.
+_CHUNKING_PROFILE_DOCUMENT_TYPES: dict[ChunkingProfile, DocumentType] = {
+    profile: document_type
+    for document_type, profile in DOCUMENT_TYPE_CHUNKING_PROFILES.items()
+}
 
 
 class HybridDocumentTypeResolver:
@@ -233,24 +246,8 @@ class HybridDocumentTypeResolver:
 
     @staticmethod
     def _document_type_for_profile(profile: ChunkingProfile) -> DocumentType:
-        if profile == ChunkingProfile.MANUAL:
-            return DocumentType.MANUAL
-        if profile == ChunkingProfile.DATASHEET:
-            return DocumentType.DATASHEET
-        if profile == ChunkingProfile.DRAWING:
-            return DocumentType.DRAWING
-        if profile == ChunkingProfile.REPORT:
-            return DocumentType.REPORT
-        return DocumentType.UNKNOWN
+        return _CHUNKING_PROFILE_DOCUMENT_TYPES.get(profile, DocumentType.UNKNOWN)
 
     @staticmethod
     def _profile_for_document_type(document_type: DocumentType) -> ChunkingProfile:
-        if document_type == DocumentType.MANUAL:
-            return ChunkingProfile.MANUAL
-        if document_type == DocumentType.DATASHEET:
-            return ChunkingProfile.DATASHEET
-        if document_type == DocumentType.DRAWING:
-            return ChunkingProfile.DRAWING
-        if document_type == DocumentType.REPORT:
-            return ChunkingProfile.REPORT
-        return ChunkingProfile.DEFAULT
+        return DOCUMENT_TYPE_CHUNKING_PROFILES.get(document_type, ChunkingProfile.DEFAULT)

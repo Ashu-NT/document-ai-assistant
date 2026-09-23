@@ -20,7 +20,13 @@ from src.domain.common import DocumentType
 from src.domain.document import DocumentSection
 from src.domain.elements import CanonicalElement
 
-_DOCUMENT_TYPE_PROFILES: dict[DocumentType, ChunkingProfile] = {
+# The single authoritative DocumentType -> ChunkingProfile mapping. Exported
+# (not module-private) so other collaborators that need this same knowledge
+# - e.g. HybridDocumentTypeResolver - import it rather than hardcoding a
+# second, divergence-prone copy (see the CERTIFICATE mapping defect this
+# fixed: HybridDocumentTypeResolver had its own incomplete duplicate of this
+# table that was never updated when CERTIFICATE was added here).
+DOCUMENT_TYPE_CHUNKING_PROFILES: dict[DocumentType, ChunkingProfile] = {
     DocumentType.DATASHEET: ChunkingProfile.DATASHEET,
     DocumentType.DRAWING: ChunkingProfile.DRAWING,
     DocumentType.REPORT: ChunkingProfile.REPORT,
@@ -93,7 +99,7 @@ class DocumentChunkingPolicyResolver:
         precomputed_inference: StructuralProfileInference | None = None,
     ) -> ChunkingProfileResolution:
         mapped_profile = (
-            _DOCUMENT_TYPE_PROFILES.get(document_type)
+            DOCUMENT_TYPE_CHUNKING_PROFILES.get(document_type)
             if document_type is not None
             else None
         )
