@@ -1,3 +1,18 @@
+from src.application.evaluation.extraction.extraction_completeness import (
+    ExtractionCompleteness,
+)
+from src.application.evaluation.extraction.extraction_golden_metrics import (
+    aggregate_extraction_metrics,
+    build_bucket_keyed_results,
+    collect_applicability_counts,
+    summarize_buckets_by,
+)
+from src.application.evaluation.extraction.extraction_review_status import (
+    ExtractionReviewStatus,
+)
+from src.application.evaluation.extraction.matchers.extraction_match_result import (
+    ExtractionMatchOutcome,
+)
 from src.application.evaluation.golden.golden_evaluation_report import (
     GoldenEvaluationReport,
 )
@@ -25,6 +40,7 @@ class GoldenEvaluationReportMarkdownRenderer:
         lines.extend(self._render_cross_reference_section(report))
         lines.extend(self._render_reconciliation_section(report))
         lines.extend(self._render_classification_section(report))
+        lines.extend(self._render_extraction_section(report))
         lines.extend(self._render_not_evaluated_section(report))
         lines.extend(self._render_reproducibility_section(report))
 
@@ -347,6 +363,142 @@ class GoldenEvaluationReportMarkdownRenderer:
         return lines
 
     @staticmethod
+    def _render_extraction_section(report: GoldenEvaluationReport) -> list[str]:
+        lines = ["## Extraction (Phase 2B)", ""]
+        results = report.extraction_results
+        if not results:
+            lines.extend(["_Extraction was not evaluated in this run._", ""])
+            return lines
+
+        lines.extend(
+            [
+                "_CANDIDATE metrics below are NON-AUTHORITATIVE until a human "
+                "reviews the underlying expectations (review_status: reviewed). "
+                "REVIEWED tables are the authoritative baseline once any exist._",
+                "",
+            ]
+        )
+
+        lines.extend(GoldenEvaluationReportMarkdownRenderer._render_extraction_execution(results))
+        lines.extend(
+            GoldenEvaluationReportMarkdownRenderer._render_extraction_applicability(results)
+        )
+        for review_status in (ExtractionReviewStatus.REVIEWED, ExtractionReviewStatus.CANDIDATE):
+            lines.extend(
+                GoldenEvaluationReportMarkdownRenderer._render_extraction_metrics_table(
+                    results, review_status=review_status
+                )
+            )
+        lines.extend(
+            GoldenEvaluationReportMarkdownRenderer._render_extraction_mismatches(results)
+        )
+        return lines
+
+    @staticmethod
+    def _render_extraction_execution(results: list) -> list[str]:
+        evaluated = sum(1 for r in results if r.was_evaluated)
+        execution_failed = sum(1 for r in results if r.has_execution_failures)
+        scope_count = sum(len(r.scope_outcomes) for r in results)
+        return [
+            "### Execution",
+            "",
+            f"- documents with an extraction expectation: `{len(results)}`",
+            f"- documents evaluated (at least one scope ran): `{evaluated}`",
+            f"- documents with an execution failure in at least one scope: "
+            f"`{execution_failed}`",
+            f"- (document, scope) executions: `{scope_count}`",
+            "",
+        ]
+
+    @staticmethod
+    def _render_extraction_applicability(results: list) -> list[str]:
+        counts = collect_applicability_counts(results)
+        return [
+            "### Applicability",
+            "",
+            f"- APPLICABLE: `{counts.applicable}`",
+            f"- NOT_APPLICABLE: `{counts.not_applicable}`",
+            f"- NOT_ASSESSED (explicit declarations only - absence of any "
+            f"declaration is never counted here): `{counts.not_assessed}`",
+            "",
+        ]
+
+    @staticmethod
+    def _render_extraction_metrics_table(
+        results: list, *, review_status: ExtractionReviewStatus
+    ) -> list[str]:
+        keyed = build_bucket_keyed_results(results)
+        buckets = aggregate_extraction_metrics(keyed)
+        rolled = summarize_buckets_by(buckets, only_review_status=review_status)
+
+        label = "REVIEWED (authoritative)" if review_status.value == "reviewed" else "CANDIDATE (non-authoritative)"
+        lines = [f"### Metrics - {label}", ""]
+        if not rolled:
+            lines.extend([f"_No {review_status.value} expectations evaluated._", ""])
+            return lines
+
+        lines.append(
+            "| entity_type | completeness | TP | FP | FN | precision | recall | f1 | "
+            "evidence correct | evidence incorrect | ambiguous |"
+        )
+        lines.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+        for (entity_type, completeness), bucket in sorted(rolled.items()):
+            fp = (
+                str(bucket.false_positive_count)
+                if completeness is ExtractionCompleteness.EXHAUSTIVE
+                else "n/a (presence-only)"
+            )
+            lines.append(
+                f"| {entity_type} | {completeness.value} | "
+                f"{bucket.true_positive_count} | {fp} | {bucket.false_negative_count} | "
+                f"{_format_ratio(bucket.precision)} | {_format_ratio(bucket.recall)} | "
+                f"{_format_ratio(bucket.f1)} | {bucket.evidence_correct_count} | "
+                f"{bucket.evidence_incorrect_count} | {bucket.ambiguous_count} |"
+            )
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _render_extraction_mismatches(results: list) -> list[str]:
+        lines = ["### Mismatches (diagnostic detail)", ""]
+        any_mismatch = False
+        for document_result in results:
+            for scope_outcome in document_result.scope_outcomes:
+                if scope_outcome.stage_status.value == "execution_failed":
+                    any_mismatch = True
+                    lines.append(
+                        f"- `{document_result.alias}` scope "
+                        f"`{scope_outcome.scope.scope_type.value} "
+                        f"{scope_outcome.scope.page_start}-{scope_outcome.scope.page_end}`: "
+                        f"EXECUTION_FAILED - {scope_outcome.execution_error}"
+                    )
+                    continue
+                for match in scope_outcome.match_results:
+                    if match.outcome is ExtractionMatchOutcome.MATCHED and match.evidence_correct is not False and not match.differing_fields:
+                        continue
+                    any_mismatch = True
+                    detail_parts = [f"outcome={match.outcome.value}"]
+                    if match.expectation is not None:
+                        detail_parts.append(f"case_id={match.expectation.case_id}")
+                    if match.differing_fields:
+                        detail_parts.append(f"differing_fields={list(match.differing_fields)}")
+                    if match.ambiguous_actual_entity_ids:
+                        detail_parts.append(
+                            f"ambiguous_candidates={list(match.ambiguous_actual_entity_ids)}"
+                        )
+                    if match.evidence_correct is False:
+                        detail_parts.append(f"evidence_incorrect={match.evidence_detail}")
+                    detail_parts.append(f"reason={match.match_reason}")
+                    lines.append(
+                        f"- `{document_result.alias}` / `{match.entity_type}`: "
+                        + "; ".join(detail_parts)
+                    )
+        if not any_mismatch:
+            lines.append("_No mismatches - every evaluated expectation matched cleanly._")
+        lines.append("")
+        return lines
+
+    @staticmethod
     def _render_not_evaluated_section(report: GoldenEvaluationReport) -> list[str]:
         not_evaluated = report.documents_not_evaluated
         lines = ["## Documents Not Evaluated", ""]
@@ -384,6 +536,24 @@ class GoldenEvaluationReportMarkdownRenderer:
                     f"by this run): `{metadata.classification_allow_reclassification}`",
                     "- production setting use_cache (recorded, NOT used by this run): "
                     f"`{metadata.classification_use_cache}`",
+                ]
+            )
+        if metadata.extraction_execution_mode is not None or metadata.extraction_model is not None:
+            lines.extend(
+                [
+                    f"- extraction execution mode: `{metadata.extraction_execution_mode}`",
+                    f"- extraction model: `{metadata.extraction_model or 'unknown'}`",
+                    "- extraction prompt version: "
+                    f"`{metadata.extraction_prompt_version or 'unknown'}`",
+                    f"- extraction temperature: `{metadata.extraction_temperature}`",
+                    f"- extraction max attempts: `{metadata.extraction_max_attempts}`",
+                    "- extraction allow_partial_batches: "
+                    f"`{metadata.extraction_allow_partial_batches}`",
+                    "- extraction candidate_narrowing_enabled: "
+                    f"`{metadata.extraction_candidate_narrowing_enabled}`",
+                    "- extraction confidence threshold (flags requires_human_review "
+                    "only - never drops an entity): "
+                    f"`{metadata.extraction_confidence_threshold}`",
                 ]
             )
         lines.append("")

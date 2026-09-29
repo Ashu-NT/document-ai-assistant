@@ -15,6 +15,9 @@ from src.application.evaluation.golden.aggregate_cross_reference_metrics import 
 from src.application.evaluation.golden.corpus_coverage_summary import (
     CorpusCoverageSummary,
 )
+from src.application.evaluation.extraction.golden_extraction_document_result import (
+    GoldenExtractionDocumentResult,
+)
 from src.application.evaluation.golden.golden_document_evaluation_outcome import (
     GoldenDocumentEvaluationOutcome,
 )
@@ -34,6 +37,12 @@ class GoldenEvaluationReport:
     # (see ClassificationStageStatus) and its own, separate golden-label
     # source. Empty by default so every Phase 1 caller/report is unaffected.
     classification_results: list[GoldenClassificationDocumentResult] = field(
+        default_factory=list
+    )
+    # Same convention, for the Phase 2B extraction stage (see
+    # ExtractionStageStatus) - empty by default so every Phase 1/2A
+    # caller/report is unaffected.
+    extraction_results: list[GoldenExtractionDocumentResult] = field(
         default_factory=list
     )
 

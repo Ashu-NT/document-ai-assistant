@@ -7,6 +7,19 @@ from src.application.evaluation.classification.classification_golden_metrics imp
 from src.application.evaluation.classification.golden_classification_document_result import (
     GoldenClassificationDocumentResult,
 )
+from src.application.evaluation.extraction.extraction_golden_metrics import (
+    aggregate_extraction_metrics,
+    build_bucket_keyed_results,
+    collect_applicability_counts,
+    summarize_buckets_by,
+)
+from src.application.evaluation.extraction.extraction_review_status import (
+    ExtractionReviewStatus,
+)
+from src.application.evaluation.extraction.golden_extraction_document_result import (
+    ExtractionScopeRunOutcome,
+    GoldenExtractionDocumentResult,
+)
 from src.application.evaluation.golden.golden_document_evaluation_outcome import (
     GoldenDocumentEvaluationOutcome,
 )
@@ -69,6 +82,129 @@ class GoldenEvaluationReportJsonSerializer:
             # Sibling to the structural/cross-reference sections above, never
             # merged with them into one combined "AI quality" score.
             "classification": self._serialize_classification(report),
+            "extraction": self._serialize_extraction(report),
+        }
+
+    def _serialize_extraction(self, report) -> dict[str, Any]:
+        results = report.extraction_results
+        keyed = build_bucket_keyed_results(results)
+        buckets = aggregate_extraction_metrics(keyed)
+        applicability = collect_applicability_counts(results)
+
+        def _metrics_table(review_status: ExtractionReviewStatus) -> list[dict[str, Any]]:
+            rolled = summarize_buckets_by(buckets, only_review_status=review_status)
+            return [
+                {
+                    "entity_type": entity_type,
+                    "completeness": completeness.value,
+                    "true_positive_count": bucket.true_positive_count,
+                    "false_positive_count": bucket.false_positive_count,
+                    "false_negative_count": bucket.false_negative_count,
+                    "precision": bucket.precision,
+                    "recall": bucket.recall,
+                    "f1": bucket.f1,
+                    "evidence_correct_count": bucket.evidence_correct_count,
+                    "evidence_incorrect_count": bucket.evidence_incorrect_count,
+                    "evidence_not_checked_count": bucket.evidence_not_checked_count,
+                    "ambiguous_count": bucket.ambiguous_count,
+                }
+                for (entity_type, completeness), bucket in sorted(rolled.items())
+            ]
+
+        return {
+            "applicability_counts": {
+                "applicable": applicability.applicable,
+                "not_applicable": applicability.not_applicable,
+                "not_assessed": applicability.not_assessed,
+            },
+            "metrics_reviewed": _metrics_table(ExtractionReviewStatus.REVIEWED),
+            "metrics_candidate_non_authoritative": _metrics_table(
+                ExtractionReviewStatus.CANDIDATE
+            ),
+            "documents": [
+                self._serialize_extraction_document_result(document_result)
+                for document_result in results
+            ],
+        }
+
+    @staticmethod
+    def _serialize_extraction_document_result(
+        document_result: GoldenExtractionDocumentResult,
+    ) -> dict[str, Any]:
+        return {
+            "alias": document_result.alias,
+            "was_evaluated": document_result.was_evaluated,
+            "has_execution_failures": document_result.has_execution_failures,
+            "scope_outcomes": [
+                GoldenEvaluationReportJsonSerializer._serialize_extraction_scope_outcome(
+                    outcome
+                )
+                for outcome in document_result.scope_outcomes
+            ],
+        }
+
+    @staticmethod
+    def _serialize_extraction_scope_outcome(
+        outcome: ExtractionScopeRunOutcome,
+    ) -> dict[str, Any]:
+        scope = outcome.scope
+        return {
+            "scope": {
+                "scope_type": scope.scope_type.value,
+                "page_start": scope.page_start,
+                "page_end": scope.page_end,
+            },
+            "stage_status": outcome.stage_status.value,
+            "execution_error": outcome.execution_error,
+            "batch_summary": (
+                {
+                    "batch_count": outcome.batch_summary.batch_count,
+                    "parse_success_count": outcome.batch_summary.parse_success_count,
+                    "parse_failure_count": outcome.batch_summary.parse_failure_count,
+                    "dropped_empty_count": outcome.batch_summary.dropped_empty_count,
+                    "invalid_source_chunk_id_event_count": (
+                        outcome.batch_summary.invalid_source_chunk_id_event_count
+                    ),
+                }
+                if outcome.batch_summary is not None
+                else None
+            ),
+            "applicability_declarations": [
+                {
+                    "declaration_id": declaration.declaration_id,
+                    "entity_type": declaration.entity_type.value,
+                    "applicability": declaration.applicability.value,
+                    "review_status": declaration.review_status.value,
+                    "reason": declaration.reason,
+                    "notes": declaration.notes,
+                }
+                for declaration in outcome.applicability_declarations
+            ],
+            "matches": [
+                {
+                    "outcome": match.outcome.value,
+                    "entity_type": match.entity_type,
+                    "group_completeness": match.group_completeness.value,
+                    "group_review_status": match.group_review_status.value,
+                    "case_id": (
+                        match.expectation.case_id
+                        if match.expectation is not None
+                        else None
+                    ),
+                    "actual_entity_id": match.actual_entity_id,
+                    "identity_fields_used": list(match.identity_fields_used),
+                    "differing_fields": list(match.differing_fields),
+                    "normalized_expected": match.normalized_expected,
+                    "normalized_actual": match.normalized_actual,
+                    "match_reason": match.match_reason,
+                    "ambiguous_actual_entity_ids": list(
+                        match.ambiguous_actual_entity_ids
+                    ),
+                    "evidence_correct": match.evidence_correct,
+                    "evidence_detail": match.evidence_detail,
+                }
+                for match in outcome.match_results
+            ],
         }
 
     def _serialize_classification(self, report) -> dict[str, Any]:
