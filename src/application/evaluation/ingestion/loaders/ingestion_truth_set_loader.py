@@ -10,6 +10,9 @@ from src.application.evaluation.ingestion.models.ingestion_expectation_case impo
     ExpectedCrossReference,
     IngestionExpectationCase,
 )
+from src.application.evaluation.ingestion.models.structural_baseline_provenance import (
+    StructuralBaselineProvenance,
+)
 from src.application.evaluation.retrieval.benchmarking.loaders.markdown_section_parser import (
     extract_sections,
 )
@@ -134,6 +137,19 @@ class IngestionTruthSetLoader:
             for entry in (payload.get("expected_cross_references") or [])
         )
 
+        provenance_payload = payload.get("provenance")
+        provenance = (
+            StructuralBaselineProvenance(
+                parser_name=provenance_payload.get("parser_name"),
+                parser_version=provenance_payload.get("parser_version"),
+                conversion_fingerprint=provenance_payload.get(
+                    "conversion_fingerprint"
+                ),
+            )
+            if isinstance(provenance_payload, dict)
+            else None
+        )
+
         return IngestionExpectationCase(
             case_id=str(payload["id"]),
             document_path=document_path,
@@ -163,6 +179,7 @@ class IngestionTruthSetLoader:
                 payload.get("exhaustive_cross_reference_types") or []
             ),
             notes=payload.get("notes"),
+            provenance=provenance,
         )
 
     def _resolve_document_path(

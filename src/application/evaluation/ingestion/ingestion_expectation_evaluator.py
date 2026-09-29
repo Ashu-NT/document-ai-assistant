@@ -192,6 +192,7 @@ class IngestionExpectationEvaluator:
         return IngestionExpectationCaseResult(
             case_id=case.case_id,
             assertions=assertions,
+            provenance=case.provenance,
         )
 
     def evaluate_cross_references(

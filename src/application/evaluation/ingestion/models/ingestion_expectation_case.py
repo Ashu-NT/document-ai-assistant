@@ -1,6 +1,10 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from src.application.evaluation.ingestion.models.structural_baseline_provenance import (
+    StructuralBaselineProvenance,
+)
+
 
 @dataclass(slots=True, frozen=True)
 class ExpectedCrossReference:
@@ -60,6 +64,11 @@ class IngestionExpectationCase:
     # metrics are always computable from the curated list regardless.
     exhaustive_cross_reference_types: tuple[str, ...] = ()
     notes: str | None = None
+    # Optional - describes the environment this baseline was
+    # reviewed/recorded under (see StructuralBaselineProvenance). `None`
+    # means "not recorded", not "unknown parser" - existing fixtures
+    # authored before this field existed remain loadable unchanged.
+    provenance: StructuralBaselineProvenance | None = None
 
 
 __all__ = ["ExpectedCrossReference", "IngestionExpectationCase"]

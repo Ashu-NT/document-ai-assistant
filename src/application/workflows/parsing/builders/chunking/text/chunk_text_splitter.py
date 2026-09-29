@@ -45,17 +45,58 @@ class ChunkTextSplitter:
                 previous_source_window = source_window
                 continue
 
-            overlap_prefix = self.token_counter.tail_text(
-                previous_source_window,
-                self.chunk_overlap,
+            overlapped_windows.append(
+                self._prepend_overlap_within_budget(
+                    previous_source_window=previous_source_window,
+                    window=window,
+                )
             )
-            if overlap_prefix:
-                window = f"{overlap_prefix} {window}".strip()
-
-            overlapped_windows.append(window)
             previous_source_window = source_window
 
         return overlapped_windows
+
+    def _prepend_overlap_within_budget(
+        self,
+        *,
+        previous_source_window: str,
+        window: str,
+    ) -> str:
+        """Prepends as much of `chunk_overlap` tokens of cross-window
+        context as safely fits within `max_chunk_tokens`.
+
+        Every `window` produced by `_split_recursively` already satisfies
+        `count_tokens(window) <= max_chunk_tokens` by construction - this
+        method must never shrink, replace, or drop any of that payload; it
+        only ever reduces how much overlap context gets prepended in front
+        of it (down to zero) so the *final emitted* text still fits.
+
+        Overlap fit is verified against the actual joined-and-retokenized
+        text via `count_tokens()`, never assumed additive from independently
+        counted piece lengths - a non-whitespace tokenizer's boundary
+        retokenization is not guaranteed to equal a simple sum, and the
+        final encoded text is what must stay within budget, not an estimate
+        of it. Iterates from the full configured overlap down to the
+        smallest possible (1 token), which is a small, deterministic, and
+        bounded number of tokenizer calls (`chunk_overlap` is a handful of
+        tokens per chunking profile), not an expensive search.
+        """
+        window_tokens = self.count_tokens(window)
+        if window_tokens >= self.max_chunk_tokens:
+            # No room for any overlap without exceeding budget by itself -
+            # the payload's own content is authoritative.
+            return window
+
+        for overlap_tokens in range(self.chunk_overlap, 0, -1):
+            overlap_prefix = self.token_counter.tail_text(
+                previous_source_window, overlap_tokens
+            )
+            if not overlap_prefix:
+                continue
+            candidate = f"{overlap_prefix} {window}".strip()
+            if self.count_tokens(candidate) <= self.max_chunk_tokens:
+                return candidate
+
+        return window
 
     def count_tokens(self, text: str | None) -> int:
         return self.token_counter.count_tokens(text)

@@ -19,7 +19,17 @@ dependencies = [
     "alembic>=1.16",
 
     # PDF Processing
-    "docling",
+    # Pinned exactly (not ">=") because Docling's own table/section
+    # detection heuristics change between releases in ways that directly
+    # change real parsing/chunking output (see
+    # outputs/architecture/upstream_structural_quality_investigation.md,
+    # Part C/D) - an unconstrained install could silently invalidate golden
+    # structural baselines. docling-core/docling-ibm-models/docling-parse/
+    # docling-slim are transitive dependencies of docling itself (confirmed
+    # via `pip show docling` -> Requires: docling-slim), not direct
+    # dependencies of this project, so they are deliberately not pinned
+    # here individually.
+    "docling==2.126.0",
 
     # Vector Database
     "qdrant-client",

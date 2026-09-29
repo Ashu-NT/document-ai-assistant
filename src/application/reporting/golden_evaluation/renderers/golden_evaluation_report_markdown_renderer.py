@@ -44,7 +44,7 @@ class GoldenEvaluationReportMarkdownRenderer:
 
     @staticmethod
     def _render_structural_section(report: GoldenEvaluationReport) -> list[str]:
-        return [
+        lines = [
             "## Structural",
             "",
             f"- passed documents: `{report.structural_passed_count}`",
@@ -52,6 +52,43 @@ class GoldenEvaluationReportMarkdownRenderer:
             f"- structural assertion failures: `{report.structural_assertion_failure_count}`",
             "",
         ]
+        lines.extend(
+            GoldenEvaluationReportMarkdownRenderer._render_baseline_provenance(report)
+        )
+        return lines
+
+    @staticmethod
+    def _render_baseline_provenance(report: GoldenEvaluationReport) -> list[str]:
+        """Diagnostic only - never a pass/fail signal. A baseline recorded
+        under a different parser/version than the current run is reported
+        so a human can decide whether to re-review it, never automatically
+        invalidated (see StructuralBaselineProvenance)."""
+        recorded = [
+            (outcome.alias, outcome.structural_result.provenance)
+            for outcome in report.document_outcomes
+            if outcome.structural_result is not None
+            and outcome.structural_result.provenance is not None
+            and outcome.structural_result.provenance.is_recorded
+        ]
+        if not recorded:
+            return []
+
+        run_metadata = report.run_metadata
+        lines = ["### Baseline provenance (diagnostic only)", ""]
+        for alias, provenance in recorded:
+            matches = (
+                provenance.parser_version == run_metadata.parser_version
+                and provenance.conversion_fingerprint
+                == run_metadata.conversion_fingerprint
+            )
+            status = "matches current run" if matches else "differs from current run"
+            lines.append(
+                f"- `{alias}`: recorded `{provenance.parser_name} "
+                f"{provenance.parser_version}` (fingerprint "
+                f"`{provenance.conversion_fingerprint or 'unknown'}`) - {status}"
+            )
+        lines.append("")
+        return lines
 
     @staticmethod
     def _render_chunking_section(report: GoldenEvaluationReport) -> list[str]:

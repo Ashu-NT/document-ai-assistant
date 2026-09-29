@@ -351,6 +351,25 @@ def test_unset_expected_fields_produce_no_case_specific_assertions() -> None:
     assert result.passed is True
 
 
+def test_case_provenance_is_passed_through_to_the_result_never_fabricated() -> None:
+    from src.application.evaluation.ingestion.models.structural_baseline_provenance import (
+        StructuralBaselineProvenance,
+    )
+
+    graph = make_graph()
+
+    no_provenance_result = _evaluator().evaluate(case=make_case(), document_graph=graph)
+    assert no_provenance_result.provenance is None
+
+    provenance = StructuralBaselineProvenance(
+        parser_name="docling", parser_version="2.126.0", conversion_fingerprint="fp-1"
+    )
+    with_provenance_result = _evaluator().evaluate(
+        case=make_case(provenance=provenance), document_graph=graph
+    )
+    assert with_provenance_result.provenance is provenance
+
+
 def _assertion(result, name: str):
     matches = [a for a in result.assertions if a.name == name]
     assert matches, f"no assertion named {name!r} in {[a.name for a in result.assertions]}"

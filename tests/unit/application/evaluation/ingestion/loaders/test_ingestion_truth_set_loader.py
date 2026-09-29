@@ -99,6 +99,72 @@ def test_loader_raises_when_file_is_missing(tmp_path) -> None:
         IngestionTruthSetLoader().load(missing_path)
 
 
+def test_loader_defaults_provenance_to_none_when_not_recorded(tmp_path) -> None:
+    truth_set_path = tmp_path / "truth_set.md"
+    truth_set_path.write_text(_MINIMAL_STRUCTURAL_SECTION, encoding="utf-8")
+
+    cases = IngestionTruthSetLoader().load(truth_set_path)
+
+    # Existing fixtures authored before provenance existed must remain
+    # loadable, with an explicit "not recorded" (None), never a fabricated
+    # guess at what parser/version produced the baseline.
+    assert cases[0].provenance is None
+
+
+def test_loader_parses_an_explicit_provenance_block(tmp_path) -> None:
+    truth_set_path = tmp_path / "truth_set.md"
+    truth_set_path.write_text(
+        """
+# 7. Structural Expectations
+
+```yaml
+id: struct_001
+document_path: "TestDoc/fixtures/sample_manual.pdf"
+expected_section_count: 5
+provenance:
+  parser_name: docling
+  parser_version: "2.126.0"
+  conversion_fingerprint: "abc123"
+```
+""",
+        encoding="utf-8",
+    )
+
+    cases = IngestionTruthSetLoader().load(truth_set_path)
+
+    provenance = cases[0].provenance
+    assert provenance is not None
+    assert provenance.parser_name == "docling"
+    assert provenance.parser_version == "2.126.0"
+    assert provenance.conversion_fingerprint == "abc123"
+    assert provenance.is_recorded is True
+
+
+def test_loader_handles_partial_provenance_block(tmp_path) -> None:
+    truth_set_path = tmp_path / "truth_set.md"
+    truth_set_path.write_text(
+        """
+# 7. Structural Expectations
+
+```yaml
+id: struct_001
+document_path: "TestDoc/fixtures/sample_manual.pdf"
+provenance:
+  parser_name: docling
+```
+""",
+        encoding="utf-8",
+    )
+
+    cases = IngestionTruthSetLoader().load(truth_set_path)
+
+    provenance = cases[0].provenance
+    assert provenance is not None
+    assert provenance.parser_name == "docling"
+    assert provenance.parser_version is None
+    assert provenance.conversion_fingerprint is None
+
+
 def test_loader_raises_when_no_structural_section_present(tmp_path) -> None:
     truth_set_path = tmp_path / "truth_set.md"
     truth_set_path.write_text("# 1. Something Else\n\nno cases here\n", encoding="utf-8")

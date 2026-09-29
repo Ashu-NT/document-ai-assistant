@@ -192,6 +192,7 @@ class GoldenEvaluationReportJsonSerializer:
     def _serialize_structural_result(
         result: IngestionExpectationCaseResult,
     ) -> dict[str, Any]:
+        provenance = result.provenance
         return {
             "case_id": result.case_id,
             "passed": result.passed,
@@ -204,6 +205,15 @@ class GoldenEvaluationReportJsonSerializer:
                 }
                 for assertion in result.assertions
             ],
+            "baseline_provenance": (
+                {
+                    "parser_name": provenance.parser_name,
+                    "parser_version": provenance.parser_version,
+                    "conversion_fingerprint": provenance.conversion_fingerprint,
+                }
+                if provenance is not None and provenance.is_recorded
+                else None
+            ),
         }
 
     @staticmethod
