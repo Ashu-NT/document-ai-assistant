@@ -1,23 +1,23 @@
 {
   "run_metadata": {
-    "timestamp": "2026-09-29T03:36:25.085192+00:00",
-    "git_commit": "f5d2f0955b22b873b81df79207a8d5a628853ad7",
+    "timestamp": "2026-09-29T04:14:31.671519+00:00",
+    "git_commit": "241387c372353cd3f3cd05e65f903426ff0b75ea",
     "artifact_schema_version": 1,
     "parser_name": "docling",
     "parser_version": "2.126.0",
     "conversion_fingerprint": "e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5",
     "evaluation_config": {
-      "allow_real_parsing": false
+      "allow_real_parsing": true
     },
-    "classification_model": "qwen2.5:3b",
+    "classification_model": null,
     "extraction_model": null,
     "embedding_model": null,
     "retrieval_configuration": null,
-    "classification_execution_mode": "fresh_model",
-    "classification_confidence_threshold": 0.75,
-    "classification_allow_reclassification": true,
-    "classification_use_cache": true,
-    "classification_prompt_version": "v2"
+    "classification_execution_mode": null,
+    "classification_confidence_threshold": null,
+    "classification_allow_reclassification": null,
+    "classification_use_cache": null,
+    "classification_prompt_version": null
   },
   "corpus_coverage": {
     "expected": 10,
@@ -27,418 +27,868 @@
     "hash_mismatch_aliases": []
   },
   "summary": {
-    "structural_passed_count": 0,
+    "structural_passed_count": 10,
     "structural_failed_count": 0,
     "structural_assertion_failure_count": 0,
     "chunk_invariant_failure_count": 0,
     "chunk_token_budget_hard_violation_count": 0,
-    "chunk_token_budget_oversized_indivisible_count": 0,
+    "chunk_token_budget_oversized_indivisible_count": 6,
     "chunk_token_budget_unresolved_aliases": [],
     "documents_not_evaluated": []
   },
-  "cross_reference_type_metrics": [],
-  "reconciliation_outcome_counts": {},
+  "cross_reference_type_metrics": [
+    {
+      "reference_type": "annex_reference",
+      "true_positives": 1,
+      "false_negatives": 0,
+      "false_positives": null,
+      "precision": null,
+      "recall": 1.0,
+      "f1": null,
+      "exhaustive_document_count": 0,
+      "non_exhaustive_document_count": 1
+    },
+    {
+      "reference_type": "section_reference",
+      "true_positives": 1,
+      "false_negatives": 0,
+      "false_positives": null,
+      "precision": null,
+      "recall": 1.0,
+      "f1": null,
+      "exhaustive_document_count": 0,
+      "non_exhaustive_document_count": 1
+    }
+  ],
+  "reconciliation_outcome_counts": {
+    "single_source": 59,
+    "(none)": 4
+  },
   "documents": [
     {
       "alias": "manual_fwc12",
       "status": "evaluated",
       "detail": null,
-      "structural": null,
-      "cross_references": null,
-      "chunk_token_budget": null
+      "structural": {
+        "case_id": "struct_fwc12_manual",
+        "passed": true,
+        "assertions": [
+          {
+            "name": "section_count",
+            "expected": 186,
+            "actual": 186,
+            "passed": true
+          },
+          {
+            "name": "chunk_count",
+            "expected": 334,
+            "actual": 334,
+            "passed": true
+          },
+          {
+            "name": "table_count",
+            "expected": 32,
+            "actual": 32,
+            "passed": true
+          },
+          {
+            "name": "picture_count",
+            "expected": 269,
+            "actual": 269,
+            "passed": true
+          },
+          {
+            "name": "cross_reference_present[See Section 8]",
+            "expected": "section_reference -> 8",
+            "actual": [
+              [
+                "section_reference",
+                "8",
+                null
+              ]
+            ],
+            "passed": true
+          },
+          {
+            "name": "cross_reference_absent[With reference to section 9.4]",
+            "expected": "no internal cross-reference produced",
+            "actual": [],
+            "passed": true
+          },
+          {
+            "name": "cross_reference_absent[described in section 6.5]",
+            "expected": "no internal cross-reference produced",
+            "actual": [],
+            "passed": true
+          },
+          {
+            "name": "cross_reference_absent[Annex I, Section 1.2]",
+            "expected": "no internal cross-reference produced",
+            "actual": [],
+            "passed": true
+          },
+          {
+            "name": "cross_reference_present[Refer to Annex 2]",
+            "expected": "annex_reference -> 2",
+            "actual": [
+              [
+                "annex_reference",
+                null,
+                "2"
+              ],
+              [
+                "annex_reference",
+                null,
+                "2"
+              ],
+              [
+                "annex_reference",
+                null,
+                "2"
+              ]
+            ],
+            "passed": true
+          },
+          {
+            "name": "cross_reference_absent[Refer to Annex 3]",
+            "expected": "no internal cross-reference produced",
+            "actual": [],
+            "passed": true
+          },
+          {
+            "name": "cross_reference_absent[Annex V regulations]",
+            "expected": "no internal cross-reference produced",
+            "actual": [],
+            "passed": true
+          },
+          {
+            "name": "no_empty_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "element_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_hard_token_budget",
+            "expected": "0 hard budget violations (effective profile='manual', budget<=310 tokens)",
+            "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 304 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          }
+        ],
+        "baseline_provenance": {
+          "parser_name": "docling",
+          "parser_version": "2.126.0",
+          "conversion_fingerprint": "e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5"
+        }
+      },
+      "cross_references": {
+        "case_id": "struct_fwc12_manual",
+        "type_metrics": [
+          {
+            "reference_type": "annex_reference",
+            "exhaustive": false,
+            "true_positives": 1,
+            "false_negatives": 0,
+            "false_positives": null,
+            "precision": null,
+            "recall": 1.0,
+            "f1": null,
+            "matched_clues": [
+              "Refer to Annex 2"
+            ],
+            "missed_clues": []
+          },
+          {
+            "reference_type": "section_reference",
+            "exhaustive": false,
+            "true_positives": 1,
+            "false_negatives": 0,
+            "false_positives": null,
+            "precision": null,
+            "recall": 1.0,
+            "f1": null,
+            "matched_clues": [
+              "See Section 8"
+            ],
+            "missed_clues": []
+          }
+        ],
+        "reconciliation_outcome_counts": {
+          "single_source": 4
+        },
+        "external_reference_clues_correctly_unresolved": 5,
+        "external_reference_clues_incorrectly_resolved": 0
+      },
+      "chunk_token_budget": {
+        "resolved": true,
+        "profile": "manual",
+        "effective_budget": 310,
+        "unresolved_reason": null,
+        "max_observed_tokens": 304,
+        "normal_count": 334,
+        "oversized_indivisible_count": 0,
+        "hard_budget_violation_count": 0,
+        "passed": true,
+        "oversized_chunks": []
+      }
     },
     {
       "alias": "manual_bauer_mv320_compressor",
       "status": "evaluated",
       "detail": null,
-      "structural": null,
-      "cross_references": null,
-      "chunk_token_budget": null
+      "structural": {
+        "case_id": "struct_manual_bauer_mv320_compressor_default",
+        "passed": true,
+        "assertions": [
+          {
+            "name": "no_empty_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "element_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_hard_token_budget",
+            "expected": "0 hard budget violations (effective profile='manual', budget<=310 tokens)",
+            "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 310 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          }
+        ],
+        "baseline_provenance": null
+      },
+      "cross_references": {
+        "case_id": "struct_manual_bauer_mv320_compressor_default",
+        "type_metrics": [],
+        "reconciliation_outcome_counts": {
+          "single_source": 55,
+          "(none)": 4
+        },
+        "external_reference_clues_correctly_unresolved": 0,
+        "external_reference_clues_incorrectly_resolved": 0
+      },
+      "chunk_token_budget": {
+        "resolved": true,
+        "profile": "manual",
+        "effective_budget": 310,
+        "unresolved_reason": null,
+        "max_observed_tokens": 310,
+        "normal_count": 598,
+        "oversized_indivisible_count": 0,
+        "hard_budget_violation_count": 0,
+        "passed": true,
+        "oversized_chunks": []
+      }
     },
     {
       "alias": "datasheet_mk311xxx",
       "status": "evaluated",
       "detail": null,
-      "structural": null,
-      "cross_references": null,
-      "chunk_token_budget": null
+      "structural": {
+        "case_id": "struct_datasheet_mk311xxx_default",
+        "passed": true,
+        "assertions": [
+          {
+            "name": "no_empty_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "element_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_hard_token_budget",
+            "expected": "0 hard budget violations (effective profile='datasheet', budget<=270 tokens)",
+            "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 255 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          }
+        ],
+        "baseline_provenance": null
+      },
+      "cross_references": {
+        "case_id": "struct_datasheet_mk311xxx_default",
+        "type_metrics": [],
+        "reconciliation_outcome_counts": {},
+        "external_reference_clues_correctly_unresolved": 0,
+        "external_reference_clues_incorrectly_resolved": 0
+      },
+      "chunk_token_budget": {
+        "resolved": true,
+        "profile": "datasheet",
+        "effective_budget": 270,
+        "unresolved_reason": null,
+        "max_observed_tokens": 255,
+        "normal_count": 28,
+        "oversized_indivisible_count": 0,
+        "hard_budget_violation_count": 0,
+        "passed": true,
+        "oversized_chunks": []
+      }
     },
     {
       "alias": "datasheet_deck_fillers",
       "status": "evaluated",
       "detail": null,
-      "structural": null,
-      "cross_references": null,
-      "chunk_token_budget": null
+      "structural": {
+        "case_id": "struct_datasheet_deck_fillers_default",
+        "passed": true,
+        "assertions": [
+          {
+            "name": "no_empty_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "element_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_hard_token_budget",
+            "expected": "0 hard budget violations (effective profile='datasheet', budget<=270 tokens)",
+            "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 270 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          }
+        ],
+        "baseline_provenance": null
+      },
+      "cross_references": {
+        "case_id": "struct_datasheet_deck_fillers_default",
+        "type_metrics": [],
+        "reconciliation_outcome_counts": {},
+        "external_reference_clues_correctly_unresolved": 0,
+        "external_reference_clues_incorrectly_resolved": 0
+      },
+      "chunk_token_budget": {
+        "resolved": true,
+        "profile": "datasheet",
+        "effective_budget": 270,
+        "unresolved_reason": null,
+        "max_observed_tokens": 270,
+        "normal_count": 9,
+        "oversized_indivisible_count": 0,
+        "hard_budget_violation_count": 0,
+        "passed": true,
+        "oversized_chunks": []
+      }
     },
     {
       "alias": "certificate_hoses_ham2423501",
       "status": "evaluated",
       "detail": null,
-      "structural": null,
-      "cross_references": null,
-      "chunk_token_budget": null
+      "structural": {
+        "case_id": "struct_certificate_hoses_ham2423501_default",
+        "passed": true,
+        "assertions": [
+          {
+            "name": "no_empty_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "element_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_hard_token_budget",
+            "expected": "0 hard budget violations (effective profile='default', budget<=200 tokens)",
+            "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 192 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          }
+        ],
+        "baseline_provenance": null
+      },
+      "cross_references": {
+        "case_id": "struct_certificate_hoses_ham2423501_default",
+        "type_metrics": [],
+        "reconciliation_outcome_counts": {},
+        "external_reference_clues_correctly_unresolved": 0,
+        "external_reference_clues_incorrectly_resolved": 0
+      },
+      "chunk_token_budget": {
+        "resolved": true,
+        "profile": "default",
+        "effective_budget": 200,
+        "unresolved_reason": null,
+        "max_observed_tokens": 192,
+        "normal_count": 40,
+        "oversized_indivisible_count": 0,
+        "hard_budget_violation_count": 0,
+        "passed": true,
+        "oversized_chunks": []
+      }
     },
     {
       "alias": "certificate_mtu_engine_set_ham2152268",
       "status": "evaluated",
       "detail": null,
-      "structural": null,
-      "cross_references": null,
-      "chunk_token_budget": null
+      "structural": {
+        "case_id": "struct_certificate_mtu_engine_set_ham2152268_default",
+        "passed": true,
+        "assertions": [
+          {
+            "name": "no_empty_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "element_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_hard_token_budget",
+            "expected": "0 hard budget violations (effective profile='certificate', budget<=250 tokens)",
+            "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 247 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          }
+        ],
+        "baseline_provenance": null
+      },
+      "cross_references": {
+        "case_id": "struct_certificate_mtu_engine_set_ham2152268_default",
+        "type_metrics": [],
+        "reconciliation_outcome_counts": {},
+        "external_reference_clues_correctly_unresolved": 0,
+        "external_reference_clues_incorrectly_resolved": 0
+      },
+      "chunk_token_budget": {
+        "resolved": true,
+        "profile": "certificate",
+        "effective_budget": 250,
+        "unresolved_reason": null,
+        "max_observed_tokens": 247,
+        "normal_count": 7,
+        "oversized_indivisible_count": 0,
+        "hard_budget_violation_count": 0,
+        "passed": true,
+        "oversized_chunks": []
+      }
     },
     {
       "alias": "report_transformer_d4000240",
       "status": "evaluated",
       "detail": null,
-      "structural": null,
-      "cross_references": null,
-      "chunk_token_budget": null
+      "structural": {
+        "case_id": "struct_report_transformer_d4000240_default",
+        "passed": true,
+        "assertions": [
+          {
+            "name": "no_empty_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "element_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_hard_token_budget",
+            "expected": "0 hard budget violations (effective profile='datasheet', budget<=270 tokens)",
+            "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 255 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          }
+        ],
+        "baseline_provenance": null
+      },
+      "cross_references": {
+        "case_id": "struct_report_transformer_d4000240_default",
+        "type_metrics": [],
+        "reconciliation_outcome_counts": {},
+        "external_reference_clues_correctly_unresolved": 0,
+        "external_reference_clues_incorrectly_resolved": 0
+      },
+      "chunk_token_budget": {
+        "resolved": true,
+        "profile": "datasheet",
+        "effective_budget": 270,
+        "unresolved_reason": null,
+        "max_observed_tokens": 255,
+        "normal_count": 14,
+        "oversized_indivisible_count": 0,
+        "hard_budget_violation_count": 0,
+        "passed": true,
+        "oversized_chunks": []
+      }
     },
     {
       "alias": "report_man_shop_test_8351446",
       "status": "evaluated",
       "detail": null,
-      "structural": null,
-      "cross_references": null,
-      "chunk_token_budget": null
+      "structural": {
+        "case_id": "struct_report_man_shop_test_8351446_default",
+        "passed": true,
+        "assertions": [
+          {
+            "name": "no_empty_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "element_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_hard_token_budget",
+            "expected": "0 hard budget violations (effective profile='datasheet', budget<=270 tokens)",
+            "actual": "0 hard violation(s), 5 oversized-indivisible (max observed 317 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          }
+        ],
+        "baseline_provenance": null
+      },
+      "cross_references": {
+        "case_id": "struct_report_man_shop_test_8351446_default",
+        "type_metrics": [],
+        "reconciliation_outcome_counts": {},
+        "external_reference_clues_correctly_unresolved": 0,
+        "external_reference_clues_incorrectly_resolved": 0
+      },
+      "chunk_token_budget": {
+        "resolved": true,
+        "profile": "datasheet",
+        "effective_budget": 270,
+        "unresolved_reason": null,
+        "max_observed_tokens": 317,
+        "normal_count": 70,
+        "oversized_indivisible_count": 5,
+        "hard_budget_violation_count": 0,
+        "passed": true,
+        "oversized_chunks": [
+          {
+            "chunk_id": "chunk_65e1a11218df4c619f4e6685aeb986c2",
+            "token_count": 317,
+            "budget": 270,
+            "status": "oversized_indivisible",
+            "chunk_type": "technical_specification",
+            "table_id": "table_3cd865c2825d43a0a3da88472ecb2151",
+            "table_row_start": 11,
+            "table_row_end": 11
+          },
+          {
+            "chunk_id": "chunk_4ad23c2cf54d4431a8a5fd138f017ecc",
+            "token_count": 283,
+            "budget": 270,
+            "status": "oversized_indivisible",
+            "chunk_type": "technical_specification",
+            "table_id": "table_be94b6a8f41c49bcad5f1cec1c7880d9",
+            "table_row_start": 8,
+            "table_row_end": 8
+          },
+          {
+            "chunk_id": "chunk_81c45a75141d4f389c28757991b31464",
+            "token_count": 292,
+            "budget": 270,
+            "status": "oversized_indivisible",
+            "chunk_type": "technical_specification",
+            "table_id": "table_be94b6a8f41c49bcad5f1cec1c7880d9",
+            "table_row_start": 14,
+            "table_row_end": 14
+          },
+          {
+            "chunk_id": "chunk_f2d34f44e8e84515881c4a9a2916a52d",
+            "token_count": 273,
+            "budget": 270,
+            "status": "oversized_indivisible",
+            "chunk_type": "technical_specification",
+            "table_id": "table_83a503b0a65840f4b0d619825ec4296f",
+            "table_row_start": 2,
+            "table_row_end": 2
+          },
+          {
+            "chunk_id": "chunk_0954c56cf8364207855331e0cdaa61c0",
+            "token_count": 282,
+            "budget": 270,
+            "status": "oversized_indivisible",
+            "chunk_type": "technical_specification",
+            "table_id": "table_83a503b0a65840f4b0d619825ec4296f",
+            "table_row_start": 8,
+            "table_row_end": 8
+          }
+        ]
+      }
     },
     {
       "alias": "report_pressure_transmitter",
       "status": "evaluated",
       "detail": null,
-      "structural": null,
-      "cross_references": null,
-      "chunk_token_budget": null
+      "structural": {
+        "case_id": "struct_report_pressure_transmitter_default",
+        "passed": true,
+        "assertions": [
+          {
+            "name": "no_empty_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "element_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_hard_token_budget",
+            "expected": "0 hard budget violations (effective profile='manual', budget<=310 tokens)",
+            "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 288 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          }
+        ],
+        "baseline_provenance": null
+      },
+      "cross_references": {
+        "case_id": "struct_report_pressure_transmitter_default",
+        "type_metrics": [],
+        "reconciliation_outcome_counts": {},
+        "external_reference_clues_correctly_unresolved": 0,
+        "external_reference_clues_incorrectly_resolved": 0
+      },
+      "chunk_token_budget": {
+        "resolved": true,
+        "profile": "manual",
+        "effective_budget": 310,
+        "unresolved_reason": null,
+        "max_observed_tokens": 288,
+        "normal_count": 177,
+        "oversized_indivisible_count": 0,
+        "hard_budget_violation_count": 0,
+        "passed": true,
+        "oversized_chunks": []
+      }
     },
     {
       "alias": "report_vedder_maintenance",
       "status": "evaluated",
       "detail": null,
-      "structural": null,
-      "cross_references": null,
-      "chunk_token_budget": null
+      "structural": {
+        "case_id": "struct_report_vedder_maintenance_default",
+        "passed": true,
+        "assertions": [
+          {
+            "name": "no_empty_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "element_page_provenance_present",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          },
+          {
+            "name": "chunk_hard_token_budget",
+            "expected": "0 hard budget violations (effective profile='manual', budget<=310 tokens)",
+            "actual": "0 hard violation(s), 1 oversized-indivisible (max observed 311 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
+          }
+        ],
+        "baseline_provenance": null
+      },
+      "cross_references": {
+        "case_id": "struct_report_vedder_maintenance_default",
+        "type_metrics": [],
+        "reconciliation_outcome_counts": {},
+        "external_reference_clues_correctly_unresolved": 0,
+        "external_reference_clues_incorrectly_resolved": 0
+      },
+      "chunk_token_budget": {
+        "resolved": true,
+        "profile": "manual",
+        "effective_budget": 310,
+        "unresolved_reason": null,
+        "max_observed_tokens": 311,
+        "normal_count": 48,
+        "oversized_indivisible_count": 1,
+        "hard_budget_violation_count": 0,
+        "passed": true,
+        "oversized_chunks": [
+          {
+            "chunk_id": "chunk_a274307dcadd445798d2c8dc76eb3bb8",
+            "token_count": 311,
+            "budget": 310,
+            "status": "oversized_indivisible",
+            "chunk_type": "general",
+            "table_id": "table_ec94f32c6d3e46d4995ae4626e774a90",
+            "table_row_start": 7,
+            "table_row_end": 7
+          }
+        ]
+      }
     }
   ],
   "classification": {
     "metrics": {
-      "executed_count": 10,
+      "executed_count": 0,
       "execution_failed_count": 0,
       "skipped_parsing_unavailable_count": 0,
       "unknown_count": 0,
-      "unknown_rate": 0.0,
+      "unknown_rate": null,
       "low_confidence_rejected_count": 0,
-      "low_confidence_rejection_rate": 0.0,
-      "confidence_count": 10,
-      "confidence_min": 0.95,
-      "confidence_max": 0.98,
-      "confidence_mean": 0.961,
-      "confidence_median": 0.95,
-      "reviewed_eligible_document_count": 6,
-      "raw_correct_count": 6,
-      "raw_accuracy": 1.0,
-      "accepted_count": 6,
-      "accepted_correct_count": 6,
-      "accepted_classification_accuracy": 1.0,
-      "accuracy_among_accepted": 1.0,
-      "ambiguous_document_count": 4,
-      "ambiguous_raw_match_count": 2,
-      "confusion_matrix": {
-        "manual": {
-          "manual": 2
-        },
-        "datasheet": {
-          "datasheet": 1
-        },
-        "certificate": {
-          "certificate": 1
-        },
-        "report": {
-          "report": 2
-        }
-      }
+      "low_confidence_rejection_rate": null,
+      "confidence_count": 0,
+      "confidence_min": null,
+      "confidence_max": null,
+      "confidence_mean": null,
+      "confidence_median": null,
+      "reviewed_eligible_document_count": 0,
+      "raw_correct_count": 0,
+      "raw_accuracy": null,
+      "accepted_count": 0,
+      "accepted_correct_count": 0,
+      "accepted_classification_accuracy": null,
+      "accuracy_among_accepted": null,
+      "ambiguous_document_count": 0,
+      "ambiguous_raw_match_count": 0,
+      "confusion_matrix": {}
     },
-    "documents": [
-      {
-        "alias": "manual_fwc12",
-        "stage_status": "evaluated",
-        "detail": null,
-        "execution_error": null,
-        "expectation": {
-          "expected_document_type": "manual",
-          "ambiguous": false,
-          "review_status": "reviewed",
-          "notes": "Reviewed - a 552-page technical/maintenance manual (General, Safety, System Introduction, Installation, Commissioning, Operation & Maintenance, Components, Annexes). Unambiguous MANUAL."
-        },
-        "attempt": {
-          "predicted_document_type": "manual",
-          "predicted_label": "manual",
-          "confidence": 0.97,
-          "confidence_threshold": 0.75,
-          "passed_confidence_gate": true,
-          "validation_outcome": "valid",
-          "model_name": "qwen2.5:3b",
-          "rationale": "The document contains a Table of Contents, 'General' sections, and 'Installation Instruction' sections which are characteristic of a technical manual. The presence of a 'Table of Contents' and 'General' sections are strong indicators of a manual.",
-          "processing_errors": [],
-          "prompt_version": "v2"
-        },
-        "eligible_for_accuracy": true,
-        "raw_prediction_correct": true,
-        "accepted_classification_correct": true,
-        "ambiguous_raw_match": null
-      },
-      {
-        "alias": "manual_bauer_mv320_compressor",
-        "stage_status": "evaluated",
-        "detail": null,
-        "execution_error": null,
-        "expectation": {
-          "expected_document_type": "manual",
-          "ambiguous": false,
-          "review_status": "reviewed",
-          "notes": "Reviewed - top section is literally \"OPERATING MANUAL\"; Preface/Commissioning/Troubleshooting structure. Unambiguous MANUAL."
-        },
-        "attempt": {
-          "predicted_document_type": "manual",
-          "predicted_label": "manual",
-          "confidence": 0.98,
-          "confidence_threshold": 0.75,
-          "passed_confidence_gate": true,
-          "validation_outcome": "valid",
-          "model_name": "qwen2.5:3b",
-          "rationale": "The document contains comprehensive information including operation instructions, maintenance procedures, and technical specifications, which are typical features of an operating manual. The presence of a detailed table of contents, sections like 'Preface' and 'Introduction', and specific subsections like 'Operating Instructions' are strong indicators of this document being an operating manual.",
-          "processing_errors": [],
-          "prompt_version": "v2"
-        },
-        "eligible_for_accuracy": true,
-        "raw_prediction_correct": true,
-        "accepted_classification_correct": true,
-        "ambiguous_raw_match": null
-      },
-      {
-        "alias": "datasheet_mk311xxx",
-        "stage_status": "evaluated",
-        "detail": null,
-        "execution_error": null,
-        "expectation": {
-          "expected_document_type": "datasheet",
-          "ambiguous": true,
-          "review_status": "reviewed",
-          "notes": "Reviewed as DATASHEET (primary technical-data-sheet intent), but genuinely ambiguous - pages 2-4 (dimension/parts-list content) are DRAWING-shaped, which is why the model predicted DRAWING. See ambiguous-documents section above."
-        },
-        "attempt": {
-          "predicted_document_type": "drawing",
-          "predicted_label": "drawing",
-          "confidence": 0.95,
-          "confidence_threshold": 0.75,
-          "passed_confidence_gate": true,
-          "validation_outcome": "valid",
-          "model_name": "qwen2.5:3b",
-          "rationale": "The document contains technical drawings and specifications, and mentions elements like connection options and operating instructions, which are characteristic of engineering drawings. The language and design style are consistent with technical drawings.",
-          "processing_errors": [],
-          "prompt_version": "v2"
-        },
-        "eligible_for_accuracy": false,
-        "raw_prediction_correct": null,
-        "accepted_classification_correct": null,
-        "ambiguous_raw_match": false
-      },
-      {
-        "alias": "datasheet_deck_fillers",
-        "stage_status": "evaluated",
-        "detail": null,
-        "execution_error": null,
-        "expectation": {
-          "expected_document_type": "datasheet",
-          "ambiguous": false,
-          "review_status": "reviewed",
-          "notes": "Reviewed - filename/title literally \"...datasheet\"; technical_specification-dominant content. Unambiguous DATASHEET."
-        },
-        "attempt": {
-          "predicted_document_type": "datasheet",
-          "predicted_label": "datasheet",
-          "confidence": 0.95,
-          "confidence_threshold": 0.75,
-          "passed_confidence_gate": true,
-          "validation_outcome": "valid",
-          "model_name": "qwen2.5:3b",
-          "rationale": "The document contains technical specifications, installation instructions, and material dimensions, which are typical of a datasheet. It has a clear structure with headers, tables, and detailed information.",
-          "processing_errors": [],
-          "prompt_version": "v2"
-        },
-        "eligible_for_accuracy": true,
-        "raw_prediction_correct": true,
-        "accepted_classification_correct": true,
-        "ambiguous_raw_match": null
-      },
-      {
-        "alias": "certificate_hoses_ham2423501",
-        "stage_status": "evaluated",
-        "detail": null,
-        "execution_error": null,
-        "expectation": {
-          "expected_document_type": "certificate",
-          "ambiguous": false,
-          "review_status": "reviewed",
-          "notes": "Reviewed - \"Certificate for Machinery Equipment\" section, certification_table content, identification marks. Unambiguous CERTIFICATE."
-        },
-        "attempt": {
-          "predicted_document_type": "certificate",
-          "predicted_label": "certificate",
-          "confidence": 0.98,
-          "confidence_threshold": 0.75,
-          "passed_confidence_gate": true,
-          "validation_outcome": "valid",
-          "model_name": "qwen2.5:3b",
-          "rationale": "The document contains a certificate issued by Industrietechnik GmbH, referencing DIN EN 10204. The presence of a certificate header and details such as the date of the inspection, and the names of the involved parties are strong indicators of this document type.",
-          "processing_errors": [],
-          "prompt_version": "v2"
-        },
-        "eligible_for_accuracy": true,
-        "raw_prediction_correct": true,
-        "accepted_classification_correct": true,
-        "ambiguous_raw_match": null
-      },
-      {
-        "alias": "certificate_mtu_engine_set_ham2152268",
-        "stage_status": "evaluated",
-        "detail": null,
-        "execution_error": null,
-        "expectation": {
-          "expected_document_type": "certificate",
-          "ambiguous": true,
-          "review_status": "reviewed",
-          "notes": "Reviewed as CERTIFICATE - two separate Lloyd's Register certificates packaged in one PDF; single-label is defensible but this is structurally two documents. Ambiguity is packet-count, not type-confusion."
-        },
-        "attempt": {
-          "predicted_document_type": "certificate",
-          "predicted_label": "certificate",
-          "confidence": 0.95,
-          "confidence_threshold": 0.75,
-          "passed_confidence_gate": true,
-          "validation_outcome": "valid",
-          "model_name": "qwen2.5:3b",
-          "rationale": "The document contains explicit certification information including details of the engine, approval numbers, and a manufacturer's statement, which are typical of a certificate.",
-          "processing_errors": [],
-          "prompt_version": "v2"
-        },
-        "eligible_for_accuracy": false,
-        "raw_prediction_correct": null,
-        "accepted_classification_correct": null,
-        "ambiguous_raw_match": true
-      },
-      {
-        "alias": "report_transformer_d4000240",
-        "stage_status": "evaluated",
-        "detail": null,
-        "execution_error": null,
-        "expectation": {
-          "expected_document_type": "report",
-          "ambiguous": false,
-          "review_status": "reviewed",
-          "notes": "Reviewed - \"TRANSFORMER TEST REPORT\" with itemized test sections (rating data, voltage ratio, short circuit, no-load, temperature-rise). Unambiguous REPORT."
-        },
-        "attempt": {
-          "predicted_document_type": "report",
-          "predicted_label": "report",
-          "confidence": 0.95,
-          "confidence_threshold": 0.75,
-          "passed_confidence_gate": true,
-          "validation_outcome": "valid",
-          "model_name": "qwen2.5:3b",
-          "rationale": "The document contains a comprehensive report with sections such as 'TRANSFORMER TEST REPORT', 'RATING DATA', 'MEASUREMENT OF VOLTAGE RATIO', and 'NO LOAD TEST AT 50Hz', which strongly indicate that it is a technical report. The presence of detailed test results, ratings, and specifications further supports this classification.",
-          "processing_errors": [],
-          "prompt_version": "v2"
-        },
-        "eligible_for_accuracy": true,
-        "raw_prediction_correct": true,
-        "accepted_classification_correct": true,
-        "ambiguous_raw_match": null
-      },
-      {
-        "alias": "report_man_shop_test_8351446",
-        "stage_status": "evaluated",
-        "detail": null,
-        "execution_error": null,
-        "expectation": {
-          "expected_document_type": "report",
-          "ambiguous": false,
-          "review_status": "reviewed",
-          "notes": "Reviewed - \"Shop test protocol\" plus itemized \"Performance Data NN%\" sections; classic engine shop-test report. Unambiguous REPORT."
-        },
-        "attempt": {
-          "predicted_document_type": "report",
-          "predicted_label": "report",
-          "confidence": 0.98,
-          "confidence_threshold": 0.75,
-          "passed_confidence_gate": true,
-          "validation_outcome": "valid",
-          "model_name": "qwen2.5:3b",
-          "rationale": "The document contains a comprehensive report with sections, tables, and pictures, indicating it's a technical report. The presence of multiple sections (Shop test protocol, Performance Data, etc.), tables, and a certificate of shop test carried out according to the enclosed recordings and performance data are strong indicators of a report.",
-          "processing_errors": [],
-          "prompt_version": "v2"
-        },
-        "eligible_for_accuracy": true,
-        "raw_prediction_correct": true,
-        "accepted_classification_correct": true,
-        "ambiguous_raw_match": null
-      },
-      {
-        "alias": "report_pressure_transmitter",
-        "stage_status": "evaluated",
-        "detail": null,
-        "execution_error": null,
-        "expectation": {
-          "expected_document_type": "report",
-          "ambiguous": true,
-          "review_status": "reviewed",
-          "notes": "Reviewed as REPORT (source's own \"Final Inspection Report\" framing on pages 1-2), but genuinely ambiguous - pages 3-23+ (the bulk of the document) are a full operating manual, which is why the model predicted MANUAL. See ambiguous-documents section above."
-        },
-        "attempt": {
-          "predicted_document_type": "manual",
-          "predicted_label": "manual",
-          "confidence": 0.95,
-          "confidence_threshold": 0.75,
-          "passed_confidence_gate": true,
-          "validation_outcome": "valid",
-          "model_name": "qwen2.5:3b",
-          "rationale": "The document contains detailed technical specifications, operation instructions, and safety warnings, which are characteristic of a manual. It includes sections such as 'Test Report', 'Final Inspection Report', 'Order information', 'Procedure', 'Measuring condition', and 'Execution', which are often found in user manuals. The presence of 'technical specification' and 'installation instruction' chunks further supports this classification.",
-          "processing_errors": [],
-          "prompt_version": "v2"
-        },
-        "eligible_for_accuracy": false,
-        "raw_prediction_correct": null,
-        "accepted_classification_correct": null,
-        "ambiguous_raw_match": false
-      },
-      {
-        "alias": "report_vedder_maintenance",
-        "stage_status": "evaluated",
-        "detail": null,
-        "execution_error": null,
-        "expectation": {
-          "expected_document_type": "report",
-          "ambiguous": true,
-          "review_status": "reviewed",
-          "notes": "Reviewed and confirmed REPORT - itemized per-equipment maintenance log, zero operation/installation-instruction chunks (the earlier \"MANUAL-shaped\" concern did not hold up). Kept ambiguous as a softer edge case per the original review."
-        },
-        "attempt": {
-          "predicted_document_type": "report",
-          "predicted_label": "report",
-          "confidence": 0.95,
-          "confidence_threshold": 0.75,
-          "passed_confidence_gate": true,
-          "validation_outcome": "valid",
-          "model_name": "qwen2.5:3b",
-          "rationale": "The document contains sections like 'INHALTSVERZEICHNIS', '1. INDOOR CLIMATE', '5. FLOOR AND MIRROR HEATING > VEDDER GmbH', and '8. FRIDGES', which are typical indicators of a maintenance report. The presence of tables and chunks of information related to maintenance tasks and intervals further supports this classification.",
-          "processing_errors": [],
-          "prompt_version": "v2"
-        },
-        "eligible_for_accuracy": false,
-        "raw_prediction_correct": null,
-        "accepted_classification_correct": null,
-        "ambiguous_raw_match": true
-      }
-    ]
+    "documents": []
   }
 }

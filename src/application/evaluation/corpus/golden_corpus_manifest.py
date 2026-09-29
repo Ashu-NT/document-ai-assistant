@@ -1,6 +1,9 @@
 from pathlib import Path
 from typing import Sequence
 
+from src.application.evaluation.corpus.evaluation_corpus_tier import (
+    EvaluationCorpusTier,
+)
 from src.application.evaluation.corpus.golden_document_manifest_entry import (
     GoldenDocumentManifestEntry,
 )
@@ -107,6 +110,42 @@ _DEFAULT_ENTRIES: tuple[GoldenDocumentManifestEntry, ...] = (
         expected_sha256="193504db71f77d5da76127f20a692bb4904e495528b22c1e33522f5ab95e9272",
         notes="Maintenance-procedure/checklist-flavored content, distinct shape from report_pressure_transmitter. DocumentType has no SOP value (approved decision 2), so this is classified as REPORT.",
     ),
+    # First CHALLENGE-tier document (see EvaluationCorpusTier and
+    # outputs/architecture/mtu_challenge_document_reconnaissance.md). Lives
+    # outside TestDoc/ (in the user's Downloads folder) - `relative_path`
+    # is deliberately the full absolute path, since pathlib's `/` operator
+    # discards the left operand when the right is already absolute, so
+    # `root_dir / relative_path` resolves correctly without copying the
+    # file into the repo's corpus directory. This is Part 1 of a
+    # multi-part document set (its own embedded Table of Contents
+    # references content through internal page 1098; this file has
+    # exactly 552 physical pages, ending exactly at the last TOC entry
+    # before "9 Manufacturer's Documentation" begins) - Part 2 is not
+    # required to use this document as a CORE-untouched CHALLENGE case.
+    GoldenDocumentManifestEntry(
+        alias="challenge_mtu_marine_engine_generator_part1",
+        relative_path=(
+            r"C:\Users\ashuf\Downloads\3210-0010 MTU MAN Marine Engine "
+            r"Generator 20V4000M53B System Documentation SA18000434_00E "
+            r"Part1.pdf"
+        ),
+        category="complex_manual",
+        expected_document_type=DocumentType.MANUAL,
+        expected_sha256="c148ccab491a83fa62a44b04742ca1c9e236ca134e1fb87fbc33b18480050481",
+        notes=(
+            "552-page real-world MTU/Rolls-Royce marine engine-generator "
+            "system documentation (Functional Description, Maintenance, "
+            "Operating Instructions, Instructions for Exchange of "
+            "Sub-assemblies). Real Docling parse: 443 tables, 780 "
+            "pictures, 2190 flat section_header items (all level=1 in "
+            "Docling's own output - hierarchy depth is entirely "
+            "reconstructed by our own numbering logic). CHALLENGE tier: "
+            "large, heterogeneous, table/picture-dense, deep hierarchy "
+            "(5 real levels reconstructed) - deliberately NOT part of the "
+            "fast CORE regression set."
+        ),
+        tier=EvaluationCorpusTier.CHALLENGE,
+    ),
 )
 
 
@@ -175,8 +214,26 @@ class GoldenCorpusManifest:
             actual_sha256=actual_sha256,
         )
 
-    def resolve_all(self) -> list[ResolvedGoldenDocument]:
-        return [self.resolve(entry.alias) for entry in self._entries]
+    def resolve_all(
+        self,
+        *,
+        tiers: frozenset[EvaluationCorpusTier] | None = None,
+    ) -> list[ResolvedGoldenDocument]:
+        """Resolves every manifest entry whose `tier` is in `tiers`.
+
+        Defaults to CORE only - normal regression runs must never pick up
+        a CHALLENGE document automatically. Pass
+        `tiers=frozenset({EvaluationCorpusTier.CORE, EvaluationCorpusTier.CHALLENGE})`
+        (or just `{EvaluationCorpusTier.CHALLENGE}`) to explicitly opt in.
+        """
+        resolved_tiers = (
+            tiers if tiers is not None else frozenset({EvaluationCorpusTier.CORE})
+        )
+        return [
+            self.resolve(entry.alias)
+            for entry in self._entries
+            if entry.tier in resolved_tiers
+        ]
 
 
 __all__ = ["GoldenCorpusManifest"]

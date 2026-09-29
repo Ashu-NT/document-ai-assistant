@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 
+from src.application.evaluation.corpus.evaluation_corpus_tier import (
+    EvaluationCorpusTier,
+)
 from src.domain.common import DocumentType
 
 
@@ -26,6 +29,9 @@ class GoldenDocumentManifestEntry:
     expected_document_type: DocumentType | None = None
     expected_sha256: str | None = None
     notes: str | None = None
+    # Defaults to CORE so every pre-existing entry needed zero fixture
+    # churn to adopt this concept - see EvaluationCorpusTier.
+    tier: EvaluationCorpusTier = EvaluationCorpusTier.CORE
 
 
 __all__ = ["GoldenDocumentManifestEntry"]

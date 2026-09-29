@@ -16,6 +16,9 @@ from src.application.evaluation.classification.golden_classification_document_re
 from src.application.evaluation.classification.loaders.classification_expectation_loader import (
     ClassificationExpectationLoader,
 )
+from src.application.evaluation.corpus.evaluation_corpus_tier import (
+    EvaluationCorpusTier,
+)
 from src.application.evaluation.corpus.golden_corpus_manifest import GoldenCorpusManifest
 from src.application.evaluation.corpus.resolved_golden_document import (
     GoldenDocumentAvailability,
@@ -69,6 +72,7 @@ def run_classification_golden_evaluation(
     parsing_workflow=None,
     classification_workflow: DocumentClassificationWorkflow | None = None,
     confidence_threshold: float | None = None,
+    tiers: frozenset[EvaluationCorpusTier] | None = None,
 ) -> GoldenEvaluationReport:
     """Evaluates classification (only) for every document in the golden
     corpus manifest through the real production classification path
@@ -89,7 +93,7 @@ def run_classification_golden_evaluation(
     fakes); the production default builds the real runtimes.
     """
     resolved_manifest = manifest or GoldenCorpusManifest.default()
-    resolved_documents = resolved_manifest.resolve_all()
+    resolved_documents = resolved_manifest.resolve_all(tiers=tiers)
 
     expectations_by_alias = _load_expectations_by_alias(
         expectation_cases_path, manifest=resolved_manifest

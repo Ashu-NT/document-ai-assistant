@@ -1,3 +1,6 @@
+from src.application.evaluation.corpus.evaluation_corpus_tier import (
+    EvaluationCorpusTier,
+)
 from src.application.evaluation.corpus.golden_corpus_manifest import (
     GoldenCorpusManifest,
 )
@@ -10,6 +13,7 @@ from src.application.evaluation.corpus.resolved_golden_document import (
 )
 
 __all__ = [
+    "EvaluationCorpusTier",
     "GoldenCorpusManifest",
     "GoldenDocumentAvailability",
     "GoldenDocumentManifestEntry",

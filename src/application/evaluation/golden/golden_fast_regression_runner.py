@@ -1,5 +1,8 @@
 from pathlib import Path
 
+from src.application.evaluation.corpus.evaluation_corpus_tier import (
+    EvaluationCorpusTier,
+)
 from src.application.evaluation.corpus.golden_corpus_manifest import GoldenCorpusManifest
 from src.application.evaluation.corpus.resolved_golden_document import (
     GoldenDocumentAvailability,
@@ -44,6 +47,7 @@ def run_fast_golden_regression(
     allow_real_parsing: bool = True,
     parsing_workflow=None,
     evaluator: IngestionExpectationEvaluator | None = None,
+    tiers: frozenset[EvaluationCorpusTier] | None = None,
 ) -> GoldenEvaluationReport:
     """Evaluates every document in the golden corpus manifest through the
     real production parsing path (Parsed Artifact Store -> ParsingWorkflow
@@ -59,12 +63,18 @@ def run_fast_golden_regression(
     GoldenDocumentEvaluationStatus - so a partial corpus can never be
     reported as a fully evaluated one.
 
+    `tiers` selects which EvaluationCorpusTier(s) to evaluate - defaults to
+    CORE only (see GoldenCorpusManifest.resolve_all). A CHALLENGE document
+    is never picked up by an ordinary run; pass
+    `tiers=frozenset({EvaluationCorpusTier.CORE, EvaluationCorpusTier.CHALLENGE})`
+    (or just `{EvaluationCorpusTier.CHALLENGE}`) to opt in explicitly.
+
     `parsing_workflow`/`evaluator` are injectable (tests use a fake
     parsing_workflow so they never need real Docling/a real corpus); the
     production default builds the real runtime via `build_parsing_runtime`.
     """
     resolved_manifest = manifest or GoldenCorpusManifest.default()
-    resolved_documents = resolved_manifest.resolve_all()
+    resolved_documents = resolved_manifest.resolve_all(tiers=tiers)
 
     cases_by_alias = _load_structural_cases_by_alias(structural_cases_path)
 

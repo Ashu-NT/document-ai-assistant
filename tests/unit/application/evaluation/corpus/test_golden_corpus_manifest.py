@@ -3,6 +3,7 @@ import hashlib
 import pytest
 
 from src.application.evaluation.corpus import (
+    EvaluationCorpusTier,
     GoldenCorpusManifest,
     GoldenDocumentAvailability,
     GoldenDocumentManifestEntry,
@@ -126,12 +127,95 @@ class TestAvailability:
         assert statuses["absent"] == GoldenDocumentAvailability.MISSING
 
 
-class TestDefaultManifest:
-    def test_default_manifest_has_ten_documents_with_distinct_aliases(self) -> None:
-        manifest = GoldenCorpusManifest.default()
+class TestCorpusTierFiltering:
+    def _manifest(self, tmp_path):
+        _write(tmp_path / "core.pdf")
+        _write(tmp_path / "challenge.pdf")
+        entries = [
+            GoldenDocumentManifestEntry(
+                alias="core_doc", relative_path="core.pdf", category="manual"
+            ),
+            GoldenDocumentManifestEntry(
+                alias="challenge_doc",
+                relative_path="challenge.pdf",
+                category="manual",
+                tier=EvaluationCorpusTier.CHALLENGE,
+            ),
+        ]
+        return GoldenCorpusManifest(entries, root_dir=tmp_path)
 
-        assert len(manifest.entries) == 10
-        assert len({entry.alias for entry in manifest.entries}) == 10
+    def test_entry_without_explicit_tier_defaults_to_core(self) -> None:
+        entry = GoldenDocumentManifestEntry(
+            alias="doc_x", relative_path="doc.pdf", category="manual"
+        )
+
+        assert entry.tier == EvaluationCorpusTier.CORE
+
+    def test_explicit_challenge_entry_is_respected(self, tmp_path) -> None:
+        manifest = self._manifest(tmp_path)
+
+        challenge_entry = manifest.entry("challenge_doc")
+
+        assert challenge_entry.tier == EvaluationCorpusTier.CHALLENGE
+
+    def test_resolve_all_defaults_to_core_only(self, tmp_path) -> None:
+        manifest = self._manifest(tmp_path)
+
+        resolved = manifest.resolve_all()
+
+        assert {r.alias for r in resolved} == {"core_doc"}
+
+    def test_resolve_all_includes_challenge_when_explicitly_requested(
+        self, tmp_path
+    ) -> None:
+        manifest = self._manifest(tmp_path)
+
+        resolved = manifest.resolve_all(
+            tiers=frozenset({EvaluationCorpusTier.CORE, EvaluationCorpusTier.CHALLENGE})
+        )
+
+        assert {r.alias for r in resolved} == {"core_doc", "challenge_doc"}
+
+    def test_resolve_all_can_select_challenge_only(self, tmp_path) -> None:
+        manifest = self._manifest(tmp_path)
+
+        resolved = manifest.resolve_all(tiers=frozenset({EvaluationCorpusTier.CHALLENGE}))
+
+        assert {r.alias for r in resolved} == {"challenge_doc"}
+
+    def test_unknown_tier_value_is_rejected(self) -> None:
+        # EvaluationCorpusTier is a StrEnum - constructing it from any value
+        # outside {"core", "challenge"} raises, so a manifest entry can
+        # never silently carry a bogus tier.
+        with pytest.raises(ValueError):
+            EvaluationCorpusTier("nonexistent_tier")
+
+    def test_existing_all_core_manifest_behavior_is_unchanged(self, tmp_path) -> None:
+        # A manifest with only CORE entries (the pre-existing shape, before
+        # this concept existed) must resolve identically to before.
+        _write(tmp_path / "a.pdf")
+        _write(tmp_path / "b.pdf")
+        entries = [
+            GoldenDocumentManifestEntry(alias="a", relative_path="a.pdf", category="manual"),
+            GoldenDocumentManifestEntry(alias="b", relative_path="b.pdf", category="manual"),
+        ]
+        manifest = GoldenCorpusManifest(entries, root_dir=tmp_path)
+
+        resolved = manifest.resolve_all()
+
+        assert {r.alias for r in resolved} == {"a", "b"}
+
+
+class TestDefaultManifest:
+    def test_default_manifest_has_ten_core_documents_with_distinct_aliases(self) -> None:
+        # Total entry count includes the CHALLENGE-tier MTU document (see
+        # EvaluationCorpusTier) - the CORE regression set itself remains
+        # exactly the original 10, unaffected by adding a challenge entry.
+        manifest = GoldenCorpusManifest.default()
+        core_entries = [e for e in manifest.entries if e.tier == EvaluationCorpusTier.CORE]
+
+        assert len(core_entries) == 10
+        assert len({entry.alias for entry in core_entries}) == 10
 
     def test_default_manifest_entries_declare_a_real_production_document_type(self) -> None:
         manifest = GoldenCorpusManifest.default()
