@@ -25,6 +25,7 @@ from src.application.workflows.parsing.builders.chunking.text.tokenization.chunk
 )
 from src.domain.document.aggregates.document_graph import DocumentGraph
 from src.domain.document.entities.chunk_cross_reference import ChunkCrossReference
+from src.shared.text.rendering_noise_detector import is_rendering_only_noise
 
 # The universal, always-run invariant assertion names `evaluate()` appends
 # (see `_universal_invariants`) - exposed so reporting code can separate
@@ -36,6 +37,7 @@ UNIVERSAL_INVARIANT_ASSERTION_NAMES: frozenset[str] = frozenset(
         "chunk_page_provenance_present",
         "element_page_provenance_present",
         "chunk_hard_token_budget",
+        "no_rendering_only_noise_chunks",
     }
 )
 
@@ -396,6 +398,7 @@ class IngestionExpectationEvaluator:
             self._chunk_token_budget_assertion(
                 self.evaluate_chunk_token_budget(document_graph)
             ),
+            self._no_rendering_only_noise_chunks_assertion(document_graph),
         ]
 
     @staticmethod
@@ -444,6 +447,27 @@ class IngestionExpectationEvaluator:
             expected=0,
             actual=len(missing),
             passed=not missing,
+        )
+
+    @staticmethod
+    def _no_rendering_only_noise_chunks_assertion(
+        document_graph: DocumentGraph,
+    ) -> IngestionAssertionResult:
+        """Independent regression net for the rendering-only-noise chunk
+        defect (see DegradedTablePlainTextRenderer / ChunkFragmentPacker's
+        own defensive filter) - catches any chunk consisting of nothing but
+        table-rendering syntax (e.g. "| --- | --- |") regardless of which
+        code path produced it, current or future."""
+        noise_chunk_ids = [
+            chunk.chunk_id
+            for chunk in document_graph.chunks.values()
+            if is_rendering_only_noise(chunk.content)
+        ]
+        return IngestionAssertionResult(
+            name="no_rendering_only_noise_chunks",
+            expected=0,
+            actual=len(noise_chunk_ids),
+            passed=not noise_chunk_ids,
         )
 
     @staticmethod

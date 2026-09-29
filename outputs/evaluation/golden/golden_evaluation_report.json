@@ -1,7 +1,7 @@
 {
   "run_metadata": {
-    "timestamp": "2026-09-29T03:05:56.132234+00:00",
-    "git_commit": "161254718b7371d0f7d3c895bcf2d3da4fba6860",
+    "timestamp": "2026-09-29T03:25:48.997721+00:00",
+    "git_commit": "ad3e4907a888f64b60b02d2a51eb23fca3258d82",
     "artifact_schema_version": 1,
     "parser_name": "docling",
     "parser_version": "2.126.0",
@@ -184,6 +184,12 @@
             "expected": "0 hard budget violations (effective profile='manual', budget<=310 tokens)",
             "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 304 tokens)",
             "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
           }
         ],
         "baseline_provenance": null
@@ -270,6 +276,12 @@
             "expected": "0 hard budget violations (effective profile='manual', budget<=310 tokens)",
             "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 310 tokens)",
             "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
           }
         ],
         "baseline_provenance": null
@@ -328,6 +340,12 @@
             "expected": "0 hard budget violations (effective profile='datasheet', budget<=270 tokens)",
             "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 255 tokens)",
             "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
           }
         ],
         "baseline_provenance": null
@@ -382,6 +400,12 @@
             "name": "chunk_hard_token_budget",
             "expected": "0 hard budget violations (effective profile='datasheet', budget<=270 tokens)",
             "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 270 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
             "passed": true
           }
         ],
@@ -438,6 +462,12 @@
             "expected": "0 hard budget violations (effective profile='default', budget<=200 tokens)",
             "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 192 tokens)",
             "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
           }
         ],
         "baseline_provenance": null
@@ -492,6 +522,12 @@
             "name": "chunk_hard_token_budget",
             "expected": "0 hard budget violations (effective profile='certificate', budget<=250 tokens)",
             "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 247 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
             "passed": true
           }
         ],
@@ -548,6 +584,12 @@
             "expected": "0 hard budget violations (effective profile='datasheet', budget<=270 tokens)",
             "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 255 tokens)",
             "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
           }
         ],
         "baseline_provenance": null
@@ -603,6 +645,12 @@
             "expected": "0 hard budget violations (effective profile='datasheet', budget<=270 tokens)",
             "actual": "0 hard violation(s), 5 oversized-indivisible (max observed 317 tokens)",
             "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
           }
         ],
         "baseline_provenance": null
@@ -620,58 +668,58 @@
         "effective_budget": 270,
         "unresolved_reason": null,
         "max_observed_tokens": 317,
-        "normal_count": 91,
+        "normal_count": 70,
         "oversized_indivisible_count": 5,
         "hard_budget_violation_count": 0,
         "passed": true,
         "oversized_chunks": [
           {
-            "chunk_id": "chunk_3eac374c4ee7478699c857e15c21891f",
+            "chunk_id": "chunk_4c4151fb3db845dba206e3999428373b",
             "token_count": 317,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_7207db68f19e4aa9b9f1967cb3d89aec",
+            "table_id": "table_3fed78e7f4fc403a953bb62976d3a821",
             "table_row_start": 11,
             "table_row_end": 11
           },
           {
-            "chunk_id": "chunk_72a3718c0cd84c279862302743859a49",
+            "chunk_id": "chunk_ab78d90a3b4145f98e325dce2dee59dc",
             "token_count": 283,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_a6533902eeda4519ac0a075f9aa541e3",
+            "table_id": "table_fdfe25aede4e45baa9c7b41fc780e0f7",
             "table_row_start": 8,
             "table_row_end": 8
           },
           {
-            "chunk_id": "chunk_3592f07ea2874e4ba6dbcebfa731a5eb",
+            "chunk_id": "chunk_20bc55d50a024cd3bcf57e450af346ae",
             "token_count": 292,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_a6533902eeda4519ac0a075f9aa541e3",
+            "table_id": "table_fdfe25aede4e45baa9c7b41fc780e0f7",
             "table_row_start": 14,
             "table_row_end": 14
           },
           {
-            "chunk_id": "chunk_5d284a4a15db41cfb165e2252d87da0d",
+            "chunk_id": "chunk_6b53922fa2da4232b0fcefa5ce75f0a1",
             "token_count": 273,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_62b0a910b7f84c72b16bdd9836d63d79",
+            "table_id": "table_56f9b1fb3f3f460d9a7a6a55417cc3b5",
             "table_row_start": 2,
             "table_row_end": 2
           },
           {
-            "chunk_id": "chunk_7e03282ec1a9438bbda799bfd6d4476f",
+            "chunk_id": "chunk_4a90a6dd4d5d48e69a1ec58d121cc184",
             "token_count": 282,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_62b0a910b7f84c72b16bdd9836d63d79",
+            "table_id": "table_56f9b1fb3f3f460d9a7a6a55417cc3b5",
             "table_row_start": 8,
             "table_row_end": 8
           }
@@ -708,6 +756,12 @@
             "name": "chunk_hard_token_budget",
             "expected": "0 hard budget violations (effective profile='manual', budget<=310 tokens)",
             "actual": "0 hard violation(s), 0 oversized-indivisible (max observed 288 tokens)",
+            "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
             "passed": true
           }
         ],
@@ -764,6 +818,12 @@
             "expected": "0 hard budget violations (effective profile='manual', budget<=310 tokens)",
             "actual": "0 hard violation(s), 1 oversized-indivisible (max observed 311 tokens)",
             "passed": true
+          },
+          {
+            "name": "no_rendering_only_noise_chunks",
+            "expected": 0,
+            "actual": 0,
+            "passed": true
           }
         ],
         "baseline_provenance": null
@@ -787,12 +847,12 @@
         "passed": true,
         "oversized_chunks": [
           {
-            "chunk_id": "chunk_cc3b18b4b3674c0d861fa1dbb5fd9857",
+            "chunk_id": "chunk_42e2ed61e64c459c99e8abf0c4127a57",
             "token_count": 311,
             "budget": 310,
             "status": "oversized_indivisible",
             "chunk_type": "general",
-            "table_id": "table_52edac325831481185c3bbc6d1026a8d",
+            "table_id": "table_962f11d246bb4d98be04127c20445d6f",
             "table_row_start": 7,
             "table_row_end": 7
           }

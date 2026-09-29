@@ -347,6 +347,7 @@ def test_unset_expected_fields_produce_no_case_specific_assertions() -> None:
         "chunk_page_provenance_present",
         "element_page_provenance_present",
         "chunk_hard_token_budget",
+        "no_rendering_only_noise_chunks",
     }
     assert result.passed is True
 
@@ -462,6 +463,75 @@ class TestUniversalInvariants:
         assertion = _assertion(result, "no_empty_chunks")
         assert assertion.passed is False
         assert assertion.actual == 1
+
+    def test_rendering_only_noise_invariant_fails_on_pure_table_syntax(self) -> None:
+        graph = make_graph(
+            chunks={
+                "c1": make_chunk(chunk_id="c1", content="real content"),
+                "c2": make_chunk(chunk_id="c2", content="| --- | --- | --- |"),
+            }
+        )
+
+        result = _evaluator().evaluate(case=make_case(), document_graph=graph)
+
+        assertion = _assertion(result, "no_rendering_only_noise_chunks")
+        assert assertion.passed is False
+        assert assertion.actual == 1
+
+    def test_rendering_only_noise_invariant_passes_on_technical_text(self) -> None:
+        graph = make_graph(
+            chunks={
+                "c1": make_chunk(
+                    chunk_id="c1",
+                    content="TCR12-43063 engine no. 8351446 pressure-temperature",
+                )
+            }
+        )
+
+        result = _evaluator().evaluate(case=make_case(), document_graph=graph)
+
+        assertion = _assertion(result, "no_rendering_only_noise_chunks")
+        assert assertion.passed is True
+        assert assertion.actual == 0
+
+    def test_rendering_only_noise_invariant_passes_on_normal_prose(self) -> None:
+        graph = make_graph(
+            chunks={
+                "c1": make_chunk(
+                    chunk_id="c1",
+                    content="Replace the hydraulic filter every 1000 operating hours.",
+                )
+            }
+        )
+
+        result = _evaluator().evaluate(case=make_case(), document_graph=graph)
+
+        assertion = _assertion(result, "no_rendering_only_noise_chunks")
+        assert assertion.passed is True
+
+    def test_rendering_only_noise_invariant_passes_on_normal_structured_table_chunks(
+        self,
+    ) -> None:
+        graph = make_graph(
+            chunks={
+                "c1": make_chunk(
+                    chunk_id="c1",
+                    content="| Parameter | Value |\n| --- | --- |\n| Pressure | 16 bar |",
+                    table_ids=["t1"],
+                    table_row_start=1,
+                    table_row_end=1,
+                )
+            }
+        )
+
+        result = _evaluator().evaluate(case=make_case(), document_graph=graph)
+
+        assertion = _assertion(result, "no_rendering_only_noise_chunks")
+        # Real table content ("Pressure", "16 bar") coexists with fence
+        # syntax in the same chunk - the presence of any meaningful
+        # alphanumeric content means this is never noise, regardless of
+        # how much Markdown table syntax surrounds it.
+        assert assertion.passed is True
 
     def test_chunk_provenance_invariant_fails_when_page_start_missing(self) -> None:
         graph = make_graph(

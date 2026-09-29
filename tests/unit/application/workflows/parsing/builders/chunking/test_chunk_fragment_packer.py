@@ -357,6 +357,69 @@ def test_flushes_before_an_oversized_key_value_group_but_still_allows_it_to_spli
     assert groups[2] == ["Field 2."]
 
 
+class TestRenderingOnlyNoiseWindowsAreDropped:
+    """Defensive backstop for the degraded-table fallback path: if a
+    standalone oversized fragment's text still somehow contains pure
+    table-rendering syntax (e.g. because it came from some other, untouched
+    code path), the generic-splitter fallback must never emit a final
+    chunk consisting of nothing else - while never discarding a window
+    that has any real meaningful content, even if it also contains fence
+    syntax. See src/shared/text/rendering_noise_detector.py."""
+
+    def _pack_standalone(self, fragment: ChunkFragment) -> list[str]:
+        text_splitter = ChunkTextSplitter(max_chunk_tokens=5, chunk_overlap=0)
+        merge_policy = SectionMergePolicy(text_splitter=text_splitter, min_section_text_length=10)
+        payloads = ChunkFragmentPacker().pack(
+            document_title=None,
+            fragments=[fragment],
+            text_splitter=text_splitter,
+            payload_factory=ChunkPayloadFactory(),
+            merge_policy=merge_policy,
+        )
+        return [payload.content for payload in payloads]
+
+    def test_pure_fence_window_is_dropped_but_meaningful_windows_survive(self) -> None:
+        fragment = ChunkFragment(
+            text="engine no 8351446 turbocharger TCR12-43063\n"
+            "--------- --------- --------- ---------\n"
+            "12V175D-ML pressure 995 mbar",
+            chunk_type=ChunkType.GENERAL,
+            standalone=True,
+            order_index=1,
+            section_id="s1",
+            section_path=["1 Intro"],
+            token_count=20,
+        )
+
+        contents = self._pack_standalone(fragment)
+
+        joined = " ".join(contents)
+        assert "8351446" in joined
+        assert "TCR12-43063" in joined
+        assert "12V175D-ML" in joined
+        assert not any(
+            content.strip() and content.replace("-", "").strip() == ""
+            for content in contents
+        )
+
+    def test_meaningful_content_alone_is_never_dropped(self) -> None:
+        fragment = ChunkFragment(
+            text="DN25 PN16 80 C TCR12-43063 pressure-temperature 8351446 measurement data",
+            chunk_type=ChunkType.GENERAL,
+            standalone=True,
+            order_index=1,
+            section_id="s1",
+            section_path=["1 Intro"],
+            token_count=20,
+        )
+
+        contents = self._pack_standalone(fragment)
+
+        joined = " ".join(contents)
+        for value in ("DN25", "PN16", "TCR12-43063", "8351446"):
+            assert value in joined
+
+
 def test_list_run_and_key_value_group_cohesion_operate_independently() -> None:
     """Regression: the new key_value_area cohesion check must not alter
     pre-existing list-run flush behavior, and vice versa -- each

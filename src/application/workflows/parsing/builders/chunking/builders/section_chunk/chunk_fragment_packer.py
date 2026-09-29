@@ -19,6 +19,7 @@ from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitte
     ChunkTextSplitter,
 )
 from src.domain.common import ChunkType
+from src.shared.text.rendering_noise_detector import is_rendering_only_noise
 
 
 class ChunkFragmentPacker:
@@ -196,7 +197,7 @@ class ChunkFragmentPacker:
                 section_path_lookup=section_path_lookup,
             )
             for window in windows
-            if window.strip()
+            if window.strip() and not is_rendering_only_noise(window)
         ]
 
     def _flush_current_fragments(

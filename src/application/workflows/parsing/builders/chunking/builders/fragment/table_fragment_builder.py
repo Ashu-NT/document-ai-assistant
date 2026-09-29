@@ -1,6 +1,9 @@
 from src.application.workflows.parsing.builders.chunking.builders.fragment.asset_context_resolver import (
     AssetContextResolver,
 )
+from src.application.workflows.parsing.builders.chunking.builders.fragment.degraded_table_plain_text_renderer import (
+    DegradedTablePlainTextRenderer,
+)
 from src.application.workflows.parsing.builders.chunking.text.chunk_text_splitter import (
     ChunkTextSplitter,
 )
@@ -89,9 +92,39 @@ class TableFragmentBuilder:
         return "\n\n".join(parts).strip() if parts else None
 
     @staticmethod
-    def table_markdown_text(element: CanonicalElement) -> str | None:
+    def table_markdown_text(
+        element: CanonicalElement,
+        *,
+        degraded_table_renderer: DegradedTablePlainTextRenderer | None = None,
+    ) -> str | None:
         parser_extra = resolve_parser_extra(element)
+
+        if TableFragmentBuilder._has_too_few_rows_for_structure(parser_extra):
+            renderer = degraded_table_renderer or DegradedTablePlainTextRenderer()
+            plain_text = renderer.render(parser_extra.get("table_rows"))
+            if plain_text:
+                return plain_text
+
         return clean_chunk_text(parser_extra.get("markdown") or element.text)
+
+    @staticmethod
+    def _has_too_few_rows_for_structure(parser_extra: dict) -> bool:
+        """Every table-structure summarizer
+        (MaintenanceSchedule/PerformanceCurve/SpecificationMatrix/
+        GenericRecord) already refuses to classify a table's shape at all
+        once it has fewer than 2 rows - see
+        `GenericRecordStructureSummarizer.summarize()`. Reusing that exact,
+        already-established threshold here (rather than inventing a new
+        "degraded" heuristic) means: a table this condition matches can
+        never have a real row/column structure to render as a Markdown
+        table regardless of WHY it only has one row - whether that's a
+        genuinely tiny table or Docling's table-structure model collapsing
+        a complex table into one degenerate row. Both cases are safe to
+        treat the same way: render the real cell text plainly, never a
+        Markdown table with a meaningless header/separator distinction.
+        """
+        row_count = parser_extra.get("row_count")
+        return not isinstance(row_count, int) or row_count < 2
 
     @staticmethod
     def compose_table_text(

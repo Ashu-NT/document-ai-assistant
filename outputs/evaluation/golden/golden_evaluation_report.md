@@ -86,17 +86,17 @@
 - effective profile: `datasheet`
 - effective budget: `270` tokens
 - max observed tokens: `317`
-- normal chunks: `91`
+- normal chunks: `70`
 - oversized-indivisible chunks: `5`
 - hard budget violations: `0`
 
 | chunk_id | status | tokens | budget | chunk_type | table_id | rows |
 | --- | --- | --- | --- | --- | --- | --- |
-| chunk_3eac374c4ee7478699c857e15c21891f | oversized_indivisible | 317 | 270 | technical_specification | table_7207db68f19e4aa9b9f1967cb3d89aec | 11-11 |
-| chunk_72a3718c0cd84c279862302743859a49 | oversized_indivisible | 283 | 270 | technical_specification | table_a6533902eeda4519ac0a075f9aa541e3 | 8-8 |
-| chunk_3592f07ea2874e4ba6dbcebfa731a5eb | oversized_indivisible | 292 | 270 | technical_specification | table_a6533902eeda4519ac0a075f9aa541e3 | 14-14 |
-| chunk_5d284a4a15db41cfb165e2252d87da0d | oversized_indivisible | 273 | 270 | technical_specification | table_62b0a910b7f84c72b16bdd9836d63d79 | 2-2 |
-| chunk_7e03282ec1a9438bbda799bfd6d4476f | oversized_indivisible | 282 | 270 | technical_specification | table_62b0a910b7f84c72b16bdd9836d63d79 | 8-8 |
+| chunk_4c4151fb3db845dba206e3999428373b | oversized_indivisible | 317 | 270 | technical_specification | table_3fed78e7f4fc403a953bb62976d3a821 | 11-11 |
+| chunk_ab78d90a3b4145f98e325dce2dee59dc | oversized_indivisible | 283 | 270 | technical_specification | table_fdfe25aede4e45baa9c7b41fc780e0f7 | 8-8 |
+| chunk_20bc55d50a024cd3bcf57e450af346ae | oversized_indivisible | 292 | 270 | technical_specification | table_fdfe25aede4e45baa9c7b41fc780e0f7 | 14-14 |
+| chunk_6b53922fa2da4232b0fcefa5ce75f0a1 | oversized_indivisible | 273 | 270 | technical_specification | table_56f9b1fb3f3f460d9a7a6a55417cc3b5 | 2-2 |
+| chunk_4a90a6dd4d5d48e69a1ec58d121cc184 | oversized_indivisible | 282 | 270 | technical_specification | table_56f9b1fb3f3f460d9a7a6a55417cc3b5 | 8-8 |
 
 ### report_pressure_transmitter
 
@@ -118,7 +118,7 @@
 
 | chunk_id | status | tokens | budget | chunk_type | table_id | rows |
 | --- | --- | --- | --- | --- | --- | --- |
-| chunk_cc3b18b4b3674c0d861fa1dbb5fd9857 | oversized_indivisible | 311 | 310 | general | table_52edac325831481185c3bbc6d1026a8d | 7-7 |
+| chunk_42e2ed61e64c459c99e8abf0c4127a57 | oversized_indivisible | 311 | 310 | general | table_962f11d246bb4d98be04127c20445d6f | 7-7 |
 
 ## Cross References
 
@@ -155,8 +155,8 @@ _None._
 
 ## Reproducibility
 
-- timestamp: `2026-09-29T03:05:56.132234+00:00`
-- git commit: `161254718b7371d0f7d3c895bcf2d3da4fba6860`
+- timestamp: `2026-09-29T03:25:48.997721+00:00`
+- git commit: `ad3e4907a888f64b60b02d2a51eb23fca3258d82`
 - artifact schema version: `1`
 - parser: `docling 2.126.0`
 - conversion fingerprint: `e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5`
