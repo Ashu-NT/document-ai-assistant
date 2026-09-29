@@ -1,7 +1,7 @@
 {
   "run_metadata": {
-    "timestamp": "2026-09-29T05:17:10.116063+00:00",
-    "git_commit": "e1525b52007cf8159cc90cad589997bb88b11b99",
+    "timestamp": "2026-09-29T06:33:20.322941+00:00",
+    "git_commit": "9bce1640dfc589686e95f94a4aba38a3d9de4ad9",
     "artifact_schema_version": 1,
     "parser_name": "docling",
     "parser_version": "2.126.0",
@@ -17,7 +17,14 @@
     "classification_confidence_threshold": null,
     "classification_allow_reclassification": null,
     "classification_use_cache": null,
-    "classification_prompt_version": null
+    "classification_prompt_version": null,
+    "extraction_execution_mode": null,
+    "extraction_prompt_version": null,
+    "extraction_temperature": null,
+    "extraction_max_attempts": null,
+    "extraction_allow_partial_batches": null,
+    "extraction_candidate_narrowing_enabled": null,
+    "extraction_confidence_threshold": null
   },
   "corpus_coverage": {
     "expected": 10,
@@ -678,52 +685,52 @@
         "passed": true,
         "oversized_chunks": [
           {
-            "chunk_id": "chunk_f8b5aa4ced4848e186a860a16cb93817",
+            "chunk_id": "chunk_645d32e0383f4939a7fa4031cecdc7b2",
             "token_count": 317,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_4bb1dd510fc5469581943738e1ac9a14",
+            "table_id": "table_8791f14620924ad6bce8fb36a9d509b7",
             "table_row_start": 11,
             "table_row_end": 11
           },
           {
-            "chunk_id": "chunk_4562b70f5495417bb3184f6b7d7ddba8",
+            "chunk_id": "chunk_aadb713c83964467bffc4670dd76a654",
             "token_count": 283,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_66c6a471c1994574817bcd4e7fac4eb8",
+            "table_id": "table_23d2dfc3ed3542f993c7f0ee3c79bbee",
             "table_row_start": 8,
             "table_row_end": 8
           },
           {
-            "chunk_id": "chunk_52a44475fede437abf732452207654c0",
+            "chunk_id": "chunk_eec493e0fed44966a81651d7bd5dd3d9",
             "token_count": 292,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_66c6a471c1994574817bcd4e7fac4eb8",
+            "table_id": "table_23d2dfc3ed3542f993c7f0ee3c79bbee",
             "table_row_start": 14,
             "table_row_end": 14
           },
           {
-            "chunk_id": "chunk_564ad168dd2d48bcb63c32bd6bceb85c",
+            "chunk_id": "chunk_3b2d5bfa59ff461c98c8890f80a9e4a1",
             "token_count": 273,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_fa507c9c97bf4dff87aa5d08c6c2e136",
+            "table_id": "table_251332c5de7f4fbca21b51f71a5e08f9",
             "table_row_start": 2,
             "table_row_end": 2
           },
           {
-            "chunk_id": "chunk_67cda704e18647a683f57899dee38833",
+            "chunk_id": "chunk_2e95f9587929414c9467e424e875f73f",
             "token_count": 282,
             "budget": 270,
             "status": "oversized_indivisible",
             "chunk_type": "technical_specification",
-            "table_id": "table_fa507c9c97bf4dff87aa5d08c6c2e136",
+            "table_id": "table_251332c5de7f4fbca21b51f71a5e08f9",
             "table_row_start": 8,
             "table_row_end": 8
           }
@@ -851,12 +858,12 @@
         "passed": true,
         "oversized_chunks": [
           {
-            "chunk_id": "chunk_640b89ef083c43ce9a25ee73f52f953b",
+            "chunk_id": "chunk_08194c21a1c6462481ebff1736fd946b",
             "token_count": 311,
             "budget": 310,
             "status": "oversized_indivisible",
             "chunk_type": "general",
-            "table_id": "table_5b7c0f4fba6f48f797920cb32c302e79",
+            "table_id": "table_5d9ddbe1b3284b02847edc802cd259cd",
             "table_row_start": 7,
             "table_row_end": 7
           }
@@ -889,6 +896,16 @@
       "ambiguous_raw_match_count": 0,
       "confusion_matrix": {}
     },
+    "documents": []
+  },
+  "extraction": {
+    "applicability_counts": {
+      "applicable": 0,
+      "not_applicable": 0,
+      "not_assessed": 0
+    },
+    "metrics_reviewed": [],
+    "metrics_candidate_non_authoritative": [],
     "documents": []
   }
 }

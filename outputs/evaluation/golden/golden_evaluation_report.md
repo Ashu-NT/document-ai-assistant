@@ -96,11 +96,11 @@
 
 | chunk_id | status | tokens | budget | chunk_type | table_id | rows |
 | --- | --- | --- | --- | --- | --- | --- |
-| chunk_f8b5aa4ced4848e186a860a16cb93817 | oversized_indivisible | 317 | 270 | technical_specification | table_4bb1dd510fc5469581943738e1ac9a14 | 11-11 |
-| chunk_4562b70f5495417bb3184f6b7d7ddba8 | oversized_indivisible | 283 | 270 | technical_specification | table_66c6a471c1994574817bcd4e7fac4eb8 | 8-8 |
-| chunk_52a44475fede437abf732452207654c0 | oversized_indivisible | 292 | 270 | technical_specification | table_66c6a471c1994574817bcd4e7fac4eb8 | 14-14 |
-| chunk_564ad168dd2d48bcb63c32bd6bceb85c | oversized_indivisible | 273 | 270 | technical_specification | table_fa507c9c97bf4dff87aa5d08c6c2e136 | 2-2 |
-| chunk_67cda704e18647a683f57899dee38833 | oversized_indivisible | 282 | 270 | technical_specification | table_fa507c9c97bf4dff87aa5d08c6c2e136 | 8-8 |
+| chunk_645d32e0383f4939a7fa4031cecdc7b2 | oversized_indivisible | 317 | 270 | technical_specification | table_8791f14620924ad6bce8fb36a9d509b7 | 11-11 |
+| chunk_aadb713c83964467bffc4670dd76a654 | oversized_indivisible | 283 | 270 | technical_specification | table_23d2dfc3ed3542f993c7f0ee3c79bbee | 8-8 |
+| chunk_eec493e0fed44966a81651d7bd5dd3d9 | oversized_indivisible | 292 | 270 | technical_specification | table_23d2dfc3ed3542f993c7f0ee3c79bbee | 14-14 |
+| chunk_3b2d5bfa59ff461c98c8890f80a9e4a1 | oversized_indivisible | 273 | 270 | technical_specification | table_251332c5de7f4fbca21b51f71a5e08f9 | 2-2 |
+| chunk_2e95f9587929414c9467e424e875f73f | oversized_indivisible | 282 | 270 | technical_specification | table_251332c5de7f4fbca21b51f71a5e08f9 | 8-8 |
 
 ### report_pressure_transmitter
 
@@ -122,7 +122,7 @@
 
 | chunk_id | status | tokens | budget | chunk_type | table_id | rows |
 | --- | --- | --- | --- | --- | --- | --- |
-| chunk_640b89ef083c43ce9a25ee73f52f953b | oversized_indivisible | 311 | 310 | general | table_5b7c0f4fba6f48f797920cb32c302e79 | 7-7 |
+| chunk_08194c21a1c6462481ebff1736fd946b | oversized_indivisible | 311 | 310 | general | table_5d9ddbe1b3284b02847edc802cd259cd | 7-7 |
 
 ## Cross References
 
@@ -153,14 +153,18 @@
 
 _Classification was not evaluated in this run._
 
+## Extraction (Phase 2B)
+
+_Extraction was not evaluated in this run._
+
 ## Documents Not Evaluated
 
 _None._
 
 ## Reproducibility
 
-- timestamp: `2026-09-29T05:17:10.116063+00:00`
-- git commit: `e1525b52007cf8159cc90cad589997bb88b11b99`
+- timestamp: `2026-09-29T06:33:20.322941+00:00`
+- git commit: `9bce1640dfc589686e95f94a4aba38a3d9de4ad9`
 - artifact schema version: `1`
 - parser: `docling 2.126.0`
 - conversion fingerprint: `e6c271c982c219155891eac9f98ff47e72177e4df45e22609853a8f1401ed6b5`

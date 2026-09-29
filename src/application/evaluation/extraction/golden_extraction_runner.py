@@ -204,7 +204,7 @@ def _evaluate_scope(
 
     try:
         extraction_result: ExtractionResult = workflow.extract(
-            document_id=graph.document_id,
+            document_id=graph.document.document_id,
             chunks=chunks,
             tables=graph.tables,
             sections=graph.sections,
@@ -332,17 +332,28 @@ def _evaluate_document(
             )
         graph = parse_outcome.document_graph
 
-    scopes = sorted(
-        {expectation.scope for expectation in doc_expectations}
-        | {declaration.scope for declaration in doc_declarations},
-        key=lambda scope: (
-            scope.scope_type.value,
-            scope.page_start or 0,
-            scope.page_end or 0,
-        ),
+    def _sort_key(scope: ExtractionEvaluationScope):
+        return (scope.scope_type.value, scope.page_start or 0, scope.page_end or 0)
+
+    # Only scopes with at least one real ExtractionExpectationCase ever
+    # trigger `workflow.extract()`. An ExtractionApplicabilityDeclaration is
+    # a static judgment, never a reason to run extraction by itself - a
+    # WHOLE_DOCUMENT-scoped declaration (e.g. MaintenanceInterval =
+    # NOT_APPLICABLE) must NEVER cause a whole-document extraction call
+    # (see task instruction: never run the LLM over the entire MTU manual).
+    extraction_scopes = sorted(
+        {expectation.scope for expectation in doc_expectations}, key=_sort_key
+    )
+    declaration_only_scopes = sorted(
+        {
+            declaration.scope
+            for declaration in doc_declarations
+            if declaration.scope not in extraction_scopes
+        },
+        key=_sort_key,
     )
 
-    if not scopes:
+    if not extraction_scopes and not declaration_only_scopes:
         return GoldenExtractionDocumentResult(
             alias=alias,
             scope_outcomes=[
@@ -363,7 +374,18 @@ def _evaluate_document(
             doc_declarations=[d for d in doc_declarations if d.scope == scope],
             extraction_workflow_factory=extraction_workflow_factory,
         )
-        for scope in scopes
+        for scope in extraction_scopes
+    ]
+    scope_outcomes += [
+        ExtractionScopeRunOutcome(
+            document_alias=alias,
+            scope=scope,
+            stage_status=ExtractionStageStatus.NO_EXPECTATIONS,
+            applicability_declarations=[
+                d for d in doc_declarations if d.scope == scope
+            ],
+        )
+        for scope in declaration_only_scopes
     ]
 
     return GoldenExtractionDocumentResult(alias=alias, scope_outcomes=scope_outcomes)

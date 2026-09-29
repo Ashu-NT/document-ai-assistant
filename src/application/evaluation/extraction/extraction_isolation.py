@@ -73,12 +73,18 @@ class CannedResponseLLMService:
         self,
         prompt: str,
         model: str | None = None,
+        activity_context: Any | None = None,
         *,
         temperature: float | None = None,
         json_mode: bool = False,
         response_schema: dict[str, Any] | None = None,
         num_ctx: int | None = None,
     ) -> str:
+        # `activity_context` is accepted (and ignored) only to match the
+        # real `LLMService.generate(...)` signature exactly - production's
+        # `ExtractionBatchExecutor` calls it with this kwarg (see
+        # extraction_batch_executor.py) and a fake standing in for the real
+        # service must accept the same call shape.
         self.calls.append(
             RecordedLLMCall(
                 prompt=prompt,

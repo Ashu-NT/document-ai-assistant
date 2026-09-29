@@ -118,6 +118,12 @@ def match_expectations_against_actuals(
             continue
 
         if len(candidates) > 1:
+            # These candidates are "spoken for" by this expectation (each is
+            # an equally plausible match) - consumed here so they never ALSO
+            # surface as independent UNMATCHED_ACTUAL false-positive
+            # candidates below, which would double-count the same ambiguity
+            # as both an unresolved match AND a spurious extra entity.
+            matched_actual_ids.update(candidate.entity_id for candidate in candidates)
             results.append(
                 ExtractionMatchResult(
                     outcome=ExtractionMatchOutcome.UNMATCHED_EXPECTED,
